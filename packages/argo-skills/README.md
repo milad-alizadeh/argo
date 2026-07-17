@@ -48,7 +48,9 @@ Options: `--global`/`-g` (install to `~` instead of the project), `--project`/`-
 - **`agents`** — which agents to install for (e.g. `claude-code`, `cursor`, `codex`).
 - **`scope`** — `project` (default, committed with the repo) or `global`.
 
-## Add your own skill
+## Argo's own skills
 
-Drop a folder under `skills/` with a `SKILL.md` (see `skills/example-house-style`).
-It installs automatically via the `mine` entry.
+Live under `skills/`, one `SKILL.md` per folder, and install via the `mine` entry.
+Currently one: [`scaffold-project`](skills/scaffold-project/SKILL.md) — an interactive
+scaffolder for a new project of any stack (interview → monorepo vs single → install the
+stack's LSP → lay out the folders). Add more by dropping another folder here.
