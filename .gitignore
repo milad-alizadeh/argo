@@ -1,0 +1,10 @@
+node_modules/
+.turbo/
+dist/
+*.log
+.DS_Store
+
+# Installed skill copies are throwaway outputs of `npx skills add` —
+# skills-lock.json is committed and restores them via `npx skills experimental_install`.
+.agents/
+.claude/
