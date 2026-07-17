@@ -62,7 +62,7 @@ if (entries.length === 0) {
   process.exit(1);
 }
 
-console.log(`\nargo-skill-starter — ${entries.length} source(s), agents=[${agents.join(", ")}], scope=${scope}${dryRun ? " (dry run)" : ""}`);
+console.log(`\nargo-skills — ${entries.length} source(s), agents=[${agents.join(", ")}], scope=${scope}${dryRun ? " (dry run)" : ""}`);
 console.log(`manifest: ${path}\ninstalling into: ${process.cwd()}\n`);
 
 const failed = [];

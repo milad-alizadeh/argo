@@ -8,11 +8,11 @@
         "turbo": "^2.3.3",
       },
     },
-    "packages/argo-skill-starter": {
-      "name": "argo-skill-starter",
+    "packages/argo-skills": {
+      "name": "argo-skills",
       "version": "0.1.0",
       "bin": {
-        "argo-skill-starter": "bin/scaffold.mjs",
+        "argo-skills": "bin/scaffold.mjs",
       },
     },
   },
@@ -29,7 +29,7 @@
 
     "@turbo/windows-arm64": ["@turbo/windows-arm64@2.10.5", "", { "os": "win32", "cpu": "arm64" }, "sha512-sog+wP+8YSJrdWZ/rUJg8xghVTrwoG+BrSlDQpnK5fzSgJHn1INRWXbVWRH0d3vX8dBI01E3yxXRre9Dn+OXQA=="],
 
-    "argo-skill-starter": ["argo-skill-starter@workspace:packages/argo-skill-starter"],
+    "argo-skills": ["argo-skills@workspace:packages/argo-skills"],
 
     "turbo": ["turbo@2.10.5", "", { "optionalDependencies": { "@turbo/darwin-64": "2.10.5", "@turbo/darwin-arm64": "2.10.5", "@turbo/linux-64": "2.10.5", "@turbo/linux-arm64": "2.10.5", "@turbo/windows-64": "2.10.5", "@turbo/windows-arm64": "2.10.5" }, "bin": { "turbo": "bin/turbo" } }, "sha512-07Y/C7OUp23l4P92PJoYtFNbHjLhftrZH5Ce7dbczS4kX2Re+wtbXvZLoxn/pUtzgsQaRCBaRuZPJp4zmAn0WQ=="],
   }

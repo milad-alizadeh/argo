@@ -1,13 +1,14 @@
 {
-  "name": "argo-skill-starter",
+  "name": "argo-skills",
   "version": "0.1.0",
-  "description": "One command to install your agent-skill bundle (third-party + your own) into any project.",
+  "description": "Argo's own skills + a scaffolder that installs them and a curated third-party bundle into any project.",
   "type": "module",
   "bin": {
-    "argo-skill-starter": "bin/scaffold.mjs"
+    "argo-skills": "bin/scaffold.mjs"
   },
   "files": [
     "bin",
+    "skills",
     "bundle.json"
   ],
   "scripts": {
