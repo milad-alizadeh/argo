@@ -168,6 +168,11 @@
       "skillPath": "skills/misc/scaffold-exercises/SKILL.md",
       "computedHash": "354c91f6dbc9b058632f30594aacb4edc6d25012596585abb00402af8d7ec5e9"
     },
+    "scaffold-project": {
+      "source": "/Users/milad/.npm/_npx/4fca0602f1f8b30e/node_modules/argo/packages/argo-skills/skills",
+      "sourceType": "local",
+      "computedHash": "163fb34f4bd28a0c966e73bdf9568dd318824af0b11c020507e7039766c5b457"
+    },
     "setup-argo-skills": {
       "source": "/Users/milad/.npm/_npx/4fca0602f1f8b30e/node_modules/argo/packages/argo-skills/skills",
       "sourceType": "local",
