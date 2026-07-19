@@ -49,8 +49,8 @@
 
   /* Rail */
   .rail-h{display:flex;align-items:center;gap:8px;padding:13px 14px 9px;color:var(--muted-foreground);font:var(--type-eyebrow-weight) var(--type-eyebrow)/var(--type-eyebrow-leading) var(--sans);letter-spacing:var(--type-eyebrow-tracking);text-transform:uppercase;}
-  .rail-h .plus{margin-left:auto;width:18px;height:18px;border-radius:calc(var(--radius) - 2px);display:grid;place-items:center;color:var(--muted-foreground);border:1px solid var(--border);cursor:pointer;}
-  .proj{display:flex;align-items:center;gap:7px;padding:5px 14px;color:var(--foreground);font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);}
+  .rail-h .plus,.proj .plus{margin-left:auto;width:18px;height:18px;border-radius:calc(var(--radius) - 2px);display:grid;place-items:center;color:var(--muted-foreground);border:1px solid var(--border);cursor:pointer;flex:none;}
+  .proj{display:flex;align-items:center;gap:7px;padding:5px 14px;color:var(--foreground);font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);cursor:pointer;user-select:none;}
   .proj .n{color:var(--foreground-faint);font-weight:var(--type-meta-weight);}
   .rail-scroll{flex:1;overflow:auto;padding:2px 10px 8px;}
   .srow{display:block;background:var(--inset);border:1px solid var(--inset-hair);border-radius:calc(var(--radius) + 4px);padding:9px 11px;margin:6px 0;cursor:pointer;transition:border-color var(--time-fast),background var(--time-fast);}
@@ -67,10 +67,13 @@
   .srow .slot{color:var(--muted-foreground);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);margin:6px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .srow .meta{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;margin:4px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .srow .slot::first-letter,.srow .meta::first-letter{text-transform:uppercase;}
-  .srow .ctxrow{display:flex;align-items:center;gap:7px;margin:3px 0 0;}
-  .srow .ctxrow .ctxlbl{color:var(--foreground-faint);font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;flex:none;}
+  /* Context gauge — ONE shape for "context remaining" everywhere (rail rows +
+     session header): CTX tag + bar + ~n%. Un-scoped so both sites share it. */
+  .ctxrow{display:flex;align-items:center;gap:7px;}
+  .srow .ctxrow{margin:3px 0 0;}
+  .ctxlbl{color:var(--foreground-faint);font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;flex:none;}
   .srow .ctxrow .ctxbar{flex:1;width:auto;}
-  .srow .ctxrow .ctxpct{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;flex:none;}
+  .ctxpct{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;flex:none;}
   .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none;}
   .dot.run{background:var(--status-working);box-shadow:0 0 8px color-mix(in srgb,var(--status-working) 70%,transparent);}
   .dot.amber{background:var(--status-awaiting-input);box-shadow:0 0 8px color-mix(in srgb,var(--status-awaiting-input) 55%,transparent);}
@@ -94,7 +97,9 @@
   .tg{font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);color:var(--muted-foreground);border:1px solid var(--border);border-radius:var(--radius);padding:3px 9px;cursor:pointer;display:inline-flex;gap:5px;align-items:center;user-select:none;}
   .tg.on{color:var(--foreground);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:var(--accent);}
 
-  .work{display:grid;grid-template-columns:1fr 6px var(--c-det,400px);min-height:0;overflow:hidden;}
+  /* Default split: the two work panes (Activity | Session changes) share the
+     width 50/50; a splitter drag pins --c-act (the Activity track) to px. */
+  .work{display:grid;grid-template-columns:var(--c-act,1fr) 6px 1fr;min-height:0;overflow:hidden;}
   .work.solo{grid-template-columns:1fr 0 0;}
   .region{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;}
   .region.detail{border-left:1px solid var(--border);}
@@ -163,6 +168,8 @@
   .sumpeer{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:var(--radius);cursor:pointer;color:var(--muted-foreground);font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);}
   .sumpeer:hover{background:color-mix(in srgb,var(--gray-50) 4%,transparent);} .sumpeer .cv{color:var(--foreground-faint);width:10px;flex:none;} .sumpeer .grow{flex:1;} .sumpeer .meta{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;}
   .peerdiv{border-top:1px solid var(--inset-hair);margin:4px 2px;}
+  /* non-interactive section header (Timeline) — same row anatomy, no click affordance */
+  .sumpeer.static{cursor:default;} .sumpeer.static:hover{background:transparent;}
 
   /* Narrative */
   .msg{border-left:2px solid var(--inset-hair);padding:2px 0 2px 11px;margin:0 2px 3px;}
@@ -186,7 +193,11 @@
   .tierline .tk.direct{color:var(--foreground);} .tierline .tk.derived{color:var(--foreground-soft);text-decoration:underline dotted;text-decoration-color:var(--foreground-faint);text-underline-offset:2px;} .tierline .tk.conv{color:var(--indigo-200);}
 
   /* Detail */
-  .dtabs{display:flex;gap:2px;padding:7px 12px;border-bottom:1px solid var(--border);align-items:center;}
+  /* Shared PaneHeader strip metrics — .atabs (Activity) and .dtabs (Detail) hold
+     the SAME height so their bottom hairlines form one continuous line. The old
+     mismatch: .atab carries a 1px border + 1px more padding than .dtab, making
+     the left strip 2px taller. */
+  .dtabs{display:flex;gap:2px;padding:6px 12px 8px;border-bottom:1px solid var(--border);align-items:center;min-height:41px;}
   .dtab{font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);color:var(--muted-foreground);padding:4px 10px;border-radius:var(--radius);cursor:pointer;} .dtab.on{color:var(--foreground);background:color-mix(in srgb,var(--gray-50) 6%,transparent);}
   .scopejump{margin-left:auto;font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);color:var(--primary);cursor:pointer;}
   .feed{font:var(--type-code-weight) var(--type-code)/var(--type-code-leading) var(--mono);letter-spacing:var(--type-code-tracking);color:var(--foreground-soft);white-space:pre-wrap;} .feed .p{color:var(--muted-foreground);} .feed .a{color:var(--green-300);} .feed .r{color:var(--red-300);} .feed .w{color:var(--amber-300);}
@@ -199,10 +210,10 @@
   .hunk{font:var(--type-code-weight) var(--type-code)/var(--type-code-leading) var(--mono);letter-spacing:var(--type-code-tracking);padding:9px 11px;white-space:pre-wrap;} .hunk .a{color:var(--green-300);} .hunk .r{color:var(--red-300);} .hunk .m{color:var(--foreground-faint);}
   .empty{color:var(--muted-foreground);font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);padding:8px 2px;}
 
-  /* Commit / Merge — a two-stage "ship this work" card. Stage 1 commits the
-     uncommitted files (accent primary). Stage 2 merges the worktree branch to
-     main behind an explicit review+tests gate. Only one stage is active at once;
-     each state fact is shown exactly ONCE. */
+  /* Commit / PR — a two-stage "ship this work" card. Stage 1 commits the
+     uncommitted files (accent primary). Stage 2 creates the pull request
+     (worktree branch → main) behind an explicit review+tests gate. Only one
+     stage is active at once; each state fact is shown exactly ONCE. */
   .commitcta{background:color-mix(in srgb,var(--primary) 6%,transparent);border:1px solid color-mix(in srgb,var(--primary) 24%,transparent);border-radius:calc(var(--radius) + 4px);margin:0 0 13px;overflow:hidden;}
   .cstage{padding:11px 12px;}
   .commitcta .top{display:flex;align-items:center;gap:8px;font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);} .commitcta .top .g{color:var(--muted-foreground);}
@@ -214,8 +225,8 @@
   .commitcta .btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, var(--indigo-400), var(--primary));color:var(--primary-foreground);border:1px solid color-mix(in srgb,var(--primary) 55%,transparent);border-radius:var(--radius);padding:7px 13px;font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);cursor:pointer;}
   .commitcta .btn[disabled]{opacity:.45;cursor:not-allowed;}
 
-  /* Stage 2 — merge behind its own labelled gate. The gate rows spell out each
-     prerequisite's real state, so "why disabled" is self-evident (no hint text). */
+  /* Stage 2 — PR creation behind its own labelled gate. The gate rows spell out
+     each prerequisite's real state, so "why disabled" is self-evident (no hint text). */
   .mstage{border-top:1px solid var(--inset-hair);background:var(--well);padding:11px 12px;}
   .mstage-h{display:inline-flex;align-items:center;gap:6px;font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);color:var(--muted-foreground);text-transform:uppercase;margin-bottom:9px;}
   .mstage-h .ic{font-size:13px;} /* icon box */
@@ -287,112 +298,112 @@
         renders in the narrow Activity scroll, the diff stays in Detail. ══ */
 
   /* Activity tab row — Overview | Review · <verdict> · <n> */
-  .atabs{display:flex;gap:4px;padding:6px 12px 8px;border-bottom:1px solid var(--hair);align-items:center;}
-  .atab{font-size:11.5px;color:var(--dim);padding:4px 11px;border-radius:8px;cursor:pointer;font-weight:600;border:1px solid transparent;user-select:none;}
-  .atab:hover{color:var(--txt);}
-  .atab.on{color:var(--txt);background:rgba(246,240,230,0.06);}
-  .atab.review{color:var(--v-changes);}
-  .atab.review.on{background:rgba(246,178,60,0.13);border-color:rgba(246,178,60,0.4);color:#f0cf93;}
+  .atabs{display:flex;gap:4px;padding:6px 12px 8px;border-bottom:1px solid var(--border);align-items:center;min-height:41px;} /* same strip height as .dtabs (shared PaneHeader) */
+  .atab{font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);color:var(--muted-foreground);padding:4px 11px;border-radius:var(--radius);cursor:pointer;border:1px solid transparent;user-select:none;}
+  .atab:hover{color:var(--foreground);}
+  .atab.on{color:var(--foreground);background:color-mix(in srgb,var(--gray-50) 6%,transparent);}
+  .atab.review{color:var(--verdict-changes);}
+  .atab.review.on{background:color-mix(in srgb,var(--amber-500) 12%,transparent);border-color:color-mix(in srgb,var(--amber-500) 40%,transparent);color:var(--verdict-changes);}
   /* glowing badge while a review is outstanding (any finding not Fixed) */
   .atab.review.glow{animation:tabglow 2.2s ease-in-out infinite;}
-  @keyframes tabglow{0%,100%{box-shadow:0 0 0 0 rgba(245,86,79,0);}50%{box-shadow:0 0 12px 1px rgba(245,86,79,0.45);}}
-  @media (prefers-reduced-motion:reduce){.atab.review.glow{animation:none;box-shadow:0 0 9px 1px rgba(245,86,79,0.4);}}
-  .atab .tglow{width:6px;height:6px;border-radius:50%;background:var(--v-block);box-shadow:0 0 7px rgba(245,86,79,0.9);display:inline-block;margin-right:6px;vertical-align:middle;}
+  @keyframes tabglow{0%,100%{box-shadow:0 0 0 0 transparent;}50%{box-shadow:0 0 12px 1px color-mix(in srgb,var(--red-500) 40%,transparent);}}
+  @media (prefers-reduced-motion:reduce){.atab.review.glow{animation:none;box-shadow:0 0 9px 1px color-mix(in srgb,var(--red-500) 40%,transparent);}}
+  .atab .tglow{width:6px;height:6px;border-radius:50%;background:var(--verdict-block);box-shadow:0 0 7px color-mix(in srgb,var(--red-500) 70%,transparent);display:inline-block;margin-right:6px;vertical-align:middle;}
   /* subtle in-diff finding marker — a thin tinted row that jumps to the Review tab */
   .fmarks{border-top:1px solid var(--inset-hair);}
-  .fmark{display:flex;align-items:center;gap:8px;padding:5px 11px;cursor:pointer;font-size:11px;color:var(--dim);border-left:2px solid transparent;background:rgba(246,240,230,0.012);}
-  .fmark:hover{background:rgba(246,240,230,0.045);color:var(--txt);}
+  .fmark{display:flex;align-items:center;gap:8px;padding:5px 11px;cursor:pointer;font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);color:var(--muted-foreground);border-left:2px solid transparent;background:var(--inset);}
+  .fmark:hover{background:color-mix(in srgb,var(--gray-50) 4%,transparent);color:var(--foreground);}
   .fmark .fm-bar{display:none;}
-  .fmark.sev-block{border-left-color:rgba(245,86,79,0.55);} .fmark.sev-changes{border-left-color:rgba(246,178,60,0.5);}
-  .fmark .fm-lbl{font-variant-numeric:tabular-nums;letter-spacing:.02em;} .fmark.sev-block .fm-lbl{color:#f0928c;} .fmark.done{border-left-color:rgba(36,206,124,0.55);} .fmark.done .fm-lbl{color:var(--mist);text-decoration:line-through;}
-  .fmark .grow{flex:1;} .fmark .fm-go{color:var(--blue);font-size:10.5px;opacity:0;} .fmark:hover .fm-go,.fmark:focus-visible .fm-go{opacity:1;}
+  .fmark.sev-block{border-left-color:color-mix(in srgb,var(--red-500) 55%,transparent);} .fmark.sev-changes{border-left-color:color-mix(in srgb,var(--amber-500) 55%,transparent);}
+  .fmark .fm-lbl{font-variant-numeric:tabular-nums;} .fmark.sev-block .fm-lbl{color:var(--verdict-block);} .fmark.done{border-left-color:color-mix(in srgb,var(--green-500) 55%,transparent);} .fmark.done .fm-lbl{color:var(--muted-foreground);text-decoration:line-through;}
+  .fmark .grow{flex:1;} .fmark .fm-go{color:var(--primary);opacity:0;} .fmark:hover .fm-go,.fmark:focus-visible .fm-go{opacity:1;}
   /* Review-tab row briefly highlighted when reached from a diff marker */
-  .rvrow.rv-focus{box-shadow:inset 0 0 0 1px rgba(246,178,60,0.6);background:rgba(246,178,60,0.09);}
+  .rvrow.rv-focus{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--amber-500) 55%,transparent);background:color-mix(in srgb,var(--amber-500) 12%,transparent);}
 
   /* Compact verdict hero + narrow-column tweaks for the Review tab */
   .rv-hero.compact{padding:13px 14px;margin:2px 0 12px;}
   .rv-hero.compact .verdict{gap:11px;}
-  .rv-hero.compact .vglyph{width:36px;height:36px;font-size:18px;}
-  .rv-hero.compact .vhead{font-size:14px;}
-  .rv-hero.compact .vsum{font-size:12px;margin-top:9px;max-width:none;}
+  .rv-hero.compact .vglyph{width:36px;height:36px;font-size:18px;} /* icon box */
+  .rv-hero.compact .vhead{font:var(--type-title-weight) var(--type-title)/var(--type-title-leading) var(--sans);letter-spacing:var(--type-title-tracking);}
+  .rv-hero.compact .vsum{margin-top:9px;max-width:none;}
   .rv-hero.compact .vattr{gap:9px;flex-wrap:wrap;margin-top:10px;}
-  .rv-hero .vnote{color:var(--dimmer);font-size:10.5px;margin-top:8px;font-style:italic;}
+  .rv-hero .vnote{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);margin-top:8px;font-style:italic;}
   .rv-progress.compact{flex-wrap:wrap;gap:8px;}
   .rv-progress.compact .track{flex:1 1 90px;width:auto;}
-  .rv-cta.compact .rv-btn{padding:8px 13px;font-size:12px;}
+  .rv-cta.compact .rv-btn{padding:8px 13px;}
 
   /* Verdict HERO — magenta accent because there are blocking findings; flips to
      a teal "addressed" band once every finding is marked Fixed (re-review still
      pending — the copy never claims the verdict was refreshed). */
-  .rv-hero{position:relative;border-radius:14px;padding:16px 18px;margin:2px 0 15px;
-    border:1px solid color-mix(in srgb,var(--warning) 42%,transparent);
-    background:linear-gradient(135deg,color-mix(in srgb,var(--warning) 13%,transparent),color-mix(in srgb,var(--warning) 4%,transparent) 62%,transparent);
-    box-shadow:0 1px 0 var(--inset-hi) inset,0 14px 34px rgba(0,0,0,0.22);}
-  .rv-hero.approve{border-color:color-mix(in srgb,var(--success) 42%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--success) 13%,transparent),color-mix(in srgb,var(--success) 4%,transparent) 62%,transparent);}
+  .rv-hero{position:relative;border-radius:calc(var(--radius) + 4px);padding:16px 18px;margin:2px 0 15px;
+    border:1px solid color-mix(in srgb,var(--amber-500) 40%,transparent);
+    background:linear-gradient(135deg,color-mix(in srgb,var(--amber-500) 12%,transparent),color-mix(in srgb,var(--amber-500) 6%,transparent) 62%,transparent);
+    box-shadow:0 1px 0 color-mix(in srgb,var(--gray-50) 4%,transparent) inset,0 14px 34px var(--shadow-2);}
+  .rv-hero.approve{border-color:color-mix(in srgb,var(--green-500) 40%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--green-500) 12%,transparent),color-mix(in srgb,var(--green-500) 6%,transparent) 62%,transparent);}
   .rv-hero .verdict{display:flex;align-items:center;gap:12px;}
-  .rv-hero .vglyph{width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:21px;font-variant-emoji:text;
-    color:var(--warning);border:1px solid color-mix(in srgb,var(--warning) 55%,transparent);background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--warning) 26%,transparent),transparent 70%);}
-  .rv-hero .vglyph.ap{color:var(--success);border-color:color-mix(in srgb,var(--success) 55%,transparent);background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--success) 26%,transparent),transparent 70%);}
-  .rv-hero .vhead{font-size:16.5px;font-weight:700;color:var(--foreground);letter-spacing:.005em;}
+  .rv-hero .vglyph{width:42px;height:42px;border-radius:calc(var(--radius) + 4px);flex:none;display:grid;place-items:center;font-size:21px;font-variant-emoji:text; /* icon box */
+    color:var(--verdict-changes);border:1px solid color-mix(in srgb,var(--amber-500) 55%,transparent);background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--amber-500) 24%,transparent),transparent 70%);}
+  .rv-hero .vglyph.ap{color:var(--verdict-approve);border-color:color-mix(in srgb,var(--green-500) 55%,transparent);background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--green-500) 24%,transparent),transparent 70%);}
+  .rv-hero .vhead{font:var(--type-headline-weight) var(--type-headline)/var(--type-headline-leading) var(--sans);letter-spacing:var(--type-headline-tracking);color:var(--foreground);}
   .rv-hero.approve .vhead{color:var(--foreground);}
-  .rv-hero .vhead .vblock{color:var(--critical);}
-  .rv-hero .vsum{color:#d6d0c6;font-size:12.5px;line-height:1.55;margin:11px 0 0;max-width:70ch;}
-  .rv-hero .vsum b{color:#fff;}
-  .rv-hero .vattr{display:flex;align-items:center;gap:12px;margin-top:12px;color:var(--dimmer);font-size:11px;}
+  .rv-hero .vhead .vblock{color:var(--verdict-block);}
+  .rv-hero .vsum{color:var(--gray-200);font:var(--type-prose-weight) var(--type-prose)/var(--type-prose-leading) var(--sans);letter-spacing:var(--type-prose-tracking);margin:11px 0 0;max-width:70ch;}
+  .rv-hero .vsum b{color:var(--gray-50);}
+  .rv-hero .vattr{display:flex;align-items:center;gap:12px;margin-top:12px;color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);}
   .rv-hero .vattr .sha{font-family:var(--mono);}
-  .rv-hero .vattr .sha{color:var(--mist);}
+  .rv-hero .vattr .sha{color:var(--muted-foreground);}
 
   /* Primary CTA row */
   .rv-cta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 13px;}
-  .rv-btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:9px 15px;font-size:12.5px;cursor:pointer;font-family:inherit;font-weight:600;border:1px solid transparent;transition:filter .15s,border-color .15s,background .15s;}
-  .rv-btn.primary{background:linear-gradient(135deg, color-mix(in srgb,var(--primary) 96%,#ffffff 10%), var(--primary));color:var(--primary-foreground);border-color:color-mix(in srgb,var(--primary) 60%,transparent);box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 32%,transparent);}
+  .rv-btn{display:inline-flex;align-items:center;gap:7px;border-radius:var(--radius);padding:9px 15px;font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);cursor:pointer;border:1px solid transparent;transition:filter var(--time-fast),border-color var(--time-fast),background var(--time-fast);}
+  .rv-btn.primary{background:linear-gradient(135deg, var(--indigo-400), var(--primary));color:var(--primary-foreground);border-color:color-mix(in srgb,var(--primary) 55%,transparent);box-shadow:0 6px 16px color-mix(in srgb,var(--primary) 24%,transparent);}
   .rv-btn.primary:hover{filter:brightness(1.09);}
-  .rv-btn.ghost{color:#e3ded5;border-color:var(--hair-strong);background:rgba(246,240,230,0.03);}
-  .rv-btn.ghost:hover{border-color:var(--blue);}
-  .rv-btn.merge{color:var(--primary-foreground);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:linear-gradient(135deg, color-mix(in srgb,var(--primary) 96%,#ffffff 10%), var(--primary));}
-  .rv-btn.merge:hover{background:linear-gradient(135deg, color-mix(in srgb,var(--primary) 82%,#ffffff 22%), var(--primary));}
+  .rv-btn.ghost{color:var(--gray-200);border-color:var(--input);background:color-mix(in srgb,var(--gray-50) 4%,transparent);}
+  .rv-btn.ghost:hover{border-color:var(--primary);}
+  .rv-btn.merge{color:var(--primary-foreground);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:linear-gradient(135deg, var(--indigo-400), var(--primary));}
+  .rv-btn.merge:hover{filter:brightness(1.09);} /* hover hand-mix collapsed; brightness carries the feedback */
   .rv-btn[disabled]{opacity:.4;cursor:not-allowed;filter:none;box-shadow:none;}
 
-  .rv-progress{display:flex;align-items:center;gap:11px;font-size:11.5px;color:var(--dim);margin:0 0 14px;font-variant-numeric:tabular-nums;}
-  .rv-progress .track{flex:none;width:200px;height:5px;border-radius:3px;background:rgba(246,240,230,0.08);overflow:hidden;}
-  .rv-progress .track>span{display:block;height:100%;background:linear-gradient(90deg,var(--v-changes),var(--v-approve));transition:width .3s;}
-  .rv-progress.done{color:var(--v-approve);}
+  .rv-progress{display:flex;align-items:center;gap:11px;font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);color:var(--muted-foreground);margin:0 0 14px;font-variant-numeric:tabular-nums;}
+  .rv-progress .track{flex:none;width:200px;height:5px;border-radius:calc(var(--radius) - 4px);background:color-mix(in srgb,var(--gray-50) 9%,transparent);overflow:hidden;}
+  .rv-progress .track>span{display:block;height:100%;background:linear-gradient(90deg,var(--verdict-changes),var(--verdict-approve));transition:width var(--time-slow);}
+  .rv-progress.done{color:var(--verdict-approve);}
 
   /* Addressable findings LIST — each row is a real actionable card */
   .rv-list{display:flex;flex-direction:column;gap:9px;}
-  .rvrow{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:12px;
-    border:1px solid var(--inset-hair);background:var(--inset);box-shadow:0 1px 0 var(--inset-hi) inset;border-left:3px solid var(--v-block);}
-  .rvrow.sev-advisory{border-left-color:var(--v-changes);}
-  .rvrow.fixed{border-left-color:var(--v-approve);opacity:.74;}
-  .rvrow .rsev{font-size:14px;flex:none;margin-top:1px;font-variant-emoji:text;color:var(--v-block);}
-  .rvrow.sev-advisory .rsev{color:var(--v-changes);}
-  .rvrow.fixed .rsev{color:var(--v-approve);}
+  .rvrow{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:calc(var(--radius) + 4px);
+    border:1px solid var(--inset-hair);background:var(--inset);box-shadow:0 1px 0 color-mix(in srgb,var(--gray-50) 4%,transparent) inset;border-left:3px solid var(--verdict-block);}
+  .rvrow.sev-advisory{border-left-color:var(--verdict-changes);}
+  .rvrow.fixed{border-left-color:var(--verdict-approve);opacity:.74;}
+  .rvrow .rsev{font-size:14px;flex:none;margin-top:1px;font-variant-emoji:text;color:var(--verdict-block);} /* icon box */
+  .rvrow.sev-advisory .rsev{color:var(--verdict-changes);}
+  .rvrow.fixed .rsev{color:var(--verdict-approve);}
   .rvrow{flex-wrap:wrap;}
   .rvrow .rmid{flex:1 1 62%;min-width:0;}
-  .rvrow .rloc{font-family:var(--mono);color:var(--mist);font-size:11.5px;}
-  .rvrow .diffjump{color:var(--blue);cursor:pointer;margin-left:9px;font-family:var(--sans);font-size:11px;}
+  .rvrow .rloc{font:var(--type-code-inline-weight) var(--type-code-inline)/var(--type-code-inline-leading) var(--mono);letter-spacing:var(--type-code-inline-tracking);color:var(--muted-foreground);}
+  .rvrow .diffjump{color:var(--primary);cursor:pointer;margin-left:9px;font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);}
   .rvrow .diffjump:hover{text-decoration:underline;}
-  .rvrow .rbody{color:#d6d0c6;font-size:12px;line-height:1.5;margin:5px 0 0;}
-  .rvrow.fixed .rbody{color:var(--dim);}
-  .rvrow .rby{color:var(--dimmer);font-size:10.5px;margin-top:6px;}
+  .rvrow .rbody{color:var(--gray-200);font:var(--type-prose-weight) var(--type-prose)/var(--type-prose-leading) var(--sans);letter-spacing:var(--type-prose-tracking);margin:5px 0 0;}
+  .rvrow.fixed .rbody{color:var(--muted-foreground);}
+  .rvrow .rby{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);margin-top:6px;}
   .rvrow .ractions{display:flex;flex-direction:row;align-items:center;gap:8px;flex:none;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;}
 
   /* State chip (status, not a control) — Open · Addressing · Fixed */
-  .schip{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 9px;border-radius:20px;border:1px solid transparent;font-weight:600;white-space:nowrap;font-variant-emoji:text;}
-  .schip.open{color:#f2a49b;border-color:rgba(245,86,79,0.45);background:rgba(245,86,79,0.10);}
-  .schip.addressing{color:#f0d093;border-color:rgba(246,178,60,0.45);background:rgba(246,178,60,0.10);}
-  .schip.fixed{color:#8fe6bf;border-color:rgba(36,206,124,0.45);background:rgba(36,206,124,0.12);}
+  .schip{display:inline-flex;align-items:center;gap:5px;font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;padding:2px 9px;border-radius:999px;border:1px solid transparent;white-space:nowrap;font-variant-emoji:text;} /* pill — outside the 4/6/8/12 radius family (follow-up) */
+  .schip.open{color:var(--verdict-block);border-color:color-mix(in srgb,var(--red-500) 40%,transparent);background:color-mix(in srgb,var(--red-500) 12%,transparent);}
+  .schip.addressing{color:var(--verdict-changes);border-color:color-mix(in srgb,var(--amber-500) 40%,transparent);background:color-mix(in srgb,var(--amber-500) 12%,transparent);}
+  .schip.fixed{color:var(--verdict-approve);border-color:color-mix(in srgb,var(--green-500) 40%,transparent);background:color-mix(in srgb,var(--green-500) 12%,transparent);}
 
   /* Address button (the real control) — reused inline in the Diff tab too */
-  .abtn{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;border-radius:8px;padding:6px 12px;
-    color:#f3e6c8;border:1px solid rgba(246,178,60,0.5);background:rgba(246,178,60,0.13);transition:background .15s,border-color .15s;}
-  .abtn:hover{background:rgba(246,178,60,0.22);border-color:rgba(246,178,60,0.85);}
-  .abtn.confirm{color:#eaf6ef;border-color:rgba(36,206,124,0.55);background:rgba(36,206,124,0.15);}
-  .abtn.confirm:hover{background:rgba(36,206,124,0.26);border-color:rgba(36,206,124,0.9);}
-  .abtn.reopen{color:var(--dim);border-color:var(--hair);background:transparent;}
-  .abtn.reopen:hover{color:var(--txt);border-color:var(--hair-strong);background:rgba(246,240,230,0.03);}
-  .abtn.sm{padding:4px 10px;font-size:11px;}
-  .abtn:focus-visible,.rv-btn:focus-visible,.rv-back:focus-visible{outline:2px solid var(--blue);outline-offset:1px;}
+  .abtn{display:inline-flex;align-items:center;gap:6px;font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);cursor:pointer;border-radius:var(--radius);padding:6px 12px;
+    color:var(--amber-100);border:1px solid color-mix(in srgb,var(--amber-500) 55%,transparent);background:color-mix(in srgb,var(--amber-500) 12%,transparent);transition:background var(--time-fast),border-color var(--time-fast);}
+  .abtn:hover{background:color-mix(in srgb,var(--amber-500) 24%,transparent);border-color:var(--amber-500);}
+  .abtn.confirm{color:var(--green-100);border-color:color-mix(in srgb,var(--green-500) 55%,transparent);background:color-mix(in srgb,var(--green-500) 12%,transparent);}
+  .abtn.confirm:hover{background:color-mix(in srgb,var(--green-500) 24%,transparent);border-color:var(--green-500);}
+  .abtn.reopen{color:var(--muted-foreground);border-color:var(--border);background:transparent;}
+  .abtn.reopen:hover{color:var(--foreground);border-color:var(--input);background:color-mix(in srgb,var(--gray-50) 4%,transparent);}
+  .abtn.sm{padding:4px 10px;}
+  .abtn:focus-visible,.rv-btn:focus-visible,.rv-back:focus-visible{outline:2px solid var(--ring);outline-offset:1px;}
 </style>
 </head>
 <body>
@@ -408,7 +419,7 @@
 const ic=(n,x)=>`<svg class="ic${x?' '+x:''}"><use href="#i-${n}"/></svg>`;
 /* Lifecycle → a colour class AND a full word (a11y: never colour alone). */
 const LIFE_DOT={run:'run',fail:'red',queued:'gray',done:'mist',interrupted:'amber',stopped:'amber','rate-limited':'amber','needs-input':'amber',orphaned:'stale',stale:'stale',amber:'amber',mist:'mist',gray:'gray',red:'red'};
-const DOT_WORD={run:'Running',amber:'Needs you',stale:'Orphaned',mist:'Done',red:'Failed',gray:'Queued'};
+const DOT_WORD={run:'Running',amber:'Needs input',stale:'Orphaned',mist:'Done',red:'Failed',gray:'Queued'};
 const STATE_ICON={run:'circle-notch',amber:'warning',mist:'check',red:'x',gray:'circle',stale:'circle'};
 
 const SESSIONS=[
@@ -467,10 +478,10 @@ const ARTIFACTS=[
   {id:'plan',path:'plan.md',
    body:'<b>Auth shim · plan</b><br/><br/><b>Bet</b> — <code>rotate()</code> issues a new token pair; legacy <code>verify()</code> delegates into the rotation core so the old path keeps working.<br/><br/><b>Slices</b><br/>1 · rotation core (atomic pair issue)<br/>2 · storage schema (refresh_tokens)<br/>3 · legacy shim delegates in<br/>4 · e2e login→refresh→protected'},
   {id:'plan-diagram',path:'auth-flow.svg',
-   body:'<b>auth-flow.svg</b><br/><span style="color:var(--dim)">token-rotation sequence — rendered vector, written alongside the plan.</span>'},
+   body:'<b>auth-flow.svg</b><br/><span style="color:var(--muted-foreground)">token-rotation sequence — rendered vector, written alongside the plan.</span>'},
   {id:'plan-notes',path:'plan-notes.md',missing:true},
   {id:'review',path:'auth-review.md',
-   body:'<b>Review findings</b><br/><br/>· legacy <code>verify()</code> dropped the audience claim — restored.<br/>· rotation not atomic across the store write — wrapped in a txn.<br/><span style="color:var(--dim)">written after the reviewer pass; kept for the next session</span>'},
+   body:'<b>Review findings</b><br/><br/>· legacy <code>verify()</code> dropped the audience claim — restored.<br/>· rotation not atomic across the store write — wrapped in a txn.<br/><span style="color:var(--muted-foreground)">written after the reviewer pass; kept for the next session</span>'},
 ];
 
 /* NARRATIVE — the agent's OWN messages are the spine; tools fold underneath.
@@ -512,12 +523,12 @@ const OUTCOMES=[
   {id:'o-rev',type:'review',auth:'skill',title:'Reviewer pass findings',prov:'auth-review.md',life:'done',artifacts:['review'],verdict:{cls:'changes',label:'2 findings'}},
 ];
 
-let sel='session', detailTab=null, showDetail=true, showNarr=true;
+let sel='session', detailTab=null, showDetail=true, projOpen=true;
 /* finding-walk state: findings default ON; walkIdx tracks the pager position;
    landStep drives the two-step Merge confirm. v5: activeTab drives the Activity
    column's Overview|Review tabs — the review is no longer a full-width takeover. */
 let walkIdx=0, landStep=0, activeTab='overview', focusFinding=null;
-const collapsed={}, termTall={v:false}, viewed={}, artOpen={};
+const expanded={}, termTall={v:false}, viewed={}, artOpen={}; /* timeline steps default COLLAPSED (expand is opt-in per step) */
 /* v4 state model per finding: 'open' → 'addressing' → 'fixed'. `open` default.
    `addressing` is a PENDING state (Argo was dispatched to fix; not confirmed);
    `fixed` is user-marked after the dispatch. Only `fixed` counts as addressed. */
@@ -535,7 +546,6 @@ const sumA=FILES.reduce((s,f)=>s+f.a,0), sumD=FILES.reduce((s,f)=>s+f.d,0);
 const agLifeDot=o=>LIFE_DOT[o.life]||'gray';
 
 function railHtml(){
-  const needsYou=SESSIONS.filter(s=>s.dot==='amber').length;
   const s=SESSIONS.map(s=>{const word=DOT_WORD[s.dot]||'';const sic=s.act||STATE_ICON[s.dot]||'circle';return `<div class="srow ${s.sel?'sel':''}" tabindex="0" role="button">
     <div class="t"><span class="sic ${s.dot}" title="${word}" aria-label="${word}">${ic(sic)}</span><span class="ttl" title="${s.title}">${s.title}</span><span class="grow"></span><span class="stw ${s.dot}">${word} <span class="dot ${s.dot}"></span></span></div>
     <div class="slot" title="${s.slot}">${s.slot}</div>
@@ -543,8 +553,8 @@ function railHtml(){
     <div class="meta" title="${s.meta}">${s.meta}</div></div>`;}).join('');
   return `<div class="panel rail">
     <div class="rail-h">Projects <span class="plus">${ic('plus')}</span></div>
-    <div class="proj">${ic('caret-down')} argo &nbsp;<span class="n">· ${SESSIONS.length}${needsYou?` · ${needsYou} needs you`:''}</span></div>
-    <div class="rail-scroll">${s}</div>
+    <div class="proj" onclick="toggleProj()">${ic(projOpen?'caret-down':'caret-right')} argo<span style="flex:1"></span><span class="plus" onclick="event.stopPropagation()" title="New session" aria-label="New session">${ic('plus')}</span></div>
+    ${projOpen?`<div class="rail-scroll">${s}</div>`:''}
     <div class="dock" onclick="cycleOrb()"><canvas id="orb" width="52" height="52"></canvas>
       <span class="lbl">Concierge</span><span class="state" id="orbstate">idle</span></div></div>`;
 }
@@ -598,7 +608,7 @@ function orollHtml(o){
   if(!parts.length) return o.life==='queued'?`<span class="oroll">queued</span>`:'';
   return `<span class="oroll">${parts.join(' · ')}</span>`;
 }
-const OSTATE={run:'Running',done:'Done',queued:'Queued',fail:'Failed',interrupted:'Interrupted','needs-input':'Needs you'};
+const OSTATE={run:'Running',done:'Done',queued:'Queued',fail:'Failed',interrupted:'Interrupted','needs-input':'Needs input'};
 function outcomeRow(o){
   const t=OTYPE[o.type]||OTYPE.untyped;
   /* lean: verdict lives once on the Checks Review row; drop the provenance pedigree.
@@ -620,19 +630,20 @@ function summaryHtml(){
   const olist=OUTCOMES.map((o,i)=>({o,i})).sort((a,b)=>orank(a.o)-orank(b.o)||a.i-b.i).map(x=>x.o);
   return `<div class="inset">${olist.map(outcomeRow).join('')}</div>`;
 }
-/* lean: the timeline (agent messages + tools) is collapsed by default —
-   Outcomes is the spine; open this only when you want the retelling. */
+/* lean: the timeline section is ALWAYS present and NOT collapsible (no section
+   chevron); each STEP starts collapsed — Outcomes is the spine, a step's tool
+   rows are opt-in. The collapsed row still carries its status chip + dot; the
+   now-line elsewhere shows the live activity. */
 function narrHtml(){
   const n=MSGS.length;
-  if(!showNarr) return `<div class="sumpeer" onclick="toggleNarr()" style="margin-top:4px"><span>Timeline</span><span class="grow"></span><span class="meta">${n} steps</span><span class="go">${ic('caret-right')}</span></div>`;
-  return `<div class="sumpeer" onclick="toggleNarr()" style="margin-top:4px"><span>Timeline</span><span class="grow"></span><span class="meta">${n} steps</span><span class="go">${ic('caret-down')}</span></div>
+  return `<div class="sumpeer static" style="margin-top:4px"><span>Timeline</span><span class="grow"></span><span class="meta">${n} steps</span></div>
     <div class="inset pad0" style="padding:8px 6px">${MSGS.map(msgHtml).join('')}</div>`;
 }
 
 function toolRow(t){
   const cls=t.running?'run':'done';
   let rm='';
-  if(t.running) rm=`<span class="rmeta ${t.dv?'derived':''}" ${t.dv?'title="estimated from timestamps — not reported by the tool"':'style="color:var(--run)"'}>${t.dv?'~':''}${t.rmeta||'…'}</span>`;
+  if(t.running) rm=`<span class="rmeta ${t.dv?'derived':''}" ${t.dv?'title="estimated from timestamps — not reported by the tool"':'style="color:var(--status-working)"'}>${t.dv?'~':''}${t.rmeta||'…'}</span>`;
   else if(t.kind==='test'){ /* pass/fail glyph is exit-driven (DIRECT); the count is parsed (DERIVED) */
     const ok=t.exit===0;
     rm=`<span class="tv ${ok?'pass':'fail'}" title="from exit code">${ok?ic('check'):ic('x')}</span> <span class="rmeta derived" title="parsed from captured tool output">${t.pass||(ok?'passed':'')}${t.fail?` · ${t.fail}`:''}</span>`;
@@ -644,7 +655,7 @@ function toolRow(t){
     <span class="ti">${t.ti}</span><span class="lbl">${t.lbl}</span><span class="grow"></span>${rm}</div>`;
 }
 function msgHtml(m){
-  const open=!collapsed[m.id];
+  const open=!!expanded[m.id]; /* default collapsed — including the active step */
   const sd=m.status==='run'?'run':'mist';
   return `<div class="msg ${m.status==='run'?'run':'done'}">
     <div class="msg-head" onclick="toggleMsg('${m.id}')">
@@ -678,8 +689,8 @@ function activityHtml(){
   return `<div class="region activity">
     <div class="rhead"><span class="icon">${ic('wave-sine')}</span><span class="name">Activity</span>
       <span class="grow"></span>
-      <span class="smeta"><span class="mref">feat/auth-rotation</span><span style="color:var(--dimmer)">·</span>
-        context <span class="ctxbar"><span style="width:42%"></span></span> <span class="derived" title="estimated from token usage ÷ model context window">~42%</span> · sonnet · 118K tokens · 12m</span></div>
+      <span class="smeta"><span class="mref">feat/auth-rotation</span><span style="color:var(--foreground-faint)">·</span>
+        <span class="ctxrow" title="context window used (estimated)"><span class="ctxlbl">CTX</span><span class="ctxbar"><span style="width:42%"></span></span><span class="ctxpct" title="estimated from token usage ÷ model context window">~42%</span></span> · sonnet · 118K tokens · 12m</span></div>
     ${tabs}
     <div class="rscroll">${body}</div></div>`;
 }
@@ -777,9 +788,10 @@ function commitCtaHtml(){
   </div>`;
 }
 
-/* Land — user-initiated commit→push→merge. Honest: it's a concrete action,
+/* Land — user-initiated commit→push→PR. Stage 2 CREATES A PULL REQUEST
+   (feat branch → main); it does not merge. Honest: it's a concrete action,
    gated on review addressed + tests green, with a two-step confirm. It does
-   NOT claim the merge already happened. */
+   NOT claim the PR already exists. */
 function landHtml(){
   const openN=openFindings();
   const testsPass=BRANCH.tests.state==='pass';
@@ -791,14 +803,14 @@ function landHtml(){
   const testsRow=`<div class="mgrow"><span class="mgk">Tests</span><span class="mgv ${testsPass?'ok':'wait'}">${testsPass?ic('check'):ic('circle-notch')} ${testsPass?BRANCH.tests.label:'not green yet'}</span></div>`;
   let act;
   if(!ready){
-    act=`<button class="mbtn" disabled tabindex="0">${ic('arrows-merge')} Merge to main</button>`;
+    act=`<button class="mbtn" disabled tabindex="0">${ic('arrows-merge')} Create PR</button>`;
   } else if(landStep===0){
-    act=`<button class="mbtn" onclick="event.stopPropagation();armLand()" tabindex="0">${ic('arrows-merge')} Merge to main</button><span class="chain">commit → push → merge → main</span>`;
+    act=`<button class="mbtn" onclick="event.stopPropagation();armLand()" tabindex="0">${ic('arrows-merge')} Create PR</button><span class="chain">commit → push → open PR</span>`;
   } else {
-    act=`<button class="mbtn confirm" onclick="event.stopPropagation();armLand()" tabindex="0">${ic('arrows-merge')} Confirm merge</button><span class="mhint">runs the chain · <span class="redraft" onclick="event.stopPropagation();cancelLand()" style="cursor:pointer">cancel</span></span>`;
+    act=`<button class="mbtn confirm" onclick="event.stopPropagation();armLand()" tabindex="0">${ic('arrows-merge')} Confirm — create PR</button><span class="mhint">runs the chain · <span class="redraft" onclick="event.stopPropagation();cancelLand()" style="cursor:pointer">cancel</span></span>`;
   }
   return `<div class="mstage">
-    <div class="mstage-h">${ic('arrows-merge')} Merge <span class="mono">feat/auth-rotation</span> → <span class="mono">main</span></div>
+    <div class="mstage-h">${ic('arrows-merge')} PR <span class="mono">feat/auth-rotation</span> → <span class="mono">main</span></div>
     ${reviewRow}
     ${testsRow}
     <div class="mstage-act">${act}</div>
@@ -843,7 +855,7 @@ function reviewTabHtml(){
   const hero=allFixed
     ? `<div class="rv-hero approve compact">
         <div class="verdict"><span class="vglyph ap">${ic('binoculars')}</span><div class="vhead">All findings addressed</div></div>
-        <div class="vsum">${total} of ${total} findings marked <b>Fixed</b>. Argo has not re-run the review — <b>Re-review</b> to refresh the verdict, or merge now (tests are green).</div>
+        <div class="vsum">${total} of ${total} findings marked <b>Fixed</b>. Argo has not re-run the review — <b>Re-review</b> to refresh the verdict, or open the PR now (tests are green).</div>
         <div class="vattr">argo · code-review<span class="sha">base ${baseSha}</span></div>
         <div class="vnote">Blocking is advisory — Argo holds no merge gate.</div></div>`
     : `<div class="rv-hero compact">
@@ -857,15 +869,15 @@ function reviewTabHtml(){
     : `<button class="rv-btn primary" disabled title="nothing left to dispatch">${ic('arrow-bend-down-right')} Address findings</button>`;
   const mergeBtn=mergeReady
     ? (landStep===0
-        ? `<button class="rv-btn merge" onclick="armLand()">${ic('arrows-merge')} Merge to main</button>`
-        : `<button class="rv-btn merge" onclick="armLand()">${ic('arrows-merge')} Confirm merge</button>`)
-    : `<button class="rv-btn merge" disabled>${ic('arrows-merge')} Merge to main</button>`;
+        ? `<button class="rv-btn merge" onclick="armLand()">${ic('arrows-merge')} Create PR</button>`
+        : `<button class="rv-btn merge" onclick="armLand()">${ic('arrows-merge')} Confirm — create PR</button>`)
+    : `<button class="rv-btn merge" disabled>${ic('arrows-merge')} Create PR</button>`;
   const cta=`<div class="rv-cta compact">${addressCta}<button class="rv-btn ghost" onclick="reReview()">${ic('arrow-clockwise')} Re-review</button>${mergeBtn}</div>`;
 
   const progress=`<div class="rv-progress compact ${allFixed?'done':''}">
     <span>${fixed} of ${total} addressed</span>
     <span class="track"><span style="width:${pct}%"></span></span>
-    ${allFixed?'<span>· review ready — tests green</span>':(landStep===1?'<span>· click Confirm to run commit → push → merge</span>':'')}</div>`;
+    ${allFixed?'<span>· review ready — tests green</span>':(landStep===1?'<span>· click Confirm to run commit → push → PR</span>':'')}</div>`;
 
   return `${hero}${cta}${progress}
     <div class="sect-h" style="margin:16px 2px 9px">Findings <span class="n">· addressable · click a row → its diff</span><span class="grow"></span><span class="n">${total}</span></div>
@@ -958,10 +970,12 @@ function pick(id){sel=id;detailTab=null;if(id!=='session')showDetail=true;render
 function toggleArt(id){artOpen[id]=artOpen[id]===false?true:false;render();}
 function openArtifact(aid){const o=OUTCOMES.find(x=>(x.artifacts||[]).includes(aid));if(o){sel='outcome:'+o.id;artOpen[aid]=true;showDetail=true;render();}}
 function setTab(t){detailTab=t;render();}
-function toggleMsg(id){collapsed[id]=!collapsed[id];render();}
+function toggleMsg(id){expanded[id]=!expanded[id];render();}
 function toggleView(key){viewed[key]=!viewed[key];render();}
 function toggleDetail(){showDetail=!showDetail;render();}
-function toggleNarr(){showNarr=!showNarr;render();}
+/* Projects group header — collapsible (root cause of the dead toggle: the mock
+   rendered a static chevron with no click handler or open/closed state). */
+function toggleProj(){projOpen=!projOpen;render();}
 /* ── v5 Review-tab routing + finding-walk ── */
 function setActiveTab(t){activeTab=t;render();}
 /* Enter the Review tab: switch the Activity column to it, keep the whole
@@ -991,7 +1005,7 @@ function scrollToWalk(){const f=FINDINGS[walkIdx];if(!f)return;requestAnimationF
 function armLand(){if(landStep===0){landStep=1;}else{landStep=0;/* prototype: no fabricated success — chain would run here */}render();}
 function cancelLand(){landStep=0;render();}
 function expandTerm(){termTall.v=!termTall.v;document.documentElement.style.setProperty('--r-term',termTall.v?'44vh':'170px');render();}
-Object.assign(window,{pick,toggleArt,openArtifact,setTab,toggleMsg,toggleView,toggleNarr,toggleDetail,expandTerm,
+Object.assign(window,{pick,toggleArt,openArtifact,setTab,toggleMsg,toggleView,toggleDetail,toggleProj,expandTerm,
   setActiveTab,openReview,openFindingInReview,toggleFinding,advanceFinding,addressAll,reReview,gotoDiff,
   walkNext,walkPrev,armLand,cancelLand});
 
@@ -1000,10 +1014,16 @@ function wireSplitters(){
     el.addEventListener('pointerdown',e=>{
       e.preventDefault();el.setPointerCapture(e.pointerId);el.classList.add('dragging');
       const kind=el.dataset.split,sx=e.clientX,sy=e.clientY,root=document.documentElement.style,cs=getComputedStyle(document.documentElement);
-      const sRail=parseInt(cs.getPropertyValue('--c-rail'))||236,sDet=parseInt(cs.getPropertyValue('--c-det'))||400,sTerm=parseInt(cs.getPropertyValue('--r-term'))||170;
+      const sRail=parseInt(cs.getPropertyValue('--c-rail'))||236,sTerm=parseInt(cs.getPropertyValue('--r-term'))||170;
+      /* Activity owns the sized track (default 1fr — an even 50/50 split);
+         dragging pins --c-act to px. Clamp keeps Session changes ≥300px
+         (306 = 300 + the 6px splitter). */
+      const actEl=document.querySelector('.region.activity'),workEl=document.querySelector('.work');
+      const sAct=actEl?actEl.getBoundingClientRect().width:640;
       const move=ev=>{
         if(kind==='rail')root.setProperty('--c-rail',Math.max(190,Math.min(360,sRail+(ev.clientX-sx)))+'px');
-        if(kind==='detail')root.setProperty('--c-det',Math.max(300,Math.min(680,sDet-(ev.clientX-sx)))+'px');
+        if(kind==='detail'){const workW=workEl?workEl.getBoundingClientRect().width:innerWidth;
+          root.setProperty('--c-act',Math.max(360,Math.min(workW-306,sAct+(ev.clientX-sx)))+'px');}
         if(kind==='term')root.setProperty('--r-term',Math.max(92,Math.min(innerHeight*0.6,sTerm-(ev.clientY-sy)))+'px');
       };
       const up=()=>{el.classList.remove('dragging');removeEventListener('pointermove',move);removeEventListener('pointerup',up);};
@@ -1020,18 +1040,19 @@ const starC=document.getElementById('stars');
 function drawStars(){const dpr=Math.min(2,devicePixelRatio||1);starC.width=innerWidth*dpr;starC.height=innerHeight*dpr;
   const c=starC.getContext('2d');c.scale(dpr,dpr);c.clearRect(0,0,innerWidth,innerHeight);
   for(let i=0;i<90;i++){const x=Math.random()*innerWidth,y=Math.random()*innerHeight*0.7,r=Math.random()*1.1;
-    c.globalAlpha=0.15+Math.random()*0.5;c.fillStyle='#cbc5bb';c.beginPath();c.arc(x,y,r,0,7);c.fill();}c.globalAlpha=1;}
+    c.globalAlpha=0.15+Math.random()*0.5;c.fillStyle='#cbc5bb'/* component-local: canvas star ink (decorative; canvas can't read CSS vars) */;c.beginPath();c.arc(x,y,r,0,7);c.fill();}c.globalAlpha=1;}
 const ORB=['idle','listening','thinking','speaking'];let orbState=0;
 function cycleOrb(){orbState=(orbState+1)%ORB.length;document.getElementById('orbstate').textContent=ORB[orbState];
   document.getElementById('glow').classList.toggle('warm',orbState>0);drawOrb();}
 window.cycleOrb=cycleOrb;
 function drawOrb(){const cv=document.getElementById('orb');if(!cv)return;const c=cv.getContext('2d'),cx=26,cy=26,R=13,warm=orbState>0;
+  /* component-local: concierge-orb canvas palette (Round-2 resolution — decorative singleton, not tokenized) */
   const rim=warm?'rgba(242,180,120,0.95)':'rgba(210,224,255,0.95)',glow=warm?'rgba(242,140,77,':'rgba(84,104,234,';
   c.clearRect(0,0,52,52);const g=c.createRadialGradient(cx,cy,R*0.7,cx,cy,R*2);g.addColorStop(0,glow+'0.5)');g.addColorStop(1,glow+'0)');
   c.fillStyle=g;c.beginPath();c.arc(cx,cy,R*2,0,7);c.fill();c.beginPath();c.arc(cx,cy,R,0,7);c.fillStyle='#0a0806';c.fill();
   c.lineWidth=1.4;c.strokeStyle=rim;c.beginPath();c.arc(cx,cy,R,0,7);c.stroke();}
 addEventListener('resize',()=>{drawStars();drawOrb();});
-document.getElementById('hint').textContent='v5 · Review as an Activity tab — Checks/Outcomes "Review" row switches the Activity column to its Review tab (no takeover; Detail keeps the diff beside it). Compact verdict hero + addressable findings: Address dispatches (→ Addressing, pending), rows walk Open → Addressing → Fixed, progress + Merge enable when all Fixed. A finding\'s row / → diff selects its file in Detail and scrolls to the inline card. "Blocking" is advisory — Argo holds no merge gate.';
+document.getElementById('hint').textContent='v5 · Review as an Activity tab — Checks/Outcomes "Review" row switches the Activity column to its Review tab (no takeover; Detail keeps the diff beside it). Compact verdict hero + addressable findings: Address dispatches (→ Addressing, pending), rows walk Open → Addressing → Fixed, progress + Create PR enable when all Fixed. A finding\'s row / → diff selects its file in Detail and scrolls to the inline card. "Blocking" is advisory — Argo holds no merge gate.';
 render();drawStars();
 </script>
 </body>
