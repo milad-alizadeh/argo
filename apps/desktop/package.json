@@ -29,7 +29,8 @@
     "clsx": "^2.1.1",
     "node-pty": "^1.1.0",
     "radix-ui": "^1.6.2",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.2.1",

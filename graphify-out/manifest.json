@@ -50,8 +50,8 @@
     "semantic_hash": "0a8b6d5b7f74e987e0853967d9285aec"
   },
   "apps/desktop/package.json": {
-    "mtime": 1784476452.352604,
-    "ast_hash": "71ac4b2c2990b113d7430a37fa697f95",
+    "mtime": 1784477236.3323205,
+    "ast_hash": "5be0623ec9f4db0cb8b40c8e3f72da35",
     "semantic_hash": ""
   },
   "apps/desktop/playwright.config.ts": {
@@ -60,29 +60,24 @@
     "semantic_hash": "9494c84e3b8c7cd0385513051b42f132"
   },
   "apps/desktop/src/main/index.ts": {
-    "mtime": 1784461723.7401907,
-    "ast_hash": "d041f2cbf47bd27b6f01458d4de7f288",
-    "semantic_hash": "d041f2cbf47bd27b6f01458d4de7f288"
+    "mtime": 1784477469.905936,
+    "ast_hash": "960fbabdad7f0dbd5627a0fb2fa16a53",
+    "semantic_hash": ""
   },
   "apps/desktop/src/preload/index.d.ts": {
-    "mtime": 1784461723.7403605,
-    "ast_hash": "a5b6bf7cc9033238cb5aafe95e906fa0",
-    "semantic_hash": "a5b6bf7cc9033238cb5aafe95e906fa0"
+    "mtime": 1784477230.4050195,
+    "ast_hash": "0b19507be0a5e17371ae07ad4349960b",
+    "semantic_hash": ""
   },
   "apps/desktop/src/preload/index.ts": {
-    "mtime": 1784461723.740503,
-    "ast_hash": "4a444cb1a78f3122d70648ca8f8f9e0b",
-    "semantic_hash": "4a444cb1a78f3122d70648ca8f8f9e0b"
-  },
-  "apps/desktop/src/renderer/src/App.stories.tsx": {
-    "mtime": 1784461723.7411292,
-    "ast_hash": "4da3c262b8396b0ff04001da1a8b4da0",
-    "semantic_hash": "4da3c262b8396b0ff04001da1a8b4da0"
+    "mtime": 1784477322.0667703,
+    "ast_hash": "68d580df215fac7d464be86c97823f8e",
+    "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/App.tsx": {
-    "mtime": 1784461723.7412927,
-    "ast_hash": "7dcd0909a48b46acbc16e2923dba060c",
-    "semantic_hash": "7dcd0909a48b46acbc16e2923dba060c"
+    "mtime": 1784477257.5657449,
+    "ast_hash": "ebb5c08225cc217dc2542bb14e57f9c7",
+    "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/ui/button.stories.tsx": {
     "mtime": 1784461723.7415311,
@@ -120,14 +115,14 @@
     "semantic_hash": "3b1035e94d93208f4211ff93008678ce"
   },
   "apps/desktop/tsconfig.node.json": {
-    "mtime": 1784461723.7431004,
-    "ast_hash": "5950036123bef2808d917f05d9041bb4",
-    "semantic_hash": "5950036123bef2808d917f05d9041bb4"
+    "mtime": 1784477214.2963934,
+    "ast_hash": "a932acd8e98c114d8a326b8ecda7c08d",
+    "semantic_hash": ""
   },
   "apps/desktop/tsconfig.web.json": {
-    "mtime": 1784461723.743242,
-    "ast_hash": "f801660cb53e8af835ca1d7f6bb76fa0",
-    "semantic_hash": "f801660cb53e8af835ca1d7f6bb76fa0"
+    "mtime": 1784477215.0645173,
+    "ast_hash": "3d3096f6b2de2f8f5f88313d04011df3",
+    "semantic_hash": ""
   },
   "apps/desktop/vitest.config.ts": {
     "mtime": 1784461723.7434235,
@@ -172,6 +167,101 @@
   "biome.json": {
     "mtime": 1784476452.3530726,
     "ast_hash": "ebe15e35470e56c875251f48207e108a",
+    "semantic_hash": ""
+  },
+  "apps/desktop/e2e/rail.spec.ts": {
+    "mtime": 1784477373.5574205,
+    "ast_hash": "7ae6895a895b25a6f42d82d95437b3a8",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/main/demoSeed.ts": {
+    "mtime": 1784477473.325369,
+    "ast_hash": "16308d19001ebd157ddb993f0c02b148",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/main/hub.test.ts": {
+    "mtime": 1784477211.360275,
+    "ast_hash": "37dcab2678f87eca8dcdf6b4ee7108f9",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/main/hub.ts": {
+    "mtime": 1784477322.0668273,
+    "ast_hash": "91ea8c2fcf80ef8fdce9386e5143a028",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/main/projectionBridge.ts": {
+    "mtime": 1784477220.6100557,
+    "ast_hash": "474e4ec9dde1eea62facc5a6c3af1df9",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/EmptyRail.tsx": {
+    "mtime": 1784477253.1467967,
+    "ast_hash": "8f4aead8e190d7a43900f85b0ceb2b8e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/Rail.stories.tsx": {
+    "mtime": 1784477259.6525247,
+    "ast_hash": "d99582c983003d38470003185c8ba4b6",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/Rail.tsx": {
+    "mtime": 1784477254.3403566,
+    "ast_hash": "02ebcddd586b7343fcbf3e3765453e9d",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/SessionRow.tsx": {
+    "mtime": 1784477252.3333037,
+    "ast_hash": "0159145c9b5ef1c9fe04b183e1552b85",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/index.ts": {
+    "mtime": 1784477254.510624,
+    "ast_hash": "f9eed6e2274e3694a5de8653fe830f28",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/StatusDot.stories.tsx": {
+    "mtime": 1784477688.5548472,
+    "ast_hash": "2d2a35aa9d9fc975cd0809bcef22a526",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/StatusDot.tsx": {
+    "mtime": 1784477248.8060725,
+    "ast_hash": "91e13bb9ac2ddcbfdf5f30b44e7043b1",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/index.ts": {
+    "mtime": 1784477249.0869288,
+    "ast_hash": "6984f038ebac6e72b83f78b8683f216e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/sessionStore.test.ts": {
+    "mtime": 1784477240.5772421,
+    "ast_hash": "456645609afc13c1a92f861278ded830",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/sessionStore.ts": {
+    "mtime": 1784477322.0704992,
+    "ast_hash": "2df112783fce097edf8d0c7adf684bf3",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/shared/channels.ts": {
+    "mtime": 1784477171.366856,
+    "ast_hash": "a781cbd1bbd7462b5ec2c4c38ec03a0f",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/shared/index.ts": {
+    "mtime": 1784477322.0702498,
+    "ast_hash": "2e75fac7f1d0a8b6ce3ba38b7112cf07",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/shared/projection.test.ts": {
+    "mtime": 1784477322.072727,
+    "ast_hash": "e7f200756adee9ad124c2e6a2e3a0559",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/shared/projection.ts": {
+    "mtime": 1784477613.490656,
+    "ast_hash": "f2a20b1defbd504cf656de171be299c4",
     "semantic_hash": ""
   }
 }
