@@ -9,6 +9,12 @@ A small, generic scaffolder for any stack. Don't hardcode ecosystems and don't h
 the official generator can produce — run the wizard, look up the current tools online, generate,
 then prove it works.
 
+**Golden rule: reach for a CLI, not your memory.** Every tool you add — the framework, *and* each
+piece of tooling on top of it (formatter, linter, test runner, component library, Storybook, …) —
+has its own official `create-*`/`init`/`add` command. Use it. Check that tool's own docs for the
+current command before running it. Hand-authoring config is the last resort for what no generator
+covers.
+
 ## 1. Wizard
 
 Ask one question at a time, lead with a recommendation, skip anything you can already see:
@@ -21,21 +27,51 @@ Ask one question at a time, lead with a recommendation, skip anything you can al
    and share code?), not by counting folders.
 5. **Package manager & baseline tooling** — formatter/linter/test config, `.gitignore`, `README`.
 
-## 2. Search online for the current generator and LSP
+## 2. Search online for the current generators and LSP
 
-Ecosystems change, so don't rely on memory — do a quick web search / check official docs for the
-chosen stack:
+Ecosystems change, so don't rely on memory — do a quick web search / read official docs for:
 
-- the **official scaffolding generator** and its current command (e.g. the framework's `create-*`
-  tool, or the language toolchain's `init`/`new`).
+- the **framework's official generator** and its current command (the `create-*` tool, or the
+  language toolchain's `init`/`new`);
+- **each additional tool's** own init/add command (e.g. `<linter> init`, `<component-lib> init`
+  + `add`, `storybook init`, `create-<e2e>`) — read that tool's install page, don't guess flags;
 - the stack's **language server** and how the current release installs it.
 
-Prefer stable releases; note versions.
+Prefer stable releases; note the versions you resolve. If the user says "use latest", verify the
+true latest per package (`npm view <pkg> version`) rather than trusting remembered numbers — but let
+a generator's own pinned versions stand when they're the vetted, working baseline.
 
-## 3. Scaffold with the official generator
+## 3. Scaffold with the official generators
 
-Run the official generator into the confirmed target. Make only the smallest edits needed to match
-the wizard answers. Hand-authoring is a last resort for what no generator covers.
+Run the framework generator into the confirmed target, then layer each additional tool with **its
+own** CLI (not by hand). Along the way:
+
+- **Drive interactive prompts non-interactively.** These generators prompt on a TTY. Prefer real
+  flags (`--yes`, `--template`, `--browser`, `--package-manager`), and where a generator only
+  prompts, drive it with `expect` feeding the answers. Some tools detect an AI-agent/non-TTY
+  session and run unattended — let them.
+- **Reconcile generator output to your layout.** A generator assumes a vanilla layout; a
+  non-standard one (custom source dir, a wrapping build tool, a monorepo) will break its
+  auto-detection. When a tool can't detect the framework, follow its documented *manual* steps
+  instead: hand-write only the small pointer config it needs (e.g. the component-library
+  `components.json`, path aliases, a `viteFinal`/equivalent to re-inject plugins its builder runs
+  in isolation) and then use its `add` command, which works off that config.
+- **Strip what the generator brought that the stack replaces** (e.g. remove eslint/prettier if you
+  chose a single lint+format tool; drop a `postinstall` that fails on unrelated grounds).
+- **Clean up package-manager leakage.** An `npx`/`create-*` tool may install with npm and drop a
+  stray `package-lock.json` in a bun/pnpm workspace — remove it and reinstall with the chosen PM.
+
+### Monorepo gotchas
+
+- **Dedup shared build deps.** Under isolated installs (e.g. bun's default linker) the same tool
+  (like `vite`) can resolve to several physical copies with incompatible *types*, breaking
+  typecheck on config files. A hoisted/flat linker gives one copy; prefer it, and it's friendlier
+  to native modules too.
+- **Wire every tool's scripts to the monorepo runner** (turbo/nx/…) and add root passthrough
+  scripts, so "runnable from the repo root" holds literally for lint, typecheck, unit, component,
+  and e2e tests — not just the ones the framework generator wired.
+- **Native modules** (PTYs, sqlite bindings, …) often need an ABI rebuild for the runtime
+  (e.g. Electron). If unused in the first cut, note it's installed-but-not-rebuilt and defer.
 
 ## 4. Wire the LSP into the current agent
 
@@ -49,7 +85,9 @@ Ask before any machine-global install. Scaffolding must succeed even if the LSP 
 
 ## 5. Validate and report
 
-Run the stack's native commands and report actual results: install, typecheck, lint, test, build,
-and a minimal start or import. Then `git init` + first commit only if the user opts in (state that
-it changes history). Summarize the target path, repo shape, generator used, LSP status, and the
-next command to run.
+Run the stack's native commands and report actual results — cover **every** surface you wired, not
+just the framework's: install, typecheck, lint, unit tests, component/story tests, e2e/app-launch
+smoke, build, and a minimal start or import. Interactive generators leave subtle breakage
+(ESM `__dirname`, an optimizer that reloads mid-test, a dead theme variant) that only a real run
+surfaces. Then `git init` + first commit only if the user opts in (state that it changes history).
+Summarize the target path, repo shape, generators used, LSP status, and the next command to run.
