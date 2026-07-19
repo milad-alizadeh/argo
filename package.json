@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "lint": "turbo run lint",
+    "format-and-lint": "biome check .",
+    "format-and-lint:fix": "biome check . --write",
     "test": "turbo run test",
     "test:stories": "turbo run test:stories",
     "test:e2e": "turbo run test:e2e",
@@ -22,6 +23,7 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.1.0",
     "turbo": "^2.3.3"

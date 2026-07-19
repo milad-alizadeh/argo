@@ -1,3 +1,3 @@
 {
-  "apps/desktop/**/*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}": "bash -c 'cd apps/desktop && bunx biome check --write --no-errors-on-unmatched \"$@\"' _"
+  "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}": "biome check --write --no-errors-on-unmatched"
 }

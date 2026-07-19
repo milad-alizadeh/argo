@@ -71,12 +71,24 @@ manager:
 
 The block is a no-op until the graph exists, so ordering vs lint-staged etc. doesn't matter.
 
-## 4. Keep the graph code-only
+## 4. Keep the graph code-only — adapted to this repo
 
-Copy `templates/graphifyignore` → `.graphifyignore` (committed). It excludes `*.md` so plans,
-ADRs, skill docs, and READMEs never become nodes. This is the **update-safe** lever: `--code-only`
-on `extract` is ignored by `update`, which re-adds markdown on the next commit — but both `extract`
-and `update` honor `.graphifyignore`. Widen it for other non-code (fixtures, snapshots) as needed.
+Copy `templates/graphifyignore` → `.graphifyignore` (committed), then **adapt it to the harness
+this repo actually uses** — the graph should be about application/library code, not agent config,
+skills, rules, docs, or tooling. This is the **update-safe** lever: `--code-only` on `extract` is
+ignored by `update` (which re-adds the excluded files on the next commit), but both `extract` and
+`update` honor `.graphifyignore`.
+
+Look, don't assume — keep an ignore line only for a dir that exists here:
+
+- **Always** `*.md` (plans, ADRs, instruction files `CLAUDE.md`/`AGENTS.md`, skill/rule prose).
+- **Agent / editor / CI config present** — `.claude/`, `.codex/`, `.cursor/`, `.husky/`,
+  `.github/`, `.agents/`.
+- **Tooling + agent-facing definitions** — `scripts/`, a `rules/` dir, and any skills package
+  (e.g. `packages/<skills-pkg>/`).
+
+Widen for other non-code (fixtures, snapshots) as needed; delete a line to let that content back
+into the graph.
 
 ## 5. Wire the union merge driver
 
@@ -102,10 +114,13 @@ come from `graphify label`, which we never run automatically.)
 
 ## 7. Seed the graph once, then commit
 
-The pre-commit only acts once a graph exists, so build it a first time **respecting the ignore**:
+The pre-commit only acts once a graph exists, so build it a first time with graphify's own
+commands (never hand-edit `graphify-out/`) — `extract` builds it respecting the ignore, `update`
+names communities from their dominant node and writes `GRAPH_REPORT.md`:
 
 ```bash
-graphify extract . --code-only   # AST-only, no key; .graphifyignore prunes markdown
+graphify extract . --code-only   # AST-only, no key; .graphifyignore prunes non-code
+graphify update .                # deterministic community names + report/html
 ```
 
 Then commit `graphify-out/`.

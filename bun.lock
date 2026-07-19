@@ -5,6 +5,7 @@
     "": {
       "name": "argo",
       "devDependencies": {
+        "@biomejs/biome": "2.5.4",
         "husky": "^9.1.7",
         "lint-staged": "^17.1.0",
         "turbo": "^2.3.3",
@@ -25,7 +26,6 @@
         "tailwind-merge": "^3.6.0",
       },
       "devDependencies": {
-        "@biomejs/biome": "2.5.4",
         "@chromatic-com/storybook": "^5.2.1",
         "@electron-toolkit/tsconfig": "^2.0.0",
         "@playwright/test": "^1.61.1",

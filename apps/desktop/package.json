@@ -12,9 +12,7 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "bun run typecheck:node && bun run typecheck:web",
-    "lint": "biome check .",
     "boundaries": "bun --bun x depcruise --config scripts/dependency-cruiser.cjs src",
-    "format": "biome format --write .",
     "test": "vitest run --project=unit",
     "test:stories": "vitest run --project=storybook",
     "test:e2e": "electron-vite build && playwright test",
@@ -34,7 +32,6 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.4",
     "@chromatic-com/storybook": "^5.2.1",
     "@electron-toolkit/tsconfig": "^2.0.0",
     "@playwright/test": "^1.61.1",

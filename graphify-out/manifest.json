@@ -1,8 +1,8 @@
 {
   ".lintstagedrc.json": {
-    "mtime": 1784463906.6997643,
-    "ast_hash": "830451597db99f40b19d4aeeba985f3f",
-    "semantic_hash": "830451597db99f40b19d4aeeba985f3f"
+    "mtime": 1784475933.1468763,
+    "ast_hash": "113c7965fcc087c87eaf468af9a0d256",
+    "semantic_hash": ""
   },
   "apps/desktop/.storybook/env.d.ts": {
     "mtime": 1784461723.7355688,
@@ -34,11 +34,6 @@
     "ast_hash": "a760f629338d349fc3c47120b2169a77",
     "semantic_hash": "a760f629338d349fc3c47120b2169a77"
   },
-  "apps/desktop/biome.json": {
-    "mtime": 1784461723.7372918,
-    "ast_hash": "26241eaf3904b726ec9c7cc8f9792dbf",
-    "semantic_hash": "26241eaf3904b726ec9c7cc8f9792dbf"
-  },
   "apps/desktop/components.json": {
     "mtime": 1784461723.7387457,
     "ast_hash": "43ffc77f2596dbc15c3157423c1347e0",
@@ -55,9 +50,9 @@
     "semantic_hash": "0a8b6d5b7f74e987e0853967d9285aec"
   },
   "apps/desktop/package.json": {
-    "mtime": 1784466989.2715194,
-    "ast_hash": "7c09cd39c74c168605822936951de6be",
-    "semantic_hash": "7c09cd39c74c168605822936951de6be"
+    "mtime": 1784475865.680448,
+    "ast_hash": "71ac4b2c2990b113d7430a37fa697f95",
+    "semantic_hash": ""
   },
   "apps/desktop/playwright.config.ts": {
     "mtime": 1784461723.7396586,
@@ -145,29 +140,9 @@
     "semantic_hash": "651a08814b4b81cb8496b175118545fb"
   },
   "package.json": {
-    "mtime": 1784463781.5100641,
-    "ast_hash": "c8e19f1a910e0e50fd114d1d38cb9d8b",
-    "semantic_hash": "c8e19f1a910e0e50fd114d1d38cb9d8b"
-  },
-  "packages/argo-skills/bin/scaffold.mjs": {
-    "mtime": 1784314519.3858814,
-    "ast_hash": "4b44a9a9a834d5f18cccb8b71e49320e",
-    "semantic_hash": "4b44a9a9a834d5f18cccb8b71e49320e"
-  },
-  "packages/argo-skills/bundle.json": {
-    "mtime": 1784315590.086703,
-    "ast_hash": "a4a2fbc918cbe8c912261e853fc317fa",
-    "semantic_hash": "a4a2fbc918cbe8c912261e853fc317fa"
-  },
-  "packages/argo-skills/package.json": {
-    "mtime": 1784460721.3271496,
-    "ast_hash": "35576bd7cbd8314d97fa6d1b75b8e81b",
-    "semantic_hash": "35576bd7cbd8314d97fa6d1b75b8e81b"
-  },
-  "packages/argo-skills/skills/setup-module-boundaries/templates/module-boundaries.json": {
-    "mtime": 1784463781.510589,
-    "ast_hash": "6ce9dbb8eba4db2635acf8bd4a11e6fa",
-    "semantic_hash": "6ce9dbb8eba4db2635acf8bd4a11e6fa"
+    "mtime": 1784475915.9667404,
+    "ast_hash": "0fef0860dfe3130b1f14e6c535c01baf",
+    "semantic_hash": ""
   },
   "skills-lock.json": {
     "mtime": 1784467159.9308274,
@@ -175,13 +150,8 @@
     "semantic_hash": "3ce603f7689f805a3e2761ab5552425a"
   },
   "turbo.json": {
-    "mtime": 1784461723.7474144,
-    "ast_hash": "deee29e262f5ddf3321d58a5bed0d8d1",
-    "semantic_hash": "deee29e262f5ddf3321d58a5bed0d8d1"
-  },
-  ".github/workflows/module-boundaries.yml": {
-    "mtime": 1784467002.9229171,
-    "ast_hash": "60df242218353af33d39e18bd0dc3585",
+    "mtime": 1784475919.587463,
+    "ast_hash": "61b45da98fc9e811c0911a100aa91c97",
     "semantic_hash": ""
   },
   "apps/desktop/electron-builder.yml": {
@@ -194,34 +164,14 @@
     "ast_hash": "b3959ac9bc97777a62549fc0130ceb96",
     "semantic_hash": ""
   },
-  "packages/argo-skills/skills/setup-module-boundaries/templates/module-boundaries.yml": {
-    "mtime": 1784466996.494873,
-    "ast_hash": "24ecedcd1e15bd6f3121963f005f14e5",
-    "semantic_hash": ""
-  },
   "apps/desktop/resources/icon.png": {
     "mtime": 1784461723.7399333,
     "ast_hash": "a2cf889708d9c4959c6808b4584848e4",
     "semantic_hash": ""
   },
-  "apps/desktop/scripts/module-boundaries.json": {
-    "mtime": 1784463781.5091975,
-    "ast_hash": "326d87788de2ce73c516ebc43e3803fe",
-    "semantic_hash": "326d87788de2ce73c516ebc43e3803fe"
-  },
-  "packages/argo-skills/skills/setup-graphify/templates/graphify-precommit-block.sh": {
-    "mtime": 1784474474.270888,
-    "ast_hash": "e6577dc7edacbf475a73dcd643c9665e",
+  "biome.json": {
+    "mtime": 1784475972.6015832,
+    "ast_hash": "ebe15e35470e56c875251f48207e108a",
     "semantic_hash": ""
-  },
-  "apps/desktop/scripts/dependency-cruiser.cjs": {
-    "mtime": 1784463781.509044,
-    "ast_hash": "2fda1e3948c5de197a55ddc0806f651b",
-    "semantic_hash": "2fda1e3948c5de197a55ddc0806f651b"
-  },
-  "packages/argo-skills/skills/setup-module-boundaries/templates/dependency-cruiser.cjs": {
-    "mtime": 1784463781.5104568,
-    "ast_hash": "deefdc2d474048afa33d1c03436f1baa",
-    "semantic_hash": "deefdc2d474048afa33d1c03436f1baa"
   }
 }

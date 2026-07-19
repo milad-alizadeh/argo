@@ -18,7 +18,7 @@ Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agent
 
 ## Rules
 
-House engineering rules live in `.claude/rules/`. Load the ones matching the files you
+House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
@@ -63,8 +63,8 @@ global Bash hook already auto-wraps `git`, `grep`, `gh`, `vitest`, `tsc`, `ls`,
 canonical entrypoints leak full output unless wrapped explicitly:
 
 ```bash
-rtk test bun run test       # turbo → vitest, failures only
-rtk err  bun run lint       # turbo → biome, errors/warnings only
+rtk test bun run test               # turbo → vitest, failures only
+rtk err  bun run format-and-lint    # biome at repo root (whole monorepo), errors only
 rtk err  bun run typecheck
 ```
 

@@ -94,20 +94,22 @@ Keep the forbidden-lists and self-checks — those are the parts that change beh
 
 ## 5. Write the files
 
-Write the adapted rules to **`.claude/rules/`** at the repo root (create it). Keep each
-file's `paths:` frontmatter — it's how the rule scopes itself to matching files.
+Write the adapted rules to **`rules/`** at the repo root (create it). Use a neutral,
+agent-agnostic location — not `.claude/rules/` — since the rules are consumed equally by
+every agent (Claude Code, Codex, …) via the pointer, and nothing auto-loads them by path.
+Keep each file's `paths:` frontmatter — it's how the rule scopes itself to matching files.
 
 ## 6. Wire the pointer (so agents actually load them)
 
-Stock Claude Code and Codex do **not** auto-load `.claude/rules/*.md` by path-glob.
-Without a pointer the files are inert. Add a **Rules** section to both `CLAUDE.md` and
-`AGENTS.md` at the repo root (this repo is single-context — one of each). Group by
-concern so a backend task isn't pulled into UI rules:
+Stock Claude Code and Codex do **not** auto-load `rules/*.md` by path-glob. Without a
+pointer the files are inert. Add a **Rules** section to both `CLAUDE.md` and `AGENTS.md`
+at the repo root (this repo is single-context — one of each). Group by concern so a
+backend task isn't pulled into UI rules:
 
 ```markdown
 ## Rules
 
-House engineering rules live in `.claude/rules/`. Load the ones matching the files you
+House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
