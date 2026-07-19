@@ -4,6 +4,18 @@ Committed design studies for the Argo cockpit. These are high-fidelity static HT
 open any file in a browser. They are the **agreed-latest** set; superseded drafts
 (v0–v6, palette explorations, fleet variants) were pruned rather than kept.
 
+## Authoring a new study
+
+Copy `study-template.html` and follow its inline conventions (rules/design-studies.md):
+
+- `tokens.css` — the study vocabulary. It `@import`s the app's real contract
+  (`apps/desktop/src/renderer/src/styles/argo-tokens.css`) so studies can't drift,
+  and adds the typography role classes (`.text-micro` … `.text-display`, `.mono`).
+- `kit.js` — shared named render functions for recurring atoms/molecules; call
+  them, never re-write their markup.
+- `data-component="PascalCaseName"` on every meaningful region — the future
+  component's name, decided in the study.
+
 The graph ignores `docs/` (see `.graphifyignore`), so these HTML files never enter
 the code knowledge graph.
 

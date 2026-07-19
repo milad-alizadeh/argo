@@ -1,0 +1,48 @@
+/*
+ * Study-side token vocabulary. Imports the REAL contract (argo-tokens.css) so
+ * studies and the app share one source and cannot drift — never copy values in
+ * here. The classes below mirror the text-* utilities globals.css generates for
+ * the app. Style only via var(--token) and these classes; a value the contract
+ * lacks is a proposal to snap or promote when the study settles, never a bare
+ * literal to keep (rules/design-studies.md).
+ */
+@import url("../../apps/desktop/src/renderer/src/styles/argo-tokens.css");
+
+/* Cockpit is dark-first: studies set <html class="dark"> (see study-template.html). */
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: var(--type-body-weight) var(--type-body) / var(--type-body-leading) var(--sans);
+  letter-spacing: var(--type-body-tracking);
+}
+
+/* Typography roles — the same tuples the app gets as text-micro … text-display. */
+.text-micro {
+  font: var(--type-micro-weight) var(--type-micro) / var(--type-micro-leading) var(--sans);
+  letter-spacing: var(--type-micro-tracking);
+}
+.text-label {
+  font: var(--type-label-weight) var(--type-label) / var(--type-label-leading) var(--sans);
+  letter-spacing: var(--type-label-tracking);
+  text-transform: uppercase;
+}
+.text-body {
+  font: var(--type-body-weight) var(--type-body) / var(--type-body-leading) var(--sans);
+  letter-spacing: var(--type-body-tracking);
+}
+.text-body-lg {
+  font: var(--type-body-lg-weight) var(--type-body-lg) / var(--type-body-lg-leading) var(--sans);
+  letter-spacing: var(--type-body-lg-tracking);
+}
+.text-title {
+  font: var(--type-title-weight) var(--type-title) / var(--type-title-leading) var(--sans);
+  letter-spacing: var(--type-title-tracking);
+}
+.text-display {
+  font: var(--type-display-weight) var(--type-display) / var(--type-display-leading) var(--sans);
+  letter-spacing: var(--type-display-tracking);
+}
+.mono {
+  font-family: var(--mono);
+}

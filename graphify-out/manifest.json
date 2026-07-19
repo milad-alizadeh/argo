@@ -1,7 +1,7 @@
 {
   ".lintstagedrc.json": {
-    "mtime": 1784476452.351717,
-    "ast_hash": "113c7965fcc087c87eaf468af9a0d256",
+    "mtime": 1784482716.3244317,
+    "ast_hash": "4e6f5270fb6111009a3e3900bf0c1c58",
     "semantic_hash": ""
   },
   "apps/desktop/.storybook/env.d.ts": {

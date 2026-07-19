@@ -40,6 +40,47 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+
+  /* Typography roles: text-micro … text-display apply the full tuple. */
+  --text-micro: var(--type-micro);
+  --text-micro--line-height: var(--type-micro-leading);
+  --text-micro--font-weight: var(--type-micro-weight);
+  --text-micro--letter-spacing: var(--type-micro-tracking);
+  --text-label: var(--type-label);
+  --text-label--line-height: var(--type-label-leading);
+  --text-label--font-weight: var(--type-label-weight);
+  --text-label--letter-spacing: var(--type-label-tracking);
+  --text-body: var(--type-body);
+  --text-body--line-height: var(--type-body-leading);
+  --text-body--font-weight: var(--type-body-weight);
+  --text-body--letter-spacing: var(--type-body-tracking);
+  --text-body-lg: var(--type-body-lg);
+  --text-body-lg--line-height: var(--type-body-lg-leading);
+  --text-body-lg--font-weight: var(--type-body-lg-weight);
+  --text-body-lg--letter-spacing: var(--type-body-lg-tracking);
+  --text-title: var(--type-title);
+  --text-title--line-height: var(--type-title-leading);
+  --text-title--font-weight: var(--type-title-weight);
+  --text-title--letter-spacing: var(--type-title-tracking);
+  --text-display: var(--type-display);
+  --text-display--line-height: var(--type-display-leading);
+  --text-display--font-weight: var(--type-display-weight);
+  --text-display--letter-spacing: var(--type-display-tracking);
+
+  /* Spacing roles: p-inset, gap-tight, … alongside Tailwind's numeric scale. */
+  --spacing-hair: var(--space-hair);
+  --spacing-tight: var(--space-tight);
+  --spacing-snug: var(--space-snug);
+  --spacing-gap: var(--space-gap);
+  --spacing-inset: var(--space-inset);
+  --spacing-region: var(--space-region);
+
+  /* Motion roles: duration-fast / duration-slow. */
+  --transition-duration-fast: var(--time-fast);
+  --transition-duration-slow: var(--time-slow);
 }
 
 @layer base {
@@ -49,6 +90,6 @@
   body {
     @apply bg-background text-foreground;
     margin: 0;
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: var(--sans);
   }
 }

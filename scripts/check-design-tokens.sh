@@ -17,23 +17,50 @@ SRC_DIRS="apps/desktop/src/renderer/src"
 EXCLUDE_FILES="argo-tokens.css globals.css"
 ALLOW_FILE="$(dirname "$0")/design-tokens-allow.txt"
 
-exclude_args=""
-for f in $EXCLUDE_FILES; do
-  exclude_args="$exclude_args --exclude=$f"
-done
-
 # 1. Raw hex colors in source (tsx/ts/css), outside the token files.
 # 2. Tailwind arbitrary values with a unit or color inside the brackets.
-findings=$(
-  # shellcheck disable=SC2086
-  {
-    # excludes must come AFTER includes: BSD grep gives the later option precedence
-    grep -rEn --include='*.tsx' --include='*.ts' --include='*.css' $exclude_args \
-      '#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?\b|#[0-9a-fA-F]{3}\b' $SRC_DIRS 2>/dev/null
-    grep -rEn --include='*.tsx' --include='*.ts' $exclude_args \
-      -- '-\[[^]]*(#|[0-9]+(\.[0-9]+)?(px|rem|em|ms|vh|vw|%))[^]]*\]' $SRC_DIRS 2>/dev/null
-  } | sort -u
-)
+HEX_RE='#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?\b|#[0-9a-fA-F]{3}\b'
+TW_RE='-\[[^]]*(#|[0-9]+(\.[0-9]+)?(px|rem|em|ms|vh|vw|%))[^]]*\]'
+
+if [ $# -gt 0 ]; then
+  # File mode (lint-staged pre-commit): scan only the staged files given —
+  # parallel sessions share one working tree, so a full scan would fail a
+  # commit on another session's WIP.
+  targets=""
+  for f in "$@"; do
+    case "$(basename "$f")" in
+      argo-tokens.css | globals.css) continue ;;
+    esac
+    targets="$targets $f"
+  done
+  if [ -z "$targets" ]; then
+    echo "check:design-tokens — clean."
+    exit 0
+  fi
+  findings=$(
+    # shellcheck disable=SC2086
+    {
+      grep -HEn "$HEX_RE" $targets 2>/dev/null
+      grep -HEn -- "$TW_RE" $targets 2>/dev/null
+    } | sort -u
+  )
+else
+  exclude_args=""
+  for f in $EXCLUDE_FILES; do
+    exclude_args="$exclude_args --exclude=$f"
+  done
+
+  findings=$(
+    # shellcheck disable=SC2086
+    {
+      # excludes must come AFTER includes: BSD grep gives the later option precedence
+      grep -rEn --include='*.tsx' --include='*.ts' --include='*.css' $exclude_args \
+        "$HEX_RE" $SRC_DIRS 2>/dev/null
+      grep -rEn --include='*.tsx' --include='*.ts' $exclude_args \
+        -- "$TW_RE" $SRC_DIRS 2>/dev/null
+    } | sort -u
+  )
+fi
 
 if [ -f "$ALLOW_FILE" ]; then
   patterns=$(grep -Ev '^\s*(#|$)' "$ALLOW_FILE" || true)
