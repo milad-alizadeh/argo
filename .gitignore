@@ -8,5 +8,13 @@ dist/
 # skills-lock.json is committed and restores them via `npx skills experimental_install`.
 .agents/
 .claude/*
-# House rules are authored, not installed — keep them tracked.
-!.claude/rules/
+
+# graphify: commit the graph outputs (graph.json, graph.html, report, labels, manifest).
+# Ignore only what the pre-commit `update` never maintains — it would churn or go stale.
+# (Patterns only — .gitignore has no inline comments.)
+# regenerable rebuild cache:
+graphify-out/cache/
+# dated backup snapshots (created by extract/label, never by update):
+graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+# extract-only analysis; the pre-commit update never refreshes it:
+graphify-out/.graphify_analysis.json

@@ -1,0 +1,28 @@
+{
+  "$schema": "./module-boundaries.schema.json",
+  "_comment": "LLM-MAINTAINED MODULE MAP. This file is the single source of truth for module boundaries; .dependency-cruiser.cjs turns it into lint rules mechanically — never hand-edit the generated rules, edit this map. Refresh it whenever the folder structure changes (see the setup-module-boundaries skill). Every `path` and `publicEntry` is an anchored regex over repo-relative POSIX paths.",
+  "tsConfig": "tsconfig.json",
+  "exclude": "(^|/)(node_modules|dist|out|build|coverage|\\.turbo|\\.storybook|e2e|test-results)/",
+  "orphansAreWarnings": true,
+  "modules": [
+    {
+      "name": "example-core",
+      "comment": "A leaf module. Others may import it ONLY through its barrel; its internal files are private.",
+      "path": "^src/core/",
+      "publicEntry": ["^src/core/index\\.(ts|tsx|js)$"]
+    },
+    {
+      "name": "example-feature",
+      "comment": "A module with more than one public file — list each as a publicEntry.",
+      "path": "^src/features/checkout/",
+      "publicEntry": [
+        "^src/features/checkout/index\\.(ts|tsx)$",
+        "^src/features/checkout/routes\\.tsx$"
+      ]
+    }
+  ],
+  "layers": {
+    "_comment": "OPTIONAL directional rules, off unless populated. Each entry forbids the named module from importing the listed modules AT ALL (stricter than public-entry-only). Use for one-directional layering, e.g. a renderer that must never reach the main process.",
+    "example-core": ["example-feature"]
+  }
+}

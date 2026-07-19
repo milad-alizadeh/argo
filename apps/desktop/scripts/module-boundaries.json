@@ -1,0 +1,32 @@
+{
+  "_comment": "LLM-MAINTAINED MODULE MAP for @argo/desktop. Single source of truth for module boundaries; .dependency-cruiser.cjs turns it into lint rules mechanically — edit this map, never the generated rules. Refresh when the src/ structure changes. Managed by the setup-module-boundaries skill.",
+  "tsConfig": "tsconfig.web.json",
+  "exclude": "(^|/)(node_modules|out|dist|build|coverage|test-results|playwright-report|\\.storybook|e2e)/",
+  "orphansAreWarnings": true,
+  "modules": [
+    {
+      "name": "main",
+      "comment": "Electron main process. Its internals are private; the app is wired only from its own entry.",
+      "path": "^src/main/",
+      "publicEntry": ["^src/main/index\\.ts$"]
+    },
+    {
+      "name": "preload",
+      "comment": "The context-bridge. Loaded by Electron via file path, not imported — nothing should import its internals.",
+      "path": "^src/preload/",
+      "publicEntry": ["^src/preload/index\\.ts$", "^src/preload/index\\.d\\.ts$"]
+    },
+    {
+      "name": "renderer",
+      "comment": "The UI (browser context). Talks to main only through the window bridge, never by import.",
+      "path": "^src/renderer/",
+      "publicEntry": ["^src/renderer/src/main\\.tsx$"]
+    }
+  ],
+  "layers": {
+    "_comment": "Electron process isolation: the three processes must never import each other at all — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). Importing across them is the classic footgun this locks out.",
+    "main": ["renderer", "preload"],
+    "renderer": ["main", "preload"],
+    "preload": ["main", "renderer"]
+  }
+}

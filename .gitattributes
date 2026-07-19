@@ -1,0 +1,5 @@
+# graphify: union-merge the committed graph so parallel commits never leave conflict markers.
+# Requires the local driver (setup-graphify wires it per clone):
+#   git config merge.graphify.name   "graphify union merge"
+#   git config merge.graphify.driver "graphify merge-driver %O %A %B"
+graphify-out/graph.json merge=graphify
