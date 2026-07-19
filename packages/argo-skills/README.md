@@ -26,13 +26,16 @@ app, and the installed skills carry everything they need with them:
   same in any project without reading back into this package.
 
 The Argo cockpit's own `.claude/skills/` are therefore *installed output* of this
-per-project flow, not source. The source is only ever here.
+per-project flow, not source. The source is only ever here — and it distributes
+only via GitHub: even this monorepo installs its own skills with the same npx
+command (push first, then reinstall).
 
 ## Use it in a project
 
 ```bash
 # from anywhere, inside the target project directory:
-npx argo-skills            # once published, or `bun run scaffold` from the monorepo
+npx github:milad-alizadeh/argo   # canonical — installs straight from GitHub
+# npx argo-skills                # once published to npm
 ```
 
 Preview without touching anything:

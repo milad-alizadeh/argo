@@ -139,11 +139,6 @@
     "ast_hash": "3b7fdd27dd8b907e8a97338c2e99c717",
     "semantic_hash": ""
   },
-  "skills-lock.json": {
-    "mtime": 1784484609.9926322,
-    "ast_hash": "2545eec776d365121c6de26639b1729d",
-    "semantic_hash": ""
-  },
   "turbo.json": {
     "mtime": 1784476452.3608572,
     "ast_hash": "61b45da98fc9e811c0911a100aa91c97",

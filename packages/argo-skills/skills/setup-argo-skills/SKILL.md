@@ -19,14 +19,16 @@ third-party `bundle` entries (`mattpocock/skills`, `vercel-labs/skills`,
 `anthropics/claude-plugins-official`) and the `mine` entries (Argo's own skills):
 
 ```bash
-npx argo-skills                   # if published to npm
-# or, from a local checkout of the argo monorepo:
-node <path-to>/packages/argo-skills/bin/scaffold.mjs
+npx github:milad-alizadeh/argo    # canonical — installs everything from GitHub
 ```
 
 Preview with `--dry-run`. Skills land in `.claude/skills/` + `.agents/skills/`,
 recorded in `skills-lock.json`. If the project already has a lock, this is an
 update, not a first install — say so and continue.
+
+Every source installs from its repo — including Argo's own skills; even the
+argo monorepo dogfoods itself with the same command. A new or edited skill must
+be **pushed** before a reinstall picks it up.
 
 ## Phase 2 — the infra wizard
 
