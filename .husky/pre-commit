@@ -1,14 +1,13 @@
 bunx lint-staged
 
-# --- graphify: committed knowledge graph, kept fresh in-commit (installed by setup-graphify) ---
-# Replaces graphify's stock async post-commit hook. `graphify update .` refreshes the graph
-# (AST only, fast, deterministic) AND names communities from their dominant node — no LLM, no
-# API key, no churn. Staging it puts the fresh, named graph INSIDE this commit. No-op until the
-# graph exists. `git add graphify-out` respects .gitignore (heavy graph.html / cache/ excluded).
-# NOTE: deliberately NOT running `graphify label` here — it re-clusters and writes dated backup
-# snapshots on every call (churn). Thematic LLM names are an occasional in-session polish, not
-# a per-commit step.
-if command -v graphify >/dev/null 2>&1 && [ -f graphify-out/graph.json ]; then
+# --- graphify: committed knowledge graph, refreshed in-commit (installed by setup-graphify) ---
+# Refresh + stage the graph INTO this commit, but ONLY in the main working tree — linked
+# worktrees are skipped (git-dir != git-common-dir), so feature branches never churn or
+# conflict the graph. `graphify update` (>=0.9.15) preserves community names; NEW communities
+# are named separately by the SessionStart hook (graphify label --missing-only). No post-commit
+# hook anywhere. No-op until the graph exists.
+if command -v graphify >/dev/null 2>&1 && [ -f graphify-out/graph.json ] \
+   && [ "$(git rev-parse --git-dir 2>/dev/null)" = "$(git rev-parse --git-common-dir 2>/dev/null)" ]; then
   graphify update . >/dev/null 2>&1 || true
   git add graphify-out >/dev/null 2>&1 || true
 fi

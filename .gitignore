@@ -11,6 +11,6 @@ dist/
 # House rules are authored, not installed — keep them tracked.
 !.claude/rules/
 
-# graphify: commit graph.json + labels + report; ignore the heavy viz + cache
-graphify-out/graph.html
-graphify-out/*/
+# graphify: commit the graph outputs (graph.json, graph.html, report, labels).
+# Ignore only the internal rebuild cache — it's regenerable and would churn every commit.
+graphify-out/cache/

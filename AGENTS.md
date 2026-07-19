@@ -24,3 +24,36 @@ touch (each rule's `paths:` frontmatter states its scope):
 - **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
   `typescript-style.md`, `dependencies.md`
 - **UI work** — also `ui-components.md`, `design-system.md`
+
+## graphify
+
+This project has a knowledge graph at `graphify-out/` with god nodes, community
+structure, and cross-file relationships.
+
+- For codebase questions, first run `graphify query "<question>"` when
+  `graphify-out/graph.json` exists. Use `graphify path "<A>" "<B>"` for
+  relationships and `graphify explain "<concept>"` for focused concepts. These
+  return a scoped subgraph, usually much smaller than `GRAPH_REPORT.md` or raw grep.
+- If `graphify-out/wiki/index.md` exists, use it for broad navigation instead of
+  raw source browsing.
+- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or when
+  query/path/explain do not surface enough context.
+
+The graph is committed and refreshed automatically by the pre-commit hook — you never
+run `graphify update` by hand. How it's wired (worktree guard, community naming, merge
+driver) lives in the `setup-graphify` skill, not here.
+
+## Tooling (RTK)
+
+Run commands through `rtk` so output is filtered before it reaches context. The
+global Bash hook already auto-wraps `git`, `grep`, `gh`, `vitest`, `tsc`, `ls`,
+`find`, and similar — but it has **no `bun` or `turbo` proxy**, so this repo's
+canonical entrypoints leak full output unless wrapped explicitly:
+
+```bash
+rtk test bun run test       # turbo → vitest, failures only
+rtk err  bun run lint       # turbo → eslint, errors/warnings only
+rtk err  bun run typecheck
+```
+
+@RTK.md
