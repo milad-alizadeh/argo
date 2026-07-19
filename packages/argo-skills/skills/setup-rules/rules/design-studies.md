@@ -35,6 +35,11 @@ the markup:
   Exploring a value the contract doesn't have yet is allowed (that's what studies
   are for), but it's a **proposal**: it either snaps to an existing token or gets
   promoted to a named one when the study settles, never ported raw.
+- **Foundations before screens.** The ramps themselves (type roles, spacing,
+  radii, color roles) are designed once via `/design-foundations` and rendered
+  as `docs/designs/foundations.html` — the one **non-disposable** study: it
+  styles only via `var(--token)`, so it always renders the current contract.
+  Screen studies follow it; they propose, they never redefine.
 - **Name every region.** Each meaningful region carries a stable
   `data-component="SessionRow"` attribute (PascalCase, the future component's
   name). This name survives into the inventory, the codebase, stories, and

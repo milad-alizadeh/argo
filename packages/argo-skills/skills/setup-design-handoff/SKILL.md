@@ -48,9 +48,11 @@ tokens" have only colors:
 3. **Spacing roles** — the rhythm steps the design actually uses.
 4. **Radii / durations / opacity** as used.
 
-If the project has existing UI or design studies, derive the initial values by
-**settling what exists** (see `/componentize-design` step 1 — snap-or-promote),
-not by inventing a fresh scale.
+This skill installs the *structure*; the values are design work. When families
+are missing, run `/design-foundations` next — the moodboard→contract ceremony
+that designs the ramps deliberately from whatever exploration exists (studies,
+the app's CSS) and lands them only behind a user bless. Never derive a scale
+inline here, and never copy a study's raw values verbatim into the contract.
 
 ## 3. Install the study scaffolding
 

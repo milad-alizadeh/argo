@@ -69,3 +69,8 @@ what was deferred.
 Summarize the whole bootstrap: skills installed/updated (lock delta), infra
 installed per piece, anything deferred with the reason, and the one-liner for
 re-running any single piece later (`/setup-<piece>`).
+
+If design handoff was installed, point at the design loop's first move: explore
+a moodboard, then run `/design-foundations` to settle the token ramps **before
+the first screen study is settled** — `/componentize-design` reconciles screens
+against foundations; it doesn't design them.
