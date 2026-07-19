@@ -3,7 +3,7 @@
  * globals.css imports this and maps these onto Tailwind's @theme. shadcn/ui semantic
  * roles resolve to these variables; do not hardcode colours in components.
  *
- * Palette follows the agreed high-fidelity cockpit design (docs/designs/cockpit-v7-phosphor):
+ * Palette follows the agreed high-fidelity cockpit design (docs/designs/cockpit.html):
  * a warm near-black graphite with a single indigo accent, one frosted `panel` surface per
  * region and flat `inset` cards inside it (never glass-on-glass). Status is carried by a
  * disjoint set of state colours.

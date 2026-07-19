@@ -11,11 +11,7 @@ the code knowledge graph.
 
 | File | Screen | Notes |
 |---|---|---|
-| `cockpit-v7-phosphor.html` | Single-session cockpit — session/work view | v7, phosphor treatment |
-| `cockpit-v7-narrative.html` | Single-session cockpit — narrative view | v7, narrative treatment |
-| `workflow-fanout-v2.html` | Workflow fan-out | v2 |
-| `orchestrator-v2.html` | Orchestrator | v2 |
-| `codex-v2.html` | Codex turn timeline | v2 |
+| `cockpit.html` | Single-session cockpit — session/work view | v7, phosphor treatment — **the final design** |
 
 ## Lineage & decisions
 
