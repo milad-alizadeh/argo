@@ -7,4 +7,6 @@ dist/
 # Installed skill copies are throwaway outputs of `npx skills add` —
 # skills-lock.json is committed and restores them via `npx skills experimental_install`.
 .agents/
-.claude/
+.claude/*
+# House rules are authored, not installed — keep them tracked.
+!.claude/rules/

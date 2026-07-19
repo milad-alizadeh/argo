@@ -15,3 +15,12 @@ The five canonical triage roles, each label string equal to its name. See `docs/
 ### Domain docs
 
 Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+## Rules
+
+House engineering rules live in `.claude/rules/`. Load the ones matching the files you
+touch (each rule's `paths:` frontmatter states its scope):
+
+- **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
+  `typescript-style.md`, `dependencies.md`
+- **UI work** — also `ui-components.md`, `design-system.md`
