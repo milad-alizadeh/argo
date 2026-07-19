@@ -114,7 +114,7 @@
   --inset: color-mix(in srgb, var(--gray-950) 2%, transparent);
   --inset-hair: color-mix(in srgb, var(--gray-950) 6%, transparent);
 
-  /* Lifecycle status — calm; indigo=working, amber=needs-you. */
+  /* Lifecycle status — calm; indigo=working, amber=needs-input. */
   --status-working: var(--indigo-600);
   --status-idle: var(--gray-600);
   --status-awaiting-input: var(--amber-600);
