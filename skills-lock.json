@@ -189,6 +189,11 @@
       "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
       "computedHash": "74e894a3509e2676d4cdb771c8eace087092430635e845e02a9cc2f757c552a4"
     },
+    "setup-module-boundaries": {
+      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
+      "sourceType": "local",
+      "computedHash": "975ad179666557f15fbcd6226da5c1b28940e9b69ecc2584a56ae03bd69ca8fb"
+    },
     "setup-pre-commit": {
       "source": "mattpocock/skills",
       "sourceType": "github",

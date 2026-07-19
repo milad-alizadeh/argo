@@ -1,0 +1,3 @@
+# Forward to graphify's local post-checkout hook (kept in .git/hooks/, shadowed by
+# husky's core.hooksPath). Pass through the checkout args ($1 prev, $2 new, $3 flag).
+[ -x .git/hooks/post-checkout ] && .git/hooks/post-checkout "$@"

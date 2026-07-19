@@ -1,0 +1,28 @@
+# Mechanical module-boundary check. Fails the PR when any module is imported through
+# a non-public file (see module-boundaries.json). Installed by the setup-module-boundaries skill.
+#
+# dependency-cruiser needs a Node RUNTIME (22 || 24 || >=26) even in a bun repo — it runs
+# under Node via its shebang, so we set up Node explicitly and invoke depcruise directly
+# rather than through `bun run` (bun's runtime fails depcruise's engine check).
+name: module-boundaries
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: oven-sh/setup-bun@v2 # {{SWAP_FOR_YOUR_PM}} — installs deps + the hoisted depcruise bin
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile # {{SWAP_FOR_YOUR_PM}}
+      - name: Check module boundaries
+        working-directory: "{{WORKSPACE_DIR}}" # e.g. apps/desktop; "." for a single-package repo
+        run: npx --no-install depcruise --config .dependency-cruiser.cjs src
