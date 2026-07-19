@@ -10,6 +10,24 @@ is the multi-source manifest the `skills` CLI doesn't ship yet: it lists the thi
 sources plus Argo's own skills (kept in this package's `skills/`), and installs them all
 at once.
 
+## Project-agnostic by design — set up per project
+
+This package is the **single source** for Argo's skills; it has no dependency on any
+particular project (including the Argo cockpit app that shares this monorepo). Every
+project — the cockpit and any other — is a plain **consumer**: it runs the scaffolder
+to install its own copy of the skills under `.claude/skills/` (and `.agents/skills/`),
+recorded in that project's `skills-lock.json`. Nothing here reaches into a consuming
+app, and the installed skills carry everything they need with them:
+
+- The scaffolder installs into the **current working directory**, so you point it at
+  whatever project you're setting up.
+- Each skill is **self-contained** — supporting files (e.g. `setup-rules/rules/*.md`)
+  live inside the skill folder and travel with it on install, so a skill works the
+  same in any project without reading back into this package.
+
+The Argo cockpit's own `.claude/skills/` are therefore *installed output* of this
+per-project flow, not source. The source is only ever here.
+
 ## Use it in a project
 
 ```bash
@@ -51,6 +69,13 @@ Options: `--global`/`-g` (install to `~` instead of the project), `--project`/`-
 ## Argo's own skills
 
 Live under `skills/`, one `SKILL.md` per folder, and install via the `mine` entry.
-Currently one: [`scaffold-project`](skills/scaffold-project/SKILL.md) — an interactive
-scaffolder for a new project of any stack (interview → monorepo vs single → install the
-stack's LSP → lay out the folders). Add more by dropping another folder here.
+Add more by dropping another folder here (with any supporting files colocated inside it).
+
+- [`scaffold-project`](skills/scaffold-project/SKILL.md) — interactive scaffolder for a
+  new project of any stack (interview → monorepo vs single → install the stack's LSP →
+  lay out the folders).
+- [`implement-fanout`](skills/implement-fanout/SKILL.md) — implement several independent
+  tickets in parallel, each in its own git worktree via a subagent.
+- [`setup-rules`](skills/setup-rules/SKILL.md) — install Argo's engineering rule set into
+  a project, adapting every path to the detected structure. Its rule templates ship in
+  its own `rules/` folder so it's self-contained per project.

@@ -7,12 +7,18 @@ one-command scaffolder that installs them — plus a curated third-party
 ## Layout
 
 ```
-packages/argo-skills/
-  skills/            Argo's own skills — one SKILL.md folder each
-  bundle.json        the manifest: third-party `bundle` + own `mine`
-  bin/scaffold.mjs   installs every bundle source via `npx skills add`
-skills-lock.json     committed record of the installed bundle (dogfooded into this repo)
+packages/argo-skills/   the project-AGNOSTIC source of Argo's skills (the toolkit)
+  skills/               Argo's own skills — one SKILL.md folder each, supporting
+                        files (e.g. setup-rules/rules/) colocated so each is self-contained
+  bundle.json           the manifest: third-party `bundle` + own `mine`
+  bin/scaffold.mjs      installs every bundle source via `npx skills add`
+apps/                   consumers (e.g. the cockpit app) — set up per project, not source
+skills-lock.json        committed record of the installed bundle (dogfooded into this repo)
 ```
+
+The `argo-skills` package is the single source; everything else — the cockpit app, and
+any other project — is a **consumer** that installs the skills per project (see
+Dogfooding below). Nothing in the package depends on a consuming app.
 
 ## Scaffold a project — one command, no install
 
