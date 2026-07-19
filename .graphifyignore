@@ -1,0 +1,2 @@
+# graphify: keep the graph code-only — no markdown (plans, ADRs, skills, docs) as nodes.
+*.md

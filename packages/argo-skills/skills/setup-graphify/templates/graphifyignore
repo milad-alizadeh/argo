@@ -1,0 +1,6 @@
+# graphify: keep the graph code-only — no markdown (plans, ADRs, skills, docs) as nodes.
+# git-style patterns, honored by BOTH `graphify extract` and the pre-commit `graphify update`.
+# `--code-only` on extract is NOT enough on its own: `update` rejects that flag and re-adds
+# markdown on the next commit, so the ignore file is the update-safe lever. Widen as needed
+# (e.g. add fixtures/, *.snap) or delete this line if you want docs in the graph.
+*.md
