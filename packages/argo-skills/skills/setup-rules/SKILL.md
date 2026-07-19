@@ -1,6 +1,6 @@
 ---
 name: setup-rules
-description: Install Argo's engineering rule set into a project — copies the rule templates (engineering principles, comments, TypeScript style, dependencies, file structure, UI components, design system) into the repo, adapts every path to the detected structure, and wires a pointer into CLAUDE.md/AGENTS.md so Claude Code and Codex actually load them. Run once per project after scaffolding.
+description: Install Argo's engineering rule set into a project — copies the rule templates (engineering principles, comments, TypeScript style, dependencies, file structure, UI components, design system) into the repo, adapts every path to the detected structure, and wires a pointer into CLAUDE.md/AGENTS.md so Claude Code and Codex actually load them. Usually dispatched by the /setup-argo-skills wizard; run directly to (re)install just this piece.
 disable-model-invocation: true
 ---
 
@@ -34,7 +34,7 @@ The Tier-1+2 set is:
 | `file-structure.md` | domain folders, barrels, boundaries | always (TS/JS projects) |
 | `ui-components.md` | atomic design, container/View, icons | project has a UI component tree |
 | `design-system.md` | tokens-only, no magic numbers | project uses Tailwind v4 tokens |
-| `design-wireframes.md` | HTML design studies → `docs/wireframes/`, committed | project does UI design/prototyping |
+| `design-studies.md` | HTML design studies → `docs/designs/`, committed | project does UI design/prototyping |
 
 `testing.md`, `documentation-*.md`, and `database.md` are **not** in this set — bring
 them later, individually, once the infra they reference (test runner, docs site, DB)
@@ -115,7 +115,7 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
   `typescript-style.md`, `dependencies.md`
-- **UI work** — also `ui-components.md`, `design-system.md`, `design-wireframes.md`
+- **UI work** — also `ui-components.md`, `design-system.md`, `design-studies.md`
 ```
 
 If `CLAUDE.md`/`AGENTS.md` already has a Rules section, update it rather than duplicating.

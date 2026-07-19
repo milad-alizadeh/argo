@@ -1,5 +1,5 @@
 {
-  "$comment": "Your skill bundle manifest. `bundle` = third-party sources; `mine` = your own skills under ./skills. Run `argo-skill-starter` in any project to install all of them for the listed agents.",
+  "$comment": "Your skill bundle manifest. Every source installs from its repo via `npx skills add` — including Argo's own skills (milad-alizadeh/argo), which install from GitHub like any other source even inside this monorepo (it dogfoods itself like any consumer). Process: edit skills in packages/argo-skills/skills/, push to main, then run `npx github:milad-alizadeh/argo` in the target project.",
   "agents": ["claude-code", "cursor", "codex"],
   "scope": "project",
   "bundle": [
@@ -14,11 +14,9 @@
     {
       "source": "anthropics/claude-plugins-official",
       "skills": ["frontend-design"]
-    }
-  ],
-  "mine": [
+    },
     {
-      "source": "./skills",
+      "source": "milad-alizadeh/argo",
       "skills": "*"
     }
   ]
