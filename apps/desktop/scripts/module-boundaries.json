@@ -5,6 +5,12 @@
   "orphansAreWarnings": true,
   "modules": [
     {
+      "name": "shared",
+      "comment": "Cross-process contract: the event vocabulary, projected-state types, IPC channel names, and the pure projection reducer. Types-and-pure-functions only — imported by all three processes, imports none of them.",
+      "path": "^src/shared/",
+      "publicEntry": ["^src/shared/index\\.ts$"]
+    },
+    {
       "name": "main",
       "comment": "Electron main process. Its internals are private; the app is wired only from its own entry.",
       "path": "^src/main/",
@@ -24,9 +30,10 @@
     }
   ],
   "layers": {
-    "_comment": "Electron process isolation: the three processes must never import each other at all — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). Importing across them is the classic footgun this locks out.",
+    "_comment": "Electron process isolation: the three processes must never import each other at all — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). Importing across them is the classic footgun this locks out. All three may import `shared` (the type/pure-function contract); `shared` must import none of them.",
     "main": ["renderer", "preload"],
     "renderer": ["main", "preload"],
-    "preload": ["main", "renderer"]
+    "preload": ["main", "renderer"],
+    "shared": ["main", "renderer", "preload"]
   }
 }

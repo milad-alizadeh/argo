@@ -2,6 +2,9 @@ import { join } from 'node:path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
+import { seedDemoSession } from './demoSeed'
+import { createHub } from './hub'
+import { wireProjection } from './projectionBridge'
 
 function createWindow(): void {
   // Create the browser window.
@@ -16,7 +19,9 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      // electron-vite emits the preload as ESM (.mjs) because the app is "type": "module";
+      // loading the wrong extension silently skips the preload (no window.cockpit bridge).
+      preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
     },
   })
@@ -52,6 +57,14 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+
+  // Seam A: the authoritative hub and its IPC projection into the renderer (ADR-0005).
+  const hub = createHub()
+  wireProjection(hub)
+  // Opt-in synthetic Session that drives the projection pipeline end-to-end (the
+  // launch smoke sets this; run `ARGO_SEED_DEMO=1 bun run dev` to see it locally).
+  // Nothing real is observed yet — drop when the session adapter lands.
+  if (process.env.ARGO_SEED_DEMO === '1') seedDemoSession(hub)
 
   createWindow()
 

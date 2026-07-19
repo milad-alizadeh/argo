@@ -50,6 +50,20 @@ Rules that fall out of this:
   interaction state. Interactive primitives wrap `radix-ui` (the headless-UI library)
   and are styled only with design-system tokens; never import the library's default CSS.
 
+## Build from the inventory — when a design study exists
+
+If the UI being built comes from a settled design study, its component inventory
+(`docs/designs/<study>.inventory.md`, produced by `/componentize-design`) is the
+build contract:
+
+- **Names are fixed by the inventory.** The component's name, tier, and props come
+  from its inventory row — don't rename, re-tier, or re-shape mid-build.
+- **A component that isn't in the inventory doesn't get built** off a study;
+  update the inventory first (one row), then build. This keeps the study, the
+  inventory, and the codebase telling one story.
+- Never derive a component by copying study markup — rebuild from tokens and
+  existing primitives (the study is a spec, per `design-studies.md`).
+
 ## Icons — one icon component per file
 
 **No inline SVGs anywhere.** Every SVG icon is its own named component in
@@ -72,6 +86,11 @@ fetching, store wiring; ~10 lines) and a pure presentational **View**
 
 ## Storybook stories
 
-This project uses Storybook (`*.stories.tsx` colocated with components). One story per
-PRD/spec state, rendering the **View** with typed fixtures. Stories prove composition
-and visual state only — they never replace e2e wiring checks of the container.
+When Storybook is installed, it's mandatory: every component and every screen **View**
+ships a colocated `*.stories.tsx` in the same change. Containers are exempt — story the
+View, with typed fixtures (never the container).
+
+- **Cover every prop, not just the happy path:** each enum variant, both sides of every
+  boolean, loading / empty / error / populated, and edges (overflow, missing optional
+  data). If a prop changes what renders, a story exercises it.
+- Stories prove visual state only — they never replace the container's e2e wiring checks.

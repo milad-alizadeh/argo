@@ -1,0 +1,52 @@
+<!doctype html>
+<!-- Study template. Copy this file to start a new study; delete the copy's
+     explainer comments. Rules that make a study transfer to the app
+     (rules/design-studies.md):
+       1. tokens.css only — every value is var(--token) or a role class. A value
+          the contract lacks is a proposal: snap or promote it when the study
+          settles, never keep the literal.
+       2. data-component="PascalCaseName" on every meaningful region — the name
+          is decided HERE, once, and survives into the inventory, the real
+          component, its stories, and tickets.
+       3. Repeated shapes become named render functions in kit.js; a study calls
+          them, never re-writes their markup. -->
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Study — ScreenName</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      /* Study-local layout only — still tokens, no bespoke px/hex. */
+      .frame {
+        min-height: 100vh;
+        padding: var(--space-region);
+        display: grid;
+        gap: var(--space-gap);
+        align-content: start;
+      }
+      .card {
+        background: var(--inset);
+        border: 1px solid var(--inset-hair);
+        border-radius: var(--radius);
+        padding: var(--space-inset);
+        display: grid;
+        gap: var(--space-snug);
+      }
+      .status-working {
+        color: var(--status-working);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="frame" data-component="ScreenName">
+      <!-- Worked example of region naming: this molecule will be built as
+           <SessionRow /> — same name, decided here. -->
+      <section class="card" data-component="SessionRow">
+        <div class="text-eyebrow">Session</div>
+        <div class="text-row">Row copy uses the settled ladder — no bespoke sizes.</div>
+        <div class="text-tag status-working">working</div>
+      </section>
+    </main>
+    <script src="kit.js"></script>
+  </body>
+</html>

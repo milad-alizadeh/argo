@@ -20,7 +20,8 @@ A unit of work spawned inside a Session — a Claude subagent/Task, or a Codex T
 _Avoid_: subagent (in UI copy), worker, thread
 
 **Run**:
-A structured multi-agent effort hanging under an Actor. Two shapes: a **batch** (agents in parallel) or a **pipeline** (agents in stages). Claude-only vocabulary.
+A structured multi-agent effort hanging under an Actor. Two shapes: a **batch** (agents in parallel) or a **dynamic workflow** (agents in stages). Claude-only vocabulary.
+_Avoid_: pipeline (in UI copy — the old name of the staged shape)
 
 **Phase**:
 A named group of Agents within a Run (e.g. Review → Verify → Synthesize).
@@ -36,6 +37,13 @@ _Avoid_: dispatcher, NLU
 **Companion plugin**:
 The single shared plugin (Claude-Code / Codex `.claude-plugin` standard) the cockpit loads into every managed Session, giving it an MCP status/ask/report channel. Required in managed sessions.
 _Avoid_: extension, addon
+
+**Ship ribbon**:
+The work pane's lifecycle header — artifact nodes Commits → PR → CI → Review → Merge, the sole owner of ship-flow state. A node's done-state is a fact about a sha and can go **stale**; the head (leftmost non-fresh node) carries the screen's one primary control. Spec: `docs/designs/cockpit-matrix.md` (ADR-0009).
+_Avoid_: pipeline (that word is a Run shape), stepper
+
+**Gate**:
+A ship-ribbon transition that publishes or lands work (Create PR, Merge). Human-clicked by default; delegable per session as a standing order (rendered `⚙ auto`, revocable) — the only sanctioned form of the cockpit acting without a per-action gesture.
 
 **Outcome**:
 A natural-language accomplishment produced by a Session ("what got done"), each carrying a provenance tag and clickable to its diff/artifact. Its diff link is **git-addressed** (commit SHA(s) in the Session's cwd); an Outcome with no commit backing has no stable link, never a fabricated one. Computed once and cached — never regenerated on app open (ADR-0008).

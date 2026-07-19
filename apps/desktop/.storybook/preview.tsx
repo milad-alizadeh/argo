@@ -11,11 +11,17 @@ const preview: Preview = {
     (Story): ReactElement =>
       createElement(
         'div',
-        { className: 'dark bg-background text-foreground' },
+        {
+          className:
+            'dark bg-background text-foreground flex min-h-screen items-center justify-center',
+        },
         createElement(Story),
       ),
   ],
   parameters: {
+    // Let the dark decorator fill the whole canvas (it centres the story itself) instead
+    // of shrink-wrapping the component into a dark box on Storybook's default white.
+    layout: 'fullscreen',
     controls: {
       matchers: {
         color: /(background|color)$/i,

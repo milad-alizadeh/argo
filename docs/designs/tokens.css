@@ -1,0 +1,70 @@
+/*
+ * Study-side token vocabulary. Imports the REAL contract (argo-tokens.css) so
+ * studies and the app share one source and cannot drift — never copy values in
+ * here. The classes below mirror the text-* utilities globals.css generates for
+ * the app. Style only via var(--token) and these classes; a value the contract
+ * lacks is a proposal to snap or promote when the study settles, never a bare
+ * literal to keep (rules/design-studies.md).
+ */
+@import url("../../apps/desktop/src/renderer/src/styles/argo-tokens.css");
+
+/* Cockpit is dark-first: studies set <html class="dark"> (see study-template.html). */
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: var(--type-row-weight) var(--type-row) / var(--type-row-leading) var(--sans);
+  letter-spacing: var(--type-row-tracking);
+}
+
+/* Typography roles — the same tuples the app gets as text-headline … text-code-inline.
+ * One sans ladder (10/12/14/16); within a size, weight/case/tracking/leading
+ * differentiate — never a 1px size step. */
+.text-headline {
+  font: var(--type-headline-weight) var(--type-headline) / var(--type-headline-leading) var(--sans);
+  letter-spacing: var(--type-headline-tracking);
+}
+.text-title {
+  font: var(--type-title-weight) var(--type-title) / var(--type-title-leading) var(--sans);
+  letter-spacing: var(--type-title-tracking);
+}
+.text-row {
+  font: var(--type-row-weight) var(--type-row) / var(--type-row-leading) var(--sans);
+  letter-spacing: var(--type-row-tracking);
+}
+.text-row-strong {
+  font: var(--type-row-strong-weight) var(--type-row-strong) / var(--type-row-strong-leading)
+    var(--sans);
+  letter-spacing: var(--type-row-strong-tracking);
+}
+.text-prose {
+  font: var(--type-prose-weight) var(--type-prose) / var(--type-prose-leading) var(--sans);
+  letter-spacing: var(--type-prose-tracking);
+}
+.text-meta {
+  font: var(--type-meta-weight) var(--type-meta) / var(--type-meta-leading) var(--sans);
+  letter-spacing: var(--type-meta-tracking);
+  font-variant-numeric: tabular-nums;
+}
+.text-tag {
+  font: var(--type-tag-weight) var(--type-tag) / var(--type-tag-leading) var(--sans);
+  letter-spacing: var(--type-tag-tracking);
+  text-transform: uppercase;
+}
+.text-eyebrow {
+  font: var(--type-eyebrow-weight) var(--type-eyebrow) / var(--type-eyebrow-leading) var(--sans);
+  letter-spacing: var(--type-eyebrow-tracking);
+  text-transform: uppercase;
+}
+.text-code {
+  font: var(--type-code-weight) var(--type-code) / var(--type-code-leading) var(--mono);
+  letter-spacing: var(--type-code-tracking);
+}
+.text-code-inline {
+  font: var(--type-code-inline-weight) var(--type-code-inline) / var(--type-code-inline-leading)
+    var(--mono);
+  letter-spacing: var(--type-code-inline-tracking);
+}
+.mono {
+  font-family: var(--mono);
+}

@@ -1,0 +1,229 @@
+<!doctype html>
+<!-- The living token specimen (/design-foundations step 5). NON-disposable:
+     it styles ONLY via tokens.css (var(--token) + role classes), so opening it
+     always renders the CURRENT contract — it cannot drift. When the contract
+     changes, this page is already correct; edit it only to specimen new roles. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Argo — Design Foundations</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      /* Specimen layout only — every colour/type/space value is a token. */
+      .zone {
+        padding: var(--space-region);
+        background: var(--background);
+        color: var(--foreground);
+      }
+      h2 {
+        margin: var(--space-region) 0 var(--space-gap);
+        color: var(--foreground-faint);
+      }
+      .spec {
+        display: grid;
+        grid-template-columns: 8rem 1fr 12rem;
+        gap: var(--space-inset);
+        align-items: baseline;
+        padding: var(--space-snug) 0;
+        border-bottom: 1px solid var(--inset-hair);
+      }
+      .spec .name {
+        color: var(--foreground-faint);
+      }
+      .spec .tuple {
+        color: var(--foreground-faint);
+        text-align: right;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-gap);
+      }
+      .chip {
+        display: grid;
+        gap: var(--space-hair);
+        justify-items: center;
+      }
+      .chip .sw {
+        width: 3.5rem;
+        height: 2.25rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--inset-hair);
+      }
+      .chip .cap {
+        color: var(--foreground-faint);
+      }
+      .bars {
+        display: grid;
+        gap: var(--space-tight);
+      }
+      .bars .bar {
+        height: var(--space-gap);
+        background: var(--accent);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      .cards {
+        display: flex;
+        gap: var(--space-region);
+      }
+      .cards .card {
+        width: 9rem;
+        height: 5rem;
+        border-radius: var(--radius);
+        background: var(--card);
+        display: grid;
+        place-items: center;
+        color: var(--foreground-faint);
+      }
+      .motion .dot {
+        width: var(--space-region);
+        height: var(--space-region);
+        border-radius: 50%;
+        background: var(--primary);
+        transition: transform var(--time-fast);
+      }
+      .motion .dot.slow {
+        transition-duration: var(--time-slow);
+      }
+      .motion .dot:hover {
+        transform: translateX(var(--space-region));
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .motion .dot.pulse {
+          animation: pulse var(--time-pulse) ease-in-out infinite;
+        }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.45; }
+      }
+      .motion {
+        display: flex;
+        gap: var(--space-region);
+        padding: var(--space-gap) 0;
+      }
+    </style>
+  </head>
+  <body style="margin: 0; background: var(--gray-950)">
+    <!-- ============================== DARK (product home) -->
+    <div class="dark zone">
+      <div class="text-headline">Argo design foundations</div>
+      <div class="text-prose" style="color: var(--foreground-soft); max-width: 44rem">
+        Settled by the /design-foundations ceremony from cockpit.html. One sans ladder
+        (10/12/14/16 — every step 2px); two-layer colour (core ramps → semantic roles);
+        lifecycle and verdict families disjoint by construction.
+      </div>
+
+      <h2 class="text-eyebrow">Typography — the role ladder</h2>
+      <div id="type"></div>
+
+      <h2 class="text-eyebrow">Core ramps (theme-agnostic — raw values live only here)</h2>
+      <div id="ramps"></div>
+
+      <h2 class="text-eyebrow">Semantic roles — dark binding</h2>
+      <div id="semantic-dark"></div>
+
+      <h2 class="text-eyebrow">Spacing rhythm</h2>
+      <div class="bars" id="spacing"></div>
+
+      <h2 class="text-eyebrow">Radius · shadows · wells</h2>
+      <div class="cards">
+        <div class="card" style="box-shadow: 0 8px 24px var(--shadow-1)">shadow-1</div>
+        <div class="card" style="box-shadow: 0 8px 24px var(--shadow-2)">shadow-2</div>
+        <div class="card" style="box-shadow: 0 8px 24px var(--shadow-3)">shadow-3</div>
+        <div class="card" style="background: var(--well); border: 1px solid var(--inset-hair)">
+          well
+        </div>
+      </div>
+      <div class="text-meta" style="color: var(--foreground-faint); margin-top: var(--space-gap)">
+        --radius 8px → sm 4 · md 6 · lg 8 · xl 12 (derived in globals.css)
+      </div>
+
+      <h2 class="text-eyebrow">Motion (hover the dots; the pulse is the one animation budget)</h2>
+      <div class="motion">
+        <div class="dot" title="--time-fast"></div>
+        <div class="dot slow" title="--time-slow"></div>
+        <div class="dot pulse" title="--time-pulse"></div>
+      </div>
+    </div>
+
+    <!-- ============================== LIGHT (same ramps, re-bound) -->
+    <div class="zone">
+      <h2 class="text-eyebrow">Semantic roles — light binding (same ramps, re-bound)</h2>
+      <div id="semantic-light"></div>
+    </div>
+
+    <script>
+      // Specimen generator — names only; every rendered value resolves from the
+      // imported contract at open time. Add a row here when a role is added there.
+      const TYPE_ROLES = [
+        ['headline', 'Changes requested · 2 blocking'],
+        ['title', 'Editing legacy.ts — now line'],
+        ['row', 'List primary text: checks, outcomes, tool rows'],
+        ['row-strong', 'Session titles, commit subjects, buttons'],
+        ['prose', 'Multi-line reading: finding bodies, review summaries, plan docs.'],
+        ['meta', '14:32 · 1,204 tokens · +88 −12'],
+        ['tag', 'open · addressing · fixed'],
+        ['eyebrow', 'Checks · Outcomes · Merge'],
+        ['code', 'const hub = createHub({ ipc })'],
+        ['code-inline', 'apps/desktop/src/main.ts @ 4f2a9c1'],
+      ]
+      document.getElementById('type').innerHTML = TYPE_ROLES.map(([role, sample]) => {
+        const s = getComputedStyle(document.documentElement)
+        const px = s.getPropertyValue(`--type-${role}`).trim()
+        const lh = s.getPropertyValue(`--type-${role}-leading`).trim()
+        const w = s.getPropertyValue(`--type-${role}-weight`).trim()
+        const tr = s.getPropertyValue(`--type-${role}-tracking`).trim()
+        return `<div class="spec">
+          <span class="name text-meta">${role}</span>
+          <span class="text-${role}">${sample}</span>
+          <span class="tuple text-meta">${px} / ${lh} · ${w} · ${tr}</span>
+        </div>`
+      }).join('')
+
+      const RAMPS = {
+        gray: [50, 100, 200, 300, 400, 500, 600, 700, 800, 850, 900, 950],
+        indigo: [100, 200, 400, 500, 600],
+        green: [100, 300, 500, 600, 700, 950],
+        amber: [100, 300, 500, 600, 700, 950],
+        red: [100, 300, 500, 600, 700, 950],
+      }
+      document.getElementById('ramps').innerHTML = Object.entries(RAMPS).map(
+        ([hue, steps]) => `<div class="chips" style="margin-bottom: var(--space-gap)">
+          ${steps.map(n => `<div class="chip">
+            <div class="sw" style="background: var(--${hue}-${n})"></div>
+            <span class="cap text-meta">${hue}-${n}</span>
+          </div>`).join('')}
+        </div>`,
+      ).join('')
+
+      const SEMANTIC = [
+        'background', 'card', 'popover', 'panel', 'inset', 'inset-hair', 'well',
+        'foreground', 'foreground-bright', 'foreground-soft', 'muted-foreground', 'foreground-faint',
+        'primary', 'primary-bright', 'primary-soft', 'accent', 'border', 'input', 'ring', 'destructive',
+        'status-working', 'status-idle', 'status-awaiting-input', 'status-exited', 'status-failed',
+        'status-done', 'status-landed',
+        'verdict-approve', 'verdict-changes', 'verdict-block',
+        'verdict-approve-tint', 'verdict-changes-tint', 'verdict-block-tint',
+        'signal-ok', 'signal-warn', 'signal-bad',
+      ]
+      const chipRow = (roles) => `<div class="chips">
+        ${roles.map(r => `<div class="chip">
+          <div class="sw" style="background: var(--${r})"></div>
+          <span class="cap text-meta">${r}</span>
+        </div>`).join('')}
+      </div>`
+      document.getElementById('semantic-dark').innerHTML = chipRow(SEMANTIC)
+      document.getElementById('semantic-light').innerHTML = chipRow(SEMANTIC)
+
+      const SPACING = ['hair', 'tight', 'snug', 'gap', 'inset', 'region']
+      document.getElementById('spacing').innerHTML = SPACING.map(
+        s => `<div style="display: flex; gap: var(--space-inset); align-items: center">
+          <span class="text-meta" style="width: 4rem; color: var(--foreground-faint)">${s}</span>
+          <div class="bar" style="width: calc(10 * var(--space-${s}))"></div>
+        </div>`,
+      ).join('')
+    </script>
+  </body>
+</html>

@@ -31,11 +31,23 @@
       "skillPath": "skills/engineering/codebase-design/SKILL.md",
       "computedHash": "6d9d51d8caa01633fd00cf87089c5618c982321f942ac69f62565dc001c6b22f"
     },
+    "componentize-design": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/componentize-design/SKILL.md",
+      "computedHash": "a0f48c7cf75007a72e231ee766033c258681d7247f936e8ae6df28e47f23f842"
+    },
     "design-an-interface": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/deprecated/design-an-interface/SKILL.md",
       "computedHash": "aef348a9af675b771635623b5aa7790da4d40adc1ee88b58b6fd116eda2047d8"
+    },
+    "design-foundations": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/design-foundations/SKILL.md",
+      "computedHash": "3062738cb361b6820e887366ef2da5f8406be7f449557e0eff63baa5df6609b8"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
@@ -54,11 +66,6 @@
       "sourceType": "github",
       "skillPath": "skills/personal/edit-article/SKILL.md",
       "computedHash": "cb2a13b2acb6c8a0706eb3a973a2681f30fd74c00784c74ceaa98e12eb2b2fc3"
-    },
-    "example-house-style": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
-      "sourceType": "local",
-      "computedHash": "ca4efdd96f79a9703dfd79f158cb724a5d2151bd0d0f13495acc81508ee89fcf"
     },
     "find-skills": {
       "source": "vercel-labs/skills",
@@ -109,8 +116,9 @@
       "computedHash": "2139cfedf24791adbc839aaab6019cff158af1e28bfead020ec6e0ce01b3e74d"
     },
     "implement-fanout": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
-      "sourceType": "local",
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/implement-fanout/SKILL.md",
       "computedHash": "080ddfcc229ec1dfb8acbdc797ee1d192d24a9ab519a2a12a495e67daeb7c97b"
     },
     "improve-codebase-architecture": {
@@ -174,19 +182,28 @@
       "computedHash": "354c91f6dbc9b058632f30594aacb4edc6d25012596585abb00402af8d7ec5e9"
     },
     "scaffold-project": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
-      "sourceType": "local",
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/scaffold-project/SKILL.md",
       "computedHash": "78e1290eb81c017948fe1c3438e30add2a13e5ca5697567a252a146f9dea6d44"
     },
     "setup-argo-skills": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
-      "sourceType": "local",
-      "computedHash": "03082418be24ac4ebba11b5b16cf26cbe9846fa340265176df36b9db241108c9"
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/setup-argo-skills/SKILL.md",
+      "computedHash": "69439ae7fc4f2913a80a0e0ebc91fbb7c1fc841e86f3d589f46222490e9e1e98"
+    },
+    "setup-design-handoff": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/setup-design-handoff/SKILL.md",
+      "computedHash": "211902854ea5403e0bb2e8257515582ba15309c3a2582e6c7268367e115c3efd"
     },
     "setup-graphify": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
-      "sourceType": "local",
-      "computedHash": "ace4292b5bf15f3f4eab88b27cceb041727c9e4f32256c487f8e046ad0dc5b56"
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/setup-graphify/SKILL.md",
+      "computedHash": "01f9b57359b9fe757515eaf316851031967e632b7f41923a40af6917ea0dcfe9"
     },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
@@ -195,9 +212,10 @@
       "computedHash": "74e894a3509e2676d4cdb771c8eace087092430635e845e02a9cc2f757c552a4"
     },
     "setup-module-boundaries": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
-      "sourceType": "local",
-      "computedHash": "975ad179666557f15fbcd6226da5c1b28940e9b69ecc2584a56ae03bd69ca8fb"
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/setup-module-boundaries/SKILL.md",
+      "computedHash": "ec135247c5fc83f382cd626ca912bb548a75467ed164bb2ddf13225814a28209"
     },
     "setup-pre-commit": {
       "source": "mattpocock/skills",
@@ -206,9 +224,10 @@
       "computedHash": "1b140af948d0a6330c4cf52d46ca2e06a0e96fdc34d22ec8888d2b9751b99b62"
     },
     "setup-rules": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
-      "sourceType": "local",
-      "computedHash": "af023273fc5286a6a3dcf58ee1907c8a5272920ed7d9f301632791c5a2a0c660"
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/setup-rules/SKILL.md",
+      "computedHash": "54b80b8d48c2bf193b6e5e8fe4bb1c237842db8e4560ae7cba99aea9fca2c7ca"
     },
     "setup-ts-deep-modules": {
       "source": "mattpocock/skills",

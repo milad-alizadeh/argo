@@ -6,8 +6,12 @@ dist/
 
 # Installed skill copies are throwaway outputs of `npx skills add` —
 # skills-lock.json is committed and restores them via `npx skills experimental_install`.
+# Shared project config (settings.json, output-styles) is real source — allowlisted;
+# settings.local.json stays personal and ignored.
 .agents/
 .claude/*
+!.claude/settings.json
+!.claude/output-styles/
 
 # graphify: commit the graph outputs (graph.json, graph.html, report, labels, manifest).
 # Ignore only what the pre-commit `update` never maintains — it would churn or go stale.
