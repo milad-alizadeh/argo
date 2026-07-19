@@ -1,28 +1,21 @@
 import { cn } from '@/lib/utils'
 import type { SessionStatus } from '@/sessionStore'
+import { SESSION_STATUS } from './sessionStatus'
 
-// Atom: a Session's live status as a coloured dot with an accessible name, so the
-// status is legible to sighted users (colour) and screen readers (label) alike.
-const STATUS: Record<SessionStatus, { tone: string; label: string }> = {
-  working: { tone: 'bg-status-working', label: 'Working' },
-  idle: { tone: 'bg-status-idle', label: 'Idle' },
-  'awaiting-input': { tone: 'bg-status-awaiting-input', label: 'Awaiting input' },
-  exited: { tone: 'bg-status-exited', label: 'Exited' },
-}
-
+// Atom: a Session's live status as a small glowing dot. Self-describing by default
+// (accessible name = the status); pass `decorative` when a visible status word already
+// labels it, so screen readers don't hear the status twice.
 export function StatusDot({
   status,
+  decorative = false,
   className,
 }: {
   status: SessionStatus
+  decorative?: boolean
   className?: string
 }): React.JSX.Element {
-  const { tone, label } = STATUS[status]
-  return (
-    <span
-      role="img"
-      aria-label={label}
-      className={cn('inline-block size-2 shrink-0 rounded-full', tone, className)}
-    />
-  )
+  const { dotClass, label } = SESSION_STATUS[status]
+  const dot = cn('inline-block size-2 shrink-0 rounded-full', dotClass, className)
+  if (decorative) return <span aria-hidden className={dot} />
+  return <span role="img" aria-label={label} className={dot} />
 }

@@ -23,7 +23,7 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
   `typescript-style.md`, `dependencies.md`
-- **UI work** — also `ui-components.md`, `design-system.md`, `design-wireframes.md`
+- **UI work** — also `ui-components.md`, `design-system.md`, `design-studies.md`
 
 ### Module boundaries
 

@@ -5,7 +5,6 @@ import { StatusDot } from './StatusDot'
 const meta = {
   title: 'Cockpit/StatusDot',
   component: StatusDot,
-  parameters: { layout: 'centered' },
 } satisfies Meta<typeof StatusDot>
 
 export default meta

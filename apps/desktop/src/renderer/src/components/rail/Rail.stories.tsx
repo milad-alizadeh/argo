@@ -34,7 +34,8 @@ export const SingleSession: Story = {
     const list = canvas.getByRole('list', { name: 'Sessions' })
     await expect(within(list).getByText('Refactor auth module')).toBeInTheDocument()
     await expect(within(list).getByText('claude')).toBeInTheDocument()
-    await expect(within(list).getByRole('img', { name: 'Working' })).toBeInTheDocument()
+    // The visible status word carries the status (the dot beside it is decorative).
+    await expect(within(list).getByText('Working')).toBeInTheDocument()
     await expect(canvas.queryByText('No Sessions observed yet.')).not.toBeInTheDocument()
   },
 }

@@ -85,7 +85,7 @@
   .proj{display:flex;align-items:center;gap:7px;padding:5px 14px;color:var(--txt);font-weight:600;font-size:12.5px;}
   .proj .n{color:var(--dimmer);font-weight:500;}
   .rail-scroll{flex:1;overflow:auto;padding:2px 10px 8px;}
-  .srow{display:block;background:var(--inset);border:1px solid var(--inset-hair);border-radius:10px;padding:8px 10px;margin:5px 0;cursor:pointer;transition:border-color .15s,background .15s;}
+  .srow{display:block;background:var(--inset);border:1px solid var(--inset-hair);border-radius:10px;padding:9px 11px;margin:6px 0;cursor:pointer;transition:border-color .15s,background .15s;}
   .srow:hover{background:rgba(246,240,230,0.04);}
   .srow.sel{border-color:color-mix(in srgb,var(--primary) 60%,transparent);background:linear-gradient(135deg, color-mix(in srgb, var(--primary) 22%, transparent), color-mix(in srgb, var(--primary) 4%, transparent));box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 30%,transparent);}
   .srow .t{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;} .srow .t .grow{flex:1;}
@@ -96,9 +96,11 @@
   .srow .ttl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .srow .t .stw{display:inline-flex;align-items:center;gap:5px;color:var(--dim);font-weight:500;font-size:10px;letter-spacing:.03em;flex:none;}
   .srow .t .stw.amber{color:var(--warning);} .srow .t .stw.red{color:var(--critical);}
-  .srow .slot{color:var(--dim);font-size:11px;margin:3px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .srow .meta{color:var(--dimmer);font-size:10.5px;font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .srow .ctxrow{display:flex;align-items:center;gap:7px;margin-top:7px;}
+  .srow .slot{color:var(--dim);font-size:11px;margin:6px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .srow .meta{color:var(--dimmer);font-size:10.5px;font-variant-numeric:tabular-nums;margin:4px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .srow .slot::first-letter,.srow .meta::first-letter{text-transform:uppercase;}
+  .srow .ctxrow{display:flex;align-items:center;gap:7px;margin:3px 0 0;}
+  .srow .ctxrow .ctxlbl{color:var(--dimmer);font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;flex:none;}
   .srow .ctxrow .ctxbar{flex:1;width:auto;}
   .srow .ctxrow .ctxpct{color:var(--dimmer);font-size:10px;font-variant-numeric:tabular-nums;flex:none;}
   .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none;}
@@ -541,11 +543,11 @@ const OUTCOMES=[
   {id:'o-rev',type:'review',auth:'skill',title:'Reviewer pass findings',prov:'auth-review.md',life:'done',artifacts:['review'],verdict:{cls:'changes',label:'2 findings'}},
 ];
 
-let sel='session', detailTab=null, showDetail=true, showNarr=false;
+let sel='session', detailTab=null, showDetail=true, showNarr=true;
 /* finding-walk state: findings default ON; walkIdx tracks the pager position;
    landStep drives the two-step Merge confirm. v5: activeTab drives the Activity
    column's Overview|Review tabs — the review is no longer a full-width takeover. */
-let showFindings=true, walkIdx=0, landStep=0, activeTab='review', focusFinding='f1';
+let walkIdx=0, landStep=0, activeTab='overview', focusFinding=null;
 const collapsed={}, termTall={v:false}, viewed={}, artOpen={};
 /* v4 state model per finding: 'open' → 'addressing' → 'fixed'. `open` default.
    `addressing` is a PENDING state (Argo was dispatched to fix; not confirmed);
@@ -568,8 +570,8 @@ function railHtml(){
   const s=SESSIONS.map(s=>{const word=DOT_WORD[s.dot]||'';const sic=s.act||STATE_ICON[s.dot]||'circle';return `<div class="srow ${s.sel?'sel':''}" tabindex="0" role="button">
     <div class="t"><span class="sic ${s.dot}" title="${word}" aria-label="${word}">${ic(sic)}</span><span class="ttl" title="${s.title}">${s.title}</span><span class="grow"></span><span class="stw ${s.dot}">${word} <span class="dot ${s.dot}"></span></span></div>
     <div class="slot" title="${s.slot}">${s.slot}</div>
-    <div class="meta" title="${s.meta}">${s.meta}</div>
-    <div class="ctxrow"><span class="ctxbar" title="context window used (estimated)"><span style="width:${s.ctx}%"></span></span><span class="ctxpct derived" title="estimated from token usage ÷ model context window">~${s.ctx}%</span></div></div>`;}).join('');
+    <div class="ctxrow"><span class="ctxlbl">CTX</span><span class="ctxbar" title="context window used (estimated)"><span style="width:${s.ctx}%"></span></span><span class="ctxpct" title="estimated from token usage ÷ model context window">~${s.ctx}%</span></div>
+    <div class="meta" title="${s.meta}">${s.meta}</div></div>`;}).join('');
   return `<div class="panel rail">
     <div class="rail-h">Projects <span class="plus">${ic('plus')}</span></div>
     <div class="proj">${ic('caret-down')} argo &nbsp;<span class="n">· ${SESSIONS.length}${needsYou?` · ${needsYou} needs you`:''}</span></div>
@@ -649,12 +651,12 @@ function summaryHtml(){
   const olist=OUTCOMES.map((o,i)=>({o,i})).sort((a,b)=>orank(a.o)-orank(b.o)||a.i-b.i).map(x=>x.o);
   return `<div class="inset">${olist.map(outcomeRow).join('')}</div>`;
 }
-/* lean: the play-by-play (agent messages + tools) is collapsed by default —
+/* lean: the timeline (agent messages + tools) is collapsed by default —
    Outcomes is the spine; open this only when you want the retelling. */
 function narrHtml(){
   const n=MSGS.length;
-  if(!showNarr) return `<div class="sumpeer" onclick="toggleNarr()" style="margin-top:4px"><span>Show play-by-play</span><span class="grow"></span><span class="meta">${n} messages</span><span class="go">${ic('caret-right')}</span></div>`;
-  return `<div class="sumpeer" onclick="toggleNarr()" style="margin-top:4px"><span>Play-by-play</span><span class="grow"></span><span class="meta">${n} messages</span><span class="go">${ic('caret-down')}</span></div>
+  if(!showNarr) return `<div class="sumpeer" onclick="toggleNarr()" style="margin-top:4px"><span>Timeline</span><span class="grow"></span><span class="meta">${n} steps</span><span class="go">${ic('caret-right')}</span></div>`;
+  return `<div class="sumpeer" onclick="toggleNarr()" style="margin-top:4px"><span>Timeline</span><span class="grow"></span><span class="meta">${n} steps</span><span class="go">${ic('caret-down')}</span></div>
     <div class="inset pad0" style="padding:8px 6px">${MSGS.map(msgHtml).join('')}</div>`;
 }
 
@@ -685,7 +687,7 @@ function msgHtml(m){
 }
 
 /* Overview tab — the unchanged Activity content (now-line, Checks, Outcomes,
-   collapsed play-by-play). */
+   collapsed timeline). */
 function overviewHtml(){
   return `${nowHtml()}
       <div class="sect-h">Checks</div>
@@ -751,7 +753,7 @@ function addressBtn(id,st,extra){
 function findingCard(f){
   const st=findingStatus[f.id], fixed=st==='fixed';
   const sev=f.severity==='blocking'?'blocking':'advisory';
-  const focus=showFindings&&FINDINGS[walkIdx]&&FINDINGS[walkIdx].id===f.id;
+  const focus=FINDINGS[walkIdx]&&FINDINGS[walkIdx].id===f.id;
   const glyph=f.severity==='blocking'?'▲':'◆';
   return `<div id="fc-${f.id}" class="finding sev-${sev} ${fixed?'resolved':''} ${focus?'walk-focus':''}">
     <div class="fhead">
@@ -770,7 +772,7 @@ function fileDiff(gkey,f){
   const openN=fnd.filter(x=>findingStatus[x.id]!=='fixed').length;
   const flag=fnd.length?`<span class="flag" title="${fnd.length} review finding${fnd.length>1?'s':''} on this file">${ic('flag')} ${openN||fnd.length}</span>`:'';
   /* subtle: a thin marker per finding — the detail lives on the Review tab, not wedged in the code */
-  const marks=(showFindings&&fnd.length&&!isViewed)?`<div class="fmarks">${fnd.map(x=>{const st=findingStatus[x.id],done=st==='fixed',sv=x.severity==='blocking'?'block':'changes';return `<div id="fm-${x.id}" class="fmark sev-${sv} ${done?'done':''}" onclick="openFindingInReview('${x.id}')" tabindex="0" role="button" title="open this finding in the Review tab"><span class="fm-bar"></span><span class="fm-lbl">${done?'fixed':x.severity} · :${x.line}</span><span class="grow"></span><span class="fm-go">review ${ic('caret-right')}</span></div>`;}).join('')}</div>`:'';
+  const marks=(fnd.length&&!isViewed)?`<div class="fmarks">${fnd.map(x=>{const st=findingStatus[x.id],done=st==='fixed',sv=x.severity==='blocking'?'block':'changes';return `<div id="fm-${x.id}" class="fmark sev-${sv} ${done?'done':''}" onclick="openFindingInReview('${x.id}')" tabindex="0" role="button" title="open this finding in the Review tab"><span class="fm-bar"></span><span class="fm-lbl">${done?'fixed':x.severity} · :${x.line}</span><span class="grow"></span><span class="fm-go">review ${ic('caret-right')}</span></div>`;}).join('')}</div>`:'';
   return `<div class="inset fdiff pad0 ${isViewed?'viewed-on':''}">
     <div class="fdhead" onclick="toggleView('${key}')">
       <span class="fkind" title="${({M:'modified',A:'added',D:'deleted',R:'renamed'})[f.k]||f.k}">${ic(({M:'file-text',A:'file-plus',D:'file-minus',R:'file-text'})[f.k]||'file-text')}</span><span class="fpath">${f.p}</span><span class="grow"></span>
@@ -938,16 +940,14 @@ function detailHtml(){
   const modelFiles=m.files||[];
   const hasFindings=modelFiles.some(f=>findingsFor(f.p).length);
   const pager=hasFindings?fwalkHtml():'';
-  const fToggle=hasFindings?`<span class="dtab ${showFindings?'on':''}" onclick="toggleFindings()" title="show / hide inline review findings">${ic('binoculars')} Findings</span>`:'';
   return `<div class="region detail">
     <div class="rhead"><span class="icon">${ic('git-diff')}</span><span class="name">${m.title}</span><span class="grow"></span></div>
-    <div class="dtabs">${tabsHtml}${fToggle}${jump}</div>
+    <div class="dtabs">${tabsHtml}${jump}</div>
     <div class="rscroll">${body}</div></div>`;
 }
 
 /* finding-walk pager — the (visual) walk control across all findings */
 function fwalkHtml(){
-  if(!showFindings) return `<span class="fwalk" style="opacity:.5">findings hidden</span>`;
   const n=FINDINGS.length, cur=Math.min(walkIdx,n-1)+1;
   const done=openFindings()===0;
   return `<span class="fwalk">
@@ -997,8 +997,7 @@ function toggleNarr(){showNarr=!showNarr;render();}
 function setActiveTab(t){activeTab=t;render();}
 /* Enter the Review tab: switch the Activity column to it, keep the whole
    change-set diff visible in Detail (findings on) — no takeover. */
-function openReview(){activeTab='review';sel='session';showDetail=true;showFindings=true;walkIdx=0;landStep=0;render();}
-function toggleFindings(){showFindings=!showFindings;render();}
+function openReview(){activeTab='review';sel='session';showDetail=true;walkIdx=0;landStep=0;render();}
 /* subtle diff marker → jump to this finding's card on the Review tab (the home). */
 function openFindingInReview(id){activeTab='review';focusFinding=id;const i=FINDINGS.findIndex(f=>f.id===id);if(i>=0)walkIdx=i;render();requestAnimationFrame(()=>{const el=document.getElementById('rv-'+id);if(el)el.scrollIntoView({block:'center',behavior:'smooth'});});}
 /* Address button: walk Open → Addressing → Fixed (Fixed → Open reopens). */
@@ -1015,7 +1014,7 @@ function reReview(){render();}
 /* → diff: select the finding's file in Detail (whole change-set diff, findings
    on) and scroll to its inline card — findings (Activity) beside code (Detail). */
 function gotoDiff(id){const f=FINDINGS.find(x=>x.id===id);if(!f)return;
-  sel='session';showDetail=true;showFindings=true;const i=FINDINGS.findIndex(x=>x.id===id);if(i>=0)walkIdx=i;
+  sel='session';showDetail=true;const i=FINDINGS.findIndex(x=>x.id===id);if(i>=0)walkIdx=i;
   render();requestAnimationFrame(()=>{const el=document.getElementById('fm-'+id);if(el)el.scrollIntoView({block:'center',behavior:'smooth'});});}
 function walkNext(){walkIdx=(walkIdx+1)%FINDINGS.length;render();scrollToWalk();}
 function walkPrev(){walkIdx=(walkIdx-1+FINDINGS.length)%FINDINGS.length;render();scrollToWalk();}
@@ -1024,7 +1023,7 @@ function armLand(){if(landStep===0){landStep=1;}else{landStep=0;/* prototype: no
 function cancelLand(){landStep=0;render();}
 function expandTerm(){termTall.v=!termTall.v;document.documentElement.style.setProperty('--r-term',termTall.v?'44vh':'170px');render();}
 Object.assign(window,{pick,toggleArt,openArtifact,setTab,toggleMsg,toggleView,toggleNarr,toggleDetail,expandTerm,
-  setActiveTab,openReview,openFindingInReview,toggleFindings,toggleFinding,advanceFinding,addressAll,reReview,gotoDiff,
+  setActiveTab,openReview,openFindingInReview,toggleFinding,advanceFinding,addressAll,reReview,gotoDiff,
   walkNext,walkPrev,armLand,cancelLand});
 
 function wireSplitters(){

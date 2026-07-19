@@ -1,6 +1,6 @@
-# Wireframes
+# Designs
 
-Committed design studies for the Argo cockpit. These are static HTML prototypes —
+Committed design studies for the Argo cockpit. These are high-fidelity static HTML designs —
 open any file in a browser. They are the **agreed-latest** set; superseded drafts
 (v0–v6, palette explorations, fleet variants) were pruned rather than kept.
 
@@ -13,8 +13,6 @@ the code knowledge graph.
 |---|---|---|
 | `cockpit-v7-phosphor.html` | Single-session cockpit — session/work view | v7, phosphor treatment |
 | `cockpit-v7-narrative.html` | Single-session cockpit — narrative view | v7, narrative treatment |
-| `cockpit-finding-clicked.html` | Cockpit — review finding opened | v7 state |
-| `cockpit-findings-off.html` | Cockpit — findings resolved/off | v7 state |
 | `workflow-fanout-v2.html` | Workflow fan-out | v2 |
 | `orchestrator-v2.html` | Orchestrator | v2 |
 | `codex-v2.html` | Codex turn timeline | v2 |

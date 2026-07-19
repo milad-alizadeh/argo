@@ -1,16 +1,16 @@
 # Graph Report - argo  (2026-07-19)
 
 ## Corpus Check
-- 50 files · ~7,026 words
+- 52 files · ~7,318 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 356 nodes · 418 edges · 47 communities (16 shown, 31 thin omitted)
+- 360 nodes · 427 edges · 48 communities (17 shown, 31 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `214315e4`
+- Built from commit: `d2201b25`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -62,7 +62,7 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `scripts` - 14 edges
-2. `scripts` - 12 edges
+2. `scripts` - 13 edges
 3. `tasks` - 11 edges
 4. `include` - 9 edges
 5. `ProjectionDelta` - 8 edges
@@ -87,15 +87,15 @@
 ## Import Cycles
 - None detected.
 
-## Communities (47 total, 31 thin omitted)
+## Communities (48 total, 31 thin omitted)
 
 ### Community 0 - "biome.json"
 Cohesion: 0.06
-Nodes (31): source, assist, actions, enabled, css, parser, files, ignoreUnknown (+23 more)
+Nodes (32): source, assist, actions, enabled, css, parser, files, ignoreUnknown (+24 more)
 
 ### Community 1 - "scripts"
-Cohesion: 0.07
-Nodes (29): @biomejs/biome, husky, lint-staged, bin, argo, devDependencies, @biomejs/biome, husky (+21 more)
+Cohesion: 0.06
+Nodes (30): @biomejs/biome, husky, lint-staged, bin, argo, devDependencies, @biomejs/biome, husky (+22 more)
 
 ### Community 2 - "tasks"
 Cohesion: 0.07
@@ -106,7 +106,7 @@ Cohesion: 0.10
 Nodes (20): description, main, name, private, scripts, boundaries, build, build-storybook (+12 more)
 
 ### Community 4 - "button.stories.tsx"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (18): Button(), buttonVariants, Default, Destructive, Disabled, Ghost, Outline, Small (+10 more)
 
 ### Community 5 - "dependencies"
@@ -127,22 +127,22 @@ Nodes (15): compilerOptions, baseUrl, composite, jsx, paths, extends, include, s
 
 ### Community 9 - "devDependencies"
 Cohesion: 0.22
-Nodes (9): devDependencies, electron-builder, playwright, react, react-dom, electron-builder, playwright, react (+1 more)
+Nodes (9): devDependencies, electron-builder, electron-vite, react, react-dom, electron-builder, electron-vite, react (+1 more)
 
 ### Community 10 - "tsconfig.json"
 Cohesion: 0.33
 Nodes (5): compilerOptions, baseUrl, paths, files, references
 
 ### Community 14 - "electron"
-Cohesion: 0.16
-Nodes (12): App(), ADR-0005, EmptyRail(), Rail(), Empty, oneSession, SingleSession, Story (+4 more)
+Cohesion: 0.15
+Nodes (13): App(), ADR-0005, EmptyRail(), Rail(), Empty, oneSession, SingleSession, Story (+5 more)
 
 ### Community 39 - "index.ts"
 Cohesion: 0.09
-Nodes (26): seedDemoSession(), createHub(), Hub, ProjectionListener, ADR-0005, ADR-0005, ADR-0005, wireProjection() (+18 more)
+Nodes (25): seedDemoSession(), createHub(), Hub, ProjectionListener, ADR-0005, ADR-0005, ADR-0005, wireProjection() (+17 more)
 
 ## Knowledge Gaps
-- **186 isolated node(s):** `*.css`, `projectRoot`, `config`, `preview`, `$schema` (+181 more)
+- **187 isolated node(s):** `*.css`, `projectRoot`, `config`, `preview`, `$schema` (+182 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **31 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -150,15 +150,15 @@ Nodes (26): seedDemoSession(), createHub(), Hub, ProjectionListener, ADR-0005, A
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `scripts`, `@chromatic-com/storybook`, `@electron-toolkit/tsconfig`, `electron-vite`, `@playwright/test`, `react`, `react-dom`, `storybook`, `@storybook/addon-a11y`, `@storybook/addon-docs`, `@storybook/addon-mcp`, `@storybook/addon-vitest`, `@storybook/react-vite`, `tailwindcss`, `@tailwindcss/vite`, `tw-animate-css`, `@types/node`, `@types/react`, `@types/react-dom`, `typescript`, `vite`, `@vitejs/plugin-react`, `vitest`, `@vitest/coverage-v8`, `index.ts`?**
-  _High betweenness centrality (0.061) - this node is a cross-community bridge._
+  _High betweenness centrality (0.060) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `dependencies` to `scripts`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
+  _High betweenness centrality (0.027) - this node is a cross-community bridge._
 - **What connects `*.css`, `projectRoot`, `config` to the rest of the system?**
-  _186 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _187 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `biome.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.0625 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06060606060606061 - nodes in this community are weakly interconnected._
 - **Should `scripts` be split into smaller, more focused modules?**
-  _Cohesion score 0.06666666666666667 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06451612903225806 - nodes in this community are weakly interconnected._
 - **Should `tasks` be split into smaller, more focused modules?**
   _Cohesion score 0.07389162561576355 - nodes in this community are weakly interconnected._
 - **Should `scripts` be split into smaller, more focused modules?**

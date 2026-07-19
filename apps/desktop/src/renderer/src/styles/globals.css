@@ -27,6 +27,10 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  --color-panel: var(--panel);
+  --color-inset: var(--inset);
+  --color-inset-hair: var(--inset-hair);
+
   --color-status-working: var(--status-working);
   --color-status-idle: var(--status-idle);
   --color-status-awaiting-input: var(--status-awaiting-input);

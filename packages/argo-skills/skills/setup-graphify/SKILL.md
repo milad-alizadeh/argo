@@ -1,6 +1,6 @@
 ---
 name: setup-graphify
-description: Make graphify plug-and-play in the current repo. Installs graphify latest, wires its agent integration through the official channels, and sets up a self-maintaining committed knowledge graph — refreshed inside every commit, communities named deterministically (no LLM, no key), code-only, and conflict-free across worktrees/PRs. Project-agnostic and agent-agnostic; run once per repo.
+description: Make graphify plug-and-play in the current repo. Installs graphify latest, wires its agent integration through the official channels, and sets up a self-maintaining committed knowledge graph — refreshed inside every commit, communities named deterministically (no LLM, no key), code-only, and conflict-free across worktrees/PRs. Project-agnostic and agent-agnostic. Usually dispatched by the /setup-argo-skills wizard; run directly to (re)install just this piece.
 disable-model-invocation: true
 ---
 

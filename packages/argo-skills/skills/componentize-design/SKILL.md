@@ -1,0 +1,106 @@
+---
+name: componentize-design
+description: Turn a settled HTML design study into properly componentized app code — settle its raw values into the token contract, extract a component inventory (atoms → molecules → organisms → screen), then scaffold each tier bottom-up with typed Views and all-props Storybook stories. Use when the user wants to build a design, componentize or settle a study, or transfer a design study HTML file into the app.
+---
+
+# Componentize Design
+
+Input: one settled study in the repo's design-studies directory (see the
+`design-studies` rule — typically `docs/designs/`). Output: the design rebuilt as
+real components in dependency order, with a written inventory as the durable
+contract. The HTML is visual truth; the inventory is build truth — never build a
+component by eyeballing the HTML and guessing its boundaries.
+
+The study is a **disposable spec, not source**. Its markup and CSS are never
+ported; only its decisions survive, as tokens and inventory rows.
+
+## 1. Settle the tokens — no code yet
+
+The study was allowed to invent values while exploring. Before anything is built,
+every raw value in it must either **snap** to an existing token or be **promoted**
+to a new named one. Nothing stays raw.
+
+1. Locate the token contract: the file the `design-system` rule names as the
+   single source of raw values (the CSS custom-property file feeding Tailwind's
+   `@theme`, a Tamagui `createTokens` source, or the project's DTCG `tokens.json`).
+2. Dump the study's used values (colors, font sizes, spacing, radii, durations) —
+   e.g. `grep -oE 'font-size:\s*[^;]+' <study>.html | sort | uniq -c` and
+   equivalents per property.
+3. For each distinct value: **snap** it to the nearest existing token (exploration
+   jitter — 11px vs 11.5px — collapses here), or **promote** it to a new token
+   named by *role*, never by value (`--text-label`, not `--text-10-5`). Typography
+   roles are full tuples: size + line-height + weight + tracking.
+4. Land promotions in the token contract (all theme variants) and its framework
+   wiring in the same change.
+
+Show the user the snap/promote table before proceeding — collapsing near-duplicate
+values changes how the built UI looks in the small; they should see what moved.
+
+## 2. Inventory — still no code
+
+Read the study, the design-studies README, the token contract, and the repo's
+`ui-components` rule. Decompose the screen into one table row per component:
+
+| Column | Meaning |
+|---|---|
+| name | component name = the file to create (or the existing one to reuse) |
+| tier | atom / molecule / organism / screen |
+| props | full contract: every prop, its type, enum variants, states |
+| composed-of | which lower-tier rows it renders |
+| source | anchor in the study: its `data-component` attribute, else a CSS class (e.g. `.srow`) |
+
+While decomposing:
+
+- **Reuse before invent** — check the project's UI primitives directory first;
+  point rows at existing components rather than duplicating them.
+- **Every repeated shape in the HTML is one row**, listed once.
+- **Props come from the study itself** — its data objects (e.g. a `SESSIONS`
+  array) and its CSS variant classes (`.sel`, `.amber`, …), not from guesses. A
+  variant class is an enum prop; a data field is a value prop.
+- **Names are frozen here.** The name in this table is the component's name in
+  the codebase, in stories, and in tickets — renaming later is a migration, not
+  a whim.
+
+Write the table next to the study (`<study>.inventory.md`, linked from the design
+README). **Show the user the inventory and get a nod before scaffolding** — this
+is the one checkpoint; everything after is mechanical.
+
+## 3. Ticket or build
+
+Two ways to consume the inventory — pick with the user:
+
+- **Build now** (default for a single screen): continue to step 4 in this session.
+- **Ticket it** (bigger surface, or work split across sessions/agents): run
+  `/to-tickets` over the inventory. One ticket per organism/screen; shared new
+  atoms/molecules become their own tickets, `Blocked by:` edges follow
+  `composed-of`. Because names and tokens are already frozen, leaf tickets with no
+  shared rows are safe for `/implement-fanout`; the rest run serially via
+  `/implement`. Each ticket body links the study file, the inventory row, and the
+  token contract — a fresh context needs nothing else.
+
+## 4. Build bottom-up
+
+Strict order: atoms → molecules → organisms → screen View. Never start a row
+before its `composed-of` rows are done. For each row:
+
+1. The component, per the repo's `ui-components` + `design-system` rules: tokens
+   only, one tier per file, interactive primitives wrap the project's headless-UI
+   library, re-export from the UI barrel.
+2. Colocated `*.stories.tsx` covering **all props** — every enum variant, both
+   sides of each boolean, loading/empty/error states, edges — per the Storybook
+   section of the `ui-components` rule (when the project has Storybook).
+3. Tick the row in the inventory before moving up a tier.
+
+The screen ships as container/View; only the **View** comes from the design — the
+container wires real data later and is out of scope here.
+
+## 5. Verify against the design
+
+- Screenshot the study headless (Chrome command in the design README) and the
+  built screen/story; compare side by side. Divergence is fixed in the component —
+  or, if the design was wrong, in the study, in the same change.
+- Run the repo's lint and test commands (wrapped per the repo's tooling rules);
+  if a design-token check script is installed, it must pass.
+
+A row is done only when: component + all-props stories + visual parity + green
+checks.

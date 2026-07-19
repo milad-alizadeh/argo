@@ -3,6 +3,11 @@
  * globals.css imports this and maps these onto Tailwind's @theme. shadcn/ui semantic
  * roles resolve to these variables; do not hardcode colours in components.
  *
+ * Palette follows the agreed high-fidelity cockpit design (docs/designs/cockpit-v7-phosphor):
+ * a warm near-black graphite with a single indigo accent, one frosted `panel` surface per
+ * region and flat `inset` cards inside it (never glass-on-glass). Status is carried by a
+ * disjoint set of state colours.
+ *
  * Orientation follows the shadcn convention: :root is light, `.dark` is dark. The Cockpit
  * is dark-first, so index.html sets `<html class="dark">` — but keeping the `.dark` mechanism
  * live is what makes shadcn's `dark:` utility variants work.
@@ -10,72 +15,81 @@
 :root {
   --radius: 0.625rem;
 
-  --background: oklch(0.99 0.002 285);
-  --foreground: oklch(0.17 0.006 285);
+  --background: #f7f4ef;
+  --foreground: #1c1813;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.17 0.006 285);
+  --card: #ffffff;
+  --card-foreground: #1c1813;
 
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.17 0.006 285);
+  --popover: #ffffff;
+  --popover-foreground: #1c1813;
 
-  --primary: oklch(0.55 0.13 215);
-  --primary-foreground: oklch(0.99 0.002 285);
+  --primary: #4a5ee0;
+  --primary-foreground: #ffffff;
 
-  --secondary: oklch(0.96 0.004 285);
-  --secondary-foreground: oklch(0.21 0.006 285);
+  --secondary: #efeae1;
+  --secondary-foreground: #1c1813;
 
-  --muted: oklch(0.96 0.004 285);
-  --muted-foreground: oklch(0.53 0.006 285);
+  --muted: #efeae1;
+  --muted-foreground: #6b645a;
 
-  --accent: oklch(0.96 0.004 285);
-  --accent-foreground: oklch(0.21 0.006 285);
+  --accent: rgba(28, 24, 19, 0.04);
+  --accent-foreground: #1c1813;
 
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.99 0.002 285);
+  --destructive: #dc3b34;
+  --destructive-foreground: #ffffff;
 
-  --border: oklch(0.2 0.006 285 / 12%);
-  --input: oklch(0.2 0.006 285 / 16%);
-  --ring: oklch(0.55 0.13 215);
+  --border: rgba(28, 24, 19, 0.1);
+  --input: rgba(28, 24, 19, 0.14);
+  --ring: #4a5ee0;
 
-  /* Session status — calm, disjoint from destructive (red is reserved for failure). */
-  --status-working: oklch(0.6 0.15 230);
-  --status-idle: oklch(0.65 0.02 285);
-  --status-awaiting-input: oklch(0.68 0.15 75);
-  --status-exited: oklch(0.72 0.01 285);
+  /* One frosted surface per region (panel); flat inset cards live inside it. */
+  --panel: rgba(255, 255, 255, 0.6);
+  --inset: rgba(28, 24, 19, 0.02);
+  --inset-hair: rgba(28, 24, 19, 0.07);
+
+  /* Session status — calm, disjoint; indigo=working, amber=needs-you, red reserved for failure. */
+  --status-working: #4a5ee0;
+  --status-idle: #8b8377;
+  --status-awaiting-input: #d98a1f;
+  --status-exited: #6b645a;
 }
 
 .dark {
-  --background: oklch(0.16 0.006 285);
-  --foreground: oklch(0.97 0.002 285);
+  --background: #0b0a08;
+  --foreground: #efece6;
 
-  --card: oklch(0.2 0.006 285);
-  --card-foreground: oklch(0.97 0.002 285);
+  --card: #16130f;
+  --card-foreground: #efece6;
 
-  --popover: oklch(0.2 0.006 285);
-  --popover-foreground: oklch(0.97 0.002 285);
+  --popover: #16130f;
+  --popover-foreground: #efece6;
 
-  --primary: oklch(0.72 0.13 215);
-  --primary-foreground: oklch(0.16 0.006 285);
+  --primary: #5468ea;
+  --primary-foreground: #efece6;
 
-  --secondary: oklch(0.27 0.006 285);
-  --secondary-foreground: oklch(0.97 0.002 285);
+  --secondary: #211d17;
+  --secondary-foreground: #efece6;
 
-  --muted: oklch(0.27 0.006 285);
-  --muted-foreground: oklch(0.68 0.006 285);
+  --muted: #211d17;
+  --muted-foreground: #9a938a;
 
-  --accent: oklch(0.27 0.006 285);
-  --accent-foreground: oklch(0.97 0.002 285);
+  --accent: rgba(246, 240, 230, 0.05);
+  --accent-foreground: #efece6;
 
-  --destructive: oklch(0.62 0.21 25);
-  --destructive-foreground: oklch(0.97 0.002 285);
+  --destructive: #f5564f;
+  --destructive-foreground: #efece6;
 
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.72 0.13 215);
+  --border: rgba(246, 240, 230, 0.09);
+  --input: rgba(246, 240, 230, 0.13);
+  --ring: #5468ea;
 
-  --status-working: oklch(0.72 0.15 230);
-  --status-idle: oklch(0.55 0.02 285);
-  --status-awaiting-input: oklch(0.78 0.15 75);
-  --status-exited: oklch(0.45 0.01 285);
+  --panel: rgba(22, 19, 15, 0.55);
+  --inset: rgba(246, 240, 230, 0.022);
+  --inset-hair: rgba(246, 240, 230, 0.065);
+
+  --status-working: #5468ea;
+  --status-idle: #8b8377;
+  --status-awaiting-input: #f6b23c;
+  --status-exited: #9a938a;
 }

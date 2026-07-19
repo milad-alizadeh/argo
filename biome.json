@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!graphify-out"]
+    "includes": ["**", "!graphify-out", "!docs"]
   },
   "formatter": {
     "enabled": true,

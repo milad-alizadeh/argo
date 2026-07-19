@@ -1,0 +1,22 @@
+# Mechanical design-token check for the renderer. Fails the PR when a design
+# constant escapes the token contract (raw hex, Tailwind arbitrary value) —
+# see rules/design-system.md. Pure grep: no toolchain setup needed.
+name: design-tokens
+
+on:
+  pull_request:
+    paths:
+      - "apps/desktop/src/renderer/**"
+      - "scripts/check-design-tokens.sh"
+      - ".github/workflows/design-tokens.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/desktop/src/renderer/**"
+
+jobs:
+  design-tokens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sh scripts/check-design-tokens.sh

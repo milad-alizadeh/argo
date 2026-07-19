@@ -33,6 +33,28 @@ utility class through the `@theme inline` block in `styles/globals.css`.
 - Prefer the shadcn semantic roles (`background`, `foreground`, `muted`, `border`, …)
   that already resolve to these variables over inventing a parallel token.
 
+## Roles, not values — typography and spacing
+
+Tokens are named by **role** (`--text-label`, `--space-inset`), never by their
+value (`--text-10-5`, `--space-7px`). Role names are what survive a redesign and
+what carry a design across frameworks; value names are drift with extra steps.
+
+- A typography role is the **full tuple** — size + line-height + weight +
+  letter-spacing — not just a font size. Components use the role's utility
+  (`text-label`), never a raw size, and never Tailwind arbitrary values
+  (`text-[13px]`, `p-[7px]`, `bg-[#4a5ee0]` are all forbidden in components).
+- The set of roles is deliberately small (roughly: micro / label / body /
+  body-lg / title / display). A new role needs a reason an existing one can't
+  cover — "this looked 0.5px better in one spot" is a snap, not a new role.
+
+## Drift — fix the contract, not the symptom
+
+When you find a raw value in a component (yours or inherited), the fix is never
+local: snap it to an existing token or promote it into `argo-tokens.css`, then
+use the utility. Patching one component while the raw value's siblings survive
+elsewhere is how the system rots. Same rule for the AI: when output drifts,
+correct the token contract or the rules — not the one offending line.
+
 ## Rule 2 — Classes/utilities, never inline styles
 
 Style with `className` and Tailwind utilities. **Do not** use static `style={{ ... }}`
@@ -65,8 +87,10 @@ magic numbers inline.
 ## Checklist before you finish styling work
 
 - [ ] No hex/rgb/px/rem/ms literals (except token defs in `argo-tokens.css`).
+- [ ] No Tailwind arbitrary values (`*-[...]`) carrying a design constant.
 - [ ] No inline `style={{}}` except the two escape hatches above, each commented.
 - [ ] Any new visual value added to `argo-tokens.css` + mapped in `globals.css` first.
+- [ ] `bun run check:design-tokens` passes (mechanical version of the above).
 - [ ] Typecheck succeeds.
 
 ## Figma canvas work
