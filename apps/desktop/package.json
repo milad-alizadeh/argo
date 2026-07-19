@@ -13,7 +13,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "bun run typecheck:node && bun run typecheck:web",
     "lint": "biome check .",
-    "boundaries": "depcruise --config .dependency-cruiser.cjs src",
+    "boundaries": "bun --bun x depcruise --config scripts/dependency-cruiser.cjs src",
     "format": "biome format --write .",
     "test": "vitest run --project=unit",
     "test:stories": "vitest run --project=storybook",

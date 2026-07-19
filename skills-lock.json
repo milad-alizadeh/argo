@@ -183,6 +183,11 @@
       "sourceType": "local",
       "computedHash": "03082418be24ac4ebba11b5b16cf26cbe9846fa340265176df36b9db241108c9"
     },
+    "setup-graphify": {
+      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
+      "sourceType": "local",
+      "computedHash": "ace4292b5bf15f3f4eab88b27cceb041727c9e4f32256c487f8e046ad0dc5b56"
+    },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
       "sourceType": "github",

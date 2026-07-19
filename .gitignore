@@ -10,3 +10,7 @@ dist/
 .claude/*
 # House rules are authored, not installed — keep them tracked.
 !.claude/rules/
+
+# graphify: commit graph.json + labels + report; ignore the heavy viz + cache
+graphify-out/graph.html
+graphify-out/*/

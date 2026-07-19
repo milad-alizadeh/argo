@@ -1,4 +1,0 @@
-# Husky owns core.hooksPath, which shadows .git/hooks/. graphify installs its
-# post-commit graph-refresh hook there (with a machine-specific interpreter path,
-# so it stays local and untracked). Forward to it if present; no-op otherwise.
-[ -x .git/hooks/post-commit ] && .git/hooks/post-commit

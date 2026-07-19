@@ -69,19 +69,32 @@ checker that can never fire.
 
 ## 3. Materialize the checker
 
+The config lives in a **`scripts/` folder inside the workspace** (`<workspace>/scripts/`), not
+at the workspace root — the boundary map is tooling, and tooling shouldn't clutter the root.
 Per workspace being protected:
 
-1. Copy `templates/module-boundaries.json` → the workspace root and fill in the real map
-   from step 2. Delete the `example-*` entries.
-2. Copy `templates/dependency-cruiser.cjs` → `.dependency-cruiser.cjs` **verbatim** next to
-   the map. It `require`s the map; you should never need to edit it. (If the map lives at a
-   non-default path, adjust the one `require` line — that's the only permitted edit.)
-3. Install the engine as a dev dependency:
-   `<pm> add -D dependency-cruiser` (in the workspace).
-4. Add a package script:
-   `"boundaries": "depcruise --config .dependency-cruiser.cjs --ignore-known .dependency-cruiser-known-violations.json <src-dirs>"`
-   where `<src-dirs>` is the source root(s) to scan (e.g. `src`). Add a root aggregate script
-   if the repo uses turbo/nx (`turbo run boundaries`).
+1. Create `<workspace>/scripts/` if absent. Copy `templates/module-boundaries.json` →
+   `<workspace>/scripts/module-boundaries.json` and fill in the real map from step 2. Delete
+   the `example-*` entries.
+2. Copy `templates/dependency-cruiser.cjs` → `<workspace>/scripts/dependency-cruiser.cjs`
+   **verbatim**. It `require`s `./module-boundaries.json` (colocated in the same `scripts/`
+   folder) — you should never need to edit it.
+3. Path conventions, because the config sits one level down in `scripts/`:
+   - Run depcruise from the **workspace root** (cwd), scanning `src`. Then the map's
+     `path`/`publicEntry` regexes (`^src/…`) and `tsConfig` (e.g. `tsconfig.json`) stay
+     workspace-root-relative — depcruise resolves `tsConfig` and scan paths against the cwd,
+     not the config's location. Only the `--config` path points into `scripts/`.
+4. Install the engine as a dev dependency: `<pm> add -D dependency-cruiser` (from the repo
+   root in a workspaces monorepo, targeting the workspace, so the single root lockfile stays
+   authoritative).
+5. Add a package script that runs under a supported runtime. depcruise needs Node semantics
+   22/24/26; **bun satisfies this** (its `process.versions.node` is ≥24) — but only when bun
+   *runs* depcruise, so force the bun runtime instead of letting the `node` shebang shell out
+   to a stray system Node:
+   `"boundaries": "bun --bun x depcruise --config scripts/dependency-cruiser.cjs src"`
+   (npm/pnpm/yarn just use `depcruise --config scripts/dependency-cruiser.cjs src` — their
+   node runtime already applies). Add a root aggregate script for turbo/nx (`turbo run
+   boundaries`).
 
 ## 4. Baseline against reality — fix or grandfather, never loosen
 
@@ -92,8 +105,10 @@ leak. For each:
   re-export to the barrel. This is the preferred outcome; it's usually a one-line import
   change.
 - **Grandfather it** only if fixing now is out of scope. Generate a baseline of the current
-  violations and commit it, so *new* leaks still fail while known ones are tracked:
-  `depcruise --config .dependency-cruiser.cjs --output-type baseline <src-dirs> > .dependency-cruiser-known-violations.json`
+  violations and commit it (in `scripts/`, beside the config), so *new* leaks still fail while
+  known ones are tracked — then add `--ignore-known scripts/.dependency-cruiser-known-violations.json`
+  to the `boundaries` script:
+  `bun --bun x depcruise --config scripts/dependency-cruiser.cjs --output-type baseline src > scripts/.dependency-cruiser-known-violations.json`
 
 Never widen a `path`/`publicEntry` regex to make an error disappear — that silently unlocks
 the whole module. The baseline file is the *only* sanctioned escape hatch, and shrinking it
@@ -102,16 +117,17 @@ over time is the goal.
 ## 5. Wire CI
 
 Copy `templates/module-boundaries.yml` → `.github/workflows/module-boundaries.yml`. Swap the
-two `# {{SWAP_FOR_YOUR_PM}}` lines for the detected package manager's install step, set
+`# {{SWAP_FOR_YOUR_PM}}` line for the detected package manager's setup + install, set
 `{{WORKSPACE_DIR}}` to the workspace being checked (e.g. `apps/desktop`, or `.` for a
 single-package repo), and scope it with `paths:` if only one workspace is covered. A leak
 then fails the check on every PR.
 
-**depcruise needs a Node runtime (22 || 24 || >=26)** even in a bun/pnpm repo — it runs under
-Node via its shebang, and bun's runtime fails its engine check. The template therefore adds
-`actions/setup-node` and invokes `npx --no-install depcruise …` directly rather than through
-`<pm> run boundaries`. Locally, run the `boundaries` script under a supported Node (a machine
-on an odd/non-LTS Node like 23 must switch via nvm/fnm first).
+**No separate Node runtime is needed.** depcruise's engine check wants Node 22/24/26 semantics,
+and **bun already provides them** (its `process.versions.node` is ≥24) — the earlier trap was
+that `bun run <script>` executes the depcruise bin via its `#!/usr/bin/env node` shebang, which
+shells out to whatever system Node is on PATH (possibly an unsupported one). Running depcruise
+through the bun *runtime* (`bun --bun x depcruise …`) sidesteps the shebang entirely, so CI just
+sets up bun and runs `<pm> run boundaries`.
 
 Optionally add it to a pre-commit hook (if the repo uses husky/lint-staged from the
 `setup-pre-commit` skill) so leaks are caught before push — but CI is the backstop that
