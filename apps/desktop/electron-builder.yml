@@ -1,0 +1,30 @@
+appId: dev.argo.cockpit
+productName: Argo Cockpit
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!vitest.config.ts'
+  - '!vitest.shims.d.ts'
+  - '!playwright.config.ts'
+  - '!components.json'
+  - '!biome.json'
+  - '!{.storybook,e2e,storybook-static,playwright-report,test-results}/*'
+  - '!{.eslintcache,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,bun.lock}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+# node-pty ships a native .node binary — keep it (and other resources) unpacked from the asar.
+asarUnpack:
+  - resources/**
+  - '**/node_modules/node-pty/**'
+# mac/dmg first (ADR-0006). Windows/Linux packaging is explicitly out of scope for the skeleton.
+mac:
+  entitlementsInherit: build/entitlements.mac.plist
+  category: public.app-category.developer-tools
+  notarize: false
+  target:
+    - dmg
+dmg:
+  artifactName: ${productName}-${version}-${arch}.${ext}

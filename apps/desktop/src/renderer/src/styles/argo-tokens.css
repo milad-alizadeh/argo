@@ -1,0 +1,70 @@
+/*
+ * Argo design tokens — the single source of raw values (ADR-0006: argo-tokens.css → globals.css).
+ * globals.css imports this and maps these onto Tailwind's @theme. shadcn/ui semantic
+ * roles resolve to these variables; do not hardcode colours in components.
+ *
+ * Orientation follows the shadcn convention: :root is light, `.dark` is dark. The Cockpit
+ * is dark-first, so index.html sets `<html class="dark">` — but keeping the `.dark` mechanism
+ * live is what makes shadcn's `dark:` utility variants work.
+ */
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(0.99 0.002 285);
+  --foreground: oklch(0.17 0.006 285);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.17 0.006 285);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.17 0.006 285);
+
+  --primary: oklch(0.55 0.13 215);
+  --primary-foreground: oklch(0.99 0.002 285);
+
+  --secondary: oklch(0.96 0.004 285);
+  --secondary-foreground: oklch(0.21 0.006 285);
+
+  --muted: oklch(0.96 0.004 285);
+  --muted-foreground: oklch(0.53 0.006 285);
+
+  --accent: oklch(0.96 0.004 285);
+  --accent-foreground: oklch(0.21 0.006 285);
+
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.99 0.002 285);
+
+  --border: oklch(0.2 0.006 285 / 12%);
+  --input: oklch(0.2 0.006 285 / 16%);
+  --ring: oklch(0.55 0.13 215);
+}
+
+.dark {
+  --background: oklch(0.16 0.006 285);
+  --foreground: oklch(0.97 0.002 285);
+
+  --card: oklch(0.2 0.006 285);
+  --card-foreground: oklch(0.97 0.002 285);
+
+  --popover: oklch(0.2 0.006 285);
+  --popover-foreground: oklch(0.97 0.002 285);
+
+  --primary: oklch(0.72 0.13 215);
+  --primary-foreground: oklch(0.16 0.006 285);
+
+  --secondary: oklch(0.27 0.006 285);
+  --secondary-foreground: oklch(0.97 0.002 285);
+
+  --muted: oklch(0.27 0.006 285);
+  --muted-foreground: oklch(0.68 0.006 285);
+
+  --accent: oklch(0.27 0.006 285);
+  --accent-foreground: oklch(0.97 0.002 285);
+
+  --destructive: oklch(0.62 0.21 25);
+  --destructive-foreground: oklch(0.97 0.002 285);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.72 0.13 215);
+}
