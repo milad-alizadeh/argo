@@ -1,18 +1,12 @@
-import {
-  CheckCircleIcon,
-  CircleIcon,
-  CircleNotchIcon,
-  type Icon,
-  WarningIcon,
-} from '@phosphor-icons/react'
 import type { SessionStatus } from '@/sessionStore'
+import { CheckCircleIcon, CircleIcon, CircleNotchIcon, type IconAtom, WarningIcon } from './icons'
 
 // Single source of a Session status's presentation — label, colour token classes, and
-// its Phosphor icon. Every status atom reads this map so the four states are defined
+// its icon atom. Every status atom reads this map so the four states are defined
 // once (no per-atom switch to drift).
 export const SESSION_STATUS: Record<
   SessionStatus,
-  { label: string; dotClass: string; textClass: string; Icon: Icon }
+  { label: string; dotClass: string; textClass: string; Icon: IconAtom }
 > = {
   working: {
     label: 'Working',

@@ -293,6 +293,13 @@
   --space-inset: 12px;
   --space-region: 16px;
 
+  /* Icon glyph box — em-relative, so a glyph tracks the type role it sits in
+   * rather than needing a size per call site (the default box is the icon's own
+   * 1em). The baseline nudge optically centres a glyph against lowercase text
+   * instead of sitting it on the baseline. */
+  --icon-box-sm: 0.86em;
+  --icon-baseline: -0.14em;
+
   /* Motion. `pulse` is the period of the screen's ONE animation budget
    * (at most one pulsing element per render). */
   --time-fast: 150ms;
