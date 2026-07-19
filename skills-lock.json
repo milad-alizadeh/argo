@@ -109,7 +109,7 @@
       "computedHash": "2139cfedf24791adbc839aaab6019cff158af1e28bfead020ec6e0ce01b3e74d"
     },
     "implement-fanout": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
+      "source": "/Users/milad/.npm/_npx/4fca0602f1f8b30e/node_modules/argo/packages/argo-skills/skills",
       "sourceType": "local",
       "computedHash": "080ddfcc229ec1dfb8acbdc797ee1d192d24a9ab519a2a12a495e67daeb7c97b"
     },
@@ -174,7 +174,7 @@
       "computedHash": "354c91f6dbc9b058632f30594aacb4edc6d25012596585abb00402af8d7ec5e9"
     },
     "scaffold-project": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
+      "source": "/Users/milad/.npm/_npx/4fca0602f1f8b30e/node_modules/argo/packages/argo-skills/skills",
       "sourceType": "local",
       "computedHash": "78e1290eb81c017948fe1c3438e30add2a13e5ca5697567a252a146f9dea6d44"
     },
@@ -184,9 +184,9 @@
       "computedHash": "03082418be24ac4ebba11b5b16cf26cbe9846fa340265176df36b9db241108c9"
     },
     "setup-graphify": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
+      "source": "/Users/milad/.npm/_npx/4fca0602f1f8b30e/node_modules/argo/packages/argo-skills/skills",
       "sourceType": "local",
-      "computedHash": "ace4292b5bf15f3f4eab88b27cceb041727c9e4f32256c487f8e046ad0dc5b56"
+      "computedHash": "7a81669e4c3cd453e8eb30dcf6f555e4f8348d3fc6c801e6dcbd5e281ec400e9"
     },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
@@ -195,9 +195,9 @@
       "computedHash": "74e894a3509e2676d4cdb771c8eace087092430635e845e02a9cc2f757c552a4"
     },
     "setup-module-boundaries": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
+      "source": "/Users/milad/.npm/_npx/4fca0602f1f8b30e/node_modules/argo/packages/argo-skills/skills",
       "sourceType": "local",
-      "computedHash": "975ad179666557f15fbcd6226da5c1b28940e9b69ecc2584a56ae03bd69ca8fb"
+      "computedHash": "d81e4be2767890fd6d239c5d62292a5fcdc805ad20c3428c3dc9d6eb40148e0c"
     },
     "setup-pre-commit": {
       "source": "mattpocock/skills",
@@ -206,9 +206,9 @@
       "computedHash": "1b140af948d0a6330c4cf52d46ca2e06a0e96fdc34d22ec8888d2b9751b99b62"
     },
     "setup-rules": {
-      "source": "/Users/milad/Developer/argo/packages/argo-skills/skills",
+      "source": "/Users/milad/.npm/_npx/4fca0602f1f8b30e/node_modules/argo/packages/argo-skills/skills",
       "sourceType": "local",
-      "computedHash": "af023273fc5286a6a3dcf58ee1907c8a5272920ed7d9f301632791c5a2a0c660"
+      "computedHash": "a6f0a4d6cdb6c1401e38ab946ec9cfd12174ebdaf8f16c7901e88232a2c4e890"
     },
     "setup-ts-deep-modules": {
       "source": "mattpocock/skills",
