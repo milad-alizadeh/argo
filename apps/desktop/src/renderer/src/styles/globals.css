@@ -27,6 +27,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  --color-foreground-bright: var(--foreground-bright);
   --color-foreground-soft: var(--foreground-soft);
   --color-foreground-faint: var(--foreground-faint);
 
@@ -40,10 +41,22 @@
   --color-status-awaiting-input: var(--status-awaiting-input);
   --color-status-exited: var(--status-exited);
   --color-status-failed: var(--status-failed);
+  --color-status-done: var(--status-done);
+  --color-status-landed: var(--status-landed);
 
   --color-verdict-approve: var(--verdict-approve);
   --color-verdict-changes: var(--verdict-changes);
   --color-verdict-block: var(--verdict-block);
+  --color-verdict-approve-tint: var(--verdict-approve-tint);
+  --color-verdict-changes-tint: var(--verdict-changes-tint);
+  --color-verdict-block-tint: var(--verdict-block-tint);
+
+  --color-signal-ok: var(--signal-ok);
+  --color-signal-warn: var(--signal-warn);
+  --color-signal-bad: var(--signal-bad);
+
+  --color-primary-bright: var(--primary-bright);
+  --color-primary-soft: var(--primary-soft);
 
   /* Shadow colour steps (offsets live at the use site):
    * box-shadow: 0 18px 40px var(--shadow-3). Not mapped to utilities. */
@@ -109,9 +122,10 @@
   --spacing-inset: var(--space-inset);
   --spacing-region: var(--space-region);
 
-  /* Motion roles: duration-fast / duration-slow. */
+  /* Motion roles: duration-fast / duration-slow / duration-pulse. */
   --transition-duration-fast: var(--time-fast);
   --transition-duration-slow: var(--time-slow);
+  --transition-duration-pulse: var(--time-pulse);
 }
 
 @layer base {

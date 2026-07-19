@@ -89,6 +89,15 @@
       .motion .dot:hover {
         transform: translateX(var(--space-region));
       }
+      @media (prefers-reduced-motion: no-preference) {
+        .motion .dot.pulse {
+          animation: pulse var(--time-pulse) ease-in-out infinite;
+        }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.45; }
+      }
       .motion {
         display: flex;
         gap: var(--space-region);
@@ -131,10 +140,11 @@
         --radius 8px → sm 4 · md 6 · lg 8 · xl 12 (derived in globals.css)
       </div>
 
-      <h2 class="text-eyebrow">Motion (hover the dots)</h2>
+      <h2 class="text-eyebrow">Motion (hover the dots; the pulse is the one animation budget)</h2>
       <div class="motion">
         <div class="dot" title="--time-fast"></div>
         <div class="dot slow" title="--time-slow"></div>
+        <div class="dot pulse" title="--time-pulse"></div>
       </div>
     </div>
 
@@ -190,10 +200,13 @@
 
       const SEMANTIC = [
         'background', 'card', 'popover', 'panel', 'inset', 'inset-hair', 'well',
-        'foreground', 'foreground-soft', 'muted-foreground', 'foreground-faint',
-        'primary', 'accent', 'border', 'input', 'ring', 'destructive',
+        'foreground', 'foreground-bright', 'foreground-soft', 'muted-foreground', 'foreground-faint',
+        'primary', 'primary-bright', 'primary-soft', 'accent', 'border', 'input', 'ring', 'destructive',
         'status-working', 'status-idle', 'status-awaiting-input', 'status-exited', 'status-failed',
+        'status-done', 'status-landed',
         'verdict-approve', 'verdict-changes', 'verdict-block',
+        'verdict-approve-tint', 'verdict-changes-tint', 'verdict-block-tint',
+        'signal-ok', 'signal-warn', 'signal-bad',
       ]
       const chipRow = (roles) => `<div class="chips">
         ${roles.map(r => `<div class="chip">

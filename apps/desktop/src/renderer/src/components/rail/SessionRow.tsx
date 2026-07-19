@@ -11,7 +11,7 @@ export function SessionRow({ session }: { session: SessionView }): React.JSX.Ele
       <div className="flex items-center gap-2">
         <Icon weight="light" aria-hidden className={`size-4 shrink-0 ${textClass}`} />
         <span className="flex-1 truncate text-foreground text-row-strong">{session.title}</span>
-        <span className={`text-tag ${textClass}`}>{label}</span>
+        <span className={`text-meta ${textClass}`}>{label}</span>
         <StatusDot status={session.status} decorative />
       </div>
       <div className="mt-1 text-muted-foreground text-meta">{session.cli}</div>
