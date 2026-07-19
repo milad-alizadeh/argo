@@ -1,0 +1,6 @@
+# Hoisted (npm-style) node_modules: a single physical copy of shared build deps
+# (notably vite, shared by electron-vite + @vitejs/plugin-react + @tailwindcss/vite),
+# which keeps their TypeScript plugin types identity-compatible. It's also the
+# friendlier layout for Electron native modules like node-pty.
+[install]
+linker = "hoisted"

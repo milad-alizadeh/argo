@@ -3,11 +3,31 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", "out/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
     },
     "lint": {},
     "test": {
       "dependsOn": ["^build"]
+    },
+    "test:stories": {
+      "cache": false
+    },
+    "test:e2e": {
+      "cache": false
+    },
+    "build-storybook": {
+      "outputs": ["storybook-static/**"]
+    },
+    "storybook": {
+      "cache": false,
+      "persistent": true
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
     }
   }
 }
