@@ -81,7 +81,24 @@ in one tree (amend landing on another session's commit, vanished stash, wrong-br
 > with that `path`) and runs `/code-review` with fresh eyes before the PR is opened. Costs ~2× per
 > ticket; use it when the batch is high-stakes.
 
-### 4. Collect and report
+### 4. Integration check — detect, don't resolve
+
+After all agents return, run one integrator agent (no worktree isolation needed — it works on a
+throwaway branch it deletes):
+
+- Branch `integration-check` off main; merge every ticket branch into it in dependency order.
+- Where a merge conflicts, record the pair and the files/hunks, abort that merge, and continue
+  with the rest — **never resolve here**.
+- Run the full suite on whatever merged cleanly: two PRs can be conflict-free and still break
+  each other (semantic conflicts the textual merge won't show).
+- Delete the branch. Nothing is pushed, no PR is touched.
+
+Resolution is deliberately out of scope: before any PR merges, every branch shares the same base,
+so "resolving" would mean merging unmerged siblings into each other — coupling supposedly
+independent PRs and changing what the human reviews. Conflicts become real only after the first
+merge; that's step 6's job.
+
+### 5. Collect and report
 
 Gather the returned PR URLs (one per worktree/ticket); filter out any agent that returned
 null / failed. Tell the user:
@@ -89,7 +106,22 @@ null / failed. Tell the user:
 - which tickets produced PRs (with links), and any **unresolved review findings** each PR carried
   from its step-3 `/code-review`;
 - which failed and need a manual `/implement`;
-- the **merge order** (dependency order), and that they own resolving any conflicts.
+- the **conflict map** from step 4: which PR pairs collide and where, the merge order that
+  minimizes conflicts, and whether the clean union passed the suite;
+- that after each merge they can invoke the step-6 repair pass instead of resolving by hand.
+
+### 6. After each merge — rebase and repair
+
+Conflicts materialize one merge at a time, so this pass runs **per merge, on request** — it is
+gated on the user's merge decisions and cannot live inside the fan-out workflow. After a PR
+merges:
+
+- rebase each surviving ticket branch onto updated main, using `resolving-merge-conflicts` when
+  a rebase stops on the predicted (or a new) conflict;
+- re-run the full suite in that branch's worktree; push with `--force-with-lease`;
+- note in the PR body anything material the resolution changed.
+
+Then re-scout: the merged PR may have unblocked new frontier tickets.
 
 ## Guardrails
 
@@ -98,5 +130,7 @@ null / failed. Tell the user:
 - **Draft PRs only.** A fanned-out agent runs unattended and is lower-fidelity than a human-steered
   session — the human reviews before merge.
 - **Cap concurrency.** A runaway fan-out is expensive; default 2–3.
+- **Never merge unmerged branches into each other.** Cross-branch resolution before a PR lands
+  couples independent tickets; the integration branch in step 4 is throwaway and detection-only.
 - **One ticket's files per agent.** An agent that strays outside its ticket is a bug — its worktree
   should only ever contain its own ticket's changes.
