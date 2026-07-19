@@ -298,4 +298,5 @@
   --time-fast: 150ms;
   --time-slow: 300ms;
   --time-pulse: 2s;
+  --pulse-dim: 0.45; /* the opacity that one pulsing element dips to */
 }

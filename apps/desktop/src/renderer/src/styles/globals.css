@@ -126,6 +126,20 @@
   --transition-duration-fast: var(--time-fast);
   --transition-duration-slow: var(--time-slow);
   --transition-duration-pulse: var(--time-pulse);
+
+  /* animate-pulse-status — the screen's ONE animation budget (at most one pulsing
+   * element per render). Pair it with motion-safe:. */
+  --animate-pulse-status: pulse-status var(--time-pulse) ease-in-out infinite;
+}
+
+@keyframes pulse-status {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: var(--pulse-dim);
+  }
 }
 
 @layer base {
