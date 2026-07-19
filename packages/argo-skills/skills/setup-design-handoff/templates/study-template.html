@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- Design study template (design-studies rule):
+     · every value = var(-token) from tokens.css; a value the contract lacks is a
+       PROPOSAL — mark it "PROPOSAL" in a comment; it snaps or gets promoted at settle
+     · every meaningful region carries data-component="PascalCaseName" — that name is
+       final: it becomes the component file, its stories, and its ticket
+     · repeated shapes: add a render function to kit.js and call it, don't copy markup -->
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <title>STUDY — screen name</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <style>
+      body {
+        background: var(--background);
+        color: var(--foreground);
+        font: var(--text-body);
+      }
+      .panel {
+        background: var(--panel);
+        border-radius: var(--radius);
+      }
+      .panel h2 {
+        font: var(--text-label);
+        letter-spacing: var(--tracking-label);
+        color: var(--muted-foreground);
+      }
+    </style>
+  </head>
+  <body>
+    <main data-component="ExampleScreen">
+      <section class="panel" data-component="ExamplePanel">
+        <h2>Section label</h2>
+        <!-- rows via kit.js: document.write / DOM-append from named render fns -->
+      </section>
+    </main>
+    <script src="./kit.js"></script>
+  </body>
+</html>

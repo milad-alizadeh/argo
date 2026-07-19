@@ -1,6 +1,6 @@
 ---
 name: setup-module-boundaries
-description: Install a mechanical module-boundary checker into a project so a leak fails the build instead of relying on review. An LLM builds and maintains a module map (module → public entry) for this repo; dependency-cruiser turns it into public-entry-only lint rules, wired into a package script and CI. Run once per repo, then re-run to refresh the map when structure changes.
+description: Install a mechanical module-boundary checker into a project so a leak fails the build instead of relying on review. An LLM builds and maintains a module map (module → public entry) for this repo; dependency-cruiser turns it into public-entry-only lint rules, wired into a package script and CI. Usually dispatched by the /setup-argo-skills wizard; run directly to (re)install this piece or refresh the map when structure changes.
 disable-model-invocation: true
 ---
 

@@ -50,6 +50,20 @@ Rules that fall out of this:
   interaction state. Interactive primitives wrap the chosen headless-UI library and
   are styled only with design-system tokens; never import the library's default CSS.
 
+## Build from the inventory — when a design study exists
+
+If the UI being built comes from a settled design study, its component inventory
+(`docs/designs/<study>.inventory.md`, produced by `/componentize-design`) is the
+build contract:
+
+- **Names are fixed by the inventory.** The component's name, tier, and props come
+  from its inventory row — don't rename, re-tier, or re-shape mid-build.
+- **A component that isn't in the inventory doesn't get built** off a study;
+  update the inventory first (one row), then build. This keeps the study, the
+  inventory, and the codebase telling one story.
+- Never derive a component by copying study markup — rebuild from tokens and
+  existing primitives (the study is a spec, per `design-studies.md`).
+
 ## Icons — one icon component per file
 
 **No inline SVGs anywhere.** Every SVG icon is its own named component in

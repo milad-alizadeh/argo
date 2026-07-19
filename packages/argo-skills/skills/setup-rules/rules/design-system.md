@@ -9,6 +9,12 @@ Style every UI through **design tokens** surfaced as **Tailwind v4 utility class
 never as raw values or inline style objects. Two hard rules, no exceptions outside the
 documented escape hatches.
 
+> The contract is the **named token set**, not any file format. This file's wording is
+> Tailwind v4; on a non-Tailwind target (React Native / Tamagui, etc.) the same rules
+> bind against that framework's token layer (`createTokens`, styled props, StyleSheet
+> constants) — raw values stay banned everywhere, and token *names* stay identical
+> across targets.
+
 ## Rule 1 — Tokens only, never magic numbers
 
 Every visual constant lives in the `@theme static {}` block in `{{TOKENS_CSS}}` — the
@@ -21,6 +27,28 @@ class automatically.
   anywhere — not in a class, not in a style, not in code.
 - Need a value that doesn't exist yet? **Add a token** to the `@theme` block first,
   then use its generated utility class. Don't inline the raw value.
+
+## Roles, not values — typography and spacing
+
+Tokens are named by **role** (`--text-label`, `--space-inset`), never by their
+value (`--text-10-5`, `--space-7px`). Role names are what survive a redesign and
+what carry a design across frameworks; value names are drift with extra steps.
+
+- A typography role is the **full tuple** — size + line-height + weight +
+  letter-spacing — not just a font size. Components use the role's utility
+  (`text-label`), never a raw size, and never Tailwind arbitrary values
+  (`text-[13px]`, `p-[7px]`, `bg-[#888888]` are all forbidden in components).
+- The set of roles is deliberately small (roughly: micro / label / body /
+  body-lg / title / display). A new role needs a reason an existing one can't
+  cover — "this looked 0.5px better in one spot" is a snap, not a new role.
+
+## Drift — fix the contract, not the symptom
+
+When you find a raw value in a component (yours or inherited), the fix is never
+local: snap it to an existing token or promote it into the tokens file, then use
+the utility. Patching one component while the raw value's siblings survive
+elsewhere is how the system rots. Same rule for the AI: when output drifts,
+correct the token contract or the rules — not the one offending line.
 
 ## Rule 2 — Classes/utilities, never inline styles
 
@@ -54,8 +82,10 @@ magic numbers inline.
 ## Checklist before you finish styling work
 
 - [ ] No hex/rgb/px/rem/ms literals (except token defs in the tokens file).
+- [ ] No Tailwind arbitrary values (`*-[...]`) carrying a design constant.
 - [ ] No inline `style={{}}` except the two escape hatches above, each commented.
 - [ ] Any new visual value added to the `@theme` block first.
+- [ ] The design-token check script passes, if the repo has one installed.
 - [ ] Typecheck succeeds.
 
 ## Figma canvas work
