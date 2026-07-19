@@ -53,24 +53,41 @@ parallel(frontier.map(t => () =>
   agent(briefFor(t), { isolation: 'worktree', label: `implement:#${t.number}` })))
 ```
 
-Each agent's brief is self-contained (it has its own fresh context — that's the point):
+Each agent's brief is self-contained (it has its own fresh context — that's the point) and runs
+this **ordered, non-skippable contract**. Every step happens *inside that agent's own worktree*, so
+review and the PR are per-ticket, not shared:
 
-- Read ticket #N from the tracker and implement it following `/implement`: TDD at agreed seams,
-  typecheck / lint / single-file tests regularly, the full suite once at the end.
-- Run `/code-review` on your own diff and address the findings before committing.
-- Commit to a ticket branch, push it, and open a **draft** PR whose body says `Closes #N`. Return
-  the PR URL as your result.
-- Do **not** merge. Do **not** touch any other ticket's files.
+1. **Implement** — read ticket #N from the tracker and build it following `/implement`: TDD at
+   agreed seams, typecheck / lint / single-file tests regularly, the full suite once at the end.
+2. **Verify** — the full suite (typecheck, lint, tests, build) must be green before proceeding.
+3. **Code-review** — run `/code-review` on your own diff and address the findings. This runs
+   **per worktree**, in the agent's fresh context — it is not optional and is not deferred to the
+   human. If a finding can't be resolved, note it in the PR body rather than skipping it.
+4. **Commit** to a ticket branch (`argo/#${N}-<slug>` or the repo convention).
+5. **Push** that branch.
+6. **Open exactly one draft PR** for this worktree — body says `Closes #N`, and lists any
+   unresolved review findings from step 3. **Return the PR URL** as your result.
+
+Do **not** merge. Do **not** touch any other ticket's files. One worktree → one branch → one draft PR.
 
 `isolation: "worktree"` gives each agent its own working directory, index, and HEAD, so concurrent
 agents can't clobber each other — the exact failure mode of running plain `/implement` in parallel
 in one tree (amend landing on another session's commit, vanished stash, wrong-branch commits).
 
+> **Independent review (optional, stronger).** Self-review in the same context can miss
+> plausible-but-wrong findings. For higher assurance, make each ticket a two-stage `pipeline`:
+> stage 1 implements + commits in the worktree; stage 2 is a *separate* agent that enters the same
+> worktree (`agent(..., { isolation })` returns its path; a reviewer re-enters via `EnterWorktree`
+> with that `path`) and runs `/code-review` with fresh eyes before the PR is opened. Costs ~2× per
+> ticket; use it when the batch is high-stakes.
+
 ### 4. Collect and report
 
-Gather the returned PR URLs; filter out any agent that returned null / failed. Tell the user:
+Gather the returned PR URLs (one per worktree/ticket); filter out any agent that returned
+null / failed. Tell the user:
 
-- which tickets produced PRs (with links);
+- which tickets produced PRs (with links), and any **unresolved review findings** each PR carried
+  from its step-3 `/code-review`;
 - which failed and need a manual `/implement`;
 - the **merge order** (dependency order), and that they own resolving any conflicts.
 
