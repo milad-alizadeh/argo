@@ -41,3 +41,8 @@ the design session; the settled cockpit UI model lives in the ADRs under `docs/a
   --hide-scrollbars --force-device-scale-factor=2 --window-size=1680,1050 \
   --screenshot=out.png "file://$(pwd)/<file>.html"
 ```
+
+Storybook side (component parity): with Storybook running in `apps/desktop`, use the
+same command against `http://localhost:6006/iframe.html?id=<story-id>&viewMode=story`.
+The parity check is a side-by-side eyeball of the two screenshots per the
+componentize ceremony — no automated compare, no committed baselines.
