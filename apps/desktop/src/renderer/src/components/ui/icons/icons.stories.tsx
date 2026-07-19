@@ -1,12 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { GearIcon } from './GearIcon'
 import * as icons from './index'
 
+// One stories file for the whole set: the inventory has a single `Icon` row, and every
+// atom is the same factory output, so the props are storied once on a representative
+// glyph and `AllGlyphs` covers the `name` axis.
 const meta = {
   title: 'Cockpit/Icon',
-  component: GearIcon,
-} satisfies Meta<typeof GearIcon>
+  component: icons.GearIcon,
+} satisfies Meta<typeof icons.GearIcon>
 
 export default meta
 type Story = StoryObj<typeof meta>
