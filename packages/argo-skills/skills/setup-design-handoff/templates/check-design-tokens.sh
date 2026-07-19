@@ -32,6 +32,11 @@ findings=$(
       '#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?\b|#[0-9a-fA-F]{3}\b' $SRC_DIRS 2>/dev/null
     grep -rEn --include='*.tsx' --include='*.ts' $exclude_args \
       -- '-\[[^]]*(#|[0-9]+(\.[0-9]+)?(px|rem|em|ms|vh|vw|%))[^]]*\]' $SRC_DIRS 2>/dev/null
+    # 3. OPTIONAL — enable when the project removes Tailwind's stock text scale
+    #    (@theme `--text-*: initial`) in favour of role utilities; a stock class
+    #    like text-sm then silently no-ops, so it must fail the check instead:
+    # grep -rEn --include='*.tsx' --include='*.ts' $exclude_args \
+    #   -- '(^|[^a-zA-Z0-9_-])text-(xs|sm|base|lg|[0-9]?xl)($|[^a-zA-Z0-9-])' $SRC_DIRS 2>/dev/null
   } | sort -u
 )
 

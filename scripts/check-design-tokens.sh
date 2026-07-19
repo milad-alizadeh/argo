@@ -19,8 +19,12 @@ ALLOW_FILE="$(dirname "$0")/design-tokens-allow.txt"
 
 # 1. Raw hex colors in source (tsx/ts/css), outside the token files.
 # 2. Tailwind arbitrary values with a unit or color inside the brackets.
+# 3. Stock Tailwind text-size classes — the default scale is removed from the
+#    theme (globals.css --text-*: initial), so text-sm would silently no-op;
+#    type is set only via the role ladder (text-row, text-meta, …).
 HEX_RE='#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?\b|#[0-9a-fA-F]{3}\b'
 TW_RE='-\[[^]]*(#|[0-9]+(\.[0-9]+)?(px|rem|em|ms|vh|vw|%))[^]]*\]'
+STOCK_TEXT_RE='(^|[^a-zA-Z0-9_-])text-(xs|sm|base|lg|[0-9]?xl)($|[^a-zA-Z0-9-])'
 
 if [ $# -gt 0 ]; then
   # File mode (lint-staged pre-commit): scan only the staged files given —
@@ -42,6 +46,7 @@ if [ $# -gt 0 ]; then
     {
       grep -HEn "$HEX_RE" $targets 2>/dev/null
       grep -HEn -- "$TW_RE" $targets 2>/dev/null
+      grep -HEn -- "$STOCK_TEXT_RE" $targets 2>/dev/null
     } | sort -u
   )
 else
@@ -58,6 +63,8 @@ else
         "$HEX_RE" $SRC_DIRS 2>/dev/null
       grep -rEn --include='*.tsx' --include='*.ts' $exclude_args \
         -- "$TW_RE" $SRC_DIRS 2>/dev/null
+      grep -rEn --include='*.tsx' --include='*.ts' $exclude_args \
+        -- "$STOCK_TEXT_RE" $SRC_DIRS 2>/dev/null
     } | sort -u
   )
 fi
@@ -79,6 +86,7 @@ if [ -n "$findings" ]; then
   count=$(printf '%s\n' "$findings" | wc -l | tr -d ' ')
   echo "check:design-tokens — $count design constant(s) outside the token contract."
   echo "Fix: snap to an existing token or promote a named one (rules/design-system.md)."
+  echo "Stock text-* classes: use a type role instead (text-row, text-meta, …)."
   exit 1
 fi
 

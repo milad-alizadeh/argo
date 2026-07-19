@@ -12,9 +12,7 @@ export function Rail({ sessions }: { sessions: SessionView[] }): React.JSX.Eleme
       className="flex h-screen w-screen bg-background p-3 text-foreground"
     >
       <section className="flex w-60 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl">
-        <header className="px-3.5 pt-3 pb-2 font-semibold text-muted-foreground text-xs uppercase tracking-widest">
-          Sessions
-        </header>
+        <header className="px-3.5 pt-3 pb-2 text-eyebrow text-muted-foreground">Sessions</header>
         <div className="flex flex-1 flex-col overflow-auto px-2.5 pb-2">
           {sessions.length === 0 ? (
             <EmptyRail />

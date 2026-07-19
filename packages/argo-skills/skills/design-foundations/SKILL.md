@@ -113,7 +113,20 @@ styles **only** via `var(--token)`, opening it always shows the current
 contract — it cannot drift. This is the one study that is *not* disposable;
 link it first in the designs README.
 
-## 6. Report
+## 6. Re-base the reference studies — when values moved
+
+If the blessed settle only snapped jitter (≤1px, invisible), existing studies
+stay untouched. But when it **deliberately moved values** — collapsed size
+steps, consolidated colour families, re-spaced hierarchy — the flagship study
+is now a pre-settle draft, and every later parity check degenerates into
+"blessed delta or build bug?". Re-base it: mechanically translate the study
+through the mapping tables (import the mirror, substitute each raw value for
+its `var(--token)`/role class; blessed component-local exceptions keep their
+literals with a comment). Translation, not redesign — no new judgment calls.
+Verify with before/after screenshots: the only visible deltas must be the
+blessed ones. The study's markup still never ports to the app.
+
+## 7. Report
 
 Per family: what was settled, which judgment calls moved values and by how
 much. Then the rule going forward: new studies start from the template with

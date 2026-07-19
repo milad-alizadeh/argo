@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/ui/button.tsx": {
-    "mtime": 1784481157.6173813,
-    "ast_hash": "51c114eb0f3311cbf6822d6912b0a657",
+    "mtime": 1784486118.5046759,
+    "ast_hash": "4ef88bb686319e957d99646e4de7a39e",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/env.d.ts": {
@@ -190,8 +190,8 @@
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/EmptyRail.tsx": {
-    "mtime": 1784478288.45252,
-    "ast_hash": "894f63d152ed6ff41d83d1d9e0fa6f2c",
+    "mtime": 1784486125.6089265,
+    "ast_hash": "a3eec2d13cd3a9268150f035784d82f1",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/Rail.stories.tsx": {
@@ -200,13 +200,13 @@
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/Rail.tsx": {
-    "mtime": 1784478308.5023375,
-    "ast_hash": "63b2aed0fb427cdcd2cba59762ae01b0",
+    "mtime": 1784486327.2518241,
+    "ast_hash": "db459c0b8fcde3abeda21b9e518b92cc",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/SessionRow.tsx": {
-    "mtime": 1784478361.7627513,
-    "ast_hash": "f6b8d54894d08865d5b1264421815db8",
+    "mtime": 1784486122.275545,
+    "ast_hash": "611dfbb28316e05fe0f5a462eef89376",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/index.ts": {
@@ -270,7 +270,7 @@
     "semantic_hash": ""
   },
   "skills-lock.json": {
-    "mtime": 1784486001.8637123,
+    "mtime": 1784486066.3070564,
     "ast_hash": "fdcaa786d49708c78a632d9881733ba7",
     "semantic_hash": ""
   }

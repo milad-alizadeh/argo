@@ -10,7 +10,7 @@ Copy `study-template.html` and follow its inline conventions (rules/design-studi
 
 - `tokens.css` — the study vocabulary. It `@import`s the app's real contract
   (`apps/desktop/src/renderer/src/styles/argo-tokens.css`) so studies can't drift,
-  and adds the typography role classes (`.text-micro` … `.text-display`, `.mono`).
+  and adds the typography role classes (`.text-headline` … `.text-code-inline`, `.mono`).
 - `kit.js` — shared named render functions for recurring atoms/molecules; call
   them, never re-write their markup.
 - `data-component="PascalCaseName"` on every meaningful region — the future
@@ -23,7 +23,8 @@ the code knowledge graph.
 
 | File | Screen | Notes |
 |---|---|---|
-| `cockpit.html` | Single-session cockpit — session/work view | v7, phosphor treatment — **the final design** |
+| `foundations.html` | The living token specimen — type roles, core ramps, semantic bindings (both themes) | **Non-disposable** — renders `tokens.css` directly, so it always shows the current contract |
+| `cockpit.html` | Single-session cockpit — session/work view | v7, phosphor treatment — **the final design**; predates the settled foundations, so its raw values read through the settle mapping, not literally |
 
 ## Lineage & decisions
 

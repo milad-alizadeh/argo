@@ -3,95 +3,251 @@
  * globals.css imports this and maps these onto Tailwind's @theme. shadcn/ui semantic
  * roles resolve to these variables; do not hardcode colours in components.
  *
- * Palette follows the agreed high-fidelity cockpit design (docs/designs/cockpit.html):
- * a warm near-black graphite with a single indigo accent, one frosted `panel` surface per
- * region and flat `inset` cards inside it (never glass-on-glass). Status is carried by a
- * disjoint set of state colours.
+ * Two-layer colour contract (settled by the /design-foundations ceremony from
+ * docs/designs/cockpit.html — living specimen: docs/designs/foundations.html):
  *
- * Orientation follows the shadcn convention: :root is light, `.dark` is dark. The Cockpit
- * is dark-first, so index.html sets `<html class="dark">` — but keeping the `.dark` mechanism
- * live is what makes shadcn's `dark:` utility variants work.
+ *   1. CORE ramps — raw values live ONLY here. Theme-agnostic, named by what
+ *      they are. Never referenced by components or studies directly.
+ *   2. SEMANTIC roles — named by job, bound per theme (:root light / .dark dark),
+ *      referencing core steps only. Alpha variants are color-mix derivations of
+ *      a core step, never a new hex.
+ *
+ * Palette: a warm near-black graphite with a single indigo accent, one frosted
+ * `panel` surface per region and flat `inset` cards inside it (never
+ * glass-on-glass). Lifecycle status and review verdict are DISJOINT families:
+ * verdict sits one ramp step further toward the theme's ink end than lifecycle
+ * (dark: 500 vs 300; light: 600 vs 700), so they never render the same value.
+ *
+ * Orientation follows the shadcn convention: :root is light, `.dark` is dark. The
+ * Cockpit is dark-first, so index.html sets `<html class="dark">` — keeping the
+ * `.dark` mechanism live is what makes shadcn's `dark:` variants work.
  */
+
+/* ---------------------------------------------------------------- core ramps */
 :root {
-  --radius: 0.625rem;
+  /* Warm gray (graphite) — surfaces + inks. */
+  --gray-50: #f6f0e6;
+  --gray-100: #efece6;
+  --gray-200: #dcd6cb;
+  --gray-300: #c6c0b5;
+  --gray-400: #9a938a;
+  --gray-500: #837b70;
+  --gray-600: #6b645b;
+  --gray-700: #3f3931; /* reserved: light-theme reading ink */
+  --gray-800: #211d17;
+  --gray-850: #1c1813;
+  --gray-900: #16130f;
+  --gray-950: #0b0a08;
 
-  --background: #f7f4ef;
-  --foreground: #1c1813;
+  /* Indigo — the single accent. */
+  --indigo-100: #eef0fb;
+  --indigo-200: #bfc9f4;
+  --indigo-400: #7b8bef;
+  --indigo-500: #5468ea;
+  --indigo-600: #4355d0;
 
-  --card: #ffffff;
-  --card-foreground: #1c1813;
+  /* Status hues — two-ended so light mode is a re-binding, not a re-mix. */
+  --green-100: #eaf6ef;
+  --green-300: #82ddad;
+  --green-500: #24ce7c;
+  --green-600: #17945c;
+  --green-700: #107a4c;
+  --green-950: #04140c;
 
-  --popover: #ffffff;
-  --popover-foreground: #1c1813;
+  --amber-100: #f3e6c8;
+  --amber-300: #f0cd8e;
+  --amber-500: #f6b23c;
+  --amber-600: #c07d15;
+  --amber-700: #9c6410;
+  --amber-950: #1a1204;
 
-  --primary: #4a5ee0;
-  --primary-foreground: #ffffff;
+  --red-100: #ffeceb;
+  --red-300: #f29a91;
+  --red-500: #f5564f;
+  --red-600: #d03730;
+  --red-700: #ad2b26;
+  --red-950: #1b0908;
+}
 
-  --secondary: #efeae1;
-  --secondary-foreground: #1c1813;
+/* -------------------------------------------------- semantic roles — light */
+:root {
+  --radius: 0.5rem;
 
-  --muted: #efeae1;
-  --muted-foreground: #6b645a;
+  --background: var(--gray-100);
+  --foreground: var(--gray-950);
 
-  --accent: rgba(28, 24, 19, 0.04);
-  --accent-foreground: #1c1813;
+  --card: var(--gray-50);
+  --card-foreground: var(--gray-950);
 
-  --destructive: #dc3b34;
-  --destructive-foreground: #ffffff;
+  --popover: var(--gray-50);
+  --popover-foreground: var(--gray-950);
 
-  --border: rgba(28, 24, 19, 0.1);
-  --input: rgba(28, 24, 19, 0.14);
-  --ring: #4a5ee0;
+  --primary: var(--indigo-600);
+  --primary-foreground: var(--gray-50);
+
+  --secondary: var(--gray-200);
+  --secondary-foreground: var(--gray-800);
+
+  /* `muted` is bound identically to `secondary` (no distinct job in the design);
+   * kept for shadcn compatibility — prefer `secondary` in new code. */
+  --muted: var(--gray-200);
+  --muted-foreground: var(--gray-600);
+
+  /* Selection/hover wash — the accent's rendered form is always the wash, never
+   * solid indigo (that is `primary`'s job). */
+  --accent: color-mix(in srgb, var(--indigo-500) 12%, transparent);
+  --accent-foreground: var(--gray-950);
+
+  --destructive: var(--red-600);
+  --destructive-foreground: var(--red-100);
+
+  --border: color-mix(in srgb, var(--gray-950) 9%, transparent);
+  --input: color-mix(in srgb, var(--gray-950) 13%, transparent);
+  --ring: var(--indigo-600);
+
+  /* Ink ladder: foreground → soft (long-dwell reading) → muted → faint (metas). */
+  --foreground-soft: var(--gray-800);
+  --foreground-faint: var(--gray-500);
 
   /* One frosted surface per region (panel); flat inset cards live inside it. */
-  --panel: rgba(255, 255, 255, 0.6);
-  --inset: rgba(28, 24, 19, 0.02);
-  --inset-hair: rgba(28, 24, 19, 0.07);
+  --panel: color-mix(in srgb, var(--gray-50) 70%, transparent);
+  --inset: color-mix(in srgb, var(--gray-950) 2%, transparent);
+  --inset-hair: color-mix(in srgb, var(--gray-950) 6%, transparent);
 
-  /* Session status — calm, disjoint; indigo=working, amber=needs-you, red reserved for failure. */
-  --status-working: #4a5ee0;
-  --status-idle: #8b8377;
-  --status-awaiting-input: #d98a1f;
-  --status-exited: #6b645a;
+  /* Lifecycle status — calm; indigo=working, amber=needs-you. */
+  --status-working: var(--indigo-600);
+  --status-idle: var(--gray-600);
+  --status-awaiting-input: var(--amber-600);
+  --status-exited: var(--gray-500);
+  --status-failed: var(--red-600);
 
-  /* ---- Non-themed families (identical in light and dark, defined once) ---- */
+  /* Review verdict — disjoint from lifecycle (700s vs lifecycle's 600s). */
+  --verdict-approve: var(--green-700);
+  --verdict-changes: var(--amber-700);
+  --verdict-block: var(--red-700);
 
+  /* Shadows (colour steps; offsets live at the use site). `well` is a recessed
+   * fill, not a shadow. */
+  --shadow-1: color-mix(in srgb, black 8%, transparent);
+  --shadow-2: color-mix(in srgb, black 12%, transparent);
+  --shadow-3: color-mix(in srgb, black 18%, transparent);
+  --well: color-mix(in srgb, var(--gray-950) 4%, transparent);
+}
+
+/* --------------------------------------------------- semantic roles — dark */
+.dark {
+  --background: var(--gray-950);
+  --foreground: var(--gray-100);
+
+  --card: var(--gray-900);
+  --card-foreground: var(--gray-100);
+
+  --popover: var(--gray-850);
+  --popover-foreground: var(--gray-100);
+
+  --primary: var(--indigo-500);
+  --primary-foreground: var(--gray-50);
+
+  --secondary: var(--gray-800);
+  --secondary-foreground: var(--gray-200);
+
+  --muted: var(--gray-800);
+  --muted-foreground: var(--gray-400);
+
+  --accent: color-mix(in srgb, var(--indigo-500) 12%, transparent);
+  --accent-foreground: var(--gray-100);
+
+  --destructive: var(--red-500);
+  --destructive-foreground: var(--red-100);
+
+  --border: color-mix(in srgb, var(--gray-50) 9%, transparent);
+  --input: color-mix(in srgb, var(--gray-50) 13%, transparent);
+  --ring: var(--indigo-500);
+
+  --foreground-soft: var(--gray-300);
+  --foreground-faint: var(--gray-500);
+
+  --panel: color-mix(in srgb, var(--gray-900) 55%, transparent);
+  --inset: color-mix(in srgb, var(--gray-50) 2%, transparent);
+  --inset-hair: color-mix(in srgb, var(--gray-50) 6%, transparent);
+
+  --status-working: var(--indigo-500);
+  --status-idle: var(--gray-400);
+  --status-awaiting-input: var(--amber-500);
+  --status-exited: var(--gray-600);
+  --status-failed: var(--red-500);
+
+  --verdict-approve: var(--green-300);
+  --verdict-changes: var(--amber-300);
+  --verdict-block: var(--red-300);
+
+  --shadow-1: color-mix(in srgb, black 15%, transparent);
+  --shadow-2: color-mix(in srgb, black 25%, transparent);
+  --shadow-3: color-mix(in srgb, black 35%, transparent);
+  --well: color-mix(in srgb, black 15%, transparent);
+}
+
+/* ---- Non-themed families (identical in light and dark, defined once) ---- */
+:root {
   /* Font stacks — studies and the app both speak these names. */
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Typography roles — full tuple per role (size / leading / weight / tracking),
-   * settled from cockpit.html's dense micro-ramp. Wired to text-* utilities in
-   * globals.css. A new size snaps to a role or gets promoted here, never inlined. */
-  --type-micro: 9px;
-  --type-micro-leading: 1.2;
-  --type-micro-weight: 500;
-  --type-micro-tracking: 0.06em;
+  /* Typography roles — one sans ladder (10/12/14/16, every step 2px); all
+   * further hierarchy is carried inside a size by weight, case+tracking, or
+   * line-height, never by a 1px size step. Full tuple per role; wired to
+   * text-* utilities in globals.css (which also adds the uppercase /
+   * tabular-nums / mono facets where a role demands them). A new size snaps
+   * to a role or gets promoted here, never inlined. */
+  --type-headline: 16px; /* verdict hero, session-level headings */
+  --type-headline-leading: 22px;
+  --type-headline-weight: 700;
+  --type-headline-tracking: -0.01em;
 
-  --type-label: 10.5px;
-  --type-label-leading: 1.2;
-  --type-label-weight: 600;
-  --type-label-tracking: 0.08em;
-
-  --type-body: 11.5px;
-  --type-body-leading: 1.5;
-  --type-body-weight: 400;
-  --type-body-tracking: 0em;
-
-  --type-body-lg: 12.5px;
-  --type-body-lg-leading: 1.55;
-  --type-body-lg-weight: 400;
-  --type-body-lg-tracking: 0em;
-
-  --type-title: 14px;
-  --type-title-leading: 1.3;
+  --type-title: 14px; /* now-line, a pane's single hero row */
+  --type-title-leading: 20px;
   --type-title-weight: 600;
-  --type-title-tracking: -0.006em;
+  --type-title-tracking: -0.005em;
 
-  --type-display: 17px;
-  --type-display-leading: 1.2;
-  --type-display-weight: 600;
-  --type-display-tracking: -0.01em;
+  --type-row: 12px; /* list primary text */
+  --type-row-leading: 16px;
+  --type-row-weight: 400;
+  --type-row-tracking: 0em;
+
+  --type-row-strong: 12px; /* same size — weight differentiates: row titles, buttons */
+  --type-row-strong-leading: 16px;
+  --type-row-strong-weight: 600;
+  --type-row-strong-tracking: 0em;
+
+  --type-prose: 12px; /* same size — leading differentiates: multi-line reading */
+  --type-prose-leading: 18px;
+  --type-prose-weight: 400;
+  --type-prose-tracking: 0em;
+
+  --type-meta: 10px; /* timestamps, counts, k/v keys (+ tabular-nums) */
+  --type-meta-leading: 14px;
+  --type-meta-weight: 500;
+  --type-meta-tracking: 0.01em;
+
+  --type-tag: 10px; /* state chips, severity words (+ uppercase) */
+  --type-tag-leading: 14px;
+  --type-tag-weight: 600;
+  --type-tag-tracking: 0.06em;
+
+  --type-eyebrow: 10px; /* section headers (+ uppercase, wide tracking) */
+  --type-eyebrow-leading: 14px;
+  --type-eyebrow-weight: 600;
+  --type-eyebrow-tracking: 0.12em;
+
+  --type-code: 12px; /* terminal, diff hunks, code blocks (+ mono) */
+  --type-code-leading: 18px;
+  --type-code-weight: 400;
+  --type-code-tracking: 0em;
+
+  --type-code-inline: 11px; /* paths/SHAs inside 12px sans rows (+ mono, −1px optical) */
+  --type-code-inline-leading: 16px;
+  --type-code-inline-weight: 400;
+  --type-code-inline-tracking: 0em;
 
   /* Spacing rhythm — the six steps the design actually uses. */
   --space-hair: 2px;
@@ -104,43 +260,4 @@
   /* Motion. */
   --time-fast: 150ms;
   --time-slow: 300ms;
-}
-
-.dark {
-  --background: #0b0a08;
-  --foreground: #efece6;
-
-  --card: #16130f;
-  --card-foreground: #efece6;
-
-  --popover: #16130f;
-  --popover-foreground: #efece6;
-
-  --primary: #5468ea;
-  --primary-foreground: #efece6;
-
-  --secondary: #211d17;
-  --secondary-foreground: #efece6;
-
-  --muted: #211d17;
-  --muted-foreground: #9a938a;
-
-  --accent: rgba(246, 240, 230, 0.05);
-  --accent-foreground: #efece6;
-
-  --destructive: #f5564f;
-  --destructive-foreground: #efece6;
-
-  --border: rgba(246, 240, 230, 0.09);
-  --input: rgba(246, 240, 230, 0.13);
-  --ring: #5468ea;
-
-  --panel: rgba(22, 19, 15, 0.55);
-  --inset: rgba(246, 240, 230, 0.022);
-  --inset-hair: rgba(246, 240, 230, 0.065);
-
-  --status-working: #5468ea;
-  --status-idle: #8b8377;
-  --status-awaiting-input: #f6b23c;
-  --status-exited: #9a938a;
 }

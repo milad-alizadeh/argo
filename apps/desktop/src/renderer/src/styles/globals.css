@@ -27,14 +27,26 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  --color-foreground-soft: var(--foreground-soft);
+  --color-foreground-faint: var(--foreground-faint);
+
   --color-panel: var(--panel);
   --color-inset: var(--inset);
   --color-inset-hair: var(--inset-hair);
+  --color-well: var(--well);
 
   --color-status-working: var(--status-working);
   --color-status-idle: var(--status-idle);
   --color-status-awaiting-input: var(--status-awaiting-input);
   --color-status-exited: var(--status-exited);
+  --color-status-failed: var(--status-failed);
+
+  --color-verdict-approve: var(--verdict-approve);
+  --color-verdict-changes: var(--verdict-changes);
+  --color-verdict-block: var(--verdict-block);
+
+  /* Shadow colour steps (offsets live at the use site):
+   * box-shadow: 0 18px 40px var(--shadow-3). Not mapped to utilities. */
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -44,31 +56,50 @@
   --font-sans: var(--sans);
   --font-mono: var(--mono);
 
-  /* Typography roles: text-micro … text-display apply the full tuple. */
-  --text-micro: var(--type-micro);
-  --text-micro--line-height: var(--type-micro-leading);
-  --text-micro--font-weight: var(--type-micro-weight);
-  --text-micro--letter-spacing: var(--type-micro-tracking);
-  --text-label: var(--type-label);
-  --text-label--line-height: var(--type-label-leading);
-  --text-label--font-weight: var(--type-label-weight);
-  --text-label--letter-spacing: var(--type-label-tracking);
-  --text-body: var(--type-body);
-  --text-body--line-height: var(--type-body-leading);
-  --text-body--font-weight: var(--type-body-weight);
-  --text-body--letter-spacing: var(--type-body-tracking);
-  --text-body-lg: var(--type-body-lg);
-  --text-body-lg--line-height: var(--type-body-lg-leading);
-  --text-body-lg--font-weight: var(--type-body-lg-weight);
-  --text-body-lg--letter-spacing: var(--type-body-lg-tracking);
+  /* Typography roles — the stock text-xs…text-9xl scale is removed: the role
+   * ladder below is the only type vocabulary (check:design-tokens enforces it).
+   * Each text-<role> utility applies the full tuple. */
+  --text-*: initial;
+  --text-headline: var(--type-headline);
+  --text-headline--line-height: var(--type-headline-leading);
+  --text-headline--font-weight: var(--type-headline-weight);
+  --text-headline--letter-spacing: var(--type-headline-tracking);
   --text-title: var(--type-title);
   --text-title--line-height: var(--type-title-leading);
   --text-title--font-weight: var(--type-title-weight);
   --text-title--letter-spacing: var(--type-title-tracking);
-  --text-display: var(--type-display);
-  --text-display--line-height: var(--type-display-leading);
-  --text-display--font-weight: var(--type-display-weight);
-  --text-display--letter-spacing: var(--type-display-tracking);
+  --text-row: var(--type-row);
+  --text-row--line-height: var(--type-row-leading);
+  --text-row--font-weight: var(--type-row-weight);
+  --text-row--letter-spacing: var(--type-row-tracking);
+  --text-row-strong: var(--type-row-strong);
+  --text-row-strong--line-height: var(--type-row-strong-leading);
+  --text-row-strong--font-weight: var(--type-row-strong-weight);
+  --text-row-strong--letter-spacing: var(--type-row-strong-tracking);
+  --text-prose: var(--type-prose);
+  --text-prose--line-height: var(--type-prose-leading);
+  --text-prose--font-weight: var(--type-prose-weight);
+  --text-prose--letter-spacing: var(--type-prose-tracking);
+  --text-meta: var(--type-meta);
+  --text-meta--line-height: var(--type-meta-leading);
+  --text-meta--font-weight: var(--type-meta-weight);
+  --text-meta--letter-spacing: var(--type-meta-tracking);
+  --text-tag: var(--type-tag);
+  --text-tag--line-height: var(--type-tag-leading);
+  --text-tag--font-weight: var(--type-tag-weight);
+  --text-tag--letter-spacing: var(--type-tag-tracking);
+  --text-eyebrow: var(--type-eyebrow);
+  --text-eyebrow--line-height: var(--type-eyebrow-leading);
+  --text-eyebrow--font-weight: var(--type-eyebrow-weight);
+  --text-eyebrow--letter-spacing: var(--type-eyebrow-tracking);
+  --text-code: var(--type-code);
+  --text-code--line-height: var(--type-code-leading);
+  --text-code--font-weight: var(--type-code-weight);
+  --text-code--letter-spacing: var(--type-code-tracking);
+  --text-code-inline: var(--type-code-inline);
+  --text-code-inline--line-height: var(--type-code-inline-leading);
+  --text-code-inline--font-weight: var(--type-code-inline-weight);
+  --text-code-inline--letter-spacing: var(--type-code-inline-tracking);
 
   /* Spacing roles: p-inset, gap-tight, … alongside Tailwind's numeric scale. */
   --spacing-hair: var(--space-hair);
@@ -91,5 +122,19 @@
     @apply bg-background text-foreground;
     margin: 0;
     font-family: var(--sans);
+  }
+
+  /* Facets a type role carries beyond the size tuple (Tailwind's --text-*
+   * sub-values stop at line-height/weight/tracking). One class = the whole role. */
+  .text-tag,
+  .text-eyebrow {
+    text-transform: uppercase;
+  }
+  .text-meta {
+    font-variant-numeric: tabular-nums;
+  }
+  .text-code,
+  .text-code-inline {
+    font-family: var(--mono);
   }
 }
