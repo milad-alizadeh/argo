@@ -46,6 +46,7 @@ up?" — with the detected recommendation marked, covering:
 | Choice | Delegates to | Recommend when |
 |---|---|---|
 | House engineering rules | `setup-rules` | always |
+| Terse output style (Claude Code default) | `setup-output-style` | always |
 | Pre-commit hooks (format/typecheck/test) | `setup-pre-commit` | package.json exists |
 | Knowledge graph (committed, hook-refreshed) | `setup-graphify` | repo beyond trivial size |
 | Module boundaries (dependency-cruiser) | `setup-module-boundaries` | monorepo / layered app |
@@ -61,6 +62,8 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
 4. `setup-module-boundaries` — lint config + CI gate.
 5. `setup-design-handoff` — token contract, study scaffolding, design-token
    check; depends on the rules from step 1.
+6. `setup-output-style` — Terse output style as the Claude Code session default;
+   independent of the rest, so it can run any time.
 
 Run them as skills (each owns its own detection and wizard details); don't
 inline their logic here. Between steps, report one line: what was installed,
