@@ -27,6 +27,12 @@
       "comment": "The UI (browser context). Talks to main only through the window bridge, never by import.",
       "path": "^src/renderer/",
       "publicEntry": ["^src/renderer/src/main\\.tsx$"]
+    },
+    {
+      "name": "ship",
+      "comment": "Pure ship-flow derivation inside the renderer: session facts → ribbon nodes, head, terminal, and the rail status word (cockpit-matrix.md). No React, no I/O — Views consume the derived model through its barrel and never re-derive it.",
+      "path": "^src/renderer/src/ship/",
+      "publicEntry": ["^src/renderer/src/ship/index\\.ts$"]
     }
   ],
   "layers": {
