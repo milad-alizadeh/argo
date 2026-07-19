@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Argo · Trim sweep orchestrator · Workflows</title>
+<style>
+  :root{
+    color-scheme:dark;
+    /* shadcn/ui system tokens (argo-tokens.css · warm graphite neutrals + indigo accent) */
+    --background:#0b0a08; --foreground:#efece6;
+    --card:#16130f; --card-foreground:#efece6;
+    --popover:#1c1813; --popover-foreground:#efece6;
+    --primary:#5468ea; --primary-foreground:#ffffff;
+    --secondary:#211d17; --secondary-foreground:#e7e2da;
+    --muted-foreground:#9a938a; --dimmer:#8b8377;
+    --accent:#5468ea; --accent-foreground:#ffffff;
+    --destructive:#e84a45; --destructive-foreground:#ffeceb;
+    --border:rgba(246,240,230,.09); --input:rgba(246,240,230,.13); --ring:#5468ea;
+    --success:#24ce7c; --success-foreground:#04140c;
+    --warning:#f6b23c; --warning-foreground:#1a1204;
+    --critical:#f5564f; --critical-foreground:#1b0908;
+    --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    /* legacy wireframe tokens remapped onto the system (SEMANTIC MAPPING) */
+    --bg:var(--background);
+    --glass:rgba(22,19,15,0.55);
+    --glass-2:rgba(22,19,15,0.62);
+    --glass-3:rgba(28,24,19,0.70);
+    --hair:var(--border);
+    --seam:rgba(246,240,230,0.05);
+    --text:var(--foreground);
+    --muted:var(--muted-foreground);
+    --dim:var(--dimmer);
+    /* lifecycle state — running is INDIGO (moved off green) */
+    --done:var(--muted-foreground);
+    --running:var(--primary);
+    --wait:var(--warning);
+    --fail:var(--critical);
+    --pending:var(--dimmer);
+    /* identity / voice */
+    --eclipse:var(--primary);
+    --eclipse-soft:rgba(84,104,234,0.16);
+    --font:var(--font-sans);
+    --mono:var(--font-mono);
+  }
+
+  /* ── TYPE SYSTEM roles (argo-tokens.css) — available as .t-* classes ── */
+  .t-hero    {font:700 28px/1.15 var(--font-sans);letter-spacing:-0.01em;color:var(--foreground)}
+  .t-title   {font:600 17px/1.2  var(--font-sans);letter-spacing:-0.006em;color:var(--foreground)}
+  .t-subtitle{font:600 14px/1.3  var(--font-sans);color:var(--foreground)}
+  .t-eyebrow {font:600 11px/1.1  var(--font-sans);letter-spacing:0.14em;text-transform:uppercase;color:var(--muted-foreground)}
+  .t-body    {font:400 13px/1.35 var(--font-sans);color:var(--foreground)}
+  .t-label   {font:500 12px/1.3  var(--font-sans);color:var(--foreground)}
+  .t-meta    {font:500 11px/1.3  var(--font-sans);letter-spacing:0.01em;color:var(--dimmer);font-variant-numeric:tabular-nums}
+  .t-micro   {font:500 10px/1.2  var(--font-sans);letter-spacing:0.03em;color:var(--muted-foreground)}
+  .t-mono    {font:400 12px/1.5  var(--font-mono)}
+  .t-mono-in {font:450 11px/1.3  var(--font-mono);letter-spacing:0}
+  /* Phosphor Light inline-icon helper — 1em, currentColor tint. */
+  .ic{width:1em;height:1em;display:inline-block;vertical-align:-0.14em;flex:none;fill:currentColor}
+  .ic.sm{width:.86em;height:.86em}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:var(--font);color:var(--text);
+    background:var(--bg);overflow:hidden;
+    font-size:13px;line-height:1.4;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* indigo night ground */
+  .ground{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(120% 70% at 50% -8%, rgba(84,104,234,0.20) 0%, rgba(84,104,234,0.06) 34%, rgba(0,0,0,0) 62%),
+      radial-gradient(80% 55% at 50% 112%, rgba(242,140,77,0.10) 0%, rgba(0,0,0,0) 70%),
+      radial-gradient(140% 120% at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%),
+      var(--bg);
+  }
+  .ground canvas{position:absolute;inset:0;width:100%;height:100%}
+  .tabnum{font-variant-numeric:tabular-nums}
+
+  /* ---------- app grid ---------- */
+  .app{
+    position:relative;z-index:1;height:100vh;width:100vw;
+    display:grid;grid-template-columns:288px 1fr 392px;
+    gap:0;padding:14px;
+    transition:grid-template-columns .22s ease;
+  }
+  .app.no-details{grid-template-columns:288px 1fr 0px}
+  .glass{
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(22px) saturate(1.2);
+    backdrop-filter:blur(22px) saturate(1.2);
+    border:1px solid rgba(246,240,230,0.045);
+    border-top:1px solid var(--hair);
+    border-radius:12px;
+    box-shadow:0 18px 50px -20px rgba(0,0,0,0.8), inset 0 1px 0 rgba(246,240,230,0.05);
+  }
+
+  /* ---------- rail ---------- */
+  .rail{display:flex;flex-direction:column;min-height:0;margin-right:12px;overflow:hidden}
+  .rail-top{padding:14px 14px 8px;flex:0 0 auto}
+  .rail-title{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .rail-scroll{flex:1 1 auto;overflow-y:auto;padding:2px 8px 8px}
+  .rail-scroll::-webkit-scrollbar,.pane-scroll::-webkit-scrollbar,.det-scroll::-webkit-scrollbar{width:8px}
+  .rail-scroll::-webkit-scrollbar-thumb,.pane-scroll::-webkit-scrollbar-thumb,.det-scroll::-webkit-scrollbar-thumb{background:rgba(246,240,230,.08);border-radius:8px}
+
+  .proj{margin:6px 4px 2px}
+  .proj-head{display:flex;align-items:center;gap:6px;padding:5px 6px;border-radius:7px;cursor:pointer;color:var(--muted);font-weight:600;font-size:12.5px}
+  .proj-head:hover{background:rgba(246,240,230,.03)}
+  .proj-head .caret{display:inline-flex;align-items:center;color:var(--dim);transition:transform .15s}
+  .proj.collapsed .caret{transform:rotate(-90deg)}
+  .proj.collapsed .sessions{display:none}
+  .proj-hint{margin-left:auto;font-size:10.5px;font-weight:600;color:var(--wait);letter-spacing:.02em;
+    background:color-mix(in srgb,var(--warning) 12%,transparent);border:1px solid color-mix(in srgb,var(--warning) 30%,transparent);border-radius:20px;padding:1px 8px}
+  .proj-count{margin-left:auto;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+
+  .sessions{display:flex;flex-direction:column;gap:3px;margin-top:3px}
+  .sess{
+    position:relative;padding:8px 10px 8px 12px;border-radius:9px;cursor:pointer;
+    border:1px solid transparent;
+  }
+  .sess:hover{background:rgba(246,240,230,.03)}
+  .sess.selected{background:var(--eclipse-soft);border-color:rgba(84,104,234,.3)}
+  .sess.focused::before{content:"";position:absolute;left:2px;top:8px;bottom:8px;width:2.5px;border-radius:2px;background:var(--eclipse);box-shadow:0 0 10px rgba(84,104,234,.7)}
+  .sess.focused{background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 22%,transparent),color-mix(in srgb,var(--primary) 4%,transparent))}
+  .sess-l1{display:flex;align-items:center;gap:7px}
+  .sess-name{font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto}
+  .sess-status{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.03em;color:var(--muted);white-space:nowrap;flex:0 0 auto}
+  .sess-l2{display:flex;align-items:center;gap:6px;margin-top:3px;font:400 11.5px/1.35 var(--font-sans);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sess-l2::first-letter{text-transform:uppercase}
+  /* session context progress bar (v7 session-card) */
+  .sess-ctx{display:flex;align-items:center;gap:7px;margin:8px 0 0}
+  .sess-ctx .track{flex:1;height:5px;border-radius:3px;background:rgba(246,240,230,0.09);overflow:hidden}
+  .sess-ctx .track>span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),color-mix(in srgb,var(--primary) 62%,#ffffff))}
+  .sess-ctx .pct{color:var(--dim);font-size:10px;font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .sess-meta{margin-top:4px;font:500 10.5px/1.3 var(--font-sans);color:var(--dim);letter-spacing:.01em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* attention pop */
+  .sess.pop{background:linear-gradient(90deg,color-mix(in srgb,var(--warning) 14%,transparent),color-mix(in srgb,var(--warning) 3%,transparent));border-color:color-mix(in srgb,var(--warning) 34%,transparent)}
+  .sess.pop::before{content:"";position:absolute;left:2px;top:8px;bottom:8px;width:2.5px;border-radius:2px;background:var(--wait);box-shadow:0 0 12px rgba(246,178,60,.75);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+
+  /* current-action icon — tinted by lifecycle, pulses while running */
+  .verb{display:inline-flex;align-items:center;justify-content:center;width:1.05em;color:var(--muted);flex:0 0 auto}
+  .verb.run{color:var(--running)} .verb.wait{color:var(--wait)} .verb.fail{color:var(--fail)} .verb.done{color:var(--done)}
+  @media (prefers-reduced-motion:no-preference){.verb.run{animation:sicpulse 1.9s ease-in-out infinite}}
+  @keyframes sicpulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+  /* status dot + word — glowing dots, all states */
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  .dot[data-s="running"]{background:var(--running);box-shadow:0 0 8px rgba(84,104,234,.7)}
+  .dot[data-s="done"]{background:var(--done);box-shadow:0 0 7px color-mix(in srgb,var(--done) 55%,transparent)}
+  .dot[data-s="wait"]{background:var(--wait);box-shadow:0 0 8px rgba(246,178,60,.6)}
+  .dot[data-s="fail"]{background:var(--fail);box-shadow:0 0 8px rgba(245,86,79,.6)}
+  .dot[data-s="pending"]{background:var(--pending);box-shadow:0 0 6px color-mix(in srgb,var(--pending) 55%,transparent)}
+  .sw-running{color:var(--running)} .sw-done{color:var(--done)} .sw-wait{color:var(--wait)} .sw-fail{color:var(--fail)} .sw-pending{color:var(--pending)}
+
+  /* concierge dock */
+  .dock{flex:0 0 auto;border-top:1px solid var(--seam);padding:10px 12px 12px;display:flex;align-items:center;gap:10px}
+  .orb-wrap{width:44px;height:44px;border-radius:50%;overflow:hidden;flex:0 0 auto;box-shadow:0 0 0 1px rgba(84,104,234,.25),0 0 18px -4px rgba(84,104,234,.5)}
+  .orb-wrap canvas{width:100%;height:100%;display:block}
+  .dock-body{min-width:0}
+  .dock-label{font-weight:600;font-size:12px;color:var(--text)}
+  .voice-switch{display:flex;gap:3px;margin-top:5px}
+  .voice-switch button{
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;color:var(--dim);
+    background:rgba(246,240,230,.03);border:1px solid rgba(246,240,230,.06);border-radius:5px;
+    padding:2px 5px;cursor:pointer;text-transform:lowercase;
+  }
+  .voice-switch button:hover{color:var(--muted)}
+  .voice-switch button.on{color:var(--eclipse);border-color:rgba(84,104,234,.4);background:rgba(84,104,234,.12)}
+
+  /* ---------- main ---------- */
+  .main{display:grid;grid-template-rows:auto 1fr auto;min-height:0;min-width:0}
+  .crumb-bar{
+    display:flex;align-items:center;gap:12px;padding:11px 16px;margin-bottom:12px;
+  }
+  .crumb{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .crumb b{color:var(--text);font-weight:600}
+  .crumb .sep{color:var(--dim);display:inline-flex;align-items:center;vertical-align:middle}
+  .crumb .lens{display:inline-flex;align-items:center;gap:5px;font:600 10px/1 var(--font-sans);letter-spacing:.12em;text-transform:uppercase;color:var(--eclipse);margin-left:6px}
+  .crumb-tools{margin-left:auto;display:flex;align-items:center;gap:8px;flex:0 0 auto}
+  .ptog{
+    font-size:11.5px;color:var(--muted);background:rgba(246,240,230,.03);
+    border:1px solid rgba(246,240,230,.07);border-radius:7px;padding:4px 9px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:5px;
+  }
+  .ptog[aria-pressed="true"]{color:var(--text);background:rgba(84,104,234,.13);border-color:rgba(84,104,234,.32)}
+  .ptog:hover{border-color:rgba(246,240,230,.16)}
+  .switch{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);cursor:pointer;user-select:none;
+    background:rgba(246,240,230,.03);border:1px solid rgba(246,240,230,.07);border-radius:7px;padding:4px 9px 4px 8px}
+  .switch input{position:absolute;opacity:0;width:0;height:0}
+  .track{width:26px;height:14px;border-radius:8px;background:rgba(246,240,230,.10);position:relative;transition:background .16s;flex:0 0 auto}
+  .track::after{content:"";position:absolute;top:1.5px;left:1.5px;width:11px;height:11px;border-radius:50%;background:var(--muted);transition:transform .16s,background .16s}
+  .switch input:checked + .track{background:rgba(84,104,234,.55)}
+  .switch input:checked + .track::after{transform:translateX(12px);background:#eef0fb}
+
+  .activity{overflow:hidden;display:flex;flex-direction:column;min-height:0}
+  .act-head{padding:12px 16px 8px;flex:0 0 auto;border-bottom:1px solid var(--seam)}
+  .act-title{font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text)}
+  .act-meta{margin-top:7px;display:flex;align-items:center;gap:9px;font:500 11px/1.3 var(--font-sans);color:var(--muted);font-variant-numeric:tabular-nums}
+  .ctxbar{display:inline-flex;align-items:center;gap:7px}
+  .ctxbar .bar{width:88px;height:6px;border-radius:4px;background:rgba(246,240,230,.08);overflow:hidden}
+  .ctxbar .fill{height:100%;width:63%;background:linear-gradient(90deg,var(--primary),color-mix(in srgb,var(--primary) 62%,#ffffff))}
+
+  .legend{margin-top:9px}
+  .legend>summary{list-style:none;cursor:pointer;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:inline-flex;align-items:center;gap:6px}
+  .legend>summary::-webkit-details-marker{display:none}
+  .legend>summary .lc{display:inline-flex;align-items:center;transition:transform .15s}
+  .legend[open]>summary .lc{transform:rotate(90deg)}
+  .legend-grid{margin-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 20px;padding:4px 2px 2px}
+  .legend-grid div{font-size:11px;color:var(--muted);font-family:var(--font-sans);display:flex;align-items:center;gap:7px}
+  .legend-grid .g{display:inline-flex;align-items:center;color:var(--muted);flex:0 0 auto}
+  .legend-grid .amber .g{color:var(--wait)}
+
+  .pane-scroll{flex:1 1 auto;overflow-y:auto;padding:14px 16px 18px}
+
+  .section-title{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:2px 2px 9px}
+  .section{margin-bottom:16px}
+  .card{background:var(--glass-2);border:1px solid rgba(246,240,230,.05);border-top:1px solid var(--hair);border-radius:11px;padding:12px 12px 6px;box-shadow:0 10px 30px -18px rgba(0,0,0,.7)}
+
+  /* run */
+  .run{padding:2px 0 6px}
+  .run + .run{margin-top:6px;padding-top:12px;border-top:1px solid var(--seam)}
+  .run-header{cursor:pointer;border-radius:8px;padding:6px 8px;margin:-2px -4px 6px}
+  .run-header:hover{background:rgba(246,240,230,.03)}
+  .run.selected>.run-header{background:var(--eclipse-soft);box-shadow:inset 2px 0 0 var(--eclipse)}
+  .rh-l1{display:flex;align-items:center;gap:8px}
+  .kind{display:inline-flex;align-items:center;justify-content:center;color:var(--muted);width:1.1em;flex:0 0 auto}
+  .rh-title{font-weight:600;font-size:13px;color:var(--text)}
+  .grow{flex:1 1 auto;min-width:8px;border-bottom:1px dotted rgba(246,240,230,.07);margin:0 4px;transform:translateY(-2px)}
+  .rh-status{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);flex:0 0 auto}
+  .rh-l2{margin-top:3px;padding-left:calc(1.1em + 8px);font:500 11px/1.3 var(--font-sans);color:var(--muted);font-variant-numeric:tabular-nums}
+  .run.collapsed .stages{display:none}
+  .run-header .rcaret{display:inline-flex;align-items:center;color:var(--dim);width:12px;flex:0 0 auto;transition:transform .15s}
+  .run.collapsed .rcaret{transform:rotate(-90deg)}
+
+  /* stages: left rail of pills + leaves */
+  .stages{position:relative;margin-left:2px}
+  .stage{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:4px 0}
+  .stage + .stage{border-top:1px solid rgba(246,240,230,.03)}
+  .pill{
+    align-self:start;margin-top:2px;position:relative;
+    border-radius:8px;padding:6px 9px;font-size:11px;
+    border:1px solid rgba(246,240,230,.06);
+  }
+  .pill .pname{font-weight:600;color:var(--text);font-size:11.5px}
+  .pill .pcount{display:block;margin-top:2px;font:500 10px/1.2 var(--font-sans);color:var(--dim);font-variant-numeric:tabular-nums}
+  .pill[data-s="done"]{background:color-mix(in srgb,var(--muted-foreground) 15%,transparent);border-color:color-mix(in srgb,var(--muted-foreground) 28%,transparent)}
+  .pill[data-s="running"]{background:color-mix(in srgb,var(--primary) 14%,transparent);border-color:color-mix(in srgb,var(--primary) 34%,transparent)}
+  .pill[data-s="pending"]{background:color-mix(in srgb,var(--dimmer) 13%,transparent);border-color:color-mix(in srgb,var(--dimmer) 26%,transparent)}
+  .pill[data-s="pending"] .pname{color:var(--muted)}
+  .pill[data-s="fail"]{background:color-mix(in srgb,var(--critical) 12%,transparent);border-color:color-mix(in srgb,var(--critical) 30%,transparent)}
+  .stage-leaves{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .empty-leaf{font:400 11px/1.4 var(--font-sans);color:var(--dim);padding:8px 4px}
+
+  /* leaf */
+  .leaf{padding:6px 8px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+  .leaf:hover{background:rgba(246,240,230,.03)}
+  .leaf.selected{background:var(--eclipse-soft);border-color:rgba(84,104,234,.3);box-shadow:inset 2px 0 0 var(--eclipse)}
+  .lf-l1{display:flex;align-items:center;gap:7px}
+  .lf-name{font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .lf-status{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);flex:0 0 auto}
+  .lf-l2{margin-top:3px;padding-left:calc(1.05em + 7px);font:500 11px/1.35 var(--font-sans);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lf-l2::first-letter{text-transform:uppercase}
+  .ref{color:var(--dim);font-family:var(--mono);display:inline-flex;align-items:center;gap:3px}
+  .ref .ic{opacity:.8}
+  .mode{color:var(--muted)}
+  body.hide-mode .mode{display:none}
+
+  /* ---------- details ---------- */
+  .details{display:flex;flex-direction:column;min-height:0;margin-left:12px;overflow:hidden}
+  .app.no-details .details{opacity:0;pointer-events:none}
+  .det-head{padding:13px 16px 0;flex:0 0 auto}
+  .det-title{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+  .det-title .di{display:inline-flex;align-items:center;color:var(--muted)}
+  .tabrow{display:flex;gap:2px;margin-top:12px;border-bottom:1px solid var(--seam)}
+  .tab{font-size:11.5px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;padding:7px 10px;cursor:pointer;font-family:var(--font)}
+  .tab:hover{color:var(--text)}
+  .tab.on{color:var(--text);border-bottom-color:var(--eclipse)}
+  .det-scroll{flex:1 1 auto;overflow-y:auto;padding:14px 16px 18px}
+  .feed{font-family:var(--mono);font-size:11.5px;line-height:1.65;color:var(--muted);white-space:pre-wrap;margin:0}
+  .feed .tail{color:var(--dim);font-style:italic}
+  .filecard{border:1px solid rgba(246,240,230,.08);border-radius:9px;overflow:hidden;background:rgba(246,240,230,.02)}
+  .fc-head{display:flex;align-items:center;gap:8px;padding:8px 11px;border-bottom:1px solid rgba(246,240,230,.06);font-family:var(--mono);font-size:11.5px}
+  .fc-head .fkind{display:inline-flex;align-items:center;color:var(--dim);flex:0 0 auto}
+  .fc-head .path{color:var(--text)}
+  .fc-head .stat{margin-left:auto;font-variant-numeric:tabular-nums}
+  .fc-head .add{color:var(--dim)} .fc-head .del{color:var(--dim)}
+  .hunk{font-family:var(--mono);font-size:11.5px;line-height:1.7;padding:8px 11px}
+  .hunk .del{color:var(--critical);background:color-mix(in srgb,var(--critical) 10%,transparent);display:block}
+  .hunk .add{color:var(--success);background:color-mix(in srgb,var(--success) 10%,transparent);display:block}
+  .files-list{display:flex;flex-direction:column;gap:6px}
+  .file-row{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11.5px;padding:7px 10px;border:1px solid rgba(246,240,230,.06);border-radius:8px;background:rgba(246,240,230,.02)}
+  .file-row .fkind{display:inline-flex;align-items:center;color:var(--dim);flex:0 0 auto}
+  .file-row .p{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .file-row .s{margin-left:auto;color:var(--dim);flex:0 0 auto;font-variant-numeric:tabular-nums}
+  .record{font:400 12px/1.6 var(--font-sans);color:var(--muted)}
+
+  /* ---------- terminal ---------- */
+  .terminal{margin-top:12px;flex:0 0 auto;overflow:hidden}
+  .term-head{display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--seam)}
+  .term-head .tt{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .term-hint{font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-left:8px}
+  .term-exp{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);background:rgba(246,240,230,.04);border:1px solid rgba(246,240,230,.08);border-radius:6px;width:24px;height:20px;cursor:pointer;line-height:1}
+  .term-exp .ic{transition:transform .2s}
+  .terminal.tall .term-exp .ic{transform:rotate(180deg)}
+  .term-exp:hover{color:var(--text)}
+  .term-body{
+    background:rgba(12,10,8,0.72);font-family:var(--mono);font-size:12px;line-height:1.6;
+    color:#c2bcb1;padding:10px 14px;height:74px;overflow:hidden;transition:height .2s ease;
+  }
+  .terminal.tall .term-body{height:186px;overflow-y:auto}
+  .term-scroll{color:var(--dim)}
+  .term-body .path{color:color-mix(in srgb,var(--primary) 55%,#ffffff)}
+  .term-body .ok{color:var(--running)}
+  .cursor{display:inline-block;width:8px;height:14px;background:#c2bcb1;vertical-align:-2px;margin-left:1px;animation:blink 1.05s steps(1) infinite}
+  @keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+
+  :focus-visible{outline:2px solid var(--eclipse);outline-offset:2px;border-radius:6px}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important}
+    .cursor{opacity:1}
+  }
+</style>
+</head>
+<body class="">
+<!-- Phosphor Light icon sprite (ph/*-light @ 0 0 256 256). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-wave-sine" viewBox="0 0 256 256"><path fill="currentColor" d="M237.43 130.55C215.84 176.57 197 198 178 198c-23.83 0-39.2-32.76-55.47-67.45C109.26 102.17 94.17 70 78 70c-9.18 0-25 10.5-48.53 60.55a6 6 0 0 1-10.86-5.1C40.16 79.43 59 58 78 58c23.83 0 39.2 32.76 55.47 67.45C146.74 153.83 161.83 186 178 186c9.18 0 25.05-10.5 48.53-60.55a6 6 0 0 1 10.86 5.1Z"/></symbol><symbol id="i-sidebar-simple" viewBox="0 0 256 256"><path fill="currentColor" d="M216 42H40a14 14 0 0 0-14 14v144a14 14 0 0 0 14 14h176a14 14 0 0 0 14-14V56a14 14 0 0 0-14-14M38 200V56a2 2 0 0 1 2-2h42v148H40a2 2 0 0 1-2-2m180 0a2 2 0 0 1-2 2H94V54h122a2 2 0 0 1 2 2Z"/></symbol><symbol id="i-pencil-simple" viewBox="0 0 256 256"><path fill="currentColor" d="m225.9 74.78l-44.69-44.69a14 14 0 0 0-19.8 0L38.1 153.41a13.94 13.94 0 0 0-4.1 9.9V208a14 14 0 0 0 14 14h44.69a13.94 13.94 0 0 0 9.9-4.1L225.9 94.58a14 14 0 0 0 0-19.8M94.1 209.41a2 2 0 0 1-1.41.59H48a2 2 0 0 1-2-2v-44.69a2 2 0 0 1 .59-1.41L136 72.48L183.51 120ZM217.41 86.1L192 111.51L144.49 64l25.41-25.42a2 2 0 0 1 2.83 0l44.68 44.69a2 2 0 0 1 0 2.83"/></symbol><symbol id="i-terminal-window" viewBox="0 0 256 256"><path fill="currentColor" d="M126 128a6 6 0 0 1-2.25 4.69l-40 32a6 6 0 0 1-7.5-9.38L110.4 128l-34.15-27.31a6 6 0 1 1 7.5-9.38l40 32A6 6 0 0 1 126 128m50 26h-40a6 6 0 0 0 0 12h40a6 6 0 0 0 0-12m54-98v144a14 14 0 0 1-14 14H40a14 14 0 0 1-14-14V56a14 14 0 0 1 14-14h176a14 14 0 0 1 14 14m-12 0a2 2 0 0 0-2-2H40a2 2 0 0 0-2 2v144a2 2 0 0 0 2 2h176a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-magnifying-glass" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 219.76l-51.38-51.38a86.15 86.15 0 1 0-8.48 8.48l51.38 51.38a6 6 0 0 0 8.48-8.48M38 112a74 74 0 1 1 74 74a74.09 74.09 0 0 1-74-74"/></symbol><symbol id="i-git-commit" viewBox="0 0 256 256"><path fill="currentColor" d="M248 122h-66.34a54 54 0 0 0-107.32 0H8a6 6 0 0 0 0 12h66.34a54 54 0 0 0 107.32 0H248a6 6 0 0 0 0-12m-120 48a42 42 0 1 1 42-42a42 42 0 0 1-42 42"/></symbol><symbol id="i-flag" viewBox="0 0 256 256"><path fill="currentColor" d="M44.08 51.37A6 6 0 0 0 42 55.9V224a6 6 0 0 0 12 0v-45.22c28.08-22.79 51.88-11 79.34 2.57c16.12 8 33.49 16.58 52 16.58c13.57 0 27.76-4.6 42.56-17.42A6 6 0 0 0 230 176V55.9a6 6 0 0 0-9.93-4.54c-29 25.12-53.28 13.09-81.41-.84c-27.89-13.81-59.66-29.36-94.58.85M218 173.17c-28.08 22.8-51.88 11-79.34-2.58C113.4 158.08 85.09 144.07 54 164V58.72c28.08-22.8 51.88-11 79.34 2.56C158.6 73.79 186.91 87.8 218 67.91Z"/></symbol><symbol id="i-arrow-bend-down-right" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 156.24l-48 48a6 6 0 0 1-8.48-8.48L209.51 158H128A102.12 102.12 0 0 1 26 56a6 6 0 0 1 12 0a90.1 90.1 0 0 0 90 90h81.51l-37.75-37.76a6 6 0 0 1 8.48-8.48l48 48a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-git-merge" viewBox="0 0 256 256"><path fill="currentColor" d="M208 114a30 30 0 0 0-29.21 23.19l-44-6.28a10 10 0 0 1-6.18-3.39L91.18 83.83A30 30 0 1 0 74 85.4v85.2a30 30 0 1 0 12 0V96.22l33.52 39.11a22 22 0 0 0 13.6 7.46l45.35 6.48A30 30 0 1 0 208 114M62 56a18 18 0 1 1 18 18a18 18 0 0 1-18-18m36 144a18 18 0 1 1-18-18a18 18 0 0 1 18 18m110-38a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-arrow-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M238 56v48a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h32.55l-30.38-27.8c-.06-.06-.12-.13-.19-.19a82 82 0 1 0-1.7 117.65a6 6 0 0 1 8.24 8.73A93.46 93.46 0 0 1 128 222h-1.28a94 94 0 1 1 67.65-160.6L226 90.35V56a6 6 0 1 1 12 0"/></symbol><symbol id="i-arrow-counter-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M222 128a94 94 0 0 1-92.74 94H128a93.43 93.43 0 0 1-64.5-25.65a6 6 0 1 1 8.24-8.72A82 82 0 1 0 70 70l-.19.19L39.44 98H72a6 6 0 0 1 0 12H24a6 6 0 0 1-6-6V56a6 6 0 0 1 12 0v34.34L61.63 61.4A94 94 0 0 1 222 128"/></symbol><symbol id="i-check" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 76.24l-128 128a6 6 0 0 1-8.48 0l-56-56a6 6 0 0 1 8.48-8.48L96 191.51L219.76 67.76a6 6 0 0 1 8.48 8.48"/></symbol><symbol id="i-x" viewBox="0 0 256 256"><path fill="currentColor" d="M204.24 195.76a6 6 0 1 1-8.48 8.48L128 136.49l-67.76 67.75a6 6 0 0 1-8.48-8.48L119.51 128L51.76 60.24a6 6 0 0 1 8.48-8.48L128 119.51l67.76-67.75a6 6 0 0 1 8.48 8.48L136.49 128Z"/></symbol><symbol id="i-warning" viewBox="0 0 256 256"><path fill="currentColor" d="M235.07 189.09L147.61 37.22a22.75 22.75 0 0 0-39.22 0L20.93 189.09a21.53 21.53 0 0 0 0 21.72A22.35 22.35 0 0 0 40.55 222h174.9a22.35 22.35 0 0 0 19.6-11.19a21.53 21.53 0 0 0 .02-21.72m-10.41 15.71a10.46 10.46 0 0 1-9.21 5.2H40.55a10.46 10.46 0 0 1-9.21-5.2a9.51 9.51 0 0 1 0-9.72l87.45-151.87a10.75 10.75 0 0 1 18.42 0l87.46 151.87a9.51 9.51 0 0 1-.01 9.72M122 144v-40a6 6 0 0 1 12 0v40a6 6 0 0 1-12 0m16 36a10 10 0 1 1-10-10a10 10 0 0 1 10 10"/></symbol><symbol id="i-circle-notch" viewBox="0 0 256 256"><path fill="currentColor" d="M230 128a102 102 0 0 1-204 0c0-40.18 23.35-76.86 59.5-93.45a6 6 0 0 1 5 10.9C58.61 60.09 38 92.49 38 128a90 90 0 0 0 180 0c0-35.51-20.61-67.91-52.5-82.55a6 6 0 0 1 5-10.9C206.65 51.14 230 87.82 230 128"/></symbol><symbol id="i-circle-half" viewBox="0 0 256 256"><path fill="currentColor" d="M128 26a102 102 0 1 0 102 102A102.12 102.12 0 0 0 128 26m6 12.2a90 90 0 0 1 20 3.63v172.34a90 90 0 0 1-20 3.63Zm32 8.23a90.5 90.5 0 0 1 20 12.81v137.52a90.5 90.5 0 0 1-20 12.81ZM38 128a90.12 90.12 0 0 1 84-89.8v179.6A90.12 90.12 0 0 1 38 128m160 56.5v-113a89.81 89.81 0 0 1 0 113"/></symbol><symbol id="i-circle" viewBox="0 0 256 256"><path fill="currentColor" d="M128 26a102 102 0 1 0 102 102A102.12 102.12 0 0 0 128 26m0 192a90 90 0 1 1 90-90a90.1 90.1 0 0 1-90 90"/></symbol><symbol id="i-gear" viewBox="0 0 256 256"><path fill="currentColor" d="M128 82a46 46 0 1 0 46 46a46.06 46.06 0 0 0-46-46m0 80a34 34 0 1 1 34-34a34 34 0 0 1-34 34m86-31.16c.06-1.89.06-3.79 0-5.68L229.33 106a6 6 0 0 0 1.11-5.29a105.3 105.3 0 0 0-10.68-25.81a6 6 0 0 0-4.53-3l-24.45-2.71q-1.93-2.07-4-4l-2.72-24.46a6 6 0 0 0-3-4.53a105.7 105.7 0 0 0-25.77-10.66a6 6 0 0 0-5.29 1.14l-19.2 15.37a90 90 0 0 0-5.68 0L106 26.67a6 6 0 0 0-5.29-1.11A105.3 105.3 0 0 0 74.9 36.24a6 6 0 0 0-3 4.53l-2.67 24.45q-2.07 1.94-4 4L40.76 72a6 6 0 0 0-4.53 3a105.7 105.7 0 0 0-10.66 25.77a6 6 0 0 0 1.11 5.23l15.37 19.2a90 90 0 0 0 0 5.68l-15.38 19.17a6 6 0 0 0-1.11 5.29a105.3 105.3 0 0 0 10.68 25.76a6 6 0 0 0 4.53 3l24.45 2.71q1.94 2.07 4 4L72 215.24a6 6 0 0 0 3 4.53a105.7 105.7 0 0 0 25.77 10.66a6 6 0 0 0 5.29-1.11l19.1-15.32c1.89.06 3.79.06 5.68 0l19.21 15.38a6 6 0 0 0 3.75 1.31a6.2 6.2 0 0 0 1.54-.2a105.3 105.3 0 0 0 25.76-10.68a6 6 0 0 0 3-4.53l2.71-24.45q2.07-1.93 4-4l24.46-2.72a6 6 0 0 0 4.53-3a105.5 105.5 0 0 0 10.66-25.77a6 6 0 0 0-1.11-5.29Zm-3.1 41.63l-23.64 2.63a6 6 0 0 0-3.82 2a75 75 0 0 1-6.31 6.31a6 6 0 0 0-2 3.82l-2.63 23.63a94.3 94.3 0 0 1-17.36 7.14l-18.57-14.86a6 6 0 0 0-3.75-1.31h-.36a78 78 0 0 1-8.92 0a6 6 0 0 0-4.11 1.3L100.87 218a94 94 0 0 1-17.34-7.17l-2.63-23.62a6 6 0 0 0-2-3.82a75 75 0 0 1-6.31-6.31a6 6 0 0 0-3.82-2l-23.63-2.63A94.3 94.3 0 0 1 38 155.14l14.86-18.57a6 6 0 0 0 1.3-4.11a78 78 0 0 1 0-8.92a6 6 0 0 0-1.3-4.11L38 100.87a94 94 0 0 1 7.17-17.34l23.62-2.63a6 6 0 0 0 3.82-2a75 75 0 0 1 6.31-6.31a6 6 0 0 0 2-3.82l2.63-23.63A94.3 94.3 0 0 1 100.86 38l18.57 14.86a6 6 0 0 0 4.11 1.3a78 78 0 0 1 8.92 0a6 6 0 0 0 4.11-1.3L155.13 38a94 94 0 0 1 17.34 7.17l2.63 23.64a6 6 0 0 0 2 3.82a75 75 0 0 1 6.31 6.31a6 6 0 0 0 3.82 2l23.63 2.63a94.3 94.3 0 0 1 7.14 17.29l-14.86 18.57a6 6 0 0 0-1.3 4.11a78 78 0 0 1 0 8.92a6 6 0 0 0 1.3 4.11L218 155.13a94 94 0 0 1-7.15 17.34Z"/></symbol><symbol id="i-caret-right" viewBox="0 0 256 256"><path fill="currentColor" d="m180.24 132.24l-80 80a6 6 0 0 1-8.48-8.48L167.51 128L91.76 52.24a6 6 0 0 1 8.48-8.48l80 80a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-caret-left" viewBox="0 0 256 256"><path fill="currentColor" d="M164.24 203.76a6 6 0 1 1-8.48 8.48l-80-80a6 6 0 0 1 0-8.48l80-80a6 6 0 0 1 8.48 8.48L88.49 128Z"/></symbol><symbol id="i-caret-down" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 100.24l-80 80a6 6 0 0 1-8.48 0l-80-80a6 6 0 0 1 8.48-8.48L128 167.51l75.76-75.75a6 6 0 0 1 8.48 8.48"/></symbol><symbol id="i-caret-up" viewBox="0 0 256 256"><path fill="currentColor" d="M212.24 164.24a6 6 0 0 1-8.48 0L128 88.49l-75.76 75.75a6 6 0 0 1-8.48-8.48l80-80a6 6 0 0 1 8.48 0l80 80a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-plus" viewBox="0 0 256 256"><path fill="currentColor" d="M222 128a6 6 0 0 1-6 6h-82v82a6 6 0 0 1-12 0v-82H40a6 6 0 0 1 0-12h82V40a6 6 0 0 1 12 0v82h82a6 6 0 0 1 6 6"/></symbol><symbol id="i-notebook" viewBox="0 0 256 256"><path fill="currentColor" d="M182 112a6 6 0 0 1-6 6h-64a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6m-6 26h-64a6 6 0 0 0 0 12h64a6 6 0 0 0 0-12m46-90v160a14 14 0 0 1-14 14H48a14 14 0 0 1-14-14V48a14 14 0 0 1 14-14h160a14 14 0 0 1 14 14M48 210h26V46H48a2 2 0 0 0-2 2v160a2 2 0 0 0 2 2M210 48a2 2 0 0 0-2-2H86v164h122a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-sparkle" viewBox="0 0 256 256"><path fill="currentColor" d="M196.89 130.94L144.4 111.6l-19.34-52.49a13.92 13.92 0 0 0-26.12 0L79.6 111.6l-52.49 19.34a13.92 13.92 0 0 0 0 26.12L79.6 176.4l19.34 52.49a13.92 13.92 0 0 0 26.12 0l19.34-52.49l52.49-19.34a13.92 13.92 0 0 0 0-26.12m-4.15 14.86l-55.08 20.3a6 6 0 0 0-3.56 3.56l-20.3 55.08a1.92 1.92 0 0 1-3.6 0l-20.3-55.08a6 6 0 0 0-3.56-3.56l-55.08-20.3a1.92 1.92 0 0 1 0-3.6l55.08-20.3a6 6 0 0 0 3.56-3.56l20.3-55.08a1.92 1.92 0 0 1 3.6 0l20.3 55.08a6 6 0 0 0 3.56 3.56l55.08 20.3a1.92 1.92 0 0 1 0 3.6M146 40a6 6 0 0 1 6-6h18V16a6 6 0 0 1 12 0v18h18a6 6 0 0 1 0 12h-18v18a6 6 0 0 1-12 0V46h-18a6 6 0 0 1-6-6m100 48a6 6 0 0 1-6 6h-10v10a6 6 0 0 1-12 0V94h-10a6 6 0 0 1 0-12h10V72a6 6 0 0 1 12 0v10h10a6 6 0 0 1 6 6"/></symbol><symbol id="i-bug" viewBox="0 0 256 256"><path fill="currentColor" d="M146 92a10 10 0 1 1 10 10a10 10 0 0 1-10-10m-46-10a10 10 0 1 0 10 10a10 10 0 0 0-10-10m146 46a6 6 0 0 1-6 6h-26v10a85.9 85.9 0 0 1-3.45 24.08l23.85 10.42a6 6 0 0 1-4.8 11l-23.23-10.15a86 86 0 0 1-156.74 0L26.4 189.5a6 6 0 1 1-4.8-11l23.85-10.42A85.9 85.9 0 0 1 42 144v-10H16a6 6 0 0 1 0-12h26v-10a85.9 85.9 0 0 1 3.45-24.08L21.6 77.5a6 6 0 0 1 4.8-11l23.23 10.15a86 86 0 0 1 156.74 0L229.6 66.5a6 6 0 1 1 4.8 11l-23.85 10.42A85.9 85.9 0 0 1 214 112v10h26a6 6 0 0 1 6 6m-192-6h148v-10a74 74 0 0 0-148 0Zm68 95.74V134H54v10a74.09 74.09 0 0 0 68 73.74M202 134h-68v83.74A74.09 74.09 0 0 0 202 144Z"/></symbol><symbol id="i-arrows-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M222 48v48a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h33.52l-18.05-18a81.5 81.5 0 0 0-57.53-24h-.46a81.5 81.5 0 0 0-57.29 23.28a6 6 0 1 1-8.38-8.58a93.38 93.38 0 0 1 65.67-26.76h.52a93.45 93.45 0 0 1 66 27.53l18 18V48a6 6 0 0 1 12 0m-34.19 136.72a81.5 81.5 0 0 1-57.29 23.34h-.46a81.5 81.5 0 0 1-57.53-24L54.48 166H88a6 6 0 0 0 0-12H40a6 6 0 0 0-6 6v48a6 6 0 0 0 12 0v-33.52l18 18.05a93.45 93.45 0 0 0 66 27.53h.52a93.38 93.38 0 0 0 65.67-26.76a6 6 0 1 0-8.38-8.58"/></symbol><symbol id="i-check-square" viewBox="0 0 256 256"><path fill="currentColor" d="M172.24 99.76a6 6 0 0 1 0 8.48l-56 56a6 6 0 0 1-8.48 0l-24-24a6 6 0 0 1 8.48-8.48L112 151.51l51.76-51.75a6 6 0 0 1 8.48 0M222 48v160a14 14 0 0 1-14 14H48a14 14 0 0 1-14-14V48a14 14 0 0 1 14-14h160a14 14 0 0 1 14 14m-12 0a2 2 0 0 0-2-2H48a2 2 0 0 0-2 2v160a2 2 0 0 0 2 2h160a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-file-text" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-34-82a6 6 0 0 1-6 6H96a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6m0 32a6 6 0 0 1-6 6H96a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6"/></symbol><symbol id="i-binoculars" viewBox="0 0 256 256"><path fill="currentColor" d="M233 147.24L191.43 52.6a6 6 0 0 0-1.25-1.83a30 30 0 0 0-42.42 0A6 6 0 0 0 146 55v27h-36V55a6 6 0 0 0-1.76-4.25a30 30 0 0 0-42.42 0a6 6 0 0 0-1.25 1.83L23 147.24A46 46 0 1 0 110 168V94h36v74a46 46 0 1 0 87-20.76M64 202a34 34 0 1 1 34-34a34 34 0 0 1-34 34m0-80a45.8 45.8 0 0 0-18.55 3.92l29.61-67.38A18 18 0 0 1 98 57.71V137a45.9 45.9 0 0 0-34-15m94-64.28a18 18 0 0 1 22.94.83l29.61 67.37A45.9 45.9 0 0 0 158 137ZM192 202a34 34 0 1 1 34-34a34 34 0 0 1-34 34"/></symbol><symbol id="i-git-diff" viewBox="0 0 256 256"><path fill="currentColor" d="M112 154a6 6 0 0 0-6 6v33.52l-41.07-41.08a9.93 9.93 0 0 1-2.93-7.07v-52a30 30 0 1 0-12 0v52a21.88 21.88 0 0 0 6.44 15.56L97.52 202H64a6 6 0 0 0 0 12h48a6 6 0 0 0 6-6v-48a6 6 0 0 0-6-6M38 64a18 18 0 1 1 18 18a18 18 0 0 1-18-18m168 98.6v-52a21.88 21.88 0 0 0-6.44-15.56L158.48 54H192a6 6 0 0 0 0-12h-48a6 6 0 0 0-6 6v48a6 6 0 0 0 12 0V62.48l41.07 41.08a9.93 9.93 0 0 1 2.93 7.07v52a30 30 0 1 0 12 0Zm-6 47.4a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-file-plus" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-42-66a6 6 0 0 1-6 6h-18v18a6 6 0 0 1-12 0v-18h-18a6 6 0 0 1 0-12h18v-18a6 6 0 0 1 12 0v18h18a6 6 0 0 1 6 6"/></symbol><symbol id="i-file-minus" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-42-66a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h48a6 6 0 0 1 6 6"/></symbol><symbol id="i-arrows-merge" viewBox="0 0 256 256"><path fill="currentColor" d="M190 40v64a6 6 0 0 1-1.76 4.24L134 162.49v55l21.76-21.75a6 6 0 0 1 8.48 8.48l-32 32a6 6 0 0 1-8.48 0l-32-32a6 6 0 0 1 8.48-8.48L122 217.51v-55l-54.24-54.27A6 6 0 0 1 66 104V40a6 6 0 0 1 12 0v61.51l50 50l50-50V40a6 6 0 0 1 12 0"/></symbol></svg>
+<div class="ground"><canvas id="bg"></canvas></div>
+
+<div class="app" id="app">
+
+  <!-- ========== RAIL ========== -->
+  <aside class="rail glass" aria-label="Projects and sessions">
+    <div class="rail-top"><div class="rail-title">Projects</div></div>
+    <div class="rail-scroll">
+
+      <div class="proj" id="proj-v2">
+        <div class="proj-head" data-proj="proj-v2">
+          <span class="caret"><svg class="ic"><use href="#i-caret-down"/></svg></span><span>argo-v2</span>
+          <span class="proj-hint">3 need you</span>
+        </div>
+        <div class="sessions">
+
+          <div class="sess focused" data-id="sess-orch" data-title="Trim sweep orchestrator">
+            <div class="sess-l1"><span class="verb run"><svg class="ic"><use href="#i-arrow-bend-down-right"/></svg></span><span class="sess-name">Trim sweep orchestrator</span>
+              <span class="sess-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+            <div class="sess-l2"><span class="mode">Delegating · </span>10 agents · 2 workflows</div>
+            <div class="sess-ctx"><span class="track"><span style="width:63%"></span></span><span class="pct">63%</span></div>
+            <div class="sess-meta">Fable 5 · 812K · 41m</div>
+          </div>
+
+          <div class="sess" data-id="sess-auth" data-title="Auth refactor">
+            <div class="sess-l1"><span class="verb run"><svg class="ic"><use href="#i-pencil-simple"/></svg></span><span class="sess-name">Auth refactor</span>
+              <span class="sess-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+            <div class="sess-l2"><span class="mode">Editing · </span>src/auth/legacy.ts</div>
+            <div class="sess-ctx"><span class="track"><span style="width:42%"></span></span><span class="pct">42%</span></div>
+            <div class="sess-meta">sonnet · 118K · 12m</div>
+          </div>
+
+          <div class="sess" data-id="sess-ci" data-title="Why is CI flaky">
+            <div class="sess-l1"><span class="verb run"><svg class="ic"><use href="#i-terminal-window"/></svg></span><span class="sess-name">Why is CI flaky</span>
+              <span class="sess-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+            <div class="sess-l2"><span class="mode">Running · </span>20× e2e at parallelism=4</div>
+            <div class="sess-ctx"><span class="track"><span style="width:18%"></span></span><span class="pct">18%</span></div>
+            <div class="sess-meta">opus · 64K · 8m</div>
+          </div>
+
+          <div class="sess" data-id="sess-hero" data-title="Landing hero rework">
+            <div class="sess-l1"><span class="verb run"><svg class="ic"><use href="#i-sparkle"/></svg></span><span class="sess-name">Landing hero rework</span>
+              <span class="sess-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+            <div class="sess-l2"><span class="mode">On canvas · </span>hero visual 3/4</div>
+            <div class="sess-ctx"><span class="track"><span style="width:51%"></span></span><span class="pct">51%</span></div>
+            <div class="sess-meta">sonnet · 402K · 33m</div>
+          </div>
+
+          <div class="sess" data-id="sess-voice" data-title="Voice concierge plan">
+            <div class="sess-l1"><span class="verb run"><svg class="ic"><use href="#i-pencil-simple"/></svg></span><span class="sess-name">Voice concierge plan</span>
+              <span class="sess-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+            <div class="sess-l2"><span class="mode">Editing · </span>drafting section 4</div>
+            <div class="sess-ctx"><span class="track"><span style="width:22%"></span></span><span class="pct">22%</span></div>
+            <div class="sess-meta">opus · 71K · 15m</div>
+          </div>
+
+          <div class="sess" data-id="sess-review" data-title="Auth refactor review">
+            <div class="sess-l1"><span class="verb wait"><svg class="ic"><use href="#i-binoculars"/></svg></span><span class="sess-name">Auth refactor review</span>
+              <span class="sess-status"><span class="sw-wait">Review</span><span class="dot" data-s="wait"></span></span></div>
+            <div class="sess-l2"><span class="mode">Verifying · </span>verdict ready · 2 findings</div>
+            <div class="sess-ctx"><span class="track"><span style="width:30%"></span></span><span class="pct">30%</span></div>
+            <div class="sess-meta">sonnet · 88K · 6m</div>
+          </div>
+
+          <div class="sess pop" data-id="sess-token" data-title="Legacy token cleanup">
+            <div class="sess-l1"><span class="verb wait"><svg class="ic"><use href="#i-warning"/></svg></span><span class="sess-name">Legacy token cleanup</span>
+              <span class="sess-status"><span class="sw-wait">Needs input</span><span class="dot" data-s="wait"></span></span></div>
+            <div class="sess-l2">keep or delete the legacy token path?</div>
+            <div class="sess-ctx"><span class="track"><span style="width:37%"></span></span><span class="pct">37%</span></div>
+            <div class="sess-meta">sonnet · 96K · 26m</div>
+          </div>
+
+          <div class="sess" data-id="sess-docs" data-title="Docs restructure">
+            <div class="sess-l1"><span class="verb wait"><svg class="ic"><use href="#i-warning"/></svg></span><span class="sess-name">Docs restructure</span>
+              <span class="sess-status"><span class="sw-wait">Interrupted</span><span class="dot" data-s="wait"></span></span></div>
+            <div class="sess-l2">was running when the app closed</div>
+            <div class="sess-ctx"><span class="track"><span style="width:44%"></span></span><span class="pct">44%</span></div>
+            <div class="sess-meta">sonnet · 210K · 2h</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="proj collapsed" id="proj-plugin">
+        <div class="proj-head" data-proj="proj-plugin">
+          <span class="caret"><svg class="ic"><use href="#i-caret-down"/></svg></span><span>argo-plugin</span>
+          <span class="proj-count">2</span>
+        </div>
+        <div class="sessions">
+          <div class="sess" data-id="sess-plug1" data-title="Plugin manifest sync">
+            <div class="sess-l1"><span class="verb run"><svg class="ic"><use href="#i-magnifying-glass"/></svg></span><span class="sess-name">Plugin manifest sync</span>
+              <span class="sess-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+            <div class="sess-l2"><span class="mode">Exploring · </span>bundle.json refs</div>
+            <div class="sess-ctx"><span class="track"><span style="width:15%"></span></span><span class="pct">15%</span></div>
+            <div class="sess-meta">sonnet · 40K · 4m</div>
+          </div>
+          <div class="sess" data-id="sess-plug2" data-title="Release notes draft">
+            <div class="sess-l1"><span class="verb done"><svg class="ic"><use href="#i-git-commit"/></svg></span><span class="sess-name">Release notes draft</span>
+              <span class="sess-status"><span class="sw-done">Done</span><span class="dot" data-s="done"></span></span></div>
+            <div class="sess-l2"><span class="mode">Committed · </span>notes: v0.4 skills</div>
+            <div class="sess-ctx"><span class="track"><span style="width:28%"></span></span><span class="pct">28%</span></div>
+            <div class="sess-meta">opus · 90K · 19m</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="dock">
+      <div class="orb-wrap"><canvas id="orb"></canvas></div>
+      <div class="dock-body">
+        <div class="dock-label">Concierge</div>
+        <div class="voice-switch" id="voice">
+          <button data-st="idle" class="on">idle</button>
+          <button data-st="listening">listen</button>
+          <button data-st="thinking">think</button>
+          <button data-st="speaking">speak</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <main class="main">
+    <div class="crumb-bar glass">
+      <div class="crumb">argo-v2 <span class="sep"><svg class="ic sm"><use href="#i-caret-right"/></svg></span> <b>Trim sweep orchestrator</b> <span class="lens"><svg class="ic"><use href="#i-git-merge"/></svg> Workflows</span></div>
+      <div class="crumb-tools">
+        <button class="ptog" id="tog-activity" aria-pressed="true"><svg class="ic"><use href="#i-wave-sine"/></svg> Activity</button>
+        <button class="ptog" id="tog-details" aria-pressed="true"><svg class="ic"><use href="#i-sidebar-simple"/></svg> Details</button>
+        <label class="switch"><input type="checkbox" id="tog-mode" checked><span class="track"></span>Inferred mode</label>
+      </div>
+    </div>
+
+    <section class="activity glass" id="activity">
+      <div class="act-head">
+        <div class="act-title">Activity</div>
+        <div class="act-meta">
+          <span class="ctxbar">ctx <span class="bar"><span class="fill"></span></span> 63%</span>
+          <span>· Fable 5 · 812K tok · 41m</span>
+        </div>
+        <details class="legend">
+          <summary><span class="lc"><svg class="ic"><use href="#i-caret-right"/></svg></span> Legend · activity vocabulary</summary>
+          <div class="legend-grid">
+            <div><span class="g"><svg class="ic"><use href="#i-magnifying-glass"/></svg></span> Exploring — Read / Grep</div>
+            <div><span class="g"><svg class="ic"><use href="#i-pencil-simple"/></svg></span> Editing — Edit / Write</div>
+            <div><span class="g"><svg class="ic"><use href="#i-check"/></svg></span> Verifying — test / lint / tsc</div>
+            <div><span class="g"><svg class="ic"><use href="#i-terminal-window"/></svg></span> Running — other Bash</div>
+            <div><span class="g"><svg class="ic"><use href="#i-magnifying-glass"/></svg></span> Researching — WebFetch</div>
+            <div><span class="g"><svg class="ic"><use href="#i-arrow-bend-down-right"/></svg></span> Delegating — spawn agent</div>
+            <div><span class="g"><svg class="ic"><use href="#i-sparkle"/></svg></span> On canvas — Figma / MCP</div>
+            <div class="amber"><span class="g"><svg class="ic"><use href="#i-warning"/></svg></span> Waiting on you</div>
+            <div><span class="g"><svg class="ic"><use href="#i-git-merge"/></svg></span> Landing — push / PR</div>
+            <div><span class="g"><svg class="ic"><use href="#i-git-commit"/></svg></span> Committed — finished</div>
+          </div>
+        </details>
+      </div>
+
+      <div class="pane-scroll" id="activityScroll">
+
+        <!-- SECTION: WORKFLOWS -->
+        <div class="section">
+          <div class="section-title">Workflows</div>
+          <div class="card">
+
+            <!-- RUN 1 -->
+            <div class="run" data-runid="run1">
+              <div class="run-header" data-id="run-1" data-title="Trim layer 1 fanout 3">
+                <div class="rh-l1">
+                  <span class="rcaret" data-caret><svg class="ic"><use href="#i-caret-down"/></svg></span>
+                  <span class="kind"><svg class="ic"><use href="#i-arrow-bend-down-right"/></svg></span>
+                  <span class="rh-title">Trim layer 1 fanout 3</span>
+                  <span class="grow"></span>
+                  <span class="rh-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span>
+                </div>
+                <div class="rh-l2">Batch · 3/6 agents</div>
+              </div>
+              <div class="stages">
+
+                <div class="stage">
+                  <div class="pill" data-s="done"><span class="pname">Warm</span><span class="pcount">1/1 agents</span></div>
+                  <div class="stage-leaves">
+                    <div class="leaf" data-id="skill-purge" data-title="Skill purge">
+                      <div class="lf-l1"><span class="verb done"><svg class="ic"><use href="#i-git-commit"/></svg></span><span class="lf-name">Skill purge</span></div>
+                      <div class="lf-l2"><span class="mode">Done · </span>committed 'trim: purge handoff skills' · <span class="ref"><svg class="ic sm"><use href="#i-git-merge"/></svg> trim/skill-purge</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="stage">
+                  <div class="pill" data-s="running"><span class="pname">Build</span><span class="pcount">2/5 agents</span></div>
+                  <div class="stage-leaves">
+                    <div class="leaf selected" data-id="kit-surface-trim" data-title="Kit surface trim">
+                      <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-check"/></svg></span><span class="lf-name">Kit surface trim</span>
+                        <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+                      <div class="lf-l2"><span class="mode">Verifying · </span>running tsc --noEmit · <span class="ref"><svg class="ic sm"><use href="#i-git-merge"/></svg> trim/verify-trim</span> · 1/2 criteria</div>
+                    </div>
+                    <div class="leaf" data-id="docs-sweep" data-title="Docs sweep">
+                      <div class="lf-l1"><span class="verb done"><svg class="ic"><use href="#i-git-commit"/></svg></span><span class="lf-name">Docs sweep</span>
+                        <span class="grow"></span><span class="lf-status"><span class="sw-done">Finished</span><span class="dot" data-s="done"></span></span></div>
+                      <div class="lf-l2"><span class="mode">Done · </span>committed 'sweep stale doc refs' · <span class="ref"><svg class="ic sm"><use href="#i-git-merge"/></svg> trim/docs-sweep</span></div>
+                    </div>
+                    <div class="leaf" data-id="hooks-migration" data-title="Hooks migration">
+                      <div class="lf-l1"><span class="verb done"><svg class="ic"><use href="#i-git-commit"/></svg></span><span class="lf-name">Hooks migration</span>
+                        <span class="grow"></span><span class="lf-status"><span class="sw-done">Finished</span><span class="dot" data-s="done"></span></span></div>
+                      <div class="lf-l2"><span class="mode">Done · </span>committed 'lockfile hook → deny rules' · <span class="ref"><svg class="ic sm"><use href="#i-git-merge"/></svg> trim/hooks-migration</span></div>
+                    </div>
+                    <div class="leaf" data-id="research-shrink" data-title="Research shrink">
+                      <div class="lf-l1"><span class="verb wait"><svg class="ic"><use href="#i-warning"/></svg></span><span class="lf-name">Research shrink</span>
+                        <span class="grow"></span><span class="lf-status"><span class="sw-wait">Interrupted</span><span class="dot" data-s="wait"></span></span></div>
+                      <div class="lf-l2"><span class="mode">Interrupted · </span>context limit reached · returned partial · <span class="ref"><svg class="ic sm"><use href="#i-git-merge"/></svg> wf-…-5</span></div>
+                    </div>
+                    <div class="leaf" data-id="council-shrink" data-title="Council shrink">
+                      <div class="lf-l1"><span class="verb fail"><svg class="ic"><use href="#i-x"/></svg></span><span class="lf-name">Council shrink</span>
+                        <span class="grow"></span><span class="lf-status"><span class="sw-fail">Failed</span><span class="dot" data-s="fail"></span></span></div>
+                      <div class="lf-l2"><span class="mode">Failed · </span>bun install · lockfile out of sync in worktree · <span class="ref"><svg class="ic sm"><use href="#i-git-merge"/></svg> trim/council-shrink</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="stage">
+                  <div class="pill" data-s="pending"><span class="pname">Verify</span><span class="pcount">0/0 agents</span></div>
+                  <div class="stage-leaves"><div class="empty-leaf">no children yet</div></div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- RUN 2 -->
+            <div class="run" data-runid="run2">
+              <div class="run-header" data-id="run-2" data-title="Design screen sweep">
+                <div class="rh-l1">
+                  <span class="rcaret" data-caret><svg class="ic"><use href="#i-caret-down"/></svg></span>
+                  <span class="kind"><svg class="ic"><use href="#i-git-merge"/></svg></span>
+                  <span class="rh-title">Design screen sweep</span>
+                  <span class="grow"></span>
+                  <span class="rh-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span>
+                </div>
+                <div class="rh-l2">Dynamic workflow · 2/4 agents</div>
+              </div>
+              <div class="stages">
+
+                <div class="stage">
+                  <div class="pill" data-s="done"><span class="pname">Understand</span><span class="pcount">1/1 agents</span></div>
+                  <div class="stage-leaves">
+                    <div class="leaf" data-id="registry-mapper" data-title="Registry mapper">
+                      <div class="lf-l1"><span class="verb done"><svg class="ic"><use href="#i-magnifying-glass"/></svg></span><span class="lf-name">Registry mapper</span></div>
+                      <div class="lf-l2"><span class="mode">Explored · </span>12 screens, 3 stale</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="stage">
+                  <div class="pill" data-s="running"><span class="pname">Verify</span><span class="pcount">1/3 agents</span></div>
+                  <div class="stage-leaves">
+                    <div class="leaf" data-id="spec-runs" data-title="Spec diff · runs list">
+                      <div class="lf-l1"><span class="verb done"><svg class="ic"><use href="#i-binoculars"/></svg></span><span class="lf-name">Spec diff · runs list</span>
+                        <span class="grow"></span><span class="lf-status"><span class="sw-done">Finished</span><span class="dot" data-s="done"></span></span></div>
+                      <div class="lf-l2"><span class="mode">Done · </span>clean — matches the registry spec</div>
+                    </div>
+                    <div class="leaf" data-id="spec-detail" data-title="Spec diff · run detail">
+                      <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-binoculars"/></svg></span><span class="lf-name">Spec diff · run detail</span>
+                        <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+                      <div class="lf-l2"><span class="mode">Verifying · </span>comparing hunks</div>
+                    </div>
+                    <div class="leaf" data-id="spec-home" data-title="Spec diff · project home">
+                      <div class="lf-l1"><span class="verb"><svg class="ic"><use href="#i-binoculars"/></svg></span><span class="lf-name">Spec diff · project home</span>
+                        <span class="grow"></span><span class="lf-status"><span class="sw-pending">Queued</span><span class="dot" data-s="pending"></span></span></div>
+                      <div class="lf-l2"><span class="mode">Queued · </span>waiting for a concurrency slot</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- SECTION: SUB AGENTS -->
+        <div class="section">
+          <div class="section-title">Sub Agents</div>
+          <div class="card">
+            <div class="leaf" data-id="auth-shim" data-title="Auth shim builder">
+              <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-pencil-simple"/></svg></span><span class="lf-name">Auth shim builder</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+              <div class="lf-l2"><span class="mode">Editing · </span>src/auth/legacy.ts · 1/3 criteria</div>
+            </div>
+            <div class="leaf" data-id="docs-researcher" data-title="Docs researcher">
+              <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-magnifying-glass"/></svg></span><span class="lf-name">Docs researcher</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+              <div class="lf-l2"><span class="mode">Researching · </span>WebFetch ×8 · verify 1/2 · 8 sources</div>
+            </div>
+            <div class="leaf" data-id="hero-designer" data-title="Hero screen designer">
+              <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-sparkle"/></svg></span><span class="lf-name">Hero screen designer</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+              <div class="lf-l2"><span class="mode">On canvas · </span>use_figma createFrame 'hero-visual' · 2/3 sections</div>
+            </div>
+            <div class="leaf" data-id="ci-debugger" data-title="CI flake debugger">
+              <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-bug"/></svg></span><span class="lf-name">CI flake debugger</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+              <div class="lf-l2"><span class="mode">Diagnosing · </span>20× local e2e at parallelism=4 · 2/4 hypotheses</div>
+            </div>
+            <div class="leaf" data-id="voice-planner" data-title="Voice sidecar planner">
+              <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-pencil-simple"/></svg></span><span class="lf-name">Voice sidecar planner</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+              <div class="lf-l2"><span class="mode">Drafting · </span>section 2 · plan .argo/plans/voice-sidecar.md</div>
+            </div>
+            <div class="leaf" data-id="fidelity-verifier" data-title="Fidelity verifier">
+              <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-binoculars"/></svg></span><span class="lf-name">Fidelity verifier</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+              <div class="lf-l2"><span class="mode">Verifying · </span>ruling per checklist · 6 match · 1 deviates</div>
+            </div>
+            <div class="leaf" data-id="integrator" data-title="Integrator">
+              <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-git-merge"/></svg></span><span class="lf-name">Integrator</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+              <div class="lf-l2"><span class="mode">Landing · </span>git push trim/verify-trim · 2/3 steps</div>
+            </div>
+            <div class="leaf" data-id="explore-ipc" data-title="Explore: find IPC seams">
+              <div class="lf-l1"><span class="verb run"><svg class="ic"><use href="#i-magnifying-glass"/></svg></span><span class="lf-name">Explore: find IPC seams</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-running">Running</span><span class="dot" data-s="running"></span></span></div>
+              <div class="lf-l2"><span class="mode">Exploring · </span>reading src/ipc · no extractable turns yet</div>
+            </div>
+            <div class="leaf" data-id="merge-gate" data-title="Merge-gate reviewer">
+              <div class="lf-l1"><span class="verb done"><svg class="ic"><use href="#i-binoculars"/></svg></span><span class="lf-name">Merge-gate reviewer</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-done">Finished</span><span class="dot" data-s="done"></span></span></div>
+              <div class="lf-l2"><span class="mode">Reviewed · </span>changes requested · 2 blocking</div>
+            </div>
+            <div class="leaf" data-id="docs-linkcheck" data-title="Docs linkcheck">
+              <div class="lf-l1"><span class="verb done"><svg class="ic"><use href="#i-check"/></svg></span><span class="lf-name">Docs linkcheck</span>
+                <span class="grow"></span><span class="lf-status"><span class="sw-done">Finished</span><span class="dot" data-s="done"></span></span></div>
+              <div class="lf-l2"><span class="mode">Done · </span>0 broken links</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TERMINAL -->
+    <section class="terminal glass" id="terminal">
+      <div class="term-head">
+        <span class="tt">Terminal</span>
+        <button class="term-exp" id="termExp" aria-label="Expand terminal" title="Expand"><svg class="ic"><use href="#i-caret-up"/></svg></button>
+      </div>
+      <div class="term-body" id="termBody" tabindex="0">
+<span class="term-scroll" id="termScroll">argo-v2/trim-sweep <span class="ok">❯</span> argo agents ls --running
+  <span class="path">10 running · 2 workflows · 1 needs input</span>
+argo-v2/trim-sweep <span class="ok">❯</span> argo run open "Trim layer 1 fanout 3"
+  <span class="path">Build 2/5 · verify-trim tailing tsc --noEmit</span>
+</span><span class="path">argo-v2/trim-sweep</span> <span class="ok">❯</span> argo run status --units <span class="cursor"></span>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========== DETAILS ========== -->
+  <aside class="details glass" id="details" aria-label="Selection details">
+    <div class="det-head">
+      <div class="det-title"><span class="di"><svg class="ic"><use href="#i-sidebar-simple"/></svg></span><span id="detTitle">Kit surface trim</span></div>
+      <div class="tabrow" id="tabrow">
+        <button class="tab on" data-tab="feed">Timeline</button>
+        <button class="tab" data-tab="diff">Diff</button>
+        <button class="tab" data-tab="files">3 files</button>
+        <button class="tab" data-tab="record">Run record</button>
+      </div>
+    </div>
+    <div class="det-scroll" id="detBody"></div>
+  </aside>
+
+</div>
+
+<script>
+/* ==== inlined orb.js ==== */
+function createEclipseOrb(canvas, opts) {
+  opts = opts || {};
+  const ctx = canvas.getContext('2d');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const mode = opts.mode || 'hero';
+  let state = opts.state || 'idle';
+  let warmTarget = opts.warm ? 1 : 0;
+
+  const COOL = [0.33, 0.41, 0.92];
+  const WARM = [0.95, 0.55, 0.30];
+  const RIM  = [0.96, 0.94, 0.90];
+
+  let W = 0, H = 0, DPR = 1, stars = [], t0 = null, raf = null;
+  let warmMix = warmTarget, activeMix = state === 'idle' ? 0 : 1, level = 0, levelS = 0;
+
+  function lerp(a, b, k) { return a + (b - a) * k; }
+  function mix3(a, b, k) { return [lerp(a[0],b[0],k), lerp(a[1],b[1],k), lerp(a[2],b[2],k)]; }
+  function rgba(c, a) { return 'rgba(' + (c[0]*255|0) + ',' + (c[1]*255|0) + ',' + (c[2]*255|0) + ',' + a + ')'; }
+
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(1, r.width); H = Math.max(1, r.height);
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const n = mode === 'badge' ? 0 : (mode === 'ambient' ? 40 : 130);
+    stars = [];
+    for (let i = 0; i < n; i++) {
+      stars.push({ x: Math.random() * W, y: Math.random() * H * 0.7,
+                   r: Math.random() * 1.1 + 0.2, a: Math.random() * 0.5 + 0.15,
+                   tw: Math.random() * 6.28 });
+    }
+    if (reduce) draw(0);
+  }
+
+  function geom() {
+    const m = Math.min(W, H);
+    const frac = mode === 'badge' ? 0.34 : (mode === 'ambient' ? 0.15 : 0.165);
+    const R = m * frac;
+    const cx = W / 2;
+    const cy = mode === 'badge' ? H / 2 : (mode === 'hero' ? H * 0.42 : H * 0.44);
+    return { R, cx, cy, m };
+  }
+
+  function drawScene(cx, R, tint, horizonV) {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#01030a');
+    sky.addColorStop(0.55, '#04070f');
+    sky.addColorStop(1, '#070d1a');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (const s of stars) {
+      const a = s.a * (0.6 + 0.4 * Math.sin(s.tw + t() * 1.5));
+      ctx.fillStyle = 'rgba(200,214,255,' + a + ')';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill();
+    }
+    ctx.restore();
+
+    if (mode === 'badge') return;
+
+    const hy = H * horizonV;
+    const haze = ctx.createRadialGradient(cx, hy, 0, cx, hy, Math.max(W, H) * 0.6);
+    const hb = 0.10 + 0.22 * activeMix;
+    haze.addColorStop(0, rgba(mix3([0.10,0.22,0.45], tint, 0.4), hb));
+    haze.addColorStop(0.4, 'rgba(10,22,44,' + (0.10 + 0.10 * activeMix) + ')');
+    haze.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = haze; ctx.fillRect(0, hy - H, W, H); ctx.restore();
+
+    if (mode === 'hero') {
+      ctx.fillStyle = '#04070d';
+      const ridge = (pts) => { ctx.beginPath(); ctx.moveTo(0, H); pts.forEach(p => ctx.lineTo(p[0]*W, hy - p[1]*H)); ctx.lineTo(W, H); ctx.closePath(); ctx.fill(); };
+      ctx.fillStyle = '#060a14';
+      ridge([[0,0.02],[0.2,0.05],[0.35,0.02],[0.5,0.06],[0.65,0.03],[0.82,0.06],[1,0.02]]);
+      ctx.fillStyle = '#03060c';
+      ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(0, hy - 0.02*H);
+      [[0.03,0.10],[0.07,0.05],[0.12,0.16],[0.17,0.07],[0.22,0.13],[0.27,0.02]].forEach(p=>ctx.lineTo(p[0]*W, hy - p[1]*H));
+      ctx.lineTo(0.30*W, H); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(W, H); ctx.lineTo(W, hy - 0.02*H);
+      [[0.97,0.12],[0.93,0.05],[0.88,0.18],[0.83,0.06],[0.78,0.14],[0.73,0.03]].forEach(p=>ctx.lineTo(p[0]*W, hy - p[1]*H));
+      ctx.lineTo(0.70*W, H); ctx.closePath(); ctx.fill();
+    }
+
+    const gd = 0.15 + 0.85 * activeMix;
+    if (gd > 0.02) {
+      const gx = cx, gy = hy;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, R * 0.5);
+      g.addColorStop(0, rgba(mix3(RIM, tint, 0.3), 0.9 * gd));
+      g.addColorStop(0.3, rgba(tint, 0.4 * gd));
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(gx, gy, R * 0.5, 0, 6.2832); ctx.fill();
+      const fl = (0.05 + 0.16 * (0.5 + 0.5 * Math.sin(t()*22))) * gd;
+      ctx.strokeStyle = rgba(RIM, fl); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(gx - R*0.28, gy); ctx.lineTo(gx + R*0.28, gy);
+      ctx.moveTo(gx, gy - R*0.14); ctx.lineTo(gx, gy + R*0.14); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawOrb(cx, cy, R, tint) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const glowAmt = 0.35 + 0.55 * activeMix + 0.15 * levelS;
+    for (let i = 0; i < 3; i++) {
+      const rr = R * (1.15 + i * 0.55);
+      const g = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, rr);
+      g.addColorStop(0, rgba(tint, (0.16 - i * 0.045) * glowAmt));
+      g.addColorStop(0.5, rgba(tint, (0.07 - i * 0.02) * glowAmt));
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 6.2832); ctx.fill();
+    }
+    ctx.restore();
+
+    const disc = ctx.createRadialGradient(cx, cy, R * 0.85, cx, cy, R);
+    disc.addColorStop(0, '#000');
+    disc.addColorStop(0.9, '#000');
+    disc.addColorStop(1, 'rgba(0,0,0,0.0)');
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.985, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = disc;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832); ctx.fill();
+
+    if (state === 'thinking') {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.96, 0, 6.2832); ctx.clip();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 4; i++) {
+        const a = t() * 0.4 + i * 1.5708;
+        const lx = cx + Math.cos(a) * R * 0.5, ly = cy + Math.sin(a) * R * 0.42;
+        const lr = R * (0.32 + 0.06 * Math.sin(t() * 0.9 + i));
+        const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, lr);
+        g.addColorStop(0, rgba(tint, 0.16));
+        g.addColorStop(0.6, rgba(tint, 0.05));
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(lx, ly, lr, 0, 6.2832); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    const rimA = 0.55 + 0.4 * activeMix + 0.2 * levelS;
+    const rg = ctx.createRadialGradient(cx, cy, R * 0.93, cx, cy, R * 1.07);
+    rg.addColorStop(0, 'rgba(0,0,0,0)');
+    rg.addColorStop(0.5, rgba(mix3(RIM, tint, 0.25), 0.9 * rimA));
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.07, 0, 6.2832); ctx.arc(cx, cy, R * 0.93, 0, 6.2832, true); ctx.fill();
+    const grad = ctx.createLinearGradient(0, cy, 0, cy + R);
+    grad.addColorStop(0, 'rgba(246,240,230,0)');
+    grad.addColorStop(1, 'rgba(246,240,230,' + (0.5 * rimA) + ')');
+    ctx.strokeStyle = grad; ctx.lineWidth = Math.max(1.5, R * 0.012);
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0.15, Math.PI - 0.15); ctx.stroke();
+    ctx.restore();
+
+    if (state === 'listening' || state === 'speaking') {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      const outward = state === 'speaking';
+      const amp = 0.35 + 0.6 * levelS;
+      for (let i = 0; i < 4; i++) {
+        let ph = (t() * (outward ? 0.55 : -0.55) + i * 0.25) % 1; if (ph < 0) ph += 1;
+        const rr = outward ? R * (1.0 + ph * 0.9) : R * (1.9 - ph * 0.9);
+        const fade = Math.sin(ph * Math.PI);
+        const a = 0.18 * fade * amp;
+        ctx.lineWidth = Math.max(1, R * 0.01);
+        for (let seg = 0; seg < 24; seg++) {
+          const a0 = seg / 24 * 6.2832, a1 = (seg + 1) / 24 * 6.2832;
+          const dir = outward ? Math.sin((a0 + a1) / 2) : -Math.sin((a0 + a1) / 2);
+          const w = 0.5 + 0.5 * dir;
+          ctx.strokeStyle = rgba(mix3(RIM, tint, 0.4), a * w);
+          ctx.beginPath(); ctx.arc(cx, cy, rr, a0, a1); ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+  }
+
+  function t() { return t0 == null ? 0 : (performance.now() - t0) / 1000; }
+
+  function step() {
+    warmMix = lerp(warmMix, warmTarget, 0.06);
+    const activeTarget = state === 'idle' ? 0 : 1;
+    activeMix = lerp(activeMix, activeTarget, 0.07);
+    let target = 0;
+    if (state === 'listening') target = 0.4 + 0.6 * Math.abs(Math.sin(t() * 3.1) * 0.6 + Math.sin(t() * 7.3) * 0.4);
+    else if (state === 'speaking') target = 0.35 + 0.55 * Math.abs(Math.sin(t() * 2.2) * 0.7 + Math.sin(t() * 5.1) * 0.3);
+    level = target;
+    levelS = level > levelS ? lerp(levelS, level, 0.55) : lerp(levelS, level, 0.08);
+  }
+
+  function draw() {
+    step();
+    const tint = mix3(COOL, WARM, warmMix);
+    const g = geom();
+    const breath = state === 'idle' ? 1 + 0.015 * Math.sin(t() * 0.9)
+                 : state === 'speaking' ? 1 + (0.018 + 0.03 * levelS) * Math.sin(t() * 1.9)
+                 : 1 + 0.01 * Math.sin(t() * 1.4);
+    const R = g.R * breath;
+    ctx.clearRect(0, 0, W, H);
+    drawScene(g.cx, g.R, tint, mode === 'hero' ? 0.82 : 0.9);
+    drawOrb(g.cx, g.cy, R, tint);
+  }
+
+  function loop() {
+    if (t0 == null) t0 = performance.now();
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  resize();
+  if (!reduce) loop(); else draw();
+
+  const ro = ('ResizeObserver' in window) ? new ResizeObserver(resize) : null;
+  if (ro) ro.observe(canvas);
+  window.addEventListener('resize', resize);
+
+  return {
+    setState(s) { state = s; },
+    setWarm(w) { warmTarget = w ? 1 : 0; if (reduce) draw(); },
+    getState() { return state; },
+    resize,
+    destroy() { if (raf) cancelAnimationFrame(raf); if (ro) ro.disconnect(); window.removeEventListener('resize', resize); }
+  };
+}
+if (typeof window !== 'undefined') window.createEclipseOrb = createEclipseOrb;
+
+/* ==== background eclipse wash (ambient orb, very dim, decorative) ==== */
+createEclipseOrb(document.getElementById('bg'), { mode:'ambient', state:'idle', warm:false });
+
+/* ==== concierge orb ==== */
+const orb = createEclipseOrb(document.getElementById('orb'), { mode:'badge', state:'idle', warm:false });
+const voice = document.getElementById('voice');
+voice.addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if(!b) return;
+  voice.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b));
+  orb.setState(b.dataset.st);
+});
+
+/* ==== details data ==== */
+/* Phosphor-Light icon → inline <use> of the sprite symbol (state carried by tint). */
+const ic=(n,x)=>`<svg class="ic${x?' '+x:''}"><use href="#i-${n}"/></svg>`;
+const FKIND={M:'file-text',A:'file-plus',D:'file-minus'};
+const fkind=k=>`<span class="fkind">${ic(FKIND[k]||'file-text')}</span>`;
+const FEED_KIT = '▸ Read verify.ts (412 lines)\n▸ Read verify.test.ts\n▸ Edit verify.ts · drop battery scaffolding\n▸ Bash: bunx vitest run verify.test.ts … 14 passed\n▸ Bash: bunx tsc --noEmit … ok\n';
+const SEL = {
+  'kit-surface-trim':{
+    feed: FEED_KIT,
+    diff: '<div class="filecard"><div class="fc-head">'+fkind('M')+'<span class="path">packages/toolkit/src/entry/cli/verify.ts</span><span class="stat"><span class="add">+12</span> <span class="del">−340</span></span></div>'
+        + '<div class="hunk"><span class="del">- const battery = loadBattery(config)</span><span class="add">+ const result = runTokenLint(config)</span></div></div>',
+    files: '<div class="files-list">'
+        + '<div class="file-row">'+fkind('M')+'<span class="p">packages/toolkit/src/entry/cli/verify.ts</span><span class="s">+12 −340</span></div>'
+        + '<div class="file-row">'+fkind('M')+'<span class="p">packages/toolkit/src/entry/cli/verify.test.ts</span><span class="s">+4 −60</span></div>'
+        + '<div class="file-row">'+fkind('D')+'<span class="p">packages/toolkit/src/entry/cli/battery.ts</span><span class="s">−180</span></div></div>',
+    record: '<div class="record">Batch · Trim layer 1 fanout 3 · Running · criteria live in the run record.</div>'
+  },
+  'skill-purge':{ feed:'▸ Grep skills/handoff/*\n▸ Edit skills-lock.json · remove handoff pack\n▸ Bash: git commit -m "trim: purge handoff skills"\n' },
+  'docs-sweep':{ feed:'▸ Grep stale doc refs\n▸ Edit docs/*.md · fix 6 refs\n▸ Bash: git commit -m "sweep stale doc refs"\n' },
+  'council-shrink':{ feed:'▸ Bash: bun install\n✕ lockfile out of sync in worktree trim/council-shrink\n▸ awaiting retry / manual reconcile\n' },
+  'research-shrink':{ feed:'▸ WebFetch ×5\n▸ context limit reached — returned partial summary\n▸ interrupted at wf-…-5\n' },
+  'integrator':{ feed:'▸ git add -A\n▸ git commit -m "verify-trim green"\n▸ git push trim/verify-trim … step 2/3\n' },
+  'ci-debugger':{ feed:'▸ Bash: run e2e ×20 @ parallelism=4\n▸ 3 fails clustered on shared port\n▸ hypothesis 2/4: fixture teardown race\n' },
+  'merge-gate':{ feed:'▸ reviewed diff (3 files)\n▸ 2 blocking findings\n▸ changes requested\n' },
+};
+const detTitle = document.getElementById('detTitle');
+const detBody = document.getElementById('detBody');
+const tabrow = document.getElementById('tabrow');
+let curSel = { id:'kit-surface-trim', title:'Kit surface trim' };
+let curTab = 'feed';
+
+function renderDetails(){
+  const data = SEL[curSel.id] || {};
+  detTitle.textContent = curSel.title;
+  if(curTab==='feed'){
+    const feed = data.feed || (curSel.title + ' — streaming its tool calls\n');
+    detBody.innerHTML = '<pre class="feed">'+escapeHtml(feed)+'<span class="tail">tailing…</span></pre>';
+  } else if(curTab==='diff'){
+    detBody.innerHTML = data.diff || '<div class="record">No diff captured yet for “'+escapeHtml(curSel.title)+'”. Working tree clean or not yet touched.</div>';
+  } else if(curTab==='files'){
+    detBody.innerHTML = data.files || '<div class="record">No changed files recorded for “'+escapeHtml(curSel.title)+'”.</div>';
+  } else {
+    detBody.innerHTML = data.record || '<div class="record">Part of Trim sweep orchestrator · criteria live in the run record.</div>';
+  }
+}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+tabrow.addEventListener('click',(e)=>{
+  const b = e.target.closest('.tab'); if(!b) return;
+  curTab = b.dataset.tab;
+  tabrow.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x===b));
+  renderDetails();
+});
+
+/* ==== selection (rail sessions + runs + leaves) ==== */
+function selectEl(el){
+  document.querySelectorAll('.selected').forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected');
+  curSel = { id: el.dataset.id, title: el.dataset.title };
+  curTab = 'feed';
+  tabrow.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x.dataset.tab==='feed'));
+  renderDetails();
+  if(document.getElementById('app').classList.contains('no-details')) toggleDetails(true);
+}
+document.querySelectorAll('[data-id]').forEach(el=>{
+  el.setAttribute('tabindex','0');
+  el.addEventListener('click',(e)=>{ e.stopPropagation(); selectEl(el); });
+  el.addEventListener('keydown',(e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); selectEl(el); }});
+});
+
+/* ==== run caret collapse ==== */
+document.querySelectorAll('.run-header').forEach(h=>{
+  h.querySelector('[data-caret]').addEventListener('click',(e)=>{
+    e.stopPropagation();
+    h.closest('.run').classList.toggle('collapsed');
+  });
+});
+
+/* ==== project collapse ==== */
+document.querySelectorAll('.proj-head').forEach(h=>{
+  h.addEventListener('click',()=>{
+    const p = document.getElementById(h.dataset.proj);
+    p.classList.toggle('collapsed');
+  });
+});
+
+/* ==== inferred mode toggle ==== */
+document.getElementById('tog-mode').addEventListener('change',(e)=>{
+  document.body.classList.toggle('hide-mode', !e.target.checked);
+});
+
+/* ==== panel toggles ==== */
+const app = document.getElementById('app');
+function toggleDetails(force){
+  const btn = document.getElementById('tog-details');
+  const on = (typeof force==='boolean') ? force : (btn.getAttribute('aria-pressed')!=='true');
+  btn.setAttribute('aria-pressed', on);
+  app.classList.toggle('no-details', !on);
+}
+document.getElementById('tog-details').addEventListener('click',()=>toggleDetails());
+document.getElementById('tog-activity').addEventListener('click',(e)=>{
+  const on = e.currentTarget.getAttribute('aria-pressed')!=='true';
+  e.currentTarget.setAttribute('aria-pressed', on);
+  document.getElementById('activityScroll').style.display = on ? '' : 'none';
+});
+
+/* ==== terminal expand ==== */
+const term = document.getElementById('terminal');
+const termScroll = document.getElementById('termScroll');
+document.getElementById('termExp').addEventListener('click',(e)=>{
+  const tall = term.classList.toggle('tall');
+  e.currentTarget.setAttribute('aria-label', tall ? 'Collapse terminal' : 'Expand terminal');
+  if(tall && !termScroll.dataset.filled){
+    termScroll.dataset.filled = '1';
+    termScroll.insertAdjacentHTML('afterbegin',
+      'argo-v2/trim-sweep <span class="ok">❯</span> git worktree list\n'
+    + '  <span class="path">.argo/wt/verify-trim · docs-sweep · hooks-migration · council-shrink</span>\n'
+    + 'argo-v2/trim-sweep <span class="ok">❯</span> argo agents attach council-shrink\n'
+    + '  <span style="color:var(--fail)">✕ bun install — lockfile out of sync</span>\n');
+  }
+});
+
+renderDetails();
+</script>
+</body>
+</html>

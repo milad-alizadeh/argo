@@ -34,6 +34,7 @@ The Tier-1+2 set is:
 | `file-structure.md` | domain folders, barrels, boundaries | always (TS/JS projects) |
 | `ui-components.md` | atomic design, container/View, icons | project has a UI component tree |
 | `design-system.md` | tokens-only, no magic numbers | project uses Tailwind v4 tokens |
+| `design-wireframes.md` | HTML design studies → `docs/wireframes/`, committed | project does UI design/prototyping |
 
 `testing.md`, `documentation-*.md`, and `database.md` are **not** in this set — bring
 them later, individually, once the infra they reference (test runner, docs site, DB)
@@ -114,7 +115,7 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
   `typescript-style.md`, `dependencies.md`
-- **UI work** — also `ui-components.md`, `design-system.md`
+- **UI work** — also `ui-components.md`, `design-system.md`, `design-wireframes.md`
 ```
 
 If `CLAUDE.md`/`AGENTS.md` already has a Rules section, update it rather than duplicating.

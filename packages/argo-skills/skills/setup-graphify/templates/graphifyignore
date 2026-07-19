@@ -9,6 +9,9 @@
 # docs, plans, ADRs, instruction files (CLAUDE.md / AGENTS.md), skill/rule prose
 *.md
 
+# design studies / wireframes and everything else under docs/ (HTML too — not app code)
+docs/
+
 # agent / editor / CI config — not application code
 .claude/
 .codex/

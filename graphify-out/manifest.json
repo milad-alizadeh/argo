@@ -1,6 +1,6 @@
 {
   ".lintstagedrc.json": {
-    "mtime": 1784475933.1468763,
+    "mtime": 1784476452.351717,
     "ast_hash": "113c7965fcc087c87eaf468af9a0d256",
     "semantic_hash": ""
   },
@@ -50,7 +50,7 @@
     "semantic_hash": "0a8b6d5b7f74e987e0853967d9285aec"
   },
   "apps/desktop/package.json": {
-    "mtime": 1784475865.680448,
+    "mtime": 1784476452.352604,
     "ast_hash": "71ac4b2c2990b113d7430a37fa697f95",
     "semantic_hash": ""
   },
@@ -140,17 +140,17 @@
     "semantic_hash": "651a08814b4b81cb8496b175118545fb"
   },
   "package.json": {
-    "mtime": 1784475915.9667404,
+    "mtime": 1784476452.3570743,
     "ast_hash": "0fef0860dfe3130b1f14e6c535c01baf",
     "semantic_hash": ""
   },
   "skills-lock.json": {
-    "mtime": 1784467159.9308274,
+    "mtime": 1784476452.360623,
     "ast_hash": "3ce603f7689f805a3e2761ab5552425a",
     "semantic_hash": "3ce603f7689f805a3e2761ab5552425a"
   },
   "turbo.json": {
-    "mtime": 1784475919.587463,
+    "mtime": 1784476452.3608572,
     "ast_hash": "61b45da98fc9e811c0911a100aa91c97",
     "semantic_hash": ""
   },
@@ -170,7 +170,7 @@
     "semantic_hash": ""
   },
   "biome.json": {
-    "mtime": 1784475972.6015832,
+    "mtime": 1784476452.3530726,
     "ast_hash": "ebe15e35470e56c875251f48207e108a",
     "semantic_hash": ""
   }
