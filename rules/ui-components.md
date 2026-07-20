@@ -1,11 +1,12 @@
 ---
 paths:
-  - "apps/desktop/src/renderer/src/components/**/*.{ts,tsx}"
+  - "apps/desktop/src/renderer/src/{domains,shared}/**/*.{ts,tsx}"
 ---
 
 # UI Component Rules
 
-Applies to all UI components under `apps/desktop/src/renderer/src/components/`. Read
+Applies to all UI components under `apps/desktop/src/renderer/src/domains/` and
+`apps/desktop/src/renderer/src/shared/`. Read
 together with the `design-system` rule (tokens + utilities, no magic numbers).
 
 ## Atomic design — always (atoms → molecules → organisms)

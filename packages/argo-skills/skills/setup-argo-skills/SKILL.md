@@ -14,9 +14,11 @@ individually later without going through this wizard again.
 ## Phase 1 — install the skill bundle
 
 Run the `argo-skills` scaffolder from the target project's root. It reads
-`bundle.json` and installs every listed source via `npx skills add` — the
-third-party `bundle` entries (`mattpocock/skills`, `vercel-labs/skills`,
-`anthropics/claude-plugins-official`) and the `mine` entries (Argo's own skills):
+`bundle.json` and installs every listed source via `npx skills add` — the four
+third-party sources (`mattpocock/skills`, `vercel-labs/skills`,
+`anthropics/claude-plugins-official`, `anthropics/skills`) plus Argo's own skills,
+which are a normal `bundle` entry (`milad-alizadeh/argo`, `"*"`) installed from
+GitHub like any other source:
 
 ```bash
 npx github:milad-alizadeh/argo    # canonical — installs everything from GitHub
