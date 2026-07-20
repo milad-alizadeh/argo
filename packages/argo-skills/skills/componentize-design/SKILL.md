@@ -55,12 +55,33 @@ Read the study, the design-studies README, the token contract, and the repo's
 | tier | atom / molecule / organism / screen |
 | props | full contract: every prop, its type, enum variants, states |
 | composed-of | which lower-tier rows it renders |
+| reuse | how the row is sourced — resolves to exactly one of the three values below |
+| domain | target folder the row is born into (`shared/ui` or `domains/<region>`) |
 | source | anchor in the study: its `data-component` attribute, else a CSS class (e.g. `.srow`) |
 
-While decomposing:
+**`reuse` and `domain` are the reconciliation this step exists for.** Every row
+resolves both before the checkpoint — reuse against what already exists, domain
+against where the row renders — so the build starts from a reconciled table, not
+net-new components authored by reflex.
 
-- **Reuse before invent** — check the project's UI primitives directory first;
-  point rows at existing components rather than duplicating them.
+- **`reuse` — one of exactly three values, per row:**
+  - `reuse:<existing primitive>` — an existing component already renders this shape;
+    point the row at it and don't re-author. Search `shared/components/ui/` and the
+    owning region's `components/` first.
+  - `kit:<name>` — your configured component kit supplies it (the kit the
+    `ui-components` rule names — its `{{COMPONENT_KIT}}` value, not a kit this skill
+    hardcodes). Pull the primitive from the kit and **adapt its variant map to the
+    token contract**; a hand-rolled equivalent beside a kit primitive is a duplication
+    bug.
+  - `new — <one-line why nothing covers it>` — nothing above fits. **A `new` row
+    cannot omit the justification clause** — the one line arguing why no existing
+    primitive and no kit component covers it is what makes hand-rolling the argued
+    exception rather than the reflex.
+- **`domain` — the target folder, derived not chosen.** A framework primitive shared
+  across regions is `shared/ui`; a component that belongs to one Pane/region is
+  `domains/<region>` (the region it renders in, per CONTEXT.md's Panes). This one
+  value drives both the file path in step 4 and the story title's top segment (per
+  the `ui-components` rule's `title == top domain folder`), so it is settled here, once.
 - **Every repeated shape in the HTML is one row**, listed once.
 - **Props come from the study itself** — its data objects (e.g. a `SESSIONS`
   array) and its CSS variant classes (`.sel`, `.amber`, …), not from guesses. A
@@ -71,7 +92,10 @@ While decomposing:
 
 Write the table next to the study (`<study>.inventory.md`, linked from the design
 README). **Show the user the inventory and get a nod before scaffolding** — this
-is the one checkpoint; everything after is mechanical.
+is the one checkpoint; everything after is mechanical. **The checkpoint blocks on
+both new columns being filled:** every row has a resolved `reuse` (one of the three
+values, and no `new` row without its justification clause) and an assigned `domain`.
+An unreconciled row — blank reuse, or a bare `new` — is not ready to build.
 
 ## 3. Ticket or build
 
@@ -93,7 +117,13 @@ before its `composed-of` rows are done. For each row:
 
 1. The component, per the repo's `ui-components` + `design-system` rules: tokens
    only, one tier per file, interactive primitives wrap the project's headless-UI
-   library, re-export from the UI barrel.
+   library, re-export from the UI barrel. **Place the file by its `domain` value** —
+   a `shared/ui` row is born in `shared/components/ui/`, a `domains/<region>` row in
+   `domains/<region>/components/` — never a flat `components/` dump. The story
+   title's top segment then equals that domain folder (per `ui-components`), so
+   placement and taxonomy both fall out of the inventory with no further judgment.
+   A `reuse:`/`kit:` row builds nothing net-new: import the existing primitive, or
+   pull the kit component and adapt its variant map — only a `new` row authors a file.
 2. Colocated `*.stories.tsx` per the Storybook section of the `ui-components`
    rule (when the project has Storybook): **every prop covered, but as an axis
    rather than a story each** — a union gets one story plus a `select` control and
