@@ -1,6 +1,6 @@
 import { setProjectAnnotations } from '@storybook/react-vite'
-import { page } from '@vitest/browser/context'
 import { beforeAll, expect } from 'vitest'
+import { page } from 'vitest/browser'
 import preview from './preview'
 
 // Owning setProjectAnnotations makes this file the source of truth for project annotations, so
