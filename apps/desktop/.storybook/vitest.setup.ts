@@ -1,4 +1,5 @@
 import { setProjectAnnotations } from '@storybook/react-vite'
+import { page } from '@vitest/browser/context'
 import { beforeAll, expect } from 'vitest'
 import preview from './preview'
 
@@ -10,11 +11,18 @@ const project = setProjectAnnotations([
   {
     // Screenshot every story after it renders; the baseline name is the stable story id.
     async afterEach({ canvasElement, id }) {
-      // A story excludes a volatile region (terminal, live gauge) from the diff by marking it
-      // [data-vrt-mask]; masked pixels are painted over before the comparison.
       const canvas = canvasElement as HTMLElement
-      const mask = Array.from(canvas.querySelectorAll('[data-vrt-mask]'))
-      await expect.element(canvas).toMatchScreenshot(id, { screenshotOptions: { mask } })
+      // A story excludes a volatile region (terminal, live gauge) from the diff by marking it
+      // [data-vrt-mask]; masked pixels are painted over before the comparison. Playwright's mask
+      // wants Locators, not raw DOM nodes, so wrap each element.
+      const mask = Array.from(canvas.querySelectorAll('[data-vrt-mask]')).map((el) =>
+        page.elementLocator(el),
+      )
+      // Plain expect(), NOT expect.element(): expect.element retries the assertion until it
+      // passes, so a *permanent* "no reference screenshot" failure (a missing baseline in CI)
+      // gets retried until the test timeout instead of failing fast. The matcher does its own
+      // capture-stability retries regardless, so nothing is lost.
+      await expect(canvas).toMatchScreenshot(id, { screenshotOptions: { mask } })
     },
   },
 ])
