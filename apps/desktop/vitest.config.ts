@@ -65,6 +65,11 @@ export default defineConfig({
                 // 1% budget let an 8px→12px StatusDot (28–472 pixels) pass as unchanged. Per-pixel
                 // `threshold` still absorbs antialiasing, which is what a ratio was covering for.
                 comparatorOptions: { allowedMismatchedPixelRatio: 0 },
+                // One top-level baseline tree keyed by the stable story id, instead of a
+                // __screenshots__/ dir beside every component. `arg` is the story id we pass to
+                // toMatchScreenshot; `root` is this project (apps/desktop). CI owns the -linux PNGs.
+                resolveScreenshotPath: ({ root, arg, browserName, platform, ext }) =>
+                  `${root}/__screenshots__/${arg}-${browserName}-${platform}${ext}`,
               },
             },
           },

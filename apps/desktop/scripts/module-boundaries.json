@@ -29,29 +29,50 @@
       "publicEntry": ["^src/renderer/src/main\\.tsx$"]
     },
     {
-      "name": "console",
-      "comment": "The Console domain (cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). Console-only by construction — `session · live` plus AT MOST ONE capture slot — so it is not part of the shared `components/ui` kit; the screen composes it through this barrel.",
-      "path": "^src/renderer/src/components/console/",
-      "publicEntry": ["^src/renderer/src/components/console/index\\.ts$"]
+      "name": "renderer-shared",
+      "comment": "The renderer's shared leaf (feature-sliced `shared/`): the framework-primitive kit (`components/ui` + its icons) that every Pane composes, and the ship-flow presentation vocabulary (`shared/ship`: the rail status word/icon and the `shipState` composition over the `@shared` ribbon derivation). A building block imported by two or more domains lives here, so every domain may import it and it imports no domain in return. External code reaches it only through the three barrels; its internals are private.",
+      "path": "^src/renderer/src/shared/",
+      "publicEntry": [
+        "^src/renderer/src/shared/components/ui/index\\.ts$",
+        "^src/renderer/src/shared/components/ui/icons/index\\.ts$",
+        "^src/renderer/src/shared/ship/index\\.ts$"
+      ]
+    },
+    {
+      "name": "rail",
+      "comment": "The Rail Pane (CONTEXT.md region): the session roster column and its rows. A feature slice — owns its `components/` and, as they arrive, its hooks/store/types. Composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "path": "^src/renderer/src/domains/rail/",
+      "publicEntry": ["^src/renderer/src/domains/rail/components/index\\.ts$"]
+    },
+    {
+      "name": "activity",
+      "comment": "The Activity Pane (CONTEXT.md region; supersedes ADR-0009's `story/`): the Background Tasks roster — Runs, Agents, phases. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "path": "^src/renderer/src/domains/activity/",
+      "publicEntry": ["^src/renderer/src/domains/activity/components/index\\.ts$"]
     },
     {
       "name": "ship",
-      "comment": "The renderer's ship-flow presentation: the rail status word (tone, icon) and the `shipState` composition. The ribbon derivation it composes lives in `shared`, so main can drive gates from the same pure code (cockpit-matrix.md R16). No React, no I/O — Views consume the model through this barrel and never re-derive it.",
-      "path": "^src/renderer/src/ship/",
-      "publicEntry": ["^src/renderer/src/ship/index\\.ts$"]
+      "comment": "The Ship Pane (CONTEXT.md region; supersedes ADR-0009's `work/`): the ship-flow ribbon and node drawers — PrLifecycleRibbon + NodeDrawer, the CI card molecules, the RibbonNode state→icon/tone vocabulary. Pure Views over the pre-derived `RibbonModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "path": "^src/renderer/src/domains/ship/",
+      "publicEntry": ["^src/renderer/src/domains/ship/components/index\\.ts$"]
     },
     {
-      "name": "work",
-      "comment": "The Work pane's ship ribbon and node drawers (cockpit-matrix.md's Work region): PrLifecycleRibbon + NodeDrawer, the CI card molecules they compose, and the RibbonNode state→icon/tone vocabulary. Pure Views over the pre-derived `RibbonModel` from `shared` — no re-derivation, so it is not part of the shared `components/ui` kit; the screen composes it through this barrel.",
-      "path": "^src/renderer/src/components/work/",
-      "publicEntry": ["^src/renderer/src/components/work/index\\.ts$"]
+      "name": "console",
+      "comment": "The Console Pane (CONTEXT.md region, cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "path": "^src/renderer/src/domains/console/",
+      "publicEntry": ["^src/renderer/src/domains/console/components/index\\.ts$"]
     }
   ],
   "layers": {
-    "_comment": "Electron process isolation: the three processes must never import each other at all — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). Importing across them is the classic footgun this locks out. All three may import `shared` (the type/pure-function contract); `shared` must import none of them.",
+    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation: a domain (Pane) must not reach into another domain's internals (domains ⊥ domains); every domain may import `renderer-shared` (domains → shared); `renderer-shared` is a leaf that imports no domain (shared ⊥ domains).",
     "main": ["renderer", "preload"],
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],
-    "shared": ["main", "renderer", "preload"]
+    "shared": ["main", "renderer", "preload"],
+    "rail": ["activity", "ship", "console"],
+    "activity": ["rail", "ship", "console"],
+    "ship": ["rail", "activity", "console"],
+    "console": ["rail", "activity", "ship"],
+    "renderer-shared": ["rail", "activity", "ship", "console"]
   }
 }
