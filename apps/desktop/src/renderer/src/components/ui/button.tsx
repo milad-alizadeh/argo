@@ -16,21 +16,19 @@ const CONTROL_BASE = `inline-flex shrink-0 cursor-pointer items-center justify-c
 // <Text> without breaking prop merging; it composes the role class from Text's map instead.
 const buttonVariants = cva(CONTROL_BASE, {
   variants: {
-    // Tones are named after the token they spend, never after the state a caller is in:
-    // a finding that is `open` wears `verdict-changes` here and `verdict-block` on its
-    // chip, so a state word in this map would be a lie on one of the two surfaces.
+    // Named after the token spent, never the state a caller is in — see findingState.ts.
     variant: {
       // The gradient is the screen's ONE primary (R2) — it belongs to the head node's
       // drawer. Disabled drops the gradient: a dead control must not read as the primary.
       primary:
         'border-primary/55 bg-linear-to-br from-primary-bright to-primary text-primary-foreground disabled:border-border disabled:bg-none disabled:text-muted-foreground',
       ghost:
-        'border-border bg-transparent text-muted-foreground hover:border-input hover:bg-foreground/4 hover:text-foreground',
+        'border-border bg-transparent text-muted-foreground hover:border-input hover:text-foreground',
       // Review-tab controls are all secondary — shipping belongs to the ribbon's gate.
       'review-secondary':
         'border-input bg-foreground/4 text-foreground-bright hover:border-primary',
-      // Verdict-tinted controls: a 55% border over a 12% wash that deepens to 24% on
-      // hover, so the tint carries the weight the primary's gradient would.
+      // A 55% border over a 12% wash deepening to 24% on hover: the tint carries the
+      // weight the primary's gradient would, without spending the screen's one primary.
       'verdict-changes':
         'border-verdict-changes-tint/55 bg-verdict-changes-tint/12 text-foreground hover:border-verdict-changes-tint hover:bg-verdict-changes-tint/24',
       'verdict-approve':

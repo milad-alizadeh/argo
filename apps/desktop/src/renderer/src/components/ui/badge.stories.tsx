@@ -1,17 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { Badge } from './badge'
-import { CheckIcon, CircleIcon, CircleNotchIcon } from './icons'
+import { CircleIcon } from './icons'
 import { Text } from './Text'
 
-const VARIANTS = [
-  'neutral',
-  'warn',
-  'primary',
-  'verdict-block',
-  'verdict-changes',
-  'verdict-approve',
-] as const
+const VERDICT_VARIANTS = ['verdict-block', 'verdict-changes', 'verdict-approve'] as const
+
+const VARIANTS = ['neutral', 'warn', 'primary', ...VERDICT_VARIANTS] as const
 
 const SHAPES = ['default', 'pill'] as const
 
@@ -63,31 +58,26 @@ export const AllVariants: Story = {
   },
 }
 
-// Composed-of: Icon + label. The badge sizes the glyph off its own tag role, so a pill with
-// a leading glyph — the shape a review finding reports its state in — needs no component of
-// its own.
+// Composed-of: Icon + label. The badge sizes the glyph off its own tag role, so the pill a
+// state is reported in needs no component of its own — which state wears which tone is the
+// caller's binding (findingState.ts), never something spelled here.
 export const WithIcon: Story = {
   render: () => (
     <div className="flex items-center gap-region">
-      <Badge shape="pill" variant="verdict-block">
-        <CircleIcon aria-hidden />
-        open
-      </Badge>
-      <Badge shape="pill" variant="verdict-changes">
-        <CircleNotchIcon aria-hidden />
-        addressing
-      </Badge>
-      <Badge shape="pill" variant="verdict-approve">
-        <CheckIcon aria-hidden />
-        fixed
-      </Badge>
+      {VERDICT_VARIANTS.map((variant) => (
+        <Badge key={variant} shape="pill" variant={variant}>
+          <CircleIcon aria-hidden />
+          {variant}
+        </Badge>
+      ))}
     </div>
   ),
   play: async ({ canvasElement }) => {
-    const chip = within(canvasElement).getByText('addressing')
+    const chip = within(canvasElement).getByText('verdict-changes')
     // The word is authored in sentence case; the tag role is what uppercases it, so the
     // accessible text stays what the caller wrote.
     await expect(getComputedStyle(chip).textTransform).toBe('uppercase')
+    await expect(chip.querySelector('svg')).toBeInTheDocument()
   },
 }
 

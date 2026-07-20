@@ -2,6 +2,7 @@ export { Badge, type BadgeVariant, badgeVariants } from './badge'
 export { Button, type ButtonVariant, buttonVariants } from './button'
 export { ContextGauge } from './ContextGauge'
 export {
+  FINDING_CYCLE_TITLE,
   FINDING_STATE_ACTION,
   FINDING_STATE_REPORT,
   FINDING_STATES,

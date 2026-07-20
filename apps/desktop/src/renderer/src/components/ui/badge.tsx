@@ -8,14 +8,13 @@ import { TYPE_ROLE_CLASS } from './Text'
 // Labels are authored lower-case: the `tag` role uppercases them, so the accessible text
 // stays what the caller wrote. `asChild` hands the children to a Slot, so the role class
 // is composed from Text's map rather than wrapped.
-// Radius and padding live in `shape` rather than here, for the reason CONTROL_BASE gives in
-// button.tsx: a shape has to state its whole box, not override half of an inherited one.
+// Radius and padding live in `shape` rather than here: tailwind-merge only de-dupes the
+// classes it knows and the spacing roles are ours, so a shape states its whole box.
 const badgeVariants = cva(
   `inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden border ${TYPE_ROLE_CLASS.tag} whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&>svg]:pointer-events-none [&>svg]:size-3`,
   {
     variants: {
-      // Tones are named after the token they spend, never after what a caller reads into
-      // them: the same wash reports one thing on a finding and another on a check.
+      // Named after the token spent, never what a caller reads into it — see findingState.ts.
       variant: {
         neutral: 'border-border text-foreground-faint',
         warn: 'border-status-awaiting-input/40 text-status-awaiting-input',

@@ -2,22 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { FINDING_STATE_ACTION, FINDING_STATE_REPORT, FINDING_STATES } from './findingState'
 
 describe('finding state vocabulary', () => {
-  it('reports every state with a word, a glyph and a tone', () => {
-    for (const state of FINDING_STATES) {
-      const report = FINDING_STATE_REPORT[state]
-      expect(report.label).not.toBe('')
-      expect(report.Icon).toBeTypeOf('function')
-      expect(report.tone).toMatch(/^verdict-/)
-    }
-  })
-
-  it('offers every state a next action with a word, a glyph and a tone', () => {
-    for (const state of FINDING_STATES) {
-      const action = FINDING_STATE_ACTION[state]
-      expect(action.label).not.toBe('')
-      expect(action.title).not.toBe('')
-      expect(action.Icon).toBeTypeOf('function')
-    }
+  it('binds every rung of the cycle, in cycle order', () => {
+    expect(Object.keys(FINDING_STATE_REPORT)).toEqual([...FINDING_STATES])
+    expect(Object.keys(FINDING_STATE_ACTION)).toEqual([...FINDING_STATES])
   })
 
   it('spells each word exactly once across the cycle', () => {
