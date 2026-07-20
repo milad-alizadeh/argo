@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { RAIL_TONES } from '@/shared/ship'
+import { ROSTER_TONES } from '@/shared/delivery'
 import { StatusDot } from './StatusDot'
 import { Text } from './Text'
 
@@ -8,7 +8,7 @@ const meta = {
   title: 'Shared/StatusDot',
   component: StatusDot,
   argTypes: {
-    tone: { control: 'select', options: RAIL_TONES },
+    tone: { control: 'select', options: ROSTER_TONES },
     pulse: { control: 'boolean' },
     label: { control: 'text' },
   },
@@ -55,7 +55,7 @@ export const AllTones: Story = {
   args: { tone: 'run' },
   render: () => (
     <div className="flex items-start gap-region">
-      {RAIL_TONES.map((tone) => (
+      {ROSTER_TONES.map((tone) => (
         <span className="flex w-16 flex-col items-center gap-gap" key={tone}>
           <StatusDot tone={tone} />
           <Text variant="meta" className="text-foreground-faint">

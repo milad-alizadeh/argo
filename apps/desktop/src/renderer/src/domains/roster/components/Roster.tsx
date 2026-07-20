@@ -1,20 +1,20 @@
 import type { SessionView } from '@/sessionStore'
 import { Text } from '@/shared/components/ui'
-import { EmptyRail } from './EmptyRail'
+import { EmptyRoster } from './EmptyRoster'
 import { SessionRow } from './SessionRow'
 
 /**
- * Organism: the rail of observed Sessions — one frosted `panel` holding flat inset rows, a
+ * Organism: the roster of observed Sessions — one frosted `panel` holding flat inset rows, a
  * pure projection of `sessions`.
  *
  * An empty roster renders the empty state. This is the whole window for now; later tickets
  * add the session-detail column beside it.
  */
-export function Rail({
+export function Roster({
   sessions,
 }: {
   /** The observed roster, in the order it is listed. Callers read it off the projected
-   * state the sessionStore replays from main (`CockpitState.sessions`) — the rail derives
+   * state the sessionStore replays from main (`CockpitState.sessions`) — the roster derives
    * nothing from it and re-orders nothing. An empty array is the empty state, not an
    * error. */
   sessions: SessionView[]
@@ -30,7 +30,7 @@ export function Rail({
         </Text>
         <div className="flex flex-1 flex-col overflow-auto px-2.5 pb-2">
           {sessions.length === 0 ? (
-            <EmptyRail />
+            <EmptyRoster />
           ) : (
             <ul aria-label="Sessions" className="flex flex-col gap-1.5">
               {sessions.map((session) => (

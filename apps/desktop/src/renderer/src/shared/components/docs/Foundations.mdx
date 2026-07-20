@@ -1,6 +1,6 @@
 import { Meta } from '@storybook/addon-docs/blocks'
 import { StatusDot, Text, TYPE_ROLE_CLASS } from '@/shared/components/ui'
-import { RAIL_TONES } from '@/shared/ship'
+import { ROSTER_TONES } from '@/shared/delivery'
 
 <Meta title="Foundations" />
 
@@ -47,13 +47,13 @@ same sample reads identically in every row below.
 
 ## Tone palette
 
-Colour is owned by state, never by a component. `RAIL_TONES` is the closed set, and a tone's
+Colour is owned by state, never by a component. `ROSTER_TONES` is the closed set, and a tone's
 name **is** its `--tone-*` token — a View interpolates `text-tone-${tone}` straight from the
 derivation, so no component keeps a colour map of its own. A tone is never the only carrier
 of meaning: it always arrives beside the word it tints.
 
 <div className="flex flex-wrap items-start gap-region">
-  {RAIL_TONES.map((tone) => (
+  {ROSTER_TONES.map((tone) => (
     <span className="flex w-16 flex-col items-center gap-gap" key={tone}>
       <StatusDot tone={tone} />
       <Text variant="meta" className="text-foreground-faint">

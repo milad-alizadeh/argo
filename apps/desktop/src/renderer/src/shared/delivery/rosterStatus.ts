@@ -7,15 +7,15 @@ import type {
   TerminalState,
 } from '@shared'
 
-// The rail row's word — a POINTER into the ribbon's head node, never a value of its
+// The roster row's word — a POINTER into the ribbon's head node, never a value of its
 // own. Tone is a name equal to its `--tone-*` token; a View interpolates
 // `text-tone-${tone}` directly, no map. No colour lives here.
 
-export const RAIL_TONES = ['run', 'amber', 'done', 'gray', 'red', 'stale', 'landed'] as const
+export const ROSTER_TONES = ['run', 'amber', 'done', 'gray', 'red', 'stale', 'landed'] as const
 
-export type RailTone = (typeof RAIL_TONES)[number]
+export type RosterTone = (typeof ROSTER_TONES)[number]
 
-export const RAIL_ICONS = [
+export const ROSTER_ICONS = [
   'arrow-line-up',
   'check',
   'circle',
@@ -30,15 +30,15 @@ export const RAIL_ICONS = [
   'x',
 ] as const
 
-export type RailIcon = (typeof RAIL_ICONS)[number]
+export type RosterIcon = (typeof ROSTER_ICONS)[number]
 
-export interface RailStatus {
+export interface RosterStatus {
   word: string
-  tone: RailTone
-  icon: RailIcon
+  tone: RosterTone
+  icon: RosterIcon
 }
 
-export const SESSION_STATUS: Record<SessionStatus, RailStatus> = {
+export const SESSION_STATUS: Record<SessionStatus, RosterStatus> = {
   running: { word: 'Running', tone: 'run', icon: 'circle-notch' },
   'needs-input': { word: 'Needs input', tone: 'amber', icon: 'warning' },
   done: { word: 'Done', tone: 'done', icon: 'check' },
@@ -47,7 +47,7 @@ export const SESSION_STATUS: Record<SessionStatus, RailStatus> = {
   orphaned: { word: 'Orphaned', tone: 'stale', icon: 'circle' },
 }
 
-const TERMINAL_STATUS: Record<TerminalState, RailStatus> = {
+const TERMINAL_STATUS: Record<TerminalState, RosterStatus> = {
   merged: { word: 'Landed', tone: 'landed', icon: 'git-merge' },
   closed: { word: 'Closed', tone: 'stale', icon: 'prohibit' },
 }
@@ -59,7 +59,7 @@ const TERMINAL_STATUS: Record<TerminalState, RailStatus> = {
 const HEAD_STATUS: Partial<
   Record<
     `${LifecycleNodeKey}:${LifecycleNodeState}`,
-    RailStatus | ((facts: SessionFacts) => RailStatus)
+    RosterStatus | ((facts: SessionFacts) => RosterStatus)
   >
 > = {
   'commits:gate': { word: 'Commit ready', tone: 'amber', icon: 'git-commit' },
@@ -84,7 +84,7 @@ const HEAD_STATUS: Partial<
 
 // Takes the model the ribbon is already rendering, so the row cannot be derived
 // from a second, differently-timed reading of the same facts.
-export function railStatus(facts: SessionFacts, model: LifecycleModel | null): RailStatus {
+export function rosterStatus(facts: SessionFacts, model: LifecycleModel | null): RosterStatus {
   if (!model) return SESSION_STATUS[facts.status]
   if (model.terminal) return TERMINAL_STATUS[model.terminal]
 

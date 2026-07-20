@@ -1,22 +1,22 @@
 import { cn } from '@/lib/utils'
-import type { RailIcon, RailTone } from '@/shared/ship'
-import { RAIL_ICON } from './railIcon'
+import type { RosterIcon, RosterTone } from '@/shared/delivery'
+import { ROSTER_ICON } from './rosterIcon'
 
-// Atom: a status row's leading glyph — the ship-named icon, tinted by its tone. The
-// name → component lookup lives here alone, so no View re-implements it and the ship
-// keeps emitting icon names, never React components.
+// Atom: a status row's leading glyph — the delivery-derived icon, tinted by its tone. The
+// name → component lookup lives here alone, so no View re-implements it and the delivery
+// derivation keeps emitting icon names, never React components.
 export function StatusIcon({
   icon,
   tone,
   className,
 }: {
-  /** The icon name from the ship derivation (`RailStatus.icon`). */
-  icon: RailIcon
+  /** The icon name from the delivery derivation (`RosterStatus.icon`). */
+  icon: RosterIcon
   /** The tone that names the icon's `--tone-*` colour. */
-  tone: RailTone
+  tone: RosterTone
   className?: string
 }): React.JSX.Element {
-  const Icon = RAIL_ICON[icon]
+  const Icon = ROSTER_ICON[icon]
   return (
     <Icon
       weight="light"

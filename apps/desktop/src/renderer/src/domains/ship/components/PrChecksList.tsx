@@ -1,7 +1,7 @@
 import type { CiStatus } from '@shared'
 import { cn } from '@/lib/utils'
 import { ArrowSquareOutIcon, Button, StatusIcon, Text } from '@/shared/components/ui'
-import type { RailIcon, RailTone } from '@/shared/ship'
+import type { RosterIcon, RosterTone } from '@/shared/delivery'
 import { CiCard } from './CiCard'
 
 export const CI_RUN_STATUSES = ['queued', 'running', 'passed', 'failed'] as const
@@ -20,16 +20,16 @@ export interface CiRun {
   note?: string
 }
 
-// Reuses the rail's own icon/tone vocabulary (`StatusIcon`) rather than a parallel one: a
-// GitHub Actions run's four states map onto four states the rail already draws.
-const CI_RUN_PRESENTATION: Record<CiRunStatus, { icon: RailIcon; tone: RailTone }> = {
+// Reuses the Roster's own icon/tone vocabulary (`StatusIcon`) rather than a parallel one: a
+// GitHub Actions run's four states map onto four states the Roster already draws.
+const CI_RUN_PRESENTATION: Record<CiRunStatus, { icon: RosterIcon; tone: RosterTone }> = {
   queued: { icon: 'circle', tone: 'gray' },
   running: { icon: 'circle-notch', tone: 'run' },
   passed: { icon: 'check', tone: 'done' },
   failed: { icon: 'x', tone: 'red' },
 }
 
-const AGGREGATE_TONE: Record<CiStatus, RailTone> = {
+const AGGREGATE_TONE: Record<CiStatus, RosterTone> = {
   running: 'run',
   passed: 'done',
   failed: 'red',
