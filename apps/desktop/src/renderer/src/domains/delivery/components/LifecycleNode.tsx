@@ -1,7 +1,7 @@
 import type { LifecycleNodeKey, LifecycleNodeState } from '@shared'
 import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
-import { RIBBON_NODE_STATE } from './ribbonNodeState'
+import { LIFECYCLE_NODE_STATE } from './lifecycleNodeState'
 
 const NODE_LABEL: Record<LifecycleNodeKey, string> = {
   commits: 'Commits',
@@ -11,7 +11,7 @@ const NODE_LABEL: Record<LifecycleNodeKey, string> = {
   merge: 'Merge',
 }
 
-export interface RibbonNodeProps {
+export interface LifecycleNodeProps {
   /** Which of the five artifacts this node names. Renamed from the study's `key` — a
    * reserved React prop. */
   nodeKey: LifecycleNodeKey
@@ -30,14 +30,14 @@ export interface RibbonNodeProps {
 }
 
 /**
- * Molecule: one artifact on the ship ribbon — a stateful glyph disc, its label and an
+ * Molecule: one artifact on the Delivery lifecycle — a stateful glyph disc, its label and an
  * optional sub echo.
  *
  * Gate reads apart from in-progress by FORM, an outer ring, never a second tint (R2) —
- * `now`/`gate`/`sync` share one glyph in `ribbonNodeState.ts` and this component adds the
+ * `now`/`gate`/`sync` share one glyph in `lifecycleNodeState.ts` and this component adds the
  * ring itself. Stale renders dashed and struck through (R3), never red: nothing failed.
  */
-export function RibbonNode({
+export function LifecycleNode({
   nodeKey,
   state,
   sub,
@@ -45,8 +45,8 @@ export function RibbonNode({
   open,
   clickable,
   className,
-}: RibbonNodeProps): React.JSX.Element {
-  const { Icon, glyph, label } = RIBBON_NODE_STATE[state]
+}: LifecycleNodeProps): React.JSX.Element {
+  const { Icon, glyph, label } = LIFECYCLE_NODE_STATE[state]
   const pulse = isHead && (state === 'gate' || state === 'fail' || state === 'warn')
   return (
     <div

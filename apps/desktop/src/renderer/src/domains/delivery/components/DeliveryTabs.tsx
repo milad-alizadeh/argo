@@ -11,16 +11,16 @@ import {
 } from '@/shared/components/ui'
 import { type ChangesView, ChangesViewToggle } from './ChangesViewToggle'
 
-export const WORK_TABS = ['changes', 'review', 'artifacts'] as const
+export const DELIVERY_TABS = ['changes', 'review', 'artifacts'] as const
 
-/** Which content the Work pane's strip is driving. */
-export type WorkTab = (typeof WORK_TABS)[number]
+/** Which content the Delivery panel's strip is driving. */
+export type DeliveryTab = (typeof DELIVERY_TABS)[number]
 
 const REVIEW_TAB_TITLE =
-  "agent code review · argo — verdict + findings (the GitHub review lives on the ribbon's Review node)"
+  "agent code review · argo — verdict + findings (the GitHub review lives on the Delivery lifecycle's Review node)"
 
-function isWorkTab(value: string): value is WorkTab {
-  return (WORK_TABS as readonly string[]).includes(value)
+function isDeliveryTab(value: string): value is DeliveryTab {
+  return (DELIVERY_TABS as readonly string[]).includes(value)
 }
 
 function ReviewTabLabel({ outstanding }: { outstanding: number }): React.JSX.Element {
@@ -43,9 +43,9 @@ function ReviewTabLabel({ outstanding }: { outstanding: number }): React.JSX.Ele
 }
 
 /**
- * Organism: the Work pane's tab strip — `Changes · n | Review · n | Artifacts · n`, the same
- * 41px height as the ship ribbon, since the strip IS the pane's header (no separate title
- * row).
+ * Organism: the Delivery panel's tab strip — `Changes · n | Review · n | Artifacts · n`, the
+ * same 41px height as the Delivery lifecycle, since the strip IS the panel's header (no separate
+ * title row).
  *
  * Three shapes, one component: `unscoped` is the real three-tab tablist (Radix `Tabs`, roving
  * tabindex + `aria-selected` included free); `scoped` is an outcome's return path, a single
@@ -54,14 +54,14 @@ function ReviewTabLabel({ outstanding }: { outstanding: number }): React.JSX.Ele
  * lives only in its tooltip — never in the visible label — and its outstanding-count badge is
  * the agent review's ONE pointer (R14).
  */
-export function WorkTabs(
+export function DeliveryTabs(
   props:
     | {
         variant: 'unscoped'
         /** Which tab is selected. */
-        tab: WorkTab
+        tab: DeliveryTab
         /** Select a tab. */
-        onSelectTab: (tab: WorkTab) => void
+        onSelectTab: (tab: DeliveryTab) => void
         /** Total changed files, for the Changes tab's count. */
         changesCount: number
         /** Open review findings — 0 shows a check instead of a count. */
@@ -75,7 +75,7 @@ export function WorkTabs(
       }
     | {
         variant: 'scoped'
-        /** The outcome this Work pane is scoped to. */
+        /** The outcome this Delivery panel is scoped to. */
         outcomeTitle: string
         /** Return to the unscoped, three-tab strip. */
         onBack: () => void
@@ -90,7 +90,7 @@ export function WorkTabs(
         <Tabs
           value={props.tab}
           onValueChange={(value) => {
-            if (isWorkTab(value)) props.onSelectTab(value)
+            if (isDeliveryTab(value)) props.onSelectTab(value)
           }}
         >
           <TabsList aria-label="Work" className="min-h-strip px-inset py-tight">

@@ -4,8 +4,8 @@ import type { CiRun } from './PrChecksList'
 
 /** One round of the GitHub human review, already resolved for display — `stale`/
  * `archived` arrive as facts rather than being derived here from a sha comparison, per
- * this ticket's boundary: the ribbon's own derivation (#33) owns staleness, and a round is
- * a second, per-round instance of the same fact the ribbon's `review` node already carries
+ * this ticket's boundary: the lifecycle's own derivation (#33) owns staleness, and a round is
+ * a second, per-round instance of the same fact the lifecycle's `review` node already carries
  * for its latest round alone. */
 export interface ReviewRoundView {
   round: number
@@ -23,7 +23,7 @@ export interface ReviewRoundView {
   stale?: boolean
 }
 
-/** Everything the Commits body needs beyond the ribbon's own `state` — the drafted commit
+/** Everything the Commits body needs beyond the lifecycle's own `state` — the drafted commit
  * message and the sha a `now`/`done` line echoes. */
 export interface CommitsDrawerData {
   dirty: number
@@ -37,7 +37,7 @@ export interface CommitsDrawerData {
   selectedCheck?: CheckOutputProps
 }
 
-/** The remote CI checks, keyed to the ribbon's own head sha. */
+/** The remote CI checks, keyed to the lifecycle's own head sha. */
 export interface CiDrawerData {
   sha: string
   status: 'running' | 'passed' | 'failed'

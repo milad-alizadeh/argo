@@ -21,7 +21,7 @@ const SESSION: NodeDrawerSession = {
 }
 
 const meta = {
-  title: 'Ship/NodeDrawer',
+  title: 'Delivery/NodeDrawer',
   component: NodeDrawer,
   argTypes: {
     node: { control: false },
@@ -194,7 +194,7 @@ export const ReviewChangesRequested: Story = {
 }
 
 /** S9's review side: round 1 archived (fixed and re-approved), round 2's approval now
- * stale under a newer push — same R3 mechanism as the ribbon's own node. */
+ * stale under a newer push — same R3 mechanism as the lifecycle's own node. */
 export const ReviewArchivedAndStale: Story = {
   args: {
     node: 'review',
@@ -255,7 +255,7 @@ export const MergeWaiting: Story = {
   },
 }
 
-/** R8: merged — the terminal summary, `--tone-landed` is asserted on the ribbon itself; this
+/** R8: merged — the terminal summary, `--tone-landed` is asserted on the lifecycle itself; this
  * drawer carries the squash sha, who, when, and the next-step ghost control. */
 export const TerminalMerged: Story = {
   args: { node: 'terminal', state: 'merged', session: SESSION },

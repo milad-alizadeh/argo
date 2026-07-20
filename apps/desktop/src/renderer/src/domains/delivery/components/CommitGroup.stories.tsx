@@ -22,7 +22,7 @@ const FILES: CommitGroupFile[] = [
 ]
 
 const meta = {
-  title: 'Ship/CommitGroup',
+  title: 'Delivery/CommitGroup',
   component: CommitGroup,
   args: { files: FILES, onAdvanceFindingState: fn() },
   argTypes: {

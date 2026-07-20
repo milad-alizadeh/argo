@@ -51,10 +51,10 @@
       "publicEntry": ["^src/renderer/src/domains/activity/components/index\\.ts$"]
     },
     {
-      "name": "ship",
-      "comment": "The Ship Pane (CONTEXT.md region; supersedes ADR-0009's `work/`): the ship-flow ribbon and node drawers — PrLifecycleRibbon + NodeDrawer, the CI card molecules, the RibbonNode state→icon/tone vocabulary. Pure Views over the pre-derived `LifecycleModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
-      "path": "^src/renderer/src/domains/ship/",
-      "publicEntry": ["^src/renderer/src/domains/ship/components/index\\.ts$"]
+      "name": "delivery",
+      "comment": "The Delivery Panel (CONTEXT.md region; supersedes ADR-0009's `work/`): the Delivery lifecycle and node drawers — DeliveryLifecycle + NodeDrawer, the CI card molecules, the LifecycleNode state→icon/tone vocabulary. Pure Views over the pre-derived `LifecycleModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "path": "^src/renderer/src/domains/delivery/",
+      "publicEntry": ["^src/renderer/src/domains/delivery/components/index\\.ts$"]
     },
     {
       "name": "console",
@@ -69,10 +69,10 @@
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],
     "shared": ["main", "renderer", "preload"],
-    "roster": ["activity", "ship", "console"],
-    "activity": ["roster", "ship", "console"],
-    "ship": ["roster", "activity", "console"],
-    "console": ["roster", "activity", "ship"],
-    "renderer-shared": ["roster", "activity", "ship", "console"]
+    "roster": ["activity", "delivery", "console"],
+    "activity": ["roster", "delivery", "console"],
+    "delivery": ["roster", "activity", "console"],
+    "console": ["roster", "activity", "delivery"],
+    "renderer-shared": ["roster", "activity", "delivery", "console"]
   }
 }

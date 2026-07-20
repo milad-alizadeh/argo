@@ -1,7 +1,7 @@
 import type { LifecycleModel } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { PrLifecycleRibbon } from './PrLifecycleRibbon'
+import { DeliveryLifecycle } from './DeliveryLifecycle'
 
 const IN_REVIEW: LifecycleModel = {
   nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'now', merge: 'wait' },
@@ -9,22 +9,22 @@ const IN_REVIEW: LifecycleModel = {
   terminal: null,
 }
 
-type PrLifecycleRibbonProps = React.ComponentProps<typeof PrLifecycleRibbon>
+type DeliveryLifecycleProps = React.ComponentProps<typeof DeliveryLifecycle>
 
-const PR: PrLifecycleRibbonProps['pr'] = {
+const PR: DeliveryLifecycleProps['pr'] = {
   num: 42,
   ghUrl: 'https://github.com/milad-alizadeh/argo/pull/42',
 }
 
 const meta = {
-  title: 'Ship/PrLifecycleRibbon',
-  component: PrLifecycleRibbon,
+  title: 'Delivery/DeliveryLifecycle',
+  component: DeliveryLifecycle,
   argTypes: {
     model: { control: false },
     openKey: { control: false },
     pr: { control: false },
   },
-} satisfies Meta<typeof PrLifecycleRibbon>
+} satisfies Meta<typeof DeliveryLifecycle>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -74,7 +74,7 @@ export const Closed: Story = {
   },
 }
 
-/** R7: no ribbon at all until the tree differs from base — the pane shows tabs only, so
+/** R7: no lifecycle at all until the tree differs from base — the panel shows tabs only, so
  * this renders nothing. */
 export const Absent: Story = {
   args: { model: null, openKey: null, pr: null },

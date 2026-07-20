@@ -27,7 +27,7 @@ export function ciBody(
         </div>
       )}
       {/* R3: stale is a fact about the sha (`ci.sha !== head_sha`), already resolved into the
-       * ribbon's own `state` for this node — read that instead of re-deriving it from `runs`. */}
+       * lifecycle's own `state` for this node — read that instead of re-deriving it from `runs`. */}
       {state === 'stale' && (
         <Text variant="meta" className="text-tone-stale">
           superseded by a newer commit

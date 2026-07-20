@@ -15,7 +15,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The `neutral` tone — the strip WorkTabs builds its Changes/Artifacts triggers from. */
+/** The `neutral` tone — the strip DeliveryTabs builds its Changes/Artifacts triggers from. */
 export const Default: Story = {
   render: () => (
     <Tabs defaultValue="changes">

@@ -2,11 +2,11 @@ import type { LifecycleNodeState } from '@shared'
 import { LIFECYCLE_KEYS } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { RibbonNode } from './RibbonNode'
+import { LifecycleNode } from './LifecycleNode'
 
 // No runtime array of the ten states ships from `@shared` (only the type), so this is the
 // gallery's own list — `satisfies` keeps it a compile error for the union to drift from it.
-const RIBBON_NODE_STATES = [
+const LIFECYCLE_NODE_STATES = [
   'wait',
   'now',
   'gate',
@@ -20,17 +20,17 @@ const RIBBON_NODE_STATES = [
 ] as const satisfies readonly LifecycleNodeState[]
 
 const meta = {
-  title: 'Ship/RibbonNode',
-  component: RibbonNode,
+  title: 'Delivery/LifecycleNode',
+  component: LifecycleNode,
   argTypes: {
     nodeKey: { control: 'select', options: LIFECYCLE_KEYS },
-    state: { control: 'select', options: RIBBON_NODE_STATES },
+    state: { control: 'select', options: LIFECYCLE_NODE_STATES },
     sub: { control: 'text' },
     isHead: { control: 'boolean' },
     open: { control: 'boolean' },
     clickable: { control: 'boolean' },
   },
-} satisfies Meta<typeof RibbonNode>
+} satisfies Meta<typeof LifecycleNode>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -80,8 +80,8 @@ export const EveryState: Story = {
   args: { nodeKey: 'commits', state: 'now', isHead: false, open: false, clickable: true },
   render: () => (
     <div className="flex divide-x divide-inset-hair border border-inset-hair">
-      {RIBBON_NODE_STATES.map((state) => (
-        <RibbonNode
+      {LIFECYCLE_NODE_STATES.map((state) => (
+        <LifecycleNode
           key={state}
           nodeKey="commits"
           state={state}
@@ -94,7 +94,7 @@ export const EveryState: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelectorAll('[role="button"]')).toHaveLength(
-      RIBBON_NODE_STATES.length - 1,
+      LIFECYCLE_NODE_STATES.length - 1,
     )
   },
 }
@@ -105,7 +105,7 @@ export const EveryNode: Story = {
   render: () => (
     <div className="flex divide-x divide-inset-hair border border-inset-hair">
       {LIFECYCLE_KEYS.map((key) => (
-        <RibbonNode key={key} nodeKey={key} state="done" isHead={false} open={false} clickable />
+        <LifecycleNode key={key} nodeKey={key} state="done" isHead={false} open={false} clickable />
       ))}
     </div>
   ),

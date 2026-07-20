@@ -24,7 +24,7 @@ const FILES: AllFilesDiffFile[] = [
 ]
 
 const meta = {
-  title: 'Ship/AllFilesDiff',
+  title: 'Delivery/AllFilesDiff',
   component: AllFilesDiff,
   args: { onAdvanceFindingState: fn() },
   argTypes: {
@@ -49,7 +49,7 @@ export const Default: Story = {
   },
 }
 
-/** No changes yet — the real state a clean tree with an open ribbon can still show. */
+/** No changes yet — the real state a clean tree with an open lifecycle can still show. */
 export const Empty: Story = {
   args: { files: [] },
   play: async ({ canvasElement }) => {

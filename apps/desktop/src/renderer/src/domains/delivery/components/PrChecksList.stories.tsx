@@ -14,7 +14,7 @@ const RUNS = [
 ] as const
 
 const meta = {
-  title: 'Ship/PrChecksList',
+  title: 'Delivery/PrChecksList',
   component: PrChecksList,
   argTypes: {
     sha: { control: 'text' },
