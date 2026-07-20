@@ -73,7 +73,10 @@ export function PhaseGroup({
         </Text>
       </RosterRow>
       {open && hasMembers && (
-        <div className="ml-inset">
+        // A phase head is caret + name with no glyph, so its members indent only enough to
+        // drop their sparkle into the caret's column — one clean left marker column, with the
+        // member names landing under the phase name (the icon-bearing batch nests wider).
+        <div className="ml-snug">
           {members.map((member) => (
             <AgentRow key={member.channelId} {...member} rollupState={PHASE_ROLLUP_STATE[state]} />
           ))}
