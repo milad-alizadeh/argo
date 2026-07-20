@@ -63,12 +63,18 @@ review and the PR are per-ticket, not shared:
 3. **Code-review** — run `/code-review` on your own diff and address the findings. This runs
    **per worktree**, in the agent's fresh context — it is not optional and is not deferred to the
    human. If a finding can't be resolved, note it in the PR body rather than skipping it.
-4. **Commit** to a ticket branch (`argo/#${N}-<slug>` or the repo convention).
-5. **Push** that branch.
-6. **Open exactly one PR** for this worktree — body says `Closes #N`, and lists any
-   unresolved review findings from step 3. It opens ready-for-review (step 3 already
-   reviewed the diff — draft would be a second gate guarding nothing); use draft only if
-   step 3 left findings you could not resolve. **Return the PR URL** as your result.
+4. **Visual-verify** — if the diff touches anything rendered (components, styles, stories,
+   studies, renderer code), run `/visual-verify`: render the affected states, screenshot them,
+   and have a *fresh* judge agent check the pixels against the ticket's acceptance criteria
+   (max two fix rounds). Commit the final screenshots per that skill; unresolved visual
+   findings go in the PR body. Non-UI tickets skip this step and say so.
+5. **Commit** to a ticket branch (`argo/#${N}-<slug>` or the repo convention).
+6. **Push** that branch.
+7. **Open exactly one PR** for this worktree — body says `Closes #N`, lists any unresolved
+   findings from steps 3–4, and embeds the visual-verify screenshots for UI tickets. It opens
+   ready-for-review (steps 3–4 already reviewed the diff — draft would be a second gate
+   guarding nothing); use draft only if those steps left findings you could not resolve.
+   **Return the PR URL** as your result.
 
 Do **not** merge. Do **not** touch any other ticket's files. One worktree → one branch → one PR.
 
@@ -105,8 +111,8 @@ merge; that's step 6's job.
 Gather the returned PR URLs (one per worktree/ticket); filter out any agent that returned
 null / failed. Tell the user:
 
-- which tickets produced PRs (with links), and any **unresolved review findings** each PR carried
-  from its step-3 `/code-review`;
+- which tickets produced PRs (with links), and any **unresolved review or visual findings**
+  each PR carried from its step-3 `/code-review` and step-4 `/visual-verify`;
 - which failed and need a manual `/implement`;
 - the **conflict map** from step 4: which PR pairs collide and where, the merge order that
   minimizes conflicts, and whether the clean union passed the suite;
@@ -129,8 +135,8 @@ Then re-scout: the merged PR may have unblocked new frontier tickets.
 
 - **Never fan out a blocked ticket.** Re-run this skill after a blocker's PR merges to pick up the
   newly-unblocked frontier.
-- **Never merge.** PRs open ready-for-review because each diff was already `/code-review`ed in
-  its worktree (step 3) — but merging stays with the human, in dependency order.
+- **Never merge.** PRs open ready-for-review because each diff was already reviewed in its
+  worktree (steps 3–4) — but merging stays with the human, in dependency order.
 - **Cap concurrency.** A runaway fan-out is expensive; default 2–3.
 - **Never merge unmerged branches into each other.** Cross-branch resolution before a PR lands
   couples independent tickets; the integration branch in step 4 is throwaway and detection-only.

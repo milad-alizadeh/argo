@@ -1,11 +1,12 @@
 {
-  "$comment": "Your skill bundle manifest. Every source installs from its repo via `npx skills add` — including Argo's own skills (milad-alizadeh/argo), which install from GitHub like any other source even inside this monorepo (it dogfoods itself like any consumer). Process: edit skills in packages/argo-skills/skills/, push to main, then run `npx github:milad-alizadeh/argo` in the target project.",
+  "$comment": "Your skill bundle manifest. Every source installs from its repo via `npx skills add` — including Argo's own skills (milad-alizadeh/argo), which install from GitHub like any other source even inside this monorepo (it dogfoods itself like any consumer). Process: edit skills in packages/argo-skills/skills/, push to main, then run `npx github:milad-alizadeh/argo` in the target project. `exclude` keeps a name out of a `*` source (the scaffolder removes it right after that source installs): Argo owns `implement` (its fork adds worktree isolation + visual-verify), so upstream's must never survive — the overriding source has to come AFTER the excluding one.",
   "agents": ["claude-code", "cursor", "codex"],
   "scope": "project",
   "bundle": [
     {
       "source": "mattpocock/skills",
-      "skills": "*"
+      "skills": "*",
+      "exclude": ["implement"]
     },
     {
       "source": "vercel-labs/skills",

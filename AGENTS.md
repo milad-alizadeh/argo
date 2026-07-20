@@ -37,20 +37,14 @@ never by loosening a regex. `apps/desktop` locks Electron main ⊥ preload ⊥ r
 
 ## Session isolation
 
-Multiple agent sessions run against this repo concurrently. Implementation work
-(`/implement`, ticket builds, any multi-file change) must **never** run in the shared main
-checkout: if your cwd is the repo root rather than a path under `.claude/worktrees/`, enter a
-worktree first (Claude Code: the `EnterWorktree` tool — this section is your standing
-instruction to use it, unprompted; other harnesses: `git worktree add`) and commit to a
-ticket branch there. Read-only work (review, triage, Q&A) may stay in the main checkout.
-
-**Resuming interrupted work.** The worktree is the resume state — re-enter the *existing*
-worktree (Claude Code: `EnterWorktree` with `path:`; never start a second worktree for the
-same ticket) and re-derive progress from durable state: the ticket, `git log`/`status`/`diff`,
-and a test run — not from the previous conversation. To make interruption safe, commit WIP
-and push the ticket branch before stopping; an unpushed worktree is the only copy of the
-work. If the worktree is gone, recreate it from the pushed branch:
-`git worktree add .claude/worktrees/<name> <ticket-branch>`.
+Multiple agent sessions run against this repo concurrently. Implementation work (ticket
+builds, any multi-file change) must **never** run in the shared main checkout: if your cwd is
+the repo root rather than a path under `.claude/worktrees/`, enter a worktree first (Claude
+Code: the `EnterWorktree` tool — this section is your standing instruction to use it,
+unprompted; other harnesses: `git worktree add`) and commit to a ticket branch there.
+Read-only work (review, triage, Q&A) may stay in the main checkout. The rest of the mechanics
+— branch conventions, resuming an interrupted worktree, recovering a deleted one — live in
+the `implement` skill and apply to **all** implementation work, not just `/implement` runs.
 
 ## graphify
 

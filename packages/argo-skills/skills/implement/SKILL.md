@@ -1,0 +1,54 @@
+---
+name: implement
+description: "Implement a ticket or spec the Argo way: worktree-isolated, TDD at agreed seams, code-review and visual verification before the PR opens. Argo's owned fork of mattpocock/skills' implement."
+disable-model-invocation: true
+---
+
+# Implement
+
+One ticket (or spec) per fresh context. This is Argo's owned fork of the upstream
+`mattpocock/skills` implement — the same core flow, plus the stages Argo layers on top
+(worktree isolation, visual verification). The upstream skill is deliberately excluded from
+`bundle.json` so this one owns the name.
+
+## 0. Enter a worktree — non-negotiable
+
+Implementation never runs in the shared main checkout. If your cwd is the repo root rather
+than a path under `.claude/worktrees/`, enter a worktree first, unprompted (Claude Code: the
+`EnterWorktree` tool; other harnesses: `git worktree add .claude/worktrees/<name>`), and work
+on a ticket branch there (`argo/#<N>-<slug>`, or the repo's convention).
+
+**Resuming interrupted work.** The worktree is the resume state — re-enter the *existing*
+worktree (Claude Code: `EnterWorktree` with `path:`; never start a second worktree for the
+same ticket) and re-derive progress from durable state: the ticket, `git log`/`status`/`diff`,
+and a test run — not from the previous conversation. To make interruption safe, commit WIP
+and push the ticket branch before stopping; an unpushed worktree is the only copy of the
+work. If the worktree is gone, recreate it from the pushed branch:
+`git worktree add .claude/worktrees/<name> <ticket-branch>`.
+
+## 1. Implement
+
+Read the ticket or spec. Use `/tdd` where possible, at pre-agreed seams.
+
+Run typechecking regularly, single test files regularly, and the full test suite once at the
+end. The full suite (typecheck, lint, tests, build) must be green before moving on.
+
+## 2. Code-review
+
+Run `/code-review` on your own diff and address the findings. If a finding can't be resolved,
+carry it into the PR body rather than skipping it silently.
+
+## 3. Visual-verify — when the diff touches UI
+
+If the diff touches anything rendered (components, styles, stories, design studies, renderer
+code), run `/visual-verify`: render the affected states, screenshot them, and have a fresh
+agent judge the pixels against the ticket's acceptance criteria. Fix what it finds (max two
+rounds), commit the final screenshots, and carry any unresolved visual findings into the PR
+body. Code review reads the diff; this catches what only the pixels show.
+
+## 4. Commit, push, PR
+
+Commit to the ticket branch and push it. Open one PR — body says `Closes #<N>`, lists any
+unresolved findings from steps 2–3, and embeds the visual-verify screenshots for UI work.
+Open it ready-for-review (the diff was already reviewed); use draft only if unresolved
+findings remain. Do not merge — merging stays with the human.
