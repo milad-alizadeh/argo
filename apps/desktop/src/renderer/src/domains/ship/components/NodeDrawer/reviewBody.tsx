@@ -1,4 +1,4 @@
-import type { RibbonNodeState } from '@shared'
+import type { LifecycleNodeState } from '@shared'
 import { ArrowBendDownRightIcon, Button, CheckIcon, Status, Text } from '@/shared/components/ui'
 import type { ReviewDrawerData, ReviewRoundView } from '../nodeDrawerModel'
 import { GrowRow } from './drawerControls'
@@ -48,7 +48,7 @@ function reviewRoundLine(round: ReviewRoundView): React.JSX.Element {
 }
 
 export function reviewBody(
-  state: RibbonNodeState,
+  state: LifecycleNodeState,
   isHead: boolean,
   data: ReviewDrawerData,
 ): React.JSX.Element {

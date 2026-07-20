@@ -1,9 +1,9 @@
-import type { RibbonModel } from '@shared'
+import type { LifecycleModel } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { PrLifecycleRibbon } from './PrLifecycleRibbon'
 
-const IN_REVIEW: RibbonModel = {
+const IN_REVIEW: LifecycleModel = {
   nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'now', merge: 'wait' },
   head: 'review',
   terminal: null,

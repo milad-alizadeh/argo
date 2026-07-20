@@ -52,7 +52,7 @@
     },
     {
       "name": "ship",
-      "comment": "The Ship Pane (CONTEXT.md region; supersedes ADR-0009's `work/`): the ship-flow ribbon and node drawers — PrLifecycleRibbon + NodeDrawer, the CI card molecules, the RibbonNode state→icon/tone vocabulary. Pure Views over the pre-derived `RibbonModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "comment": "The Ship Pane (CONTEXT.md region; supersedes ADR-0009's `work/`): the ship-flow ribbon and node drawers — PrLifecycleRibbon + NodeDrawer, the CI card molecules, the RibbonNode state→icon/tone vocabulary. Pure Views over the pre-derived `LifecycleModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/ship/",
       "publicEntry": ["^src/renderer/src/domains/ship/components/index\\.ts$"]
     },
