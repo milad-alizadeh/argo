@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Argo · cockpit — ship-ribbon lifecycle</title>
+<title>Argo · cockpit — delivery lifecycle</title>
 <link rel="stylesheet" href="tokens.css" />
 <style>
-  /* COCKPIT — settled from the ship-ribbon experiment — the ribbon (Commits → PR → CI → Review →
-     Merge) is the work pane's header and the ONE home of ship-flow state.
-     Rules R1–R16 + state table + pane anatomy: cockpit-matrix.md. */
+  /* COCKPIT — settled from the delivery-lifecycle experiment — the lifecycle (Commits → PR → CI → Review →
+     Merge) is the Delivery panel's header and the ONE home of delivery state.
+     Rules R1–R16 + state table + panel anatomy: cockpit-matrix.md. */
   :root{
     color-scheme:dark;
     /* --tone-landed (Merged ≠ CI-green) was promoted into argo-tokens.css at
@@ -42,13 +42,13 @@
   .unreported{color:var(--foreground-faint);}
 
   /* ── THE one animation budget: at most one .pulse1 element per render, bound
-     to the ribbon's blocked/gate node — or, when the ribbon is quiet, to the
-     top needs-you rail row's dot. Everything else renders static. ── */
+     to the lifecycle's blocked/gate node — or, when the lifecycle is quiet, to the
+     top needs-you Roster row's dot. Everything else renders static. ── */
   @media (prefers-reduced-motion:no-preference){.pulse1{animation:pulse1 var(--time-pulse) ease-in-out infinite;}}
   @keyframes pulse1{0%,100%{opacity:1;}50%{opacity:.45;}}
 
-  /* Rail — cross-session triage: per-row status word, doing-now, workspace
-     echo, Context, model·tokens·duration. Per-row repetition is the rail's job;
+  /* Roster — cross-session triage: per-row status word, doing-now, workspace
+     echo, Context, model·tokens·duration. Per-row repetition is the Roster's job;
      it is also the SOLE home of the Context/model/tokens/duration tuple. */
   .rail-h{display:flex;align-items:center;gap:var(--space-gap);padding:13px 14px 9px;color:var(--muted-foreground);font:var(--type-eyebrow-weight) var(--type-eyebrow)/var(--type-eyebrow-leading) var(--sans);letter-spacing:var(--type-eyebrow-tracking);text-transform:uppercase;}
   .rail-h .plus,.proj .plus{margin-left:auto;width:18px;height:18px;border-radius:calc(var(--radius) - 2px);display:grid;place-items:center;color:var(--muted-foreground);border:1px solid var(--border);cursor:pointer;flex:none;}
@@ -74,7 +74,7 @@
   .srow .wsline{display:flex;align-items:center;gap:5px;color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);margin:4px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .srow .wsline .b{font:var(--type-code-inline-weight) var(--type-code-inline)/var(--type-code-inline-leading) var(--mono);letter-spacing:var(--type-code-inline-tracking);}
   .srow .wsline.shared{color:var(--tone-amber);}
-  /* Context gauge — ONE shape for "context remaining" (rail only in this
+  /* Context gauge — ONE shape for "context remaining" (Roster only in this
      variation; the session header no longer repeats it). */
   .ctxrow{display:flex;align-items:center;gap:7px;}
   .srow .ctxrow{margin:4px 0 0;}
@@ -125,7 +125,7 @@
   .work.solo{grid-template-columns:1fr 0 0;}
   .region{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;}
   .region.detail{border-left:1px solid var(--border);}
-  /* no pane title rows — the tab strip / ribbon strip IS the pane header;
+  /* no panel title rows — the tab strip / lifecycle strip IS the panel header;
      region names live in aria-label only */
   .rscroll{flex:1;overflow:auto;padding:12px 13px 16px;min-height:0;}
   .inset{background:var(--inset);border:1px solid var(--inset-hair);border-radius:calc(var(--radius) + 4px);box-shadow:0 1px 0 color-mix(in srgb,var(--foreground) 4%,transparent) inset;padding:12px 13px;margin:0 0 12px;}
@@ -145,7 +145,7 @@
 
   /* Checks — LOCAL only (Argo ran these in this working tree, keyed to the
      SHA). Remote CI is a different fact with a different origin — it lives on
-     the ribbon's CI node. The agent review's pointer is the Review tab badge. */
+     the lifecycle's CI node. The agent review's pointer is the Review tab badge. */
   .checks{display:flex;flex-direction:column;gap:1px;}
   .chkrow{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:var(--radius);font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);cursor:pointer;}
   .chkrow:hover{background:color-mix(in srgb,var(--foreground) 4%,transparent);}
@@ -198,11 +198,11 @@
   .lrow .grow{flex:1;} .lrow .rmeta{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;}
   .lrow .tv{flex:none;font-variant-emoji:text;} .lrow .tv.pass{color:var(--tone-done);} .lrow .tv.fail{color:var(--tone-red);}
   .lrow .ok{color:var(--tone-done);} .lrow .add{color:var(--foreground-faint);} .lrow .del{color:var(--foreground-faint);}
-  /* AgentRow / RunRow — the story pane's Actor roster (R15): an Agent is a
+  /* AgentRow / RunRow — the Activity panel's Actor roster (R15): an Agent is a
      PROCESS, not a tool call — quiet primary-tinted rule + sparkle tile, name
      strong, status WORD carries the state (never colour alone). A Run (batch |
      pipeline) groups member AgentRows under a phase-progress line. Static —
-     R10's budget stays on the ribbon. */
+     R10's budget stays on the lifecycle. */
   /* Quiet rows — same anatomy as every other lrow (no tinted pill, no border):
      the sparkle tile is the agent identity; lowercase status WORD renders only
      where it adds information (running/failed always; done only on lone rows —
@@ -243,7 +243,7 @@
   .phgroup.st-run .pstat{color:var(--tone-run);}
   .phgroup.st-wait .pstat{color:var(--foreground-faint);}
 
-  /* Content tab strip (work pane) — same 41px strip height as the ribbon. */
+  /* Content tab strip (Delivery panel) — same 41px strip height as the lifecycle. */
   .dtabs{display:flex;gap:var(--space-hair);padding:6px 12px 8px;border-bottom:1px solid var(--border);align-items:center;min-height:41px;}
   .dtab{font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);color:var(--muted-foreground);padding:4px 10px;border-radius:var(--radius);cursor:pointer;} .dtab.on{color:var(--foreground);background:color-mix(in srgb,var(--foreground) 6%,transparent);}
   /* All files | By commit — view toggle inside the Changes tab strip */
@@ -263,7 +263,7 @@
   .cgroup{margin:0 0 14px;} .cghead{display:flex;align-items:center;gap:var(--space-gap);padding:6px 4px 8px;font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);}
   .cghead .sha{font:var(--type-code-inline-weight) var(--type-code-inline)/var(--type-code-inline-leading) var(--mono);letter-spacing:var(--type-code-inline-tracking);color:var(--muted-foreground);} .cghead .cmsg{color:var(--foreground);font-weight:var(--type-row-strong-weight);} .cghead .grow{flex:1;} .cghead .cgn{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);} .cghead.wip .cmsg{color:var(--tone-amber);}
 
-  /* ══ PrLifecycleRibbon — the work pane's header strip; node states + drawer
+  /* ══ PrLifecycleRibbon — the Delivery panel's header strip; node states + drawer
         per cockpit-matrix.md. ══ */
   .shipbar{display:flex;align-items:stretch;border-bottom:1px solid var(--border);min-height:41px;}
   .shipbar .nodes{display:flex;align-items:stretch;flex:1;min-width:0;overflow-x:auto;}
@@ -324,7 +324,7 @@
   .cirow .ct.fail{color:var(--signal-bad);}
   .cirow .open{color:var(--primary);opacity:0;font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);display:inline-flex;align-items:center;gap:3px;flex:none;}
   .cirow:hover .open,.cirow:focus-visible .open{opacity:1;}
-  /* commit stage bits inside the ribbon detail */
+  /* commit stage bits inside the lifecycle detail */
   .draftmsg{font:var(--type-code-weight) var(--type-code)/var(--type-code-leading) var(--mono);letter-spacing:var(--type-code-tracking);color:var(--foreground-soft);background:var(--inset);border:1px solid var(--inset-hair);border-radius:var(--radius);padding:6px 9px;display:flex;align-items:center;gap:9px;}
   .draftmsg .g{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--foreground-bright);}
   .draftmsg .redraft{color:var(--primary);cursor:pointer;flex:none;}
@@ -369,12 +369,12 @@
   .term{display:grid;grid-template-rows:auto 1fr;min-height:0;border-top:1px solid var(--input);}
   .term-h{display:flex;align-items:center;gap:var(--space-gap);padding:7px 13px;background:color-mix(in srgb,var(--background) 55%,transparent);color:var(--muted-foreground);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);} .term-h .grow{flex:1;} .term-h .x{cursor:pointer;color:var(--foreground-faint);}
   .term-body{background:var(--background);color:var(--foreground-soft);font:var(--type-code-weight) var(--type-code)/var(--type-code-leading) var(--mono);letter-spacing:var(--type-code-tracking);padding:10px 13px;overflow:auto;white-space:pre-wrap;outline:none;} .term-body .p{color:var(--tone-run);} .term-body .dim{color:var(--foreground-faint);}
-  .caret{display:inline-block;width:7px;height:14px;background:var(--foreground-soft);vertical-align:-2px;} /* static — the animation budget belongs to the ribbon/rail */
+  .caret{display:inline-block;width:7px;height:14px;background:var(--foreground-soft);vertical-align:-2px;} /* static — the animation budget belongs to the lifecycle/Roster */
   .hint{position:fixed;left:16px;bottom:12px;z-index:5;color:var(--muted-foreground);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);}
   [tabindex]:focus-visible{outline:2px solid var(--ring);outline-offset:1px;border-radius:calc(var(--radius) - 2px);}
   .term-body:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--ring);}
 
-  /* Review tab (pane 2, R14) — the agent review's ONE pointer: count + a
+  /* Review tab (panel 2, R14) — the agent review's ONE pointer: count + a
      static dot while findings are outstanding; verdict word lives in the hero. */
   .dtab.review{color:var(--verdict-changes);font-variant-numeric:tabular-nums;}
   .dtab.review.on{background:color-mix(in srgb,var(--verdict-changes-tint) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--verdict-changes-tint) 40%,transparent);color:var(--verdict-changes);}
@@ -410,7 +410,7 @@
   .rv-cta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 13px;}
   .rv-btn{display:inline-flex;align-items:center;gap:7px;border-radius:var(--radius);padding:8px 13px;font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);cursor:pointer;border:1px solid transparent;transition:filter var(--time-fast),border-color var(--time-fast),background var(--time-fast);}
   /* all Review-tab controls are SECONDARY — the screen's one primary lives in
-     the ribbon head's drawer (R2) */
+     the lifecycle head's drawer (R2) */
   .rv-btn.ghost{color:var(--foreground-bright);border-color:var(--input);background:color-mix(in srgb,var(--foreground) 4%,transparent);}
   .rv-btn.ghost:hover{border-color:var(--primary);}
   .rv-btn[disabled]{opacity:.4;cursor:not-allowed;filter:none;box-shadow:none;}
@@ -452,7 +452,7 @@
 </style>
 </head>
 <body>
-<!-- Phosphor Light icon sprite (ph/*-light @ 0 0 256 256, fetched from api.iconify.design; extended with git-branch / git-pull-request / arrow-square-out / arrow-line-up / user / prohibit / tree-structure for the workspace chip + ship ribbon). -->
+<!-- Phosphor Light icon sprite (ph/*-light @ 0 0 256 256, fetched from api.iconify.design; extended with git-branch / git-pull-request / arrow-square-out / arrow-line-up / user / prohibit / tree-structure for the workspace chip + delivery lifecycle). -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-wave-sine" viewBox="0 0 256 256"><path fill="currentColor" d="M237.43 130.55C215.84 176.57 197 198 178 198c-23.83 0-39.2-32.76-55.47-67.45C109.26 102.17 94.17 70 78 70c-9.18 0-25 10.5-48.53 60.55a6 6 0 0 1-10.86-5.1C40.16 79.43 59 58 78 58c23.83 0 39.2 32.76 55.47 67.45C146.74 153.83 161.83 186 178 186c9.18 0 25.05-10.5 48.53-60.55a6 6 0 0 1 10.86 5.1Z"/></symbol><symbol id="i-sidebar-simple" viewBox="0 0 256 256"><path fill="currentColor" d="M216 42H40a14 14 0 0 0-14 14v144a14 14 0 0 0 14 14h176a14 14 0 0 0 14-14V56a14 14 0 0 0-14-14M38 200V56a2 2 0 0 1 2-2h42v148H40a2 2 0 0 1-2-2m180 0a2 2 0 0 1-2 2H94V54h122a2 2 0 0 1 2 2Z"/></symbol><symbol id="i-pencil-simple" viewBox="0 0 256 256"><path fill="currentColor" d="m225.9 74.78l-44.69-44.69a14 14 0 0 0-19.8 0L38.1 153.41a13.94 13.94 0 0 0-4.1 9.9V208a14 14 0 0 0 14 14h44.69a13.94 13.94 0 0 0 9.9-4.1L225.9 94.58a14 14 0 0 0 0-19.8M94.1 209.41a2 2 0 0 1-1.41.59H48a2 2 0 0 1-2-2v-44.69a2 2 0 0 1 .59-1.41L136 72.48L183.51 120ZM217.41 86.1L192 111.51L144.49 64l25.41-25.42a2 2 0 0 1 2.83 0l44.68 44.69a2 2 0 0 1 0 2.83"/></symbol><symbol id="i-terminal-window" viewBox="0 0 256 256"><path fill="currentColor" d="M126 128a6 6 0 0 1-2.25 4.69l-40 32a6 6 0 0 1-7.5-9.38L110.4 128l-34.15-27.31a6 6 0 1 1 7.5-9.38l40 32A6 6 0 0 1 126 128m50 26h-40a6 6 0 0 0 0 12h40a6 6 0 0 0 0-12m54-98v144a14 14 0 0 1-14 14H40a14 14 0 0 1-14-14V56a14 14 0 0 1 14-14h176a14 14 0 0 1 14 14m-12 0a2 2 0 0 0-2-2H40a2 2 0 0 0-2 2v144a2 2 0 0 0 2 2h176a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-magnifying-glass" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 219.76l-51.38-51.38a86.15 86.15 0 1 0-8.48 8.48l51.38 51.38a6 6 0 0 0 8.48-8.48M38 112a74 74 0 1 1 74 74a74.09 74.09 0 0 1-74-74"/></symbol><symbol id="i-git-commit" viewBox="0 0 256 256"><path fill="currentColor" d="M248 122h-66.34a54 54 0 0 0-107.32 0H8a6 6 0 0 0 0 12h66.34a54 54 0 0 0 107.32 0H248a6 6 0 0 0 0-12m-120 48a42 42 0 1 1 42-42a42 42 0 0 1-42 42"/></symbol><symbol id="i-flag" viewBox="0 0 256 256"><path fill="currentColor" d="M44.08 51.37A6 6 0 0 0 42 55.9V224a6 6 0 0 0 12 0v-45.22c28.08-22.79 51.88-11 79.34 2.57c16.12 8 33.49 16.58 52 16.58c13.57 0 27.76-4.6 42.56-17.42A6 6 0 0 0 230 176V55.9a6 6 0 0 0-9.93-4.54c-29 25.12-53.28 13.09-81.41-.84c-27.89-13.81-59.66-29.36-94.58.85M218 173.17c-28.08 22.8-51.88 11-79.34-2.58C113.4 158.08 85.09 144.07 54 164V58.72c28.08-22.8 51.88-11 79.34 2.56C158.6 73.79 186.91 87.8 218 67.91Z"/></symbol><symbol id="i-arrow-bend-down-right" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 156.24l-48 48a6 6 0 0 1-8.48-8.48L209.51 158H128A102.12 102.12 0 0 1 26 56a6 6 0 0 1 12 0a90.1 90.1 0 0 0 90 90h81.51l-37.75-37.76a6 6 0 0 1 8.48-8.48l48 48a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-git-merge" viewBox="0 0 256 256"><path fill="currentColor" d="M208 114a30 30 0 0 0-29.21 23.19l-44-6.28a10 10 0 0 1-6.18-3.39L91.18 83.83A30 30 0 1 0 74 85.4v85.2a30 30 0 1 0 12 0V96.22l33.52 39.11a22 22 0 0 0 13.6 7.46l45.35 6.48A30 30 0 1 0 208 114M62 56a18 18 0 1 1 18 18a18 18 0 0 1-18-18m36 144a18 18 0 1 1-18-18a18 18 0 0 1 18 18m110-38a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-arrow-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M238 56v48a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h32.55l-30.38-27.8c-.06-.06-.12-.13-.19-.19a82 82 0 1 0-1.7 117.65a6 6 0 0 1 8.24 8.73A93.46 93.46 0 0 1 128 222h-1.28a94 94 0 1 1 67.65-160.6L226 90.35V56a6 6 0 1 1 12 0"/></symbol><symbol id="i-arrow-counter-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M222 128a94 94 0 0 1-92.74 94H128a93.43 93.43 0 0 1-64.5-25.65a6 6 0 1 1 8.24-8.72A82 82 0 1 0 70 70l-.19.19L39.44 98H72a6 6 0 0 1 0 12H24a6 6 0 0 1-6-6V56a6 6 0 0 1 12 0v34.34L61.63 61.4A94 94 0 0 1 222 128"/></symbol><symbol id="i-check" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 76.24l-128 128a6 6 0 0 1-8.48 0l-56-56a6 6 0 0 1 8.48-8.48L96 191.51L219.76 67.76a6 6 0 0 1 8.48 8.48"/></symbol><symbol id="i-x" viewBox="0 0 256 256"><path fill="currentColor" d="M204.24 195.76a6 6 0 1 1-8.48 8.48L128 136.49l-67.76 67.75a6 6 0 0 1-8.48-8.48L119.51 128L51.76 60.24a6 6 0 0 1 8.48-8.48L128 119.51l67.76-67.75a6 6 0 0 1 8.48 8.48L136.49 128Z"/></symbol><symbol id="i-warning" viewBox="0 0 256 256"><path fill="currentColor" d="M235.07 189.09L147.61 37.22a22.75 22.75 0 0 0-39.22 0L20.93 189.09a21.53 21.53 0 0 0 0 21.72A22.35 22.35 0 0 0 40.55 222h174.9a22.35 22.35 0 0 0 19.6-11.19a21.53 21.53 0 0 0 .02-21.72m-10.41 15.71a10.46 10.46 0 0 1-9.21 5.2H40.55a10.46 10.46 0 0 1-9.21-5.2a9.51 9.51 0 0 1 0-9.72l87.45-151.87a10.75 10.75 0 0 1 18.42 0l87.46 151.87a9.51 9.51 0 0 1-.01 9.72M122 144v-40a6 6 0 0 1 12 0v40a6 6 0 0 1-12 0m16 36a10 10 0 1 1-10-10a10 10 0 0 1 10 10"/></symbol><symbol id="i-circle-notch" viewBox="0 0 256 256"><path fill="currentColor" d="M230 128a102 102 0 0 1-204 0c0-40.18 23.35-76.86 59.5-93.45a6 6 0 0 1 5 10.9C58.61 60.09 38 92.49 38 128a90 90 0 0 0 180 0c0-35.51-20.61-67.91-52.5-82.55a6 6 0 0 1 5-10.9C206.65 51.14 230 87.82 230 128"/></symbol><symbol id="i-circle-half" viewBox="0 0 256 256"><path fill="currentColor" d="M128 26a102 102 0 1 0 102 102A102.12 102.12 0 0 0 128 26m6 12.2a90 90 0 0 1 20 3.63v172.34a90 90 0 0 1-20 3.63Zm32 8.23a90.5 90.5 0 0 1 20 12.81v137.52a90.5 90.5 0 0 1-20 12.81ZM38 128a90.12 90.12 0 0 1 84-89.8v179.6A90.12 90.12 0 0 1 38 128m160 56.5v-113a89.81 89.81 0 0 1 0 113"/></symbol><symbol id="i-circle" viewBox="0 0 256 256"><path fill="currentColor" d="M128 26a102 102 0 1 0 102 102A102.12 102.12 0 0 0 128 26m0 192a90 90 0 1 1 90-90a90.1 90.1 0 0 1-90 90"/></symbol><symbol id="i-gear" viewBox="0 0 256 256"><path fill="currentColor" d="M128 82a46 46 0 1 0 46 46a46.06 46.06 0 0 0-46-46m0 80a34 34 0 1 1 34-34a34 34 0 0 1-34 34m86-31.16c.06-1.89.06-3.79 0-5.68L229.33 106a6 6 0 0 0 1.11-5.29a105.3 105.3 0 0 0-10.68-25.81a6 6 0 0 0-4.53-3l-24.45-2.71q-1.93-2.07-4-4l-2.72-24.46a6 6 0 0 0-3-4.53a105.7 105.7 0 0 0-25.77-10.66a6 6 0 0 0-5.29 1.14l-19.2 15.37a90 90 0 0 0-5.68 0L106 26.67a6 6 0 0 0-5.29-1.11A105.3 105.3 0 0 0 74.9 36.24a6 6 0 0 0-3 4.53l-2.67 24.45q-2.07 1.94-4 4L40.76 72a6 6 0 0 0-4.53 3a105.7 105.7 0 0 0-10.66 25.77a6 6 0 0 0 1.11 5.23l15.37 19.2a90 90 0 0 0 0 5.68l-15.38 19.17a6 6 0 0 0-1.11 5.29a105.3 105.3 0 0 0 10.68 25.76a6 6 0 0 0 4.53 3l24.45 2.71q1.94 2.07 4 4L72 215.24a6 6 0 0 0 3 4.53a105.7 105.7 0 0 0 25.77 10.66a6 6 0 0 0 5.29-1.11l19.1-15.32c1.89.06 3.79.06 5.68 0l19.21 15.38a6 6 0 0 0 3.75 1.31a6.2 6.2 0 0 0 1.54-.2a105.3 105.3 0 0 0 25.76-10.68a6 6 0 0 0 3-4.53l2.71-24.45q2.07-1.93 4-4l24.46-2.72a6 6 0 0 0 4.53-3a105.5 105.5 0 0 0 10.66-25.77a6 6 0 0 0-1.11-5.29Zm-3.1 41.63l-23.64 2.63a6 6 0 0 0-3.82 2a75 75 0 0 1-6.31 6.31a6 6 0 0 0-2 3.82l-2.63 23.63a94.3 94.3 0 0 1-17.36 7.14l-18.57-14.86a6 6 0 0 0-3.75-1.31h-.36a78 78 0 0 1-8.92 0a6 6 0 0 0-4.11 1.3L100.87 218a94 94 0 0 1-17.34-7.17l-2.63-23.62a6 6 0 0 0-2-3.82a75 75 0 0 1-6.31-6.31a6 6 0 0 0-3.82-2l-23.63-2.63A94.3 94.3 0 0 1 38 155.14l14.86-18.57a6 6 0 0 0 1.3-4.11a78 78 0 0 1 0-8.92a6 6 0 0 0-1.3-4.11L38 100.87a94 94 0 0 1 7.17-17.34l23.62-2.63a6 6 0 0 0 3.82-2a75 75 0 0 1 6.31-6.31a6 6 0 0 0 2-3.82l2.63-23.63A94.3 94.3 0 0 1 100.86 38l18.57 14.86a6 6 0 0 0 4.11 1.3a78 78 0 0 1 8.92 0a6 6 0 0 0 4.11-1.3L155.13 38a94 94 0 0 1 17.34 7.17l2.63 23.64a6 6 0 0 0 2 3.82a75 75 0 0 1 6.31 6.31a6 6 0 0 0 3.82 2l23.63 2.63a94.3 94.3 0 0 1 7.14 17.29l-14.86 18.57a6 6 0 0 0-1.3 4.11a78 78 0 0 1 0 8.92a6 6 0 0 0 1.3 4.11L218 155.13a94 94 0 0 1-7.15 17.34Z"/></symbol><symbol id="i-caret-right" viewBox="0 0 256 256"><path fill="currentColor" d="m180.24 132.24l-80 80a6 6 0 0 1-8.48-8.48L167.51 128L91.76 52.24a6 6 0 0 1 8.48-8.48l80 80a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-caret-left" viewBox="0 0 256 256"><path fill="currentColor" d="M164.24 203.76a6 6 0 1 1-8.48 8.48l-80-80a6 6 0 0 1 0-8.48l80-80a6 6 0 0 1 8.48 8.48L88.49 128Z"/></symbol><symbol id="i-caret-down" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 100.24l-80 80a6 6 0 0 1-8.48 0l-80-80a6 6 0 0 1 8.48-8.48L128 167.51l75.76-75.75a6 6 0 0 1 8.48 8.48"/></symbol><symbol id="i-caret-up" viewBox="0 0 256 256"><path fill="currentColor" d="M212.24 164.24a6 6 0 0 1-8.48 0L128 88.49l-75.76 75.75a6 6 0 0 1-8.48-8.48l80-80a6 6 0 0 1 8.48 0l80 80a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-plus" viewBox="0 0 256 256"><path fill="currentColor" d="M222 128a6 6 0 0 1-6 6h-82v82a6 6 0 0 1-12 0v-82H40a6 6 0 0 1 0-12h82V40a6 6 0 0 1 12 0v82h82a6 6 0 0 1 6 6"/></symbol><symbol id="i-notebook" viewBox="0 0 256 256"><path fill="currentColor" d="M182 112a6 6 0 0 1-6 6h-64a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6m-6 26h-64a6 6 0 0 0 0 12h64a6 6 0 0 0 0-12m46-90v160a14 14 0 0 1-14 14H48a14 14 0 0 1-14-14V48a14 14 0 0 1 14-14h160a14 14 0 0 1 14 14M48 210h26V46H48a2 2 0 0 0-2 2v160a2 2 0 0 0 2 2M210 48a2 2 0 0 0-2-2H86v164h122a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-sparkle" viewBox="0 0 256 256"><path fill="currentColor" d="M196.89 130.94L144.4 111.6l-19.34-52.49a13.92 13.92 0 0 0-26.12 0L79.6 111.6l-52.49 19.34a13.92 13.92 0 0 0 0 26.12L79.6 176.4l19.34 52.49a13.92 13.92 0 0 0 26.12 0l19.34-52.49l52.49-19.34a13.92 13.92 0 0 0 0-26.12m-4.15 14.86l-55.08 20.3a6 6 0 0 0-3.56 3.56l-20.3 55.08a1.92 1.92 0 0 1-3.6 0l-20.3-55.08a6 6 0 0 0-3.56-3.56l-55.08-20.3a1.92 1.92 0 0 1 0-3.6l55.08-20.3a6 6 0 0 0 3.56-3.56l20.3-55.08a1.92 1.92 0 0 1 3.6 0l20.3 55.08a6 6 0 0 0 3.56 3.56l55.08 20.3a1.92 1.92 0 0 1 0 3.6M146 40a6 6 0 0 1 6-6h18V16a6 6 0 0 1 12 0v18h18a6 6 0 0 1 0 12h-18v18a6 6 0 0 1-12 0V46h-18a6 6 0 0 1-6-6m100 48a6 6 0 0 1-6 6h-10v10a6 6 0 0 1-12 0V94h-10a6 6 0 0 1 0-12h10V72a6 6 0 0 1 12 0v10h10a6 6 0 0 1 6 6"/></symbol><symbol id="i-bug" viewBox="0 0 256 256"><path fill="currentColor" d="M146 92a10 10 0 1 1 10 10a10 10 0 0 1-10-10m-46-10a10 10 0 1 0 10 10a10 10 0 0 0-10-10m146 46a6 6 0 0 1-6 6h-26v10a85.9 85.9 0 0 1-3.45 24.08l23.85 10.42a6 6 0 0 1-4.8 11l-23.23-10.15a86 86 0 0 1-156.74 0L26.4 189.5a6 6 0 1 1-4.8-11l23.85-10.42A85.9 85.9 0 0 1 42 144v-10H16a6 6 0 0 1 0-12h26v-10a85.9 85.9 0 0 1 3.45-24.08L21.6 77.5a6 6 0 0 1 4.8-11l23.23 10.15a86 86 0 0 1 156.74 0L229.6 66.5a6 6 0 1 1 4.8 11l-23.85 10.42A85.9 85.9 0 0 1 214 112v10h26a6 6 0 0 1 6 6m-192-6h148v-10a74 74 0 0 0-148 0Zm68 95.74V134H54v10a74.09 74.09 0 0 0 68 73.74M202 134h-68v83.74A74.09 74.09 0 0 0 202 144Z"/></symbol><symbol id="i-arrows-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M222 48v48a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h33.52l-18.05-18a81.5 81.5 0 0 0-57.53-24h-.46a81.5 81.5 0 0 0-57.29 23.28a6 6 0 1 1-8.38-8.58a93.38 93.38 0 0 1 65.67-26.76h.52a93.45 93.45 0 0 1 66 27.53l18 18V48a6 6 0 0 1 12 0m-34.19 136.72a81.5 81.5 0 0 1-57.29 23.34h-.46a81.5 81.5 0 0 1-57.53-24L54.48 166H88a6 6 0 0 0 0-12H40a6 6 0 0 0-6 6v48a6 6 0 0 0 12 0v-33.52l18 18.05a93.45 93.45 0 0 0 66 27.53h.52a93.38 93.38 0 0 0 65.67-26.76a6 6 0 1 0-8.38-8.58"/></symbol><symbol id="i-check-square" viewBox="0 0 256 256"><path fill="currentColor" d="M172.24 99.76a6 6 0 0 1 0 8.48l-56 56a6 6 0 0 1-8.48 0l-24-24a6 6 0 0 1 8.48-8.48L112 151.51l51.76-51.75a6 6 0 0 1 8.48 0M222 48v160a14 14 0 0 1-14 14H48a14 14 0 0 1-14-14V48a14 14 0 0 1 14-14h160a14 14 0 0 1 14 14m-12 0a2 2 0 0 0-2-2H48a2 2 0 0 0-2 2v160a2 2 0 0 0 2 2h160a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-file-text" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-34-82a6 6 0 0 1-6 6H96a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6m0 32a6 6 0 0 1-6 6H96a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6"/></symbol><symbol id="i-binoculars" viewBox="0 0 256 256"><path fill="currentColor" d="M233 147.24L191.43 52.6a6 6 0 0 0-1.25-1.83a30 30 0 0 0-42.42 0A6 6 0 0 0 146 55v27h-36V55a6 6 0 0 0-1.76-4.25a30 30 0 0 0-42.42 0a6 6 0 0 0-1.25 1.83L23 147.24A46 46 0 1 0 110 168V94h36v74a46 46 0 1 0 87-20.76M64 202a34 34 0 1 1 34-34a34 34 0 0 1-34 34m0-80a45.8 45.8 0 0 0-18.55 3.92l29.61-67.38A18 18 0 0 1 98 57.71V137a45.9 45.9 0 0 0-34-15m94-64.28a18 18 0 0 1 22.94.83l29.61 67.37A45.9 45.9 0 0 0 158 137ZM192 202a34 34 0 1 1 34-34a34 34 0 0 1-34 34"/></symbol><symbol id="i-git-diff" viewBox="0 0 256 256"><path fill="currentColor" d="M112 154a6 6 0 0 0-6 6v33.52l-41.07-41.08a9.93 9.93 0 0 1-2.93-7.07v-52a30 30 0 1 0-12 0v52a21.88 21.88 0 0 0 6.44 15.56L97.52 202H64a6 6 0 0 0 0 12h48a6 6 0 0 0 6-6v-48a6 6 0 0 0-6-6M38 64a18 18 0 1 1 18 18a18 18 0 0 1-18-18m168 98.6v-52a21.88 21.88 0 0 0-6.44-15.56L158.48 54H192a6 6 0 0 0 0-12h-48a6 6 0 0 0-6 6v48a6 6 0 0 0 12 0V62.48l41.07 41.08a9.93 9.93 0 0 1 2.93 7.07v52a30 30 0 1 0 12 0Zm-6 47.4a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-file-plus" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-42-66a6 6 0 0 1-6 6h-18v18a6 6 0 0 1-12 0v-18h-18a6 6 0 0 1 0-12h18v-18a6 6 0 0 1 12 0v18h18a6 6 0 0 1 6 6"/></symbol><symbol id="i-file-minus" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-42-66a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h48a6 6 0 0 1 6 6"/></symbol><symbol id="i-arrows-merge" viewBox="0 0 256 256"><path fill="currentColor" d="M190 40v64a6 6 0 0 1-1.76 4.24L134 162.49v55l21.76-21.75a6 6 0 0 1 8.48 8.48l-32 32a6 6 0 0 1-8.48 0l-32-32a6 6 0 0 1 8.48-8.48L122 217.51v-55l-54.24-54.27A6 6 0 0 1 66 104V40a6 6 0 0 1 12 0v61.51l50 50l50-50V40a6 6 0 0 1 12 0"/></symbol><symbol id="i-git-branch" viewBox="0 0 256 256"><path fill="currentColor" d="M230 64a30 30 0 1 0-36 29.4V112a10 10 0 0 1-10 10H96a21.84 21.84 0 0 0-10 2.42v-31a30 30 0 1 0-12 0v69.2a30 30 0 1 0 12 0V144a10 10 0 0 1 10-10h88a22 22 0 0 0 22-22V93.4A30.05 30.05 0 0 0 230 64M62 64a18 18 0 1 1 18 18a18 18 0 0 1-18-18m36 128a18 18 0 1 1-18-18a18 18 0 0 1 18 18M200 82a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-git-pull-request" viewBox="0 0 256 256"><path fill="currentColor" d="M102 64a30 30 0 1 0-36 29.4v69.2a30 30 0 1 0 12 0V93.4A30.05 30.05 0 0 0 102 64m-48 0a18 18 0 1 1 18 18a18 18 0 0 1-18-18m36 128a18 18 0 1 1-18-18a18 18 0 0 1 18 18m116-29.4v-52a21.88 21.88 0 0 0-6.44-15.56L158.48 54H192a6 6 0 0 0 0-12h-48a6 6 0 0 0-6 6v48a6 6 0 0 0 12 0V62.48l41.07 41.08a9.9 9.9 0 0 1 2.93 7.07v52a30 30 0 1 0 12 0Zm-6 47.4a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-arrow-square-out" viewBox="0 0 256 256"><path fill="currentColor" d="M222 104a6 6 0 0 1-12 0V54.49l-69.75 69.75a6 6 0 0 1-8.48-8.48L201.51 46H152a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6Zm-38 26a6 6 0 0 0-6 6v72a2 2 0 0 1-2 2H48a2 2 0 0 1-2-2V80a2 2 0 0 1 2-2h72a6 6 0 0 0 0-12H48a14 14 0 0 0-14 14v128a14 14 0 0 0 14 14h128a14 14 0 0 0 14-14v-72a6 6 0 0 0-6-6"/></symbol><symbol id="i-arrow-line-up" viewBox="0 0 256 256"><path fill="currentColor" d="M204.24 139.76a6 6 0 1 1-8.48 8.48L134 86.49V224a6 6 0 0 1-12 0V86.49l-61.76 61.75a6 6 0 0 1-8.48-8.48l72-72a6 6 0 0 1 8.48 0ZM216 34H40a6 6 0 0 0 0 12h176a6 6 0 0 0 0-12"/></symbol><symbol id="i-user" viewBox="0 0 256 256"><path fill="currentColor" d="M229.19 213c-15.81-27.32-40.63-46.49-69.47-54.62a70 70 0 1 0-63.44 0C67.44 166.5 42.62 185.67 26.81 213a6 6 0 1 0 10.38 6c19.21-33.19 53.15-53 90.81-53s71.6 19.81 90.81 53a6 6 0 1 0 10.38-6M70 96a58 58 0 1 1 58 58a58.07 58.07 0 0 1-58-58"/></symbol><symbol id="i-prohibit" viewBox="0 0 256 256"><path fill="currentColor" d="M128 26a102 102 0 1 0 102 102A102.12 102.12 0 0 0 128 26m90 102a89.6 89.6 0 0 1-22.29 59.22L68.78 60.29A89.95 89.95 0 0 1 218 128m-180 0a89.6 89.6 0 0 1 22.29-59.22l126.93 126.93A89.95 89.95 0 0 1 38 128"/></symbol><symbol id="i-tree-structure" viewBox="0 0 256 256"><path fill="currentColor" d="M160 110h48a14 14 0 0 0 14-14V48a14 14 0 0 0-14-14h-48a14 14 0 0 0-14 14v18h-18a22 22 0 0 0-22 22v34H70v-10a14 14 0 0 0-14-14H24a14 14 0 0 0-14 14v32a14 14 0 0 0 14 14h32a14 14 0 0 0 14-14v-10h36v34a22 22 0 0 0 22 22h18v18a14 14 0 0 0 14 14h48a14 14 0 0 0 14-14v-48a14 14 0 0 0-14-14h-48a14 14 0 0 0-14 14v18h-18a10 10 0 0 1-10-10V88a10 10 0 0 1 10-10h18v18a14 14 0 0 0 14 14M58 144a2 2 0 0 1-2 2H24a2 2 0 0 1-2-2v-32a2 2 0 0 1 2-2h32a2 2 0 0 1 2 2Zm100 16a2 2 0 0 1 2-2h48a2 2 0 0 1 2 2v48a2 2 0 0 1-2 2h-48a2 2 0 0 1-2-2Zm0-112a2 2 0 0 1 2-2h48a2 2 0 0 1 2 2v48a2 2 0 0 1-2 2h-48a2 2 0 0 1-2-2Z"/></symbol></svg>
 <div id="sky"><div class="halo" id="halo"></div><canvas id="stars"></canvas></div>
 <div class="app" id="app"></div>
@@ -602,7 +602,7 @@ const COMMITS=[
 
 /* LOCAL CHECKS — Argo ran these in THIS working tree, keyed to the latest
    commit + uncommitted work. Remote CI (GitHub Actions, keyed to the PR) is a
-   different fact with a different origin — it lives on the ribbon's CI node.
+   different fact with a different origin — it lives on the lifecycle's CI node.
    The agent review is NOT a check row; its one pointer is the Review tab badge. */
 const BRANCH={
   lint:{state:'warn',label:'2 warnings',derived:true,cmd:'eslint . --max-warnings 0',
@@ -853,7 +853,7 @@ function toolRow(t){
   return `<div class="lrow ${cls} ${sel===(t.chref||t.id)?'sel':''}" onclick="openConsole('${t.chref||t.id}')" title="${esc(clean(t.lbl))} — opens this feed as a console channel">
     <span class="ti">${t.ti}</span><span class="lbl">${t.lbl}</span><span class="grow"></span>${rm}</div>`;
 }
-/* ── Agents — the story pane's Actor roster (R15). AgentRow + RunRow own agent
+/* ── Agents — the Activity panel's Actor roster (R15). AgentRow + RunRow own agent
    state; each Agent's stream is its console channel. ── */
 function agentRow(a,parentSt){
   const st=a.astate||'running';
@@ -878,7 +878,7 @@ function runRow(r){
   const word=st==='failed'?`<span class="aword failed">failed</span>`:'';
   const dur=r.rmeta?`<span ${r.dv?'title="estimated from timestamps"':''}>${r.rmeta}</span>`:'';
   const meta=(word||dur)?`<span class="ameta">${word}${dur}</span>`:'';
-  /* progress summary renders only while COLLAPSED — expanded, the phase rails
+  /* progress summary renders only while COLLAPSED — expanded, the phase spines
      and member rows carry the same information (single home) */
   return `<div class="lrow agent ${st==='running'?'run':'done'}" data-component="RunRow" onclick="toggleRun('${r.id}')" title="${shapeWord} — a Run of ${r.members.length} agents">
       <span class="cv">${open?ic('caret-down'):ic('caret-right')}</span>
@@ -925,7 +925,7 @@ function msgHtml(m){
       ${m.at?`<span class="mtime">${m.at}</span>`:''}<span class="dot glow ${STATE_TONE[ms]} sd" title="${STATE_WORD[ms]}" aria-label="${STATE_WORD[ms]}"></span></div>
     ${open?`<div class="msg-tools">${m.tools.map(toolRow).join('')}</div>`:''}</div>`;
 }
-/* ══ PrLifecycleRibbon — the ONE stateful home of ship-flow state.
+/* ══ PrLifecycleRibbon — the ONE stateful home of delivery state.
    Artifact nodes Commits · PR · CI · Review · Merge; every node state is a
    fact about a sha, so done can go STALE (R3). Head = leftmost non-fresh (R1). ══ */
 const NODE_ICON={commits:'git-commit',pr:'git-pull-request',ci:'gear',review:'user',merge:'arrows-merge'};
@@ -1098,7 +1098,7 @@ function nodeDetailHtml(k,s,m){
   }
   return '';
 }
-/* The strip + drawer — the Session-changes pane header. Returns '' under R7. */
+/* The strip + drawer — the Delivery panel header. Returns '' under R7. */
 function shipbarHtml(s){
   const sh=s.ship, m=ribbonModel(s);
   /* R9 — the anchor exists only once a PR does; pre-PR the Create-PR drawer names the base */
@@ -1124,14 +1124,14 @@ function shipbarHtml(s){
     ${detail?`<div class="rdetail" data-component="NodeDrawer">${detail}</div>`:''}`;
 }
 
-/* ── STORY pane — time-ordered, prose only, NO tabs (R11/R12): now-line →
+/* ── ACTIVITY panel — time-ordered, prose only, NO tabs (R11/R12): now-line →
    local checks → outcomes → timeline. Raw I/O routes to the console. ── */
 function overviewHtml(s){
   const msgs=msgsFor(s);
   if(!isFull()) return `${nowHtml(s)}
     ${agentsHtml(s)}
     ${msgs.length?narrHtml(msgs):''}
-    <div class="empty">Full Activity is mocked on “Auth refactor” — this session exists to demonstrate its rail row and ship-ribbon state.</div>`;
+    <div class="empty">Full Activity is mocked on “Auth refactor” — this session exists to demonstrate its Roster row and delivery-lifecycle state.</div>`;
   return `${nowHtml(s)}
       ${agentsHtml(s)}
       ${checksHtml()}
@@ -1140,13 +1140,13 @@ function overviewHtml(s){
       ${narrHtml(msgs)}`;
 }
 function activityHtml(){
-  return `<div class="region activity" aria-label="Story">
+  return `<div class="region activity" aria-label="Activity">
     <div class="rscroll" style="padding-top:14px">${overviewHtml(cur())}</div></div>`;
 }
 
-/* ── Review tab (pane 2, R14) — SOLE home of the AGENT verdict + findings
-   (the GitHub human review lives on the ribbon's Review node). No merge button
-   (the ribbon gate owns shipping), no progress-bar count, no header count. ── */
+/* ── Review tab (panel 2, R14) — SOLE home of the AGENT verdict + findings
+   (the GitHub human review lives on the lifecycle's Review node). No merge button
+   (the lifecycle gate owns shipping), no progress-bar count, no header count. ── */
 const S_WORD={open:'Open',addressing:'Addressing',fixed:'Fixed'};
 const S_GLYPH={open:ic('circle'),addressing:ic('circle-notch'),fixed:ic('check')};
 function stateChip(st){return `<span class="schip ${st}" title="finding state — Open → Addressing → Fixed">${S_GLYPH[st]} ${S_WORD[st]}</span>`;}
@@ -1193,7 +1193,7 @@ function reviewTabHtml(){
     <div class="rv-list" data-component="FindingsList">${FINDINGS.map(reviewFindingRow).join('')}</div>`;
 }
 
-/* ── WORK pane — ribbon strip header + Changes/Review/Artifacts tabs. The ONLY
+/* ── DELIVERY panel — lifecycle strip header + Changes/Review/Artifacts tabs. The ONLY
    scoping a story click may cause is sha-keyed product: an outcome (R11).
    Tool feeds → console; check output → Commits drawer. ── */
 function detailModel(){
@@ -1267,7 +1267,7 @@ function detailHtml(){
   const s=cur();
   const bar=shipbarHtml(s);           /* '' under R7 — investigation sessions */
   if(!isFull()){
-    return `<div class="region detail" aria-label="Work">
+    return `<div class="region detail" aria-label="Delivery">
       ${bar}
       <div class="dtabs" data-component="WorkTabs"><span class="dtab on">Changes</span><span class="dtab">Artifacts</span></div>
       <div class="rscroll"><div class="empty">Diff and Activity mocks live on “Auth refactor” — this session demonstrates the lifecycle state above.</div></div></div>`;
@@ -1285,7 +1285,7 @@ function detailHtml(){
       ?`<span class="vtoggle" data-component="ChangesViewToggle"><span class="vt ${changesView==='all'?'on':''}" onclick="setChangesView('all')">All files</span><span class="vt ${changesView==='commits'?'on':''}" onclick="setChangesView('commits')">By commit</span></span>`:'';
     strip=`<div class="dtabs" data-component="WorkTabs">
       <span class="dtab ${detailTab==='changes'?'on':''}" onclick="setDetailTab('changes')">Changes · ${FILES.length}</span>
-      <span class="dtab review ${detailTab==='review'?'on':''}" onclick="setDetailTab('review')" title="agent code review · argo — verdict + findings (the GitHub review lives on the ribbon's Review node)">${reviewLbl}</span>
+      <span class="dtab review ${detailTab==='review'?'on':''}" onclick="setDetailTab('review')" title="agent code review · argo — verdict + findings (the GitHub review lives on the Delivery lifecycle's Review node)">${reviewLbl}</span>
       <span class="dtab ${detailTab==='artifacts'?'on':''}" onclick="setDetailTab('artifacts')">Artifacts · ${ARTIFACTS.length}</span>
       ${toggle}</div>`;
     body=detailTab==='artifacts'?artifactsTabHtml()
@@ -1306,7 +1306,7 @@ function detailHtml(){
       body=`<div class="empty">Nothing captured for this outcome yet.</div>`;
     }
   }
-  return `<div class="region detail" aria-label="Work">
+  return `<div class="region detail" aria-label="Delivery">
     ${bar}
     ${strip}
     <div class="rscroll">${body}</div></div>`;
@@ -1324,7 +1324,7 @@ function sessionHtml(){
     <div class="shead" data-component="SessionHeader">
       <div class="crumb"><span>argo</span><span class="sep">${ic('caret-right')}</span><b>${s.title}</b></div>
       ${wschipHtml(s)}
-      <div class="toggles"><span class="tg ${showDetail?'on':''}" onclick="toggleDetail()">${ic('sidebar-simple')} Work</span></div>
+      <div class="toggles"><span class="tg ${showDetail?'on':''}" onclick="toggleDetail()">${ic('sidebar-simple')} Delivery</span></div>
     </div>
     ${workHtml()}
     <div class="hsplit" data-split="term"></div>
@@ -1434,9 +1434,9 @@ function drawOrb(){const cv=document.getElementById('orb');if(!cv)return;const c
   c.fillStyle=g;c.beginPath();c.arc(cx,cy,R*2,0,7);c.fill();c.beginPath();c.arc(cx,cy,R,0,7);c.fillStyle='#0a0806';c.fill();
   c.lineWidth=1.4;c.strokeStyle=rim;c.beginPath();c.arc(cx,cy,R,0,7);c.stroke();}
 addEventListener('resize',()=>{drawStars();drawOrb();});
-document.getElementById('hint').textContent='cockpit · story|work split · Background Tasks roster (R15, phase-grouped Runs) · ribbon = work-pane header · console channels for raw I/O · matrix S0–S11 + R1–R16 in the rail (spec: cockpit-matrix.md). One primary control, in the head node’s drawer.';
+document.getElementById('hint').textContent='cockpit · activity|delivery split · Background Tasks roster (R15, phase-grouped Runs) · lifecycle = Delivery-panel header · console channels for raw I/O · matrix S0–S11 + R1–R16 in the Roster (spec: cockpit-matrix.md). One primary control, in the head node’s drawer.';
 /* demo deep-links: #s=N preselects a rail session; &ch=<tool-id> opens its
-   console channel; &tab=review|artifacts picks the work-pane tab */
+   console channel; &tab=review|artifacts picks the Delivery-panel tab */
 const hp=location.hash.match(/s=(\d+)/); if(hp) selIdx=Math.min(SESSIONS.length-1,+hp[1]);
 const ht=location.hash.match(/tab=(\w+)/); if(ht&&['changes','review','artifacts'].includes(ht[1])) detailTab=ht[1];
 seedChannels();
