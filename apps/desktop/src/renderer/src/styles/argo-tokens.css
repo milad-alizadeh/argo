@@ -73,6 +73,7 @@
 :root {
   --radius: 0.5rem;
   --radius-full: 999px; /* pills/chips; the app's rounded-full already covers this */
+  --border-rail: 3px; /* the study's severity/state accent rail (finding, rvrow, phase group) */
 
   --background: var(--gray-100);
   --foreground: var(--gray-950);
