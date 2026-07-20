@@ -21,9 +21,11 @@ conflicts.
 - **Named deterministically — no LLM, no namer, no `Community N`.** `graphify update` names every
   community from its **dominant node** (verified: a brand-new community gets a real name like
   `net.py`, never a numeric placeholder). No API key, no backend, no background job, no agent
-  coupling. Thematic LLM names (`graphify label`) are an **occasional in-session polish only** —
-  never automate them: `label` re-clusters and drops a dated backup dir on every call (churn),
-  and needs a key or `--backend`.
+  coupling. Thematic LLM names (`graphify label`) are an **occasional manual polish only** — inside
+  Claude Code, `graphify label --backend claude-cli` runs through the local `claude` CLI with **no
+  API key**. Never automate it: every `label` re-clusters and drops a dated backup dir (churn), its
+  wording drifts run-to-run, and it can misread a community from node ids alone — always eyeball the
+  result.
 - **Code-only.** A `.graphifyignore` keeps markdown (plans, ADRs, skills, docs) out of the graph,
   so queries stay about code.
 - **Conflict-free.** graphify's **union merge driver** auto-merges `graph.json`, so parallel
@@ -92,8 +94,14 @@ into the graph.
 
 ## 5. Wire the union merge driver
 
+`graphify merge-driver` is graphify's built-in union merge for `graph.json`. `graphify hook install`
+would register it (git config + `.gitattributes`) for you — but §3 skips hook install (its
+post-commit refresh is dead under husky), and that installer bundles the driver with those dead
+hooks, so wire the driver standalone instead.
+
 Copy the `graphify-out/graph.json merge=graphify` line into `.gitattributes` (committed), and set
-the driver in each clone's git config (setup does this; the skill notes it for teammates):
+the driver in each clone's git config (setup does this; the git-config half doesn't travel with the
+repo, so the skill notes it for teammates):
 
 ```bash
 git config merge.graphify.name   "graphify union merge"
