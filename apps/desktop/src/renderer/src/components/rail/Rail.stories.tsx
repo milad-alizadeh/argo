@@ -58,11 +58,10 @@ export const EveryState: Story = {
     const list = within(canvasElement).getByRole('list', { name: 'Sessions' })
     const rows = within(list).getAllByRole('listitem')
     await expect(rows).toHaveLength(SESSION_STATES.length)
-    for (const [index, status] of SESSION_STATES.entries()) {
-      const row = rows[index]
-      const { word, tone } = STATUS_STATE[status]
-      await expect(within(row as HTMLElement).getByText(word)).toBeInTheDocument()
-      await expect(row?.querySelector('svg')).toHaveClass(STATUS_TONE[tone])
+    for (const [index, row] of rows.entries()) {
+      const { word, tone } = STATUS_STATE[SESSION_STATES[index]]
+      await expect(within(row).getByText(word)).toBeInTheDocument()
+      await expect(row.querySelector('svg')).toHaveClass(STATUS_TONE[tone])
     }
   },
 }
