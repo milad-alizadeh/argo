@@ -4,6 +4,10 @@ import type * as React from 'react'
 import { cn } from '@/lib/utils'
 import { TYPE_ROLE_CLASS } from './Text'
 
+/**
+ * Atom: the roving-tabindex tablist — vendored shadcn on Radix `Tabs`, selection and
+ * `aria-selected` wiring included free.
+ */
 function Tabs({
   className,
   ...props

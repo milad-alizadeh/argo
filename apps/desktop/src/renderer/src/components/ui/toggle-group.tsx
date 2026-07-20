@@ -3,6 +3,10 @@ import type * as React from 'react'
 import { cn } from '@/lib/utils'
 import { TYPE_ROLE_CLASS } from './Text'
 
+/**
+ * Atom: the single-select segmented control — vendored shadcn on Radix `ToggleGroup`, roving
+ * focus and `data-state=on` wiring included free.
+ */
 function ToggleGroup({
   className,
   ...props

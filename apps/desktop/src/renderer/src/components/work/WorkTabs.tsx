@@ -5,6 +5,7 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
+  Text,
   tabsTriggerVariants,
 } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -116,18 +117,25 @@ export function WorkTabs(
             <CaretLeftIcon aria-hidden />
             All changes
           </Button>
-          <span className={cn(tabsTriggerVariants(), 'cursor-default')} data-state="active">
+          <Text
+            as="span"
+            variant="row"
+            className={cn(tabsTriggerVariants(), 'cursor-default')}
+            data-state="active"
+          >
             {props.outcomeTitle}
-          </span>
+          </Text>
         </div>
       )
     case 'stub':
       return (
         <div className="flex min-h-strip items-center gap-hair px-inset py-tight">
-          <span className={tabsTriggerVariants()} data-state="active">
+          <Text as="span" variant="row" className={tabsTriggerVariants()} data-state="active">
             Changes
-          </span>
-          <span className={tabsTriggerVariants()}>Artifacts</span>
+          </Text>
+          <Text as="span" variant="row" className={tabsTriggerVariants()}>
+            Artifacts
+          </Text>
         </div>
       )
   }
