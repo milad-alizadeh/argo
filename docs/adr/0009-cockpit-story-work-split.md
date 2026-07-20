@@ -28,7 +28,7 @@ The session screen is split by **data nature**, not by widget:
 
 Every fact has exactly one home; other appearances are pointers. Workspace
 identity is one header chip (branch names the worktree; shared-tree sessions
-warn). The full contract — facts model, rules R1–R15, state table S0–S11, pane
+warn). The full contract — facts model, rules R1–R16, state table S0–S11, pane
 anatomy — lives in `docs/designs/cockpit-matrix.md` and is written to become the
 component unit tests.
 
