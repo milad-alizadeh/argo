@@ -115,12 +115,6 @@
       "skillPath": "packages/argo-skills/skills/implement/SKILL.md",
       "computedHash": "770cb2d2c93b761a6ec5068cc160e39fbf530bff111a838b434ffcc8f1e033c0"
     },
-    "implement-fanout": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/implement-fanout/SKILL.md",
-      "computedHash": "ccc0eb020e355a7f4e6af3ce2cfd4cf7da76ba0c6e33d1b6eee82094d0bac8d6"
-    },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
       "sourceType": "github",

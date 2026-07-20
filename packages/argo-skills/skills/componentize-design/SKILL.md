@@ -105,10 +105,10 @@ Two ways to consume the inventory — pick with the user:
 - **Ticket it** (bigger surface, or work split across sessions/agents): run
   `/to-tickets` over the inventory. One ticket per organism/screen; shared new
   atoms/molecules become their own tickets, `Blocked by:` edges follow
-  `composed-of`. Because names and tokens are already frozen, leaf tickets with no
-  shared rows are safe for `/implement-fanout`; the rest run serially via
-  `/implement`. Each ticket body links the study file, the inventory row, and the
-  token contract — a fresh context needs nothing else.
+  `composed-of`. Because names and tokens are already frozen, build each ticket
+  with `/implement` — one ticket per fresh context, in dependency order. Each
+  ticket body links the study file, the inventory row, and the token contract — a
+  fresh context needs nothing else.
 
 ## 4. Build bottom-up
 
