@@ -51,6 +51,7 @@ up?" — with the detected recommendation marked, covering:
 | Knowledge graph (committed, hook-refreshed) | `setup-graphify` | repo beyond trivial size |
 | Module boundaries (dependency-cruiser) | `setup-module-boundaries` | monorepo / layered app |
 | Design handoff (tokens, studies, check) | `setup-design-handoff` | project has UI |
+| Visual verification (screenshot script + verify stage) | `setup-visual-verify` | project has UI |
 
 ## Phase 3 — dispatch in order
 
@@ -62,7 +63,9 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
 4. `setup-module-boundaries` — lint config + CI gate.
 5. `setup-design-handoff` — token contract, study scaffolding, design-token
    check; depends on the rules from step 1.
-6. `setup-output-style` — Terse output style as the Claude Code session default;
+6. `setup-visual-verify` — screenshot script + declared render method; points at
+   the studies/Storybook that step 5 (or the app) provides.
+7. `setup-output-style` — Terse output style as the Claude Code session default;
    independent of the rest, so it can run any time.
 
 Run them as skills (each owns its own detection and wizard details); don't
