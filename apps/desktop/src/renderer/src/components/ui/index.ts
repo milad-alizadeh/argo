@@ -10,6 +10,7 @@ export {
 } from './findingState'
 export * from './icons'
 export { StatusIcon } from './icons/StatusIcon'
+export { NowLine } from './NowLine'
 export { PANE_ORIENTATIONS, type PaneOrientation, PaneSplitter } from './PaneSplitter'
 export { SectionHeader } from './SectionHeader'
 export { Status } from './Status'
@@ -21,3 +22,10 @@ export {
   type TextVariant,
   TYPE_ROLE_CLASS,
 } from './Text'
+export {
+  syncLabel,
+  WorkspaceIdentity,
+  type WorkspaceTag,
+  type WorkspaceTree,
+  workspaceTag,
+} from './WorkspaceIdentity'
