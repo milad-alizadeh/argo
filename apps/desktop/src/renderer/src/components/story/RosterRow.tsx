@@ -73,18 +73,24 @@ export function RosterRow({
           }}
           aria-expanded={caret === 'open'}
           aria-label={`${caret === 'open' ? 'Collapse' : 'Expand'} ${toggleLabel}`}
-          className="h-auto w-auto shrink-0 border-none bg-transparent p-0 text-meta text-foreground-faint hover:bg-transparent hover:text-foreground"
+          className="h-auto w-caret-col shrink-0 justify-center border-none bg-transparent p-0 text-meta text-foreground-faint hover:bg-transparent hover:text-foreground"
         >
           <Caret aria-hidden />
         </Button>
       )}
       {caret !== undefined && !canToggle && (
-        <Text variant="meta" className="inline-flex shrink-0 text-foreground-faint">
+        <Text
+          variant="meta"
+          className="inline-flex w-caret-col shrink-0 justify-center text-foreground-faint"
+        >
           <Caret aria-hidden className={cn(caret === 'reserved' && 'invisible')} />
         </Text>
       )}
       {Glyph !== undefined && (
-        <Text variant="row" className="inline-flex shrink-0 text-primary-soft">
+        <Text
+          variant="row"
+          className="inline-flex w-glyph-col shrink-0 justify-center text-primary-soft"
+        >
           <Glyph aria-hidden />
         </Text>
       )}

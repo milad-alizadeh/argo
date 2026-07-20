@@ -304,6 +304,11 @@
   /* Nesting depth — how far a tree's children sit in from their parent row. Above the
    * region step because it is a structural offset, not a gap between neighbours. */
   --space-nest: 24px;
+  /* Roster tree columns — the fixed caret and glyph boxes (study `.cv` 10px / `.ti`
+   * 16px). Structural icon-box widths like --space-nest, not rhythm steps: a fixed box
+   * is what holds the caret and icon in their column as a row nests deeper. */
+  --space-caret-col: 10px;
+  --space-glyph-col: 16px;
 
   /* Glow — the lit halo a live signal carries (status dots, the ctx fill). Its
    * colour is the element's own currentColor, so one utility covers every tone;
