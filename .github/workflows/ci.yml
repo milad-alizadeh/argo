@@ -146,20 +146,21 @@ jobs:
           path: apps/desktop/test-results/
           retention-days: 7
 
-  # A brand-new story has no baseline, so `stories` reds the first time it sees one. There's
-  # nothing to review — the first render *is* the baseline — so generate and commit those
-  # automatically, no gate. An *existing* baseline that changed is real drift: never auto-push
-  # it, just flag it for `approve-baselines`. The PAT push re-runs `stories`.
-  auto-baseline:
-    name: baseline new stories
+  # When `stories` reds, the baselines are out of date in one of two ways: a new story has none
+  # yet, or an existing one drifted. Both resolve the same way — regenerate and push the PNGs to
+  # the PR — because that puts the pixels somewhere you can actually judge them: GitHub renders
+  # a changed image in Files changed with 2-up / swipe / onion-skin, which a downloadable zip
+  # never gave you. Drift is called out in a PR comment so it can't pass as a silent update, and
+  # merging it is gated by the PR review that main already requires.
+  baselines:
+    name: update visual baselines
     needs: stories
     if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.stories.result == 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: write
-    outputs:
-      has_drift: ${{ steps.commit.outputs.has_drift }}
+      pull-requests: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -173,65 +174,53 @@ jobs:
       - name: Install Playwright Chromium
         run: bunx playwright install --with-deps chromium
 
-      # --update writes every baseline: it creates the missing ones and overwrites drifted ones.
+      # --update writes every baseline: creates the missing ones, overwrites the drifted ones.
+      # `|| true` because a story failing for a non-visual reason must not lose the new baselines.
       - name: Regenerate baselines
         run: cd apps/desktop && bun run test:stories -- --update || true
 
-      - name: Commit new-story baselines, flag drift
-        id: commit
+      - name: Commit and push baselines
+        id: push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # A changed tracked baseline is drift → hand it to approve-baselines, don't touch it here.
-          if [ -n "$(git diff --name-only -- '*__screenshots__*')" ]; then
-            echo "has_drift=true" >> "$GITHUB_OUTPUT"
+          # Tracked-and-modified is drift (a story that already had a baseline now renders
+          # differently); untracked is a new story's first render, which has nothing to compare to.
+          drift=$(git diff --name-only -- '*__screenshots__*')
+          git add -A -- '*__screenshots__*'
+          if git diff --cached --quiet; then
+            echo "Baselines already current."
+            exit 0
+          fi
+          if [ -n "$drift" ]; then
+            git commit -m "test(visual): update drifted screenshot baselines"
           else
-            echo "has_drift=false" >> "$GITHUB_OUTPUT"
+            git commit -m "test(visual): baseline new stories"
           fi
-          # An untracked baseline is a new story's first render → stage only these.
-          git ls-files --others --exclude-standard -z -- '*__screenshots__*' | xargs -0 -r git add --
-          if git diff --cached --quiet; then
-            echo "No new-story baselines to commit."
-            exit 0
-          fi
-          git commit -m "test(visual): baseline new stories"
           git push origin "HEAD:${{ github.head_ref }}"
+          {
+            echo "drift<<EOF"
+            echo "$drift"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
-  # Drift on an existing baseline is the one case a human must judge: is the pixel change
-  # intended? This job waits on the `visual-baselines` environment (GitHub's native "Review
-  # deployments → Approve"); on approval it regenerates every baseline and pushes, re-running
-  # `stories` green. Without the environment + a required reviewer the gate auto-approves.
-  approve-baselines:
-    name: approve visual baselines
-    needs: [stories, auto-baseline]
-    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.stories.result == 'failure' && needs.auto-baseline.outputs.has_drift == 'true' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    environment: visual-baselines
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          token: ${{ secrets.VISUAL_APPROVE_TOKEN }}
-          ref: ${{ github.head_ref }}
-
-      - uses: ./.github/actions/setup
-
-      - name: Install Playwright Chromium
-        run: bunx playwright install --with-deps chromium
-
-      - name: Regenerate baselines
-        run: cd apps/desktop && bun run test:stories -- --update
-
-      - name: Commit and push updated baselines
+      # Drift is the case a human has to actually look at, so say so out loud rather than
+      # letting a bot commit slide by as routine.
+      - name: Flag drift on the PR
+        if: steps.push.outputs.drift != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRIFT: ${{ steps.push.outputs.drift }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add '*__screenshots__*'
-          if git diff --cached --quiet; then
-            echo "No baseline changes to push."
-            exit 0
-          fi
-          git commit -m "test(visual): approve updated screenshot baselines"
-          git push origin "HEAD:${{ github.head_ref }}"
+          {
+            echo "**Visual drift** — these stories render differently than their committed baseline:"
+            echo
+            echo '```'
+            echo "$DRIFT"
+            echo '```'
+            echo
+            echo "I pushed the regenerated baselines to this branch. Open **Files changed** and use"
+            echo "the image diff (2-up / swipe / onion-skin) to check the change is intended — if it"
+            echo "isn't, the fix belongs in the component, not the baseline."
+          } > comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
