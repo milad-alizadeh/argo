@@ -17,7 +17,7 @@ const testSweep: RosterActor = {
   shape: 'batch',
   state: 'done',
   duration: '4m',
-  open: false,
+  defaultOpen: false,
   members: [
     {
       name: 'unit agent',
@@ -49,7 +49,7 @@ const retryAudit: RosterActor = {
   shape: 'pipeline',
   state: 'running',
   duration: '9m',
-  open: true,
+  defaultOpen: true,
   phases: [
     { label: 'Survey', state: 'done', count: '4' },
     { label: 'Deep-read', state: 'run', count: '2/3' },
@@ -117,17 +117,6 @@ export const Default: Story = {
     await expect(canvas.getByText('dynamic workflow')).toBeInTheDocument()
     // the header counts nothing — no "· 3" beside the name
     await expect(canvas.queryByText(/^·\s/)).not.toBeInTheDocument()
-  },
-}
-
-// A session whose only Actor is one dispatched Agent. A lone row has no rollup above it,
-// so it always words its state.
-export const SingleAgent: Story = {
-  args: { actors: [reviewAgent] },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByText('code-review agent')).toBeInTheDocument()
-    await expect(canvas.getByText('done')).toBeInTheDocument()
   },
 }
 

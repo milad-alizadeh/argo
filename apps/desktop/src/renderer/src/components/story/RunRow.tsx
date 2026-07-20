@@ -8,6 +8,7 @@ import { doneAgentCount } from './agentState'
 import { PhaseGroup } from './PhaseGroup'
 import { PHASE_PRESENTATION, type PhaseState, phaseOpensByDefault } from './phaseState'
 import { RosterRow } from './RosterRow'
+import { useDisclosure } from './useDisclosure'
 
 export const RUN_SHAPES = ['batch', 'pipeline'] as const
 
@@ -55,8 +56,13 @@ export type RunRowProps = {
   members: readonly RunMember[]
   /** The Phases a `pipeline` runs through, in order. A batch has none. */
   phases?: readonly RunPhase[]
-  /** Whether the members are showing. */
-  open: boolean
+  /** Seeds whether the members show, standalone. Ignored once `open` is passed. */
+  defaultOpen?: boolean
+  /** Drives the disclosure directly — pass this (with `onOpenChange`) for a container (#30)
+   * to control the Run from outside; omit it to let the row track its own open state. */
+  open?: boolean
+  /** Every open/closed transition, whether the Run is controlled or tracking itself. */
+  onOpenChange?: (open: boolean) => void
   /** Extra classes for the Run's outer element. */
   className?: string
 }
@@ -82,14 +88,22 @@ export function RunRow({
   duration,
   members,
   phases,
-  open,
+  defaultOpen = false,
+  open: openProp,
+  onOpenChange,
   className,
 }: RunRowProps): React.JSX.Element {
+  const [open, toggleOpen] = useDisclosure({ open: openProp, defaultOpen, onOpenChange })
   const shapeWord = SHAPE_WORD[shape]
+  // A Run dispatched with nothing in it yet has nothing to open — the caret reserves its
+  // width rather than becoming a dead button (mirrors PhaseGroup's own empty-members rule).
+  const hasContent = phases ? phases.length > 0 : members.length > 0
   return (
     <div className={className}>
       <RosterRow
-        caret={open ? 'open' : 'closed'}
+        caret={hasContent ? (open ? 'open' : 'closed') : 'reserved'}
+        onToggle={toggleOpen}
+        toggleLabel={label}
         glyph={TreeStructureIcon}
         title={`${shapeWord} — a Run of ${members.length} agents`}
         stateWord={state === 'failed' ? state : undefined}
@@ -162,7 +176,7 @@ function RunMembers({
             label={phase.label}
             state={phase.state}
             members={membersOfPhase(members, phase.label)}
-            open={phase.open ?? phaseOpensByDefault(phase.state)}
+            defaultOpen={phase.open ?? phaseOpensByDefault(phase.state)}
           />
         ))}
       </div>

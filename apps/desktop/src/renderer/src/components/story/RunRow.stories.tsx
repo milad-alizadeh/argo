@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { RUN_SHAPES, RUN_STATES, type RunMember, type RunPhase, RunRow } from './RunRow'
 
 const batchMembers: RunMember[] = [
@@ -75,7 +75,7 @@ const workflowMembers: RunMember[] = [
 ]
 
 const meta = {
-  title: 'Cockpit/RunRow',
+  title: 'Cockpit/BackgroundTasks/RunRow',
   component: RunRow,
   decorators: [
     (Story) => (
@@ -90,14 +90,14 @@ const meta = {
     state: 'running',
     duration: '4m',
     members: batchMembers,
-    open: true,
+    defaultOpen: true,
   },
   argTypes: {
     label: { control: 'text' },
     shape: { control: 'select', options: RUN_SHAPES },
     state: { control: 'select', options: RUN_STATES },
     duration: { control: 'text' },
-    open: { control: 'boolean' },
+    defaultOpen: { control: 'boolean' },
   },
 } satisfies Meta<typeof RunRow>
 
@@ -105,22 +105,59 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 // A batch lists its members flat. Expanded, the rows carry the progress, so the collapsed
-// summary stays out of the header — one home per fact.
+// summary stays out of the header — one home per fact. Standalone, the caret is a real
+// button: keyboard operates it exactly the way a click does.
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('batch')).toBeInTheDocument()
     await expect(canvas.getByText('unit agent')).toBeInTheDocument()
     await expect(canvas.queryByText('2/3 done')).not.toBeInTheDocument()
+
+    const toggle = canvas.getByRole('button', { name: 'Collapse test-sweep' })
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    toggle.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByRole('button', { name: 'Expand test-sweep' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    await expect(canvas.queryByText('unit agent')).not.toBeInTheDocument()
   },
 }
 
-// Collapsed, the header takes the progress back: a batch counts its done members.
+// Collapsed, the header takes the progress back: a batch counts its done members. Clicking
+// the caret is what opens it back up — members appear and the caret flips with it.
 export const CollapsedBatch: Story = {
-  args: { open: false },
+  args: { defaultOpen: false },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('2/3 done')).toBeInTheDocument()
+    await expect(canvas.queryByText('unit agent')).not.toBeInTheDocument()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Expand test-sweep' }))
+    await expect(canvas.getByRole('button', { name: 'Collapse test-sweep' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    await expect(canvas.getByText('unit agent')).toBeInTheDocument()
+  },
+}
+
+// A container (#30) drives the Run directly: the caret still reports every click through
+// `onOpenChange`, but never flips itself — the members stay put until the caller re-renders
+// with a new `open`.
+export const Controlled: Story = {
+  args: { defaultOpen: undefined, open: false, onOpenChange: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggle = canvas.getByRole('button', { name: 'Expand test-sweep' })
+    await userEvent.click(toggle)
+    await expect(args.onOpenChange).toHaveBeenCalledWith(true)
+    await expect(canvas.getByRole('button', { name: 'Expand test-sweep' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
     await expect(canvas.queryByText('unit agent')).not.toBeInTheDocument()
   },
 }
@@ -155,7 +192,7 @@ export const CollapsedWorkflow: Story = {
     duration: '9m',
     members: workflowMembers,
     phases: workflowPhases,
-    open: false,
+    defaultOpen: false,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
@@ -168,11 +205,14 @@ export const CollapsedWorkflow: Story = {
 }
 
 // A Run dispatched with nothing in it yet. The batch summary still reports honestly rather
-// than hiding: "0/0 done" is the designed empty presentation, not a placeholder.
+// than hiding: "0/0 done" is the designed empty presentation, not a placeholder — and with
+// nothing to open, the caret reserves its space instead of becoming a dead button.
 export const EmptyBatch: Story = {
-  args: { members: [], open: false },
+  args: { members: [], defaultOpen: false },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('0/0 done')).toBeInTheDocument()
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('0/0 done')).toBeInTheDocument()
+    await expect(canvas.queryByRole('button', { name: /test-sweep/ })).not.toBeInTheDocument()
   },
 }
 
@@ -229,7 +269,7 @@ export const WorkflowWithPhaseOverride: Story = {
 // A Run still running has no final duration to report; the progress summary carries it
 // alone.
 export const WithoutDuration: Story = {
-  args: { duration: undefined, open: false },
+  args: { duration: undefined, defaultOpen: false },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('2/3 done')).toBeInTheDocument()
@@ -242,7 +282,7 @@ export const EveryState: Story = {
   render: (args) => (
     <div className="flex flex-col gap-gap">
       {RUN_STATES.map((state) => (
-        <RunRow key={state} {...args} state={state} label={`${state} sweep`} open={false} />
+        <RunRow key={state} {...args} state={state} label={`${state} sweep`} defaultOpen={false} />
       ))}
     </div>
   ),

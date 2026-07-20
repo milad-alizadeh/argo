@@ -9,6 +9,7 @@ import {
   phaseStatusText,
 } from './phaseState'
 import { RosterRow } from './RosterRow'
+import { useDisclosure } from './useDisclosure'
 
 export type PhaseGroupProps = {
   /** Which Run this Phase belongs to — a Phase name is only unique within its Run. Lands as
@@ -20,9 +21,15 @@ export type PhaseGroupProps = {
   state: PhaseState
   /** The Agents grouped under this Phase. */
   members: readonly AgentRowModel[]
-  /** Whether the members are showing. Done phases collapse to their header and future
-   * phases are header-only, so only the phase being worked opens by default. */
-  open: boolean
+  /** Seeds whether the members show, standalone. Done phases collapse to their header and
+   * future phases are header-only, so a Run usually seeds only the phase being worked open.
+   * Ignored once `open` is passed. */
+  defaultOpen?: boolean
+  /** Drives the disclosure directly — pass this (with `onOpenChange`) for a container to
+   * control the Phase from outside; omit it to let the group track its own open state. */
+  open?: boolean
+  /** Every open/closed transition, whether the Phase is controlled or tracking itself. */
+  onOpenChange?: (open: boolean) => void
   /** Extra classes for the group's outer element. */
   className?: string
 }
@@ -34,11 +41,15 @@ export function PhaseGroup({
   label,
   state,
   members,
-  open,
+  defaultOpen = false,
+  open: openProp,
+  onOpenChange,
   className,
 }: PhaseGroupProps): React.JSX.Element {
+  const [open, toggleOpen] = useDisclosure({ open: openProp, defaultOpen, onOpenChange })
   const { rail, ink, nameInk } = PHASE_PRESENTATION[state]
   const statusText = phaseStatusText(state, members.length, doneAgentCount(members))
+  const hasMembers = members.length > 0
   return (
     <div
       data-run-id={runId}
@@ -48,7 +59,9 @@ export function PhaseGroup({
       <RosterRow
         // A phase with nothing to open still reserves the caret, so every phase name in the
         // Run starts at the same x.
-        caret={members.length === 0 ? 'reserved' : open ? 'open' : 'closed'}
+        caret={hasMembers ? (open ? 'open' : 'closed') : 'reserved'}
+        onToggle={toggleOpen}
+        toggleLabel={label}
         title={`phase ${label} — ${statusText}`}
         className="py-hair"
       >
@@ -59,7 +72,7 @@ export function PhaseGroup({
           {statusText}
         </Text>
       </RosterRow>
-      {open && members.length > 0 && (
+      {open && hasMembers && (
         <div className="ml-inset">
           {members.map((member) => (
             <AgentRow key={member.channelId} {...member} rollupState={PHASE_ROLLUP_STATE[state]} />

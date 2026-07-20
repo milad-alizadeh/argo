@@ -1,12 +1,33 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { useState } from 'react'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { Text } from '@/components/ui'
 import { SparkleIcon } from '@/components/ui/icons'
 import { AGENT_STATES } from './agentState'
 import { ROW_CARETS, RosterRow } from './RosterRow'
 
+// The gallery's own state holder: RosterRow reports intent through `onToggle`, but never
+// flips its own `caret` — that decision belongs to whatever owns the open/closed state
+// upstream (RunRow, PhaseGroup). This is a minimal stand-in for that owner.
+function ToggleableRow({
+  onToggle,
+  ...args
+}: React.ComponentProps<typeof RosterRow>): React.JSX.Element {
+  const [open, setOpen] = useState(false)
+  return (
+    <RosterRow
+      {...args}
+      caret={open ? 'open' : 'closed'}
+      onToggle={() => {
+        onToggle?.()
+        setOpen((value) => !value)
+      }}
+    />
+  )
+}
+
 const meta = {
-  title: 'Cockpit/RosterRow',
+  title: 'Cockpit/BackgroundTasks/RosterRow',
   component: RosterRow,
   decorators: [
     (Story) => (
@@ -67,8 +88,45 @@ export const WithChannel: Story = {
   },
 }
 
+// Given `onToggle`, the caret is a real button: a click or a keyboard activation reports
+// through `onToggle` and the row's own `aria-expanded` reads off whatever `caret` its owner
+// hands back — the row never flips itself.
+export const Toggleable: Story = {
+  args: { toggleLabel: 'Deep-read', onToggle: fn() },
+  render: (args) => <ToggleableRow {...args} />,
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const closed = canvas.getByRole('button', { name: 'Expand Deep-read' })
+    await expect(closed).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.click(closed)
+    await expect(args.onToggle).toHaveBeenCalledTimes(1)
+    const opened = canvas.getByRole('button', { name: 'Collapse Deep-read' })
+    await expect(opened).toHaveAttribute('aria-expanded', 'true')
+
+    opened.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(args.onToggle).toHaveBeenCalledTimes(2)
+    await expect(canvas.getByRole('button', { name: 'Expand Deep-read' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+  },
+}
+
+// A `reserved` caret never becomes a button, even standalone: nothing was handed an
+// `onToggle` a click could ever reach, because there is nothing behind it to open.
+export const ReservedIsNeverAButton: Story = {
+  args: { caret: 'reserved', onToggle: fn() },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByRole('button')).not.toBeInTheDocument()
+  },
+}
+
 // The three caret states beside a caretless row. `reserved` draws nothing but still holds
 // its width, so all four names start at the same x — that alignment is the whole point.
+// None is wired to `onToggle` here, so all four stay the decorative glyph — the interactive
+// button is `Toggleable`'s to prove.
 export const EveryCaret: Story = {
   render: (args) => (
     <div className="flex flex-col">

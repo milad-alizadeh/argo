@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import type { AgentRowModel } from './AgentRow'
 import { PhaseGroup } from './PhaseGroup'
 import { PHASE_STATES, type PhaseState } from './phaseState'
@@ -40,7 +40,7 @@ const deepReadMembers: AgentRowModel[] = [
 ]
 
 const meta = {
-  title: 'Cockpit/PhaseGroup',
+  title: 'Cockpit/BackgroundTasks/PhaseGroup',
   component: PhaseGroup,
   decorators: [
     (Story) => (
@@ -54,62 +54,92 @@ const meta = {
     label: 'Deep-read',
     state: 'run',
     members: deepReadMembers,
-    open: true,
+    defaultOpen: true,
   },
   argTypes: {
     runId: { control: 'text' },
     label: { control: 'text' },
     state: { control: 'select', options: PHASE_STATES },
-    open: { control: 'boolean' },
+    defaultOpen: { control: 'boolean' },
   },
 } satisfies Meta<typeof PhaseGroup>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-// The phase being worked, with mixed member states. Its rail and its inline status share
-// one hue; every member disagrees with the `running` rollup or is running itself, so all
-// three word themselves.
+// The phase being worked, with mixed member states — its own `running 1/3` header math and
+// which members it composed in. Standalone, the caret is a real button that keyboard
+// operates exactly the way a click does.
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('running 1/3')).toBeInTheDocument()
-    for (const word of ['done', 'running', 'queued']) {
-      await expect(canvas.getByText(word)).toBeInTheDocument()
-    }
+    await expect(canvas.getByText('idempotency agent')).toBeInTheDocument()
+
+    const toggle = canvas.getByRole('button', { name: 'Collapse Deep-read' })
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    toggle.focus()
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByRole('button', { name: 'Expand Deep-read' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    await expect(canvas.queryByText('idempotency agent')).not.toBeInTheDocument()
   },
 }
 
-// A finished phase collapses to its header — the fraction is all that is left to say.
+// A finished phase collapses to its header — the fraction is all that is left to say until
+// the caret reopens it.
 export const Collapsed: Story = {
-  args: { label: 'Survey', state: 'done', members: surveyMembers, open: false },
+  args: { label: 'Survey', state: 'done', members: surveyMembers, defaultOpen: false },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('done 2/2')).toBeInTheDocument()
     await expect(canvas.queryByText('queue agent')).not.toBeInTheDocument()
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Expand Survey' }))
+    await expect(canvas.getByRole('button', { name: 'Collapse Survey' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    await expect(canvas.getByText('queue agent')).toBeInTheDocument()
   },
 }
 
-// Opened, a done phase is where the rollup earns its keep: every member is done too, so
-// none of them repeats the word and the rows collapse to name · goal · duration.
-export const RollupSilencesMembers: Story = {
-  args: { label: 'Survey', state: 'done', members: surveyMembers, open: true },
-  play: async ({ canvasElement }) => {
+// A container drives the Phase directly: the caret still reports every click through
+// `onOpenChange`, but never flips itself — the members stay put until the caller re-renders
+// with a new `open`.
+export const Controlled: Story = {
+  args: {
+    label: 'Survey',
+    state: 'done',
+    members: surveyMembers,
+    defaultOpen: undefined,
+    open: false,
+    onOpenChange: fn(),
+  },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('done 2/2')).toBeInTheDocument()
-    await expect(canvas.getByText('queue agent')).toBeInTheDocument()
-    await expect(canvas.queryByText('done')).not.toBeInTheDocument()
+    const toggle = canvas.getByRole('button', { name: 'Expand Survey' })
+    await userEvent.click(toggle)
+    await expect(args.onOpenChange).toHaveBeenCalledWith(true)
+    await expect(canvas.getByRole('button', { name: 'Expand Survey' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    await expect(canvas.queryByText('queue agent')).not.toBeInTheDocument()
   },
 }
 
 // A future phase has no members yet, so it stands on its word alone and shows no caret —
-// there is nothing to open.
+// there is nothing to open, so it never becomes a dead button.
 export const WithoutMembers: Story = {
-  args: { label: 'Synthesize', state: 'wait', members: [], open: false },
+  args: { label: 'Synthesize', state: 'wait', members: [], defaultOpen: false },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('queued')).toBeInTheDocument()
     await expect(canvas.queryByText('queued 0/0')).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('button', { name: /Synthesize/ })).not.toBeInTheDocument()
     // the phase keys off both attributes together — a phase name is unique only in its Run
     await expect(canvasElement.querySelector('[data-run-id="retry-audit"]')).toBeVisible()
     await expect(canvasElement.querySelector('[data-phase="Synthesize"]')).toBeVisible()
@@ -137,7 +167,7 @@ export const EveryState: Story = {
           state={state}
           label={`Phase ${state}`}
           members={MEMBERS_BY_STATE[state]}
-          open={false}
+          defaultOpen={false}
         />
       ))}
     </div>

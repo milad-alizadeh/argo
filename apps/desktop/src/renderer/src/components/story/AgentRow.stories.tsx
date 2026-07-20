@@ -4,7 +4,7 @@ import { AgentRow } from './AgentRow'
 import { AGENT_STATES } from './agentState'
 
 const meta = {
-  title: 'Cockpit/AgentRow',
+  title: 'Cockpit/BackgroundTasks/AgentRow',
   component: AgentRow,
   // The goal truncates against the row's width, so a roster-width frame is what the row
   // actually has to lay out inside.
