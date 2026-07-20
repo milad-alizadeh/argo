@@ -2,35 +2,35 @@ import { describe, expect, it } from 'vitest'
 import { syncLabel, workspaceTag } from './WorkspaceIdentity'
 
 describe('workspaceTag', () => {
-  it('names the main tree, whatever the dir says', () => {
-    expect(workspaceTag('main', 'main', '/repo')).toEqual({ kind: 'main-tree' })
+  it('names the main tree, whatever the directory says', () => {
+    expect(workspaceTag('main', 'main', '/repository')).toEqual({ kind: 'main-tree' })
   })
 
-  it('is a named worktree when the dir leaf matches the branch leaf', () => {
-    expect(workspaceTag('worktree', 'feat/auth-rotation', '/wt/auth-rotation')).toEqual({
+  it('is a named worktree when the directory leaf matches the branch leaf', () => {
+    expect(workspaceTag('worktree', 'feat/auth-rotation', '/worktrees/auth-rotation')).toEqual({
       kind: 'named-worktree',
-      dir: '/wt/auth-rotation',
+      directory: '/worktrees/auth-rotation',
     })
   })
 
-  it('is adopted when the dir leaf diverges from the branch leaf', () => {
-    expect(workspaceTag('worktree', 'feat/auth-rotation', '/wt/hotfix')).toEqual({
+  it('is adopted when the directory leaf diverges from the branch leaf', () => {
+    expect(workspaceTag('worktree', 'feat/auth-rotation', '/worktrees/hotfix')).toEqual({
       kind: 'adopted-worktree',
-      dir: '/wt/hotfix',
+      directory: '/worktrees/hotfix',
     })
   })
 
-  it('compares leaves, so a bare branch matching the dir leaf is still named', () => {
+  it('compares leaves, so a bare branch matching the directory leaf is still named', () => {
     expect(workspaceTag('worktree', 'auth-rotation', '/some/nested/auth-rotation')).toEqual({
       kind: 'named-worktree',
-      dir: '/some/nested/auth-rotation',
+      directory: '/some/nested/auth-rotation',
     })
   })
 
-  it('ignores a trailing slash on the dir', () => {
-    expect(workspaceTag('worktree', 'auth-rotation', '/wt/auth-rotation/')).toEqual({
+  it('ignores a trailing slash on the directory', () => {
+    expect(workspaceTag('worktree', 'auth-rotation', '/worktrees/auth-rotation/')).toEqual({
       kind: 'named-worktree',
-      dir: '/wt/auth-rotation/',
+      directory: '/worktrees/auth-rotation/',
     })
   })
 })

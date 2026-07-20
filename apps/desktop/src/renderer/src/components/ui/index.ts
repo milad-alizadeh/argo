@@ -22,10 +22,4 @@ export {
   type TextVariant,
   TYPE_ROLE_CLASS,
 } from './Text'
-export {
-  syncLabel,
-  WorkspaceIdentity,
-  type WorkspaceTag,
-  type WorkspaceTree,
-  workspaceTag,
-} from './WorkspaceIdentity'
+export { WorkspaceIdentity, type WorkspaceTree } from './WorkspaceIdentity'

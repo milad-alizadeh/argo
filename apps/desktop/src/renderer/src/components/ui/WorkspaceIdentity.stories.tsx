@@ -8,7 +8,7 @@ const meta = {
   argTypes: {
     branch: { control: 'text' },
     tree: { control: 'select', options: ['main', 'worktree'] },
-    dir: { control: 'text' },
+    directory: { control: 'text' },
     dirty: { control: { type: 'range', min: 0, max: 12, step: 1 } },
     ahead: { control: { type: 'range', min: 0, max: 40, step: 1 } },
     behind: { control: { type: 'range', min: 0, max: 40, step: 1 } },
@@ -19,13 +19,13 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// A branch-named worktree with work in flight: the branch, the `wt` tag, the amber dirty
-// count, and the ahead/behind line — the everyday shape.
+// The everyday shape: a branch-named worktree with work in flight. Every other tag and flag
+// is a control or a row of AllVariants — the tag is a `select`, the counts are ranges.
 export const Default: Story = {
   args: {
     branch: 'feat/auth-rotation',
     tree: 'worktree',
-    dir: '/wt/auth-rotation',
+    directory: '/worktrees/auth-rotation',
     dirty: 3,
     ahead: 2,
     behind: 1,
@@ -34,7 +34,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('feat/auth-rotation')).toBeInTheDocument()
-    await expect(canvas.getByText('wt')).toBeInTheDocument()
+    await expect(canvas.getByText('worktree')).toBeInTheDocument()
     await expect(canvas.getByText(/3 dirty/)).toBeInTheDocument()
     await expect(canvas.getByText('↑2 ↓1 vs main')).toBeInTheDocument()
     // No shared-tree warning while this session owns the tree.
@@ -42,71 +42,19 @@ export const Default: Story = {
   },
 }
 
-// The base tree wears `main tree` instead of a worktree tag; the dir never surfaces.
-export const MainTree: Story = {
-  args: {
-    branch: 'main',
-    tree: 'main',
-    dir: '/repo',
-    dirty: 0,
-    ahead: 0,
-    behind: 0,
-    sharedCount: 1,
-  },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('main tree')).toBeInTheDocument()
-  },
-}
-
-// An adopted worktree — its dir leaf diverges from the branch, so the tag spells the dir.
-export const AdoptedWorktree: Story = {
-  args: {
-    branch: 'feat/auth-rotation',
-    tree: 'worktree',
-    dir: '/wt/hotfix',
-    dirty: 0,
-    ahead: 4,
-    behind: 0,
-    sharedCount: 1,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByText('/wt/hotfix')).toBeInTheDocument()
-    await expect(canvas.getByText('↑4 vs main')).toBeInTheDocument()
-  },
-}
-
-// Nothing outstanding: no dirty chip, level with main — the calm end of the range.
+// Nothing outstanding: the dirty chip is gone and the sync line reads level — the designed
+// zero state, not a smaller number.
 export const Clean: Story = {
   args: {
-    branch: 'feat/auth-rotation',
-    tree: 'worktree',
-    dir: '/wt/auth-rotation',
+    ...Default.args,
     dirty: 0,
     ahead: 0,
     behind: 0,
-    sharedCount: 1,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('= vs main')).toBeInTheDocument()
     await expect(canvas.queryByText(/dirty/)).not.toBeInTheDocument()
-  },
-}
-
-// Two sessions resolve to one tree — the amber warning names how many.
-export const SharedTree: Story = {
-  args: {
-    branch: 'feat/auth-rotation',
-    tree: 'worktree',
-    dir: '/wt/auth-rotation',
-    dirty: 1,
-    ahead: 0,
-    behind: 2,
-    sharedCount: 2,
-  },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/shared tree · 2 sessions/)).toBeInTheDocument()
   },
 }
 
@@ -118,7 +66,7 @@ export const AllVariants: Story = {
       <WorkspaceIdentity
         branch="main"
         tree="main"
-        dir="/repo"
+        directory="/repository"
         dirty={0}
         ahead={0}
         behind={0}
@@ -127,7 +75,7 @@ export const AllVariants: Story = {
       <WorkspaceIdentity
         branch="feat/auth-rotation"
         tree="worktree"
-        dir="/wt/auth-rotation"
+        directory="/worktrees/auth-rotation"
         dirty={0}
         ahead={0}
         behind={0}
@@ -136,7 +84,7 @@ export const AllVariants: Story = {
       <WorkspaceIdentity
         branch="feat/auth-rotation"
         tree="worktree"
-        dir="/wt/hotfix"
+        directory="/worktrees/hotfix"
         dirty={3}
         ahead={2}
         behind={1}
@@ -145,7 +93,7 @@ export const AllVariants: Story = {
       <WorkspaceIdentity
         branch="feat/auth-rotation"
         tree="worktree"
-        dir="/wt/auth-rotation"
+        directory="/worktrees/auth-rotation"
         dirty={1}
         ahead={0}
         behind={2}
@@ -156,7 +104,7 @@ export const AllVariants: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('main tree')).toBeInTheDocument()
-    await expect(canvas.getByText('/wt/hotfix')).toBeInTheDocument()
+    await expect(canvas.getByText('/worktrees/hotfix')).toBeInTheDocument()
     await expect(canvas.getByText(/shared tree · 3 sessions/)).toBeInTheDocument()
   },
 }
