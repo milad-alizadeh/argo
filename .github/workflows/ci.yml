@@ -252,39 +252,62 @@ jobs:
             echo "drift<<GH_EOF"
             echo "$drift"
             echo "GH_EOF"
+            echo "fresh<<GH_EOF"
+            echo "$fresh"
+            echo "GH_EOF"
           } >> "$GITHUB_OUTPUT"
 
       # Both versions are in git — old at the parent, new at the commit just published — so raw
-      # URLs pinned to those SHAs render before/after inline. Requires a public repo.
-      - name: Flag drift on the PR
-        if: steps.commit.outputs.drift != ''
+      # URLs pinned to those SHAs render inline. Drift renders before/after; a new story renders
+      # after only, since it has no baseline to compare against. Requires a public repo.
+      - name: Flag baseline changes on the PR
+        if: steps.commit.outputs.drift != '' || steps.commit.outputs.fresh != ''
         env:
           GH_TOKEN: ${{ github.token }}
           DRIFT: ${{ steps.commit.outputs.drift }}
+          FRESH: ${{ steps.commit.outputs.fresh }}
           BEFORE: ${{ steps.commit.outputs.before }}
           AFTER: ${{ steps.commit.outputs.after }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           raw="https://raw.githubusercontent.com/$REPO"
-          {
-            echo "### Visual drift"
-            echo
-            echo "These stories render differently than their committed baseline. I pushed the"
-            echo "regenerated baselines, so the gate goes green — check the change is intended."
-            echo "**If it isn't, fix the component, not the baseline.**"
-            echo
-            echo "| story | before | after |"
-            echo "| --- | --- | --- |"
-            while IFS= read -r file; do
-              if [ -n "$file" ]; then
-                story=$(basename "$file" .png | sed 's/-chromium-linux$//')
-                echo "| \`$story\` | <img src=\"$raw/$BEFORE/$file\" width=\"360\"> | <img src=\"$raw/$AFTER/$file\" width=\"360\"> |"
-              fi
-            done <<< "$DRIFT"
-            echo
-            echo "Files changed also gives you swipe and onion-skin on each image."
-          } > comment.md
+          story_of() { basename "$1" .png | sed 's/-chromium-linux$//'; }
+          : > comment.md
+          if [ -n "$DRIFT" ]; then
+            {
+              echo "### Visual drift"
+              echo
+              echo "These stories render differently than their committed baseline. I pushed the"
+              echo "regenerated baselines, so the gate goes green — check the change is intended."
+              echo "**If it isn't, fix the component, not the baseline.**"
+              echo
+              echo "| story | before | after |"
+              echo "| --- | --- | --- |"
+              while IFS= read -r file; do
+                [ -n "$file" ] || continue
+                echo "| \`$(story_of "$file")\` | <img src=\"$raw/$BEFORE/$file\" width=\"360\"> | <img src=\"$raw/$AFTER/$file\" width=\"360\"> |"
+              done <<< "$DRIFT"
+              echo
+            } >> comment.md
+          fi
+          if [ -n "$FRESH" ]; then
+            {
+              echo "### New baselines"
+              echo
+              echo "These stories had no baseline; I captured their first render and committed it."
+              echo "Nothing to diff against — eyeball each one, and fix the component if it's wrong."
+              echo
+              echo "| story | baseline |"
+              echo "| --- | --- |"
+              while IFS= read -r file; do
+                [ -n "$file" ] || continue
+                echo "| \`$(story_of "$file")\` | <img src=\"$raw/$AFTER/$file\" width=\"360\"> |"
+              done <<< "$FRESH"
+              echo
+            } >> comment.md
+          fi
+          echo "Files changed also gives you swipe and onion-skin on each image." >> comment.md
           gh pr comment "$PR_NUMBER" --body-file comment.md
 
       - name: Push baselines to the PR branch
