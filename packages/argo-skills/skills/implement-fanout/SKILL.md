@@ -27,18 +27,18 @@ ticket per fresh conversation, in dependency order, and say so.
 > ### A workflow agent cannot spawn agents
 >
 > `agent()` calls inside a `Workflow` do **not** get the `Agent` tool. Any skill they invoke that
-> works by spawning sub-agents — `/code-review` (two parallel axis agents), `/visual-verify` (a
-> fresh judge) — cannot do so, and degrades to running in the implementer's own context. That
-> means **the author reviews their own diff and judges their own screenshots**.
+> works by spawning sub-agents — `/code-review` (two parallel axis agents) — cannot do so, and
+> degrades to running in the implementer's own context. That means **the author reviews their own
+> diff**.
 >
 > The failure is silent. The work finishes, the PR opens, and its body says a review happened —
 > the degradation shows up only as a buried aside like "this worker had no sub-agent tool, so
 > both axes were single-context". Findings that a fresh reader catches immediately sail through,
 > because the author is the last person able to see them.
 >
-> **So the orchestrator spawns the reviewer, never the implementer.** Review and visual judgement
-> are separate workflow stages (step 3 below) — the workflow itself *can* spawn them. Never write
-> a brief telling a workflow agent to "run `/code-review` on your own diff".
+> **So the orchestrator spawns the reviewer, never the implementer.** The review axes are separate
+> workflow stages (step 3 below) — the workflow itself *can* spawn them. Never write a brief
+> telling a workflow agent to "run `/code-review` on your own diff".
 
 ## Process
 
@@ -53,9 +53,9 @@ ticket per fresh conversation, in dependency order, and say so.
 
 ### 2. Confirm with the user (explicit opt-in + cost)
 
-Fan-out spawns a build agent plus its independent reviewers per ticket — each ticket edits, tests,
-gets reviewed by a separate context, then commits and opens a PR — so it costs meaningfully more
-than N× a single ticket. Present, and get an explicit go before spawning:
+Fan-out spawns a build agent plus two review agents and a land agent per ticket — each ticket
+edits, gets reviewed by two separate contexts, then fixes and opens a PR — so it costs meaningfully
+more than N× a single ticket. Present, and get an explicit go before spawning:
 
 - the frontier tickets you'll run (numbers + titles);
 - the concurrency cap (default **2–3** at once; higher only if the user asks);
@@ -69,12 +69,19 @@ itself; a separate agent, which has not seen the author's reasoning, does that:
 ```js
 pipeline(frontier,
   // stage 1 — build. Returns the worktree path so later stages can re-enter it.
-  t => agent(buildBrief(t),  { isolation: 'worktree', label: `build:#${t.number}`,  phase: 'Build' }),
-  // stage 2 — review, in a fresh context that did not write the code.
-  (built, t) => agent(reviewBrief(t, built), { label: `review:#${t.number}`, phase: 'Review' }),
-  // stage 3 — the author addresses the findings, then opens the PR.
-  (found, t) => agent(landBrief(t, found),   { label: `land:#${t.number}`,   phase: 'Land' }))
+  t => agent(buildBrief(t), { isolation: 'worktree', label: `build:#${t.number}`, phase: 'Build' }),
+  // stage 2 — review: two axes (standards, spec) IN PARALLEL, each a fresh context that did not
+  //           write the code. No visual axis — CI's stories job owns that (see below).
+  (built, t) => parallel(['standards', 'spec'].map(ax => () =>
+    agent(reviewBrief(ax, t, built), { label: `review-${ax}:#${t.number}`, phase: 'Review' })))
+    .then(axes => ({ built, axes: axes.filter(Boolean) })),
+  // stage 3 — the author fixes blocker/major, pushes, opens the PR (minors ride into the PR body).
+  (reviewed, t) => agent(landBrief(t, reviewed), { label: `land:#${t.number}`, phase: 'Land' }))
 ```
+
+The two review axes run **inside a `parallel()` within the stage-2 callback** — that is script code,
+so the workflow spawns them; a stage-2 *agent* could not. Model tier is a lever: default to `sonnet`
+for every stage, reaching for a stronger model only on a genuinely hard verify.
 
 A reviewer re-enters the build's worktree with `EnterWorktree` using the `path` stage 1 returned,
 so it reviews the real tree rather than a re-derived diff.
@@ -91,18 +98,31 @@ not write this code and that the author's own confidence is not evidence:
   smell baseline?
 - **Spec** — walk every acceptance criterion in the ticket independently; verify each in the code
   rather than trusting the author's claim.
-- **Visual** — for anything rendered, a judge that takes *its own* screenshots and compares them
-  against the design study. A judge that only looks at screenshots the author captured is
-  inheriting the author's framing.
+
+Two axes, not three. **Do not spawn a visual reviewer.** The CI visual-regression gate (the
+`stories` job, added in #66) screenshots every story and diffs it against the committed baseline
+on the PR itself — so a per-run visual judge is now redundant work on the critical path, and it was
+the most expensive review axis. Rendered output is verified after the branch pushes, by CI, on Linux
+baselines the human approves from the PR. Reserve
+`/visual-verify` for a *subjective* state that has no story (run it yourself, inline, before the
+fan-out or after a merge) — never wire it as a fan-out stage.
 
 Reviewers are **read-only**: they report findings, they do not edit, commit, or push. Say so
 explicitly in the brief — an agent told to "review" will otherwise helpfully start fixing.
 
-**Stage 3 — address and land.** The author fixes what review found, re-runs the full suite, and
-opens **exactly one PR** — body says `Closes #N`, embeds the visual screenshots, and lists every
-finding it chose *not* to fix **with the reason**. A finding may be declined, but never silently:
-the PR body is where the human sees the disagreement. Open ready-for-review; use draft only if
-findings remain unresolved. **Return the PR URL.**
+**Stage 3 — address and land.** Land is a fix-and-ship stage, not a second build — keep it that way
+or it costs as much as stage 1, fixing every finding and re-running the whole suite.
+
+- **Fix only `blocker` and `major` findings.** `minor`/`nit` findings ride into the PR body as an
+  "Unaddressed review findings" list for the human to accept or wave through — they do **not** block
+  the PR. Declined `major`/`blocker` findings are still listed with a reason; a finding may be
+  declined, but never silently, and the PR body is where the human sees the disagreement.
+- **Re-run the affected tests, not the whole suite.** The full suite already ran green at the end of
+  stage 1, and CI re-runs it on push — so stage 3 only needs to prove *its own* fixes: typecheck
+  plus the test files touching the changed code (`vitest run <paths>` / `--changed`). Full-suite
+  green is CI's job, not a thing to pay for twice on the critical path.
+- Open **exactly one PR** — body says `Closes #N`. Open ready-for-review; use draft only if a
+  `blocker`/`major` is left unresolved. **Return the PR URL.**
 
 Do **not** merge. Do **not** touch any other ticket's files. One worktree → one branch → one PR.
 
@@ -117,15 +137,20 @@ in one tree (amend landing on another session's commit, vanished stash, wrong-br
 
 ### 4. Integration check — detect, don't resolve
 
-After all agents return, run one integrator agent (no worktree isolation needed — it works on a
-throwaway branch it deletes):
+Run one integrator agent (its own throwaway worktree, so it never disturbs the shared checkout):
 
 - Branch `integration-check` off main; merge every ticket branch into it in dependency order.
 - Where a merge conflicts, record the pair and the files/hunks, abort that merge, and continue
   with the rest — **never resolve here**.
-- Run the full suite on whatever merged cleanly: two PRs can be conflict-free and still break
-  each other (semantic conflicts the textual merge won't show).
+- Run **the affected tests** on whatever merged cleanly — the parts touched by more than one branch,
+  where a semantic conflict the textual merge won't show would hide. The full suite is CI's job on
+  each PR; the integrator only needs to catch cross-branch breakage, not re-audit each branch.
 - Delete the branch. Nothing is pushed, no PR is touched.
+
+This is a serial tail (it needs every branch pushed before it can merge them), so keep it cheap — it
+is detection, not verification. It does **not** gate the PRs, which are already open from stage 3; it
+just hands the human the conflict map. If a run has only one ticket left landing, the integrator can
+begin on the branches already pushed and re-check once the last lands, rather than idling for it.
 
 Resolution is deliberately out of scope: before any PR merges, every branch shares the same base,
 so "resolving" would mean merging unmerged siblings into each other — coupling supposedly
@@ -137,12 +162,14 @@ merge; that's step 6's job.
 Gather the returned PR URLs (one per worktree/ticket); filter out any agent that returned
 null / failed. Tell the user:
 
-- which tickets produced PRs (with links), and any **unresolved review or visual findings**
-  each PR carried from its stage-2 review, **and whether that review ran in a fresh context** —
-  if any ticket's review collapsed into the author's context, lead with that;
+- which tickets produced PRs (with links), the **unaddressed `minor`/`nit` findings** each PR
+  carried into its body, plus any declined `major`/`blocker`, **and whether the review ran in a
+  fresh context** — if any ticket's review collapsed into the author's context, lead with that;
+- a reminder that each PR's **visual gate runs in CI** — the human reviews rendered diffs there
+  (swipe/onion-skin on the PR's Files-changed), not from screenshots in the PR body;
 - which failed and need a manual `/implement`;
 - the **conflict map** from step 4: which PR pairs collide and where, the merge order that
-  minimizes conflicts, and whether the clean union passed the suite;
+  minimizes conflicts, and whether the clean union passed the affected tests;
 - that after each merge they can invoke the step-6 repair pass instead of resolving by hand.
 
 ### 6. After each merge — rebase and repair
