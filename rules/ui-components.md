@@ -34,6 +34,9 @@ Rules that fall out of this:
   it if it doesn't exist yet.
 - **Build bottom-up.** A new organism is assembled from existing atoms/molecules. If
   a needed primitive is missing, create it in `shared/components/ui/` first, then compose.
+  This is *assembly* order within a build — how tiers stack once a component exists — not
+  a mandate to author components ahead of the screen that needs them. For when a component
+  is created (assemble the screen first, extract on evidence), see `componentize-design`.
 - **One tier per file:** an atom file exports one atom, a molecule file one molecule.
 
 ## Reuse before you build
