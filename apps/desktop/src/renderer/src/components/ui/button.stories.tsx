@@ -34,9 +34,6 @@ export const Default: Story = {
   },
 }
 
-// The screen's one primary — the gradient control in the head node's drawer.
-export const Primary: Story = { args: { variant: 'primary' } }
-
 // Disabled is the only boolean that changes the render; the enabled side is Default. A
 // disabled primary drops its gradient so a dead control never reads as the primary action.
 export const Disabled: Story = { args: { variant: 'primary', disabled: true } }

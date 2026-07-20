@@ -43,8 +43,10 @@ const addressButtonVariants = cva(CONTROL_BASE, {
       fixed:
         'border-border bg-transparent text-muted-foreground hover:border-input hover:bg-foreground/4 hover:text-foreground',
     },
+    // Each size states the whole box — see CONTROL_BASE on why padding can't be inherited
+    // and overridden.
     size: {
-      default: '',
+      default: 'px-inset py-snug',
       // The inline FindingCard wedges this under a diff hunk, where the control has to
       // give the code back its room.
       sm: 'px-gap py-tight',

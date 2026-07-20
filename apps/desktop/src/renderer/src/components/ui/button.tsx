@@ -5,16 +5,17 @@ import type * as React from 'react'
 import { cn } from '@/lib/utils'
 import { TYPE_ROLE_CLASS } from './Text'
 
-// The shape every cockpit control wears: box, gap, radius, the row-strong role, the focus
-// outline and the disabled treatment. AddressButton composes its verdict tones onto this
-// instead of growing Button's variant map, which the inventory freezes at three.
-// The role sits on the control itself because an icon's glyph box is 1em — it tracks the
-// control's own type, not the label's.
-export const CONTROL_BASE = `inline-flex shrink-0 cursor-pointer items-center justify-center gap-snug whitespace-nowrap rounded-lg border px-inset py-snug ${TYPE_ROLE_CLASS['row-strong']} transition-[color,background-color,border-color] duration-fast outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-40`
+// Shared with AddressButton, whose verdict tones can't join a variant map the inventory
+// freezes at three. The type role sits on the control itself because a glyph's box is 1em:
+// it tracks the control's type, not the label's.
+// Padding is deliberately NOT here: tailwind-merge only de-dupes the classes it knows, and
+// the spacing roles are ours, so a `px-gap` further down the string would land beside
+// `px-inset` instead of replacing it. Each control states its own box.
+export const CONTROL_BASE = `inline-flex shrink-0 cursor-pointer items-center justify-center gap-snug whitespace-nowrap rounded-lg border ${TYPE_ROLE_CLASS['row-strong']} transition-[color,background-color,border-color] duration-fast outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-40`
 
 // `asChild` hands the children straight to a Slot, so a Button cannot wrap its label in
 // <Text> without breaking prop merging; it composes the role class from Text's map instead.
-const buttonVariants = cva(CONTROL_BASE, {
+const buttonVariants = cva(`${CONTROL_BASE} px-inset py-snug`, {
   variants: {
     variant: {
       // The gradient is the screen's ONE primary (R2) — it belongs to the head node's

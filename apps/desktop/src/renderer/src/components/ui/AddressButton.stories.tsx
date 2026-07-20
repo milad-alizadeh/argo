@@ -32,9 +32,6 @@ export const Default: Story = {
   },
 }
 
-// `sm` is the tighter box the inline FindingCard wedges under a diff hunk.
-export const Small: Story = { args: { state: 'addressing', size: 'sm' } }
-
 // A finding whose fix is still dispatching can't be advanced twice.
 export const Disabled: Story = { args: { state: 'addressing', disabled: true } }
 

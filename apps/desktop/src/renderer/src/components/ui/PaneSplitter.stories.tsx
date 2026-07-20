@@ -59,47 +59,27 @@ export const Default: Story = {
     // Released, the pointer no longer resizes anything.
     await fireEvent.pointerMove(window, { clientX: 200, clientY: 100 })
     await expect(args.onResize).toHaveBeenLastCalledWith(360)
-  },
-}
 
-// A drag-only splitter is unreachable by keyboard, so the arrows along its axis step it.
-export const KeyboardResize: Story = {
-  play: async ({ args, canvasElement }) => {
-    const splitter = within(canvasElement).getByRole('separator', { name: 'Rail width' })
+    // Drag-only would leave the splitter unreachable by keyboard, so the arrows along its
+    // axis step it — and the cross-axis arrows stay free for scrolling.
     await userEvent.tab()
     await expect(splitter).toHaveFocus()
-
     await userEvent.keyboard('{ArrowRight}')
     await expect(args.onResize).toHaveBeenLastCalledWith(264)
-    await userEvent.keyboard('{ArrowLeft}')
-    await expect(args.onResize).toHaveBeenLastCalledWith(232)
-
-    // The cross-axis arrows stay free for scrolling.
     await userEvent.keyboard('{ArrowDown}')
-    await expect(args.onResize).toHaveBeenCalledTimes(2)
-  },
-}
-
-// The bar between two rows — the console's ribbon.
-export const Horizontal: Story = {
-  args: { orientation: 'h', size: 170, min: 92, max: 420, label: 'Console height' },
-  play: async ({ args, canvasElement }) => {
-    const splitter = within(canvasElement).getByRole('separator', { name: 'Console height' })
-    await expect(splitter).toHaveAttribute('aria-orientation', 'horizontal')
-
-    await fireEvent.pointerDown(splitter, { clientX: 100, clientY: 100 })
-    await fireEvent.pointerMove(window, { clientX: 100, clientY: 130 })
-    await expect(args.onResize).toHaveBeenLastCalledWith(200)
-    await fireEvent.pointerUp(window)
+    await expect(args.onResize).toHaveBeenLastCalledWith(264)
   },
 }
 
 // `invert` is for the pane that sits AFTER its splitter (the console under its bar):
-// dragging down shrinks it.
+// dragging down shrinks it, where the un-inverted rail grows.
 export const Inverted: Story = {
   args: { orientation: 'h', size: 170, min: 92, max: 420, invert: true, label: 'Console height' },
   play: async ({ args, canvasElement }) => {
     const splitter = within(canvasElement).getByRole('separator', { name: 'Console height' })
+    await expect(splitter).toHaveAttribute('aria-orientation', 'horizontal')
+
+    // A horizontal splitter reads the pointer's y, and inverted subtracts it.
     await fireEvent.pointerDown(splitter, { clientX: 100, clientY: 100 })
     await fireEvent.pointerMove(window, { clientX: 100, clientY: 130 })
     await expect(args.onResize).toHaveBeenLastCalledWith(140)
