@@ -1,4 +1,4 @@
-import { ribbonModel } from './ribbonModel'
+import type { RibbonModel, RibbonNodeKey, RibbonNodeState, TerminalState } from './ribbonModel'
 import type { SessionFacts, SessionLifecycle } from './sessionFacts'
 
 // The rail row's word — a POINTER into the ribbon's head node, never a value of its
@@ -35,36 +35,45 @@ const LIFECYCLE_STATUS: Record<SessionLifecycle, RailStatus> = {
   orphaned: { word: 'Orphaned', tone: 'stale', icon: 'circle' },
 }
 
-export function railStatus(facts: SessionFacts): RailStatus {
-  const model = ribbonModel(facts)
+const TERMINAL_STATUS: Record<TerminalState, RailStatus> = {
+  merged: { word: 'Landed', tone: 'landed', icon: 'git-merge' },
+  closed: { word: 'Closed', tone: 'stale', icon: 'prohibit' },
+}
+
+// Keyed by the head node and the state it is in — the row can only ever speak for
+// the stage R1 already chose, so it cannot re-rank the nodes behind the ribbon's
+// back. A pair absent from the table wants nothing from you (`now`/`wait`/`done`),
+// which is where the Session's own triage word belongs.
+const HEAD_STATUS: Partial<
+  Record<`${RibbonNodeKey}:${RibbonNodeState}`, RailStatus | ((facts: SessionFacts) => RailStatus)>
+> = {
+  'commits:gate': { word: 'Commit ready', tone: 'amber', icon: 'git-commit' },
+  'commits:sync': (facts) => ({
+    word: `↑${facts.unpushed} unpushed`,
+    tone: 'run',
+    icon: 'arrow-line-up',
+  }),
+  'pr:gate': { word: 'Create PR ready', tone: 'amber', icon: 'git-pull-request' },
+  'pr:auto': { word: 'Opening PR · auto', tone: 'run', icon: 'gear' },
+  // CI only runs against a PR (R4), so the row names the PR triage is watching.
+  'ci:now': (facts) =>
+    facts.pr
+      ? { word: `PR #${facts.pr.num} · CI`, tone: 'run', icon: 'git-pull-request' }
+      : LIFECYCLE_STATUS[facts.lifecycle],
+  'ci:fail': { word: 'CI failing', tone: 'amber', icon: 'warning' },
+  'review:now': { word: 'In review', tone: 'run', icon: 'user' },
+  'review:warn': { word: 'Changes requested', tone: 'amber', icon: 'user' },
+  'merge:gate': { word: 'Ready to merge', tone: 'amber', icon: 'git-pull-request' },
+  'merge:auto': { word: 'Auto-merge armed', tone: 'run', icon: 'gear' },
+}
+
+// Takes the model the ribbon is already rendering, so the row cannot be derived
+// from a second, differently-timed reading of the same facts.
+export function railStatus(facts: SessionFacts, model: RibbonModel | null): RailStatus {
   if (!model) return LIFECYCLE_STATUS[facts.lifecycle]
+  if (model.terminal) return TERMINAL_STATUS[model.terminal]
 
-  switch (model.terminal) {
-    case 'merged':
-      return { word: 'Landed', tone: 'landed', icon: 'git-merge' }
-    case 'closed':
-      return { word: 'Closed', tone: 'stale', icon: 'prohibit' }
-  }
-
-  // Ordered worst-first: the first stage that wants something from you wins the row.
-  const { nodes } = model
-  if (nodes.ci === 'fail') return { word: 'CI failing', tone: 'amber', icon: 'warning' }
-  if (nodes.review === 'warn') return { word: 'Changes requested', tone: 'amber', icon: 'user' }
-  if (nodes.merge === 'gate') {
-    return { word: 'Ready to merge', tone: 'amber', icon: 'git-pull-request' }
-  }
-  if (nodes.merge === 'auto') return { word: 'Auto-merge armed', tone: 'run', icon: 'gear' }
-  if (nodes.commits === 'sync') {
-    return { word: `↑${facts.unpushed} unpushed`, tone: 'run', icon: 'arrow-line-up' }
-  }
-  if (nodes.commits === 'gate') return { word: 'Commit ready', tone: 'amber', icon: 'git-commit' }
-  if (nodes.pr === 'gate') {
-    return { word: 'Create PR ready', tone: 'amber', icon: 'git-pull-request' }
-  }
-  if (nodes.pr === 'auto') return { word: 'Opening PR · auto', tone: 'run', icon: 'gear' }
-  if (nodes.review === 'now') return { word: 'In review', tone: 'run', icon: 'user' }
-  if (facts.pr) {
-    return { word: `PR #${facts.pr.num} · CI`, tone: 'run', icon: 'git-pull-request' }
-  }
-  return LIFECYCLE_STATUS[facts.lifecycle]
+  const status = HEAD_STATUS[`${model.head}:${model.nodes[model.head]}`]
+  if (!status) return LIFECYCLE_STATUS[facts.lifecycle]
+  return typeof status === 'function' ? status(facts) : status
 }

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { railStatus } from './railStatus'
-import { ribbonModel } from './ribbonModel'
 import { type SessionFactsInput, sessionFacts } from './sessionFacts'
+import { shipState } from './shipState'
 
 // The state table of `docs/designs/cockpit-matrix.md`, one case per row: given the
 // facts, the ribbon, its head, and the rail word are fully determined.
@@ -11,8 +10,8 @@ const OLD = '9f0e1d2'
 const PR = { num: 42, state: 'open', base: 'main' } as const
 
 const row = (input: SessionFactsInput) => {
-  const facts = sessionFacts(input)
-  return { model: ribbonModel(facts), rail: railStatus(facts) }
+  const { ribbon, rail } = shipState(sessionFacts(input))
+  return { model: ribbon, rail }
 }
 
 describe('S0 — clean tree, no commits', () => {
