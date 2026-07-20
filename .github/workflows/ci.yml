@@ -175,6 +175,35 @@ jobs:
           # `stories` gate would never re-run to clear its red X.
           token: ${{ secrets.VISUAL_APPROVE_TOKEN }}
           ref: ${{ github.head_ref }}
+          # Full history: the merge below needs the base branch's commits, not a shallow tip.
+          fetch-depth: 0
+
+      # `stories` gates the *merge* of head into base, but we check out the bare head so there is
+      # a branch to push to. Regenerating on that tip reads a different tree than the one that
+      # failed: a branch forked before the gate landed has no screenshot assertion at all, so
+      # `--update` writes nothing and the commit step then finds no baselines to add.
+      - name: Merge the base branch
+        id: merge
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags origin "$BASE"
+          if ! git merge --no-edit "origin/$BASE"; then
+            git merge --abort
+            echo "conflict=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report a conflicting branch
+        if: steps.merge.outputs.conflict == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.base_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR_NUMBER" --body "\`$BASE\` does not merge cleanly into this branch, so the visual baselines can't be regenerated against the tree the gate tests. Resolve the conflict and push — the gate will retry."
+          exit 1
 
       - uses: ./.github/actions/setup
 
@@ -196,17 +225,18 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Tracked-and-modified is drift (a story that already had a baseline now renders
           # differently); untracked is a new story's first render, with nothing to compare to.
           drift=$(git diff --name-only -- '*__screenshots__*')
           fresh=$(git ls-files --others --exclude-standard -- '*__screenshots__*')
-          git add -A -- '*__screenshots__*'
-          if git diff --cached --quiet; then
-            echo "Baselines already current."
+          # Guarded, not just run: `git add` treats a pathspec matching nothing as fatal, which
+          # reads as a broken workflow rather than the ordinary "`stories` went red for a
+          # non-visual reason, so there is no baseline to fix" that it actually is.
+          if [ -z "$drift" ] && [ -z "$fresh" ]; then
+            echo "No baseline changed — see the stories job for the real failure."
             exit 0
           fi
+          git add -A -- '*__screenshots__*'
           if [ -n "$drift" ] && [ -n "$fresh" ]; then
             subject="test(visual): baseline new stories, update drifted ones"
           elif [ -n "$drift" ]; then
