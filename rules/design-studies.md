@@ -58,8 +58,31 @@ React Native) without reverse-engineering the markup:
 A study's markup and CSS are disposable. Building a screen means running
 `/componentize-design` — settle values into the token contract, extract the
 inventory, rebuild from tokens + existing components — never copying study markup
-or styles into the app. When the app and a settled study disagree, fix whichever
-is wrong *in the same change*; don't let them drift apart silently.
+or styles into the app.
+
+## Drift — the inventory carries a Status column
+
+A big screen ships row by row over many tickets, so its study is authoritative for the
+regions not built yet and stale for the ones that are. The inventory says which, per row:
+
+- **`spec`** — no component yet. The study region is truth; a design change means editing
+  the study HTML, which is what the study is for.
+- **`partial · <path>`** — the component exists but doesn't cover the row. Code is truth for
+  what it renders, the study for the rest; the row's Notes name what's outstanding.
+- **`built · <path>`** — the component and its stories are truth. A decision made while
+  implementing lands in the **inventory row** — its name and props become whatever the code
+  says, freezing having applied only up to `spec`. The study region is frozen reference and
+  is allowed to go stale.
+
+Pay to update a settled study's HTML in exactly one case: when a `built` region's drift would
+mislead a still-`spec` neighbour — a changed shell, split ratio, or row height that unbuilt
+regions are laid out against. Cosmetic divergence inside a built region costs nothing and is
+not worth a 100 KB edit.
+
+Two corollaries, both cheap and both mandatory in the same change as the code:
+a component that exists with no inventory row gets one (the row is how it becomes findable),
+and a row whose built name diverged from the study proposal keeps the old name in its Notes
+so the study anchor stays greppable.
 
 ## Why not scratchpad
 
