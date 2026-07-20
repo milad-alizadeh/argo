@@ -1,12 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { Button } from './button'
-import { ArrowBendDownRightIcon, GitPullRequestIcon } from './icons'
+import { ArrowBendDownRightIcon, GitPullRequestIcon, XIcon } from './icons'
 import { Text } from './Text'
 
 const VARIANTS = [
   'primary',
   'ghost',
+  'quiet',
   'review-secondary',
   'verdict-changes',
   'verdict-approve',
@@ -60,6 +61,13 @@ export const Default: Story = {
     await expect(button).toHaveClass('text-row-strong')
     // The motion role has to resolve to the contract's --time-fast, not to a Tailwind default.
     await expect(getComputedStyle(button).transitionDuration).toBe('0.15s')
+
+    // The ring is gone by product decision — neither a mouse click nor keyboard focus
+    // may paint one, and no UA default may fill the gap it left.
+    await userEvent.click(button)
+    await expect(getComputedStyle(button).outlineStyle).toBe('none')
+    button.focus()
+    await expect(getComputedStyle(button).outlineStyle).toBe('none')
   },
 }
 
@@ -68,6 +76,59 @@ export const Default: Story = {
  * disabled primary drops its gradient so a dead control never reads as the primary action.
  */
 export const Disabled: Story = { args: { variant: 'primary', disabled: true } }
+
+/**
+ * `quiet` is the borderless step, for a control that sits in a strip of its own peers
+ * (console channel tabs) where a box each would out-shout the strip. Its selected wash
+ * keys off `data-active`, so the state rides on the control instead of forking the variant.
+ */
+export const Quiet: Story = {
+  args: { variant: 'quiet', size: 'sm' },
+  render: (args) => (
+    <div className="flex items-center gap-gap">
+      <Button {...args} data-active>
+        session · live
+      </Button>
+      <Button {...args}>vitest @12:04</Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const selected = canvas.getByRole('button', { name: 'session · live' })
+    await expect(selected).toHaveAttribute('data-active')
+    // The denser box carries the denser type: a strip reads at meta, not at row-strong.
+    await expect(selected).toHaveClass('text-meta')
+    await expect(canvas.getByRole('button', { name: 'vitest @12:04' })).not.toHaveAttribute(
+      'data-active',
+    )
+  },
+}
+
+/**
+ * `bare` spends nothing — no box, no ink — for a control nested inside a chip its parent
+ * already paints. It still carries the ladder's interaction, which is the whole point:
+ * cursor and disabled handling come from the primitive rather than being re-typed at the
+ * call site.
+ */
+export const Bare: Story = {
+  args: { variant: 'bare', size: 'none' },
+  render: (args) => (
+    <div className="inline-flex items-center gap-snug rounded-lg bg-foreground/6 px-gap py-tight text-meta">
+      <Button {...args}>vitest @12:04</Button>
+      <Button {...args} aria-label="Close vitest @12:04" className="text-foreground-faint">
+        <XIcon aria-hidden />
+      </Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const nested = canvas.getByRole('button', { name: 'vitest @12:04' })
+    // No box of its own: no padding, and no type role to drift off the chip's.
+    await expect(getComputedStyle(nested).padding).toBe('0px')
+    await expect(nested).not.toHaveClass('text-row-strong')
+    await expect(canvas.getByRole('button', { name: 'Close vitest @12:04' })).toBeInTheDocument()
+  },
+}
 
 /** A control that leads somewhere is a link wearing the button's shape. */
 export const AsChild: Story = {

@@ -312,6 +312,15 @@
   --icon-box-sm: 0.86em;
   --icon-baseline: -0.14em;
 
+  /* Console caret — the live channel's cursor bar. One monospace advance wide (`ch`, so
+   * the width tracks the code role), and a settled height between the code role's 12px em
+   * box (squat) and its 18px line box (a filled row). Its own baseline nudge: a text caret
+   * sits lower than a glyph does. Static by design — the screen's ONE animation budget
+   * belongs to the ribbon/rail. */
+  --caret-box-w: 1ch;
+  --caret-box-h: 14px;
+  --caret-baseline: -2px;
+
   /* Motion. `pulse` is the period of the screen's ONE animation budget
    * (at most one pulsing element per render). */
   --time-fast: 150ms;

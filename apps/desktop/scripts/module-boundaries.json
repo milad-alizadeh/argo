@@ -29,6 +29,12 @@
       "publicEntry": ["^src/renderer/src/main\\.tsx$"]
     },
     {
+      "name": "console",
+      "comment": "The Console domain (cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). Console-only by construction — `session · live` plus AT MOST ONE capture slot — so it is not part of the shared `components/ui` kit; the screen composes it through this barrel.",
+      "path": "^src/renderer/src/components/console/",
+      "publicEntry": ["^src/renderer/src/components/console/index\\.ts$"]
+    },
+    {
       "name": "ship",
       "comment": "The renderer's ship-flow presentation: the rail status word (tone, icon) and the `shipState` composition. The ribbon derivation it composes lives in `shared`, so main can drive gates from the same pure code (cockpit-matrix.md R16). No React, no I/O — Views consume the model through this barrel and never re-derive it.",
       "path": "^src/renderer/src/ship/",
