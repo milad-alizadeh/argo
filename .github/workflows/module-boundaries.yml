@@ -1,9 +1,6 @@
 # Mechanical module-boundary check for @argo/desktop. Fails the PR when a module is
 # imported through a non-public file, or when the Electron main/preload/renderer
 # processes import each other (see apps/desktop/scripts/module-boundaries.json).
-#
-# No Node runtime needed: bun's node-compat (>=24) satisfies dependency-cruiser, and
-# `bun run boundaries` runs it via the bun runtime (`bun --bun x depcruise`).
 name: module-boundaries
 
 on:
@@ -11,6 +8,7 @@ on:
     paths:
       - "apps/desktop/**"
       - ".github/workflows/module-boundaries.yml"
+      - ".github/actions/setup/**"
   push:
     branches: [main]
     paths:
@@ -20,11 +18,8 @@ jobs:
   boundaries:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: "1.3.3"
-      - run: bun install --frozen-lockfile
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
       - name: Check module boundaries
         working-directory: apps/desktop
         run: bun run boundaries
