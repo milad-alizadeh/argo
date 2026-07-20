@@ -1,0 +1,45 @@
+name: skills-drift
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check upstream skill drift
+        id: drift
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          node packages/argo-skills/bin/skills-drift.mjs > report.md
+          code=$?
+          set -e
+          cat report.md
+          if [ "$code" -ge 2 ]; then exit "$code"; fi
+          echo "drifted=$code" >> "$GITHUB_OUTPUT"
+
+      - name: File or update the drift issue
+        if: steps.drift.outputs.drifted == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create skills-drift --force --color D93F0B \
+            --description "Upstream skill pack drifted from the pinned baseline"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --label skills-drift \
+            --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body-file report.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --label skills-drift \
+              --title "Upstream skills drifted" --body-file report.md
+          fi
