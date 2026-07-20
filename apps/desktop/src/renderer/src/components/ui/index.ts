@@ -1,6 +1,7 @@
 export { Badge, badgeVariants } from './badge'
 export { Button, buttonVariants } from './button'
 export { ContextGauge } from './ContextGauge'
+export * from './icons'
 export { SectionHeader } from './SectionHeader'
 export { Status } from './Status'
 export { StatusDot } from './StatusDot'

@@ -1,0 +1,43 @@
+name: Setup toolchain
+description: Install bun and Node, restore bun's module cache, and install dependencies.
+
+inputs:
+  save-cache:
+    description: >-
+      Write bun's module cache back. Exactly one job per workflow should do this:
+      parallel writers race for the same key and all but one lose the reservation.
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: package.json
+
+    # setup-bun ships no Node, and vitest's `#!/usr/bin/env node` bin hangs silently
+    # without one rather than failing (vitest#7681).
+    - uses: actions/setup-node@v5
+      with:
+        node-version: "22"
+
+    - id: cache-key
+      shell: bash
+      run: echo "key=${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}" >> "$GITHUB_OUTPUT"
+
+    # setup-bun caches only the bun executable, never ~/.bun/install/cache.
+    - id: restore
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ steps.cache-key.outputs.key }}
+        restore-keys: ${{ runner.os }}-bun-
+
+    - run: bun install --frozen-lockfile
+      shell: bash
+
+    - if: inputs.save-cache == 'true' && steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ steps.cache-key.outputs.key }}

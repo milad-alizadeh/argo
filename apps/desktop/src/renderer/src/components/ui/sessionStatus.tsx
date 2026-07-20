@@ -1,11 +1,5 @@
-import {
-  CheckCircleIcon,
-  CircleIcon,
-  CircleNotchIcon,
-  type Icon,
-  WarningIcon,
-} from '@phosphor-icons/react'
 import type { SessionStatus } from '@/sessionStore'
+import { CheckCircleIcon, CircleIcon, CircleNotchIcon, type IconAtom, WarningIcon } from './icons'
 
 export type StatusTone = 'run' | 'amber' | 'mist' | 'gray' | 'red' | 'stale' | 'landed'
 
@@ -49,9 +43,9 @@ export const STATUS_STATE: Record<StatusState, { word: string; tone: StatusTone 
   live: { word: 'live', tone: 'run' },
 }
 
-// The icon each Session lifecycle state wears — the only thing the Session-only view of
-// the vocabulary owns; its word and tone still come from STATUS_STATE.
-export const SESSION_ICON: Record<SessionStatus, Icon> = {
+// The icon atom each Session lifecycle state wears — the only thing the Session-only view
+// of the vocabulary owns; its word and tone still come from STATUS_STATE.
+export const SESSION_ICON: Record<SessionStatus, IconAtom> = {
   working: CircleNotchIcon,
   idle: CircleIcon,
   'awaiting-input': WarningIcon,

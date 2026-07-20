@@ -149,6 +149,24 @@
     color-mix(in srgb, currentColor var(--glow-strength), transparent);
 }
 
+/* The shared icon sizing convention (`size: default | sm` in the inventory), the app's
+ * `.ic` / `.ic.sm`. `icon` is applied by every icon atom and deliberately leaves the box
+ * alone so the default stays the glyph's own 1em and per-call width/height still land;
+ * `icon-sm` is the opt-in step down. Colour is never set here — a glyph is tinted by its
+ * enclosing element's currentColor. */
+@utility icon {
+  /* Preflight makes every svg `display: block`, which breaks a glyph out of its
+   * text line and makes the baseline nudge below a no-op. */
+  display: inline-block;
+  flex: none;
+  vertical-align: var(--icon-baseline);
+}
+
+@utility icon-sm {
+  width: var(--icon-box-sm);
+  height: var(--icon-box-sm);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
