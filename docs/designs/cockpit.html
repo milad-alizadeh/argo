@@ -8,7 +8,7 @@
 <style>
   /* COCKPIT — settled from the ship-ribbon experiment — the ribbon (Commits → PR → CI → Review →
      Merge) is the work pane's header and the ONE home of ship-flow state.
-     Rules R1–R15 + state table + pane anatomy: cockpit-matrix.md. */
+     Rules R1–R16 + state table + pane anatomy: cockpit-matrix.md. */
   :root{
     color-scheme:dark;
     /* --status-landed (Merged ≠ CI-green) was promoted into argo-tokens.css at
@@ -1434,7 +1434,7 @@ function drawOrb(){const cv=document.getElementById('orb');if(!cv)return;const c
   c.fillStyle=g;c.beginPath();c.arc(cx,cy,R*2,0,7);c.fill();c.beginPath();c.arc(cx,cy,R,0,7);c.fillStyle='#0a0806';c.fill();
   c.lineWidth=1.4;c.strokeStyle=rim;c.beginPath();c.arc(cx,cy,R,0,7);c.stroke();}
 addEventListener('resize',()=>{drawStars();drawOrb();});
-document.getElementById('hint').textContent='cockpit · story|work split · Background Tasks roster (R15, phase-grouped Runs) · ribbon = work-pane header · console channels for raw I/O · matrix S0–S11 + R1–R15 in the rail (spec: cockpit-matrix.md). One primary control, in the head node’s drawer.';
+document.getElementById('hint').textContent='cockpit · story|work split · Background Tasks roster (R15, phase-grouped Runs) · ribbon = work-pane header · console channels for raw I/O · matrix S0–S11 + R1–R16 in the rail (spec: cockpit-matrix.md). One primary control, in the head node’s drawer.';
 /* demo deep-links: #s=N preselects a rail session; &ch=<tool-id> opens its
    console channel; &tab=review|artifacts picks the work-pane tab */
 const hp=location.hash.match(/s=(\d+)/); if(hp) selIdx=Math.min(SESSIONS.length-1,+hp[1]);

@@ -18,6 +18,7 @@
     "test:e2e": "turbo run test:e2e",
     "typecheck": "turbo run typecheck",
     "check:design-tokens": "sh scripts/check-design-tokens.sh",
+    "worktrees:gc": "sh scripts/worktree-gc.sh",
     "storybook": "turbo run storybook",
     "build-storybook": "turbo run build-storybook",
     "scaffold": "node packages/argo-skills/bin/scaffold.mjs",
