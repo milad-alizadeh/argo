@@ -145,6 +145,23 @@ fetching, store wiring; ~10 lines) and a pure presentational **View**
 > value (`label: ''`) is not a variation but invalid input — fix it with a type or a
 > boundary guard, not a story that renders nothing.
 >
+> A parent stories only what it *adds*. Tiers compose, so their props do too: a parent
+> that re-stories a prop it forwards untouched multiplies one axis by the depth of the
+> tree. If a parent story differs from its base story only by a pass-through prop, it
+> belongs to the child — delete it. The parent's own stories are the ones composition
+> creates: which child renders and the switch between them, focus/keyboard/aria wiring
+> spanning two children, layout under pressure, its own state. A child's union is covered
+> by the child's gallery and a pure helper's edges by its unit test — neither needs a
+> second telling upstairs.
+>
+> Nest by ownership. A story's title places it in a catalog of things you compose *with*:
+> primitives and the organisms a screen mounts sit at the top level, while a component
+> with exactly one importer nests under that importer (`Console`, then
+> `Console/ChannelTab`) rather than standing beside it as a peer — four sibling entries
+> for one organism claim four components exist where one does. Only the title changes,
+> never the file or the export name. A part that grows a second importer is promoted to
+> the top level, and the title change is the promotion.
+>
 > The story file is also the component's docs page: turn autodocs on globally, document
 > each prop with a TSDoc comment on the component's props type (react-docgen lifts those
 > into the props table — don't duplicate them into `argTypes`), declare the control
