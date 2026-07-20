@@ -54,7 +54,7 @@ export function PhaseGroup({
     <div
       data-run-id={runId}
       data-phase={label}
-      className={cn('mt-hair mb-tight border-l-2 pl-gap', rail, className)}
+      className={cn('mt-hair mb-tight border-l-2 pl-snug', rail, className)}
     >
       <RosterRow
         // A phase with nothing to open still reserves the caret, so every phase name in the
@@ -73,10 +73,10 @@ export function PhaseGroup({
         </Text>
       </RosterRow>
       {open && hasMembers && (
-        // A phase head is caret + name with no glyph, so its members indent only enough to
-        // drop their sparkle into the caret's column — one clean left marker column, with the
-        // member names landing under the phase name (the icon-bearing batch nests wider).
-        <div className="ml-snug">
+        // A phase head is caret + name, so a member (glyph + name) lands its glyph under the
+        // phase NAME: one nest step (24) right of the phase caret, which is where the phase
+        // content — and so this wrapper's 0 — already begins.
+        <div className="ml-nest">
           {members.map((member) => (
             <AgentRow key={member.channelId} {...member} rollupState={PHASE_ROLLUP_STATE[state]} />
           ))}

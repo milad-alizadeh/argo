@@ -167,7 +167,11 @@ function RunMembers({
 }: Pick<RunRowProps, 'label' | 'state' | 'members' | 'phases'>): React.JSX.Element {
   if (phases) {
     return (
-      <div className="mt-hair mb-tight ml-nest">
+      // Phase groups are children of the run, so the phase caret lands under the run's NAME.
+      // This clears the run's two marker columns (caret + tree-icon) — one nest step of
+      // margin plus one region of padding; PhaseGroup's own rail + pad and the row's shared
+      // gap carry the caret the rest of the way onto the run-name axis.
+      <div className="mt-hair mb-tight ml-nest pl-region">
         {phases.map((phase) => (
           <PhaseGroup
             key={phase.label}
@@ -183,7 +187,11 @@ function RunMembers({
     )
   }
   return (
-    <div className="mt-hair mb-tight ml-nest border-l border-inset-hair pl-snug">
+    // Batch members are children of the run, so their leading marker (the glyph) lands under
+    // the run's NAME — the run's two marker columns in, one nest step of margin plus one of
+    // padding. The hairline spine's own 1px pushes the glyph a single pixel past the name;
+    // within the row's tolerance and not worth an off-rhythm constant to shave.
+    <div className="mt-hair mb-tight ml-nest border-l border-inset-hair pl-nest">
       {members.map((member) => (
         <AgentRow key={member.channelId} {...agentOf(member)} rollupState={state} />
       ))}

@@ -73,7 +73,11 @@ export function RosterRow({
           }}
           aria-expanded={caret === 'open'}
           aria-label={`${caret === 'open' ? 'Collapse' : 'Expand'} ${toggleLabel}`}
-          className="h-auto w-caret-col shrink-0 justify-center border-none bg-transparent p-0 text-meta text-foreground-faint hover:bg-transparent hover:text-foreground"
+          // The caret must be exactly the marker box — no border, no background, no padding.
+          // Button's `size="default"` bakes in `px-inset py-snug` via a custom spacing token
+          // that tailwind-merge can't see to strip (only classes it knows are de-duped), so a
+          // plain `p-0` would land beside it and lose the cascade. `p-0!` forces it to zero.
+          className="h-auto w-marker-col shrink-0 justify-center border-0 bg-transparent p-0! text-meta text-foreground-faint hover:bg-transparent hover:text-foreground"
         >
           <Caret aria-hidden />
         </Button>
@@ -81,7 +85,7 @@ export function RosterRow({
       {caret !== undefined && !canToggle && (
         <Text
           variant="meta"
-          className="inline-flex w-caret-col shrink-0 justify-center text-foreground-faint"
+          className="inline-flex w-marker-col shrink-0 justify-center text-foreground-faint"
         >
           <Caret aria-hidden className={cn(caret === 'reserved' && 'invisible')} />
         </Text>
@@ -89,7 +93,7 @@ export function RosterRow({
       {Glyph !== undefined && (
         <Text
           variant="row"
-          className="inline-flex w-glyph-col shrink-0 justify-center text-primary-soft"
+          className="inline-flex w-marker-col shrink-0 justify-center text-primary-soft"
         >
           <Glyph aria-hidden />
         </Text>

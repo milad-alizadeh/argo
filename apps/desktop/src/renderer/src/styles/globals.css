@@ -128,8 +128,7 @@
   --spacing-inset: var(--space-inset);
   --spacing-region: var(--space-region);
   --spacing-nest: var(--space-nest);
-  --spacing-caret-col: var(--space-caret-col);
-  --spacing-glyph-col: var(--space-glyph-col);
+  --spacing-marker-col: var(--space-marker-col);
 
   /* Motion roles: duration-fast / duration-slow / duration-pulse. */
   --transition-duration-fast: var(--time-fast);
