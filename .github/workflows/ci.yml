@@ -70,6 +70,16 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test
 
+      # Story tests render stories, never the generated Docs pages, so a broken .mdx or a
+      # component react-docgen cannot parse fails only here. It sits in this job rather than
+      # `stories` because a red `stories` wakes the `baselines` job — an MDX typo would
+      # otherwise cost a full Playwright baseline regeneration to learn nothing.
+      - name: Build Storybook
+        if: ${{ !cancelled() }}
+        env:
+          STORYBOOK_DISABLE_TELEMETRY: "1"
+        run: bun run build-storybook
+
   stories:
     name: story tests
     runs-on: ubuntu-latest
@@ -89,12 +99,15 @@ jobs:
       - name: Story tests
         run: bun run test:stories
 
-      # Story tests render stories, never the generated Docs pages — so a broken .mdx or a
-      # component react-docgen cannot parse fails only here. Runs even after a story-test
-      # failure, same reason the check job's gates do.
-      - name: Build Storybook
-        if: ${{ !cancelled() }}
-        run: bun run build-storybook
+      # Fallback record of what differed, for a run whose `baselines` job never got to comment.
+      - name: Upload visual diffs
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: visual-diffs
+          path: apps/desktop/.vitest-attachments/
+          retention-days: 7
+          if-no-files-found: ignore
 
   e2e:
     name: electron e2e
@@ -142,3 +155,110 @@ jobs:
           name: playwright-traces
           path: apps/desktop/test-results/
           retention-days: 7
+
+  # Resolves a red `stories`: a new story has no baseline yet, or an existing one drifted. Both
+  # end with the PNGs pushed to the PR, where GitHub renders a changed image with swipe and
+  # onion-skin. Drift also gets a comment, since merging it is the only thing that accepts it.
+  baselines:
+    name: update visual baselines
+    needs: stories
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.stories.result == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # A PAT, not GITHUB_TOKEN: a GITHUB_TOKEN push starts no new workflow run, so the
+          # `stories` gate would never re-run to clear its red X.
+          token: ${{ secrets.VISUAL_APPROVE_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - uses: ./.github/actions/setup
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      # --update writes every baseline: creates the missing ones, overwrites the drifted ones.
+      # `|| true` because a story failing for a non-visual reason must not lose the new baselines.
+      - name: Regenerate baselines
+        run: cd apps/desktop && bun run test:stories -- --update || true
+
+      # Commit, and publish the objects under a ref that triggers nothing (`on.push` is main-only,
+      # `pull_request` only fires for the head branch) so the comment's raw image URLs resolve
+      # before the branch push exists. Pushing the branch is deliberately the LAST step: it
+      # re-runs `pull_request`, and the workflow's cancel-in-progress then kills this job — which
+      # already silently ate the drift comment once.
+      - name: Commit baselines
+        id: commit
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Tracked-and-modified is drift (a story that already had a baseline now renders
+          # differently); untracked is a new story's first render, with nothing to compare to.
+          drift=$(git diff --name-only -- '*__screenshots__*')
+          fresh=$(git ls-files --others --exclude-standard -- '*__screenshots__*')
+          git add -A -- '*__screenshots__*'
+          if git diff --cached --quiet; then
+            echo "Baselines already current."
+            exit 0
+          fi
+          if [ -n "$drift" ] && [ -n "$fresh" ]; then
+            subject="test(visual): baseline new stories, update drifted ones"
+          elif [ -n "$drift" ]; then
+            subject="test(visual): update drifted screenshot baselines"
+          else
+            subject="test(visual): baseline new stories"
+          fi
+          git commit -m "$subject"
+          git push --force origin "HEAD:refs/visual-baselines/pr-$PR_NUMBER"
+          {
+            echo "before=$(git rev-parse HEAD~1)"
+            echo "after=$(git rev-parse HEAD)"
+            echo "drift<<GH_EOF"
+            echo "$drift"
+            echo "GH_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # Both versions are in git — old at the parent, new at the commit just published — so raw
+      # URLs pinned to those SHAs render before/after inline. Requires a public repo.
+      - name: Flag drift on the PR
+        if: steps.commit.outputs.drift != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRIFT: ${{ steps.commit.outputs.drift }}
+          BEFORE: ${{ steps.commit.outputs.before }}
+          AFTER: ${{ steps.commit.outputs.after }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          raw="https://raw.githubusercontent.com/$REPO"
+          {
+            echo "### Visual drift"
+            echo
+            echo "These stories render differently than their committed baseline. I pushed the"
+            echo "regenerated baselines, so the gate goes green — check the change is intended."
+            echo "**If it isn't, fix the component, not the baseline.**"
+            echo
+            echo "| story | before | after |"
+            echo "| --- | --- | --- |"
+            while IFS= read -r file; do
+              if [ -n "$file" ]; then
+                story=$(basename "$file" .png | sed 's/-chromium-linux$//')
+                echo "| \`$story\` | <img src=\"$raw/$BEFORE/$file\" width=\"360\"> | <img src=\"$raw/$AFTER/$file\" width=\"360\"> |"
+              fi
+            done <<< "$DRIFT"
+            echo
+            echo "Files changed also gives you swipe and onion-skin on each image."
+          } > comment.md
+          gh pr comment "$PR_NUMBER" --body-file comment.md
+
+      - name: Push baselines to the PR branch
+        if: steps.commit.outputs.after != ''
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: git push origin "HEAD:$HEAD_REF"

@@ -51,11 +51,22 @@ export default defineConfig({
         },
         test: {
           name: 'storybook',
+          // Screenshots every story via a project-annotation afterEach (see .storybook/vitest.setup.ts).
+          setupFiles: ['./.storybook/vitest.setup.ts'],
           browser: {
             enabled: true,
             headless: true,
             provider: playwright({}),
             instances: [{ browser: 'chromium' }],
+            expect: {
+              toMatchScreenshot: {
+                comparatorName: 'pixelmatch',
+                // Zero ratio, not a percentage: an atom is a small part of its own frame, so a
+                // 1% budget let an 8px→12px StatusDot (28–472 pixels) pass as unchanged. Per-pixel
+                // `threshold` still absorbs antialiasing, which is what a ratio was covering for.
+                comparatorOptions: { allowedMismatchedPixelRatio: 0 },
+              },
+            },
           },
         },
       },
