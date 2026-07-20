@@ -65,11 +65,24 @@ fundamental (wrong layout, missing states), open the PR as draft.
 ## 4. Evidence in the PR
 
 Pass or fail, the final screenshots go in the PR so the human reviews pixels, not just a
-diff. The GitHub API can't upload images into a PR body, so commit them to the ticket branch
-under `docs/pr-screenshots/<branch-slug>/` and embed with raw URLs:
+diff. The GitHub API can't upload images into a PR body, and committing them to the branch
+drags them into `main` forever — so publish them under a throwaway ref instead: an orphan
+commit, reachable only by that ref, whose blobs resolve as raw URLs and never enter `main`.
 
-```markdown
-![status-row](https://github.com/<owner>/<repo>/blob/<branch>/docs/pr-screenshots/<branch-slug>/status-row.png?raw=true)
+From the dir holding the PNGs (`$SHOTS`):
+
+```sh
+slug=$(git rev-parse --abbrev-ref HEAD | tr '/' '-')
+tree=$(for f in "$SHOTS"/*.png; do
+  printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"
+done | git mktree)
+commit=$(git commit-tree "$tree" -m "visual-verify: $slug")
+git push --force origin "$commit:refs/pr-screenshots/$slug"
 ```
 
-A few binary blobs per UI PR is the accepted cost of a self-contained repo.
+Embed each with a raw URL pinned to that commit — it renders inline during review and is
+reaped by `worktrees:gc` once the PR closes:
+
+```markdown
+![status-row](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/status-row.png)
+```
