@@ -1,8 +1,10 @@
-# --- session isolation: commits belong in worktrees (see AGENTS.md "Session isolation") ---
+# --- session isolation: AGENT commits belong in worktrees (see AGENTS.md "Session isolation") ---
 # Concurrent agent sessions share this checkout; a commit here lands on whatever branch/index
-# another session is using. Worktrees pass (git-dir != git-common-dir). Humans deliberately
-# committing in the main checkout: ARGO_MAIN_COMMIT=1 git commit ...
-if [ -z "$ARGO_MAIN_COMMIT" ] \
+# another session is using. Worktrees pass (git-dir != git-common-dir). Humans pass too —
+# only agent sessions are blocked (CLAUDECODE marks Claude Code; harnesses with no env marker
+# are governed by AGENTS.md). Agent override for a deliberate main-checkout commit
+# (e.g. skills-lock.json after a reinstall): ARGO_MAIN_COMMIT=1 git commit ...
+if [ -n "$CLAUDECODE" ] && [ -z "$ARGO_MAIN_COMMIT" ] \
    && [ "$(git rev-parse --git-dir 2>/dev/null)" = "$(git rev-parse --git-common-dir 2>/dev/null)" ]; then
   echo "pre-commit: blocked — this is the shared main checkout; implement in a worktree" >&2
   echo "  (git worktree add / EnterWorktree; override: ARGO_MAIN_COMMIT=1 git commit ...)" >&2
