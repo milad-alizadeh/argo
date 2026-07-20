@@ -42,8 +42,8 @@ states in this project: <the detected method — e.g. "`bun run build-storybook`
 `storybook-static/` on a free port, states are story URLs via
 `iframe.html?id=<story-id>&viewMode=story`">. Screenshot with
 `node scripts/screenshot-states.mjs <states.json> <out-dir>`. UI tickets end with
-`/visual-verify`; screenshots are committed under `docs/pr-screenshots/<branch-slug>/` and
-embedded in the PR body.
+`/visual-verify`; screenshots are published to a throwaway `refs/pr-screenshots/<branch-slug>`
+ref (never committed to the branch) and embedded in the PR body via raw URLs.
 ```
 
 ## 4. Optional — pixel-diff regression tests

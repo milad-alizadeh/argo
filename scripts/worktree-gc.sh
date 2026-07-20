@@ -132,6 +132,55 @@ while IFS= read -r line; do
   fi
 done < "$list"
 
+# Prune stale visual-review refs on the remote. visual-verify publishes screenshots to
+# refs/pr-screenshots/<slug> (slug = head branch with / → -), and the CI baselines job to
+# refs/visual-baselines/pr-N. Both are ephemeral: once the PR is gone, so is their purpose.
+# Reap them on the same provably-safe footing as worktrees — but only with gh to say which
+# PRs are still open. Without it, or if the query fails, never delete: incomplete info is
+# not a reason to reap.
+if [ "$has_gh" = 1 ]; then
+  # Check each gh query's own exit status, not a pipeline's (a trailing `tr` would mask a
+  # failed gh), and prune only when BOTH succeeded — otherwise open_slugs/open_numbers may
+  # be empty for lack of data, not lack of open PRs, and we'd reap live refs.
+  open_branches=$(cd "$repo_root" && gh pr list --state open --limit 500 \
+    --json headRefName --jq '.[].headRefName' 2>/dev/null)
+  branches_ok=$?
+  open_numbers=$(cd "$repo_root" && gh pr list --state open --limit 500 \
+    --json number --jq '.[].number' 2>/dev/null)
+  numbers_ok=$?
+  if [ "$branches_ok" -eq 0 ] && [ "$numbers_ok" -eq 0 ]; then
+    open_slugs=$(printf '%s\n' "$open_branches" | tr '/' '-')
+    prune_refs=1
+  else
+    prune_refs=0
+  fi
+
+  if [ "$prune_refs" = 1 ]; then
+    git -C "$repo_root" ls-remote origin 'refs/pr-screenshots/*' 2>/dev/null \
+    | while IFS='	' read -r _sha ref; do
+        [ -n "$ref" ] || continue
+        slug=${ref#refs/pr-screenshots/}
+        printf '%s\n' "$open_slugs" | grep -qxF "$slug" && continue
+        if [ "$DRY_RUN" = 1 ]; then
+          echo "  reap ref $ref — no open PR (dry run)"
+        elif git -C "$repo_root" push --quiet origin --delete "$ref" 2>/dev/null; then
+          echo "  reaped ref $ref"
+        fi
+      done
+    git -C "$repo_root" ls-remote origin 'refs/visual-baselines/*' 2>/dev/null \
+    | while IFS='	' read -r _sha ref; do
+        [ -n "$ref" ] || continue
+        n=${ref##*/pr-}
+        printf '%s\n' "$open_numbers" | grep -qxF "$n" && continue
+        if [ "$DRY_RUN" = 1 ]; then
+          echo "  reap ref $ref — PR #$n not open (dry run)"
+        elif git -C "$repo_root" push --quiet origin --delete "$ref" 2>/dev/null; then
+          echo "  reaped ref $ref"
+        fi
+      done
+  fi
+fi
+
 git -C "$repo_root" worktree prune
 
 if [ "$reaped" = 0 ] && [ "$kept" = 0 ]; then

@@ -5,3 +5,7 @@
 #   git config merge.graphify.name   "graphify union merge"
 #   git config merge.graphify.driver "graphify merge-driver %O %A %B"
 graphify-out/graph.json merge=graphify
+
+# VRT baselines: tracked (the stories gate diffs against them) but machine-generated.
+# linguist-generated folds them out of the PR Files-changed view and the diffstat.
+**/__screenshots__/**/*.png linguist-generated=true
