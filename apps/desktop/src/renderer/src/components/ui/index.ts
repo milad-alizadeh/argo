@@ -5,13 +5,7 @@ export * from './icons'
 export { SectionHeader } from './SectionHeader'
 export { Status } from './Status'
 export { StatusDot } from './StatusDot'
-export {
-  SESSION_ICON,
-  STATUS_STATE,
-  STATUS_TONE,
-  type StatusState,
-  type StatusTone,
-} from './sessionStatus'
+export { STATUS_TONE } from './statusTone'
 export {
   TEXT_ELEMENTS,
   Text,

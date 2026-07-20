@@ -30,7 +30,7 @@
     },
     {
       "name": "ship",
-      "comment": "Pure ship-flow derivation inside the renderer: the contract's session facts → ribbon nodes, head, terminal, and the rail status word (cockpit-matrix.md). No React, no I/O — it declares no facts of its own, and Views consume the derived model through its barrel and never re-derive it.",
+      "comment": "Pure ship-flow derivation inside the renderer: the contract's session facts → ribbon nodes, head, terminal, and the rail status word (cockpit-matrix.md R16). No React, no I/O — it declares no facts of its own. It owns the lifecycle vocabulary (word · tone · icon name per state) and Views consume it, and the derived model, through this barrel: never re-derived, never re-spelled.",
       "path": "^src/renderer/src/ship/",
       "publicEntry": ["^src/renderer/src/ship/index\\.ts$"]
     }

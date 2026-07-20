@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { SESSION_ICON, STATUS_STATE, STATUS_TONE } from '@/components/ui'
+import { STATUS_TONE } from '@/components/ui'
 import type { SessionStatus, SessionView } from '@/sessionStore'
+import { type RailTone, SESSION_STATES } from '@/ship'
 import { Rail } from './Rail'
-
-const SESSION_STATES = Object.keys(SESSION_ICON) as SessionStatus[]
 
 const meta = {
   title: 'Cockpit/Rail',
@@ -50,6 +49,17 @@ const everyState: SessionView[] = SESSION_STATES.map((status) => ({
   status,
 }))
 
+// Spelled out rather than read off the table the rows render from — otherwise the story
+// only proves nothing falls through, not that the cockpit says what R16 settled on.
+const vocabulary: [SessionStatus, string, RailTone][] = [
+  ['running', 'Running', 'run'],
+  ['needs-input', 'Needs input', 'amber'],
+  ['done', 'Done', 'mist'],
+  ['failed', 'Failed', 'red'],
+  ['queued', 'Queued', 'gray'],
+  ['orphaned', 'Orphaned', 'stale'],
+]
+
 // Every state main can observe, one row each: each row carries its own word and an icon
 // tinted by that word's tone — no state falls through to a blank or a borrowed word.
 export const EveryState: Story = {
@@ -57,9 +67,10 @@ export const EveryState: Story = {
   play: async ({ canvasElement }) => {
     const list = within(canvasElement).getByRole('list', { name: 'Sessions' })
     const rows = within(list).getAllByRole('listitem')
-    await expect(rows).toHaveLength(SESSION_STATES.length)
+    await expect(rows).toHaveLength(vocabulary.length)
+    await expect(SESSION_STATES).toEqual(vocabulary.map(([status]) => status))
     for (const [index, row] of rows.entries()) {
-      const { word, tone } = STATUS_STATE[SESSION_STATES[index]]
+      const [, word, tone] = vocabulary[index]
       await expect(within(row).getByText(word)).toBeInTheDocument()
       await expect(row.querySelector('svg')).toHaveClass(STATUS_TONE[tone])
     }

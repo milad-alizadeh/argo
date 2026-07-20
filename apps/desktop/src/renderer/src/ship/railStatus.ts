@@ -4,7 +4,9 @@ import type { RibbonModel, RibbonNodeKey, RibbonNodeState, TerminalState } from 
 // The rail row's word — a POINTER into the ribbon's head node, never a value of its
 // own. Tone is a name the row resolves to a `--status-*` token; no colour lives here.
 
-export type RailTone = 'run' | 'amber' | 'mist' | 'gray' | 'red' | 'stale' | 'landed'
+export const RAIL_TONES = ['run', 'amber', 'mist', 'gray', 'red', 'stale', 'landed'] as const
+
+export type RailTone = (typeof RAIL_TONES)[number]
 
 export type RailIcon =
   | 'arrow-line-up'
@@ -26,7 +28,18 @@ export interface RailStatus {
   icon: RailIcon
 }
 
-const SESSION_STATUS: Record<SessionStatus, RailStatus> = {
+// The order the cockpit shows the lifecycle in, and the list every gallery iterates.
+// `railStatus.test.ts` holds it to the table so a seventh state cannot ship uncovered.
+export const SESSION_STATES = [
+  'running',
+  'needs-input',
+  'done',
+  'failed',
+  'queued',
+  'orphaned',
+] as const satisfies readonly SessionStatus[]
+
+export const SESSION_STATUS: Record<SessionStatus, RailStatus> = {
   running: { word: 'Running', tone: 'run', icon: 'circle-notch' },
   'needs-input': { word: 'Needs input', tone: 'amber', icon: 'warning' },
   done: { word: 'Done', tone: 'mist', icon: 'check' },
