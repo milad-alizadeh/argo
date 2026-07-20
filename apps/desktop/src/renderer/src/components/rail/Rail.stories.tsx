@@ -9,12 +9,20 @@ const meta = {
   title: 'Cockpit/Rail',
   component: Rail,
   parameters: { layout: 'fullscreen' },
+  argTypes: {
+    sessions: {
+      control: false,
+      description:
+        'The projected Sessions the rail renders, one row each, already carrying the facts a row derives its word and tone from. A projection rather than raw state, so there is nothing here to edit by hand.',
+      table: { type: { summary: 'SessionView[]' } },
+    },
+  },
 } satisfies Meta<typeof Rail>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Empty hub → empty rail (issue #3): the whole visible surface is the empty state.
+/** Empty hub → empty rail (issue #3): the whole visible surface is the empty state. */
 export const Empty: Story = {
   args: { sessions: [] },
   play: async ({ canvasElement }) => {
@@ -33,7 +41,7 @@ const oneSession: SessionView[] = [
   },
 ]
 
-// A single projected Session → one rail row, asserting the whole visible row.
+/** A single projected Session → one rail row, asserting the whole visible row. */
 export const SingleSession: Story = {
   args: { sessions: oneSession },
   play: async ({ canvasElement }) => {
@@ -67,8 +75,10 @@ const vocabulary: [SessionStatus, string, RailTone][] = [
   ['orphaned', 'Orphaned', 'stale'],
 ]
 
-// Every state main can observe, one row each: each row carries its own word and an icon
-// tinted by that word's tone — no state falls through to a blank or a borrowed word.
+/**
+ * Every state main can observe, one row each: each row carries its own word and an icon
+ * tinted by that word's tone — no state falls through to a blank or a borrowed word.
+ */
 export const EveryState: Story = {
   args: { sessions: everyState },
   play: async ({ canvasElement }) => {
@@ -114,8 +124,10 @@ const shipStates: SessionView[] = [
   },
 ]
 
-// The ribbon-derived half of R16, reachable now that facts cross the bridge: a ship
-// stage REPLACES the lifecycle word rather than appending a detail to it.
+/**
+ * The ribbon-derived half of R16, reachable now that facts cross the bridge: a ship stage
+ * REPLACES the lifecycle word rather than appending a detail to it.
+ */
 export const ShipStates: Story = {
   args: { sessions: shipStates },
   play: async ({ canvasElement }) => {

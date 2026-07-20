@@ -3,10 +3,22 @@ import type { SessionView } from '@/sessionStore'
 import { EmptyRail } from './EmptyRail'
 import { SessionRow } from './SessionRow'
 
-// Organism: the rail of observed Sessions — one frosted `panel` holding flat inset
-// rows, a pure projection of `sessions`. An empty roster renders the empty state.
-// This is the whole window for now; later tickets add the session-detail column beside it.
-export function Rail({ sessions }: { sessions: SessionView[] }): React.JSX.Element {
+/**
+ * Organism: the rail of observed Sessions — one frosted `panel` holding flat inset rows, a
+ * pure projection of `sessions`.
+ *
+ * An empty roster renders the empty state. This is the whole window for now; later tickets
+ * add the session-detail column beside it.
+ */
+export function Rail({
+  sessions,
+}: {
+  /** The observed roster, in the order it is listed. Callers read it off the projected
+   * state the sessionStore replays from main (`CockpitState.sessions`) — the rail derives
+   * nothing from it and re-orders nothing. An empty array is the empty state, not an
+   * error. */
+  sessions: SessionView[]
+}): React.JSX.Element {
   return (
     <main
       data-testid="cockpit-root"

@@ -54,9 +54,12 @@ type PaneSplitterProps = {
   className?: string
 }
 
-// Atom: the draggable hairline between two panes. It owns the pointer bookkeeping and the
-// clamp, and nothing else — no layout variable, no pane, no persistence. The screen that
-// mounts it decides what the number means.
+/**
+ * Atom: the draggable hairline between two panes.
+ *
+ * It owns the pointer bookkeeping and the clamp, and nothing else — no layout variable, no
+ * pane, no persistence. The screen that mounts it decides what the number means.
+ */
 export function PaneSplitter({
   orientation,
   size,

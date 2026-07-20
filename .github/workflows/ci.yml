@@ -89,6 +89,13 @@ jobs:
       - name: Story tests
         run: bun run test:stories
 
+      # Story tests render stories, never the generated Docs pages — so a broken .mdx or a
+      # component react-docgen cannot parse fails only here. Runs even after a story-test
+      # failure, same reason the check job's gates do.
+      - name: Build Storybook
+        if: ${{ !cancelled() }}
+        run: bun run build-storybook
+
   e2e:
     name: electron e2e
     runs-on: ubuntu-latest

@@ -1,9 +1,12 @@
 import { cn } from '@/lib/utils'
 import { Text } from './Text'
 
-// Atom: the uppercase eyebrow that opens a section ("Outcomes · 4", "Checks · 8f3a1c").
-// The count drops the eyebrow's uppercase and tracking so a sha or a phrase stays
-// readable.
+/**
+ * Atom: the uppercase eyebrow that opens a section ("Outcomes · 4", "Checks · 8f3a1c").
+ *
+ * The count drops the eyebrow's uppercase and tracking so a sha or a phrase stays
+ * readable.
+ */
 export function SectionHeader({
   label,
   count,

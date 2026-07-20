@@ -41,8 +41,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Dragging reports the new clamped px size and nothing else — the screen-local custom
-// property it feeds (`--c-rail`) belongs to SessionScreen, never to the splitter.
+/**
+ * Dragging reports the new clamped px size and nothing else — the screen-local custom
+ * property it feeds (`--c-rail`) belongs to SessionScreen, never to the splitter.
+ */
 export const Default: Story = {
   play: async ({ args, canvasElement }) => {
     const splitter = within(canvasElement).getByRole('separator', { name: 'Rail width' })
@@ -71,8 +73,10 @@ export const Default: Story = {
   },
 }
 
-// `invert` is for the pane that sits AFTER its splitter (the console under its bar):
-// dragging down shrinks it, where the un-inverted rail grows.
+/**
+ * `invert` is for the pane that sits AFTER its splitter (the console under its bar): dragging
+ * down shrinks it, where the un-inverted rail grows.
+ */
 export const Inverted: Story = {
   args: { orientation: 'h', size: 170, min: 92, max: 420, invert: true, label: 'Console height' },
   play: async ({ args, canvasElement }) => {
@@ -87,7 +91,7 @@ export const Inverted: Story = {
   },
 }
 
-// Both orientations in one frame — the visual-diff surface for the pip.
+/** Both orientations in one frame — the visual-diff surface for the pip. */
 export const AllOrientations: Story = {
   parameters: { unframed: true },
   render: (args) => (

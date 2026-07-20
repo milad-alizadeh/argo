@@ -17,8 +17,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Beside a visible word the dot says nothing — the word is already the accessible name, so
-// announcing it twice is the bug. This is how the Status molecule renders it.
+/**
+ * Beside a visible word the dot says nothing — the word is already the accessible name, so
+ * announcing it twice is the bug. This is how the Status molecule renders it.
+ */
 export const Default: Story = {
   args: { tone: 'run' },
   play: async ({ canvasElement }) => {
@@ -26,7 +28,7 @@ export const Default: Story = {
   },
 }
 
-// Standing alone, the dot needs `label` to be legible without colour.
+/** Standing alone, the dot needs `label` to be legible without colour. */
 export const Labelled: Story = {
   args: { tone: 'red', label: 'CI failing' },
   play: async ({ canvasElement }) => {
@@ -34,8 +36,10 @@ export const Labelled: Story = {
   },
 }
 
-// The screen's ONE animation budget — at most one pulsing dot per render. Asserting the
-// computed animation, not just the class, is what catches the utility failing to resolve.
+/**
+ * The screen's ONE animation budget — at most one pulsing dot per render. Asserting the
+ * computed animation, not just the class, is what catches the utility failing to resolve.
+ */
 export const Pulsing: Story = {
   args: { tone: 'amber', label: 'Needs input', pulse: true },
   play: async ({ canvasElement }) => {
@@ -46,7 +50,7 @@ export const Pulsing: Story = {
   },
 }
 
-// The whole tone union in one frame — the visual-diff surface for the palette and its glow.
+/** The whole tone union in one frame — the visual-diff surface for the palette and its glow. */
 export const AllTones: Story = {
   args: { tone: 'run' },
   render: () => (

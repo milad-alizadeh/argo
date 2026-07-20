@@ -16,8 +16,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// A count is not always a number — the Checks header counts a sha and a phrase, which is
-// why it drops the eyebrow's uppercase and tracking.
+/**
+ * A count is not always a number — the Checks header counts a sha and a phrase, which is why
+ * it drops the eyebrow's uppercase and tracking.
+ */
 export const Default: Story = {
   args: { label: 'Checks', count: '8f3a1c +2 uncommitted' },
   play: async ({ canvasElement }) => {
@@ -25,7 +27,7 @@ export const Default: Story = {
   },
 }
 
-// `count` is optional and its absence is a different render, not a different value.
+/** `count` is optional and its absence is a different render, not a different value. */
 export const WithoutCount: Story = {
   args: { label: 'Background Tasks' },
   play: async ({ canvasElement }) => {

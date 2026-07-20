@@ -24,9 +24,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Word and tone arrive already derived (`SESSION_STATUS` here, `railStatus()` on a real
-// row), so the molecule never spells a state itself. The dot is decorative: the visible
-// word already names the state and must not be announced twice.
+/**
+ * Word and tone arrive already derived (`SESSION_STATUS` here, `railStatus()` on a real row),
+ * so the molecule never spells a state itself. The dot is decorative: the visible word
+ * already names the state and must not be announced twice.
+ */
 export const Default: Story = {
   args: wordAndTone(SESSION_STATUS.running),
   play: async ({ canvasElement }) => {
@@ -36,7 +38,7 @@ export const Default: Story = {
   },
 }
 
-// The screen's ONE animation budget, spent on the row stalled on a human.
+/** The screen's ONE animation budget, spent on the row stalled on a human. */
 export const Pulsing: Story = {
   args: { ...wordAndTone(SESSION_STATUS['needs-input']), pulse: true },
   play: async ({ canvasElement }) => {
@@ -45,8 +47,10 @@ export const Pulsing: Story = {
   },
 }
 
-// The whole Session lifecycle in one frame — the visual-diff surface for words, tones and
-// glow. Ship-flow words ("Ready to merge", "CI failing") render through the same two props.
+/**
+ * The whole Session lifecycle in one frame — the visual-diff surface for words, tones and
+ * glow. Ship-flow words ("Ready to merge", "CI failing") render through the same two props.
+ */
 export const EveryState: Story = {
   args: wordAndTone(SESSION_STATUS.running),
   render: () => (

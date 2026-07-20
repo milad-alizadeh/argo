@@ -16,8 +16,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// The glyph is decorative (aria-hidden), so the only thing to assert is that a name
-// resolves to a drawn svg — the row's word carries the accessible meaning.
+/**
+ * The glyph is decorative (aria-hidden), so the only thing to assert is that a name resolves
+ * to a drawn svg — the row's word carries the accessible meaning.
+ */
 export const Default: Story = {
   args: { icon: 'circle-notch', tone: 'run' },
   play: async ({ canvasElement }) => {
@@ -25,8 +27,10 @@ export const Default: Story = {
   },
 }
 
-// Every icon name in one frame — the visual-diff surface for the ship's glyph set.
-// One tone throughout: the tone↔colour pairing is StatusDot's gallery, not this one.
+/**
+ * Every icon name in one frame — the visual-diff surface for the ship's glyph set. One tone
+ * throughout: the tone↔colour pairing is StatusDot's gallery, not this one.
+ */
 export const AllIcons: Story = {
   args: { icon: 'circle-notch', tone: 'run' },
   render: () => (

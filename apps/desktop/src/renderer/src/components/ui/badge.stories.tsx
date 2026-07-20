@@ -16,8 +16,26 @@ const meta = {
   args: { children: 'worktree' },
   // cva surfaces the variant union as a plain string, so the control is declared here.
   argTypes: {
-    variant: { control: 'select', options: VARIANTS },
-    shape: { control: 'select', options: SHAPES },
+    variant: {
+      control: 'select',
+      options: VARIANTS,
+      description:
+        "The token the label spends, never what a caller reads into it — `neutral` for a plain marker, `warn` and the three `verdict-*` tints for a chip reporting where something stands. Which state wears which tone is the caller's binding (findingState.ts).",
+      table: {
+        type: { summary: VARIANTS.join(' | ') },
+        defaultValue: { summary: 'neutral' },
+      },
+    },
+    shape: {
+      control: 'select',
+      options: SHAPES,
+      description:
+        'The box: `default` is the bordered mini label, `pill` sits outside the 4/6/8/12 radius family so a chip never reads as the label it travels beside.',
+      table: {
+        type: { summary: SHAPES.join(' | ') },
+        defaultValue: { summary: 'default' },
+      },
+    },
     children: { control: 'text' },
   },
 } satisfies Meta<typeof Badge>
@@ -25,16 +43,20 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// The label is authored lower-case and the `tag` role uppercases it, so the accessible
-// text stays what the caller wrote.
+/**
+ * The label is authored lower-case and the `tag` role uppercases it, so the accessible text
+ * stays what the caller wrote.
+ */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('worktree')).toHaveClass('text-tag')
   },
 }
 
-// Every tone in both shapes — the visual-diff surface for the whole variant map. A caption
-// names the token a tone spends, never what a caller reads into it.
+/**
+ * Every tone in both shapes — the visual-diff surface for the whole variant map. A caption
+ * names the token a tone spends, never what a caller reads into it.
+ */
 export const AllVariants: Story = {
   render: () => (
     <div className="flex flex-col gap-gap">
@@ -58,9 +80,11 @@ export const AllVariants: Story = {
   },
 }
 
-// Composed-of: Icon + label. The badge sizes the glyph off its own tag role, so the pill a
-// state is reported in needs no component of its own — which state wears which tone is the
-// caller's binding (findingState.ts), never something spelled here.
+/**
+ * Composed-of: Icon + label. The badge sizes the glyph off its own tag role, so the pill a
+ * state is reported in needs no component of its own — which state wears which tone is the
+ * caller's binding (findingState.ts), never something spelled here.
+ */
 export const WithIcon: Story = {
   render: () => (
     <div className="flex items-center gap-region">
@@ -81,8 +105,10 @@ export const WithIcon: Story = {
   },
 }
 
-// `asChild` is the kit's escape hatch: the badge's styling merges onto the caller's own
-// element, which is why the label cannot be wrapped in a <Text> inside the component.
+/**
+ * `asChild` is the kit's escape hatch: the badge's styling merges onto the caller's own
+ * element, which is why the label cannot be wrapped in a `<Text>` inside the component.
+ */
 export const AsChild: Story = {
   args: { asChild: true },
   render: (args) => (

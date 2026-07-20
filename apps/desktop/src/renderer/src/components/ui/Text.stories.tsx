@@ -32,8 +32,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// The element is a separate axis from the role, and it is invisible — so it gets a
-// control plus an assertion rather than a gallery of identical-looking renders.
+/**
+ * The element is a separate axis from the role, and it is invisible — so it gets a control
+ * plus an assertion rather than a gallery of identical-looking renders.
+ */
 export const Default: Story = {
   args: { variant: 'row', children: SPECIMEN.row },
   play: async ({ canvasElement }) => {
@@ -41,8 +43,10 @@ export const Default: Story = {
   },
 }
 
-// Colour is not part of a role, so it composes through className — this is the proof
-// that `cn` keeps the colour class next to the role instead of dropping one of them.
+/**
+ * Colour is not part of a role, so it composes through className — this is the proof that
+ * `cn` keeps the colour class next to the role instead of dropping one of them.
+ */
 export const Coloured: Story = {
   args: { variant: 'meta', className: 'text-tone-run', children: SPECIMEN.meta },
   play: async ({ canvasElement }) => {
@@ -52,8 +56,10 @@ export const Coloured: Story = {
   },
 }
 
-// The type specimen: the whole closed ladder in one frame, which is also the
-// visual-diff surface for any change to the role tuples.
+/**
+ * The type specimen: the whole closed ladder in one frame, which is also the visual-diff
+ * surface for any change to the role tuples.
+ */
 export const AllVariants: Story = {
   args: { variant: 'row', children: SPECIMEN.row },
   render: () => (

@@ -2,12 +2,17 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import * as icons from './index'
 
-// One stories file for the whole set: the inventory has a single `Icon` row, and every
-// atom is the same factory output, so the props are storied once on a representative
-// glyph and `AllGlyphs` covers the `name` axis.
 const meta = {
   title: 'Cockpit/Icon',
   component: icons.GearIcon,
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'One stories file for the whole set: the inventory has a single `Icon` row, and every atom is the same factory output, so the props are storied once on a representative glyph and `AllGlyphs` covers the `name` axis.',
+      },
+    },
+  },
 } satisfies Meta<typeof icons.GearIcon>
 
 export default meta
@@ -22,6 +27,10 @@ const glyph = (canvasElement: HTMLElement): SVGSVGElement => {
 const boxOf = (canvasElement: HTMLElement): number =>
   glyph(canvasElement).getBoundingClientRect().width
 
+/**
+ * A glyph's box is 1em, so it sizes off whatever type role it lands in — and the factory pins
+ * the Light weight, which only the drawn geometry can prove.
+ */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     await expect(boxOf(canvasElement)).toBe(
@@ -34,6 +43,7 @@ export const Default: Story = {
   },
 }
 
+/** `icon-sm` is the one step down from 1em, for a glyph that must not out-weigh its row. */
 export const Small: Story = {
   args: { className: 'icon-sm' },
   play: async ({ canvasElement }) => {
@@ -43,6 +53,7 @@ export const Small: Story = {
   },
 }
 
+/** Explicit px wins over the 1em box — the escape hatch for a glyph standing on its own. */
 export const Sized: Story = {
   args: { width: 48, height: 48 },
   play: async ({ canvasElement }) => {
@@ -50,6 +61,7 @@ export const Sized: Story = {
   },
 }
 
+/** Beside a visible word the glyph is decoration, so it stays out of the a11y tree entirely. */
 export const Decorative: Story = {
   args: { 'aria-hidden': true },
   play: async ({ canvasElement }) => {
@@ -57,6 +69,7 @@ export const Decorative: Story = {
   },
 }
 
+/** Carrying meaning alone, a glyph has to name itself — `role` and `aria-label` together. */
 export const Labelled: Story = {
   args: { role: 'img', 'aria-label': 'Settings' },
   play: async ({ canvasElement }) => {
@@ -64,7 +77,7 @@ export const Labelled: Story = {
   },
 }
 
-// A glyph is tinted by whatever it sits in — never by a colour prop, a weight, or a fill.
+/** A glyph is tinted by whatever it sits in — never by a colour prop, a weight, or a fill. */
 export const Tinted: Story = {
   render: (args) => (
     <div className="flex items-center gap-gap">
@@ -87,6 +100,9 @@ export const Tinted: Story = {
   },
 }
 
+/**
+ * Set in running prose, where the 1em box has to hold the line's rhythm rather than break it.
+ */
 export const InlineWithText: Story = {
   render: (args) => (
     <p className="text-foreground text-row">
@@ -100,6 +116,10 @@ const GLYPHS = Object.entries(icons).filter(
   (entry): entry is [string, icons.IconAtom] => typeof entry[1] === 'function',
 )
 
+/**
+ * The `name` axis: every export off the barrel in one frame, so a glyph added or dropped is a
+ * visual diff rather than a silent change.
+ */
 export const AllGlyphs: Story = {
   render: (args) => (
     <div className="grid grid-cols-6 gap-region text-foreground-soft text-title">

@@ -147,8 +147,35 @@ fetching, store wiring; ~10 lines) and a pure presentational **View**
 >
 > The story file is also the component's docs page: turn autodocs on globally, document
 > each prop with a TSDoc comment on the component's props type (react-docgen lifts those
-> into the props table — don't duplicate them into `argTypes`), declare the control
-> wherever inference is wrong (`select` + `options` for a union, `range` + `min`/`max` for
-> a bounded number, `boolean` for a flag), and wire every callback to `fn()` so it lands
-> in the Actions panel and can be asserted from `play`. Stories prove composition and
-> visual state only — they never replace e2e wiring checks.
+> into the props table — don't duplicate them into `argTypes`, with the one exception
+> below), declare the control wherever inference is wrong (`select` + `options` for a
+> union, `range` + `min`/`max` for a bounded number, `boolean` for a flag), and wire every
+> callback to `fn()` so it lands in the Actions panel and can be asserted from `play`.
+>
+> The prose on that page comes from docblocks. The exported component's own docblock opens
+> it — first line a one-sentence summary of what the unit is for, any detail after a blank
+> line — and every exported story takes one too, which renders as the caption under that
+> story's heading. `meta` may carry a docblock of its own, seeding the page header, and
+> `parameters.docs.description.component` overrides it. All of these are `/** */`; a `//`
+> in those positions is dropped on the floor (see `comments.md`).
+>
+> Two things react-docgen cannot see. A prop whose type comes from a variant-map helper
+> (`cva` or equivalent) resolves to neither a type nor a description, so its row renders
+> blank unless the story spells it out:
+>
+> ```tsx
+> argTypes: {
+>   variant: {
+>     control: 'select',
+>     options: ['neutral', 'accent', 'danger'],
+>     description: 'Which token family the control spends.',
+>     table: { type: { summary: 'Variant' }, defaultValue: { summary: 'neutral' } },
+>   },
+> }
+> ```
+>
+> And a component produced by a factory rather than declared directly has no docgen surface
+> at all, so its description has to arrive as `parameters.docs.description.component` on
+> its `meta`. Every docblock is rendered as markdown, so backtick angle-bracketed names,
+> paths and identifiers — a bare `<Name>` is parsed as a tag and vanishes from the page.
+> Stories prove composition and visual state only — they never replace e2e wiring checks.

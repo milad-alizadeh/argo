@@ -171,7 +171,36 @@ story declares is what the generated page shows. Declare it properly:
 
 - **Document props on the component, not in the story.** A TSDoc comment on each prop in
   the component's props type is what react-docgen lifts into the docs table — write it
-  there once rather than duplicating it into `argTypes[prop].description`.
+  there once rather than duplicating it into `argTypes[prop].description`. The one
+  exception is a prop react-docgen cannot see, below.
+- **The component's own docblock opens the page.** Its first line is a one-sentence
+  summary of what the unit is for — that sentence is what the docs page leads with — and
+  any detail follows after a blank line. `meta` may carry a docblock of its own, which
+  seeds the page header; `parameters.docs.description.component` overrides both.
+- **Every exported story takes a docblock**, which renders as the caption under that
+  story's heading. The house habit of saying WHY a story exists is exactly what belongs
+  there, now addressed to a reader of the docs page rather than the next editor.
+  All three are `/** */` — a `//` is dropped on the floor (see `comments.md`).
+- **A `cva` / `VariantProps` prop is invisible to react-docgen.** It resolves to neither a
+  type nor a description, so the row renders blank and has to be spelled out in `argTypes`:
+
+  ```tsx
+  argTypes: {
+    variant: {
+      control: 'select',
+      options: ['primary', 'ghost', 'review-secondary', 'verdict-changes', 'verdict-approve'],
+      description: 'Which token the control spends — never the state its caller is in.',
+      table: { type: { summary: 'ButtonVariant' }, defaultValue: { summary: 'ghost' } },
+    },
+  }
+  ```
+
+- **A component built by a factory has no docgen surface at all.** react-docgen cannot see
+  through `createIcon(...)`, so every icon atom's description arrives as
+  `parameters.docs.description.component` on its `meta`.
+- **Every docblock is rendered as markdown**, so a component name written bare —
+  `wrapping the children in <Text>` — is parsed as a tag and silently vanishes from the
+  page. Backtick every angle-bracketed name, every path, and every identifier.
 - **Declare the control wherever inference is wrong or lossy:** `select` (with `options`)
   for a union that arrives as a plain string, `range` (with `min`/`max`/`step`) for a
   bounded number, `boolean` for a flag, `text` for free copy. A prop with ten legal values

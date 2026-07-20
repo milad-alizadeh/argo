@@ -20,8 +20,26 @@ const meta = {
   args: { children: 'Commit', onClick: fn() },
   // cva surfaces the variant union as a plain string, so the control has to be declared here.
   argTypes: {
-    variant: { control: 'select', options: VARIANTS },
-    size: { control: 'select', options: SIZES },
+    variant: {
+      control: 'select',
+      options: VARIANTS,
+      description:
+        'The token the control spends, never the state a caller is in. `ghost` is the default because R2 allows ONE `primary` gradient per screen; `review-secondary` is what every Review-tab control wears, and the `verdict-*` tints carry their weight without spending that one primary.',
+      table: {
+        type: { summary: VARIANTS.join(' | ') },
+        defaultValue: { summary: 'ghost' },
+      },
+    },
+    size: {
+      control: 'select',
+      options: SIZES,
+      description:
+        'The whole padding box, stated per size rather than merged. `sm` is the tighter box for a control wedged into a dense row — under a diff hunk it has to give the code back its room.',
+      table: {
+        type: { summary: SIZES.join(' | ') },
+        defaultValue: { summary: 'default' },
+      },
+    },
     disabled: { control: 'boolean' },
     asChild: { control: 'boolean' },
     children: { control: 'text' },
@@ -31,9 +49,11 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Ghost is the default: R2 allows ONE primary on screen, so the gradient is opted into.
-// The label wears the row-strong role, composed from Text's role map rather than
-// re-spelled here — `asChild` rules out wrapping the children in <Text>.
+/**
+ * Ghost is the default: R2 allows ONE primary on screen, so the gradient is opted into. The
+ * label wears the row-strong role, composed from Text's role map rather than re-spelled
+ * here — `asChild` rules out wrapping the children in `<Text>`.
+ */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const button = within(canvasElement).getByRole('button', { name: 'Commit' })
@@ -43,11 +63,13 @@ export const Default: Story = {
   },
 }
 
-// Disabled is the only boolean that changes the render; the enabled side is Default. A
-// disabled primary drops its gradient so a dead control never reads as the primary action.
+/**
+ * Disabled is the only boolean that changes the render; the enabled side is Default. A
+ * disabled primary drops its gradient so a dead control never reads as the primary action.
+ */
 export const Disabled: Story = { args: { variant: 'primary', disabled: true } }
 
-// A control that leads somewhere is a link wearing the button's shape.
+/** A control that leads somewhere is a link wearing the button's shape. */
 export const AsChild: Story = {
   args: {
     asChild: true,
@@ -60,7 +82,7 @@ export const AsChild: Story = {
   },
 }
 
-// Composed-of: Icon + label. The glyph takes its box from the control's own type role.
+/** Composed-of: Icon + label. The glyph takes its box from the control's own type role. */
 export const WithIcon: Story = {
   args: {
     variant: 'primary',
@@ -73,9 +95,11 @@ export const WithIcon: Story = {
   },
 }
 
-// The whole variant union across both sizes, enabled over disabled — the visual-diff
-// surface. Verdict tones carry their weight in the tint, so they take a glyph the way the
-// controls that wedge into a review row do.
+/**
+ * The whole variant union across both sizes, enabled over disabled — the visual-diff surface.
+ * Verdict tones carry their weight in the tint, so they take a glyph the way the controls
+ * that wedge into a review row do.
+ */
 export const AllVariants: Story = {
   render: () => (
     <div className="flex flex-col gap-gap">
