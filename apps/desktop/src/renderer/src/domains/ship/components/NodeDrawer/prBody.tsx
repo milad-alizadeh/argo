@@ -1,9 +1,9 @@
-import type { RibbonNodeState } from '@shared'
+import type { LifecycleNodeState } from '@shared'
 import { CheckIcon, GitPullRequestIcon, Text } from '@/shared/components/ui'
 import { DelegatedRow, GateAction, GrowRow } from './drawerControls'
 
 export function prBody(
-  state: RibbonNodeState,
+  state: LifecycleNodeState,
   isHead: boolean,
   data: { headSha: string },
 ): React.JSX.Element | null {

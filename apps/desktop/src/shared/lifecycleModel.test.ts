@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { RIBBON_KEYS, ribbonModel } from './ribbonModel'
+import { LIFECYCLE_KEYS, lifecycleModel } from './lifecycleModel'
 import { type SessionFactsInput, sessionFacts } from './sessionFacts'
 
-// The ribbon rules of `docs/designs/cockpit-matrix.md` that the S-row table alone
+// The lifecycle rules of `docs/designs/cockpit-matrix.md` that the S-row table alone
 // cannot pin down.
 
 const HEAD = 'a1b2c3d'
@@ -10,7 +10,7 @@ const OLD = '9f0e1d2'
 const PR = { num: 42, state: 'open', base: 'main' } as const
 const approved = (sha: string) => [{ by: '@sam', verdict: 'approved' as const, sha, findings: 0 }]
 
-const model = (input: SessionFactsInput) => ribbonModel(sessionFacts(input))
+const model = (input: SessionFactsInput) => lifecycleModel(sessionFacts(input))
 
 const shipped = (input: SessionFactsInput = {}) =>
   model({
@@ -23,24 +23,26 @@ const shipped = (input: SessionFactsInput = {}) =>
 
 describe('R1 · head', () => {
   it('is the leftmost node that is not done-fresh', () => {
-    const ribbon = shipped({ ci: { status: 'failed', sha: HEAD } })
-    expect(ribbon?.head).toBe('ci')
+    const lifecycle = shipped({ ci: { status: 'failed', sha: HEAD } })
+    expect(lifecycle?.head).toBe('ci')
   })
 
   it('never leaves a done node holding the head', () => {
-    const ribbon = shipped({ review: [{ by: '@sam', verdict: 'changes', sha: HEAD, findings: 2 }] })
-    const head = ribbon?.head
-    if (!head || !ribbon?.nodes) throw new Error('expected a five-node ribbon')
-    for (const key of RIBBON_KEYS.slice(0, RIBBON_KEYS.indexOf(head))) {
-      expect(ribbon.nodes[key]).toBe('done')
+    const lifecycle = shipped({
+      review: [{ by: '@sam', verdict: 'changes', sha: HEAD, findings: 2 }],
+    })
+    const head = lifecycle?.head
+    if (!head || !lifecycle?.nodes) throw new Error('expected a five-node lifecycle')
+    for (const key of LIFECYCLE_KEYS.slice(0, LIFECYCLE_KEYS.indexOf(head))) {
+      expect(lifecycle.nodes[key]).toBe('done')
     }
-    expect(ribbon.nodes[head]).not.toBe('done')
+    expect(lifecycle.nodes[head]).not.toBe('done')
   })
 
   it('treats a stale node as non-fresh and gives it the head', () => {
-    const ribbon = shipped({ ci: { status: 'passed', sha: OLD } })
-    expect(ribbon?.nodes?.ci).toBe('stale')
-    expect(ribbon?.head).toBe('ci')
+    const lifecycle = shipped({ ci: { status: 'passed', sha: OLD } })
+    expect(lifecycle?.nodes?.ci).toBe('stale')
+    expect(lifecycle?.head).toBe('ci')
   })
 
   it('rests on Merge once every node is done', () => {
@@ -81,9 +83,9 @@ describe('R3 · staleness', () => {
 
 describe('R5 · post-PR sync', () => {
   it('syncs Commits when a PR exists and commits are unpushed', () => {
-    const ribbon = shipped({ unpushed: 2 })
-    expect(ribbon?.nodes?.commits).toBe('sync')
-    expect(ribbon?.head).toBe('commits')
+    const lifecycle = shipped({ unpushed: 2 })
+    expect(lifecycle?.nodes?.commits).toBe('sync')
+    expect(lifecycle?.head).toBe('commits')
   })
 
   it('narrates the sync as a standing order when push_after_pr is auto', () => {
@@ -99,8 +101,8 @@ describe('R5 · post-PR sync', () => {
   })
 })
 
-describe('R7 · ribbon existence', () => {
-  it('grows no ribbon while the tree equals its base', () => {
+describe('R7 · lifecycle existence', () => {
+  it('grows no lifecycle while the tree equals its base', () => {
     expect(model({})).toBeNull()
   })
 
@@ -131,7 +133,7 @@ describe('R8 · terminal states', () => {
   })
 
   it('outranks live facts — a dirty tree under a merged PR is still terminal', () => {
-    const ribbon = shipped({ pr: { num: 42, state: 'merged', base: 'main' }, dirty: 4 })
-    expect(ribbon?.terminal).toBe('merged')
+    const lifecycle = shipped({ pr: { num: 42, state: 'merged', base: 'main' }, dirty: 4 })
+    expect(lifecycle?.terminal).toBe('merged')
   })
 })

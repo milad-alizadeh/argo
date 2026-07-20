@@ -1,9 +1,9 @@
-import type { RibbonNodeState } from '@shared'
+import type { LifecycleNodeState } from '@shared'
 import { CheckIcon, Text } from '@/shared/components/ui'
 import { DelegatedRow, GateAction, GrowRow } from './drawerControls'
 
 export function mergeBody(
-  state: RibbonNodeState,
+  state: LifecycleNodeState,
   isHead: boolean,
   data: { prNum: number; headSha: string },
 ): React.JSX.Element {

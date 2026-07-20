@@ -1,5 +1,5 @@
-import type { RibbonNodeState } from '@shared'
-import { RIBBON_KEYS } from '@shared'
+import type { LifecycleNodeState } from '@shared'
+import { LIFECYCLE_KEYS } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { RibbonNode } from './RibbonNode'
@@ -17,13 +17,13 @@ const RIBBON_NODE_STATES = [
   'warn',
   'stale',
   'lock',
-] as const satisfies readonly RibbonNodeState[]
+] as const satisfies readonly LifecycleNodeState[]
 
 const meta = {
   title: 'Ship/RibbonNode',
   component: RibbonNode,
   argTypes: {
-    nodeKey: { control: 'select', options: RIBBON_KEYS },
+    nodeKey: { control: 'select', options: LIFECYCLE_KEYS },
     state: { control: 'select', options: RIBBON_NODE_STATES },
     sub: { control: 'text' },
     isHead: { control: 'boolean' },
@@ -74,7 +74,7 @@ export const HeadPulsing: Story = {
 }
 
 /** Every state on one node, in the study's own left-to-right node order. The visual-diff
- * surface for the whole `RibbonNodeState` palette — including the `now`/`gate`/`sync` glyph
+ * surface for the whole `LifecycleNodeState` palette — including the `now`/`gate`/`sync` glyph
  * the three deliberately share (R2), and gate's outer ring. */
 export const EveryState: Story = {
   args: { nodeKey: 'commits', state: 'now', isHead: false, open: false, clickable: true },
@@ -104,7 +104,7 @@ export const EveryNode: Story = {
   args: { nodeKey: 'commits', state: 'done', isHead: false, open: false, clickable: true },
   render: () => (
     <div className="flex divide-x divide-inset-hair border border-inset-hair">
-      {RIBBON_KEYS.map((key) => (
+      {LIFECYCLE_KEYS.map((key) => (
         <RibbonNode key={key} nodeKey={key} state="done" isHead={false} open={false} clickable />
       ))}
     </div>

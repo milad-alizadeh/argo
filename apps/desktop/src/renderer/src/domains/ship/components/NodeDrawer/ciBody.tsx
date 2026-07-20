@@ -1,10 +1,10 @@
-import type { RibbonNodeState } from '@shared'
+import type { LifecycleNodeState } from '@shared'
 import { ArrowBendDownRightIcon, ArrowClockwiseIcon, Button, Text } from '@/shared/components/ui'
 import type { CiDrawerData } from '../nodeDrawerModel'
 import { PrChecksList } from '../PrChecksList'
 
 export function ciBody(
-  state: RibbonNodeState,
+  state: LifecycleNodeState,
   isHead: boolean,
   ci: CiDrawerData,
 ): React.JSX.Element {

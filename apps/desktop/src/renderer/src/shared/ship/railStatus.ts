@@ -1,7 +1,7 @@
 import type {
-  RibbonModel,
-  RibbonNodeKey,
-  RibbonNodeState,
+  LifecycleModel,
+  LifecycleNodeKey,
+  LifecycleNodeState,
   SessionFacts,
   SessionStatus,
   TerminalState,
@@ -57,7 +57,10 @@ const TERMINAL_STATUS: Record<TerminalState, RailStatus> = {
 // back. A pair absent from the table wants nothing from you (`now`/`wait`/`done`),
 // which is where the Session's own triage word belongs.
 const HEAD_STATUS: Partial<
-  Record<`${RibbonNodeKey}:${RibbonNodeState}`, RailStatus | ((facts: SessionFacts) => RailStatus)>
+  Record<
+    `${LifecycleNodeKey}:${LifecycleNodeState}`,
+    RailStatus | ((facts: SessionFacts) => RailStatus)
+  >
 > = {
   'commits:gate': { word: 'Commit ready', tone: 'amber', icon: 'git-commit' },
   'commits:sync': (facts) => ({
@@ -81,7 +84,7 @@ const HEAD_STATUS: Partial<
 
 // Takes the model the ribbon is already rendering, so the row cannot be derived
 // from a second, differently-timed reading of the same facts.
-export function railStatus(facts: SessionFacts, model: RibbonModel | null): RailStatus {
+export function railStatus(facts: SessionFacts, model: LifecycleModel | null): RailStatus {
   if (!model) return SESSION_STATUS[facts.status]
   if (model.terminal) return TERMINAL_STATUS[model.terminal]
 

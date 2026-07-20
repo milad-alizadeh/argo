@@ -1,4 +1,4 @@
-import type { RibbonNodeKey, RibbonNodeState, TerminalState } from '@shared'
+import type { LifecycleNodeKey, LifecycleNodeState, TerminalState } from '@shared'
 import { cn } from '@/lib/utils'
 import type {
   CiDrawerData,
@@ -28,8 +28,8 @@ export interface NodeDrawerSession {
 
 export type NodeDrawerProps =
   | {
-      node: RibbonNodeKey
-      state: RibbonNodeState
+      node: LifecycleNodeKey
+      state: LifecycleNodeState
       /** Whether this node is the head — a drawer carries a control only when it is (R2). */
       isHead: boolean
       session: NodeDrawerSession

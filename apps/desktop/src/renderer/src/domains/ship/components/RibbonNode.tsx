@@ -1,9 +1,9 @@
-import type { RibbonNodeKey, RibbonNodeState } from '@shared'
+import type { LifecycleNodeKey, LifecycleNodeState } from '@shared'
 import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
 import { RIBBON_NODE_STATE } from './ribbonNodeState'
 
-const NODE_LABEL: Record<RibbonNodeKey, string> = {
+const NODE_LABEL: Record<LifecycleNodeKey, string> = {
   commits: 'Commits',
   pr: 'PR',
   ci: 'CI',
@@ -14,9 +14,9 @@ const NODE_LABEL: Record<RibbonNodeKey, string> = {
 export interface RibbonNodeProps {
   /** Which of the five artifacts this node names. Renamed from the study's `key` — a
    * reserved React prop. */
-  nodeKey: RibbonNodeKey
+  nodeKey: LifecycleNodeKey
   /** Where this node stands. Drives the glyph, its tone and, on the head, the pulse. */
-  state: RibbonNodeState
+  state: LifecycleNodeState
   /** A count or sha echo beside the label — never a re-typed value. */
   sub?: string
   /** R1: the leftmost node that is not fresh. Only the head takes the motion budget

@@ -1,4 +1,4 @@
-import type { RibbonNodeState } from '@shared'
+import type { LifecycleNodeState } from '@shared'
 import {
   ArrowsClockwiseIcon,
   CheckIcon,
@@ -36,7 +36,7 @@ const ACTIVE_LABEL = 'text-foreground'
 
 /** State → icon + tone, in the `findingState.ts` pattern: every render fact about a ribbon
  * node's glyph lives here once, so RibbonNode never re-picks a colour for a state key. */
-export const RIBBON_NODE_STATE: Record<RibbonNodeState, RibbonNodeStatePresentation> = {
+export const RIBBON_NODE_STATE: Record<LifecycleNodeState, RibbonNodeStatePresentation> = {
   wait: {
     Icon: CircleIcon,
     glyph: 'border-border text-muted-foreground',

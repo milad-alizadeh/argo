@@ -1,4 +1,4 @@
-import type { RibbonNodeState } from '@shared'
+import type { LifecycleNodeState } from '@shared'
 import {
   ArrowClockwiseIcon,
   Button,
@@ -13,7 +13,7 @@ import type { CommitsDrawerData } from '../nodeDrawerModel'
 import { GrowRow } from './drawerControls'
 
 function commitsStageBody(
-  state: RibbonNodeState,
+  state: LifecycleNodeState,
   isHead: boolean,
   data: CommitsDrawerData,
 ): React.JSX.Element {
@@ -103,7 +103,7 @@ function commitsStageBody(
 // The Commits body plus, when the screen has one open, the local check output it selected
 // (R11 — sha-keyed, so this is that output's one home).
 export function commitsBody(
-  state: RibbonNodeState,
+  state: LifecycleNodeState,
   isHead: boolean,
   data: CommitsDrawerData,
 ): React.JSX.Element {

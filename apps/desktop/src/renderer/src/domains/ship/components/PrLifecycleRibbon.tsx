@@ -1,4 +1,9 @@
-import { RIBBON_KEYS, type RibbonModel, type RibbonNodeKey, type TerminalState } from '@shared'
+import {
+  LIFECYCLE_KEYS,
+  type LifecycleModel,
+  type LifecycleNodeKey,
+  type TerminalState,
+} from '@shared'
 import { cn } from '@/lib/utils'
 import { GitMergeIcon, type IconAtom, ProhibitIcon, Text } from '@/shared/components/ui'
 import { PrAnchor } from './PrAnchor'
@@ -11,12 +16,12 @@ const TERMINAL_PRESENTATION: Record<TerminalState, { Icon: IconAtom; word: strin
   }
 
 export interface PrLifecycleRibbonProps {
-  /** The ribbon's pre-derived render state (`shared/ribbonModel.ts`) — `null` renders
+  /** The ribbon's pre-derived render state (`shared/lifecycleModel.ts`) — `null` renders
    * nothing (R7: no ribbon until the tree differs from base). Re-derives nothing: this is
    * the same model the rail row reads, so the two can never disagree. */
-  model: RibbonModel | null
+  model: LifecycleModel | null
   /** Which node's drawer is showing, if any — a pointer `NodeDrawer` reads beside this. */
-  openKey: RibbonNodeKey | null
+  openKey: LifecycleNodeKey | null
   /** The PR this session ships through, once one exists — `null` before `Create PR` runs,
    * and while terminal (the anchor still names what merged/closed). */
   pr: { num: number; ghUrl: string } | null
@@ -63,7 +68,7 @@ export function PrLifecycleRibbon({
       className={cn('flex items-stretch border-border border-b', className)}
     >
       <div className="flex flex-1 items-stretch divide-x divide-inset-hair overflow-x-auto">
-        {RIBBON_KEYS.map((key) => (
+        {LIFECYCLE_KEYS.map((key) => (
           <RibbonNode
             key={key}
             nodeKey={key}
