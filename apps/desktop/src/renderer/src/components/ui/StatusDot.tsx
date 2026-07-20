@@ -33,7 +33,8 @@ function presentation(props: StatusDotProps): { tone: StatusTone; label: string 
 
 // Atom: a lifecycle state as a small coloured dot. Keyed either by a Session's status
 // (self-describing — accessible name = the status word) or by a raw cockpit `tone`, which
-// is silent unless given a `label`, since a StatusWord normally sits beside it.
+// is silent unless given a `label`, since a word normally sits beside it — and a state
+// shown with its word is the Status molecule, not this.
 // `pulse` spends the screen's ONE animation budget: at most one per render.
 export function StatusDot(props: StatusDotProps): React.JSX.Element {
   const { tone, label } = presentation(props)

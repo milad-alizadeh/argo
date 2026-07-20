@@ -136,6 +136,13 @@
 
       <h2 class="text-eyebrow">Typography — the role ladder</h2>
       <div id="type"></div>
+      <div class="text-meta" style="color: var(--foreground-faint); margin-top: var(--space-gap)">
+        A role is the whole tuple (size / leading · weight · tracking) and colour is not part
+        of it. The app applies these roles through exactly one atom — <code>Text</code>, whose
+        <code>variant</code> takes the names in the left column — so this specimen and the
+        component share one vocabulary and cannot drift. Every other component, including the
+        vendored kit ones, gets its type by rendering a Text or composing from Text's map.
+      </div>
 
       <h2 class="text-eyebrow">Core ramps (theme-agnostic — raw values live only here)</h2>
       <div id="ramps"></div>
