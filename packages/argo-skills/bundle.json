@@ -17,6 +17,10 @@
       "skills": ["frontend-design"]
     },
     {
+      "source": "anthropics/skills",
+      "skills": ["skill-creator"]
+    },
+    {
       "source": "milad-alizadeh/argo",
       "skills": "*"
     }
