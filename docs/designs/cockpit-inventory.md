@@ -38,7 +38,7 @@ from Text's map instead of wrapping.
 | Button *(unnamed in study)* | `{variant: primary \| ghost \| review-secondary, disabled}` | Icon + label | `.mbtn` (gradient primary — drawer controls only, R2: one primary on screen) / `.mbtn.ghost` / `.rv-btn.ghost` (Review-tab controls, all secondary). |
 | AddressButton *(unnamed in study)* | `{state: open \| addressing \| fixed, size: default \| sm}` | Icon + label | Render fn `addressBtn()` → `.abtn`. State-cycling: open → "Address" (amber) → addressing → "Mark fixed" (`.confirm`, green) → fixed → "Reopen" (`.reopen`, ghost). |
 | SectionHeader *(unnamed in study)* | `{label, count?}` | Text `eyebrow` + `.n` count (no trailing aside — the count is the only slot) | `.sect-h` — uppercase eyebrow with optional neutral count ("Outcomes · 4", "Agents · 1 live", "Checks · sha"). |
-| PaneSplitter *(unnamed in study)* | `{orientation: v \| h, target: rail \| detail \| term}` | — | `.vsplit`/`.hsplit` with `data-split`; drag resizes `--c-rail`/`--c-act`/`--r-term`; hover/drag highlights the pip. |
+| PaneSplitter *(unnamed in study)* | `{orientation: v \| h, size, min, max, invert?, label, onResize}` | — | `.vsplit`/`.hsplit`; hover/drag highlights the pip, arrows step it by one rhythm unit. The study's `target: rail \| detail \| term` was the name of the custom property it wrote — `--c-rail`/`--c-act`/`--r-term` are **screen-local layout state, not tokens**, so the atom stays pure and reports a clamped px `size`; SessionScreen owns the properties. |
 
 ## Molecules
 
