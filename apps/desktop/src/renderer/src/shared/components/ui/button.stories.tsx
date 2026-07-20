@@ -1,0 +1,189 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, fn, userEvent, within } from 'storybook/test'
+import { Button } from './button'
+import { ArrowBendDownRightIcon, GitPullRequestIcon, XIcon } from './icons'
+import { Text } from './Text'
+
+const VARIANTS = [
+  'primary',
+  'ghost',
+  'quiet',
+  'review-secondary',
+  'verdict-changes',
+  'verdict-approve',
+] as const
+
+const SIZES = ['default', 'sm'] as const
+
+const meta = {
+  title: 'Shared/Button',
+  component: Button,
+  args: { children: 'Commit', onClick: fn() },
+  // cva surfaces the variant union as a plain string, so the control has to be declared here.
+  argTypes: {
+    variant: {
+      control: 'select',
+      options: VARIANTS,
+      description:
+        'The token the control spends, never the state a caller is in. `ghost` is the default because R2 allows ONE `primary` gradient per screen; `review-secondary` is what every Review-tab control wears, and the `verdict-*` tints carry their weight without spending that one primary.',
+      table: {
+        type: { summary: VARIANTS.join(' | ') },
+        defaultValue: { summary: 'ghost' },
+      },
+    },
+    size: {
+      control: 'select',
+      options: SIZES,
+      description:
+        'The whole padding box, stated per size rather than merged. `sm` is the tighter box for a control wedged into a dense row — under a diff hunk it has to give the code back its room.',
+      table: {
+        type: { summary: SIZES.join(' | ') },
+        defaultValue: { summary: 'default' },
+      },
+    },
+    disabled: { control: 'boolean' },
+    asChild: { control: 'boolean' },
+    children: { control: 'text' },
+  },
+} satisfies Meta<typeof Button>
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+/**
+ * Ghost is the default: R2 allows ONE primary on screen, so the gradient is opted into. The
+ * label wears the row-strong role, composed from Text's role map rather than re-spelled
+ * here — `asChild` rules out wrapping the children in `<Text>`.
+ */
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole('button', { name: 'Commit' })
+    await expect(button).toHaveClass('text-row-strong')
+    // The motion role has to resolve to the contract's --time-fast, not to a Tailwind default.
+    await expect(getComputedStyle(button).transitionDuration).toBe('0.15s')
+
+    // The ring is gone by product decision — neither a mouse click nor keyboard focus
+    // may paint one, and no UA default may fill the gap it left.
+    await userEvent.click(button)
+    await expect(getComputedStyle(button).outlineStyle).toBe('none')
+    button.focus()
+    await expect(getComputedStyle(button).outlineStyle).toBe('none')
+  },
+}
+
+/**
+ * Disabled is the only boolean that changes the render; the enabled side is Default. A
+ * disabled primary drops its gradient so a dead control never reads as the primary action.
+ */
+export const Disabled: Story = { args: { variant: 'primary', disabled: true } }
+
+/**
+ * `quiet` is the borderless step, for a control that sits in a strip of its own peers
+ * (console channel tabs) where a box each would out-shout the strip. Its selected wash
+ * keys off `data-active`, so the state rides on the control instead of forking the variant.
+ */
+export const Quiet: Story = {
+  args: { variant: 'quiet', size: 'sm' },
+  render: (args) => (
+    <div className="flex items-center gap-gap">
+      <Button {...args} data-active>
+        session · live
+      </Button>
+      <Button {...args}>vitest @12:04</Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const selected = canvas.getByRole('button', { name: 'session · live' })
+    await expect(selected).toHaveAttribute('data-active')
+    // The denser box carries the denser type: a strip reads at meta, not at row-strong.
+    await expect(selected).toHaveClass('text-meta')
+    await expect(canvas.getByRole('button', { name: 'vitest @12:04' })).not.toHaveAttribute(
+      'data-active',
+    )
+  },
+}
+
+/**
+ * `bare` spends nothing — no box, no ink — for a control nested inside a chip its parent
+ * already paints. It still carries the ladder's interaction, which is the whole point:
+ * cursor and disabled handling come from the primitive rather than being re-typed at the
+ * call site.
+ */
+export const Bare: Story = {
+  args: { variant: 'bare', size: 'none' },
+  render: (args) => (
+    <div className="inline-flex items-center gap-snug rounded-lg bg-foreground/6 px-gap py-tight text-meta">
+      <Button {...args}>vitest @12:04</Button>
+      <Button {...args} aria-label="Close vitest @12:04" className="text-foreground-faint">
+        <XIcon aria-hidden />
+      </Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const nested = canvas.getByRole('button', { name: 'vitest @12:04' })
+    // No box of its own: no padding, and no type role to drift off the chip's.
+    await expect(getComputedStyle(nested).padding).toBe('0px')
+    await expect(nested).not.toHaveClass('text-row-strong')
+    await expect(canvas.getByRole('button', { name: 'Close vitest @12:04' })).toBeInTheDocument()
+  },
+}
+
+/** A control that leads somewhere is a link wearing the button's shape. */
+export const AsChild: Story = {
+  args: {
+    asChild: true,
+    variant: 'review-secondary',
+    children: <a href="#pr">Open PR</a>,
+  },
+  play: async ({ canvasElement }) => {
+    const link = within(canvasElement).getByRole('link', { name: 'Open PR' })
+    await expect(link).toHaveClass('text-row-strong')
+  },
+}
+
+/** Composed-of: Icon + label. The glyph takes its box from the control's own type role. */
+export const WithIcon: Story = {
+  args: {
+    variant: 'primary',
+    children: (
+      <>
+        <GitPullRequestIcon aria-hidden />
+        Create PR
+      </>
+    ),
+  },
+}
+
+/**
+ * The whole variant union across both sizes, enabled over disabled — the visual-diff surface.
+ * Verdict tones carry their weight in the tint, so they take a glyph the way the controls
+ * that wedge into a review row do.
+ */
+export const AllVariants: Story = {
+  render: () => (
+    <div className="flex flex-col gap-gap">
+      {VARIANTS.map((variant) => (
+        <div className="flex items-center gap-gap" key={variant}>
+          <Text variant="meta" className="w-36 text-foreground-faint">
+            {variant}
+          </Text>
+          {SIZES.map((size) => (
+            <Button key={size} variant={variant} size={size}>
+              <ArrowBendDownRightIcon aria-hidden />
+              {variant}
+            </Button>
+          ))}
+          <Button variant={variant} disabled>
+            {variant}
+          </Button>
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByRole('button')).toHaveLength(VARIANTS.length * (SIZES.length + 1))
+  },
+}

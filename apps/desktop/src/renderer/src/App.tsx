@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Rail } from '@/components/rail'
+import { Rail } from '@/domains/rail/components'
 import { useSessionStore } from '@/sessionStore'
 
 // Container: wires the projection bridge into the store, then renders the rail as a

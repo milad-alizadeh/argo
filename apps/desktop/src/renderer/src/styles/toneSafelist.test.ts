@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, it } from 'vitest'
-import { RAIL_TONES } from '@/ship'
+import { RAIL_TONES } from '@/shared/ship'
 
 // The `text-tone-${tone}` classes are built at runtime, so Tailwind never sees them as
 // literals — the `@source inline(...)` safelist in globals.css is the only thing that
