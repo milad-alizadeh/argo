@@ -1,10 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, within } from 'storybook/test'
 import { Button } from './button'
-import { GitPullRequestIcon } from './icons'
+import { ArrowBendDownRightIcon, GitPullRequestIcon } from './icons'
 import { Text } from './Text'
 
-const VARIANTS = ['primary', 'ghost', 'review-secondary'] as const
+const VARIANTS = [
+  'primary',
+  'ghost',
+  'review-secondary',
+  'verdict-changes',
+  'verdict-approve',
+] as const
+
+const SIZES = ['default', 'sm'] as const
 
 const meta = {
   title: 'UI/Button',
@@ -13,6 +21,7 @@ const meta = {
   // cva surfaces the variant union as a plain string, so the control has to be declared here.
   argTypes: {
     variant: { control: 'select', options: VARIANTS },
+    size: { control: 'select', options: SIZES },
     disabled: { control: 'boolean' },
     asChild: { control: 'boolean' },
     children: { control: 'text' },
@@ -64,16 +73,23 @@ export const WithIcon: Story = {
   },
 }
 
-// The whole variant union in one frame, enabled over disabled — the visual-diff surface.
+// The whole variant union across both sizes, enabled over disabled — the visual-diff
+// surface. Verdict tones carry their weight in the tint, so they take a glyph the way the
+// controls that wedge into a review row do.
 export const AllVariants: Story = {
   render: () => (
     <div className="flex flex-col gap-gap">
       {VARIANTS.map((variant) => (
         <div className="flex items-center gap-gap" key={variant}>
-          <Text variant="meta" className="w-32 text-foreground-faint">
+          <Text variant="meta" className="w-36 text-foreground-faint">
             {variant}
           </Text>
-          <Button variant={variant}>{variant}</Button>
+          {SIZES.map((size) => (
+            <Button key={size} variant={variant} size={size}>
+              <ArrowBendDownRightIcon aria-hidden />
+              {variant}
+            </Button>
+          ))}
           <Button variant={variant} disabled>
             {variant}
           </Button>
@@ -82,6 +98,7 @@ export const AllVariants: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getAllByRole('button')).toHaveLength(VARIANTS.length * 2)
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByRole('button')).toHaveLength(VARIANTS.length * (SIZES.length + 1))
   },
 }

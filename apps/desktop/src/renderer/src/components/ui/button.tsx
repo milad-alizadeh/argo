@@ -5,39 +5,56 @@ import type * as React from 'react'
 import { cn } from '@/lib/utils'
 import { TYPE_ROLE_CLASS } from './Text'
 
-// Shared with AddressButton, whose verdict tones can't join a variant map the inventory
-// freezes at three. The type role sits on the control itself because a glyph's box is 1em:
-// it tracks the control's type, not the label's.
+// The type role sits on the control itself because a glyph's box is 1em: it tracks the
+// control's type, not the label's.
 // Padding is deliberately NOT here: tailwind-merge only de-dupes the classes it knows, and
 // the spacing roles are ours, so a `px-gap` further down the string would land beside
-// `px-inset` instead of replacing it. Each control states its own box.
-export const CONTROL_BASE = `inline-flex shrink-0 cursor-pointer items-center justify-center gap-snug whitespace-nowrap rounded-lg border ${TYPE_ROLE_CLASS['row-strong']} transition-[color,background-color,border-color] duration-fast outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-40`
+// `px-inset` instead of replacing it. Each size states the whole box.
+const CONTROL_BASE = `inline-flex shrink-0 cursor-pointer items-center justify-center gap-snug whitespace-nowrap rounded-lg border ${TYPE_ROLE_CLASS['row-strong']} transition-[color,background-color,border-color] duration-fast outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-40`
 
 // `asChild` hands the children straight to a Slot, so a Button cannot wrap its label in
 // <Text> without breaking prop merging; it composes the role class from Text's map instead.
-const buttonVariants = cva(`${CONTROL_BASE} px-inset py-snug`, {
+const buttonVariants = cva(CONTROL_BASE, {
   variants: {
+    // Tones are named after the token they spend, never after the state a caller is in:
+    // a finding that is `open` wears `verdict-changes` here and `verdict-block` on its
+    // chip, so a state word in this map would be a lie on one of the two surfaces.
     variant: {
       // The gradient is the screen's ONE primary (R2) — it belongs to the head node's
       // drawer. Disabled drops the gradient: a dead control must not read as the primary.
       primary:
         'border-primary/55 bg-linear-to-br from-primary-bright to-primary text-primary-foreground disabled:border-border disabled:bg-none disabled:text-muted-foreground',
       ghost:
-        'border-border bg-transparent text-muted-foreground hover:border-input hover:text-foreground',
+        'border-border bg-transparent text-muted-foreground hover:border-input hover:bg-foreground/4 hover:text-foreground',
       // Review-tab controls are all secondary — shipping belongs to the ribbon's gate.
       'review-secondary':
         'border-input bg-foreground/4 text-foreground-bright hover:border-primary',
+      // Verdict-tinted controls: a 55% border over a 12% wash that deepens to 24% on
+      // hover, so the tint carries the weight the primary's gradient would.
+      'verdict-changes':
+        'border-verdict-changes-tint/55 bg-verdict-changes-tint/12 text-foreground hover:border-verdict-changes-tint hover:bg-verdict-changes-tint/24',
+      'verdict-approve':
+        'border-verdict-approve-tint/55 bg-verdict-approve-tint/12 text-foreground hover:border-verdict-approve-tint hover:bg-verdict-approve-tint/24',
+    },
+    size: {
+      default: 'px-inset py-snug',
+      // The tighter box for a control wedged into a dense row — under a diff hunk, the
+      // control has to give the code back its room.
+      sm: 'px-gap py-tight',
     },
   },
   // Ghost, not primary: R2 allows one primary per screen, so a caller opts into it.
-  defaultVariants: { variant: 'ghost' },
+  defaultVariants: { variant: 'ghost', size: 'default' },
 })
 
-// Atom: the cockpit's labelled control. Three variants and one size — icon-only controls
-// (rail header, work tabs) are their own components, not a size of this one.
+export type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>
+
+// Atom: the cockpit's labelled control. Icon-only controls (rail header, work tabs) are
+// their own components, not a size of this one.
 function Button({
   className,
   variant = 'ghost',
+  size = 'default',
   asChild = false,
   ...props
 }: React.ComponentProps<'button'> &
@@ -52,7 +69,8 @@ function Button({
     <Comp
       data-slot="button"
       data-variant={variant}
-      className={cn(buttonVariants({ variant }), className)}
+      data-size={size}
+      className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />
   )
