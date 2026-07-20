@@ -3,7 +3,7 @@
 The build contract extracted from the settled study `cockpit.html` (per
 `rules/design-studies.md` "Ship the inventory"). `/componentize-design` consumes this
 file to scaffold the real components — names, tiers, and props below are fixed; the
-study's markup/CSS are disposable. Behavior — ribbon rules R1–R15, the session state
+study's markup/CSS are disposable. Behavior — ribbon rules R1–R16, the session state
 table S0–S11, and pane anatomy — lives in `cockpit-matrix.md`; this file covers only
 *what* the components are.
 

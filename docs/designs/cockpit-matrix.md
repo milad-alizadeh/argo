@@ -12,6 +12,9 @@ unpushed: n         local commits not on origin
 head_sha            tip of the session branch
 pr: null | { num, state: open|merged|closed, base: main }
 ci: null | { status: running|passed|failed, sha, runs[] }      GitHub Actions, keyed to a sha
+                    runs[] = one row per check { name, status, duration, note? };
+                    the aggregate line ("1 running · 2 passed") derives from it —
+                    the CI node's sub-label is its first segment (S4, S5)
 review: rounds[] of { by, verdict: running|approved|changes, sha, findings }
 agent: working|idle
 policy: { create_pr: ask|auto, merge: ask|auto, push_after_pr: manual|auto }
@@ -51,10 +54,38 @@ a node — it is the sync affordance on Commits.
 - **R9 · single home per fact** — branch string typed exactly once (header
   WorkspaceIdentity chip). Allowed echoes: rail-row `⎇ branch · tree` line,
   `→ main` on PR surfaces (only once a PR exists), and the rail row's
-  `PR #n · <lifecycle word>` — triage needs it. PR number's home is the ribbon
-  strip anchor.
+  `PR #n · CI` word (R16 row 11) — triage needs it. PR number's home is the
+  ribbon strip anchor.
 - **R10 · motion budget** — one animation: the head node, only when `◆`/`✗`
-  (stalled on a human). Otherwise the single top needs-you rail dot.
+  (stalled on a human). Otherwise the single top amber attention dot in the rail.
+- **R16 · rail vocabulary** — the rail row carries exactly ONE status word, and a
+  ship state's word **replaces** the lifecycle word rather than appending a detail
+  to it. The lifecycle word (`Running` · `Needs input` · `Done` · `Failed` ·
+  `Queued` · `Orphaned`) is the *fallback*, rendered only when no ship state has a
+  claim on the row. Claims resolve against the ribbon's node states, first match
+  wins:
+
+  | # | claim | word |
+  |---|---|---|
+  | 1 | terminal merged / closed (R8) | `Landed` · `Closed` |
+  | 2 | CI node `✗` — failed **and fresh** (a stale fail is `⍚`, R3) | `CI failing` |
+  | 3 | Review node `✗` — verdict `changes` | `Changes requested` |
+  | 4 | Merge gate open | `Ready to merge` |
+  | 5 | Merge gate delegated (R6) | `Auto-merge armed` |
+  | 6 | Commits `◆` — `dirty > 0`, agent idle | `Commit ready` |
+  | 7 | Commits `● ↑n` — clean tree, `unpushed > 0` post-PR (R5) | `↑n unpushed` |
+  | 8 | PR gate open (R4) | `Create PR ready` |
+  | 9 | PR gate delegated (R6) | `Opening PR · auto` |
+  | 10 | Review round running | `In review` |
+  | 11 | a PR exists, no stage claims the row | `PR #n · CI` |
+  | 12 | — | the lifecycle word |
+
+  Rows 6 and 7 are ordered but never both true: dirty wins, so a dirty tree with
+  unpushed commits reads `Commit ready`.
+
+  The word is a pointer into the head node, never a value: `Commit 3 files` and
+  `Push 1` are the ribbon's control labels; beside them the rail says `Commit
+  ready` / `↑1 unpushed`.
 
 ## Executor split
 
@@ -71,22 +102,23 @@ the only pusher, and only through a gate or R5 sync.
 ## State table
 
 Columns: ribbon (C=Commits, P=PR, I=CI, R=Review, M=Merge) · head · primary
-control (executor) · rail row state.
+control (executor) · rail row state. The Rail column is the single word R16
+resolves to — never the control's label, never a lifecycle word plus a detail.
 
 | ID | Given | C | P | I | R | M | Head | Control | Rail |
 |----|-------|---|---|---|---|---|------|---------|------|
 | S0 | clean tree, no commits | — no ribbon — | | | | | — | — | Running |
 | S1 | dirty 3 · agent working | ● 3 dirty | ◌ | ◌ | ◌ | ◌ | C | none (R2) | Running |
-| S2 | dirty 3 · agent idle | ◆ | ◌ | ◌ | ◌ | ◌ | C | `[⎇ Commit 3 files]` (app) | Needs you |
-| S3 | commits ✓ · no PR | ✓ | ◆ | ◌ | ◌ | ◌ | P | `[⇄ Create PR → main]` (YOU) | Needs you |
-| S3b | S3 · `create_pr: auto` | ✓ | ● creating… ⚙ | ◌ | ◌ | ◌ | P | none (R6) | Running |
-| S4 | PR #42 · CI running | ✓ | ✓ | ● 2/4 | ◌ | ◌ | I | none | Running · PR #42 |
-| S5 | CI failed 1/4 | ✓ | ✓ | ✗ | ◌ | ◌ | I | `[Fix CI]` (agent) · `[↻ Re-run]` (app) | Needs you · CI failed |
-| S6 | CI ✓ · review round n running | ✓ | ✓ | ✓ | ● | ◌ | R | none | Running |
-| S7 | changes requested · 2 open | ✓ | ✓ | ✓ | ✗ | ◌ | R | `[Address 2]` (agent) | Needs you |
-| S8 | approved · all fresh | ✓ | ✓ | ✓ | ✓ | ◆ | M | `[⇄ Merge #42]` → confirm (YOU) | Needs you · ready |
-| S8b | S8 · `merge: auto` | ✓ | ✓ | ✓ | ✓ | ● auto ⚙ | M | none (R6) | Running |
-| S9 | +1 commit while PR open | ● ↑1 | ✓ | ⍚ | ⍚ | locked | C | `[↑ Push 1]` (app, R5) | Running |
+| S2 | dirty 3 · agent idle | ◆ | ◌ | ◌ | ◌ | ◌ | C | `[⎇ Commit 3 files]` (app) | Commit ready |
+| S3 | commits ✓ · no PR | ✓ | ◆ | ◌ | ◌ | ◌ | P | `[⇄ Create PR → main]` (YOU) | Create PR ready |
+| S3b | S3 · `create_pr: auto` | ✓ | ● creating… ⚙ | ◌ | ◌ | ◌ | P | none (R6) | Opening PR · auto |
+| S4 | PR #42 · CI `1 running · 2 passed` | ✓ | ✓ | ● 1 running | ◌ | ◌ | I | none | PR #42 · CI |
+| S5 | CI `1 failed · 2 passed` | ✓ | ✓ | ✗ 1 failed | ◌ | ◌ | I | `[Fix CI]` (agent) · `[↻ Re-run]` (app) | CI failing |
+| S6 | CI ✓ · review round n running | ✓ | ✓ | ✓ | ● | ◌ | R | none | In review |
+| S7 | changes requested · 2 open | ✓ | ✓ | ✓ | ✗ | ◌ | R | `[Address 2]` (agent) | Changes requested |
+| S8 | approved · all fresh | ✓ | ✓ | ✓ | ✓ | ◆ | M | `[⇄ Merge #42]` → confirm (YOU) | Ready to merge |
+| S8b | S8 · `merge: auto` | ✓ | ✓ | ✓ | ✓ | ● auto ⚙ | M | none (R6) | Auto-merge armed |
+| S9 | +1 commit while PR open | ● ↑1 | ✓ | ⍚ | ⍚ | locked | C | `[↑ Push 1]` (app, R5) | ↑1 unpushed |
 | S10 | merged | — terminal card: squash sha · by · when — | | | | | — | `[▸ Next ticket from main]` | Landed |
 | S11 | closed w/o merge | — terminal card: closed · reason — | | | | | — | `[▸ New session from main]` | Closed |
 
