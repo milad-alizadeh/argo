@@ -30,6 +30,17 @@ A file exports exactly one of: a state machine, an actor, a React component, a h
 a class, or a top-level function. Soft ceiling of ~150 lines (machines and pure data
 files exempt).
 
+## Names are words, not abbreviations
+
+Spell identifiers out: `percentage` not `pct`, `context` not `ctx`, `configuration`
+not `cfg`, `repository` not `repo`, `worktree` not `wt`. This covers component names,
+props, variables, CSS classes **and user-visible labels** — a gauge labelled `CTX` is
+as unreadable as a prop named `pct`.
+
+Two exceptions: an acronym that is the domain's own name (`URL`, `HTML`, `ID`, `PR`,
+`API`, `CI`), and a name the platform fixes for you (`ref`, `props`, `args`). Those
+still follow the casing rule — `sessionId`, `prUrl`, never `sessionID` / `PRUrl`.
+
 ## File naming — cased by what the file exports
 
 | Thing | Case | Example |

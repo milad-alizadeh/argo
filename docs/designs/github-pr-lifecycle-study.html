@@ -34,7 +34,7 @@
       .board-h .n {
         width: 18px; height: 18px; flex: none; display: grid; place-items: center;
         border-radius: 999px; background: var(--accent); color: var(--primary);
-        font: var(--type-tag-weight) var(--type-tag) / 1 var(--sans);
+        font: var(--type-tag-weight) var(--type-tag) / var(--type-tag-leading) var(--sans);
       }
       .caption {
         color: var(--muted-foreground);
@@ -50,7 +50,8 @@
         font: var(--type-meta-weight) var(--type-meta) / var(--type-meta-leading) var(--sans);
         letter-spacing: var(--type-meta-tracking);
       }
-      .propose::before { content: "PROPOSE — "; color: var(--amber-500); font-weight: 700; }
+      .propose::before { content: "PROPOSE — "; color: var(--amber-500);
+        font-weight: var(--type-row-strong-weight); }
 
       /* The panel wrapper — one frosted surface per region (no glass-on-glass;
          inset cards live flat inside). */
@@ -116,15 +117,14 @@
       .srow .meta { color: var(--foreground-faint);
         font: var(--type-meta-weight) var(--type-meta) / var(--type-meta-leading) var(--sans);
         letter-spacing: var(--type-meta-tracking); font-variant-numeric: tabular-nums; }
-      .dot { width: 7px; height: 7px; border-radius: 999px; flex: none; }
+      /* Fill and halo are both currentColor, so a tone class sets one property and the
+         shared `glow` class supplies the halo — the shape the app's StatusDot ships. */
+      .dot { width: var(--space-gap); height: var(--space-gap); border-radius: 999px; flex: none;
+        background: currentColor; }
       .working { color: var(--status-working); }
-      .dot.working { background: var(--status-working); box-shadow: 0 0 8px color-mix(in srgb, var(--status-working) 60%, transparent); }
       .attn { color: var(--status-awaiting-input); }
-      .dot.attn { background: var(--status-awaiting-input); box-shadow: 0 0 8px color-mix(in srgb, var(--status-awaiting-input) 55%, transparent); }
       .fail { color: var(--status-failed); }
-      .dot.fail { background: var(--status-failed); box-shadow: 0 0 8px color-mix(in srgb, var(--status-failed) 55%, transparent); }
       .landed { color: var(--verdict-approve); }
-      .dot.landed { background: var(--verdict-approve); box-shadow: 0 0 7px color-mix(in srgb, var(--verdict-approve) 55%, transparent); }
 
       /* ── PR card (Variation A) — the mstage grown into a stateful card ── */
       .prcard {
@@ -147,7 +147,8 @@
         border-bottom: 1px solid var(--inset-hair);
         font: var(--type-row-strong-weight) var(--type-row-strong) / var(--type-row-strong-leading) var(--sans);
       }
-      .pr-h .num { color: var(--foreground-faint); font-family: var(--mono); font-weight: 400; }
+      .pr-h .num { color: var(--foreground-faint); font-family: var(--mono);
+        font-weight: var(--type-code-inline-weight); }
       .pr-h .gh {
         display: inline-flex; align-items: center; gap: 3px; flex: none;
         color: var(--primary); cursor: pointer;
@@ -263,7 +264,8 @@
         background: var(--inset-hair); }
       .rnode.active { background: color-mix(in srgb, var(--primary) 10%, transparent); }
       .rnode .glyph { width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center;
-        border: 1px solid var(--border); color: var(--muted-foreground); font-size: 11px; }
+        border: 1px solid var(--border); color: var(--muted-foreground);
+        font-size: 11px; /* icon box — container-sized, outside the type ramp */ }
       .rnode.done .glyph { color: var(--green-950); background: var(--green-500); border-color: transparent; }
       .rnode.now .glyph { color: var(--primary-foreground);
         background: linear-gradient(135deg, var(--indigo-400), var(--primary)); border-color: transparent; }
@@ -318,7 +320,7 @@
           <div class="srow">
             <div class="t"><span class="sic working"><svg class="ic"><use href="#i-git-diff"/></svg></span>
               <span class="ttl">Auth refactor</span><span class="grow"></span>
-              <span class="stw">PR #42 · CI <span class="dot working"></span></span></div>
+              <span class="stw">PR #42 · CI <span class="dot glow working"></span></span></div>
             <div class="slot">Pushed · checks running (2 of 4)</div>
             <div class="meta">Sonnet · 118K tokens · 12m</div>
           </div>
@@ -327,7 +329,7 @@
           <div class="srow">
             <div class="t"><span class="sic attn"><svg class="ic"><use href="#i-warning"/></svg></span>
               <span class="ttl">Why is CI flaky</span><span class="grow"></span>
-              <span class="stw attn">CI failing <span class="dot attn"></span></span></div>
+              <span class="stw attn">CI failing <span class="dot glow attn"></span></span></div>
             <div class="slot attn">e2e failed on #39 — needs you</div>
             <div class="meta">Opus · 64K tokens · 8m</div>
           </div>
@@ -336,7 +338,7 @@
           <div class="srow">
             <div class="t"><span class="sic attn"><svg class="ic"><use href="#i-binoculars"/></svg></span>
               <span class="ttl">Landing hero re…</span><span class="grow"></span>
-              <span class="stw attn">2 requested <span class="dot attn"></span></span></div>
+              <span class="stw attn">2 requested <span class="dot glow attn"></span></span></div>
             <div class="slot">Changes requested on #41 by @sam</div>
             <div class="meta">Sonnet · 402K tokens · 33m</div>
           </div>
@@ -345,7 +347,7 @@
           <div class="srow">
             <div class="t"><span class="sic landed"><svg class="ic"><use href="#i-git-merge"/></svg></span>
               <span class="ttl">Token store schema</span><span class="grow"></span>
-              <span class="stw landed">Landed <span class="dot landed"></span></span></div>
+              <span class="stw landed">Landed <span class="dot glow landed"></span></span></div>
             <div class="slot landed">Merged #38 into main · 2h ago</div>
             <div class="meta">Sonnet · 96K tokens · start follow-up?</div>
           </div>
@@ -354,7 +356,7 @@
           <div class="srow">
             <div class="t"><span class="sic working"><svg class="ic"><use href="#i-circle-notch" class="spin"/></svg></span>
               <span class="ttl">Legacy token cleanup</span><span class="grow"></span>
-              <span class="stw working">Working <span class="dot working"></span></span></div>
+              <span class="stw working">Working <span class="dot glow working"></span></span></div>
             <div class="slot">Editing legacy.ts — no PR yet</div>
             <div class="meta">Sonnet · 37K tokens · 26m</div>
           </div>
@@ -444,14 +446,14 @@
             <span class="synced">latest commit 41ce2f0 + 1 uncommitted</span></div>
           <div class="checkscard" data-component="BranchChecksCard">
             <div class="cs-sec">
-              <div class="cs-lbl">Local <span class="grow"></span><span class="src">Argo · this working tree</span></div>
+              <div class="cs-lbl">Local <span class="src">· Argo · this working tree</span></div>
               <div class="cirow"><span class="cg warn-g"><svg class="ic"><use href="#i-warning"/></svg></span><span class="cn">Lint</span><span class="grow"></span><span class="ct warn-g">2 warnings</span></div>
               <div class="cirow"><span class="cg run-g"><svg class="ic spin"><use href="#i-circle-notch"/></svg></span><span class="cn">Typecheck</span><span class="grow"></span><span class="ct">checking…</span></div>
               <div class="cirow"><span class="cg pass"><svg class="ic"><use href="#i-check"/></svg></span><span class="cn">Tests</span><span class="grow"></span><span class="ct">7 passed</span></div>
               <div class="cirow"><span class="cg warn-g"><svg class="ic"><use href="#i-binoculars"/></svg></span><span class="cn">Review</span><span class="grow"></span><span class="ct warn-g">changes · 2</span></div>
             </div>
             <div class="cs-sec">
-              <div class="cs-lbl">GitHub CI <span class="grow"></span><span class="src">#42 · derived · open ↗</span></div>
+              <div class="cs-lbl">GitHub CI <span class="src">· #42 · derived · open ↗</span></div>
               <div class="cirow"><span class="cg pass"><svg class="ic"><use href="#i-check"/></svg></span><span class="cn">build</span><span class="grow"></span><span class="ct">18s</span><span class="open">open ↗</span></div>
               <div class="cirow"><span class="cg pass"><svg class="ic"><use href="#i-check"/></svg></span><span class="cn">lint</span><span class="grow"></span><span class="ct">9s</span><span class="open">open ↗</span></div>
               <div class="cirow"><span class="cg fail-g"><svg class="ic"><use href="#i-x"/></svg></span><span class="cn">e2e</span><span class="grow"></span><span class="ct fail-g">failed · login flow</span><span class="open">open ↗</span></div>

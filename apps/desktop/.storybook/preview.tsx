@@ -1,27 +1,46 @@
 import type { Preview } from '@storybook/react-vite'
 import { createElement, type ReactElement } from 'react'
+import { themes } from 'storybook/theming'
 import '../src/renderer/src/styles/globals.css'
 
+// globals.css paints `body` with `bg-background`, and only the root element can put that
+// in dark mode — on a decorator instead, the body stays light and flashes white on every
+// navigation. index.html does the same.
+document.documentElement.classList.add('dark')
+
 const preview: Preview = {
-  // The Cockpit is dark-first (index.html sets <html class="dark">); mirror that in
-  // Storybook so components render against the same tokens they ship with. Authored with
+  // The props table is generated from the TSDoc on each component's props type, so that is
+  // where a prop is documented.
+  tags: ['autodocs'],
+
   // createElement rather than JSX because Storybook config is type-checked under the node
-  // tsconfig (no jsx flag).
+  // tsconfig (no jsx flag). A docs page stacks one wrapper per story, so the
+  // canvas-filling height belongs to the story view only.
   decorators: [
-    (Story): ReactElement =>
+    (Story, context): ReactElement =>
       createElement(
         'div',
         {
           className:
-            'dark bg-background text-foreground flex min-h-screen items-center justify-center',
+            context.viewMode === 'docs'
+              ? 'flex items-center justify-center p-region'
+              : 'flex min-h-screen items-center justify-center',
         },
         createElement(Story),
       ),
   ],
   parameters: {
-    // Let the dark decorator fill the whole canvas (it centres the story itself) instead
-    // of shrink-wrapping the component into a dark box on Storybook's default white.
+    // Set twice because they are two surfaces: manager.ts themes the Storybook chrome,
+    // this themes the generated docs page inside the preview iframe.
+    docs: { theme: themes.dark },
+
+    // Let the decorator fill the whole canvas instead of Storybook's padded, white-backed box.
     layout: 'fullscreen',
+
+    // The addon paints its own swatch (a lighter gray than --background) over the canvas,
+    // making every story lie about its contrast. The cockpit has ONE background and it
+    // comes from the token contract, so the toggle is removed rather than re-pointed.
+    backgrounds: { disable: true },
     controls: {
       matchers: {
         color: /(background|color)$/i,
@@ -29,12 +48,8 @@ const preview: Preview = {
       },
     },
 
-    a11y: {
-      // 'todo' - show a11y violations in the test UI only
-      // 'error' - fail CI on a11y violations
-      // 'off' - skip a11y checks entirely
-      test: 'todo',
-    },
+    // 'todo' surfaces violations in the test UI without failing CI ('error' would).
+    a11y: { test: 'todo' },
   },
 }
 

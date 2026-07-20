@@ -126,6 +126,27 @@
   --transition-duration-fast: var(--time-fast);
   --transition-duration-slow: var(--time-slow);
   --transition-duration-pulse: var(--time-pulse);
+
+  /* animate-pulse-status — the screen's ONE animation budget (at most one pulsing
+   * element per render). Pair it with motion-safe:. */
+  --animate-pulse-status: pulse-status var(--time-pulse) ease-in-out infinite;
+}
+
+@keyframes pulse-status {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: var(--pulse-dim);
+  }
+}
+
+/* The lit halo on a live signal. Colour is taken from the element's own currentColor,
+ * so one utility covers every status tone — pair it with a text-* colour class. */
+@utility glow {
+  box-shadow: 0 0 var(--glow-blur)
+    color-mix(in srgb, currentColor var(--glow-strength), transparent);
 }
 
 /* The shared icon sizing convention (`size: default | sm` in the inventory), the app's

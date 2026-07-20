@@ -46,6 +46,10 @@ what carry a design across frameworks; value names are drift with extra steps.
 - The set of roles is deliberately small (roughly: micro / label / body /
   body-lg / title / display). A new role needs a reason an existing one can't
   cover — "this looked 0.5px better in one spot" is a snap, not a new role.
+- **A type role reaches the screen through the `Text` atom, never as a class typed
+  at a call site.** `className="text-meta"` is a violation exactly the way
+  `bg-[#4a5ee0]` is — and so is a bare string in a `div` that inherits its type.
+  See `ui-components.md`, "All rendered text is a `Text`".
 
 ## Drift — fix the contract, not the symptom
 

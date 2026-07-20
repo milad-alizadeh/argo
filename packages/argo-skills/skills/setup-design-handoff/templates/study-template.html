@@ -4,25 +4,23 @@
        PROPOSAL — mark it "PROPOSAL" in a comment; it snaps or gets promoted at settle
      · every meaningful region carries data-component="PascalCaseName" — that name is
        final: it becomes the component file, its stories, and its ticket
-     · repeated shapes: add a render function to kit.js and call it, don't copy markup -->
+     · repeated shapes: add a render function to kit.js and call it, don't copy markup
+     · type comes from a .text-<role> class in tokens.css, never a `font:` declaration
+       here — that mirrors the app, where type is applied by the one Text component -->
 <html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
     <title>STUDY — screen name</title>
     <link rel="stylesheet" href="./tokens.css" />
     <style>
-      body {
-        background: var(--background);
-        color: var(--foreground);
-        font: var(--text-body);
-      }
+      /* Study-local layout only — colour and spacing from tokens, type from role classes. */
       .panel {
         background: var(--panel);
         border-radius: var(--radius);
+        padding: var(--space-inset);
       }
       .panel h2 {
-        font: var(--text-label);
-        letter-spacing: var(--tracking-label);
+        margin: 0;
         color: var(--muted-foreground);
       }
     </style>
@@ -30,7 +28,8 @@
   <body>
     <main data-component="ExampleScreen">
       <section class="panel" data-component="ExamplePanel">
-        <h2>Section label</h2>
+        <h2 class="text-label">Section label</h2>
+        <p class="text-body">Row copy uses the settled ladder — no bespoke sizes.</p>
         <!-- rows via kit.js: document.write / DOM-append from named render fns -->
       </section>
     </main>
