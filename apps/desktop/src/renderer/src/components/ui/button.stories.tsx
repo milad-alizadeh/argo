@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { Button } from './button'
 import { ArrowBendDownRightIcon, GitPullRequestIcon, XIcon } from './icons'
 import { Text } from './Text'
@@ -61,6 +61,13 @@ export const Default: Story = {
     await expect(button).toHaveClass('text-row-strong')
     // The motion role has to resolve to the contract's --time-fast, not to a Tailwind default.
     await expect(getComputedStyle(button).transitionDuration).toBe('0.15s')
+
+    // The ring is gone by product decision — neither a mouse click nor keyboard focus
+    // may paint one, and no UA default may fill the gap it left.
+    await userEvent.click(button)
+    await expect(getComputedStyle(button).outlineStyle).toBe('none')
+    button.focus()
+    await expect(getComputedStyle(button).outlineStyle).toBe('none')
   },
 }
 
@@ -100,7 +107,8 @@ export const Quiet: Story = {
 /**
  * `bare` spends nothing — no box, no ink — for a control nested inside a chip its parent
  * already paints. It still carries the ladder's interaction, which is the whole point:
- * cursor and focus ring come from the primitive rather than being re-typed at the call site.
+ * cursor and disabled handling come from the primitive rather than being re-typed at the
+ * call site.
  */
 export const Bare: Story = {
   args: { variant: 'bare', size: 'none' },

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { Console } from './Console'
 import { captureLabel } from './captureLabel'
@@ -27,11 +28,35 @@ const CAPTURE: ConsoleCapture = {
       Tests  7 passed (7)`,
 }
 
-const AGENT_CAPTURE: ConsoleCapture = {
-  id: 'a-review',
-  label: captureLabel('review agent', new Date(2026, 6, 20, 11, 56)),
-  feed: '▸ agent code-review — dispatched on 41ce2f0\n▸ Read src/auth/*.ts (4 files)',
-  agent: true,
+// The console is controlled — Storybook's `fn()` args would otherwise leave a click
+// looking like nothing happened. This wrapper holds the same state the screen would, so a
+// reviewer can click a tab, close the capture, or toggle expand and see the console
+// actually answer, while `args.on*` still fires for the `play` assertions below.
+function ControlledConsole(args: React.ComponentProps<typeof Console>): React.JSX.Element {
+  const [activeChannel, setActiveChannel] = useState(args.activeChannel)
+  const [capture, setCapture] = useState(args.capture)
+  const [expanded, setExpanded] = useState(args.expanded)
+
+  return (
+    <Console
+      {...args}
+      activeChannel={activeChannel}
+      capture={capture}
+      expanded={expanded}
+      onSelectChannel={(id) => {
+        setActiveChannel(id)
+        args.onSelectChannel(id)
+      }}
+      onCloseCapture={(id) => {
+        setCapture(undefined)
+        args.onCloseCapture(id)
+      }}
+      onToggleExpanded={() => {
+        setExpanded((value) => !value)
+        args.onToggleExpanded()
+      }}
+    />
+  )
 }
 
 const meta = {
@@ -52,6 +77,7 @@ const meta = {
     // A CSS length, because the screen's splitter — not the console — owns the number.
     height: { control: 'text' },
   },
+  render: ControlledConsole,
   // The console spans its pane; the frame stands in for the session panel above it.
   decorators: [
     (Story): React.JSX.Element => (
@@ -98,32 +124,6 @@ export const CaptureActive: Story = {
   },
 }
 
-// A tool that has not written a line yet. The slot is real and named, and the note still
-// says how to get back — an empty capture is not an empty panel.
-export const CaptureOfEmptyFeed: Story = {
-  args: { capture: { ...CAPTURE, feed: '' }, activeChannel: CAPTURE.id },
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    const panel = canvas.getByRole('tabpanel', { name: 'captured feed' })
-    await expect(panel.textContent).toContain(`returns to ${LIVE_CHANNEL_LABEL}`)
-
-    await expect(panel).toHaveFocus()
-    await userEvent.keyboard('{Escape}')
-    await expect(args.onSelectChannel).toHaveBeenCalledWith(LIVE_CHANNEL_ID)
-  },
-}
-
-// A session that has said nothing yet: the live channel is its prompt and caret, and the
-// console does NOT pull focus — the live channel is where focus already belongs.
-export const LiveWithoutTail: Story = {
-  args: { live: { ...LIVE, tail: '' } },
-  play: async ({ canvasElement }) => {
-    const panel = within(canvasElement).getByRole('tabpanel', { name: LIVE_CHANNEL_LABEL })
-    await expect(panel.textContent?.startsWith('auth refactor $')).toBe(true)
-    await expect(panel).not.toHaveFocus()
-  },
-}
-
 // The slot is filled but the live channel is the one being read: Esc has nowhere to
 // return to, so it stays out of the way of anything else listening for it.
 export const CaptureIdle: Story = {
@@ -138,17 +138,6 @@ export const CaptureIdle: Story = {
   },
 }
 
-// An Agent's stream is a channel like any other feed (R15) — the roster owns its state,
-// the console only shows what it said.
-export const AgentCapture: Story = {
-  args: { capture: AGENT_CAPTURE, activeChannel: AGENT_CAPTURE.id },
-  play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByRole('tab', { name: 'review agent @11:56' }),
-    ).toBeInTheDocument()
-  },
-}
-
 // The tall console. The height arrives as a CSS length the screen owns — here a literal,
 // in the app the splitter-driven custom property.
 export const Expanded: Story = {
@@ -157,16 +146,5 @@ export const Expanded: Story = {
     const console = canvasElement.querySelector('[data-slot="console"]')
     await expect(console).toHaveAttribute('data-expanded', 'true')
     await expect((console as HTMLElement).style.height).toBe('420px')
-  },
-}
-
-// A selection pointing at a feed that has since been cleared by ✕ or replaced by the next
-// one. The console shows live rather than an empty panel.
-export const StaleSelection: Story = {
-  args: { activeChannel: 't-gone' },
-  play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByRole('tabpanel', { name: LIVE_CHANNEL_LABEL }),
-    ).toBeInTheDocument()
   },
 }

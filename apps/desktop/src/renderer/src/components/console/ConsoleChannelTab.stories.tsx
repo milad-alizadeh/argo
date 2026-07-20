@@ -4,7 +4,7 @@ import { ConsoleChannelTab } from './ConsoleChannelTab'
 import { CONSOLE_CHANNEL_KINDS, LIVE_CHANNEL_ID, LIVE_CHANNEL_LABEL } from './consoleChannels'
 
 const meta = {
-  title: 'Cockpit/ConsoleChannelTab',
+  title: 'Cockpit/Console/ChannelTab',
   component: ConsoleChannelTab,
   args: {
     id: LIVE_CHANNEL_ID,
@@ -37,6 +37,11 @@ export const Default: Story = {
 
     await userEvent.click(tab)
     await expect(args.onSelect).toHaveBeenCalledWith(LIVE_CHANNEL_ID)
+    // Neither a mouse click nor keyboard focus may paint a ring — the product decision
+    // that overrode it applies here first, since the tab is where it was most visible.
+    await expect(getComputedStyle(tab).outlineStyle).toBe('none')
+    tab.focus()
+    await expect(getComputedStyle(tab).outlineStyle).toBe('none')
   },
 }
 

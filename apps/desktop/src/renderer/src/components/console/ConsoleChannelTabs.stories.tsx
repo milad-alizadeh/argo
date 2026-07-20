@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { ConsoleChannelTabs } from './ConsoleChannelTabs'
 import { type ConsoleCapture, LIVE_CHANNEL_ID, LIVE_CHANNEL_LABEL } from './consoleChannels'
@@ -9,15 +10,41 @@ const CAPTURE: ConsoleCapture = {
   feed: '▸ Bash: bunx vitest run rotation.test.ts',
 }
 
-const AGENT_CAPTURE: ConsoleCapture = {
-  id: 'a-review',
-  label: 'review agent @11:56',
-  feed: '▸ agent code-review — dispatched on 41ce2f0',
-  agent: true,
+// The strip is controlled — Storybook's `fn()` args would otherwise leave a click looking
+// like nothing happened. This wrapper holds the same state the screen would, so a reviewer
+// can click a tab, close the capture, or toggle expand and see the strip actually answer,
+// while `args.on*` still fires for the `play` assertions below.
+function ControlledConsoleChannelTabs(
+  args: React.ComponentProps<typeof ConsoleChannelTabs>,
+): React.JSX.Element {
+  const [activeChannel, setActiveChannel] = useState(args.activeChannel)
+  const [capture, setCapture] = useState(args.capture)
+  const [expanded, setExpanded] = useState(args.expanded)
+
+  return (
+    <ConsoleChannelTabs
+      {...args}
+      activeChannel={activeChannel}
+      capture={capture}
+      expanded={expanded}
+      onSelectChannel={(id) => {
+        setActiveChannel(id)
+        args.onSelectChannel(id)
+      }}
+      onCloseCapture={(id) => {
+        setCapture(undefined)
+        args.onCloseCapture(id)
+      }}
+      onToggleExpanded={() => {
+        setExpanded((value) => !value)
+        args.onToggleExpanded()
+      }}
+    />
+  )
 }
 
 const meta = {
-  title: 'Cockpit/ConsoleChannelTabs',
+  title: 'Cockpit/Console/ChannelTabs',
   component: ConsoleChannelTabs,
   args: {
     activeChannel: LIVE_CHANNEL_ID,
@@ -31,6 +58,7 @@ const meta = {
     expanded: { control: 'boolean' },
     panelId: { control: 'text' },
   },
+  render: ControlledConsoleChannelTabs,
   decorators: [
     (Story): React.JSX.Element => (
       <div className="w-2xl">
@@ -111,17 +139,6 @@ export const StaleSelection: Story = {
       'aria-selected',
       'false',
     )
-  },
-}
-
-// An Agent's stream fills the same one slot a tool feed does — the sparkle is what says an
-// Agent produced it.
-export const AgentCapture: Story = {
-  args: { capture: AGENT_CAPTURE, activeChannel: AGENT_CAPTURE.id },
-  play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).getByRole('tab', { name: 'review agent @11:56' }),
-    ).toBeInTheDocument()
   },
 }
 

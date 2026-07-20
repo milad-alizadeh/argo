@@ -17,7 +17,7 @@ const FEED = `▸ Bash: bunx vitest run rotation.test.ts
 // Typed off the props rather than `typeof ConsoleChannel`: the variants are a discriminated
 // union, and Storybook's arg inference collapses a union component's args to `never`.
 const meta: Meta<ConsoleChannelProps> = {
-  title: 'Cockpit/ConsoleChannel',
+  title: 'Cockpit/Console/Channel',
   component: ConsoleChannel,
   argTypes: { kind: { control: 'select', options: CONSOLE_CHANNEL_KINDS } },
   // The channel fills whatever the console gives it; the frame stands in for that.

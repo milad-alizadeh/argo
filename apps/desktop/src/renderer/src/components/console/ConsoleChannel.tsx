@@ -54,7 +54,7 @@ function feedNodes(feed: string): React.ReactNode {
 // A real xterm pane here MUST import `@xterm/xterm/css/xterm.css` or it renders ghost rows.
 export function ConsoleChannel(props: ConsoleChannelProps): React.JSX.Element {
   const shell = cn(
-    'min-h-0 overflow-auto whitespace-pre-wrap bg-background px-inset py-gap text-foreground-soft outline-none focus-visible:inset-ring focus-visible:inset-ring-ring',
+    'min-h-0 overflow-auto whitespace-pre-wrap bg-background px-inset py-gap text-foreground-soft outline-none',
     props.className,
   )
 

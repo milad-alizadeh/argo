@@ -11,7 +11,7 @@ import { TYPE_ROLE_CLASS } from './Text'
 // instead of replacing it. Each size states the whole box, type role included — a glyph's
 // box is 1em, so it tracks the control's type rather than the label's.
 const CONTROL_BASE =
-  'inline-flex shrink-0 cursor-pointer items-center justify-center gap-snug whitespace-nowrap rounded-lg border transition-[color,background-color,border-color] duration-fast outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-40'
+  'inline-flex shrink-0 cursor-pointer items-center justify-center gap-snug whitespace-nowrap rounded-lg border transition-[color,background-color,border-color] duration-fast outline-none disabled:cursor-not-allowed disabled:opacity-40'
 
 // `asChild` hands the children straight to a Slot, so a Button cannot wrap its label in
 // <Text> without breaking prop merging; it composes the role class from Text's map instead.
