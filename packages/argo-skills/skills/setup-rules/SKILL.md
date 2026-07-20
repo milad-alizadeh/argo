@@ -73,10 +73,11 @@ Detect the values (step 2); don't copy the examples. The full token set:
 |---|---|---|
 | `{{APP_GLOB}}` | app source glob | `apps/desktop/**/*.{ts,tsx}` |
 | `{{MAIN_DIR}}` / `{{RENDERER_DIR}}` | the two non-cross-importing layers | `main/` / `renderer/` (web: `server/` / `client/`) |
-| `{{COMPONENTS_GLOB}}` | components glob | `apps/desktop/src/renderer/src/components/**/*.{ts,tsx}` |
-| `{{COMPONENTS_DIR}}` | components dir (trailing slash) | `apps/desktop/src/renderer/src/components/` |
+| `{{COMPONENTS_GLOB}}` | components glob | `apps/desktop/src/renderer/src/{domains,shared}/**/*.{ts,tsx}` |
+| `{{COMPONENTS_DIR}}` | components dir (trailing slash) | `apps/desktop/src/renderer/src/shared/components/` |
 | `{{RENDERER_GLOB}}` | renderer css/tsx glob | `apps/desktop/src/renderer/src/**/*.{css,tsx,jsx}` |
-| `{{TOKENS_CSS}}` | file holding the `@theme` block | `apps/desktop/src/renderer/src/assets/base.css` |
+| `{{TOKENS_CSS}}` | file holding the `@theme` block | `apps/desktop/src/renderer/src/styles/globals.css` |
+| `{{LOCKFILE}}` | lockfile glob (from step 2) | `**/bun.lock` (pnpm: `**/pnpm-lock.yaml`; npm: `**/package-lock.json`) |
 | `{{PKG_MANAGER}}` | package manager name | `bun` |
 | `{{PKG_ADD}}` / `{{PKG_REMOVE}}` | add/remove commands | `bun add` / `bun remove` |
 | `{{COMPONENT_KIT}}` | how this repo's configured kit supplies primitives | `This is a configured shadcn project (\`components.json\`) — \`bunx shadcn@latest add <name>\` is where a badge, dialog or select comes from.` |
@@ -112,9 +113,10 @@ Keep each file's `paths:` frontmatter — it's how the rule scopes itself to mat
 ## 6. Wire the pointer (so agents actually load them)
 
 Stock Claude Code and Codex do **not** auto-load `rules/*.md` by path-glob. Without a
-pointer the files are inert. Add a **Rules** section to both `CLAUDE.md` and `AGENTS.md`
-at the repo root (this repo is single-context — one of each). Group by concern so a
-backend task isn't pulled into UI rules:
+pointer the files are inert. Add a **Rules** section at the repo root: if `CLAUDE.md` merely
+imports `AGENTS.md` (its whole body is `@AGENTS.md`), put the section in `AGENTS.md` only —
+adding it to both would duplicate it via the import. Otherwise wire both. Group by concern so
+a backend task isn't pulled into UI rules:
 
 ```markdown
 ## Rules

@@ -1,5 +1,5 @@
 {
-  "_comment": "LLM-MAINTAINED MODULE MAP for @argo/desktop. Single source of truth for module boundaries; .dependency-cruiser.cjs turns it into lint rules mechanically — edit this map, never the generated rules. Refresh when the src/ structure changes. Managed by the setup-module-boundaries skill.",
+  "_comment": "LLM-MAINTAINED MODULE MAP for @argo/desktop. Single source of truth for module boundaries; dependency-cruiser.cjs turns it into lint rules mechanically — edit this map, never the generated rules. Refresh when the src/ structure changes. Managed by the setup-module-boundaries skill.",
   "tsConfig": "tsconfig.web.json",
   "exclude": "(^|/)(node_modules|out|dist|build|coverage|test-results|playwright-report|\\.storybook|e2e)/",
   "orphansAreWarnings": true,

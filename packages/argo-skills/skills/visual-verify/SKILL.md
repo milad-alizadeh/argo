@@ -17,8 +17,10 @@ studies, renderer/web source. If nothing renderable changed, say so and stop.
 
 Resolution order — first hit wins:
 
-1. **Project-declared** — a "Visual verification" section in the project's `AGENTS.md`
-   (written by `/setup-visual-verify`) says how to render states. Follow it.
+1. **Project-declared** — IF a "Visual verification" section in the project's `AGENTS.md`
+   spells out how to *render* states, follow it. Such a section may instead document only a
+   CI screenshot gate (baseline diffing) and give no interactive render method — in that
+   case fall through to the next option rather than dead-ending here.
 2. **Storybook** (`.storybook/` exists) — `build-storybook`, serve the static build on a free
    port, and render the changed components' stories via
    `iframe.html?id=<story-id>&viewMode=story`. The affected states are the stories of every
