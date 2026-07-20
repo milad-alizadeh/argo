@@ -68,7 +68,10 @@ try {
       })
     }
 
-    const pinned = entry.skills === '*' ? [...upstream.keys()] : (entry.skills ?? [])
+    const excluded = new Set([].concat(entry.exclude ?? []))
+    const pinned = (entry.skills === '*' ? [...upstream.keys()] : (entry.skills ?? [])).filter(
+      (name) => !excluded.has(name),
+    )
     const watched = Object.keys(sourceBaseline).filter((name) => sourceBaseline[name].watch)
     const tracked = [...new Set([...pinned, ...watched])].sort()
 
@@ -118,7 +121,9 @@ try {
     if (REPORT_NEW.has(entry.source)) {
       const trackedSet = new Set(tracked)
       for (const name of [...upstream.keys()].sort()) {
-        if (trackedSet.has(name)) continue
+        // sourceBaseline check: --update records unadopted skills as seen, so
+        // they report as new once, not on every run.
+        if (trackedSet.has(name) || excluded.has(name) || sourceBaseline[name]) continue
         drift = true
         lines.push(
           `- new upstream skill \`${name}\` — adopt in bundle.json or accept via \`--update\``,
