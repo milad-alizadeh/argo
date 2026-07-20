@@ -22,4 +22,5 @@ export {
   type TextVariant,
   TYPE_ROLE_CLASS,
 } from './Text'
+export { type DisclosureProps, useDisclosure } from './useDisclosure'
 export { WorkspaceIdentity, type WorkspaceTree } from './WorkspaceIdentity'

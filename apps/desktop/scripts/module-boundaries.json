@@ -39,6 +39,12 @@
       "comment": "The renderer's ship-flow presentation: the rail status word (tone, icon) and the `shipState` composition. The ribbon derivation it composes lives in `shared`, so main can drive gates from the same pure code (cockpit-matrix.md R16). No React, no I/O — Views consume the model through this barrel and never re-derive it.",
       "path": "^src/renderer/src/ship/",
       "publicEntry": ["^src/renderer/src/ship/index\\.ts$"]
+    },
+    {
+      "name": "work",
+      "comment": "The Work pane's ship ribbon and node drawers (cockpit-matrix.md's Work region): PrLifecycleRibbon + NodeDrawer, the CI card molecules they compose, and the RibbonNode state→icon/tone vocabulary. Pure Views over the pre-derived `RibbonModel` from `shared` — no re-derivation, so it is not part of the shared `components/ui` kit; the screen composes it through this barrel.",
+      "path": "^src/renderer/src/components/work/",
+      "publicEntry": ["^src/renderer/src/components/work/index\\.ts$"]
     }
   ],
   "layers": {
