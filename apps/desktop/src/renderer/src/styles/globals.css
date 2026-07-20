@@ -142,6 +142,13 @@
   }
 }
 
+/* The lit halo on a live signal. Colour is taken from the element's own currentColor,
+ * so one utility covers every status tone — pair it with a text-* colour class. */
+@utility glow {
+  box-shadow: 0 0 var(--glow-blur)
+    color-mix(in srgb, currentColor var(--glow-strength), transparent);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

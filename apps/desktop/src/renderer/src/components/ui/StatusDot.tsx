@@ -2,9 +2,27 @@ import { cn } from '@/lib/utils'
 import type { SessionStatus } from '@/sessionStore'
 import { SESSION_STATUS, STATUS_TONE, type StatusTone } from './sessionStatus'
 
-type StatusDotProps = { pulse?: boolean; className?: string } & (
-  | { status: SessionStatus; decorative?: boolean; tone?: never; label?: never }
-  | { tone: StatusTone; label?: string; status?: never; decorative?: never }
+type StatusDotProps = {
+  /** Spend the screen's ONE animation budget on this dot. At most one per render. */
+  pulse?: boolean
+  className?: string
+} & (
+  | {
+      /** Key the dot off a Session's lifecycle; its accessible name becomes that status. */
+      status: SessionStatus
+      /** Suppress the accessible name because a visible word already labels the dot. */
+      decorative?: boolean
+      tone?: never
+      label?: never
+    }
+  | {
+      /** Key the dot off a raw cockpit tone. Silent unless `label` names it. */
+      tone: StatusTone
+      /** What the dot means, for a dot that stands alone. */
+      label?: string
+      status?: never
+      decorative?: never
+    }
 )
 
 function presentation(props: StatusDotProps): { tone: StatusTone; label: string | undefined } {
@@ -20,8 +38,8 @@ function presentation(props: StatusDotProps): { tone: StatusTone; label: string 
 export function StatusDot(props: StatusDotProps): React.JSX.Element {
   const { tone, label } = presentation(props)
   const dot = cn(
-    'inline-block size-2 shrink-0 rounded-full',
-    STATUS_TONE[tone].dotClass,
+    'inline-block size-2 shrink-0 rounded-full bg-current glow',
+    STATUS_TONE[tone].textClass,
     props.pulse && 'motion-safe:animate-pulse-status',
     props.className,
   )

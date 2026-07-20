@@ -15,7 +15,10 @@ export function Tag({
   tone,
   className,
 }: {
+  /** Authored lower-case; the type role uppercases it, so the accessible text stays what
+   * the caller wrote. */
   label: string
+  /** Which of the three badge treatments to wear. */
   tone: TagTone
   className?: string
 }): React.JSX.Element {

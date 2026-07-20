@@ -156,6 +156,9 @@
   --shadow-2: color-mix(in srgb, black 12%, transparent);
   --shadow-3: color-mix(in srgb, black 18%, transparent);
   --well: color-mix(in srgb, var(--gray-950) 4%, transparent);
+
+  /* Weaker on light, where a halo reads as blur rather than as light. */
+  --glow-strength: 35%;
 }
 
 /* --------------------------------------------------- semantic roles — dark */
@@ -221,6 +224,8 @@
   --shadow-2: color-mix(in srgb, black 25%, transparent);
   --shadow-3: color-mix(in srgb, black 35%, transparent);
   --well: color-mix(in srgb, black 15%, transparent);
+
+  --glow-strength: 60%;
 }
 
 /* ---- Non-themed families (identical in light and dark, defined once) ---- */
@@ -292,6 +297,11 @@
   --space-gap: 8px;
   --space-inset: 12px;
   --space-region: 16px;
+
+  /* Glow — the lit halo a live signal carries (status dots, the ctx fill). Its
+   * colour is the element's own currentColor, so one utility covers every tone;
+   * only the strength is themed. */
+  --glow-blur: 8px;
 
   /* Motion. `pulse` is the period of the screen's ONE animation budget
    * (at most one pulsing element per render). */

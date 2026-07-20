@@ -68,3 +68,9 @@ body {
 .mono {
   font-family: var(--mono);
 }
+
+/* The lit halo on a live signal — mirrors the app's `glow` utility. The colour is the
+ * element's own currentColor, so one class covers every tone. */
+.glow {
+  box-shadow: 0 0 var(--glow-blur) color-mix(in srgb, currentColor var(--glow-strength), transparent);
+}

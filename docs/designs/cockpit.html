@@ -38,8 +38,8 @@
 
   /* DERIVED — reserved for genuinely estimated values (parsed stdout, snapshot
      diff, token-sum estimate). Exact counts render plain. */
-  .derived{text-decoration:underline dotted;text-decoration-color:var(--foreground-faint);text-underline-offset:2px;text-decoration-thickness:from-font;cursor:help;}
-  .derived.gone{text-decoration:none;color:var(--foreground-faint);}
+  /* An estimate reads as plain text; its provenance lives in the title, not in decoration. */
+  .derived.gone{color:var(--foreground-faint);}
 
   /* ── THE one animation budget: at most one .pulse1 element per render, bound
      to the ribbon's blocked/gate node — or, when the ribbon is quiet, to the
@@ -48,8 +48,8 @@
   @keyframes pulse1{0%,100%{opacity:1;}50%{opacity:.45;}}
 
   /* Rail — cross-session triage: per-row status word, doing-now, workspace
-     echo, CTX, model·tokens·duration. Per-row repetition is the rail's job;
-     it is also the SOLE home of the CTX/model/tokens/duration tuple. */
+     echo, Context, model·tokens·duration. Per-row repetition is the rail's job;
+     it is also the SOLE home of the Context/model/tokens/duration tuple. */
   .rail-h{display:flex;align-items:center;gap:var(--space-gap);padding:13px 14px 9px;color:var(--muted-foreground);font:var(--type-eyebrow-weight) var(--type-eyebrow)/var(--type-eyebrow-leading) var(--sans);letter-spacing:var(--type-eyebrow-tracking);text-transform:uppercase;}
   .rail-h .plus,.proj .plus{margin-left:auto;width:18px;height:18px;border-radius:calc(var(--radius) - 2px);display:grid;place-items:center;color:var(--muted-foreground);border:1px solid var(--border);cursor:pointer;flex:none;}
   .proj{display:flex;align-items:center;gap:7px;padding:5px 14px;color:var(--foreground);font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);cursor:pointer;user-select:none;}
@@ -81,17 +81,18 @@
   .ctxlbl{color:var(--foreground-faint);font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;flex:none;}
   .srow .ctxrow .ctxbar{flex:1;width:auto;}
   .ctxpct{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;flex:none;}
-  .ctxbar{display:inline-block;width:48px;height:5px;border-radius:calc(var(--radius) - 4px);background:var(--border);overflow:hidden;vertical-align:middle;}
-  .ctxbar>span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-bright));}
-  /* Status dots — quiet pass: no glow shadows; the word beside carries state. */
-  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none;}
-  .dot.run{background:var(--status-working);}
-  .dot.amber{background:var(--status-awaiting-input);}
-  .dot.mist{background:var(--status-idle);}
-  .dot.gray{background:var(--status-idle);}
-  .dot.red{background:var(--status-failed);}
-  .dot.stale{background:var(--status-exited);}
-  .dot.landed{background:var(--status-landed);}
+  .ctxbar{display:inline-block;width:48px;height:5px;border-radius:calc(var(--radius) - 4px);background:var(--border);vertical-align:middle;}
+  .ctxbar>span{display:block;height:100%;border-radius:inherit;color:var(--primary-bright);background:linear-gradient(90deg,var(--primary),var(--primary-bright));box-shadow:0 0 var(--glow-blur) color-mix(in srgb, currentColor var(--glow-strength), transparent);}
+  /* Status dots — a lit signal, not a printed bullet. Fill and glow both read
+     currentColor, so a tone class sets one property. */
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none;background:currentColor;box-shadow:0 0 var(--glow-blur) color-mix(in srgb, currentColor var(--glow-strength), transparent);}
+  .dot.run{color:var(--status-working);}
+  .dot.amber{color:var(--status-awaiting-input);}
+  .dot.mist{color:var(--status-idle);}
+  .dot.gray{color:var(--status-idle);}
+  .dot.red{color:var(--status-failed);}
+  .dot.stale{color:var(--status-exited);}
+  .dot.landed{color:var(--status-landed);}
   .dock{margin-top:auto;display:flex;align-items:center;gap:9px;padding:11px 14px;border-top:1px solid var(--border);cursor:pointer;}
   .dock canvas{width:26px;height:26px;border-radius:50%;} .dock .lbl{font:var(--type-row-weight) var(--type-row)/var(--type-row-leading) var(--sans);letter-spacing:var(--type-row-tracking);}
   .dock .state{margin-left:auto;color:var(--foreground-faint);font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;}
@@ -125,7 +126,7 @@
   .inset{background:var(--inset);border:1px solid var(--inset-hair);border-radius:calc(var(--radius) + 4px);box-shadow:0 1px 0 color-mix(in srgb,var(--foreground) 4%,transparent) inset;padding:12px 13px;margin:0 0 12px;}
   .inset.pad0{padding:0;overflow:hidden;}
   .sect-h{display:flex;align-items:center;gap:var(--space-gap);color:var(--muted-foreground);font:var(--type-eyebrow-weight) var(--type-eyebrow)/var(--type-eyebrow-leading) var(--sans);letter-spacing:var(--type-eyebrow-tracking);text-transform:uppercase;margin:2px 2px 8px;}
-  .sect-h .grow{flex:1;} .sect-h .n{color:var(--foreground-faint);letter-spacing:0;text-transform:none;}
+  .sect-h .n{color:var(--foreground-faint);letter-spacing:0;text-transform:none;}
 
   /* Now-line — quiet pass: a one-line strip. No gradient verb tile, no pulse
      ring; "live" is a static word + dot. */
@@ -730,7 +731,7 @@ function railHtml(){
     <div class="t"><span class="sic ${st.cls}" title="${st.word}" aria-label="${st.word}">${ic(st.icon)}</span><span class="ttl" title="${s.title}">${s.title}</span><span class="grow"></span><span class="stw ${st.cls}">${st.word} <span class="dot ${st.cls}${pulse}"></span></span></div>
     <div class="slot" title="${s.slot}">${s.slot}</div>
     ${wsl}
-    <div class="ctxrow"><span class="ctxlbl">CTX</span><span class="ctxbar" title="context window used (estimated)"><span style="width:${s.ctx}%"></span></span><span class="ctxpct derived" title="estimated from token usage ÷ model context window">~${s.ctx}%</span></div>
+    <div class="ctxrow"><span class="ctxlbl">Context</span><span class="ctxbar" title="context window used (estimated)"><span style="width:${s.ctx}%"></span></span><span class="ctxpct derived" title="estimated from token usage ÷ model context window">~${s.ctx}%</span></div>
     <div class="meta" title="${s.meta}">${s.meta}</div></div>`;}).join('');
   return `<div class="panel rail" data-component="SessionRail">
     <div class="rail-h">Projects <span class="plus">${ic('plus')}</span></div>
@@ -749,9 +750,9 @@ function wschipHtml(s){
   const dirMatches=w.dir&&w.dir.split('/').pop()===w.branch.split('/').pop();
   const tag=w.tree==='main'
     ?`<span class="tag">main tree</span>`
-    :dirMatches?`<span class="tag" title="worktree ${w.dir} — named by the branch">wt</span>`
-    :`<span class="tag" title="adopted worktree — dir does not match the branch">wt <span class="mono">${w.dir}</span></span>`;
-  const dirty=w.dirty?`<span class="dirty" title="${w.dirty} uncommitted file${w.dirty>1?'s':''}"><span class="dot amber"></span>${w.dirty} dirty</span>`:'';
+    :dirMatches?`<span class="tag" title="worktree ${w.dir} — named by the branch">worktree</span>`
+    :`<span class="tag" title="adopted worktree — dir does not match the branch">worktree <span class="mono">${w.dir}</span></span>`;
+  const dirty=w.dirty?`<span class="dirty" title="${w.dirty} uncommitted file${w.dirty>1?'s':''}">${w.dirty} dirty<span class="dot amber"></span></span>`:'';
   const parts=[];
   if(w.ahead)parts.push(`↑${w.ahead}`);
   if(w.behind)parts.push(`↓${w.behind}`);
@@ -768,7 +769,7 @@ function nowHtml(s){
   return `<div class="inset nowstrip" data-component="NowLine"><div class="now">
     <span class="nicon">${ic(icon)}</span>
     <div class="line">${line}</div><span class="grow"></span>
-    ${live?`<span class="live"><span class="dot run"></span> live</span>`:''}
+    ${live?`<span class="live">live <span class="dot run"></span></span>`:''}
   </div></div>`;
 }
 
@@ -786,7 +787,7 @@ function chkRow(key,label,c){
 function checksHtml(){
   const latest=COMMITS[COMMITS.length-1].sha, uncommitted=FILES.filter(f=>!f.commit).length;
   return `<div class="inset" data-component="BranchChecksCard">
-    <div class="sect-h" style="margin:0 2px 7px">Checks <span class="n">· ${latest}${uncommitted?` +${uncommitted} uncommitted`:''}</span><span class="grow"></span><span class="branchmeta">Argo · this working tree</span></div>
+    <div class="sect-h" style="margin:0 2px 7px">Checks <span class="n">· ${latest}${uncommitted?` +${uncommitted} uncommitted`:''}</span></div>
     <div class="checks">
       ${chkRow('lint','Lint',BRANCH.lint)}
       ${chkRow('types','Typecheck',BRANCH.types)}
@@ -1289,7 +1290,7 @@ function detailHtml(){
       <span class="dtab on" style="cursor:default">${m.title}</span></div>`;
     if(m.kind==='outcome'){
       const arts=m.artifacts||[];
-      const artBlock=arts.length?`<div class="sect-h" style="margin:0 2px 9px">Artifacts<span class="grow"></span><span class="n">${arts.length}</span></div>${arts.map(artifactCard).join('')}`:'';
+      const artBlock=arts.length?`<div class="sect-h" style="margin:0 2px 9px">Artifacts <span class="n">· ${arts.length}</span></div>${arts.map(artifactCard).join('')}`:'';
       const fileBlock=m.files&&m.files.length?`<div class="sect-h" style="margin:${arts.length?'16px':'2px'} 2px 8px">Files</div>${groupedFiles(m.files)}`:'';
       body=artBlock+fileBlock||`<div class="empty">Nothing captured for this outcome yet.</div>`;
     } else {

@@ -3,17 +3,25 @@ import { createElement, type ReactElement } from 'react'
 import '../src/renderer/src/styles/globals.css'
 
 const preview: Preview = {
+  // Docs for every component without a per-file opt-in — the props table is generated from
+  // the TSDoc on each component's props type, so that is where a prop is documented.
+  tags: ['autodocs'],
+
   // The Cockpit is dark-first (index.html sets <html class="dark">); mirror that in
   // Storybook so components render against the same tokens they ship with. Authored with
   // createElement rather than JSX because Storybook config is type-checked under the node
   // tsconfig (no jsx flag).
+  // A docs page stacks one of these per story, so the canvas-filling height belongs to the
+  // story view only — in docs it would push the props table a screen down per story.
   decorators: [
-    (Story): ReactElement =>
+    (Story, context): ReactElement =>
       createElement(
         'div',
         {
           className:
-            'dark bg-background text-foreground flex min-h-screen items-center justify-center',
+            context.viewMode === 'docs'
+              ? 'dark bg-background text-foreground flex items-center justify-center p-region'
+              : 'dark bg-background text-foreground flex min-h-screen items-center justify-center',
         },
         createElement(Story),
       ),

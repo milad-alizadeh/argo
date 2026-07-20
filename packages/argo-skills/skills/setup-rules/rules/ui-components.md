@@ -84,6 +84,22 @@ fetching, store wiring; ~10 lines) and a pure presentational **View**
 - Fixtures are typed off the container's own view-model types and live next to the
   screen — shape drift is a compile error, never a silent stale fixture.
 
-> If/when this project adds Storybook: one story per PRD/spec state, rendering the
-> View with typed fixtures; stories prove composition and visual state only — they
-> never replace e2e wiring checks of the container.
+> If/when this project adds Storybook: render the View with typed fixtures, never the
+> container, and story **prop axes, not values**. Re-running the same render with a
+> different number or word is a control, not a story — a `percentage` prop gets one
+> story plus a range control, not `Empty` / `Low` / `Half` / `Full`. A discrete union
+> gets one story with a `select` control plus a single gallery story showing every
+> value side by side. A boolean gets one story for its non-default side. Structural
+> states (loading / empty / error / populated) are genuinely different renders, so
+> those do get a story each. Behavioural edges (clamping, rounding, truncation) belong
+> in a `play` assertion or a unit test, never in their own story. An empty required
+> value (`label: ''`) is not a variation but invalid input — fix it with a type or a
+> boundary guard, not a story that renders nothing.
+>
+> The story file is also the component's docs page: turn autodocs on globally, document
+> each prop with a TSDoc comment on the component's props type (react-docgen lifts those
+> into the props table — don't duplicate them into `argTypes`), declare the control
+> wherever inference is wrong (`select` + `options` for a union, `range` + `min`/`max` for
+> a bounded number, `boolean` for a flag), and wire every callback to `fn()` so it lands
+> in the Actions panel and can be asserted from `play`. Stories prove composition and
+> visual state only — they never replace e2e wiring checks.
