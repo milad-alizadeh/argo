@@ -27,6 +27,11 @@ QUIET_MINUTES=30
 DRY_RUN=0
 [ "${1:-}" = "--dry-run" ] && DRY_RUN=1
 
+# A hook can invoke this from any cwd, so the repo is located from the script's own
+# path rather than from wherever the caller happens to be standing.
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
+cd "$script_dir" || exit 1
+
 git_common=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || {
   echo "worktree-gc: not a git repository" >&2
   exit 1
