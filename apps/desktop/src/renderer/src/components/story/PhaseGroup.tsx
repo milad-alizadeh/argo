@@ -1,4 +1,4 @@
-import { Text } from '@/components/ui'
+import { Text, useDisclosure } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { AgentRow, type AgentRowModel } from './AgentRow'
 import { doneAgentCount } from './agentState'
@@ -9,7 +9,6 @@ import {
   phaseStatusText,
 } from './phaseState'
 import { RosterRow } from './RosterRow'
-import { useDisclosure } from './useDisclosure'
 
 export type PhaseGroupProps = {
   /** Which Run this Phase belongs to — a Phase name is only unique within its Run. Lands as

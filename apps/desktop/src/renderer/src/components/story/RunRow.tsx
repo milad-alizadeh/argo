@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { Text } from '@/components/ui'
+import { Text, useDisclosure } from '@/components/ui'
 import { ArrowRightIcon, TreeStructureIcon } from '@/components/ui/icons'
 import { cn } from '@/lib/utils'
 import type { AgentRowModel } from './AgentRow'
@@ -8,7 +8,6 @@ import { doneAgentCount } from './agentState'
 import { PhaseGroup } from './PhaseGroup'
 import { PHASE_PRESENTATION, type PhaseState, phaseOpensByDefault } from './phaseState'
 import { RosterRow } from './RosterRow'
-import { useDisclosure } from './useDisclosure'
 
 export const RUN_SHAPES = ['batch', 'pipeline'] as const
 
