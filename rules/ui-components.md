@@ -45,10 +45,52 @@ Rules that fall out of this:
 - **Don't introduce a bespoke element where a primitive is the right tool** (sliders,
   selects, dialogs, radio groups, meters, dividers, section labels, icons). Raw
   buttons/inputs standing in for an existing primitive are forbidden.
+- **Check the component kit before building a primitive.** This is a configured shadcn
+  project (`apps/desktop/components.json`, `radix-ui` + `class-variance-authority`
+  already installed) — `bunx shadcn@latest add <name>` is where a badge, progress bar,
+  dialog or select comes from. A hand-rolled equivalent of a kit primitive is a
+  duplication bug, not a design choice. When the kit's variants don't match the design,
+  **adapt the vendored component's `cva` variant map to our tokens** — owning the
+  vendored file is the intended workflow; writing a parallel component beside it is not.
+  Vendored primitives keep their upstream lowercase filenames (`button.tsx`,
+  `badge.tsx`) and, since `components.json` still declares lucide, any icon a generated
+  component pulls in is swapped for the Phosphor icon atom.
 - Re-export every primitive from `components/ui/index.ts` so imports are one line.
 - Primitives are pure presentation — no state machines, no I/O, no hooks beyond local
   interaction state. Interactive primitives wrap `radix-ui` (the headless-UI library)
   and are styled only with design-system tokens; never import the library's default CSS.
+
+## All rendered text is a `Text`
+
+Typography is a primitive like any other, so it obeys the rule above: the type-role
+ladder is applied by **one atom**, `components/ui/Text.tsx`. The rule is not merely
+"don't type a role class" — it is that **every string the user reads is rendered by
+`Text`**. A bare string in a `div` is the violation even when it inherits the right type
+today, because inheritance is exactly what drifts the moment an ancestor changes.
+
+```tsx
+<span className="text-meta text-foreground-faint">14:32</span>       // forbidden
+<div>No sessions yet</div>                                          // forbidden
+<Text variant="meta" className="text-foreground-faint">14:32</Text>  // correct
+```
+
+That covers labels, counts, captions, values, empty-state copy, and the text inside
+stories — a gallery story's captions included, since the specimen should model the rule
+it teaches. Where a wrapper element exists only to carry text, collapse it into the
+`Text` via `as` rather than nesting a `Text` inside a redundant `span`.
+
+- **`Text.tsx` is the only file that spells a `text-<role>` class.** Its variant map is
+  the single lookup; a primitive that styles its own root and genuinely cannot wrap its
+  children (`Button`, whose `asChild` hands them to a Slot) composes the class from that
+  map rather than re-typing it.
+- **Colour is not part of a type role**, so `Text` has no `tone` prop. A caller passes
+  `text-foreground-faint` / `text-status-working` through `className`; `cn()` is taught
+  the role names so it de-dupes role against role without eating the colour class.
+- **The element is the call site's decision, not the role's.** `Text` renders a neutral
+  `span` by default and takes an `as` prop for the rest — never pick `h1` because a role
+  looks big; pick the heading level the document outline needs.
+- `Text`'s gallery story is the project's **type specimen** — every role in one frame,
+  and the visual-diff surface for any change to the role tuples.
 
 ## Build from the inventory — when a design study exists
 
@@ -71,6 +113,13 @@ build contract:
 component, accepts optional `width`/`height`/`className`, and defaults to its original
 size. Plain-text glyphs standing in for icons (`✕`, `→`) are forbidden — use the icon
 atom.
+
+The shadcn CLI can only generate `lucide` or `radix` icon imports — `components.json`
+cannot be pointed at Phosphor, and setting it there would be accepted and then ignored.
+So a vendored kit component that ships an icon (`select`, `checkbox`, `dialog`,
+`accordion`, `dropdown-menu`, `calendar`) arrives with a lucide import: **swap it for the
+matching atom in `components/ui/icons/` in the same change.** `lucide-react` is never
+added as a dependency — its presence in `package.json` means a swap was missed.
 
 ## Screens — container/View split
 

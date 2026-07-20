@@ -1,4 +1,4 @@
-import { SESSION_STATUS, StatusDot } from '@/components/ui'
+import { SESSION_STATUS, StatusDot, Text } from '@/components/ui'
 import type { SessionView } from '@/sessionStore'
 
 // Molecule: one Session as a flat inset card (the wireframe's `.srow`). Status is
@@ -10,11 +10,17 @@ export function SessionRow({ session }: { session: SessionView }): React.JSX.Ele
     <li className="rounded-lg border border-inset-hair bg-inset px-3 py-2 transition-colors hover:bg-accent">
       <div className="flex items-center gap-2">
         <Icon weight="light" aria-hidden className={`size-4 shrink-0 ${textClass}`} />
-        <span className="flex-1 truncate text-foreground text-row-strong">{session.title}</span>
-        <span className={`text-meta ${textClass}`}>{label}</span>
+        <Text variant="row-strong" className="flex-1 truncate text-foreground">
+          {session.title}
+        </Text>
+        <Text variant="meta" className={textClass}>
+          {label}
+        </Text>
         <StatusDot status={session.status} decorative />
       </div>
-      <div className="mt-1 text-muted-foreground text-meta">{session.cli}</div>
+      <Text as="div" variant="meta" className="mt-1 text-muted-foreground">
+        {session.cli}
+      </Text>
     </li>
   )
 }

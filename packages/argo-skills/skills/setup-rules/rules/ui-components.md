@@ -45,10 +45,53 @@ Rules that fall out of this:
 - **Don't introduce a bespoke element where a primitive is the right tool** (sliders,
   selects, dialogs, radio groups, meters, dividers, section labels, icons). Raw
   buttons/inputs standing in for an existing primitive are forbidden.
+- **Check the project's component kit before building a primitive.** If the project is
+  built on a kit/generator, that is where a badge, progress bar, dialog or select comes
+  from — a hand-rolled equivalent of a kit primitive is a duplication bug, not a design
+  choice. When the kit's variants don't match the design, **adapt the vendored
+  component's variant map to the design tokens**; writing a parallel component beside it
+  is what the rule forbids. Vendored primitives keep their upstream filenames, and any
+  icon a generated component pulls in is swapped for this project's icon atom.
 - Re-export every primitive from `components/ui/index.ts` so imports are one line.
 - Primitives are pure presentation — no state machines, no I/O, no hooks beyond local
   interaction state. Interactive primitives wrap the chosen headless-UI library and
   are styled only with design-system tokens; never import the library's default CSS.
+
+## All rendered text goes through one `Text` atom
+
+Typography is a primitive like any other, so it obeys the rule above: the project's
+type-role ladder (`design-system.md`, "Roles, not values") is applied by **one atom**,
+`components/ui/Text.tsx`, exposing the roles as a `variant` prop. The rule is not merely
+"don't type a role class" — it is that **every string the user reads is rendered by
+`Text`**. A bare string in a `div` is the violation even when it inherits the right type
+today, because inheritance is exactly what drifts the moment an ancestor changes. If this
+project has no `Text` atom yet, creating it is the first step of the next UI change that
+would otherwise write one.
+
+```tsx
+<span className="text-meta text-faint">14:32</span>       // forbidden
+<div>No items yet</div>                                   // forbidden
+<Text variant="meta" className="text-faint">14:32</Text>  // correct
+```
+
+That covers labels, counts, captions, values, empty-state copy, and the text inside any
+stories/examples — the specimen should model the rule it teaches. Where a wrapper element
+exists only to carry text, collapse it into the `Text` via `as` rather than nesting a
+`Text` inside a redundant `span`.
+
+- **`Text.tsx` is the only file that spells a role class.** Its variant map is the
+  single lookup; a primitive that styles its own root and genuinely cannot wrap its
+  children (a button whose `asChild`/`as` hands them to a slot) composes the class from
+  that map rather than re-typing it.
+- **Colour is not part of a type role**, so `Text` takes no `tone`/`color` prop. A
+  caller passes the colour utility through `className`; the project's class-merge helper
+  must be taught the role names so it de-dupes role against role without eating the
+  colour class sitting beside it.
+- **The element is the call site's decision, not the role's.** `Text` renders a neutral
+  inline element by default and takes an `as` prop for the rest — never pick `h1`
+  because a role looks big; pick the heading level the document outline needs.
+- If/when this project adds Storybook, `Text`'s gallery story is the **type specimen** —
+  every role in one frame, and the visual-diff surface for any change to the role tuples.
 
 ## Build from the inventory — when a design study exists
 
@@ -71,6 +114,12 @@ build contract:
 component, accepts optional `width`/`height`/`className`, and defaults to its original
 size. Plain-text glyphs standing in for icons (`✕`, `→`) are forbidden — use the icon
 atom.
+
+If the project's component kit is a code generator, its icon setting only chooses which
+import the generator *writes*, and it may not know this project's icon library at all —
+so a vendored component that ships an icon arrives importing the wrong one. **Swap it for
+the matching atom in the same change**, and never let the generator's icon package into
+`package.json`: its presence there means a swap was missed.
 
 ## Screens — container/View split
 

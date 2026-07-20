@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { StatusDot } from './StatusDot'
 import type { StatusTone } from './sessionStatus'
+import { Text } from './Text'
 
 const TONES: StatusTone[] = ['run', 'amber', 'mist', 'gray', 'red', 'stale', 'landed']
 
@@ -67,7 +68,9 @@ export const AllTones: Story = {
       {TONES.map((tone) => (
         <span className="flex w-16 flex-col items-center gap-gap" key={tone}>
           <StatusDot tone={tone} />
-          <span className="text-foreground-faint text-meta">{tone}</span>
+          <Text variant="meta" className="text-foreground-faint">
+            {tone}
+          </Text>
         </span>
       ))}
     </div>

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { DerivedValue } from './DerivedValue'
+import { Text } from './Text'
 
 // Atom: the ONE shape for a Session's context window — a labelled bar plus the estimated
 // percentage. Rail-only; no other surface repeats it.
@@ -15,7 +15,9 @@ export function ContextGauge({
   const clamped = Math.min(100, Math.max(0, Math.round(percentage)))
   return (
     <div className={cn('flex items-center gap-snug', className)}>
-      <span className="shrink-0 text-tag text-foreground-faint">Context</span>
+      <Text variant="tag" className="shrink-0 text-foreground-faint">
+        Context
+      </Text>
       <span
         role="progressbar"
         aria-label="Context window used"
@@ -31,11 +33,15 @@ export function ContextGauge({
           style={{ width: `${clamped}%` }}
         />
       </span>
-      <DerivedValue
-        text={`~${clamped}%`}
+      {/* An estimate reads as plain text — its provenance is the hover tooltip, never
+          decoration; a value the tool never reported would dim with text-foreground-faint. */}
+      <Text
+        variant="meta"
         title="estimated from token usage ÷ model context window"
-        className="shrink-0 text-meta text-foreground-faint"
-      />
+        className="shrink-0 text-foreground-faint"
+      >
+        {`~${clamped}%`}
+      </Text>
     </div>
   )
 }

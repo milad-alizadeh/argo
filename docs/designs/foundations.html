@@ -81,16 +81,17 @@
         flex-wrap: wrap;
         gap: var(--space-region);
       }
+      /* Type comes from the .text-meta role class on the element, never re-spelled here. */
       .statuses .status {
         display: inline-flex;
         align-items: center;
         gap: var(--space-snug);
-        font: var(--type-meta-weight) var(--type-meta) / var(--type-meta-leading) var(--sans);
       }
-      /* The specimen dot itself — the app builds this as the StatusDot atom. */
+      /* The specimen dot itself — the app builds this as the StatusDot atom, sized to
+         the same 8px step the app's `size-2` resolves to. */
       .statuses .status i {
-        width: 7px;
-        height: 7px;
+        width: var(--space-gap);
+        height: var(--space-gap);
         border-radius: 50%;
         background: currentColor;
       }
@@ -114,7 +115,7 @@
       }
       @keyframes pulse {
         0%, 100% { opacity: 1; }
-        50% { opacity: 0.45; }
+        50% { opacity: var(--pulse-dim); }
       }
       .motion {
         display: flex;
@@ -160,14 +161,14 @@
 
       <h2 class="text-eyebrow">Status glow (the lit signal — fill and halo are both currentColor)</h2>
       <div class="statuses">
-        <span class="status" style="color: var(--status-working)">Working <i class="glow"></i></span>
-        <span class="status" style="color: var(--status-awaiting-input)">
+        <span class="status text-meta" style="color: var(--status-working)">Working <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--status-awaiting-input)">
           Awaiting input <i class="glow"></i>
         </span>
-        <span class="status" style="color: var(--status-idle)">Idle <i class="glow"></i></span>
-        <span class="status" style="color: var(--status-failed)">Failed <i class="glow"></i></span>
-        <span class="status" style="color: var(--status-exited)">Exited <i class="glow"></i></span>
-        <span class="status" style="color: var(--status-landed)">Landed <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--status-idle)">Idle <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--status-failed)">Failed <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--status-exited)">Exited <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--status-landed)">Landed <i class="glow"></i></span>
       </div>
       <div class="text-meta" style="color: var(--foreground-faint); margin-top: var(--space-gap)">
         --glow-blur 8px · --glow-strength 60% dark / 35% light — the word carries the state,

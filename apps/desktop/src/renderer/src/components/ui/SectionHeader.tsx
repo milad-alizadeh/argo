@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { Text } from './Text'
 
 // Atom: the uppercase eyebrow that opens a section ("Outcomes · 4", "Checks · 8f3a1c").
 // The count drops the eyebrow's uppercase and tracking so a sha or a phrase stays
@@ -17,11 +18,11 @@ export function SectionHeader({
 }): React.JSX.Element {
   return (
     <div className={cn('flex items-center gap-gap text-muted-foreground', className)}>
-      <span className="text-eyebrow">{label}</span>
+      <Text variant="eyebrow">{label}</Text>
       {count !== undefined && (
-        <span className="text-eyebrow text-foreground-faint normal-case tracking-normal">
+        <Text variant="eyebrow" className="text-foreground-faint normal-case tracking-normal">
           · {count}
-        </span>
+        </Text>
       )}
     </div>
   )

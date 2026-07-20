@@ -1,5 +1,6 @@
 import type { Preview } from '@storybook/react-vite'
 import { createElement, type ReactElement } from 'react'
+import { themes } from 'storybook/theming'
 import '../src/renderer/src/styles/globals.css'
 
 const preview: Preview = {
@@ -27,6 +28,11 @@ const preview: Preview = {
       ),
   ],
   parameters: {
+    // The dark theme has to be set twice because they are two different surfaces:
+    // manager.ts themes the Storybook chrome (sidebar, toolbar), while this themes the
+    // generated docs page, which renders inside the preview iframe the chrome cannot reach.
+    docs: { theme: themes.dark },
+
     // Let the dark decorator fill the whole canvas (it centres the story itself) instead
     // of shrink-wrapping the component into a dark box on Storybook's default white.
     layout: 'fullscreen',

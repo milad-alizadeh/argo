@@ -5,13 +5,8 @@ import { SectionHeader } from './SectionHeader'
 const meta = {
   title: 'Cockpit/SectionHeader',
   component: SectionHeader,
-  decorators: [
-    (Story): React.JSX.Element => (
-      <div className="w-96">
-        <Story />
-      </div>
-    ),
-  ],
+  // No width wrapper: label and count sit together and the header has no trailing slot,
+  // so nothing in it stretches — a fixed width would only misreport how it sizes.
   argTypes: {
     label: { control: 'text' },
     count: { control: 'text' },

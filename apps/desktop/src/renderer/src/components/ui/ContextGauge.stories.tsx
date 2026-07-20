@@ -28,6 +28,10 @@ export const Default: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Context')).toBeInTheDocument()
     await expect(canvas.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '64')
-    await expect(canvas.getByText('~64%')).toBeInTheDocument()
+    // The estimate reads as plain text — its provenance is reachable only as a tooltip.
+    await expect(canvas.getByText('~64%')).toHaveAttribute(
+      'title',
+      'estimated from token usage ÷ model context window',
+    )
   },
 }

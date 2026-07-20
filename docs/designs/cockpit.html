@@ -20,9 +20,9 @@
   html,body{margin:0;height:100%;}
   body{overflow:hidden;} /* colour/type/background come from the tokens.css body rule */
   #sky{position:fixed;inset:0;z-index:0;overflow:hidden;}
-  #sky .glow{position:absolute;left:50%;bottom:-38%;transform:translateX(-50%);width:150vw;height:110vh;border-radius:50%;
+  #sky .halo{position:absolute;left:50%;bottom:-38%;transform:translateX(-50%);width:150vw;height:110vh;border-radius:50%;
     background:radial-gradient(closest-side,color-mix(in srgb,var(--primary) 24%,transparent),color-mix(in srgb,var(--primary) 6%,transparent) 55%,transparent 72%);filter:blur(20px);}
-  #sky .glow.warm{width:70vw;height:50vh;bottom:-14%;opacity:.5;background:radial-gradient(closest-side,color-mix(in srgb,var(--status-awaiting-input) 12%,transparent),transparent 70%);}
+  #sky .halo.warm{width:70vw;height:50vh;bottom:-14%;opacity:.5;background:radial-gradient(closest-side,color-mix(in srgb,var(--status-awaiting-input) 12%,transparent),transparent 70%);}
   #sky canvas{position:absolute;inset:0;width:100%;height:100%;}
 
   .app{position:relative;z-index:1;height:100vh;display:grid;grid-template-columns:var(--c-rail,248px) 6px 1fr;padding:12px;}
@@ -82,10 +82,10 @@
   .srow .ctxrow .ctxbar{flex:1;width:auto;}
   .ctxpct{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;flex:none;}
   .ctxbar{display:inline-block;width:48px;height:5px;border-radius:calc(var(--radius) - 4px);background:var(--border);vertical-align:middle;}
-  .ctxbar>span{display:block;height:100%;border-radius:inherit;color:var(--primary-bright);background:linear-gradient(90deg,var(--primary),var(--primary-bright));box-shadow:0 0 var(--glow-blur) color-mix(in srgb, currentColor var(--glow-strength), transparent);}
+  .ctxbar>span{display:block;height:100%;border-radius:inherit;color:var(--primary-bright);background:linear-gradient(90deg,var(--primary),var(--primary-bright));}
   /* Status dots — a lit signal, not a printed bullet. Fill and glow both read
      currentColor, so a tone class sets one property. */
-  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none;background:currentColor;box-shadow:0 0 var(--glow-blur) color-mix(in srgb, currentColor var(--glow-strength), transparent);}
+  .dot{width:var(--space-gap);height:var(--space-gap);border-radius:50%;display:inline-block;flex:none;background:currentColor;}
   .dot.run{color:var(--status-working);}
   .dot.amber{color:var(--status-awaiting-input);}
   .dot.mist{color:var(--status-idle);}
@@ -106,10 +106,15 @@
      count, ahead/behind vs main. PR surfaces show only "→ main". */
   .wschip{display:inline-flex;align-items:center;gap:var(--space-gap);padding:3px 10px;background:var(--inset);border:1px solid var(--inset-hair);border-radius:var(--radius);color:var(--muted-foreground);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;}
   .wschip .branch{font:var(--type-code-inline-weight) var(--type-code-inline)/var(--type-code-inline-leading) var(--mono);letter-spacing:var(--type-code-inline-tracking);color:var(--foreground-soft);}
-  .wschip .tag{font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;color:var(--foreground-faint);border:1px solid var(--border);border-radius:calc(var(--radius) - 4px);padding:0 5px;}
-  .wschip .tag .mono{text-transform:none;}
+  /* Badge — ONE atom for the mini uppercase bordered label (worktree marker,
+     "uncommitted" flag, declared intent, draft). Three tones; the `tag` role
+     supplies the uppercase, so the label is authored lower-case. */
+  .badge{display:inline-flex;align-items:center;flex:none;border:1px solid var(--border);border-radius:calc(var(--radius) - 4px);padding:0 5px;color:var(--foreground-faint);font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;}
+  .badge.warn{color:var(--status-awaiting-input);border-color:color-mix(in srgb,var(--status-awaiting-input) 40%,transparent);}
+  .badge.primary{color:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 40%,transparent);background:color-mix(in srgb,var(--primary) 12%,transparent);}
+  .wschip .badge .mono{text-transform:none;}
   .wschip .dirty{color:var(--status-awaiting-input);display:inline-flex;align-items:center;gap:var(--space-tight);}
-  .wschip .dirty .dot{width:6px;height:6px;}
+  .wschip .dirty .dot{width:var(--space-snug);height:var(--space-snug);}
   .wschip .sync{color:var(--foreground-faint);}
   .wschip .shared{color:var(--status-awaiting-input);display:inline-flex;align-items:center;gap:var(--space-tight);}
   .toggles{margin-left:auto;display:flex;gap:5px;}
@@ -180,7 +185,7 @@
   .msg-head .cv{color:var(--foreground-faint);font-size:10px;width:10px;flex:none;margin-top:3px;} /* icon box */
   /* one-line rows TRUNCATE, never wrap — the title attr carries the full text */
   .msg-head .say{font:var(--type-prose-weight) var(--type-prose)/var(--type-prose-leading) var(--sans);letter-spacing:var(--type-prose-tracking);color:var(--foreground);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .msg-head .decl{font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;color:var(--primary-soft);border:1px solid color-mix(in srgb,var(--primary) 40%,transparent);background:color-mix(in srgb,var(--primary) 12%,transparent);border-radius:calc(var(--radius) - 4px);padding:1px 6px;flex:none;margin-top:1px;}
+  .msg-head .badge{margin-top:1px;}
   .msg-head .sd{flex:none;margin-top:5px;}
   .msg-head .mtime{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;flex:none;margin-top:2px;}
   .msg-tools{margin:2px 0 6px 18px;}
@@ -297,7 +302,6 @@
   .rdetail{border-bottom:1px solid var(--border);background:var(--well);padding:11px 13px;display:grid;gap:var(--space-gap);}
   .rdetail .stalebanner{color:var(--status-exited);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);}
   /* uncommitted marker on an All-files diff row */
-  .wipchip{color:var(--status-awaiting-input);font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;border:1px solid color-mix(in srgb,var(--status-awaiting-input) 40%,transparent);border-radius:calc(var(--radius) - 4px);padding:0 5px;flex:none;}
   .rdetail .dh{display:flex;align-items:center;gap:var(--space-gap);font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);color:var(--foreground-soft);}
   .rdetail .dh .g{color:var(--muted-foreground);display:inline-flex;}
   .rdetail .dh .src{margin-left:auto;color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;}
@@ -322,7 +326,6 @@
   .cirow:hover .open,.cirow:focus-visible .open{opacity:1;}
   /* commit stage bits inside the ribbon detail */
   .draftmsg{font:var(--type-code-weight) var(--type-code)/var(--type-code-leading) var(--mono);letter-spacing:var(--type-code-tracking);color:var(--foreground-soft);background:var(--inset);border:1px solid var(--inset-hair);border-radius:var(--radius);padding:6px 9px;display:flex;align-items:center;gap:9px;}
-  .draftmsg .draft{color:var(--foreground-faint);font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;flex:none;border:1px solid var(--border);border-radius:calc(var(--radius) - 4px);padding:1px 5px;}
   .draftmsg .g{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--foreground-bright);}
   .draftmsg .redraft{color:var(--primary);cursor:pointer;flex:none;}
   .mbtn{display:inline-flex;align-items:center;gap:var(--space-snug);border-radius:var(--radius);padding:7px 13px;font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);cursor:pointer;
@@ -375,7 +378,7 @@
      static dot while findings are outstanding; verdict word lives in the hero. */
   .dtab.review{color:var(--verdict-changes);font-variant-numeric:tabular-nums;}
   .dtab.review.on{background:color-mix(in srgb,var(--verdict-changes-tint) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--verdict-changes-tint) 40%,transparent);color:var(--verdict-changes);}
-  .tglow{width:6px;height:6px;border-radius:50%;background:var(--verdict-block);display:inline-block;margin-right:6px;vertical-align:middle;}
+  .tglow{width:var(--space-snug);height:var(--space-snug);border-radius:50%;color:var(--verdict-block);background:currentColor;display:inline-block;margin-left:var(--space-snug);vertical-align:middle;}
   /* Console — channel tabs in the terminal strip header (R13): `session · live`
      keeps the caret/tail; captures are timestamped, caretless, closable. */
   .term-h .chtab{display:inline-flex;align-items:center;gap:var(--space-snug);padding:2px 9px;border-radius:var(--radius);cursor:pointer;color:var(--muted-foreground);border:1px solid transparent;user-select:none;}
@@ -451,7 +454,7 @@
 <body>
 <!-- Phosphor Light icon sprite (ph/*-light @ 0 0 256 256, fetched from api.iconify.design; extended with git-branch / git-pull-request / arrow-square-out / arrow-line-up / user / prohibit / tree-structure for the workspace chip + ship ribbon). -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-wave-sine" viewBox="0 0 256 256"><path fill="currentColor" d="M237.43 130.55C215.84 176.57 197 198 178 198c-23.83 0-39.2-32.76-55.47-67.45C109.26 102.17 94.17 70 78 70c-9.18 0-25 10.5-48.53 60.55a6 6 0 0 1-10.86-5.1C40.16 79.43 59 58 78 58c23.83 0 39.2 32.76 55.47 67.45C146.74 153.83 161.83 186 178 186c9.18 0 25.05-10.5 48.53-60.55a6 6 0 0 1 10.86 5.1Z"/></symbol><symbol id="i-sidebar-simple" viewBox="0 0 256 256"><path fill="currentColor" d="M216 42H40a14 14 0 0 0-14 14v144a14 14 0 0 0 14 14h176a14 14 0 0 0 14-14V56a14 14 0 0 0-14-14M38 200V56a2 2 0 0 1 2-2h42v148H40a2 2 0 0 1-2-2m180 0a2 2 0 0 1-2 2H94V54h122a2 2 0 0 1 2 2Z"/></symbol><symbol id="i-pencil-simple" viewBox="0 0 256 256"><path fill="currentColor" d="m225.9 74.78l-44.69-44.69a14 14 0 0 0-19.8 0L38.1 153.41a13.94 13.94 0 0 0-4.1 9.9V208a14 14 0 0 0 14 14h44.69a13.94 13.94 0 0 0 9.9-4.1L225.9 94.58a14 14 0 0 0 0-19.8M94.1 209.41a2 2 0 0 1-1.41.59H48a2 2 0 0 1-2-2v-44.69a2 2 0 0 1 .59-1.41L136 72.48L183.51 120ZM217.41 86.1L192 111.51L144.49 64l25.41-25.42a2 2 0 0 1 2.83 0l44.68 44.69a2 2 0 0 1 0 2.83"/></symbol><symbol id="i-terminal-window" viewBox="0 0 256 256"><path fill="currentColor" d="M126 128a6 6 0 0 1-2.25 4.69l-40 32a6 6 0 0 1-7.5-9.38L110.4 128l-34.15-27.31a6 6 0 1 1 7.5-9.38l40 32A6 6 0 0 1 126 128m50 26h-40a6 6 0 0 0 0 12h40a6 6 0 0 0 0-12m54-98v144a14 14 0 0 1-14 14H40a14 14 0 0 1-14-14V56a14 14 0 0 1 14-14h176a14 14 0 0 1 14 14m-12 0a2 2 0 0 0-2-2H40a2 2 0 0 0-2 2v144a2 2 0 0 0 2 2h176a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-magnifying-glass" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 219.76l-51.38-51.38a86.15 86.15 0 1 0-8.48 8.48l51.38 51.38a6 6 0 0 0 8.48-8.48M38 112a74 74 0 1 1 74 74a74.09 74.09 0 0 1-74-74"/></symbol><symbol id="i-git-commit" viewBox="0 0 256 256"><path fill="currentColor" d="M248 122h-66.34a54 54 0 0 0-107.32 0H8a6 6 0 0 0 0 12h66.34a54 54 0 0 0 107.32 0H248a6 6 0 0 0 0-12m-120 48a42 42 0 1 1 42-42a42 42 0 0 1-42 42"/></symbol><symbol id="i-flag" viewBox="0 0 256 256"><path fill="currentColor" d="M44.08 51.37A6 6 0 0 0 42 55.9V224a6 6 0 0 0 12 0v-45.22c28.08-22.79 51.88-11 79.34 2.57c16.12 8 33.49 16.58 52 16.58c13.57 0 27.76-4.6 42.56-17.42A6 6 0 0 0 230 176V55.9a6 6 0 0 0-9.93-4.54c-29 25.12-53.28 13.09-81.41-.84c-27.89-13.81-59.66-29.36-94.58.85M218 173.17c-28.08 22.8-51.88 11-79.34-2.58C113.4 158.08 85.09 144.07 54 164V58.72c28.08-22.8 51.88-11 79.34 2.56C158.6 73.79 186.91 87.8 218 67.91Z"/></symbol><symbol id="i-arrow-bend-down-right" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 156.24l-48 48a6 6 0 0 1-8.48-8.48L209.51 158H128A102.12 102.12 0 0 1 26 56a6 6 0 0 1 12 0a90.1 90.1 0 0 0 90 90h81.51l-37.75-37.76a6 6 0 0 1 8.48-8.48l48 48a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-git-merge" viewBox="0 0 256 256"><path fill="currentColor" d="M208 114a30 30 0 0 0-29.21 23.19l-44-6.28a10 10 0 0 1-6.18-3.39L91.18 83.83A30 30 0 1 0 74 85.4v85.2a30 30 0 1 0 12 0V96.22l33.52 39.11a22 22 0 0 0 13.6 7.46l45.35 6.48A30 30 0 1 0 208 114M62 56a18 18 0 1 1 18 18a18 18 0 0 1-18-18m36 144a18 18 0 1 1-18-18a18 18 0 0 1 18 18m110-38a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-arrow-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M238 56v48a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h32.55l-30.38-27.8c-.06-.06-.12-.13-.19-.19a82 82 0 1 0-1.7 117.65a6 6 0 0 1 8.24 8.73A93.46 93.46 0 0 1 128 222h-1.28a94 94 0 1 1 67.65-160.6L226 90.35V56a6 6 0 1 1 12 0"/></symbol><symbol id="i-arrow-counter-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M222 128a94 94 0 0 1-92.74 94H128a93.43 93.43 0 0 1-64.5-25.65a6 6 0 1 1 8.24-8.72A82 82 0 1 0 70 70l-.19.19L39.44 98H72a6 6 0 0 1 0 12H24a6 6 0 0 1-6-6V56a6 6 0 0 1 12 0v34.34L61.63 61.4A94 94 0 0 1 222 128"/></symbol><symbol id="i-check" viewBox="0 0 256 256"><path fill="currentColor" d="m228.24 76.24l-128 128a6 6 0 0 1-8.48 0l-56-56a6 6 0 0 1 8.48-8.48L96 191.51L219.76 67.76a6 6 0 0 1 8.48 8.48"/></symbol><symbol id="i-x" viewBox="0 0 256 256"><path fill="currentColor" d="M204.24 195.76a6 6 0 1 1-8.48 8.48L128 136.49l-67.76 67.75a6 6 0 0 1-8.48-8.48L119.51 128L51.76 60.24a6 6 0 0 1 8.48-8.48L128 119.51l67.76-67.75a6 6 0 0 1 8.48 8.48L136.49 128Z"/></symbol><symbol id="i-warning" viewBox="0 0 256 256"><path fill="currentColor" d="M235.07 189.09L147.61 37.22a22.75 22.75 0 0 0-39.22 0L20.93 189.09a21.53 21.53 0 0 0 0 21.72A22.35 22.35 0 0 0 40.55 222h174.9a22.35 22.35 0 0 0 19.6-11.19a21.53 21.53 0 0 0 .02-21.72m-10.41 15.71a10.46 10.46 0 0 1-9.21 5.2H40.55a10.46 10.46 0 0 1-9.21-5.2a9.51 9.51 0 0 1 0-9.72l87.45-151.87a10.75 10.75 0 0 1 18.42 0l87.46 151.87a9.51 9.51 0 0 1-.01 9.72M122 144v-40a6 6 0 0 1 12 0v40a6 6 0 0 1-12 0m16 36a10 10 0 1 1-10-10a10 10 0 0 1 10 10"/></symbol><symbol id="i-circle-notch" viewBox="0 0 256 256"><path fill="currentColor" d="M230 128a102 102 0 0 1-204 0c0-40.18 23.35-76.86 59.5-93.45a6 6 0 0 1 5 10.9C58.61 60.09 38 92.49 38 128a90 90 0 0 0 180 0c0-35.51-20.61-67.91-52.5-82.55a6 6 0 0 1 5-10.9C206.65 51.14 230 87.82 230 128"/></symbol><symbol id="i-circle-half" viewBox="0 0 256 256"><path fill="currentColor" d="M128 26a102 102 0 1 0 102 102A102.12 102.12 0 0 0 128 26m6 12.2a90 90 0 0 1 20 3.63v172.34a90 90 0 0 1-20 3.63Zm32 8.23a90.5 90.5 0 0 1 20 12.81v137.52a90.5 90.5 0 0 1-20 12.81ZM38 128a90.12 90.12 0 0 1 84-89.8v179.6A90.12 90.12 0 0 1 38 128m160 56.5v-113a89.81 89.81 0 0 1 0 113"/></symbol><symbol id="i-circle" viewBox="0 0 256 256"><path fill="currentColor" d="M128 26a102 102 0 1 0 102 102A102.12 102.12 0 0 0 128 26m0 192a90 90 0 1 1 90-90a90.1 90.1 0 0 1-90 90"/></symbol><symbol id="i-gear" viewBox="0 0 256 256"><path fill="currentColor" d="M128 82a46 46 0 1 0 46 46a46.06 46.06 0 0 0-46-46m0 80a34 34 0 1 1 34-34a34 34 0 0 1-34 34m86-31.16c.06-1.89.06-3.79 0-5.68L229.33 106a6 6 0 0 0 1.11-5.29a105.3 105.3 0 0 0-10.68-25.81a6 6 0 0 0-4.53-3l-24.45-2.71q-1.93-2.07-4-4l-2.72-24.46a6 6 0 0 0-3-4.53a105.7 105.7 0 0 0-25.77-10.66a6 6 0 0 0-5.29 1.14l-19.2 15.37a90 90 0 0 0-5.68 0L106 26.67a6 6 0 0 0-5.29-1.11A105.3 105.3 0 0 0 74.9 36.24a6 6 0 0 0-3 4.53l-2.67 24.45q-2.07 1.94-4 4L40.76 72a6 6 0 0 0-4.53 3a105.7 105.7 0 0 0-10.66 25.77a6 6 0 0 0 1.11 5.23l15.37 19.2a90 90 0 0 0 0 5.68l-15.38 19.17a6 6 0 0 0-1.11 5.29a105.3 105.3 0 0 0 10.68 25.76a6 6 0 0 0 4.53 3l24.45 2.71q1.94 2.07 4 4L72 215.24a6 6 0 0 0 3 4.53a105.7 105.7 0 0 0 25.77 10.66a6 6 0 0 0 5.29-1.11l19.1-15.32c1.89.06 3.79.06 5.68 0l19.21 15.38a6 6 0 0 0 3.75 1.31a6.2 6.2 0 0 0 1.54-.2a105.3 105.3 0 0 0 25.76-10.68a6 6 0 0 0 3-4.53l2.71-24.45q2.07-1.93 4-4l24.46-2.72a6 6 0 0 0 4.53-3a105.5 105.5 0 0 0 10.66-25.77a6 6 0 0 0-1.11-5.29Zm-3.1 41.63l-23.64 2.63a6 6 0 0 0-3.82 2a75 75 0 0 1-6.31 6.31a6 6 0 0 0-2 3.82l-2.63 23.63a94.3 94.3 0 0 1-17.36 7.14l-18.57-14.86a6 6 0 0 0-3.75-1.31h-.36a78 78 0 0 1-8.92 0a6 6 0 0 0-4.11 1.3L100.87 218a94 94 0 0 1-17.34-7.17l-2.63-23.62a6 6 0 0 0-2-3.82a75 75 0 0 1-6.31-6.31a6 6 0 0 0-3.82-2l-23.63-2.63A94.3 94.3 0 0 1 38 155.14l14.86-18.57a6 6 0 0 0 1.3-4.11a78 78 0 0 1 0-8.92a6 6 0 0 0-1.3-4.11L38 100.87a94 94 0 0 1 7.17-17.34l23.62-2.63a6 6 0 0 0 3.82-2a75 75 0 0 1 6.31-6.31a6 6 0 0 0 2-3.82l2.63-23.63A94.3 94.3 0 0 1 100.86 38l18.57 14.86a6 6 0 0 0 4.11 1.3a78 78 0 0 1 8.92 0a6 6 0 0 0 4.11-1.3L155.13 38a94 94 0 0 1 17.34 7.17l2.63 23.64a6 6 0 0 0 2 3.82a75 75 0 0 1 6.31 6.31a6 6 0 0 0 3.82 2l23.63 2.63a94.3 94.3 0 0 1 7.14 17.29l-14.86 18.57a6 6 0 0 0-1.3 4.11a78 78 0 0 1 0 8.92a6 6 0 0 0 1.3 4.11L218 155.13a94 94 0 0 1-7.15 17.34Z"/></symbol><symbol id="i-caret-right" viewBox="0 0 256 256"><path fill="currentColor" d="m180.24 132.24l-80 80a6 6 0 0 1-8.48-8.48L167.51 128L91.76 52.24a6 6 0 0 1 8.48-8.48l80 80a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-caret-left" viewBox="0 0 256 256"><path fill="currentColor" d="M164.24 203.76a6 6 0 1 1-8.48 8.48l-80-80a6 6 0 0 1 0-8.48l80-80a6 6 0 0 1 8.48 8.48L88.49 128Z"/></symbol><symbol id="i-caret-down" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 100.24l-80 80a6 6 0 0 1-8.48 0l-80-80a6 6 0 0 1 8.48-8.48L128 167.51l75.76-75.75a6 6 0 0 1 8.48 8.48"/></symbol><symbol id="i-caret-up" viewBox="0 0 256 256"><path fill="currentColor" d="M212.24 164.24a6 6 0 0 1-8.48 0L128 88.49l-75.76 75.75a6 6 0 0 1-8.48-8.48l80-80a6 6 0 0 1 8.48 0l80 80a6 6 0 0 1 0 8.48"/></symbol><symbol id="i-plus" viewBox="0 0 256 256"><path fill="currentColor" d="M222 128a6 6 0 0 1-6 6h-82v82a6 6 0 0 1-12 0v-82H40a6 6 0 0 1 0-12h82V40a6 6 0 0 1 12 0v82h82a6 6 0 0 1 6 6"/></symbol><symbol id="i-notebook" viewBox="0 0 256 256"><path fill="currentColor" d="M182 112a6 6 0 0 1-6 6h-64a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6m-6 26h-64a6 6 0 0 0 0 12h64a6 6 0 0 0 0-12m46-90v160a14 14 0 0 1-14 14H48a14 14 0 0 1-14-14V48a14 14 0 0 1 14-14h160a14 14 0 0 1 14 14M48 210h26V46H48a2 2 0 0 0-2 2v160a2 2 0 0 0 2 2M210 48a2 2 0 0 0-2-2H86v164h122a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-sparkle" viewBox="0 0 256 256"><path fill="currentColor" d="M196.89 130.94L144.4 111.6l-19.34-52.49a13.92 13.92 0 0 0-26.12 0L79.6 111.6l-52.49 19.34a13.92 13.92 0 0 0 0 26.12L79.6 176.4l19.34 52.49a13.92 13.92 0 0 0 26.12 0l19.34-52.49l52.49-19.34a13.92 13.92 0 0 0 0-26.12m-4.15 14.86l-55.08 20.3a6 6 0 0 0-3.56 3.56l-20.3 55.08a1.92 1.92 0 0 1-3.6 0l-20.3-55.08a6 6 0 0 0-3.56-3.56l-55.08-20.3a1.92 1.92 0 0 1 0-3.6l55.08-20.3a6 6 0 0 0 3.56-3.56l20.3-55.08a1.92 1.92 0 0 1 3.6 0l20.3 55.08a6 6 0 0 0 3.56 3.56l55.08 20.3a1.92 1.92 0 0 1 0 3.6M146 40a6 6 0 0 1 6-6h18V16a6 6 0 0 1 12 0v18h18a6 6 0 0 1 0 12h-18v18a6 6 0 0 1-12 0V46h-18a6 6 0 0 1-6-6m100 48a6 6 0 0 1-6 6h-10v10a6 6 0 0 1-12 0V94h-10a6 6 0 0 1 0-12h10V72a6 6 0 0 1 12 0v10h10a6 6 0 0 1 6 6"/></symbol><symbol id="i-bug" viewBox="0 0 256 256"><path fill="currentColor" d="M146 92a10 10 0 1 1 10 10a10 10 0 0 1-10-10m-46-10a10 10 0 1 0 10 10a10 10 0 0 0-10-10m146 46a6 6 0 0 1-6 6h-26v10a85.9 85.9 0 0 1-3.45 24.08l23.85 10.42a6 6 0 0 1-4.8 11l-23.23-10.15a86 86 0 0 1-156.74 0L26.4 189.5a6 6 0 1 1-4.8-11l23.85-10.42A85.9 85.9 0 0 1 42 144v-10H16a6 6 0 0 1 0-12h26v-10a85.9 85.9 0 0 1 3.45-24.08L21.6 77.5a6 6 0 0 1 4.8-11l23.23 10.15a86 86 0 0 1 156.74 0L229.6 66.5a6 6 0 1 1 4.8 11l-23.85 10.42A85.9 85.9 0 0 1 214 112v10h26a6 6 0 0 1 6 6m-192-6h148v-10a74 74 0 0 0-148 0Zm68 95.74V134H54v10a74.09 74.09 0 0 0 68 73.74M202 134h-68v83.74A74.09 74.09 0 0 0 202 144Z"/></symbol><symbol id="i-arrows-clockwise" viewBox="0 0 256 256"><path fill="currentColor" d="M222 48v48a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h33.52l-18.05-18a81.5 81.5 0 0 0-57.53-24h-.46a81.5 81.5 0 0 0-57.29 23.28a6 6 0 1 1-8.38-8.58a93.38 93.38 0 0 1 65.67-26.76h.52a93.45 93.45 0 0 1 66 27.53l18 18V48a6 6 0 0 1 12 0m-34.19 136.72a81.5 81.5 0 0 1-57.29 23.34h-.46a81.5 81.5 0 0 1-57.53-24L54.48 166H88a6 6 0 0 0 0-12H40a6 6 0 0 0-6 6v48a6 6 0 0 0 12 0v-33.52l18 18.05a93.45 93.45 0 0 0 66 27.53h.52a93.38 93.38 0 0 0 65.67-26.76a6 6 0 1 0-8.38-8.58"/></symbol><symbol id="i-check-square" viewBox="0 0 256 256"><path fill="currentColor" d="M172.24 99.76a6 6 0 0 1 0 8.48l-56 56a6 6 0 0 1-8.48 0l-24-24a6 6 0 0 1 8.48-8.48L112 151.51l51.76-51.75a6 6 0 0 1 8.48 0M222 48v160a14 14 0 0 1-14 14H48a14 14 0 0 1-14-14V48a14 14 0 0 1 14-14h160a14 14 0 0 1 14 14m-12 0a2 2 0 0 0-2-2H48a2 2 0 0 0-2 2v160a2 2 0 0 0 2 2h160a2 2 0 0 0 2-2Z"/></symbol><symbol id="i-file-text" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-34-82a6 6 0 0 1-6 6H96a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6m0 32a6 6 0 0 1-6 6H96a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6"/></symbol><symbol id="i-binoculars" viewBox="0 0 256 256"><path fill="currentColor" d="M233 147.24L191.43 52.6a6 6 0 0 0-1.25-1.83a30 30 0 0 0-42.42 0A6 6 0 0 0 146 55v27h-36V55a6 6 0 0 0-1.76-4.25a30 30 0 0 0-42.42 0a6 6 0 0 0-1.25 1.83L23 147.24A46 46 0 1 0 110 168V94h36v74a46 46 0 1 0 87-20.76M64 202a34 34 0 1 1 34-34a34 34 0 0 1-34 34m0-80a45.8 45.8 0 0 0-18.55 3.92l29.61-67.38A18 18 0 0 1 98 57.71V137a45.9 45.9 0 0 0-34-15m94-64.28a18 18 0 0 1 22.94.83l29.61 67.37A45.9 45.9 0 0 0 158 137ZM192 202a34 34 0 1 1 34-34a34 34 0 0 1-34 34"/></symbol><symbol id="i-git-diff" viewBox="0 0 256 256"><path fill="currentColor" d="M112 154a6 6 0 0 0-6 6v33.52l-41.07-41.08a9.93 9.93 0 0 1-2.93-7.07v-52a30 30 0 1 0-12 0v52a21.88 21.88 0 0 0 6.44 15.56L97.52 202H64a6 6 0 0 0 0 12h48a6 6 0 0 0 6-6v-48a6 6 0 0 0-6-6M38 64a18 18 0 1 1 18 18a18 18 0 0 1-18-18m168 98.6v-52a21.88 21.88 0 0 0-6.44-15.56L158.48 54H192a6 6 0 0 0 0-12h-48a6 6 0 0 0-6 6v48a6 6 0 0 0 12 0V62.48l41.07 41.08a9.93 9.93 0 0 1 2.93 7.07v52a30 30 0 1 0 12 0Zm-6 47.4a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-file-plus" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-42-66a6 6 0 0 1-6 6h-18v18a6 6 0 0 1-12 0v-18h-18a6 6 0 0 1 0-12h18v-18a6 6 0 0 1 12 0v18h18a6 6 0 0 1 6 6"/></symbol><symbol id="i-file-minus" viewBox="0 0 256 256"><path fill="currentColor" d="m212.24 83.76l-56-56A6 6 0 0 0 152 26H56a14 14 0 0 0-14 14v176a14 14 0 0 0 14 14h144a14 14 0 0 0 14-14V88a6 6 0 0 0-1.76-4.24M158 46.48L193.52 82H158ZM200 218H56a2 2 0 0 1-2-2V40a2 2 0 0 1 2-2h90v50a6 6 0 0 0 6 6h50v122a2 2 0 0 1-2 2m-42-66a6 6 0 0 1-6 6h-48a6 6 0 0 1 0-12h48a6 6 0 0 1 6 6"/></symbol><symbol id="i-arrows-merge" viewBox="0 0 256 256"><path fill="currentColor" d="M190 40v64a6 6 0 0 1-1.76 4.24L134 162.49v55l21.76-21.75a6 6 0 0 1 8.48 8.48l-32 32a6 6 0 0 1-8.48 0l-32-32a6 6 0 0 1 8.48-8.48L122 217.51v-55l-54.24-54.27A6 6 0 0 1 66 104V40a6 6 0 0 1 12 0v61.51l50 50l50-50V40a6 6 0 0 1 12 0"/></symbol><symbol id="i-git-branch" viewBox="0 0 256 256"><path fill="currentColor" d="M230 64a30 30 0 1 0-36 29.4V112a10 10 0 0 1-10 10H96a21.84 21.84 0 0 0-10 2.42v-31a30 30 0 1 0-12 0v69.2a30 30 0 1 0 12 0V144a10 10 0 0 1 10-10h88a22 22 0 0 0 22-22V93.4A30.05 30.05 0 0 0 230 64M62 64a18 18 0 1 1 18 18a18 18 0 0 1-18-18m36 128a18 18 0 1 1-18-18a18 18 0 0 1 18 18M200 82a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-git-pull-request" viewBox="0 0 256 256"><path fill="currentColor" d="M102 64a30 30 0 1 0-36 29.4v69.2a30 30 0 1 0 12 0V93.4A30.05 30.05 0 0 0 102 64m-48 0a18 18 0 1 1 18 18a18 18 0 0 1-18-18m36 128a18 18 0 1 1-18-18a18 18 0 0 1 18 18m116-29.4v-52a21.88 21.88 0 0 0-6.44-15.56L158.48 54H192a6 6 0 0 0 0-12h-48a6 6 0 0 0-6 6v48a6 6 0 0 0 12 0V62.48l41.07 41.08a9.9 9.9 0 0 1 2.93 7.07v52a30 30 0 1 0 12 0Zm-6 47.4a18 18 0 1 1 18-18a18 18 0 0 1-18 18"/></symbol><symbol id="i-arrow-square-out" viewBox="0 0 256 256"><path fill="currentColor" d="M222 104a6 6 0 0 1-12 0V54.49l-69.75 69.75a6 6 0 0 1-8.48-8.48L201.51 46H152a6 6 0 0 1 0-12h64a6 6 0 0 1 6 6Zm-38 26a6 6 0 0 0-6 6v72a2 2 0 0 1-2 2H48a2 2 0 0 1-2-2V80a2 2 0 0 1 2-2h72a6 6 0 0 0 0-12H48a14 14 0 0 0-14 14v128a14 14 0 0 0 14 14h128a14 14 0 0 0 14-14v-72a6 6 0 0 0-6-6"/></symbol><symbol id="i-arrow-line-up" viewBox="0 0 256 256"><path fill="currentColor" d="M204.24 139.76a6 6 0 1 1-8.48 8.48L134 86.49V224a6 6 0 0 1-12 0V86.49l-61.76 61.75a6 6 0 0 1-8.48-8.48l72-72a6 6 0 0 1 8.48 0ZM216 34H40a6 6 0 0 0 0 12h176a6 6 0 0 0 0-12"/></symbol><symbol id="i-user" viewBox="0 0 256 256"><path fill="currentColor" d="M229.19 213c-15.81-27.32-40.63-46.49-69.47-54.62a70 70 0 1 0-63.44 0C67.44 166.5 42.62 185.67 26.81 213a6 6 0 1 0 10.38 6c19.21-33.19 53.15-53 90.81-53s71.6 19.81 90.81 53a6 6 0 1 0 10.38-6M70 96a58 58 0 1 1 58 58a58.07 58.07 0 0 1-58-58"/></symbol><symbol id="i-prohibit" viewBox="0 0 256 256"><path fill="currentColor" d="M128 26a102 102 0 1 0 102 102A102.12 102.12 0 0 0 128 26m90 102a89.6 89.6 0 0 1-22.29 59.22L68.78 60.29A89.95 89.95 0 0 1 218 128m-180 0a89.6 89.6 0 0 1 22.29-59.22l126.93 126.93A89.95 89.95 0 0 1 38 128"/></symbol><symbol id="i-tree-structure" viewBox="0 0 256 256"><path fill="currentColor" d="M160 110h48a14 14 0 0 0 14-14V48a14 14 0 0 0-14-14h-48a14 14 0 0 0-14 14v18h-18a22 22 0 0 0-22 22v34H70v-10a14 14 0 0 0-14-14H24a14 14 0 0 0-14 14v32a14 14 0 0 0 14 14h32a14 14 0 0 0 14-14v-10h36v34a22 22 0 0 0 22 22h18v18a14 14 0 0 0 14 14h48a14 14 0 0 0 14-14v-48a14 14 0 0 0-14-14h-48a14 14 0 0 0-14 14v18h-18a10 10 0 0 1-10-10V88a10 10 0 0 1 10-10h18v18a14 14 0 0 0 14 14M58 144a2 2 0 0 1-2 2H24a2 2 0 0 1-2-2v-32a2 2 0 0 1 2-2h32a2 2 0 0 1 2 2Zm100 16a2 2 0 0 1 2-2h48a2 2 0 0 1 2 2v48a2 2 0 0 1-2 2h-48a2 2 0 0 1-2-2Zm0-112a2 2 0 0 1 2-2h48a2 2 0 0 1 2 2v48a2 2 0 0 1-2 2h-48a2 2 0 0 1-2-2Z"/></symbol></svg>
-<div id="sky"><div class="glow" id="glow"></div><canvas id="stars"></canvas></div>
+<div id="sky"><div class="halo" id="halo"></div><canvas id="stars"></canvas></div>
 <div class="app" id="app"></div>
 <div class="hint" id="hint"></div>
 <script src="kit.js"></script>
@@ -469,7 +472,7 @@ const STATE_ICON={run:'circle-notch',amber:'warning',mist:'check',red:'x',gray:'
 const SESSIONS=[
   /* S1 — agent working, dirty, pre-PR: Commits ● narrates, zero buttons */
   {title:'Auth refactor',slot:'fixing review findings',meta:'sonnet · 118K tokens · 12m',ctx:42,dot:'run',act:'pencil-simple',
-   ws:{branch:'feat/auth-rotation',tree:'worktree',dir:'../wt/auth-rotation',dirty:1,ahead:1,behind:0},
+   ws:{branch:'feat/auth-rotation',tree:'worktree',dir:'../worktrees/auth-rotation',dirty:1,ahead:1,behind:0},
    ship:{headSha:'41ce2f0',committing:true,pr:null},
    actors:[
      {kind:'agent',agent:true,id:'a-review',lbl:'code-review agent',goal:'review 41ce2f0 vs main',astate:'done',rmeta:'2m 10s',dv:true,ch:'code-review agent @11:58',
@@ -480,7 +483,7 @@ const SESSIONS=[
        {kind:'agent',agent:true,id:'a-ts-types',lbl:'types agent',goal:'tsc --noEmit over the tree',astate:'done',rmeta:'58s',dv:true,ch:'types agent @11:40',feed:'▸ agent types — bunx tsc --noEmit\n 0 errors\n· exited 11:40'}]}]},
   /* S5 — CI failed: head CI ✗ · [Fix CI] + [Re-run] · dispatched agent = timeline row + console channel */
   {title:'Why is CI flaky',slot:'test failed · e2e login flow',meta:'opus · 64K tokens · 8m',ctx:18,dot:'run',act:'magnifying-glass',
-   ws:{branch:'fix/ci-flake',tree:'worktree',dir:'../wt/ci-flake',dirty:0,ahead:0,behind:1},
+   ws:{branch:'fix/ci-flake',tree:'worktree',dir:'../worktrees/ci-flake',dirty:0,ahead:0,behind:1},
    actors:[{kind:'run',id:'r-fixci',lbl:'fix-ci',shape:'pipeline',astate:'running',rmeta:'6m',dv:true,
      phases:[{lbl:'Diagnose',st:'done',n:'1'},{lbl:'Fix',st:'run'},{lbl:'Verify',st:'wait'}],
      members:[
@@ -507,18 +510,18 @@ const SESSIONS=[
        {n:2,by:'@sam',verdict:'changes',open:2,sha:'c07b3e1'}]}}},
   /* S8 — approved + fresh: Merge ◆ gate, two-step confirm */
   {title:'Voice input spike',slot:'approved — ready to merge',meta:'sonnet · 88K tokens · 41m',ctx:64,dot:'mist',
-   ws:{branch:'feat/voice-input',tree:'worktree',dir:'../wt/voice-input',dirty:0,ahead:3,behind:0},
+   ws:{branch:'feat/voice-input',tree:'worktree',dir:'../worktrees/voice-input',dirty:0,ahead:3,behind:0},
    ship:{headSha:'5e8c2b9',pr:{num:40},
      ci:{sha:'5e8c2b9',agg:'3 passed',cls:'pass',runs:[
        {n:'build',st:'pass',t:'44s'},{n:'test',st:'pass',t:'2m 51s'},{n:'typecheck',st:'pass',t:'27s'}]},
      review:{rounds:[{n:1,by:'@sam',verdict:'approved',sha:'5e8c2b9'}]}}},
   /* S3 — commits clean, no PR yet: PR ◆ gate · [Create PR → main] */
   {title:'Docs pass',slot:'done — ready to open the PR',meta:'haiku · 22K tokens · 5m',ctx:9,dot:'mist',act:'file-text',
-   ws:{branch:'docs/agent-rules',tree:'worktree',dir:'../wt/docs-pass',dirty:0,ahead:1,behind:0},
+   ws:{branch:'docs/agent-rules',tree:'worktree',dir:'../worktrees/docs-pass',dirty:0,ahead:1,behind:0},
    ship:{headSha:'f31d0c2',pr:null}},
   /* S0 — investigation: clean tree, no commits → NO ribbon renders (R7) */
   {title:'Explore retry semantics',slot:'reading the queue retry paths',meta:'opus · 41K tokens · 11m',ctx:22,dot:'run',act:'magnifying-glass',
-   ws:{branch:'explore/retry',tree:'worktree',dir:'../wt/retry',dirty:0,ahead:0,behind:0},
+   ws:{branch:'explore/retry',tree:'worktree',dir:'../worktrees/retry',dirty:0,ahead:0,behind:0},
    ship:{headSha:null,pr:null},
    /* workflow-scale Run: phase-grouped progress — done phase collapsed, active
       phase open with mixed member states, future phase header-only */
@@ -535,11 +538,11 @@ const SESSIONS=[
      ]}]},
   /* S3b — Create PR delegated: PR node narrates `auto ⚙`, zero buttons (R6) */
   {title:'Release notes',slot:'PR opening automatically',meta:'haiku · 12K tokens · 3m',ctx:6,dot:'run',act:'file-text',
-   ws:{branch:'docs/release-notes',tree:'worktree',dir:'../wt/release-notes',dirty:0,ahead:1,behind:0},
+   ws:{branch:'docs/release-notes',tree:'worktree',dir:'../worktrees/release-notes',dirty:0,ahead:1,behind:0},
    ship:{headSha:'d8e21f0',pr:null,prGate:'auto'}},
   /* S6 — review round running: Review ●, zero buttons */
   {title:'Retry backoff tuning',slot:'review round 1 running',meta:'sonnet · 55K tokens · 14m',ctx:31,dot:'run',act:'user',
-   ws:{branch:'feat/retry-backoff',tree:'worktree',dir:'../wt/retry-backoff',dirty:0,ahead:2,behind:0},
+   ws:{branch:'feat/retry-backoff',tree:'worktree',dir:'../worktrees/retry-backoff',dirty:0,ahead:2,behind:0},
    ship:{headSha:'7a4f9c2',pr:{num:43},
      ci:{sha:'7a4f9c2',agg:'3 passed',cls:'pass',runs:[
        {n:'build',st:'pass',t:'46s'},{n:'test',st:'pass',t:'2m 31s'},{n:'typecheck',st:'pass',t:'28s'}]},
@@ -550,21 +553,21 @@ const SESSIONS=[
    ship:{headSha:null,pr:null,draft:'chore: sweep legacy token references'}},
   /* S8b — delegated gate: Merge ● auto ⚙ narrates, no button (R6) */
   {title:'Deps bump · renovate',slot:'auto-merge armed — waiting on CI',meta:'haiku · 9K tokens · 2m',ctx:4,dot:'run',act:'arrows-clockwise',
-   ws:{branch:'chore/deps-0719',tree:'worktree',dir:'../wt/deps-0719',dirty:0,ahead:1,behind:0},
+   ws:{branch:'chore/deps-0719',tree:'worktree',dir:'../worktrees/deps-0719',dirty:0,ahead:1,behind:0},
    ship:{headSha:'b4e91d3',pr:{num:44},mergeGate:'auto',
      ci:{sha:'b4e91d3',agg:'1 running · 2 passed',cls:'run',runs:[
        {n:'build',st:'pass',t:'40s'},{n:'test',st:'run',t:'58s'},{n:'typecheck',st:'pass',t:'26s'}]},
      review:{rounds:[{n:1,by:'@sam',verdict:'approved',sha:'b4e91d3'}]}}},
   /* S9 — new commit after approval: Commits ↑1 · [Push 1] · CI/Review ⍚ stale · Merge locked */
   {title:'Search relevance boost',slot:'committed a fix after approval',meta:'sonnet · 74K tokens · 19m',ctx:28,dot:'run',act:'pencil-simple',
-   ws:{branch:'feat/search-rank',tree:'worktree',dir:'../wt/search-rank',dirty:0,ahead:4,behind:0},
+   ws:{branch:'feat/search-rank',tree:'worktree',dir:'../worktrees/search-rank',dirty:0,ahead:4,behind:0},
    ship:{headSha:'9f31c2a',unpushed:1,pr:{num:45},
      ci:{sha:'5d1c440',agg:'3 passed',cls:'pass',runs:[
        {n:'build',st:'pass',t:'45s'},{n:'test',st:'pass',t:'2m 20s'},{n:'typecheck',st:'pass',t:'28s'}]},
      review:{rounds:[{n:1,by:'@sam',verdict:'approved',sha:'5d1c440'}]}}},
   /* S10 — merged terminal · Landed */
   {title:'Token store schema',slot:'merged #38 into main · 2h ago',meta:'sonnet · 96K tokens · 2h',ctx:71,dot:'mist',
-   ws:{branch:'feat/token-store',tree:'worktree',dir:'../wt/token-store',dirty:0,ahead:0,behind:0},
+   ws:{branch:'feat/token-store',tree:'worktree',dir:'../worktrees/token-store',dirty:0,ahead:0,behind:0},
    ship:{headSha:'88aa310',terminal:'merged',pr:{num:38},
      ci:{sha:'88aa310',agg:'3 passed',cls:'pass',runs:[
        {n:'build',st:'pass',t:'47s'},{n:'test',st:'pass',t:'2m 58s'},{n:'typecheck',st:'pass',t:'30s'}]},
@@ -726,12 +729,12 @@ function railHtml(){
     const st=railStatus(s);
     const shared=treeCount(s)>1;
     const pulse=(!hot&&!pulsed&&st.cls==='amber')?(pulsed=true,' pulse1'):'';
-    const wsl=`<div class="wsline ${shared?'shared':''}" title="${s.ws.tree==='main'?'the main working tree':'worktree '+s.ws.dir}">${ic(s.ws.tree==='main'?'tree-structure':'git-branch')} <span class="b">${s.ws.branch}</span> · ${shared?`${ic('warning')} shared·${treeCount(s)}`:(s.ws.tree==='main'?'main tree':'wt')}</div>`;
+    const wsl=`<div class="wsline ${shared?'shared':''}" title="${s.ws.tree==='main'?'the main working tree':'worktree '+s.ws.dir}">${ic(s.ws.tree==='main'?'tree-structure':'git-branch')} <span class="b">${s.ws.branch}</span> · ${shared?`${ic('warning')} shared·${treeCount(s)}`:(s.ws.tree==='main'?'main tree':'worktree')}</div>`;
     return `<div class="srow ${i===selIdx?'sel':''}" data-component="SessionRow" tabindex="0" role="button" onclick="selectSession(${i})">
-    <div class="t"><span class="sic ${st.cls}" title="${st.word}" aria-label="${st.word}">${ic(st.icon)}</span><span class="ttl" title="${s.title}">${s.title}</span><span class="grow"></span><span class="stw ${st.cls}">${st.word} <span class="dot ${st.cls}${pulse}"></span></span></div>
+    <div class="t"><span class="sic ${st.cls}" title="${st.word}" aria-label="${st.word}">${ic(st.icon)}</span><span class="ttl" title="${s.title}">${s.title}</span><span class="grow"></span><span class="stw ${st.cls}">${st.word} <span class="dot glow ${st.cls}${pulse}"></span></span></div>
     <div class="slot" title="${s.slot}">${s.slot}</div>
     ${wsl}
-    <div class="ctxrow"><span class="ctxlbl">Context</span><span class="ctxbar" title="context window used (estimated)"><span style="width:${s.ctx}%"></span></span><span class="ctxpct derived" title="estimated from token usage ÷ model context window">~${s.ctx}%</span></div>
+    <div class="ctxrow"><span class="ctxlbl">Context</span><span class="ctxbar" title="context window used (estimated)"><span class="glow" style="width:${s.ctx}%"></span></span><span class="ctxpct derived" title="estimated from token usage ÷ model context window">~${s.ctx}%</span></div>
     <div class="meta" title="${s.meta}">${s.meta}</div></div>`;}).join('');
   return `<div class="panel rail" data-component="SessionRail">
     <div class="rail-h">Projects <span class="plus">${ic('plus')}</span></div>
@@ -742,17 +745,18 @@ function railHtml(){
 }
 
 /* WorkspaceIdentity — branch typed exactly ONCE on screen, here. The branch
-   NAMES the worktree: when the wt dir matches it, the tag is just "wt" (one
+   NAMES the worktree: when the worktree dir matches it, the tag is just
+   "worktree" (one
    name, never two); the dir is spelled out only for an adopted worktree whose
    dir differs. Full path lives in the title/popover. */
 function wschipHtml(s){
   const w=s.ws, shared=treeCount(s)>1;
   const dirMatches=w.dir&&w.dir.split('/').pop()===w.branch.split('/').pop();
   const tag=w.tree==='main'
-    ?`<span class="tag">main tree</span>`
-    :dirMatches?`<span class="tag" title="worktree ${w.dir} — named by the branch">worktree</span>`
-    :`<span class="tag" title="adopted worktree — dir does not match the branch">worktree <span class="mono">${w.dir}</span></span>`;
-  const dirty=w.dirty?`<span class="dirty" title="${w.dirty} uncommitted file${w.dirty>1?'s':''}">${w.dirty} dirty<span class="dot amber"></span></span>`:'';
+    ?`<span class="badge">main tree</span>`
+    :dirMatches?`<span class="badge" title="worktree ${w.dir} — named by the branch">worktree</span>`
+    :`<span class="badge" title="adopted worktree — dir does not match the branch">worktree <span class="mono">${w.dir}</span></span>`;
+  const dirty=w.dirty?`<span class="dirty" title="${w.dirty} uncommitted file${w.dirty>1?'s':''}">${w.dirty} dirty<span class="dot glow amber"></span></span>`:'';
   const parts=[];
   if(w.ahead)parts.push(`↑${w.ahead}`);
   if(w.behind)parts.push(`↓${w.behind}`);
@@ -769,7 +773,7 @@ function nowHtml(s){
   return `<div class="inset nowstrip" data-component="NowLine"><div class="now">
     <span class="nicon">${ic(icon)}</span>
     <div class="line">${line}</div><span class="grow"></span>
-    ${live?`<span class="live">live <span class="dot run"></span></span>`:''}
+    ${live?`<span class="live">live <span class="dot glow run"></span></span>`:''}
   </div></div>`;
 }
 
@@ -816,7 +820,7 @@ function outcomeRow(o){
     <span class="otype" title="${t.w}">${t.g}</span>
     <span class="otw">${t.w}</span><span class="otitle">${o.title}</span>
     <span class="grow"></span>${orollHtml(o)}
-    <span class="ostate"><span class="sword">${OSTATE[o.life]||''}</span><span class="dot ${agLifeDot(o)}" title="${OSTATE[o.life]||''}" aria-label="${OSTATE[o.life]||''}"></span></span></div>`;
+    <span class="ostate"><span class="sword">${OSTATE[o.life]||''}</span><span class="dot glow ${agLifeDot(o)}" title="${OSTATE[o.life]||''}" aria-label="${OSTATE[o.life]||''}"></span></span></div>`;
 }
 const orank=o=>['run','fail','interrupted','needs-input','stopped'].includes(o.life)?0:o.life==='queued'?2:1;
 function summaryHtml(){
@@ -912,8 +916,8 @@ function msgHtml(m){
     <div class="msg-head" onclick="toggleMsg('${m.id}')">
       <span class="cv">${open?ic('caret-down'):ic('caret-right')}</span>
       <span class="say" title="${esc(m.say)}">${m.say}</span>
-      ${m.decl?`<span class="decl">${m.decl}</span>`:''}
-      ${m.at?`<span class="mtime">${m.at}</span>`:''}<span class="dot ${sd} sd" title="${DOT_WORD[sd]||''}" aria-label="${DOT_WORD[sd]||''}"></span></div>
+      ${m.decl?`<span class="badge primary">${m.decl}</span>`:''}
+      ${m.at?`<span class="mtime">${m.at}</span>`:''}<span class="dot glow ${sd} sd" title="${DOT_WORD[sd]||''}" aria-label="${DOT_WORD[sd]||''}"></span></div>
     ${open?`<div class="msg-tools">${m.tools.map(toolRow).join('')}</div>`:''}</div>`;
 }
 /* ══ PrLifecycleRibbon — the ONE stateful home of ship-flow state.
@@ -987,7 +991,7 @@ function commitsDrawerHtml(s,stv,isHead){
   if(stv==='gate'){ /* S2 — dirty + idle: the commit repair (app, drafted msg) */
     const n=s.ws.dirty;
     return `<div class="dh"><span class="g">${ic('git-commit')}</span>Commit uncommitted work<span class="src">${n} file${n>1?'s':''}</span></div>
-      <div class="draftmsg"><span class="draft">draft</span><span class="g">${sh.draft||''}</span><span class="redraft" onclick="event.stopPropagation()" tabindex="0" role="button" title="re-draft the message from the diff">${ic('arrow-clockwise')}</span></div>
+      <div class="draftmsg"><span class="badge">draft</span><span class="g">${sh.draft||''}</span><span class="redraft" onclick="event.stopPropagation()" tabindex="0" role="button" title="re-draft the message from the diff">${ic('arrow-clockwise')}</span></div>
       ${isHead?`<div class="mstage-act"><button class="mbtn" tabindex="0">${ic('git-commit')} Commit ${n} file${n>1?'s':''}</button></div>`:''}`;
   }
   if(stv==='sync'){ /* S9 — post-PR sync (R5, policy manual) */
@@ -1235,7 +1239,7 @@ function fileDiff(gkey,f,markWip){
   const key=f.p, isViewed=!!viewed[key];
   const fnd=findingsFor(key);
   const openN=fnd.filter(x=>findingStatus[x.id]!=='fixed').length;
-  const wip=(markWip&&!f.commit)?`<span class="wipchip" title="uncommitted — in the tree, not yet in a commit">uncommitted</span>`:'';
+  const wip=(markWip&&!f.commit)?`<span class="badge warn" title="uncommitted — in the tree, not yet in a commit">uncommitted</span>`:'';
   const flag=fnd.length?`<span class="flag" title="${fnd.length} review finding${fnd.length>1?'s':''} on this file">${ic('flag')} ${openN||fnd.length}</span>`:'';
   /* R14 — finding BODIES render inline under the hunk; the Review tab jumps here */
   const cards=(fnd.length&&!isViewed)?fnd.map(findingCard).join(''):'';
@@ -1271,7 +1275,7 @@ function detailHtml(){
        the agent review's one pointer: count + static dot (R14). */
     const churn=`+${FILES.reduce((x,f)=>x+f.a,0)} −${FILES.reduce((x,f)=>x+f.d,0)}`;
     const outstanding=openFindings();
-    const reviewLbl=outstanding?`${outstanding?'<span class="tglow"></span>':''}Review · ${outstanding}`:`Review ${ic('check')}`;
+    const reviewLbl=outstanding?`Review · ${outstanding}<span class="tglow glow"></span>`:`Review ${ic('check')}`;
     const toggle=detailTab==='changes'
       ?`<span class="vtoggle" data-component="ChangesViewToggle"><span class="vt ${changesView==='all'?'on':''}" onclick="setChangesView('all')">All files</span><span class="vt ${changesView==='commits'?'on':''}" onclick="setChangesView('commits')">By commit</span></span>`:'';
     strip=`<div class="dtabs" data-component="WorkTabs">
@@ -1416,7 +1420,7 @@ function drawStars(){const dpr=Math.min(2,devicePixelRatio||1);starC.width=inner
     c.globalAlpha=0.15+Math.random()*0.5;c.fillStyle='#cbc5bb'/* component-local: canvas star ink (decorative; canvas can't read CSS vars) */;c.beginPath();c.arc(x,y,r,0,7);c.fill();}c.globalAlpha=1;}
 const ORB=['idle','listening','thinking','speaking'];let orbState=0;
 function cycleOrb(){orbState=(orbState+1)%ORB.length;document.getElementById('orbstate').textContent=ORB[orbState];
-  document.getElementById('glow').classList.toggle('warm',orbState>0);drawOrb();}
+  document.getElementById('halo').classList.toggle('warm',orbState>0);drawOrb();}
 window.cycleOrb=cycleOrb;
 function drawOrb(){const cv=document.getElementById('orb');if(!cv)return;const c=cv.getContext('2d'),cx=26,cy=26,R=13,warm=orbState>0;
   /* component-local: concierge-orb canvas palette (decorative singleton, not tokenized) */

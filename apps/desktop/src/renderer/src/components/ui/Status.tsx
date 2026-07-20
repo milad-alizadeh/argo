@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
 import { StatusDot } from './StatusDot'
 import { STATUS_STATE, STATUS_TONE, type StatusState } from './sessionStatus'
+import { Text } from './Text'
 
 // Molecule: a state as its word plus a dot, in the one order the cockpit uses — word
 // first, dot terminating the row. The word carries the state and the dot only tints it,
@@ -20,15 +21,16 @@ export function Status({
 }): React.JSX.Element {
   const { word, tone } = STATUS_STATE[state]
   return (
-    <span
+    <Text
+      variant="meta"
       className={cn(
-        'inline-flex shrink-0 items-center gap-snug text-meta',
+        'inline-flex shrink-0 items-center gap-snug',
         STATUS_TONE[tone].textClass,
         className,
       )}
     >
       {word}
       <StatusDot tone={tone} pulse={pulse} />
-    </span>
+    </Text>
   )
 }
