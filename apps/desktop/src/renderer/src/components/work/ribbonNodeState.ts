@@ -7,6 +7,10 @@ import {
   GearIcon,
   type IconAtom,
   ProhibitIcon,
+  SOLID_PRIMARY_TONE,
+  VERDICT_BLOCK_WASH,
+  VERDICT_CHANGES_WASH,
+  WASH_PRIMARY_TONE,
   WarningIcon,
 } from '@/components/ui'
 
@@ -15,9 +19,9 @@ export interface RibbonNodeStatePresentation {
    * is: the node's own name already sits beside it as the `rlbl`, so the icon's only job is
    * to say where the STAGE stands. */
   Icon: IconAtom
-  /** Tailwind classes for the 18px glyph disc — border, fill/wash and ink together, since the
-   * cockpit's washed-tint recipe (`badge.tsx`) is a border+background+text triple that no
-   * single token name covers. */
+  /** Tailwind classes for the 18px glyph disc — border, fill/wash and ink together, spent
+   * from `ui/toneRecipes.ts` where button.tsx and badge.tsx already draw their own tones,
+   * so the three never independently drift on the same opacity pair. */
   glyph: string
   /** Tailwind classes for the node's label and sub echo. */
   label: string
@@ -27,8 +31,7 @@ export interface RibbonNodeStatePresentation {
 // paints identically for all three (`.rnode.now .glyph,.rnode.gate .glyph,.rnode.sync
 // .glyph`). R2 draws gate apart from in-progress by FORM (the outer ring RibbonNode adds
 // itself), never by a second tint — so the vocabulary only needs one entry for the shape.
-const ACTIVE_GLYPH =
-  'border-primary/55 bg-linear-to-br from-primary-bright to-primary text-primary-foreground'
+const ACTIVE_GLYPH = SOLID_PRIMARY_TONE
 const ACTIVE_LABEL = 'text-foreground'
 
 /** State → icon + tone, in the `findingState.ts` pattern: every render fact about a ribbon
@@ -44,7 +47,7 @@ export const RIBBON_NODE_STATE: Record<RibbonNodeState, RibbonNodeStatePresentat
   sync: { Icon: CircleNotchIcon, glyph: ACTIVE_GLYPH, label: ACTIVE_LABEL },
   auto: {
     Icon: GearIcon,
-    glyph: 'border-primary/40 bg-primary/12 text-primary-soft',
+    glyph: WASH_PRIMARY_TONE,
     label: 'text-primary-soft',
   },
   done: {
@@ -54,12 +57,12 @@ export const RIBBON_NODE_STATE: Record<RibbonNodeState, RibbonNodeStatePresentat
   },
   fail: {
     Icon: ProhibitIcon,
-    glyph: 'border-verdict-block-tint/55 bg-verdict-block-tint/12 text-verdict-block',
+    glyph: `${VERDICT_BLOCK_WASH} text-verdict-block`,
     label: 'text-verdict-block',
   },
   warn: {
     Icon: WarningIcon,
-    glyph: 'border-verdict-changes-tint/55 bg-verdict-changes-tint/12 text-verdict-changes',
+    glyph: `${VERDICT_CHANGES_WASH} text-verdict-changes`,
     label: 'text-verdict-changes',
   },
   // Stale is never red (R3: nothing failed, a fresher sha exists) — the dash and the

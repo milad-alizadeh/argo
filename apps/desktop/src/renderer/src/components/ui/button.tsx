@@ -4,6 +4,7 @@ import type * as React from 'react'
 
 import { cn } from '@/lib/utils'
 import { TYPE_ROLE_CLASS } from './Text'
+import { SOLID_PRIMARY_TONE, VERDICT_APPROVE_WASH, VERDICT_CHANGES_WASH } from './toneRecipes'
 
 // Padding and the type role are deliberately NOT here: tailwind-merge only de-dupes the
 // classes it knows, and both the spacing roles and the type roles are ours, so a `px-gap`
@@ -21,8 +22,7 @@ const buttonVariants = cva(CONTROL_BASE, {
     variant: {
       // The gradient is the screen's ONE primary (R2) — it belongs to the head node's
       // drawer. Disabled drops the gradient: a dead control must not read as the primary.
-      primary:
-        'border-primary/55 bg-linear-to-br from-primary-bright to-primary text-primary-foreground disabled:border-border disabled:bg-none disabled:text-muted-foreground',
+      primary: `${SOLID_PRIMARY_TONE} disabled:border-border disabled:bg-none disabled:text-muted-foreground`,
       ghost:
         'border-border bg-transparent text-muted-foreground hover:border-input hover:text-foreground',
       // Ghost without the border: for a control that sits in a strip of its own peers
@@ -40,10 +40,8 @@ const buttonVariants = cva(CONTROL_BASE, {
         'border-input bg-foreground/4 text-foreground-bright hover:border-primary',
       // A 55% border over a 12% wash deepening to 24% on hover: the tint carries the
       // weight the primary's gradient would, without spending the screen's one primary.
-      'verdict-changes':
-        'border-verdict-changes-tint/55 bg-verdict-changes-tint/12 text-foreground hover:border-verdict-changes-tint hover:bg-verdict-changes-tint/24',
-      'verdict-approve':
-        'border-verdict-approve-tint/55 bg-verdict-approve-tint/12 text-foreground hover:border-verdict-approve-tint hover:bg-verdict-approve-tint/24',
+      'verdict-changes': `${VERDICT_CHANGES_WASH} text-foreground hover:border-verdict-changes-tint hover:bg-verdict-changes-tint/24`,
+      'verdict-approve': `${VERDICT_APPROVE_WASH} text-foreground hover:border-verdict-approve-tint hover:bg-verdict-approve-tint/24`,
     },
     size: {
       default: `px-inset py-snug ${TYPE_ROLE_CLASS['row-strong']}`,
