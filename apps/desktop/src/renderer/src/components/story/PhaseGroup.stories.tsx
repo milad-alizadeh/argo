@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import type { AgentRowModel } from './AgentRow'
 import { PhaseGroup } from './PhaseGroup'
-import { PHASE_STATES } from './phaseState'
+import { PHASE_STATES, type PhaseState } from './phaseState'
 
 const surveyMembers: AgentRowModel[] = [
   {
@@ -110,15 +110,19 @@ export const WithoutMembers: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('queued')).toBeInTheDocument()
     await expect(canvas.queryByText('queued 0/0')).not.toBeInTheDocument()
+    // the phase keys off both attributes together — a phase name is unique only in its Run
+    await expect(canvasElement.querySelector('[data-run-id="retry-audit"]')).toBeVisible()
+    await expect(canvasElement.querySelector('[data-phase="Synthesize"]')).toBeVisible()
   },
 }
 
-// An open phase with no members is the same header — `open` cannot conjure rows.
-export const OpenWithoutMembers: Story = {
-  args: { label: 'Synthesize', state: 'wait', members: [], open: true },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Synthesize')).toBeInTheDocument()
-  },
+// Each state gets members its own domain could actually produce — a done phase has finished
+// every member, a queued one has started none. Sharing one fixture would render "done 1/3",
+// a finished phase with two members still outstanding.
+const MEMBERS_BY_STATE: Record<PhaseState, AgentRowModel[]> = {
+  done: surveyMembers,
+  run: deepReadMembers,
+  wait: deepReadMembers.map((member) => ({ ...member, state: 'queued', duration: undefined })),
 }
 
 // The three rails side by side — the visual-diff surface for the state hue that the rail
@@ -127,14 +131,21 @@ export const EveryState: Story = {
   render: (args) => (
     <div className="flex flex-col gap-gap">
       {PHASE_STATES.map((state) => (
-        <PhaseGroup key={state} {...args} state={state} label={`Phase ${state}`} open={false} />
+        <PhaseGroup
+          key={state}
+          {...args}
+          state={state}
+          label={`Phase ${state}`}
+          members={MEMBERS_BY_STATE[state]}
+          open={false}
+        />
       ))}
     </div>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('done 1/3')).toBeInTheDocument()
+    await expect(canvas.getByText('done 2/2')).toBeInTheDocument()
     await expect(canvas.getByText('running 1/3')).toBeInTheDocument()
-    await expect(canvas.getByText('queued 1/3')).toBeInTheDocument()
+    await expect(canvas.getByText('queued 0/3')).toBeInTheDocument()
   },
 }

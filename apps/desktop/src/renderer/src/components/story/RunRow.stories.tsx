@@ -167,11 +167,62 @@ export const CollapsedWorkflow: Story = {
   },
 }
 
-// A Run's progress normally reports its state, so only failure spends a word on it.
-export const Failed: Story = {
-  args: { state: 'failed', open: false },
+// A Run dispatched with nothing in it yet. The batch summary still reports honestly rather
+// than hiding: "0/0 done" is the designed empty presentation, not a placeholder.
+export const EmptyBatch: Story = {
+  args: { members: [], open: false },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('failed')).toBeInTheDocument()
+    await expect(within(canvasElement).getByText('0/0 done')).toBeInTheDocument()
+  },
+}
+
+// A member whose `phase` matches no declared Phase would vanish from the tree, so the
+// partition is pinned here: every member lands under exactly one Phase, and a Phase with no
+// matching members still renders its header.
+export const WorkflowWithUnmatchedPhase: Story = {
+  args: {
+    label: 'retry-audit',
+    shape: 'pipeline',
+    phases: workflowPhases,
+    members: [
+      ...workflowMembers,
+      {
+        name: 'stray agent',
+        // 'Deep read' is not the declared 'Deep-read'
+        phase: 'Deep read',
+        goal: 'a phase label the Run never declared',
+        state: 'running',
+        channelId: 'a-stray',
+      },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // the stray member is not silently folded into the nearest phase
+    await expect(canvas.getByText('running 1/3')).toBeInTheDocument()
+    await expect(canvas.queryByText('running 1/4')).not.toBeInTheDocument()
+    await expect(canvas.queryByText('stray agent')).not.toBeInTheDocument()
+  },
+}
+
+// A Phase carrying its own `open` overrides `phaseOpensByDefault` — this is the seam a
+// container writes into when the user expands a finished phase or collapses the live one.
+export const WorkflowWithPhaseOverride: Story = {
+  args: {
+    label: 'retry-audit',
+    shape: 'pipeline',
+    members: workflowMembers,
+    phases: [
+      { label: 'Survey', state: 'done', count: '4', open: true },
+      { label: 'Deep-read', state: 'run', count: '2/3', open: false },
+      { label: 'Synthesize', state: 'wait' },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // the done phase is open against its default, the worked phase closed against its own
+    await expect(canvas.getByText('backoff agent')).toBeInTheDocument()
+    await expect(canvas.queryByText('idempotency agent')).not.toBeInTheDocument()
   },
 }
 

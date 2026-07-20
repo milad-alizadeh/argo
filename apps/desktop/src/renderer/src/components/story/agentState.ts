@@ -6,11 +6,8 @@ export const AGENT_STATES = ['running', 'done', 'failed', 'queued'] as const
 export type AgentState = (typeof AGENT_STATES)[number]
 
 // The roster speaks its states in lowercase, so the word IS the state and only the tone
-// needs a lookup. Names a `--tone-*` token, never a colour.
-//
-// Only running and failed spend the row's one state hue; done and queued stay in the faint
-// meta role beside their duration, which is why this is not the Status molecule — a dot
-// would put colour on a row whose word deliberately carries none.
+// needs a lookup. Names a `--tone-*` token, never a colour; `null` means the state spends
+// no hue at all, which is what keeps a row to at most one.
 export const AGENT_TONE: Record<AgentState, RailTone | null> = {
   running: 'run',
   done: null,

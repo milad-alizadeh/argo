@@ -39,6 +39,7 @@
   --color-panel: var(--panel);
   --color-inset: var(--inset);
   --color-inset-hair: var(--inset-hair);
+  --color-inset-lip: var(--inset-lip);
   --color-well: var(--well);
 
   --color-tone-run: var(--tone-run);
@@ -126,6 +127,7 @@
   --spacing-gap: var(--space-gap);
   --spacing-inset: var(--space-inset);
   --spacing-region: var(--space-region);
+  --spacing-nest: var(--space-nest);
 
   /* Motion roles: duration-fast / duration-slow / duration-pulse. */
   --transition-duration-fast: var(--time-fast);
@@ -170,6 +172,12 @@
 @utility icon-sm {
   width: var(--icon-box-sm);
   height: var(--icon-box-sm);
+}
+
+/* The lit top edge of a flat inset card — 1px of the foreground, which is what lifts the
+ * card off the frosted panel it sits in without adding a second glass layer. */
+@utility inset-lip {
+  box-shadow: 0 1px 0 var(--inset-lip) inset;
 }
 
 @layer base {

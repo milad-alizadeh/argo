@@ -1,12 +1,13 @@
 import { Fragment } from 'react'
+import { Text } from '@/components/ui'
+import { ArrowRightIcon, TreeStructureIcon } from '@/components/ui/icons'
 import { cn } from '@/lib/utils'
 import type { AgentRowModel } from './AgentRow'
 import { AgentRow } from './AgentRow'
-import { agentStateWordClass, doneAgentCount } from './agentState'
-import { ArrowRightIcon, CaretDownIcon, CaretRightIcon, TreeStructureIcon } from './icons'
+import { doneAgentCount } from './agentState'
 import { PhaseGroup } from './PhaseGroup'
 import { PHASE_PRESENTATION, type PhaseState, phaseOpensByDefault } from './phaseState'
-import { Text } from './Text'
+import { RosterRow } from './RosterRow'
 
 export const RUN_SHAPES = ['batch', 'pipeline'] as const
 
@@ -31,6 +32,9 @@ export type RunPhase = {
   state: PhaseState
   /** The tally the collapsed progress walk shows beside the Phase's glyph. */
   count?: string
+  /** Whether this Phase shows its members, overriding `phaseOpensByDefault`. This is where
+   * a container records that the user expanded or collapsed the Phase by hand. */
+  open?: boolean
 }
 
 /** A Run member is an Agent plus the Phase it belongs to — flat members carry no phase. */
@@ -39,10 +43,13 @@ export type RunMember = AgentRowModel & { phase?: string }
 export type RunRowProps = {
   /** The Run's name. */
   label: string
+  /** Whether the Run is a flat batch or a phased workflow — this is what decides the
+   * collapsed progress summary's shape and whether members group. */
   shape: RunShape
   /** Where the Run stands. Its progress is what normally reports this, so only a failed
    * Run spends a state word. */
   state: RunState
+  /** How long the Run has been going, or went for. */
   duration?: string
   /** Every Agent in the Run. A `pipeline` partitions these by `phase`. */
   members: readonly RunMember[]
@@ -50,6 +57,7 @@ export type RunRowProps = {
   phases?: readonly RunPhase[]
   /** Whether the members are showing. */
   open: boolean
+  /** Extra classes for the Run's outer element. */
   className?: string
 }
 
@@ -64,8 +72,8 @@ function membersOfPhase(
   return members.filter((member) => member.phase === phaseLabel).map(agentOf)
 }
 
-// Molecule: a Run in the story pane's Actor roster — a batch or a dynamic workflow, with
-// its member AgentRows nested beneath. The progress summary shows only while collapsed:
+// Molecule: a Run in the story pane's Actor roster — a batch or a dynamic workflow, with its
+// member AgentRows nested beneath. The progress summary shows only while collapsed:
 // expanded, the phase rails and member rows already carry the same information.
 export function RunRow({
   label,
@@ -78,17 +86,17 @@ export function RunRow({
   className,
 }: RunRowProps): React.JSX.Element {
   const shapeWord = SHAPE_WORD[shape]
-  const Caret = open ? CaretDownIcon : CaretRightIcon
   return (
     <div className={className}>
-      <div
+      <RosterRow
+        caret={open ? 'open' : 'closed'}
+        glyph={TreeStructureIcon}
         title={`${shapeWord} — a Run of ${members.length} agents`}
-        className="flex items-center gap-gap rounded-lg px-gap py-tight hover:bg-foreground/5"
+        stateWord={state === 'failed' ? state : undefined}
+        duration={duration}
       >
-        <Caret aria-hidden className="size-3 text-foreground-faint" />
-        <TreeStructureIcon aria-hidden className="size-4 text-primary-soft" />
-        {/* The name is what gives way when the row runs out of width — the progress
-            summary beside it is the Run's state and must stay whole. */}
+        {/* The name is what gives way when the row runs out of width — the progress summary
+            beside it is the Run's state and must stay whole. */}
         <Text variant="row-strong" className="min-w-0 truncate text-foreground">
           {label}
         </Text>
@@ -96,25 +104,15 @@ export function RunRow({
           {shapeWord}
         </Text>
         {!open && <RunProgress members={members} phases={phases} />}
-        <span className="flex-1" />
-        {(state === 'failed' || duration !== undefined) && (
-          <span className="inline-flex shrink-0 items-baseline gap-tight text-foreground-faint">
-            {state === 'failed' && (
-              <Text variant="meta" className={agentStateWordClass(state)}>
-                {state}
-              </Text>
-            )}
-            {duration !== undefined && <Text variant="meta">{duration}</Text>}
-          </span>
-        )}
-      </div>
+      </RosterRow>
       {open && <RunMembers label={label} state={state} members={members} phases={phases} />}
     </div>
   )
 }
 
 // The collapsed run's own state: a phase glyph-walk for a workflow, a done-count for a
-// batch. Only the phase being worked carries a hue; past and future stay in the meta role.
+// batch. The whole walk sits in the meta role, so its arrows and glyphs are sized by the
+// text they separate rather than by the root font.
 function RunProgress({
   members,
   phases,
@@ -127,27 +125,21 @@ function RunProgress({
     )
   }
   return (
-    <span className="inline-flex shrink-0 items-center gap-tight">
+    <Text variant="meta" className="inline-flex shrink-0 items-center gap-tight">
       {phases.map((phase, index) => {
-        const { glyph: Glyph } = PHASE_PRESENTATION[phase.state]
+        const { glyph: Glyph, walkInk } = PHASE_PRESENTATION[phase.state]
         return (
           <Fragment key={phase.label}>
-            {index > 0 && <ArrowRightIcon aria-hidden className="icon-sm text-foreground-faint" />}
-            <Text
-              variant="meta"
-              className={cn(
-                'inline-flex items-center gap-hair',
-                phase.state === 'run' ? 'text-tone-run' : 'text-foreground-faint',
-              )}
-            >
+            {index > 0 && <ArrowRightIcon aria-hidden className="text-foreground-faint" />}
+            <span className={cn('inline-flex items-center gap-hair', walkInk)}>
               {phase.label}
-              <Glyph aria-hidden className="icon-sm" />
+              <Glyph aria-hidden />
               {phase.count}
-            </Text>
+            </span>
           </Fragment>
         )
       })}
-    </span>
+    </Text>
   )
 }
 
@@ -161,7 +153,7 @@ function RunMembers({
 }: Pick<RunRowProps, 'label' | 'state' | 'members' | 'phases'>): React.JSX.Element {
   if (phases) {
     return (
-      <div className="mt-hair mb-tight ml-6">
+      <div className="mt-hair mb-tight ml-nest">
         {phases.map((phase) => (
           <PhaseGroup
             key={phase.label}
@@ -170,14 +162,14 @@ function RunMembers({
             label={phase.label}
             state={phase.state}
             members={membersOfPhase(members, phase.label)}
-            open={phaseOpensByDefault(phase.state)}
+            open={phase.open ?? phaseOpensByDefault(phase.state)}
           />
         ))}
       </div>
     )
   }
   return (
-    <div className="mt-hair mb-tight ml-6 border-l border-inset-hair pl-snug">
+    <div className="mt-hair mb-tight ml-nest border-l border-inset-hair pl-snug">
       {members.map((member) => (
         <AgentRow key={member.channelId} {...agentOf(member)} rollupState={state} />
       ))}

@@ -42,6 +42,12 @@ export const Default: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('running')).toBeInTheDocument()
     await expect(canvas.getByText('3m')).toBeInTheDocument()
+    // the seam above keys console selection off this attribute
+    await expect(canvasElement.querySelector('[data-channel-id="a-idempotency"]')).toBeVisible()
+    // a goal longer than the row truncates rather than pushing the meta unit off the right
+    // edge — which is what keeps the duration column straight
+    const goal = canvas.getByText('audit handler idempotency keys')
+    await expect(goal).toHaveClass('truncate')
   },
 }
 
@@ -83,17 +89,6 @@ export const InformativeAgainstRollup: Story = {
   },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('done')).toBeInTheDocument()
-  },
-}
-
-// A goal longer than the row truncates rather than pushing the trailing meta unit off the
-// right edge, which is what keeps the duration column straight.
-export const LongGoal: Story = {
-  args: {
-    goal: 'audit every handler in the queue package for idempotency-key derivation and dead-letter fallout',
-  },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('3m')).toBeInTheDocument()
   },
 }
 

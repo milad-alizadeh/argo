@@ -1,19 +1,20 @@
+import { Text } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { AgentRow, type AgentRowModel } from './AgentRow'
 import { doneAgentCount } from './agentState'
-import { CaretDownIcon, CaretRightIcon } from './icons'
 import {
   PHASE_PRESENTATION,
   PHASE_ROLLUP_STATE,
   type PhaseState,
   phaseStatusText,
 } from './phaseState'
-import { Text } from './Text'
+import { RosterRow } from './RosterRow'
 
 export type PhaseGroupProps = {
-  /** Which Run this Phase belongs to — a Phase name is only unique within its Run. */
+  /** Which Run this Phase belongs to — a Phase name is only unique within its Run. Lands as
+   * `data-run-id` beside `data-phase`, which together key the Phase for the seam above. */
   runId: string
-  /** The Phase's name, in the eyebrow role. */
+  /** The Phase's name, in the eyebrow role. Also lands as `data-phase`. */
   label: string
   /** Where the Phase stands. The left rail is what shows it. */
   state: PhaseState
@@ -22,12 +23,12 @@ export type PhaseGroupProps = {
   /** Whether the members are showing. Done phases collapse to their header and future
    * phases are header-only, so only the phase being worked opens by default. */
   open: boolean
+  /** Extra classes for the group's outer element. */
   className?: string
 }
 
 // Molecule: a Run's members grouped under the Phase that owns them. A Phase is a grouping,
-// not an Actor, so it has no icon and no duration — its left rail carries the state and
-// its status word repeats that hue inline, leaving the right edge a clean duration column.
+// not an Actor, so it has no glyph and no duration — its left rail carries the state.
 export function PhaseGroup({
   runId,
   label,
@@ -36,33 +37,28 @@ export function PhaseGroup({
   open,
   className,
 }: PhaseGroupProps): React.JSX.Element {
-  const { rail, ink } = PHASE_PRESENTATION[state]
+  const { rail, ink, nameInk } = PHASE_PRESENTATION[state]
   const statusText = phaseStatusText(state, members.length, doneAgentCount(members))
-  const Caret = open ? CaretDownIcon : CaretRightIcon
   return (
     <div
       data-run-id={runId}
       data-phase={label}
-      className={cn('my-hair border-l-2 pl-gap', rail, className)}
+      className={cn('mt-hair mb-tight border-l-2 pl-gap', rail, className)}
     >
-      <div
+      <RosterRow
+        // A phase with nothing to open still reserves the caret, so every phase name in the
+        // Run starts at the same x.
+        caret={members.length === 0 ? 'reserved' : open ? 'open' : 'closed'}
         title={`phase ${label} — ${statusText}`}
-        className="flex items-center gap-gap rounded-lg px-gap py-hair"
+        className="py-hair"
       >
-        {/* The caret box holds its width with no members, so every phase name lines up. */}
-        <span className="inline-flex size-3 shrink-0 items-center text-foreground-faint">
-          {members.length > 0 && <Caret aria-hidden className="icon-sm" />}
-        </span>
-        <Text
-          variant="eyebrow"
-          className={state === 'wait' ? 'text-foreground-faint' : 'text-muted-foreground'}
-        >
+        <Text variant="eyebrow" className={nameInk}>
           {label}
         </Text>
         <Text variant="meta" className={cn('shrink-0', ink)}>
           {statusText}
         </Text>
-      </div>
+      </RosterRow>
       {open && members.length > 0 && (
         <div className="ml-inset">
           {members.map((member) => (

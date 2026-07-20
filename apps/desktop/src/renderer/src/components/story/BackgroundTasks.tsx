@@ -1,6 +1,6 @@
+import { SectionHeader } from '@/components/ui'
 import { AgentRow, type AgentRowModel } from './AgentRow'
 import { RunRow, type RunRowProps } from './RunRow'
-import { SectionHeader } from './SectionHeader'
 
 /** One entry in the roster: a lone Agent, or a Run holding its own. */
 export type RosterActor =
@@ -11,6 +11,7 @@ export type BackgroundTasksProps = {
   /** The session's Actors, in the order they were dispatched. An empty roster renders
    * nothing at all — a session with no Agents has no Background Tasks section. */
   actors: readonly RosterActor[]
+  /** Extra classes for the section element. */
   className?: string
 }
 
@@ -46,7 +47,7 @@ export function BackgroundTasks({
     <section aria-label="Background Tasks" className={className}>
       <SectionHeader label="Background Tasks" className="mx-hair mb-gap" />
       {/* Flat inset card inside the panel's one frosted surface — never glass on glass. */}
-      <div className="rounded-xl border border-inset-hair bg-inset px-snug py-gap">
+      <div className="inset-lip rounded-xl border border-inset-hair bg-inset px-snug py-gap">
         {actors.map((actor) => (
           <ActorRow key={actorKey(actor)} actor={actor} />
         ))}
