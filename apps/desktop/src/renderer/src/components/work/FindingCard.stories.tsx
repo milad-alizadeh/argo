@@ -4,7 +4,7 @@ import { FINDING_SEVERITIES, FINDING_STATES } from '@/components/ui'
 import { FindingCard } from './FindingCard'
 
 const meta = {
-  title: 'Cockpit/Work/FindingCard',
+  title: 'Cockpit/Work/FileDiff/FindingCard',
   component: FindingCard,
   args: {
     severity: 'blocking',
@@ -77,20 +77,4 @@ export const Advisory: Story = {
  * independent of the finding's own severity. */
 export const WalkFocused: Story = {
   args: { severity: 'advisory', walkFocus: true },
-}
-
-/** Every severity in one frame — the visual-diff surface for the accent pair. */
-export const AllSeverities: Story = {
-  render: (args) => (
-    <div className="flex flex-col">
-      {FINDING_SEVERITIES.map((severity) => (
-        <FindingCard key={severity} {...args} severity={severity} />
-      ))}
-    </div>
-  ),
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getAllByRole('button', { name: 'Address' })).toHaveLength(
-      FINDING_SEVERITIES.length,
-    )
-  },
 }

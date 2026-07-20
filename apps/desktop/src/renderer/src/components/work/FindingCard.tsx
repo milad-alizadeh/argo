@@ -19,12 +19,12 @@ function severityAccent(severity: FindingSeverity): { icon: string; card: string
     case 'blocking':
       return {
         icon: 'text-verdict-block',
-        card: 'border-l-2 border-verdict-block bg-verdict-block-tint/6',
+        card: 'border-l-[var(--border-rail)] border-verdict-block bg-verdict-block-tint/6',
       }
     case 'advisory':
       return {
         icon: 'text-verdict-changes',
-        card: 'border-l-2 border-verdict-changes bg-verdict-changes-tint/6',
+        card: 'border-l-[var(--border-rail)] border-verdict-changes bg-verdict-changes-tint/6',
       }
   }
 }

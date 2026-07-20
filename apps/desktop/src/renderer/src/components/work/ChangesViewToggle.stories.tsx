@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { CHANGES_VIEWS, ChangesViewToggle } from './ChangesViewToggle'
 
 const meta = {
-  title: 'Cockpit/Work/ChangesViewToggle',
+  title: 'Cockpit/Work/WorkTabs/ChangesViewToggle',
   component: ChangesViewToggle,
   args: { view: 'all', onChangeView: fn() },
   argTypes: {
@@ -14,7 +14,8 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** All files selected — the Changes tab's default view. */
+/** All files selected — the Changes tab's default view. Reselecting the active side is a no-op
+ * (`type="single"` never clears to nothing); switching sides fires the change. */
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
@@ -22,6 +23,8 @@ export const Default: Story = {
       'data-state',
       'on',
     )
+    await userEvent.click(canvas.getByRole('radio', { name: 'All files' }))
+    await expect(args.onChangeView).not.toHaveBeenCalled()
     await userEvent.click(canvas.getByRole('radio', { name: 'By commit' }))
     await expect(args.onChangeView).toHaveBeenCalledWith('commits')
   },
@@ -35,14 +38,5 @@ export const ByCommit: Story = {
       'data-state',
       'on',
     )
-  },
-}
-
-/** Clicking the side already selected keeps it selected — `type="single"` never clears to
- * nothing (there is no "no view" state). */
-export const IgnoresReselect: Story = {
-  play: async ({ canvasElement, args }) => {
-    await userEvent.click(within(canvasElement).getByRole('radio', { name: 'All files' }))
-    await expect(args.onChangeView).not.toHaveBeenCalled()
   },
 }

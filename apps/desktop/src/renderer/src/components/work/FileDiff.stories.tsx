@@ -49,23 +49,17 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** A modified file, unviewed — the hunk is visible and the row reads at full opacity. */
+/** A modified file, unviewed — the hunk is visible and the row reads at full opacity. Marking
+ * Viewed (from either the header or the checkbox, one local state) dims the row, strikes the
+ * path and collapses the hunk; toggling back restores it. */
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('src/auth/rotateToken.ts')).toBeInTheDocument()
     await expect(canvas.getByText('+12')).toBeInTheDocument()
     await expect(canvas.getByText('−4')).toBeInTheDocument()
-    await expect(canvas.getByRole('checkbox', { name: 'Viewed' })).not.toBeChecked()
-  },
-}
-
-/** Marking Viewed dims the row, strikes the path and collapses the hunk — from either
- * control, since the header and the checkbox toggle the same local state. */
-export const TogglingViewed: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
     const checkbox = canvas.getByRole('checkbox', { name: 'Viewed' })
+    await expect(checkbox).not.toBeChecked()
     await userEvent.click(canvas.getByText('src/auth/rotateToken.ts'))
     await expect(checkbox).toBeChecked()
     await expect(canvas.queryByText(/const claim/)).not.toBeInTheDocument()
