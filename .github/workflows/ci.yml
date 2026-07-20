@@ -89,6 +89,16 @@ jobs:
       - name: Story tests
         run: bun run test:stories
 
+      # Visual-regression diffs (actual/diff PNGs) for the human to inspect before approving.
+      - name: Upload visual diffs
+        uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: visual-diffs
+          path: apps/desktop/.vitest-attachments/
+          retention-days: 7
+          if-no-files-found: ignore
+
   e2e:
     name: electron e2e
     runs-on: ubuntu-latest
@@ -135,3 +145,46 @@ jobs:
           name: playwright-traces
           path: apps/desktop/test-results/
           retention-days: 7
+
+  # When the visual gate inside `stories` fails, this job waits on the `visual-baselines`
+  # environment — GitHub shows its native "Review deployments → Approve" button on the PR.
+  # On approval it regenerates the baselines in CI (Linux) and pushes them to the PR branch,
+  # which re-runs `stories` green. Create the environment with yourself as a required reviewer
+  # in Settings → Environments, or the job auto-approves and the gate is toothless.
+  approve-baselines:
+    name: approve visual baselines
+    needs: stories
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.stories.result == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: visual-baselines
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # A PAT, not GITHUB_TOKEN: a commit pushed by GITHUB_TOKEN starts no new workflow run,
+          # so the `stories` gate would never re-run to clear its red X.
+          token: ${{ secrets.VISUAL_APPROVE_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - uses: ./.github/actions/setup
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      # --update overwrites every baseline; unchanged stories re-render to identical bytes.
+      - name: Regenerate baselines
+        run: cd apps/desktop && bun run test:stories -- --update
+
+      - name: Commit and push updated baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add '*__screenshots__*'
+          if git diff --cached --quiet; then
+            echo "No baseline changes to push."
+            exit 0
+          fi
+          git commit -m "test(visual): approve updated screenshot baselines"
+          git push origin "HEAD:${{ github.head_ref }}"

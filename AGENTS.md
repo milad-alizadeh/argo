@@ -73,6 +73,29 @@ run `graphify update` by hand. Communities are named deterministically from thei
 node; never run `graphify label` for upkeep (it re-clusters and drops dated backups). How it's
 wired (worktree guard, merge driver) lives in the `setup-graphify` skill, not here.
 
+## Visual verification
+
+UI regression is gated deterministically in CI, not per change. The `stories` job screenshots
+every Storybook story (vitest `toMatchScreenshot`, chromium browser mode via
+`.storybook/vitest.setup.ts`) and compares it to a committed baseline at
+`apps/desktop/src/**/__screenshots__/<story>.stories.tsx/<id>-chromium-linux.png`. Drift fails
+the job and uploads the diff as the `visual-diffs` artifact.
+
+Baselines are Linux-only (antialiasing is OS-specific) and generated in CI — local `-darwin`/
+`-win32` images are git-ignored, never commit them. To accept an intended change, use GitHub's
+native approval: on a failing PR the `approve visual baselines` job waits on the
+`visual-baselines` environment, so click **Review deployments → Approve** — the job regenerates
+the baselines in CI and pushes them to the PR branch, re-running the gate green. Two one-time
+setups: the `visual-baselines` environment with yourself as a required reviewer (Settings →
+Environments — without it the job auto-approves and the gate is toothless), and a
+`VISUAL_APPROVE_TOKEN` repo secret (a PAT with `contents:write`, so the baseline push
+re-triggers the gate). A story excludes a volatile region (terminal, live gauge) from its diff
+by marking it `data-vrt-mask`.
+
+Subjective changes with no story (new layout, one-off states) are judged on demand with the
+`visual-verify` skill; `apps/desktop/scripts/screenshot-states.mjs` renders arbitrary states for
+it.
+
 ## Tooling (RTK)
 
 Run commands through `rtk` so output is filtered before it reaches context. The

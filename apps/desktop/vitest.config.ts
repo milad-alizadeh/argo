@@ -51,11 +51,20 @@ export default defineConfig({
         },
         test: {
           name: 'storybook',
+          // Screenshots every story via a project-annotation afterEach (see .storybook/vitest.setup.ts).
+          setupFiles: ['./.storybook/vitest.setup.ts'],
           browser: {
             enabled: true,
             headless: true,
             provider: playwright({}),
             instances: [{ browser: 'chromium' }],
+            expect: {
+              toMatchScreenshot: {
+                comparatorName: 'pixelmatch',
+                // Fail once more than 1% of pixels differ from the committed baseline.
+                comparatorOptions: { allowedMismatchedPixelRatio: 0.01 },
+              },
+            },
           },
         },
       },
