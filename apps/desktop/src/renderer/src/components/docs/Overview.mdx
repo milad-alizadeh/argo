@@ -1,0 +1,51 @@
+import { Meta } from '@storybook/addon-docs/blocks'
+
+<Meta title="Overview" />
+
+# The cockpit kit
+
+Every piece of UI is one of three tiers, and deciding which one a unit belongs to happens
+*before* the markup is written. That decision is what keeps one-off styling from creeping
+in. Build bottom-up: an organism is assembled from atoms and molecules that already exist,
+and a missing primitive is created in `components/ui/` first.
+
+## Atoms
+
+The smallest indivisible presentational units. They live in `components/ui/`, take only
+presentational props, hold no domain logic, and never emit a raw `<svg>`.
+
+`Text` · `Button` · `Badge` · `StatusDot` · `StatusIcon` · `SectionHeader` · `ContextGauge`
+· `PaneSplitter` · every glyph in `components/ui/icons/`
+
+## Molecules
+
+A small reusable composition of atoms forming one labelled unit. They sit in
+`components/ui/` once two or more domains use them, and under the parent domain folder
+until then.
+
+`Status` (word + dot) · `EmptyRail` (the rail's empty state)
+
+## Organisms
+
+A self-contained domain section built from molecules and atoms. Organisms live in their
+domain folder and are the only tier where domain logic and state wiring are allowed.
+
+`Rail` · `SessionRow`
+
+## Two rules you will meet immediately
+
+**Reuse before you build.** Before writing any raw markup, search `components/ui/` and the
+parent domain folder for something that already renders it — if it exists, import it. The
+moment the same shape would appear a second time, extract it; two copies is the trigger, not
+three. This is a configured shadcn project, so a badge, dialog or select comes from
+`bunx shadcn@latest add <name>` and is then adapted to our tokens — a hand-rolled equivalent
+of a kit primitive is a duplication bug, not a design choice.
+
+**All rendered text is a `Text`.** Not merely "don't type a role class" — every string the
+user reads is rendered by the `Text` atom, including labels, counts, empty-state copy and
+the captions inside a gallery story. A bare string in a `div` is the violation even when it
+inherits the right type today, because inheritance is exactly what drifts when an ancestor
+changes. Colour is not part of a type role, so it composes through `className`.
+
+The full rules live in `rules/ui-components.md` and `rules/design-system.md`; the token
+families they spend are rendered live under **Foundations**.

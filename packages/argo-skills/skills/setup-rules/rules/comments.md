@@ -33,7 +33,20 @@ Docs, `SKILL.md` files, rule files, and public API documentation are different �
 there, naming a verb, path, gate, or config key IS the contract the reader depends
 on. Referential naming is expected there, forbidden inside code.
 
-## Self-check
+Three positions in UI code are that same surface, because Storybook renders them
+verbatim to a reader who never opens the file: the declaration of an exported
+component, each prop in its props type, and each exported story. A comment there
+is REQUIRED, not merely permitted.
+
+- **Write it as `/** */`, never `//`.** react-docgen and Storybook's CSF enrichment
+  read docblocks only, so a `//` in one of those positions is silently dropped and
+  ships as documentation nobody will ever see. That makes it a defect, not a style
+  slip. `ui-components.md` states what each of the three has to say.
+- **Nothing else moves.** Inside a function body — a story's `render` or `play`
+  included — WHAT-restatement, tombstones, and multi-paragraph rationale stay
+  forbidden.
+
+## Self-check — in-body comments
 
 1. Does this comment say WHAT the next line does, in different words? Delete it.
 2. Is it now inferable from the code around it? Delete it.

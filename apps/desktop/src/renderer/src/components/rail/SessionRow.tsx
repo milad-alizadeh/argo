@@ -2,12 +2,22 @@ import { Status, StatusIcon, Text } from '@/components/ui'
 import type { SessionView } from '@/sessionStore'
 import { shipState } from '@/ship'
 
-// Organism: one Session as a flat inset card (the wireframe's `.srow`). The row's word,
-// tone and icon are derived from the facts main observed — the same `shipState` the ribbon
-// will render, so the two can never disagree — and the atoms below take presentation only.
-// The CLI sits on the meta line; richer per-row data (context %, tokens, elapsed) arrives
-// with later tickets.
-export function SessionRow({ session }: { session: SessionView }): React.JSX.Element {
+/**
+ * Organism: one Session as a flat inset card (the wireframe's `.srow`).
+ *
+ * The row's word, tone and icon are derived from the facts main observed — the same
+ * `shipState` the ribbon will render, so the two can never disagree — and the atoms below
+ * take presentation only. The CLI sits on the meta line; richer per-row data (context %,
+ * tokens, elapsed) arrives with later tickets.
+ */
+export function SessionRow({
+  session,
+}: {
+  /** The one Session this row renders, carrying identity and the raw `facts` main
+   * observed. The row grades those facts itself through `shipState()` — a pre-rendered
+   * word, tone or icon never arrives on the view. */
+  session: SessionView
+}): React.JSX.Element {
   const { word, tone, icon } = shipState(session.facts).rail
   return (
     <li className="rounded-lg border border-inset-hair bg-inset px-3 py-2 transition-colors hover:bg-accent">

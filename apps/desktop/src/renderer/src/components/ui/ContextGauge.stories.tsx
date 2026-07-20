@@ -20,8 +20,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// A percentage arrives from an estimate, so it is fractional here — the rounding the dial
-// cannot show is what the assertions cover.
+/**
+ * A percentage arrives from an estimate, so it is fractional here — the rounding the dial
+ * cannot show is what the assertions cover.
+ */
 export const Default: Story = {
   args: { percentage: 63.7 },
   play: async ({ canvasElement }) => {

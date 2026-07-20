@@ -44,9 +44,13 @@ type TextProps = React.HTMLAttributes<HTMLElement> & {
   as?: TextElement
 }
 
-// Atom: the ONE way type reaches the screen. Colour is deliberately not part of a role,
-// so there is no `tone` prop — a caller passes a colour class through `className` and
-// `cn()` de-dupes role against role without eating it.
+/**
+ * Atom: the ONE way type reaches the screen.
+ *
+ * Colour is deliberately not part of a role, so there is no `tone` prop — a caller passes
+ * a colour class through `className` and `cn()` de-dupes role against role without eating
+ * it.
+ */
 export function Text({ variant, as, className, ...rest }: TextProps): React.JSX.Element {
   const Element = as ?? defaultElement(variant)
   return <Element className={cn(TYPE_ROLE_CLASS[variant], className)} {...rest} />

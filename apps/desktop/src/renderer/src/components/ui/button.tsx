@@ -47,8 +47,12 @@ const buttonVariants = cva(CONTROL_BASE, {
 
 export type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>
 
-// Atom: the cockpit's labelled control. Icon-only controls (rail header, work tabs) are
-// their own components, not a size of this one.
+/**
+ * Atom: the cockpit's labelled control.
+ *
+ * Icon-only controls (rail header, work tabs) are their own components, not a size of
+ * this one.
+ */
 function Button({
   className,
   variant = 'ghost',

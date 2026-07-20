@@ -1,9 +1,13 @@
 import { cn } from '@/lib/utils'
 import type { RailTone } from '@/ship'
 
-// Atom: a state as a small coloured dot. It is silent unless `label` names it, because a
-// dot beside a visible word must not announce that word twice. A state shown with its word
-// beside it is the Status molecule, not this.
+/**
+ * Atom: a state as a small coloured dot.
+ *
+ * It is silent unless `label` names it, because a dot beside a visible word must not
+ * announce that word twice. A state shown with its word beside it is the Status molecule,
+ * not this.
+ */
 export function StatusDot({
   tone,
   label,

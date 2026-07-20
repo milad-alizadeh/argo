@@ -7,8 +7,12 @@ export function clampPercentage(percentage: number): number {
   return Math.min(100, Math.max(0, Math.round(percentage)))
 }
 
-// Atom: the ONE shape for a Session's context window — a labelled bar plus the estimated
-// percentage. Rail-only; no other surface repeats it.
+/**
+ * Atom: the ONE shape for a Session's context window — a labelled bar plus the estimated
+ * percentage.
+ *
+ * Rail-only; no other surface repeats it.
+ */
 export function ContextGauge({
   percentage,
   className,

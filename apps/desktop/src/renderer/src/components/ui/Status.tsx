@@ -3,10 +3,14 @@ import type { RailTone } from '@/ship'
 import { StatusDot } from './StatusDot'
 import { Text } from './Text'
 
-// Molecule: a state as its word plus a dot, in the one order the cockpit uses — word
-// first, dot terminating the row. The word carries the state and the dot only tints it,
-// so the dot is decorative here and the accessible name is the visible text.
-// A dot with no word beside it is the StatusDot atom, not this.
+/**
+ * Molecule: a state as its word plus a dot, in the one order the cockpit uses — word
+ * first, dot terminating the row.
+ *
+ * The word carries the state and the dot only tints it, so the dot is decorative here and
+ * the accessible name is the visible text. A dot with no word beside it is the StatusDot
+ * atom, not this.
+ */
 export function Status({
   word,
   tone,

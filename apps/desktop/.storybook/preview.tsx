@@ -37,6 +37,10 @@ const preview: Preview = {
     // Let the decorator fill the whole canvas instead of Storybook's padded, white-backed box.
     layout: 'fullscreen',
 
+    // The two signpost pages are what a newcomer should meet first; alphabetical order
+    // would file them under the component tree instead.
+    options: { storySort: { order: ['Overview', 'Foundations', '*'] } },
+
     // The addon paints its own swatch (a lighter gray than --background) over the canvas,
     // making every story lie about its contrast. The cockpit has ONE background and it
     // comes from the token contract, so the toggle is removed rather than re-pointed.

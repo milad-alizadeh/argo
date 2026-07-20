@@ -70,6 +70,16 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test
 
+      # Story tests render stories, never the generated Docs pages, so a broken .mdx or a
+      # component react-docgen cannot parse fails only here. It sits in this job rather than
+      # `stories` because a red `stories` wakes the `baselines` job — an MDX typo would
+      # otherwise cost a full Playwright baseline regeneration to learn nothing.
+      - name: Build Storybook
+        if: ${{ !cancelled() }}
+        env:
+          STORYBOOK_DISABLE_TELEMETRY: "1"
+        run: bun run build-storybook
+
   stories:
     name: story tests
     runs-on: ubuntu-latest
