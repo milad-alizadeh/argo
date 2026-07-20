@@ -43,8 +43,8 @@ const badgeVariants = cva(
 export type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>
 
 /**
- * Atom: the mini uppercase bordered label — a worktree marker, an "uncommitted" flag, a
- * declared intent, and as a pill the chip that reports where something stands.
+ * Atom: the mini uppercase bordered label — a worktree marker, a declared intent, and as a
+ * pill the chip that reports where something stands.
  *
  * It labels, never acts: nothing here is clickable. An icon child sits inline, sized off
  * the tag role.

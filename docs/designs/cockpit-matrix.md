@@ -203,7 +203,8 @@ four natures, and a click opens in the surface that owns its nature:
 - **Terminal strip = the console** — channel tabs per R13; the existing hsplit
   keeps it resizable.
 - **Identity:** WorkspaceIdentity chip sits in the header row right after the
-  breadcrumb — `argo › Auth refactor ⎇ feat/auth-rotation · wt` — one name (branch
-  names the worktree); `wt:dir` only when an adopted worktree's dir differs;
+  breadcrumb — `argo › Auth refactor ⎇ feat/auth-rotation · worktree` — one name
+  (branch names the worktree); `worktree <directory>` only when an adopted
+  worktree's directory differs;
   `shared · n ⚠` when 2+ sessions resolve to one tree. Live checkout, not a
   creation-time snapshot.
