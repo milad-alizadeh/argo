@@ -204,23 +204,35 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      # Drift is the case a human has to actually look at, so say so out loud rather than
-      # letting a bot commit slide by as routine.
+      # Drift is the case a human has to actually look at, so put the pixels in the comment
+      # itself rather than making someone go digging. Both versions are already in git — the old
+      # baseline at the parent commit, the new one at the commit just pushed — so raw URLs pinned
+      # to those SHAs render before/after inline (this repo is public; on a private repo raw URLs
+      # would not resolve and this table would have to become a Files-changed link).
       - name: Flag drift on the PR
         if: steps.push.outputs.drift != ''
         env:
           GH_TOKEN: ${{ github.token }}
           DRIFT: ${{ steps.push.outputs.drift }}
         run: |
+          before=$(git rev-parse HEAD~1)
+          after=$(git rev-parse HEAD)
+          raw="https://raw.githubusercontent.com/${{ github.repository }}"
           {
-            echo "**Visual drift** — these stories render differently than their committed baseline:"
+            echo "### Visual drift"
             echo
-            echo '```'
-            echo "$DRIFT"
-            echo '```'
+            echo "These stories render differently than their committed baseline. I pushed the"
+            echo "regenerated baselines, so the gate is green again — check the change is intended."
+            echo "**If it isn't, fix the component, not the baseline.**"
             echo
-            echo "I pushed the regenerated baselines to this branch. Open **Files changed** and use"
-            echo "the image diff (2-up / swipe / onion-skin) to check the change is intended — if it"
-            echo "isn't, the fix belongs in the component, not the baseline."
+            echo "| story | before | after |"
+            echo "| --- | --- | --- |"
+            while IFS= read -r file; do
+              [ -z "$file" ] && continue
+              story=$(basename "$file" .png | sed 's/-chromium-linux$//')
+              echo "| \`$story\` | <img src=\"$raw/$before/$file\" width=\"360\"> | <img src=\"$raw/$after/$file\" width=\"360\"> |"
+            done <<< "$DRIFT"
+            echo
+            echo "Files changed also gives you swipe and onion-skin on each image."
           } > comment.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
