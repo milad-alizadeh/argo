@@ -3,8 +3,8 @@
 @import "./argo-tokens.css";
 
 /* Tone colour utilities reach the screen via `text-tone-${tone}` interpolation
- * (no runtime map — #50), so the scanner can't see them as literals. Safelist the
- * closed tone set here; every RailTone must appear. */
+ * (no runtime map), so the scanner can't see them as literals. Safelist the closed
+ * tone set here; every RailTone must appear (toneSafelist.test.ts locks the two). */
 @source inline("text-tone-{run,amber,done,gray,red,stale,landed}");
 
 /* Raw values live in argo-tokens.css (ADR-0006). This file only wires them into

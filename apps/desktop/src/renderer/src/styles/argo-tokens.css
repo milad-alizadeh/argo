@@ -123,9 +123,8 @@
 
   /* Rail tones — named for the TONE the ship derivation emits, not a lifecycle state,
    * because tone↔state is not 1:1 (the matrix keeps colour off the state deliberately).
-   * Every tone resolves to a distinct token: `done` is tinted green (`--tone-done`),
-   * `queued` reads grey (`gray`), and `landed` (Merged) is green pulled toward indigo so
-   * Landed ≠ CI-green (ADR-0009). */
+   * Every tone resolves to a distinct value — none shares a token. `landed` (Merged) is
+   * green pulled toward indigo so Landed ≠ CI-green (ADR-0009). */
   --tone-run: var(--indigo-600);
   --tone-gray: var(--gray-600);
   --tone-amber: var(--amber-600);
