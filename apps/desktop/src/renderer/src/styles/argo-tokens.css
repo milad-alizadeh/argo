@@ -312,6 +312,13 @@
   --icon-box-sm: 0.86em;
   --icon-baseline: -0.14em;
 
+  /* Console caret — the live channel's block cursor, sized as exactly one monospace
+   * cell (the advance width `ch` × the em box) so it tracks the code role rather than
+   * a fixed px, the way the icon box tracks its type role. Static by design: the
+   * screen's ONE animation budget belongs to the ribbon/rail. */
+  --caret-box-w: 1ch;
+  --caret-box-h: 1em;
+
   /* Motion. `pulse` is the period of the screen's ONE animation budget
    * (at most one pulsing element per render). */
   --time-fast: 150ms;

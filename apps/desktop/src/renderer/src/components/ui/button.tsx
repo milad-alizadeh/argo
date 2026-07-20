@@ -24,6 +24,12 @@ const buttonVariants = cva(CONTROL_BASE, {
         'border-primary/55 bg-linear-to-br from-primary-bright to-primary text-primary-foreground disabled:border-border disabled:bg-none disabled:text-muted-foreground',
       ghost:
         'border-border bg-transparent text-muted-foreground hover:border-input hover:text-foreground',
+      // Ghost without the border: for a control that sits in a strip of its own peers
+      // (console channel tabs), where a box per control would out-shout the strip. The
+      // selected wash keys off `data-active`, so the state travels with the control
+      // rather than as a second variant.
+      quiet:
+        'border-transparent bg-transparent text-muted-foreground hover:text-foreground data-[active=true]:bg-foreground/6 data-[active=true]:text-foreground',
       // Review-tab controls are all secondary — shipping belongs to the ribbon's gate.
       'review-secondary':
         'border-input bg-foreground/4 text-foreground-bright hover:border-primary',

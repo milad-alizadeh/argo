@@ -172,6 +172,17 @@
   height: var(--icon-box-sm);
 }
 
+/* The live console channel's caret — one monospace cell, filled with the surrounding
+ * ink. Deliberately has no animation: R13 gives the caret to the console and the ONE
+ * animation budget to the ribbon/rail. */
+@utility caret-cell {
+  display: inline-block;
+  width: var(--caret-box-w);
+  height: var(--caret-box-h);
+  vertical-align: var(--icon-baseline);
+  background: currentColor;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

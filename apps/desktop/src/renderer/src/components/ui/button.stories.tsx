@@ -7,6 +7,7 @@ import { Text } from './Text'
 const VARIANTS = [
   'primary',
   'ghost',
+  'quiet',
   'review-secondary',
   'verdict-changes',
   'verdict-approve',
@@ -69,7 +70,34 @@ export const Default: Story = {
  */
 export const Disabled: Story = { args: { variant: 'primary', disabled: true } }
 
-/** A control that leads somewhere is a link wearing the button's shape. */
+/**
+ * `quiet` is the borderless step, for a control that sits in a strip of its own peers
+ * (console channel tabs) where a box each would out-shout the strip. Its selected wash
+ * keys off `data-active`, so the state rides on the control instead of forking the variant.
+ */
+export const Quiet: Story = {
+  args: { variant: 'quiet', size: 'sm' },
+  render: (args) => (
+    <div className="flex items-center gap-gap">
+      <Button {...args} data-active>
+        session · live
+      </Button>
+      <Button {...args}>vitest @12:04</Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('button', { name: 'session · live' })).toHaveAttribute(
+      'data-active',
+    )
+    await expect(canvas.getByRole('button', { name: 'vitest @12:04' })).not.toHaveAttribute(
+      'data-active',
+    )
+  },
+}
+
+// A control that leads somewhere is a link wearing the button's shape.
+>>>>>>> d1065fa (Cockpit: the console's channels (#29))
 export const AsChild: Story = {
   args: {
     asChild: true,
