@@ -55,10 +55,7 @@ ticket per fresh conversation, in dependency order, and say so.
 
 Fan-out spawns a build agent plus two review agents and a land agent per ticket — each ticket
 edits, gets reviewed by two separate contexts, then fixes and opens a PR — so it costs meaningfully
-more than N× a single ticket. Because the stages pipeline, wall-clock is roughly **one ticket's
-build→review→land chain**, not the sum — so adding tickets is nearly free, and the lever on total
-time is per-stage cost (model tier, land scope), not parallel width. Present, and get an explicit go
-before spawning:
+more than N× a single ticket. Present, and get an explicit go before spawning:
 
 - the frontier tickets you'll run (numbers + titles);
 - the concurrency cap (default **2–3** at once; higher only if the user asks);
@@ -78,14 +75,13 @@ pipeline(frontier,
   (built, t) => parallel(['standards', 'spec'].map(ax => () =>
     agent(reviewBrief(ax, t, built), { label: `review-${ax}:#${t.number}`, phase: 'Review' })))
     .then(axes => ({ built, axes: axes.filter(Boolean) })),
-  // stage 3 — the author fixes blocker/major, pushes, opens the PR (minors ride as PR comments).
+  // stage 3 — the author fixes blocker/major, pushes, opens the PR (minors ride into the PR body).
   (reviewed, t) => agent(landBrief(t, reviewed), { label: `land:#${t.number}`, phase: 'Land' }))
 ```
 
 The two review axes run **inside a `parallel()` within the stage-2 callback** — that is script code,
 so the workflow spawns them; a stage-2 *agent* could not. Model tier is a lever: default to `sonnet`
-for every stage (it ran apply/review 2–3× faster than opus with no quality loss on this kind of
-componentization work), reaching for a stronger model only on a genuinely hard verify.
+for every stage, reaching for a stronger model only on a genuinely hard verify.
 
 A reviewer re-enters the build's worktree with `EnterWorktree` using the `path` stage 1 returned,
 so it reviews the real tree rather than a re-derived diff.
@@ -106,8 +102,8 @@ not write this code and that the author's own confidence is not evidence:
 Two axes, not three. **Do not spawn a visual reviewer.** The CI visual-regression gate (the
 `stories` job, added in #66) screenshots every story and diffs it against the committed baseline
 on the PR itself — so a per-run visual judge is now redundant work on the critical path, and it was
-the most expensive axis (10–14 min against 4–6 for standards/spec). Rendered output is verified
-after the branch pushes, by CI, on Linux baselines the human approves from the PR. Reserve
+the most expensive review axis. Rendered output is verified after the branch pushes, by CI, on Linux
+baselines the human approves from the PR. Reserve
 `/visual-verify` for a *subjective* state that has no story (run it yourself, inline, before the
 fan-out or after a merge) — never wire it as a fan-out stage.
 
@@ -115,8 +111,7 @@ Reviewers are **read-only**: they report findings, they do not edit, commit, or 
 explicitly in the brief — an agent told to "review" will otherwise helpfully start fixing.
 
 **Stage 3 — address and land.** Land is a fix-and-ship stage, not a second build — keep it that way
-or it costs as much as stage 1 (it did: 25 min, matching build, when it fixed all N findings and
-re-ran everything).
+or it costs as much as stage 1, fixing every finding and re-running the whole suite.
 
 - **Fix only `blocker` and `major` findings.** `minor`/`nit` findings ride into the PR body as an
   "Unaddressed review findings" list for the human to accept or wave through — they do **not** block
@@ -174,7 +169,7 @@ null / failed. Tell the user:
   (swipe/onion-skin on the PR's Files-changed), not from screenshots in the PR body;
 - which failed and need a manual `/implement`;
 - the **conflict map** from step 4: which PR pairs collide and where, the merge order that
-  minimizes conflicts, and whether the clean union passed the suite;
+  minimizes conflicts, and whether the clean union passed the affected tests;
 - that after each merge they can invoke the step-6 repair pass instead of resolving by hand.
 
 ### 6. After each merge — rebase and repair
