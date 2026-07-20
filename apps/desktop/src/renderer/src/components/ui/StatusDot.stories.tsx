@@ -1,20 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import type { SessionStatus } from '@/sessionStore'
+import { RAIL_TONES } from '@/ship'
 import { StatusDot } from './StatusDot'
-import { SESSION_ICON, STATUS_TONE, type StatusTone } from './sessionStatus'
 import { Text } from './Text'
-
-const TONES = Object.keys(STATUS_TONE) as StatusTone[]
-const SESSION_STATES = Object.keys(SESSION_ICON) as SessionStatus[]
 
 const meta = {
   title: 'Cockpit/StatusDot',
   component: StatusDot,
   argTypes: {
-    status: { control: 'select', options: SESSION_STATES },
-    tone: { control: 'select', options: TONES },
-    decorative: { control: 'boolean' },
+    tone: { control: 'select', options: RAIL_TONES },
     pulse: { control: 'boolean' },
     label: { control: 'text' },
   },
@@ -23,27 +17,17 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Keyed by a Session's status, the dot carries that status as its accessible name, so it
-// is legible without colour. This is the bare-dot surface — wherever a word is shown
-// beside the state, the component is the Status molecule, not this.
+// Beside a visible word the dot says nothing — the word is already the accessible name, so
+// announcing it twice is the bug. This is how the Status molecule renders it.
 export const Default: Story = {
-  args: { status: 'working' },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('img', { name: 'Working' })).toBeInTheDocument()
-  },
-}
-
-// `decorative` suppresses the accessible name when a visible word already labels the dot,
-// so screen readers don't hear the status twice.
-export const Decorative: Story = {
-  args: { status: 'working', decorative: true },
+  args: { tone: 'run' },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).queryByRole('img')).not.toBeInTheDocument()
   },
 }
 
-// Keyed by a raw tone instead, the dot is silent until `label` names it.
-export const ByTone: Story = {
+// Standing alone, the dot needs `label` to be legible without colour.
+export const Labelled: Story = {
   args: { tone: 'red', label: 'CI failing' },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('img', { name: 'CI failing' })).toBeInTheDocument()
@@ -67,7 +51,7 @@ export const AllTones: Story = {
   args: { tone: 'run' },
   render: () => (
     <div className="flex items-start gap-region">
-      {TONES.map((tone) => (
+      {RAIL_TONES.map((tone) => (
         <span className="flex w-16 flex-col items-center gap-gap" key={tone}>
           <StatusDot tone={tone} />
           <Text variant="meta" className="text-foreground-faint">

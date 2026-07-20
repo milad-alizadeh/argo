@@ -121,15 +121,21 @@
   --inset: color-mix(in srgb, var(--gray-950) 2%, transparent);
   --inset-hair: color-mix(in srgb, var(--gray-950) 6%, transparent);
 
-  /* Lifecycle status — calm; indigo=working, amber=needs-input.
-   * `landed` (Merged) is green pulled toward indigo so Landed ≠ CI-green (ADR-0009). */
-  --status-working: var(--indigo-600);
-  --status-idle: var(--gray-600);
-  --status-awaiting-input: var(--amber-600);
-  --status-exited: var(--gray-500);
-  --status-failed: var(--red-600);
-  --status-done: var(--green-600);
-  --status-landed: color-mix(in srgb, var(--green-600) 55%, var(--indigo-600));
+  /* Rail tones — named for the TONE the ship derivation emits, not a lifecycle state,
+   * because tone↔state is not 1:1 (the matrix keeps colour off the state deliberately).
+   * `mist` and `gray` share one grey by design: `done` and `queued` read identically in
+   * colour and only the word tells them apart. `landed` (Merged) is green pulled toward
+   * indigo so Landed ≠ CI-green (ADR-0009). `done` is the orphan: no RailTone resolves to
+   * it, so the `done` state renders `mist` (grey); kept as the palette's green (checks use
+   * it in the study) and so a future call to tint `done` green has the value ready. */
+  --tone-run: var(--indigo-600);
+  --tone-mist: var(--gray-600);
+  --tone-gray: var(--gray-600);
+  --tone-amber: var(--amber-600);
+  --tone-stale: var(--gray-500);
+  --tone-red: var(--red-600);
+  --tone-done: var(--green-600);
+  --tone-landed: color-mix(in srgb, var(--green-600) 55%, var(--indigo-600));
 
   /* Review verdict — disjoint from lifecycle (700s vs lifecycle's 600s). */
   --verdict-approve: var(--green-700);
@@ -201,13 +207,14 @@
   --inset: color-mix(in srgb, var(--gray-50) 2%, transparent);
   --inset-hair: color-mix(in srgb, var(--gray-50) 6%, transparent);
 
-  --status-working: var(--indigo-500);
-  --status-idle: var(--gray-400);
-  --status-awaiting-input: var(--amber-500);
-  --status-exited: var(--gray-600);
-  --status-failed: var(--red-500);
-  --status-done: var(--green-500);
-  --status-landed: color-mix(in srgb, var(--green-500) 55%, var(--indigo-400));
+  --tone-run: var(--indigo-500);
+  --tone-mist: var(--gray-400);
+  --tone-gray: var(--gray-400);
+  --tone-amber: var(--amber-500);
+  --tone-stale: var(--gray-600);
+  --tone-red: var(--red-500);
+  --tone-done: var(--green-500);
+  --tone-landed: color-mix(in srgb, var(--green-500) 55%, var(--indigo-400));
 
   --verdict-approve: var(--green-300);
   --verdict-changes: var(--amber-300);

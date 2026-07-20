@@ -44,11 +44,11 @@ export const Default: Story = {
 // Colour is not part of a role, so it composes through className — this is the proof
 // that `cn` keeps the colour class next to the role instead of dropping one of them.
 export const Coloured: Story = {
-  args: { variant: 'meta', className: 'text-status-working', children: SPECIMEN.meta },
+  args: { variant: 'meta', className: 'text-tone-run', children: SPECIMEN.meta },
   play: async ({ canvasElement }) => {
     const value = within(canvasElement).getByText(SPECIMEN.meta)
     await expect(value).toHaveClass('text-meta')
-    await expect(value).toHaveClass('text-status-working')
+    await expect(value).toHaveClass('text-tone-run')
   },
 }
 

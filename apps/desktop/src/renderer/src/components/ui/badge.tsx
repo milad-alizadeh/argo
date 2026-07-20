@@ -17,7 +17,7 @@ const badgeVariants = cva(
       // Named after the token spent, never what a caller reads into it — see findingState.ts.
       variant: {
         neutral: 'border-border text-foreground-faint',
-        warn: 'border-status-awaiting-input/40 text-status-awaiting-input',
+        warn: 'border-tone-amber/40 text-tone-amber',
         primary: 'border-primary/40 bg-primary/12 text-primary-soft',
         // Verdict ink over its own tint — 40% border, 12% wash, one pair per token.
         'verdict-block': 'border-verdict-block-tint/40 bg-verdict-block-tint/12 text-verdict-block',

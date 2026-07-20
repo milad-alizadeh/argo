@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
+import type { RailTone } from '@/ship'
 import { StatusDot } from './StatusDot'
-import { STATUS_STATE, STATUS_TONE, type StatusState } from './sessionStatus'
+import { STATUS_TONE } from './statusTone'
 import { Text } from './Text'
 
 // Molecule: a state as its word plus a dot, in the one order the cockpit uses — word
@@ -8,18 +9,20 @@ import { Text } from './Text'
 // so the dot is decorative here and the accessible name is the visible text.
 // A dot with no word beside it is the StatusDot atom, not this.
 export function Status({
-  state,
+  word,
+  tone,
   pulse,
   className,
 }: {
-  /** Which state to show. The word and its tone both come from the status vocabulary — a
-   * caller never spells a lifecycle word itself. */
-  state: StatusState
+  /** The state's word, already derived. Callers read it off the ship vocabulary
+   * (`SESSION_STATUS` / `railStatus()`) — never a word typed at the call site. */
+  word: string
+  /** The tone that word carries, from the same derivation. */
+  tone: RailTone
   /** Spend the screen's ONE animation budget on this row. At most one per render. */
   pulse?: boolean
   className?: string
 }): React.JSX.Element {
-  const { word, tone } = STATUS_STATE[state]
   return (
     <Text
       variant="meta"

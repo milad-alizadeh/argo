@@ -22,8 +22,8 @@ const config: StorybookConfig = {
     getAbsolutePath('@storybook/addon-mcp'),
   ],
   framework: getAbsolutePath('@storybook/react-vite') as '@storybook/react-vite',
-  // Storybook runs its own Vite (not electron-vite), so re-declare the two things
-  // our renderer components rely on: Tailwind 4 and the "@" → renderer alias.
+  // Storybook runs its own Vite (not electron-vite), so re-declare what our renderer
+  // components rely on: Tailwind 4 and the "@" / "@shared" aliases.
   viteFinal: async (viteConfig) => {
     const { default: tailwindcss } = await import('@tailwindcss/vite')
     const { mergeConfig } = await import('vite')
@@ -33,6 +33,7 @@ const config: StorybookConfig = {
         alias: {
           '@': resolve(projectRoot, '../src/renderer/src'),
           '@renderer': resolve(projectRoot, '../src/renderer/src'),
+          '@shared': resolve(projectRoot, '../src/shared/index.ts'),
         },
       },
     })

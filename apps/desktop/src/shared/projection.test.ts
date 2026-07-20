@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyDelta, applyEvent, emptyState, type HubEvent, type SessionView } from './projection'
+import { sessionFacts } from './sessionFacts'
 
 // Seam A, pure: main-side `applyEvent` turns events into deltas; renderer-side
 // `applyDelta` replays those deltas into projected state. This exercises the whole
@@ -25,7 +26,7 @@ const session = (over: Partial<SessionView> = {}): SessionView => ({
   id: 's1',
   title: 'Refactor auth module',
   cli: 'claude',
-  status: 'working',
+  facts: sessionFacts(),
   ...over,
 })
 

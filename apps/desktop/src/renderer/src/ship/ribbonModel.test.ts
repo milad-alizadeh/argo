@@ -1,6 +1,6 @@
+import { type SessionFactsInput, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
 import { RIBBON_KEYS, ribbonModel } from './ribbonModel'
-import { type SessionFactsInput, sessionFacts } from './sessionFacts'
 
 // The ribbon rules of `docs/designs/cockpit-matrix.md` that the S-row table alone
 // cannot pin down.

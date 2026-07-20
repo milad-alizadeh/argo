@@ -1,5 +1,5 @@
+import { type SessionFactsInput, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { type SessionFactsInput, sessionFacts } from './sessionFacts'
 import { shipState } from './shipState'
 
 // The state table of `docs/designs/cockpit-matrix.md`, one case per row: given the
@@ -36,7 +36,7 @@ describe('S1 — dirty 3 · agent working', () => {
 
 describe('S2 — dirty 3 · agent idle', () => {
   it('hands Commits back as a gate', () => {
-    const { model, rail } = row({ dirty: 3, agent: 'idle', lifecycle: 'needs-input' })
+    const { model, rail } = row({ dirty: 3, agent: 'idle', status: 'needs-input' })
     expect(model).toEqual({
       nodes: { commits: 'gate', pr: 'wait', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'commits',
@@ -48,7 +48,7 @@ describe('S2 — dirty 3 · agent idle', () => {
 
 describe('S3 — commits ✓ · no PR', () => {
   it('puts the head on the PR gate', () => {
-    const { model, rail } = row({ headSha: HEAD, agent: 'idle', lifecycle: 'needs-input' })
+    const { model, rail } = row({ headSha: HEAD, agent: 'idle', status: 'needs-input' })
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'gate', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'pr',

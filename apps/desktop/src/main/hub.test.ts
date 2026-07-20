@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { HubEvent, ProjectionDelta } from '../shared'
+import { type HubEvent, type ProjectionDelta, sessionFacts } from '../shared'
 import { createHub } from './hub'
 
 const created = (id: string): HubEvent => ({
   type: 'session-created',
-  session: { id, title: id, cli: 'claude', status: 'working' },
+  session: { id, title: id, cli: 'claude', facts: sessionFacts() },
 })
 
 describe('createHub', () => {

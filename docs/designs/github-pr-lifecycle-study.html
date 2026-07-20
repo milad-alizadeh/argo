@@ -94,7 +94,7 @@
       .rail-title .cnt { color: var(--foreground-faint);
         font: var(--type-meta-weight) var(--type-meta) / var(--type-meta-leading) var(--sans);
         letter-spacing: var(--type-meta-tracking); }
-      .rail-title .needs { color: var(--status-awaiting-input); }
+      .rail-title .needs { color: var(--tone-amber); }
       .srow {
         border-radius: var(--radius); padding: var(--space-gap) var(--space-snug);
         display: grid; gap: var(--space-tight); cursor: pointer;
@@ -121,9 +121,9 @@
          shared `glow` class supplies the halo — the shape the app's StatusDot ships. */
       .dot { width: var(--space-gap); height: var(--space-gap); border-radius: 999px; flex: none;
         background: currentColor; }
-      .working { color: var(--status-working); }
-      .attn { color: var(--status-awaiting-input); }
-      .fail { color: var(--status-failed); }
+      .working { color: var(--tone-run); }
+      .attn { color: var(--tone-amber); }
+      .fail { color: var(--tone-red); }
       .landed { color: var(--verdict-approve); }
 
       /* ── PR card (Variation A) — the mstage grown into a stateful card ── */
@@ -173,7 +173,7 @@
       .grow-row .v { display: inline-flex; align-items: center; gap: 5px; }
       .v.ok { color: var(--verdict-approve); }
       .v.warn { color: var(--verdict-changes); }
-      .v.wait { color: var(--status-working); }
+      .v.wait { color: var(--tone-run); }
       .v.bad { color: var(--verdict-block); }
       .v.muted { color: var(--muted-foreground); }
 
@@ -211,7 +211,7 @@
       .pass { color: var(--green-500); }
       .fail-g { color: var(--red-500); }
       .warn-g { color: var(--amber-500); }
-      .run-g { color: var(--status-working); }
+      .run-g { color: var(--tone-run); }
       .spin { animation: spin 1.1s linear infinite; transform-origin: 50% 50%; }
       @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -311,7 +311,7 @@
         <div class="caption">
           "When a PR merges / CI fails" is answered <b>here</b>, not just in the open session.
           The rail already has a state dot + "needs you" count; PR outcomes feed straight into it.
-          <span class="propose">merged reuses <b>verdict-approve</b> green — a distinct terminal <span class="mono">--status-landed</span> token may be worth promoting, so "landed" ≠ "CI passed".</span>
+          <span class="propose">merged reuses <b>verdict-approve</b> green — a distinct terminal <span class="mono">--tone-landed</span> token may be worth promoting, so "landed" ≠ "CI passed".</span>
         </div>
         <div class="rail" data-component="SessionRow">
           <div class="rail-title">argo <span class="grow"></span><span class="cnt">5 · <span class="needs">2 need you</span></span></div>

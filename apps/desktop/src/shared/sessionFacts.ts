@@ -1,5 +1,23 @@
 // The ship-flow facts of one Session, per `docs/designs/cockpit-matrix.md`. Facts
 // only: every rendered state is derived from these, never stored alongside them.
+// They live in the contract because main is the only process that can observe them
+// (it runs git and gh — ADR-0004) and the renderer is a projection (ADR-0005).
+
+// Every state main can observe, in `cockpit-matrix.md` R16's rail-column order — the
+// domain's own ordering, which is why the list lives here and not beside a view. The
+// union derives from the tuple so a seventh state cannot reach one without the other.
+export const SESSION_STATES = [
+  'running',
+  'needs-input',
+  'done',
+  'failed',
+  'queued',
+  'orphaned',
+] as const
+
+// The one word for what state a Session is in, shared by both processes: `status` on
+// the facts main observes, which the renderer grades into the row's word.
+export type SessionStatus = (typeof SESSION_STATES)[number]
 
 export type PrLifecycle = 'open' | 'merged' | 'closed'
 
@@ -33,14 +51,12 @@ export interface SessionPolicy {
   pushAfterPr: 'manual' | 'auto'
 }
 
-export type SessionLifecycle = 'running' | 'needs-input' | 'done' | 'failed' | 'queued' | 'orphaned'
-
 export interface SessionFacts {
   // The Session's own triage word, which the rail falls back to whenever the ribbon
   // has nothing to say (no ribbon at all, or a head node no rule speaks for).
-  lifecycle: SessionLifecycle
+  status: SessionStatus
   // Who owns the Commits stage right now: a working agent narrates it, an idle one
-  // hands the repair back to you. Narrower than `lifecycle`, which grades the Session.
+  // hands the repair back to you. Narrower than `status`, which grades the Session.
   agent: 'working' | 'idle'
   dirty: number
   unpushed: number
@@ -61,7 +77,7 @@ export type SessionFactsInput = Partial<Omit<SessionFacts, 'policy'>> & {
 export function sessionFacts(input: SessionFactsInput = {}): SessionFacts {
   const { policy, ...facts } = input
   return {
-    lifecycle: 'running',
+    status: 'running',
     agent: 'working',
     dirty: 0,
     unpushed: 0,
