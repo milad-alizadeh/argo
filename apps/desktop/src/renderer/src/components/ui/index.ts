@@ -9,11 +9,11 @@ export {
   type FindingState,
 } from './findingState'
 export * from './icons'
+export { StatusIcon } from './icons/StatusIcon'
 export { PANE_ORIENTATIONS, type PaneOrientation, PaneSplitter } from './PaneSplitter'
 export { SectionHeader } from './SectionHeader'
 export { Status } from './Status'
 export { StatusDot } from './StatusDot'
-export { StatusIcon } from './icons/StatusIcon'
 export {
   TEXT_ELEMENTS,
   Text,
