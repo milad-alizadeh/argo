@@ -1,12 +1,12 @@
 import { SESSION_STATES } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { RAIL_TONES, type RailStatus, SESSION_STATUS } from '@/shared/ship'
+import { ROSTER_TONES, type RosterStatus, SESSION_STATUS } from '@/shared/delivery'
 import { Status } from './Status'
 
 // The molecule renders the word and its tone; the icon column of the same row belongs to
 // the organism around it, so the fixtures drop it rather than the props widening.
-const wordAndTone = ({ word, tone }: RailStatus): Pick<RailStatus, 'tone' | 'word'> => ({
+const wordAndTone = ({ word, tone }: RosterStatus): Pick<RosterStatus, 'tone' | 'word'> => ({
   word,
   tone,
 })
@@ -16,7 +16,7 @@ const meta = {
   component: Status,
   argTypes: {
     word: { control: 'text' },
-    tone: { control: 'select', options: RAIL_TONES },
+    tone: { control: 'select', options: ROSTER_TONES },
     pulse: { control: 'boolean' },
   },
 } satisfies Meta<typeof Status>
@@ -25,7 +25,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * Word and tone arrive already derived (`SESSION_STATUS` here, `railStatus()` on a real row),
+ * Word and tone arrive already derived (`SESSION_STATUS` here, `rosterStatus()` on a real row),
  * so the molecule never spells a state itself. The dot is decorative: the visible word
  * already names the state and must not be announced twice.
  */

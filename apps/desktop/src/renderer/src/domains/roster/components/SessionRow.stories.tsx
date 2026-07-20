@@ -2,13 +2,13 @@ import { SESSION_STATES, type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import type { SessionView } from '@/sessionStore'
-import { SESSION_STATUS } from '@/shared/ship'
+import { SESSION_STATUS } from '@/shared/delivery'
 import { SessionRow } from './SessionRow'
 
 // The row renders an `<li>`, and `listitem` is only its role inside a list — without the
-// parent the stories would assert against a roleless element the rail never renders.
+// parent the stories would assert against a roleless element the roster never renders.
 const meta = {
-  title: 'Rail/SessionRow',
+  title: 'Roster/SessionRow',
   component: SessionRow,
   argTypes: {
     session: { control: 'object', table: { type: { summary: 'SessionView' } } },
@@ -33,7 +33,7 @@ const stateRow = (status: SessionStatus): SessionView => ({
 })
 
 /**
- * One observed Session as the rail draws it.
+ * One observed Session as the roster draws it.
  *
  * Nothing on the row is passed in already rendered: the word, its tone and the leading
  * icon are all graded from `session.facts`, so the facts object is the control worth
@@ -62,7 +62,7 @@ export const Default: Story = {
  * Every state main can observe, one row each — the visual-diff surface for the row's word,
  * tone and icon in a single frame.
  *
- * Which word each state is owed is settled in `Rail.stories.tsx`, spelled out there against
+ * Which word each state is owed is settled in `Roster.stories.tsx`, spelled out there against
  * the table; read off `SESSION_STATUS` here so the two files cannot drift apart. What this
  * proves is the row's own job: that it surfaces the graded word in the right row and tints
  * the glyph to match, rather than falling through to a blank or a borrowed one.

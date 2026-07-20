@@ -1,78 +1,78 @@
 import { type SessionFactsInput, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { shipState } from './shipState'
+import { deliveryState } from './deliveryState'
 
 // The state table of `docs/designs/cockpit-matrix.md`, one case per row: given the
-// facts, the ribbon, its head, and the rail word are fully determined.
+// facts, the ribbon, its head, and the roster word are fully determined.
 
 const HEAD = 'a1b2c3d'
 const OLD = '9f0e1d2'
 const PR = { num: 42, state: 'open', base: 'main' } as const
 
 const row = (input: SessionFactsInput) => {
-  const { ribbon, rail } = shipState(sessionFacts(input))
-  return { model: ribbon, rail }
+  const { ribbon, roster } = deliveryState(sessionFacts(input))
+  return { model: ribbon, roster }
 }
 
 describe('S0 — clean tree, no commits', () => {
   it('grows no ribbon and stays Running', () => {
-    const { model, rail } = row({})
+    const { model, roster } = row({})
     expect(model).toBeNull()
-    expect(rail).toEqual({ word: 'Running', tone: 'run', icon: 'circle-notch' })
+    expect(roster).toEqual({ word: 'Running', tone: 'run', icon: 'circle-notch' })
   })
 })
 
 describe('S1 — dirty 3 · agent working', () => {
   it('narrates Commits and stays Running', () => {
-    const { model, rail } = row({ dirty: 3, agent: 'working' })
+    const { model, roster } = row({ dirty: 3, agent: 'working' })
     expect(model).toEqual({
       nodes: { commits: 'now', pr: 'wait', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'commits',
       terminal: null,
     })
-    expect(rail.word).toBe('Running')
+    expect(roster.word).toBe('Running')
   })
 })
 
 describe('S2 — dirty 3 · agent idle', () => {
   it('hands Commits back as a gate', () => {
-    const { model, rail } = row({ dirty: 3, agent: 'idle', status: 'needs-input' })
+    const { model, roster } = row({ dirty: 3, agent: 'idle', status: 'needs-input' })
     expect(model).toEqual({
       nodes: { commits: 'gate', pr: 'wait', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'commits',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'Commit ready', tone: 'amber', icon: 'git-commit' })
+    expect(roster).toEqual({ word: 'Commit ready', tone: 'amber', icon: 'git-commit' })
   })
 })
 
 describe('S3 — commits ✓ · no PR', () => {
   it('puts the head on the PR gate', () => {
-    const { model, rail } = row({ headSha: HEAD, agent: 'idle', status: 'needs-input' })
+    const { model, roster } = row({ headSha: HEAD, agent: 'idle', status: 'needs-input' })
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'gate', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'pr',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'Create PR ready', tone: 'amber', icon: 'git-pull-request' })
+    expect(roster).toEqual({ word: 'Create PR ready', tone: 'amber', icon: 'git-pull-request' })
   })
 })
 
 describe('S3b — S3 · create_pr: auto', () => {
   it('delegates the PR gate and narrates it', () => {
-    const { model, rail } = row({ headSha: HEAD, policy: { createPr: 'auto' } })
+    const { model, roster } = row({ headSha: HEAD, policy: { createPr: 'auto' } })
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'auto', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'pr',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'Opening PR · auto', tone: 'run', icon: 'gear' })
+    expect(roster).toEqual({ word: 'Opening PR · auto', tone: 'run', icon: 'gear' })
   })
 })
 
 describe('S4 — PR #42 · CI running', () => {
-  it('moves the head to CI and points the rail at the PR', () => {
-    const { model, rail } = row({
+  it('moves the head to CI and points the roster at the PR', () => {
+    const { model, roster } = row({
       headSha: HEAD,
       pr: PR,
       ci: { status: 'running', sha: HEAD },
@@ -82,13 +82,13 @@ describe('S4 — PR #42 · CI running', () => {
       head: 'ci',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'PR #42 · CI', tone: 'run', icon: 'git-pull-request' })
+    expect(roster).toEqual({ word: 'PR #42 · CI', tone: 'run', icon: 'git-pull-request' })
   })
 })
 
 describe('S5 — CI failed', () => {
-  it('fails the CI node and calls the rail out', () => {
-    const { model, rail } = row({
+  it('fails the CI node and calls the roster out', () => {
+    const { model, roster } = row({
       headSha: HEAD,
       pr: PR,
       ci: { status: 'failed', sha: HEAD },
@@ -98,13 +98,13 @@ describe('S5 — CI failed', () => {
       head: 'ci',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'CI failing', tone: 'amber', icon: 'warning' })
+    expect(roster).toEqual({ word: 'CI failing', tone: 'amber', icon: 'warning' })
   })
 })
 
 describe('S6 — CI ✓ · review round running', () => {
   it('moves the head to Review with no gate', () => {
-    const { model, rail } = row({
+    const { model, roster } = row({
       headSha: HEAD,
       pr: PR,
       ci: { status: 'passed', sha: HEAD },
@@ -115,13 +115,13 @@ describe('S6 — CI ✓ · review round running', () => {
       head: 'review',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'In review', tone: 'run', icon: 'user' })
+    expect(roster).toEqual({ word: 'In review', tone: 'run', icon: 'user' })
   })
 })
 
 describe('S7 — changes requested · 2 open', () => {
   it('marks Review changed and keeps the head there', () => {
-    const { model, rail } = row({
+    const { model, roster } = row({
       headSha: HEAD,
       pr: PR,
       ci: { status: 'passed', sha: HEAD },
@@ -132,13 +132,13 @@ describe('S7 — changes requested · 2 open', () => {
       head: 'review',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'Changes requested', tone: 'amber', icon: 'user' })
+    expect(roster).toEqual({ word: 'Changes requested', tone: 'amber', icon: 'user' })
   })
 })
 
 describe('S8 — approved · all fresh', () => {
   it('opens the Merge gate', () => {
-    const { model, rail } = row({
+    const { model, roster } = row({
       headSha: HEAD,
       pr: PR,
       ci: { status: 'passed', sha: HEAD },
@@ -149,13 +149,13 @@ describe('S8 — approved · all fresh', () => {
       head: 'merge',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'Ready to merge', tone: 'amber', icon: 'git-pull-request' })
+    expect(roster).toEqual({ word: 'Ready to merge', tone: 'amber', icon: 'git-pull-request' })
   })
 })
 
 describe('S8b — S8 · merge: auto', () => {
   it('arms the Merge gate instead of asking', () => {
-    const { model, rail } = row({
+    const { model, roster } = row({
       headSha: HEAD,
       pr: PR,
       ci: { status: 'passed', sha: HEAD },
@@ -167,13 +167,13 @@ describe('S8b — S8 · merge: auto', () => {
       head: 'merge',
       terminal: null,
     })
-    expect(rail).toEqual({ word: 'Auto-merge armed', tone: 'run', icon: 'gear' })
+    expect(roster).toEqual({ word: 'Auto-merge armed', tone: 'run', icon: 'gear' })
   })
 })
 
 describe('S9 — +1 commit while PR open', () => {
   it('syncs Commits, stales CI and Review, locks Merge', () => {
-    const { model, rail } = row({
+    const { model, roster } = row({
       headSha: HEAD,
       unpushed: 1,
       pr: PR,
@@ -185,31 +185,31 @@ describe('S9 — +1 commit while PR open', () => {
       head: 'commits',
       terminal: null,
     })
-    expect(rail).toEqual({ word: '↑1 unpushed', tone: 'run', icon: 'arrow-line-up' })
+    expect(roster).toEqual({ word: '↑1 unpushed', tone: 'run', icon: 'arrow-line-up' })
   })
 })
 
 describe('S10 — merged', () => {
-  it('replaces the ribbon with the merged terminal and lands the rail', () => {
-    const { model, rail } = row({
+  it('replaces the ribbon with the merged terminal and lands the roster', () => {
+    const { model, roster } = row({
       headSha: HEAD,
       pr: { num: 38, state: 'merged', base: 'main' },
       ci: { status: 'passed', sha: HEAD },
       review: [{ by: '@sam', verdict: 'approved', sha: HEAD, findings: 0 }],
     })
     expect(model).toEqual({ nodes: null, head: null, terminal: 'merged' })
-    expect(rail).toEqual({ word: 'Landed', tone: 'landed', icon: 'git-merge' })
+    expect(roster).toEqual({ word: 'Landed', tone: 'landed', icon: 'git-merge' })
   })
 })
 
 describe('S11 — closed w/o merge', () => {
   it('replaces the ribbon with the closed terminal', () => {
-    const { model, rail } = row({
+    const { model, roster } = row({
       headSha: HEAD,
       pr: { num: 35, state: 'closed', base: 'main' },
       ci: { status: 'passed', sha: HEAD },
     })
     expect(model).toEqual({ nodes: null, head: null, terminal: 'closed' })
-    expect(rail).toEqual({ word: 'Closed', tone: 'stale', icon: 'prohibit' })
+    expect(roster).toEqual({ word: 'Closed', tone: 'stale', icon: 'prohibit' })
   })
 })

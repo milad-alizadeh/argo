@@ -1,4 +1,4 @@
-import type { RailIcon } from '@/shared/ship'
+import type { RosterIcon } from '@/shared/delivery'
 import { ArrowLineUpIcon } from './ArrowLineUpIcon'
 import { CheckIcon } from './CheckIcon'
 import { CircleIcon } from './CircleIcon'
@@ -13,9 +13,9 @@ import { UserIcon } from './UserIcon'
 import { WarningIcon } from './WarningIcon'
 import { XIcon } from './XIcon'
 
-// Name → atom, and nothing else: which icon a state wears is the ship derivation's call
-// (`RailStatus.icon`), so this side only knows how to draw the name it is handed.
-export const RAIL_ICON: Record<RailIcon, IconAtom> = {
+// Name → atom, and nothing else: which icon a state wears is the delivery derivation's call
+// (`RosterStatus.icon`), so this side only knows how to draw the name it is handed.
+export const ROSTER_ICON: Record<RosterIcon, IconAtom> = {
   'arrow-line-up': ArrowLineUpIcon,
   check: CheckIcon,
   circle: CircleIcon,

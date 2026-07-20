@@ -1,4 +1,4 @@
-import type { RailTone } from '@/shared/ship'
+import type { RosterTone } from '@/shared/delivery'
 
 export const AGENT_STATES = ['running', 'done', 'failed', 'queued'] as const
 
@@ -8,7 +8,7 @@ export type AgentState = (typeof AGENT_STATES)[number]
 // The roster speaks its states in lowercase, so the word IS the state and only the tone
 // needs a lookup. Names a `--tone-*` token, never a colour; `null` means the state spends
 // no hue at all, which is what keeps a row to at most one.
-export const AGENT_TONE: Record<AgentState, RailTone | null> = {
+export const AGENT_TONE: Record<AgentState, RosterTone | null> = {
   running: 'run',
   done: null,
   failed: 'red',

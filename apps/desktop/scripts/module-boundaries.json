@@ -30,19 +30,19 @@
     },
     {
       "name": "renderer-shared",
-      "comment": "The renderer's shared leaf (feature-sliced `shared/`): the framework-primitive kit (`components/ui` + its icons) that every Pane composes, and the ship-flow presentation vocabulary (`shared/ship`: the rail status word/icon and the `shipState` composition over the `@shared` ribbon derivation). A building block imported by two or more domains lives here, so every domain may import it and it imports no domain in return. External code reaches it only through the three barrels; its internals are private.",
+      "comment": "The renderer's shared leaf (feature-sliced `shared/`): the framework-primitive kit (`components/ui` + its icons) that every Pane composes, and the delivery-flow presentation vocabulary (`shared/delivery`: the Roster status word/icon and the `deliveryState` composition over the `@shared` ribbon derivation). A building block imported by two or more domains lives here, so every domain may import it and it imports no domain in return. External code reaches it only through the three barrels; its internals are private.",
       "path": "^src/renderer/src/shared/",
       "publicEntry": [
         "^src/renderer/src/shared/components/ui/index\\.ts$",
         "^src/renderer/src/shared/components/ui/icons/index\\.ts$",
-        "^src/renderer/src/shared/ship/index\\.ts$"
+        "^src/renderer/src/shared/delivery/index\\.ts$"
       ]
     },
     {
-      "name": "rail",
-      "comment": "The Rail Pane (CONTEXT.md region): the session roster column and its rows. A feature slice — owns its `components/` and, as they arrive, its hooks/store/types. Composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
-      "path": "^src/renderer/src/domains/rail/",
-      "publicEntry": ["^src/renderer/src/domains/rail/components/index\\.ts$"]
+      "name": "roster",
+      "comment": "The Roster Pane (CONTEXT.md region): the session roster column and its rows. A feature slice — owns its `components/` and, as they arrive, its hooks/store/types. Composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "path": "^src/renderer/src/domains/roster/",
+      "publicEntry": ["^src/renderer/src/domains/roster/components/index\\.ts$"]
     },
     {
       "name": "activity",
@@ -69,10 +69,10 @@
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],
     "shared": ["main", "renderer", "preload"],
-    "rail": ["activity", "ship", "console"],
-    "activity": ["rail", "ship", "console"],
-    "ship": ["rail", "activity", "console"],
-    "console": ["rail", "activity", "ship"],
-    "renderer-shared": ["rail", "activity", "ship", "console"]
+    "roster": ["activity", "ship", "console"],
+    "activity": ["roster", "ship", "console"],
+    "ship": ["roster", "activity", "console"],
+    "console": ["roster", "activity", "ship"],
+    "renderer-shared": ["roster", "activity", "ship", "console"]
   }
 }

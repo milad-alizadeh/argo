@@ -2,27 +2,27 @@ import { SESSION_STATES, type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import type { SessionView } from '@/sessionStore'
-import type { RailTone } from '@/shared/ship'
-import { Rail } from './Rail'
+import type { RosterTone } from '@/shared/delivery'
+import { Roster } from './Roster'
 
 const meta = {
-  title: 'Rail',
-  component: Rail,
+  title: 'Roster',
+  component: Roster,
   parameters: { layout: 'fullscreen' },
   argTypes: {
     sessions: {
       control: false,
       description:
-        'The projected Sessions the rail renders, one row each, already carrying the facts a row derives its word and tone from. A projection rather than raw state, so there is nothing here to edit by hand.',
+        'The projected Sessions the roster renders, one row each, already carrying the facts a row derives its word and tone from. A projection rather than raw state, so there is nothing here to edit by hand.',
       table: { type: { summary: 'SessionView[]' } },
     },
   },
-} satisfies Meta<typeof Rail>
+} satisfies Meta<typeof Roster>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Empty hub → empty rail (issue #3): the whole visible surface is the empty state. */
+/** Empty hub → empty roster (issue #3): the whole visible surface is the empty state. */
 export const Empty: Story = {
   args: { sessions: [] },
   play: async ({ canvasElement }) => {
@@ -41,7 +41,7 @@ const oneSession: SessionView[] = [
   },
 ]
 
-/** A single projected Session → one rail row, asserting the whole visible row. */
+/** A single projected Session → one roster row, asserting the whole visible row. */
 export const SingleSession: Story = {
   args: { sessions: oneSession },
   play: async ({ canvasElement }) => {
@@ -66,7 +66,7 @@ const everyState: SessionView[] = SESSION_STATES.map((status) => ({
 
 // Spelled out rather than read off the table the rows render from — otherwise the story
 // only proves nothing falls through, not that the cockpit says what R16 settled on.
-const vocabulary: [SessionStatus, string, RailTone][] = [
+const vocabulary: [SessionStatus, string, RosterTone][] = [
   ['running', 'Running', 'run'],
   ['needs-input', 'Needs input', 'amber'],
   ['done', 'Done', 'done'],
@@ -98,7 +98,7 @@ const HEAD = 'a1b2c3d'
 const PR = { num: 42, state: 'open', base: 'main' } as const
 
 // All three are `status: 'running'`; none of them says "Running".
-const shipStates: SessionView[] = [
+const deliveryStates: SessionView[] = [
   {
     id: 'ci-failing',
     title: 'Why is CI flaky',
@@ -125,11 +125,11 @@ const shipStates: SessionView[] = [
 ]
 
 /**
- * The ribbon-derived half of R16, reachable now that facts cross the bridge: a ship stage
+ * The ribbon-derived half of R16, reachable now that facts cross the bridge: a delivery stage
  * REPLACES the lifecycle word rather than appending a detail to it.
  */
-export const ShipStates: Story = {
-  args: { sessions: shipStates },
+export const DeliveryStates: Story = {
+  args: { sessions: deliveryStates },
   play: async ({ canvasElement }) => {
     const list = within(canvasElement).getByRole('list', { name: 'Sessions' })
     for (const word of ['CI failing', 'Ready to merge', 'Commit ready']) {

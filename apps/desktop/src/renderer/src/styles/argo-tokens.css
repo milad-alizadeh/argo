@@ -73,7 +73,7 @@
 :root {
   --radius: 0.5rem;
   --radius-full: 999px; /* pills/chips; the app's rounded-full already covers this */
-  --border-rail: 3px; /* the study's severity/state accent rail (finding, rvrow, phase group) */
+  --border-roster: 3px; /* the study's severity/state accent rail (finding, rvrow, phase group) */
 
   --background: var(--gray-100);
   --foreground: var(--gray-950);
@@ -123,7 +123,7 @@
   --inset-hair: color-mix(in srgb, var(--gray-950) 6%, transparent);
   --inset-lip: color-mix(in srgb, var(--gray-950) 4%, transparent);
 
-  /* Rail tones — named for the TONE the ship derivation emits, not a lifecycle state,
+  /* Roster tones — named for the TONE the delivery derivation emits, not a lifecycle state,
    * because tone↔state is not 1:1 (the matrix keeps colour off the state deliberately).
    * Every tone resolves to a distinct value — none shares a token. `landed` (Merged) is
    * green pulled toward indigo so Landed ≠ CI-green (ADR-0009). */

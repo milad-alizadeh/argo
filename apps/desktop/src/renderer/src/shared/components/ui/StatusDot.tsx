@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { RailTone } from '@/shared/ship'
+import type { RosterTone } from '@/shared/delivery'
 
 /**
  * Atom: a state as a small coloured dot.
@@ -15,7 +15,7 @@ export function StatusDot({
   className,
 }: {
   /** Which cockpit tone the dot carries — its fill and its glow both read it. */
-  tone: RailTone
+  tone: RosterTone
   /** What the dot means, for a dot that stands alone. Omit it beside a visible word. */
   label?: string
   /** Spend the screen's ONE animation budget on this dot. At most one per render. */

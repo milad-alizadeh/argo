@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { RAIL_ICONS, RAIL_TONES } from '@/shared/ship'
+import { ROSTER_ICONS, ROSTER_TONES } from '@/shared/delivery'
 import { Text } from '../Text'
 import { StatusIcon } from './StatusIcon'
 
@@ -8,8 +8,8 @@ const meta = {
   title: 'Shared/StatusIcon',
   component: StatusIcon,
   argTypes: {
-    icon: { control: 'select', options: RAIL_ICONS },
-    tone: { control: 'select', options: RAIL_TONES },
+    icon: { control: 'select', options: ROSTER_ICONS },
+    tone: { control: 'select', options: ROSTER_TONES },
   },
 } satisfies Meta<typeof StatusIcon>
 
@@ -35,7 +35,7 @@ export const AllIcons: Story = {
   args: { icon: 'circle-notch', tone: 'run' },
   render: () => (
     <div className="flex flex-wrap items-start gap-region">
-      {RAIL_ICONS.map((icon) => (
+      {ROSTER_ICONS.map((icon) => (
         <span className="flex w-20 flex-col items-center gap-gap" key={icon}>
           <StatusIcon icon={icon} tone="run" />
           <Text variant="meta" className="text-foreground-faint">
