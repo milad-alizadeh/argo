@@ -11,10 +11,9 @@ Make information hiding **enforced, not aspirational**. The rule this installs:
 > A file outside module M may import M **only through M's public entry** (its barrel).
 > M's internal files are private to M. A module's own files import each other freely.
 
-This is the mechanical companion to the `file-structure.md` house rule's "enforce
-mechanically where you can" clause. The semantic decision — *what the modules are and
-where each one's front door is* — is an LLM judgment captured in a map file. The
-enforcement — *turning that map into lint rules* — is deterministic. Keep that seam:
+This is the mechanical companion to the `file-structure.md` house rule. The semantic
+decision — *what the modules are and where each one's front door is* — is an LLM judgment
+in a map file; turning that map into lint rules is deterministic. Keep that seam:
 **edit the map, never the generated config.**
 
 Templates ship inside this skill at `templates/` (next to this `SKILL.md`):
@@ -23,7 +22,7 @@ copy verbatim), `module-boundaries.yml` (the CI job).
 
 ## 1. Detect the project shape
 
-Look, don't assume. Gather:
+Read these off the repo, not from memory:
 
 - **Package manager + lockfile** — root `package.json` `packageManager`, which lockfile
   exists (`bun.lock`, `pnpm-lock.yaml`, `package-lock.json`). Drives the add command and
@@ -122,12 +121,9 @@ Copy `templates/module-boundaries.yml` → `.github/workflows/module-boundaries.
 single-package repo), and scope it with `paths:` if only one workspace is covered. A leak
 then fails the check on every PR.
 
-**No separate Node runtime is needed.** depcruise's engine check wants Node 22/24/26 semantics,
-and **bun already provides them** (its `process.versions.node` is ≥24) — the earlier trap was
-that `bun run <script>` executes the depcruise bin via its `#!/usr/bin/env node` shebang, which
-shells out to whatever system Node is on PATH (possibly an unsupported one). Running depcruise
-through the bun *runtime* (`bun --bun x depcruise …`) sidesteps the shebang entirely, so CI just
-sets up bun and runs `<pm> run boundaries`.
+**No separate Node runtime is needed** — bun provides the Node 22/24/26 semantics depcruise's
+engine check wants, via the `bun --bun x` runtime invocation §3 step 5 sets up. CI just installs
+bun and runs `<pm> run boundaries`.
 
 Optionally add it to a pre-commit hook (if the repo uses husky/lint-staged from the
 `setup-pre-commit` skill) so leaks are caught before push — but CI is the backstop that

@@ -5,17 +5,15 @@ description: The moodboard→contract ceremony. Run once per project after setup
 
 # Design Foundations
 
-Foundations come **before screens**. A type scale derived as a by-product of one
-screen's settle inherits that screen's exploration jitter — half-pixel sizes,
-missing rungs, one screen's accidents enshrined as the project's law. A scale
-designed deliberately, as its own short ceremony, gives every later study
-something clean to snap to. This skill is that ceremony: part moodboard review,
-part ratification.
+Foundations come **before screens**: a scale derived as a by-product of one screen's
+settle inherits that screen's exploration jitter — half-pixel sizes, missing rungs,
+one screen's accidents enshrined as law. Designed deliberately, as its own ceremony,
+it gives every later study something clean to snap to.
 
 Run it **once per project**, after `setup-design-handoff` has installed the token
 *structure* and before the first screen study is settled. Re-run it any time as an
-**audit** (see the last section). `/componentize-design` then only *reconciles* a
-screen against these foundations; it never designs a scale.
+**audit**. `/componentize-design` then only *reconciles* a screen against these
+foundations; it never designs a scale.
 
 ## The shape of a foundation
 
@@ -66,8 +64,8 @@ user, then continue.
 
 ## 2. Design each family — deliberately, not by averaging
 
-This is design judgment, not extraction. The histograms show where the
-designer's eye kept landing; the ceremony names those places and cleans them up.
+The histograms show where the designer's eye kept landing; name those places and
+clean them up.
 
 - **Typography** — cluster the observed sizes; choose the role set (from
   micro / label / body / body-lg / title / heading / display — drop roles the

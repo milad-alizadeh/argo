@@ -5,9 +5,9 @@ description: Generic project scaffolder. Runs a short wizard, then searches onli
 
 # Scaffold Project
 
-A small, generic scaffolder for any stack. Don't hardcode ecosystems and don't hand-author config
-the official generator can produce — run the wizard, look up the current tools online, generate,
-then prove it works.
+A small, generic scaffolder for any stack: run the wizard, look up the current tools online,
+generate with the official CLIs, then prove it works. Don't hardcode ecosystems or hand-author
+config a generator can produce.
 
 **Golden rule: reach for a CLI, not your memory.** Every tool you add — the framework, *and* each
 piece of tooling on top of it (formatter, linter, test runner, component library, Storybook, …) —
@@ -29,7 +29,7 @@ Ask one question at a time, lead with a recommendation, skip anything you can al
 
 ## 2. Search online for the current generators and LSP
 
-Ecosystems change, so don't rely on memory — do a quick web search / read official docs for:
+Ecosystems change — web-search / read the official docs for:
 
 - the **framework's official generator** and its current command (the `create-*` tool, or the
   language toolchain's `init`/`new`);

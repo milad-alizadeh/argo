@@ -6,10 +6,10 @@ disable-model-invocation: true
 
 # Setup Argo Skills
 
-One entry point for setting up a project the Argo way. Two phases: install the
-**skills** (so every agent has the same toolbox), then install the **infra** the
-user actually wants — each piece delegated to its own `setup-*` skill, so any
-piece can be re-run individually later without going through this wizard again.
+One entry point for setting up a project the Argo way: install the **skills** (so
+every agent has the same toolbox), then install the **infra** the user actually
+wants — each piece delegated to its own `setup-*` skill, so any piece can be re-run
+individually later without going through this wizard again.
 
 ## Phase 1 — install the skill bundle
 
@@ -26,9 +26,8 @@ Preview with `--dry-run`. Skills land in `.claude/skills/` + `.agents/skills/`,
 recorded in `skills-lock.json`. If the project already has a lock, this is an
 update, not a first install — say so and continue.
 
-Every source installs from its repo — including Argo's own skills; even the
-argo monorepo dogfoods itself with the same command. A new or edited skill must
-be **pushed** before a reinstall picks it up.
+Every source installs from its repo — including Argo's own skills. A new or edited
+skill must be **pushed** before a reinstall picks it up.
 
 ## Phase 2 — the infra wizard
 

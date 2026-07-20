@@ -15,8 +15,8 @@ enforcement check. The *prose* rules (`design-system.md`, `design-studies.md`,
 `ui-components.md`) come from `setup-rules` — run that first if the repo has no
 `rules/` yet.
 
-**Golden rule (same as setup-rules): adapt, don't dump.** Every path, glob, and
-command installed must resolve to something real in this repo.
+**Golden rule: adapt, don't dump.** Every path, glob, and command installed must
+resolve to something real in this repo.
 
 ## 1. Detect the target stack
 
@@ -52,7 +52,7 @@ This skill installs the *structure*; the values are design work. When families
 are missing, run `/design-foundations` next — the moodboard→contract ceremony
 that designs the ramps deliberately from whatever exploration exists (studies,
 the app's CSS) and lands them only behind a user bless. Never derive a scale
-inline here, and never copy a study's raw values verbatim into the contract.
+inline here or copy a study's raw values into the contract.
 
 ## 3. Install the study scaffolding
 
