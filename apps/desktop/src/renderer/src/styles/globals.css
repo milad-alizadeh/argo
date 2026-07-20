@@ -134,6 +134,9 @@
  * `icon-sm` is the opt-in step down. Colour is never set here — a glyph is tinted by its
  * enclosing element's currentColor. */
 @utility icon {
+  /* Preflight makes every svg `display: block`, which breaks a glyph out of its
+   * text line and makes the baseline nudge below a no-op. */
+  display: inline-block;
   flex: none;
   vertical-align: var(--icon-baseline);
 }
