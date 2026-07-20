@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { FINDING_STATE_ACTION, FINDING_STATE_REPORT, FINDING_STATES } from './findingState'
+import {
+  FINDING_SEVERITIES,
+  FINDING_SEVERITY,
+  FINDING_STATE_ACTION,
+  FINDING_STATE_REPORT,
+  FINDING_STATES,
+} from './findingState'
 
 describe('finding state vocabulary', () => {
   it('binds every rung of the cycle, in cycle order', () => {
@@ -25,5 +31,21 @@ describe('finding state vocabulary', () => {
   it('tones the report and the action independently', () => {
     expect(FINDING_STATE_REPORT.open.tone).toBe('verdict-block')
     expect(FINDING_STATE_ACTION.open.tone).toBe('verdict-changes')
+  })
+})
+
+describe('finding severity vocabulary', () => {
+  it('binds every severity to a word, an icon and a tone', () => {
+    expect(Object.keys(FINDING_SEVERITY)).toEqual([...FINDING_SEVERITIES])
+  })
+
+  it('spells each severity word exactly once', () => {
+    const words = FINDING_SEVERITIES.map((severity) => FINDING_SEVERITY[severity].word)
+    expect(new Set(words).size).toBe(FINDING_SEVERITIES.length)
+  })
+
+  it('tones blocking with the block verdict and advisory with the changes verdict', () => {
+    expect(FINDING_SEVERITY.blocking.tone).toBe('verdict-block')
+    expect(FINDING_SEVERITY.advisory.tone).toBe('verdict-changes')
   })
 })

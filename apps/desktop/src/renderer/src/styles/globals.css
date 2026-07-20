@@ -127,6 +127,10 @@
   --spacing-inset: var(--space-inset);
   --spacing-region: var(--space-region);
 
+  /* The one shared strip height (min-h-strip): the Work pane's tab strip and the ship
+   * ribbon it stacks against. */
+  --height-strip: var(--strip-height);
+
   /* Motion roles: duration-fast / duration-slow / duration-pulse. */
   --transition-duration-fast: var(--time-fast);
   --transition-duration-slow: var(--time-slow);
