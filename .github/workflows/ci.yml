@@ -227,7 +227,9 @@ jobs:
         run: |
           # Tracked-and-modified is drift (a story that already had a baseline now renders
           # differently); untracked is a new story's first render, with nothing to compare to.
-          drift=$(git diff --name-only -- '*__screenshots__*')
+          # --diff-filter=M so a *deleted* baseline (story removed) never lands in the table —
+          # its `after` image is gone, and the row would render a broken image.
+          drift=$(git diff --name-only --diff-filter=M -- '*__screenshots__*')
           fresh=$(git ls-files --others --exclude-standard -- '*__screenshots__*')
           # Guarded, not just run: `git add` treats a pathspec matching nothing as fatal, which
           # reads as a broken workflow rather than the ordinary "`stories` went red for a
