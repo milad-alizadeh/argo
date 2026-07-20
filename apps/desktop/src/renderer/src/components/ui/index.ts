@@ -35,4 +35,12 @@ export {
   tabsTriggerVariants,
 } from './tabs'
 export { ToggleGroup, ToggleGroupItem } from './toggle-group'
+export {
+  SOLID_PRIMARY_TONE,
+  VERDICT_APPROVE_WASH,
+  VERDICT_BLOCK_WASH,
+  VERDICT_CHANGES_WASH,
+  WASH_PRIMARY_TONE,
+} from './toneRecipes'
+export { type DisclosureProps, useDisclosure } from './useDisclosure'
 export { WorkspaceIdentity, type WorkspaceTree } from './WorkspaceIdentity'

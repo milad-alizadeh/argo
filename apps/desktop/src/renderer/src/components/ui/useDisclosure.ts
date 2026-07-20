@@ -10,9 +10,9 @@ export type DisclosureProps = {
   onOpenChange?: (open: boolean) => void
 }
 
-/** The controlled-with-uncontrolled-fallback boolean every disclosure in the roster shares:
- * standalone it tracks its own open state seeded by `defaultOpen`; handed `open`, a container
- * drives it and `toggle` only reports through `onOpenChange`. */
+/** The controlled-with-uncontrolled-fallback boolean any drawer/disclosure in the cockpit can
+ * share: standalone it tracks its own open state seeded by `defaultOpen`; handed `open`, a
+ * container drives it and `toggle` only reports through `onOpenChange`. */
 export function useDisclosure({
   open,
   defaultOpen = false,

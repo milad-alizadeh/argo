@@ -4,6 +4,7 @@ import type * as React from 'react'
 
 import { cn } from '@/lib/utils'
 import { TYPE_ROLE_CLASS } from './Text'
+import { WASH_PRIMARY_TONE } from './toneRecipes'
 
 // Labels are authored lower-case: the `tag` role uppercases them, so the accessible text
 // stays what the caller wrote. `asChild` hands the children to a Slot, so the role class
@@ -18,7 +19,7 @@ const badgeVariants = cva(
       variant: {
         neutral: 'border-border text-foreground-faint',
         warn: 'border-tone-amber/40 text-tone-amber',
-        primary: 'border-primary/40 bg-primary/12 text-primary-soft',
+        primary: WASH_PRIMARY_TONE,
         // Verdict ink over its own tint — 40% border, 12% wash, one pair per token.
         'verdict-block': 'border-verdict-block-tint/40 bg-verdict-block-tint/12 text-verdict-block',
         'verdict-changes':
