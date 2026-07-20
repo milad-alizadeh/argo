@@ -1,18 +1,25 @@
 ---
 name: componentize-design
-description: Turn a settled HTML design study into properly componentized app code — settle its raw values into the token contract, extract a component inventory (atoms → molecules → organisms → screen), then scaffold each tier bottom-up with typed Views and Storybook stories that cover every prop. Use when the user wants to build a design, componentize or settle a study, or transfer a design study HTML file into the app.
+description: Turn a settled HTML design study into properly componentized app code — settle its raw values into the token contract, assemble the screen from existing primitives against a derived view-model, then extract components only where reuse or unexercised states justify it, storying the screen plus each extracted component. Use when the user wants to build a design, componentize or settle a study, or transfer a design study HTML file into the app.
 ---
 
 # Componentize Design
 
 Input: one settled study in the repo's design-studies directory (see the
-`design-studies` rule — typically `docs/designs/`). Output: the design rebuilt as
-real components in dependency order, with a written inventory as the durable
-contract. The HTML is visual truth; the inventory is build truth — never build a
-component by eyeballing the HTML and guessing its boundaries.
+`design-studies` rule — typically `docs/designs/`). Output: the screen assembled
+from existing primitives against a derived view-model, with a written inventory of
+the components extraction actually justified as the durable contract. The HTML is
+visual truth; the inventory is build truth — a component exists because evidence in
+the assembled screen forced it out, never because the HTML was eyeballed for
+boundaries up front.
 
 The study is a **disposable spec, not source**. Its markup and CSS are never
 ported; only its decisions survive, as tokens and inventory rows.
+
+**This screen-first order is for building application screens.** If the deliverable
+is a reusable cross-app component library, or the inventory is already empirically
+known, or multiple teams need frozen contracts before building, build inventory-first
+bottom-up instead.
 
 ## 1. Settle the tokens — no code yet
 
@@ -44,96 +51,62 @@ run `/design-foundations` with this study as raw material, then come back.
 Show the user the snap/promote table before proceeding — collapsing near-duplicate
 values changes how the built UI looks in the small; they should see what moved.
 
-## 2. Inventory — still no code
+## 2. Assemble the screen skeleton — real structure, no new components
 
-Read the study, the design-studies README, the token contract, and the repo's
-`ui-components` rule. Decompose the screen into one table row per component:
+Build the screen top-down from what already exists: kit primitives, existing
+`shared/ui` atoms, and a **derived view-model** — a pure `derive(facts)`, the same
+pattern as `shipState(facts)`. Write the markup inline in the screen View. Do not
+author new named components yet; no stories yet. Variation and state live in the
+view-model and region-local state, never flattened props threaded down. Settle raw
+values against the token contract as you go (step 1's snap/promote rules still apply).
+
+The skeleton is done when the screen renders its happy path from primitives plus
+the view-model, with no net-new named component authored.
+
+## 3. Extract by evidence — then write the inventory
+
+Extract a block into a named component when **any** is true; else it stays inline:
+
+- **Repetition** — the same markup appears a second time within the screen (rule of
+  two/three).
+- **Known cross-screen unit** — a shape the design system reuses across screens
+  (card, badge, status, empty-state, drawer header), even at one occurrence here.
+- **Unexercised states** — states the happy path doesn't render (error / empty /
+  loading / overflow) that need their own coverage.
+
+A single-use, single-state, trivial block — a primitive with hardcoded children — is
+**not** extracted; inline it in its one caller.
+
+Write the inventory **from these extractions** (`<study>.inventory.md`, linked from
+the design README), one row per extracted component:
 
 | Column | Meaning |
 |---|---|
-| name | component name = the file to create (or the existing one to reuse) |
-| tier | atom / molecule / organism / screen |
-| props | full contract: every prop, its type, enum variants, states |
-| composed-of | which lower-tier rows it renders |
-| reuse | how the row is sourced — resolves to exactly one of the three values below |
-| domain | target folder the row is born into (`shared/ui` or `domains/<region>`) |
+| name | component name = the file to create |
+| tier | atom / molecule / organism — a **label applied at extraction**, not a schedule |
+| domain | `shared/ui` if it renders across regions, else `domains/<region>` (per CONTEXT.md's Panes) |
+| props | the surface the skeleton proved — every prop, its type, enum variants, states |
+| composed-of | which lower-tier components it renders |
 | source | anchor in the study: its `data-component` attribute, else a CSS class (e.g. `.srow`) |
 
-**`reuse` and `domain` are the reconciliation this step exists for.** Every row
-resolves both before the checkpoint — reuse against what already exists, domain
-against where the row renders — so the build starts from a reconciled table, not
-net-new components authored by reflex.
+Names are frozen once written — renaming later is a migration, not a whim.
 
-- **`reuse` — one of exactly three values, per row:**
-  - `reuse:<existing primitive>` — an existing component already renders this shape;
-    point the row at it and don't re-author. Search `shared/components/ui/` and the
-    owning region's `components/` first.
-  - `kit:<name>` — your configured component kit supplies it (the kit the
-    `ui-components` rule names — its `{{COMPONENT_KIT}}` value, not a kit this skill
-    hardcodes). Pull the primitive from the kit and **adapt its variant map to the
-    token contract**; a hand-rolled equivalent beside a kit primitive is a duplication
-    bug.
-  - `new — <one-line why nothing covers it>` — nothing above fits. **A `new` row
-    cannot omit the justification clause** — the one line arguing why no existing
-    primitive and no kit component covers it is what makes hand-rolling the argued
-    exception rather than the reflex.
-- **`domain` — the target folder, derived not chosen.** A framework primitive shared
-  across regions is `shared/ui`; a component that belongs to one Pane/region is
-  `domains/<region>` (the region it renders in, per CONTEXT.md's Panes). This one
-  value drives both the file path in step 4 and the story title's top segment (per
-  the `ui-components` rule's `title == top domain folder`), so it is settled here, once.
-- **Every repeated shape in the HTML is one row**, listed once.
-- **Props come from the study itself** — its data objects (e.g. a `SESSIONS`
-  array) and its CSS variant classes (`.sel`, `.amber`, …), not from guesses. A
-  variant class is an enum prop; a data field is a value prop.
-- **Names are frozen here.** The name in this table is the component's name in
-  the codebase, in stories, and in tickets — renaming later is a migration, not
-  a whim.
+Show the user the inventory **and which blocks stayed inline**, and get a nod —
+this is the one checkpoint; everything after is mechanical.
 
-Write the table next to the study (`<study>.inventory.md`, linked from the design
-README). **Show the user the inventory and get a nod before scaffolding** — this
-is the one checkpoint; everything after is mechanical. **The checkpoint blocks on
-both new columns being filled:** every row has a resolved `reuse` (one of the three
-values, and no `new` row without its justification clause) and an assigned `domain`.
-An unreconciled row — blank reuse, or a bare `new` — is not ready to build.
+## 4. Harden — story and test what was extracted, plus the screen
 
-## 3. Ticket or build
+For each extracted component: build or relocate it per the `ui-components` +
+`design-system` rules — tokens only, one tier per file, kit primitives adapted not
+re-authored, re-exported from the UI barrel, placed by its `domain` — with a
+colocated `*.stories.tsx` covering the states it actually has (union → one story +
+`select` control + gallery; boolean → its non-default side; a prop forwarded
+untouched is not storied here — it belongs to the child).
 
-Two ways to consume the inventory — pick with the user:
-
-- **Build now** (default for a single screen): continue to step 4 in this session.
-- **Ticket it** (bigger surface, or work split across sessions/agents): run
-  `/to-tickets` over the inventory. One ticket per organism/screen; shared new
-  atoms/molecules become their own tickets, `Blocked by:` edges follow
-  `composed-of`. Because names and tokens are already frozen, build each ticket
-  with `/implement` — one ticket per fresh context, in dependency order. Each
-  ticket body links the study file, the inventory row, and the token contract — a
-  fresh context needs nothing else.
-
-## 4. Build bottom-up
-
-Strict order: atoms → molecules → organisms → screen View. Never start a row
-before its `composed-of` rows are done. For each row:
-
-1. The component, per the repo's `ui-components` + `design-system` rules: tokens
-   only, one tier per file, interactive primitives wrap the project's headless-UI
-   library, re-export from the UI barrel. **Place the file by its `domain` value** —
-   a `shared/ui` row is born in `shared/components/ui/`, a `domains/<region>` row in
-   `domains/<region>/components/` — never a flat `components/` dump. The story
-   title's top segment then equals that domain folder (per `ui-components`), so
-   placement and taxonomy both fall out of the inventory with no further judgment.
-   A `reuse:`/`kit:` row builds nothing net-new: import the existing primitive, or
-   pull the kit component and adapt its variant map — only a `new` row authors a file.
-2. Colocated `*.stories.tsx` per the Storybook section of the `ui-components`
-   rule (when the project has Storybook): **every prop covered, but as an axis
-   rather than a story each** — a union gets one story plus a `select` control and
-   one gallery, a bounded number a range control, a boolean its non-default side.
-   Story only what this tier *adds*, never a prop it forwards to a child untouched,
-   and nest a single-owner part under its owner's title.
-3. Tick the row in the inventory before moving up a tier.
-
-The screen ships as container/View; only the **View** comes from the design — the
-container wires real data later and is out of scope here.
+**Always** write a screen-level story for the assembled View: compose its args from
+the child stories, and keep connected/data logic in a wrapper outside Storybook.
+This screen story is the visual-regression baseline for every region that stayed
+inline; extracted components add their own.
 
 ## 5. Verify against the design
 
@@ -143,5 +116,6 @@ container wires real data later and is out of scope here.
 - Run the repo's lint and test commands (wrapped per the repo's tooling rules);
   if a design-token check script is installed, it must pass.
 
-A row is done only when: component + every prop covered by a story or a control +
-visual parity + green checks.
+The screen is done when: every extracted component has each prop covered by a story
+or a control, the assembled View has its screen story, there is visual parity with
+the study, and checks are green.
