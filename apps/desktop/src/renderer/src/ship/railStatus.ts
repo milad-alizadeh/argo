@@ -1,5 +1,11 @@
-import type { SessionFacts, SessionStatus } from '@shared'
-import type { RibbonModel, RibbonNodeKey, RibbonNodeState, TerminalState } from './ribbonModel'
+import type {
+  RibbonModel,
+  RibbonNodeKey,
+  RibbonNodeState,
+  SessionFacts,
+  SessionStatus,
+  TerminalState,
+} from '@shared'
 
 // The rail row's word — a POINTER into the ribbon's head node, never a value of its
 // own. Tone is a name the row resolves to a `--status-*` token; no colour lives here.
