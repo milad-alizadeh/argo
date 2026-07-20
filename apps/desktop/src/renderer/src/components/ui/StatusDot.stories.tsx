@@ -1,16 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
+import type { SessionStatus } from '@/sessionStore'
 import { StatusDot } from './StatusDot'
-import type { StatusTone } from './sessionStatus'
+import { SESSION_ICON, STATUS_TONE, type StatusTone } from './sessionStatus'
 import { Text } from './Text'
 
-const TONES: StatusTone[] = ['run', 'amber', 'mist', 'gray', 'red', 'stale', 'landed']
+const TONES = Object.keys(STATUS_TONE) as StatusTone[]
+const SESSION_STATES = Object.keys(SESSION_ICON) as SessionStatus[]
 
 const meta = {
   title: 'Cockpit/StatusDot',
   component: StatusDot,
   argTypes: {
-    status: { control: 'select', options: ['working', 'idle', 'awaiting-input', 'exited'] },
+    status: { control: 'select', options: SESSION_STATES },
     tone: { control: 'select', options: TONES },
     decorative: { control: 'boolean' },
     pulse: { control: 'boolean' },

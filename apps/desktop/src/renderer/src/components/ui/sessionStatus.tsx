@@ -9,19 +9,17 @@ import type { SessionStatus } from '@/sessionStore'
 
 export type StatusTone = 'run' | 'amber' | 'mist' | 'gray' | 'red' | 'stale' | 'landed'
 
-// The cockpit's lifecycle palette. `mist` and `gray` deliberately resolve to the same
-// token — done and queued read identically in colour, and only the word beside them
-// tells them apart (colour never carries state alone). A tone is one colour class: a dot
-// takes its fill and its glow from currentColor, so there is no background variant to
-// keep in step.
-export const STATUS_TONE: Record<StatusTone, { textClass: string }> = {
-  run: { textClass: 'text-status-working' },
-  amber: { textClass: 'text-status-awaiting-input' },
-  mist: { textClass: 'text-status-idle' },
-  gray: { textClass: 'text-status-idle' },
-  red: { textClass: 'text-status-failed' },
-  stale: { textClass: 'text-status-exited' },
-  landed: { textClass: 'text-status-landed' },
+// `mist` and `gray` resolve to the same token deliberately — done and queued read
+// identically in colour and only the word beside them tells them apart. A tone is one
+// colour class: a dot takes both its fill and its glow from currentColor.
+export const STATUS_TONE: Record<StatusTone, string> = {
+  run: 'text-status-working',
+  amber: 'text-status-awaiting-input',
+  mist: 'text-status-idle',
+  gray: 'text-status-idle',
+  red: 'text-status-failed',
+  stale: 'text-status-exited',
+  landed: 'text-status-landed',
 }
 
 // The cockpit's whole status vocabulary. A caller passes a state key and never a word, so
@@ -51,22 +49,11 @@ export const STATUS_STATE: Record<StatusState, { word: string; tone: StatusTone 
   live: { word: 'live', tone: 'run' },
 }
 
-function sessionEntry(
-  state: SessionStatus,
-  Icon: Icon,
-): { label: string; tone: StatusTone; textClass: string; Icon: Icon } {
-  const { word, tone } = STATUS_STATE[state]
-  return { label: word, tone, ...STATUS_TONE[tone], Icon }
-}
-
-// The Session-only view of that vocabulary: the four lifecycle states plus the icon each
-// one wears. Words come from STATUS_STATE, so there is one table, not two.
-export const SESSION_STATUS: Record<
-  SessionStatus,
-  { label: string; tone: StatusTone; textClass: string; Icon: Icon }
-> = {
-  working: sessionEntry('working', CircleNotchIcon),
-  idle: sessionEntry('idle', CircleIcon),
-  'awaiting-input': sessionEntry('awaiting-input', WarningIcon),
-  exited: sessionEntry('exited', CheckCircleIcon),
+// The icon each Session lifecycle state wears — the only thing the Session-only view of
+// the vocabulary owns; its word and tone still come from STATUS_STATE.
+export const SESSION_ICON: Record<SessionStatus, Icon> = {
+  working: CircleNotchIcon,
+  idle: CircleIcon,
+  'awaiting-input': WarningIcon,
+  exited: CheckCircleIcon,
 }

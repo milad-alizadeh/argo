@@ -1,6 +1,12 @@
 import { cn } from '@/lib/utils'
 import { Text } from './Text'
 
+/** A context percentage is an estimate, so it arrives fractional and can overshoot both
+ * ends; the gauge shows a whole number inside 0–100. */
+export function clampPercentage(percentage: number): number {
+  return Math.min(100, Math.max(0, Math.round(percentage)))
+}
+
 // Atom: the ONE shape for a Session's context window — a labelled bar plus the estimated
 // percentage. Rail-only; no other surface repeats it.
 export function ContextGauge({
@@ -12,7 +18,7 @@ export function ContextGauge({
   percentage: number
   className?: string
 }): React.JSX.Element {
-  const clamped = Math.min(100, Math.max(0, Math.round(percentage)))
+  const clamped = clampPercentage(percentage)
   return (
     <div className={cn('flex items-center gap-snug', className)}>
       <Text variant="tag" className="shrink-0 text-foreground-faint">
@@ -25,7 +31,7 @@ export function ContextGauge({
         aria-valuemin={0}
         aria-valuemax={100}
         title="context window used (estimated)"
-        className="h-1 flex-1 rounded-sm bg-border"
+        className="h-tight flex-1 rounded-sm bg-border"
       >
         {/* runtime escape hatch: the fill is a percentage of the track, not a token step */}
         <span

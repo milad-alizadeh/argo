@@ -36,10 +36,10 @@
   .hsplit::after{content:"";position:absolute;inset:0;margin:auto;height:2px;width:34px;border-radius:calc(var(--radius) - 4px);background:var(--border);transition:background var(--time-fast);}
   .vsplit:hover::after,.hsplit:hover::after,.dragging::after{background:var(--primary);}
 
-  /* DERIVED — reserved for genuinely estimated values (parsed stdout, snapshot
-     diff, token-sum estimate). Exact counts render plain. */
-  /* An estimate reads as plain text; its provenance lives in the title, not in decoration. */
-  .derived.gone{color:var(--foreground-faint);}
+  /* An estimated value (parsed stdout, snapshot diff, token sum) reads as plain text —
+     its provenance lives in the title, never in decoration. Only a value the tool never
+     reported dims, which is what `.unreported` says. */
+  .unreported{color:var(--foreground-faint);}
 
   /* ── THE one animation budget: at most one .pulse1 element per render, bound
      to the ribbon's blocked/gate node — or, when the ribbon is quiet, to the
@@ -81,7 +81,7 @@
   .ctxlbl{color:var(--foreground-faint);font:var(--type-tag-weight) var(--type-tag)/var(--type-tag-leading) var(--sans);letter-spacing:var(--type-tag-tracking);text-transform:uppercase;flex:none;}
   .srow .ctxrow .ctxbar{flex:1;width:auto;}
   .ctxpct{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;flex:none;}
-  .ctxbar{display:inline-block;width:48px;height:5px;border-radius:calc(var(--radius) - 4px);background:var(--border);vertical-align:middle;}
+  .ctxbar{display:inline-block;width:48px;height:var(--space-tight);border-radius:calc(var(--radius) - 4px);background:var(--border);vertical-align:middle;}
   .ctxbar>span{display:block;height:100%;border-radius:inherit;color:var(--primary-bright);background:linear-gradient(90deg,var(--primary),var(--primary-bright));}
   /* Status dots — a lit signal, not a printed bullet. Fill and glow both read
      currentColor, so a tone class sets one property. */
@@ -734,7 +734,7 @@ function railHtml(){
     <div class="t"><span class="sic ${st.cls}" title="${st.word}" aria-label="${st.word}">${ic(st.icon)}</span><span class="ttl" title="${s.title}">${s.title}</span><span class="grow"></span><span class="stw ${st.cls}">${st.word} <span class="dot glow ${st.cls}${pulse}"></span></span></div>
     <div class="slot" title="${s.slot}">${s.slot}</div>
     ${wsl}
-    <div class="ctxrow"><span class="ctxlbl">Context</span><span class="ctxbar" title="context window used (estimated)"><span class="glow" style="width:${s.ctx}%"></span></span><span class="ctxpct derived" title="estimated from token usage ÷ model context window">~${s.ctx}%</span></div>
+    <div class="ctxrow"><span class="ctxlbl">Context</span><span class="ctxbar" title="context window used (estimated)"><span class="glow" style="width:${s.ctx}%"></span></span><span class="ctxpct" title="estimated from token usage ÷ model context window">~${s.ctx}%</span></div>
     <div class="meta" title="${s.meta}">${s.meta}</div></div>`;}).join('');
   return `<div class="panel rail" data-component="SessionRail">
     <div class="rail-h">Projects <span class="plus">${ic('plus')}</span></div>
@@ -785,7 +785,7 @@ function chkRow(key,label,c){
   const valcls=c.state==='fail'?'fail':c.state==='warn'?'warn':'';
   return `<div class="chkrow ${checkSel===key?'sel':''}" onclick="openCheck('${key}')" title="opens the captured output under the Commits node">
     <span class="ck ${c.state}">${CK_GLYPH[c.state]||'·'}</span><span class="cklbl">${label}</span>
-    <span class="ckval ${c.derived?'derived':valcls}" ${c.derived?'title="parsed from captured tool output"':''}>${c.label}</span>
+    <span class="ckval ${c.derived?'':valcls}" ${c.derived?'title="parsed from captured tool output"':''}>${c.label}</span>
     <span class="grow"></span><span class="rerun">${ic('arrow-clockwise')} rerun</span></div>`;
 }
 function checksHtml(){
@@ -837,14 +837,14 @@ function narrHtml(msgs){
 function toolRow(t){
   const cls=t.running?'run':'done';
   let rm='';
-  if(t.running) rm=`<span class="rmeta ${t.dv?'derived':''}" ${t.dv?'title="estimated from timestamps — not reported by the tool"':'style="color:var(--status-working)"'}>${t.dv?'~':''}${t.rmeta||'…'}</span>`;
+  if(t.running) rm=`<span class="rmeta" ${t.dv?'title="estimated from timestamps — not reported by the tool"':'style="color:var(--status-working)"'}>${t.dv?'~':''}${t.rmeta||'…'}</span>`;
   else if(t.kind==='test'){
     const ok=t.exit===0;
-    rm=`<span class="tv ${ok?'pass':'fail'}" title="from exit code">${ok?ic('check'):ic('x')}</span> <span class="rmeta derived" title="parsed from captured tool output">${t.pass||(ok?'passed':'')}${t.fail?` · ${t.fail}`:''}</span>`;
+    rm=`<span class="tv ${ok?'pass':'fail'}" title="from exit code">${ok?ic('check'):ic('x')}</span> <span class="rmeta" title="parsed from captured tool output">${t.pass||(ok?'passed':'')}${t.fail?` · ${t.fail}`:''}</span>`;
   }
-  else if(t.noCapture) rm=`<span class="rmeta derived gone" title="tool ran; output not captured">no output</span>`;
-  else if(t.add!=null) rm=`<span class="rmeta derived" title="line counts from a file snapshot around the edit"><span class="add">+${t.add}</span> <span class="del">−${t.del}</span></span>`;
-  else if(t.rmeta) rm=`<span class="rmeta ${t.dv?'derived':''}" ${t.dv?'title="parsed from captured tool output"':''}>${t.rmeta}</span>`;
+  else if(t.noCapture) rm=`<span class="rmeta unreported" title="tool ran; output not captured">no output</span>`;
+  else if(t.add!=null) rm=`<span class="rmeta" title="line counts from a file snapshot around the edit"><span class="add">+${t.add}</span> <span class="del">−${t.del}</span></span>`;
+  else if(t.rmeta) rm=`<span class="rmeta" ${t.dv?'title="parsed from captured tool output"':''}>${t.rmeta}</span>`;
   return `<div class="lrow ${cls} ${sel===(t.chref||t.id)?'sel':''}" onclick="openConsole('${t.chref||t.id}')" title="${esc(clean(t.lbl))} — opens this feed as a console channel">
     <span class="ti">${t.ti}</span><span class="lbl">${t.lbl}</span><span class="grow"></span>${rm}</div>`;
 }
@@ -1247,7 +1247,7 @@ function fileDiff(gkey,f,markWip){
     <div class="fdhead" onclick="toggleView('${key}')">
       <span class="fkind" title="${({M:'modified',A:'added',D:'deleted',R:'renamed'})[f.k]||f.k}">${ic(({M:'file-text',A:'file-plus',D:'file-minus',R:'file-text'})[f.k]||'file-text')}</span><span class="fpath">${f.p}</span><span class="grow"></span>
       ${wip}${flag}
-      <span class="derived" title="line counts from a file snapshot"><span class="add">+${f.a}</span> <span class="del">−${f.d}</span></span>
+      <span title="line counts from a file snapshot"><span class="add">+${f.a}</span> <span class="del">−${f.d}</span></span>
       <label class="viewed" onclick="event.stopPropagation()"><input type="checkbox" ${isViewed?'checked':''} onchange="toggleView('${key}')"/> Viewed</label></div>
     ${isViewed?'':`<div class="hunk">${f.hunk.map(([c,t])=>`<span class="${c}">${esc(t)}</span>`).join('\n')}</div>`}
     ${cards}</div>`;

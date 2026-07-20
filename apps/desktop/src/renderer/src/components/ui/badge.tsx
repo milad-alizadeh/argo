@@ -5,10 +5,9 @@ import type * as React from 'react'
 import { cn } from '@/lib/utils'
 import { TYPE_ROLE_CLASS } from './Text'
 
-// Vendored shadcn primitive with its variant map re-bound to the cockpit's three badge
-// treatments. The label is authored lower-case and the `tag` role uppercases it, so the
-// accessible text stays what the caller wrote — and, as with Button, `asChild` hands the
-// children to a Slot, so the role class is composed from Text's map rather than wrapped.
+// Labels are authored lower-case: the `tag` role uppercases them, so the accessible text
+// stays what the caller wrote. `asChild` hands the children to a Slot, so the role class
+// is composed from Text's map rather than wrapped.
 const badgeVariants = cva(
   `inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-sm border px-snug ${TYPE_ROLE_CLASS.tag} whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 [&>svg]:pointer-events-none [&>svg]:size-3`,
   {

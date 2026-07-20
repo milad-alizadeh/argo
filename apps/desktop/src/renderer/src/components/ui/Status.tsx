@@ -23,11 +23,7 @@ export function Status({
   return (
     <Text
       variant="meta"
-      className={cn(
-        'inline-flex shrink-0 items-center gap-snug',
-        STATUS_TONE[tone].textClass,
-        className,
-      )}
+      className={cn('inline-flex shrink-0 items-center gap-snug', STATUS_TONE[tone], className)}
     >
       {word}
       <StatusDot tone={tone} pulse={pulse} />

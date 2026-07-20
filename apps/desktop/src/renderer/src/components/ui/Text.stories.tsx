@@ -1,21 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { Text, type TextElement, type TextVariant } from './Text'
+import { TEXT_ELEMENTS, Text, type TextVariant, TYPE_ROLE_CLASS } from './Text'
 
-const VARIANTS: TextVariant[] = [
-  'headline',
-  'title',
-  'row',
-  'row-strong',
-  'prose',
-  'meta',
-  'tag',
-  'eyebrow',
-  'code',
-  'code-inline',
-]
-
-const ELEMENTS: TextElement[] = ['span', 'p', 'div', 'h1', 'h2', 'h3', 'code', 'header']
+const VARIANTS = Object.keys(TYPE_ROLE_CLASS) as TextVariant[]
 
 // One sample per role, phrased as the cockpit copy that role actually carries — the
 // specimen has to read like the product, not like lorem ipsum.
@@ -37,7 +24,7 @@ const meta = {
   component: Text,
   argTypes: {
     variant: { control: 'select', options: VARIANTS },
-    as: { control: 'select', options: ELEMENTS },
+    as: { control: 'select', options: [...TEXT_ELEMENTS] },
     children: { control: 'text' },
   },
 } satisfies Meta<typeof Text>
