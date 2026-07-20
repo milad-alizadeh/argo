@@ -462,16 +462,19 @@
 /* Phosphor-Light icon → inline <use> of the sprite symbol. State is carried by
    the TINT (currentColor) of the enclosing span, never by weight/fill. */
 const ic=(n,x)=>`<svg class="ic${x?' '+x:''}"><use href="#i-${n}"/></svg>`;
-/* Lifecycle → a colour class AND a full word (a11y: never colour alone). */
-const DOT_WORD={run:'Running',amber:'Needs input',stale:'Orphaned',mist:'Done',red:'Failed',gray:'Queued'};
-const STATE_ICON={run:'circle-notch',amber:'warning',mist:'check',red:'x',gray:'circle',stale:'circle'};
+/* Lifecycle → a full word, a tone and an icon (a11y: never colour alone). Keyed by the
+   STATE, never by its tone: done and queued share `--status-idle`, so a tone cannot say
+   which word the row wears. The words are R16's table (cockpit-matrix.md). */
+const STATE_WORD={running:'Running','needs-input':'Needs input',done:'Done',failed:'Failed',queued:'Queued',orphaned:'Orphaned'};
+const STATE_TONE={running:'run','needs-input':'amber',done:'mist',failed:'red',queued:'gray',orphaned:'stale'};
+const STATE_ICON={running:'circle-notch','needs-input':'warning',done:'check',failed:'x',queued:'circle',orphaned:'circle'};
 
 /* SESSIONS — rail triage rows; each is one matrix state row (cockpit-matrix.md).
    ws = workspace identity (the header chip is its one full render) · ship =
    lifecycle facts · actors = the session's Agents/Runs, the R15 roster. */
 const SESSIONS=[
   /* S1 — agent working, dirty, pre-PR: Commits ● narrates, zero buttons */
-  {title:'Auth refactor',slot:'fixing review findings',meta:'sonnet · 118K tokens · 12m',ctx:42,dot:'run',act:'pencil-simple',
+  {title:'Auth refactor',slot:'fixing review findings',meta:'sonnet · 118K tokens · 12m',ctx:42,status:'running',act:'pencil-simple',
    ws:{branch:'feat/auth-rotation',tree:'worktree',dir:'../worktrees/auth-rotation',dirty:1,ahead:1,behind:0},
    ship:{headSha:'41ce2f0',committing:true,pr:null},
    actors:[
@@ -482,7 +485,7 @@ const SESSIONS=[
        {kind:'agent',agent:true,id:'a-ts-e2e',lbl:'e2e agent',goal:'login → refresh → protected',astate:'done',rmeta:'2m 44s',dv:true,ch:'e2e agent @11:43',feed:'▸ agent e2e — playwright · login flow\n ✓ 3 scenarios\n· exited 11:43'},
        {kind:'agent',agent:true,id:'a-ts-types',lbl:'types agent',goal:'tsc --noEmit over the tree',astate:'done',rmeta:'58s',dv:true,ch:'types agent @11:40',feed:'▸ agent types — bunx tsc --noEmit\n 0 errors\n· exited 11:40'}]}]},
   /* S5 — CI failed: head CI ✗ · [Fix CI] + [Re-run] · dispatched agent = timeline row + console channel */
-  {title:'Why is CI flaky',slot:'test failed · e2e login flow',meta:'opus · 64K tokens · 8m',ctx:18,dot:'run',act:'magnifying-glass',
+  {title:'Why is CI flaky',slot:'test failed · e2e login flow',meta:'opus · 64K tokens · 8m',ctx:18,status:'running',act:'magnifying-glass',
    ws:{branch:'fix/ci-flake',tree:'worktree',dir:'../worktrees/ci-flake',dirty:0,ahead:0,behind:1},
    actors:[{kind:'run',id:'r-fixci',lbl:'fix-ci',shape:'pipeline',astate:'running',rmeta:'6m',dv:true,
      phases:[{lbl:'Diagnose',st:'done',n:'1'},{lbl:'Fix',st:'run'},{lbl:'Verify',st:'wait'}],
@@ -500,7 +503,7 @@ const SESSIONS=[
        {n:'build',st:'pass',t:'48s'},{n:'test',st:'fail',t:'2m 40s',note:'e2e · login flow'},{n:'typecheck',st:'pass',t:'31s'}]},
      review:{rounds:[]}}},
   /* S7 — round 2 changes requested (round 1 archived) · [Address 2] · shared main tree */
-  {title:'Landing hero rework',slot:'changes requested on #41 by @sam',meta:'sonnet · 402K tokens · 33m',ctx:51,dot:'run',act:'pencil-simple',
+  {title:'Landing hero rework',slot:'changes requested on #41 by @sam',meta:'sonnet · 402K tokens · 33m',ctx:51,status:'running',act:'pencil-simple',
    ws:{branch:'feat/landing-hero',tree:'main',dir:null,dirty:0,ahead:2,behind:4},
    ship:{headSha:'c07b3e1',pr:{num:41},
      ci:{sha:'c07b3e1',agg:'3 passed',cls:'pass',runs:[
@@ -509,18 +512,18 @@ const SESSIONS=[
        {n:1,by:'@sam',verdict:'changes',findings:3,fixed:3,sha:'9b02d17',archived:true},
        {n:2,by:'@sam',verdict:'changes',open:2,sha:'c07b3e1'}]}}},
   /* S8 — approved + fresh: Merge ◆ gate, two-step confirm */
-  {title:'Voice input spike',slot:'approved — ready to merge',meta:'sonnet · 88K tokens · 41m',ctx:64,dot:'mist',
+  {title:'Voice input spike',slot:'approved — ready to merge',meta:'sonnet · 88K tokens · 41m',ctx:64,status:'done',
    ws:{branch:'feat/voice-input',tree:'worktree',dir:'../worktrees/voice-input',dirty:0,ahead:3,behind:0},
    ship:{headSha:'5e8c2b9',pr:{num:40},
      ci:{sha:'5e8c2b9',agg:'3 passed',cls:'pass',runs:[
        {n:'build',st:'pass',t:'44s'},{n:'test',st:'pass',t:'2m 51s'},{n:'typecheck',st:'pass',t:'27s'}]},
      review:{rounds:[{n:1,by:'@sam',verdict:'approved',sha:'5e8c2b9'}]}}},
   /* S3 — commits clean, no PR yet: PR ◆ gate · [Create PR → main] */
-  {title:'Docs pass',slot:'done — ready to open the PR',meta:'haiku · 22K tokens · 5m',ctx:9,dot:'mist',act:'file-text',
+  {title:'Docs pass',slot:'done — ready to open the PR',meta:'haiku · 22K tokens · 5m',ctx:9,status:'done',act:'file-text',
    ws:{branch:'docs/agent-rules',tree:'worktree',dir:'../worktrees/docs-pass',dirty:0,ahead:1,behind:0},
    ship:{headSha:'f31d0c2',pr:null}},
   /* S0 — investigation: clean tree, no commits → NO ribbon renders (R7) */
-  {title:'Explore retry semantics',slot:'reading the queue retry paths',meta:'opus · 41K tokens · 11m',ctx:22,dot:'run',act:'magnifying-glass',
+  {title:'Explore retry semantics',slot:'reading the queue retry paths',meta:'opus · 41K tokens · 11m',ctx:22,status:'running',act:'magnifying-glass',
    ws:{branch:'explore/retry',tree:'worktree',dir:'../worktrees/retry',dirty:0,ahead:0,behind:0},
    ship:{headSha:null,pr:null},
    /* workflow-scale Run: phase-grouped progress — done phase collapsed, active
@@ -537,36 +540,36 @@ const SESSIONS=[
        {kind:'agent',agent:true,id:'a-dr3',phase:'Deep-read',lbl:'races agent',goal:'find retry/ack races',astate:'queued'},
      ]}]},
   /* S3b — Create PR delegated: PR node narrates `auto ⚙`, zero buttons (R6) */
-  {title:'Release notes',slot:'PR opening automatically',meta:'haiku · 12K tokens · 3m',ctx:6,dot:'run',act:'file-text',
+  {title:'Release notes',slot:'PR opening automatically',meta:'haiku · 12K tokens · 3m',ctx:6,status:'running',act:'file-text',
    ws:{branch:'docs/release-notes',tree:'worktree',dir:'../worktrees/release-notes',dirty:0,ahead:1,behind:0},
    ship:{headSha:'d8e21f0',pr:null,prGate:'auto'}},
   /* S6 — review round running: Review ●, zero buttons */
-  {title:'Retry backoff tuning',slot:'review round 1 running',meta:'sonnet · 55K tokens · 14m',ctx:31,dot:'run',act:'user',
+  {title:'Retry backoff tuning',slot:'review round 1 running',meta:'sonnet · 55K tokens · 14m',ctx:31,status:'running',act:'user',
    ws:{branch:'feat/retry-backoff',tree:'worktree',dir:'../worktrees/retry-backoff',dirty:0,ahead:2,behind:0},
    ship:{headSha:'7a4f9c2',pr:{num:43},
      ci:{sha:'7a4f9c2',agg:'3 passed',cls:'pass',runs:[
        {n:'build',st:'pass',t:'46s'},{n:'test',st:'pass',t:'2m 31s'},{n:'typecheck',st:'pass',t:'28s'}]},
      review:{rounds:[{n:1,by:'@sam',verdict:'running',sha:'7a4f9c2'}]}}},
   /* S2 — dirty + agent idle: Commits ◆ repair · [Commit 3 files] (drafted) */
-  {title:'Legacy token cleanup',slot:'awaiting you: keep or delete the legacy path?',meta:'sonnet · 96K tokens · 26m',ctx:37,dot:'amber',
+  {title:'Legacy token cleanup',slot:'awaiting you: keep or delete the legacy path?',meta:'sonnet · 96K tokens · 26m',ctx:37,status:'needs-input',
    ws:{branch:'chore/legacy-tokens',tree:'main',dir:null,dirty:3,ahead:0,behind:0},
    ship:{headSha:null,pr:null,draft:'chore: sweep legacy token references'}},
   /* S8b — delegated gate: Merge ● auto ⚙ narrates, no button (R6) */
-  {title:'Deps bump · renovate',slot:'auto-merge armed — waiting on CI',meta:'haiku · 9K tokens · 2m',ctx:4,dot:'run',act:'arrows-clockwise',
+  {title:'Deps bump · renovate',slot:'auto-merge armed — waiting on CI',meta:'haiku · 9K tokens · 2m',ctx:4,status:'running',act:'arrows-clockwise',
    ws:{branch:'chore/deps-0719',tree:'worktree',dir:'../worktrees/deps-0719',dirty:0,ahead:1,behind:0},
    ship:{headSha:'b4e91d3',pr:{num:44},mergeGate:'auto',
      ci:{sha:'b4e91d3',agg:'1 running · 2 passed',cls:'run',runs:[
        {n:'build',st:'pass',t:'40s'},{n:'test',st:'run',t:'58s'},{n:'typecheck',st:'pass',t:'26s'}]},
      review:{rounds:[{n:1,by:'@sam',verdict:'approved',sha:'b4e91d3'}]}}},
   /* S9 — new commit after approval: Commits ↑1 · [Push 1] · CI/Review ⍚ stale · Merge locked */
-  {title:'Search relevance boost',slot:'committed a fix after approval',meta:'sonnet · 74K tokens · 19m',ctx:28,dot:'run',act:'pencil-simple',
+  {title:'Search relevance boost',slot:'committed a fix after approval',meta:'sonnet · 74K tokens · 19m',ctx:28,status:'running',act:'pencil-simple',
    ws:{branch:'feat/search-rank',tree:'worktree',dir:'../worktrees/search-rank',dirty:0,ahead:4,behind:0},
    ship:{headSha:'9f31c2a',unpushed:1,pr:{num:45},
      ci:{sha:'5d1c440',agg:'3 passed',cls:'pass',runs:[
        {n:'build',st:'pass',t:'45s'},{n:'test',st:'pass',t:'2m 20s'},{n:'typecheck',st:'pass',t:'28s'}]},
      review:{rounds:[{n:1,by:'@sam',verdict:'approved',sha:'5d1c440'}]}}},
   /* S10 — merged terminal · Landed */
-  {title:'Token store schema',slot:'merged #38 into main · 2h ago',meta:'sonnet · 96K tokens · 2h',ctx:71,dot:'mist',
+  {title:'Token store schema',slot:'merged #38 into main · 2h ago',meta:'sonnet · 96K tokens · 2h',ctx:71,status:'done',
    ws:{branch:'feat/token-store',tree:'worktree',dir:'../worktrees/token-store',dirty:0,ahead:0,behind:0},
    ship:{headSha:'88aa310',terminal:'merged',pr:{num:38},
      ci:{sha:'88aa310',agg:'3 passed',cls:'pass',runs:[
@@ -574,7 +577,7 @@ const SESSIONS=[
      review:{rounds:[{n:1,by:'@sam',verdict:'approved',sha:'88aa310'}]},
      merged:{sha:'a1b7c09',how:'squash',by:'@sam',when:'2h ago'}}},
   /* S11 — closed without merge */
-  {title:'Spike: token cache',slot:'closed — spike answered, not landing',meta:'haiku · 31K tokens · 3d',ctx:12,dot:'mist',
+  {title:'Spike: token cache',slot:'closed — spike answered, not landing',meta:'haiku · 31K tokens · 3d',ctx:12,status:'done',
    ws:{branch:'spike/token-cache',tree:'worktree',dir:'../scratch/tc-spike',dirty:0,ahead:2,behind:6},
    ship:{headSha:'2c9e8d1',terminal:'closed',pr:{num:35},
      ci:{sha:'2c9e8d1',agg:'3 passed',cls:'pass',runs:[
@@ -716,7 +719,7 @@ function railStatus(s){
     if(m.st.review==='now') return {word:'In review',cls:'run',icon:'user'};
     if(sh.pr) return {word:`PR #${sh.pr.num} · CI`,cls:'run',icon:'git-pull-request'};
   }
-  return {word:DOT_WORD[s.dot]||'',cls:s.dot,icon:s.act||STATE_ICON[s.dot]||'circle'};
+  return {word:STATE_WORD[s.status],cls:STATE_TONE[s.status],icon:s.act||STATE_ICON[s.status]};
 }
 /* the single animation budget (R10): true when the current ribbon's head is a
    gate/blocked node (it takes the pulse); else the top needs-you rail dot does. */
@@ -767,9 +770,9 @@ function wschipHtml(s){
 
 /* Now-line — a one-line strip; live is a static word + dot. */
 function nowHtml(s){
-  const live=s.dot==='run';
+  const live=s.status==='running';
   const line=isFull()?NOW.html:esc(s.slot);
-  const icon=isFull()?NOW.verb:(s.act||STATE_ICON[s.dot]||'circle');
+  const icon=isFull()?NOW.verb:(s.act||STATE_ICON[s.status]);
   return `<div class="inset nowstrip" data-component="NowLine"><div class="now">
     <span class="nicon">${ic(icon)}</span>
     <div class="line">${line}</div><span class="grow"></span>
@@ -809,7 +812,9 @@ function orollHtml(o){
   if(!parts.length) return o.life==='queued'?`<span class="oroll">queued</span>`:'';
   return `<span class="oroll">${parts.join(' · ')}</span>`;
 }
-const OSTATE={run:'Running',done:'Done',queued:'Queued',fail:'Failed',interrupted:'Interrupted','needs-input':'Needs input'};
+/* Outcome life → the same settled words, spelled once above. `interrupted` is
+   Outcome-only: no Session ever reports it, so it has no row in STATE_WORD. */
+const OSTATE={run:STATE_WORD.running,done:STATE_WORD.done,queued:STATE_WORD.queued,fail:STATE_WORD.failed,'needs-input':STATE_WORD['needs-input'],interrupted:'Interrupted'};
 const agLifeDot=o=>({run:'run',fail:'red',queued:'gray',done:'mist',interrupted:'amber','needs-input':'amber'})[o.life]||'gray';
 function outcomeRow(o){
   const t=OTYPE[o.type]||OTYPE.untyped;
@@ -911,13 +916,13 @@ function agentsHtml(s){
 }
 function msgHtml(m){
   const open=!!expanded[m.id];
-  const sd=m.status==='run'?'run':'mist';
+  const ms=m.status==='run'?'running':'done';
   return `<div class="msg ${m.status==='run'?'run':'done'}">
     <div class="msg-head" onclick="toggleMsg('${m.id}')">
       <span class="cv">${open?ic('caret-down'):ic('caret-right')}</span>
       <span class="say" title="${esc(m.say)}">${m.say}</span>
       ${m.decl?`<span class="badge primary">${m.decl}</span>`:''}
-      ${m.at?`<span class="mtime">${m.at}</span>`:''}<span class="dot glow ${sd} sd" title="${DOT_WORD[sd]||''}" aria-label="${DOT_WORD[sd]||''}"></span></div>
+      ${m.at?`<span class="mtime">${m.at}</span>`:''}<span class="dot glow ${STATE_TONE[ms]} sd" title="${STATE_WORD[ms]}" aria-label="${STATE_WORD[ms]}"></span></div>
     ${open?`<div class="msg-tools">${m.tools.map(toolRow).join('')}</div>`:''}</div>`;
 }
 /* ══ PrLifecycleRibbon — the ONE stateful home of ship-flow state.
