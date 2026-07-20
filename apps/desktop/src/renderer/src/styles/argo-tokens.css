@@ -120,6 +120,7 @@
   --panel: color-mix(in srgb, var(--gray-50) 70%, transparent);
   --inset: color-mix(in srgb, var(--gray-950) 2%, transparent);
   --inset-hair: color-mix(in srgb, var(--gray-950) 6%, transparent);
+  --inset-lip: color-mix(in srgb, var(--gray-950) 4%, transparent);
 
   /* Rail tones — named for the TONE the ship derivation emits, not a lifecycle state,
    * because tone↔state is not 1:1 (the matrix keeps colour off the state deliberately).
@@ -202,6 +203,7 @@
   --panel: color-mix(in srgb, var(--gray-900) 55%, transparent);
   --inset: color-mix(in srgb, var(--gray-50) 2%, transparent);
   --inset-hair: color-mix(in srgb, var(--gray-50) 6%, transparent);
+  --inset-lip: color-mix(in srgb, var(--gray-50) 4%, transparent);
 
   --tone-run: var(--indigo-500);
   --tone-gray: var(--gray-400);
@@ -292,13 +294,22 @@
   --type-code-inline-weight: 400;
   --type-code-inline-tracking: 0em;
 
-  /* Spacing rhythm — the six steps the design actually uses. */
+  /* Spacing rhythm — the seven steps the design actually uses. */
   --space-hair: 2px;
   --space-tight: 4px;
   --space-snug: 6px;
   --space-gap: 8px;
   --space-inset: 12px;
   --space-region: 16px;
+  /* Nesting depth — how far a tree's children sit in from their parent row. Above the
+   * region step because it is a structural offset, not a gap between neighbours. */
+  --space-nest: 24px;
+  /* Roster tree marker column — ONE fixed box shared by the caret and the glyph, so a
+   * caret and an icon that share a column centre on the same vertical axis. Sized to the
+   * icon (16px). Structural icon-box width like --space-nest, not a rhythm step: a fixed
+   * box is what holds a marker in its column as a row nests deeper. One marker box (16) +
+   * one row gap (8) = 24 = --space-nest, so each tree level steps by exactly one nest. */
+  --space-marker-col: 16px;
 
   /* The one shared strip height: the Work pane's tab strip IS its header, sized to match
    * the ship ribbon's own strip so the two stack with no visual seam. Off the 4px rhythm by
