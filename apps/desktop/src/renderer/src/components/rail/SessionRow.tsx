@@ -1,5 +1,4 @@
-import { RAIL_ICON, STATUS_TONE, Status, Text } from '@/components/ui'
-import { cn } from '@/lib/utils'
+import { Status, StatusIcon, Text } from '@/components/ui'
 import type { SessionView } from '@/sessionStore'
 import { shipState } from '@/ship'
 
@@ -10,11 +9,10 @@ import { shipState } from '@/ship'
 // with later tickets.
 export function SessionRow({ session }: { session: SessionView }): React.JSX.Element {
   const { word, tone, icon } = shipState(session.facts).rail
-  const Icon = RAIL_ICON[icon]
   return (
     <li className="rounded-lg border border-inset-hair bg-inset px-3 py-2 transition-colors hover:bg-accent">
       <div className="flex items-center gap-2">
-        <Icon weight="light" aria-hidden className={cn('size-4 shrink-0', STATUS_TONE[tone])} />
+        <StatusIcon icon={icon} tone={tone} />
         <Text variant="row-strong" className="flex-1 truncate text-foreground">
           {session.title}
         </Text>

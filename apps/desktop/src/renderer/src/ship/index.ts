@@ -5,6 +5,7 @@
 // point, so the ribbon and the rail row can never disagree about a Session.
 
 export {
+  RAIL_ICONS,
   RAIL_TONES,
   type RailIcon,
   type RailStatus,
