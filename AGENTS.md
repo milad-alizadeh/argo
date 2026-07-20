@@ -35,6 +35,15 @@ gates it on every PR). When you add, split, or rename a module, update the map's
 `publicEntry` in the **same change**; a new module missing from the map is fixed by adding it,
 never by loosening a regex. `apps/desktop` locks Electron main ⊥ preload ⊥ renderer isolation.
 
+## Session isolation
+
+Multiple agent sessions run against this repo concurrently. Implementation work
+(`/implement`, ticket builds, any multi-file change) must **never** run in the shared main
+checkout: if your cwd is the repo root rather than a path under `.claude/worktrees/`, enter a
+worktree first (Claude Code: the `EnterWorktree` tool — this section is your standing
+instruction to use it, unprompted; other harnesses: `git worktree add`) and commit to a
+ticket branch there. Read-only work (review, triage, Q&A) may stay in the main checkout.
+
 ## graphify
 
 This project has a knowledge graph at `graphify-out/` with god nodes, community
