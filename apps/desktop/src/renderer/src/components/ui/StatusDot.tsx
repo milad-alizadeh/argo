@@ -19,7 +19,7 @@ export function StatusDot({
   className?: string
 }): React.JSX.Element {
   const dot = cn(
-    'inline-block size-3 shrink-0 rounded-full bg-current glow',
+    'inline-block size-2 shrink-0 rounded-full bg-current glow',
     `text-tone-${tone}`,
     pulse && 'motion-safe:animate-pulse-status',
     className,
