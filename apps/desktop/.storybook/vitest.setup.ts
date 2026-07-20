@@ -18,10 +18,8 @@ const project = setProjectAnnotations([
       const mask = Array.from(canvas.querySelectorAll('[data-vrt-mask]')).map((el) =>
         page.elementLocator(el),
       )
-      // Plain expect(), NOT expect.element(): expect.element retries the assertion until it
-      // passes, so a *permanent* "no reference screenshot" failure (a missing baseline in CI)
-      // gets retried until the test timeout instead of failing fast. The matcher does its own
-      // capture-stability retries regardless, so nothing is lost.
+      // Plain expect(), NOT expect.element(): the latter retries until it passes, so a missing
+      // baseline (a permanent failure) hangs to the test timeout instead of reporting itself.
       await expect(canvas).toMatchScreenshot(id, { screenshotOptions: { mask } })
     },
   },

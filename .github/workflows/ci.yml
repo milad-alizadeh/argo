@@ -89,7 +89,7 @@ jobs:
       - name: Story tests
         run: bun run test:stories
 
-      # Visual-regression diffs (actual/diff PNGs) for the human to inspect before approving.
+      # Fallback record of what differed, for a run whose `baselines` job never got to comment.
       - name: Upload visual diffs
         uses: actions/upload-artifact@v6
         if: failure()
@@ -146,12 +146,9 @@ jobs:
           path: apps/desktop/test-results/
           retention-days: 7
 
-  # When `stories` reds, the baselines are out of date in one of two ways: a new story has none
-  # yet, or an existing one drifted. Both resolve the same way — regenerate and push the PNGs to
-  # the PR — because that puts the pixels somewhere you can actually judge them: GitHub renders
-  # a changed image in Files changed with 2-up / swipe / onion-skin, which a downloadable zip
-  # never gave you. Drift is called out in a PR comment so it can't pass as a silent update, and
-  # merging it is gated by the PR review that main already requires.
+  # Resolves a red `stories`: a new story has no baseline yet, or an existing one drifted. Both
+  # end with the PNGs pushed to the PR, where GitHub renders a changed image with swipe and
+  # onion-skin. Drift also gets a comment, since merging it is the only thing that accepts it.
   baselines:
     name: update visual baselines
     needs: stories
@@ -179,60 +176,79 @@ jobs:
       - name: Regenerate baselines
         run: cd apps/desktop && bun run test:stories -- --update || true
 
-      - name: Commit and push baselines
-        id: push
+      # Commit, and publish the objects under a ref that triggers nothing (`on.push` is main-only,
+      # `pull_request` only fires for the head branch) so the comment's raw image URLs resolve
+      # before the branch push exists. Pushing the branch is deliberately the LAST step: it
+      # re-runs `pull_request`, and the workflow's cancel-in-progress then kills this job — which
+      # already silently ate the drift comment once.
+      - name: Commit baselines
+        id: commit
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Tracked-and-modified is drift (a story that already had a baseline now renders
-          # differently); untracked is a new story's first render, which has nothing to compare to.
+          # differently); untracked is a new story's first render, with nothing to compare to.
           drift=$(git diff --name-only -- '*__screenshots__*')
+          fresh=$(git ls-files --others --exclude-standard -- '*__screenshots__*')
           git add -A -- '*__screenshots__*'
           if git diff --cached --quiet; then
             echo "Baselines already current."
             exit 0
           fi
-          if [ -n "$drift" ]; then
-            git commit -m "test(visual): update drifted screenshot baselines"
+          if [ -n "$drift" ] && [ -n "$fresh" ]; then
+            subject="test(visual): baseline new stories, update drifted ones"
+          elif [ -n "$drift" ]; then
+            subject="test(visual): update drifted screenshot baselines"
           else
-            git commit -m "test(visual): baseline new stories"
+            subject="test(visual): baseline new stories"
           fi
-          git push origin "HEAD:${{ github.head_ref }}"
+          git commit -m "$subject"
+          git push --force origin "HEAD:refs/visual-baselines/pr-$PR_NUMBER"
           {
-            echo "drift<<EOF"
+            echo "before=$(git rev-parse HEAD~1)"
+            echo "after=$(git rev-parse HEAD)"
+            echo "drift<<GH_EOF"
             echo "$drift"
-            echo "EOF"
+            echo "GH_EOF"
           } >> "$GITHUB_OUTPUT"
 
-      # Drift is the case a human has to actually look at, so put the pixels in the comment
-      # itself rather than making someone go digging. Both versions are already in git — the old
-      # baseline at the parent commit, the new one at the commit just pushed — so raw URLs pinned
-      # to those SHAs render before/after inline (this repo is public; on a private repo raw URLs
-      # would not resolve and this table would have to become a Files-changed link).
+      # Both versions are in git — old at the parent, new at the commit just published — so raw
+      # URLs pinned to those SHAs render before/after inline. Requires a public repo.
       - name: Flag drift on the PR
-        if: steps.push.outputs.drift != ''
+        if: steps.commit.outputs.drift != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          DRIFT: ${{ steps.push.outputs.drift }}
+          DRIFT: ${{ steps.commit.outputs.drift }}
+          BEFORE: ${{ steps.commit.outputs.before }}
+          AFTER: ${{ steps.commit.outputs.after }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          before=$(git rev-parse HEAD~1)
-          after=$(git rev-parse HEAD)
-          raw="https://raw.githubusercontent.com/${{ github.repository }}"
+          raw="https://raw.githubusercontent.com/$REPO"
           {
             echo "### Visual drift"
             echo
             echo "These stories render differently than their committed baseline. I pushed the"
-            echo "regenerated baselines, so the gate is green again — check the change is intended."
+            echo "regenerated baselines, so the gate goes green — check the change is intended."
             echo "**If it isn't, fix the component, not the baseline.**"
             echo
             echo "| story | before | after |"
             echo "| --- | --- | --- |"
             while IFS= read -r file; do
-              [ -z "$file" ] && continue
-              story=$(basename "$file" .png | sed 's/-chromium-linux$//')
-              echo "| \`$story\` | <img src=\"$raw/$before/$file\" width=\"360\"> | <img src=\"$raw/$after/$file\" width=\"360\"> |"
+              if [ -n "$file" ]; then
+                story=$(basename "$file" .png | sed 's/-chromium-linux$//')
+                echo "| \`$story\` | <img src=\"$raw/$BEFORE/$file\" width=\"360\"> | <img src=\"$raw/$AFTER/$file\" width=\"360\"> |"
+              fi
             done <<< "$DRIFT"
             echo
             echo "Files changed also gives you swipe and onion-skin on each image."
           } > comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+          gh pr comment "$PR_NUMBER" --body-file comment.md
+
+      - name: Push baselines to the PR branch
+        if: steps.commit.outputs.after != ''
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: git push origin "HEAD:$HEAD_REF"
