@@ -33,10 +33,22 @@ Read the ticket or spec. Use `/tdd` where possible, at pre-agreed seams.
 Run typechecking regularly, single test files regularly, and the full test suite once at the
 end. The full suite (typecheck, lint, tests, build) must be green before moving on.
 
-## 2. Code-review
+## 2. Code-review — in a context that did not write the code
 
-Run `/code-review` on your own diff and address the findings. If a finding can't be resolved,
-carry it into the PR body rather than skipping it silently.
+Run `/code-review` on the diff and address the findings. If a finding can't be resolved, carry
+it into the PR body **with the reason** rather than skipping it silently.
+
+**This only works if the review runs in a fresh context.** `/code-review` does its job by
+spawning two parallel axis sub-agents; the value is that they have not seen your reasoning and
+cannot inherit your blind spots. An author reviewing their own diff knows what the code *meant*
+to do — which is precisely the knowledge that hides the defect.
+
+So before running it, confirm you can actually spawn sub-agents (do you have the `Agent` tool?).
+**If you cannot, stop and report that** — do not run the two axes yourself and call it reviewed.
+A self-administered review that the PR body presents as a review is worse than no review: it
+spends the human's trust without earning it. Notable case: agents spawned inside a `Workflow`
+have no `Agent` tool, so `/implement` run that way must hand review to a separate stage — see
+`/implement-fanout`.
 
 ## 3. Visual-verify — when the diff touches UI
 
@@ -45,6 +57,10 @@ code), run `/visual-verify`: render the affected states, screenshot them, and ha
 agent judge the pixels against the ticket's acceptance criteria. Fix what it finds (max two
 rounds), commit the final screenshots, and carry any unresolved visual findings into the PR
 body. Code review reads the diff; this catches what only the pixels show.
+
+The same precondition binds: the judge must be a separate agent that takes **its own**
+screenshots. A judge handed the author's screenshots inherits the author's framing — it can only
+confirm that the captured states look as captured, not that the right states were captured.
 
 ## 4. Commit, push, PR
 
