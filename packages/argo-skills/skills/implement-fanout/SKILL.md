@@ -42,7 +42,7 @@ opens a PR — so it costs roughly N× a single ticket. Present, and get an expl
 
 - the frontier tickets you'll run (numbers + titles);
 - the concurrency cap (default **2–3** at once; higher only if the user asks);
-- that each opens a **draft** PR for the user to review and merge.
+- that each opens a PR for the user to review and merge.
 
 ### 3. Fan out — one worktree-isolated agent per ticket
 
@@ -65,10 +65,12 @@ review and the PR are per-ticket, not shared:
    human. If a finding can't be resolved, note it in the PR body rather than skipping it.
 4. **Commit** to a ticket branch (`argo/#${N}-<slug>` or the repo convention).
 5. **Push** that branch.
-6. **Open exactly one draft PR** for this worktree — body says `Closes #N`, and lists any
-   unresolved review findings from step 3. **Return the PR URL** as your result.
+6. **Open exactly one PR** for this worktree — body says `Closes #N`, and lists any
+   unresolved review findings from step 3. It opens ready-for-review (step 3 already
+   reviewed the diff — draft would be a second gate guarding nothing); use draft only if
+   step 3 left findings you could not resolve. **Return the PR URL** as your result.
 
-Do **not** merge. Do **not** touch any other ticket's files. One worktree → one branch → one draft PR.
+Do **not** merge. Do **not** touch any other ticket's files. One worktree → one branch → one PR.
 
 `isolation: "worktree"` gives each agent its own working directory, index, and HEAD, so concurrent
 agents can't clobber each other — the exact failure mode of running plain `/implement` in parallel
@@ -127,8 +129,8 @@ Then re-scout: the merged PR may have unblocked new frontier tickets.
 
 - **Never fan out a blocked ticket.** Re-run this skill after a blocker's PR merges to pick up the
   newly-unblocked frontier.
-- **Draft PRs only.** A fanned-out agent runs unattended and is lower-fidelity than a human-steered
-  session — the human reviews before merge.
+- **Never merge.** PRs open ready-for-review because each diff was already `/code-review`ed in
+  its worktree (step 3) — but merging stays with the human, in dependency order.
 - **Cap concurrency.** A runaway fan-out is expensive; default 2–3.
 - **Never merge unmerged branches into each other.** Cross-branch resolution before a PR lands
   couples independent tickets; the integration branch in step 4 is throwaway and detection-only.
