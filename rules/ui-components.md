@@ -84,7 +84,7 @@ it teaches. Where a wrapper element exists only to carry text, collapse it into 
   children (`Button`, whose `asChild` hands them to a Slot) composes the class from that
   map rather than re-typing it.
 - **Colour is not part of a type role**, so `Text` has no `tone` prop. A caller passes
-  `text-foreground-faint` / `text-status-working` through `className`; `cn()` is taught
+  `text-foreground-faint` / `text-tone-run` through `className`; `cn()` is taught
   the role names so it de-dupes role against role without eating the colour class.
 - **The element is the call site's decision, not the role's.** `Text` renders a neutral
   `span` by default and takes an `as` prop for the rest — never pick `h1` because a role

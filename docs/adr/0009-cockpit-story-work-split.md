@@ -36,7 +36,7 @@ component unit tests.
 
 - `/componentize-design` builds from `docs/designs/cockpit-inventory.md`;
   matrix rows become the test suite.
-- `--status-landed` (Merged ≠ CI-green) is a proposed token to promote into
+- `--tone-landed` (Merged ≠ CI-green) is a proposed token to promote into
   `argo-tokens.css` at settle time.
 - Open: whether the Checks summary rows stay in the story pane or fold entirely
   into the ribbon's Commits drawer.

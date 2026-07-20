@@ -68,13 +68,13 @@ export const Labelled: Story = {
 export const Tinted: Story = {
   render: (args) => (
     <div className="flex items-center gap-gap">
-      <span className="text-status-working">
+      <span className="text-tone-run">
         <icons.CircleNotchIcon {...args} />
       </span>
-      <span className="text-status-awaiting-input">
+      <span className="text-tone-amber">
         <icons.WarningIcon {...args} />
       </span>
-      <span className="text-status-failed">
+      <span className="text-tone-red">
         <icons.ProhibitIcon {...args} />
       </span>
     </div>

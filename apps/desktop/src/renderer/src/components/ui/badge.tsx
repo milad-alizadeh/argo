@@ -14,7 +14,7 @@ const badgeVariants = cva(
     variants: {
       variant: {
         neutral: 'border-border text-foreground-faint',
-        warn: 'border-status-awaiting-input/40 text-status-awaiting-input',
+        warn: 'border-tone-amber/40 text-tone-amber',
         primary: 'border-primary/40 bg-primary/12 text-primary-soft',
       },
     },

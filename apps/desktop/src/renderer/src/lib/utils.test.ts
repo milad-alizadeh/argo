@@ -30,6 +30,6 @@ describe('cn', () => {
   })
 
   it('still lets a later colour replace an earlier one', () => {
-    expect(cn('text-primary', 'text-status-working')).toBe('text-status-working')
+    expect(cn('text-primary', 'text-tone-run')).toBe('text-tone-run')
   })
 })

@@ -50,7 +50,7 @@ a node — it is the sync affordance on Commits.
   (`dirty = 0 ∧ commits = 0` → pane shows tabs only). Investigation sessions never
   grow one.
 - **R8 · terminal states** — merged/closed replace the ribbon with a terminal
-  card; the rail flips to `Landed` (`--status-landed`, ≠ CI-pass green) or `Closed`.
+  card; the rail flips to `Landed` (`--tone-landed`, ≠ CI-pass green) or `Closed`.
 - **R9 · single home per fact** — branch string typed exactly once (header
   WorkspaceIdentity chip). Allowed echoes: rail-row `⎇ branch · tree` line,
   `→ main` on PR surfaces (only once a PR exists), and the rail row's

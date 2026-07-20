@@ -168,14 +168,14 @@
 
       <h2 class="text-eyebrow">Status glow (the lit signal — fill and halo are both currentColor)</h2>
       <div class="statuses">
-        <span class="status text-meta" style="color: var(--status-working)">Working <i class="glow"></i></span>
-        <span class="status text-meta" style="color: var(--status-awaiting-input)">
+        <span class="status text-meta" style="color: var(--tone-run)">Working <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--tone-amber)">
           Awaiting input <i class="glow"></i>
         </span>
-        <span class="status text-meta" style="color: var(--status-idle)">Idle <i class="glow"></i></span>
-        <span class="status text-meta" style="color: var(--status-failed)">Failed <i class="glow"></i></span>
-        <span class="status text-meta" style="color: var(--status-exited)">Exited <i class="glow"></i></span>
-        <span class="status text-meta" style="color: var(--status-landed)">Landed <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--tone-mist)">Idle <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--tone-red)">Failed <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--tone-stale)">Exited <i class="glow"></i></span>
+        <span class="status text-meta" style="color: var(--tone-landed)">Landed <i class="glow"></i></span>
       </div>
       <div class="text-meta" style="color: var(--foreground-faint); margin-top: var(--space-gap)">
         --glow-blur 8px · --glow-strength 60% dark / 35% light — the word carries the state,
@@ -244,8 +244,8 @@
         'background', 'card', 'popover', 'panel', 'inset', 'inset-hair', 'well',
         'foreground', 'foreground-bright', 'foreground-soft', 'muted-foreground', 'foreground-faint',
         'primary', 'primary-bright', 'primary-soft', 'accent', 'border', 'input', 'ring', 'destructive',
-        'status-working', 'status-idle', 'status-awaiting-input', 'status-exited', 'status-failed',
-        'status-done', 'status-landed',
+        'tone-run', 'tone-mist', 'tone-amber', 'tone-stale', 'tone-red',
+        'tone-done', 'tone-landed',
         'verdict-approve', 'verdict-changes', 'verdict-block',
         'verdict-approve-tint', 'verdict-changes-tint', 'verdict-block-tint',
         'signal-ok', 'signal-warn', 'signal-bad',
