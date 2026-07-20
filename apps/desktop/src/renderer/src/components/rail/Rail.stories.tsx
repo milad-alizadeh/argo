@@ -1,7 +1,6 @@
 import { SESSION_STATES, type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { STATUS_TONE } from '@/components/ui'
 import type { SessionView } from '@/sessionStore'
 import type { RailTone } from '@/ship'
 import { Rail } from './Rail'
@@ -62,7 +61,7 @@ const everyState: SessionView[] = SESSION_STATES.map((status) => ({
 const vocabulary: [SessionStatus, string, RailTone][] = [
   ['running', 'Running', 'run'],
   ['needs-input', 'Needs input', 'amber'],
-  ['done', 'Done', 'mist'],
+  ['done', 'Done', 'done'],
   ['failed', 'Failed', 'red'],
   ['queued', 'Queued', 'gray'],
   ['orphaned', 'Orphaned', 'stale'],
@@ -80,7 +79,7 @@ export const EveryState: Story = {
     for (const [index, row] of rows.entries()) {
       const [, word, tone] = vocabulary[index]
       await expect(within(row).getByText(word)).toBeInTheDocument()
-      await expect(row.querySelector('svg')).toHaveClass(STATUS_TONE[tone])
+      await expect(row.querySelector('svg')).toHaveClass(`text-tone-${tone}`)
     }
   },
 }

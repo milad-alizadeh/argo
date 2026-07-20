@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils'
 import type { RailTone } from '@/ship'
 import { StatusDot } from './StatusDot'
-import { STATUS_TONE } from './statusTone'
 import { Text } from './Text'
 
 // Molecule: a state as its word plus a dot, in the one order the cockpit uses — word
@@ -26,7 +25,7 @@ export function Status({
   return (
     <Text
       variant="meta"
-      className={cn('inline-flex shrink-0 items-center gap-snug', STATUS_TONE[tone], className)}
+      className={cn('inline-flex shrink-0 items-center gap-snug', `text-tone-${tone}`, className)}
     >
       {word}
       <StatusDot tone={tone} pulse={pulse} />

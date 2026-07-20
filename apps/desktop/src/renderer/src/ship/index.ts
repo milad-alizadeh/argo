@@ -5,6 +5,7 @@
 // are the cross-process contract (`@shared`), not this module's to declare.
 
 export {
+  RAIL_ICONS,
   RAIL_TONES,
   type RailIcon,
   type RailStatus,

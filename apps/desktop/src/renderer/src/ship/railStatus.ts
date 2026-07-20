@@ -2,25 +2,29 @@ import type { SessionFacts, SessionStatus } from '@shared'
 import type { RibbonModel, RibbonNodeKey, RibbonNodeState, TerminalState } from './ribbonModel'
 
 // The rail row's word — a POINTER into the ribbon's head node, never a value of its
-// own. Tone is a name the row resolves to a `--status-*` token; no colour lives here.
+// own. Tone is a name equal to its `--tone-*` token; a View interpolates
+// `text-tone-${tone}` directly, no map. No colour lives here.
 
-export const RAIL_TONES = ['run', 'amber', 'mist', 'gray', 'red', 'stale', 'landed'] as const
+export const RAIL_TONES = ['run', 'amber', 'done', 'gray', 'red', 'stale', 'landed'] as const
 
 export type RailTone = (typeof RAIL_TONES)[number]
 
-export type RailIcon =
-  | 'arrow-line-up'
-  | 'check'
-  | 'circle'
-  | 'circle-notch'
-  | 'gear'
-  | 'git-commit'
-  | 'git-merge'
-  | 'git-pull-request'
-  | 'prohibit'
-  | 'user'
-  | 'warning'
-  | 'x'
+export const RAIL_ICONS = [
+  'arrow-line-up',
+  'check',
+  'circle',
+  'circle-notch',
+  'gear',
+  'git-commit',
+  'git-merge',
+  'git-pull-request',
+  'prohibit',
+  'user',
+  'warning',
+  'x',
+] as const
+
+export type RailIcon = (typeof RAIL_ICONS)[number]
 
 export interface RailStatus {
   word: string
@@ -31,7 +35,7 @@ export interface RailStatus {
 export const SESSION_STATUS: Record<SessionStatus, RailStatus> = {
   running: { word: 'Running', tone: 'run', icon: 'circle-notch' },
   'needs-input': { word: 'Needs input', tone: 'amber', icon: 'warning' },
-  done: { word: 'Done', tone: 'mist', icon: 'check' },
+  done: { word: 'Done', tone: 'done', icon: 'check' },
   failed: { word: 'Failed', tone: 'red', icon: 'x' },
   queued: { word: 'Queued', tone: 'gray', icon: 'circle' },
   orphaned: { word: 'Orphaned', tone: 'stale', icon: 'circle' },
