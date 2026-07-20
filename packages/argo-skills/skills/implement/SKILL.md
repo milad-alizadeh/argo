@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Implement a ticket or spec the Argo way: worktree-isolated, TDD at agreed seams, code-review and visual verification before the PR opens. Argo's owned fork of mattpocock/skills' implement."
+description: "Implement a ticket or spec the Argo way: worktree-isolated, TDD at agreed seams, code-review before the PR opens; UI regression is gated deterministically in CI. Argo's owned fork of mattpocock/skills' implement."
 disable-model-invocation: true
 ---
 
@@ -8,8 +8,8 @@ disable-model-invocation: true
 
 One ticket (or spec) per fresh context. This is Argo's owned fork of the upstream
 `mattpocock/skills` implement — the same core flow, plus the stages Argo layers on top
-(worktree isolation, visual verification). The upstream skill is deliberately excluded from
-`bundle.json` so this one owns the name.
+(worktree isolation, CI-gated visual regression). The upstream skill is deliberately excluded
+from `bundle.json` so this one owns the name.
 
 ## 0. Enter a worktree — non-negotiable
 
@@ -50,13 +50,12 @@ spends the human's trust without earning it. Notable case: agents spawned inside
 have no `Agent` tool, so `/implement` run that way must hand review to a separate stage — see
 `/implement-fanout`.
 
-## 3. Visual-verify — when the diff touches UI
+## 3. Visual regression — gated in CI
 
-If the diff touches anything rendered (components, styles, stories, design studies, renderer
-code), run `/visual-verify`: render the affected states, screenshot them, and have a fresh
-agent judge the pixels against the ticket's acceptance criteria. Fix what it finds (max two
-rounds), commit the final screenshots, and carry any unresolved visual findings into the PR
-body. Code review reads the diff; this catches what only the pixels show.
+UI drift is caught by the CI screenshot gate (vitest `toMatchScreenshot` over every story; see
+AGENTS.md "Visual verification"). Don't screenshot inline. Run `/visual-verify` by hand only for
+visually *subjective* changes — a new layout, a state with no story — where judging pixels
+against the spec adds something the pixel gate can't.
 
 The same precondition binds: the judge must be a separate agent that takes **its own**
 screenshots. A judge handed the author's screenshots inherits the author's framing — it can only
@@ -64,7 +63,6 @@ confirm that the captured states look as captured, not that the right states wer
 
 ## 4. Commit, push, PR
 
-Commit to the ticket branch and push it. Open one PR — body says `Closes #<N>`, lists any
-unresolved findings from steps 2–3, and embeds the visual-verify screenshots for UI work.
-Open it ready-for-review (the diff was already reviewed); use draft only if unresolved
-findings remain. Do not merge — merging stays with the human.
+Commit to the ticket branch and push it. Open one PR — body says `Closes #<N>` and lists any
+unresolved findings from steps 2–3. Open it ready-for-review (the diff was already reviewed);
+use draft only if unresolved findings remain. Do not merge — merging stays with the human.
