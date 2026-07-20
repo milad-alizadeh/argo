@@ -1,0 +1,181 @@
+{
+  "anthropics/claude-plugins-official": {
+    "frontend-design": {
+      "path": "plugins/frontend-design/skills/frontend-design/SKILL.md",
+      "sha": "decdff43d05908b4c1fc2cfd2d80fc5743440934"
+    }
+  },
+  "mattpocock/skills": {
+    "ask-matt": {
+      "path": "skills/engineering/ask-matt/SKILL.md",
+      "sha": "70b807b35f85859b0c6cced1919f56e024e6a753"
+    },
+    "batch-grill-me": {
+      "path": "skills/in-progress/batch-grill-me/SKILL.md",
+      "sha": "4dbf90deb9c2bcadb36520b2f885e9d585d3fde7"
+    },
+    "claude-handoff": {
+      "path": "skills/in-progress/claude-handoff/SKILL.md",
+      "sha": "88ce8be28217c9dbcd5f8cef0ead2502bf2e2b1c"
+    },
+    "code-review": {
+      "path": "skills/engineering/code-review/SKILL.md",
+      "sha": "2a0b5240731b927caa9ac0bf43c3e2af9dc3f0a7"
+    },
+    "codebase-design": {
+      "path": "skills/engineering/codebase-design/SKILL.md",
+      "sha": "16620c24528b737408e78d95dd6a0e01a98d3d63"
+    },
+    "design-an-interface": {
+      "path": "skills/deprecated/design-an-interface/SKILL.md",
+      "sha": "d056bd183229ca93bd41cf1b8c10c6fd1f30e75f"
+    },
+    "diagnosing-bugs": {
+      "path": "skills/engineering/diagnosing-bugs/SKILL.md",
+      "sha": "f400de7c1937377fec7ff9bae3b0c072670f1e81"
+    },
+    "domain-modeling": {
+      "path": "skills/engineering/domain-modeling/SKILL.md",
+      "sha": "d0f7e1a5ccb06a7184056ff9af02b67bc77f9dda"
+    },
+    "edit-article": {
+      "path": "skills/personal/edit-article/SKILL.md",
+      "sha": "2a6ad33e969068afa6917b5ed778b5f53aa357ca"
+    },
+    "git-guardrails-claude-code": {
+      "path": "skills/misc/git-guardrails-claude-code/SKILL.md",
+      "sha": "d943c68219d0f47512f10c5018a11fd8358e9bb5"
+    },
+    "grill-me": {
+      "path": "skills/productivity/grill-me/SKILL.md",
+      "sha": "9470cfcfe231a35e46494cddbacdd395991afb1e"
+    },
+    "grill-with-docs": {
+      "path": "skills/engineering/grill-with-docs/SKILL.md",
+      "sha": "bed05d2bd3245306267cea57cd696b5dd94d50fe"
+    },
+    "grilling": {
+      "path": "skills/productivity/grilling/SKILL.md",
+      "sha": "52d8eb3cadd2dca62634d5dccfa73ea6b725b117"
+    },
+    "handoff": {
+      "path": "skills/productivity/handoff/SKILL.md",
+      "sha": "043d9e13dc7eca3002a47d3ab9865c568f647863"
+    },
+    "implement": {
+      "path": "skills/engineering/implement/SKILL.md",
+      "sha": "7a0b11f5f4fe9505ea5c7983c3083ba1bf754f69",
+      "watch": true
+    },
+    "improve-codebase-architecture": {
+      "path": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "sha": "b56969e92f0705d70700f908b8ec929a1edfa782"
+    },
+    "loop-me": {
+      "path": "skills/in-progress/loop-me/SKILL.md",
+      "sha": "3a8c52c8d0a429905bfe728b91e31b01ab57adaf"
+    },
+    "migrate-to-shoehorn": {
+      "path": "skills/misc/migrate-to-shoehorn/SKILL.md",
+      "sha": "ae4f965e204fc93cedbc4e2c306e92829d93f800"
+    },
+    "obsidian-vault": {
+      "path": "skills/personal/obsidian-vault/SKILL.md",
+      "sha": "b9393654a90811d6e1ce25163b3bd77f803c1026"
+    },
+    "prototype": {
+      "path": "skills/engineering/prototype/SKILL.md",
+      "sha": "e75d5331ceffd9b2c5a9554c3db124d848afa054"
+    },
+    "qa": {
+      "path": "skills/deprecated/qa/SKILL.md",
+      "sha": "305e43fbc1a171987fcab977ebd124c3f9792d39"
+    },
+    "request-refactor-plan": {
+      "path": "skills/deprecated/request-refactor-plan/SKILL.md",
+      "sha": "7e8b2e41d7ce805746d18b8e9dba4559301db251"
+    },
+    "research": {
+      "path": "skills/engineering/research/SKILL.md",
+      "sha": "0ba594a07f306479baa67104381f48e209ab6aae"
+    },
+    "resolving-merge-conflicts": {
+      "path": "skills/engineering/resolving-merge-conflicts/SKILL.md",
+      "sha": "aadb3fcb1dfb43413dff30c2fb4b18b7cf58e90e"
+    },
+    "scaffold-exercises": {
+      "path": "skills/misc/scaffold-exercises/SKILL.md",
+      "sha": "d87df28e7d8abb4e57ecc6e47d71c274d16054c7"
+    },
+    "setup-matt-pocock-skills": {
+      "path": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+      "sha": "aecf855317d3202f8c812f9b2e0d1b65d98d7d26"
+    },
+    "setup-pre-commit": {
+      "path": "skills/misc/setup-pre-commit/SKILL.md",
+      "sha": "395a77b5f7e33911092f7bc86e7d87c4ca70d189"
+    },
+    "setup-ts-deep-modules": {
+      "path": "skills/in-progress/setup-ts-deep-modules/SKILL.md",
+      "sha": "5963b8a39f1818da85bbef74eab8c96cf544181e"
+    },
+    "tdd": {
+      "path": "skills/engineering/tdd/SKILL.md",
+      "sha": "9a2e1d2a1ad856b0d5903dd002209ff8c32c9a48"
+    },
+    "teach": {
+      "path": "skills/productivity/teach/SKILL.md",
+      "sha": "b1603e5ac536d2b5c29496c06df4db0bb9f74e69"
+    },
+    "to-questionnaire": {
+      "path": "skills/in-progress/to-questionnaire/SKILL.md",
+      "sha": "1423375bb23923a754e931f034a9714b8f81dfcc"
+    },
+    "to-spec": {
+      "path": "skills/engineering/to-spec/SKILL.md",
+      "sha": "f3cca8d3dbdb7c22e11447f1d13011a78ca6efba"
+    },
+    "to-tickets": {
+      "path": "skills/engineering/to-tickets/SKILL.md",
+      "sha": "23140c577f71c98993523f0dbec74f250561b708"
+    },
+    "triage": {
+      "path": "skills/engineering/triage/SKILL.md",
+      "sha": "be47b78100c8524c3af3681790d2bb8b9ff150b7"
+    },
+    "ubiquitous-language": {
+      "path": "skills/deprecated/ubiquitous-language/SKILL.md",
+      "sha": "35b649ddcd4f6da16d70f27662e0dfb86fb34870"
+    },
+    "wayfinder": {
+      "path": "skills/engineering/wayfinder/SKILL.md",
+      "sha": "42e3644cc57e41a1b87482754f25b4d9462d4bbc"
+    },
+    "wizard": {
+      "path": "skills/in-progress/wizard/SKILL.md",
+      "sha": "a754784080d85f559ee2d4ba6327c68098a02029"
+    },
+    "writing-beats": {
+      "path": "skills/in-progress/writing-beats/SKILL.md",
+      "sha": "1cdb7dec65d1168c8516c3e83af32149226f79e3"
+    },
+    "writing-fragments": {
+      "path": "skills/in-progress/writing-fragments/SKILL.md",
+      "sha": "3d0ea7527ac01405ce94857e8a5e0c4c1e105087"
+    },
+    "writing-great-skills": {
+      "path": "skills/productivity/writing-great-skills/SKILL.md",
+      "sha": "82abd0dce264eecb3ed461b3eac17bdafb52f84b"
+    },
+    "writing-shape": {
+      "path": "skills/in-progress/writing-shape/SKILL.md",
+      "sha": "a9694e345d585e58778a5541f6a35fd4479d6f7f"
+    }
+  },
+  "vercel-labs/skills": {
+    "find-skills": {
+      "path": "skills/find-skills/SKILL.md",
+      "sha": "a41bdd074bb587afd861332cf2f473f3154de4d7"
+    }
+  }
+}
