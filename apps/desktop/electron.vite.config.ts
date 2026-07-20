@@ -17,5 +17,17 @@ export default defineConfig({
       },
     },
     plugins: [react(), tailwindcss()],
+    build: {
+      rollupOptions: {
+        // The `radix-ui` umbrella re-exports ~40 `@radix-ui/react-*` packages, each shipping a
+        // top-of-file `"use client"` directive for RSC. Rollup parses them all to read exports
+        // (then tree-shakes the unused ones out), warning once per file that it dropped a
+        // directive it can't use here. Cosmetic — drop just that code, keep every real warning.
+        onwarn(warning, defaultHandler) {
+          if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return
+          defaultHandler(warning)
+        },
+      },
+    },
   },
 })
