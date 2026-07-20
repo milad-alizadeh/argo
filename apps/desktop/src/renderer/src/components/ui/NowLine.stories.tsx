@@ -27,8 +27,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// The running strip: a leading verb icon, a line embedding a mono path span, and the static
-// `live` word + dot at the trailing edge.
+/**
+ * The running strip: a leading verb icon, a line embedding a mono path span, and the static
+ * `live` word + dot at the trailing edge.
+ */
 export const Live: Story = {
   args: {
     icon: <PencilSimpleIcon aria-hidden />,
@@ -51,7 +53,7 @@ export const Live: Story = {
   },
 }
 
-// Not running: the same quiet strip with no `live` indicator at all.
+/** Not running: the same quiet strip with no `live` indicator at all. */
 export const Idle: Story = {
   args: {
     icon: <MagnifyingGlassIcon aria-hidden />,

@@ -19,8 +19,10 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// The everyday shape: a branch-named worktree with work in flight. Every other tag and flag
-// is a control or a row of AllVariants — the tag is a `select`, the counts are ranges.
+/**
+ * The everyday shape: a branch-named worktree with work in flight. Every other tag and flag
+ * is a control or a row of `AllVariants` — the tag is a `select`, the counts are ranges.
+ */
 export const Default: Story = {
   args: {
     branch: 'feat/auth-rotation',
@@ -42,8 +44,10 @@ export const Default: Story = {
   },
 }
 
-// Nothing outstanding: the dirty chip is gone and the sync line reads level — the designed
-// zero state, not a smaller number.
+/**
+ * Nothing outstanding: the dirty chip is gone and the sync line reads level — the designed
+ * zero state, not a smaller number.
+ */
 export const Clean: Story = {
   args: {
     ...Default.args,
@@ -58,7 +62,7 @@ export const Clean: Story = {
   },
 }
 
-// Every tag and flag in one frame — the visual-diff surface for the whole chip.
+/** Every tag and flag in one frame — the visual-diff surface for the whole chip. */
 export const AllVariants: Story = {
   args: Default.args,
   render: () => (

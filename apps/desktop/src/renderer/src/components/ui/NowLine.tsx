@@ -2,10 +2,12 @@ import { cn } from '@/lib/utils'
 import { Status } from './Status'
 import { Text } from './Text'
 
-// Molecule: the quiet one-line "doing now" strip that opens the story pane. One inset row —
-// a leading icon, the current line, and, while the agent is running, a static `live` word +
-// dot. The `live` row takes no pulse: the screen's one animation budget belongs to the
-// ribbon and the rail.
+/**
+ * The quiet one-line "doing now" strip that opens the story pane. One inset row — a leading
+ * icon, the current line, and, while the agent is running, a static `live` word + dot. The
+ * `live` row takes no pulse: the screen's one animation budget belongs to the ribbon and the
+ * rail.
+ */
 export function NowLine({
   icon,
   line,

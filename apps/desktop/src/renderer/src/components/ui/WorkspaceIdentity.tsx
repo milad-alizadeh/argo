@@ -73,10 +73,12 @@ function tagContent(tag: WorkspaceTag): React.ReactNode {
   }
 }
 
-// Molecule: the ONE full home of "where is this session working". Branch is typed exactly
-// once on screen — here — beside its tree tag, an uncommitted count, the sync line vs main,
-// and a warning when another session shares the tree. Everything arrives resolved: the chip
-// decides nothing about the checkout, it only spells it.
+/**
+ * The ONE full home of "where is this session working". Branch is typed exactly once on
+ * screen — here — beside its tree tag, an uncommitted count, the sync line vs main, and a
+ * warning when another session shares the tree. Everything arrives resolved: the chip decides
+ * nothing about the checkout, it only spells it.
+ */
 export function WorkspaceIdentity({
   branch,
   tree,
