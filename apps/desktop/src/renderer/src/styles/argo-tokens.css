@@ -73,6 +73,7 @@
 :root {
   --radius: 0.5rem;
   --radius-full: 999px; /* pills/chips; the app's rounded-full already covers this */
+  --border-rail: 3px; /* the study's severity/state accent rail (finding, rvrow, phase group) */
 
   --background: var(--gray-100);
   --foreground: var(--gray-950);
@@ -310,6 +311,12 @@
    * box is what holds a marker in its column as a row nests deeper. One marker box (16) +
    * one row gap (8) = 24 = --space-nest, so each tree level steps by exactly one nest. */
   --space-marker-col: 16px;
+
+  /* The one shared strip height: the Work pane's tab strip IS its header, sized to match
+   * the ship ribbon's own strip so the two stack with no visual seam. Off the 4px rhythm by
+   * design (both strips settled on it independently) — named rather than left implicit so a
+   * future ribbon build reads the same constant instead of re-measuring the study. */
+  --strip-height: 41px;
 
   /* Glow — the lit halo a live signal carries (status dots, the ctx fill). Its
    * colour is the element's own currentColor, so one utility covers every tone;

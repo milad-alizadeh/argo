@@ -6,7 +6,9 @@ import {
   CheckIcon,
   CircleIcon,
   CircleNotchIcon,
+  DiamondIcon,
   type IconAtom,
+  WarningIcon,
 } from './icons'
 
 export const FINDING_STATES = ['open', 'addressing', 'fixed'] as const
@@ -55,4 +57,19 @@ export const FINDING_STATE_ACTION: Record<FindingState, FindingAction> = {
     Icon: ArrowCounterClockwiseIcon,
     tone: 'ghost',
   },
+}
+
+export const FINDING_SEVERITIES = ['blocking', 'advisory'] as const
+
+/** How serious a review finding is — shared with #28, which reads this vocabulary rather
+ * than re-deriving it. */
+export type FindingSeverity = (typeof FINDING_SEVERITIES)[number]
+
+/** The word, glyph and tone a surface reports a finding's severity with. */
+type SeverityReport = { word: string; Icon: IconAtom; tone: VerdictTone }
+
+/** Replaces the study's ▲/◆ text glyphs with an icon atom, per severity. */
+export const FINDING_SEVERITY: Record<FindingSeverity, SeverityReport> = {
+  blocking: { word: 'blocking', Icon: WarningIcon, tone: 'verdict-block' },
+  advisory: { word: 'advisory', Icon: DiamondIcon, tone: 'verdict-changes' },
 }

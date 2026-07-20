@@ -1,11 +1,15 @@
 export { Badge, type BadgeVariant, badgeVariants } from './badge'
 export { Button, type ButtonVariant, buttonVariants } from './button'
 export { ContextGauge } from './ContextGauge'
+export { Checkbox } from './checkbox'
 export {
   FINDING_CYCLE_TITLE,
+  FINDING_SEVERITIES,
+  FINDING_SEVERITY,
   FINDING_STATE_ACTION,
   FINDING_STATE_REPORT,
   FINDING_STATES,
+  type FindingSeverity,
   type FindingState,
 } from './findingState'
 export * from './icons'
@@ -22,4 +26,13 @@ export {
   type TextVariant,
   TYPE_ROLE_CLASS,
 } from './Text'
+export {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  type TabsTriggerTone,
+  tabsTriggerVariants,
+} from './tabs'
+export { ToggleGroup, ToggleGroupItem } from './toggle-group'
 export { WorkspaceIdentity, type WorkspaceTree } from './WorkspaceIdentity'
