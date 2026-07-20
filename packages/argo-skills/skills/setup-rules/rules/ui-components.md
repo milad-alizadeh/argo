@@ -15,16 +15,16 @@ one-off styling from creeping in. Before writing markup, decide which tier the u
 belongs to and build/reuse at that tier.
 
 - **Atoms** — the smallest indivisible presentational units: a button, input, label,
-  icon, badge, dot, divider, spinner, meter bar. Atoms live in `components/ui/`
-  (`Button.tsx`, `StatusDot.tsx`), icons in `components/ui/icons/`. They take only
+  icon, badge, dot, divider, spinner, meter bar. Atoms live in `shared/components/ui/`
+  (`Button.tsx`, `StatusDot.tsx`), icons in `shared/components/ui/icons/`. They take only
   presentational props, hold no domain logic, and never emit raw `<svg>`.
 - **Molecules** — a small reusable composition of atoms forming one labelled unit: a
   setting row, a status banner, a card header, an empty-state block, a pill. Molecules
-  live in `components/ui/` when reused across two+ domains; otherwise as a subcomponent
-  under the parent domain folder.
+  live in `shared/components/ui/` when reused across two+ regions; otherwise as a
+  subcomponent under the owning region's `components/` folder.
 - **Organisms** — a self-contained domain section composed of molecules and atoms: a
-  card, a list, a settings panel, a detail view. Organisms live in their domain folder
-  and are where domain logic / state wiring is allowed.
+  card, a list, a settings panel, a detail view. Organisms live in their region's folder
+  (`domains/<region>/components/`) and are where domain logic / state wiring is allowed.
 
 Rules that fall out of this:
 
@@ -32,12 +32,12 @@ Rules that fall out of this:
   inside an organism is a duplication bug, even on first use — import it, or extract
   it if it doesn't exist yet.
 - **Build bottom-up.** A new organism is assembled from existing atoms/molecules. If
-  a needed primitive is missing, create it in `components/ui/` first, then compose.
+  a needed primitive is missing, create it in `shared/components/ui/` first, then compose.
 - **One tier per file:** an atom file exports one atom, a molecule file one molecule.
 
 ## Reuse before you build
 
-- **Before writing any raw markup, search `components/ui/` (and the parent domain
+- **Before writing any raw markup, search `shared/components/ui/` (and the owning region's
   folder) for a component that already renders it.** If one exists, import it — never
   re-implement its markup at a call site.
 - **The moment the same shape would appear a second time, extract it** into one
@@ -45,14 +45,13 @@ Rules that fall out of this:
 - **Don't introduce a bespoke element where a primitive is the right tool** (sliders,
   selects, dialogs, radio groups, meters, dividers, section labels, icons). Raw
   buttons/inputs standing in for an existing primitive are forbidden.
-- **Check the project's component kit before building a primitive.** If the project is
-  built on a kit/generator, that is where a badge, progress bar, dialog or select comes
-  from — a hand-rolled equivalent of a kit primitive is a duplication bug, not a design
-  choice. When the kit's variants don't match the design, **adapt the vendored
+- **Reach for your configured component kit before authoring a primitive.**
+  {{COMPONENT_KIT}} A hand-rolled equivalent of a kit primitive is a duplication bug, not a
+  design choice. When the kit's variants don't match the design, **adapt the vendored
   component's variant map to the design tokens**; writing a parallel component beside it
   is what the rule forbids. Vendored primitives keep their upstream filenames, and any
   icon a generated component pulls in is swapped for this project's icon atom.
-- Re-export every primitive from `components/ui/index.ts` so imports are one line.
+- Re-export every primitive from `shared/components/ui/index.ts` so imports are one line.
 - Primitives are pure presentation — no state machines, no I/O, no hooks beyond local
   interaction state. Interactive primitives wrap the chosen headless-UI library and
   are styled only with design-system tokens; never import the library's default CSS.
@@ -61,7 +60,7 @@ Rules that fall out of this:
 
 Typography is a primitive like any other, so it obeys the rule above: the project's
 type-role ladder (`design-system.md`, "Roles, not values") is applied by **one atom**,
-`components/ui/Text.tsx`, exposing the roles as a `variant` prop. The rule is not merely
+`shared/components/ui/Text.tsx`, exposing the roles as a `variant` prop. The rule is not merely
 "don't type a role class" — it is that **every string the user reads is rendered by
 `Text`**. A bare string in a `div` is the violation even when it inherits the right type
 today, because inheritance is exactly what drifts the moment an ancestor changes. If this
@@ -110,7 +109,7 @@ build contract:
 ## Icons — one icon component per file
 
 **No inline SVGs anywhere.** Every SVG icon is its own named component in
-`components/ui/icons/`, re-exported from its barrel. Each file exports exactly one
+`shared/components/ui/icons/`, re-exported from its barrel. Each file exports exactly one
 component, accepts optional `width`/`height`/`className`, and defaults to its original
 size. Plain-text glyphs standing in for icons (`✕`, `→`) are forbidden — use the icon
 atom.
@@ -154,13 +153,19 @@ fetching, store wiring; ~10 lines) and a pure presentational **View**
 > by the child's gallery and a pure helper's edges by its unit test — neither needs a
 > second telling upstairs.
 >
-> Nest by ownership. A story's title places it in a catalog of things you compose *with*:
-> primitives and the organisms a screen mounts sit at the top level, while a component
-> with exactly one importer nests under that importer (`Console`, then
-> `Console/ChannelTab`) rather than standing beside it as a peer — four sibling entries
-> for one organism claim four components exist where one does. Only the title changes,
-> never the file or the export name. A part that grows a second importer is promoted to
-> the top level, and the title change is the promotion.
+> A story's `title` top segment equals its top domain folder — the taxonomy is derived
+> from where the file lives, never chosen. Components live under `domains/<region>/` (each
+> region owns its `components/`) or `shared/components/ui/` (framework primitives, shared
+> across regions). A primitive in `shared/components/ui/Button` titles as `Shared/Button`;
+> a component in `domains/<region>/components/Row` titles as `<Region>/Row`. Placement is
+> `dirname`, so the sidebar reads as one per-domain catalog and never drifts between
+> sessions or worktrees.
+>
+> Within a domain, single-owner parts still nest under their owner: a component with exactly
+> one importer nests beneath it (`<Region>/List`, then `<Region>/List/Row`) rather than
+> standing beside it as a peer — sibling entries for one organism's parts claim components
+> exist where one does. Only the title changes, never the file or the export name. A part
+> imported by a second region is promoted to `shared/`, and that move is the promotion.
 >
 > The story file is also the component's docs page: turn autodocs on globally, document
 > each prop with a TSDoc comment on the component's props type (react-docgen lifts those
@@ -176,9 +181,9 @@ fetching, store wiring; ~10 lines) and a pure presentational **View**
 > `parameters.docs.description.component` overrides it. All of these are `/** */`; a `//`
 > in those positions is dropped on the floor (see `comments.md`).
 >
-> Two things react-docgen cannot see. A prop whose type comes from a variant-map helper
-> (`cva` or equivalent) resolves to neither a type nor a description, so its row renders
-> blank unless the story spells it out:
+> Two things react-docgen cannot see. A prop whose type is inferred from a variant-map
+> factory (rather than declared as a named type) resolves to neither a type nor a
+> description, so its row renders blank unless the story spells it out:
 >
 > ```tsx
 > argTypes: {

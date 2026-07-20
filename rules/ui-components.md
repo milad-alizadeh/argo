@@ -15,16 +15,16 @@ one-off styling from creeping in. Before writing markup, decide which tier the u
 belongs to and build/reuse at that tier.
 
 - **Atoms** — the smallest indivisible presentational units: a button, input, label,
-  icon, badge, dot, divider, spinner, meter bar. Atoms live in `components/ui/`
-  (`Button.tsx`, `StatusDot.tsx`), icons in `components/ui/icons/`. They take only
+  icon, badge, dot, divider, spinner, meter bar. Atoms live in `shared/components/ui/`
+  (`Button.tsx`, `StatusDot.tsx`), icons in `shared/components/ui/icons/`. They take only
   presentational props, hold no domain logic, and never emit raw `<svg>`.
 - **Molecules** — a small reusable composition of atoms forming one labelled unit: a
   setting row, a status banner, a card header, an empty-state block, a pill. Molecules
-  live in `components/ui/` when reused across two+ domains; otherwise as a subcomponent
-  under the parent domain folder.
+  live in `shared/components/ui/` when reused across two+ regions; otherwise as a
+  subcomponent under the owning region's `components/` folder.
 - **Organisms** — a self-contained domain section composed of molecules and atoms: a
-  card, a list, a settings panel, a detail view. Organisms live in their domain folder
-  and are where domain logic / state wiring is allowed.
+  card, a list, a settings panel, a detail view. Organisms live in their region's folder
+  (`domains/<region>/components/`) and are where domain logic / state wiring is allowed.
 
 Rules that fall out of this:
 
@@ -32,12 +32,12 @@ Rules that fall out of this:
   inside an organism is a duplication bug, even on first use — import it, or extract
   it if it doesn't exist yet.
 - **Build bottom-up.** A new organism is assembled from existing atoms/molecules. If
-  a needed primitive is missing, create it in `components/ui/` first, then compose.
+  a needed primitive is missing, create it in `shared/components/ui/` first, then compose.
 - **One tier per file:** an atom file exports one atom, a molecule file one molecule.
 
 ## Reuse before you build
 
-- **Before writing any raw markup, search `components/ui/` (and the parent domain
+- **Before writing any raw markup, search `shared/components/ui/` (and the owning region's
   folder) for a component that already renders it.** If one exists, import it — never
   re-implement its markup at a call site.
 - **The moment the same shape would appear a second time, extract it** into one
@@ -45,17 +45,17 @@ Rules that fall out of this:
 - **Don't introduce a bespoke element where a primitive is the right tool** (sliders,
   selects, dialogs, radio groups, meters, dividers, section labels, icons). Raw
   buttons/inputs standing in for an existing primitive are forbidden.
-- **Check the component kit before building a primitive.** This is a configured shadcn
-  project (`apps/desktop/components.json`, `radix-ui` + `class-variance-authority`
-  already installed) — `bunx shadcn@latest add <name>` is where a badge, progress bar,
-  dialog or select comes from. A hand-rolled equivalent of a kit primitive is a
-  duplication bug, not a design choice. When the kit's variants don't match the design,
-  **adapt the vendored component's `cva` variant map to our tokens** — owning the
-  vendored file is the intended workflow; writing a parallel component beside it is not.
+- **Reach for your configured component kit before authoring a primitive.** This is a
+  configured shadcn project (`apps/desktop/components.json`, `radix-ui` +
+  `class-variance-authority` already installed) — `bunx shadcn@latest add <name>` is where
+  a badge, progress bar, dialog or select comes from. A hand-rolled equivalent of a kit
+  primitive is a duplication bug, not a design choice. When the kit's variants don't match
+  the design, **adapt the vendored component's `cva` variant map to our tokens** — owning
+  the vendored file is the intended workflow; writing a parallel component beside it is not.
   Vendored primitives keep their upstream lowercase filenames (`button.tsx`,
   `badge.tsx`) and, since `components.json` still declares lucide, any icon a generated
   component pulls in is swapped for the Phosphor icon atom.
-- Re-export every primitive from `components/ui/index.ts` so imports are one line.
+- Re-export every primitive from `shared/components/ui/index.ts` so imports are one line.
 - Primitives are pure presentation — no state machines, no I/O, no hooks beyond local
   interaction state. Interactive primitives wrap `radix-ui` (the headless-UI library)
   and are styled only with design-system tokens; never import the library's default CSS.
@@ -63,7 +63,7 @@ Rules that fall out of this:
 ## All rendered text is a `Text`
 
 Typography is a primitive like any other, so it obeys the rule above: the type-role
-ladder is applied by **one atom**, `components/ui/Text.tsx`. The rule is not merely
+ladder is applied by **one atom**, `shared/components/ui/Text.tsx`. The rule is not merely
 "don't type a role class" — it is that **every string the user reads is rendered by
 `Text`**. A bare string in a `div` is the violation even when it inherits the right type
 today, because inheritance is exactly what drifts the moment an ancestor changes.
@@ -109,7 +109,7 @@ build contract:
 ## Icons — one icon component per file
 
 **No inline SVGs anywhere.** Every SVG icon is its own named component in
-`components/ui/icons/`, re-exported from its barrel. Each file exports exactly one
+`shared/components/ui/icons/`, re-exported from its barrel. Each file exports exactly one
 component, accepts optional `width`/`height`/`className`, and defaults to its original
 size. Plain-text glyphs standing in for icons (`✕`, `→`) are forbidden — use the icon
 atom.
@@ -118,7 +118,7 @@ The shadcn CLI can only generate `lucide` or `radix` icon imports — `component
 cannot be pointed at Phosphor, and setting it there would be accepted and then ignored.
 So a vendored kit component that ships an icon (`select`, `checkbox`, `dialog`,
 `accordion`, `dropdown-menu`, `calendar`) arrives with a lucide import: **swap it for the
-matching atom in `components/ui/icons/` in the same change.** `lucide-react` is never
+matching atom in `shared/components/ui/icons/` in the same change.** `lucide-react` is never
 added as a dependency — its presence in `package.json` means a swap was missed.
 
 ## Screens — container/View split
@@ -184,19 +184,25 @@ its unit test. Neither needs a second telling upstairs. Cover one axis at two ti
 both copies rot the day the child changes — the upstairs copy just fails later and
 further from the cause.
 
-### Nest a single-owner part under its owner
+### Title follows the domain folder
 
-A story's `title` places it in a catalog of things you compose *with*, not a flat dump of
-every file that exports a component.
+A story's `title` top segment equals its top domain folder — derived from where the file
+lives, never chosen, so the sidebar reads as one per-domain catalog and never drifts
+between sessions or worktrees.
 
-- **Top level** — primitives from `components/ui/`, and organisms a screen mounts.
-- **Nested under its owner** — a component with exactly one importer. It is that
-  organism's part, not its peer: `Cockpit/Console`, then `Cockpit/Console/ChannelTabs`,
-  `Cockpit/Console/ChannelTab`, `Cockpit/Console/Channel`.
+- **Domain folders** are the CONTEXT.md Panes/regions: `rail`, `activity`, `ship`,
+  `preview`, `console`, `screen` (the Actor-screen shell) and `voice` (later). A component
+  in `domains/rail/components/SessionRow` titles as `Rail/SessionRow`.
+- **Shared primitives** live in `shared/components/ui/`, titled under `Shared/` —
+  `shared/components/ui/Button` → `Shared/Button`. There is no `UI/`-vs-`Cockpit/` split: a
+  vendored kit atom and a hand-rolled primitive share one `Shared/` namespace.
 
-Four sibling `Cockpit/*` entries for one console claim four components exist where one
-does. Only the title changes — never the file or the export name. A part that grows a
-second importer moves up to the top level, and that title change *is* the promotion.
+Within a domain, single-owner parts still nest under their owner: a component with exactly
+one importer is that organism's part, not its peer — `Console/ChannelTabs`, then
+`Console/ChannelTabs/ChannelTab`, `Console/ChannelTabs/Channel`. Sibling entries for one
+organism's parts claim components exist where one does. Only the title changes — never the
+file or the export name. A part imported by a second region is promoted to `shared/`, and
+that move *is* the promotion.
 
 ### The story file is also the docs page
 

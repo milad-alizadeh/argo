@@ -65,18 +65,28 @@ activate once source lands.
 
 ## 3. Substitute the placeholders
 
-Replace every `{{TOKEN}}` with the detected value. The full token set:
+Replace every `{{TOKEN}}` with the detected value. The **Example** column shows one
+concrete instance — an Electron monorepo — but these rules serve any app kind: a web app
+substitutes its own root (`src/…`, `apps/web/src/…`), a React Native app its screen tree.
+Detect the values (step 2); don't copy the examples. The full token set:
 
 | Token | Meaning | Example |
 |---|---|---|
 | `{{APP_GLOB}}` | app source glob | `apps/desktop/**/*.{ts,tsx}` |
-| `{{MAIN_DIR}}` / `{{RENDERER_DIR}}` | the two non-cross-importing layers | `main/` / `renderer/` |
+| `{{MAIN_DIR}}` / `{{RENDERER_DIR}}` | the two non-cross-importing layers | `main/` / `renderer/` (web: `server/` / `client/`) |
 | `{{COMPONENTS_GLOB}}` | components glob | `apps/desktop/src/renderer/src/components/**/*.{ts,tsx}` |
 | `{{COMPONENTS_DIR}}` | components dir (trailing slash) | `apps/desktop/src/renderer/src/components/` |
 | `{{RENDERER_GLOB}}` | renderer css/tsx glob | `apps/desktop/src/renderer/src/**/*.{css,tsx,jsx}` |
 | `{{TOKENS_CSS}}` | file holding the `@theme` block | `apps/desktop/src/renderer/src/assets/base.css` |
 | `{{PKG_MANAGER}}` | package manager name | `bun` |
 | `{{PKG_ADD}}` / `{{PKG_REMOVE}}` | add/remove commands | `bun add` / `bun remove` |
+| `{{COMPONENT_KIT}}` | how this repo's configured kit supplies primitives | `This is a configured shadcn project (\`components.json\`) — \`bunx shadcn@latest add <name>\` is where a badge, dialog or select comes from.` |
+
+`{{COMPONENT_KIT}}` is a short block, not a bare value: name the kit, its add-command, its
+config file, and its icon-swap convention (e.g. shadcn: `bunx shadcn@latest add <name>`,
+`components.json`, its generated-icon swap). On a repo with **no** kit, degrade it to a
+sentence pointing at the primitives directory ("no generator — build primitives by hand in
+`shared/components/ui/`"), so the reuse gate in `ui-components.md` still reads.
 
 After substitution, **grep the installed files for any remaining `{{`** — a leftover
 token means detection missed something. Fix it before finishing; never ship a `{{...}}`.
