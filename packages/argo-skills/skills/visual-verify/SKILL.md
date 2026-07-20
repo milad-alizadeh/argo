@@ -50,6 +50,12 @@ mostly returns "looks right". The judge answers one question — do these pixels
 spec? — and returns a structured verdict: pass/fail plus findings, each naming the
 screenshot, what is wrong, and which spec line it violates.
 
+**If you cannot spawn a separate agent, stop here and say so.** Judging your own render is not
+a weaker version of this step, it is the failure this step exists to prevent — and a PR that
+reports "visually verified" after a self-judged pass has spent the human's trust without
+earning it. The common case: agents running inside a `Workflow` have no `Agent` tool, so the
+orchestrator must run the judge as its own stage instead.
+
 ## 3. Fix loop
 
 Findings go back to implementation: fix, re-render, re-judge. **Max two rounds.** Still

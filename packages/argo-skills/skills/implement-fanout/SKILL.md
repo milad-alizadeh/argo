@@ -24,6 +24,22 @@ Orchestration uses Claude Code's `Workflow` + per-agent `isolation: "worktree"`.
 without them (Codex, Cursor), don't emulate it — fall back to the serial loop: `/implement` one
 ticket per fresh conversation, in dependency order, and say so.
 
+> ### A workflow agent cannot spawn agents
+>
+> `agent()` calls inside a `Workflow` do **not** get the `Agent` tool. Any skill they invoke that
+> works by spawning sub-agents — `/code-review` (two parallel axis agents), `/visual-verify` (a
+> fresh judge) — cannot do so, and degrades to running in the implementer's own context. That
+> means **the author reviews their own diff and judges their own screenshots**.
+>
+> The failure is silent. The work finishes, the PR opens, and its body says a review happened —
+> the degradation shows up only as a buried aside like "this worker had no sub-agent tool, so
+> both axes were single-context". Findings that a fresh reader catches immediately sail through,
+> because the author is the last person able to see them.
+>
+> **So the orchestrator spawns the reviewer, never the implementer.** Review and visual judgement
+> are separate workflow stages (step 3 below) — the workflow itself *can* spawn them. Never write
+> a brief telling a workflow agent to "run `/code-review` on your own diff".
+
 ## Process
 
 ### 1. Scout the frontier (inline, in the main session — cheap)
@@ -37,44 +53,56 @@ ticket per fresh conversation, in dependency order, and say so.
 
 ### 2. Confirm with the user (explicit opt-in + cost)
 
-Fan-out spawns one full implement agent per ticket — each edits, tests, self-reviews, commits, and
-opens a PR — so it costs roughly N× a single ticket. Present, and get an explicit go before spawning:
+Fan-out spawns a build agent plus its independent reviewers per ticket — each ticket edits, tests,
+gets reviewed by a separate context, then commits and opens a PR — so it costs meaningfully more
+than N× a single ticket. Present, and get an explicit go before spawning:
 
 - the frontier tickets you'll run (numbers + titles);
 - the concurrency cap (default **2–3** at once; higher only if the user asks);
 - that each opens a PR for the user to review and merge.
 
-### 3. Fan out — one worktree-isolated agent per ticket
+### 3. Fan out — build, then review in a *different* context
 
-Run a `Workflow` that fans out the frontier, capped at the agreed concurrency:
+Each ticket is a `pipeline` of stages the **workflow** spawns. The build stage never reviews
+itself; a separate agent, which has not seen the author's reasoning, does that:
 
 ```js
-parallel(frontier.map(t => () =>
-  agent(briefFor(t), { isolation: 'worktree', label: `implement:#${t.number}` })))
+pipeline(frontier,
+  // stage 1 — build. Returns the worktree path so later stages can re-enter it.
+  t => agent(buildBrief(t),  { isolation: 'worktree', label: `build:#${t.number}`,  phase: 'Build' }),
+  // stage 2 — review, in a fresh context that did not write the code.
+  (built, t) => agent(reviewBrief(t, built), { label: `review:#${t.number}`, phase: 'Review' }),
+  // stage 3 — the author addresses the findings, then opens the PR.
+  (found, t) => agent(landBrief(t, found),   { label: `land:#${t.number}`,   phase: 'Land' }))
 ```
 
-Each agent's brief is self-contained (it has its own fresh context — that's the point) and runs
-this **ordered, non-skippable contract**. Every step happens *inside that agent's own worktree*, so
-review and the PR are per-ticket, not shared:
+A reviewer re-enters the build's worktree with `EnterWorktree` using the `path` stage 1 returned,
+so it reviews the real tree rather than a re-derived diff.
 
-1. **Implement** — read ticket #N from the tracker and build it following `/implement`: TDD at
-   agreed seams, typecheck / lint / single-file tests regularly, the full suite once at the end.
-2. **Verify** — the full suite (typecheck, lint, tests, build) must be green before proceeding.
-3. **Code-review** — run `/code-review` on your own diff and address the findings. This runs
-   **per worktree**, in the agent's fresh context — it is not optional and is not deferred to the
-   human. If a finding can't be resolved, note it in the PR body rather than skipping it.
-4. **Visual-verify** — if the diff touches anything rendered (components, styles, stories,
-   studies, renderer code), run `/visual-verify`: render the affected states, screenshot them,
-   and have a *fresh* judge agent check the pixels against the ticket's acceptance criteria
-   (max two fix rounds). Commit the final screenshots per that skill; unresolved visual
-   findings go in the PR body. Non-UI tickets skip this step and say so.
-5. **Commit** to a ticket branch (`argo/#${N}-<slug>` or the repo convention).
-6. **Push** that branch.
-7. **Open exactly one PR** for this worktree — body says `Closes #N`, lists any unresolved
-   findings from steps 3–4, and embeds the visual-verify screenshots for UI tickets. It opens
-   ready-for-review (steps 3–4 already reviewed the diff — draft would be a second gate
-   guarding nothing); use draft only if those steps left findings you could not resolve.
-   **Return the PR URL** as your result.
+**Stage 1 — build.** Read ticket #N and build it following `/implement`: TDD at agreed seams,
+typecheck / lint / single-file tests regularly, the full suite green at the end. Commit to a
+ticket branch (`argo/#${N}-<slug>` or the repo convention). **Do not open a PR** — that is stage
+3's job, after review. Return the worktree path and branch name.
+
+**Stage 2 — review, in a fresh context.** Spawn one agent per axis, each told plainly that it did
+not write this code and that the author's own confidence is not evidence:
+
+- **Standards** — does it follow the repo's documented rules (`rules/`, `AGENTS.md`) plus the
+  smell baseline?
+- **Spec** — walk every acceptance criterion in the ticket independently; verify each in the code
+  rather than trusting the author's claim.
+- **Visual** — for anything rendered, a judge that takes *its own* screenshots and compares them
+  against the design study. A judge that only looks at screenshots the author captured is
+  inheriting the author's framing.
+
+Reviewers are **read-only**: they report findings, they do not edit, commit, or push. Say so
+explicitly in the brief — an agent told to "review" will otherwise helpfully start fixing.
+
+**Stage 3 — address and land.** The author fixes what review found, re-runs the full suite, and
+opens **exactly one PR** — body says `Closes #N`, embeds the visual screenshots, and lists every
+finding it chose *not* to fix **with the reason**. A finding may be declined, but never silently:
+the PR body is where the human sees the disagreement. Open ready-for-review; use draft only if
+findings remain unresolved. **Return the PR URL.**
 
 Do **not** merge. Do **not** touch any other ticket's files. One worktree → one branch → one PR.
 
@@ -82,12 +110,10 @@ Do **not** merge. Do **not** touch any other ticket's files. One worktree → on
 agents can't clobber each other — the exact failure mode of running plain `/implement` in parallel
 in one tree (amend landing on another session's commit, vanished stash, wrong-branch commits).
 
-> **Independent review (optional, stronger).** Self-review in the same context can miss
-> plausible-but-wrong findings. For higher assurance, make each ticket a two-stage `pipeline`:
-> stage 1 implements + commits in the worktree; stage 2 is a *separate* agent that enters the same
-> worktree (`agent(..., { isolation })` returns its path; a reviewer re-enters via `EnterWorktree`
-> with that `path`) and runs `/code-review` with fresh eyes before the PR is opened. Costs ~2× per
-> ticket; use it when the batch is high-stakes.
+> **Cheaper, weaker variant.** Collapsing stages 2–3 into the build agent costs ~⅓ less and is
+> what you get by default if you are not deliberate. It also means the author grades its own
+> homework — see the harness warning above. Only do this for throwaway or mechanical batches, and
+> tell the user the review was self-administered so they know to read the diff themselves.
 
 ### 4. Integration check — detect, don't resolve
 
@@ -112,7 +138,8 @@ Gather the returned PR URLs (one per worktree/ticket); filter out any agent that
 null / failed. Tell the user:
 
 - which tickets produced PRs (with links), and any **unresolved review or visual findings**
-  each PR carried from its step-3 `/code-review` and step-4 `/visual-verify`;
+  each PR carried from its stage-2 review, **and whether that review ran in a fresh context** —
+  if any ticket's review collapsed into the author's context, lead with that;
 - which failed and need a manual `/implement`;
 - the **conflict map** from step 4: which PR pairs collide and where, the merge order that
   minimizes conflicts, and whether the clean union passed the suite;
@@ -135,8 +162,12 @@ Then re-scout: the merged PR may have unblocked new frontier tickets.
 
 - **Never fan out a blocked ticket.** Re-run this skill after a blocker's PR merges to pick up the
   newly-unblocked frontier.
-- **Never merge.** PRs open ready-for-review because each diff was already reviewed in its
-  worktree (steps 3–4) — but merging stays with the human, in dependency order.
+- **No agent reviews its own work.** The context that wrote the code cannot judge it — it knows
+  what the code *meant* to do, which is exactly the knowledge that hides the defect. If for any
+  reason review ends up running in the author's context, that is a **reportable failure**, not a
+  degraded pass: say so to the user instead of letting the PR body imply a review happened.
+- **Never merge.** PRs open ready-for-review because a separate reviewer saw the diff (stage 2) —
+  but merging stays with the human, in dependency order.
 - **Cap concurrency.** A runaway fan-out is expensive; default 2–3.
 - **Never merge unmerged branches into each other.** Cross-branch resolution before a PR lands
   couples independent tickets; the integration branch in step 4 is throwaway and detection-only.

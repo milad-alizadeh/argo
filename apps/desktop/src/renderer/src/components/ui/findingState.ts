@@ -1,6 +1,58 @@
-// The review-finding vocabulary, shared by the chip that reports the state (StateChip)
-// and the control that advances it (AddressButton) so the cycle is spelled once.
+import type { BadgeVariant } from './badge'
+import type { ButtonVariant } from './button'
+import {
+  ArrowBendDownRightIcon,
+  ArrowCounterClockwiseIcon,
+  CheckIcon,
+  CircleIcon,
+  CircleNotchIcon,
+  type IconAtom,
+} from './icons'
+
 export const FINDING_STATES = ['open', 'addressing', 'fixed'] as const
 
 /** Where a review finding stands: open → addressing → fixed, and back to open on reopen. */
 export type FindingState = (typeof FINDING_STATES)[number]
+
+/** The tooltip that spells the cycle out wherever a finding's state is reported. */
+export const FINDING_CYCLE_TITLE = 'finding state — Open → Addressing → Fixed'
+
+type VerdictTone = Extract<BadgeVariant, `verdict-${string}`>
+
+/** The word, glyph and tone a surface reports a finding's state with. */
+type FindingReport = { label: string; Icon: IconAtom; tone: VerdictTone }
+
+/** The same, for the control that advances the finding, plus the tooltip it carries. */
+type FindingAction = { label: string; title: string; Icon: IconAtom; tone: ButtonVariant }
+
+/** What the pill Badge beside a finding reports. The word is what keeps the state legible
+ * without colour, so no surface may drop it and lean on the tone alone. */
+export const FINDING_STATE_REPORT: Record<FindingState, FindingReport> = {
+  open: { label: 'Open', Icon: CircleIcon, tone: 'verdict-block' },
+  addressing: { label: 'Addressing', Icon: CircleNotchIcon, tone: 'verdict-changes' },
+  fixed: { label: 'Fixed', Icon: CheckIcon, tone: 'verdict-approve' },
+}
+
+/** What the Button beside it DOES next — always the action, never the current state, since
+ * the chip already reports that. This pair of maps is why neither primitive's variants may
+ * be named after a state: `open` is reported in block ink but acted on in the changes tint. */
+export const FINDING_STATE_ACTION: Record<FindingState, FindingAction> = {
+  open: {
+    label: 'Address',
+    title: "dispatch code-review's fix agent",
+    Icon: ArrowBendDownRightIcon,
+    tone: 'verdict-changes',
+  },
+  addressing: {
+    label: 'Mark fixed',
+    title: 'mark the dispatched fix confirmed',
+    Icon: CheckIcon,
+    tone: 'verdict-approve',
+  },
+  fixed: {
+    label: 'Reopen',
+    title: 'reopen this finding',
+    Icon: ArrowCounterClockwiseIcon,
+    tone: 'ghost',
+  },
+}

@@ -1,9 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { Badge } from './badge'
+import { CircleIcon } from './icons'
 import { Text } from './Text'
 
-const VARIANTS = ['neutral', 'warn', 'primary'] as const
+const VERDICT_VARIANTS = ['verdict-block', 'verdict-changes', 'verdict-approve'] as const
+
+const VARIANTS = ['neutral', 'warn', 'primary', ...VERDICT_VARIANTS] as const
+
+const SHAPES = ['default', 'pill'] as const
 
 const meta = {
   title: 'Cockpit/Badge',
@@ -12,6 +17,7 @@ const meta = {
   // cva surfaces the variant union as a plain string, so the control is declared here.
   argTypes: {
     variant: { control: 'select', options: VARIANTS },
+    shape: { control: 'select', options: SHAPES },
     children: { control: 'text' },
   },
 } satisfies Meta<typeof Badge>
@@ -27,17 +33,51 @@ export const Default: Story = {
   },
 }
 
-// The three badge treatments side by side, each under the copy it actually carries.
+// Every tone in both shapes — the visual-diff surface for the whole variant map. A caption
+// names the token a tone spends, never what a caller reads into it.
 export const AllVariants: Story = {
   render: () => (
-    <div className="flex items-center gap-gap">
-      <Badge variant="neutral">main tree</Badge>
-      <Badge variant="warn">uncommitted</Badge>
-      <Badge variant="primary">declared</Badge>
+    <div className="flex flex-col gap-gap">
+      {VARIANTS.map((variant) => (
+        <div className="flex items-center gap-gap" key={variant}>
+          <Text variant="meta" className="w-36 text-foreground-faint">
+            {variant}
+          </Text>
+          {SHAPES.map((shape) => (
+            <Badge key={shape} variant={variant} shape={shape}>
+              {shape}
+            </Badge>
+          ))}
+        </div>
+      ))}
     </div>
   ),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('declared')).toBeInTheDocument()
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByText('pill')).toHaveLength(VARIANTS.length)
+  },
+}
+
+// Composed-of: Icon + label. The badge sizes the glyph off its own tag role, so the pill a
+// state is reported in needs no component of its own — which state wears which tone is the
+// caller's binding (findingState.ts), never something spelled here.
+export const WithIcon: Story = {
+  render: () => (
+    <div className="flex items-center gap-region">
+      {VERDICT_VARIANTS.map((variant) => (
+        <Badge key={variant} shape="pill" variant={variant}>
+          <CircleIcon aria-hidden />
+          {variant}
+        </Badge>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const chip = within(canvasElement).getByText('verdict-changes')
+    // The word is authored in sentence case; the tag role is what uppercases it, so the
+    // accessible text stays what the caller wrote.
+    await expect(getComputedStyle(chip).textTransform).toBe('uppercase')
+    await expect(chip.querySelector('svg')).toBeInTheDocument()
   },
 }
 
