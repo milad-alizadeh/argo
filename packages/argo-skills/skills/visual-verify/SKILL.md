@@ -5,15 +5,13 @@ description: Verify UI changes visually — render the affected states, screensh
 
 # Visual Verify
 
-Code review reads the diff; this reads the pixels. It exists for the class of bug where the
-code looks right but the render is wrong — spec says "inline icons with text", the app stacks
-them — which no text-based review can catch.
+Code review reads the diff; this reads the pixels — the class of bug where the code looks right
+but the render is wrong (spec says "inline icons with text", the app stacks them).
 
 ## Gate
 
 Applies when the working diff touches anything rendered: components, styles, stories, design
-studies, renderer/web source. If nothing renderable changed, say so and stop — this skill
-must never run as an empty ritual.
+studies, renderer/web source. If nothing renderable changed, say so and stop.
 
 ## 1. Render the affected states
 
@@ -50,11 +48,10 @@ mostly returns "looks right". The judge answers one question — do these pixels
 spec? — and returns a structured verdict: pass/fail plus findings, each naming the
 screenshot, what is wrong, and which spec line it violates.
 
-**If you cannot spawn a separate agent, stop here and say so.** Judging your own render is not
-a weaker version of this step, it is the failure this step exists to prevent — and a PR that
-reports "visually verified" after a self-judged pass has spent the human's trust without
-earning it. The common case: agents running inside a `Workflow` have no `Agent` tool, so the
-orchestrator must run the judge as its own stage instead.
+**If you cannot spawn a separate agent, stop here and say so.** Judging your own render is the
+failure this step exists to prevent, not a weaker version of it. The common case: agents running
+inside a `Workflow` have no `Agent` tool, so the orchestrator must run the judge as its own stage
+instead.
 
 ## 3. Fix loop
 

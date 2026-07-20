@@ -8,19 +8,17 @@ disable-model-invocation: true
 
 Install the **Terse** output style — answer-first ordering, hard caps on prose,
 zero filler — so every Claude Code session in the project defaults to concise
-output. The template ships **inside this skill** at `output-styles/terse.md`
-(colocated next to this `SKILL.md`), so it works in any project the skill is
-installed into, with no dependency on the argo monorepo.
+output.
 
 This is a Claude Code feature; other agents (Codex, Cursor) ignore
 `.claude/output-styles/` — their conciseness comes from AGENTS.md instructions.
 
 ## 1. Copy the style
 
-Copy `<this-skill-dir>/output-styles/terse.md` to `.claude/output-styles/terse.md`
-at the project root (create the directory). Copy verbatim — the style is
-project-agnostic by design; project-specific instructions belong in
-CLAUDE.md/AGENTS.md, never in the style file.
+Copy `<this-skill-dir>/output-styles/terse.md` (colocated next to this `SKILL.md`)
+to `.claude/output-styles/terse.md` at the project root (create the directory).
+Copy verbatim — project-specific instructions belong in CLAUDE.md/AGENTS.md, not
+the style file.
 
 ## 2. Set it as the default
 

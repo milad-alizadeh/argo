@@ -9,9 +9,8 @@ disable-model-invocation: true
 Materialize the Argo rule templates into the current project as house rules, adapted
 to *this* repo's actual structure, and wire them so agents load them. The templates
 ship **inside this skill** at `rules/` (colocated next to this `SKILL.md`) — generic
-versions carrying `{{PLACEHOLDER}}` tokens. Because they travel with the skill, this
-works in any project the skill is installed into, with no dependency on the argo
-monorepo. This skill's job is to copy, substitute, trim, and wire.
+versions carrying `{{PLACEHOLDER}}` tokens. This skill's job is to copy, substitute,
+trim, and wire.
 
 **Golden rule: adapt, don't dump.** A rule that references a path or tool the project
 doesn't have is bloat — it's an instruction the agent can't act on. Every path in the
@@ -42,7 +41,7 @@ actually exists.
 
 ## 2. Detect the project's structure
 
-Discover the concrete values before substituting. Look, don't assume:
+Discover the concrete values before substituting — read each off the repo, never assume it:
 
 - **Package manager** — read the root `package.json` (`packageManager` field) and which
   lockfile exists (`bun.lock`, `pnpm-lock.yaml`, `package-lock.json`).

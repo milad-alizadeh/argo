@@ -19,13 +19,11 @@ conflicts.
   worktrees** (`git-dir != git-common-dir`), so feature branches never churn the graph or fight
   over it on merge.
 - **Named deterministically — no LLM, no namer, no `Community N`.** `graphify update` names every
-  community from its **dominant node** (verified: a brand-new community gets a real name like
-  `net.py`, never a numeric placeholder). No API key, no backend, no background job, no agent
-  coupling. Thematic LLM names (`graphify label`) are an **occasional manual polish only** — inside
-  Claude Code, `graphify label --backend claude-cli` runs through the local `claude` CLI with **no
-  API key**. Never automate it: every `label` re-clusters and drops a dated backup dir (churn), its
-  wording drifts run-to-run, and it can misread a community from node ids alone — always eyeball the
-  result.
+  community from its **dominant node** — a brand-new community gets a real name like `net.py`, never
+  a numeric placeholder — with no API key, no backend, no agent coupling. Thematic LLM names
+  (`graphify label`, or `--backend claude-cli` inside Claude Code for a keyless local run) are an
+  **occasional manual polish only** — never automate them: each run re-clusters, drops a dated backup
+  dir, and drifts wording, so always eyeball the result.
 - **Code-only.** A `.graphifyignore` keeps markdown (plans, ADRs, skills, docs) out of the graph,
   so queries stay about code.
 - **Conflict-free.** graphify's **union merge driver** auto-merges `graph.json`, so parallel
@@ -33,9 +31,10 @@ conflicts.
 
 No post-commit hook, no SessionStart hook, nothing agent-specific in the refresh path.
 
-## 1. Install / upgrade graphify (>=0.9.15 required)
+## 1. Install / upgrade graphify (>=0.9.15)
 
->=0.9.15 is where `update` stopped stripping community names back to numeric IDs. Install latest:
+Install latest (>=0.9.15 is where `update` keeps community names instead of stripping them to
+numeric IDs):
 
 ```bash
 uv tool install graphifyy        # or: uv tool upgrade graphifyy
@@ -81,7 +80,7 @@ skills, rules, docs, or tooling. This is the **update-safe** lever: `--code-only
 ignored by `update` (which re-adds the excluded files on the next commit), but both `extract` and
 `update` honor `.graphifyignore`.
 
-Look, don't assume — keep an ignore line only for a dir that exists here:
+Keep an ignore line only for a dir that exists here:
 
 - **Always** `*.md` (plans, ADRs, instruction files `CLAUDE.md`/`AGENTS.md`, skill/rule prose).
 - **Agent / editor / CI config present** — `.claude/`, `.codex/`, `.cursor/`, `.husky/`,
@@ -95,9 +94,8 @@ into the graph.
 ## 5. Wire the union merge driver
 
 `graphify merge-driver` is graphify's built-in union merge for `graph.json`. `graphify hook install`
-would register it (git config + `.gitattributes`) for you — but §3 skips hook install (its
-post-commit refresh is dead under husky), and that installer bundles the driver with those dead
-hooks, so wire the driver standalone instead.
+would register it (git config + `.gitattributes`), but §3 skips that installer (it bundles the
+driver with the dead post-commit hooks), so wire the driver standalone instead.
 
 Copy the `graphify-out/graph.json merge=graphify` line into `.gitattributes` (committed), and set
 the driver in each clone's git config (setup does this; the git-config half doesn't travel with the
@@ -117,8 +115,7 @@ graphify-out/cache/     # internal rebuild cache — regenerable, would churn ev
 ```
 
 Commit everything else in `graphify-out/` — `graph.json`, `graph.html`, `GRAPH_REPORT.md`,
-`manifest.json`, `.graphify_labels.json`. (`update` creates no dated backup dirs — those only
-come from `graphify label`, which we never run automatically.)
+`manifest.json`, `.graphify_labels.json`. (`update` creates no dated backup dirs to exclude.)
 
 ## 7. Seed the graph once, then commit
 
