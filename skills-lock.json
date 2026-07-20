@@ -119,7 +119,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/implement-fanout/SKILL.md",
-      "computedHash": "5b60f05034704e8ba209a95b330151d16b9e8acef3091bea937f094cfb5d5cab"
+      "computedHash": "ccc0eb020e355a7f4e6af3ce2cfd4cf7da76ba0c6e33d1b6eee82094d0bac8d6"
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",

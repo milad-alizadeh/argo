@@ -1,6 +1,6 @@
 {
   ".lintstagedrc.json": {
-    "mtime": 1784482716.3244317,
+    "mtime": 1784503231.0867653,
     "ast_hash": "4e6f5270fb6111009a3e3900bf0c1c58",
     "semantic_hash": ""
   },
@@ -10,13 +10,13 @@
     "semantic_hash": "1862d54d6e075bd3047a07eba7420d61"
   },
   "apps/desktop/.storybook/main.ts": {
-    "mtime": 1784461723.7357347,
-    "ast_hash": "fb02d12ec0e8fc0c10d5d0b99482036a",
-    "semantic_hash": "fb02d12ec0e8fc0c10d5d0b99482036a"
+    "mtime": 1784544913.200154,
+    "ast_hash": "1353a16eac74e03abbd5a56124000bff",
+    "semantic_hash": ""
   },
   "apps/desktop/.storybook/preview.tsx": {
-    "mtime": 1784477986.4378996,
-    "ast_hash": "aa02b6353c5a158d60a1944d2e3df54d",
+    "mtime": 1784556915.9717867,
+    "ast_hash": "fefbc3c798a89b40863469fd55d47fec",
     "semantic_hash": ""
   },
   "apps/desktop/.vscode/extensions.json": {
@@ -45,12 +45,12 @@
     "semantic_hash": "23243b6337ba7b27619f46d6df710931"
   },
   "apps/desktop/electron.vite.config.ts": {
-    "mtime": 1784461723.7393143,
-    "ast_hash": "0a8b6d5b7f74e987e0853967d9285aec",
-    "semantic_hash": "0a8b6d5b7f74e987e0853967d9285aec"
+    "mtime": 1784544913.200998,
+    "ast_hash": "d8eea1d68c825792aabcb795538b808b",
+    "semantic_hash": ""
   },
   "apps/desktop/package.json": {
-    "mtime": 1784477236.3323205,
+    "mtime": 1784503231.087728,
     "ast_hash": "5be0623ec9f4db0cb8b40c8e3f72da35",
     "semantic_hash": ""
   },
@@ -60,33 +60,33 @@
     "semantic_hash": "9494c84e3b8c7cd0385513051b42f132"
   },
   "apps/desktop/src/main/index.ts": {
-    "mtime": 1784477469.905936,
+    "mtime": 1784503231.08839,
     "ast_hash": "960fbabdad7f0dbd5627a0fb2fa16a53",
     "semantic_hash": ""
   },
   "apps/desktop/src/preload/index.d.ts": {
-    "mtime": 1784477230.4050195,
+    "mtime": 1784503231.0886838,
     "ast_hash": "0b19507be0a5e17371ae07ad4349960b",
     "semantic_hash": ""
   },
   "apps/desktop/src/preload/index.ts": {
-    "mtime": 1784477322.0667703,
+    "mtime": 1784503231.088833,
     "ast_hash": "68d580df215fac7d464be86c97823f8e",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/App.tsx": {
-    "mtime": 1784477257.5657449,
+    "mtime": 1784503231.088984,
     "ast_hash": "ebb5c08225cc217dc2542bb14e57f9c7",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/ui/button.stories.tsx": {
-    "mtime": 1784477999.9799697,
-    "ast_hash": "d0347167199ef4101883042bba2d320f",
+    "mtime": 1784556915.992877,
+    "ast_hash": "0a9d951cc394e8a37e67ed1b17de63f1",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/ui/button.tsx": {
-    "mtime": 1784486118.5046759,
-    "ast_hash": "4ef88bb686319e957d99646e4de7a39e",
+    "mtime": 1784556915.9931564,
+    "ast_hash": "bc85abb593224537cab5b49e06023466",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/env.d.ts": {
@@ -95,14 +95,14 @@
     "semantic_hash": "0352474ba2918efe13895edbc3780d94"
   },
   "apps/desktop/src/renderer/src/lib/utils.test.ts": {
-    "mtime": 1784461723.7420912,
-    "ast_hash": "8181bf066f91435a36b804bef905a8ea",
-    "semantic_hash": "8181bf066f91435a36b804bef905a8ea"
+    "mtime": 1784544913.2082717,
+    "ast_hash": "ff1f50fb8ef12424d51320785acf4918",
+    "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/lib/utils.ts": {
-    "mtime": 1784461723.7422404,
-    "ast_hash": "2d2388e5c692c47ba33513d486e337a9",
-    "semantic_hash": "2d2388e5c692c47ba33513d486e337a9"
+    "mtime": 1784515846.2894466,
+    "ast_hash": "10643bc7ec93f09218c63e3036d80659",
+    "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/main.tsx": {
     "mtime": 1784461723.7423956,
@@ -115,19 +115,19 @@
     "semantic_hash": "3b1035e94d93208f4211ff93008678ce"
   },
   "apps/desktop/tsconfig.node.json": {
-    "mtime": 1784477214.2963934,
+    "mtime": 1784503231.092063,
     "ast_hash": "a932acd8e98c114d8a326b8ecda7c08d",
     "semantic_hash": ""
   },
   "apps/desktop/tsconfig.web.json": {
-    "mtime": 1784477215.0645173,
-    "ast_hash": "3d3096f6b2de2f8f5f88313d04011df3",
+    "mtime": 1784544913.2143176,
+    "ast_hash": "c7bdbf03bdffefe925f2e51d43c1307e",
     "semantic_hash": ""
   },
   "apps/desktop/vitest.config.ts": {
-    "mtime": 1784461723.7434235,
-    "ast_hash": "e06a15af784ba9f8a0edd801c75abf5f",
-    "semantic_hash": "e06a15af784ba9f8a0edd801c75abf5f"
+    "mtime": 1784556915.9970498,
+    "ast_hash": "6806dc2ea8b7fcfdc525518490786f4b",
+    "semantic_hash": ""
   },
   "apps/desktop/vitest.shims.d.ts": {
     "mtime": 1784461723.7435896,
@@ -135,8 +135,8 @@
     "semantic_hash": "651a08814b4b81cb8496b175118545fb"
   },
   "package.json": {
-    "mtime": 1784481043.7179139,
-    "ast_hash": "3b7fdd27dd8b907e8a97338c2e99c717",
+    "mtime": 1784543903.7114706,
+    "ast_hash": "a019cb3fcc803d176a5a0225ad8960d1",
     "semantic_hash": ""
   },
   "turbo.json": {
@@ -160,118 +160,703 @@
     "semantic_hash": ""
   },
   "biome.json": {
-    "mtime": 1784479374.3465698,
+    "mtime": 1784503231.0923736,
     "ast_hash": "2e133d8cb2d037cea6e7fe58cb7b711e",
     "semantic_hash": ""
   },
   "apps/desktop/e2e/rail.spec.ts": {
-    "mtime": 1784478344.3809233,
-    "ast_hash": "56bbd2175778a4a41d9d87770b50efab",
+    "mtime": 1784544913.2006261,
+    "ast_hash": "86836e19bfdb9c8ab508858396455fda",
     "semantic_hash": ""
   },
   "apps/desktop/src/main/demoSeed.ts": {
-    "mtime": 1784477473.325369,
-    "ast_hash": "16308d19001ebd157ddb993f0c02b148",
+    "mtime": 1784544913.2020402,
+    "ast_hash": "82b77872969cfad80ae6a51330a37861",
     "semantic_hash": ""
   },
   "apps/desktop/src/main/hub.test.ts": {
-    "mtime": 1784477211.360275,
-    "ast_hash": "37dcab2678f87eca8dcdf6b4ee7108f9",
+    "mtime": 1784544913.20237,
+    "ast_hash": "995d578dad7fec1ca75be191462b2d9b",
     "semantic_hash": ""
   },
   "apps/desktop/src/main/hub.ts": {
-    "mtime": 1784477322.0668273,
+    "mtime": 1784503231.088248,
     "ast_hash": "91ea8c2fcf80ef8fdce9386e5143a028",
     "semantic_hash": ""
   },
   "apps/desktop/src/main/projectionBridge.ts": {
-    "mtime": 1784477220.6100557,
+    "mtime": 1784503231.0885296,
     "ast_hash": "474e4ec9dde1eea62facc5a6c3af1df9",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/EmptyRail.tsx": {
-    "mtime": 1784486125.6089265,
-    "ast_hash": "a3eec2d13cd3a9268150f035784d82f1",
+    "mtime": 1784556915.9736469,
+    "ast_hash": "606848b4f5e6c69ffeb6ad322b3e6d54",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/Rail.stories.tsx": {
-    "mtime": 1784478332.9462671,
-    "ast_hash": "162c66a564c2d8fff586ef5dabc1ae1d",
+    "mtime": 1784556915.9742138,
+    "ast_hash": "378a4e3051f7fb12ca1c2740d2b9e08c",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/Rail.tsx": {
-    "mtime": 1784486327.2518241,
-    "ast_hash": "db459c0b8fcde3abeda21b9e518b92cc",
+    "mtime": 1784556915.9745562,
+    "ast_hash": "8e9a66eb761dcac22f9fb066084f6364",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/SessionRow.tsx": {
-    "mtime": 1784488928.414473,
-    "ast_hash": "199710312288feaab7c8afab9999d8ba",
+    "mtime": 1784556915.9751718,
+    "ast_hash": "41c3024dc8d474b2946785e564da3d4f",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/rail/index.ts": {
-    "mtime": 1784477254.510624,
+    "mtime": 1784503231.089742,
     "ast_hash": "f9eed6e2274e3694a5de8653fe830f28",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/ui/StatusDot.stories.tsx": {
-    "mtime": 1784477995.99538,
-    "ast_hash": "b9ad733442e3c6573bf33c71676f1ece",
+    "mtime": 1784556915.9819405,
+    "ast_hash": "e2781911303278e7f02745e3e32a1524",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/ui/StatusDot.tsx": {
-    "mtime": 1784478264.126449,
-    "ast_hash": "69158edbf943f9fef953672a03ad0823",
+    "mtime": 1784556915.982232,
+    "ast_hash": "1069e4d55c55c39a02670816e64235bb",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/components/ui/index.ts": {
-    "mtime": 1784478361.7631392,
-    "ast_hash": "3662d713154898d5c1a3d53251442ea3",
+    "mtime": 1784548867.61491,
+    "ast_hash": "c4c0d46613e9a51beb606f6d161cf3ca",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/sessionStore.test.ts": {
-    "mtime": 1784477240.5772421,
-    "ast_hash": "456645609afc13c1a92f861278ded830",
+    "mtime": 1784544913.2085493,
+    "ast_hash": "5785a668c7e379d404b1619ec89ffc2f",
     "semantic_hash": ""
   },
   "apps/desktop/src/renderer/src/sessionStore.ts": {
-    "mtime": 1784477322.0704992,
-    "ast_hash": "2df112783fce097edf8d0c7adf684bf3",
+    "mtime": 1784544913.2088497,
+    "ast_hash": "f58b789cbab5d726dc7e26ac573d00bb",
     "semantic_hash": ""
   },
   "apps/desktop/src/shared/channels.ts": {
-    "mtime": 1784477171.366856,
+    "mtime": 1784503231.0915196,
     "ast_hash": "a781cbd1bbd7462b5ec2c4c38ec03a0f",
     "semantic_hash": ""
   },
   "apps/desktop/src/shared/index.ts": {
-    "mtime": 1784477322.0702498,
-    "ast_hash": "2e75fac7f1d0a8b6ce3ba38b7112cf07",
+    "mtime": 1784548867.6183145,
+    "ast_hash": "6e1221c4f3878a535f4596e6d0c81a70",
     "semantic_hash": ""
   },
   "apps/desktop/src/shared/projection.test.ts": {
-    "mtime": 1784477322.072727,
-    "ast_hash": "e7f200756adee9ad124c2e6a2e3a0559",
+    "mtime": 1784544913.2132714,
+    "ast_hash": "23316cb8bbd1e29a09a8de8894b9644b",
     "semantic_hash": ""
   },
   "apps/desktop/src/shared/projection.ts": {
-    "mtime": 1784477613.490656,
-    "ast_hash": "f2a20b1defbd504cf656de171be299c4",
+    "mtime": 1784544913.213646,
+    "ast_hash": "32a0aa056f15ad35f209223d50d93374",
     "semantic_hash": ""
   },
   "apps/desktop/.storybook/manager.ts": {
-    "mtime": 1784477991.2913616,
+    "mtime": 1784503231.0872507,
     "ast_hash": "3dcb7c10a7189a9f8dc853114749aa67",
     "semantic_hash": ""
   },
-  "apps/desktop/src/renderer/src/components/ui/sessionStatus.tsx": {
-    "mtime": 1784478447.7134242,
-    "ast_hash": "947d615e415d17aa3eccce17909835b8",
+  "skills-lock.json": {
+    "mtime": 1784559556.8478487,
+    "ast_hash": "36a7aa3be3e0422784be23b31f600c16",
     "semantic_hash": ""
   },
-  "skills-lock.json": {
-    "mtime": 1784487099.2356231,
-    "ast_hash": "f9c77ed5ad0868e9aaca0f27d074c736",
+  "apps/desktop/.storybook/vitest.setup.ts": {
+    "mtime": 1784556915.972038,
+    "ast_hash": "c7d9cec7d1bdefb77cc3938a2e865be3",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/EmptyRail.stories.tsx": {
+    "mtime": 1784556915.9731722,
+    "ast_hash": "071c1ff65993c4542ae6a8890ac66b94",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/SessionRow.stories.tsx": {
+    "mtime": 1784556915.9747663,
+    "ast_hash": "5b66d8edbc6ae10f61d6a930de6bb4ab",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/ContextGauge.stories.tsx": {
+    "mtime": 1784556915.978748,
+    "ast_hash": "ad7a927e4518bb9da9a4163eb1b45e22",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/ContextGauge.test.ts": {
+    "mtime": 1784515846.2845912,
+    "ast_hash": "56dfd266a5a7aa776ebb86e6fccd9eae",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/ContextGauge.tsx": {
+    "mtime": 1784556915.9791267,
+    "ast_hash": "75233f851bc6a135553eefeabceb183d",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/PaneSplitter.stories.tsx": {
+    "mtime": 1784556915.979564,
+    "ast_hash": "8305c34acb717fd14589e9d6a2b986ec",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/PaneSplitter.test.ts": {
+    "mtime": 1784543903.6991074,
+    "ast_hash": "68ee7f71360b2a1eb64a89c7ec34e08b",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/PaneSplitter.tsx": {
+    "mtime": 1784556915.9800713,
+    "ast_hash": "ea2fa91df5cac06f8369dd88c93ff424",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/SectionHeader.stories.tsx": {
+    "mtime": 1784556915.980382,
+    "ast_hash": "6bd5e1b3b408d5e72062bcbf858d28c8",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/SectionHeader.tsx": {
+    "mtime": 1784556915.9806492,
+    "ast_hash": "83df9fcd5e27b938dda812a11bf9d37e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/Status.stories.tsx": {
+    "mtime": 1784556915.9810946,
+    "ast_hash": "129c2b96acfd184d1d9333d6e5b61be3",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/Status.tsx": {
+    "mtime": 1784556915.9813545,
+    "ast_hash": "cca36ebe32ee570dc6554023752bbb2d",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/Text.stories.tsx": {
+    "mtime": 1784556915.9826577,
+    "ast_hash": "8886435e1e70b6356b121e0e115446f5",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/Text.tsx": {
+    "mtime": 1784556915.9829824,
+    "ast_hash": "97cf9062161252eb898ebbc8e0ffac11",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/badge.stories.tsx": {
+    "mtime": 1784556915.9922976,
+    "ast_hash": "4c8fc5ed85b0dfca6a3b3cd4fc0bdb86",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/badge.tsx": {
+    "mtime": 1784556915.9925907,
+    "ast_hash": "5e33653d686e7370b0b4fbf35f8cb4f0",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/findingState.test.ts": {
+    "mtime": 1784543903.7010148,
+    "ast_hash": "d987c29a0c325003bc20aa96d952d079",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/findingState.ts": {
+    "mtime": 1784543903.7012532,
+    "ast_hash": "ef10b1e3fdf279331c2a00702e4b2dd0",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/ArrowBendDownRightIcon.tsx": {
+    "mtime": 1784513584.4785376,
+    "ast_hash": "40f8987a9b55cc5c278142a6137adb8d",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/ArrowClockwiseIcon.tsx": {
+    "mtime": 1784513584.4790692,
+    "ast_hash": "801990e6ecbdcdfd8aca9f42507549e0",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/ArrowCounterClockwiseIcon.tsx": {
+    "mtime": 1784513584.4793491,
+    "ast_hash": "73e882e7b4a7141debe1e703e15f8206",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/ArrowLineUpIcon.tsx": {
+    "mtime": 1784513584.4794943,
+    "ast_hash": "23d36444a50188ae010ddca80af9d736",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/ArrowSquareOutIcon.tsx": {
+    "mtime": 1784513584.479644,
+    "ast_hash": "c67a660f09f7f85a6e512edf252fef54",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/ArrowsClockwiseIcon.tsx": {
+    "mtime": 1784513584.4798021,
+    "ast_hash": "7d9c54c0b909c78bf1e742dfd09bcb84",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/ArrowsMergeIcon.tsx": {
+    "mtime": 1784513584.4799385,
+    "ast_hash": "03f14f7a8f2d2b5c4cbf6dcdc1bfb6f9",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/BinocularsIcon.tsx": {
+    "mtime": 1784513584.4801857,
+    "ast_hash": "766c391313861bccf4c22e4e99e4039a",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/BugIcon.tsx": {
+    "mtime": 1784513584.4803286,
+    "ast_hash": "00c054f04deb2bf771ce34d2c7014ef6",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CaretDownIcon.tsx": {
+    "mtime": 1784513584.4805286,
+    "ast_hash": "2b5fdd42cef5217d9c5adad7c7ff16b3",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CaretLeftIcon.tsx": {
+    "mtime": 1784513584.4807196,
+    "ast_hash": "d733bc991cdfe8b11c1b5adb22e2867b",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CaretRightIcon.tsx": {
+    "mtime": 1784513584.4809399,
+    "ast_hash": "3297b0c6f044f69a48acbb9284a26c69",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CaretUpIcon.tsx": {
+    "mtime": 1784513584.4812033,
+    "ast_hash": "2f4693c7d584540fdd2614404fd0527e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CheckCircleIcon.tsx": {
+    "mtime": 1784513584.481574,
+    "ast_hash": "1c0a5af0ef596676a6b76f9410618a0e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CheckIcon.tsx": {
+    "mtime": 1784513584.4818165,
+    "ast_hash": "c95871ef339b9a788d2cceaecb637e55",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CheckSquareIcon.tsx": {
+    "mtime": 1784513584.48207,
+    "ast_hash": "3fc2014cdffd607db75a39bd5b713e26",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CircleHalfIcon.tsx": {
+    "mtime": 1784513584.4825904,
+    "ast_hash": "867dd2fbcd9b3b976d3f8674c1f6d86e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CircleIcon.tsx": {
+    "mtime": 1784513584.4827807,
+    "ast_hash": "1642161b73c728c538962bc10cc733d2",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/CircleNotchIcon.tsx": {
+    "mtime": 1784513584.4830132,
+    "ast_hash": "d76ebc71cf6221c5fc624bc2eb5d2ec7",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/FileMinusIcon.tsx": {
+    "mtime": 1784513584.4832706,
+    "ast_hash": "a0aefe67480be5abe911118657d9b7fb",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/FilePlusIcon.tsx": {
+    "mtime": 1784513584.4835362,
+    "ast_hash": "0da969f22e4ec2e1bed655db8285f3b9",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/FileTextIcon.tsx": {
+    "mtime": 1784513584.4837637,
+    "ast_hash": "21c7bbdd6fb811ca5a7fe3b5b2fc3954",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/FlagIcon.tsx": {
+    "mtime": 1784513584.4840138,
+    "ast_hash": "a79a138ca1c48e4af2c84068b67a3ded",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/GearIcon.tsx": {
+    "mtime": 1784513584.4843822,
+    "ast_hash": "e7aa5cd4aa87667a656290fa17054e07",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/GitBranchIcon.tsx": {
+    "mtime": 1784513584.484713,
+    "ast_hash": "f02c697f68f791fea454136dd4498844",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/GitCommitIcon.tsx": {
+    "mtime": 1784513584.4849253,
+    "ast_hash": "a406bdfa6c41cd97b6316cc912aa9e55",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/GitDiffIcon.tsx": {
+    "mtime": 1784513584.485172,
+    "ast_hash": "eed898357bf1551228dc2e4120a223ac",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/GitMergeIcon.tsx": {
+    "mtime": 1784513584.4853885,
+    "ast_hash": "478a3424c3a8454362e6cf0f81125b84",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/GitPullRequestIcon.tsx": {
+    "mtime": 1784513584.485609,
+    "ast_hash": "7d14fc98c6865ce221c69db722cc3e8c",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/MagnifyingGlassIcon.tsx": {
+    "mtime": 1784513584.4862998,
+    "ast_hash": "65ec0ba87dcb79dea78e302c1fd6d927",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/NotebookIcon.tsx": {
+    "mtime": 1784513584.4866061,
+    "ast_hash": "831e3ad017ff53b72b3fc7e96fe34612",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/PencilSimpleIcon.tsx": {
+    "mtime": 1784513584.4868624,
+    "ast_hash": "2d41892588ed78da01b729f9e1c5ed05",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/PlusIcon.tsx": {
+    "mtime": 1784513584.487118,
+    "ast_hash": "07af73639333ef4e3d9efebbc6bfe0bf",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/ProhibitIcon.tsx": {
+    "mtime": 1784513584.48745,
+    "ast_hash": "576ea3194fe2505fb2b2844a5eb45e5c",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/SidebarSimpleIcon.tsx": {
+    "mtime": 1784513584.487667,
+    "ast_hash": "2cdd0d11285c5b659d6d4c82b1b70736",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/SparkleIcon.tsx": {
+    "mtime": 1784513584.4879026,
+    "ast_hash": "d2d1e64dc5abec476aec438be2cf8e30",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/StatusIcon.stories.tsx": {
+    "mtime": 1784556915.9935713,
+    "ast_hash": "4c2071bed4079dcb6d346f6e4cadbd98",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/StatusIcon.tsx": {
+    "mtime": 1784548867.613991,
+    "ast_hash": "590bbba1cf702629bb04481d68caaedc",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/TerminalWindowIcon.tsx": {
+    "mtime": 1784513584.4885511,
+    "ast_hash": "6bf4920750710a797592c26941e29ad0",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/TreeStructureIcon.tsx": {
+    "mtime": 1784513584.4887333,
+    "ast_hash": "88f814bf02dfe627fad107981c9add57",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/UserIcon.tsx": {
+    "mtime": 1784513584.4889603,
+    "ast_hash": "6a4cf1fe6534efba8bb781ca710b2e58",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/WarningIcon.tsx": {
+    "mtime": 1784513584.4893067,
+    "ast_hash": "9de10e30d56249d14c0df7b546c696a8",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/WaveSineIcon.tsx": {
+    "mtime": 1784513584.4897645,
+    "ast_hash": "3d5769ca224ed9ea84b3bff512acbb2e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/XIcon.tsx": {
+    "mtime": 1784513584.490095,
+    "ast_hash": "e0ab5af9c9f3964afd026cd9871a2184",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/createIcon.tsx": {
+    "mtime": 1784513584.4903953,
+    "ast_hash": "482684fb62b520e3a0954bb869215b68",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/icons.stories.tsx": {
+    "mtime": 1784556915.9966788,
+    "ast_hash": "bd441ec9f971b0bdbfa66f534e854e82",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/index.ts": {
+    "mtime": 1784548867.614461,
+    "ast_hash": "b197e66b61ba4339fb2ecd9501e120dc",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/railIcon.ts": {
+    "mtime": 1784544913.207061,
+    "ast_hash": "f7fd6956d428fd2844edce26069566fc",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/ship/index.ts": {
+    "mtime": 1784548867.6153138,
+    "ast_hash": "4dd8477c97c84081ee63d7017bc8d41e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/ship/railStatus.test.ts": {
+    "mtime": 1784544913.2096055,
+    "ast_hash": "63a98491e4c0a46ff37082de4d9c960f",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/ship/railStatus.ts": {
+    "mtime": 1784548867.6158605,
+    "ast_hash": "a693c9243945680e99ec579415a9b9f9",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/ship/shipState.ts": {
+    "mtime": 1784548867.6161318,
+    "ast_hash": "4acf5a728c6a7d00a02f56e5f0f84945",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/ship/stateMatrix.test.ts": {
+    "mtime": 1784544913.2113605,
+    "ast_hash": "62bc779dcfdd1c8ed8f1c217e733efb7",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/styles/toneSafelist.test.ts": {
+    "mtime": 1784548867.6180155,
+    "ast_hash": "5e92b273ed921cd1f8b07df634a703f8",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/shared/ribbonModel.test.ts": {
+    "mtime": 1784548867.6187716,
+    "ast_hash": "9f8d16dcd20c96e9f267af01ba404d51",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/shared/ribbonModel.ts": {
+    "mtime": 1784548867.619078,
+    "ast_hash": "dcb618cba0099c9e1c33dd4aff0b59e4",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/shared/sessionFacts.ts": {
+    "mtime": 1784544913.214017,
+    "ast_hash": "19d9d08ec1e2879cdd822eab4a77fa75",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/__screenshots__/EmptyRail.stories.tsx/cockpit-emptyrail-default-chromium-linux.png": {
+    "mtime": 1784556915.9754975,
+    "ast_hash": "7c9d1bc39aa65ddb6b294ed9b6dfd9a5",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/__screenshots__/Rail.stories.tsx/cockpit-rail-empty-chromium-linux.png": {
+    "mtime": 1784556915.9758296,
+    "ast_hash": "56516ed5e1791d36e305620e1664e517",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/__screenshots__/Rail.stories.tsx/cockpit-rail-every-state-chromium-linux.png": {
+    "mtime": 1784556915.9768183,
+    "ast_hash": "743ed6425152ed5345f621c7fdc4a70f",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/__screenshots__/Rail.stories.tsx/cockpit-rail-ship-states-chromium-linux.png": {
+    "mtime": 1784556915.97723,
+    "ast_hash": "20a748eb32548e660a9921a905bd0b77",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/__screenshots__/Rail.stories.tsx/cockpit-rail-single-session-chromium-linux.png": {
+    "mtime": 1784556915.9774818,
+    "ast_hash": "c4ec19e3089d603c519a56bfd716e0d7",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/__screenshots__/SessionRow.stories.tsx/cockpit-sessionrow-default-chromium-linux.png": {
+    "mtime": 1784556915.9777915,
+    "ast_hash": "b66d21980523dd076b9720b2384d3377",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/rail/__screenshots__/SessionRow.stories.tsx/cockpit-sessionrow-every-state-chromium-linux.png": {
+    "mtime": 1784556915.9783661,
+    "ast_hash": "6e80756a048b7f152575bbe020a1f7d5",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/ContextGauge.stories.tsx/cockpit-contextgauge-default-chromium-linux.png": {
+    "mtime": 1784556915.9833138,
+    "ast_hash": "8af100707429cebc8b39ef4d71524ba5",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/PaneSplitter.stories.tsx/cockpit-panesplitter-all-orientations-chromium-linux.png": {
+    "mtime": 1784556915.9836574,
+    "ast_hash": "7121be38bd6ad45fbde9ca303c576f69",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/PaneSplitter.stories.tsx/cockpit-panesplitter-default-chromium-linux.png": {
+    "mtime": 1784556915.9840586,
+    "ast_hash": "fedede7920590d49c7b3499b96c5972e",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/PaneSplitter.stories.tsx/cockpit-panesplitter-inverted-chromium-linux.png": {
+    "mtime": 1784556915.9842205,
+    "ast_hash": "4ba8a9a8576815c0f0a106276d6823cd",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/SectionHeader.stories.tsx/cockpit-sectionheader-default-chromium-linux.png": {
+    "mtime": 1784556915.9844265,
+    "ast_hash": "eadf4d12e084c474f0b5aef22cf4fa32",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/SectionHeader.stories.tsx/cockpit-sectionheader-without-count-chromium-linux.png": {
+    "mtime": 1784556915.9846199,
+    "ast_hash": "1aa81d55b3f296af6f3b620846f8a23d",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/Status.stories.tsx/cockpit-status-default-chromium-linux.png": {
+    "mtime": 1784556915.9849224,
+    "ast_hash": "48b1723a152e334871cd1365292ca795",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/Status.stories.tsx/cockpit-status-every-state-chromium-linux.png": {
+    "mtime": 1784556915.9852016,
+    "ast_hash": "9cdd1cabd1a004e31f45b282618be686",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/Status.stories.tsx/cockpit-status-pulsing-chromium-linux.png": {
+    "mtime": 1784556915.985434,
+    "ast_hash": "716127559e36c664a11a219c0b53c118",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/StatusDot.stories.tsx/cockpit-statusdot-all-tones-chromium-linux.png": {
+    "mtime": 1784556915.986242,
+    "ast_hash": "34c6b1a25148cabd07178f698f2d5e65",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/StatusDot.stories.tsx/cockpit-statusdot-default-chromium-linux.png": {
+    "mtime": 1784556915.9864783,
+    "ast_hash": "407f79dd5fc0df83d37653442b79b7d3",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/StatusDot.stories.tsx/cockpit-statusdot-labelled-chromium-linux.png": {
+    "mtime": 1784556915.986969,
+    "ast_hash": "0d7d2ee175cccf088e856955a31d1123",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/StatusDot.stories.tsx/cockpit-statusdot-pulsing-chromium-linux.png": {
+    "mtime": 1784556915.9871418,
+    "ast_hash": "c52b0a78514af16688a0f3490a373db7",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/Text.stories.tsx/cockpit-text-all-variants-chromium-linux.png": {
+    "mtime": 1784556915.9878697,
+    "ast_hash": "267fcd9369f4345e3e9df48b01dc6a01",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/Text.stories.tsx/cockpit-text-coloured-chromium-linux.png": {
+    "mtime": 1784556915.9880743,
+    "ast_hash": "8e1bad4178b580503895a160de74aef1",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/Text.stories.tsx/cockpit-text-default-chromium-linux.png": {
+    "mtime": 1784556915.9882321,
+    "ast_hash": "257658b77ce898a61e9f3b6e8d9746e7",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/badge.stories.tsx/cockpit-badge-all-variants-chromium-linux.png": {
+    "mtime": 1784556915.9886105,
+    "ast_hash": "dcfa6a2eb118d864c2ce4e498ba47239",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/badge.stories.tsx/cockpit-badge-as-child-chromium-linux.png": {
+    "mtime": 1784556915.9889333,
+    "ast_hash": "da6177ae53b8853f4d4ff9e857548a5d",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/badge.stories.tsx/cockpit-badge-default-chromium-linux.png": {
+    "mtime": 1784556915.9891853,
+    "ast_hash": "79b4e00d02c458e8c4865947f58bc18a",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/badge.stories.tsx/cockpit-badge-with-icon-chromium-linux.png": {
+    "mtime": 1784556915.9894261,
+    "ast_hash": "4f8bac2e720dd89c0bd60d3f0707e630",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/button.stories.tsx/ui-button-all-variants-chromium-linux.png": {
+    "mtime": 1784556915.9901946,
+    "ast_hash": "e7b491f4bd949f6db481a067a3fe5d43",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/button.stories.tsx/ui-button-as-child-chromium-linux.png": {
+    "mtime": 1784556915.9905865,
+    "ast_hash": "8c0fd289491a3dc3bded171620dd24c7",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/button.stories.tsx/ui-button-default-chromium-linux.png": {
+    "mtime": 1784556915.9908583,
+    "ast_hash": "a5f99855cec5e60a7878f341beafb913",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/button.stories.tsx/ui-button-disabled-chromium-linux.png": {
+    "mtime": 1784556915.9913645,
+    "ast_hash": "6fdf6be8dfd4b9f1307f12eec78c6445",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/__screenshots__/button.stories.tsx/ui-button-with-icon-chromium-linux.png": {
+    "mtime": 1784556915.9916215,
+    "ast_hash": "b22c2c12b013f60f15e45dedac57b1ff",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/StatusIcon.stories.tsx/cockpit-statusicon-all-icons-chromium-linux.png": {
+    "mtime": 1784556915.9939582,
+    "ast_hash": "d69b169bcc045eab38a86599b41c215a",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/StatusIcon.stories.tsx/cockpit-statusicon-default-chromium-linux.png": {
+    "mtime": 1784556915.9942956,
+    "ast_hash": "0d22ee230e261513132dcb343b68010a",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/icons.stories.tsx/cockpit-icon-all-glyphs-chromium-linux.png": {
+    "mtime": 1784556915.9949806,
+    "ast_hash": "db276d62f74d8250859f9b677a6b37b7",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/icons.stories.tsx/cockpit-icon-decorative-chromium-linux.png": {
+    "mtime": 1784556915.9952126,
+    "ast_hash": "11f610552fac4f12b75324205b13f5ff",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/icons.stories.tsx/cockpit-icon-default-chromium-linux.png": {
+    "mtime": 1784556915.9953413,
+    "ast_hash": "11f610552fac4f12b75324205b13f5ff",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/icons.stories.tsx/cockpit-icon-inline-with-text-chromium-linux.png": {
+    "mtime": 1784556915.995533,
+    "ast_hash": "cadc0bafc2c3f5674d7d9211399826a4",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/icons.stories.tsx/cockpit-icon-labelled-chromium-linux.png": {
+    "mtime": 1784556915.9957721,
+    "ast_hash": "11f610552fac4f12b75324205b13f5ff",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/icons.stories.tsx/cockpit-icon-sized-chromium-linux.png": {
+    "mtime": 1784556915.9960494,
+    "ast_hash": "572d9ae8ebf9f343bbb4b472aaecce6f",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/icons.stories.tsx/cockpit-icon-small-chromium-linux.png": {
+    "mtime": 1784556915.996203,
+    "ast_hash": "8af5179bc128ea9a9d1ba6af8b94f811",
+    "semantic_hash": ""
+  },
+  "apps/desktop/src/renderer/src/components/ui/icons/__screenshots__/icons.stories.tsx/cockpit-icon-tinted-chromium-linux.png": {
+    "mtime": 1784556915.996364,
+    "ast_hash": "4b78e7641fa21586f56e6e846086e095",
     "semantic_hash": ""
   }
 }
