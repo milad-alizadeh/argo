@@ -13,6 +13,7 @@ export { PANE_ORIENTATIONS, type PaneOrientation, PaneSplitter } from './PaneSpl
 export { SectionHeader } from './SectionHeader'
 export { Status } from './Status'
 export { StatusDot } from './StatusDot'
+export { StatusIcon } from './icons/StatusIcon'
 export {
   TEXT_ELEMENTS,
   Text,

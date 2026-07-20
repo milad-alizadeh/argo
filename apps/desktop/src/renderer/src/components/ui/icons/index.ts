@@ -35,7 +35,10 @@ export { PlusIcon } from './PlusIcon'
 export { ProhibitIcon } from './ProhibitIcon'
 export { SidebarSimpleIcon } from './SidebarSimpleIcon'
 export { SparkleIcon } from './SparkleIcon'
-export { StatusIcon } from './StatusIcon'
+// StatusIcon lives in this folder (it wraps RAIL_ICON) but is deliberately NOT re-exported
+// here: this barrel is the raw glyph set, and `icons.stories.tsx` renders every function it
+// exports as a bare IconAtom. StatusIcon needs `icon`/`tone` props, so it ships through the
+// `components/ui` barrel instead.
 export { TerminalWindowIcon } from './TerminalWindowIcon'
 export { TreeStructureIcon } from './TreeStructureIcon'
 export { UserIcon } from './UserIcon'
