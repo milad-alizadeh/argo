@@ -1,5 +1,7 @@
 # graphify: union-merge the committed graph so parallel commits never leave conflict markers.
-# Requires the local driver (setup-graphify wires it per clone):
+# `graphify merge-driver` is graphify's own built-in. `graphify hook install` would register it
+# (git config + this line) for you — but we skip hook install (its post-commit refresh is dead
+# under husky), so setup-graphify wires just the driver directly. The git-config half is per-clone:
 #   git config merge.graphify.name   "graphify union merge"
 #   git config merge.graphify.driver "graphify merge-driver %O %A %B"
 graphify-out/graph.json merge=graphify

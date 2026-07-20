@@ -123,13 +123,9 @@
 
   /* Rail tones — named for the TONE the ship derivation emits, not a lifecycle state,
    * because tone↔state is not 1:1 (the matrix keeps colour off the state deliberately).
-   * `mist` and `gray` share one grey by design: `done` and `queued` read identically in
-   * colour and only the word tells them apart. `landed` (Merged) is green pulled toward
-   * indigo so Landed ≠ CI-green (ADR-0009). `done` is the orphan: no RailTone resolves to
-   * it, so the `done` state renders `mist` (grey); kept as the palette's green (checks use
-   * it in the study) and so a future call to tint `done` green has the value ready. */
+   * Every tone resolves to a distinct value — none shares a token. `landed` (Merged) is
+   * green pulled toward indigo so Landed ≠ CI-green (ADR-0009). */
   --tone-run: var(--indigo-600);
-  --tone-mist: var(--gray-600);
   --tone-gray: var(--gray-600);
   --tone-amber: var(--amber-600);
   --tone-stale: var(--gray-500);
@@ -208,7 +204,6 @@
   --inset-hair: color-mix(in srgb, var(--gray-50) 6%, transparent);
 
   --tone-run: var(--indigo-500);
-  --tone-mist: var(--gray-400);
   --tone-gray: var(--gray-400);
   --tone-amber: var(--amber-500);
   --tone-stale: var(--gray-600);

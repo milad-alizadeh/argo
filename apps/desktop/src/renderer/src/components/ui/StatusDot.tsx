@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils'
 import type { RailTone } from '@/ship'
-import { STATUS_TONE } from './statusTone'
 
 // Atom: a state as a small coloured dot. It is silent unless `label` names it, because a
 // dot beside a visible word must not announce that word twice. A state shown with its word
@@ -21,7 +20,7 @@ export function StatusDot({
 }): React.JSX.Element {
   const dot = cn(
     'inline-block size-2 shrink-0 rounded-full bg-current glow',
-    STATUS_TONE[tone],
+    `text-tone-${tone}`,
     pulse && 'motion-safe:animate-pulse-status',
     className,
   )
