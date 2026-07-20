@@ -146,25 +146,25 @@ jobs:
           path: apps/desktop/test-results/
           retention-days: 7
 
-  # When the visual gate inside `stories` fails, this job waits on the `visual-baselines`
-  # environment — GitHub shows its native "Review deployments → Approve" button on the PR.
-  # On approval it regenerates the baselines in CI (Linux) and pushes them to the PR branch,
-  # which re-runs `stories` green. Create the environment with yourself as a required reviewer
-  # in Settings → Environments, or the job auto-approves and the gate is toothless.
-  approve-baselines:
-    name: approve visual baselines
+  # A brand-new story has no baseline, so `stories` reds the first time it sees one. There's
+  # nothing to review — the first render *is* the baseline — so generate and commit those
+  # automatically, no gate. An *existing* baseline that changed is real drift: never auto-push
+  # it, just flag it for `approve-baselines`. The PAT push re-runs `stories`.
+  auto-baseline:
+    name: baseline new stories
     needs: stories
     if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.stories.result == 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: visual-baselines
     permissions:
       contents: write
+    outputs:
+      has_drift: ${{ steps.commit.outputs.has_drift }}
     steps:
       - uses: actions/checkout@v5
         with:
-          # A PAT, not GITHUB_TOKEN: a commit pushed by GITHUB_TOKEN starts no new workflow run,
-          # so the `stories` gate would never re-run to clear its red X.
+          # A PAT, not GITHUB_TOKEN: a GITHUB_TOKEN push starts no new workflow run, so the
+          # `stories` gate would never re-run to clear its red X.
           token: ${{ secrets.VISUAL_APPROVE_TOKEN }}
           ref: ${{ github.head_ref }}
 
@@ -173,7 +173,54 @@ jobs:
       - name: Install Playwright Chromium
         run: bunx playwright install --with-deps chromium
 
-      # --update overwrites every baseline; unchanged stories re-render to identical bytes.
+      # --update writes every baseline: it creates the missing ones and overwrites drifted ones.
+      - name: Regenerate baselines
+        run: cd apps/desktop && bun run test:stories -- --update || true
+
+      - name: Commit new-story baselines, flag drift
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # A changed tracked baseline is drift → hand it to approve-baselines, don't touch it here.
+          if [ -n "$(git diff --name-only -- '*__screenshots__*')" ]; then
+            echo "has_drift=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_drift=false" >> "$GITHUB_OUTPUT"
+          fi
+          # An untracked baseline is a new story's first render → stage only these.
+          git ls-files --others --exclude-standard -z -- '*__screenshots__*' | xargs -0 -r git add --
+          if git diff --cached --quiet; then
+            echo "No new-story baselines to commit."
+            exit 0
+          fi
+          git commit -m "test(visual): baseline new stories"
+          git push origin "HEAD:${{ github.head_ref }}"
+
+  # Drift on an existing baseline is the one case a human must judge: is the pixel change
+  # intended? This job waits on the `visual-baselines` environment (GitHub's native "Review
+  # deployments → Approve"); on approval it regenerates every baseline and pushes, re-running
+  # `stories` green. Without the environment + a required reviewer the gate auto-approves.
+  approve-baselines:
+    name: approve visual baselines
+    needs: [stories, auto-baseline]
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.stories.result == 'failure' && needs.auto-baseline.outputs.has_drift == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: visual-baselines
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.VISUAL_APPROVE_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - uses: ./.github/actions/setup
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
       - name: Regenerate baselines
         run: cd apps/desktop && bun run test:stories -- --update
 
