@@ -1,6 +1,6 @@
 ---
 name: componentize-design
-description: Turn a settled HTML design study into properly componentized app code — settle its raw values into the token contract, extract a component inventory (atoms → molecules → organisms → screen), then scaffold each tier bottom-up with typed Views and all-props Storybook stories. Use when the user wants to build a design, componentize or settle a study, or transfer a design study HTML file into the app.
+description: Turn a settled HTML design study into properly componentized app code — settle its raw values into the token contract, extract a component inventory (atoms → molecules → organisms → screen), then scaffold each tier bottom-up with typed Views and Storybook stories that cover every prop. Use when the user wants to build a design, componentize or settle a study, or transfer a design study HTML file into the app.
 ---
 
 # Componentize Design
@@ -94,9 +94,12 @@ before its `composed-of` rows are done. For each row:
 1. The component, per the repo's `ui-components` + `design-system` rules: tokens
    only, one tier per file, interactive primitives wrap the project's headless-UI
    library, re-export from the UI barrel.
-2. Colocated `*.stories.tsx` covering **all props** — every enum variant, both
-   sides of each boolean, loading/empty/error states, edges — per the Storybook
-   section of the `ui-components` rule (when the project has Storybook).
+2. Colocated `*.stories.tsx` per the Storybook section of the `ui-components`
+   rule (when the project has Storybook): **every prop covered, but as an axis
+   rather than a story each** — a union gets one story plus a `select` control and
+   one gallery, a bounded number a range control, a boolean its non-default side.
+   Story only what this tier *adds*, never a prop it forwards to a child untouched,
+   and nest a single-owner part under its owner's title.
 3. Tick the row in the inventory before moving up a tier.
 
 The screen ships as container/View; only the **View** comes from the design — the
@@ -110,5 +113,5 @@ container wires real data later and is out of scope here.
 - Run the repo's lint and test commands (wrapped per the repo's tooling rules);
   if a design-token check script is installed, it must pass.
 
-A row is done only when: component + all-props stories + visual parity + green
-checks.
+A row is done only when: component + every prop covered by a story or a control +
+visual parity + green checks.

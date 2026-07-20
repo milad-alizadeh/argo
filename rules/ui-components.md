@@ -164,6 +164,40 @@ Pick the shape from what the prop is:
 - A gallery story is also the visual-diff surface: one screenshot covers the whole union.
 - Stories prove visual state only — they never replace the container's e2e wiring checks.
 
+### A parent stories only what it adds
+
+Tiers compose, so their props do too — and a parent that re-stories the props it merely
+forwards multiplies one axis by the depth of the tree. A four-tier console reached 26
+stories that way, telling `live` vs `capture` at every tier and the agent sparkle at three.
+
+**If a parent story differs from the base story only by a prop the parent passes through
+untouched, it belongs to the child — delete it.** What the parent stories is what
+composition creates and nothing below it can show:
+
+- which child renders, and the switch between them
+- focus, keyboard and `aria-controls` wiring that spans two children
+- layout under pressure — a long label has to give way somewhere
+- the parent's own state (`expanded`)
+
+A child's union is covered by the child's gallery; a pure helper's edges are covered by
+its unit test. Neither needs a second telling upstairs. Cover one axis at two tiers and
+both copies rot the day the child changes — the upstairs copy just fails later and
+further from the cause.
+
+### Nest a single-owner part under its owner
+
+A story's `title` places it in a catalog of things you compose *with*, not a flat dump of
+every file that exports a component.
+
+- **Top level** — primitives from `components/ui/`, and organisms a screen mounts.
+- **Nested under its owner** — a component with exactly one importer. It is that
+  organism's part, not its peer: `Cockpit/Console`, then `Cockpit/Console/ChannelTabs`,
+  `Cockpit/Console/ChannelTab`, `Cockpit/Console/Channel`.
+
+Four sibling `Cockpit/*` entries for one console claim four components exist where one
+does. Only the title changes — never the file or the export name. A part that grows a
+second importer moves up to the top level, and that title change *is* the promotion.
+
 ### The story file is also the docs page
 
 Autodocs are on globally (`tags: ['autodocs']` in `.storybook/preview.tsx`), so whatever a
