@@ -17,8 +17,10 @@ export function Status({
   pulse,
   className,
 }: {
-  /** The state's word, already derived. Callers read it off the ship vocabulary
-   * (`SESSION_STATUS` / `railStatus()`) — never a word typed at the call site. */
+  /** The state's word, already derived. A screen reads it off the ship vocabulary
+   * (`SESSION_STATUS` / `railStatus()`) — never a word typed at the call site. A molecule
+   * whose word is fixed by the design rather than by session state (NowLine's `live`)
+   * supplies its own. */
   word: string
   /** The tone that word carries, from the same derivation. */
   tone: RailTone
