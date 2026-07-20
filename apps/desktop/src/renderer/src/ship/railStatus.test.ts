@@ -1,6 +1,5 @@
 import { type SessionStatus, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { SESSION_STATES, SESSION_STATUS } from './railStatus'
 import { shipState } from './shipState'
 
 // The S-row table covers the ribbon-derived words; what is left is the fallback —
@@ -21,12 +20,6 @@ describe('railStatus fallback', () => {
       expect(shipState(sessionFacts({ status })).rail.word).toBe(word)
     })
   }
-
-  // The tuple is what every gallery iterates, so a seventh state added to the table
-  // (a compile error there) must not slip past the stories by being missing here.
-  it('lists every state the table grades', () => {
-    expect([...SESSION_STATES].sort()).toEqual(Object.keys(SESSION_STATUS).sort())
-  })
 
   it('falls back while a working agent owns the Commits node', () => {
     expect(shipState(sessionFacts({ dirty: 3, agent: 'working' })).rail.word).toBe('Running')

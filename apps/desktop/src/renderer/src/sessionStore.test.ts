@@ -1,4 +1,4 @@
-import { emptyState } from '@shared'
+import { emptyState, sessionFacts } from '@shared'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useSessionStore } from './sessionStore'
 
@@ -10,7 +10,7 @@ describe('useSessionStore', () => {
   it('appends a row for a session-added delta', () => {
     useSessionStore.getState().applyDelta({
       type: 'session-added',
-      session: { id: 'a', title: 'A', cli: 'claude', status: 'running' },
+      session: { id: 'a', title: 'A', cli: 'claude', facts: sessionFacts() },
     })
     expect(useSessionStore.getState().sessions.map((s) => s.id)).toEqual(['a'])
   })
@@ -18,11 +18,20 @@ describe('useSessionStore', () => {
   it('replaces all rows for a snapshot delta', () => {
     useSessionStore.getState().applyDelta({
       type: 'session-added',
-      session: { id: 'stale', title: 'stale', cli: 'claude', status: 'queued' },
+      session: {
+        id: 'stale',
+        title: 'stale',
+        cli: 'claude',
+        facts: sessionFacts({ status: 'queued' }),
+      },
     })
     useSessionStore.getState().applyDelta({
       type: 'snapshot',
-      state: { sessions: [{ id: 'fresh', title: 'Fresh', cli: 'codex', status: 'queued' }] },
+      state: {
+        sessions: [
+          { id: 'fresh', title: 'Fresh', cli: 'codex', facts: sessionFacts({ status: 'queued' }) },
+        ],
+      },
     })
     expect(useSessionStore.getState().sessions.map((s) => s.id)).toEqual(['fresh'])
   })

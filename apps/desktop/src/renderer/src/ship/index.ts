@@ -9,7 +9,6 @@ export {
   type RailIcon,
   type RailStatus,
   type RailTone,
-  SESSION_STATES,
   SESSION_STATUS,
 } from './railStatus'
 export {

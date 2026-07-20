@@ -28,17 +28,6 @@ export interface RailStatus {
   icon: RailIcon
 }
 
-// The order the cockpit shows the lifecycle in, and the list every gallery iterates.
-// `railStatus.test.ts` holds it to the table so a seventh state cannot ship uncovered.
-export const SESSION_STATES = [
-  'running',
-  'needs-input',
-  'done',
-  'failed',
-  'queued',
-  'orphaned',
-] as const satisfies readonly SessionStatus[]
-
 export const SESSION_STATUS: Record<SessionStatus, RailStatus> = {
   running: { word: 'Running', tone: 'run', icon: 'circle-notch' },
   'needs-input': { word: 'Needs input', tone: 'amber', icon: 'warning' },

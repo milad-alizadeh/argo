@@ -6,7 +6,7 @@
   "modules": [
     {
       "name": "shared",
-      "comment": "Cross-process contract: the Session state union, the ship facts main observes, the event vocabulary, projected-state types, IPC channel names, and the pure projection reducer. Types-and-pure-functions only — imported by all three processes (renderer files reach it through the `@shared` alias), imports none of them.",
+      "comment": "Cross-process contract: the Session state list and the union derived from it, the ship facts main observes, the event vocabulary, projected-state types, IPC channel names, and the pure projection reducer. Types, frozen constants and pure functions only — no I/O, no framework. `SessionView` carries facts, never a rendered state, so grading stays on the renderer's side of the bridge. Imported by all three processes (renderer files reach it through the `@shared` alias), imports none of them.",
       "path": "^src/shared/",
       "publicEntry": ["^src/shared/index\\.ts$"]
     },
@@ -30,7 +30,7 @@
     },
     {
       "name": "ship",
-      "comment": "Pure ship-flow derivation inside the renderer: the contract's session facts → ribbon nodes, head, terminal, and the rail status word (cockpit-matrix.md R16). No React, no I/O — it declares no facts of its own. It owns the lifecycle vocabulary (word · tone · icon name per state) and Views consume it, and the derived model, through this barrel: never re-derived, never re-spelled.",
+      "comment": "Pure ship-flow derivation inside the renderer: the contract's session facts → ribbon nodes, head, terminal, and the rail status word (cockpit-matrix.md R16). No React, no I/O — it declares no facts of its own. It owns the lifecycle vocabulary (word · tone · icon name per state), and the rail row renders `shipState(facts).rail` through this barrel: never re-derived, never re-spelled.",
       "path": "^src/renderer/src/ship/",
       "publicEntry": ["^src/renderer/src/ship/index\\.ts$"]
     }

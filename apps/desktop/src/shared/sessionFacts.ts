@@ -3,10 +3,21 @@
 // They live in the contract because main is the only process that can observe them
 // (it runs git and gh — ADR-0004) and the renderer is a projection (ADR-0005).
 
+// Every state main can observe, in `cockpit-matrix.md` R16's rail-column order — the
+// domain's own ordering, which is why the list lives here and not beside a view. The
+// union derives from the tuple so a seventh state cannot reach one without the other.
+export const SESSION_STATES = [
+  'running',
+  'needs-input',
+  'done',
+  'failed',
+  'queued',
+  'orphaned',
+] as const
+
 // The one word for what state a Session is in, shared by both processes: `status` on
-// the facts main observes and on the `SessionView` it projects. Every state main can
-// observe is a member — the matrix's rail column.
-export type SessionStatus = 'running' | 'needs-input' | 'done' | 'failed' | 'queued' | 'orphaned'
+// the facts main observes, which the renderer grades into the row's word.
+export type SessionStatus = (typeof SESSION_STATES)[number]
 
 export type PrLifecycle = 'open' | 'merged' | 'closed'
 

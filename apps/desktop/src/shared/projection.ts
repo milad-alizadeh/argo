@@ -4,17 +4,19 @@
 // with zero interpretation. Both sides run the SAME pure code here so the two
 // copies can never drift.
 
-import type { SessionStatus } from './sessionFacts'
+import type { SessionFacts } from './sessionFacts'
 
 export type Cli = 'claude' | 'codex'
 
-// The rail-row view-model. Seam B will enrich this (honesty tiers, derived fields);
-// for the skeleton it is the whole Session shape.
+// The rail-row view-model. It carries the Session's identity and the FACTS main
+// observed — never a rendered state: the row's word, tone and icon are derived from
+// `facts` by the renderer's ship module, so no state crosses the bridge pre-graded.
+// Seam B will enrich this (honesty tiers, derived fields).
 export interface SessionView {
   id: string
   title: string
   cli: Cli
-  status: SessionStatus
+  facts: SessionFacts
 }
 
 // The event vocabulary the hub consumes (the Seam B → Seam A contract). One member

@@ -1,3 +1,4 @@
+import { sessionFacts } from '../shared'
 import type { Hub } from './hub'
 
 // Opt-in synthetic Session (gated on ARGO_SEED_DEMO) that visibly exercises the
@@ -10,7 +11,7 @@ export function seedDemoSession(hub: Hub): void {
       id: 'demo-claude-1',
       title: 'Refactor auth module',
       cli: 'claude',
-      status: 'running',
+      facts: sessionFacts({ status: 'running' }),
     },
   })
 }

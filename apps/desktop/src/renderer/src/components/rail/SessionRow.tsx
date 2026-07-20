@@ -1,14 +1,15 @@
 import { RAIL_ICON, STATUS_TONE, Status, Text } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import type { SessionView } from '@/sessionStore'
-import { SESSION_STATUS } from '@/ship'
+import { shipState } from '@/ship'
 
-// Organism: one Session as a flat inset card (the wireframe's `.srow`). The word, tone and
-// icon are all read off the ship vocabulary here — the atoms below take presentation only.
+// Organism: one Session as a flat inset card (the wireframe's `.srow`). The row's word,
+// tone and icon are derived from the facts main observed — the same `shipState` the ribbon
+// will render, so the two can never disagree — and the atoms below take presentation only.
 // The CLI sits on the meta line; richer per-row data (context %, tokens, elapsed) arrives
 // with later tickets.
 export function SessionRow({ session }: { session: SessionView }): React.JSX.Element {
-  const { word, tone, icon } = SESSION_STATUS[session.status]
+  const { word, tone, icon } = shipState(session.facts).rail
   const Icon = RAIL_ICON[icon]
   return (
     <li className="rounded-lg border border-inset-hair bg-inset px-3 py-2 transition-colors hover:bg-accent">
