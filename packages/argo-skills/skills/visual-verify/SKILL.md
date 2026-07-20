@@ -65,11 +65,8 @@ fundamental (wrong layout, missing states), open the PR as draft.
 ## 4. Evidence in the PR
 
 Pass or fail, the final screenshots go in the PR so the human reviews pixels, not just a
-diff. The GitHub API can't upload images into a PR body, and committing them to the branch
-drags them into `main` forever — so publish them under a throwaway ref instead: an orphan
-commit, reachable only by that ref, whose blobs resolve as raw URLs and never enter `main`.
-
-From the dir holding the PNGs (`$SHOTS`):
+diff. Don't commit them to the branch — that carries them into `main` on merge. Publish them
+under a throwaway ref instead, from the dir holding the PNGs (`$SHOTS`):
 
 ```sh
 slug=$(git rev-parse --abbrev-ref HEAD | tr '/' '-')
