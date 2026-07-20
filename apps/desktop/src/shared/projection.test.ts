@@ -25,7 +25,7 @@ const session = (over: Partial<SessionView> = {}): SessionView => ({
   id: 's1',
   title: 'Refactor auth module',
   cli: 'claude',
-  status: 'working',
+  status: 'running',
   ...over,
 })
 

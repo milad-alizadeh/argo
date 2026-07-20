@@ -1,5 +1,5 @@
 import type { SessionStatus } from '@/sessionStore'
-import { CheckCircleIcon, CircleIcon, CircleNotchIcon, type IconAtom, WarningIcon } from './icons'
+import { CheckIcon, CircleIcon, CircleNotchIcon, type IconAtom, WarningIcon, XIcon } from './icons'
 
 export type StatusTone = 'run' | 'amber' | 'mist' | 'gray' | 'red' | 'stale' | 'landed'
 
@@ -17,37 +17,29 @@ export const STATUS_TONE: Record<StatusTone, string> = {
 }
 
 // The cockpit's whole status vocabulary. A caller passes a state key and never a word, so
-// one state cannot be spelled two ways on two surfaces. A Session is Working; the Runs and
-// Agents inside it are Running / Queued / Done — different objects, so both words exist.
-export type StatusState =
-  | SessionStatus
-  | 'running'
-  | 'queued'
-  | 'done'
-  | 'failed'
-  | 'interrupted'
-  | 'orphaned'
-  | 'live'
+// one state cannot be spelled two ways on two surfaces. A Session's six states are the
+// contract's `SessionStatus`; the extra keys belong to the Runs and Agents inside it.
+export type StatusState = SessionStatus | 'interrupted' | 'live'
 
 export const STATUS_STATE: Record<StatusState, { word: string; tone: StatusTone }> = {
-  working: { word: 'Working', tone: 'run' },
-  idle: { word: 'Idle', tone: 'mist' },
-  'awaiting-input': { word: 'Awaiting input', tone: 'amber' },
-  exited: { word: 'Exited', tone: 'stale' },
   running: { word: 'Running', tone: 'run' },
-  queued: { word: 'Queued', tone: 'gray' },
+  'needs-input': { word: 'Needs input', tone: 'amber' },
   done: { word: 'Done', tone: 'mist' },
   failed: { word: 'Failed', tone: 'red' },
-  interrupted: { word: 'Interrupted', tone: 'amber' },
+  queued: { word: 'Queued', tone: 'gray' },
   orphaned: { word: 'Orphaned', tone: 'stale' },
+  interrupted: { word: 'Interrupted', tone: 'amber' },
   live: { word: 'live', tone: 'run' },
 }
 
-// The icon atom each Session lifecycle state wears — the only thing the Session-only view
-// of the vocabulary owns; its word and tone still come from STATUS_STATE.
+// The icon atom each Session state wears — the only thing the Session-only view of the
+// vocabulary owns; its word and tone still come from STATUS_STATE. Queued and orphaned
+// share the resting circle and are told apart by tone, as the matrix's rail column is.
 export const SESSION_ICON: Record<SessionStatus, IconAtom> = {
-  working: CircleNotchIcon,
-  idle: CircleIcon,
-  'awaiting-input': WarningIcon,
-  exited: CheckCircleIcon,
+  running: CircleNotchIcon,
+  'needs-input': WarningIcon,
+  done: CheckIcon,
+  failed: XIcon,
+  queued: CircleIcon,
+  orphaned: CircleIcon,
 }

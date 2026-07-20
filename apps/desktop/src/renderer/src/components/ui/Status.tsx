@@ -13,7 +13,7 @@ export function Status({
   className,
 }: {
   /** Which state to show. The word and its tone both come from the status vocabulary — a
-   * caller never spells a lifecycle word itself. */
+   * caller never spells the word itself. */
   state: StatusState
   /** Spend the screen's ONE animation budget on this row. At most one per render. */
   pulse?: boolean

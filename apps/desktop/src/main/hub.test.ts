@@ -4,7 +4,7 @@ import { createHub } from './hub'
 
 const created = (id: string): HubEvent => ({
   type: 'session-created',
-  session: { id, title: id, cli: 'claude', status: 'working' },
+  session: { id, title: id, cli: 'claude', status: 'running' },
 })
 
 describe('createHub', () => {

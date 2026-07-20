@@ -27,16 +27,16 @@ type Story = StoryObj<typeof meta>
 // is legible without colour. This is the bare-dot surface — wherever a word is shown
 // beside the state, the component is the Status molecule, not this.
 export const Default: Story = {
-  args: { status: 'working' },
+  args: { status: 'running' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('img', { name: 'Working' })).toBeInTheDocument()
+    await expect(within(canvasElement).getByRole('img', { name: 'Running' })).toBeInTheDocument()
   },
 }
 
 // `decorative` suppresses the accessible name when a visible word already labels the dot,
 // so screen readers don't hear the status twice.
 export const Decorative: Story = {
-  args: { status: 'working', decorative: true },
+  args: { status: 'running', decorative: true },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).queryByRole('img')).not.toBeInTheDocument()
   },

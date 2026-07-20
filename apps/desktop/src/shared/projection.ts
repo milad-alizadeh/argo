@@ -4,9 +4,9 @@
 // with zero interpretation. Both sides run the SAME pure code here so the two
 // copies can never drift.
 
-export type Cli = 'claude' | 'codex'
+import type { SessionStatus } from './sessionFacts'
 
-export type SessionStatus = 'working' | 'idle' | 'awaiting-input' | 'exited'
+export type Cli = 'claude' | 'codex'
 
 // The rail-row view-model. Seam B will enrich this (honesty tiers, derived fields);
 // for the skeleton it is the whole Session shape.

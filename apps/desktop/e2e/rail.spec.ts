@@ -33,6 +33,6 @@ test('projects a seeded Session into a rail row', async () => {
   const list = window.getByRole('list', { name: 'Sessions' })
   await expect(list.getByText('Refactor auth module')).toBeVisible()
   await expect(list.getByText('claude')).toBeVisible()
-  await expect(list.getByText('Working')).toBeVisible()
+  await expect(list.getByText('Running')).toBeVisible()
   await expect(window.getByText('No Sessions observed yet.')).toBeHidden()
 })

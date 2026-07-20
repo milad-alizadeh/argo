@@ -21,17 +21,17 @@ type Story = StoryObj<typeof meta>
 // dot is decorative: the visible word already names the state, so it must not be
 // announced twice.
 export const Default: Story = {
-  args: { state: 'working' },
+  args: { state: 'running' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Working')).toBeInTheDocument()
+    await expect(canvas.getByText('Running')).toBeInTheDocument()
     await expect(canvas.queryByRole('img')).not.toBeInTheDocument()
   },
 }
 
 // The screen's ONE animation budget, spent on the row that needs you.
 export const Pulsing: Story = {
-  args: { state: 'awaiting-input', pulse: true },
+  args: { state: 'needs-input', pulse: true },
   play: async ({ canvasElement }) => {
     const dot = canvasElement.querySelector('span > span')
     await expect(getComputedStyle(dot as Element).animationName).toBe('pulse-status')
@@ -40,7 +40,7 @@ export const Pulsing: Story = {
 
 // Every state in the vocabulary — the visual-diff surface for words, tones and glow.
 export const AllStates: Story = {
-  args: { state: 'working' },
+  args: { state: 'running' },
   render: () => (
     <div className="flex flex-col items-start gap-gap">
       {STATES.map((state) => (

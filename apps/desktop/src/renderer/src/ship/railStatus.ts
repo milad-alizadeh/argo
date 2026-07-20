@@ -1,5 +1,5 @@
+import type { SessionFacts, SessionStatus } from '@shared'
 import type { RibbonModel, RibbonNodeKey, RibbonNodeState, TerminalState } from './ribbonModel'
-import type { SessionFacts, SessionLifecycle } from './sessionFacts'
 
 // The rail row's word — a POINTER into the ribbon's head node, never a value of its
 // own. Tone is a name the row resolves to a `--status-*` token; no colour lives here.
@@ -26,7 +26,7 @@ export interface RailStatus {
   icon: RailIcon
 }
 
-const LIFECYCLE_STATUS: Record<SessionLifecycle, RailStatus> = {
+const SESSION_STATUS: Record<SessionStatus, RailStatus> = {
   running: { word: 'Running', tone: 'run', icon: 'circle-notch' },
   'needs-input': { word: 'Needs input', tone: 'amber', icon: 'warning' },
   done: { word: 'Done', tone: 'mist', icon: 'check' },
@@ -59,7 +59,7 @@ const HEAD_STATUS: Partial<
   'ci:now': (facts) =>
     facts.pr
       ? { word: `PR #${facts.pr.num} · CI`, tone: 'run', icon: 'git-pull-request' }
-      : LIFECYCLE_STATUS[facts.lifecycle],
+      : SESSION_STATUS[facts.status],
   'ci:fail': { word: 'CI failing', tone: 'amber', icon: 'warning' },
   'review:now': { word: 'In review', tone: 'run', icon: 'user' },
   'review:warn': { word: 'Changes requested', tone: 'amber', icon: 'user' },
@@ -70,10 +70,10 @@ const HEAD_STATUS: Partial<
 // Takes the model the ribbon is already rendering, so the row cannot be derived
 // from a second, differently-timed reading of the same facts.
 export function railStatus(facts: SessionFacts, model: RibbonModel | null): RailStatus {
-  if (!model) return LIFECYCLE_STATUS[facts.lifecycle]
+  if (!model) return SESSION_STATUS[facts.status]
   if (model.terminal) return TERMINAL_STATUS[model.terminal]
 
   const status = HEAD_STATUS[`${model.head}:${model.nodes[model.head]}`]
-  if (!status) return LIFECYCLE_STATUS[facts.lifecycle]
+  if (!status) return SESSION_STATUS[facts.status]
   return typeof status === 'function' ? status(facts) : status
 }

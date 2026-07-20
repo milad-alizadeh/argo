@@ -8,7 +8,7 @@ type StatusDotProps = {
   className?: string
 } & (
   | {
-      /** Key the dot off a Session's lifecycle; its accessible name becomes that status. */
+      /** Key the dot off a Session's status; its accessible name becomes that word. */
       status: SessionStatus
       /** Suppress the accessible name because a visible word already labels the dot. */
       decorative?: boolean
@@ -31,7 +31,7 @@ function toneAndLabel(props: StatusDotProps): { tone: StatusTone; label: string 
   return { tone, label: props.decorative ? undefined : word }
 }
 
-// Atom: a lifecycle state as a small coloured dot, keyed either by a Session's status
+// Atom: a state as a small coloured dot, keyed either by a Session's status
 // (accessible name = the status word) or by a raw cockpit `tone`, which is silent unless
 // given a `label`. A state shown with its word beside it is the Status molecule, not this.
 export function StatusDot(props: StatusDotProps): React.JSX.Element {

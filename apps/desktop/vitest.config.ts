@@ -18,7 +18,10 @@ export default defineConfig({
       {
         extends: true,
         resolve: {
-          alias: { '@': path.join(dirname, 'src/renderer/src') },
+          alias: {
+            '@': path.join(dirname, 'src/renderer/src'),
+            '@shared': path.join(dirname, 'src/shared/index.ts'),
+          },
         },
         test: {
           name: 'unit',

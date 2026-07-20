@@ -1,12 +1,12 @@
+import { type SessionStatus, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { type SessionLifecycle, sessionFacts } from './sessionFacts'
 import { shipState } from './shipState'
 
 // The S-row table covers the ribbon-derived words; what is left is the fallback —
 // a Session whose ribbon says nothing falls back to its own triage word.
 
 describe('railStatus fallback', () => {
-  const words: [SessionLifecycle, string][] = [
+  const words: [SessionStatus, string][] = [
     ['running', 'Running'],
     ['needs-input', 'Needs input'],
     ['done', 'Done'],
@@ -15,9 +15,9 @@ describe('railStatus fallback', () => {
     ['orphaned', 'Orphaned'],
   ]
 
-  for (const [lifecycle, word] of words) {
-    it(`speaks the Session's own word for a ribbonless ${lifecycle} session`, () => {
-      expect(shipState(sessionFacts({ lifecycle })).rail.word).toBe(word)
+  for (const [status, word] of words) {
+    it(`speaks the Session's own word for a ribbonless ${status} session`, () => {
+      expect(shipState(sessionFacts({ status })).rail.word).toBe(word)
     })
   }
 
