@@ -46,6 +46,13 @@ Read-only work (review, triage, Q&A) may stay in the main checkout. The rest of 
 — branch conventions, resuming an interrupted worktree, recovering a deleted one — live in
 the `implement` skill and apply to **all** implementation work, not just `/implement` runs.
 
+Landed worktrees are reaped by `bun run worktrees:gc` (`scripts/worktree-gc.sh`) — PRs merge
+on GitHub, so nothing local fires when work lands and worktrees otherwise accumulate. It
+removes only what is provably safe: PR merged (or branch merged into the default branch),
+working tree clean, nothing unpushed, and untouched for 30 minutes so a live session isn't
+pulled out from under it. Everything else is reported and left alone; `--dry-run` reports
+without removing.
+
 ## graphify
 
 This project has a knowledge graph at `graphify-out/` with god nodes, community

@@ -25,8 +25,8 @@ the code knowledge graph.
 |---|---|---|
 | `foundations.html` | The living token specimen — type roles, core ramps, semantic bindings (both themes) | **Non-disposable** — renders `tokens.css` directly, so it always shows the current contract |
 | `cockpit.html` | Single-session cockpit — **the final design** (v8 "ship ribbon") | Story\|Work panes · PR-lifecycle ribbon (Commits→PR→CI→Review→Merge) · Background Tasks roster (R15) · console channels. Settled 2026-07 from the five-lens UX audit; supersedes v7 |
-| `cockpit-matrix.md` | The cockpit's testable spec | Session facts → rules R1–R15 → state table S0–S11 → pane anatomy/routing. Becomes the component unit tests at componentize time |
-| `cockpit-inventory.md` | Component inventory for `cockpit.html` | name · tier · props/variants · composed-of — the build contract `/componentize-design` consumes. Ticketed as GitHub issues #18–#30 (native `blocked_by` edges follow composed-of) |
+| `cockpit-matrix.md` | The cockpit's testable spec | Session facts → rules R1–R16 → state table S0–S11 → pane anatomy/routing. Becomes the component unit tests at componentize time |
+| `cockpit-inventory.md` | Component inventory for `cockpit.html` | name · **status** · props/variants · composed-of — the build contract `/componentize-design` consumes. Status (`spec` / `partial` / `built`) says whether the study region or the shipped component is truth for that row; `built` rows follow the code, and `cockpit.html` is allowed to be stale under them. Ticketed as GitHub issues #18–#30 (native `blocked_by` edges follow composed-of) |
 
 ## Lineage & decisions
 
