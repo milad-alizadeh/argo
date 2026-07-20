@@ -77,8 +77,6 @@ Add more by dropping another folder here (with any supporting files colocated in
 - [`scaffold-project`](skills/scaffold-project/SKILL.md) — interactive scaffolder for a
   new project of any stack (interview → monorepo vs single → install the stack's LSP →
   lay out the folders).
-- [`implement-fanout`](skills/implement-fanout/SKILL.md) — implement several independent
-  tickets in parallel, each in its own git worktree via a subagent.
 - [`setup-rules`](skills/setup-rules/SKILL.md) — install Argo's engineering rule set into
   a project, adapting every path to the detected structure. Its rule templates ship in
   its own `rules/` folder so it's self-contained per project.

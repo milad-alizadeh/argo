@@ -47,8 +47,8 @@ So before running it, confirm you can actually spawn sub-agents (do you have the
 **If you cannot, stop and report that** — do not run the two axes yourself and call it reviewed.
 A self-administered review that the PR body presents as a review is worse than no review: it
 spends the human's trust without earning it. Notable case: agents spawned inside a `Workflow`
-have no `Agent` tool, so `/implement` run that way must hand review to a separate stage — see
-`/implement-fanout`.
+have no `Agent` tool, so `/implement` run that way can't spawn its own review — run `/implement`
+directly (not nested inside a Workflow) so the review stage can fan out its sub-agents.
 
 ## 3. Visual regression — gated in CI
 
