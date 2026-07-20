@@ -1,7 +1,7 @@
 ---
 paths:
   - "**/package.json"
-  - "**/bun.lock"
+  - "{{LOCKFILE}}"
 ---
 
 # Dependency Hygiene

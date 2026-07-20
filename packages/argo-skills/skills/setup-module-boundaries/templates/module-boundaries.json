@@ -1,6 +1,5 @@
 {
-  "$schema": "./module-boundaries.schema.json",
-  "_comment": "LLM-MAINTAINED MODULE MAP. This file is the single source of truth for module boundaries; .dependency-cruiser.cjs turns it into lint rules mechanically — never hand-edit the generated rules, edit this map. Refresh it whenever the folder structure changes (see the setup-module-boundaries skill). Every `path` and `publicEntry` is an anchored regex over repo-relative POSIX paths.",
+  "_comment": "LLM-MAINTAINED MODULE MAP. This file is the single source of truth for module boundaries; dependency-cruiser.cjs turns it into lint rules mechanically — never hand-edit the generated rules, edit this map. Refresh it whenever the folder structure changes (see the setup-module-boundaries skill). Every `path` and `publicEntry` is an anchored regex over repo-relative POSIX paths.",
   "tsConfig": "tsconfig.json",
   "exclude": "(^|/)(node_modules|dist|out|build|coverage|\\.turbo|\\.storybook|e2e|test-results)/",
   "orphansAreWarnings": true,

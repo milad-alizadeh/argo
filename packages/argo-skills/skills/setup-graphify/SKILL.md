@@ -106,16 +106,24 @@ git config merge.graphify.name   "graphify union merge"
 git config merge.graphify.driver "graphify merge-driver %O %A %B"
 ```
 
-## 6. Commit the graph, ignore only the cache
+## 6. Commit the graph, ignore what `update` never maintains
 
-Add exactly one line to `.gitignore`:
+Add the three graphify patterns to `.gitignore` (`.gitignore` has no inline comments — the
+`#` lines are separate comment lines):
 
 ```gitignore
-graphify-out/cache/     # internal rebuild cache — regenerable, would churn every commit
+# regenerable rebuild cache:
+graphify-out/cache/
+# dated backup snapshots (created by extract/label, never by update):
+graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+# extract-only analysis; the pre-commit update never refreshes it:
+graphify-out/.graphify_analysis.json
 ```
 
-Commit everything else in `graphify-out/` — `graph.json`, `graph.html`, `GRAPH_REPORT.md`,
-`manifest.json`, `.graphify_labels.json`. (`update` creates no dated backup dirs to exclude.)
+The last two patterns catch the extract-only artifacts §7's `graphify extract` creates. Commit
+everything else in `graphify-out/` — `graph.json`, `graph.html`, `GRAPH_REPORT.md`,
+`manifest.json`, `.graphify_labels.json` (plus its `.graphify_labels.json.sig` and the
+`.graphify_root` marker).
 
 ## 7. Seed the graph once, then commit
 
