@@ -44,6 +44,14 @@ worktree first (Claude Code: the `EnterWorktree` tool — this section is your s
 instruction to use it, unprompted; other harnesses: `git worktree add`) and commit to a
 ticket branch there. Read-only work (review, triage, Q&A) may stay in the main checkout.
 
+**Resuming interrupted work.** The worktree is the resume state — re-enter the *existing*
+worktree (Claude Code: `EnterWorktree` with `path:`; never start a second worktree for the
+same ticket) and re-derive progress from durable state: the ticket, `git log`/`status`/`diff`,
+and a test run — not from the previous conversation. To make interruption safe, commit WIP
+and push the ticket branch before stopping; an unpushed worktree is the only copy of the
+work. If the worktree is gone, recreate it from the pushed branch:
+`git worktree add .claude/worktrees/<name> <ticket-branch>`.
+
 ## graphify
 
 This project has a knowledge graph at `graphify-out/` with god nodes, community
