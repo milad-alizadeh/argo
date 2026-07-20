@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, within } from 'storybook/test'
 import { Button } from './button'
-import { ArrowBendDownRightIcon, GitPullRequestIcon } from './icons'
+import { ArrowBendDownRightIcon, GitPullRequestIcon, XIcon } from './icons'
 import { Text } from './Text'
 
 const VARIANTS = [
@@ -87,17 +87,42 @@ export const Quiet: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: 'session · live' })).toHaveAttribute(
-      'data-active',
-    )
+    const selected = canvas.getByRole('button', { name: 'session · live' })
+    await expect(selected).toHaveAttribute('data-active')
+    // The denser box carries the denser type: a strip reads at meta, not at row-strong.
+    await expect(selected).toHaveClass('text-meta')
     await expect(canvas.getByRole('button', { name: 'vitest @12:04' })).not.toHaveAttribute(
       'data-active',
     )
   },
 }
 
-// A control that leads somewhere is a link wearing the button's shape.
->>>>>>> d1065fa (Cockpit: the console's channels (#29))
+/**
+ * `bare` spends nothing — no box, no ink — for a control nested inside a chip its parent
+ * already paints. It still carries the ladder's interaction, which is the whole point:
+ * cursor and focus ring come from the primitive rather than being re-typed at the call site.
+ */
+export const Bare: Story = {
+  args: { variant: 'bare', size: 'none' },
+  render: (args) => (
+    <div className="inline-flex items-center gap-snug rounded-lg bg-foreground/6 px-gap py-tight text-meta">
+      <Button {...args}>vitest @12:04</Button>
+      <Button {...args} aria-label="Close vitest @12:04" className="text-foreground-faint">
+        <XIcon aria-hidden />
+      </Button>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const nested = canvas.getByRole('button', { name: 'vitest @12:04' })
+    // No box of its own: no padding, and no type role to drift off the chip's.
+    await expect(getComputedStyle(nested).padding).toBe('0px')
+    await expect(nested).not.toHaveClass('text-row-strong')
+    await expect(canvas.getByRole('button', { name: 'Close vitest @12:04' })).toBeInTheDocument()
+  },
+}
+
+/** A control that leads somewhere is a link wearing the button's shape. */
 export const AsChild: Story = {
   args: {
     asChild: true,

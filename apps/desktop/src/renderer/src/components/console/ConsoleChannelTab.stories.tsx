@@ -12,7 +12,6 @@ const meta = {
     kind: 'live',
     active: true,
     onSelect: fn(),
-    onClose: fn(),
   },
   argTypes: {
     id: { control: 'text' },
@@ -20,15 +19,15 @@ const meta = {
     kind: { control: 'select', options: CONSOLE_CHANNEL_KINDS },
     agent: { control: 'boolean' },
     active: { control: 'boolean' },
-    closable: { control: 'boolean' },
+    panelId: { control: 'text' },
   },
 } satisfies Meta<typeof ConsoleChannelTab>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-// `session · live` is the fixed channel: it is always there and it never closes, so no ✕
-// is offered however the tab is styled.
+// `session · live` is the fixed channel: it is always there and it never closes. The union
+// is what enforces that — a `live` tab has no `onClose` to give it a ✕.
 export const Default: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
@@ -41,19 +40,39 @@ export const Default: Story = {
   },
 }
 
+// The tab points at the panel it opens, so the two are linked in the accessibility tree.
+// The Console owns both ends; a tab on its own leaves it unset rather than dangling.
+export const LinkedToItsPanel: Story = {
+  args: { panelId: 'console-panel' },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('tab')).toHaveAttribute(
+      'aria-controls',
+      'console-panel',
+    )
+  },
+}
+
 // A capture is timestamped (that is what tells two runs of one tool apart) and closable —
 // its ✕ clears the slot without also switching to the channel it is closing.
 export const Capture: Story = {
-  args: { id: 't-test', label: 'vitest @12:04', kind: 'capture', active: false, closable: true },
+  args: {
+    id: 't-test',
+    label: 'vitest @12:04',
+    kind: 'capture',
+    active: false,
+    onClose: fn(),
+  },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
+    // `onClose` lives on the capture arm alone — that is the invariant the union carries.
+    const onClose = args.kind === 'capture' ? args.onClose : undefined
     await expect(canvas.getByRole('tab', { name: 'vitest @12:04' })).toHaveAttribute(
       'aria-selected',
       'false',
     )
 
     await userEvent.click(canvas.getByRole('button', { name: 'Close vitest @12:04' }))
-    await expect(args.onClose).toHaveBeenCalledWith('t-test')
+    await expect(onClose).toHaveBeenCalledWith('t-test')
     await expect(args.onSelect).not.toHaveBeenCalled()
   },
 }
@@ -67,10 +86,33 @@ export const AgentChannel: Story = {
     kind: 'capture',
     agent: true,
     active: true,
-    closable: true,
+    onClose: fn(),
   },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.querySelector('svg')).toBeInTheDocument()
+  },
+}
+
+// A capture label long enough to out-run the strip. The chip gives way rather than pushing
+// what sits beside it out of the console.
+export const LongCaptureLabel: Story = {
+  args: {
+    id: 't-e2e',
+    label: 'e2e:playwright --project=chromium --grep session-rail @11:02',
+    kind: 'capture',
+    active: false,
+    onClose: fn(),
+  },
+  decorators: [
+    (Story): React.JSX.Element => (
+      <div className="flex w-64 items-center bg-background/55 px-inset py-snug">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const chip = canvasElement.querySelector('[data-slot="console-channel-tab"]')
+    await expect((chip as HTMLElement).clientWidth).toBeLessThanOrEqual(canvasElement.clientWidth)
   },
 }
 
@@ -79,15 +121,15 @@ export const AgentChannel: Story = {
 export const EveryChannel: Story = {
   render: (args) => (
     <div className="flex items-center gap-gap bg-background/55 px-inset py-snug">
-      <ConsoleChannelTab {...args} />
-      <ConsoleChannelTab {...args} active={false} />
+      <ConsoleChannelTab {...args} kind="live" />
+      <ConsoleChannelTab {...args} kind="live" active={false} />
       <ConsoleChannelTab
         {...args}
         id="t-test"
         label="vitest @12:04"
         kind="capture"
         active={false}
-        closable
+        onClose={fn()}
       />
       <ConsoleChannelTab
         {...args}
@@ -96,7 +138,7 @@ export const EveryChannel: Story = {
         kind="capture"
         agent
         active
-        closable
+        onClose={fn()}
       />
     </div>
   ),
@@ -105,5 +147,11 @@ export const EveryChannel: Story = {
     await expect(canvas.getAllByRole('tab')).toHaveLength(4)
     // Only the two captures can be closed; the live channel is fixed.
     await expect(canvas.getAllByRole('button', { name: /^Close/ })).toHaveLength(2)
+
+    // The chip's box is the ladder's `sm` step and nothing more: 4+4 padding, a 1px border
+    // each side, and the meta line box. Its nested controls spend no box of their own, so
+    // adding one would show up here as a taller strip.
+    const chip = canvasElement.querySelector('[data-slot="console-channel-tab"]')
+    await expect((chip as HTMLElement).offsetHeight).toBe(24)
   },
 }

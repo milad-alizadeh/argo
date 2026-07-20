@@ -73,6 +73,16 @@ export const Capture: Story = {
   },
 }
 
+// A tool that has not written a line yet. `feedLines('')` is one empty line, not nothing,
+// so the panel is a named empty surface with the return note still on it.
+export const CaptureOfEmptyFeed: Story = {
+  args: { kind: 'capture', feed: '' },
+  play: async ({ canvasElement }) => {
+    const panel = within(canvasElement).getByRole('tabpanel', { name: 'captured feed' })
+    await expect(panel.textContent).toBe(`captured feed — esc returns to ${LIVE_CHANNEL_LABEL}`)
+  },
+}
+
 // A feed the tool wrote with markup in it. It is data, not HTML, so it renders as the
 // characters it is.
 export const CaptureOfMarkup: Story = {

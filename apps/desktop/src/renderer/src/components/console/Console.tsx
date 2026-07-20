@@ -1,12 +1,9 @@
+import { useEffect, useId, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { ConsoleChannel } from './ConsoleChannel'
 import { ConsoleChannelTabs } from './ConsoleChannelTabs'
-import {
-  type ConsoleCapture,
-  type ConsoleLiveChannel,
-  LIVE_CHANNEL_ID,
-  resolveActiveChannel,
-} from './consoleChannels'
+import { type ConsoleCapture, type ConsoleLiveChannel, LIVE_CHANNEL_ID } from './consoleChannels'
+import { resolveActiveChannel } from './resolveActiveChannel'
 
 type ConsoleProps = {
   /** The session's own channel. Always present — `session · live` is fixed (R13). */
@@ -45,10 +42,19 @@ export function Console({
   className,
 }: ConsoleProps): React.JSX.Element {
   const active = resolveActiveChannel(activeChannel, capture)
+  const panelId = useId()
+  const panelRef = useRef<HTMLElement>(null)
 
-  // Esc returns to `session · live` from a capture. It is bound here rather than on the
-  // window so the console only answers for keys pressed inside it; a screen-wide Esc is
-  // the screen's to own.
+  // A capture is opened by clicking a timeline row (R13), so focus is OUTSIDE the console
+  // when it arrives. Pull it onto the panel, or the Esc the panel promises never reaches
+  // the handler below.
+  useEffect(() => {
+    if (active === LIVE_CHANNEL_ID) return
+    panelRef.current?.focus()
+  }, [active])
+
+  // Bound on the region rather than the window: the console answers only for keys pressed
+  // inside it, and a screen-wide Esc stays the screen's.
   function handleKeyDown(event: React.KeyboardEvent<HTMLElement>): void {
     if (event.key !== 'Escape' || active === LIVE_CHANNEL_ID) return
     event.preventDefault()
@@ -56,8 +62,6 @@ export function Console({
   }
 
   return (
-    // The keydown rides on the region rather than a control of its own: it answers for the
-    // focusable channels inside it, so the region takes no role and no tabindex.
     <section
       aria-label="Console"
       data-slot="console"
@@ -72,14 +76,28 @@ export function Console({
         capture={capture}
         activeChannel={active}
         expanded={expanded}
+        panelId={panelId}
         onSelectChannel={onSelectChannel}
         onCloseCapture={onCloseCapture}
         onToggleExpanded={onToggleExpanded}
       />
       {capture !== undefined && active === capture.id ? (
-        <ConsoleChannel kind="capture" feed={capture.feed} className="flex-1" />
+        <ConsoleChannel
+          kind="capture"
+          feed={capture.feed}
+          id={panelId}
+          ref={panelRef}
+          className="flex-1"
+        />
       ) : (
-        <ConsoleChannel kind="live" prompt={live.prompt} tail={live.tail} className="flex-1" />
+        <ConsoleChannel
+          kind="live"
+          prompt={live.prompt}
+          tail={live.tail}
+          id={panelId}
+          ref={panelRef}
+          className="flex-1"
+        />
       )}
     </section>
   )

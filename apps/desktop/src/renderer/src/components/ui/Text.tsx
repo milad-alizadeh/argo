@@ -42,6 +42,8 @@ type TextProps = React.HTMLAttributes<HTMLElement> & {
   /** The element to render. Defaults to `span` (`code` for the two code roles), because
    * heading level and paragraph structure are the call site's decision, not the role's. */
   as?: TextElement
+  /** The rendered element, for a caller that has to move focus onto it. */
+  ref?: React.Ref<HTMLElement>
 }
 
 /**
@@ -52,6 +54,8 @@ type TextProps = React.HTMLAttributes<HTMLElement> & {
  * it.
  */
 export function Text({ variant, as, className, ...rest }: TextProps): React.JSX.Element {
-  const Element = as ?? defaultElement(variant)
+  // JSX intersects the props of every member of the element union, so no single `ref` type
+  // satisfies all of them. Widening here keeps the closed union in the PUBLIC prop type.
+  const Element = (as ?? defaultElement(variant)) as React.ElementType
   return <Element className={cn(TYPE_ROLE_CLASS[variant], className)} {...rest} />
 }

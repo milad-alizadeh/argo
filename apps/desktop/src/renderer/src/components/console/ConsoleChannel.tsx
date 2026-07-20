@@ -1,9 +1,16 @@
 import { Fragment } from 'react'
+import { Text } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { FEED_MARKER, feedLines, LIVE_CHANNEL_LABEL } from './consoleChannels'
-import { Text } from './Text'
+import { FEED_MARKER, LIVE_CHANNEL_LABEL } from './consoleChannels'
+import { feedLines } from './feedLines'
 
-export type ConsoleChannelProps = { className?: string } & (
+export type ConsoleChannelProps = {
+  /** DOM id, so the tab that opens this channel can point at it. */
+  id?: string
+  /** The rendered panel, so the Console can pull focus onto a capture it just opened. */
+  ref?: React.Ref<HTMLElement>
+  className?: string
+} & (
   | {
       /** The session's own channel: the tail of its output, its prompt, and the caret. */
       kind: 'live'
@@ -20,9 +27,9 @@ export type ConsoleChannelProps = { className?: string } & (
     }
 )
 
-// The feed is ONE string the user reads, so one `Text` renders it and the marker spans
-// only re-tint inside it — a command reads apart from its output that way. Keys are the
-// character offset each line starts at: a real position, stable under a growing feed.
+// The feed is ONE string the user reads, so one `Text` renders it and the marker spans only
+// re-tint inside it. The marker is captured text, not an icon. Keys are the character
+// offset each line starts at: a real position, stable under a growing feed.
 function feedNodes(feed: string): React.ReactNode {
   let offset = 0
   return feedLines(feed).map((line, index) => {
@@ -42,12 +49,9 @@ function feedNodes(feed: string): React.ReactNode {
   })
 }
 
-// Molecule: the ONE monospace surface's body (R13). Two variants, and the caret is what
-// separates them — the live channel carries prompt, caret and tail; a capture is a frozen
-// feed that says how to get back. The caret is static: the screen's ONE animation budget
-// belongs to the ribbon/rail.
-// If this ever becomes a real xterm pane it MUST import `@xterm/xterm/css/xterm.css`,
-// or the terminal renders ghost rows and a solid selection.
+// Molecule: the ONE monospace surface's body (R13). The caret is what separates the two
+// variants — live carries prompt, caret and tail; a capture is a frozen feed.
+// A real xterm pane here MUST import `@xterm/xterm/css/xterm.css` or it renders ghost rows.
 export function ConsoleChannel(props: ConsoleChannelProps): React.JSX.Element {
   const shell = cn(
     'min-h-0 overflow-auto whitespace-pre-wrap bg-background px-inset py-gap text-foreground-soft outline-none focus-visible:inset-ring focus-visible:inset-ring-ring',
@@ -60,6 +64,8 @@ export function ConsoleChannel(props: ConsoleChannelProps): React.JSX.Element {
         <Text
           as="div"
           variant="code"
+          id={props.id}
+          ref={props.ref}
           role="tabpanel"
           aria-label={LIVE_CHANNEL_LABEL}
           tabIndex={0}
@@ -87,6 +93,8 @@ export function ConsoleChannel(props: ConsoleChannelProps): React.JSX.Element {
         <Text
           as="div"
           variant="code"
+          id={props.id}
+          ref={props.ref}
           role="tabpanel"
           aria-label="captured feed"
           tabIndex={0}
@@ -94,7 +102,11 @@ export function ConsoleChannel(props: ConsoleChannelProps): React.JSX.Element {
         >
           {feedNodes(props.feed)}
           <Text variant="code" as="div" className="text-foreground-faint">
-            captured feed — <b>esc</b> returns to {LIVE_CHANNEL_LABEL}
+            captured feed —{' '}
+            <Text variant="code" as="span" className="text-foreground">
+              esc
+            </Text>{' '}
+            returns to {LIVE_CHANNEL_LABEL}
           </Text>
         </Text>
       )

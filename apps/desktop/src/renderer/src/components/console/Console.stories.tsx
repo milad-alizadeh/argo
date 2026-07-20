@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { Console } from './Console'
+import { captureLabel } from './captureLabel'
 import {
   type ConsoleCapture,
   type ConsoleLiveChannel,
-  captureLabel,
   LIVE_CHANNEL_ID,
   LIVE_CHANNEL_LABEL,
 } from './consoleChannels'
@@ -70,7 +70,10 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('tab')).toHaveLength(1)
-    await expect(canvas.getByRole('tabpanel', { name: LIVE_CHANNEL_LABEL })).toBeInTheDocument()
+
+    // The tab and the panel it opens are linked: the Console owns both ids.
+    const panel = canvas.getByRole('tabpanel', { name: LIVE_CHANNEL_LABEL })
+    await expect(canvas.getByRole('tab')).toHaveAttribute('aria-controls', panel.id)
   },
 }
 
@@ -86,10 +89,38 @@ export const CaptureActive: Story = {
       canvas.queryByRole('tabpanel', { name: LIVE_CHANNEL_LABEL }),
     ).not.toBeInTheDocument()
 
-    // Esc returns to `session · live` (R13) — the note on the feed is the promise this keeps.
-    await userEvent.click(panel)
+    // R13 opens a capture by clicking a TIMELINE row — focus starts outside the console, so
+    // the console pulls it onto the panel. Esc has to work without touching the console first:
+    // the note on the feed is the promise this keeps.
+    await expect(panel).toHaveFocus()
     await userEvent.keyboard('{Escape}')
     await expect(args.onSelectChannel).toHaveBeenCalledWith(LIVE_CHANNEL_ID)
+  },
+}
+
+// A tool that has not written a line yet. The slot is real and named, and the note still
+// says how to get back — an empty capture is not an empty panel.
+export const CaptureOfEmptyFeed: Story = {
+  args: { capture: { ...CAPTURE, feed: '' }, activeChannel: CAPTURE.id },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    const panel = canvas.getByRole('tabpanel', { name: 'captured feed' })
+    await expect(panel.textContent).toContain(`returns to ${LIVE_CHANNEL_LABEL}`)
+
+    await expect(panel).toHaveFocus()
+    await userEvent.keyboard('{Escape}')
+    await expect(args.onSelectChannel).toHaveBeenCalledWith(LIVE_CHANNEL_ID)
+  },
+}
+
+// A session that has said nothing yet: the live channel is its prompt and caret, and the
+// console does NOT pull focus — the live channel is where focus already belongs.
+export const LiveWithoutTail: Story = {
+  args: { live: { ...LIVE, tail: '' } },
+  play: async ({ canvasElement }) => {
+    const panel = within(canvasElement).getByRole('tabpanel', { name: LIVE_CHANNEL_LABEL })
+    await expect(panel.textContent?.startsWith('auth refactor $')).toBe(true)
+    await expect(panel).not.toHaveFocus()
   },
 }
 
