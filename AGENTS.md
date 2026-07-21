@@ -49,10 +49,9 @@ mechanically: a `CLAUDECODE`-gated `PreToolUse` hook (`scripts/worktree-guard.mj
 edits stay free, and the human workflow is never touched.
 
 Everything else about worktrees — the deterministic naming format, resuming an interrupted
-worktree (`/implement #<N>` is idempotent), recovering a deleted one, and the rule that a
-dispatched sub-agent stays in its parent's worktree unless the parent explicitly grants it its
-own — lives in `docs/agents/worktrees.md`, and applies to **all** implementation work, not just
-`/implement` runs. That doc is self-contained and ships with the guardrail hooks, so a consumer
+worktree, recovering a deleted one, and the sub-agent-in-parent-worktree rule — lives in
+`docs/agents/worktrees.md`, and applies to **all** implementation work, not just `/implement`
+runs. That doc is self-contained and ships with the guardrail hooks, so a consumer
 that installs `--hooks` gets the rules alongside the enforcement.
 
 Landed worktrees are reaped by `bun run worktrees:gc` (`scripts/worktree-gc.sh`) — PRs merge
