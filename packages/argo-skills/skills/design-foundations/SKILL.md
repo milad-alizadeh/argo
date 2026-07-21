@@ -12,8 +12,8 @@ it gives every later study something clean to snap to.
 
 Run it **once per project**, after `setup-design-handoff` has installed the token
 *structure* and before the first screen study is settled. Re-run it any time as an
-**audit**. `/componentize-design` then only *reconciles* a screen against these
-foundations; it never designs a scale.
+**audit**. The `componentize-design` skill then only *reconciles* a screen against
+these foundations; it never designs a scale.
 
 ## The shape of a foundation
 
@@ -129,7 +129,7 @@ blessed ones. The study's markup still never ports to the app.
 Per family: what was settled, which judgment calls moved values and by how
 much. Then the rule going forward: new studies start from the template with
 these tokens loaded; a study inventing a value marks it as a **proposal**, and
-`/componentize-design` reconciles proposals at settle time — a promotion there
+the `componentize-design` skill reconciles proposals at settle time — a promotion there
 is a *contract change* and comes back through a mini version of step 3.
 
 ## Re-running as an audit

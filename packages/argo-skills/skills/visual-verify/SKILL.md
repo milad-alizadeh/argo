@@ -33,13 +33,16 @@ Resolution order — first hit wins:
    stop. Never silently pass.
 
 Screenshot mechanics: use `scripts/screenshot-states.mjs` if the project has it (installed by
-`/setup-visual-verify` — deterministic viewport, animations disabled); otherwise drive
+the `setup-visual-verify` skill — deterministic viewport, animations disabled); otherwise drive
 headless Chromium/Playwright inline with the same settings. Write screenshots to a temp dir,
 one PNG per state, named after the state.
 
 ## 2. Judge with fresh eyes
 
-Spawn a **separate agent** (fresh context) to do the judging. Its only inputs:
+Hand the judging to a **fresh context** — one that never saw the render or your reasoning
+(Claude Code: spawn a separate agent with the `Agent` tool; other harnesses: open a new
+session/conversation seeded with only the inputs below and paste its verdict back). Its only
+inputs:
 
 - the ticket's acceptance criteria (or the user's spec, verbatim);
 - the design references — settled study, foundations specimen — if the project has them;
@@ -50,10 +53,10 @@ mostly returns "looks right". The judge answers one question — do these pixels
 spec? — and returns a structured verdict: pass/fail plus findings, each naming the
 screenshot, what is wrong, and which spec line it violates.
 
-**If you cannot spawn a separate agent, stop here and say so.** Judging your own render is the
-failure this step exists to prevent, not a weaker version of it. The common case: agents running
-inside a `Workflow` have no `Agent` tool, so the orchestrator must run the judge as its own stage
-instead.
+**If you cannot reach any fresh context, stop here and say so.** Judging your own render is the
+failure this step exists to prevent, not a weaker version of it. One Claude Code case: agents
+running inside a `Workflow` have no `Agent` tool, so the orchestrator must run the judge as its
+own stage instead.
 
 ## 3. Fix loop
 

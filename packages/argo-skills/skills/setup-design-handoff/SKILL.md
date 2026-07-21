@@ -49,7 +49,7 @@ tokens" have only colors:
 4. **Radii / durations / opacity** as used.
 
 This skill installs the *structure*; the values are design work. When families
-are missing, run `/design-foundations` next — the moodboard→contract ceremony
+are missing, run the `design-foundations` skill next — the moodboard→contract ceremony
 that designs the ramps deliberately from whatever exploration exists (studies,
 the app's CSS) and lands them only behind a user bless. Never derive a scale
 inline here or copy a study's raw values into the contract.
@@ -94,4 +94,4 @@ placeholders, and make it executable:
 - Studies template opens in a browser and renders with the token vocabulary.
 - Report: stack detected, token families installed vs derived-from-settling,
   where the check is wired (script / CI / pre-commit), allowlist debt if any,
-  and the next step — run `/componentize-design` on the first settled study.
+  and the next step — run the `componentize-design` skill on the first settled study.

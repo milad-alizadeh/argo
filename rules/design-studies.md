@@ -36,7 +36,7 @@ React Native) without reverse-engineering the markup:
   are for), but it's a **proposal**: it either snaps to an existing token or gets
   promoted to a named one when the study settles, never ported raw.
 - **Foundations before screens.** The ramps themselves (type roles, spacing,
-  radii, color roles) are designed once via `/design-foundations` and rendered
+  radii, color roles) are designed once via the `design-foundations` skill and rendered
   as `docs/designs/foundations.html` — the one **non-disposable** study: it
   styles only via `var(--token)`, so it always renders the current contract.
   Screen studies follow it; they propose, they never redefine.
@@ -50,13 +50,13 @@ React Native) without reverse-engineering the markup:
   then compose. Same tiering as `ui-components.md`.
 - **Ship the inventory.** A settled study carries a component-inventory table —
   name · tier · props/variants · composed-of — next to it in `docs/designs/`. The
-  inventory, not the HTML, is the build contract; `/componentize-design` consumes it
+  inventory, not the HTML, is the build contract; the `componentize-design` skill consumes it
   to scaffold the real components.
 
 ## The study is a spec, never a source
 
 A study's markup and CSS are disposable. Building a screen means running
-`/componentize-design` — settle values into the token contract, extract the
+the `componentize-design` skill — settle values into the token contract, extract the
 inventory, rebuild from tokens + existing components — never copying study markup
 or styles into the app.
 
