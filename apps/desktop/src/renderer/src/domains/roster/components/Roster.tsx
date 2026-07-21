@@ -1,6 +1,6 @@
+import { CompassIcon } from '@phosphor-icons/react'
 import type { SessionView } from '@/sessionStore'
 import { Text } from '@/shared/components/ui'
-import { EmptyRoster } from './EmptyRoster'
 import { SessionRow } from './SessionRow'
 
 /**
@@ -30,7 +30,12 @@ export function Roster({
         </Text>
         <div className="flex flex-1 flex-col overflow-auto px-2.5 pb-2">
           {sessions.length === 0 ? (
-            <EmptyRoster />
+            <div className="flex flex-1 select-none flex-col items-center justify-center gap-3 px-4 text-center">
+              <CompassIcon weight="light" size={28} className="text-muted-foreground/70" />
+              <Text as="p" variant="row" className="text-muted-foreground">
+                No Sessions observed yet.
+              </Text>
+            </div>
           ) : (
             <ul aria-label="Sessions" className="flex flex-col gap-1.5">
               {sessions.map((session) => (
