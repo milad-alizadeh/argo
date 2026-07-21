@@ -36,6 +36,18 @@ export const Default: Story = {
   },
 }
 
+/** By commit selected — the toggle's other position (the segmented control lives inline in
+ * the strip now, so this story is its only VRT surface). */
+export const UnscopedByCommit: Story = {
+  args: { ...unscopedArgs, changesView: 'commits' },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('radio', { name: 'By commit' })).toHaveAttribute(
+      'data-state',
+      'on',
+    )
+  },
+}
+
 /** Outstanding findings — the count plus the static glow dot, the agent review's ONE
  * pointer (R14). The `argo` attribution lives only in the tooltip. */
 export const ReviewOutstanding: Story = {
