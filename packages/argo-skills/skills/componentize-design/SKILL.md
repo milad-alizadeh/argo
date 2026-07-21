@@ -108,14 +108,20 @@ the child stories, and keep connected/data logic in a wrapper outside Storybook.
 This screen story is the visual-regression baseline for every region that stayed
 inline; extracted components add their own.
 
-## 5. Verify against the design
+## 5. Verify — never self-review
 
-- Screenshot the study headless (Chrome command in the design README) and the
-  built screen/story; compare side by side. Divergence is fixed in the component —
-  or, if the design was wrong, in the study, in the same change.
-- Run the repo's lint and test commands (wrapped per the repo's tooling rules);
-  if a design-token check script is installed, it must pass.
+The screen is not signed off by the agent that built it. First make the mechanical
+gates green (the repo's lint and test commands, wrapped per its tooling rules; the
+design-token check if installed). Then hand both judgments to fresh eyes, the way the
+`implement` skill hands its diff to `code-review`:
 
-The screen is done when: every extracted component has each prop covered by a story
-or a control, the assembled View has its screen story, there is visual parity with
-the study, and checks are green.
+- **Pixels** — the `visual-verify` skill: a fresh agent judges the built screen
+  against the study and foundations. Divergence is fixed in the component, or in the
+  study if the design was wrong, in the same change.
+- **Conversion judgment** — the `review-componentization` skill: a fresh agent judges
+  the extractions, altitude, naming, snap/promote, and stories against the UI rules.
+
+Resolve every finding from either lens the way that skill directs.
+
+The screen is done when the mechanical gates are green, both fresh-eyes reviews have
+run, and every finding is fixed-and-re-judged or rejected with a cited rule.
