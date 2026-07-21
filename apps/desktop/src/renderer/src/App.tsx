@@ -37,6 +37,7 @@ function App(): React.JSX.Element {
 
   const handlers: SessionScreenHandlers = {
     onSelectSession: setSelectedId,
+    onCloseSession: () => setSelectedId(null),
     onResize: resize,
     onToggleVariant: () =>
       setUi((state) => ({ ...state, variant: state.variant === 'split' ? 'solo' : 'split' })),

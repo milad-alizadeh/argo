@@ -80,6 +80,18 @@ export const Selected: Story = {
 }
 
 /**
+ * The row handed the screen's one pulse budget: its status dot animates. The row never claims
+ * the budget itself — the roster grants it — so `pulse` is a plain flag the row obeys.
+ */
+export const Pulsing: Story = {
+  args: { session: stateRow('needs-input'), pulse: true },
+  play: async ({ canvasElement }) => {
+    const dot = canvasElement.querySelector('span > span')
+    await expect(getComputedStyle(dot as Element).animationName).toBe('pulse-status')
+  },
+}
+
+/**
  * Every state main can observe, one row each — the visual-diff surface for the row's word,
  * tone and icon in a single frame.
  *

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import { cn } from '@/lib/utils'
-import { Button, CaretDownIcon, CaretUpIcon, Text } from '@/shared/components/ui'
+import { CaretDownIcon, CaretUpIcon, IconButton, PanelHeader } from '@/shared/components/ui'
 import { ConsoleChannel } from './ConsoleChannel'
 import { ConsoleChannelTab } from './ConsoleChannelTab'
 import { type ConsoleCapture, LIVE_CHANNEL_ID, LIVE_CHANNEL_LABEL } from './consoleChannels'
@@ -71,52 +71,58 @@ export function Console({
       // Runtime escape hatch: the height is a splitter-driven length the screen owns, so
       // it cannot be a class. See the `height` prop.
       style={{ height }}
-      className={cn('flex min-h-0 flex-col border-input border-t', className)}
+      // No top border of its own — the console sits under the horizontal splitter, whose 1px
+      // hairline is the seam. A border here would double it.
+      className={cn('flex min-h-0 flex-col', className)}
     >
-      {/* The channel strip: the fixed `session · live` tab, at most ONE capture tab (R13), and
-          the control that resizes the console. The expand control sits OUTSIDE the tablist —
-          only tabs may be a tablist's children. */}
-      <div
-        data-slot="console-channel-tabs"
-        className="flex shrink-0 items-center gap-gap bg-background/55 px-inset py-snug text-muted-foreground"
-      >
-        <div
-          role="tablist"
-          aria-label="Console channels"
-          className="flex min-w-0 items-center gap-gap"
-        >
-          <ConsoleChannelTab
-            id={LIVE_CHANNEL_ID}
-            label={LIVE_CHANNEL_LABEL}
-            kind="live"
-            active={liveActive}
-            panelId={liveActive ? panelId : undefined}
-            onSelect={onSelectChannel}
-          />
-          {capture !== undefined && (
+      {/* The channel strip is the console's PanelHeader (same chrome as the roster + session
+          headers): the fixed `session · live` tab, at most ONE capture tab (R13) in the left slot,
+          and the resize chevron in the right slot — OUTSIDE the tablist, since only tabs may be a
+          tablist's children. */}
+      <PanelHeader
+        left={
+          <div
+            role="tablist"
+            aria-label="Console channels"
+            className="flex min-w-0 items-center gap-gap"
+          >
             <ConsoleChannelTab
-              id={capture.id}
-              label={capture.label}
-              kind="capture"
-              agent={capture.agent}
-              active={!liveActive}
-              panelId={liveActive ? undefined : panelId}
+              id={LIVE_CHANNEL_ID}
+              label={LIVE_CHANNEL_LABEL}
+              kind="live"
+              active={liveActive}
+              panelId={liveActive ? panelId : undefined}
               onSelect={onSelectChannel}
-              onClose={onCloseCapture}
             />
-          )}
-        </div>
-        <Button
-          variant="quiet"
-          size="sm"
-          aria-expanded={expanded}
-          onClick={onToggleExpanded}
-          className="ml-auto text-foreground-faint"
-        >
-          {expanded ? <CaretDownIcon aria-hidden /> : <CaretUpIcon aria-hidden />}
-          <Text variant="meta">{expanded ? 'collapse' : 'expand'}</Text>
-        </Button>
-      </div>
+            {capture !== undefined && (
+              <ConsoleChannelTab
+                id={capture.id}
+                label={capture.label}
+                kind="capture"
+                agent={capture.agent}
+                active={!liveActive}
+                panelId={liveActive ? undefined : panelId}
+                onSelect={onSelectChannel}
+                onClose={onCloseCapture}
+              />
+            )}
+          </div>
+        }
+        right={
+          <IconButton
+            label={expanded ? 'Collapse console' : 'Expand console'}
+            aria-expanded={expanded}
+            onClick={onToggleExpanded}
+            className="text-foreground-faint"
+          >
+            {expanded ? (
+              <CaretDownIcon aria-hidden className="size-4" />
+            ) : (
+              <CaretUpIcon aria-hidden className="size-4" />
+            )}
+          </IconButton>
+        }
+      />
       {capture !== undefined && active === capture.id ? (
         <ConsoleChannel feed={capture.feed} id={panelId} ref={panelRef} className="flex-1" />
       ) : (
