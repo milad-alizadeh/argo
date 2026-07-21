@@ -7,14 +7,24 @@ import {
   TabsList,
   TabsTrigger,
   Text,
+  ToggleGroup,
+  ToggleGroupItem,
   tabsTriggerVariants,
 } from '@/shared/components/ui'
-import { type ChangesView, ChangesViewToggle } from './ChangesViewToggle'
 
 export const DELIVERY_TABS = ['changes', 'review', 'artifacts'] as const
 
 /** Which content the Delivery panel's strip is driving. */
 export type DeliveryTab = (typeof DELIVERY_TABS)[number]
+
+export const CHANGES_VIEWS = ['all', 'commits'] as const
+
+/** Which shape the Changes tab renders its files in. */
+export type ChangesView = (typeof CHANGES_VIEWS)[number]
+
+function isChangesView(value: string): value is ChangesView {
+  return (CHANGES_VIEWS as readonly string[]).includes(value)
+}
 
 const REVIEW_TAB_TITLE =
   "agent code review · argo — verdict + findings (the GitHub review lives on the Delivery lifecycle's Review node)"
@@ -101,10 +111,17 @@ export function DeliveryTabs(
             <TabsTrigger value="artifacts">Artifacts · {props.artifactsCount}</TabsTrigger>
             {props.tab === 'changes' && (
               <span className="ml-auto">
-                <ChangesViewToggle
-                  view={props.changesView}
-                  onChangeView={props.onChangeChangesView}
-                />
+                <ToggleGroup
+                  type="single"
+                  value={props.changesView}
+                  onValueChange={(value) => {
+                    if (isChangesView(value)) props.onChangeChangesView(value)
+                  }}
+                  aria-label="Changes view"
+                >
+                  <ToggleGroupItem value="all">All files</ToggleGroupItem>
+                  <ToggleGroupItem value="commits">By commit</ToggleGroupItem>
+                </ToggleGroup>
               </span>
             )}
           </TabsList>

@@ -1,10 +1,16 @@
 export { AllFilesDiff, type AllFilesDiffFile } from './AllFilesDiff'
-export { CHANGES_VIEWS, type ChangesView, ChangesViewToggle } from './ChangesViewToggle'
 export { CheckOutput, type CheckOutputProps, LOCAL_CHECKS, type LocalCheck } from './CheckOutput'
 export { CiCard, type CiCardProps } from './CiCard'
 export { CommitGroup, type CommitGroupFile } from './CommitGroup'
+export { Delivery, type DeliveryCommitGroup, type DeliveryProps } from './Delivery'
 export { DeliveryLifecycle, type DeliveryLifecycleProps } from './DeliveryLifecycle'
-export { DELIVERY_TABS, type DeliveryTab, DeliveryTabs } from './DeliveryTabs'
+export {
+  CHANGES_VIEWS,
+  type ChangesView,
+  DELIVERY_TABS,
+  type DeliveryTab,
+  DeliveryTabs,
+} from './DeliveryTabs'
 export type { DiffFinding, DiffHunkLine, FileChangeKind } from './diffModel'
 export { FileDiff } from './FileDiff'
 export { FindingCard } from './FindingCard'
