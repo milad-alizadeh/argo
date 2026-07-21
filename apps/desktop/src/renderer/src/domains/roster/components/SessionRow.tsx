@@ -15,6 +15,7 @@ import { deliveryState } from '@/shared/delivery'
 export function SessionRow({
   session,
   selected = false,
+  pulse = false,
   onSelect,
 }: {
   /** The one Session this row renders, carrying identity and the raw `facts` main
@@ -23,6 +24,10 @@ export function SessionRow({
   session: SessionView
   /** Whether this row is the selected Session — draws the primary-tinted selection card. */
   selected?: boolean
+  /** Spend the screen's ONE pulse budget on this row's status dot. The roster grants it to at
+   * most one row per render (the top needs-you row, and only while the lifecycle is quiet), so
+   * the row only obeys the flag it is handed. */
+  pulse?: boolean
   /** Select this Session by its id. The row owns no selection state; it reports the id and
    * the screen above decides. Absent, the row is inert (the roster's read-only stories). */
   onSelect?: (id: string) => void
@@ -44,7 +49,7 @@ export function SessionRow({
           <Text variant="row-strong" className="flex-1 truncate text-foreground">
             {session.title}
           </Text>
-          <Status word={word} tone={tone} />
+          <Status word={word} tone={tone} pulse={pulse} />
         </div>
         <Text as="div" variant="meta" className="mt-1 text-muted-foreground">
           {session.cli}

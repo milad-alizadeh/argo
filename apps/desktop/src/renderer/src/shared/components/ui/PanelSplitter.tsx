@@ -127,12 +127,14 @@ export function PanelSplitter({
       onPointerDown={handlePointerDown}
       onKeyDown={handleKeyDown}
     >
-      {/* The pip is the whole affordance: a hairline at rest, primary under the pointer. */}
+      {/* The rail is a full-length hairline — the visible separator between two panes — that
+          lifts to primary under the pointer. Spanning the whole edge (not a short centered pip)
+          is what makes every pane boundary read as a border. */}
       <span
         aria-hidden
         className={cn(
-          'rounded-sm transition-colors duration-fast group-hover:bg-primary',
-          orientation === 'v' ? 'h-8 w-hair' : 'h-hair w-8',
+          'transition-colors duration-fast group-hover:bg-primary',
+          orientation === 'v' ? 'h-full w-hair' : 'h-hair w-full',
           dragging ? 'bg-primary' : 'bg-border',
         )}
       />
