@@ -90,6 +90,23 @@ check('script emits deny JSON for a blocked edit', () => {
   assert.match(parsed.hookSpecificOutput.permissionDecisionReason, /worktree/)
 })
 
+// End-to-end (cross-CLI): the injected ARGO_HOOK_AGENT marker gates a block even
+// without CLAUDECODE — this is how the guard fires under Codex, whose hooks the
+// projection wires with ARGO_HOOK_AGENT=1 (no CLAUDECODE equivalent exists).
+check('script blocks via ARGO_HOOK_AGENT when CLAUDECODE is absent', () => {
+  const out = execFileSync(process.execPath, [HOOK], {
+    input: JSON.stringify({
+      // Codex sends toolInput (camelCase); the guard must read it too.
+      toolInput: { file_path: 'apps/desktop/src/x.ts' },
+      cwd: ROOT,
+    }),
+    env: { ...process.env, CLAUDECODE: '', ARGO_HOOK_AGENT: '1', CLAUDE_PROJECT_DIR: ROOT },
+    encoding: 'utf8',
+  })
+  const parsed = JSON.parse(out)
+  assert.equal(parsed.hookSpecificOutput.permissionDecision, 'deny')
+})
+
 // End-to-end: an allowed edit produces no output (silent allow).
 check('script stays silent for an allowed edit', () => {
   const out = execFileSync(process.execPath, [HOOK], {

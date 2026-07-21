@@ -21,7 +21,7 @@ type PhasePresentation = {
    * hued there — past and future both stay faint, so the walk has one focal point. This is
    * deliberately NOT `ink`: the group header hues done, the walk does not. */
   walkInk: string
-  /** The glyph the collapsed run summary walks this phase with. Drawn from the shipped rail
+  /** The glyph the collapsed run summary walks this phase with. Drawn from the Roster status
    * vocabulary (#50) so a phase and a Session say `running` with the same mark. */
   glyph: IconAtom
 }

@@ -7,7 +7,7 @@ import { Text } from './Text'
 const meta = {
   title: 'Shared/NowLine',
   component: NowLine,
-  // The strip fills the Activity pane's width — a fixed frame is what lets the line truncate.
+  // The strip fills the Activity panel's width — a fixed frame is what lets the line truncate.
   decorators: [
     (Story): React.JSX.Element => (
       <div className="w-96">

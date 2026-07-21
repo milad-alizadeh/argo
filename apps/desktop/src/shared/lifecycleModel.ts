@@ -93,7 +93,7 @@ function mergeState(
   return ci === 'done' && review === 'done' ? 'gate' : 'wait'
 }
 
-// null = no lifecycle at all (R7): nothing has been produced for this Session to ship.
+// null = no lifecycle at all (R7): nothing has been produced for this Session to deliver.
 export function lifecycleModel(facts: SessionFacts): LifecycleModel | null {
   const terminal = terminalOf(facts.pr)
   if (terminal) return { nodes: null, head: null, terminal }

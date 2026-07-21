@@ -2,8 +2,8 @@ import { type SessionStatus, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
 import { deliveryState } from './deliveryState'
 
-// The S-row table covers the ribbon-derived words; what is left is the fallback —
-// a Session whose ribbon says nothing falls back to its own triage word.
+// The S-row table covers the lifecycle-derived words; what is left is the fallback —
+// a Session whose lifecycle says nothing falls back to its own triage word.
 
 describe('rosterStatus fallback', () => {
   const words: [SessionStatus, string][] = [
@@ -47,10 +47,10 @@ describe('rosterStatus fallback', () => {
 
 // R1 puts the head at the leftmost unfinished node, and the row speaks for that
 // node alone — a louder stage to its right never steals the word, or the roster and
-// the ribbon would answer the same question differently.
+// the lifecycle would answer the same question differently.
 describe('rosterStatus speaks for the head node', () => {
   it('keeps the word on Commits while a failed CI sits to its right', () => {
-    const { ribbon, roster } = deliveryState(
+    const { lifecycle, roster } = deliveryState(
       sessionFacts({
         headSha: 'a1b2c3d',
         dirty: 3,
@@ -59,8 +59,8 @@ describe('rosterStatus speaks for the head node', () => {
         ci: { status: 'failed', sha: 'a1b2c3d' },
       }),
     )
-    expect(ribbon?.head).toBe('commits')
-    expect(ribbon?.nodes?.ci).toBe('fail')
+    expect(lifecycle?.head).toBe('commits')
+    expect(lifecycle?.nodes?.ci).toBe('fail')
     expect(roster).toEqual({ word: 'Commit ready', tone: 'amber', icon: 'git-commit' })
   })
 })

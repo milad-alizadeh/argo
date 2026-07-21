@@ -29,8 +29,8 @@ type ConsoleProps = {
 }
 
 // Organism: the ONE monospace surface (R13). The live channel is a real shell (`LiveTerminal`);
-// raw tool and agent feeds fill its single capture slot — they never open a pane, and they
-// never nest inside the Activity pane's prose.
+// raw tool and agent feeds fill its single capture slot — they never open a panel, and they
+// never nest inside the Activity panel's prose.
 export function Console({
   capture,
   activeChannel,

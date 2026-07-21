@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { clampPaneSize, keyStepDelta } from './PanelSplitter'
+import { clampPanelSize, keyStepDelta } from './PanelSplitter'
 
-describe('clampPaneSize', () => {
+describe('clampPanelSize', () => {
   it('rounds a fractional pointer position to whole pixels', () => {
-    expect(clampPaneSize(248.4, 190, 360)).toBe(248)
-    expect(clampPaneSize(248.6, 190, 360)).toBe(249)
+    expect(clampPanelSize(248.4, 190, 360)).toBe(248)
+    expect(clampPanelSize(248.6, 190, 360)).toBe(249)
   })
 
   it('clamps a drag past either end to the bound it ran into', () => {
-    expect(clampPaneSize(12, 190, 360)).toBe(190)
-    expect(clampPaneSize(900, 190, 360)).toBe(360)
-    expect(clampPaneSize(-40, 190, 360)).toBe(190)
+    expect(clampPanelSize(12, 190, 360)).toBe(190)
+    expect(clampPanelSize(900, 190, 360)).toBe(360)
+    expect(clampPanelSize(-40, 190, 360)).toBe(190)
   })
 
   it('leaves the bounds themselves alone', () => {
-    expect(clampPaneSize(190, 190, 360)).toBe(190)
-    expect(clampPaneSize(360, 190, 360)).toBe(360)
+    expect(clampPanelSize(190, 190, 360)).toBe(190)
+    expect(clampPanelSize(360, 190, 360)).toBe(360)
   })
 })
 
