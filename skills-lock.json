@@ -35,7 +35,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/componentize-design/SKILL.md",
-      "computedHash": "f64c1b4de94cbfbdaaee58b18b277f20a72b6ea7c247bf86e3efdc389c291149"
+      "computedHash": "a119e9164061411855bf1476255eaaced3b885768deee24a4151c06917c14aad"
     },
     "design-an-interface": {
       "source": "mattpocock/skills",
@@ -233,7 +233,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-rules/SKILL.md",
-      "computedHash": "f30415841bc1b6ca792a0e73d071607ebe0df35bc0f4101b82dc7a38de54db2d"
+      "computedHash": "d2456cf9e0769201d8f90d01c1735222c4ad6304330eaed05c533c94b0f80d9c"
     },
     "setup-ts-deep-modules": {
       "source": "mattpocock/skills",
@@ -287,7 +287,7 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/to-tickets/SKILL.md",
-      "computedHash": "5d79577541b5cf6dade61c69844432ea20ce7b12527cdda1dd4d6fe8d59a135d"
+      "computedHash": "0349eee265e7005e667b4543de849672106c46d545e998f37d3319300bb07751"
     },
     "triage": {
       "source": "mattpocock/skills",
