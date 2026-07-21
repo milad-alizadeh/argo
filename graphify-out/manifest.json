@@ -125,8 +125,8 @@
     "semantic_hash": "651a08814b4b81cb8496b175118545fb"
   },
   "package.json": {
-    "mtime": 1784596417.7592773,
-    "ast_hash": "f2eae2d999fb05fd9626f7a5bd742f9c",
+    "mtime": 1784598069.7087383,
+    "ast_hash": "309ea6e6682f0cb74c5626f702d0ddbd",
     "semantic_hash": ""
   },
   "turbo.json": {
@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "skills-lock.json": {
-    "mtime": 1784597672.441261,
-    "ast_hash": "11ec70c28ceaae9c4cfb7e9ef8c243f9",
+    "mtime": 1784598124.2217774,
+    "ast_hash": "30f6afe22fe1a64b34896c8f5de463eb",
     "semantic_hash": ""
   },
   "apps/desktop/.storybook/vitest.setup.ts": {
@@ -1917,6 +1917,16 @@
   "apps/desktop/__screenshots__/shared-workspaceidentity-default-chromium-linux.png": {
     "mtime": 1784583968.7326503,
     "ast_hash": "2c6805a53ed5cb3cf09509f86fe586e4",
+    "semantic_hash": ""
+  },
+  ".codex/hooks.json": {
+    "mtime": 1784598069.7074046,
+    "ast_hash": "6e05b1dd92a016afde495d0295858b46",
+    "semantic_hash": ""
+  },
+  "hooks.json": {
+    "mtime": 1784598069.7084544,
+    "ast_hash": "5daf1de7bb20d62417e56f02f0fa0a75",
     "semantic_hash": ""
   }
 }

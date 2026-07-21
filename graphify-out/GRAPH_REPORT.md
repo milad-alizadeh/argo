@@ -1,16 +1,16 @@
 # Graph Report - argo  (2026-07-21)
 
 ## Corpus Check
-- 215 files · ~117,478 words
+- 217 files · ~117,719 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1051 nodes · 2104 edges · 78 communities (46 shown, 32 thin omitted)
+- 1052 nodes · 2105 edges · 78 communities (46 shown, 32 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 4 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `24fa9670`
+- Built from commit: `ea296257`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -95,7 +95,7 @@
 2. `createIcon()` - 46 edges
 3. `Text()` - 45 edges
 4. `Button()` - 17 edges
-5. `scripts` - 15 edges
+5. `scripts` - 16 edges
 6. `scripts` - 14 edges
 7. `NodeDrawer()` - 12 edges
 8. `CheckIcon` - 12 edges
@@ -125,7 +125,7 @@ Nodes (33): source, assist, actions, enabled, css, parser, files, ignoreUnknown 
 
 ### Community 1 - "Root Package Manifest"
 Cohesion: 0.06
-Nodes (32): @biomejs/biome, husky, lint-staged, bin, argo, devDependencies, @biomejs/biome, husky (+24 more)
+Nodes (33): @biomejs/biome, husky, lint-staged, bin, argo, devDependencies, @biomejs/biome, husky (+25 more)
 
 ### Community 2 - "Turbo Build Pipeline"
 Cohesion: 0.07
@@ -165,7 +165,7 @@ Nodes (43): App(), ADR-0005, Roster(), deliveryStates, Empty, everyState, oneSes
 
 ### Community 15 - "Electron Toolkit TSConfig"
 Cohesion: 0.22
-Nodes (9): devDependencies, electron, @electron-toolkit/tsconfig, @storybook/addon-docs, @vitest/browser-playwright, electron, @electron-toolkit/tsconfig, @storybook/addon-docs (+1 more)
+Nodes (9): devDependencies, @chromatic-com/storybook, electron, @electron-toolkit/tsconfig, @vitest/browser-playwright, @chromatic-com/storybook, electron, @electron-toolkit/tsconfig (+1 more)
 
 ### Community 20 - "Vitest Browser Playwright"
 Cohesion: 0.06
@@ -213,7 +213,7 @@ Nodes (14): DeliveryTabs(), isChangesView(), isDeliveryTab(), AllTones, ChangesT
 
 ### Community 54 - "button.stories.tsx"
 Cohesion: 0.12
-Nodes (16): RUN_SHAPES, RUN_STATES, batchMembers, CollapsedBatch, CollapsedWorkflow, Controlled, Default, EmptyBatch (+8 more)
+Nodes (16): RUN_SHAPES, RunMember, batchMembers, CollapsedBatch, CollapsedWorkflow, Controlled, Default, EmptyBatch (+8 more)
 
 ### Community 55 - "ContextGauge.tsx"
 Cohesion: 0.16
@@ -288,7 +288,7 @@ Cohesion: 0.40
 Nodes (4): Checked, Default, Disabled, Story
 
 ## Knowledge Gaps
-- **472 isolated node(s):** `*.css`, `projectRoot`, `config`, `project`, `$schema` (+467 more)
+- **473 isolated node(s):** `*.css`, `projectRoot`, `config`, `project`, `$schema` (+468 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **32 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -302,10 +302,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `NodeDrawer()` connect `index.ts` to `Session Row & Button`, `sessionFacts.ts`, `Vitest Browser Playwright`, `SectionHeader.tsx`, `Electron Vite`?**
   _High betweenness centrality (0.014) - this node is a cross-community bridge._
 - **What connects `*.css`, `projectRoot`, `config` to the rest of the system?**
-  _472 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _473 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Biome Config` be split into smaller, more focused modules?**
   _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._
 - **Should `Root Package Manifest` be split into smaller, more focused modules?**
-  _Cohesion score 0.06060606060606061 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._
 - **Should `Turbo Build Pipeline` be split into smaller, more focused modules?**
   _Cohesion score 0.07389162561576355 - nodes in this community are weakly interconnected._

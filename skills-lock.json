@@ -185,7 +185,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-argo-skills/SKILL.md",
-      "computedHash": "8e7171e9d41665e35f592a628b4fd1d4b8336cae9783ee8631bcf4ac34af87d2"
+      "computedHash": "52eadc5e788743be253791a108a632a74b806be064c7f2cd00ebbd7b047da766"
     },
     "setup-design-handoff": {
       "source": "milad-alizadeh/argo",
