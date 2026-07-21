@@ -30,7 +30,7 @@ function TabsList({
   )
 }
 
-// Named after the token spent, never a domain word — `changes` is the one caller (WorkTabs'
+// Named after the token spent, never a domain word — `changes` is the one caller (DeliveryTabs'
 // Review tab) reaching for the amber wash the study spells `.dtab.review`.
 const tabsTriggerVariants = cva(
   `${TYPE_ROLE_CLASS.row} cursor-pointer rounded-lg px-gap py-tight text-muted-foreground outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40 data-[state=active]:bg-foreground/6 data-[state=active]:text-foreground`,

@@ -4,7 +4,7 @@ import { FINDING_SEVERITIES, FINDING_STATES } from '@/shared/components/ui'
 import { FindingCard } from './FindingCard'
 
 const meta = {
-  title: 'Ship/FileDiff/FindingCard',
+  title: 'Delivery/FileDiff/FindingCard',
   component: FindingCard,
   args: {
     severity: 'blocking',

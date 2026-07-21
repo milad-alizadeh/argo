@@ -10,7 +10,7 @@ function isChangesView(value: string): value is ChangesView {
 }
 
 /**
- * Molecule: the All files | By commit segmented toggle inside the WorkTabs strip, Changes
+ * Molecule: the All files | By commit segmented toggle inside the DeliveryTabs strip, Changes
  * tab only. Vendored `ToggleGroup` on Radix, `type="single"` — always exactly one selected,
  * so a click on the already-selected side is ignored rather than clearing it.
  */

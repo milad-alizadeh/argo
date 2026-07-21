@@ -23,7 +23,7 @@ const FINDINGS: DiffFinding[] = [
 ]
 
 const meta = {
-  title: 'Ship/FileDiff',
+  title: 'Delivery/FileDiff',
   component: FileDiff,
   args: {
     kind: 'M',

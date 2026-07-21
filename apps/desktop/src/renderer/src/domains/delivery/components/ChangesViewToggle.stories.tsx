@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { CHANGES_VIEWS, ChangesViewToggle } from './ChangesViewToggle'
 
 const meta = {
-  title: 'Ship/WorkTabs/ChangesViewToggle',
+  title: 'Delivery/DeliveryTabs/ChangesViewToggle',
   component: ChangesViewToggle,
   args: { view: 'all', onChangeView: fn() },
   argTypes: {

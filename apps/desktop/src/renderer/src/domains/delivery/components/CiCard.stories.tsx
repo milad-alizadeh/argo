@@ -4,7 +4,7 @@ import { Text } from '@/shared/components/ui'
 import { CiCard } from './CiCard'
 
 const meta = {
-  title: 'Ship/CiCard',
+  title: 'Delivery/CiCard',
   component: CiCard,
   argTypes: {
     heading: { control: false },

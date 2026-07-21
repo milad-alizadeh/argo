@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { WorkTabs } from './WorkTabs'
+import { DeliveryTabs } from './DeliveryTabs'
 
 const meta = {
-  title: 'Ship/WorkTabs',
-  component: WorkTabs,
-} satisfies Meta<typeof WorkTabs>
+  title: 'Delivery/DeliveryTabs',
+  component: DeliveryTabs,
+} satisfies Meta<typeof DeliveryTabs>
 
 export default meta
 type Story = StoryObj<typeof meta>

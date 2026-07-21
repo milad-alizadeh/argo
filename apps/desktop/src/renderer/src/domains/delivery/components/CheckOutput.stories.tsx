@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { CheckOutput, LOCAL_CHECKS } from './CheckOutput'
 
 const meta = {
-  title: 'Ship/CheckOutput',
+  title: 'Delivery/CheckOutput',
   component: CheckOutput,
   argTypes: {
     check: { control: 'select', options: LOCAL_CHECKS },
@@ -21,7 +21,7 @@ export const Default: Story = {
   args: {
     check: 'tests',
     command: 'bun run test',
-    output: '✓ 42 passed\n  ribbonNodeState.test.ts (4)\n  useDisclosure.test.ts (4)',
+    output: '✓ 42 passed\n  lifecycleNodeState.test.ts (4)\n  useDisclosure.test.ts (4)',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

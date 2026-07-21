@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import { ArrowRightIcon, ArrowSquareOutIcon, Button, Text } from '@/shared/components/ui'
 
 export interface PrAnchorProps {
-  /** The pull request's number — its home is this anchor; every other ship-flow surface
+  /** The pull request's number — its home is this anchor; every other delivery surface
    * that needs it only points back here (R9). */
   prNum: number
   /** Where "GitHub" opens. */
@@ -11,7 +11,7 @@ export interface PrAnchorProps {
 }
 
 /**
- * Molecule: the ribbon strip's trailing anchor to the pull request it ships through.
+ * Molecule: the lifecycle strip's trailing anchor to the pull request it ships through.
  *
  * Exists only once a PR does (R9) — nothing renders this before `Create PR` has run. The
  * base branch always reads "main"; the session's own branch is typed exactly once, in

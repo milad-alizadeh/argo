@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { PrAnchor } from './PrAnchor'
 
 const meta = {
-  title: 'Ship/PrAnchor',
+  title: 'Delivery/PrAnchor',
   component: PrAnchor,
   argTypes: {
     prNum: { control: { type: 'number', min: 1 } },
@@ -14,7 +14,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The ribbon strip's trailing anchor once a PR exists (R9) — number, target and a GitHub
+/** The lifecycle strip's trailing anchor once a PR exists (R9) — number, target and a GitHub
  * link, all pointing at facts typed exactly once elsewhere on screen. */
 export const Default: Story = {
   args: { prNum: 42, ghUrl: 'https://github.com/milad-alizadeh/argo/pull/42' },

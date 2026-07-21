@@ -14,7 +14,7 @@ import {
   WarningIcon,
 } from '@/shared/components/ui'
 
-export interface RibbonNodeStatePresentation {
+export interface LifecycleNodeStatePresentation {
   /** The glyph the disc draws — chosen by state alone, never by which of the five nodes this
    * is: the node's own name already sits beside it as the `rlbl`, so the icon's only job is
    * to say where the STAGE stands. */
@@ -29,14 +29,14 @@ export interface RibbonNodeStatePresentation {
 
 // `now`, `gate` and `sync` share one "active" glyph — the primary gradient disc the study
 // paints identically for all three (`.rnode.now .glyph,.rnode.gate .glyph,.rnode.sync
-// .glyph`). R2 draws gate apart from in-progress by FORM (the outer ring RibbonNode adds
+// .glyph`). R2 draws gate apart from in-progress by FORM (the outer ring LifecycleNode adds
 // itself), never by a second tint — so the vocabulary only needs one entry for the shape.
 const ACTIVE_GLYPH = SOLID_PRIMARY_TONE
 const ACTIVE_LABEL = 'text-foreground'
 
-/** State → icon + tone, in the `findingState.ts` pattern: every render fact about a ribbon
- * node's glyph lives here once, so RibbonNode never re-picks a colour for a state key. */
-export const RIBBON_NODE_STATE: Record<LifecycleNodeState, RibbonNodeStatePresentation> = {
+/** State → icon + tone, in the `findingState.ts` pattern: every render fact about a lifecycle
+ * node's glyph lives here once, so LifecycleNode never re-picks a colour for a state key. */
+export const LIFECYCLE_NODE_STATE: Record<LifecycleNodeState, LifecycleNodeStatePresentation> = {
   wait: {
     Icon: CircleIcon,
     glyph: 'border-border text-muted-foreground',

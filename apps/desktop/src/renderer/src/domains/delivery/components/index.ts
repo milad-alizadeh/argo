@@ -3,9 +3,13 @@ export { CHANGES_VIEWS, type ChangesView, ChangesViewToggle } from './ChangesVie
 export { CheckOutput, type CheckOutputProps, LOCAL_CHECKS, type LocalCheck } from './CheckOutput'
 export { CiCard, type CiCardProps } from './CiCard'
 export { CommitGroup, type CommitGroupFile } from './CommitGroup'
+export { DeliveryLifecycle, type DeliveryLifecycleProps } from './DeliveryLifecycle'
+export { DELIVERY_TABS, type DeliveryTab, DeliveryTabs } from './DeliveryTabs'
 export type { DiffFinding, DiffHunkLine, FileChangeKind } from './diffModel'
 export { FileDiff } from './FileDiff'
 export { FindingCard } from './FindingCard'
+export { LifecycleNode, type LifecycleNodeProps } from './LifecycleNode'
+export { LIFECYCLE_NODE_STATE, type LifecycleNodeStatePresentation } from './lifecycleNodeState'
 export { NodeDrawer, type NodeDrawerProps, type NodeDrawerSession } from './NodeDrawer'
 export type {
   CiDrawerData,
@@ -23,7 +27,3 @@ export {
   PrChecksList,
   type PrChecksListProps,
 } from './PrChecksList'
-export { PrLifecycleRibbon, type PrLifecycleRibbonProps } from './PrLifecycleRibbon'
-export { RibbonNode, type RibbonNodeProps } from './RibbonNode'
-export { RIBBON_NODE_STATE, type RibbonNodeStatePresentation } from './ribbonNodeState'
-export { WORK_TABS, type WorkTab, WorkTabs } from './WorkTabs'

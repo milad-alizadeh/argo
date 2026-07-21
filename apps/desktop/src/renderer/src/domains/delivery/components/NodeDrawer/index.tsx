@@ -36,7 +36,7 @@ export type NodeDrawerProps =
       className?: string
     }
   | {
-      /** R8: the ribbon has already resolved to a terminal state — merged or closed replace
+      /** R8: the lifecycle has already resolved to a terminal state — merged or closed replace
        * the five nodes entirely, so there is no per-node head to carry. */
       node: 'terminal'
       state: TerminalState
@@ -45,7 +45,7 @@ export type NodeDrawerProps =
     }
 
 /**
- * Organism: the selected ribbon node's drawer — the ONE place its body renders, whichever
+ * Organism: the selected lifecycle node's drawer — the ONE place its body renders, whichever
  * of the six kinds `node` names.
  *
  * A drawer carries a control only when its node is the head (R2 — the screen's one
