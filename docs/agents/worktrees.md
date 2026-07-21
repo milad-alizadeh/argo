@@ -71,3 +71,13 @@ git worktree add .claude/worktrees/ticket-<N>-<slug> argo/#<N>-<slug>
 
 If the branch was never pushed and the worktree is gone, the work is lost — which is why the
 push-before-stopping step above is not optional.
+
+## Sub-agents stay in the parent's worktree
+
+A dispatched sub-agent **inherits its parent's worktree and stays there by default** — it must
+not spin up its own (Claude Code: don't pass `isolation: "worktree"` to the `Agent` tool).
+Nesting worktrees per sub-agent just proliferates them and splits state across trees — separate
+checkouts, separate branches, and confusion over which one a dev server is serving. The parent's
+worktree already provides the isolation from the shared main checkout. The **one** exception is
+an explicit instruction from the parent to give a sub-agent its own worktree — a parent decision,
+never something a sub-agent takes on its own.
