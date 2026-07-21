@@ -1330,10 +1330,9 @@ function sessionHtml(){
   const s=cur();
   return `<div class="panel session">
     <div class="phead shead" data-component="SessionHeader">
-      <span class="plus" style="margin-left:0" title="Close session — deselects, collapsing the spine to the roster (behaviour lives in code)" aria-label="Close session">${ic('x')}</span>
       <div class="crumb"><span>argo</span><span class="sep">${ic('caret-right')}</span><b>${s.title}</b></div>
       ${wschipHtml(s)}
-      <div class="toggles"><span class="tg ${showDetail?'on':''}" onclick="toggleDetail()">${ic('sidebar-simple')} Delivery</span></div>
+      <div class="toggles"><span class="tg ${showDetail?'on':''}" onclick="toggleDetail()">${ic('sidebar-simple')} Delivery</span><span class="plus" style="margin-left:0" title="Close session — deselects, collapsing the spine to the roster (behaviour lives in code)" aria-label="Close session">${ic('x')}</span></div>
     </div>
     ${workHtml()}
     <div class="hsplit" data-split="term"></div>

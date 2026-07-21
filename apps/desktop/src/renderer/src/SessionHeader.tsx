@@ -30,9 +30,6 @@ export function SessionHeader({
     <PanelHeader
       left={
         <>
-          <IconButton label="Close session" onClick={onClose}>
-            <XIcon aria-hidden className="size-4" />
-          </IconButton>
           <div className="flex min-w-0 items-center gap-snug">
             <Text variant="row" className="text-muted-foreground">
               {project}
@@ -48,9 +45,14 @@ export function SessionHeader({
         </>
       }
       right={
-        <Button variant="ghost" size="sm" aria-pressed={deliveryOpen} onClick={onToggleDelivery}>
-          <Text variant="meta">Delivery</Text>
-        </Button>
+        <>
+          <Button variant="ghost" size="sm" aria-pressed={deliveryOpen} onClick={onToggleDelivery}>
+            <Text variant="meta">Delivery</Text>
+          </Button>
+          <IconButton label="Close session" onClick={onClose}>
+            <XIcon aria-hidden className="size-3" />
+          </IconButton>
+        </>
       }
     />
   )
