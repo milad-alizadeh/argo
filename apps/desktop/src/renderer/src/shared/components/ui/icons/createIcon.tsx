@@ -7,7 +7,7 @@ export type IconProps = Pick<
   'width' | 'height' | 'className' | 'aria-hidden' | 'aria-label' | 'role'
 > & {
   // Light is the cockpit's only icon weight, so this can restate the pin but never
-  // change it. Kept until `rail/SessionRow.tsx` (owned by #3) drops the prop.
+  // change it. Kept until `roster/SessionRow.tsx` (owned by #3) drops the prop.
   weight?: 'light'
 }
 

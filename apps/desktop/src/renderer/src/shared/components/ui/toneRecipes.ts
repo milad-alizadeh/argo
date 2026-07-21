@@ -1,6 +1,6 @@
 // The cockpit's tone recipes, spent by name instead of hand-copied — a washed tint is a
 // border+background(+text) triple that no single Tailwind token covers, so each recipe
-// lives here once and every caller (button.tsx, badge.tsx, the ribbon's own state
+// lives here once and every caller (button.tsx, badge.tsx, the lifecycle's own state
 // vocabulary) reads the same literal instead of re-typing the opacity pair.
 
 /** The screen's ONE primary — a gradient disc/pill (R2). button.tsx's `primary` variant and

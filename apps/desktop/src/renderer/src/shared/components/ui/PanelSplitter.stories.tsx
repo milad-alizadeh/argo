@@ -1,25 +1,25 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fireEvent, fn, userEvent, within } from 'storybook/test'
 import { cn } from '@/lib/utils'
-import { PANE_ORIENTATIONS, PanelSplitter } from './PanelSplitter'
+import { PANEL_ORIENTATIONS, PanelSplitter } from './PanelSplitter'
 import { Text } from './Text'
 
-const RAIL = { size: 248, min: 190, max: 360 }
+const ROSTER = { size: 248, min: 190, max: 360 }
 
 const meta = {
   title: 'Shared/PanelSplitter',
   component: PanelSplitter,
-  args: { orientation: 'v', ...RAIL, label: 'Rail width', onResize: fn() },
+  args: { orientation: 'v', ...ROSTER, label: 'Roster width', onResize: fn() },
   argTypes: {
-    orientation: { control: 'select', options: PANE_ORIENTATIONS },
+    orientation: { control: 'select', options: PANEL_ORIENTATIONS },
     size: { control: { type: 'range', min: 92, max: 640, step: 1 } },
     min: { control: 'number' },
     max: { control: 'number' },
     invert: { control: 'boolean' },
     label: { control: 'text' },
   },
-  // A splitter is a hairline between two panes, so it only has a size once something
-  // holds it: the frame stands in for the panes it would sit between. The gallery brings
+  // A splitter is a hairline between two panels, so it only has a size once something
+  // holds it: the frame stands in for the panels it would sit between. The gallery brings
   // its own frames and opts out.
   decorators: [
     (Story, { args, parameters }) =>
@@ -43,11 +43,11 @@ type Story = StoryObj<typeof meta>
 
 /**
  * Dragging reports the new clamped px size and nothing else — the screen-local custom
- * property it feeds (`--c-rail`) belongs to SessionScreen, never to the splitter.
+ * property it feeds (`--c-roster`) belongs to SessionScreen, never to the splitter.
  */
 export const Default: Story = {
   play: async ({ args, canvasElement }) => {
-    const splitter = within(canvasElement).getByRole('separator', { name: 'Rail width' })
+    const splitter = within(canvasElement).getByRole('separator', { name: 'Roster width' })
 
     await fireEvent.pointerDown(splitter, { clientX: 100, clientY: 100 })
     await fireEvent.pointerMove(window, { clientX: 140, clientY: 100 })
@@ -74,8 +74,8 @@ export const Default: Story = {
 }
 
 /**
- * `invert` is for the pane that sits AFTER its splitter (the console under its bar): dragging
- * down shrinks it, where the un-inverted rail grows.
+ * `invert` is for the panel that sits AFTER its splitter (the console under its bar): dragging
+ * down shrinks it, where the un-inverted roster grows.
  */
 export const Inverted: Story = {
   args: { orientation: 'h', size: 170, min: 92, max: 420, invert: true, label: 'Console height' },
@@ -96,7 +96,7 @@ export const AllOrientations: Story = {
   parameters: { unframed: true },
   render: (args) => (
     <div className="flex items-center gap-region">
-      {PANE_ORIENTATIONS.map((orientation) => (
+      {PANEL_ORIENTATIONS.map((orientation) => (
         <span className="flex flex-col items-center gap-gap" key={orientation}>
           <span
             className={cn(
@@ -115,7 +115,7 @@ export const AllOrientations: Story = {
   ),
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getAllByRole('separator')).toHaveLength(
-      PANE_ORIENTATIONS.length,
+      PANEL_ORIENTATIONS.length,
     )
   },
 }

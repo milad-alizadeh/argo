@@ -157,7 +157,7 @@ export const LongCaptureLabel: Story = {
   args: {
     capture: {
       ...CAPTURE,
-      label: 'e2e:playwright --project=chromium --grep session-rail @11:02',
+      label: 'e2e:playwright --project=chromium --grep session-roster @11:02',
     },
   },
   decorators: [

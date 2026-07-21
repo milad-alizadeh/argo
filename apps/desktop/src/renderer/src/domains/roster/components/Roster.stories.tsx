@@ -55,7 +55,7 @@ export const SingleSession: Story = {
   },
 }
 
-// A clean tree with no commits grows no ribbon (R7), so every row falls back to the
+// A clean tree with no commits grows no lifecycle (R7), so every row falls back to the
 // Session's own triage word — one row per state main can observe.
 const everyState: SessionView[] = SESSION_STATES.map((status) => ({
   id: status,
@@ -125,7 +125,7 @@ const deliveryStates: SessionView[] = [
 ]
 
 /**
- * The ribbon-derived half of R16, reachable now that facts cross the bridge: a delivery stage
+ * The lifecycle-derived half of R16, reachable now that facts cross the bridge: a delivery stage
  * REPLACES the lifecycle word rather than appending a detail to it.
  */
 export const DeliveryStates: Story = {

@@ -6,7 +6,7 @@
   "modules": [
     {
       "name": "shared",
-      "comment": "Cross-process contract: the Session state list and the union derived from it, the ship facts main observes, the event vocabulary, projected-state types, IPC channel names, the pure projection reducer, and the ribbon derivation (session facts → ship-flow render state). Types, frozen constants and pure functions only — no I/O, no framework. `SessionView` carries facts, never a rendered state, so grading stays on the renderer's side of the bridge. Imported by all three processes (renderer files reach it through the `@shared` alias), imports none of them.",
+      "comment": "Cross-process contract: the Session state list and the union derived from it, the delivery facts main observes, the event vocabulary, projected-state types, IPC channel names, the pure projection reducer, and the lifecycle derivation (session facts → delivery render state). Types, frozen constants and pure functions only — no I/O, no framework. `SessionView` carries facts, never a rendered state, so grading stays on the renderer's side of the bridge. Imported by all three processes (renderer files reach it through the `@shared` alias), imports none of them.",
       "path": "^src/shared/",
       "publicEntry": ["^src/shared/index\\.ts$"]
     },
@@ -30,7 +30,7 @@
     },
     {
       "name": "renderer-shared",
-      "comment": "The renderer's shared leaf (feature-sliced `shared/`): the framework-primitive kit (`components/ui` + its icons) that every Pane composes, and the delivery-flow presentation vocabulary (`shared/delivery`: the Roster status word/icon and the `deliveryState` composition over the `@shared` ribbon derivation). A building block imported by two or more domains lives here, so every domain may import it and it imports no domain in return. External code reaches it only through the three barrels; its internals are private.",
+      "comment": "The renderer's shared leaf (feature-sliced `shared/`): the framework-primitive kit (`components/ui` + its icons) that every Panel composes, and the delivery presentation vocabulary (`shared/delivery`: the Roster status word/icon and the `deliveryState` composition over the `@shared` lifecycle derivation). A building block imported by two or more domains lives here, so every domain may import it and it imports no domain in return. External code reaches it only through the three barrels; its internals are private.",
       "path": "^src/renderer/src/shared/",
       "publicEntry": [
         "^src/renderer/src/shared/components/ui/index\\.ts$",
@@ -40,13 +40,13 @@
     },
     {
       "name": "roster",
-      "comment": "The Roster Pane (CONTEXT.md region): the session roster column and its rows. A feature slice — owns its `components/` and, as they arrive, its hooks/store/types. Composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "comment": "The Roster Panel (CONTEXT.md region): the session roster column and its rows. A feature slice — owns its `components/` and, as they arrive, its hooks/store/types. Composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/roster/",
       "publicEntry": ["^src/renderer/src/domains/roster/components/index\\.ts$"]
     },
     {
       "name": "activity",
-      "comment": "The Activity Pane (CONTEXT.md region; supersedes ADR-0009's `story/`): the Background Tasks roster — Runs, Agents, phases. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "comment": "The Activity Panel (CONTEXT.md region; supersedes ADR-0009's `story/`): the Background Tasks roster — Runs, Agents, phases. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/activity/",
       "publicEntry": ["^src/renderer/src/domains/activity/components/index\\.ts$"]
     },
@@ -58,13 +58,13 @@
     },
     {
       "name": "console",
-      "comment": "The Console Pane (CONTEXT.md region, cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "comment": "The Console Panel (CONTEXT.md region, cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/console/",
       "publicEntry": ["^src/renderer/src/domains/console/components/index\\.ts$"]
     }
   ],
   "layers": {
-    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation: a domain (Pane) must not reach into another domain's internals (domains ⊥ domains); every domain may import `renderer-shared` (domains → shared); `renderer-shared` is a leaf that imports no domain (shared ⊥ domains).",
+    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation: a domain (Panel) must not reach into another domain's internals (domains ⊥ domains); every domain may import `renderer-shared` (domains → shared); `renderer-shared` is a leaf that imports no domain (shared ⊥ domains).",
     "main": ["renderer", "preload"],
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],

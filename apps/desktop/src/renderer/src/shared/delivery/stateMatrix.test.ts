@@ -3,19 +3,19 @@ import { describe, expect, it } from 'vitest'
 import { deliveryState } from './deliveryState'
 
 // The state table of `docs/designs/cockpit-matrix.md`, one case per row: given the
-// facts, the ribbon, its head, and the roster word are fully determined.
+// facts, the lifecycle, its head, and the roster word are fully determined.
 
 const HEAD = 'a1b2c3d'
 const OLD = '9f0e1d2'
 const PR = { num: 42, state: 'open', base: 'main' } as const
 
 const row = (input: SessionFactsInput) => {
-  const { ribbon, roster } = deliveryState(sessionFacts(input))
-  return { model: ribbon, roster }
+  const { lifecycle, roster } = deliveryState(sessionFacts(input))
+  return { model: lifecycle, roster }
 }
 
 describe('S0 — clean tree, no commits', () => {
-  it('grows no ribbon and stays Running', () => {
+  it('grows no lifecycle and stays Running', () => {
     const { model, roster } = row({})
     expect(model).toBeNull()
     expect(roster).toEqual({ word: 'Running', tone: 'run', icon: 'circle-notch' })
@@ -190,7 +190,7 @@ describe('S9 — +1 commit while PR open', () => {
 })
 
 describe('S10 — merged', () => {
-  it('replaces the ribbon with the merged terminal and lands the roster', () => {
+  it('replaces the lifecycle with the merged terminal and lands the roster', () => {
     const { model, roster } = row({
       headSha: HEAD,
       pr: { num: 38, state: 'merged', base: 'main' },
@@ -203,7 +203,7 @@ describe('S10 — merged', () => {
 })
 
 describe('S11 — closed w/o merge', () => {
-  it('replaces the ribbon with the closed terminal', () => {
+  it('replaces the lifecycle with the closed terminal', () => {
     const { model, roster } = row({
       headSha: HEAD,
       pr: { num: 35, state: 'closed', base: 'main' },

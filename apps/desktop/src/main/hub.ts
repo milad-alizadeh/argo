@@ -34,7 +34,7 @@ export function createHub(): Hub {
     subscribe(listener) {
       listeners.add(listener)
       // Hydrate the new subscriber with current truth before any live delta, so a
-      // window that connects late (or reconnects) still renders the full rail.
+      // window that connects late (or reconnects) still renders the full roster.
       listener({ type: 'snapshot', state })
       return () => {
         listeners.delete(listener)

@@ -2,24 +2,24 @@ import { useEffect, useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
-export const PANE_ORIENTATIONS = ['v', 'h'] as const
+export const PANEL_ORIENTATIONS = ['v', 'h'] as const
 
 /** `v` splits two columns (a vertical bar, dragged left/right); `h` splits two rows. */
-export type PaneOrientation = (typeof PANE_ORIENTATIONS)[number]
+export type PanelOrientation = (typeof PANEL_ORIENTATIONS)[number]
 
 /** One spacing-rhythm step per arrow press. A drag-only splitter is unreachable by
  * keyboard, so the same resize runs off the arrow keys. */
 const KEY_STEP_PX = 16
 
-/** Pane sizes are px the parent stores: a drag arrives fractional on a retina pointer and
+/** Panel sizes are px the parent stores: a drag arrives fractional on a retina pointer and
  * runs past both ends, so the splitter rounds and clamps before it reports. */
-export function clampPaneSize(size: number, min: number, max: number): number {
+export function clampPanelSize(size: number, min: number, max: number): number {
   return Math.min(Math.max(Math.round(size), min), max)
 }
 
 /** The px step an arrow key asks for along this splitter's own axis — 0 for every key
  * that would move across it, which is how the cross-axis arrows stay free for scrolling. */
-export function keyStepDelta(key: string, orientation: PaneOrientation): number {
+export function keyStepDelta(key: string, orientation: PanelOrientation): number {
   switch (key) {
     case 'ArrowLeft':
       return orientation === 'v' ? -KEY_STEP_PX : 0
@@ -36,17 +36,17 @@ export function keyStepDelta(key: string, orientation: PaneOrientation): number 
 
 type PanelSplitterProps = {
   /** Which way the bar runs: `v` between two columns, `h` between two rows. */
-  orientation: PaneOrientation
-  /** Current px size of the pane this splitter resizes — the parent owns it. */
+  orientation: PanelOrientation
+  /** Current px size of the panel this splitter resizes — the parent owns it. */
   size: number
-  /** Smallest px the pane may shrink to. */
+  /** Smallest px the panel may shrink to. */
   min: number
-  /** Largest px the pane may grow to. */
+  /** Largest px the panel may grow to. */
   max: number
-  /** The resized pane sits *after* the splitter (the console under its bar), so dragging
+  /** The resized panel sits *after* the splitter (the console under its bar), so dragging
    * toward it shrinks it. */
   invert?: boolean
-  /** What this splitter resizes, for assistive tech — "Rail width", "Console height". */
+  /** What this splitter resizes, for assistive tech — "Roster width", "Console height". */
   label: string
   /** The new clamped px size, on every drag step and arrow press. Where that number goes
    * (a screen-local custom property) is the parent's business, never the splitter's. */
@@ -55,10 +55,10 @@ type PanelSplitterProps = {
 }
 
 /**
- * Atom: the draggable hairline between two panes.
+ * Atom: the draggable hairline between two panels.
  *
  * It owns the pointer bookkeeping and the clamp, and nothing else — no layout variable, no
- * pane, no persistence. The screen that mounts it decides what the number means.
+ * panel, no persistence. The screen that mounts it decides what the number means.
  */
 export function PanelSplitter({
   orientation,
@@ -78,7 +78,7 @@ export function PanelSplitter({
       orientation === 'v' ? event.clientX : event.clientY
     const move = (event: PointerEvent): void => {
       const travelled = axisOf(event) - drag.origin
-      onResize(clampPaneSize(drag.size + (invert ? -travelled : travelled), min, max))
+      onResize(clampPanelSize(drag.size + (invert ? -travelled : travelled), min, max))
     }
     const stop = (): void => setDrag(null)
     // The listeners live on the window so a pointer that outruns the 6px bar — which it
@@ -94,7 +94,7 @@ export function PanelSplitter({
   }, [drag, orientation, invert, min, max, onResize])
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>): void {
-    // Without this the drag selects the text in both panes it sits between.
+    // Without this the drag selects the text in both panels it sits between.
     event.preventDefault()
     setDrag({ origin: orientation === 'v' ? event.clientX : event.clientY, size })
   }
@@ -103,7 +103,7 @@ export function PanelSplitter({
     const step = keyStepDelta(event.key, orientation)
     if (step === 0) return
     event.preventDefault()
-    onResize(clampPaneSize(size + (invert ? -step : step), min, max))
+    onResize(clampPanelSize(size + (invert ? -step : step), min, max))
   }
 
   const dragging = drag !== null

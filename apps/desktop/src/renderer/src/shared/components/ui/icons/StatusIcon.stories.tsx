@@ -28,7 +28,7 @@ export const Default: Story = {
 }
 
 /**
- * Every icon name in one frame — the visual-diff surface for the ship's glyph set. One tone
+ * Every icon name in one frame — the visual-diff surface for the delivery glyph set. One tone
  * throughout: the tone↔colour pairing is StatusDot's gallery, not this one.
  */
 export const AllIcons: Story = {

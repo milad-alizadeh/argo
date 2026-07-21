@@ -103,7 +103,7 @@ export const Default: Story = {
   },
 }
 
-// A tool feed opened from the timeline. It fills the ONE capture slot — never a pane —
+// A tool feed opened from the timeline. It fills the ONE capture slot — never a panel —
 // and the live channel is still a tab away.
 export const CaptureActive: Story = {
   args: { capture: CAPTURE, activeChannel: CAPTURE.id },

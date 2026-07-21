@@ -4,8 +4,8 @@ import { sessionFacts } from './sessionFacts'
 
 // Seam A, pure: main-side `applyEvent` turns events into deltas; renderer-side
 // `applyDelta` replays those deltas into projected state. This exercises the whole
-// projection contract end-to-end. The rendered-rail half of the Seam A criterion
-// lives in Rail.stories.tsx — a browser/renderer test cannot import main-process
+// projection contract end-to-end. The rendered-roster half of the Seam A criterion
+// lives in Roster.stories.tsx — a browser/renderer test cannot import main-process
 // code across the Electron module boundary, so the seam is asserted in two places
 // that share the same `SessionView` type (drift is a compile error).
 function project(events: HubEvent[]): {
@@ -31,11 +31,11 @@ const session = (over: Partial<SessionView> = {}): SessionView => ({
 })
 
 describe('Seam A projection', () => {
-  it('projects an empty rail from an empty event stream', () => {
+  it('projects an empty roster from an empty event stream', () => {
     expect(project([]).projected.sessions).toEqual([])
   })
 
-  it('projects one rail row from a session-created event', () => {
+  it('projects one roster row from a session-created event', () => {
     const { projected } = project([{ type: 'session-created', session: session() }])
     expect(projected.sessions).toEqual([session()])
   })
