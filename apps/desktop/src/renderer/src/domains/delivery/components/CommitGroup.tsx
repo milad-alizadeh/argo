@@ -62,10 +62,13 @@ export function CommitGroup({
           {files.length} file{files.length > 1 ? 's' : ''}
         </Text>
       </button>
-      {expanded &&
-        files.map((file) => (
-          <FileDiff key={file.path} {...file} onAdvanceFindingState={onAdvanceFindingState} />
-        ))}
+      {expanded && (
+        <div className="flex flex-col gap-gap">
+          {files.map((file) => (
+            <FileDiff key={file.path} {...file} onAdvanceFindingState={onAdvanceFindingState} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

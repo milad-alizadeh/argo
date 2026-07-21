@@ -43,14 +43,16 @@ export function AllFilesDiff({
           No changes yet.
         </Text>
       ) : (
-        files.map(({ commit, ...file }) => (
-          <FileDiff
-            key={file.path}
-            {...file}
-            markUncommitted={commit === null}
-            onAdvanceFindingState={onAdvanceFindingState}
-          />
-        ))
+        <div className="flex flex-col gap-gap">
+          {files.map(({ commit, ...file }) => (
+            <FileDiff
+              key={file.path}
+              {...file}
+              markUncommitted={commit === null}
+              onAdvanceFindingState={onAdvanceFindingState}
+            />
+          ))}
+        </div>
       )}
     </div>
   )

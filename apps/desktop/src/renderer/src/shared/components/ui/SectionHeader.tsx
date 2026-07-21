@@ -20,7 +20,7 @@ export function SectionHeader({
   className?: string
 }): React.JSX.Element {
   return (
-    <div className={cn('flex items-center gap-gap text-muted-foreground', className)}>
+    <div className={cn('flex items-baseline gap-gap text-muted-foreground', className)}>
       <Text variant="eyebrow">{label}</Text>
       {count !== undefined && (
         <Text variant="eyebrow" className="text-foreground-faint normal-case tracking-normal">

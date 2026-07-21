@@ -85,7 +85,12 @@ export function FileDiff({
   const flagCount = openFindings.length || findings.length
 
   return (
-    <div className={cn('bg-inset', viewed && 'opacity-60')}>
+    <div
+      className={cn(
+        'overflow-hidden rounded-lg border border-inset-hair bg-inset',
+        viewed && 'opacity-60',
+      )}
+    >
       <div className="flex items-center gap-gap border-inset-hair border-b px-inset py-gap">
         <button
           type="button"
