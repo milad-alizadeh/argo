@@ -48,12 +48,12 @@ mechanically: a `CLAUDECODE`-gated `PreToolUse` hook (`scripts/worktree-guard.mj
 `Edit`/`Write` to `apps/**` or `packages/**` from outside a worktree — doc, memory, and config
 edits stay free, and the human workflow is never touched.
 
-The full worktree contract — the deterministic naming format (`ticket-<N>-<slug>` worktree +
-`argo/#<N>-<slug>` branch), resuming an interrupted worktree (`/implement #<N>` is idempotent:
-re-enter the existing tree, never fork a second), and recovering a deleted one — lives in
-`docs/agents/worktrees.md` and applies to **all** implementation work, not just `/implement`
-runs. That doc is self-contained and ships with the guardrail hooks, so a consumer that installs
-`--hooks` gets the rules alongside the enforcement.
+The full worktree contract — the deterministic worktree/branch naming format, resuming an
+interrupted worktree (`/implement #<N>` is idempotent: re-enter the existing tree, never fork a
+second), and recovering a deleted one — lives in `docs/agents/worktrees.md` and applies to
+**all** implementation work, not just `/implement` runs. That doc is self-contained and ships
+with the guardrail hooks, so a consumer that installs `--hooks` gets the rules alongside the
+enforcement.
 
 A dispatched sub-agent **inherits its parent's worktree and stays there by default** — it must
 not spin up its own (Claude Code: don't pass `isolation: "worktree"` to the `Agent` tool).

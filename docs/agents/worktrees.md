@@ -45,14 +45,18 @@ Because the names are a pure function of `<N>`, re-running `/implement #<N>` mus
 anchored on the number:
 
 ```bash
-git worktree list | grep "ticket-<N>-"      # or: git branch --list "argo/#<N>-*"
+git worktree list | grep "ticket-<N>-"                  # existing worktree (branch renamed or not)
+git branch --list "argo/#<N>-*" "ticket-<N>-*"          # worktree gone, branch survives
 ```
 
 Match on `<N>`, not the full slug — a slug typed slightly differently must not fork a second
-tree. If a match exists, re-enter it (Claude Code: `EnterWorktree` with `path:` to the existing
-directory; other harnesses: `cd` into it) and re-derive progress from durable state — the ticket,
-`git log` / `status` / `diff`, and a test run — not from the previous conversation. Only when no
-`#<N>` worktree or branch exists do you create a fresh one per **Entering** above.
+tree. The branch check globs **both** prefixes on purpose: a worktree interrupted before the
+`git branch -m` rename (see **Entering**) still sits on `ticket-<N>-<slug>`, so matching only
+`argo/#<N>-*` would miss it. If a match exists, re-enter it (Claude Code: `EnterWorktree` with
+`path:` to the existing directory; other harnesses: `cd` into it) and re-derive progress from
+durable state — the ticket, `git log` / `status` / `diff`, and a test run — not from the previous
+conversation. Only when no `#<N>` worktree or branch exists do you create a fresh one per
+**Entering** above.
 
 To make an interruption safe, commit WIP and push the ticket branch before stopping: an unpushed
 worktree is the only copy of the work.
