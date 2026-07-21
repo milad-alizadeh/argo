@@ -45,7 +45,25 @@ argo-skills --dry-run
 ```
 
 Options: `--global`/`-g` (install to `~` instead of the project), `--project`/`-p`,
-`--dry-run`/`-n`.
+`--dry-run`/`-n`, `--hooks` (also install the guardrail hooks — see below).
+
+## Guardrail hooks (opt-in)
+
+Skills are always installed; the **guardrail hooks are opt-in**, because they impose
+Argo's worktree discipline on the project (the edit guard blocks `apps/`+`packages/`
+edits outside a worktree, and the reaper assumes `.claude/worktrees/`). Add `--hooks` to
+also install them:
+
+```bash
+npx github:milad-alizadeh/argo --hooks
+```
+
+That copies the neutral `hooks.json` descriptor plus the two scripts it invokes into the
+target, then projects the descriptor into each `agents` entry's own config: `claude-code`
+→ `.claude/settings.json`, `codex` → `.codex/hooks.json` (unknown agents are skipped with
+a warning). One source of truth per hook, a thin per-harness registration — the same shape
+`bundle.json` uses for skills. See the repo's `hooks.json` and AGENTS.md "Cross-CLI
+guardrail hooks".
 
 ## The manifest — `bundle.json`
 

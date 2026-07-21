@@ -1,0 +1,27 @@
+{
+  "$comment": "Neutral guardrail-hook SSOT for this repo — the hooks half of Argo's cross-CLI setup (skills are bundle.json's half). One entry per behavior; `packages/argo-skills/bin/hooks-sync.mjs` projects them per-agent (from bundle.json's `agents`) into each harness's own config: claude-code -> .claude/settings.json, codex -> .codex/hooks.json. Never hand-edit those generated blocks — edit here and run `bun run hooks:sync`. Commands are harness-neutral: bare `graphify` (on PATH) and `$(git rev-parse --show-toplevel)/scripts/*` (no $CLAUDE_PROJECT_DIR). The commands invoke this repo's scripts/ via git-toplevel; scaffold.mjs can copy this file AND those scripts into a consumer before projecting, but only opt-in (`--hooks`) since the guard imposes Argo's worktree discipline. See AGENTS.md \"Cross-CLI guardrail hooks\".",
+  "hooks": [
+    {
+      "event": "pre-tool",
+      "matcher": "Bash",
+      "command": "graphify hook-guard search"
+    },
+    {
+      "event": "pre-tool",
+      "matcher": "Read|Glob",
+      "command": "graphify hook-guard read"
+    },
+    {
+      "event": "pre-tool",
+      "matcher": "Edit|Write",
+      "command": "node \"$(git rev-parse --show-toplevel)/scripts/worktree-guard.mjs\"",
+      "agentGated": true
+    },
+    {
+      "event": "session-end",
+      "command": "sh \"$(git rev-parse --show-toplevel)/scripts/worktree-gc.sh\"",
+      "timeout": 60,
+      "statusMessage": "Reaping landed worktrees"
+    }
+  ]
+}

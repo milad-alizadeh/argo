@@ -53,6 +53,7 @@ up?" — with the detected recommendation marked, covering:
 | Module boundaries (dependency-cruiser) | `setup-module-boundaries` | monorepo / layered app |
 | Design handoff (tokens, studies, check) | `setup-design-handoff` | project has UI |
 | Visual verification (screenshot script + verify stage) | `setup-visual-verify` | project has UI |
+| Cross-CLI guardrail hooks (graphify-guard, worktree guard + reaper) | scaffolder `--hooks` | user runs git worktrees / wants graphify-before-grep |
 
 ## Phase 3 — dispatch in order
 
@@ -68,6 +69,9 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
    the studies/Storybook that step 5 (or the app) provides.
 7. `setup-output-style` — Terse output style as the Claude Code session default;
    independent of the rest, so it can run any time.
+8. Guardrail hooks (if chosen) — re-run the scaffolder with `--hooks`
+   (`npx github:milad-alizadeh/argo --hooks`); it's idempotent, so running it after
+   the Phase-1 skills install just adds the hooks. No separate `setup-*` skill.
 
 Run them as skills (each owns its own detection and wizard details); don't
 inline their logic here. Between steps, report one line: what was installed,
