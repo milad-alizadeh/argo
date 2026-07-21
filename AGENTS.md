@@ -46,15 +46,13 @@ unprompted; other harnesses: `git worktree add`) and commit to a ticket branch t
 Read-only work (review, triage, Q&A) may stay in the main checkout. This is enforced
 mechanically: a `CLAUDECODE`-gated `PreToolUse` hook (`scripts/worktree-guard.mjs`) blocks agent
 `Edit`/`Write` to `apps/**` or `packages/**` from outside a worktree — doc, memory, and config
-edits stay free, and the human workflow is never touched. The rest of the mechanics — branch
-conventions, resuming an interrupted worktree, recovering a deleted one — live in
-`docs/agents/worktrees.md` and apply to **all** implementation work, not just `/implement` runs.
+edits stay free, and the human workflow is never touched.
 
-A dispatched sub-agent **stays in its parent's worktree** — it must not spin up its own new
-worktree (Claude Code: don't pass `isolation: "worktree"` to the `Agent` tool when the parent is
-already in one). Nesting worktrees per sub-agent just proliferates them and splits state across
-trees — separate checkouts, separate branches, and confusion over which one a dev server is
-serving. The parent's worktree already provides the isolation from the shared main checkout.
+Everything else about worktrees — the deterministic naming format, resuming an interrupted
+worktree, recovering a deleted one, and the sub-agent-in-parent-worktree rule — lives in
+`docs/agents/worktrees.md`, and applies to **all** implementation work, not just `/implement`
+runs. That doc is self-contained and ships with the guardrail hooks, so a consumer
+that installs `--hooks` gets the rules alongside the enforcement.
 
 Landed worktrees are reaped by `bun run worktrees:gc` (`scripts/worktree-gc.sh`) — PRs merge
 on GitHub, so nothing local fires when work lands and worktrees otherwise accumulate. It

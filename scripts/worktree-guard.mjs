@@ -46,7 +46,7 @@ export function decide({ filePath, cwd, projectDir, isAgent }) {
       `Enter a worktree first (Claude Code: the EnterWorktree tool; other harnesses: ` +
       `git worktree add .claude/worktrees/<name>) and edit on a ticket branch there. ` +
       `Doc, memory, and config edits in the main checkout are fine — this only guards ` +
-      `apps/ and packages/. See AGENTS.md "Session isolation" and docs/agents/worktrees.md.`,
+      `apps/ and packages/. Naming, resuming, and recovery: see docs/agents/worktrees.md.`,
   }
 }
 

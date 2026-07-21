@@ -12,9 +12,15 @@ const STARTER_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // The Argo checkout root (STARTER_DIR is <root>/packages/argo-skills). `npx github:…`
 // clones the whole repo, so the guardrail-hook assets sit here at install time.
 const SOURCE_ROOT = resolve(STARTER_DIR, '..', '..')
-// The full guardrail set copied into every target: the neutral descriptor plus the
-// two scripts its projected commands invoke. Kept in lockstep with hooks.json.
-const HOOK_ASSETS = ['hooks.json', 'scripts/worktree-guard.mjs', 'scripts/worktree-gc.sh']
+// The full guardrail set copied into every target: the neutral descriptor, the two
+// scripts its projected commands invoke, and the worktree contract the edit-guard's
+// deny message cites (so the rules land with the enforcement). Lockstep with hooks.json.
+const HOOK_ASSETS = [
+  'hooks.json',
+  'scripts/worktree-guard.mjs',
+  'scripts/worktree-gc.sh',
+  'docs/agents/worktrees.md',
+]
 
 // Copy the guardrail-hook assets from the Argo checkout into the target project, then
 // project the descriptor into each agent's config. Target is the git root, not the cwd:
