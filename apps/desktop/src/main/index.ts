@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { seedDemoSession } from './demoSeed'
 import { createHub } from './hub'
 import { wireProjection } from './projectionBridge'
+import { wireTerminal } from './terminalBridge'
 
 function createWindow(): void {
   // Create the browser window.
@@ -61,6 +62,9 @@ app.whenReady().then(() => {
   // Seam A: the authoritative hub and its IPC projection into the renderer (ADR-0005).
   const hub = createHub()
   wireProjection(hub)
+  // Seam B: the steering PTY behind the Console's live channel — a renderer attaches and main
+  // spawns its shell.
+  wireTerminal()
   // Opt-in synthetic Session that drives the projection pipeline end-to-end (the
   // launch smoke sets this; run `ARGO_SEED_DEMO=1 bun run dev` to see it locally).
   // Nothing real is observed yet — drop when the session adapter lands.

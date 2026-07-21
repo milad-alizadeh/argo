@@ -24,12 +24,16 @@
     "storybook": "turbo run storybook",
     "build-storybook": "turbo run build-storybook",
     "scaffold": "node packages/argo-skills/bin/scaffold.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "postinstall": "node scripts/fix-pty-perms.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.4",
     "husky": "^9.1.7",
     "lint-staged": "^17.1.0",
     "turbo": "^2.3.3"
-  }
+  },
+  "trustedDependencies": [
+    "node-pty"
+  ]
 }

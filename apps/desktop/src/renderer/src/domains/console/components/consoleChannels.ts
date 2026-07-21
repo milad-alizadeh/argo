@@ -28,14 +28,6 @@ export type ConsoleCapture = {
   agent?: boolean
 }
 
-/** What the live channel shows: the tail of the session's output, then its prompt. */
-export type ConsoleLiveChannel = {
-  /** The prompt line, tinted and followed by the static caret — `auth refactor $`. */
-  prompt: string
-  /** The output above the prompt. The live channel alone carries a tail (R13). */
-  tail: string
-}
-
 /** The marker an agent-emitted feed line opens with. This is captured TEXT, not an icon:
  * it arrives inside the feed string and is only re-tinted on render. */
 export const FEED_MARKER = '▸'

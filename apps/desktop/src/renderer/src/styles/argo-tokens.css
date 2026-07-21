@@ -104,6 +104,11 @@
   --accent: color-mix(in srgb, var(--indigo-500) 12%, transparent);
   --accent-foreground: var(--gray-950);
 
+  /* Terminal text-selection wash: a translucent indigo, glass not a solid block, so the
+   * panel reads through the highlight. Heavier than `--accent` so a selection still registers.
+   * `LiveTerminal` resolves this to rgba() at runtime — xterm's parser can't read color-mix(). */
+  --terminal-selection: color-mix(in srgb, var(--indigo-500) 26%, transparent);
+
   --destructive: var(--red-600);
   --destructive-foreground: var(--red-100);
 
@@ -189,6 +194,10 @@
 
   --accent: color-mix(in srgb, var(--indigo-500) 12%, transparent);
   --accent-foreground: var(--gray-100);
+
+  /* See the light-theme note: the selection wash reads brighter on the dark panel, so a
+   * lighter indigo mix keeps the same glassy weight. */
+  --terminal-selection: color-mix(in srgb, var(--indigo-400) 30%, transparent);
 
   --destructive: var(--red-500);
   --destructive-foreground: var(--red-100);
@@ -329,15 +338,6 @@
    * instead of sitting it on the baseline. */
   --icon-box-sm: 0.86em;
   --icon-baseline: -0.14em;
-
-  /* Console caret — the live channel's cursor bar. One monospace advance wide (`ch`, so
-   * the width tracks the code role), and a settled height between the code role's 12px em
-   * box (squat) and its 18px line box (a filled row). Its own baseline nudge: a text caret
-   * sits lower than a glyph does. Static by design — the screen's ONE animation budget
-   * belongs to the lifecycle/roster. */
-  --caret-box-w: 1ch;
-  --caret-box-h: 14px;
-  --caret-baseline: -2px;
 
   /* Motion. `pulse` is the period of the screen's ONE animation budget
    * (at most one pulsing element per render). */

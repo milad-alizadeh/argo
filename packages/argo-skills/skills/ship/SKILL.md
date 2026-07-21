@@ -15,9 +15,8 @@ with the human.
    work is on the default branch, stop and report it — it should have been built on a branch.
 2. Commit the outstanding work to the branch with a message that states what changed and why.
 3. Push the branch (`git push -u origin HEAD`).
-4. Open exactly one PR with `gh pr create`. The body must contain `Closes #<N>` for the ticket
-   the branch implements (derive `<N>` from the branch name or the ticket you built), and must
-   list any review findings you could not resolve, each **with the reason** — never drop one
-   silently. Open it ready-for-review when nothing is unresolved; use `--draft` only if
-   unresolved findings remain.
+4. Open exactly one PR with `gh pr create`, ready-for-review — never `--draft`. The body must
+   contain `Closes #<N>` for the ticket the branch implements (derive `<N>` from the branch name
+   or the ticket you built), and must list any review findings you could not resolve, each
+   **with the reason** — never drop one silently.
 5. Report the PR URL. Do not merge.

@@ -3,17 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { Console } from './Console'
 import { captureLabel } from './captureLabel'
-import {
-  type ConsoleCapture,
-  type ConsoleLiveChannel,
-  LIVE_CHANNEL_ID,
-  LIVE_CHANNEL_LABEL,
-} from './consoleChannels'
-
-const LIVE: ConsoleLiveChannel = {
-  prompt: 'auth refactor $',
-  tail: '▸ Edit src/auth/legacy.ts · verify() delegates to rotation core',
-}
+import { type ConsoleCapture, LIVE_CHANNEL_ID, LIVE_CHANNEL_LABEL } from './consoleChannels'
 
 const CAPTURE: ConsoleCapture = {
   id: 't-test',
@@ -63,7 +53,6 @@ const meta = {
   title: 'Console',
   component: Console,
   args: {
-    live: LIVE,
     activeChannel: LIVE_CHANNEL_ID,
     expanded: false,
     height: '170px',
@@ -93,13 +82,20 @@ type Story = StoryObj<typeof meta>
 
 // Nothing captured: the console is the session's own channel and nothing else.
 export const Default: Story = {
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getAllByRole('tab')).toHaveLength(1)
 
     // The tab and the panel it opens are linked: the Console owns both ids.
     const panel = canvas.getByRole('tabpanel', { name: LIVE_CHANNEL_LABEL })
     await expect(canvas.getByRole('tab')).toHaveAttribute('aria-controls', panel.id)
+
+    // The expand control resizes the console and sits BESIDE the tablist — only tabs may be
+    // a tablist's children.
+    const control = canvas.getByRole('button', { name: /expand/ })
+    await expect(canvas.getByRole('tablist').contains(control)).toBe(false)
+    await userEvent.click(control)
+    await expect(args.onToggleExpanded).toHaveBeenCalled()
   },
 }
 
@@ -135,6 +131,10 @@ export const CaptureIdle: Story = {
     await userEvent.click(canvas.getByRole('tabpanel', { name: LIVE_CHANNEL_LABEL }))
     await userEvent.keyboard('{Escape}')
     await expect(args.onSelectChannel).not.toHaveBeenCalled()
+
+    // The capture's ✕ clears the ONE slot without switching to the channel it closes.
+    await userEvent.click(canvas.getByRole('button', { name: `Close ${CAPTURE.label}` }))
+    await expect(args.onCloseCapture).toHaveBeenCalledWith(CAPTURE.id)
   },
 }
 
@@ -146,5 +146,45 @@ export const Expanded: Story = {
     const console = canvasElement.querySelector('[data-slot="console"]')
     await expect(console).toHaveAttribute('data-expanded', 'true')
     await expect((console as HTMLElement).style.height).toBe('420px')
+  },
+}
+
+// A selection left pointing at a feed that has since been replaced or cleared. The strip
+// lights `session · live` rather than lighting nothing (resolveActiveChannel's fallback).
+export const StaleSelection: Story = {
+  args: { capture: CAPTURE, activeChannel: 'a-gone' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('tab', { name: LIVE_CHANNEL_LABEL })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    await expect(canvas.getByRole('tab', { name: CAPTURE.label })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    )
+  },
+}
+
+// A tool name long enough to out-run the strip. The chip gives way; the expand control keeps
+// its place inside the console rather than being pushed out of it.
+export const LongCaptureLabel: Story = {
+  args: {
+    capture: { ...CAPTURE, label: 'e2e:playwright --project=chromium --grep session-rail @11:02' },
+  },
+  decorators: [
+    (Story): React.JSX.Element => (
+      <div className="w-sm">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const strip = canvasElement.querySelector('[data-slot="console-channel-tabs"]')
+    const control = within(canvasElement).getByRole('button', { name: /expand/ })
+    const stripBox = (strip as HTMLElement).getBoundingClientRect()
+    await expect(control.getBoundingClientRect().right).toBeLessThanOrEqual(
+      Math.ceil(stripBox.right),
+    )
   },
 }
