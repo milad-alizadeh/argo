@@ -16,6 +16,7 @@ const meta = {
   args: { orbState: 'idle', active: true },
   argTypes: {
     orbState: { control: 'select', options: ORB_STATES },
+    tint: { control: 'color' },
     active: { control: 'boolean' },
   },
   decorators: [

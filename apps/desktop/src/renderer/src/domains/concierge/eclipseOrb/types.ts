@@ -2,6 +2,9 @@
 
 export type OrbState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error'
 
+/** A linear RGB colour, each channel 0–1 — the engine's native colour form. */
+export type Rgb = readonly [number, number, number]
+
 /** Options fixed at creation time — never change over the orb's life. */
 export interface OrbOptions {
   /** Honour `prefers-reduced-motion`: paint one static frame, never start the loop. */
@@ -12,6 +15,13 @@ export interface OrbOptions {
    * the eclipse ring, so a 26px orb isn't the whole mountain range squashed down.
    */
   backdrop?: boolean
+  /**
+   * The one colour the whole orb derives from — rim, ground dot, hot core and
+   * horizon glow are each this base lifted toward white by a fixed amount. Seeds
+   * the colour at mount (no fade-in); `setTint` retargets it live. Defaults to the
+   * cool eclipse blue. The `error` state overrides it with its own alarm red.
+   */
+  tint?: Rgb
 }
 
 /**
@@ -22,6 +32,8 @@ export interface OrbOptions {
 export interface OrbHandle {
   /** Voice-state vocabulary — a pure prop; nothing maps a live signal onto it yet. */
   setState(state: OrbState): void
+  /** Retint the whole orb from one base colour (lerps over ~0.5s); ignored while in `error`. */
+  setTint(tint: Rgb): void
   /** Shift the orb's apparent center rightward by this many screen pixels (negative = leftward). */
   setPanelShift(pixelOffset: number): void
   /** Animate FOV to the panel-open or panel-closed target defined in sceneConfig. */

@@ -13,6 +13,8 @@ export interface ConciergeDockProps {
    * a static frame.
    */
   active?: boolean
+  /** The one colour the mini orb derives from, as a hex string; omit for eclipse blue. */
+  tint?: string
 }
 
 /**
@@ -21,9 +23,13 @@ export interface ConciergeDockProps {
  * foot of the frosted Roster panel — the orb canvas is transparent, so it reads
  * as an inset element, not a second glass layer.
  */
-export function ConciergeDock({ orbState, active = false }: ConciergeDockProps): React.JSX.Element {
+export function ConciergeDock({
+  orbState,
+  active = false,
+  tint,
+}: ConciergeDockProps): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEclipseOrb(canvasRef, { orbState, backdrop: false, paused: !active })
+  useEclipseOrb(canvasRef, { orbState, backdrop: false, paused: !active, tint })
 
   return (
     <div

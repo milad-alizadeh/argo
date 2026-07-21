@@ -14,7 +14,7 @@ import * as THREE from 'three'
 import cockpitBgUrl from '../assets/cockpit_bg.webp'
 import { SCENE_CONFIG } from '../sceneConfig'
 import { BEAM_FRAG, BG_FRAG, BG_VERT, DISC_FRAG, DOT_FRAG, RING_FRAG, RING_VERT } from './shaders'
-import type { OrbHandle, OrbOptions, OrbState } from './types'
+import type { OrbHandle, OrbOptions, OrbState, Rgb } from './types'
 
 const C = SCENE_CONFIG.eclipseOrb
 const P = C.palette
@@ -42,6 +42,13 @@ class SP {
   }
 }
 
+// A "lit" state raises the scene — the synthetic horizon glow, the ground beam,
+// and the ground dot all fire. `idle` and `error` stay dark: error is just the
+// red ring over the unlit scene, no dawn-glow on the ridge.
+function isLitState(state: OrbState): boolean {
+  return state !== 'idle' && state !== 'error'
+}
+
 // ── Ring world radius (for reference) ──────────────────────────────────────
 // uvRadius in UV space × plane half-width × mesh scale
 const RING_WORLD_R = C.ring.uvRadius * (C.ring.planeSize / 2) * C.ring.scale
@@ -50,6 +57,7 @@ const RING_WORLD_R = C.ring.uvRadius * (C.ring.planeSize / 2) * C.ring.scale
 export function createEclipseOrb(canvas: HTMLCanvasElement, options: OrbOptions = {}): OrbHandle {
   const reducedMotion = options.reducedMotion ?? false
   const withBackdrop = options.backdrop ?? true
+  const initialTint = options.tint ?? P.base
   let destroyed = false
   let rafId = 0
   // The loop runs only while `running`. `pause()` stops it (a real RAF cancel,
@@ -76,6 +84,7 @@ export function createEclipseOrb(canvas: HTMLCanvasElement, options: OrbOptions 
   if (!gl) {
     return {
       setState() {},
+      setTint() {},
       setPanelShift() {},
       setFovOpen() {},
       pause() {},
@@ -308,13 +317,15 @@ export function createEclipseOrb(canvas: HTMLCanvasElement, options: OrbOptions 
 
   // ── Scene palette ───────────────────────────────────────────────────────────
   // ONE base colour drives the whole scene (rim, dot, glow, core — each `base`
-  // lifted toward white). It stays the cool eclipse blue except in `error`, where
-  // it lerps to a hot red so the state reads as an alarm, not a dimmer idle. The
-  // lerp (~80% in 0.5s) makes the switch a smooth flush, not a hard cut.
+  // lifted toward white). `baseTint` is that colour, a live prop (`setTint`); it
+  // defaults to the cool eclipse blue and every non-error state uses it. The
+  // `error` state overrides it with a hot red so it reads as an alarm, not a
+  // dimmer idle. The lerp (~80% in 0.5s) makes any switch a smooth flush.
   const COLOR_LERP_SPEED = 4.0
-  const sBaseR = new SP(P.base[0], COLOR_LERP_SPEED)
-  const sBaseG = new SP(P.base[1], COLOR_LERP_SPEED)
-  const sBaseB = new SP(P.base[2], COLOR_LERP_SPEED)
+  let baseTint: Rgb = initialTint
+  const sBaseR = new SP(initialTint[0], COLOR_LERP_SPEED)
+  const sBaseG = new SP(initialTint[1], COLOR_LERP_SPEED)
+  const sBaseB = new SP(initialTint[2], COLOR_LERP_SPEED)
 
   // ── State + level inputs ──────────────────────────────────────────────────
   // Audio is out of scope for this port; the levels stay pinned at 0 so the
@@ -346,9 +357,9 @@ export function createEclipseOrb(canvas: HTMLCanvasElement, options: OrbOptions 
   let swayAmp = C.animation.sway.idleAmp
 
   function applyState() {
-    const isIdle = state === 'idle'
-    sMist.set(isIdle ? 0.0 : 1.0)
-    sSceneLit.set(isIdle ? 0.0 : 1.0)
+    const lit = isLitState(state) ? 1.0 : 0.0
+    sMist.set(lit)
+    sSceneLit.set(lit)
     const s = C.states[state]
     sBright.set(s.bright)
     sGlow.set(s.glow)
@@ -356,8 +367,8 @@ export function createEclipseOrb(canvas: HTMLCanvasElement, options: OrbOptions 
     sBottom.set(s.bottom)
     sSeg.set(s.seg)
     sThink.set(state === 'thinking' ? 1 : 0) // derived from state, not a per-state style field
-    // Error flushes the whole scene red; every other state holds the cool base.
-    const tint = state === 'error' ? P.error : P.base
+    // Error flushes the whole scene red; every other state holds the base tint.
+    const tint = state === 'error' ? P.error : baseTint
     sBaseR.set(tint[0])
     sBaseG.set(tint[1])
     sBaseB.set(tint[2])
@@ -582,17 +593,30 @@ export function createEclipseOrb(canvas: HTMLCanvasElement, options: OrbOptions 
       const prev = state
       state = s
       applyState()
-      if (prev === 'idle' && s !== 'idle') {
+      // Sweep the beam only when the scene lights up (idle/error → listening/…).
+      if (!isLitState(prev) && isLitState(s)) {
         beamProg = 0
         beamAlpha = 1.0
         beamMesh.visible = true
       }
-      if (s === 'idle') {
+      // Any unlit state (idle or error) kills the beam so no ground dot lingers.
+      if (!isLitState(s)) {
         beamProg = -1
         beamAlpha = 0
         beamMesh.visible = false
       }
       if (!running) renderFrame() // paused/reduced-motion: reflect the new state at once
+    },
+    setTint(tint) {
+      baseTint = tint
+      // `error` owns the palette while it's active; retarget only when it isn't,
+      // then let applyState pick up the new base the next time the state changes.
+      if (state !== 'error') {
+        sBaseR.set(tint[0])
+        sBaseG.set(tint[1])
+        sBaseB.set(tint[2])
+      }
+      if (!running) renderFrame()
     },
     setPanelShift(px) {
       sCamShiftPx.set(px)

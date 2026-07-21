@@ -18,6 +18,7 @@ const meta = {
   args: { orbState: 'idle', paused: false, panelShift: 0 },
   argTypes: {
     orbState: { control: 'select', options: ORB_STATES },
+    tint: { control: 'color' },
     paused: { control: 'boolean' },
     panelShift: { control: { type: 'range', min: -400, max: 400, step: 10 } },
   },

@@ -15,6 +15,12 @@ export interface EclipseSceneProps {
   /** Widen the FOV a touch when a side panel is open. */
   fovOpen?: boolean
   /**
+   * The one colour the whole orb derives from, as a CSS colour string (hex or
+   * `rgb()`). Rim, ground dot, hot core and horizon glow are all this base lifted
+   * toward white. Omit for the default eclipse blue; `error` overrides it with red.
+   */
+  tint?: string
+  /**
    * Freeze the render loop (State B). The stage would be covered by a session
    * detail, so it stops drawing and the last frame stays faintly visible through
    * the frosted glass — the perf contract: only ever one orb animating.
@@ -34,10 +40,11 @@ export function EclipseScene({
   panelShift = 0,
   fovOpen = false,
   paused = false,
+  tint,
   className,
 }: EclipseSceneProps): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEclipseOrb(canvasRef, { orbState, backdrop: true, panelShift, fovOpen, paused })
+  useEclipseOrb(canvasRef, { orbState, backdrop: true, panelShift, fovOpen, paused, tint })
 
   return (
     <div
