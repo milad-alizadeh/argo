@@ -1,4 +1,4 @@
-import { Button, GitDiffIcon, GitPullRequestIcon, Text } from '@/shared/components/ui'
+import { Button, CaretRightIcon, GitPullRequestIcon, Text } from '@/shared/components/ui'
 import type { ClosedSummary, MergedSummary } from '../nodeDrawerModel'
 import { GrowRow } from './drawerControls'
 
@@ -29,7 +29,7 @@ export function mergedBody(summary: MergedSummary): React.JSX.Element {
         </Text>
       </GrowRow>
       <Button variant="ghost">
-        <GitDiffIcon aria-hidden />
+        <CaretRightIcon aria-hidden />
         Next ticket from main
       </Button>
     </>
@@ -61,7 +61,7 @@ export function closedBody(summary: ClosedSummary): React.JSX.Element {
         </Text>
       </GrowRow>
       <Button variant="ghost">
-        <GitDiffIcon aria-hidden />
+        <CaretRightIcon aria-hidden />
         New session from main
       </Button>
     </>

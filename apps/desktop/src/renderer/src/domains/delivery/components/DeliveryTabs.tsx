@@ -37,7 +37,7 @@ function ReviewTabLabel({ outstanding }: { outstanding: number }): React.JSX.Ele
   if (outstanding === 0) {
     return (
       <>
-        Review <CheckIcon aria-hidden />
+        Review <CheckIcon aria-hidden className="text-verdict-approve" />
       </>
     )
   }
@@ -105,7 +105,11 @@ export function DeliveryTabs(
         >
           <TabsList aria-label="Work" className="min-h-strip px-inset py-tight">
             <TabsTrigger value="changes">Changes · {props.changesCount}</TabsTrigger>
-            <TabsTrigger value="review" tone="changes" title={REVIEW_TAB_TITLE}>
+            <TabsTrigger
+              value="review"
+              tone={props.reviewOutstanding === 0 ? 'neutral' : 'changes'}
+              title={REVIEW_TAB_TITLE}
+            >
               <ReviewTabLabel outstanding={props.reviewOutstanding} />
             </TabsTrigger>
             <TabsTrigger value="artifacts">Artifacts · {props.artifactsCount}</TabsTrigger>
