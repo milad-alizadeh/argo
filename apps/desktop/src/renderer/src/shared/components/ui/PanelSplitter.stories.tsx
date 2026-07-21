@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fireEvent, fn, userEvent, within } from 'storybook/test'
 import { cn } from '@/lib/utils'
-import { PANE_ORIENTATIONS, PaneSplitter } from './PaneSplitter'
+import { PANE_ORIENTATIONS, PanelSplitter } from './PanelSplitter'
 import { Text } from './Text'
 
 const RAIL = { size: 248, min: 190, max: 360 }
 
 const meta = {
-  title: 'Shared/PaneSplitter',
-  component: PaneSplitter,
+  title: 'Shared/PanelSplitter',
+  component: PanelSplitter,
   args: { orientation: 'v', ...RAIL, label: 'Rail width', onResize: fn() },
   argTypes: {
     orientation: { control: 'select', options: PANE_ORIENTATIONS },
@@ -36,7 +36,7 @@ const meta = {
         </div>
       ),
   ],
-} satisfies Meta<typeof PaneSplitter>
+} satisfies Meta<typeof PanelSplitter>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -104,7 +104,7 @@ export const AllOrientations: Story = {
               orientation === 'h' && 'flex-col',
             )}
           >
-            <PaneSplitter {...args} orientation={orientation} label={`${orientation} splitter`} />
+            <PanelSplitter {...args} orientation={orientation} label={`${orientation} splitter`} />
           </span>
           <Text variant="meta" className="text-foreground-faint">
             {orientation}

@@ -34,7 +34,7 @@ export function keyStepDelta(key: string, orientation: PaneOrientation): number 
   }
 }
 
-type PaneSplitterProps = {
+type PanelSplitterProps = {
   /** Which way the bar runs: `v` between two columns, `h` between two rows. */
   orientation: PaneOrientation
   /** Current px size of the pane this splitter resizes — the parent owns it. */
@@ -60,7 +60,7 @@ type PaneSplitterProps = {
  * It owns the pointer bookkeeping and the clamp, and nothing else — no layout variable, no
  * pane, no persistence. The screen that mounts it decides what the number means.
  */
-export function PaneSplitter({
+export function PanelSplitter({
   orientation,
   size,
   min,
@@ -69,7 +69,7 @@ export function PaneSplitter({
   label,
   onResize,
   className,
-}: PaneSplitterProps): React.JSX.Element {
+}: PanelSplitterProps): React.JSX.Element {
   const [drag, setDrag] = useState<{ origin: number; size: number } | null>(null)
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export function PaneSplitter({
       aria-valuenow={size}
       aria-valuemin={min}
       aria-valuemax={max}
-      data-slot="pane-splitter"
+      data-slot="panel-splitter"
       data-dragging={dragging}
       className={cn(
         'group relative flex touch-none items-center justify-center outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring',
