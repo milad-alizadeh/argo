@@ -121,9 +121,6 @@ export function LiveTerminal({ id, className }: LiveTerminalProps): React.JSX.El
       aria-label={LIVE_CHANNEL_LABEL}
       // biome-ignore lint/a11y/noNoninteractiveTabindex: a tabpanel is focusable by design, so the shell takes keystrokes and the console's Esc handler hears them.
       tabIndex={0}
-      // A live shell (blinking cursor, changing output) is non-deterministic — mask it from the
-      // visual-diff so the strip around it is what the baseline gates on.
-      data-vrt-mask
       className={cn(
         'live-terminal min-h-0 overflow-hidden px-inset py-gap font-mono text-code text-foreground-soft outline-none',
         className,

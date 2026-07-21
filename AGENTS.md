@@ -107,13 +107,11 @@ wired (worktree guard, merge driver) lives in the `setup-graphify` skill, not he
 
 ## Visual verification
 
-Every Storybook story is screenshotted in CI (the `stories` job) and diffed against a committed
-baseline. Baselines are Linux-only and CI-managed — never commit local `-darwin`/`-win32` images,
-and never hand-edit a baseline to make the gate pass. When the gate reds, CI regenerates the PNGs
-and pushes them to the PR: review them in **Files changed** (GitHub gives you swipe/onion-skin on
-images). A drifted story also gets a PR comment naming it — if the change wasn't intended, fix the
-component, not the baseline. Mask a volatile region (terminal, live gauge) with `data-vrt-mask`.
-For subjective states with no story, run `/visual-verify`.
+Every Storybook story is rendered in CI (the `stories` job / the `story tests` required check) as
+a smoke test — it mounts each story in a real Chromium and fails on anything that throws, so a
+broken story, a barrel sweep, or an MDX error reds the gate. There is no pixel-baseline diffing.
+For a pixel- or spec-level visual check, run `/visual-verify` on demand: it renders the affected
+states and has a fresh agent judge them against the spec.
 
 ## Tooling (RTK)
 
