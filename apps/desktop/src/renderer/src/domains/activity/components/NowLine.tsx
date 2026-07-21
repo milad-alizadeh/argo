@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils'
-import { Status } from './Status'
-import { Text } from './Text'
+import { Status, Text } from '@/shared/components/ui'
 
 /**
  * The quiet one-line "doing now" strip that opens the Activity panel. One inset row — a leading

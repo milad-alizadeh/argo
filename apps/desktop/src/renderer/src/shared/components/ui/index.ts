@@ -1,20 +1,8 @@
 export { Badge, type BadgeVariant, badgeVariants } from './badge'
 export { Button, type ButtonVariant, buttonVariants } from './button'
-export { ContextGauge } from './ContextGauge'
 export { Checkbox } from './checkbox'
-export {
-  FINDING_CYCLE_TITLE,
-  FINDING_SEVERITIES,
-  FINDING_SEVERITY,
-  FINDING_STATE_ACTION,
-  FINDING_STATE_REPORT,
-  FINDING_STATES,
-  type FindingSeverity,
-  type FindingState,
-} from './findingState'
 export * from './icons'
 export { StatusIcon } from './icons/StatusIcon'
-export { NowLine } from './NowLine'
 export { PANEL_ORIENTATIONS, type PanelOrientation, PanelSplitter } from './PanelSplitter'
 export { SectionHeader } from './SectionHeader'
 export { Status } from './Status'
@@ -43,4 +31,3 @@ export {
   WASH_PRIMARY_TONE,
 } from './toneRecipes'
 export { type DisclosureProps, useDisclosure } from './useDisclosure'
-export { WorkspaceIdentity, type WorkspaceTree } from './WorkspaceIdentity'

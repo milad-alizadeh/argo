@@ -13,3 +13,4 @@ export {
   type RosterTone,
   SESSION_STATUS,
 } from './rosterStatus'
+export { STATE_MATRIX_ROWS, type StateMatrixRow, stateMatrixInput } from './stateMatrix'

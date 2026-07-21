@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { WorkspaceIdentity } from './WorkspaceIdentity'
 
 const meta = {
-  title: 'Shared/WorkspaceIdentity',
+  title: 'SessionScreen/WorkspaceIdentity',
   component: WorkspaceIdentity,
   argTypes: {
     branch: { control: 'text' },

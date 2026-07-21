@@ -59,6 +59,27 @@ export const Default: Story = {
 }
 
 /**
+ * The selected row — the whole card is one button carrying `aria-current`, tinted with the
+ * screen's primary. Unselected, the same button renders the flat inset card pixel-for-pixel.
+ */
+export const Selected: Story = {
+  args: {
+    session: {
+      id: 'auth-refactor',
+      title: 'Refactor auth module',
+      cli: 'claude',
+      facts: sessionFacts({ status: 'running' }),
+    },
+    selected: true,
+  },
+  play: async ({ canvasElement }) => {
+    const row = within(canvasElement).getByRole('listitem')
+    await expect(within(row).getByRole('button')).toHaveAttribute('aria-current', 'true')
+    await expect(within(row).getByText('Refactor auth module')).toBeInTheDocument()
+  },
+}
+
+/**
  * Every state main can observe, one row each — the visual-diff surface for the row's word,
  * tone and icon in a single frame.
  *

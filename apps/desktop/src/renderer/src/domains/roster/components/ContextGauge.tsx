@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { Text } from './Text'
+import { Text } from '@/shared/components/ui'
 
 /** A context percentage is an estimate, so it arrives fractional and can overshoot both
  * ends; the gauge shows a whole number inside 0–100. */

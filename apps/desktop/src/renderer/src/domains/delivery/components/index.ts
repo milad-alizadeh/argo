@@ -14,6 +14,16 @@ export {
 export type { DiffFinding, DiffHunkLine, FileChangeKind } from './diffModel'
 export { FileDiff } from './FileDiff'
 export { FindingCard } from './FindingCard'
+export {
+  FINDING_CYCLE_TITLE,
+  FINDING_SEVERITIES,
+  FINDING_SEVERITY,
+  FINDING_STATE_ACTION,
+  FINDING_STATE_REPORT,
+  FINDING_STATES,
+  type FindingSeverity,
+  type FindingState,
+} from './findingState'
 export { LifecycleNode, type LifecycleNodeProps } from './LifecycleNode'
 export { LIFECYCLE_NODE_STATE, type LifecycleNodeStatePresentation } from './lifecycleNodeState'
 export { NodeDrawer, type NodeDrawerProps, type NodeDrawerSession } from './NodeDrawer'

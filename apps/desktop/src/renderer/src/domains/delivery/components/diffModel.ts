@@ -1,4 +1,4 @@
-import type { FindingSeverity, FindingState } from '@/shared/components/ui'
+import type { FindingSeverity, FindingState } from './findingState'
 
 /** M(odified) / A(dded) / D(eleted) / R(enamed) — a file's status in the diff. */
 export type FileChangeKind = 'M' | 'A' | 'D' | 'R'

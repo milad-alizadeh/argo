@@ -188,6 +188,16 @@ its unit test. Neither needs a second telling upstairs. Cover one axis at two ti
 both copies rot the day the child changes — the upstairs copy just fails later and
 further from the cause.
 
+The sharpest case is **`SessionScreen` and the delivery lifecycle**: the S0–S11 matrix
+(`cockpit-matrix.md`) is the Delivery region's union, told once in its gallery
+(`InReview`, `Merged`, …). The screen must **not** carry one story per S-row — that is the
+region's gallery multiplied by the spine. The screen gets one representative composed story
+(a populated spine, proving the roster word and the Delivery strip agree) plus its own
+structural variants (`NoSelection`, `EmptyRoster`, `SoloWorkHidden`, `ConsoleExpanded`). And
+name a story for the state a human sees, never an internal matrix id: `S9` is noise in the
+sidebar; "+1 commit after approval" is the story. The S0–S11 sweep lives in the derivation
+unit test (`stateMatrix.test.ts`), not as screen stories.
+
 ### Title follows the domain folder
 
 A story's `title` top segment equals its top domain folder — derived from where the file

@@ -1,13 +1,12 @@
 import { type SessionFactsInput, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
 import { deliveryState } from './deliveryState'
+import { stateMatrixInput } from './stateMatrix'
 
 // The state table of `docs/designs/cockpit-matrix.md`, one case per row: given the
-// facts, the lifecycle, its head, and the roster word are fully determined.
-
-const HEAD = 'a1b2c3d'
-const OLD = '9f0e1d2'
-const PR = { num: 42, state: 'open', base: 'main' } as const
+// facts, the lifecycle, its head, and the roster word are fully determined. The inputs now
+// live in `stateMatrix.ts` so the SessionScreen stories replay the same rows; this test still
+// owns the expected outputs, and swapping in `stateMatrixInput(id)` leaves them untouched.
 
 const row = (input: SessionFactsInput) => {
   const { lifecycle, roster } = deliveryState(sessionFacts(input))
@@ -16,7 +15,7 @@ const row = (input: SessionFactsInput) => {
 
 describe('S0 — clean tree, no commits', () => {
   it('grows no lifecycle and stays Running', () => {
-    const { model, roster } = row({})
+    const { model, roster } = row(stateMatrixInput('S0'))
     expect(model).toBeNull()
     expect(roster).toEqual({ word: 'Running', tone: 'run', icon: 'circle-notch' })
   })
@@ -24,7 +23,7 @@ describe('S0 — clean tree, no commits', () => {
 
 describe('S1 — dirty 3 · agent working', () => {
   it('narrates Commits and stays Running', () => {
-    const { model, roster } = row({ dirty: 3, agent: 'working' })
+    const { model, roster } = row(stateMatrixInput('S1'))
     expect(model).toEqual({
       nodes: { commits: 'now', pr: 'wait', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'commits',
@@ -36,7 +35,7 @@ describe('S1 — dirty 3 · agent working', () => {
 
 describe('S2 — dirty 3 · agent idle', () => {
   it('hands Commits back as a gate', () => {
-    const { model, roster } = row({ dirty: 3, agent: 'idle', status: 'needs-input' })
+    const { model, roster } = row(stateMatrixInput('S2'))
     expect(model).toEqual({
       nodes: { commits: 'gate', pr: 'wait', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'commits',
@@ -48,7 +47,7 @@ describe('S2 — dirty 3 · agent idle', () => {
 
 describe('S3 — commits ✓ · no PR', () => {
   it('puts the head on the PR gate', () => {
-    const { model, roster } = row({ headSha: HEAD, agent: 'idle', status: 'needs-input' })
+    const { model, roster } = row(stateMatrixInput('S3'))
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'gate', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'pr',
@@ -60,7 +59,7 @@ describe('S3 — commits ✓ · no PR', () => {
 
 describe('S3b — S3 · create_pr: auto', () => {
   it('delegates the PR gate and narrates it', () => {
-    const { model, roster } = row({ headSha: HEAD, policy: { createPr: 'auto' } })
+    const { model, roster } = row(stateMatrixInput('S3b'))
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'auto', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'pr',
@@ -72,11 +71,7 @@ describe('S3b — S3 · create_pr: auto', () => {
 
 describe('S4 — PR #42 · CI running', () => {
   it('moves the head to CI and points the roster at the PR', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      pr: PR,
-      ci: { status: 'running', sha: HEAD },
-    })
+    const { model, roster } = row(stateMatrixInput('S4'))
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'done', ci: 'now', review: 'wait', merge: 'wait' },
       head: 'ci',
@@ -88,11 +83,7 @@ describe('S4 — PR #42 · CI running', () => {
 
 describe('S5 — CI failed', () => {
   it('fails the CI node and calls the roster out', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      pr: PR,
-      ci: { status: 'failed', sha: HEAD },
-    })
+    const { model, roster } = row(stateMatrixInput('S5'))
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'done', ci: 'fail', review: 'wait', merge: 'wait' },
       head: 'ci',
@@ -104,12 +95,7 @@ describe('S5 — CI failed', () => {
 
 describe('S6 — CI ✓ · review round running', () => {
   it('moves the head to Review with no gate', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      pr: PR,
-      ci: { status: 'passed', sha: HEAD },
-      review: [{ by: '@sam', verdict: 'running', sha: HEAD, findings: 0 }],
-    })
+    const { model, roster } = row(stateMatrixInput('S6'))
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'now', merge: 'wait' },
       head: 'review',
@@ -121,12 +107,7 @@ describe('S6 — CI ✓ · review round running', () => {
 
 describe('S7 — changes requested · 2 open', () => {
   it('marks Review changed and keeps the head there', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      pr: PR,
-      ci: { status: 'passed', sha: HEAD },
-      review: [{ by: '@sam', verdict: 'changes', sha: HEAD, findings: 2 }],
-    })
+    const { model, roster } = row(stateMatrixInput('S7'))
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'warn', merge: 'wait' },
       head: 'review',
@@ -138,12 +119,7 @@ describe('S7 — changes requested · 2 open', () => {
 
 describe('S8 — approved · all fresh', () => {
   it('opens the Merge gate', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      pr: PR,
-      ci: { status: 'passed', sha: HEAD },
-      review: [{ by: '@sam', verdict: 'approved', sha: HEAD, findings: 0 }],
-    })
+    const { model, roster } = row(stateMatrixInput('S8'))
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'done', merge: 'gate' },
       head: 'merge',
@@ -155,13 +131,7 @@ describe('S8 — approved · all fresh', () => {
 
 describe('S8b — S8 · merge: auto', () => {
   it('arms the Merge gate instead of asking', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      pr: PR,
-      ci: { status: 'passed', sha: HEAD },
-      review: [{ by: '@sam', verdict: 'approved', sha: HEAD, findings: 0 }],
-      policy: { merge: 'auto' },
-    })
+    const { model, roster } = row(stateMatrixInput('S8b'))
     expect(model).toEqual({
       nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'done', merge: 'auto' },
       head: 'merge',
@@ -173,13 +143,7 @@ describe('S8b — S8 · merge: auto', () => {
 
 describe('S9 — +1 commit while PR open', () => {
   it('syncs Commits, stales CI and Review, locks Merge', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      unpushed: 1,
-      pr: PR,
-      ci: { status: 'passed', sha: OLD },
-      review: [{ by: '@sam', verdict: 'approved', sha: OLD, findings: 0 }],
-    })
+    const { model, roster } = row(stateMatrixInput('S9'))
     expect(model).toEqual({
       nodes: { commits: 'sync', pr: 'done', ci: 'stale', review: 'stale', merge: 'lock' },
       head: 'commits',
@@ -191,12 +155,7 @@ describe('S9 — +1 commit while PR open', () => {
 
 describe('S10 — merged', () => {
   it('replaces the lifecycle with the merged terminal and lands the roster', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      pr: { num: 38, state: 'merged', base: 'main' },
-      ci: { status: 'passed', sha: HEAD },
-      review: [{ by: '@sam', verdict: 'approved', sha: HEAD, findings: 0 }],
-    })
+    const { model, roster } = row(stateMatrixInput('S10'))
     expect(model).toEqual({ nodes: null, head: null, terminal: 'merged' })
     expect(roster).toEqual({ word: 'Landed', tone: 'landed', icon: 'git-merge' })
   })
@@ -204,11 +163,7 @@ describe('S10 — merged', () => {
 
 describe('S11 — closed w/o merge', () => {
   it('replaces the lifecycle with the closed terminal', () => {
-    const { model, roster } = row({
-      headSha: HEAD,
-      pr: { num: 35, state: 'closed', base: 'main' },
-      ci: { status: 'passed', sha: HEAD },
-    })
+    const { model, roster } = row(stateMatrixInput('S11'))
     expect(model).toEqual({ nodes: null, head: null, terminal: 'closed' })
     expect(roster).toEqual({ word: 'Closed', tone: 'stale', icon: 'prohibit' })
   })

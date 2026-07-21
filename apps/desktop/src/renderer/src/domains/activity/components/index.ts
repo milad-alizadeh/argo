@@ -1,6 +1,7 @@
 export { AgentRow, type AgentRowModel, type AgentRowProps } from './AgentRow'
 export { AGENT_STATES, type AgentState } from './agentState'
 export { BackgroundTasks, type BackgroundTasksProps, type RosterActor } from './BackgroundTasks'
+export { NowLine } from './NowLine'
 export { PhaseGroup, type PhaseGroupProps } from './PhaseGroup'
 export { PHASE_STATES, type PhaseState } from './phaseState'
 export {
