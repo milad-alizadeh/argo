@@ -6,7 +6,7 @@ import { deliveryState } from '@/shared/delivery'
  * Organism: one Session as a flat inset card (the wireframe's `.srow`).
  *
  * The row's word, tone and icon are derived from the facts main observed — the same
- * `deliveryState` the ribbon will render, so the two can never disagree — and the atoms below
+ * `deliveryState` the lifecycle will render, so the two can never disagree — and the atoms below
  * take presentation only. The CLI sits on the meta line; richer per-row data (context %,
  * tokens, elapsed) arrives with later tickets.
  */

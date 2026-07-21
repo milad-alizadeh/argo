@@ -49,7 +49,7 @@ export const Pulsing: Story = {
 
 /**
  * The whole Session lifecycle in one frame — the visual-diff surface for words, tones and
- * glow. Ship-flow words ("Ready to merge", "CI failing") render through the same two props.
+ * glow. Delivery words ("Ready to merge", "CI failing") render through the same two props.
  */
 export const EveryState: Story = {
   args: wordAndTone(SESSION_STATUS.running),

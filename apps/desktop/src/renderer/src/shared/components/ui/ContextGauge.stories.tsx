@@ -5,7 +5,7 @@ import { ContextGauge } from './ContextGauge'
 const meta = {
   title: 'Shared/ContextGauge',
   component: ContextGauge,
-  // The gauge stretches to its container the way it does inside a rail row.
+  // The gauge stretches to its container the way it does inside a roster row.
   decorators: [
     (Story): React.JSX.Element => (
       <div className="w-56">

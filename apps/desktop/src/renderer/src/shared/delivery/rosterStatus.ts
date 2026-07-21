@@ -7,7 +7,7 @@ import type {
   TerminalState,
 } from '@shared'
 
-// The roster row's word — a POINTER into the ribbon's head node, never a value of its
+// The roster row's word — a POINTER into the lifecycle's head node, never a value of its
 // own. Tone is a name equal to its `--tone-*` token; a View interpolates
 // `text-tone-${tone}` directly, no map. No colour lives here.
 
@@ -53,7 +53,7 @@ const TERMINAL_STATUS: Record<TerminalState, RosterStatus> = {
 }
 
 // Keyed by the head node and the state it is in — the row can only ever speak for
-// the stage R1 already chose, so it cannot re-rank the nodes behind the ribbon's
+// the stage R1 already chose, so it cannot re-rank the nodes behind the lifecycle's
 // back. A pair absent from the table wants nothing from you (`now`/`wait`/`done`),
 // which is where the Session's own triage word belongs.
 const HEAD_STATUS: Partial<
@@ -82,7 +82,7 @@ const HEAD_STATUS: Partial<
   'merge:auto': { word: 'Auto-merge armed', tone: 'run', icon: 'gear' },
 }
 
-// Takes the model the ribbon is already rendering, so the row cannot be derived
+// Takes the model the lifecycle is already rendering, so the row cannot be derived
 // from a second, differently-timed reading of the same facts.
 export function rosterStatus(facts: SessionFacts, model: LifecycleModel | null): RosterStatus {
   if (!model) return SESSION_STATUS[facts.status]

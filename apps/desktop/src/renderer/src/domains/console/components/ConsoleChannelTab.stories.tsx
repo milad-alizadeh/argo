@@ -103,7 +103,7 @@ export const AgentChannel: Story = {
 export const LongCaptureLabel: Story = {
   args: {
     id: 't-e2e',
-    label: 'e2e:playwright --project=chromium --grep session-rail @11:02',
+    label: 'e2e:playwright --project=chromium --grep session-roster @11:02',
     kind: 'capture',
     active: false,
     onClose: fn(),

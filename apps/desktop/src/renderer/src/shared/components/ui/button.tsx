@@ -35,7 +35,7 @@ const buttonVariants = cva(CONTROL_BASE, {
       // chip its parent already paints (a console channel tab holds two), where a second
       // box would double the wash and a second colour would fight the chip's own state.
       bare: 'border-transparent bg-transparent',
-      // Review-tab controls are all secondary — shipping belongs to the ribbon's gate.
+      // Review-tab controls are all secondary — delivery belongs to the lifecycle's gate.
       'review-secondary':
         'border-input bg-foreground/4 text-foreground-bright hover:border-primary',
       // A 55% border over a 12% wash deepening to 24% on hover: the tint carries the
@@ -63,7 +63,7 @@ export type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['var
 /**
  * Atom: the cockpit's labelled control.
  *
- * Icon-only controls (rail header, work tabs) are their own components, not a size of
+ * Icon-only controls (roster header, delivery tabs) are their own components, not a size of
  * this one.
  */
 function Button({

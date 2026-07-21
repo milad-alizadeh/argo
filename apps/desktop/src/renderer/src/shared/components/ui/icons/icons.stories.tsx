@@ -106,7 +106,7 @@ export const Tinted: Story = {
 export const InlineWithText: Story = {
   render: (args) => (
     <p className="text-foreground text-row">
-      Branch <icons.GitBranchIcon {...args} /> <span className="text-code-inline">feat/rail</span>{' '}
+      Branch <icons.GitBranchIcon {...args} /> <span className="text-code-inline">feat/roster</span>{' '}
       is ahead <icons.ArrowLineUpIcon {...args} className="icon-sm" /> of main.
     </p>
   ),

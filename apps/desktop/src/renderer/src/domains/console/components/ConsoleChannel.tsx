@@ -51,7 +51,7 @@ function feedNodes(feed: string): React.ReactNode {
 
 // Molecule: the ONE monospace surface's body (R13). The caret is what separates the two
 // variants — live carries prompt, caret and tail; a capture is a frozen feed.
-// A real xterm pane here MUST import `@xterm/xterm/css/xterm.css` or it renders ghost rows.
+// A real xterm surface here MUST import `@xterm/xterm/css/xterm.css` or it renders ghost rows.
 export function ConsoleChannel(props: ConsoleChannelProps): React.JSX.Element {
   const shell = cn(
     'min-h-0 overflow-auto whitespace-pre-wrap bg-background px-inset py-gap text-foreground-soft outline-none',

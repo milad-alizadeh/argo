@@ -73,7 +73,7 @@
 :root {
   --radius: 0.5rem;
   --radius-full: 999px; /* pills/chips; the app's rounded-full already covers this */
-  --border-roster: 3px; /* the study's severity/state accent rail (finding, rvrow, phase group) */
+  --border-roster: 3px; /* the study's severity/state accent bar (finding, rvrow, phase group) */
 
   --background: var(--gray-100);
   --foreground: var(--gray-950);
@@ -250,7 +250,7 @@
   --type-headline-weight: 700;
   --type-headline-tracking: -0.01em;
 
-  --type-title: 14px; /* now-line, a pane's single hero row */
+  --type-title: 14px; /* now-line, a panel's single hero row */
   --type-title-leading: 20px;
   --type-title-weight: 600;
   --type-title-tracking: -0.005em;
@@ -312,10 +312,10 @@
    * one row gap (8) = 24 = --space-nest, so each tree level steps by exactly one nest. */
   --space-marker-col: 16px;
 
-  /* The one shared strip height: the Work pane's tab strip IS its header, sized to match
-   * the ship ribbon's own strip so the two stack with no visual seam. Off the 4px rhythm by
+  /* The one shared strip height: the Delivery panel's tab strip IS its header, sized to match
+   * the Delivery lifecycle's own strip so the two stack with no visual seam. Off the 4px rhythm by
    * design (both strips settled on it independently) — named rather than left implicit so a
-   * future ribbon build reads the same constant instead of re-measuring the study. */
+   * future lifecycle build reads the same constant instead of re-measuring the study. */
   --strip-height: 41px;
 
   /* Glow — the lit halo a live signal carries (status dots, the ctx fill). Its
@@ -334,7 +334,7 @@
    * the width tracks the code role), and a settled height between the code role's 12px em
    * box (squat) and its 18px line box (a filled row). Its own baseline nudge: a text caret
    * sits lower than a glyph does. Static by design — the screen's ONE animation budget
-   * belongs to the ribbon/rail. */
+   * belongs to the lifecycle/roster. */
   --caret-box-w: 1ch;
   --caret-box-h: 14px;
   --caret-baseline: -2px;

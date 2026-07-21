@@ -15,7 +15,7 @@ export {
 export * from './icons'
 export { StatusIcon } from './icons/StatusIcon'
 export { NowLine } from './NowLine'
-export { PANE_ORIENTATIONS, PanelSplitter, type PaneOrientation } from './PanelSplitter'
+export { PANEL_ORIENTATIONS, type PanelOrientation, PanelSplitter } from './PanelSplitter'
 export { SectionHeader } from './SectionHeader'
 export { Status } from './Status'
 export { StatusDot } from './StatusDot'

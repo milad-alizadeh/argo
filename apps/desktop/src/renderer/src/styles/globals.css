@@ -130,8 +130,8 @@
   --spacing-nest: var(--space-nest);
   --spacing-marker-col: var(--space-marker-col);
 
-  /* The one shared strip height (min-h-strip): the Work pane's tab strip and the ship
-   * ribbon it stacks against. */
+  /* The one shared strip height (min-h-strip): the Delivery panel's tab strip and the
+   * Delivery lifecycle it stacks against. */
   --height-strip: var(--strip-height);
 
   /* Motion roles: duration-fast / duration-slow / duration-pulse. */
@@ -187,7 +187,7 @@
 
 /* The live console channel's caret — a terminal cursor bar, filled with the surrounding
  * ink. Deliberately has no animation: R13 gives the caret to the console and the ONE
- * animation budget to the ribbon/rail. */
+ * animation budget to the lifecycle/roster. */
 @utility caret-cell {
   display: inline-block;
   width: var(--caret-box-w);

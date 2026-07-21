@@ -11,7 +11,7 @@ export function clampPercentage(percentage: number): number {
  * Atom: the ONE shape for a Session's context window — a labelled bar plus the estimated
  * percentage.
  *
- * Rail-only; no other surface repeats it.
+ * Roster-only; no other surface repeats it.
  */
 export function ContextGauge({
   percentage,

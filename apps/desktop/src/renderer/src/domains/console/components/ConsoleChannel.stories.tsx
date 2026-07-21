@@ -34,7 +34,7 @@ export default meta
 type Story = StoryObj<ConsoleChannelProps>
 
 // The live channel is the session's own surface: it takes typing, and the caret sits after
-// the prompt. The caret is STATIC — the screen's one animation budget is the ribbon's.
+// the prompt. The caret is STATIC — the screen's one animation budget is the lifecycle's.
 export const Live: Story = {
   args: { kind: 'live', prompt: 'auth refactor $', tail: TAIL },
   play: async ({ canvasElement }) => {

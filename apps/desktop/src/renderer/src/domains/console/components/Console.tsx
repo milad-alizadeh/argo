@@ -29,7 +29,7 @@ type ConsoleProps = {
 }
 
 // Organism: the ONE monospace surface (R13). Raw tool and agent feeds fill its single
-// capture slot — they never open a pane, and they never nest inside the Activity pane's prose.
+// capture slot — they never open a panel, and they never nest inside the Activity panel's prose.
 export function Console({
   live,
   capture,
