@@ -43,9 +43,12 @@ builds, any multi-file change) must **never** run in the shared main checkout: i
 the repo root rather than a path under `.claude/worktrees/`, enter a worktree first (Claude
 Code: the `EnterWorktree` tool — this section is your standing instruction to use it,
 unprompted; other harnesses: `git worktree add`) and commit to a ticket branch there.
-Read-only work (review, triage, Q&A) may stay in the main checkout. The rest of the mechanics
-— branch conventions, resuming an interrupted worktree, recovering a deleted one — live in
-the `implement` skill and apply to **all** implementation work, not just `/implement` runs.
+Read-only work (review, triage, Q&A) may stay in the main checkout. This is enforced
+mechanically: a `CLAUDECODE`-gated `PreToolUse` hook (`scripts/worktree-guard.mjs`) blocks agent
+`Edit`/`Write` to `apps/**` or `packages/**` from outside a worktree — doc, memory, and config
+edits stay free, and the human workflow is never touched. The rest of the mechanics — branch
+conventions, resuming an interrupted worktree, recovering a deleted one — live in
+`docs/agents/worktrees.md` and apply to **all** implementation work, not just `/implement` runs.
 
 Landed worktrees are reaped by `bun run worktrees:gc` (`scripts/worktree-gc.sh`) — PRs merge
 on GitHub, so nothing local fires when work lands and worktrees otherwise accumulate. It
@@ -53,6 +56,20 @@ removes only what is provably safe: PR merged (or branch merged into the default
 working tree clean, nothing unpushed, and untouched for 30 minutes so a live session isn't
 pulled out from under it. Everything else is reported and left alone; `--dry-run` reports
 without removing.
+
+## Code review
+
+An implement run reviews its diff before the PR opens (upstream `implement` calls the
+`code-review` skill). The review only works in a **fresh context that never saw the author's
+reasoning** — an author reviewing their own diff knows what the code *meant* to do, which is
+exactly the knowledge that hides the defect. Claude Code: `code-review` fans out parallel axis
+sub-agents via the `Agent` tool. Other harnesses without sub-agent spawning: run the review from
+a separate fresh session over the diff (a new Codex/Cursor conversation).
+
+If no independent fresh context is reachable, **stop and report that** — do not run the axes
+yourself and present it as a review. One Claude Code trap: agents spawned inside a `Workflow`
+have no `Agent` tool, so an implement run nested in a Workflow can't spawn its own review — run
+implement directly (not inside a Workflow) so the review stage can fan out its sub-agents.
 
 ## graphify
 
