@@ -26,6 +26,22 @@ only the Argo deltas.
   ("grep the installed files for any remaining `{{`"), not "produce a list".
 - **Prompt the positive.** Keep a prohibition only as a guardrail you cannot phrase
   positively, and pair it with the action that replaces it.
+- **Harness-agnostic.** Prefer a harness-neutral instruction. When you must name a
+  harness-specific tool or feature (`Agent`, `Workflow`, `EnterWorktree`, a slash
+  command, an output style), pair it with the generic fallback in the same breath
+  ("Claude Code: `EnterWorktree`; other harnesses: `git worktree add`"), and land
+  repo-level wiring in `AGENTS.md`, not `CLAUDE.md` alone. A capability genuinely
+  exclusive to one harness (output styles) is kept, but says so. **Check:** grep the
+  finished skill for harness tool names — each hit has a paired fallback or an
+  explicit exclusive-by-design note — and confirm any repo-level wiring it installs
+  targets `AGENTS.md` (or both files), never `CLAUDE.md` alone.
+- **Project-agnostic.** A bundled skill installs into arbitrary repos, so it must not
+  assume *this* project's paths, package names, or commands. Derive them at run time
+  (`git rev-parse --show-toplevel` for the root; read the target's manifest for its
+  scripts) rather than hardcoding `packages/argo-skills`, `apps/desktop`, or an Argo
+  script name. A skill deliberately scoped to Argo alone says so in its description.
+  **Check:** grep the finished skill for repo-specific literals — each is either
+  derived, a documented placeholder, or the payload it installs.
 
 Before editing a skill, run the `writing-great-skills` failure-mode check. A
 structural rewrite — moving content between disclosure tiers, changing step order —

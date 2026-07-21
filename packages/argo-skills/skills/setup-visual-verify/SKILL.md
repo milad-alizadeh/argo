@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Setup Visual Verify
 
-Installs the per-project half of `/visual-verify`. The skill itself is portable; what varies
+Installs the per-project half of the `visual-verify` skill. The skill itself is portable; what varies
 per project is **how to render a UI state**. This setup detects that, pins it in writing, and
 ships the screenshot script.
 
@@ -26,7 +26,7 @@ auth walls, build steps).
 
 Copy `templates/screenshot-states.mjs` to `scripts/screenshot-states.mjs` in the project.
 It needs Playwright: use the project's existing `playwright` devDependency if there is one;
-otherwise note that `/visual-verify` will run it via `npx playwright` and skip adding a
+otherwise note that the `visual-verify` skill will run it via `npx playwright` and skip adding a
 dependency.
 
 ## 3. Declare the method in AGENTS.md
@@ -42,7 +42,7 @@ states in this project: <the detected method — e.g. "`bun run build-storybook`
 `storybook-static/` on a free port, states are story URLs via
 `iframe.html?id=<story-id>&viewMode=story`">. Screenshot with
 `node scripts/screenshot-states.mjs <states.json> <out-dir>`. UI tickets end with
-`/visual-verify`; screenshots are published to a throwaway `refs/pr-screenshots/<branch-slug>`
+the `visual-verify` skill; screenshots are published to a throwaway `refs/pr-screenshots/<branch-slug>`
 ref (never committed to the branch) and embedded in the PR body via raw URLs.
 ```
 

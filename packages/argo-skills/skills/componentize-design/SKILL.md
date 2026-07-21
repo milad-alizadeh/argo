@@ -30,7 +30,7 @@ to a new named one. Nothing stays raw.
 **Foundations first.** This step *reconciles a screen against existing
 foundations* — it never designs a scale. If the contract is missing a whole
 family the study uses (no typography roles at all, no spacing steps), stop and
-run `/design-foundations` with this study as raw material, then come back.
+run the `design-foundations` skill with this study as raw material, then come back.
 
 1. Locate the token contract: the file the `design-system` rule names as the
    single source of raw values (the CSS custom-property file feeding Tailwind's
@@ -43,7 +43,7 @@ run `/design-foundations` with this study as raw material, then come back.
    never inherit the study's jitter), or **promote** it to a new token
    named by *role*, never by value (`--text-label`, not `--text-10-5`). Typography
    roles are full tuples: size + line-height + weight + tracking. A promotion is
-   a contract change — a mini `/design-foundations` bless, shown to the user
+   a contract change — a mini `design-foundations` bless, shown to the user
    before it lands.
 4. Land promotions in the token contract (all theme variants) and its framework
    wiring in the same change.

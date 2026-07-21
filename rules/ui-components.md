@@ -99,7 +99,7 @@ it teaches. Where a wrapper element exists only to carry text, collapse it into 
 ## Build from the inventory — when a design study exists
 
 If the UI being built comes from a settled design study, its component inventory
-(`docs/designs/<study>.inventory.md`, produced by `/componentize-design`) is the
+(`docs/designs/<study>.inventory.md`, produced by the `componentize-design` skill) is the
 build contract:
 
 - **Names are fixed by the inventory.** The component's name, tier, and props come
