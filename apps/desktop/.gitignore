@@ -15,10 +15,3 @@ storybook-static
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
-
-# Visual regression: only the Linux baselines CI generates are committed. A local
-# (macOS/Windows) run writes platform-suffixed images — never commit those.
-**/__screenshots__/**/*-darwin.png
-**/__screenshots__/**/*-win32.png
-# Vitest visual-diff attachments (actual/diff images, written on failure).
-.vitest-attachments/
