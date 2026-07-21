@@ -76,5 +76,17 @@
   "74": "electron-vite",
   "75": "happy-dom",
   "76": "react",
-  "77": "react-dom"
+  "77": "react-dom",
+  "78": "projection.ts",
+  "79": "sessionStore.ts",
+  "80": "sessionFacts.ts",
+  "81": "terminalBridge.ts",
+  "82": "channels.ts",
+  "83": "Roster.stories.tsx",
+  "84": "SessionRow.tsx",
+  "85": "deliveryState",
+  "86": "Status.stories.tsx",
+  "87": "StatusDot.stories.tsx",
+  "88": "useDisclosure.ts",
+  "89": "@chromatic-com/storybook"
 }
