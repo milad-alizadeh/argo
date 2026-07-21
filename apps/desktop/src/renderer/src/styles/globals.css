@@ -185,15 +185,13 @@
   box-shadow: 0 1px 0 var(--inset-lip) inset;
 }
 
-/* The live console channel's caret — a terminal cursor bar, filled with the surrounding
- * ink. Deliberately has no animation: R13 gives the caret to the console and the ONE
- * animation budget to the ribbon/rail. */
-@utility caret-cell {
-  display: inline-block;
-  width: var(--caret-box-w);
-  height: var(--caret-box-h);
-  vertical-align: var(--caret-baseline);
-  background: currentColor;
+/* The live channel is a real xterm terminal that sits directly on the panel's ONE frosted
+ * surface. Every xterm layer stays transparent so the glass reads through — no glass on glass.
+ * (Paired with `allowTransparency` + a transparent theme in `LiveTerminal`.) */
+.live-terminal .xterm,
+.live-terminal .xterm-viewport,
+.live-terminal .xterm-screen {
+  background-color: transparent;
 }
 
 @layer base {

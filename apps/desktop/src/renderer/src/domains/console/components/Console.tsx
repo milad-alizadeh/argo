@@ -1,13 +1,13 @@
 import { useEffect, useId, useRef } from 'react'
 import { cn } from '@/lib/utils'
+import { Button, CaretDownIcon, CaretUpIcon, Text } from '@/shared/components/ui'
 import { ConsoleChannel } from './ConsoleChannel'
-import { ConsoleChannelTabs } from './ConsoleChannelTabs'
-import { type ConsoleCapture, type ConsoleLiveChannel, LIVE_CHANNEL_ID } from './consoleChannels'
+import { ConsoleChannelTab } from './ConsoleChannelTab'
+import { type ConsoleCapture, LIVE_CHANNEL_ID, LIVE_CHANNEL_LABEL } from './consoleChannels'
+import { LiveTerminal } from './LiveTerminal'
 import { resolveActiveChannel } from './resolveActiveChannel'
 
 type ConsoleProps = {
-  /** The session's own channel. Always present — `session · live` is fixed (R13). */
-  live: ConsoleLiveChannel
   /** The ONE capture slot. Opening another feed replaces this value; ✕ clears it. */
   capture?: ConsoleCapture
   /** Which channel to show. Naming a capture that is gone shows live. */
@@ -23,15 +23,15 @@ type ConsoleProps = {
   onSelectChannel: (id: string) => void
   /** Clear the capture slot. */
   onCloseCapture: (id: string) => void
-  /** Swap the console between its two heights. */
+  /** Swap the console between its two heights, via the strip's expand control. */
   onToggleExpanded: () => void
   className?: string
 }
 
-// Organism: the ONE monospace surface (R13). Raw tool and agent feeds fill its single
-// capture slot — they never open a pane, and they never nest inside the Activity pane's prose.
+// Organism: the ONE monospace surface (R13). The live channel is a real shell (`LiveTerminal`);
+// raw tool and agent feeds fill its single capture slot — they never open a pane, and they
+// never nest inside the Activity pane's prose.
 export function Console({
-  live,
   capture,
   activeChannel,
   expanded,
@@ -42,6 +42,7 @@ export function Console({
   className,
 }: ConsoleProps): React.JSX.Element {
   const active = resolveActiveChannel(activeChannel, capture)
+  const liveActive = active === LIVE_CHANNEL_ID
   const panelId = useId()
   const panelRef = useRef<HTMLElement>(null)
 
@@ -72,32 +73,54 @@ export function Console({
       style={{ height }}
       className={cn('flex min-h-0 flex-col border-input border-t', className)}
     >
-      <ConsoleChannelTabs
-        capture={capture}
-        activeChannel={active}
-        expanded={expanded}
-        panelId={panelId}
-        onSelectChannel={onSelectChannel}
-        onCloseCapture={onCloseCapture}
-        onToggleExpanded={onToggleExpanded}
-      />
+      {/* The channel strip: the fixed `session · live` tab, at most ONE capture tab (R13), and
+          the control that resizes the console. The expand control sits OUTSIDE the tablist —
+          only tabs may be a tablist's children. */}
+      <div
+        data-slot="console-channel-tabs"
+        className="flex shrink-0 items-center gap-gap bg-background/55 px-inset py-snug text-muted-foreground"
+      >
+        <div
+          role="tablist"
+          aria-label="Console channels"
+          className="flex min-w-0 items-center gap-gap"
+        >
+          <ConsoleChannelTab
+            id={LIVE_CHANNEL_ID}
+            label={LIVE_CHANNEL_LABEL}
+            kind="live"
+            active={liveActive}
+            panelId={liveActive ? panelId : undefined}
+            onSelect={onSelectChannel}
+          />
+          {capture !== undefined && (
+            <ConsoleChannelTab
+              id={capture.id}
+              label={capture.label}
+              kind="capture"
+              agent={capture.agent}
+              active={!liveActive}
+              panelId={liveActive ? undefined : panelId}
+              onSelect={onSelectChannel}
+              onClose={onCloseCapture}
+            />
+          )}
+        </div>
+        <Button
+          variant="quiet"
+          size="sm"
+          aria-expanded={expanded}
+          onClick={onToggleExpanded}
+          className="ml-auto text-foreground-faint"
+        >
+          {expanded ? <CaretDownIcon aria-hidden /> : <CaretUpIcon aria-hidden />}
+          <Text variant="meta">{expanded ? 'collapse' : 'expand'}</Text>
+        </Button>
+      </div>
       {capture !== undefined && active === capture.id ? (
-        <ConsoleChannel
-          kind="capture"
-          feed={capture.feed}
-          id={panelId}
-          ref={panelRef}
-          className="flex-1"
-        />
+        <ConsoleChannel feed={capture.feed} id={panelId} ref={panelRef} className="flex-1" />
       ) : (
-        <ConsoleChannel
-          kind="live"
-          prompt={live.prompt}
-          tail={live.tail}
-          id={panelId}
-          ref={panelRef}
-          className="flex-1"
-        />
+        <LiveTerminal id={panelId} className="flex-1" />
       )}
     </section>
   )
