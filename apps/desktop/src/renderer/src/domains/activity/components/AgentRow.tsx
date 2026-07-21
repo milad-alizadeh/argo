@@ -26,7 +26,7 @@ export type AgentRowProps = {
 /** The AgentRow fields that describe the Agent itself — what a Run or a Phase holds. */
 export type AgentRowModel = Omit<AgentRowProps, 'rollupState' | 'className'>
 
-// Molecule: one dispatched Agent in the story pane's Actor roster. Static by design — the
+// Molecule: one dispatched Agent in the Activity pane's Actor roster. Static by design — the
 // screen's one animation budget belongs to the ribbon, so a running Agent reads as a word.
 export function AgentRow({
   name,

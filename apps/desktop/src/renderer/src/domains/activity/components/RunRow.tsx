@@ -77,7 +77,7 @@ function membersOfPhase(
   return members.filter((member) => member.phase === phaseLabel).map(agentOf)
 }
 
-// Molecule: a Run in the story pane's Actor roster — a batch or a dynamic workflow, with its
+// Molecule: a Run in the Activity pane's Actor roster — a batch or a dynamic workflow, with its
 // member AgentRows nested beneath. The progress summary shows only while collapsed:
 // expanded, the phase rails and member rows already carry the same information.
 export function RunRow({

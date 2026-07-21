@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { clampPaneSize, keyStepDelta } from './PaneSplitter'
+import { clampPaneSize, keyStepDelta } from './PanelSplitter'
 
 describe('clampPaneSize', () => {
   it('rounds a fractional pointer position to whole pixels', () => {

@@ -35,7 +35,7 @@ function actorKey(actor: RosterActor): string {
   }
 }
 
-// Organism: the story pane's Actor roster (R15). This section alone owns Agent state —
+// Organism: the Activity pane's Actor roster (R15). This section alone owns Agent state —
 // each Agent's output lives in its console channel, never here. The header is the name
 // alone: no counts, no rollup, because the state lives in the rows.
 export function BackgroundTasks({
