@@ -76,7 +76,7 @@ export function FindingCard({
   return (
     <div
       className={cn(
-        'border-t border-t-inset-hair px-inset py-snug',
+        'border-t border-t-inset-hair px-inset py-gap',
         resolved ? 'bg-inset px-inset py-tight' : accent.card,
         walkFocus && 'bg-verdict-block-tint/12 ring-1 ring-verdict-block-tint/40',
       )}
@@ -86,7 +86,7 @@ export function FindingCard({
         <Text variant="tag" className="text-muted-foreground">
           {FINDING_SEVERITY[severity].word}
         </Text>
-        <Text variant="meta" className="text-muted-foreground" as="span">
+        <Text variant="code-inline" className="text-muted-foreground" as="span">
           :{line}
         </Text>
         <Badge shape="pill" variant={report.tone}>

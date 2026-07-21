@@ -122,10 +122,10 @@ export function FileDiff({
           )}
           <span className="grow" />
           <span title="line counts from a file snapshot">
-            <Text variant="meta" className="text-foreground-faint" as="span">
+            <Text variant="row" className="text-foreground-faint" as="span">
               +{adds}
             </Text>{' '}
-            <Text variant="meta" className="text-foreground-faint" as="span">
+            <Text variant="row" className="text-foreground-faint" as="span">
               −{dels}
             </Text>
           </span>
