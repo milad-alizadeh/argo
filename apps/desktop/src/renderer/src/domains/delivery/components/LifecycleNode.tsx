@@ -1,6 +1,7 @@
 import type { LifecycleNodeKey, LifecycleNodeState } from '@shared'
 import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
+import { isHotHeadState } from '@/shared/delivery'
 import { LIFECYCLE_NODE_STATE } from './lifecycleNodeState'
 
 const NODE_LABEL: Record<LifecycleNodeKey, string> = {
@@ -47,7 +48,7 @@ export function LifecycleNode({
   className,
 }: LifecycleNodeProps): React.JSX.Element {
   const { Icon, glyph, label } = LIFECYCLE_NODE_STATE[state]
-  const pulse = isHead && (state === 'gate' || state === 'fail' || state === 'warn')
+  const pulse = isHead && isHotHeadState(state)
   return (
     <div
       role={clickable ? 'button' : undefined}

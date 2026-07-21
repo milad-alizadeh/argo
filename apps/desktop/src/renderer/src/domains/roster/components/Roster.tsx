@@ -1,4 +1,3 @@
-import type { SessionFacts } from '@shared'
 import { useId } from 'react'
 import type { SessionView } from '@/sessionStore'
 import {
@@ -10,21 +9,9 @@ import {
   Text,
   useDisclosure,
 } from '@/shared/components/ui'
-import { deliveryState } from '@/shared/delivery'
+import { deliveryState, lifecycleIsHot } from '@/shared/delivery'
 import { EmptyRoster } from './EmptyRoster'
 import { SessionRow } from './SessionRow'
-
-// The screen spends its ONE pulse budget (R10) on the Delivery strip's head node whenever the
-// selected Session is stalled there — `gate`/`fail`/`warn`, the exact condition `LifecycleNode`
-// pulses on. Only when that head is quiet does the pulse fall to the roster's top needs-you dot,
-// so the two surfaces read the same facts and can never pulse at once.
-function selectedLifecycleIsHot(facts: SessionFacts | undefined): boolean {
-  if (!facts) return false
-  const { lifecycle } = deliveryState(facts)
-  if (!lifecycle || lifecycle.terminal) return false
-  const head = lifecycle.nodes[lifecycle.head]
-  return head === 'gate' || head === 'fail' || head === 'warn'
-}
 
 /**
  * Organism: the roster of observed Sessions — one frosted `panel` opening with a **Projects**
@@ -57,12 +44,16 @@ export function Roster({
   // At most one row pulses per render, and only while the selected Session's lifecycle is quiet
   // (otherwise the Delivery strip owns the budget): the top needs-you (amber) row.
   const selected = selectedId == null ? undefined : sessions.find((s) => s.id === selectedId)
-  const pulseId = selectedLifecycleIsHot(selected?.facts)
+  const selectedHot = selected ? lifecycleIsHot(deliveryState(selected.facts).lifecycle) : false
+  const pulseId = selectedHot
     ? null
     : (sessions.find((s) => deliveryState(s.facts).roster.tone === 'amber')?.id ?? null)
 
   return (
-    <section className="flex w-[var(--c-rail)] shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl">
+    // A flat column, not a card: the spine wraps the roster and the session panel in ONE frosted
+    // surface (SessionScreen), so the roster carries no border/blur of its own — the splitter
+    // hairline is the only seam between it and the panel.
+    <section className="flex w-[var(--c-rail)] shrink-0 flex-col overflow-hidden">
       <PanelHeader
         left={
           <Text as="span" variant="eyebrow" className="text-muted-foreground">

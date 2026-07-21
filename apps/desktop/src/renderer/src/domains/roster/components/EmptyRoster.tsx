@@ -10,7 +10,7 @@ import { Text } from '@/shared/components/ui'
  */
 export function EmptyRoster(): React.JSX.Element {
   return (
-    <div className="flex flex-1 select-none flex-col items-center justify-center gap-3 px-4 text-center">
+    <div className="flex flex-1 select-none flex-col items-center justify-center gap-inset px-region text-center">
       <CompassIcon weight="light" size={28} className="text-muted-foreground/70" />
       <Text as="p" variant="row" className="text-muted-foreground">
         No Sessions observed yet.

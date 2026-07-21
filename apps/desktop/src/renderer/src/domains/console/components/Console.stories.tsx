@@ -91,8 +91,8 @@ export const Default: Story = {
     await expect(canvas.getByRole('tab')).toHaveAttribute('aria-controls', panel.id)
 
     // The expand control resizes the console and sits BESIDE the tablist — only tabs may be
-    // a tablist's children.
-    const control = canvas.getByRole('button', { name: /expand/ })
+    // a tablist's children. It is now a chevron IconButton (no "expand"/"collapse" text).
+    const control = canvas.getByRole('button', { name: /expand console|collapse console/i })
     await expect(canvas.getByRole('tablist').contains(control)).toBe(false)
     await userEvent.click(control)
     await expect(args.onToggleExpanded).toHaveBeenCalled()
@@ -180,8 +180,12 @@ export const LongCaptureLabel: Story = {
     ),
   ],
   play: async ({ canvasElement }) => {
-    const strip = canvasElement.querySelector('[data-slot="console-channel-tabs"]')
-    const control = within(canvasElement).getByRole('button', { name: /expand/ })
+    // The channel strip is the console's PanelHeader (`<header>`); the chevron control keeps
+    // its place inside it even when the capture label overflows.
+    const strip = canvasElement.querySelector('header')
+    const control = within(canvasElement).getByRole('button', {
+      name: /expand console|collapse console/i,
+    })
     const stripBox = (strip as HTMLElement).getBoundingClientRect()
     await expect(control.getBoundingClientRect().right).toBeLessThanOrEqual(
       Math.ceil(stripBox.right),

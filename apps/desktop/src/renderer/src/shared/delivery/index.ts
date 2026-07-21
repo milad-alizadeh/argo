@@ -5,6 +5,7 @@
 // point, so the lifecycle and the roster row can never disagree about a Session.
 
 export { type DeliveryState, deliveryState } from './deliveryState'
+export { isHotHeadState, lifecycleIsHot } from './lifecycleHot'
 export {
   ROSTER_ICONS,
   ROSTER_TONES,

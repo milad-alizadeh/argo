@@ -59,35 +59,44 @@ export function SessionScreen({
       }
       className="flex h-screen w-screen bg-background p-inset text-foreground"
     >
-      <Roster
-        sessions={sessions}
-        selectedId={selectedId}
-        onSelectSession={handlers.onSelectSession}
-      />
-      <PanelSplitter
-        orientation="v"
-        label="Roster width"
-        size={layout.roster}
-        min={SPINE.roster.min}
-        max={SPINE.roster.max}
-        onResize={(px) => handlers.onResize('roster', px)}
-      />
-      {panel ? (
-        <SessionPanel panel={panel} layout={layout} handlers={handlers} />
-      ) : (
-        <EmptySessionPanel />
-      )}
+      {/* ONE frosted surface for the whole spine (R13): the roster and the session panel are flat
+          columns inside it, divided only by the splitter's 1px hairline — no glass on glass, and
+          no double border where two cards would otherwise meet. */}
+      <div className={GLASS_CARD}>
+        <Roster
+          sessions={sessions}
+          selectedId={selectedId}
+          onSelectSession={handlers.onSelectSession}
+        />
+        <PanelSplitter
+          orientation="v"
+          label="Roster width"
+          size={layout.roster}
+          min={SPINE.roster.min}
+          max={SPINE.roster.max}
+          onResize={(px) => handlers.onResize('roster', px)}
+        />
+        {panel ? (
+          <SessionPanel panel={panel} layout={layout} handlers={handlers} />
+        ) : (
+          <EmptySessionPanel />
+        )}
+      </div>
     </main>
   )
 }
 
-// The one frosted surface of the panel column (R13) — both the populated and the empty panel
-// wear it, so the invariant lives in one place and a surface tweak can't drift between them.
-const FROSTED_PANEL =
-  'flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl'
+// The spine's ONE frosted surface (R13): the roster and the session panel are flat columns inside
+// it. The invariant lives here, in one place, so a surface tweak can't drift between regions.
+const GLASS_CARD =
+  'flex min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl'
 
-// The frosted session panel: header, the Activity ‖ Delivery work row, and the Console beneath
-// its splitter. One frosted surface (R13); the regions inside are flat.
+// A flat column: header, the Activity ‖ Delivery work row, and the Console beneath its splitter.
+// It carries no frosting of its own — the surrounding GLASS_CARD is the single glass (R13).
+const PANEL_COLUMN = 'flex min-w-0 flex-1 flex-col overflow-hidden'
+
+// The session panel: header, the Activity ‖ Delivery work row, and the Console beneath its
+// splitter. A flat column inside the shared glass; the regions inside are flat too.
 function SessionPanel({
   panel,
   layout,
@@ -99,7 +108,7 @@ function SessionPanel({
 }): React.JSX.Element {
   const split = panel.variant === 'split'
   return (
-    <section className={FROSTED_PANEL}>
+    <section className={PANEL_COLUMN}>
       <SessionHeader {...panel.header} onToggleDelivery={handlers.onToggleVariant} />
       <div className="flex min-h-0 flex-1">
         <section
@@ -152,11 +161,11 @@ function SessionPanel({
   )
 }
 
-// The panel with no Session selected (or an empty roster) — one frosted surface with a muted
-// prompt, so the spine is never a blank column.
+// The panel with no Session selected (or an empty roster) — a flat column with a muted prompt, so
+// the spine's session side is never blank. The frosting is the shared GLASS_CARD's.
 function EmptySessionPanel(): React.JSX.Element {
   return (
-    <section className={cn(FROSTED_PANEL, 'items-center justify-center')}>
+    <section className={cn(PANEL_COLUMN, 'items-center justify-center')}>
       <Text variant="row" className="text-muted-foreground">
         Select a session to see its activity, delivery and console.
       </Text>

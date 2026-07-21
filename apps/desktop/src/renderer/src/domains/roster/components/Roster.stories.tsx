@@ -9,16 +9,18 @@ const meta = {
   title: 'Roster',
   component: Roster,
   parameters: { layout: 'fullscreen' },
-  // The roster is the spine's left column; its old `<main>` window moved to SessionScreen. This
-  // decorator replays that window, pinning `--c-rail` to the splitter's 300px initial so the
-  // panel sizes exactly as it does in the app.
+  // The roster is a flat column inside the spine's ONE frosted card (SessionScreen owns the glass).
+  // This decorator replays that card around the isolated roster and pins `--c-rail` to the
+  // splitter's 300px initial, so the panel sizes and frosts exactly as it does in the app.
   decorators: [
     (Story) => (
       <div
         className="flex h-screen w-screen bg-background p-3 text-foreground"
         style={{ '--c-rail': '300px' } as React.CSSProperties}
       >
-        <Story />
+        <div className="flex overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl">
+          <Story />
+        </div>
       </div>
     ),
   ],

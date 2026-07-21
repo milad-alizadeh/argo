@@ -108,7 +108,11 @@ export function PanelSplitter({
 
   const dragging = drag !== null
   return (
-    // biome-ignore lint/a11y/useSemanticElements: <hr> is void, and a window splitter has to hold its pip, take focus and carry aria-valuenow.
+    // The splitter IS the 1px seam between two panes — a single hairline the same width as the
+    // panel border, so pane boundaries never double up. It occupies no layout width of its own
+    // (`w-0`/`h-0` + a one-side border); the wider grab affordance is the absolutely-placed child,
+    // which never pushes the panes apart.
+    // biome-ignore lint/a11y/useSemanticElements: <hr> is void, and a window splitter has to take focus and carry aria-valuenow.
     <div
       role="separator"
       tabIndex={0}
@@ -120,22 +124,23 @@ export function PanelSplitter({
       data-slot="panel-splitter"
       data-dragging={dragging}
       className={cn(
-        'group relative flex touch-none items-center justify-center outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring',
-        orientation === 'v' ? 'h-full w-snug cursor-col-resize' : 'h-snug w-full cursor-row-resize',
+        'group relative shrink-0 touch-none border-border outline-none transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring',
+        orientation === 'v'
+          ? 'w-0 cursor-col-resize border-l hover:border-primary'
+          : 'h-0 cursor-row-resize border-t hover:border-primary',
+        dragging && 'border-primary',
         className,
       )}
       onPointerDown={handlePointerDown}
       onKeyDown={handleKeyDown}
     >
-      {/* The rail is a full-length hairline — the visible separator between two panes — that
-          lifts to primary under the pointer. Spanning the whole edge (not a short centered pip)
-          is what makes every pane boundary read as a border. */}
+      {/* Transparent grab zone, wider than the 1px seam so the divider stays easy to hit —
+          absolutely placed so it adds no width and the panes sit flush against the hairline. */}
       <span
         aria-hidden
         className={cn(
-          'transition-colors duration-fast group-hover:bg-primary',
-          orientation === 'v' ? 'h-full w-hair' : 'h-hair w-full',
-          dragging ? 'bg-primary' : 'bg-border',
+          'absolute',
+          orientation === 'v' ? 'inset-y-0 -inset-x-snug' : 'inset-x-0 -inset-y-snug',
         )}
       />
     </div>
