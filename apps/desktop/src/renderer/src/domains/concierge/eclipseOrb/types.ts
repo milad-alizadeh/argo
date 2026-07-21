@@ -1,6 +1,6 @@
 /** The orb's voice-state vocabulary and the handle contract the renderer drives. */
 
-export type OrbState = 'loading' | 'idle' | 'listening' | 'thinking' | 'speaking' | 'error'
+export type OrbState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error'
 
 /** Options fixed at creation time — never change over the orb's life. */
 export interface OrbOptions {

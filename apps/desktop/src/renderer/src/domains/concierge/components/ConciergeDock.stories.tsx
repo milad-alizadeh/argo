@@ -8,7 +8,7 @@ import { ConciergeDock } from './ConciergeDock'
  * the current state word. `active` gates the loop — only true when the big stage is covered, so at
  * most one orb animates. Rendered on a panel-toned frame so the transparent orb canvas reads right.
  */
-const ORB_STATES: OrbState[] = ['idle', 'listening', 'thinking', 'speaking', 'loading', 'error']
+const ORB_STATES: OrbState[] = ['idle', 'listening', 'thinking', 'speaking', 'error']
 
 const meta = {
   title: 'Concierge/ConciergeDock',
@@ -47,7 +47,6 @@ export const Idle: Story = stateStory('idle')
 export const Listening: Story = stateStory('listening')
 export const Thinking: Story = stateStory('thinking')
 export const Speaking: Story = stateStory('speaking')
-export const Loading: Story = stateStory('loading')
 export const ErrorState: Story = { ...stateStory('error'), name: 'Error' }
 
 /** Inactive — the big stage owns the animation, so the dock orb holds a static frame. */

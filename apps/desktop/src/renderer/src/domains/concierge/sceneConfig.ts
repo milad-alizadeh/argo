@@ -37,14 +37,11 @@ export const SCENE_CONFIG = {
       z: 6.5, // world units
       near: 0.1,
       far: 100,
-      panelZ: 9.5, // zoom-out target when a side panel opens
-      panelAnimS: 0.85, // gsap tween duration (s)
     },
     lerpSpeed: 4.0, // SP default — 1.0 means full change per second
 
     ring: {
       planeSize: 5.0, // PlaneGeometry side length (world units)
-      radiusWorld: 1.65, // ring radius in world units (documentation / hit-test)
       posY: 0.1, // mesh Y offset from origin
       scale: 0.8, // uniform XY scale applied to ring mesh
       uvRadius: 0.45, // RING_R in shader — must stay in sync with shaders.ts define
@@ -148,19 +145,11 @@ export const SCENE_CONFIG = {
         audio: { breathAdd: 0.025, bottomAdd: 0.4 },
         motion: { breathFreq: 1.9, breathAmp: 0.018 }, // calm swell
       },
-      loading: {
-        bright: 0.22,
-        glow: 0.9, // awake baseline halo
-        pulse: 0.0,
-        bottom: 0.0,
-        seg: 0,
-        mic: { brightAdd: 0, glowDrive: 0 },
-        audio: { breathAdd: 0, bottomAdd: 0 },
-        motion: {},
-      },
       error: {
-        bright: 0.4,
-        glow: 0.9, // awake baseline halo
+        // Loud on purpose — bright red corona (palette lerps base→error), so it
+        // never reads as a dim idle. bright well above idle's 0.55; full glow.
+        bright: 0.85,
+        glow: 1.0,
         pulse: 0.0,
         bottom: 0.0,
         seg: 0,
@@ -291,16 +280,15 @@ export const SCENE_CONFIG = {
     // fixed amount (the *Lift constants below — these preserve the tonal
     // hierarchy and are NOT meant to be retuned for warmth).
     //
-    // To recolour the scene, change ONE value: `base`. Conversation mode swaps
-    // `base`→`warm`, and the existing colour lerp carries every element together.
+    // To recolour the scene, change ONE value: `base`. The error state swaps
+    // `base`→`error`, and the colour lerp carries every element together.
     palette: {
       base: [0.22, 0.4, 0.85] as [number, number, number], // cool eclipse blue (default)
-      warm: [0.95, 0.55, 0.3] as [number, number, number], // conversation-mode warm
+      error: [0.92, 0.16, 0.12] as [number, number, number], // alarm red (error state only)
       coreLift: 0.74, // hot core → near-white
       rimLift: 0.5, // ring rim → bright
       dotLift: 0.4, // ground dot
       glowLift: 0.0, // horizon glow/flare/sky = base, full saturation
     },
-    hitTest: { radiusMult: 1.25 },
   },
 }

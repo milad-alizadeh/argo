@@ -9,7 +9,7 @@ import { EclipseScene } from './EclipseScene'
  * freeze). WebGL animates live, so there is no pixel baseline — the play tests assert the wiring
  * (the data attributes the engine is driven from), not the rendered frame.
  */
-const ORB_STATES: OrbState[] = ['idle', 'listening', 'thinking', 'speaking', 'loading', 'error']
+const ORB_STATES: OrbState[] = ['idle', 'listening', 'thinking', 'speaking', 'error']
 
 const meta = {
   title: 'Concierge/EclipseScene',
@@ -46,7 +46,6 @@ export const Idle: Story = stateStory('idle')
 export const Listening: Story = stateStory('listening')
 export const Thinking: Story = stateStory('thinking')
 export const Speaking: Story = stateStory('speaking')
-export const Loading: Story = stateStory('loading')
 export const ErrorState: Story = { ...stateStory('error'), name: 'Error' }
 
 /** State A — the big orb drifted into the roster→edge gap via camera parallax (live scene). */
