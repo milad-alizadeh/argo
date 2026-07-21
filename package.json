@@ -14,6 +14,7 @@
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
     "test": "turbo run test",
+    "test:hooks": "node scripts/worktree-guard.test.mjs",
     "test:stories": "turbo run test:stories",
     "test:e2e": "turbo run test:e2e",
     "typecheck": "turbo run typecheck",

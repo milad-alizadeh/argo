@@ -19,6 +19,15 @@
             "command": "/Users/milad/.local/bin/graphify hook-guard read"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/worktree-guard.mjs\""
+          }
+        ]
       }
     ],
     "SessionEnd": [
