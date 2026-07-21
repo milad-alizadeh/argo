@@ -1,4 +1,5 @@
 import { BackgroundTasks, NowLine } from '@/domains/activity/components'
+import { ConciergeDock, EclipseScene, type OrbState } from '@/domains/concierge/components'
 import { Console } from '@/domains/console/components'
 import { type ChangesView, Delivery, type DeliveryTab } from '@/domains/delivery/components'
 import { Roster } from '@/domains/roster/components'
@@ -34,6 +35,8 @@ export interface SessionScreenProps {
   /** The three splitter-driven px sizes the custom properties carry. */
   layout: SpineLayout
   handlers: SessionScreenHandlers
+  /** The Concierge's voice state — a pure prop driving the eclipse orb (stage + dock). */
+  orbState: OrbState
 }
 
 /**
@@ -48,44 +51,57 @@ export function SessionScreen({
   panel,
   layout,
   handlers,
+  orbState,
 }: SessionScreenProps): React.JSX.Element {
+  // State A (no session) runs the big stage orb live, drifted into the midpoint of the
+  // roster→edge gap: a rightward shift of half the roster width (the inset cancels). State B
+  // (a session open) would cover the orb, so the stage freezes and the dock orb takes over —
+  // only ever one orb animates (the perf contract).
+  const detailOpen = selectedId != null
+  const panelShift = layout.roster / 2
   return (
-    <main
-      data-testid="cockpit-root"
-      style={
-        {
-          '--c-rail': `${layout.roster}px`,
-          '--c-act': `${layout.activity}px`,
-          '--r-term': `${layout.console}px`,
-        } as React.CSSProperties
-      }
-      className="flex h-screen w-screen bg-background p-inset text-foreground"
-    >
-      {/* ONE frosted surface for the whole spine (R13): the roster and the session panel are flat
-          columns inside it, divided only by the splitter's 1px hairline — no glass on glass, and
-          no double border where two cards would otherwise meet. With no session open the card hugs
-          the roster (`w-fit`), so closing a session leaves only the roster on screen. */}
-      <div className={cn(GLASS_CARD, panel ? 'min-w-0 flex-1' : 'w-fit')}>
-        <Roster
-          sessions={sessions}
-          selectedId={selectedId}
-          onSelectSession={handlers.onSelectSession}
-        />
-        {panel && (
-          <>
-            <PanelSplitter
-              orientation="v"
-              label="Roster width"
-              size={layout.roster}
-              min={SPINE.roster.min}
-              max={SPINE.roster.max}
-              onResize={(px) => handlers.onResize('roster', px)}
-            />
-            <SessionPanel panel={panel} layout={layout} handlers={handlers} />
-          </>
-        )}
-      </div>
-    </main>
+    <>
+      {/* The persistent stage: a fixed z-0 backdrop the frosted spine floats over (glass over
+          mountains). Frozen while a detail covers it, still faintly visible through the blur. */}
+      <EclipseScene orbState={orbState} panelShift={panelShift} paused={detailOpen} />
+      <main
+        data-testid="cockpit-root"
+        style={
+          {
+            '--c-rail': `${layout.roster}px`,
+            '--c-act': `${layout.activity}px`,
+            '--r-term': `${layout.console}px`,
+          } as React.CSSProperties
+        }
+        className="flex h-screen w-screen p-inset text-foreground"
+      >
+        {/* ONE frosted surface for the whole spine (R13): the roster and the session panel are flat
+            columns inside it, divided only by the splitter's 1px hairline — no glass on glass, and
+            no double border where two cards would otherwise meet. With no session open the card hugs
+            the roster (`w-fit`), so closing a session leaves only the roster on screen. */}
+        <div className={cn(GLASS_CARD, panel ? 'min-w-0 flex-1' : 'w-fit')}>
+          <Roster
+            sessions={sessions}
+            selectedId={selectedId}
+            onSelectSession={handlers.onSelectSession}
+            dock={<ConciergeDock orbState={orbState} active={detailOpen} />}
+          />
+          {panel && (
+            <>
+              <PanelSplitter
+                orientation="v"
+                label="Roster width"
+                size={layout.roster}
+                min={SPINE.roster.min}
+                max={SPINE.roster.max}
+                onResize={(px) => handlers.onResize('roster', px)}
+              />
+              <SessionPanel panel={panel} layout={layout} handlers={handlers} />
+            </>
+          )}
+        </div>
+      </main>
+    </>
   )
 }
 

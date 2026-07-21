@@ -58,6 +58,9 @@ function App(): React.JSX.Element {
       panel={panel}
       layout={layout}
       handlers={handlers}
+      // The Concierge state is a pure prop with no live signal yet (issue 153): the app sits
+      // idle; every state is exercised in Storybook. Mapping it to a signal is a follow-up (134).
+      orbState="idle"
     />
   )
 }

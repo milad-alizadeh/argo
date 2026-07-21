@@ -64,6 +64,7 @@ const meta = {
     panel: null,
     layout: DEFAULT_LAYOUT,
     handlers: NOOP_HANDLERS,
+    orbState: 'idle',
   },
 } satisfies Meta<typeof SessionScreen>
 
@@ -89,6 +90,7 @@ export const SelectedSession: Story = {
       })}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
+      orbState="idle"
     />
   ),
   play: async ({ args, canvasElement }) => {
@@ -116,6 +118,7 @@ export const NoSelection: Story = {
       panel={null}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
+      orbState="idle"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -138,6 +141,7 @@ export const EmptyRoster: Story = {
       panel={null}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
+      orbState="idle"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -160,6 +164,7 @@ export const SoloWorkHidden: Story = {
       })}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
+      orbState="idle"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -185,6 +190,7 @@ export const ConsoleExpanded: Story = {
       })}
       layout={EXPANDED_LAYOUT}
       handlers={NOOP_HANDLERS}
+      orbState="idle"
     />
   ),
   play: async ({ canvasElement }) => {
