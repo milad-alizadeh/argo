@@ -11,19 +11,39 @@ type LiveTerminalProps = {
   className?: string
 }
 
-// The values xterm can't take from CSS: it paints its own DOM, so the token font and colour
+// Resolve a CSS colour expression (a `var(--token)`, possibly a `color-mix()`) to a concrete
+// colour xterm's parser accepts. getComputedStyle on a real `color` property does the resolving;
+// modern Chrome hands back `color(srgb r g b / a)`, which xterm can't read, so normalise it to
+// rgba(). A probe in the host inherits the same custom-property scope the terminal sits in.
+function resolveColor(host: HTMLElement, expr: string): string {
+  const probe = document.createElement('span')
+  probe.style.color = expr
+  probe.style.display = 'none'
+  host.appendChild(probe)
+  const computed = getComputedStyle(probe).color
+  probe.remove()
+  const srgb = computed.match(/srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.]+))?/)
+  if (srgb === null) return computed
+  const [r, g, b] = [srgb[1], srgb[2], srgb[3]].map((v) => Math.round(Number(v) * 255))
+  return `rgba(${r}, ${g}, ${b}, ${srgb[4] ?? '1'})`
+}
+
+// The values xterm can't take from CSS: it paints its own DOM, so the token font and colours
 // are read off the host's computed style rather than inherited. Background is deliberately not
-// here — the theme sets it transparent so the panel glass reads through.
+// here — the theme sets it transparent so the panel glass reads through, and the selection is the
+// `--terminal-selection` wash rather than the default solid block.
 function terminalTheme(host: HTMLElement): {
   fontFamily: string
   fontSize: number
   foreground: string
+  selection: string
 } {
   const style = getComputedStyle(host)
   return {
     fontFamily: style.fontFamily || 'monospace',
     fontSize: Number.parseFloat(style.fontSize) || 12,
     foreground: style.color,
+    selection: resolveColor(host, 'var(--terminal-selection)'),
   }
 }
 
@@ -41,14 +61,20 @@ export function LiveTerminal({ id, className }: LiveTerminalProps): React.JSX.El
     const host = hostRef.current
     if (!host) return
 
-    const { fontFamily, fontSize, foreground } = terminalTheme(host)
+    const { fontFamily, fontSize, foreground, selection } = terminalTheme(host)
     const term = new Terminal({
       allowTransparency: true,
       cursorBlink: true,
       fontFamily,
       fontSize,
       lineHeight: 1.3,
-      theme: { background: 'rgba(0, 0, 0, 0)', foreground, cursor: foreground },
+      theme: {
+        background: 'rgba(0, 0, 0, 0)',
+        foreground,
+        cursor: foreground,
+        selectionBackground: selection,
+        selectionInactiveBackground: selection,
+      },
     })
     const fit = new FitAddon()
     term.loadAddon(fit)
