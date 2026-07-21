@@ -58,7 +58,9 @@ export function ConsoleChannelTab(props: ConsoleChannelTabProps): React.JSX.Elem
         aria-selected={active}
         aria-controls={panelId}
         onClick={() => onSelect(id)}
-        className="min-w-0"
+        // buttonVariants ships `shrink-0`; the label button must shrink so its `truncate` Text
+        // can clip a long capture name instead of overflowing the strip.
+        className="min-w-0 shrink"
       >
         {capture?.agent === true && <SparkleIcon aria-hidden />}
         <Text variant="meta" className="truncate">

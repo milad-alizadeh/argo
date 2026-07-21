@@ -189,8 +189,10 @@
  * surface. Every xterm layer stays transparent so the glass reads through — no glass on glass.
  * (Paired with `allowTransparency` + a transparent theme in `LiveTerminal`.) */
 .live-terminal .xterm,
-.live-terminal .xterm-viewport,
-.live-terminal .xterm-screen {
+.live-terminal .xterm .xterm-viewport,
+.live-terminal .xterm .xterm-screen {
+  /* xterm.css ships `.xterm .xterm-viewport { background: #000 }` (specificity 0,2,0) — the
+   * viewport override has to out-specify it, so the glass reads through instead of a black box. */
   background-color: transparent;
 }
 
