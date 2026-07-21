@@ -57,6 +57,14 @@ working tree clean, nothing unpushed, and untouched for 30 minutes so a live ses
 pulled out from under it. Everything else is reported and left alone; `--dry-run` reports
 without removing.
 
+## Cross-CLI guardrail hooks
+
+`hooks.json` (repo root) is the neutral SSOT for the three guardrail hooks (graphify-before-grep,
+worktree edit guard, worktree-gc), projected per-harness like `bundle.json` projects skills.
+**Edit `hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json`
+(claude-code) and `.codex/hooks.json` (codex); never hand-edit those blocks. Consumers get the
+hooks opt-in via `scaffold.mjs --hooks`. Details in `hooks.json` and the code comments.
+
 ## Code review
 
 An implement run reviews its diff before the PR opens (upstream `implement` calls the

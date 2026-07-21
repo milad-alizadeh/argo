@@ -3,11 +3,12 @@
 // AGENTS.md forbids ticket builds in the shared main checkout; this enforces it
 // mechanically for agents. Scoped to apps/ and packages/ so doc/memory/config
 // fixes in the main checkout (which AGENTS.md explicitly allows) still pass.
-// Gated on CLAUDECODE so it never touches the human's own workflow.
+// Gated on an agent marker (CLAUDECODE, or ARGO_HOOK_AGENT injected for markerless
+// harnesses like Codex) so it never touches the human's own workflow.
 // Pure path logic (no fs) — decide() is unit-tested in worktree-guard.test.mjs.
 // Env-neutral by design: the project root comes from CLAUDE_PROJECT_DIR when
-// present, else `git rev-parse --show-toplevel`, so a future cross-CLI
-// projection can register this same script under Codex without a rewrite.
+// present, else `git rev-parse --show-toplevel`, so the projection registers this
+// same script under Codex without a rewrite.
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -76,11 +77,13 @@ async function main() {
   }
 
   const cwd = payload.cwd || process.cwd()
+  // Claude sends tool_input.file_path; Codex sends toolInput.file_path (camelCase).
+  const filePath = payload.tool_input?.file_path ?? payload.toolInput?.file_path
   const decision = decide({
-    filePath: payload.tool_input?.file_path,
+    filePath,
     cwd,
     projectDir: resolveProjectDir(cwd),
-    isAgent: Boolean(process.env.CLAUDECODE),
+    isAgent: Boolean(process.env.CLAUDECODE || process.env.ARGO_HOOK_AGENT),
   })
 
   if (decision.block) {
