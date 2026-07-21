@@ -84,9 +84,5 @@
   "82": "channels.ts",
   "83": "Roster.stories.tsx",
   "84": "SessionRow.tsx",
-  "85": "deliveryState",
-  "86": "Status.stories.tsx",
-  "87": "StatusDot.stories.tsx",
-  "88": "useDisclosure.ts",
-  "89": "@chromatic-com/storybook"
+  "85": "deliveryState"
 }
