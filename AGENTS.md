@@ -50,6 +50,12 @@ edits stay free, and the human workflow is never touched. The rest of the mechan
 conventions, resuming an interrupted worktree, recovering a deleted one — live in
 `docs/agents/worktrees.md` and apply to **all** implementation work, not just `/implement` runs.
 
+A dispatched sub-agent **stays in its parent's worktree** — it must not spin up its own new
+worktree (Claude Code: don't pass `isolation: "worktree"` to the `Agent` tool when the parent is
+already in one). Nesting worktrees per sub-agent just proliferates them and splits state across
+trees — separate checkouts, separate branches, and confusion over which one a dev server is
+serving. The parent's worktree already provides the isolation from the shared main checkout.
+
 Landed worktrees are reaped by `bun run worktrees:gc` (`scripts/worktree-gc.sh`) — PRs merge
 on GitHub, so nothing local fires when work lands and worktrees otherwise accumulate. It
 removes only what is provably safe: PR merged (or branch merged into the default branch),
