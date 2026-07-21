@@ -47,7 +47,10 @@ export function wireTerminal(): void {
 
     const dispose = (): void => {
       shell.kill()
-      shells.delete(target)
+      // Only clear the map if it still points at THIS shell: on a re-attach the old shell's
+      // `onExit` fires after the new one is `set()`, and an unguarded delete would drop the new
+      // shell's entry — silently breaking its input/resize and leaking the PTY.
+      if (shells.get(target) === shell) shells.delete(target)
     }
     shell.onExit(dispose)
     target.once('destroyed', dispose)
