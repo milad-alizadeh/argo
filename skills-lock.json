@@ -169,6 +169,12 @@
       "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
       "computedHash": "28aad6f8b1b7025abc8892fa8890f68fe1533499b28a565f416b159131d22fad"
     },
+    "run-desktop": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "apps/desktop/.claude/skills/run-desktop/SKILL.md",
+      "computedHash": "ba964aa1b63fa2e2c57b5ae0c2cdd627123820258f3b90ece96d28fc65008578"
+    },
     "scaffold-exercises": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -245,7 +251,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/ship/SKILL.md",
-      "computedHash": "d9968bf3904b91e581aba07532c008bdc098b98dead868a9672d639fda5fc838"
+      "computedHash": "57451c71ca8865b13d89ec40b3bedb9c3f55ee2a2dae87bcb4799c6aa3e415d5"
     },
     "skill-creator": {
       "source": "anthropics/skills",
