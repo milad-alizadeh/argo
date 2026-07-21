@@ -1,0 +1,6 @@
+{"type":"last-prompt","leafUuid":"u-root-1","sessionId":"externalBasic"}
+{"type":"attachment","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-07-20T10:00:00.000Z","uuid":"u-root-1","parentUuid":null}
+{not valid json
+{"type":"mode","mode":"default","uuid":"u-mode-1"}
+{"type":"user","sessionId":"externalBasic","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-07-20T10:00:01.000Z","uuid":"u-user-1","parentUuid":"u-root-1","message":{"role":"user","content":"Refactor the auth module"}}
+{"type":"assistant","sessionId":"externalBasic","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-07-20T10:00:05.000Z","uuid":"u-asst-1","parentUuid":"u-user-1","message":{"role":"assistant","content":[{"type":"thinking","thinking":"considering"},{"type":"text","text":"Sure, I'll refactor it."}],"stop_reason":"end_turn"}}

@@ -4,6 +4,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import { seedDemoSession } from './demoSeed'
 import { createHub } from './hub'
+import { startObservation } from './observe'
 import { wireProjection } from './projectionBridge'
 import { wireTerminal } from './terminalBridge'
 
@@ -62,6 +63,9 @@ app.whenReady().then(() => {
   // Seam A: the authoritative hub and its IPC projection into the renderer (ADR-0005).
   const hub = createHub()
   wireProjection(hub)
+  // Seam B now observes real external claude sessions on launch: a single sweep of the CLI
+  // transcript dirs discovers, stitches and grades each Session into the roster (ADR-0008).
+  void startObservation(hub)
   // Seam B: the steering PTY behind the Console's live channel — a renderer attaches and main
   // spawns its shell.
   wireTerminal()
