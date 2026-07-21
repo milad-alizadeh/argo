@@ -70,6 +70,12 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test
 
+      # Guardrail-hook tests (worktree edit guard + cross-CLI hook projection) live
+      # outside the turbo `test` pipeline — plain node scripts, not a workspace suite.
+      - name: Hook tests
+        if: ${{ !cancelled() }}
+        run: bun run test:hooks
+
       # Story tests render stories, never the generated Docs pages, so a broken .mdx or a
       # component react-docgen cannot parse fails only here. It sits in this job rather than
       # `stories` because a red `stories` wakes the `baselines` job — an MDX typo would

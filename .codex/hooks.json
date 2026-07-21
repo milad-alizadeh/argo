@@ -1,5 +1,4 @@
 {
-  "outputStyle": "Terse",
   "hooks": {
     "PreToolUse": [
       {
@@ -25,7 +24,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/scripts/worktree-guard.mjs\""
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/scripts/worktree-guard.mjs\""
           }
         ]
       }

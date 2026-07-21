@@ -3,17 +3,66 @@
 // into the current project with one command. A thin resolver over `npx skills add`.
 
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { gitRoot, sync as syncHooks } from './hooks-sync.mjs'
 
 const STARTER_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+// The Argo checkout root (STARTER_DIR is <root>/packages/argo-skills). `npx github:…`
+// clones the whole repo, so the guardrail-hook assets sit here at install time.
+const SOURCE_ROOT = resolve(STARTER_DIR, '..', '..')
+// The full guardrail set copied into every target: the neutral descriptor plus the
+// two scripts its projected commands invoke. Kept in lockstep with hooks.json.
+const HOOK_ASSETS = ['hooks.json', 'scripts/worktree-guard.mjs', 'scripts/worktree-gc.sh']
+
+// Copy the guardrail-hook assets from the Argo checkout into the target project, then
+// project the descriptor into each agent's config. Target is the git root, not the cwd:
+// the projected commands resolve scripts via `git rev-parse --show-toplevel`, so a run
+// from a subdirectory must still land the assets at the repo root. Skipped when
+// installing into Argo itself (source === target), and a no-op when the assets aren't in
+// this install (e.g. an npm-published, skills-only package) so it degrades gracefully.
+function installHooks(cwd, agents, dryRun) {
+  const target = gitRoot(cwd)
+  if (realpathSync(SOURCE_ROOT) !== realpathSync(target)) {
+    const missing = HOOK_ASSETS.filter((rel) => !existsSync(resolve(SOURCE_ROOT, rel)))
+    if (missing.length) {
+      console.log(
+        `\n⚠ hook assets absent from this install (${missing.join(', ')}) — skipping hook setup`,
+      )
+      return
+    }
+    console.log('\ncopying guardrail-hook assets:')
+    for (const rel of HOOK_ASSETS) {
+      console.log(`  ${dryRun ? 'would copy' : 'copied'} ${rel}`)
+      if (!dryRun) {
+        mkdirSync(dirname(resolve(target, rel)), { recursive: true })
+        copyFileSync(resolve(SOURCE_ROOT, rel), resolve(target, rel))
+      }
+    }
+  }
+
+  // Real run leaves hooks.json at the target; a dry run hasn't copied it, so read source.
+  const descriptorPath = existsSync(resolve(target, 'hooks.json'))
+    ? resolve(target, 'hooks.json')
+    : resolve(SOURCE_ROOT, 'hooks.json')
+  console.log('\nprojecting hooks per-agent:')
+  syncHooks({
+    root: target,
+    descriptor: JSON.parse(readFileSync(descriptorPath, 'utf8')),
+    agents,
+    dryRun,
+  })
+}
 
 const argv = process.argv.slice(2)
 const has = (...flags) => flags.some((f) => argv.includes(f))
 const dryRun = has('--dry-run', '-n')
 const globalOverride = has('--global', '-g')
 const projectOverride = has('--project', '-p')
+// Guardrail hooks are opt-in: they impose Argo's worktree discipline (apps/+packages/
+// edit guard, worktree reaper) on the project, so a consumer chooses them explicitly.
+const wantHooks = has('--hooks') && !has('--no-hooks')
 
 function loadConfig() {
   const path = resolve(STARTER_DIR, 'bundle.json')
@@ -100,6 +149,20 @@ for (const entry of entries) {
     if (!run(buildRemoveArgs(name, entry, agents, scope)))
       failed.push(`${entry.source} (remove ${name})`)
   }
+}
+
+// Hooks are the opt-in other half of the cross-CLI setup: skills come from `skills add`
+// above; with --hooks, the guardrail hooks are copied in whole (descriptor + the scripts
+// its commands invoke) and projected per-agent (reusing the same `agents` array), so a
+// consumer inherits the same set Argo runs on itself. Off by default — skills only.
+if (wantHooks) {
+  try {
+    installHooks(process.cwd(), agents, dryRun)
+  } catch (err) {
+    failed.push(`hook setup (${err.message})`)
+  }
+} else {
+  console.log('\nguardrail hooks: skipped (opt in with --hooks)')
 }
 
 console.log('')
