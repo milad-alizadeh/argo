@@ -1,6 +1,6 @@
 import { sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import type { SessionView } from '@/sessionStore'
 import { deliveryState, stateMatrixInput } from '@/shared/delivery'
 import { SessionScreen, type SessionScreenHandlers } from './SessionScreen'
@@ -27,6 +27,7 @@ const EXPANDED_LAYOUT: SpineLayout = { ...DEFAULT_LAYOUT, console: SPINE.console
 
 const NOOP_HANDLERS: SessionScreenHandlers = {
   onSelectSession: fn(),
+  onCloseSession: fn(),
   onResize: fn(),
   onToggleVariant: fn(),
   onSelectTab: fn(),
@@ -90,7 +91,7 @@ export const SelectedSession: Story = {
       handlers={NOOP_HANDLERS}
     />
   ),
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     // Read off the same derivation the roster renders, so the assertion cannot drift.
     const { word } = deliveryState(AUTH.facts).roster
@@ -98,10 +99,15 @@ export const SelectedSession: Story = {
     await expect(within(list).getByText(word)).toBeInTheDocument()
     await expect(canvas.getByRole('region', { name: 'Activity' })).toBeInTheDocument()
     await expect(canvas.getByRole('region', { name: 'Delivery' })).toBeInTheDocument()
+    // The session header leads with a close "✕" that reports through onCloseSession — the
+    // container drops the selection, which the NoSelection story renders as roster-only.
+    await userEvent.click(canvas.getByRole('button', { name: 'Close session' }))
+    await expect(args.handlers.onCloseSession).toHaveBeenCalledOnce()
   },
 }
 
-/** Sessions present but none selected → the empty session panel beside the roster. */
+/** Sessions present but none selected → the session panel is gone; the card collapses to the
+ * roster alone (what closing a session leaves on screen). */
 export const NoSelection: Story = {
   render: () => (
     <SessionScreen
@@ -115,10 +121,11 @@ export const NoSelection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByTestId('cockpit-root')).toBeInTheDocument()
-    await expect(
-      canvas.getByText('Select a session to see its activity, delivery and console.'),
-    ).toBeInTheDocument()
+    // Only the roster: its list is here, but no session panel regions and no header close.
+    await expect(canvas.getByRole('list', { name: 'Sessions' })).toBeInTheDocument()
     await expect(canvas.queryByRole('region', { name: 'Delivery' })).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('region', { name: 'Activity' })).not.toBeInTheDocument()
+    await expect(canvas.queryByRole('button', { name: 'Close session' })).not.toBeInTheDocument()
   },
 }
 

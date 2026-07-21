@@ -56,7 +56,10 @@
      (left grows + truncates, right pins to the end via margin-left:auto). */
   .phead{display:flex;align-items:center;gap:var(--space-gap);min-height:41px;padding:0 14px;border-bottom:1px solid var(--border);}
   .rail-h{color:var(--muted-foreground);font:var(--type-eyebrow-weight) var(--type-eyebrow)/var(--type-eyebrow-leading) var(--sans);letter-spacing:var(--type-eyebrow-tracking);text-transform:uppercase;}
-  .rail-h .plus,.proj .plus{margin-left:auto;width:18px;height:18px;border-radius:calc(var(--radius) - 2px);display:grid;place-items:center;color:var(--muted-foreground);border:1px solid var(--border);cursor:pointer;flex:none;}
+  /* Borderless icon control — just the glyph. One family across the chrome: the roster "+", the
+     session close "✕" and the console expand chevron all render this way (no border, no fill;
+     lifts to the foreground on hover). */
+  .rail-h .plus,.proj .plus{margin-left:auto;width:18px;height:18px;border-radius:calc(var(--radius) - 2px);display:grid;place-items:center;color:var(--muted-foreground);cursor:pointer;flex:none;}
   .proj{display:flex;align-items:center;gap:7px;padding:5px 14px;color:var(--foreground);font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);cursor:pointer;user-select:none;}
   .rail-scroll{flex:1;overflow:auto;padding:2px 10px 8px;}
   .srow{display:block;background:var(--inset);border:1px solid var(--inset-hair);border-radius:calc(var(--radius) + 4px);padding:9px 11px;margin:6px 0;cursor:pointer;transition:border-color var(--time-fast),background var(--time-fast);}
@@ -1327,6 +1330,7 @@ function sessionHtml(){
   const s=cur();
   return `<div class="panel session">
     <div class="phead shead" data-component="SessionHeader">
+      <span class="plus" style="margin-left:0" title="Close session — deselects, collapsing the spine to the roster (behaviour lives in code)" aria-label="Close session">${ic('x')}</span>
       <div class="crumb"><span>argo</span><span class="sep">${ic('caret-right')}</span><b>${s.title}</b></div>
       ${wschipHtml(s)}
       <div class="toggles"><span class="tg ${showDetail?'on':''}" onclick="toggleDetail()">${ic('sidebar-simple')} Delivery</span></div>

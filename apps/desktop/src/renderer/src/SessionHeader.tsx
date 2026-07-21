@@ -1,10 +1,13 @@
-import { Button, PanelHeader, Text } from '@/shared/components/ui'
+import { Button, IconButton, PanelHeader, Text, XIcon } from '@/shared/components/ui'
 import type { SessionHeaderModel } from './sessionScreenModel'
 import { WorkspaceIdentity } from './WorkspaceIdentity'
 
 export interface SessionHeaderProps extends SessionHeaderModel {
   /** Toggle the Delivery region in and out of the work row (the `split` ↔ `solo` variant). */
   onToggleDelivery: () => void
+  /** Close the session detail — deselects the Session so the spine collapses to the roster
+   * alone. The "✕" that leads the header. */
+  onClose: () => void
 }
 
 /**
@@ -20,12 +23,16 @@ export function SessionHeader({
   workspace,
   variant,
   onToggleDelivery,
+  onClose,
 }: SessionHeaderProps): React.JSX.Element {
   const deliveryOpen = variant === 'split'
   return (
     <PanelHeader
       left={
         <>
+          <IconButton label="Close session" onClick={onClose}>
+            <XIcon aria-hidden className="size-4" />
+          </IconButton>
           <div className="flex min-w-0 items-center gap-snug">
             <Text variant="row" className="text-muted-foreground">
               {project}

@@ -4,7 +4,7 @@ import { type ChangesView, Delivery, type DeliveryTab } from '@/domains/delivery
 import { Roster } from '@/domains/roster/components'
 import { cn } from '@/lib/utils'
 import type { SessionView } from '@/sessionStore'
-import { PanelSplitter, Text } from '@/shared/components/ui'
+import { PanelSplitter } from '@/shared/components/ui'
 import { SessionHeader } from './SessionHeader'
 import type { SessionPanelModel, SpineEdge } from './sessionScreenModel'
 import { SPINE, type SpineLayout } from './useSpineLayout'
@@ -12,6 +12,8 @@ import { SPINE, type SpineLayout } from './useSpineLayout'
 /** Every callback the spine's regions raise, gathered so the container wires them once. */
 export interface SessionScreenHandlers {
   onSelectSession: (id: string) => void
+  /** Close the open session detail — deselects, collapsing the spine to the roster alone. */
+  onCloseSession: () => void
   onResize: (edge: SpineEdge, px: number) => void
   onToggleVariant: () => void
   onSelectTab: (tab: DeliveryTab) => void
@@ -61,25 +63,26 @@ export function SessionScreen({
     >
       {/* ONE frosted surface for the whole spine (R13): the roster and the session panel are flat
           columns inside it, divided only by the splitter's 1px hairline — no glass on glass, and
-          no double border where two cards would otherwise meet. */}
-      <div className={GLASS_CARD}>
+          no double border where two cards would otherwise meet. With no session open the card hugs
+          the roster (`w-fit`), so closing a session leaves only the roster on screen. */}
+      <div className={cn(GLASS_CARD, panel ? 'min-w-0 flex-1' : 'w-fit')}>
         <Roster
           sessions={sessions}
           selectedId={selectedId}
           onSelectSession={handlers.onSelectSession}
         />
-        <PanelSplitter
-          orientation="v"
-          label="Roster width"
-          size={layout.roster}
-          min={SPINE.roster.min}
-          max={SPINE.roster.max}
-          onResize={(px) => handlers.onResize('roster', px)}
-        />
-        {panel ? (
-          <SessionPanel panel={panel} layout={layout} handlers={handlers} />
-        ) : (
-          <EmptySessionPanel />
+        {panel && (
+          <>
+            <PanelSplitter
+              orientation="v"
+              label="Roster width"
+              size={layout.roster}
+              min={SPINE.roster.min}
+              max={SPINE.roster.max}
+              onResize={(px) => handlers.onResize('roster', px)}
+            />
+            <SessionPanel panel={panel} layout={layout} handlers={handlers} />
+          </>
         )}
       </div>
     </main>
@@ -87,9 +90,10 @@ export function SessionScreen({
 }
 
 // The spine's ONE frosted surface (R13): the roster and the session panel are flat columns inside
-// it. The invariant lives here, in one place, so a surface tweak can't drift between regions.
+// it. The invariant lives here, in one place, so a surface tweak can't drift between regions. The
+// caller toggles `flex-1` (a session is open) vs `w-fit` (roster alone).
 const GLASS_CARD =
-  'flex min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl'
+  'flex overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl'
 
 // A flat column: header, the Activity ‖ Delivery work row, and the Console beneath its splitter.
 // It carries no frosting of its own — the surrounding GLASS_CARD is the single glass (R13).
@@ -109,7 +113,11 @@ function SessionPanel({
   const split = panel.variant === 'split'
   return (
     <section className={PANEL_COLUMN}>
-      <SessionHeader {...panel.header} onToggleDelivery={handlers.onToggleVariant} />
+      <SessionHeader
+        {...panel.header}
+        onToggleDelivery={handlers.onToggleVariant}
+        onClose={handlers.onCloseSession}
+      />
       <div className="flex min-h-0 flex-1">
         <section
           aria-label="Activity"
@@ -157,18 +165,6 @@ function SessionPanel({
         onCloseCapture={handlers.onCloseCapture}
         onToggleExpanded={handlers.onToggleConsoleExpanded}
       />
-    </section>
-  )
-}
-
-// The panel with no Session selected (or an empty roster) — a flat column with a muted prompt, so
-// the spine's session side is never blank. The frosting is the shared GLASS_CARD's.
-function EmptySessionPanel(): React.JSX.Element {
-  return (
-    <section className={cn(PANEL_COLUMN, 'items-center justify-center')}>
-      <Text variant="row" className="text-muted-foreground">
-        Select a session to see its activity, delivery and console.
-      </Text>
     </section>
   )
 }

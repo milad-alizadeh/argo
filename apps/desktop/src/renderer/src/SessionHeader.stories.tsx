@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { SessionHeader } from './SessionHeader'
 import type { WorkspaceModel } from './sessionScreenModel'
 
@@ -22,6 +22,7 @@ const meta = {
     workspace: WORKSPACE,
     variant: 'split',
     onToggleDelivery: fn(),
+    onClose: fn(),
   },
   decorators: [
     (Story) => (
@@ -35,14 +36,17 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** A full header: breadcrumb, workspace chip, and the Delivery toggle pressed (region showing). */
+/** A full header: the leading close "✕", breadcrumb, workspace chip, and the Delivery toggle
+ * pressed (region showing). Clicking "✕" reports the close so the spine can drop to roster-only. */
 export const WorkspacePresent: Story = {
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Refactor auth module')).toBeInTheDocument()
     await expect(canvas.getByText('feat/auth-rotation')).toBeInTheDocument()
     const toggle = canvas.getByRole('button', { name: 'Delivery' })
     await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(canvas.getByRole('button', { name: 'Close session' }))
+    await expect(args.onClose).toHaveBeenCalledOnce()
   },
 }
 

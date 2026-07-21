@@ -14,9 +14,9 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The bordered square control the roster header and each project row spend on "+" — icon-only,
- * so `label` is the only way it announces itself. Focusable and clickable; what it spawns is
- * the caller's business.
+ * The borderless icon control the chrome spends on "+", close "✕" and the console chevron — just
+ * the glyph, icon-only, so `label` is the only way it announces itself. Focusable and clickable;
+ * what it does is the caller's business.
  */
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {
