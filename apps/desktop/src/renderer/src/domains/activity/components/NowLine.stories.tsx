@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { MagnifyingGlassIcon, PencilSimpleIcon } from './icons'
+import { Text } from '@/shared/components/ui'
+import { MagnifyingGlassIcon, PencilSimpleIcon } from '@/shared/components/ui/icons'
 import { NowLine } from './NowLine'
-import { Text } from './Text'
 
 const meta = {
-  title: 'Shared/NowLine',
+  title: 'Activity/NowLine',
   component: NowLine,
   // The strip fills the Activity panel's width — a fixed frame is what lets the line truncate.
   decorators: [

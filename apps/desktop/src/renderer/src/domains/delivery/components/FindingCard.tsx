@@ -1,15 +1,13 @@
 import { cn } from '@/lib/utils'
+import { Badge, Button, Text } from '@/shared/components/ui'
+import { findingBodyStub } from './diffModel'
 import {
-  Badge,
-  Button,
   FINDING_SEVERITY,
   FINDING_STATE_ACTION,
   FINDING_STATE_REPORT,
   type FindingSeverity,
   type FindingState,
-  Text,
-} from '@/shared/components/ui'
-import { findingBodyStub } from './diffModel'
+} from './findingState'
 
 // The card's own accent — a solid left rail + a faint wash, one pair per severity. Switched
 // (not read off `FINDING_SEVERITY.tone`) because a raw border/background pair is a rendering

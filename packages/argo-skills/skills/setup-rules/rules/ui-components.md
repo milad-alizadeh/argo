@@ -151,7 +151,12 @@ fetching, store wiring; ~10 lines) and a pure presentational **View**
 > creates: which child renders and the switch between them, focus/keyboard/aria wiring
 > spanning two children, layout under pressure, its own state. A child's union is covered
 > by the child's gallery and a pure helper's edges by its unit test — neither needs a
-> second telling upstairs.
+> second telling upstairs. The sharpest case is a **screen whose regions each own a state
+> matrix**: do not give the screen one story per lifecycle state — that is the region's
+> gallery multiplied by the spine. The screen gets one representative composed story
+> (a populated spine, proving the regions agree) plus its own structural variants
+> (no-selection, empty, solo). Name every story for the state a human sees ("In review",
+> "Merged"), never an internal matrix id ("S9") — the id is noise in the sidebar.
 >
 > A story's `title` top segment equals its top domain folder — the taxonomy is derived
 > from where the file lives, never chosen. Components live under `domains/<region>/` (each

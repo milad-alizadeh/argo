@@ -23,8 +23,11 @@ const buttonVariants = cva(CONTROL_BASE, {
       // The gradient is the screen's ONE primary (R2) — it belongs to the head node's
       // drawer. Disabled drops the gradient: a dead control must not read as the primary.
       primary: `${SOLID_PRIMARY_TONE} disabled:border-border disabled:bg-none disabled:text-muted-foreground`,
+      // A pressed ghost (an `aria-pressed` toggle like the SessionHeader Delivery control) wears
+      // the same active wash `quiet` gives its selected tab, so the on-state is legible without a
+      // second variant. Untoggled ghosts never set the attribute, so their pixels are unchanged.
       ghost:
-        'border-border bg-transparent text-muted-foreground hover:border-input hover:text-foreground',
+        'border-border bg-transparent text-muted-foreground hover:border-input hover:text-foreground aria-pressed:border-input aria-pressed:bg-foreground/6 aria-pressed:text-foreground',
       // Ghost without the border: for a control that sits in a strip of its own peers
       // (console channel tabs), where a box per control would out-shout the strip. The
       // selected wash keys off `data-active`, so the state travels with the control

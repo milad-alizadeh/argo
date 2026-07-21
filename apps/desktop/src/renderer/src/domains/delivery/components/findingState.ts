@@ -1,15 +1,15 @@
-import type { BadgeVariant } from './badge'
-import type { ButtonVariant } from './button'
 import {
   ArrowBendDownRightIcon,
   ArrowCounterClockwiseIcon,
+  type BadgeVariant,
+  type ButtonVariant,
   CheckIcon,
   CircleIcon,
   CircleNotchIcon,
   DiamondIcon,
   type IconAtom,
   WarningIcon,
-} from './icons'
+} from '@/shared/components/ui'
 
 export const FINDING_STATES = ['open', 'addressing', 'fixed'] as const
 

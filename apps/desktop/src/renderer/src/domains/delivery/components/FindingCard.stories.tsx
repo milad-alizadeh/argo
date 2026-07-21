@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { FINDING_SEVERITIES, FINDING_STATES } from '@/shared/components/ui'
 import { FindingCard } from './FindingCard'
+import { FINDING_SEVERITIES, FINDING_STATES } from './findingState'
 
 const meta = {
   title: 'Delivery/FileDiff/FindingCard',

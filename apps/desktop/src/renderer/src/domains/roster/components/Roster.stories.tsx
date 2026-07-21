@@ -9,6 +9,19 @@ const meta = {
   title: 'Roster',
   component: Roster,
   parameters: { layout: 'fullscreen' },
+  // The roster is now the spine's left column; its old `<main>` window moved to SessionScreen.
+  // This decorator replays that window (the `--c-rail` the splitter drives, seeded at the old
+  // `w-60` = 240px) so the panel sizes and sits exactly where its baseline expects.
+  decorators: [
+    (Story) => (
+      <div
+        className="flex h-screen w-screen bg-background p-3 text-foreground"
+        style={{ '--c-rail': '240px' } as React.CSSProperties}
+      >
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     sessions: {
       control: false,

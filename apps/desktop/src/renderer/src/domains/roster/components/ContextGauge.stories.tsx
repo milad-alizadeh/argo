@@ -3,7 +3,7 @@ import { expect, within } from 'storybook/test'
 import { ContextGauge } from './ContextGauge'
 
 const meta = {
-  title: 'Shared/ContextGauge',
+  title: 'Roster/ContextGauge',
   component: ContextGauge,
   // The gauge stretches to its container the way it does inside a roster row.
   decorators: [

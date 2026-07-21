@@ -1,8 +1,5 @@
 import { cn } from '@/lib/utils'
-import { Badge } from './badge'
-import { GitBranchIcon, WarningIcon } from './icons'
-import { StatusDot } from './StatusDot'
-import { Text } from './Text'
+import { Badge, GitBranchIcon, StatusDot, Text, WarningIcon } from '@/shared/components/ui'
 
 /** Where the session's checkout lives — the base tree, or a git worktree beside it. */
 export type WorkspaceTree = 'main' | 'worktree'
