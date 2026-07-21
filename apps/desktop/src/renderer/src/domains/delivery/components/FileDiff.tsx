@@ -149,17 +149,21 @@ export function FileDiff({
               </span>
             ))}
           </Text>
-          {findings.map((finding) => (
-            <FindingCard
-              key={finding.id}
-              severity={finding.severity}
-              state={finding.state}
-              line={finding.line}
-              body={finding.body}
-              by={finding.by}
-              onAdvanceState={() => onAdvanceFindingState(finding.id)}
-            />
-          ))}
+          {findings.length > 0 && (
+            <div className="grid gap-gap px-inset pb-inset">
+              {findings.map((finding) => (
+                <FindingCard
+                  key={finding.id}
+                  severity={finding.severity}
+                  state={finding.state}
+                  line={finding.line}
+                  body={finding.body}
+                  by={finding.by}
+                  onAdvanceState={() => onAdvanceFindingState(finding.id)}
+                />
+              ))}
+            </div>
+          )}
         </>
       )}
     </div>

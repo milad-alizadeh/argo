@@ -54,13 +54,27 @@ const COMMIT_GROUPS: DeliveryCommitGroup[] = [
   {
     commit: { sha: '41ce2f0', message: 'Assert audience on legacy tokens' },
     files: [
-      { kind: 'M', path: 'src/auth/rotateToken.ts', adds: 12, dels: 4, hunk: [], findings: [] },
+      {
+        kind: 'M',
+        path: 'src/auth/rotateToken.ts',
+        adds: 12,
+        dels: 4,
+        hunk: [{ side: 'add', text: '+ assertAudience(claim)' }],
+        findings: [],
+      },
     ],
   },
   {
     commit: null,
     files: [
-      { kind: 'A', path: 'src/auth/assertAudience.ts', adds: 8, dels: 0, hunk: [], findings: [] },
+      {
+        kind: 'A',
+        path: 'src/auth/assertAudience.ts',
+        adds: 8,
+        dels: 0,
+        hunk: [{ side: 'add', text: '+ export function assertAudience() {}' }],
+        findings: [],
+      },
     ],
   },
 ]

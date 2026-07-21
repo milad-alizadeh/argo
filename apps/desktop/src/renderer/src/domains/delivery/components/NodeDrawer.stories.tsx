@@ -271,7 +271,8 @@ export const TerminalClosed: Story = {
   args: { node: 'terminal', state: 'closed', session: SESSION },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('superseded by #47')).toBeInTheDocument()
+    // The note rides the attribution line now — `by @sam · superseded by #47`.
+    await expect(canvas.getByText(/superseded by #47/)).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: /New session from main/ })).toBeInTheDocument()
   },
 }
