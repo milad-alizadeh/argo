@@ -61,6 +61,12 @@
       "comment": "The Console Panel (CONTEXT.md region, cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/console/",
       "publicEntry": ["^src/renderer/src/domains/console/components/index\\.ts$"]
+    },
+    {
+      "name": "concierge",
+      "comment": "The Concierge (CONTEXT.md: the read-only voice layer) rendered — its eclipse-orb three.js engine (`eclipseOrb/` + `sceneConfig.ts`, framework-free) and the two prop-driven React surfaces that mount it: the full-screen `EclipseScene` stage backdrop and the roster `ConciergeDock` mini orb. A feature slice composed by the screen through its barrel; the engine and tuning config are private internals. IO-free — `orbState` is a pure prop, no audio, no machine bridge (#153).",
+      "path": "^src/renderer/src/domains/concierge/",
+      "publicEntry": ["^src/renderer/src/domains/concierge/components/index\\.ts$"]
     }
   ],
   "layers": {
@@ -69,10 +75,11 @@
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],
     "shared": ["main", "renderer", "preload"],
-    "roster": ["activity", "delivery", "console"],
-    "activity": ["roster", "delivery", "console"],
-    "delivery": ["roster", "activity", "console"],
-    "console": ["roster", "activity", "delivery"],
-    "renderer-shared": ["roster", "activity", "delivery", "console"]
+    "roster": ["activity", "delivery", "console", "concierge"],
+    "activity": ["roster", "delivery", "console", "concierge"],
+    "delivery": ["roster", "activity", "console", "concierge"],
+    "console": ["roster", "activity", "delivery", "concierge"],
+    "concierge": ["roster", "activity", "delivery", "console"],
+    "renderer-shared": ["roster", "activity", "delivery", "console", "concierge"]
   }
 }
