@@ -303,6 +303,18 @@
   .shipbar.terminal .tword{display:inline-flex;align-items:center;gap:7px;padding:0 13px;font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);}
   .shipbar.terminal .tword.landed{color:var(--tone-landed);}
   .shipbar.terminal .tword.closedt{color:var(--muted-foreground);}
+  /* terminal card (R8) — merged/closed milestone block: accent rail + eyebrow + quiet CTA */
+  .tcard{display:grid;gap:var(--space-tight);border-radius:var(--radius);background:var(--inset);box-shadow:inset 0 0 0 1px var(--inset-hair);padding:9px 12px;border-left:3px solid var(--foreground-faint);}
+  .tcard.landed{border-left-color:var(--tone-landed);}
+  .tcard-h{display:flex;align-items:center;gap:var(--space-gap);}
+  .tcard-h .g{display:inline-flex;color:var(--foreground-faint);}
+  .tcard.landed .tcard-h .g,.tcard.landed .tcard-eye{color:var(--tone-landed);}
+  .tcard-eye{font:var(--type-eyebrow-weight) var(--type-eyebrow)/var(--type-eyebrow-leading) var(--sans);letter-spacing:var(--type-eyebrow-tracking);text-transform:uppercase;color:var(--foreground-faint);}
+  .tcard-when{margin-left:auto;color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);font-variant-numeric:tabular-nums;}
+  .tcard-sum{font:var(--type-row-strong-weight) var(--type-row-strong)/var(--type-row-strong-leading) var(--sans);letter-spacing:var(--type-row-strong-tracking);color:var(--foreground-soft);}
+  .tcard-foot{display:flex;align-items:center;gap:var(--space-gap);}
+  .tcard-by{color:var(--foreground-faint);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);}
+  .tcard-foot .mbtn{margin-left:auto;}
   .shipanchor{margin-left:auto;display:inline-flex;align-items:center;gap:7px;padding:0 12px;flex:none;color:var(--muted-foreground);font:var(--type-meta-weight) var(--type-meta)/var(--type-meta-leading) var(--sans);letter-spacing:var(--type-meta-tracking);border-left:1px solid var(--inset-hair);}
   .shipanchor .num{font:var(--type-code-inline-weight) var(--type-code-inline)/var(--type-code-inline-leading) var(--mono);letter-spacing:var(--type-code-inline-tracking);color:var(--foreground-soft);}
   .shipanchor .mono{font-family:var(--mono);}
@@ -1073,17 +1085,24 @@ function mergeDrawerHtml(s,stv,isHead){
   }
   return `<div class="growrow"><span class="v muted">waiting on CI and review</span></div>`;
 }
+/* Terminal card (R8) — one tinted milestone block, an accent rail + eyebrow carry the
+   terminal identity (tone-landed for a merge, muted for a close). The one forward step is a
+   quiet secondary control — the session's work is already done. */
 function mergedHtml(sh){
-  return `<div class="dh"><span class="g" style="color:var(--tone-landed)">${ic('git-merge')}</span>Merged into <span class="mono">main</span></div>
-    <div class="kv"><span class="k">commit</span><span class="mono">${sh.merged.sha}</span> · ${sh.merged.how}</div>
-    <div class="kv"><span class="k">by</span><span>${sh.merged.by} · ${sh.merged.when}</span></div>
-    <div class="mstage-act"><button class="mbtn ghost" tabindex="0">${ic('git-diff')} Next ticket from main</button></div>`;
+  const m=sh.merged;
+  return `<div class="tcard landed" data-component="TerminalCard">
+    <div class="tcard-h"><span class="g">${ic('git-merge')}</span><span class="tcard-eye">Landed</span><span class="tcard-when">${m.when}</span></div>
+    <div class="tcard-sum">Merged into <span class="mono">main</span> · <span class="mono">${m.sha}</span></div>
+    <div class="tcard-foot"><span class="tcard-by">by ${m.by} · ${m.how}</span><button class="mbtn ghost" tabindex="0">Next ticket from main ${ic('caret-right')}</button></div>
+  </div>`;
 }
 function closedHtml(sh){
-  return `<div class="dh"><span class="g">${ic('prohibit')}</span>Closed without merge</div>
-    <div class="kv"><span class="k">by</span><span>${sh.closed.by} · ${sh.closed.when}</span></div>
-    <div class="kv"><span class="k">branch</span><span>${sh.closed.note}</span></div>
-    <div class="mstage-act"><button class="mbtn ghost" tabindex="0">${ic('git-diff')} New session from main</button></div>`;
+  const c=sh.closed;
+  return `<div class="tcard closedt" data-component="TerminalCard">
+    <div class="tcard-h"><span class="g">${ic('prohibit')}</span><span class="tcard-eye">Closed</span><span class="tcard-when">${c.when}</span></div>
+    <div class="tcard-sum">Closed without merge</div>
+    <div class="tcard-foot"><span class="tcard-by">by ${c.by} · ${c.note}</span><button class="mbtn ghost" tabindex="0">New session from main ${ic('caret-right')}</button></div>
+  </div>`;
 }
 /* Local-check output — sha-keyed, so its home is the Commits node drawer (R11). */
 function checkBlockHtml(){
