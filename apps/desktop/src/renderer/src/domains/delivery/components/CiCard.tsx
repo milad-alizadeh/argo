@@ -21,7 +21,7 @@ export interface CiCardProps {
 export function CiCard({ heading, trailing, children, className }: CiCardProps): React.JSX.Element {
   return (
     <div className={cn('overflow-hidden rounded-lg border border-inset-hair bg-inset', className)}>
-      <div className="flex items-center gap-snug border-inset-hair border-b px-inset py-snug">
+      <div className="flex items-baseline gap-snug border-inset-hair border-b px-inset py-snug">
         {heading}
         {trailing !== undefined && <div className="ml-auto shrink-0">{trailing}</div>}
       </div>

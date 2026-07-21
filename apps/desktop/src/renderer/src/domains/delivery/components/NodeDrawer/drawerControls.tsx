@@ -23,7 +23,7 @@ export function GateAction({
         {armed ? confirmLabel : label}
       </Button>
       {armed ? (
-        <Button variant="ghost" size="sm" onClick={arm}>
+        <Button variant="ghost" onClick={arm}>
           cancel
         </Button>
       ) : (

@@ -14,17 +14,23 @@ import { findingBodyStub } from './diffModel'
 // The card's own accent — a solid left rail + a faint wash, one pair per severity. Switched
 // (not read off `FINDING_SEVERITY.tone`) because a raw border/background pair is a rendering
 // detail this card owns, distinct from the `tone` a caller hands a Badge or Button.
+//
+// Side-specific longhands (`border-l-<width>` / `border-l-<color>`), never the all-sides
+// `border-<color>` shorthand: the row already carries a `border-t-inset-hair` hair, and
+// tailwind-merge collapses two `border-color` utilities to the last one — which silently ate
+// both the inset-hair top and the left rail's width. The `length:` hint keeps the arbitrary
+// width out of the color group so it survives the merge.
 function severityAccent(severity: FindingSeverity): { icon: string; card: string } {
   switch (severity) {
     case 'blocking':
       return {
         icon: 'text-verdict-block',
-        card: 'border-l-[var(--border-roster)] border-verdict-block bg-verdict-block-tint/6',
+        card: 'border-l-[length:var(--border-roster)] border-l-verdict-block bg-verdict-block-tint/6',
       }
     case 'advisory':
       return {
         icon: 'text-verdict-changes',
-        card: 'border-l-[var(--border-roster)] border-verdict-changes bg-verdict-changes-tint/6',
+        card: 'border-l-[length:var(--border-roster)] border-l-verdict-changes bg-verdict-changes-tint/6',
       }
   }
 }
@@ -70,7 +76,7 @@ export function FindingCard({
   return (
     <div
       className={cn(
-        'border-inset-hair border-t px-inset py-snug',
+        'border-t border-t-inset-hair px-inset py-snug',
         resolved ? 'bg-inset px-inset py-tight' : accent.card,
         walkFocus && 'bg-verdict-block-tint/12 ring-1 ring-verdict-block-tint/40',
       )}
