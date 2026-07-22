@@ -31,6 +31,8 @@ the code knowledge graph.
 |---|---|---|
 | `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Colour/mood/effects only — layout & density deferred |
 | `cockpit-sessions-room-prototype.html` | Sessions room in Penumbra (wayfinder #159) | Proves the foundation holds on a real screen: project strip · roster · session card + Outcomes · Concierge as a fixed global bottom strip (cheap ring-orb + caption + conversation toggle). Prototype fidelity — not a settled build contract. Panel structure is a sketch, being re-derived under #157 |
+| `cockpit-domain-model.md` | The cockpit's domain model | Three-entity model (Actor · Agent · Run) and the two-port adapter architecture the surfaces are derived from; see ADRs 0013–0016 under `docs/adr/` |
+| `cockpit-surface-matrix.md` | The surface × state matrix | Enumerates every cockpit surface and the states it must render — the testable spec the prototypes are checked against |
 
 ## Lineage & decisions
 
