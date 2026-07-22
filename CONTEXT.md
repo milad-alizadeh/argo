@@ -59,7 +59,7 @@ _Avoid_: live view, sandbox, simulator (that is one Source)
 One entry in the observed project's declared preview list — Storybook, the app renderer, later a device simulator. The panel offers only what the project declares; the cockpit never guesses a command.
 
 **Delivery lifecycle**:
-The Delivery panel's lifecycle header — artifact nodes Commits → PR → CI → Review → Merge, the sole owner of delivery state. A node's done-state is a fact about a sha and can go **stale**; the head (leftmost non-fresh node) carries the screen's one primary control. Spec: `docs/designs/cockpit-matrix.md` (ADR-0009).
+The Delivery panel's lifecycle header — artifact nodes Commits → PR → CI → Review → Merge, the sole owner of delivery state. A node's done-state is a fact about a sha and can go **stale**; the head (leftmost non-fresh node) carries the screen's one primary control. The concept is ADR-0009; its cockpit rendering is being re-derived under wayfinder #157.
 _Avoid_: pipeline (that word is a Run shape), stepper, ship ribbon, git lifecycle
 
 **Gate**:
