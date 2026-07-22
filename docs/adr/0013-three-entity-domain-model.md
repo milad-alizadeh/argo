@@ -24,7 +24,7 @@ Planning the cockpit's full workflow (ideation → code → deployment) kept pro
 fuzzy hybrids: a single ranked list fusing tickets and running sessions, a
 "session works on issue" link that broke the moment one session opened two PRs,
 and session "kinds" (implement / grill / chat) that a session can outgrow
-mid-run. Full model: `docs/designs/cockpit-domain-model.md`.
+mid-run. Full model: superseded by `CONTEXT.md` (#182); retired design doc in git history.
 
 ## Decision
 

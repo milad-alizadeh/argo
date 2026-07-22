@@ -9,7 +9,7 @@ observation works with nothing installed; a connected work-item provider lights
 up DERIVED surfaces; the companion plugin lights up CONVENTION fields. The open
 question was which rung the product is *designed for* — and whether the backlog
 ("what to work on next") is spine or optional. Details:
-`docs/designs/cockpit-domain-model.md` § Product stance.
+`CONTEXT.md` (#182; retired design doc in git history).
 
 ## Decision
 

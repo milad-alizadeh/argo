@@ -19,9 +19,15 @@ must have `gh` installed and authed) that the app can't own.
 - **The cockpit connects to providers via OAuth + the provider's HTTP API** (REST/GraphQL) —
   one uniform mechanism behind the port interface, per-provider adapters underneath.
 - **Onboarding owns provider connection** — "Connect GitHub" / "Connect Linear" run the OAuth
-  grant (desktop PKCE, loopback redirect). Tokens are stored **per-machine in the OS keychain**
-  (never the repo, never plain files) — the same per-machine ownership as the Project registry
-  (ADR-0017).
+  grant. **The exact grant is per-provider, not one shared flow** (verify before building): a
+  distributed desktop binary can't hold a `client_secret`, so GitHub likely needs the **Device
+  Flow** (or a GitHub App user-to-server token), *not* loopback-PKCE — and token **lifecycle
+  differs** (GitHub OAuth-App user tokens historically don't expire / have no refresh token
+  unless expiring-tokens is enabled; Linear issues expiring tokens *with* refresh). So token
+  refresh is a **per-adapter** concern, not a shared assumption. Tokens are stored
+  **per-machine in the OS keychain** (never the repo, never plain files) — same per-machine
+  ownership as the Project registry (ADR-0017); **Linux needs a `libsecret`/`safeStorage`
+  fallback story** where a keychain is absent.
 - **One GitHub OAuth grant feeds both ports** (Issues → Work Item provider, PRs/CI → Code
   host); Linear is Work-Item-only.
 - **Status is polled**, not pushed — a desktop app has no public endpoint to receive webhooks.

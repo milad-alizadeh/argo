@@ -14,7 +14,7 @@ Status: accepted; terminology superseded (#182) · 2026-07-20
 
 ## Context
 
-ADR-0009 and `docs/designs/cockpit-inventory.md` make workspace identity a fact
+ADR-0009 and the retired `cockpit-inventory.md` (git history) make workspace identity a fact
 about a **Session** — the `WorkspaceIdentity` chip is "the ONE full home of where
 is this session working", and the rail's top tier is Sessions.
 

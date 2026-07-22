@@ -1,6 +1,6 @@
 # State lives in main; the renderer is a projection
 
-**Context.** With the backend in Electron's main process (ADR-0004), the authoritative roster/actor-tree state lives in main. The renderer needs to reflect it and stay in sync. We had to choose a store topology and how much state-machine machinery to adopt.
+**Context.** With the backend in Electron's main process (ADR-0004), the authoritative roster/Agent-tree state (#182: "Actor"→"Agent") lives in main. The renderer needs to reflect it and stay in sync. We had to choose a store topology and how much state-machine machinery to adopt.
 
 **Decision.**
 - **Main** holds the single source of truth as a **plain observable TypeScript store** (the hub). The hub holds only live, reconstructable state; the durable subset is persisted to **plain files, not a database** — see ADR-0008 (`better-sqlite3` is withdrawn).

@@ -32,9 +32,12 @@ external signal** and therefore cannot be derived.
   1. **Project registry** — the set of known Projects (stable id + repo root path + optional
      port config) and which one is active. This is what a window reads on launch to know what
      it can open.
-  2. **User-asserted links** — the `Session → Work Item` edge for a session with no branch
-     (hence no Delivery, hence no derivable link). This is the sole relationship a human
-     assertion creates that nothing external records.
+  2. **User-asserted links** — two edges a human assertion creates that nothing external
+     records: (a) `Session → Work Item` for a session with **no branch** (hence no Delivery,
+     hence no derivable link); and (b) `Delivery → Work Item` when the join **derives to
+     unlinked** — a hand-named branch with no PR, the common case outside `/implement`, where
+     `id-in-branch` finds nothing. An assertion overrides a derived *unlinked*, never a
+     positive derivation. Without (b) the join silently empties for ordinary branches.
 
 - **Everything else stays derived or CLI-owned** per ADR-0008: the Session roster is
   discovered by scanning CLI transcript dirs; the derived layer (Outcomes, CONVENTION

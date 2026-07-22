@@ -21,7 +21,7 @@ Tickets and code come from different systems: Linear tickets + GitHub PRs is the
 common real-world pairing, and a file-vault ticket source is planned. Hard-coding
 GitHub for both would make every future source a rewrite. How a Delivery links to
 its Work Item(s) also needed one deterministic rule. Details:
-`docs/designs/cockpit-domain-model.md` § Two ports.
+`CONTEXT.md` → Ports (#182; retired design doc in git history).
 
 ## Decision
 

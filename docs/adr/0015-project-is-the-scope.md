@@ -9,7 +9,7 @@ are configured per repo — but the cockpit observes work across several project
 (Argo, day job). A first draft scoped some surfaces globally (Roster) and some
 per-project (Work room); mixed scoping was rejected: consistency is key, and
 every future surface would re-answer the question. Details:
-`docs/designs/cockpit-domain-model.md` § Project.
+`CONTEXT.md` → L1 (#182; retired design doc in git history).
 
 ## Decision
 

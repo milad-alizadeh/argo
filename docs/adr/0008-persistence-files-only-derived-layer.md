@@ -6,7 +6,7 @@ Facts on the ground: `claude` writes one JSONL transcript per session under `~/.
 
 **Decision.**
 - **No database.** All persistence is plain files — no SQLite, no ORM.
-- **Argo persists only its own derived layer** — Outcomes (with provenance / honesty-tier) and CONVENTION-tier plugin reports that arrived over the MCP channel and therefore never existed in a transcript. It never duplicates transcript content, the Actor tree, or live status — those are live in memory or re-derivable from the CLI JSONL.
+- **Argo persists only its own derived layer** — Outcomes (with provenance / honesty-tier) and CONVENTION-tier plugin reports that arrived over the MCP channel and therefore never existed in a transcript. It never duplicates transcript content, the Agent tree (#182: "Actor"→"Agent"), or live status — those are live in memory or re-derivable from the CLI JSONL.
 - **No persisted roster.** The set of Sessions is *discovered* every launch by scanning the CLI transcript dirs (the single source of truth) and held in memory. Argo writes nothing about which-Sessions-exist.
 - **All Sessions are observed, not only Argo-managed ones.** A Session started in a plain terminal is discovered and rendered from its transcript at DIRECT/DERIVED tiers; only Argo-**managed** Sessions (companion plugin loaded) additionally carry the CONVENTION-tier derived layer.
 - **Store shape:** one JSONL file per Session, keyed by the CLI's session id — `<userData>/sessions/<cliSessionId>.jsonl`. Each line is one derived record (`{ ts, kind: "outcome" | "report", text, tier, ref }`, `ref` pointing to the backing diff/artifact). Location is Electron's `userData` dir (app-global, survives updates, never inside a repo or the CLIs' own dirs).
