@@ -1,8 +1,14 @@
 # Designs
 
 Committed design studies for the Argo cockpit. These are high-fidelity static HTML designs —
-open any file in a browser. They are the **agreed-latest** set; superseded drafts
-(v0–v6, palette explorations, fleet variants) were pruned rather than kept.
+open any file in a browser.
+
+> **Wayfinder [#157](https://github.com/milad-alizadeh/argo/issues/157) is the source of truth
+> for the redesigned cockpit.** The old design set (`cockpit.html`, `cockpit-matrix.md`,
+> `cockpit-inventory.md`, `foundations.html`) was **wiped** — it described the app being
+> replaced. The cockpit is re-derived first-principles on the new domain model; foundations
+> and a fresh UI inventory are rebuilt downstream (Phase 2/3). The set below is the surviving
+> direction.
 
 ## Authoring a new study
 
@@ -23,12 +29,8 @@ the code knowledge graph.
 
 | File | Screen | Notes |
 |---|---|---|
-| `foundations.html` | The living token specimen — type roles, core ramps, semantic bindings (both themes) | **Non-disposable** — renders `tokens.css` directly, so it always shows the current contract |
-| `cockpit.html` | Single-session cockpit — **the final design** (v8 "delivery lifecycle") | Activity\|Delivery panels · PR-lifecycle Delivery strip (Commits→PR→CI→Review→Merge) · Background Tasks roster (R15) · console channels. Settled 2026-07 from the five-lens UX audit; supersedes v7 |
 | `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Colour/mood/effects only — layout & density deferred |
-| `cockpit-sessions-room-prototype.html` | Sessions room in Penumbra (wayfinder #159) | Proves the foundation holds on a real screen: project strip · roster · 4-panel session card (Activity·Delivery·Preview·Console) + Outcomes · Concierge as a fixed global bottom strip (cheap ring-orb + caption + conversation toggle). Prototype fidelity — not a settled build contract |
-| `cockpit-matrix.md` | The cockpit's testable spec | Session facts → rules R1–R16 → state table S0–S11 → panel anatomy/routing. Becomes the component unit tests at componentize time |
-| `cockpit-inventory.md` | Component inventory for `cockpit.html` | name · **status** · props/variants · composed-of — the build contract `/componentize-design` consumes. Status (`spec` / `partial` / `built`) says whether the study region or the shipped component is truth for that row; `built` rows follow the code, and `cockpit.html` is allowed to be stale under them. Ticketed as GitHub issues #18–#30 (native `blocked_by` edges follow composed-of) |
+| `cockpit-sessions-room-prototype.html` | Sessions room in Penumbra (wayfinder #159) | Proves the foundation holds on a real screen: project strip · roster · session card + Outcomes · Concierge as a fixed global bottom strip (cheap ring-orb + caption + conversation toggle). Prototype fidelity — not a settled build contract. Panel structure is a sketch, being re-derived under #157 |
 
 ## Lineage & decisions
 
