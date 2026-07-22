@@ -1,6 +1,22 @@
 # 0013 · Three-entity domain model: Work Item · Session · Delivery
 
-Status: accepted · 2026-07-22
+Status: partially superseded (#182) · 2026-07-22
+
+> **Superseded in part by the #182 rebuild** (see `CONTEXT.md` → L1):
+> - **Work Item `type` (PRD|Task) is dissolved** into parent/child hierarchy — "PRD" and
+>   "Task" are roles derived from whether a Work Item has children, not a stored field
+>   (providers already model this via sub-issues / milestones).
+> - **Session ↔ Work Item is a direct edge**, not "always through Delivery." The relationship
+>   is a triangle (Session→WorkItem, Session→Delivery, Delivery→WorkItem), all optional and
+>   many-to-many; the branchless planning-session-pinned-to-a-ticket case requires the direct
+>   edge and is a user-asserted link Argo persists.
+> - **Delivery is reclassified as *derived* and *branch-keyed*** (assembled from local git ∪
+>   code-host facts), not computed per-Session.
+>
+> The three-entity core (Work Item · Session · Delivery, never fused; no session kinds;
+> branch-keyed Delivery; zero-session Delivery is honest) **stands**.
+
+
 
 ## Context
 

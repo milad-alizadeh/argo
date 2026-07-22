@@ -1,6 +1,19 @@
 # 0014 · Two-port adapter architecture; native-first join
 
-Status: accepted · 2026-07-22
+Status: accepted; amended (#182) · 2026-07-22
+
+> **Amended by the #182 rebuild** (see `CONTEXT.md` → Ports, and ADR-0018):
+> - **Access mechanism = OAuth + the provider's HTTP API, not the `gh` CLI.** Providers are
+>   connected during onboarding; per-machine tokens live in the OS keychain; status is polled.
+>   `gh` remains how *agents* operate the repo — a different layer. (The join-precedence rule
+>   below — native-ref → id-in-branch → unlinked — is unaffected; "native reads" means reading
+>   the provider's native references over its API, DIRECT-tier.)
+> - **The file-vault adapter is descoped**, not deferred. Every Work Item provider is remote
+>   (GitHub Issues / Linear). Strike the file-vault rows/consequences below.
+> - One GitHub OAuth grant can serve **both** ports (Issues + PRs/CI); Linear is
+>   Work-Item-only.
+
+
 
 ## Context
 
