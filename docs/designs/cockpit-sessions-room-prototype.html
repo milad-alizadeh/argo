@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>Argo — Sessions room (Penumbra prototype)</title>
+<!--
+  Wayfinder #159 — "One-screen cockpit prototype in the leading direction".
+  Tests whether the LOCKED Penumbra language (#158) holds on a REAL Sessions room
+  that must carry all four things the reference did not: the project strip, the
+  four-panel session card (Activity·Delivery·Preview·Console), a project-switching
+  affordance, and the orb placed as the Concierge — not as its own column.
+
+  Central proposition to react to: the orb is no longer a third column. It is the
+  ROOM'S KEY LIGHT (the warm right-biased corona), idling behind the session-card
+  glass when a session is open, plus a compact Concierge dock pinned bottom-right.
+  That frees the full width for the fourth panel (Preview) the reference had no room for.
+
+  Tokens/treatment are copied verbatim from cockpit-penumbra-reference.html — the
+  visual language is locked, this study only re-architects the surfaces.
+-->
+<style>
+  :root{
+    --base:#0A0B0D;
+    --ink:#E7E3DA;
+    --ink-dim:#9A968C;
+    --ink-faint:#615E58;
+    --accent:#C8A968;
+    --accent-deep:#8A7038;
+    --run:#6FA890;
+    --need:#C8A968;
+    --block:#B5675E;
+    --done:#5B6673;
+    --warm:200,169,104;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+    --sans:"Inter","Helvetica Neue",-apple-system,system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1440px;height:900px;overflow:hidden;background:var(--base);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  .label{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  /* ===== THE ROOM — one lit scene; corona biased right, behind the session card ===== */
+  #room{
+    position:relative;width:1440px;height:900px;
+    background:
+      radial-gradient(1150px 1000px at 1120px 440px, rgba(var(--warm),0.13), rgba(var(--warm),0.04) 32%, transparent 60%),
+      radial-gradient(1400px 1000px at 860px 460px, rgba(var(--warm),0.045), transparent 55%),
+      radial-gradient(900px 900px at 300px 780px, rgba(30,34,44,0.4), transparent 60%),
+      radial-gradient(1600px 1200px at 720px 40px, #101218, transparent 70%),
+      linear-gradient(160deg,#0B0C0F,#08090B 60%,#070709);
+  }
+  #room::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(1150px 950px at 1120px 440px, transparent 46%, rgba(0,0,0,0.32) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.22), transparent 12%, transparent 82%, rgba(0,0,0,0.4));
+    mix-blend-mode:multiply;
+  }
+
+  /* ===== PROJECT STRIP — the only cross-project surface, far-left ===== */
+  #strip{position:absolute;top:0;left:0;width:60px;height:900px;z-index:8;
+    display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px 0;
+    background:linear-gradient(180deg, rgba(10,11,14,0.6), rgba(6,7,9,0.7));
+    border-right:1px solid rgba(255,246,228,0.04);
+    backdrop-filter:blur(6px);}
+  .ptab{position:relative;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--sans);font-weight:400;font-size:14px;color:var(--ink-dim);
+    background:rgba(30,32,38,0.4);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04);cursor:pointer}
+  .ptab.on{color:#F1ECE1;background:linear-gradient(180deg, rgba(46,44,40,0.7), rgba(24,22,20,0.7));
+    box-shadow:inset 0 1px 0 rgba(255,246,228,0.12), 0 0 22px -4px rgba(var(--warm),0.4)}
+  .ptab.on::before{content:"";position:absolute;left:-11px;top:50%;transform:translateY(-50%);
+    width:3px;height:22px;border-radius:2px;background:var(--accent);box-shadow:0 0 10px 1px rgba(var(--warm),0.7)}
+  /* another project needs you → its icon glows gold */
+  .ptab .badge{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;
+    background:var(--need);box-shadow:0 0 10px 2px rgba(var(--warm),0.75)}
+  #strip .spacer{flex:1}
+  #strip .add{color:var(--ink-faint);font-weight:200;font-size:20px}
+
+  /* ===== TOP BROW — mark, room switcher, status ===== */
+  #brow{position:absolute;top:26px;left:92px;right:34px;display:flex;align-items:center;justify-content:space-between;z-index:6}
+  #mark{display:flex;align-items:baseline;gap:12px}
+  #mark .glyph{font-family:var(--sans);font-weight:200;font-size:22px;letter-spacing:.34em;color:var(--ink);text-shadow:0 0 22px rgba(var(--warm),0.28)}
+  #mark .proj{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-dim)}
+
+  /* room switcher (⌘1 Work / ⌘2 Sessions) */
+  #rooms{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04)}
+  #rooms .rm{display:flex;align-items:center;gap:9px;padding:7px 15px;border-radius:8px;font-size:11.5px;color:var(--ink-dim);cursor:pointer}
+  #rooms .rm .k{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.05em}
+  #rooms .rm.on{color:#F1ECE1;background:linear-gradient(180deg, rgba(46,44,40,0.65), rgba(24,22,20,0.65));box-shadow:inset 0 1px 0 rgba(255,246,228,0.1)}
+  #rooms .rm.on .k{color:var(--accent)}
+
+  #brow .status{display:flex;gap:24px;align-items:center}
+  #brow .status .k{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim)}
+  #brow .status .v{font-size:11px;color:var(--ink)}
+
+  /* ===== ROSTER — session planes at depth (stops above the global Concierge strip) ===== */
+  #rail{position:absolute;top:82px;left:92px;width:256px;bottom:70px;z-index:5;display:flex;flex-direction:column;gap:13px}
+  #rail>.label{margin:6px 0 1px 4px}
+  .plane{
+    position:relative;border-radius:14px;padding:13px 15px;overflow:hidden;
+    backdrop-filter:blur(9px) saturate(1.05);
+    background:linear-gradient(180deg, rgba(30,32,38,0.42), rgba(16,17,21,0.5));
+    box-shadow:
+      inset 0 1px 0 rgba(255,246,228,0.05),
+      inset 0 22px 40px -30px rgba(var(--warm),0.14),
+      0 20px 34px -22px rgba(0,0,0,0.7);
+    cursor:pointer;
+  }
+  .plane::before{
+    content:"";position:absolute;left:-16%;right:-16%;top:-40%;height:120%;z-index:-1;
+    background:radial-gradient(60% 70% at 50% 34%, rgba(var(--warm),0.10), transparent 70%);
+    filter:blur(20px);opacity:.5;
+  }
+  .plane .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .plane .name{font-size:13.5px;font-weight:400;color:var(--ink);letter-spacing:.005em}
+  .plane .meta{margin-top:8px;font-size:10px;color:var(--ink-dim);font-family:var(--mono);letter-spacing:.01em}
+  .plane .branch{color:var(--ink-faint)}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--done)}
+  .dot.run{background:var(--run);box-shadow:0 0 10px 1px rgba(111,168,144,0.6)}
+  .dot.need{background:var(--need);box-shadow:0 0 12px 2px rgba(200,169,104,0.7)}
+  .dot.block{background:var(--block);box-shadow:0 0 10px 1px rgba(181,103,94,0.55)}
+  .dot.done{background:var(--done)}
+
+  .plane.active{
+    background:linear-gradient(180deg, rgba(46,44,40,0.6), rgba(24,22,20,0.6));
+    box-shadow:
+      inset 0 1px 0 rgba(255,246,228,0.12),
+      inset 0 26px 46px -30px rgba(var(--warm),0.30),
+      0 30px 50px -20px rgba(0,0,0,0.78),
+      0 0 46px -6px rgba(var(--warm),0.14);
+  }
+  .plane.active::before{opacity:.95;background:radial-gradient(60% 70% at 40% 30%, rgba(var(--warm),0.20), transparent 72%)}
+  .plane.active .name{color:#F1ECE1;text-shadow:0 0 20px rgba(var(--warm),0.25)}
+  .plane.recede{opacity:.66;transform:translateX(6px) scale(.985)}
+  .plane.recede.deep{opacity:.5;transform:translateX(11px) scale(.97)}
+  .ctxline{margin-top:11px;display:flex;align-items:center;gap:9px}
+  .ctxline .num{font-family:var(--mono);font-size:9.5px;color:var(--accent);letter-spacing:.04em}
+
+  /* ===== SESSION CARD — fills the width the orb column used to hold ===== */
+  #card{position:absolute;top:82px;left:364px;right:34px;bottom:70px;z-index:4;display:flex;flex-direction:column;
+    border-radius:20px;overflow:hidden;
+    backdrop-filter:blur(14px) saturate(1.04);
+    background:linear-gradient(180deg, rgba(28,29,35,0.5), rgba(15,16,20,0.56));
+    box-shadow:
+      inset 0 1px 0 rgba(255,246,228,0.08),
+      inset 0 30px 60px -44px rgba(var(--warm),0.22),
+      0 34px 60px -30px rgba(0,0,0,0.72);
+  }
+  /* warm bloom of the room's key light glowing THROUGH the card glass (orb idles behind) */
+  #card::before{
+    content:"";position:absolute;left:20%;right:-14%;top:-24%;height:90%;z-index:0;pointer-events:none;
+    background:radial-gradient(52% 58% at 74% 26%, rgba(var(--warm),0.13), transparent 70%);
+    filter:blur(30px);opacity:.7;
+  }
+  #card>*{position:relative;z-index:1}
+
+  /* head */
+  #chead{padding:18px 24px 15px;display:flex;align-items:flex-start;justify-content:space-between}
+  #chead .title{font-weight:200;font-size:26px;letter-spacing:.01em;color:#F2EDE2;text-shadow:0 0 26px rgba(var(--warm),0.22)}
+  #chead .subrow{margin-top:8px;display:flex;gap:13px;align-items:center;font-family:var(--mono);font-size:10.5px;color:var(--ink-dim)}
+  #chead .subrow .b{color:var(--ink-faint)}
+  #chead .subrow .t{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--run)}
+  #chead .ctxarc{display:flex;flex-direction:column;align-items:center}
+
+  /* panel tab bar — the four homes of the session card */
+  #tabs{display:flex;gap:4px;padding:0 22px;margin-bottom:4px}
+  .tab{display:flex;align-items:center;gap:8px;padding:9px 16px 11px;border-radius:10px 10px 0 0;font-size:12px;color:var(--ink-dim);cursor:pointer;position:relative}
+  .tab .n{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint)}
+  .tab.on{color:#F1ECE1}
+  .tab.on::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 8px rgba(var(--warm),0.5)}
+  .tab .cnt{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.02em}
+
+  #panelwrap{flex:1;position:relative;margin:0 4px}
+  #divider{height:1px;margin:0 20px;background:linear-gradient(90deg,transparent,rgba(255,246,228,0.09),transparent)}
+
+  /* ACTIVITY panel body — plan line + running agents + checks + delivery arc */
+  #activity{position:absolute;inset:0;display:flex;flex-direction:column;padding:16px 22px 0}
+  .planline{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:11px;margin-bottom:14px;
+    background:linear-gradient(180deg, rgba(30,32,38,0.4), rgba(16,17,21,0.44));box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
+  .planline .cur{flex:1;font-size:12.5px;color:var(--ink)}
+  .planline .prog{font-family:var(--mono);font-size:10px;color:var(--accent)}
+  .actgrid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .cell{padding:2px 22px 12px}
+  .cell + .cell{position:relative}
+  .cell h4{margin-bottom:12px}
+  .divmark{position:absolute;left:0;top:2px;bottom:14px;width:1px;background:linear-gradient(to bottom,transparent,rgba(255,246,228,0.09),transparent)}
+  .agent{display:flex;align-items:center;gap:11px;padding:7px 0}
+  .agent .body{flex:1}
+  .agent .an{font-size:12.5px;color:var(--ink)}
+  .agent .as{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);letter-spacing:.02em;margin-top:2px}
+  .subrows{margin:2px 0 4px 21px;display:flex;flex-direction:column;gap:5px}
+  .subrows .r{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10px;color:var(--ink-dim)}
+  .tick{width:5px;height:5px;border-radius:50%;background:var(--run);box-shadow:0 0 7px rgba(111,168,144,0.55)}
+  .tick.pend{background:var(--ink-faint);box-shadow:none}
+  .check{display:flex;align-items:center;gap:12px;padding:6px 0}
+  .check .cn{flex:1;font-size:12px;color:var(--ink)}
+  .check .cv{font-family:var(--mono);font-size:10px;color:var(--ink-dim)}
+  .check .cv.warn{color:var(--accent)}
+
+  /* Outcomes — "what got done" (surface matrix); absorbs Activity's vertical space honestly */
+  .outcomes{flex:1;min-height:0;padding:12px 22px 4px;margin-top:8px;border-top:1px solid rgba(255,246,228,0.05);overflow:hidden}
+  .outcomes h4{margin-bottom:11px}
+  .orow{display:flex;align-items:baseline;gap:11px;padding:7px 0;font-size:12.5px;color:var(--ink)}
+  .orow .dot{position:relative;top:1px;flex:0 0 auto}
+  .orow .oc{flex:1}
+  .orow .om{font-family:var(--mono);color:var(--ink-dim)}
+  .orow .dim{color:var(--ink-faint);font-family:var(--mono);font-size:10.5px}
+  .orow.muted{color:var(--ink-dim)}
+
+  /* delivery lifecycle arc — pinned above the console tail, Penumbra rail */
+  #lifecycle{padding:6px 24px 12px;margin-top:6px;border-top:1px solid rgba(255,246,228,0.05)}
+  #lcarc{position:relative;height:66px;margin-top:8px}
+  .stage-node{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;gap:8px;transform:translateX(-50%)}
+  .stage-node .nlab{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .stage-node.on .nlab,.stage-node.done .nlab{color:var(--ink-dim)}
+  .stage-node .nd{width:9px;height:9px;border-radius:50%;background:#26282e;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)}
+  .stage-node.done .nd{background:var(--accent);box-shadow:0 0 12px 2px rgba(var(--warm),0.55)}
+  .stage-node.cur .nd{background:var(--run);box-shadow:0 0 14px 3px rgba(111,168,144,0.6)}
+  .stage-node .nsub{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
+
+  /* other panels shown as their glance so the four homes read at once */
+  .ghostpanel{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--ink-faint)}
+  .ghostpanel .big{font-weight:200;font-size:19px;color:var(--ink-dim);letter-spacing:.02em}
+  .ghostpanel .lil{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+  .previewframe{width:78%;height:66%;border-radius:14px;background:linear-gradient(180deg,rgba(20,22,28,0.6),rgba(10,11,14,0.7));
+    box-shadow:inset 0 1px 0 rgba(255,246,228,0.06), 0 24px 40px -28px rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center}
+
+  /* CONSOLE TAIL — always docked at the bottom of the card, expands on the Console tab */
+  #console{margin:0 4px 4px;border-radius:14px;overflow:hidden;height:104px;position:relative;
+    backdrop-filter:blur(10px) saturate(0.95);
+    background:linear-gradient(180deg, rgba(10,11,14,0.72), rgba(6,7,9,0.82));
+    box-shadow:inset 0 1px 0 rgba(255,246,228,0.055), inset 0 20px 50px -40px rgba(var(--warm),0.16);
+  }
+  #console .thead{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 6px}
+  #console .lines{padding:2px 18px 12px;font-family:var(--mono);font-size:11px;line-height:1.6;color:#B7B2A6}
+  #console .lines .p{color:var(--accent)}
+  #console .lines .dim{color:var(--ink-faint)}
+  #console .lines .curs{display:inline-block;width:7px;height:13px;background:rgba(var(--warm),0.75);vertical-align:-2px;margin-left:3px;box-shadow:0 0 8px rgba(var(--warm),0.6)}
+
+  /* ===== CONCIERGE — a FIXED GLOBAL STRIP along the bottom. Cheap CSS orb-ring (no 3D). =====
+     Lives below BOTH rooms (spans past the project strip, full width), so switching ⌘1/⌘2
+     never makes it disappear. Its width buys a live caption of what the Concierge is saying.
+     The heavy procedural orb mounts ONLY when foregrounded (zero-state hero / expanded
+     conversation); this always-on strip stays lightweight for low-spec. */
+  #concierge{position:absolute;left:60px;right:0;bottom:0;height:54px;z-index:9;
+    display:flex;align-items:center;gap:16px;padding:0 22px;
+    background:linear-gradient(180deg, rgba(16,15,14,0.6), rgba(9,9,11,0.76));
+    backdrop-filter:blur(16px);
+    border-top:1px solid rgba(255,246,228,0.05);
+    box-shadow:0 -22px 44px -32px rgba(var(--warm),0.3);
+  }
+  /* cheap orb: a breathing gold eclipse-RING (two gradients + a mask, GPU-trivial) */
+  .ringorb{position:relative;width:42px;height:42px;flex:0 0 auto}
+  .ringorb .ring{position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from -40deg,
+      rgba(var(--warm),0.92), rgba(var(--warm),0.42) 42deg, rgba(var(--warm),0.05) 120deg,
+      transparent 205deg, transparent 300deg, rgba(var(--warm),0.3) 342deg, rgba(var(--warm),0.92));
+    -webkit-mask:radial-gradient(circle at 50% 50%, transparent 56%, #000 60%);
+            mask:radial-gradient(circle at 50% 50%, transparent 56%, #000 60%);
+    filter:drop-shadow(0 0 6px rgba(var(--warm),0.55));animation:breath 7s ease-in-out infinite}
+  .ringorb .core{position:absolute;inset:8px;border-radius:50%;
+    background:radial-gradient(circle at 50% 44%, #0c0d10, #060608);
+    box-shadow:inset 0 0 12px 2px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,246,228,0.05)}
+  #concierge .cid{display:flex;flex-direction:column;gap:4px;flex:0 0 auto}
+  #concierge .ceyebrow{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint)}
+  #concierge .cstatus{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--accent)}
+  /* live caption — what the Concierge just heard / is saying */
+  #concierge .caption{flex:1;min-width:0;font-weight:200;font-size:14px;line-height:1.4;color:#CFC9BC;letter-spacing:.005em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #concierge .caption .q{color:var(--ink-faint)}
+  #concierge .cdivide{width:1px;height:28px;background:linear-gradient(to bottom,transparent,rgba(255,246,228,0.1),transparent);flex:0 0 auto}
+  #concierge .cmode{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  #concierge .cmode .ml{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  /* enable/disable toggle — conversation mode, not push-to-talk */
+  .ctoggle{margin-left:auto;flex:0 0 auto;width:36px;height:20px;border-radius:11px;position:relative;cursor:pointer;
+    background:rgba(255,255,255,0.08);box-shadow:inset 0 1px 2px rgba(0,0,0,0.5)}
+  .ctoggle .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-dim)}
+  .ctoggle.on{background:linear-gradient(180deg, rgba(var(--warm),0.55), rgba(var(--warm),0.3));box-shadow:inset 0 0 8px rgba(var(--warm),0.45)}
+  .ctoggle.on .knob{left:18px;background:var(--accent);box-shadow:0 0 8px rgba(var(--warm),0.7)}
+
+  @keyframes breath{0%,100%{opacity:.82;transform:scale(1)}50%{opacity:1;transform:scale(1.035)}}
+</style>
+</head>
+<body>
+<div id="room">
+
+  <!-- PROJECT STRIP -->
+  <div id="strip" data-component="ProjectStrip">
+    <div class="ptab on" data-component="ProjectTab">A</div>
+    <div class="ptab" data-component="ProjectTab">D<span class="badge"></span></div>
+    <div class="ptab" data-component="ProjectTab">M</div>
+    <div class="ptab" data-component="ProjectTab">P</div>
+    <div class="spacer"></div>
+    <div class="ptab add">+</div>
+  </div>
+
+  <!-- TOP BROW -->
+  <div id="brow">
+    <div id="mark">
+      <span class="glyph">ARGO</span>
+      <span class="proj">Argo · cockpit</span>
+    </div>
+    <div id="rooms" data-component="RoomSwitcher">
+      <div class="rm"><span class="k">⌘1</span> Work</div>
+      <div class="rm on"><span class="k">⌘2</span> Sessions</div>
+    </div>
+    <div class="status">
+      <div><span class="k">Sessions</span> &nbsp;<span class="v mono">4</span></div>
+      <div><span class="k">Awaiting you</span> &nbsp;<span class="v mono" style="color:var(--need)">1</span></div>
+      <div><span class="k">Local</span> &nbsp;<span class="v mono">02:14</span></div>
+    </div>
+  </div>
+
+  <!-- ROSTER -->
+  <div id="rail" data-component="Roster">
+    <div class="label">Roster · this project</div>
+
+    <div class="plane active" data-component="SessionPlane">
+      <div class="top">
+        <div class="name">Auth refactor</div>
+        <div class="chip"><span class="dot run"></span> Running</div>
+      </div>
+      <div class="meta"><span>claude</span> · <span class="branch">feat/auth-rotation</span></div>
+      <div class="ctxline">
+        <svg width="128" height="8" viewBox="0 0 128 8">
+          <defs><linearGradient id="ctxg" x1="0" x2="1"><stop offset="0" stop-color="#C8A968" stop-opacity="0.95"/><stop offset="1" stop-color="#C8A968" stop-opacity="0.15"/></linearGradient></defs>
+          <rect x="0" y="3" width="128" height="2" rx="1" fill="rgba(255,255,255,0.06)"/>
+          <rect x="0" y="3" width="54" height="2" rx="1" fill="url(#ctxg)"/>
+        </svg>
+        <span class="num">ctx 42%</span>
+      </div>
+    </div>
+
+    <div class="plane recede" data-component="SessionPlane">
+      <div class="top">
+        <div class="name">Why is CI flaky</div>
+        <div class="chip"><span class="dot need"></span> Needs input</div>
+      </div>
+      <div class="meta"><span>opus</span> · <span class="branch">fix/ci-flake</span></div>
+    </div>
+
+    <div class="plane recede deep" data-component="SessionPlane">
+      <div class="top">
+        <div class="name">Landing hero</div>
+        <div class="chip"><span class="dot block"></span> Changes req.</div>
+      </div>
+      <div class="meta"><span>sonnet</span> · <span class="branch">feat/landing-hero</span></div>
+    </div>
+
+    <div class="plane recede deep" data-component="SessionPlane">
+      <div class="top">
+        <div class="name">Release notes</div>
+        <div class="chip"><span class="dot done"></span> Ready to merge</div>
+      </div>
+      <div class="meta"><span>haiku</span> · <span class="branch">chore/release-0.9</span></div>
+    </div>
+  </div>
+
+  <!-- SESSION CARD -->
+  <div id="card" data-component="SessionCard">
+    <div id="chead" data-component="SessionHeader">
+      <div>
+        <div class="title">Auth refactor</div>
+        <div class="subrow"><span class="dot run"></span><span class="t">Running</span><span class="b">·</span><span>claude</span><span class="b">·</span><span>feat/auth-rotation</span><span class="b">·</span><span>3m 12s</span><span class="b">·</span><span>intent&nbsp;<span style="color:var(--accent)">#318</span></span></div>
+      </div>
+      <div class="ctxarc">
+        <svg width="66" height="66" viewBox="0 0 72 72">
+          <defs>
+            <linearGradient id="ctxarcg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#C8A968" stop-opacity="1"/>
+              <stop offset="0.6" stop-color="#C8A968" stop-opacity="0.35"/>
+              <stop offset="1" stop-color="#C8A968" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+          <circle cx="36" cy="36" r="28" fill="none" stroke="url(#ctxarcg)" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="73.8 175.9" transform="rotate(-90 36 36)" style="filter:drop-shadow(0 0 6px rgba(200,169,104,0.5))"/>
+          <text x="36" y="34" text-anchor="middle" font-size="14" fill="#E7E3DA" font-weight="300">42</text>
+          <text x="36" y="46" text-anchor="middle" font-size="7" letter-spacing="1.5" fill="#615E58">CTX %</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- the four panels live here, one bar -->
+    <div id="tabs" data-component="PanelTabs">
+      <div class="tab on">Activity</div>
+      <div class="tab">Delivery <span class="cnt">±312</span></div>
+      <div class="tab">Preview <span class="cnt">:5173</span></div>
+      <div class="tab">Console</div>
+    </div>
+    <div id="divider"></div>
+
+    <div id="panelwrap">
+      <!-- ACTIVITY (default, richest) -->
+      <div id="activity" data-component="ActivityPanel">
+        <div class="planline">
+          <span class="dot run"></span>
+          <span class="cur">Rewiring <span class="mono" style="color:var(--ink-dim)">verify()</span> onto the rotation core</span>
+          <span class="prog">plan 3 / 7</span>
+        </div>
+        <div class="actgrid">
+          <div class="cell">
+            <h4 class="label">Running agents</h4>
+            <div class="agent">
+              <span class="dot run"></span>
+              <div class="body"><div class="an">code-review agent</div><div class="as">scanning diff · 6 files</div></div>
+            </div>
+            <div class="agent">
+              <span class="dot run"></span>
+              <div class="body"><div class="an">test-sweep</div><div class="as">running suites</div></div>
+            </div>
+            <div class="subrows">
+              <div class="r"><span class="tick"></span> unit &nbsp;<span style="color:var(--ink-faint)">·</span>&nbsp; passed</div>
+              <div class="r"><span class="tick"></span> e2e &nbsp;<span style="color:var(--ink-faint)">·</span>&nbsp; running</div>
+              <div class="r"><span class="tick pend"></span> types &nbsp;<span style="color:var(--ink-faint)">·</span>&nbsp; queued</div>
+            </div>
+          </div>
+          <div class="cell">
+            <div class="divmark"></div>
+            <h4 class="label">Checks</h4>
+            <div class="check"><span class="dot" style="background:var(--accent);box-shadow:0 0 8px rgba(200,169,104,0.5)"></span><span class="cn">Lint</span><span class="cv warn">2 warnings</span></div>
+            <div class="check"><span class="dot run"></span><span class="cn">Typecheck</span><span class="cv">passing</span></div>
+            <div class="check"><span class="dot run"></span><span class="cn">Tests</span><span class="cv">7 passed</span></div>
+          </div>
+        </div>
+
+        <!-- Outcomes — what this session got done (fills the panel honestly; click scopes Delivery to that diff) -->
+        <div class="outcomes" data-component="Outcomes">
+          <h4 class="label">Outcomes · what got done</h4>
+          <div class="orow"><span class="dot done"></span><span class="oc">Extracted the rotation core into <span class="om">rotation/verify.ts</span></span><span class="dim">+2 files · 3 commits</span></div>
+          <div class="orow"><span class="dot done"></span><span class="oc">Migrated <span class="om">verify()</span> off the legacy compare path</span><span class="dim">+1 −1</span></div>
+          <div class="orow muted"><span class="dot run"></span><span class="oc">Wiring the rotation window into token validation</span><span class="dim">in progress</span></div>
+        </div>
+
+        <!-- delivery lifecycle arc rides in Activity's foot as its glance; the Delivery tab drills it -->
+        <div id="lifecycle" data-component="DeliveryStrip">
+          <h4 class="label">Delivery · feat/auth-rotation → main</h4>
+          <div id="lcarc">
+            <svg width="100%" height="52" viewBox="0 0 980 52" preserveAspectRatio="none" style="position:absolute;top:8px;left:0">
+              <defs>
+                <linearGradient id="penum" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#C8A968" stop-opacity="0.9"/>
+                  <stop offset="0.5" stop-color="#C8A968" stop-opacity="0.5"/>
+                  <stop offset="0.62" stop-color="#6FA890" stop-opacity="0.55"/>
+                  <stop offset="0.72" stop-color="#6FA890" stop-opacity="0.12"/>
+                  <stop offset="1" stop-color="#6FA890" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="penumtrack" x1="0" x2="1">
+                  <stop offset="0" stop-color="rgba(255,255,255,0.09)"/>
+                  <stop offset="1" stop-color="rgba(255,255,255,0.03)"/>
+                </linearGradient>
+              </defs>
+              <path d="M18,26 C260,26 320,26 490,26 S740,26 962,26" fill="none" stroke="url(#penumtrack)" stroke-width="2"/>
+              <path d="M18,26 C260,26 320,26 490,26 S636,26 636,26" fill="none" stroke="url(#penum)" stroke-width="3" stroke-linecap="round" style="filter:drop-shadow(0 0 7px rgba(200,169,104,0.4))"/>
+            </svg>
+            <div class="stage-node done" style="left:2.8%"><span class="nd"></span><span class="nlab">Commits</span><span class="nsub">6</span></div>
+            <div class="stage-node done" style="left:26%"><span class="nd"></span><span class="nlab">PR</span><span class="nsub">#312</span></div>
+            <div class="stage-node cur" style="left:50%"><span class="nd"></span><span class="nlab">CI</span><span class="nsub">running</span></div>
+            <div class="stage-node" style="left:74%"><span class="nd"></span><span class="nlab">Review</span><span class="nsub">pending</span></div>
+            <div class="stage-node" style="left:97%"><span class="nd"></span><span class="nlab">Merge</span><span class="nsub">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREVIEW ghost (shows the fourth panel the reference had no room for) -->
+      <div class="ghostpanel" data-component="PreviewPanel">
+        <div class="previewframe"><span class="lil">the running UI · localhost:5173 · ⎇ clean</span></div>
+        <div class="lil">interact with it directly — no tier, it is the thing</div>
+      </div>
+    </div>
+
+    <!-- CONSOLE TAIL — always docked -->
+    <div id="console" data-component="ConsoleTail">
+      <div class="thead"><span class="label">Console · tail</span><span class="label mono" style="color:var(--ink-faint)">src/auth/legacy.ts</span></div>
+      <div class="lines">
+        <div><span class="p">▸</span> Edit <span style="color:var(--ink)">src/auth/legacy.ts</span> <span class="dim">— verify() delegates to rotation core</span></div>
+        <div class="dim">  − const ok = compareLegacy(token, secret)</div>
+        <div><span class="dim">  +</span> const ok = rotation.verify(token, { window: 2 })<span class="curs"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONCIERGE — fixed GLOBAL strip along the bottom (survives ⌘1/⌘2); ring-orb + live caption + enable/disable -->
+  <div id="concierge" data-component="ConciergeStrip">
+    <!-- orb alone carries state (listening/thinking/speaking) — no text label needed -->
+    <div class="ringorb" data-component="OrbMini"><div class="ring"></div><div class="core"></div></div>
+    <div class="caption" data-component="ConciergeCaption"><span class="q">“</span>Why is the auth refactor waiting — and what's blocking the CI check?<span class="q">”</span></div>
+    <div class="cdivide"></div>
+    <div class="cmode">
+      <span class="ml">Conversation</span>
+      <div class="ctoggle on" data-component="ConciergeToggle" title="Enable / disable Concierge"><span class="knob"></span></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
