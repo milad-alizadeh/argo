@@ -1,0 +1,4 @@
+{"type":"last-prompt","leafUuid":"a-root-1","sessionId":"adversarialNoCommit"}
+{"type":"attachment","cwd":"/Users/x/adversarial","gitBranch":"main","timestamp":"2026-07-20T12:00:00.000Z","uuid":"a-root-1","parentUuid":null}
+{"type":"user","sessionId":"adversarialNoCommit","cwd":"/Users/x/adversarial","timestamp":"2026-07-20T12:00:01.000Z","uuid":"a-user-1","parentUuid":"a-root-1","message":{"role":"user","content":"Fix the bug"}}
+{"type":"assistant","sessionId":"adversarialNoCommit","timestamp":"2026-07-20T12:00:05.000Z","uuid":"a-asst-1","parentUuid":"a-user-1","message":{"role":"assistant","content":[{"type":"text","text":"Done — I've committed the fix in commit abc1234."}],"stop_reason":"end_turn"}}
