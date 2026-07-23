@@ -1,0 +1,191 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cockpit · Spawn</title>
+<style>
+:root{
+  --base:#0A0B0D; --ink:#E7E3DA; --ink-dim:#9A968C; --ink-faint:#615E58;
+  --accent:#C8A968; --accent-deep:#8A7038;
+  --run:#6FA890; --need:#C8A968; --block:#B5675E; --done:#5B6673;
+  --warm:200,169,104;
+  --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+  --sans:"Inter","Helvetica Neue",-apple-system,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{width:1440px;height:920px;margin:0;overflow:hidden;background:var(--base);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.label{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---- cockpit backdrop (dimmed) ---- */
+#stage{position:absolute;inset:0;
+  background:
+    radial-gradient(1150px 1000px at 1230px 300px, rgba(var(--warm),0.12), rgba(var(--warm),0.04) 32%, transparent 60%),
+    radial-gradient(1400px 1000px at 900px 460px, rgba(var(--warm),0.045), transparent 55%),
+    linear-gradient(160deg,#0B0C0F,#08090B 60%,#070709);
+}
+#rail{position:absolute;top:0;left:0;bottom:0;width:300px;padding:18px 14px;display:flex;flex-direction:column;gap:9px;
+  border-right:1px solid rgba(255,255,255,0.04)}
+#brand{display:flex;align-items:baseline;gap:10px;padding:6px 8px 14px}
+#brand .g{font-weight:200;font-size:18px;letter-spacing:.32em}
+#brand .s{font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink-faint)}
+#newses{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:11px;color:var(--ink-faint);
+  border:1px dashed rgba(255,255,255,0.07);font-size:12.5px}
+#newses .plus{font-size:15px;line-height:1}
+#newses .kbd{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);opacity:.7}
+.plane{position:relative;padding:13px 14px;border-radius:12px;background:rgba(255,255,255,0.018);
+  border:1px solid rgba(255,255,255,0.045);overflow:hidden}
+.plane .name{font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:9px}
+.plane .meta{margin-top:8px;font-size:10px;color:var(--ink-dim);font-family:var(--mono)}
+.plane .branch{color:var(--ink-faint)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--done);flex:none}
+.dot.run{background:var(--run);box-shadow:0 0 10px 1px rgba(111,168,144,0.6)}
+.dot.need{background:var(--need);box-shadow:0 0 11px 2px rgba(200,169,104,0.65)}
+.dot.ext{background:transparent;border:1px solid var(--ink-faint)}
+#arch{margin-top:auto;display:flex;align-items:center;gap:9px;padding:10px 12px;font-size:11px;color:var(--ink-faint)}
+#scrim{position:absolute;inset:0;background:rgba(6,7,9,0.62);backdrop-filter:blur(2px)}
+
+/* ---- spawn palette ---- */
+#spawn{position:absolute;top:118px;left:50%;transform:translateX(-50%);width:640px;
+  background:linear-gradient(180deg, rgba(26,27,31,0.92), rgba(17,18,21,0.94));
+  border:1px solid rgba(255,255,255,0.08);border-radius:16px;
+  box-shadow:0 40px 120px -30px rgba(0,0,0,0.8), inset 0 40px 70px -50px rgba(var(--warm),0.14);
+  overflow:hidden}
+#spawn .head{padding:20px 22px 14px}
+#spawn .eyebrow{margin-bottom:12px}
+#search{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:11px;
+  background:rgba(0,0,0,0.28);border:1px solid rgba(var(--warm),0.16)}
+#search .mag{color:var(--ink-faint);font-size:15px}
+#search .q{flex:1;font-size:15px;color:var(--ink);display:flex;align-items:center}
+#search .cursor{width:1.5px;height:17px;background:var(--accent);opacity:.9;animation:blink 1.1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+#search .ph{color:var(--ink-faint)}
+
+.sec{padding:4px 12px 6px}
+.sec .label{padding:8px 10px 6px}
+.opt{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:default}
+.opt .role{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:5px;
+  border:1px solid rgba(255,255,255,0.09);color:var(--ink-dim);flex:none;min-width:74px;text-align:center}
+.opt .role.feat{color:#9FBBA9;border-color:rgba(111,168,144,0.28)}
+.opt .role.bug{color:#C79089;border-color:rgba(181,103,94,0.3)}
+.opt .role.chore{color:var(--ink-dim)}
+.opt .num{font-family:var(--mono);font-size:11px;color:var(--ink-faint);flex:none}
+.opt .ttl{font-size:13.5px;color:var(--ink-dim);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.opt .rt{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint)}
+.opt.sel{background:rgba(var(--warm),0.10);box-shadow:inset 0 0 0 1px rgba(var(--warm),0.22)}
+.opt.sel .ttl{color:var(--ink)}
+.opt.blank{color:var(--ink-dim)}
+.opt.blank .bi{width:74px;text-align:center;font-size:15px;color:var(--ink-faint)}
+
+/* derived strip (variant A) */
+#derived{display:flex;align-items:center;gap:0;padding:14px 22px;border-top:1px solid rgba(255,255,255,0.05);
+  background:rgba(0,0,0,0.18)}
+#derived .grp{display:flex;align-items:center;gap:8px;padding-right:16px;margin-right:16px;border-right:1px solid rgba(255,255,255,0.06)}
+#derived .grp:last-of-type{border:none}
+#derived .k{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+#derived .v{font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+#derived .v .hi{color:var(--accent)}
+#derived .edit{margin-left:auto;font-size:11px;color:var(--ink-faint);display:flex;align-items:center;gap:6px}
+#derived .go{margin-left:14px;padding:8px 16px;border-radius:9px;background:rgba(var(--warm),0.14);
+  border:1px solid rgba(var(--warm),0.3);color:#F1E6CE;font-size:12px;display:flex;align-items:center;gap:9px}
+#derived .go .kbd{font-family:var(--mono);font-size:10px;opacity:.7}
+
+/* ---- variant B : flat dials ---- */
+#flat{padding:8px 12px 4px}
+.dial{display:flex;align-items:center;gap:0;padding:13px 12px;border-radius:10px}
+.dial+.dial{border-top:1px solid rgba(255,255,255,0.045)}
+.dial .k{width:120px;flex:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)}
+.dial .field{flex:1;display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:9px;
+  background:rgba(0,0,0,0.24);border:1px solid rgba(255,255,255,0.06);font-family:var(--mono);font-size:12px;color:var(--ink)}
+.dial .field .car{margin-left:auto;color:var(--ink-faint);font-size:10px}
+.dial .field .mut{color:var(--ink-faint)}
+#flatbar{display:flex;align-items:center;gap:12px;padding:14px 22px;border-top:1px solid rgba(255,255,255,0.05);background:rgba(0,0,0,0.18)}
+#flatbar .hint{font-size:11px;color:var(--ink-faint)}
+#flatbar .go{margin-left:auto;padding:8px 16px;border-radius:9px;background:rgba(var(--warm),0.14);
+  border:1px solid rgba(var(--warm),0.3);color:#F1E6CE;font-size:12px;display:flex;align-items:center;gap:9px}
+#flatbar .go .kbd{font-family:var(--mono);font-size:10px;opacity:.7}
+
+/* switcher */
+#sw{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:6px;
+  padding:6px;border-radius:11px;background:rgba(20,21,24,0.9);border:1px solid rgba(255,255,255,0.08);z-index:50}
+#sw a{font-size:11px;font-family:var(--mono);color:var(--ink-dim);text-decoration:none;padding:6px 12px;border-radius:7px}
+#sw a.on{background:rgba(var(--warm),0.16);color:var(--accent)}
+#sw .cap{font-size:10px;color:var(--ink-faint);padding:6px 8px;align-self:center}
+.hide{display:none!important}
+</style>
+
+<div id="stage">
+  <div id="rail">
+    <div id="brand"><span class="g">ARGO</span><span class="s">cockpit</span></div>
+    <div id="newses"><span class="plus">+</span> New session <span class="kbd">⌘N</span></div>
+    <div class="plane"><div class="name"><span class="dot run"></span> Delivery review surface</div><div class="meta">claude · <span class="branch">feat/186-interior</span></div></div>
+    <div class="plane"><div class="name"><span class="dot need"></span> Roster empty-state</div><div class="meta">codex · <span class="branch">feat/161-roster</span></div></div>
+    <div class="plane"><div class="name"><span class="dot"></span> Token audit sweep</div><div class="meta">claude · <span class="branch">chore/tokens</span></div></div>
+    <div class="plane"><div class="name"><span class="dot ext"></span> teammate · api-refactor</div><div class="meta">~/work/api</div></div>
+    <div id="arch">⚙ Archived (7)</div>
+  </div>
+  <div id="scrim"></div>
+
+  <!-- VARIANT A : intent-first -->
+  <div id="spawn">
+    <div class="head">
+      <div class="eyebrow label">New session</div>
+      <div id="search">
+        <span class="mag">⌕</span>
+        <span class="q"><span class="ph">Search a ticket, or type to name a blank session…</span></span>
+        <span class="cursor"></span>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="label">Open work · milad-alizadeh/argo</div>
+      <div class="opt sel">
+        <span class="role feat">feature</span><span class="num">#187</span>
+        <span class="ttl">Spawn UX — the + New session flow</span><span class="rt">ready</span>
+      </div>
+      <div class="opt">
+        <span class="role bug">bug</span><span class="num">#190</span>
+        <span class="ttl">Delivery findings pile up on re-run</span><span class="rt">ready</span>
+      </div>
+      <div class="opt">
+        <span class="role chore">chore</span><span class="num">#188</span>
+        <span class="ttl">Reconcile interior prototype to Hybrid</span><span class="rt">ready</span>
+      </div>
+      <div class="opt blank">
+        <span class="bi">✎</span><span class="ttl" style="color:var(--ink-dim)">Blank session — no ticket, chat &amp; plan</span>
+      </div>
+    </div>
+    <div id="derived">
+      <div class="grp"><span class="k">agent</span><span class="v">claude</span></div>
+      <div class="grp"><span class="k">worktree</span><span class="v"><span class="hi">feat/187-spawn</span> ↳ main</span></div>
+      <div class="grp"><span class="k">mode</span><span class="v">implement</span></div>
+      <span class="edit">edit ⌄</span>
+      <span class="go">Start <span class="kbd">⏎</span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const V = new URLSearchParams(location.search).get('variant') || 'A';
+
+if(V==='B'){
+  document.getElementById('spawn').innerHTML = `
+    <div class="head">
+      <div class="eyebrow label">New session</div>
+    </div>
+    <div id="flat">
+      <div class="dial"><span class="k">Agent</span><div class="field">claude <span class="car">⌄</span></div></div>
+      <div class="dial"><span class="k">Working dir</span><div class="field">~/Developer/argo <span class="car">⌄</span></div></div>
+      <div class="dial"><span class="k">Worktree</span><div class="field">auto — new branch <span class="mut">(feat/…)</span> <span class="car">⌄</span></div></div>
+      <div class="dial"><span class="k">Mode</span><div class="field">implement <span class="car">⌄</span></div></div>
+      <div class="dial"><span class="k">Intent</span><div class="field"><span class="mut">link a ticket…</span> <span class="car">⌄</span></div></div>
+    </div>
+    <div id="flatbar">
+      <span class="hint">5 fields · defaults filled</span>
+      <span class="go">Start <span class="kbd">⏎</span></span>
+    </div>`;
+}
+
+// switcher
+const sw=document.createElement('div'); sw.id='sw';
+const caps={A:'intent-first (derive)',B:'flat dials (form)'};
+sw.innerHTML=`<span class="cap">variant</span>`+['A','B'].map(v=>`<a href="?variant=${v}" class="${v===V?'on':''}">${v}</a>`).join('')+`<span class="cap">${caps[V]}</span>`;
+document.body.appendChild(sw);
+</script>
