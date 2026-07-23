@@ -1869,8 +1869,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_app",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "app.tsx"
     },
     {
@@ -1880,8 +1880,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_app_default_panel_ui",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "default_panel_ui"
     },
     {
@@ -1891,8 +1891,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_app_app",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "app()"
     },
     {
@@ -1902,8 +1902,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_app_tsx_docref_adr_0005",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "adr-0005"
     },
     {
@@ -1979,8 +1979,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionheader",
-      "community": 62,
-      "community_name": "drawerControls.tsx",
+      "community": 59,
+      "community_name": "WorkspaceIdentity.tsx",
       "norm_label": "sessionheader.tsx"
     },
     {
@@ -1990,8 +1990,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionheader_sessionheaderprops",
-      "community": 62,
-      "community_name": "drawerControls.tsx",
+      "community": 59,
+      "community_name": "WorkspaceIdentity.tsx",
       "norm_label": "sessionheaderprops"
     },
     {
@@ -2166,8 +2166,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "sessionscreen.tsx"
     },
     {
@@ -2177,8 +2177,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen_sessionscreenhandlers",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "sessionscreenhandlers"
     },
     {
@@ -2188,8 +2188,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen_sessionscreenprops",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "sessionscreenprops"
     },
     {
@@ -2199,8 +2199,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen_sessionscreen",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "sessionscreen()"
     },
     {
@@ -2210,8 +2210,8 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen_sessionpanel",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "sessionpanel()"
     },
     {
@@ -3519,8 +3519,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "conciergedock.stories.tsx"
     },
     {
@@ -3530,8 +3530,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_orb_states",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "orb_states"
     },
     {
@@ -3541,8 +3541,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_story",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -3552,8 +3552,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_playground",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "playground"
     },
     {
@@ -3563,8 +3563,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_statestory",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "statestory()"
     },
     {
@@ -3574,8 +3574,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_idle",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "idle"
     },
     {
@@ -3585,8 +3585,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_listening",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "listening"
     },
     {
@@ -3596,8 +3596,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_thinking",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "thinking"
     },
     {
@@ -3607,8 +3607,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_speaking",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "speaking"
     },
     {
@@ -3618,8 +3618,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_errorstate",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "errorstate"
     },
     {
@@ -3629,8 +3629,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_stories_inactive",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 104,
+      "community_name": "ConciergeDock.stories.tsx",
       "norm_label": "inactive"
     },
     {
@@ -3640,8 +3640,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "conciergedock.tsx"
     },
     {
@@ -3651,8 +3651,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_conciergedockprops",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "conciergedockprops"
     },
     {
@@ -3662,8 +3662,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_conciergedock_conciergedock",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "conciergedock()"
     },
     {
@@ -3673,8 +3673,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "eclipsescene.stories.tsx"
     },
     {
@@ -3684,8 +3684,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_orb_states",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "orb_states"
     },
     {
@@ -3695,8 +3695,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_story",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -3706,8 +3706,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_playground",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "playground"
     },
     {
@@ -3717,8 +3717,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_statestory",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "statestory()"
     },
     {
@@ -3728,8 +3728,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_idle",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "idle"
     },
     {
@@ -3739,8 +3739,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_listening",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "listening"
     },
     {
@@ -3750,8 +3750,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_thinking",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "thinking"
     },
     {
@@ -3761,8 +3761,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_speaking",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "speaking"
     },
     {
@@ -3772,8 +3772,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_errorstate",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "errorstate"
     },
     {
@@ -3783,8 +3783,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_centeredingap",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "centeredingap"
     },
     {
@@ -3794,8 +3794,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_stories_pausedfordetail",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "pausedfordetail"
     },
     {
@@ -3805,8 +3805,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "eclipsescene.tsx"
     },
     {
@@ -3816,8 +3816,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_eclipsesceneprops",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "eclipsesceneprops"
     },
     {
@@ -3827,8 +3827,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_eclipsescene_eclipsescene",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "eclipsescene()"
     },
     {
@@ -3838,8 +3838,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_index",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "index.ts"
     },
     {
@@ -3849,8 +3849,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_useeclipseorb",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "useeclipseorb.ts"
     },
     {
@@ -3860,8 +3860,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_useeclipseorb_parsecolor",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "parsecolor()"
     },
     {
@@ -3871,8 +3871,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_useeclipseorb_useeclipseorbopts",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "useeclipseorbopts"
     },
     {
@@ -3882,8 +3882,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_useeclipseorb_prefersreducedmotion",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "prefersreducedmotion()"
     },
     {
@@ -3893,8 +3893,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_components_useeclipseorb_useeclipseorb",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "useeclipseorb()"
     },
     {
@@ -3926,8 +3926,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_eclipseorb_createeclipseorb_sp",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 110,
+      "community_name": "SP",
       "norm_label": "sp"
     },
     {
@@ -3937,8 +3937,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_eclipseorb_createeclipseorb_sp_constructor",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 110,
+      "community_name": "SP",
       "norm_label": ".constructor()"
     },
     {
@@ -3948,8 +3948,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_eclipseorb_createeclipseorb_sp_update",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 110,
+      "community_name": "SP",
       "norm_label": ".update()"
     },
     {
@@ -3959,8 +3959,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_eclipseorb_createeclipseorb_sp_set",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 110,
+      "community_name": "SP",
       "norm_label": ".set()"
     },
     {
@@ -4025,8 +4025,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_concierge_eclipseorb_types_orbstate",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "orbstate"
     },
     {
@@ -4509,8 +4509,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_console_components_consolechanneltab",
-      "community": 23,
-      "community_name": "Storybook Docs Addon",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "consolechanneltab.tsx"
     },
     {
@@ -4520,8 +4520,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_console_components_consolechanneltab_consolechanneltabprops",
-      "community": 23,
-      "community_name": "Storybook Docs Addon",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "consolechanneltabprops"
     },
     {
@@ -4531,8 +4531,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_console_components_consolechanneltab_consolechanneltab",
-      "community": 23,
-      "community_name": "Storybook Docs Addon",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "consolechanneltab()"
     },
     {
@@ -4993,8 +4993,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_checkoutputprops",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "checkoutputprops"
     },
     {
@@ -5147,8 +5147,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_commitgroup",
-      "community": 20,
-      "community_name": "Vitest Browser Playwright",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "commitgroup.tsx"
     },
     {
@@ -5158,8 +5158,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_commitgroup_commitgroupfile",
-      "community": 20,
-      "community_name": "Vitest Browser Playwright",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "commitgroupfile"
     },
     {
@@ -5312,8 +5312,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "delivery.tsx"
     },
     {
@@ -5323,8 +5323,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery_deliverycommitgroup",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 25,
+      "community_name": "Electron Vite",
       "norm_label": "deliverycommitgroup"
     },
     {
@@ -5334,8 +5334,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery_content_label",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "content_label"
     },
     {
@@ -5345,8 +5345,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery_deliveryprops",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "deliveryprops"
     },
     {
@@ -5356,8 +5356,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery_delivery",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "delivery()"
     },
     {
@@ -5477,8 +5477,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_deliverylifecycle",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "deliverylifecycle.tsx"
     },
     {
@@ -5488,8 +5488,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_deliverylifecycle_terminal_presentation",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "terminal_presentation"
     },
     {
@@ -5653,8 +5653,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_deliverytabs_deliverytab",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "deliverytab"
     },
     {
@@ -5675,8 +5675,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_deliverytabs_changesview",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "changesview"
     },
     {
@@ -5840,8 +5840,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_filediff",
-      "community": 20,
-      "community_name": "Vitest Browser Playwright",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "filediff.tsx"
     },
     {
@@ -5851,8 +5851,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_filediff_kindglyph",
-      "community": 20,
-      "community_name": "Vitest Browser Playwright",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "kindglyph()"
     },
     {
@@ -5862,8 +5862,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_filediff_hunklinetone",
-      "community": 20,
-      "community_name": "Vitest Browser Playwright",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "hunklinetone()"
     },
     {
@@ -5873,8 +5873,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_filediff_filediff",
-      "community": 20,
-      "community_name": "Vitest Browser Playwright",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "filediff()"
     },
     {
@@ -6093,8 +6093,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenode",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "lifecyclenode.tsx"
     },
     {
@@ -6104,8 +6104,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenode_node_label",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "node_label"
     },
     {
@@ -6126,8 +6126,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenode_lifecyclenode",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "lifecyclenode()"
     },
     {
@@ -6379,8 +6379,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_cibody",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "cibody.tsx"
     },
     {
@@ -6489,8 +6489,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_index_nodedrawersession",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "nodedrawersession"
     },
     {
@@ -6566,8 +6566,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_reviewbody",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "reviewbody.tsx"
     },
     {
@@ -6577,8 +6577,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_reviewbody_reviewroundline",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "reviewroundline()"
     },
     {
@@ -6588,8 +6588,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_reviewbody_reviewbody",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "reviewbody()"
     },
     {
@@ -6599,8 +6599,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_terminalbody",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "terminalbody.tsx"
     },
     {
@@ -6610,8 +6610,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_terminalbody_terminalcard",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "terminalcard()"
     },
     {
@@ -6643,8 +6643,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor_stories",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "pranchor.stories.tsx"
     },
     {
@@ -6654,8 +6654,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor_stories_story",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "story"
     },
     {
@@ -6665,8 +6665,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor_stories_default",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "default"
     },
     {
@@ -6676,8 +6676,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "pranchor.tsx"
     },
     {
@@ -6698,8 +6698,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor_pranchor",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "pranchor()"
     },
     {
@@ -6797,8 +6797,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist",
-      "community": 91,
-      "community_name": "PrChecksList.stories.tsx",
+      "community": 87,
+      "community_name": "PrChecksList.tsx",
       "norm_label": "prcheckslist.tsx"
     },
     {
@@ -6819,8 +6819,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_cirunstatus",
-      "community": 91,
-      "community_name": "PrChecksList.stories.tsx",
+      "community": 87,
+      "community_name": "PrChecksList.tsx",
       "norm_label": "cirunstatus"
     },
     {
@@ -6830,8 +6830,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_cirun",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 87,
+      "community_name": "PrChecksList.tsx",
       "norm_label": "cirun"
     },
     {
@@ -6841,8 +6841,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_ci_run_presentation",
-      "community": 91,
-      "community_name": "PrChecksList.stories.tsx",
+      "community": 87,
+      "community_name": "PrChecksList.tsx",
       "norm_label": "ci_run_presentation"
     },
     {
@@ -6852,8 +6852,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_aggregate_tone",
-      "community": 91,
-      "community_name": "PrChecksList.stories.tsx",
+      "community": 87,
+      "community_name": "PrChecksList.tsx",
       "norm_label": "aggregate_tone"
     },
     {
@@ -6863,8 +6863,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_prcheckslistprops",
-      "community": 91,
-      "community_name": "PrChecksList.stories.tsx",
+      "community": 87,
+      "community_name": "PrChecksList.tsx",
       "norm_label": "prcheckslistprops"
     },
     {
@@ -6896,8 +6896,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel",
-      "community": 83,
-      "community_name": "Roster.stories.tsx",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "diffmodel.ts"
     },
     {
@@ -6907,8 +6907,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel_filechangekind",
-      "community": 20,
-      "community_name": "Vitest Browser Playwright",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "filechangekind"
     },
     {
@@ -6929,8 +6929,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel_difffinding",
-      "community": 83,
-      "community_name": "Roster.stories.tsx",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "difffinding"
     },
     {
@@ -6984,8 +6984,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_findingstate_findingstate",
-      "community": 83,
-      "community_name": "Roster.stories.tsx",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "findingstate"
     },
     {
@@ -7061,8 +7061,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_findingstate_findingseverity",
-      "community": 83,
-      "community_name": "Roster.stories.tsx",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "findingseverity"
     },
     {
@@ -7105,8 +7105,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenodestate_test",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "lifecyclenodestate.test.ts"
     },
     {
@@ -7116,8 +7116,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenodestate",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "lifecyclenodestate.ts"
     },
     {
@@ -7127,8 +7127,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenodestate_lifecyclenodestatepresentation",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "lifecyclenodestatepresentation"
     },
     {
@@ -7138,8 +7138,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenodestate_lifecycle_node_state",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "lifecycle_node_state"
     },
     {
@@ -7160,8 +7160,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_reviewroundview",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "reviewroundview"
     },
     {
@@ -7171,8 +7171,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_commitsdrawerdata",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "commitsdrawerdata"
     },
     {
@@ -7204,8 +7204,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_mergedsummary",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "mergedsummary"
     },
     {
@@ -7215,8 +7215,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_closedsummary",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "closedsummary"
     },
     {
@@ -7303,8 +7303,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster_stories",
-      "community": 93,
-      "community_name": "SessionRow.stories.tsx",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "emptyroster.stories.tsx"
     },
     {
@@ -7314,8 +7314,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster_stories_story",
-      "community": 93,
-      "community_name": "SessionRow.stories.tsx",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "story"
     },
     {
@@ -7325,8 +7325,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster_stories_default",
-      "community": 93,
-      "community_name": "SessionRow.stories.tsx",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "default"
     },
     {
@@ -7336,8 +7336,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster",
-      "community": 93,
-      "community_name": "SessionRow.stories.tsx",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "emptyroster.tsx"
     },
     {
@@ -7347,8 +7347,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster_emptyroster",
-      "community": 93,
-      "community_name": "SessionRow.stories.tsx",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "emptyroster()"
     },
     {
@@ -7523,8 +7523,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_roster",
-      "community": 93,
-      "community_name": "SessionRow.stories.tsx",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "roster.tsx"
     },
     {
@@ -7622,8 +7622,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_sessionrow",
-      "community": 93,
-      "community_name": "SessionRow.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "sessionrow.tsx"
     },
     {
@@ -7633,8 +7633,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_sessionrow_sessionrow",
-      "community": 93,
-      "community_name": "SessionRow.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "sessionrow()"
     },
     {
@@ -7776,8 +7776,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_lib_utils_typerole",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "typerole"
     },
     {
@@ -7809,8 +7809,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_main",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "main.tsx"
     },
     {
@@ -7820,8 +7820,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_main_root",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "root"
     },
     {
@@ -7941,8 +7941,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_sessionheadermodel",
-      "community": 62,
-      "community_name": "drawerControls.tsx",
+      "community": 59,
+      "community_name": "WorkspaceIdentity.tsx",
       "norm_label": "sessionheadermodel"
     },
     {
@@ -7963,8 +7963,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_sessionpanelmodel",
-      "community": 48,
-      "community_name": "sessionFacts.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "sessionpanelmodel"
     },
     {
@@ -7985,8 +7985,8 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_paneluistate",
-      "community": 56,
-      "community_name": "SectionHeader.tsx",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "paneluistate"
     },
     {
@@ -8018,8 +8018,8 @@
       "source_location": "L132",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_buildsessionpanel",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "buildsessionpanel()"
     },
     {
@@ -8029,8 +8029,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore_test",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "sessionstore.test.ts"
     },
     {
@@ -8040,8 +8040,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "sessionstore.ts"
     },
     {
@@ -8051,8 +8051,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore_sessionstore",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "sessionstore"
     },
     {
@@ -8062,8 +8062,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore_usesessionstore",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "usesessionstore"
     },
     {
@@ -8073,8 +8073,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore_ts_docref_adr_0005",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "adr-0005"
     },
     {
@@ -8194,8 +8194,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_iconbutton_stories",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "iconbutton.stories.tsx"
     },
     {
@@ -8205,8 +8205,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_iconbutton_stories_story",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "story"
     },
     {
@@ -8216,8 +8216,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_iconbutton_stories_default",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "default"
     },
     {
@@ -8711,8 +8711,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_stories",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "text.stories.tsx"
     },
     {
@@ -8722,8 +8722,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_stories_variants",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "variants"
     },
     {
@@ -8733,8 +8733,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_stories_specimen",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "specimen"
     },
     {
@@ -8744,8 +8744,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_stories_story",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -8755,8 +8755,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_stories_default",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "default"
     },
     {
@@ -8766,8 +8766,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_stories_coloured",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "coloured"
     },
     {
@@ -8777,8 +8777,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_stories_allvariants",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "allvariants"
     },
     {
@@ -8788,8 +8788,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "text.tsx"
     },
     {
@@ -8799,8 +8799,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_textvariant",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "textvariant"
     },
     {
@@ -8810,8 +8810,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_text_elements",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "text_elements"
     },
     {
@@ -8821,8 +8821,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_textelement",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "textelement"
     },
     {
@@ -8832,8 +8832,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_type_role_class",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "type_role_class"
     },
     {
@@ -8843,8 +8843,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_defaultelement",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "defaultelement()"
     },
     {
@@ -8854,8 +8854,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_textprops",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "textprops"
     },
     {
@@ -8865,8 +8865,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_text",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 58,
+      "community_name": "PanelSplitter.stories.tsx",
       "norm_label": "text()"
     },
     {
@@ -8975,8 +8975,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_badge",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "badge.tsx"
     },
     {
@@ -8986,8 +8986,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_badge_badgevariants",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "badgevariants"
     },
     {
@@ -8997,8 +8997,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_badge_badgevariant",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "badgevariant"
     },
     {
@@ -9008,8 +9008,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_badge_badge",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "badge()"
     },
     {
@@ -9151,8 +9151,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_button_buttonvariants",
-      "community": 23,
-      "community_name": "Storybook Docs Addon",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "buttonvariants"
     },
     {
@@ -9173,8 +9173,8 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_button_button",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "button()"
     },
     {
@@ -9184,8 +9184,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 109,
+      "community_name": "checkbox.tsx",
       "norm_label": "checkbox.stories.tsx"
     },
     {
@@ -9195,8 +9195,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories_story",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 109,
+      "community_name": "checkbox.tsx",
       "norm_label": "story"
     },
     {
@@ -9206,8 +9206,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories_default",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 109,
+      "community_name": "checkbox.tsx",
       "norm_label": "default"
     },
     {
@@ -9217,8 +9217,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories_checked",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 109,
+      "community_name": "checkbox.tsx",
       "norm_label": "checked"
     },
     {
@@ -9228,8 +9228,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories_disabled",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 109,
+      "community_name": "checkbox.tsx",
       "norm_label": "disabled"
     },
     {
@@ -9239,8 +9239,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 109,
+      "community_name": "checkbox.tsx",
       "norm_label": "checkbox.tsx"
     },
     {
@@ -9250,8 +9250,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_checkbox",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 109,
+      "community_name": "checkbox.tsx",
       "norm_label": "checkbox()"
     },
     {
@@ -9261,8 +9261,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowbenddownrighticon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 63,
+      "community_name": "button.stories.tsx",
       "norm_label": "arrowbenddownrighticon.tsx"
     },
     {
@@ -9272,8 +9272,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowbenddownrighticon_arrowbenddownrighticon",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 63,
+      "community_name": "button.stories.tsx",
       "norm_label": "arrowbenddownrighticon"
     },
     {
@@ -9294,8 +9294,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowclockwiseicon_arrowclockwiseicon",
-      "community": 66,
-      "community_name": "FindingCard.stories.tsx",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "arrowclockwiseicon"
     },
     {
@@ -9327,8 +9327,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowlineupicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "arrowlineupicon.tsx"
     },
     {
@@ -9338,8 +9338,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowlineupicon_arrowlineupicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "arrowlineupicon"
     },
     {
@@ -9558,8 +9558,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_caretrighticon_caretrighticon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "caretrighticon"
     },
     {
@@ -9613,8 +9613,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_checkicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "checkicon.tsx"
     },
     {
@@ -9624,8 +9624,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_checkicon_checkicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "checkicon"
     },
     {
@@ -9679,8 +9679,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_circleicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "circleicon.tsx"
     },
     {
@@ -9690,8 +9690,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_circleicon_circleicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "circleicon"
     },
     {
@@ -9701,8 +9701,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_circlenotchicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "circlenotchicon.tsx"
     },
     {
@@ -9712,8 +9712,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_circlenotchicon_circlenotchicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "circlenotchicon"
     },
     {
@@ -9833,8 +9833,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gearicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "gearicon.tsx"
     },
     {
@@ -9844,8 +9844,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gearicon_gearicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "gearicon"
     },
     {
@@ -9877,8 +9877,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitcommiticon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "gitcommiticon.tsx"
     },
     {
@@ -9888,8 +9888,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitcommiticon_gitcommiticon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "gitcommiticon"
     },
     {
@@ -9921,8 +9921,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitmergeicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "gitmergeicon.tsx"
     },
     {
@@ -9932,8 +9932,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitmergeicon_gitmergeicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "gitmergeicon"
     },
     {
@@ -9943,8 +9943,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitpullrequesticon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 63,
+      "community_name": "button.stories.tsx",
       "norm_label": "gitpullrequesticon.tsx"
     },
     {
@@ -9954,8 +9954,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitpullrequesticon_gitpullrequesticon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 63,
+      "community_name": "button.stories.tsx",
       "norm_label": "gitpullrequesticon"
     },
     {
@@ -10042,8 +10042,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_plusicon_plusicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 85,
+      "community_name": "deliveryState",
       "norm_label": "plusicon"
     },
     {
@@ -10053,8 +10053,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_prohibiticon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "prohibiticon.tsx"
     },
     {
@@ -10064,8 +10064,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_prohibiticon_prohibiticon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "prohibiticon"
     },
     {
@@ -10163,8 +10163,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_statusicon",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "statusicon.tsx"
     },
     {
@@ -10174,8 +10174,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_statusicon_statusicon",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "statusicon()"
     },
     {
@@ -10229,8 +10229,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_usericon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "usericon.tsx"
     },
     {
@@ -10240,8 +10240,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_usericon_usericon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "usericon"
     },
     {
@@ -10251,8 +10251,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_warningicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "warningicon.tsx"
     },
     {
@@ -10262,8 +10262,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_warningicon_warningicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "warningicon"
     },
     {
@@ -10295,8 +10295,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_xicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 63,
+      "community_name": "button.stories.tsx",
       "norm_label": "xicon.tsx"
     },
     {
@@ -10306,8 +10306,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_xicon_xicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 63,
+      "community_name": "button.stories.tsx",
       "norm_label": "xicon"
     },
     {
@@ -10339,8 +10339,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_createicon_iconatom",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "iconatom"
     },
     {
@@ -10515,8 +10515,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_rostericon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "rostericon.ts"
     },
     {
@@ -10526,8 +10526,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_rostericon_roster_icon",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 60,
+      "community_name": "Text.tsx",
       "norm_label": "roster_icon"
     },
     {
@@ -10537,8 +10537,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_index",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "index.ts"
     },
     {
@@ -10548,8 +10548,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tabs.stories.tsx"
     },
     {
@@ -10559,8 +10559,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_tones",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tones"
     },
     {
@@ -10570,8 +10570,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_story",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -10581,8 +10581,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_default",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "default"
     },
     {
@@ -10592,8 +10592,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_changestone",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "changestone"
     },
     {
@@ -10603,8 +10603,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_alltones",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "alltones"
     },
     {
@@ -10614,8 +10614,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tabs.tsx"
     },
     {
@@ -10625,8 +10625,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabs",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tabs()"
     },
     {
@@ -10636,8 +10636,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabslist",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tabslist()"
     },
     {
@@ -10647,8 +10647,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabstriggervariants",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tabstriggervariants"
     },
     {
@@ -10658,8 +10658,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabstriggertone",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tabstriggertone"
     },
     {
@@ -10669,8 +10669,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabstrigger",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tabstrigger()"
     },
     {
@@ -10680,8 +10680,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabscontent",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tabscontent()"
     },
     {
@@ -10757,8 +10757,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tonerecipes",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 53,
+      "community_name": "badge.stories.tsx",
       "norm_label": "tonerecipes.ts"
     },
     {
@@ -10845,8 +10845,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_index",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "index.ts"
     },
     {
@@ -10911,8 +10911,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "rosterstatus.ts"
     },
     {
@@ -10977,8 +10977,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus_session_status",
-      "community": 100,
-      "community_name": "Status.stories.tsx",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "session_status"
     },
     {
@@ -10988,8 +10988,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus_terminal_status",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "terminal_status"
     },
     {
@@ -10999,8 +10999,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus_head_status",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "head_status"
     },
     {
@@ -11032,8 +11032,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "statematrix.ts"
     },
     {
@@ -11043,8 +11043,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix_statematrixrow",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "statematrixrow"
     },
     {
@@ -11054,8 +11054,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix_pr",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "pr"
     },
     {
@@ -11065,8 +11065,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix_state_matrix_rows",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "state_matrix_rows"
     },
     {
@@ -11076,8 +11076,8 @@
       "source_location": "L124",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix_statematrixinput",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "statematrixinput()"
     },
     {
@@ -11164,8 +11164,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_usespinelayout_isconsoleexpanded",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 19,
+      "community_name": "Dependency Cruiser",
       "norm_label": "isconsoleexpanded()"
     },
     {
@@ -13092,6 +13092,413 @@
       "community": 1,
       "community_name": "Root Package Manifest",
       "norm_label": "node-pty"
+    },
+    {
+      "label": "codex-discover.ts",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/codex-discover.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_codex_discover",
+      "community": 111,
+      "community_name": "codex-discover.ts",
+      "norm_label": "codex-discover.ts"
+    },
+    {
+      "label": "child",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/codex-discover.ts",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_codex_discover_child",
+      "community": 111,
+      "community_name": "codex-discover.ts",
+      "norm_label": "child"
+    },
+    {
+      "label": "send()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/codex-discover.ts",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_codex_discover_send",
+      "community": 111,
+      "community_name": "codex-discover.ts",
+      "norm_label": "send()"
+    },
+    {
+      "label": "measure-api.ts",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "measure-api.ts"
+    },
+    {
+      "label": "client",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api_client",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "client"
+    },
+    {
+      "label": "SAMPLES",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L67",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api_samples",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "samples"
+    },
+    {
+      "label": "ModelCfg",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L77",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api_modelcfg",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "modelcfg"
+    },
+    {
+      "label": "MODELS",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api_models",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "models"
+    },
+    {
+      "label": "now()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L84",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api_now",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "now()"
+    },
+    {
+      "label": "oneCall()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L86",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api_onecall",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "onecall()"
+    },
+    {
+      "label": "avg()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L113",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api_avg",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "avg()"
+    },
+    {
+      "label": "sampleLead",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L119",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_api_samplelead",
+      "community": 105,
+      "community_name": "measure-api.ts",
+      "norm_label": "samplelead"
+    },
+    {
+      "label": "measure-claude-warm.ts",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_claude_warm",
+      "community": 107,
+      "community_name": "measure-claude-warm.ts",
+      "norm_label": "measure-claude-warm.ts"
+    },
+    {
+      "label": "SAMPLES",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L32",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_claude_warm_samples",
+      "community": 107,
+      "community_name": "measure-claude-warm.ts",
+      "norm_label": "samples"
+    },
+    {
+      "label": "now()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L39",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_claude_warm_now",
+      "community": 107,
+      "community_name": "measure-claude-warm.ts",
+      "norm_label": "now()"
+    },
+    {
+      "label": "Cfg",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_claude_warm_cfg",
+      "community": 107,
+      "community_name": "measure-claude-warm.ts",
+      "norm_label": "cfg"
+    },
+    {
+      "label": "CFGS",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_claude_warm_cfgs",
+      "community": 107,
+      "community_name": "measure-claude-warm.ts",
+      "norm_label": "cfgs"
+    },
+    {
+      "label": "childEnv()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L70",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_claude_warm_childenv",
+      "community": 107,
+      "community_name": "measure-claude-warm.ts",
+      "norm_label": "childenv()"
+    },
+    {
+      "label": "runWarm()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L77",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_claude_warm_runwarm",
+      "community": 107,
+      "community_name": "measure-claude-warm.ts",
+      "norm_label": "runwarm()"
+    },
+    {
+      "label": "avg()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L113",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_claude_warm_avg",
+      "community": 107,
+      "community_name": "measure-claude-warm.ts",
+      "norm_label": "avg()"
+    },
+    {
+      "label": "measure-codex-warm.ts",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_codex_warm",
+      "community": 108,
+      "community_name": "measure-codex-warm.ts",
+      "norm_label": "measure-codex-warm.ts"
+    },
+    {
+      "label": "SAMPLES",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_codex_warm_samples",
+      "community": 108,
+      "community_name": "measure-codex-warm.ts",
+      "norm_label": "samples"
+    },
+    {
+      "label": "Cfg",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_codex_warm_cfg",
+      "community": 108,
+      "community_name": "measure-codex-warm.ts",
+      "norm_label": "cfg"
+    },
+    {
+      "label": "CFGS",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_codex_warm_cfgs",
+      "community": 108,
+      "community_name": "measure-codex-warm.ts",
+      "norm_label": "cfgs"
+    },
+    {
+      "label": "now()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_codex_warm_now",
+      "community": 108,
+      "community_name": "measure-codex-warm.ts",
+      "norm_label": "now()"
+    },
+    {
+      "label": "sampleFor()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L39",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_codex_warm_samplefor",
+      "community": 108,
+      "community_name": "measure-codex-warm.ts",
+      "norm_label": "samplefor()"
+    },
+    {
+      "label": "runWarm()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_codex_warm_runwarm",
+      "community": 108,
+      "community_name": "measure-codex-warm.ts",
+      "norm_label": "runwarm()"
+    },
+    {
+      "label": "avg()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L95",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_codex_warm_avg",
+      "community": 108,
+      "community_name": "measure-codex-warm.ts",
+      "norm_label": "avg()"
+    },
+    {
+      "label": "measure-local.ts",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "measure-local.ts"
+    },
+    {
+      "label": "SAMPLES",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local_samples",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "samples"
+    },
+    {
+      "label": "now()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L29",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local_now",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "now()"
+    },
+    {
+      "label": "sampleFor()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local_samplefor",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "samplefor()"
+    },
+    {
+      "label": "pickModel()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L32",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local_pickmodel",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "pickmodel()"
+    },
+    {
+      "label": "oneTurn()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local_oneturn",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "oneturn()"
+    },
+    {
+      "label": "avg()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L80",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local_avg",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "avg()"
+    },
+    {
+      "label": "rows",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L88",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local_rows",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "rows"
+    },
+    {
+      "label": "warm",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L95",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_local_warm",
+      "community": 106,
+      "community_name": "measure-local.ts",
+      "norm_label": "warm"
     },
     {
       "label": "measure-warm.ts",
@@ -42420,6 +42827,430 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/codex-discover.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_codex_discover",
+      "target": "prototypes_grill_by_voice_latency_codex_discover_child",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/codex-discover.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_codex_discover",
+      "target": "prototypes_grill_by_voice_latency_codex_discover_send",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L113",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api",
+      "target": "prototypes_grill_by_voice_latency_measure_api_avg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api",
+      "target": "prototypes_grill_by_voice_latency_measure_api_client",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api",
+      "target": "prototypes_grill_by_voice_latency_measure_api_modelcfg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L78",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api",
+      "target": "prototypes_grill_by_voice_latency_measure_api_models",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L84",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api",
+      "target": "prototypes_grill_by_voice_latency_measure_api_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api",
+      "target": "prototypes_grill_by_voice_latency_measure_api_onecall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L119",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api",
+      "target": "prototypes_grill_by_voice_latency_measure_api_samplelead",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api",
+      "target": "prototypes_grill_by_voice_latency_measure_api_samples",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-api.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_api_onecall",
+      "target": "prototypes_grill_by_voice_latency_measure_api_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L113",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_avg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_cfg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_cfgs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L70",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_childenv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_runwarm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_samples",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm_runwarm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-claude-warm.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_claude_warm_runwarm",
+      "target": "prototypes_grill_by_voice_latency_measure_claude_warm_childenv",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_avg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_cfg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_cfgs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_runwarm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_samplefor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_samples",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm_runwarm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-codex-warm.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_codex_warm_runwarm",
+      "target": "prototypes_grill_by_voice_latency_measure_codex_warm_samplefor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L80",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local",
+      "target": "prototypes_grill_by_voice_latency_measure_local_avg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local",
+      "target": "prototypes_grill_by_voice_latency_measure_local_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local",
+      "target": "prototypes_grill_by_voice_latency_measure_local_oneturn",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local",
+      "target": "prototypes_grill_by_voice_latency_measure_local_pickmodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L88",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local",
+      "target": "prototypes_grill_by_voice_latency_measure_local_rows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local",
+      "target": "prototypes_grill_by_voice_latency_measure_local_samplefor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local",
+      "target": "prototypes_grill_by_voice_latency_measure_local_samples",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local",
+      "target": "prototypes_grill_by_voice_latency_measure_local_warm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-local.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_local_oneturn",
+      "target": "prototypes_grill_by_voice_latency_measure_local_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
       "source_location": "L128",
       "weight": 1.0,
@@ -42977,5 +43808,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "1d3556054008fbb0b16b5fd6ee7c480229da11e2"
+  "built_at_commit": "bb1962c91ae497d9a15d8931d9d8ed468d26310e"
 }

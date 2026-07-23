@@ -102,5 +102,13 @@
   "100": "Status.stories.tsx",
   "101": "StatusDot.stories.tsx",
   "102": "Roster",
-  "103": "electron"
+  "103": "electron",
+  "104": "ConciergeDock.stories.tsx",
+  "105": "measure-api.ts",
+  "106": "measure-local.ts",
+  "107": "measure-claude-warm.ts",
+  "108": "measure-codex-warm.ts",
+  "109": "checkbox.tsx",
+  "110": "SP",
+  "111": "codex-discover.ts"
 }

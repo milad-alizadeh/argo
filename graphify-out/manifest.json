@@ -1330,13 +1330,38 @@
     "semantic_hash": ""
   },
   "prototypes/grill-by-voice-latency/measure-warm.ts": {
-    "mtime": 1784839985.6593974,
+    "mtime": 1784842402.2111917,
     "ast_hash": "ddb5fc00e1c005e887d0de5e3ee04853",
     "semantic_hash": ""
   },
   "prototypes/grill-by-voice-latency/measure.ts": {
-    "mtime": 1784839372.4705694,
+    "mtime": 1784842402.211368,
     "ast_hash": "54da1b04ce47334b599033c61e6d6687",
+    "semantic_hash": ""
+  },
+  "prototypes/grill-by-voice-latency/codex-discover.ts": {
+    "mtime": 1784842402.210469,
+    "ast_hash": "aeaede51f05c5b1025cc63c85bc8df8a",
+    "semantic_hash": ""
+  },
+  "prototypes/grill-by-voice-latency/measure-api.ts": {
+    "mtime": 1784842402.2106488,
+    "ast_hash": "65d58a2ea2acb7b347a7619a32a1940c",
+    "semantic_hash": ""
+  },
+  "prototypes/grill-by-voice-latency/measure-claude-warm.ts": {
+    "mtime": 1784842402.2107983,
+    "ast_hash": "e17dbff1052a240786fbb965267c9b11",
+    "semantic_hash": ""
+  },
+  "prototypes/grill-by-voice-latency/measure-codex-warm.ts": {
+    "mtime": 1784842402.210942,
+    "ast_hash": "5468ee9dea55445d57236d1dcf97dcfc",
+    "semantic_hash": ""
+  },
+  "prototypes/grill-by-voice-latency/measure-local.ts": {
+    "mtime": 1784842402.2110765,
+    "ast_hash": "4e9aea8cb663a68e7b09cf2289a38177",
     "semantic_hash": ""
   }
 }

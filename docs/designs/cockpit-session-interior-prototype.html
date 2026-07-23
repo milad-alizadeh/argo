@@ -1,102 +1,467 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=1440, initial-scale=1" />
-<title>Argo — Session interior (prototype)</title>
-<!--
-  THROWAWAY PROTOTYPE for wayfinder #161 "Session interior".
-  Settled-surface prototype (map #157 rule): ONE shell, the floating bar toggles
-  STATES/SURFACES, never rival looks. CSS lifted from cockpit-sessions-room-prototype.html
-  (#159) — locked Penumbra language; content = the #161 grill decisions.
-  Structurally real / visually approximate. Do NOT settle tokens here (Phase 2).
-  Scenes (?state= + ←/→): activity · delivery · preview · dock · idle · external · archived
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1440, initial-scale=1" />
+  <title>Argo — Session interior (prototype)</title>
+  <!--
+  THROWAWAY PROTOTYPE for wayfinder #157 / #186 — the session interior (Sessions room).
+  Reconciled to the settled model (2 tabs, Hybrid Delivery) then decluttered to the
+  master–detail direction chosen by the user. Decisions: docs/designs/cockpit-session-interior-decisions.md
+  (C2.2, C3a.1, C3b.2, C3b.5–C3b.7). Absorbs the delivery-review + fresh-session studies.
+
+  Delivery uses the SAME master–detail two-pane layout as Activity: LIST ON THE LEFT
+  (pure navigation) · DETAIL ON THE RIGHT (GitHub-style review). The sub-tab selects
+  WHAT THE LEFT LIST CONTAINS; the right pane shows the selected item's detail.
+
+  Model:
+    · Every master/detail surface uses GitHub "Files changed" continuous-scroll: the left list
+      is a pure navigation TOC; the right pane is ONE scrollable feed with all items concatenated
+      (each with its own title header + diff). Scroll-spy (IntersectionObserver over section
+      headers) moves the .sel highlight; a TOC click smooth-scroll-jumps to its section.
+    · Overview     → left = the walkthrough (narrated change rows) · feed = each change's what/why + diff.
+    · Code Review  → left = findings (severity-ranked) + collapsed "✓ N fixed" reconcile
+                     group at the foot · feed = each finding's anchored evidence + Apply/Dismiss.
+    · Files        → left = file list · feed = each file's gutter diff, inline findings anchored,
+                     Viewed per file, artifact diff|rendered lens.
+    · Activity     → left = subagents + this turn's steps · feed = each item's detail concatenated.
+    · ONE control line (Change A/B): [Overview · Code Review · Files tabs] + [CI pipeline rail
+      commits·pr·ci·review·merge, current node live] + [single primary CTA]. No trailing status
+      string — "CI running"/"review pending" are implied by the live/wait rail nodes; "1 blocking"
+      → red badge on the Code Review tab; "11 files" → the Files tab count. #418 + diffstat drop
+      off this line. Collapse = header · control-line · two-pane · dock.
+    · The "Also in this session · N more" glance banner is REMOVED. A finding's full text lives
+      only in Code Review / its feed section; Overview & Files rows carry only the small ● marker.
+    · pre-PR ↔ PR-open kept via rail + primary-CTA reshape.
+
+  Locked Penumbra language (#158) — no recolor. Structurally real / visually approximate.
+  States (?state= + ←/→):
+    zero · fresh · activity · idle · delivery · delivery-review · delivery-files ·
+    delivery-prepr · dock · external · archived
 -->
-<style>
-  :root{
-    --base:#0A0B0D; --ink:#E7E3DA; --ink-dim:#9A968C; --ink-faint:#615E58; --ink-ghost:#3C3A36;
-    --accent:#C8A968; --accent-deep:#8A7038; --run:#6FA890; --need:#C8A968; --block:#B5675E; --done:#5B6673;
-    --warm:200,169,104;
-    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
-    --sans:"Inter","Helvetica Neue",-apple-system,system-ui,sans-serif;
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{background:#050506;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
-  body{display:flex;justify-content:center;align-items:flex-start}
-  .label{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
-  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  <style>
+    :root {
+      --base: #0A0B0D;
+      --ink: #E7E3DA;
+      --ink-dim: #9A968C;
+      --ink-faint: #615E58;
+      --ink-ghost: #3C3A36;
+      --accent: #C8A968;
+      --accent-deep: #8A7038;
+      --run: #6FA890;
+      --need: #C8A968;
+      --block: #B5675E;
+      --done: #5B6673;
+      --warm: 200, 169, 104;
+      /* delivery-review (E Hybrid) tokens, folded in from the lifted surface */
+      --panel: #101216;
+      --panel-2: #14171C;
+      --inset: #0C0E11;
+      --line: #20242B;
+      --line-2: #292E36;
+      --accent-soft: rgba(200, 169, 104, .14);
+      --add: #5C8A6B;
+      --del: #B5675E;
+      --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, monospace;
+      --sans: "Inter", "Helvetica Neue", -apple-system, system-ui, sans-serif;
+    }
 
-  #room{position:relative;width:1440px;height:900px;overflow:hidden;
-    background:
-      radial-gradient(1150px 1000px at 1120px 440px, rgba(var(--warm),0.13), rgba(var(--warm),0.04) 32%, transparent 60%),
-      radial-gradient(1400px 1000px at 860px 460px, rgba(var(--warm),0.045), transparent 55%),
-      radial-gradient(900px 900px at 300px 780px, rgba(30,34,44,0.4), transparent 60%),
-      radial-gradient(1600px 1200px at 720px 40px, #101218, transparent 70%),
-      linear-gradient(160deg,#0B0C0F,#08090B 60%,#070709);}
-  #room::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
-    background:
-      radial-gradient(1150px 950px at 1120px 440px, transparent 46%, rgba(0,0,0,0.32) 100%),
-      linear-gradient(to bottom, rgba(0,0,0,0.22), transparent 12%, transparent 82%, rgba(0,0,0,0.4));
-    mix-blend-mode:multiply;}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-  /* ===== BROW ===== */
-  #brow{position:absolute;top:26px;left:34px;right:34px;display:flex;align-items:center;justify-content:space-between;z-index:6}
-  #mark{display:flex;align-items:baseline;gap:12px}
-  #mark .glyph{font-weight:200;font-size:20px;letter-spacing:.34em;color:var(--ink);text-shadow:0 0 22px rgba(var(--warm),0.26)}
-  #mark .proj{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-dim)}
-  #rooms{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04)}
-  #rooms .rm{display:flex;align-items:center;gap:9px;padding:7px 15px;border-radius:8px;font-size:11.5px;color:var(--ink-dim);cursor:pointer}
-  #rooms .rm .k{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
-  #rooms .rm.on{color:#F1ECE1;background:linear-gradient(180deg, rgba(46,44,40,0.65), rgba(24,22,20,0.65));box-shadow:inset 0 1px 0 rgba(255,246,228,0.1)}
-  #rooms .rm.on .k{color:var(--accent)}
+    html,
+    body {
+      background: #050506;
+      color: var(--ink);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased
+    }
 
-  /* ===== ROSTER RAIL ===== */
-  #rail{position:absolute;top:82px;left:34px;width:264px;bottom:70px;z-index:5;display:flex;flex-direction:column;gap:12px}
-  #rail>.label{margin:6px 0 1px 4px}
-  .plane{position:relative;border-radius:14px;padding:13px 15px;overflow:hidden;cursor:pointer;
-    backdrop-filter:blur(9px) saturate(1.05);
-    background:linear-gradient(180deg, rgba(30,32,38,0.42), rgba(16,17,21,0.5));
-    box-shadow:inset 0 1px 0 rgba(255,246,228,0.05), inset 0 22px 40px -30px rgba(var(--warm),0.14), 0 20px 34px -22px rgba(0,0,0,0.7);}
-  .plane::before{content:"";position:absolute;left:-16%;right:-16%;top:-40%;height:120%;z-index:-1;background:radial-gradient(60% 70% at 50% 34%, rgba(var(--warm),0.10), transparent 70%);filter:blur(20px);opacity:.5}
-  .plane .top{display:flex;align-items:center;gap:9px}
-  .plane .name{flex:1;font-size:13.5px;font-weight:400;color:var(--ink);letter-spacing:.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .plane .word{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;flex:none}
-  .plane .word.attn{color:var(--accent);text-shadow:0 0 10px rgba(var(--warm),0.4)}
-  .plane .meta{padding-left:15px}
-  .plane .meta{margin-top:8px;font-size:10px;color:var(--ink-dim);font-family:var(--mono)}
-  .plane .branch{color:var(--ink-faint)}
-  .chip{display:inline-flex;align-items:center;gap:6px;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;flex:none}
-  .chip.attn{color:var(--accent);text-shadow:0 0 10px rgba(var(--warm),0.4)}
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--done);flex:none}
-  .dot.run{background:var(--run);box-shadow:0 0 10px 1px rgba(111,168,144,0.6)}
-  .dot.need{background:var(--need);box-shadow:0 0 12px 2px rgba(200,169,104,0.7)}
-  .dot.block{background:var(--block);box-shadow:0 0 10px 1px rgba(181,103,94,0.55)}
-  .dot.idle{background:var(--ink-faint)} .dot.ext{background:transparent;border:1px solid var(--ink-ghost)}
-  .plane.active{background:linear-gradient(180deg, rgba(46,44,40,0.6), rgba(24,22,20,0.6));
-    box-shadow:inset 0 1px 0 rgba(255,246,228,0.12), inset 0 26px 46px -30px rgba(var(--warm),0.30), 0 30px 50px -20px rgba(0,0,0,0.78), 0 0 46px -6px rgba(var(--warm),0.14)}
-  .plane.active::before{opacity:.95;background:radial-gradient(60% 70% at 40% 30%, rgba(var(--warm),0.20), transparent 72%)}
-  .plane.active .name{color:#F1ECE1;text-shadow:0 0 20px rgba(var(--warm),0.25)}
-  .plane.recede{opacity:.7} .plane.ext .name{color:var(--ink-dim)}
-  .ctxline{margin-top:11px;display:flex;align-items:center;gap:9px}
-  .ctxline .num{font-family:var(--mono);font-size:9.5px;color:var(--accent)}
-  #newses{display:flex;align-items:center;gap:9px;padding:12px 15px;border-radius:12px;cursor:pointer;color:var(--ink-dim);font-size:12px}
-  #newses:hover{background:rgba(255,255,255,0.03);color:var(--ink)}
-  #newses .plus{font-size:15px;font-weight:200;color:var(--ink-faint);line-height:0}
-  #newses .k{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
-  #arch{margin-top:auto;display:flex;align-items:center;gap:9px;padding:12px 15px;border-radius:12px;cursor:pointer;color:var(--ink-dim);font-size:12px}
-  #arch:hover{background:rgba(255,255,255,0.03)}
-  #arch.on{background:linear-gradient(180deg, rgba(46,44,40,0.55), rgba(24,22,20,0.5));box-shadow:inset 0 1px 0 rgba(255,246,228,0.09);color:var(--ink)}
-  #arch .cnt{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start
+    }
 
-  /* ===== SESSION CARD (one continuous glass) ===== */
-  #card{position:absolute;top:82px;left:322px;right:34px;bottom:70px;z-index:4;display:flex;flex-direction:column;
-    border-radius:20px;overflow:hidden;backdrop-filter:blur(14px) saturate(1.04);
-    background:linear-gradient(180deg, rgba(28,29,35,0.5), rgba(15,16,20,0.56));
-    box-shadow:inset 0 1px 0 rgba(255,246,228,0.08), inset 0 30px 60px -44px rgba(var(--warm),0.22), 0 34px 60px -30px rgba(0,0,0,0.72);}
-  #card::before{content:"";position:absolute;left:20%;right:-14%;top:-24%;height:90%;z-index:0;pointer-events:none;background:radial-gradient(52% 58% at 74% 26%, rgba(var(--warm),0.12), transparent 70%);filter:blur(30px);opacity:.7}
-  #card>*{position:relative;z-index:1}
+    .label {
+      font-size: 9.5px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      font-weight: 500
+    }
 
-  /* ===== header — 3 takes on ONE band (?header=1..3), all driven by H_RUN/H_IDLE/H_EXT =====
+    .mono {
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums
+    }
+
+    #room {
+      position: relative;
+      width: 1440px;
+      height: 900px;
+      overflow: hidden;
+      background:
+        radial-gradient(1150px 1000px at 1120px 440px, rgba(var(--warm), 0.13), rgba(var(--warm), 0.04) 32%, transparent 60%),
+        radial-gradient(1400px 1000px at 860px 460px, rgba(var(--warm), 0.045), transparent 55%),
+        radial-gradient(900px 900px at 300px 780px, rgba(30, 34, 44, 0.4), transparent 60%),
+        radial-gradient(1600px 1200px at 720px 40px, #101218, transparent 70%),
+        linear-gradient(160deg, #0B0C0F, #08090B 60%, #070709);
+    }
+
+    #room::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background:
+        radial-gradient(1150px 950px at 1120px 440px, transparent 46%, rgba(0, 0, 0, 0.32) 100%),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.22), transparent 12%, transparent 82%, rgba(0, 0, 0, 0.4));
+      mix-blend-mode: multiply;
+    }
+
+    /* ===== BROW ===== */
+    #brow {
+      position: absolute;
+      top: 26px;
+      left: 34px;
+      right: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 6
+    }
+
+    #mark {
+      display: flex;
+      align-items: baseline;
+      gap: 12px
+    }
+
+    #mark .glyph {
+      font-weight: 200;
+      font-size: 20px;
+      letter-spacing: .34em;
+      color: var(--ink);
+      text-shadow: 0 0 22px rgba(var(--warm), 0.26)
+    }
+
+    #mark .proj {
+      font-size: 9.5px;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      color: var(--ink-dim)
+    }
+
+    #rooms {
+      display: flex;
+      gap: 2px;
+      padding: 3px;
+      border-radius: 11px;
+      background: rgba(10, 11, 14, 0.5);
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.04)
+    }
+
+    #rooms .rm {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 15px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      color: var(--ink-dim);
+      cursor: pointer
+    }
+
+    #rooms .rm .k {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--ink-faint)
+    }
+
+    #rooms .rm.on {
+      color: #F1ECE1;
+      background: linear-gradient(180deg, rgba(46, 44, 40, 0.65), rgba(24, 22, 20, 0.65));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.1)
+    }
+
+    #rooms .rm.on .k {
+      color: var(--accent)
+    }
+
+    /* ===== ROSTER RAIL ===== */
+    #rail {
+      position: absolute;
+      top: 82px;
+      left: 34px;
+      width: 264px;
+      bottom: 70px;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      gap: 12px
+    }
+
+    #rail>.label {
+      margin: 6px 0 1px 4px
+    }
+
+    .plane {
+      position: relative;
+      border-radius: 14px;
+      padding: 13px 15px;
+      overflow: hidden;
+      cursor: pointer;
+      backdrop-filter: blur(9px) saturate(1.05);
+      background: linear-gradient(180deg, rgba(30, 32, 38, 0.42), rgba(16, 17, 21, 0.5));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.05), inset 0 22px 40px -30px rgba(var(--warm), 0.14), 0 20px 34px -22px rgba(0, 0, 0, 0.7);
+    }
+
+    .plane::before {
+      content: "";
+      position: absolute;
+      left: -16%;
+      right: -16%;
+      top: -40%;
+      height: 120%;
+      z-index: -1;
+      background: radial-gradient(60% 70% at 50% 34%, rgba(var(--warm), 0.10), transparent 70%);
+      filter: blur(20px);
+      opacity: .5
+    }
+
+    .plane .top {
+      display: flex;
+      align-items: center;
+      gap: 9px
+    }
+
+    .plane .name {
+      flex: 1;
+      font-size: 13.5px;
+      font-weight: 400;
+      color: var(--ink);
+      letter-spacing: .005em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .plane .word {
+      font-size: 8.5px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      white-space: nowrap;
+      flex: none
+    }
+
+    .plane .word.attn {
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(var(--warm), 0.4)
+    }
+
+    .plane .meta {
+      padding-left: 15px
+    }
+
+    .plane .meta {
+      margin-top: 8px;
+      font-size: 10px;
+      color: var(--ink-dim);
+      font-family: var(--mono)
+    }
+
+    .plane .branch {
+      color: var(--ink-faint)
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 8.5px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-dim);
+      white-space: nowrap;
+      flex: none
+    }
+
+    .chip.attn {
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(var(--warm), 0.4)
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--done);
+      flex: none
+    }
+
+    .dot.run {
+      background: var(--run);
+      box-shadow: 0 0 10px 1px rgba(111, 168, 144, 0.6)
+    }
+
+    .dot.need {
+      background: var(--need);
+      box-shadow: 0 0 12px 2px rgba(200, 169, 104, 0.7)
+    }
+
+    .dot.block {
+      background: var(--block);
+      box-shadow: 0 0 10px 1px rgba(181, 103, 94, 0.55)
+    }
+
+    .dot.idle {
+      background: var(--ink-faint)
+    }
+
+    .dot.ext {
+      background: transparent;
+      border: 1px solid var(--ink-ghost)
+    }
+
+    .plane.active {
+      background: linear-gradient(180deg, rgba(46, 44, 40, 0.6), rgba(24, 22, 20, 0.6));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.12), inset 0 26px 46px -30px rgba(var(--warm), 0.30), 0 30px 50px -20px rgba(0, 0, 0, 0.78), 0 0 46px -6px rgba(var(--warm), 0.14)
+    }
+
+    .plane.active::before {
+      opacity: .95;
+      background: radial-gradient(60% 70% at 40% 30%, rgba(var(--warm), 0.20), transparent 72%)
+    }
+
+    .plane.active .name {
+      color: #F1ECE1;
+      text-shadow: 0 0 20px rgba(var(--warm), 0.25)
+    }
+
+    .plane.recede {
+      opacity: .7
+    }
+
+    .plane.ext .name {
+      color: var(--ink-dim)
+    }
+
+    .ctxline {
+      margin-top: 11px;
+      display: flex;
+      align-items: center;
+      gap: 9px
+    }
+
+    .ctxline .num {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--accent)
+    }
+
+    #newses {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 12px 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--ink-dim);
+      font-size: 12px
+    }
+
+    #newses:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--ink)
+    }
+
+    #newses .plus {
+      font-size: 15px;
+      font-weight: 200;
+      color: var(--ink-faint);
+      line-height: 0
+    }
+
+    #newses .k {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--ink-ghost)
+    }
+
+    #arch {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 12px 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--ink-dim);
+      font-size: 12px
+    }
+
+    #arch:hover {
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    #arch.on {
+      background: linear-gradient(180deg, rgba(46, 44, 40, 0.55), rgba(24, 22, 20, 0.5));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.09);
+      color: var(--ink)
+    }
+
+    #arch .cnt {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-faint)
+    }
+
+    /* ===== SESSION CARD (one continuous glass) ===== */
+    #card {
+      position: absolute;
+      top: 82px;
+      left: 322px;
+      right: 34px;
+      bottom: 70px;
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      border-radius: 20px;
+      overflow: hidden;
+      backdrop-filter: blur(14px) saturate(1.04);
+      background: linear-gradient(180deg, rgba(28, 29, 35, 0.5), rgba(15, 16, 20, 0.56));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.08), inset 0 30px 60px -44px rgba(var(--warm), 0.22), 0 34px 60px -30px rgba(0, 0, 0, 0.72);
+    }
+
+    #card::before {
+      content: "";
+      position: absolute;
+      left: 20%;
+      right: -14%;
+      top: -24%;
+      height: 90%;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(52% 58% at 74% 26%, rgba(var(--warm), 0.12), transparent 70%);
+      filter: blur(30px);
+      opacity: .7
+    }
+
+    #card>* {
+      position: relative;
+      z-index: 1
+    }
+
+    /* ===== header — 3 takes on ONE band (?header=1..3), all driven by H_RUN/H_IDLE/H_EXT =====
      ONE skeleton: [large ctx ring] · [title / meta] ......... [Activity·Delivery·Outcomes tabs].
      The band ABSORBS the tab row — there is no separate #tabs strip below it.
      Every take sheds rail-carried facts (status word · model · branch NAME), keeps git ∆/↑,
@@ -104,464 +469,3298 @@
      intent + renders the ring EMPTY / "unknown". NO action buttons / ⋯ menu. Takes vary only
      (a) ring-centre + stroke, (b) tab style (text vs pills), (c) meta one line vs two. */
 
-  #chead{display:flex;align-items:center;gap:16px;box-shadow:inset 0 -1px 0 rgba(255,246,228,0.06)}
-  #chead .hleft{flex:1;min-width:0;display:flex;align-items:center;gap:15px}
-  #chead .htblk{min-width:0;display:flex;flex-direction:column;gap:4px}
-  #chead .h-title{font-weight:200;color:#F2EDE2;text-shadow:0 0 26px rgba(var(--warm),0.22);letter-spacing:.01em;line-height:1.12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #chead .h-live{width:6px;height:6px;border-radius:50%;background:var(--run);box-shadow:0 0 9px 1px rgba(111,168,144,0.6);flex:none}
-  #chead .m-code{color:var(--run)} #chead .m-plan{color:var(--accent)} #chead .m-ask{color:var(--ink)} #chead .m-unk{color:var(--ink-faint)}
-  #chead .mut{color:var(--accent)}
-  #chead .h-b{color:var(--ink-ghost)}
-  #chead .h-intent{color:var(--ink);cursor:pointer} #chead .h-intent .n{color:var(--accent)} #chead .h-intent:hover{text-decoration:underline}
+    #chead {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: inset 0 -1px 0 rgba(255, 246, 228, 0.06)
+    }
 
-  /* title-block meta line(s) */
-  #chead .hmeta{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-  #chead .hmeta.two{flex-direction:column;align-items:flex-start;gap:3px}
-  #chead .hmeta.two .mrow{display:flex;align-items:center;gap:7px}
+    #chead .hleft {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 15px
+    }
 
-  /* large ctx ring — arc = derived ctx, centre + stroke vary per take */
-  #chead .hring{position:relative;flex:none}
-  #chead .hring svg{display:block}
-  #chead .hrc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;pointer-events:none}
-  #chead .hrcm{font-family:var(--mono);font-variant-numeric:tabular-nums;color:#E7E3DA;font-weight:300;line-height:1;font-size:13px}
-  #chead .hrcs{font-family:var(--mono);font-size:7px;letter-spacing:.03em;color:var(--ink-faint);line-height:1}
-  #chead .hring.unk .hrcm{color:var(--ink-faint);font-size:15px}
-  #chead .hglyph{color:var(--ink-faint);font-size:15px;line-height:1}
+    #chead .htblk {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px
+    }
 
-  /* tabs absorbed into the band, right-aligned + vertically centred */
-  #chead .htabs{margin-left:auto;flex:none;display:flex;align-items:center;gap:2px;align-self:flex-end;margin-bottom:-4px}
-  #chead .htab{display:flex;align-items:center;gap:7px;padding:8px 14px 9px;font-size:12px;color:var(--ink-dim);cursor:pointer;position:relative;border-radius:8px;white-space:nowrap}
-  #chead .htab:hover{color:var(--ink)}
-  #chead .htab .cnt{font-family:var(--mono);font-size:9px;color:var(--accent)}
-  /* plain text tabs → underline indicator */
-  #chead .htabs.plain .htab.on{color:#F1ECE1}
-  #chead .htabs.plain .htab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:1px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 8px rgba(var(--warm),0.5)}
-  /* segmented pill tabs */
-  #chead .htabs.pills{gap:3px;padding:3px;border-radius:10px;background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04)}
-  #chead .htabs.pills .htab{padding:6px 13px;border-radius:7px}
-  #chead .htabs.pills .htab.on{color:#F1ECE1;background:linear-gradient(180deg,rgba(46,44,40,0.7),rgba(24,22,20,0.7));box-shadow:inset 0 1px 0 rgba(255,246,228,0.1)}
+    #chead .h-title {
+      font-weight: 200;
+      color: #F2EDE2;
+      text-shadow: 0 0 26px rgba(var(--warm), 0.22);
+      letter-spacing: .01em;
+      line-height: 1.12;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
 
-  /* per-take dials */
-  #chead.t1{padding:8px 22px 8px 22px} #chead.t1 .h-title{font-size:19px}
-  #chead.t2{padding:7px 22px} #chead.t2 .h-title{font-size:18px}
-  #chead.t3{padding:6px 22px} #chead.t3 .h-title{font-size:20px}
+    #chead .h-live {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--run);
+      box-shadow: 0 0 9px 1px rgba(111, 168, 144, 0.6);
+      flex: none
+    }
 
-  /* header-variant mini-switcher (distinct from the design, like #sw) */
-  #hsw{position:fixed;bottom:66px;left:50%;transform:translateX(-50%);z-index:101;display:flex;align-items:center;gap:4px;
-    background:rgba(18,18,22,0.94);border:1px solid rgba(255,255,255,0.1);border-radius:11px;padding:5px 8px;box-shadow:0 18px 50px -12px rgba(0,0,0,0.85);backdrop-filter:blur(12px)}
-  #hsw .hlbl{font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin-right:4px}
-  #hsw .hp{font-family:var(--mono);font-size:11px;color:var(--ink-dim);padding:5px 11px;border-radius:7px;cursor:pointer}
-  #hsw .hp:hover{color:#fff;background:rgba(255,255,255,0.06)}
-  #hsw .hp.on{color:#0A0B0D;background:var(--accent);font-weight:600}
+    #chead .m-code {
+      color: var(--run)
+    }
 
-  /* tabs */
-  #tabs{display:flex;gap:4px;padding:0 22px;margin-bottom:4px}
-  .tab{display:flex;align-items:center;gap:8px;padding:9px 16px 11px;border-radius:10px 10px 0 0;font-size:12px;color:var(--ink-dim);cursor:pointer;position:relative}
-  .tab.on{color:#F1ECE1}
-  .tab.on::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 8px rgba(var(--warm),0.5)}
-  .tab .cnt{font-family:var(--mono);font-size:9px;color:var(--accent)}
-  #divider{height:1px;margin:0 20px;background:linear-gradient(90deg,transparent,rgba(255,246,228,0.09),transparent)}
+    #chead .m-plan {
+      color: var(--accent)
+    }
 
-  /* panel body */
-  #panelwrap{flex:1;min-height:0;overflow:auto;padding:16px 0 4px}
-  #panelwrap::-webkit-scrollbar{width:8px} #panelwrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:4px}
-  .planline{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:11px;margin:0 22px 16px;
-    background:linear-gradient(180deg, rgba(30,32,38,0.4), rgba(16,17,21,0.44));box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
-  .planline .cur{flex:1;font-size:12.5px;color:var(--ink)}
-  .planline .prog{font-family:var(--mono);font-size:10px;color:var(--accent)}
+    #chead .m-ask {
+      color: var(--ink)
+    }
 
-  /* two-column split — Agents | Checks */
-  .actgrid{display:grid;grid-template-columns:1fr 1fr;gap:0}
-  .cell{padding:2px 22px 14px}
-  .cell + .cell{position:relative}
-  .cell h4{margin-bottom:12px}
-  .divmark{position:absolute;left:0;top:2px;bottom:10px;width:1px;background:linear-gradient(to bottom,transparent,rgba(255,246,228,0.09),transparent)}
-  /* runtime tree */
-  .agent{display:flex;align-items:center;gap:11px;padding:7px 0}
-  .agent .body{flex:1} .agent .an{font-size:12.5px;color:var(--ink)} .agent .as{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:2px}
-  .group{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase;margin:4px 0 3px 21px}
-  .subrows{margin:0 0 4px 21px;border-left:1px solid rgba(255,255,255,0.07);padding-left:14px;display:flex;flex-direction:column;gap:6px}
-  .subrows .r{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;color:var(--ink-dim)}
-  .tick{width:5px;height:5px;border-radius:50%;background:var(--run);box-shadow:0 0 7px rgba(111,168,144,0.55);flex:none} .tick.pend{background:var(--ink-faint);box-shadow:none}
-  .check{display:flex;align-items:center;gap:12px;padding:6px 0}
-  .check .cn{flex:1;font-size:12px;color:var(--ink)} .check .cv{font-family:var(--mono);font-size:10px;color:var(--ink-dim)} .check .cv.warn{color:var(--accent)}
+    #chead .m-unk {
+      color: var(--ink-faint)
+    }
 
-  /* Activity hybrid — now-head + folded Turn timeline */
-  .planline2{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;border-radius:11px;background:linear-gradient(180deg,rgba(30,32,38,0.4),rgba(16,17,21,0.44));box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
-  .planline2 .cur{flex:1;font-size:12.5px;color:var(--ink)}
-  .planline2 .prog{font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer} .planline2 .prog .cx{color:var(--ink-faint)}
-  .blueprint{display:flex;align-items:center;gap:10px;margin-top:9px;padding-left:4px;font-family:var(--mono);font-size:10px;color:var(--ink-dim)}
-  .blueprint .bp{display:inline-flex;align-items:center;gap:6px}
-  .tl{padding:2px 22px 0} .tl-lab{margin-bottom:9px;display:flex;align-items:center;gap:10px} .tl-lab .rev{font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
-  .turn{border-radius:11px;margin-bottom:7px;overflow:hidden}
-  .turn.past{background:rgba(255,255,255,0.02);cursor:pointer;display:flex;align-items:center;gap:11px;padding:11px 14px}
-  .turn.past:hover{background:rgba(255,255,255,0.04)}
-  .turn.past .fold{color:var(--ink-ghost);font-size:10px} .turn.past .tp{color:var(--ink-dim);font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .turn.past .st{font-family:var(--mono);font-size:10px;color:var(--ink-ghost)}
-  .turn.open{background:linear-gradient(180deg,rgba(30,32,38,0.34),rgba(16,17,21,0.4));box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
-  .turn.open .th{display:flex;align-items:center;gap:10px;padding:11px 14px 8px;font-size:12px;color:var(--ink)} .turn.open .th .fold{color:var(--accent);font-size:10px} .turn.open .th .run{font-family:var(--mono);font-size:9px;color:var(--run);letter-spacing:.14em;text-transform:uppercase;margin-left:auto}
-  .step{padding:5px 14px 5px 32px;position:relative} .step .sx{position:absolute;left:15px;top:7px;width:12px;text-align:center;font-family:var(--mono);font-size:10px} .step .sh{display:flex;align-items:center;gap:9px;font-size:12px}
-  .step.done .sx{color:var(--done)} .step.done .sh{color:var(--ink-dim)} .step.cur .sx{color:var(--run)} .step.cur .sh{color:var(--ink)} .step.pending .sx{color:var(--ink-ghost)} .step.pending .sh{color:var(--ink-faint)}
-  .step .coal{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-left:auto}
-  .events{margin:6px 0 6px 4px;border-left:1px solid rgba(255,255,255,0.07);padding-left:14px;display:flex;flex-direction:column;gap:6px}
-  .ev{display:flex;align-items:baseline;gap:10px;font-family:var(--mono);font-size:10.5px} .ev .k{width:36px;flex:none;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-ghost)}
-  .ev.mut{color:var(--ink)} .ev.mut .k{color:var(--run)} .ev.read{color:var(--ink-faint)} .ev.grp{color:var(--ink-dim);cursor:pointer} .ev.grp .k{color:var(--accent)}
-  .compaction{display:flex;align-items:center;gap:12px;margin:12px 4px;font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-ghost)} .compaction::before,.compaction::after{content:"";flex:1;height:1px;background:rgba(255,255,255,0.05)}
-  /* Activity master–detail: left = timeline list (fanouts collapse) · right = detail of selection */
-  .acol{display:grid;grid-template-columns:1fr 1fr}
-  .turn.open .plab{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);padding:2px 14px 6px}
-  .tllist{border-right:1px solid rgba(255,246,228,0.06);padding:8px 12px 12px 18px;min-width:0;align-self:start}
-  .tllist .tl-lab{padding:0 2px}
-  .tldetail{padding:10px 22px 4px;min-width:0}
-  /* list rows are compact; the selected row drives the detail pane */
-  .tllist .step{cursor:pointer;border-radius:8px}
-  .tllist .step:hover{background:rgba(255,255,255,0.03)}
-  .tllist .step.sel{background:linear-gradient(180deg,rgba(200,169,104,0.12),rgba(200,169,104,0.05));box-shadow:inset 0 0 0 1px rgba(200,169,104,0.18)}
-  .tllist .step .events{display:none}
-  /* Subagents = its own section; header styled IDENTICALLY to Timeline (.tl-lab). Rows selectable → right pane shows that agent's live feed. Dense rows scale to ~30. */
-  .salist{margin:4px 0 0;max-height:190px;overflow:auto}
-  .sarow{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:8px;font-size:12px;color:var(--ink-dim);cursor:pointer}
-  .sarow:hover{color:var(--ink);background:rgba(255,255,255,0.03)}
-  .sarow.sel{background:linear-gradient(180deg,rgba(200,169,104,0.12),rgba(200,169,104,0.05));box-shadow:inset 0 0 0 1px rgba(200,169,104,0.18);color:var(--ink)}
-  .sarow .sat{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-faint)}
-  .sarow .adot{width:6px;height:6px;border-radius:50%;flex:none}
-  .sarow .adot.run{background:var(--run);box-shadow:0 0 6px rgba(111,168,144,0.55)} .sarow .adot.pend{background:var(--ink-ghost)} .sarow .adot.done{background:var(--done)}
-  /* detail pane */
-  .tldetail .dhd{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:13px;color:var(--ink)}
-  .tldetail .dhd .run{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--run);letter-spacing:.14em;text-transform:uppercase}
-  .tldetail .dsub{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-bottom:12px}
-  .tldetail .events{margin:0;border-left:none;padding-left:0}
-  .tldetail .diffpeek{margin-top:14px;border-radius:10px;background:rgba(0,0,0,0.24);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04);padding:10px 13px;font-family:var(--mono);font-size:10.5px;line-height:1.6}
-  .tldetail .diffpeek .add{color:var(--run)} .tldetail .diffpeek .ctx{color:var(--ink-faint)} .tldetail .diffpeek .fn{color:var(--ink-dim);margin-bottom:5px}
+    #chead .mut {
+      color: var(--accent)
+    }
 
-  /* Outcomes — unified, typed rows (kept from the new prototype) */
-  .outcomes{padding:14px 22px 4px;margin-top:6px;border-top:1px solid rgba(255,246,228,0.05)}
-  .outcomes h4{margin-bottom:11px}
-  .oc{display:flex;align-items:center;gap:13px;padding:9px 11px;border-radius:11px;margin-bottom:5px;cursor:pointer}
-  .oc:hover{background:rgba(255,255,255,0.03)}
-  .oc .ico{width:24px;height:24px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px}
-  .oc .ico.code{background:rgba(111,168,144,0.14);color:var(--run)}
-  .oc .ico.ticket{background:rgba(200,169,104,0.14);color:var(--accent)}
-  .oc .ico.artifact{background:rgba(120,130,150,0.16);color:#AEB4C0}
-  .oc .kind{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);width:56px;flex:none}
-  .oc .ob{flex:1} .oc .ot{font-size:12.5px;color:var(--ink)} .oc .os{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:2px}
-  .oc .go{font-family:var(--mono);font-size:10px;color:var(--ink-dim)}
+    #chead .h-b {
+      color: var(--ink-ghost)
+    }
 
-  /* delivery arc foot glance */
-  #lifecycle{padding:8px 24px 14px;margin-top:6px;border-top:1px solid rgba(255,246,228,0.05)}
-  #lcarc{position:relative;height:64px;margin-top:10px}
-  .snode{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;gap:8px;transform:translateX(-50%)}
-  .snode .nlab{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
-  .snode.done .nlab,.snode.cur .nlab{color:var(--ink-dim)}
-  .snode .nd{width:9px;height:9px;border-radius:50%;background:#26282e;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)}
-  .snode.done .nd{background:var(--accent);box-shadow:0 0 12px 2px rgba(var(--warm),0.55)}
-  .snode.cur .nd{background:var(--run);box-shadow:0 0 14px 3px rgba(111,168,144,0.6)}
-  .snode .nsub{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
-  .seam{margin:14px 24px 4px;padding:12px 14px;border-radius:10px;border:1px dashed rgba(255,255,255,0.08);color:var(--ink-faint);font-size:11px;font-family:var(--mono);line-height:1.5}
-  .seam b{color:var(--ink-dim);font-weight:400}
+    #chead .h-intent {
+      color: var(--ink);
+      cursor: pointer
+    }
 
-  /* ===== DELIVERY (nested): compact lifecycle spine + gate · sub-tabs · GitHub-style file diff ===== */
-  .dspine{padding:12px 22px 10px}
-  .dtop{display:flex;align-items:flex-start;justify-content:space-between;gap:32px}
-  .dspine .dbranch{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--ink-dim);margin-bottom:12px}
-  .dspine .dbranch b{color:var(--ink);font-weight:400}
-  .lcstrip{display:flex;align-items:center;gap:0}
-  .lcn{display:flex;align-items:center;gap:7px;flex:none}
-  .lcn .lcd{width:7px;height:7px;border-radius:50%;background:#26282e;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);flex:none}
-  .lcn.done .lcd{background:var(--accent);box-shadow:0 0 9px 1px rgba(var(--warm),0.5)}
-  .lcn.cur .lcd{background:var(--run);box-shadow:0 0 10px 2px rgba(111,168,144,0.6)}
-  .lcn .lcl{font-size:10.5px;color:var(--ink-dim)} .lcn.done .lcl,.lcn.cur .lcl{color:var(--ink)}
-  .lcn .lcs{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-left:1px}
-  .lcbar{width:26px;flex:none;height:1px;margin:0 9px;background:rgba(255,255,255,0.1)}
-  .lcbar.on{background:linear-gradient(90deg,rgba(200,169,104,0.7),rgba(200,169,104,0.2))}
-  /* checks — compact cluster on the right of the (now smaller) pipeline */
-  .dchecks{flex:none;text-align:right}
-  .dchecks .clab{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:12px}
-  .cchips{display:flex;align-items:center;gap:14px;justify-content:flex-end}
-  .cchip{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;color:var(--ink-dim);cursor:pointer}
-  .cchip:hover{color:var(--ink)}
-  .cchip .cd{width:7px;height:7px;border-radius:50%;flex:none}
-  .cchip .cd.warn{background:var(--need);box-shadow:0 0 8px rgba(200,169,104,0.5)} .cchip .cd.ok{background:var(--run);box-shadow:0 0 8px rgba(111,168,144,0.5)} .cchip .cd.idle{background:var(--ink-ghost)}
-  .cchip .cs{font-family:var(--mono);font-size:9px;color:var(--ink-faint)} .cchip .cs.warn{color:var(--need)}
-  .dgate{margin-top:12px;display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10px;color:var(--ink-dim);padding:8px 12px;border-radius:9px;background:rgba(181,103,94,0.08);box-shadow:inset 0 0 0 1px rgba(181,103,94,0.15)}
-  .dgate .gk{color:var(--block);letter-spacing:.14em;text-transform:uppercase;font-size:8.5px}
-  .dgate .gsep{color:var(--ink-ghost)}
-  /* Delivery sub-tabs */
-  .dsubtabs{display:flex;align-items:center;gap:2px;padding:0 22px;box-shadow:inset 0 -1px 0 rgba(255,246,228,0.06)}
-  .dsubtab{display:flex;align-items:center;gap:7px;padding:9px 14px;font-size:12px;color:var(--ink-dim);cursor:pointer;position:relative;white-space:nowrap}
-  .dsubtab:hover{color:var(--ink)}
-  .dsubtab.on{color:#F1ECE1}
-  .dsubtab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 8px rgba(var(--warm),0.5)}
-  .dsubtab .cnt{font-family:var(--mono);font-size:9px;color:var(--accent)} .dsubtab .cnt.warn{color:var(--need)} .dsubtab .cnt.find{color:var(--block)}
-  /* Files view: sticky tree | scrollable diff */
-  .dfiles{display:grid;grid-template-columns:minmax(230px,290px) 1fr}
-  .ftree{border-right:1px solid rgba(255,246,228,0.06);padding:12px 10px;position:sticky;top:0;align-self:start}
-  .ffilter{width:100%;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:7px 10px;color:var(--ink);font-size:11px;outline:none;margin-bottom:10px}
-  .ffilter::placeholder{color:var(--ink-ghost)}
-  .ftrow{display:flex;align-items:center;gap:7px;padding:4px 7px;border-radius:7px;font-size:12px;color:var(--ink-dim);cursor:pointer;white-space:nowrap;overflow:hidden}
-  .ftrow:hover{background:rgba(255,255,255,0.03);color:var(--ink)}
-  .ftrow.dir{color:var(--ink-faint)} .ftrow.dir .fchev{font-size:9px;color:var(--ink-ghost)}
-  .ftrow.file.sel{background:linear-gradient(180deg,rgba(200,169,104,0.12),rgba(200,169,104,0.05));box-shadow:inset 0 0 0 1px rgba(200,169,104,0.18);color:var(--ink)}
-  .ftrow .fname{flex:1;overflow:hidden;text-overflow:ellipsis}
-  .ftrow .fadd{font-family:var(--mono);font-size:9px;color:var(--run)} .ftrow .fdel{font-family:var(--mono);font-size:9px;color:var(--block)}
-  .ftrow .fcm{font-family:var(--mono);font-size:9px;color:var(--ink-faint);display:flex;align-items:center;gap:3px}
-  /* Diff pane (scrollable) */
-  .fdiff{min-width:0;overflow:auto;max-height:430px}
-  .fdhead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:10px 16px;background:rgba(10,11,14,0.9);backdrop-filter:blur(6px);box-shadow:inset 0 -1px 0 rgba(255,246,228,0.06)}
-  .fdhead .fdn{font-family:var(--mono);font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
-  .fdhead .fdstat .p{color:var(--run)} .fdhead .fdstat .m{color:var(--block)} .fdhead .fdstat{font-family:var(--mono);font-size:10px}
-  .fdhead .viewed{font-family:var(--mono);font-size:10px;color:var(--ink-faint);display:flex;align-items:center;gap:5px}
-  .hunk{display:grid;grid-template-columns:44px 44px 1fr;font-family:var(--mono);font-size:10px;color:var(--accent);background:rgba(200,169,104,0.05);padding:3px 0}
-  .hunk span:last-child{padding-left:12px;color:var(--ink-faint)}
-  .drow{display:grid;grid-template-columns:44px 44px 1fr;font-family:var(--mono);font-size:11px;line-height:1.62}
-  .drow .lo,.drow .ln{text-align:right;padding-right:9px;color:var(--ink-ghost);user-select:none}
-  .drow .code{white-space:pre;padding-left:12px;color:#C7C2B6;overflow:hidden}
-  .drow.add{background:rgba(111,168,144,0.10)} .drow.add .code{color:#CFE3D6} .drow.add .ln{color:rgba(111,168,144,0.7)}
-  .drow.del{background:rgba(181,103,94,0.12)} .drow.del .code{color:#E6C9C3} .drow.del .lo{color:rgba(181,103,94,0.7)}
-  .drow .sgn{color:var(--run)} .drow.del .sgn{color:var(--block)}
-  .dfind{grid-column:1/-1;display:flex;align-items:flex-start;gap:8px;padding:8px 12px 8px 44px;background:rgba(181,103,94,0.06);box-shadow:inset 2px 0 0 var(--block);font-family:var(--sans);font-size:11px;color:var(--ink-dim)}
-  .dfind .fv{color:var(--block);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;flex:none;margin-top:2px}
+    #chead .h-intent .n {
+      color: var(--accent)
+    }
 
-  /* preview */
-  .pv{padding:16px 24px;height:100%;display:flex;flex-direction:column}
-  .pvchip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin-bottom:14px}
-  .pvchip .d{width:6px;height:6px;border-radius:50%;background:var(--run);box-shadow:0 0 8px rgba(111,168,144,0.6)}
-  .pvframe{flex:1;border-radius:14px;background:repeating-linear-gradient(135deg,rgba(255,255,255,0.015) 0 12px,transparent 12px 24px),rgba(0,0,0,0.25);box-shadow:inset 0 1px 0 rgba(255,246,228,0.06);display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:12px}
+    #chead .h-intent:hover {
+      text-decoration: underline
+    }
 
-  /* transcript (external) */
-  .banner{display:flex;align-items:center;gap:10px;margin:0 22px 16px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.03);font-size:11.5px;color:var(--ink-dim)}
-  .banner .d{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink-ghost);flex:none}
-  .tr{padding:0 24px;font-family:var(--mono);font-size:11px;line-height:1.75;color:#9C978B}
-  .tr .u{color:var(--accent)} .tr .a{color:var(--ink)} .tr .dm{color:var(--ink-faint)}
+    /* title-block meta line(s) */
+    #chead .hmeta {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-dim);
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap
+    }
 
-  /* ===== TERMINAL DOCK ===== */
-  #dock{margin:8px 4px 4px;border-radius:14px;overflow:hidden;flex:none;position:relative;
-    backdrop-filter:blur(10px) saturate(0.95);
-    background:linear-gradient(180deg, rgba(10,11,14,0.74), rgba(6,7,9,0.84));
-    box-shadow:inset 0 1px 0 rgba(255,246,228,0.055), inset 0 20px 50px -40px rgba(var(--warm),0.16);
-    transition:height .28s cubic-bezier(.4,0,.2,1);}
-  #dock .dhead{display:flex;align-items:center;gap:11px;padding:10px 18px 7px;cursor:pointer}
-  #dock .dhead .ticon{font-family:var(--mono);font-size:12px;color:var(--ink-dim);flex:none;letter-spacing:-1px}
-  #dock .dhead .tlabel{font-size:12px;color:var(--ink-dim);flex:none}
-  #dock .dhead .tsep{color:var(--ink-ghost);flex:none}
-  #dock .dhead .live{width:6px;height:6px;border-radius:50%;background:var(--run);box-shadow:0 0 8px rgba(111,168,144,0.6);flex:none}
-  #dock .dhead .live.idle{background:var(--ink-faint);box-shadow:none}
-  /* now-head lives IN the dock header row (not a separate line): what the session is doing + plan progress */
-  #dock .dhead .now{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  #dock .dhead .now .dm{color:var(--ink-faint)}
-  #dock .dhead .prog{font-family:var(--mono);font-size:10px;color:var(--accent);flex:none} #dock .dhead .prog .cx{color:var(--ink-faint)}
-  #dock .dhead .src{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
-  #dock .dhead .exp{margin-left:auto;font-size:13px;color:var(--ink-faint);cursor:pointer}
-  #dock .dhead .dstop{font-size:10px;color:var(--ink-dim);padding:4px 10px;border-radius:7px;background:rgba(255,255,255,0.04);cursor:pointer;margin-right:12px} #dock .dhead .dstop:hover{color:var(--block);background:rgba(181,103,94,0.12)}
-  #dock .lines{padding:2px 18px 10px;font-family:var(--mono);font-size:11px;line-height:1.62;color:#B7B2A6;overflow:auto}
-  #dock .lines .p{color:var(--accent)} #dock .lines .dm{color:var(--ink-faint)} #dock .lines .ok{color:var(--run)}
-  #dock .prompt{display:flex;align-items:center;gap:9px;padding:9px 18px 12px;border-top:1px solid rgba(255,255,255,0.05)}
-  #dock .prompt .car{color:var(--accent);font-family:var(--mono);font-size:13px}
-  #dock .prompt input{flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:var(--mono);font-size:12px}
-  #dock .prompt input::placeholder{color:var(--ink-ghost)}
-  #dock .roprompt{padding:9px 18px 12px;border-top:1px solid rgba(255,255,255,0.05);font-family:var(--mono);font-size:11px;color:var(--ink-ghost);display:flex;align-items:center;gap:8px}
+    #chead .hmeta.two {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px
+    }
 
-  /* archived list (main panel) */
-  #archview{padding:12px 12px}
-  .aback{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);padding:8px 12px;border-radius:9px;cursor:pointer;margin-bottom:8px}
-  .aback:hover{background:rgba(255,255,255,0.04);color:var(--ink)}
-  .afilters{display:flex;gap:8px;padding:0 12px 12px;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:6px}
-  .pill{font-size:10px;font-family:var(--mono);color:var(--ink-dim);padding:5px 10px;border-radius:7px;background:rgba(255,255,255,0.03)}
-  .arow{display:flex;align-items:center;gap:13px;padding:10px 16px;border-radius:9px;cursor:pointer}
-  .arow:hover{background:rgba(255,255,255,0.035)}
-  .arow .an{flex:1;font-size:13px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .arow .aw{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);flex:none}
-  .arow .at{font-family:var(--mono);font-size:10px;color:var(--ink-ghost);flex:none;width:44px;text-align:right}
+    #chead .hmeta.two .mrow {
+      display: flex;
+      align-items: center;
+      gap: 7px
+    }
 
-  /* ===== CONCIERGE STRIP (context; owned by #159) ===== */
-  #cx{position:absolute;left:0;right:0;bottom:0;height:54px;z-index:9;display:flex;align-items:center;gap:16px;padding:0 22px;
-    background:linear-gradient(180deg, rgba(16,15,14,0.6), rgba(9,9,11,0.76));backdrop-filter:blur(16px);border-top:1px solid rgba(255,246,228,0.05)}
-  .ringorb{position:relative;width:38px;height:38px;flex:none}
-  .ringorb .ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from -40deg,rgba(var(--warm),0.92),rgba(var(--warm),0.42) 42deg,rgba(var(--warm),0.05) 120deg,transparent 205deg,transparent 300deg,rgba(var(--warm),0.3) 342deg,rgba(var(--warm),0.92));-webkit-mask:radial-gradient(circle,transparent 56%,#000 60%);mask:radial-gradient(circle,transparent 56%,#000 60%);filter:drop-shadow(0 0 6px rgba(var(--warm),0.55));animation:breath 7s ease-in-out infinite}
-  .ringorb .core{position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 50% 44%,#0c0d10,#060608);box-shadow:inset 0 0 12px 2px rgba(0,0,0,0.9)}
-  #cx .caption{flex:1;min-width:0;font-weight:200;font-size:14px;color:#CFC9BC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #cx .caption .q{color:var(--ink-faint)}
-  #cx .cmode{display:flex;align-items:center;gap:10px} #cx .cmode .ml{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
-  .ctoggle{width:36px;height:20px;border-radius:11px;position:relative;background:linear-gradient(180deg,rgba(var(--warm),0.5),rgba(var(--warm),0.28));box-shadow:inset 0 0 8px rgba(var(--warm),0.4)}
-  .ctoggle .knob{position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(var(--warm),0.7)}
+    /* large ctx ring — arc = derived ctx, centre + stroke vary per take */
+    #chead .hring {
+      position: relative;
+      flex: none
+    }
 
-  /* scene caption + band + switcher */
-  #cap{position:absolute;top:60px;left:50%;transform:translateX(-50%);z-index:7;font-size:10px;letter-spacing:.08em;color:var(--ink-faint);text-align:center}
-  #cap b{color:var(--accent);letter-spacing:.16em;text-transform:uppercase;font-weight:600}
-  #band{position:fixed;top:0;left:0;right:0;height:3px;background:repeating-linear-gradient(90deg,var(--accent-deep) 0 14px,transparent 14px 28px);opacity:.5;z-index:100}
-  #sw{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:101;display:flex;align-items:center;gap:2px;
-    background:rgba(18,18,22,0.94);border:1px solid rgba(255,255,255,0.1);border-radius:13px;padding:6px;box-shadow:0 18px 50px -12px rgba(0,0,0,0.85);backdrop-filter:blur(12px)}
-  #sw .ar{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);cursor:pointer;font-size:15px;color:var(--ink-dim)}
-  #sw .ar:hover{background:rgba(255,255,255,0.1);color:#fff}
-  #sw .lb{min-width:240px;text-align:center;padding:0 12px;font-size:12px;color:#EDE8DD}
-  #sw .lb .k{font-family:var(--mono);font-size:10px;color:var(--accent);margin-right:8px}
-  #sw .lb .d{display:block;font-size:9.5px;color:var(--ink-faint);margin-top:2px}
+    #chead .hring svg {
+      display: block
+    }
 
-  @keyframes breath{0%,100%{opacity:.82;transform:scale(1)}50%{opacity:1;transform:scale(1.035)}}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-</style>
+    #chead .hrc {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      pointer-events: none
+    }
+
+    #chead .hrcm {
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums;
+      color: #E7E3DA;
+      font-weight: 300;
+      line-height: 1;
+      font-size: 13px
+    }
+
+    #chead .hrcs {
+      font-family: var(--mono);
+      font-size: 7px;
+      letter-spacing: .03em;
+      color: var(--ink-faint);
+      line-height: 1
+    }
+
+    #chead .hring.unk .hrcm {
+      color: var(--ink-faint);
+      font-size: 15px
+    }
+
+    #chead .hglyph {
+      color: var(--ink-faint);
+      font-size: 15px;
+      line-height: 1
+    }
+
+    /* tabs absorbed into the band, right-aligned + vertically centred */
+    #chead .htabs {
+      margin-left: auto;
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      align-self: flex-end;
+      margin-bottom: -4px
+    }
+
+    #chead .htab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px 9px;
+      font-size: 12px;
+      color: var(--ink-dim);
+      cursor: pointer;
+      position: relative;
+      border-radius: 8px;
+      white-space: nowrap
+    }
+
+    #chead .htab:hover {
+      color: var(--ink)
+    }
+
+    #chead .htab .cnt {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--accent)
+    }
+
+    /* plain text tabs → underline indicator */
+    #chead .htabs.plain .htab.on {
+      color: #F1ECE1
+    }
+
+    #chead .htabs.plain .htab.on::after {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 1px;
+      height: 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      box-shadow: 0 0 8px rgba(var(--warm), 0.5)
+    }
+
+    /* segmented pill tabs */
+    #chead .htabs.pills {
+      gap: 3px;
+      padding: 3px;
+      border-radius: 10px;
+      background: rgba(10, 11, 14, 0.5);
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.04)
+    }
+
+    #chead .htabs.pills .htab {
+      padding: 6px 13px;
+      border-radius: 7px
+    }
+
+    #chead .htabs.pills .htab.on {
+      color: #F1ECE1;
+      background: linear-gradient(180deg, rgba(46, 44, 40, 0.7), rgba(24, 22, 20, 0.7));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.1)
+    }
+
+    /* per-take dials */
+    #chead.t1 {
+      padding: 8px 22px 8px 22px
+    }
+
+    #chead.t1 .h-title {
+      font-size: 19px
+    }
+
+    #chead.t2 {
+      padding: 7px 22px
+    }
+
+    #chead.t2 .h-title {
+      font-size: 18px
+    }
+
+    #chead.t3 {
+      padding: 6px 22px
+    }
+
+    #chead.t3 .h-title {
+      font-size: 20px
+    }
+
+    /* header-variant mini-switcher (distinct from the design, like #sw) */
+    #hsw {
+      position: fixed;
+      bottom: 66px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 101;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(18, 18, 22, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 11px;
+      padding: 5px 8px;
+      box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px)
+    }
+
+    #hsw .hlbl {
+      font-size: 8.5px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-right: 4px
+    }
+
+    #hsw .hp {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-dim);
+      padding: 5px 11px;
+      border-radius: 7px;
+      cursor: pointer
+    }
+
+    #hsw .hp:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06)
+    }
+
+    #hsw .hp.on {
+      color: #0A0B0D;
+      background: var(--accent);
+      font-weight: 600
+    }
+
+    /* tabs */
+    #tabs {
+      display: flex;
+      gap: 4px;
+      padding: 0 22px;
+      margin-bottom: 4px
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px 11px;
+      border-radius: 10px 10px 0 0;
+      font-size: 12px;
+      color: var(--ink-dim);
+      cursor: pointer;
+      position: relative
+    }
+
+    .tab.on {
+      color: #F1ECE1
+    }
+
+    .tab.on::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 0;
+      height: 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      box-shadow: 0 0 8px rgba(var(--warm), 0.5)
+    }
+
+    .tab .cnt {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--accent)
+    }
+
+    #divider {
+      height: 1px;
+      margin: 0 20px;
+      background: linear-gradient(90deg, transparent, rgba(255, 246, 228, 0.09), transparent)
+    }
+
+    /* panel body */
+    #panelwrap {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 16px 0 4px
+    }
+
+    #panelwrap::-webkit-scrollbar {
+      width: 8px
+    }
+
+    #panelwrap::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px
+    }
+
+    .planline {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 14px;
+      border-radius: 11px;
+      margin: 0 22px 16px;
+      background: linear-gradient(180deg, rgba(30, 32, 38, 0.4), rgba(16, 17, 21, 0.44));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.05)
+    }
+
+    .planline .cur {
+      flex: 1;
+      font-size: 12.5px;
+      color: var(--ink)
+    }
+
+    .planline .prog {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent)
+    }
+
+    /* two-column split — Agents | Checks */
+    .actgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0
+    }
+
+    .cell {
+      padding: 2px 22px 14px
+    }
+
+    .cell+.cell {
+      position: relative
+    }
+
+    .cell h4 {
+      margin-bottom: 12px
+    }
+
+    .divmark {
+      position: absolute;
+      left: 0;
+      top: 2px;
+      bottom: 10px;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, rgba(255, 246, 228, 0.09), transparent)
+    }
+
+    /* runtime tree */
+    .agent {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 7px 0
+    }
+
+    .agent .body {
+      flex: 1
+    }
+
+    .agent .an {
+      font-size: 12.5px;
+      color: var(--ink)
+    }
+
+    .agent .as {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--ink-faint);
+      margin-top: 2px
+    }
+
+    .group {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--ink-faint);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin: 4px 0 3px 21px
+    }
+
+    .subrows {
+      margin: 0 0 4px 21px;
+      border-left: 1px solid rgba(255, 255, 255, 0.07);
+      padding-left: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .subrows .r {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-dim)
+    }
+
+    .tick {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--run);
+      box-shadow: 0 0 7px rgba(111, 168, 144, 0.55);
+      flex: none
+    }
+
+    .tick.pend {
+      background: var(--ink-faint);
+      box-shadow: none
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 0
+    }
+
+    .check .cn {
+      flex: 1;
+      font-size: 12px;
+      color: var(--ink)
+    }
+
+    .check .cv {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-dim)
+    }
+
+    .check .cv.warn {
+      color: var(--accent)
+    }
+
+    /* Activity hybrid — now-head + folded Turn timeline */
+    .planline2 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding: 10px 14px;
+      border-radius: 11px;
+      background: linear-gradient(180deg, rgba(30, 32, 38, 0.4), rgba(16, 17, 21, 0.44));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.05)
+    }
+
+    .planline2 .cur {
+      flex: 1;
+      font-size: 12.5px;
+      color: var(--ink)
+    }
+
+    .planline2 .prog {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      cursor: pointer
+    }
+
+    .planline2 .prog .cx {
+      color: var(--ink-faint)
+    }
+
+    .blueprint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 9px;
+      padding-left: 4px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-dim)
+    }
+
+    .blueprint .bp {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .tl {
+      padding: 2px 22px 0
+    }
+
+    .tl-lab {
+      margin-bottom: 9px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .tl-lab .rev {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--ink-ghost)
+    }
+
+    .turn {
+      border-radius: 11px;
+      margin-bottom: 7px;
+      overflow: hidden
+    }
+
+    .turn.past {
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 11px 14px
+    }
+
+    .turn.past:hover {
+      background: rgba(255, 255, 255, 0.04)
+    }
+
+    .turn.past .fold {
+      color: var(--ink-ghost);
+      font-size: 10px
+    }
+
+    .turn.past .tp {
+      color: var(--ink-dim);
+      font-size: 12px;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .turn.past .st {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-ghost)
+    }
+
+    .turn.open {
+      background: linear-gradient(180deg, rgba(30, 32, 38, 0.34), rgba(16, 17, 21, 0.4));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.05)
+    }
+
+    .turn.open .th {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px 8px;
+      font-size: 12px;
+      color: var(--ink)
+    }
+
+    .turn.open .th .fold {
+      color: var(--accent);
+      font-size: 10px
+    }
+
+    .turn.open .th .run {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--run);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-left: auto
+    }
+
+    .step {
+      padding: 5px 14px 5px 32px;
+      position: relative
+    }
+
+    .step .sx {
+      position: absolute;
+      left: 15px;
+      top: 7px;
+      width: 12px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 10px
+    }
+
+    .step .sh {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 12px
+    }
+
+    .step.done .sx {
+      color: var(--done)
+    }
+
+    .step.done .sh {
+      color: var(--ink-dim)
+    }
+
+    .step.cur .sx {
+      color: var(--run)
+    }
+
+    .step.cur .sh {
+      color: var(--ink)
+    }
+
+    .step.pending .sx {
+      color: var(--ink-ghost)
+    }
+
+    .step.pending .sh {
+      color: var(--ink-faint)
+    }
+
+    .step .coal {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-faint);
+      margin-left: auto
+    }
+
+    .events {
+      margin: 6px 0 6px 4px;
+      border-left: 1px solid rgba(255, 255, 255, 0.07);
+      padding-left: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .ev {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 10.5px
+    }
+
+    .ev .k {
+      width: 36px;
+      flex: none;
+      font-size: 8.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--ink-ghost)
+    }
+
+    .ev.mut {
+      color: var(--ink)
+    }
+
+    .ev.mut .k {
+      color: var(--run)
+    }
+
+    .ev.read {
+      color: var(--ink-faint)
+    }
+
+    .ev.grp {
+      color: var(--ink-dim);
+      cursor: pointer
+    }
+
+    .ev.grp .k {
+      color: var(--accent)
+    }
+
+    .compaction {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 4px;
+      font-family: var(--mono);
+      font-size: 8.5px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--ink-ghost)
+    }
+
+    .compaction::before,
+    .compaction::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.05)
+    }
+
+    /* Activity master–detail: left = timeline TOC · right = ONE continuous concatenated feed */
+    .acol {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      flex: 1;
+      min-height: 0
+    }
+
+    .turn.open .plab {
+      font-family: var(--mono);
+      font-size: 8.5px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      padding: 2px 14px 6px
+    }
+
+    .tllist {
+      border-right: 1px solid rgba(255, 246, 228, 0.06);
+      padding: 8px 12px 12px 18px;
+      min-width: 0;
+      overflow: auto
+    }
+
+    .tllist::-webkit-scrollbar {
+      width: 8px
+    }
+
+    .tllist::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px
+    }
+
+    .tllist .tl-lab {
+      padding: 0 2px
+    }
+
+    .tldetail {
+      padding: 10px 22px 4px;
+      min-width: 0;
+      overflow: auto
+    }
+
+    .tldetail::-webkit-scrollbar {
+      width: 8px
+    }
+
+    .tldetail::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px
+    }
+
+    /* list rows are compact; the selected row drives the detail pane */
+    .tllist .step {
+      cursor: pointer;
+      border-radius: 8px
+    }
+
+    .tllist .step:hover {
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    .tllist .step.sel {
+      background: linear-gradient(180deg, rgba(200, 169, 104, 0.12), rgba(200, 169, 104, 0.05));
+      box-shadow: inset 0 0 0 1px rgba(200, 169, 104, 0.18)
+    }
+
+    .tllist .step .events {
+      display: none
+    }
+
+    /* Subagents = its own section; header styled IDENTICALLY to Timeline (.tl-lab). Rows selectable → right pane shows that agent's live feed. Dense rows scale to ~30. */
+    .salist {
+      margin: 4px 0 0;
+      max-height: 190px;
+      overflow: auto
+    }
+
+    .sarow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--ink-dim);
+      cursor: pointer
+    }
+
+    .sarow:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    .sarow.sel {
+      background: linear-gradient(180deg, rgba(200, 169, 104, 0.12), rgba(200, 169, 104, 0.05));
+      box-shadow: inset 0 0 0 1px rgba(200, 169, 104, 0.18);
+      color: var(--ink)
+    }
+
+    .sarow .sat {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--ink-faint)
+    }
+
+    .sarow .adot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex: none
+    }
+
+    .sarow .adot.run {
+      background: var(--run);
+      box-shadow: 0 0 6px rgba(111, 168, 144, 0.55)
+    }
+
+    .sarow .adot.pend {
+      background: var(--ink-ghost)
+    }
+
+    .sarow .adot.done {
+      background: var(--done)
+    }
+
+    /* detail pane */
+    .tldetail .dhd {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: var(--ink)
+    }
+
+    .tldetail .dhd .run {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--run);
+      letter-spacing: .14em;
+      text-transform: uppercase
+    }
+
+    .tldetail .dsub {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--ink-faint);
+      margin-bottom: 12px
+    }
+
+    .tldetail .events {
+      margin: 0;
+      border-left: none;
+      padding-left: 0
+    }
+
+    .tldetail .diffpeek {
+      margin-top: 14px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.24);
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.04);
+      padding: 10px 13px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      line-height: 1.6
+    }
+
+    .tldetail .diffpeek .add {
+      color: var(--run)
+    }
+
+    .tldetail .diffpeek .ctx {
+      color: var(--ink-faint)
+    }
+
+    .tldetail .diffpeek .fn {
+      color: var(--ink-dim);
+      margin-bottom: 5px
+    }
+
+    /* ============================================================================
+     DELIVERY = the Hybrid review surface (C3b.2), lifted from
+     cockpit-delivery-review-prototype.html variant E. Overview · Code Review · Files,
+     a thin lifecycle RIBBON as state-readout, pre-PR↔PR-open phase, findings that
+     reconcile, inline diff comments → Address-with-agent, artifact diff|rendered lens.
+     ============================================================================ */
+    /* delivery body layout inside the glass card */
+    .dlvwrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column
+    }
+
+    .hbodywrap {
+      flex: 1;
+      min-height: 0;
+      position: relative
+    }
+
+    #hbody {
+      position: absolute;
+      inset: 0;
+      overflow: auto
+    }
+
+    #hbody::-webkit-scrollbar {
+      width: 8px
+    }
+
+    #hbody::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px
+    }
+
+    /* CI pipeline rail nodes — dots + connectors, current node live (used inside .dctl) */
+    .rnode {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--ink-faint);
+      font-size: 11.5px;
+      font-family: var(--mono);
+      letter-spacing: .02em;
+      white-space: nowrap
+    }
+
+    .rnode .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--line-2);
+      flex: none
+    }
+
+    .rnode.done {
+      color: var(--ink-dim)
+    }
+
+    .rnode.done .dot {
+      background: var(--done)
+    }
+
+    .rnode.live {
+      color: var(--ink)
+    }
+
+    .rnode.live .dot {
+      background: var(--run);
+      box-shadow: 0 0 0 3px rgba(111, 168, 144, .16);
+      animation: pulse 2.4s ease-in-out infinite
+    }
+
+    .rnode.wait .dot {
+      background: var(--line-2)
+    }
+
+    .rbar {
+      width: 16px;
+      flex: none;
+      height: 1px;
+      background: var(--line-2);
+      margin: 0 7px
+    }
+
+    .rbar.done {
+      background: var(--done)
+    }
+
+    /* multi-Delivery glance (C3b.4): active shows full; extras collapse to one line */
+    .mdglance {
+      padding: 10px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0, 0, 0, .10);
+      flex: none
+    }
+
+    .mdglance .mdl {
+      font-family: var(--mono);
+      font-size: 8.5px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 6px
+    }
+
+    .mdrow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-dim);
+      cursor: pointer;
+      padding: 3px 0
+    }
+
+    .mdrow:hover {
+      color: var(--ink)
+    }
+
+    .mdrow .chev {
+      color: var(--ink-faint);
+      width: 10px
+    }
+
+    .mdrow .arrow {
+      color: var(--ink-faint)
+    }
+
+    .mdrow .mdst {
+      margin-left: 14px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--ink-faint)
+    }
+
+    .mdrow .mddot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--run);
+      box-shadow: 0 0 7px rgba(111, 168, 144, .5);
+      flex: none
+    }
+
+    .mdswap {
+      display: none;
+      padding: 7px 0 1px 19px;
+      font-size: 11px;
+      color: var(--accent);
+      font-family: var(--mono)
+    }
+
+    .mdrow.open+.mdswap {
+      display: block
+    }
+
+    /* ===== ONE control line: [tabs (+badges)] · [CI pipeline rail] · [primary CTA] =====
+     Collapses the old pipeline ribbon + sub-tab strip + CTA into a single horizontal band.
+     The rail is the state readout (no free-text status string); status facts are re-homed
+     onto the tabs (red blocking badge on Code Review, count on Files). */
+    .dctl {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 22px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: rgba(0, 0, 0, .18);
+      flex: none
+    }
+
+    .dtabs {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex: none
+    }
+
+    .dtab {
+      position: relative;
+      font-size: 12px;
+      color: var(--ink-faint);
+      padding: 8px 13px 9px;
+      border-radius: 7px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px
+    }
+
+    .dtab:hover {
+      color: var(--ink-dim)
+    }
+
+    .dtab.on {
+      color: #F1ECE1
+    }
+
+    .dtab.on::after {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 1px;
+      height: 2px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      box-shadow: 0 0 8px rgba(var(--warm), 0.5)
+    }
+
+    .dtab .dn {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-faint)
+    }
+
+    .blkbadge {
+      font-family: var(--mono);
+      font-size: 9px;
+      line-height: 1;
+      min-width: 15px;
+      height: 15px;
+      padding: 0 4px;
+      border-radius: 8px;
+      background: var(--block);
+      color: #160b0a;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 8px rgba(181, 103, 94, .55)
+    }
+
+    .drail {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0
+    }
+
+    .dctl .btn {
+      margin-left: 0;
+      flex: none
+    }
+
+    /* continuous-scroll feed sections — one per list item, concatenated in list order.
+     A real build would virtualize/windowise this stream; the prototype renders all
+     sections (counts are small) so scroll-spy + click-jump can be exercised end to end. */
+    .fsec {
+      scroll-margin-top: 10px
+    }
+
+    .tldetail .fsec+.fsec {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line)
+    }
+
+    .ddetail .fsec+.fsec {
+      border-top: 1px solid var(--line)
+    }
+
+    .ftrow.sel {
+      background: var(--accent-soft);
+      color: var(--ink)
+    }
+
+    /* ===== DELIVERY master–detail two-pane (mirrors Activity's .acol) ===== */
+    .dlv2 {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) 1fr;
+      background: var(--panel-2)
+    }
+
+    .dlist {
+      border-right: 1px solid var(--line);
+      overflow: auto;
+      min-width: 0;
+      padding: 10px 0 14px
+    }
+
+    .dlist::-webkit-scrollbar {
+      width: 8px
+    }
+
+    .dlist::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px
+    }
+
+    .ddetail {
+      overflow: auto;
+      min-width: 0
+    }
+
+    .ddetail::-webkit-scrollbar {
+      width: 8px
+    }
+
+    .ddetail::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px
+    }
+
+    .dlab {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      padding: 2px 18px 9px
+    }
+
+    /* generic selectable list row (walkthrough + findings share this) */
+    .lrow {
+      cursor: pointer;
+      padding: 9px 18px;
+      border-left: 2px solid transparent
+    }
+
+    .lrow:hover {
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    .lrow.sel {
+      background: linear-gradient(90deg, rgba(200, 169, 104, 0.12), rgba(200, 169, 104, 0.03));
+      border-left-color: var(--accent)
+    }
+
+    .lrow .l1 {
+      display: flex;
+      align-items: center;
+      gap: 9px
+    }
+
+    .lrow .l2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-faint)
+    }
+
+    .lrow .l2 .a {
+      color: var(--add)
+    }
+
+    .lrow .l2 .d {
+      color: var(--del)
+    }
+
+    /* walkthrough row bits */
+    .lrow .num {
+      width: 19px;
+      height: 19px;
+      flex: none;
+      border-radius: 50%;
+      border: 1px solid var(--line-2);
+      color: var(--ink-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 9.5px
+    }
+
+    .lrow .what {
+      flex: 1;
+      font-size: 12.5px;
+      color: var(--ink);
+      line-height: 1.35
+    }
+
+    .mk {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex: none
+    }
+
+    .mk.blocking {
+      background: var(--block);
+      box-shadow: 0 0 7px rgba(181, 103, 94, .5)
+    }
+
+    .mk.advisory {
+      background: var(--accent);
+      box-shadow: 0 0 7px rgba(200, 169, 104, .5)
+    }
+
+    /* findings row bits */
+    .lrow .sd {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex: none
+    }
+
+    .lrow .sd.blocking {
+      background: var(--block)
+    }
+
+    .lrow .sd.advisory {
+      background: var(--accent)
+    }
+
+    .lrow .sd.check {
+      background: var(--done)
+    }
+
+    .lrow .claim {
+      flex: 1;
+      font-size: 12.5px;
+      color: var(--ink);
+      line-height: 1.35
+    }
+
+    .lrow .conf {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-faint);
+      flex: none
+    }
+
+    .reconcile {
+      margin: 12px 18px 0;
+      border-top: 1px solid var(--line);
+      padding-top: 10px
+    }
+
+    .reconcile .rh {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--done);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer
+    }
+
+    .reconcile .rl {
+      display: none;
+      margin-top: 8px
+    }
+
+    .reconcile.open .rl {
+      display: block
+    }
+
+    .reconcile .rf {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 0;
+      font-size: 12px;
+      color: var(--ink-faint)
+    }
+
+    .reconcile .rf .sd {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--done);
+      flex: none
+    }
+
+    .reconcile .rf .cl {
+      text-decoration: line-through;
+      text-decoration-color: var(--ink-ghost)
+    }
+
+    .reconcile .rf .fp {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--ink-ghost);
+      margin-left: auto
+    }
+
+    /* file list rows in the left pane (reuse .ftrow look) */
+    .dlist .ftg {
+      padding: 9px 18px 3px
+    }
+
+    .dlist .ftrow {
+      padding: 5px 18px 5px 26px
+    }
+
+    /* right detail pane — shared header + GitHub gutter diff */
+    .dd {
+      padding: 16px 22px 22px;
+      max-width: 840px
+    }
+
+    .ddhd {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--ink);
+      line-height: 1.3
+    }
+
+    .ddhd .num {
+      width: 20px;
+      height: 20px;
+      flex: none;
+      border-radius: 50%;
+      border: 1px solid var(--line-2);
+      color: var(--ink-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 10px
+    }
+
+    .ddhd .sd {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex: none
+    }
+
+    .ddhd .sd.blocking {
+      background: var(--block)
+    }
+
+    .ddhd .sd.advisory {
+      background: var(--accent)
+    }
+
+    .ddhd .sd.check {
+      background: var(--done)
+    }
+
+    .ddsub {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-faint);
+      margin: 6px 0 14px
+    }
+
+    .ddwhy {
+      font-size: 13px;
+      line-height: 1.55;
+      margin-bottom: 9px;
+      color: var(--ink)
+    }
+
+    .ddwhy.dim {
+      color: var(--ink-dim)
+    }
+
+    .ddwhy .k {
+      display: inline-block;
+      width: 46px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      vertical-align: top
+    }
+
+    .ddmark {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      color: var(--ink-dim);
+      margin: 10px 0 2px;
+      font-family: var(--mono)
+    }
+
+    .ddacts {
+      display: flex;
+      gap: 8px;
+      margin: 14px 0 2px
+    }
+
+    /* self-contained GitHub gutter diff for the detail pane */
+    .ghdiff {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--inset);
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.62
+    }
+
+    .ghdiff .gh {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0, 0, 0, .25);
+      color: var(--ink);
+      font-size: 11px
+    }
+
+    .ghdiff .gh .fp {
+      color: var(--ink)
+    }
+
+    .ghdiff .gh .cnt {
+      margin-left: auto
+    }
+
+    .ghdiff .gh .cnt .a {
+      color: var(--add)
+    }
+
+    .ghdiff .gh .cnt .d {
+      color: var(--del)
+    }
+
+    .dfind.advisory {
+      border-left-color: var(--accent-deep);
+      background: rgba(200, 169, 104, .07)
+    }
+
+    .dfind.advisory .dm {
+      color: var(--accent)
+    }
+
+    /* frontier action row (static here — the dock sits below it in the card) */
+    .frontier {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 22px;
+      border-top: 1px solid var(--line);
+      flex: none
+    }
+
+    .frontier .lead {
+      font-size: 12px;
+      color: var(--ink-dim);
+      font-family: var(--mono)
+    }
+
+    .frontier .lead b {
+      color: var(--ink)
+    }
+
+    .gatechip {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--ink-dim);
+      border: 1px solid var(--line-2);
+      border-radius: 5px;
+      padding: 2px 7px;
+      letter-spacing: .04em
+    }
+
+    .btn {
+      margin-left: auto;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--base);
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      letter-spacing: -.01em;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--ink-dim);
+      border: 1px solid var(--line-2);
+      margin-left: 0
+    }
+
+    .btn.disabled {
+      background: var(--line-2);
+      color: var(--ink-faint);
+      cursor: not-allowed
+    }
+
+    /* shared diff snippets (used by Overview rows + findings evidence) */
+    .diff {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.65;
+      background: var(--inset);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      overflow: hidden
+    }
+
+    .dhead {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0, 0, 0, .25);
+      color: var(--ink-dim);
+      font-size: 11px
+    }
+
+    .dhead .fp {
+      color: var(--ink)
+    }
+
+    .dhead .cnt {
+      margin-left: auto;
+      font-size: 10.5px
+    }
+
+    .dhead .cnt .a {
+      color: var(--add)
+    }
+
+    .dhead .cnt .d {
+      color: var(--del)
+    }
+
+    .drow {
+      display: flex;
+      padding: 0 12px;
+      white-space: pre
+    }
+
+    .drow .g {
+      width: 34px;
+      color: var(--ink-faint);
+      text-align: right;
+      padding-right: 14px;
+      user-select: none;
+      flex: none
+    }
+
+    .drow.add {
+      background: rgba(92, 138, 107, .10)
+    }
+
+    .drow.add .g {
+      color: rgba(92, 138, 107, .7)
+    }
+
+    .drow.del {
+      background: rgba(181, 103, 94, .10)
+    }
+
+    .drow.del .g {
+      color: rgba(181, 103, 94, .7)
+    }
+
+    .drow .sgn {
+      width: 12px;
+      flex: none
+    }
+
+    .drow.add .sgn {
+      color: var(--add)
+    }
+
+    .drow.del .sgn {
+      color: var(--del)
+    }
+
+    .drow.ctx {
+      color: var(--ink-dim)
+    }
+
+    .hunkhead {
+      padding: 3px 12px;
+      color: var(--accent-deep);
+      background: rgba(200, 169, 104, .05);
+      font-size: 10.5px
+    }
+
+    .badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      letter-spacing: .03em
+    }
+
+    .risk {
+      display: inline-flex;
+      gap: 2px;
+      vertical-align: middle
+    }
+
+    .risk i {
+      width: 5px;
+      height: 9px;
+      border-radius: 1px;
+      background: var(--line-2)
+    }
+
+    .risk i.on {
+      background: var(--accent)
+    }
+
+    .mini {
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--line-2);
+      background: transparent;
+      color: var(--ink-dim);
+      cursor: pointer
+    }
+
+    .mini.ok {
+      color: var(--add);
+      border-color: rgba(92, 138, 107, .4)
+    }
+
+    .mini.no {
+      color: var(--block);
+      border-color: rgba(181, 103, 94, .35)
+    }
+
+    .mini.on {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent-deep)
+    }
+
+    .dlvpill {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--block);
+      border: 1px solid var(--block);
+      border-radius: 20px;
+      padding: 2px 9px;
+      cursor: pointer;
+      margin-left: 6px
+    }
+
+    /* Overview — PR body + narrated changes table */
+    .desc {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      margin-bottom: 8px
+    }
+
+    .desc .row {
+      font-size: 13px;
+      line-height: 1.5
+    }
+
+    .desc .row .k {
+      display: inline-block;
+      width: 52px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      vertical-align: top;
+      padding-top: 2px
+    }
+
+    .desc .row.dim {
+      color: var(--ink-dim)
+    }
+
+    .ntab-h {
+      font-size: 11px;
+      color: var(--ink-dim);
+      font-family: var(--mono);
+      letter-spacing: .04em;
+      margin: 20px 0 8px
+    }
+
+    .ntab {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      overflow: hidden
+    }
+
+    .nr {
+      display: grid;
+      grid-template-columns: 26px 1fr 210px 78px 92px;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer
+    }
+
+    .nr:last-of-type {
+      border-bottom: none
+    }
+
+    .nr:hover {
+      background: var(--panel-2)
+    }
+
+    .nr .num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid var(--line-2);
+      color: var(--ink-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 10px
+    }
+
+    .nr .what {
+      font-size: 12.5px;
+      color: var(--ink)
+    }
+
+    .nr .where {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .nr .delta {
+      font-family: var(--mono);
+      font-size: 10.5px
+    }
+
+    .nr .delta .a {
+      color: var(--add)
+    }
+
+    .nr .delta .d {
+      color: var(--del)
+    }
+
+    .nr .flag {
+      font-family: var(--mono);
+      font-size: 10px;
+      text-align: right
+    }
+
+    .nr .flag .blk {
+      color: var(--block)
+    }
+
+    .nr .flag .adv {
+      color: var(--accent)
+    }
+
+    .nx {
+      display: none;
+      padding: 0 14px 14px;
+      grid-column: 1/-1
+    }
+
+    .nrow.open .nx {
+      display: block
+    }
+
+    .nrow {
+      display: contents
+    }
+
+    /* Code Review — findings inbox */
+    .inbox {
+      padding: 16px 22px 20px;
+      max-width: 820px
+    }
+
+    .find {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--panel-2);
+      margin-top: 12px;
+      overflow: hidden
+    }
+
+    .find.blocking {
+      border-left: 2px solid var(--block)
+    }
+
+    .find.advisory {
+      border-left: 2px solid var(--accent-deep)
+    }
+
+    .find.done {
+      opacity: .5
+    }
+
+    .find .fh {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 12px 15px;
+      cursor: pointer
+    }
+
+    .find .sd {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex: none
+    }
+
+    .find.blocking .sd {
+      background: var(--block)
+    }
+
+    .find.advisory .sd {
+      background: var(--accent)
+    }
+
+    .find.done .sd {
+      background: var(--done)
+    }
+
+    .find .fc {
+      flex: 1
+    }
+
+    .find .fc .cl {
+      font-size: 13px;
+      color: var(--ink)
+    }
+
+    .find .fc .fp {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-dim);
+      margin-top: 2px
+    }
+
+    .find .conf {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-dim);
+      flex: none
+    }
+
+    .find .fa {
+      display: flex;
+      gap: 6px;
+      flex: none
+    }
+
+    .find .ev {
+      display: none;
+      padding: 0 15px 14px
+    }
+
+    .find.open .ev {
+      display: block
+    }
+
+    .cleanband {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 16px;
+      border: 1px dashed var(--line-2);
+      border-radius: 11px;
+      color: var(--ink-dim);
+      font-size: 12px
+    }
+
+    .cleanband .pct {
+      font-family: var(--mono);
+      color: var(--ink-faint);
+      margin-left: auto
+    }
+
+    .honest {
+      margin-top: 10px;
+      font-size: 10.5px;
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      text-align: center
+    }
+
+    .revbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-faint);
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .revbar .rr {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--ink-dim);
+      border: 1px solid var(--line-2);
+      border-radius: 7px;
+      padding: 5px 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .revbar .rr:hover {
+      color: var(--ink);
+      border-color: var(--ink-faint)
+    }
+
+    .resolved {
+      margin-top: 18px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px
+    }
+
+    .rhead {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--done);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer
+    }
+
+    .find.done .cl {
+      text-decoration: line-through;
+      text-decoration-color: var(--ink-faint)
+    }
+
+    .newtag {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--base);
+      background: var(--accent);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-left: 8px
+    }
+
+    .sev {
+      font-family: var(--mono);
+      font-size: 12px;
+      display: flex;
+      gap: 14px
+    }
+
+    .sev .blk {
+      color: var(--block)
+    }
+
+    .sev .adv {
+      color: var(--accent)
+    }
+
+    .sev .cln {
+      color: var(--ink-dim)
+    }
+
+    /* Files — GitHub-style tree + gutter diff, inline findings, comment threads, artifact lens */
+    .dfiles {
+      display: grid;
+      grid-template-columns: minmax(200px, 250px) 1fr;
+      height: 100%
+    }
+
+    .ftree {
+      border-right: 1px solid var(--line);
+      overflow: auto;
+      padding: 10px 0
+    }
+
+    .ffilter {
+      padding: 0 12px 10px
+    }
+
+    .ffilter input {
+      width: 100%;
+      background: var(--inset);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--ink);
+      font-size: 11px;
+      padding: 6px 9px;
+      font-family: var(--mono);
+      outline: none
+    }
+
+    .ftg {
+      padding: 7px 14px 3px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-faint);
+      letter-spacing: .05em
+    }
+
+    .ftrow {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px 5px 24px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-dim)
+    }
+
+    .ftrow:hover {
+      background: var(--panel-2)
+    }
+
+    .ftrow.on {
+      background: var(--accent-soft);
+      color: var(--ink)
+    }
+
+    .ftrow .fn {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .ftrow .fd {
+      font-size: 9.5px
+    }
+
+    .ftrow .fd .a {
+      color: var(--add)
+    }
+
+    .ftrow .fd .d {
+      color: var(--del)
+    }
+
+    .ftrow .fdot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--block);
+      flex: none
+    }
+
+    .fdiff {
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.6
+    }
+
+    .fdhead {
+      position: sticky;
+      top: 0;
+      background: #0d0f13;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 11px;
+      z-index: 2
+    }
+
+    .fdhead .cnt {
+      margin-left: auto;
+      font-size: 10.5px
+    }
+
+    .fdhead .cnt .a {
+      color: var(--add)
+    }
+
+    .fdhead .cnt .d {
+      color: var(--del)
+    }
+
+    .fdrow {
+      display: flex;
+      padding: 0 4px;
+      white-space: pre;
+      position: relative
+    }
+
+    .fdrow .lo,
+    .fdrow .ln {
+      width: 38px;
+      text-align: right;
+      padding-right: 10px;
+      color: var(--ink-faint);
+      user-select: none;
+      flex: none;
+      font-size: 10.5px
+    }
+
+    .fdrow .sgn {
+      width: 14px;
+      flex: none;
+      text-align: center
+    }
+
+    .fdrow.add {
+      background: rgba(92, 138, 107, .10)
+    }
+
+    .fdrow.add .sgn {
+      color: var(--add)
+    }
+
+    .fdrow.del {
+      background: rgba(181, 103, 94, .10)
+    }
+
+    .fdrow.del .sgn {
+      color: var(--del)
+    }
+
+    .fdrow.ctx {
+      color: var(--ink-dim)
+    }
+
+    .fdhunk {
+      padding: 3px 16px;
+      color: var(--accent-deep);
+      background: rgba(200, 169, 104, .05);
+      font-size: 10.5px
+    }
+
+    .dfind {
+      margin: 6px 20px 6px 56px;
+      padding: 9px 12px;
+      border-left: 2px solid var(--block);
+      background: rgba(181, 103, 94, .08);
+      border-radius: 0 7px 7px 0;
+      font-family: var(--sans);
+      font-size: 11.5px;
+      color: var(--ink)
+    }
+
+    .dfind .dm {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--block);
+      display: block;
+      margin-bottom: 3px
+    }
+
+    .ftoolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 16px;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-dim);
+      flex: none
+    }
+
+    .rbatch {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .rbatch .cc {
+      color: var(--accent)
+    }
+
+    .addr-btn {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--base);
+      background: var(--accent);
+      border: none;
+      border-radius: 7px;
+      padding: 6px 13px;
+      cursor: pointer
+    }
+
+    .subm {
+      font-size: 11px;
+      color: var(--ink-dim);
+      border: 1px solid var(--line-2);
+      border-radius: 7px;
+      padding: 6px 11px;
+      cursor: pointer;
+      background: none
+    }
+
+    .viewedbox {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--ink-dim);
+      cursor: pointer
+    }
+
+    .viewedbox .bx {
+      width: 13px;
+      height: 13px;
+      border: 1px solid var(--line-2);
+      border-radius: 3px;
+      flex: none
+    }
+
+    .viewedbox.on {
+      color: var(--run)
+    }
+
+    .viewedbox.on .bx {
+      background: var(--run);
+      border-color: var(--run)
+    }
+
+    .fdrow .addc {
+      position: absolute;
+      left: 56px;
+      opacity: 0;
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 700
+    }
+
+    .fdrow:hover {
+      background: rgba(200, 169, 104, .05)
+    }
+
+    .fdrow:hover .addc {
+      opacity: .7
+    }
+
+    .cthread {
+      margin: 6px 20px 8px 56px;
+      border: 1px solid var(--line-2);
+      border-radius: 9px;
+      overflow: hidden;
+      background: var(--panel-2)
+    }
+
+    .ccomment {
+      padding: 9px 12px;
+      font-family: var(--sans);
+      font-size: 12px;
+      color: var(--ink);
+      line-height: 1.5
+    }
+
+    .ccomment b {
+      color: var(--accent);
+      font-weight: 500;
+      margin-right: 8px;
+      font-size: 11px
+    }
+
+    .ccomment .ts {
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 10px
+    }
+
+    .creply {
+      border-top: 1px solid var(--line);
+      padding: 8px 10px
+    }
+
+    .creply input {
+      width: 100%;
+      background: var(--inset);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--ink);
+      font-size: 11.5px;
+      padding: 6px 9px;
+      outline: none;
+      font-family: var(--sans)
+    }
+
+    .pendtag {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--accent);
+      border: 1px solid var(--accent-deep);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-left: 8px
+    }
+
+    .fview {
+      margin-left: 16px;
+      display: inline-flex;
+      font-family: var(--mono);
+      font-size: 10px;
+      border: 1px solid var(--line-2);
+      border-radius: 6px;
+      overflow: hidden
+    }
+
+    .fview .fv {
+      padding: 3px 9px;
+      color: var(--ink-faint);
+      cursor: pointer
+    }
+
+    .fview .fv.on {
+      background: var(--accent-soft);
+      color: var(--accent)
+    }
+
+    .artview {
+      padding: 22px 26px;
+      max-width: 680px;
+      font-family: var(--sans);
+      line-height: 1.62;
+      color: var(--ink)
+    }
+
+    .artview h1 {
+      font-size: 18px;
+      margin-bottom: 6px;
+      letter-spacing: -.01em
+    }
+
+    .artview .amuted {
+      color: var(--ink-faint);
+      font-family: var(--mono);
+      font-size: 11px;
+      margin-bottom: 16px
+    }
+
+    .artview h2 {
+      font-size: 13px;
+      margin: 18px 0 6px;
+      color: var(--ink)
+    }
+
+    .artview p {
+      color: var(--ink-dim);
+      margin-bottom: 8px
+    }
+
+    .artview code {
+      font-family: var(--mono);
+      background: var(--inset);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--ink)
+    }
+
+    .artview ul {
+      padding-left: 18px;
+      color: var(--ink-dim)
+    }
+
+    .artview li {
+      margin-bottom: 4px
+    }
+
+    /* ===== FRESH SESSION — "dock is home" invitation (lifted from fresh-session study) ===== */
+    .invite {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 13px;
+      text-align: center;
+      padding: 40px 40px 26px
+    }
+
+    .invite .halo {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 50% 40%, rgba(var(--warm), 0.16), transparent 70%);
+      border: 1px solid rgba(var(--warm), 0.14);
+      color: var(--accent);
+      font-weight: 200;
+      font-size: 24px
+    }
+
+    .invite h2 {
+      font-weight: 200;
+      font-size: 19px;
+      color: #E5DFD2;
+      letter-spacing: .01em
+    }
+
+    .invite p {
+      font-size: 12.5px;
+      color: var(--ink-faint);
+      max-width: 420px;
+      line-height: 1.6
+    }
+
+    .invite p .k {
+      font-family: var(--mono);
+      color: var(--ink-dim);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 1px 6px;
+      border-radius: 5px
+    }
+
+    .invite .chips {
+      margin-top: 6px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center
+    }
+
+    .invite .sugg {
+      font-size: 11px;
+      color: var(--ink-dim);
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06)
+    }
+
+    .invite .sugg .m {
+      font-family: var(--mono);
+      color: var(--ink-faint)
+    }
+
+    /* transcript (external) */
+    .banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 22px 16px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 11.5px;
+      color: var(--ink-dim)
+    }
+
+    .banner .d {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      border: 1.5px solid var(--ink-ghost);
+      flex: none
+    }
+
+    .tr {
+      padding: 0 24px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.75;
+      color: #9C978B
+    }
+
+    .tr .u {
+      color: var(--accent)
+    }
+
+    .tr .a {
+      color: var(--ink)
+    }
+
+    .tr .dm {
+      color: var(--ink-faint)
+    }
+
+    /* ===== TERMINAL DOCK ===== */
+    #dock {
+      margin: 8px 4px 4px;
+      border-radius: 14px;
+      overflow: hidden;
+      flex: none;
+      position: relative;
+      backdrop-filter: blur(10px) saturate(0.95);
+      background: linear-gradient(180deg, rgba(10, 11, 14, 0.74), rgba(6, 7, 9, 0.84));
+      box-shadow: inset 0 1px 0 rgba(255, 246, 228, 0.055), inset 0 20px 50px -40px rgba(var(--warm), 0.16);
+      transition: height .28s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    #dock .dhead {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 18px 7px;
+      cursor: pointer
+    }
+
+    #dock .dhead .ticon {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-dim);
+      flex: none;
+      letter-spacing: -1px
+    }
+
+    #dock .dhead .tlabel {
+      font-size: 12px;
+      color: var(--ink-dim);
+      flex: none
+    }
+
+    #dock .dhead .tsep {
+      color: var(--ink-ghost);
+      flex: none
+    }
+
+    #dock .dhead .live {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--run);
+      box-shadow: 0 0 8px rgba(111, 168, 144, 0.6);
+      flex: none
+    }
+
+    #dock .dhead .live.idle {
+      background: var(--ink-faint);
+      box-shadow: none
+    }
+
+    /* now-head lives IN the dock header row (not a separate line): what the session is doing + plan progress */
+    #dock .dhead .now {
+      font-size: 12px;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0
+    }
+
+    #dock .dhead .now .dm {
+      color: var(--ink-faint)
+    }
+
+    #dock .dhead .prog {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      flex: none
+    }
+
+    #dock .dhead .prog .cx {
+      color: var(--ink-faint)
+    }
+
+    #dock .dhead .src {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--ink-ghost)
+    }
+
+    #dock .dhead .exp {
+      margin-left: auto;
+      font-size: 13px;
+      color: var(--ink-faint);
+      cursor: pointer
+    }
+
+    #dock .dhead .dstop {
+      font-size: 10px;
+      color: var(--ink-dim);
+      padding: 4px 10px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      margin-right: 12px
+    }
+
+    #dock .dhead .dstop:hover {
+      color: var(--block);
+      background: rgba(181, 103, 94, 0.12)
+    }
+
+    #dock .lines {
+      padding: 2px 18px 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.62;
+      color: #B7B2A6;
+      overflow: auto
+    }
+
+    #dock .lines .p {
+      color: var(--accent)
+    }
+
+    #dock .lines .dm {
+      color: var(--ink-faint)
+    }
+
+    #dock .lines .ok {
+      color: var(--run)
+    }
+
+    #dock .prompt {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 18px 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05)
+    }
+
+    #dock .prompt .car {
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 13px
+    }
+
+    #dock .prompt input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 12px
+    }
+
+    #dock .prompt input::placeholder {
+      color: var(--ink-ghost)
+    }
+
+    #dock .roprompt {
+      padding: 9px 18px 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-ghost);
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    /* archived list (main panel) */
+    #archview {
+      padding: 12px 12px
+    }
+
+    .aback {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--ink-dim);
+      padding: 8px 12px;
+      border-radius: 9px;
+      cursor: pointer;
+      margin-bottom: 8px
+    }
+
+    .aback:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--ink)
+    }
+
+    .afilters {
+      display: flex;
+      gap: 8px;
+      padding: 0 12px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 6px
+    }
+
+    .pill {
+      font-size: 10px;
+      font-family: var(--mono);
+      color: var(--ink-dim);
+      padding: 5px 10px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.03)
+    }
+
+    .arow {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 10px 16px;
+      border-radius: 9px;
+      cursor: pointer
+    }
+
+    .arow:hover {
+      background: rgba(255, 255, 255, 0.035)
+    }
+
+    .arow .an {
+      flex: 1;
+      font-size: 13px;
+      color: var(--ink-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .arow .aw {
+      font-size: 8.5px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      flex: none
+    }
+
+    .arow .at {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-ghost);
+      flex: none;
+      width: 44px;
+      text-align: right
+    }
+
+    /* ===== CONCIERGE STRIP (context; owned by #159) ===== */
+    #cx {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 54px;
+      z-index: 9;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 22px;
+      background: linear-gradient(180deg, rgba(16, 15, 14, 0.6), rgba(9, 9, 11, 0.76));
+      backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 246, 228, 0.05)
+    }
+
+    .ringorb {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      flex: none
+    }
+
+    .ringorb .ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from -40deg, rgba(var(--warm), 0.92), rgba(var(--warm), 0.42) 42deg, rgba(var(--warm), 0.05) 120deg, transparent 205deg, transparent 300deg, rgba(var(--warm), 0.3) 342deg, rgba(var(--warm), 0.92));
+      -webkit-mask: radial-gradient(circle, transparent 56%, #000 60%);
+      mask: radial-gradient(circle, transparent 56%, #000 60%);
+      filter: drop-shadow(0 0 6px rgba(var(--warm), 0.55));
+      animation: breath 7s ease-in-out infinite
+    }
+
+    .ringorb .core {
+      position: absolute;
+      inset: 7px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 44%, #0c0d10, #060608);
+      box-shadow: inset 0 0 12px 2px rgba(0, 0, 0, 0.9)
+    }
+
+    #cx .caption {
+      flex: 1;
+      min-width: 0;
+      font-weight: 200;
+      font-size: 14px;
+      color: #CFC9BC;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    #cx .caption .q {
+      color: var(--ink-faint)
+    }
+
+    #cx .cmode {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    #cx .cmode .ml {
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-faint)
+    }
+
+    .ctoggle {
+      width: 36px;
+      height: 20px;
+      border-radius: 11px;
+      position: relative;
+      background: linear-gradient(180deg, rgba(var(--warm), 0.5), rgba(var(--warm), 0.28));
+      box-shadow: inset 0 0 8px rgba(var(--warm), 0.4)
+    }
+
+    .ctoggle .knob {
+      position: absolute;
+      top: 2px;
+      left: 18px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(var(--warm), 0.7)
+    }
+
+    /* scene caption + band + switcher */
+    #cap {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 7;
+      font-size: 10px;
+      letter-spacing: .08em;
+      color: var(--ink-faint);
+      text-align: center
+    }
+
+    #cap b {
+      color: var(--accent);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      font-weight: 600
+    }
+
+    #band {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: repeating-linear-gradient(90deg, var(--accent-deep) 0 14px, transparent 14px 28px);
+      opacity: .5;
+      z-index: 100
+    }
+
+    #sw {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 101;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: rgba(18, 18, 22, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 13px;
+      padding: 6px;
+      box-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(12px)
+    }
+
+    #sw .ar {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      font-size: 15px;
+      color: var(--ink-dim)
+    }
+
+    #sw .ar:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff
+    }
+
+    #sw .lb {
+      min-width: 240px;
+      text-align: center;
+      padding: 0 12px;
+      font-size: 12px;
+      color: #EDE8DD
+    }
+
+    #sw .lb .k {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      margin-right: 8px
+    }
+
+    #sw .lb .d {
+      display: block;
+      font-size: 9.5px;
+      color: var(--ink-faint);
+      margin-top: 2px
+    }
+
+    @keyframes breath {
+
+      0%,
+      100% {
+        opacity: .82;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.035)
+      }
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .45
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div id="band"></div>
-<div id="room">
-  <div id="cap"><b id="capk">Activity</b> &nbsp; <span id="capd"></span></div>
+  <div id="band"></div>
+  <div id="room">
+    <div id="cap"><b id="capk">Activity</b> &nbsp; <span id="capd"></span></div>
 
-  <div id="brow">
-    <div id="mark"><span class="glyph">ARGO</span><span class="proj">Argo · main</span></div>
-    <div id="rooms"><div class="rm"><span class="k">⌘1</span> Work</div><div class="rm on"><span class="k">⌘2</span> Sessions</div></div>
+    <div id="brow">
+      <div id="mark"><span class="glyph">ARGO</span><span class="proj">Argo · main</span></div>
+      <div id="rooms">
+        <div class="rm"><span class="k">⌘1</span> Work</div>
+        <div class="rm on"><span class="k">⌘2</span> Sessions</div>
+      </div>
+    </div>
+
+    <div id="rail">
+      <div id="newses"><span class="plus">+</span> New session <span class="k">⌘N</span></div>
+      <div class="label" id="rlabel">Roster · active</div>
+      <div id="rows"></div>
+      <div id="arch">⚙ Archived <span class="cnt">37</span></div>
+    </div>
+
+    <div id="card"></div>
+
+    <div id="cx">
+      <div class="ringorb">
+        <div class="ring"></div>
+        <div class="core"></div>
+      </div>
+      <div class="caption"><span class="q">“</span>the auth refactor is on CI — one lint warning<span class="q">”</span></div>
+      <div class="cmode"><span class="ml">Conversation</span>
+        <div class="ctoggle"><span class="knob"></span></div>
+      </div>
+    </div>
   </div>
 
-  <div id="rail">
-    <div id="newses"><span class="plus">+</span> New session <span class="k">⌘N</span></div>
-    <div class="label">Roster · active</div>
-    <div id="rows"></div>
-    <div id="arch">⚙ Archived <span class="cnt">37</span></div>
+  <div id="hsw">
+    <span class="hlbl">Header</span>
+    <div class="hp" data-h="1" onclick="setHeader(1)">Elapsed</div>
+    <div class="hp" data-h="2" onclick="setHeader(2)">Percent</div>
+    <div class="hp" data-h="3" onclick="setHeader(3)">Glyph</div>
   </div>
 
-  <div id="card"></div>
-
-  <div id="cx">
-    <div class="ringorb"><div class="ring"></div><div class="core"></div></div>
-    <div class="caption"><span class="q">“</span>the auth refactor is on CI — one lint warning<span class="q">”</span></div>
-    <div class="cmode"><span class="ml">Conversation</span><div class="ctoggle"><span class="knob"></span></div></div>
+  <div id="sw">
+    <div class="ar" onclick="cycle(-1)">‹</div>
+    <div class="lb"><span><span class="k" id="swk">1/7</span><span id="swn">Activity</span></span><span class="d" id="swd"></span></div>
+    <div class="ar" onclick="cycle(1)">›</div>
   </div>
-</div>
 
-<div id="hsw">
-  <span class="hlbl">Header</span>
-  <div class="hp" data-h="1" onclick="setHeader(1)">Elapsed</div>
-  <div class="hp" data-h="2" onclick="setHeader(2)">Percent</div>
-  <div class="hp" data-h="3" onclick="setHeader(3)">Glyph</div>
-</div>
-
-<div id="sw">
-  <div class="ar" onclick="cycle(-1)">‹</div>
-  <div class="lb"><span><span class="k" id="swk">1/7</span><span id="swn">Activity</span></span><span class="d" id="swd"></span></div>
-  <div class="ar" onclick="cycle(1)">›</div>
-</div>
-
-<script>
-/* ---------- roster ---------- */
-const RAIL=[
-  {dot:'run', name:'Auth refactor', meta:'Opus 4.8 · <span class="branch">feat/auth-rotation</span>', word:'CI RUNNING', ctx:42},
-  {dot:'idle',name:'Rate-limit endpoint', meta:'GPT-5 · <span class="branch">#58 · feat/ratelimit</span>', word:'PR OPEN'},
-  {dot:'need',name:'Why is CI flaky', meta:'Sonnet 5 · <span class="branch">"explore staleness…"</span>', word:'NEEDS YOU', attn:true},
-  {dot:'block',name:'Migrate config loader', meta:'Opus 4.8 · <span class="branch">feat/config-loader</span>', word:'CI FAILED', fail:true},
-  {dot:'ext', name:'~/argo', meta:'Sonnet 5 · <span class="branch">external · read-only</span>', word:'READ-ONLY', ext:true},
-];
-function railHTML(sel){return RAIL.map((r,i)=>`
-  <div class="plane ${i===sel?'active':'recede'} ${r.ext?'ext':''}" onclick="selectRow(${i})">
+  <script>
+    /* ---------- roster ---------- */
+    const RAIL = [
+      { dot: 'run', name: 'Auth refactor', meta: 'Opus 4.8 · <span class="branch">feat/auth-rotation</span>', word: 'CI RUNNING', ctx: 42 },
+      { dot: 'idle', name: 'Rate-limit endpoint', meta: 'GPT-5 · <span class="branch">#58 · feat/ratelimit</span>', word: 'PR OPEN' },
+      { dot: 'need', name: 'Why is CI flaky', meta: 'Sonnet 5 · <span class="branch">"explore staleness…"</span>', word: 'NEEDS YOU', attn: true },
+      { dot: 'block', name: 'Migrate config loader', meta: 'Opus 4.8 · <span class="branch">feat/config-loader</span>', word: 'CI FAILED', fail: true },
+      { dot: 'ext', name: '~/argo', meta: 'Sonnet 5 · <span class="branch">external · read-only</span>', word: 'READ-ONLY', ext: true },
+    ];
+    function railHTML(sel) {
+      return RAIL.map((r, i) => `
+  <div class="plane ${i === sel ? 'active' : 'recede'} ${r.ext ? 'ext' : ''}" onclick="selectRow(${i})">
     <div class="top"><span class="dot ${r.dot}"></span><div class="name">${r.name}</div><span class="word">${r.word}</span></div>
     <div class="meta">${r.meta}</div>
-  </div>`).join('');}
+  </div>`).join('');
+    }
 
-/* ---------- header — 3 takes on ONE band (?header=1..3) ----------
-   ONE skeleton per take: [large ctx ring] · [title / meta] ...... [tabs, right-aligned].
-   header(o,active,changes,outc) dispatches on curH and renders the tabs INSIDE the band —
-   there is no separate #tabs strip. Shared locked decisions live in the helpers below, so every
-   take degrades identically: title = fallback chain (o.title, never the task) · live dot only
-   when running · idle drops ↑push · external drops the intent + renders the ring EMPTY/"unknown"
-   · intent de-dups when titleSrc==='ticket' · NO action buttons. */
-function modeCls(m){return {code:'m-code',plan:'m-plan',ask:'m-ask',unknown:'m-unk'}[m]||'m-unk';}
-function modeTxt(m){return {code:'Code',plan:'Plan',ask:'Ask',unknown:'unknown'}[m]||'unknown';}
-function gitTxt(o){if(!o.ws)return null;const g=[];if(o.ws.dirty)g.push(`${o.ws.dirty}∆`);if(o.ws.push)g.push(`↑${o.ws.push}`);return g.length?g.join(' '):null;} /* branch NAME shed; only ∆/↑ */
-function hasIntent(o){return o.live!=='ext'&&!!o.intent;}                 /* external is read-only → no intent */
-function intentBody(o){return o.titleSrc==='ticket'                       /* title already = ticket name → link only, no repeat */
-  ? `intent <span class="n">#${o.intent.n}</span> ↗`
-  : `intent <span class="n">#${o.intent.n}</span> ${o.intent.t} ↗`;}
-function compactElapsed(e){if(!e)return null;const m=e.match(/\d+\s*[hm]/);return m?m[0].replace(/\s+/g,''):e;} /* '3m 12s'→'3m' · 'idle 8m'→'8m' */
+    /* ---------- header — 3 takes on ONE band (?header=1..3) ----------
+       ONE skeleton per take: [large ctx ring] · [title / meta] ...... [tabs, right-aligned].
+       header(o,active,changes,outc) dispatches on curH and renders the tabs INSIDE the band —
+       there is no separate #tabs strip. Shared locked decisions live in the helpers below, so every
+       take degrades identically: title = fallback chain (o.title, never the task) · live dot only
+       when running · idle drops ↑push · external drops the intent + renders the ring EMPTY/"unknown"
+       · intent de-dups when titleSrc==='ticket' · NO action buttons. */
+    function modeCls(m) { return { code: 'm-code', plan: 'm-plan', ask: 'm-ask', unknown: 'm-unk' }[m] || 'm-unk'; }
+    function modeTxt(m) { return { code: 'Code', plan: 'Plan', ask: 'Ask', unknown: 'unknown' }[m] || 'unknown'; }
+    function gitTxt(o) { if (!o.ws) return null; const g = []; if (o.ws.dirty) g.push(`${o.ws.dirty}∆`); if (o.ws.push) g.push(`↑${o.ws.push}`); return g.length ? g.join(' ') : null; } /* branch NAME shed; only ∆/↑ */
+    function hasIntent(o) { return o.live !== 'ext' && !!o.intent; }                 /* external is read-only → no intent */
+    function intentBody(o) {
+      return o.titleSrc === 'ticket'                       /* title already = ticket name → link only, no repeat */
+        ? `intent <span class="n">#${o.intent.n}</span> ↗`
+        : `intent <span class="n">#${o.intent.n}</span> ${o.intent.t} ↗`;
+    }
+    function compactElapsed(e) { if (!e) return null; const m = e.match(/\d+\s*[hm]/); return m ? m[0].replace(/\s+/g, '') : e; } /* '3m 12s'→'3m' · 'idle 8m'→'8m' */
 
-/* large ctx ring — arc = DERIVED ctx (honest tilde); centre + stroke passed per take.
-   ctx==null → NO arc drawn, ring reads empty/"unknown". Never encodes state/liveness. */
-function hringSVG(px,stroke,ctx){const r=(px-stroke-4)/2,c=2*Math.PI*r,m=px/2;
-  const track=`<circle cx="${m}" cy="${m}" r="${r}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="${stroke}"/>`;
-  const arc=ctx==null?'':`<circle cx="${m}" cy="${m}" r="${r}" fill="none" stroke="#C8A968" stroke-width="${stroke}" stroke-linecap="round"
-      stroke-dasharray="${(ctx/100*c).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${m} ${m})" opacity="0.9" style="filter:drop-shadow(0 0 5px rgba(200,169,104,0.55))"/>`;
-  return `<svg width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">${track}${arc}</svg>`;}
-function ring(px,stroke,ctx,centre,sub){
-  return `<div class="hring ${ctx==null?'unk':''}" style="width:${px}px;height:${px}px">${hringSVG(px,stroke,ctx)}
-    <div class="hrc"><span class="hrcm">${centre}</span>${sub?`<span class="hrcs">${sub}</span>`:''}</div></div>`;}
+    /* large ctx ring — arc = DERIVED ctx (honest tilde); centre + stroke passed per take.
+       ctx==null → NO arc drawn, ring reads empty/"unknown". Never encodes state/liveness. */
+    function hringSVG(px, stroke, ctx) {
+      const r = (px - stroke - 4) / 2, c = 2 * Math.PI * r, m = px / 2;
+      const track = `<circle cx="${m}" cy="${m}" r="${r}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="${stroke}"/>`;
+      const arc = ctx == null ? '' : `<circle cx="${m}" cy="${m}" r="${r}" fill="none" stroke="#C8A968" stroke-width="${stroke}" stroke-linecap="round"
+      stroke-dasharray="${(ctx / 100 * c).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${m} ${m})" opacity="0.9" style="filter:drop-shadow(0 0 5px rgba(200,169,104,0.55))"/>`;
+      return `<svg width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">${track}${arc}</svg>`;
+    }
+    function ring(px, stroke, ctx, centre, sub) {
+      return `<div class="hring ${ctx == null ? 'unk' : ''}" style="width:${px}px;height:${px}px">${hringSVG(px, stroke, ctx)}
+    <div class="hrc"><span class="hrcm">${centre}</span>${sub ? `<span class="hrcs">${sub}</span>` : ''}</div></div>`;
+    }
 
-/* meta line(s): Mode · elapsed · git ∆/↑ · intent ↗ */
-function metaParts(o){
-  const mode=`<span class="${modeCls(o.mode)}">${modeTxt(o.mode)}</span>`;
-  const el=o.elapsed?`<span>${o.elapsed}</span>`:null;
-  const g=gitTxt(o);const git=g?`<span class="mut">${g}</span>`:null;
-  const intent=hasIntent(o)?`<span class="h-intent">${intentBody(o)}</span>`:null;
-  return {mode,el,git,intent};
-}
-function metaOne(o){const p=metaParts(o);const out=[p.mode];
-  [p.el,p.git,p.intent].forEach(x=>{if(x)out.push('<span class="h-b">·</span>',x);});
-  return `<div class="hmeta">${out.join('')}</div>`;}
-function metaTwo(o){const p=metaParts(o);
-  const l1=[p.mode];if(p.el)l1.push('<span class="h-b">·</span>',p.el);
-  const l2=[];[p.git,p.intent].forEach(x=>{if(x){if(l2.length)l2.push('<span class="h-b">·</span>');l2.push(x);}});
-  return `<div class="hmeta two"><div class="mrow">${l1.join('')}</div>${l2.length?`<div class="mrow">${l2.join('')}</div>`:''}</div>`;}
+    /* meta line(s): Mode · elapsed · git ∆/↑ · intent ↗ */
+    function metaParts(o) {
+      const mode = `<span class="${modeCls(o.mode)}">${modeTxt(o.mode)}</span>`;
+      const el = o.elapsed ? `<span>${o.elapsed}</span>` : null;
+      const g = gitTxt(o); const git = g ? `<span class="mut">${g}</span>` : null;
+      const intent = hasIntent(o) ? `<span class="h-intent">${intentBody(o)}</span>` : null;
+      return { mode, el, git, intent };
+    }
+    function metaOne(o) {
+      const p = metaParts(o); const out = [p.mode];
+      [p.el, p.git, p.intent].forEach(x => { if (x) out.push('<span class="h-b">·</span>', x); });
+      return `<div class="hmeta">${out.join('')}</div>`;
+    }
+    function metaTwo(o) {
+      const p = metaParts(o);
+      const l1 = [p.mode]; if (p.el) l1.push('<span class="h-b">·</span>', p.el);
+      const l2 = [];[p.git, p.intent].forEach(x => { if (x) { if (l2.length) l2.push('<span class="h-b">·</span>'); l2.push(x); } });
+      return `<div class="hmeta two"><div class="mrow">${l1.join('')}</div>${l2.length ? `<div class="mrow">${l2.join('')}</div>` : ''}</div>`;
+    }
 
-/* tabs absorbed into the band's right edge — keep counts, active indicator, setTab() wiring */
-function headTabs(active,changes,outc,style){
-  return `<div class="htabs ${style}">`+[['activity','Activity',''],['delivery','Delivery',changes||''],['outcomes','Outcomes',outc||'']]
-    .map(x=>`<div class="htab ${x[0]===active?'on':''}" onclick="setTab('${x[0]}')">${x[1]}${x[2]?`<span class="cnt">${x[2]}</span>`:''}</div>`).join('')+`</div>`;}
+    /* tabs absorbed into the band's right edge — TWO tabs only (C2.2: Outcomes cut). */
+    function headTabs(active, style) {
+      return `<div class="htabs ${style}">` + [['activity', 'Activity'], ['delivery', 'Delivery']]
+        .map(x => `<div class="htab ${x[0] === active ? 'on' : ''}" onclick="setTab('${x[0]}')">${x[1]}</div>`).join('') + `</div>`;
+    }
 
-function titleBlk(o,meta){return `<div class="htblk"><div class="h-title">${o.title}</div>${meta}</div>`;}
-function live(o){return o.live==='run'?'<span class="h-live"></span>':'';}
+    function titleBlk(o, meta) { return `<div class="htblk"><div class="h-title">${o.title}</div>${meta}</div>`; }
+    function live(o) { return o.live === 'run' ? '<span class="h-live"></span>' : ''; }
 
-/* TAKE 1 — ring centre = elapsed · medium stroke · plain text tabs · one-line meta */
-function h1(o,a,ch,oc){
-  const centre=o.ctx==null?'?':`~${o.ctx}%`;
-  const sub=o.ctx==null?'unknown':'ctx';
-  return `<div id="chead" class="t1">
-    <div class="hleft">${ring(56,3,o.ctx,centre,sub)}${titleBlk(o,`<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaOne(o)}</div>`)}</div>
-    ${headTabs(a,ch,oc,'plain')}</div>`;
-}
-/* TAKE 2 — ring centre = ~n% numeral · thin stroke · segmented pill tabs · two-line meta */
-function h2(o,a,ch,oc){
-  const centre=o.ctx==null?'?':`~${o.ctx}%`;
-  const sub=o.ctx==null?'unknown':'';
-  return `<div id="chead" class="t2">
-    <div class="hleft">${ring(54,2,o.ctx,centre,sub)}${titleBlk(o,`<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaTwo(o)}</div>`)}</div>
-    ${headTabs(a,ch,oc,'pills')}</div>`;
-}
-/* TAKE 3 — ring centre = quiet session glyph · heavy stroke · plain text tabs · one-line meta */
-function h3(o,a,ch,oc){
-  const centre=o.ctx==null?'?':'<span class="hglyph">◍</span>';
-  const sub=o.ctx==null?'unknown':`~${o.ctx}%`;
-  return `<div id="chead" class="t3">
-    <div class="hleft">${ring(58,4,o.ctx,centre,sub)}${titleBlk(o,`<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaOne(o)}</div>`)}</div>
-    ${headTabs(a,ch,oc,'plain')}</div>`;
-}
-const HV={1:{fn:h1,n:'Elapsed-core · text tabs'},2:{fn:h2,n:'%-core · pill tabs · 2-line'},3:{fn:h3,n:'Glyph-core · text tabs'}};
-let curH=1;
-function header(o,active,changes,outc){return HV[curH].fn(o,active,changes,outc);}
+    /* TAKE 1 — ring centre = elapsed · medium stroke · plain text tabs · one-line meta */
+    function h1(o, a) {
+      const centre = o.ctx == null ? '?' : `~${o.ctx}%`;
+      const sub = o.ctx == null ? 'unknown' : 'ctx';
+      return `<div id="chead" class="t1">
+    <div class="hleft">${ring(56, 3, o.ctx, centre, sub)}${titleBlk(o, `<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaOne(o)}</div>`)}</div>
+    ${headTabs(a, 'plain')}</div>`;
+    }
+    /* TAKE 2 — ring centre = ~n% numeral · thin stroke · segmented pill tabs · two-line meta */
+    function h2(o, a) {
+      const centre = o.ctx == null ? '?' : `~${o.ctx}%`;
+      const sub = o.ctx == null ? 'unknown' : '';
+      return `<div id="chead" class="t2">
+    <div class="hleft">${ring(54, 2, o.ctx, centre, sub)}${titleBlk(o, `<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaTwo(o)}</div>`)}</div>
+    ${headTabs(a, 'pills')}</div>`;
+    }
+    /* TAKE 3 — ring centre = quiet session glyph · heavy stroke · plain text tabs · one-line meta */
+    function h3(o, a) {
+      const centre = o.ctx == null ? '?' : '<span class="hglyph">◍</span>';
+      const sub = o.ctx == null ? 'unknown' : `~${o.ctx}%`;
+      return `<div id="chead" class="t3">
+    <div class="hleft">${ring(58, 4, o.ctx, centre, sub)}${titleBlk(o, `<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaOne(o)}</div>`)}</div>
+    ${headTabs(a, 'plain')}</div>`;
+    }
+    const HV = { 1: { fn: h1, n: 'Elapsed-core · text tabs' }, 2: { fn: h2, n: '%-core · pill tabs · 2-line' }, 3: { fn: h3, n: 'Glyph-core · text tabs' } };
+    let curH = 1;
+    function header(o, active) { return HV[curH].fn(o, active); }
+    /* fresh session gets a bespoke header take: ring reads "—/ready", identity meta, no live dot */
+    function freshHead() {
+      return `<div id="chead" class="t1">
+    <div class="hleft">${ring(56, 3, null, '—', 'ready')}
+      <div class="htblk"><div class="h-title">New session</div>
+        <div class="hmeta">Claude <span class="h-b">·</span> root <span class="h-b">·</span> no branch yet <span class="h-b">·</span> ctx —</div></div></div>
+    ${headTabs('activity', 'plain')}</div>`;
+    }
 
-/* ---------- bodies ---------- */
-function activityBody(){return `<div id="panelwrap">
+    /* ---------- bodies ---------- */
+    /* Activity data — the left list (TOC) and the right feed are both built from these,
+       so they stay in lock-step order (subagents first, then this turn's steps). */
+    const AGENTS = [
+      { name: 'correctness lens', target: 'rotation.ts', st: 'run' },
+      { name: 'security lens', target: 'replay window', st: 'run' },
+      { name: 'repro lens', target: 'queued', st: 'pend' },
+    ];
+    const STEPS = [
+      { name: 'Read the legacy auth module', st: 'done', coal: '×4' },
+      { name: 'Extract the rotation core', st: 'done', coal: '+180' },
+      { name: 'Wire verify() onto it', st: 'cur' },
+      { name: 'Add middleware tests', st: 'pending' },
+    ];
+    function stepIcon(st) { return { done: '✓', cur: '▶', pending: '○' }[st] || '○'; }
+    /* left = navigation TOC; right = ONE continuous scrollable feed of every item's detail.
+       Scroll-spy (wireSpy) moves .sel to whichever section is in view; a row click smooth-jumps. */
+    function activityBody() {
+      return `<div class="dlvwrap">
   <div class="acol">
     <div class="tllist">
       <div class="tl-lab"><span class="label">Subagents</span><span class="rev">Verify · 3 running</span></div>
       <div class="salist">
-        <div class="sarow sel" onclick="pickAgent(this,'correctness lens','rotation.ts','run')"><span class="adot run"></span>correctness lens<span class="sat">rotation.ts</span></div>
-        <div class="sarow" onclick="pickAgent(this,'security lens','replay window','run')"><span class="adot run"></span>security lens<span class="sat">replay window</span></div>
-        <div class="sarow" onclick="pickAgent(this,'repro lens','queued','pend')"><span class="adot pend"></span>repro lens<span class="sat">queued</span></div>
+        ${AGENTS.map((a, i) => `<div class="sarow ${i === 0 ? 'sel' : ''}" data-nav="a-sa-${i}" onclick="feedJump('.tldetail','a-sa-${i}')"><span class="adot ${a.st === 'pend' ? 'pend' : 'run'}"></span>${a.name}<span class="sat">${a.target}</span></div>`).join('')}
       </div>
       <div class="tl-lab" style="margin-top:16px"><span class="label">Timeline</span><span class="rev">newest first · past folded</span></div>
       <div class="turn open">
         <div class="th"><span class="fold">▾</span> Turn · “wire verify()” <span class="run">running</span></div>
         <div class="plab">Plan · 4 of 7</div>
-        <div class="step done" onclick="pickStep(this,'Read the legacy auth module','done')"><span class="sx">✓</span><div class="sh">Read the legacy auth module<span class="coal">×4</span></div></div>
-        <div class="step done" onclick="pickStep(this,'Extract the rotation core','done')"><span class="sx">✓</span><div class="sh">Extract the rotation core<span class="coal">+180</span></div></div>
-        <div class="step cur" onclick="pickStep(this,'Wire verify() onto it','cur')"><span class="sx">▶</span><div class="sh">Wire verify() onto it</div></div>
-        <div class="step pending" onclick="pickStep(this,'Add middleware tests','pending')"><span class="sx">○</span><div class="sh">Add middleware tests</div></div>
+        ${STEPS.map((s, i) => `<div class="step ${s.st}" data-nav="a-st-${i}" onclick="feedJump('.tldetail','a-st-${i}')"><span class="sx">${stepIcon(s.st)}</span><div class="sh">${s.name}${s.coal ? `<span class="coal">${s.coal}</span>` : ''}</div></div>`).join('')}
       </div>
       <div class="compaction">compacted</div>
       <div class="turn past"><span class="fold">▸</span><span class="tp">“extract the rotation core”</span><span class="st">8 tools · 6m</span></div>
       <div class="turn past"><span class="fold">▸</span><span class="tp">“map the auth surface”</span><span class="st">5 tools · 3m</span></div>
     </div>
-    <div class="tldetail">${agentFeed('correctness lens','rotation.ts','run')}</div>
+    <div class="tldetail" id="tlfeed">${activityFeed()}</div>
   </div>
-</div>`;}
-/* master–detail: clicking a subagent shows its live feed on the right; clicking a step shows the step detail */
-function agentFeed(name,target,st){
-  if(st==='pend') return `<div class="dhd">${name} <span class="run" style="color:var(--ink-faint)">queued</span></div><div class="dsub">subagent · verify group · waiting for a slot</div><div class="events"><div class="ev read"><span class="k">idle</span> no live feed yet — queued behind 2 running</div></div>`;
-  return `<div class="dhd">${name} <span class="run">live</span></div>
+</div>`;
+    }
+    /* right feed = each subagent's live feed, then each step's detail — concatenated in list order */
+    function activityFeed() {
+      return AGENTS.map((a, i) => `<section class="fsec" data-spy="a-sa-${i}">${agentFeed(a.name, a.target, a.st)}</section>`).join('')
+        + STEPS.map((s, i) => `<section class="fsec" data-spy="a-st-${i}">${stepDetail(s.name, s.st)}</section>`).join('');
+    }
+    /* master–detail: the feed shows every item; scroll-spy highlights the section in view */
+    function agentFeed(name, target, st) {
+      if (st === 'pend') return `<div class="dhd">${name} <span class="run" style="color:var(--ink-faint)">queued</span></div><div class="dsub">subagent · verify group · waiting for a slot</div><div class="events"><div class="ev read"><span class="k">idle</span> no live feed yet — queued behind 2 running</div></div>`;
+      return `<div class="dhd">${name} <span class="run">live</span></div>
     <div class="dsub">subagent · verify group · ${target} · 22s</div>
     <div class="events">
       <div class="ev read"><span class="k">read</span> ${target} · verify()</div>
@@ -569,9 +3768,9 @@ function agentFeed(name,target,st){
       <div class="ev read"><span class="k">read</span> token.ts · expired()</div>
       <div class="ev mut"><span class="k">run</span> asserting window default = 2 …</div>
     </div>`;
-}
-function stepDetail(name,st){
-  if(st==='cur') return `<div class="dhd">${name} <span class="run">running</span></div><div class="dsub">step of current turn · started 40s ago</div>
+    }
+    function stepDetail(name, st) {
+      if (st === 'cur') return `<div class="dhd">${name} <span class="run">running</span></div><div class="dsub">step of current turn · started 40s ago</div>
     <div class="events">
       <div class="ev mut"><span class="k">edit</span> rotation.ts — verify(token, {window: 2})</div>
       <div class="ev read"><span class="k">read</span> 4 files · join.ts · token.ts · legacy.ts</div>
@@ -579,88 +3778,346 @@ function stepDetail(name,st){
       <div class="ev mut"><span class="k">bash</span> bun test — 12 passed</div>
     </div>
     <div class="diffpeek"><div class="fn">rotation.ts</div><div class="ctx">  export function verify(token, opts) {</div><div class="add">+   const ok = rotate(token, { window: opts.window ?? 2 })</div><div class="add">+   return ok &amp;&amp; !expired(token)</div><div class="ctx">  }</div></div>`;
-  if(st==='pending') return `<div class="dhd">${name}</div><div class="dsub">not started · queued step</div><div class="events"><div class="ev read"><span class="k">idle</span> no activity yet</div></div>`;
-  return `<div class="dhd">${name} <span class="run" style="color:var(--done)">done</span></div><div class="dsub">completed step</div><div class="events"><div class="ev read"><span class="k">read</span> legacy modules · mapped the surface</div><div class="ev mut"><span class="k">edit</span> extracted the rotation core · +180</div></div>`;
-}
-function pickAgent(el,name,target,st){document.querySelectorAll('.tllist .sel').forEach(n=>n.classList.remove('sel'));el.classList.add('sel');document.querySelector('.tldetail').innerHTML=agentFeed(name,target,st);}
-function pickStep(el,name,st){document.querySelectorAll('.tllist .sel').forEach(n=>n.classList.remove('sel'));el.classList.add('sel');document.querySelector('.tldetail').innerHTML=stepDetail(name,st);}
-function deliveryBody(){return `<div id="panelwrap">
-  <div class="dspine">
-    <div class="dtop">
-      <div class="dleft">
-        <div class="dbranch"><b>feat/auth-rotation</b> → main</div>
-        <div class="lcstrip">
-          <div class="lcn done"><span class="lcd"></span><span class="lcl">commits</span><span class="lcs">6</span></div><div class="lcbar on"></div>
-          <div class="lcn done"><span class="lcd"></span><span class="lcl">PR</span><span class="lcs">#312</span></div><div class="lcbar on"></div>
-          <div class="lcn cur"><span class="lcd"></span><span class="lcl">CI</span></div><div class="lcbar"></div>
-          <div class="lcn"><span class="lcd"></span><span class="lcl">review</span></div><div class="lcbar"></div>
-          <div class="lcn"><span class="lcd"></span><span class="lcl">merge</span></div>
-        </div>
-      </div>
-      <div class="dchecks">
-        <div class="clab">Checks</div>
-        <div class="cchips">
-          <div class="cchip"><span class="cd warn"></span>lint <span class="cs warn">2!</span></div>
-          <div class="cchip"><span class="cd ok"></span>typecheck</div>
-          <div class="cchip"><span class="cd idle"></span>e2e <span class="cs">queued</span></div>
-        </div>
-      </div>
+      if (st === 'pending') return `<div class="dhd">${name}</div><div class="dsub">not started · queued step</div><div class="events"><div class="ev read"><span class="k">idle</span> no activity yet</div></div>`;
+      return `<div class="dhd">${name} <span class="run" style="color:var(--done)">done</span></div><div class="dsub">completed step</div><div class="events"><div class="ev read"><span class="k">read</span> legacy modules · mapped the surface</div><div class="ev mut"><span class="k">edit</span> extracted the rotation core · +180</div></div>`;
+    }
+    /* ---------- continuous-scroll master/detail plumbing (shared by all 4 surfaces) ----------
+       wireSpy: IntersectionObserver over the feed's [data-spy] sections → moves .sel onto the
+       matching [data-nav] row in the left TOC (whichever section sits in the top band is "current").
+       feedJump: a TOC row click smooth-scrolls its section to the top of the feed. Click still
+       works — it just isn't the only way to reach an item. */
+    function feedJump(feedSel, key) {
+      const feed = document.querySelector(feedSel); if (!feed) return;
+      const sec = [...feed.querySelectorAll('[data-spy]')].find(s => s.dataset.spy === key);
+      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function wireSpy(feedSel, listSel) {
+      const feed = document.querySelector(feedSel); if (!feed) return;
+      const rows = [...document.querySelectorAll(listSel + ' [data-nav]')];
+      const secs = [...feed.querySelectorAll('[data-spy]')];
+      if (!rows.length || !secs.length) return;
+      const visible = new Set();
+      const io = new IntersectionObserver(ents => {
+        ents.forEach(e => { if (e.isIntersecting) visible.add(e.target); else visible.delete(e.target); });
+        if (!visible.size) return;
+        const top = [...visible].sort((a, b) => a.offsetTop - b.offsetTop)[0].dataset.spy;
+        rows.forEach(r => r.classList.toggle('sel', r.dataset.nav === top));
+        /* Files rows use .on for their highlight; keep it in sync with .sel */
+        rows.forEach(r => { if (r.classList.contains('ftrow')) r.classList.toggle('on', r.dataset.nav === top); });
+      }, { root: feed, rootMargin: '0px 0px -55% 0px', threshold: [0, 1] });
+      secs.forEach(s => io.observe(s));
+    }
+    /* ---------- DELIVERY = master–detail two-pane, mirroring the Activity tab ----------
+       deliveryBody(sub, phase): ONE control line (tabs + CI pipeline rail + primary CTA) then a
+       two-pane .dlv2 (list-left | continuous feed-right) exactly like Activity's .acol. Sub-tab
+       clicks route through the state machine so every sub-view keeps its ?state= key. The left
+       list is a nav TOC; the right pane is one scrollable feed of every item, with scroll-spy
+       moving the TOC highlight and a row click smooth-jumping to its section. */
+    function deliveryBody(sub, phase) {
+      return `<div class="dlvwrap">
+    ${delControlLine(sub, phase)}
+    ${DLV2[sub](phase)}
+  </div>`;
+    }
+    /* ONE control line — [tabs (+re-homed status badges)] · [CI pipeline rail] · [primary CTA].
+       Change A: pipeline ribbon + sub-tab strip + CTA merged into a single band.
+       Change B: the old trailing status string is GONE — "CI running"/"review pending" are
+       implied by the live/wait rail nodes; "1 blocking" → red badge on Code Review; "11 files"
+       → the Files tab count; "#418"/diffstat drop off this line (PR # lives in the header meta). */
+    function delControlLine(sub, phase) {
+      const tab = (k, label) => `<span class="dtab ${k === sub ? 'on' : ''}" onclick="setDelSub('${k}')">${label}</span>`;
+      return `<div class="dctl">
+    <div class="dtabs">
+      ${tab('overview', 'Overview')}
+      ${tab('review', 'Code Review <span class="blkbadge">1</span>')}
+      ${tab('files', 'Files <span class="dn">(11)</span>')}
     </div>
-    <div class="dgate"><span class="gk">gate</span> blocked <span class="gsep">·</span> CI running <span class="gsep">·</span> review pending <span class="gsep">·</span> 1 unresolved finding</div>
+    ${railNodes(phase)}
+    ${ctaBtn(phase)}
+  </div>`;
+    }
+    /* CI pipeline rail = the state readout (dots + connectors, current node live). */
+    function railNodes(phase) {
+      const n = (c, l) => `<span class="rnode ${c}"><span class="dot"></span>${l}</span>`;
+      const bar = d => `<span class="rbar ${d ? 'done' : ''}"></span>`;
+      const inner = phase === 'local'
+        ? n('live', 'commits') + bar() + n('wait', 'pr') + bar() + n('wait', 'ci') + bar() + n('wait', 'review') + bar() + n('wait', 'merge')
+        : n('done', 'commits') + bar(1) + n('done', 'pr') + bar(1) + n('live', 'ci') + bar() + n('wait', 'review') + bar() + n('wait', 'merge');
+      return `<div class="drail">${inner}</div>`;
+    }
+    /* single primary CTA — reshapes across the pre-PR / PR-open boundary */
+    function ctaBtn(phase) {
+      return phase === 'local'
+        ? `<button class="btn">Push &amp; open PR</button>`
+        : `<button class="btn disabled">Merge ⌵</button>`;
+    }
+    function setDelSub(sub) {
+      const local = cur === 'delivery-prepr';
+      cur = sub === 'overview' ? (local ? 'delivery-prepr' : 'delivery')
+        : sub === 'review' ? 'delivery-review'
+          : 'delivery-files';
+      paint();
+    }
+
+    /* ---------- Delivery data — a single source; the sub-tab picks which list it feeds ---------- */
+    /* Overview walkthrough — narrated changes. mark = a finding lives on this change (● marker ONLY;
+       the finding's full text lives in Code Review, never repeated here). */
+    const CHANGES = [
+      {
+        n: 1, what: 'Added a <span class="mono">verify()</span> guard rejecting empty / malformed matrices',
+        file: 'core/verify.ts', delta: '<span class="a">+22</span>', ds: '+22', mark: null, diff: 'verify',
+        whatT: 'New <span class="mono">verify()</span> returns a <span class="mono">Result&lt;Matrix&gt;</span> — empty or malformed input fails fast instead of flowing on.',
+        why: '#418 — empty matrices from upstream were reaching users as corrupted rotations with no error.'
+      },
+      {
+        n: 2, what: 'Wired it into <span class="mono">rotate()</span> — throws <span class="mono">RotationError</span>',
+        file: 'core/rotation.ts', delta: '<span class="a">+18</span> <span class="d">−4</span>', ds: '+18 −4', mark: null, diff: 'rotation',
+        whatT: '<span class="mono">rotate()</span> now calls <span class="mono">verify()</span> first and throws <span class="mono">RotationError</span> rather than mapping over garbage.',
+        why: 'Makes the guard unavoidable on the primary path — callers get a typed failure.'
+      },
+      {
+        n: 3, what: 'Updated 3 call sites to handle the throw',
+        file: 'ui/… · api/… · worker/…', delta: '<span class="a">+41</span> <span class="d">−18</span>', ds: '+41 −18', mark: 'blocking', diff: 'spin',
+        whatT: 'The UI, API and worker entrypoints now catch <span class="mono">RotationError</span> — except the worker still has one unguarded path.',
+        why: 'Every caller must degrade gracefully; a raw throw crossing the worker boundary would kill the job.'
+      },
+      {
+        n: 4, what: 'Added tests for the empty-input + malformed paths',
+        file: 'test/rotation.test.ts', delta: '<span class="a">+40</span>', ds: '+40', mark: 'advisory', diff: 'tests',
+        whatT: 'Covers empty, malformed and happy-path inputs — the reset path is still uncovered.',
+        why: 'Locks the new failure behaviour so a later refactor can\'t silently drop the guard.'
+      },
+    ];
+    /* Code Review findings — severity-ranked. Full text lives HERE only. */
+    const FINDINGS = [
+      {
+        sev: 'blocking', claim: 'Unhandled empty input reaches <span class="mono">.map()</span> before the guard on the worker path',
+        loc: 'worker/spin.ts:37', conf: 'conf 85%', from: 'from change ③', ev: 'spin', apply: true
+      },
+      {
+        sev: 'advisory', claim: 'Missing test for the reset path through <span class="mono">verify()</span>',
+        loc: 'test/rotation.test.ts', conf: 'conf 60%', from: 'from change ④', ev: 'tests', apply: true
+      },
+      {
+        sev: 'advisory', claim: 'CI: <span class="mono">lint</span> — 2 warnings on the new file',
+        loc: 'core/verify.ts', conf: 'check: lint', from: '', ev: 'lint', apply: false
+      },
+    ];
+    const FIXED = [
+      { claim: 'Null deref in <span class="mono">normalize()</span>', fp: 'core/verify.ts · was blocking · fixed a1b2c3' },
+      { claim: 'Unused import', fp: 'ui/RotationPanel.tsx · was advisory · fixed' },
+    ];
+
+    /* ---------- self-contained GitHub gutter diffs (shared by every detail pane) ---------- */
+    function ghWrap(path, cnt, rows) { return `<div class="ghdiff"><div class="gh"><span class="fp">${path}</span><span class="cnt">${cnt}</span></div>${rows}</div>`; }
+    function anch(sev, dm, body) { return `<div class="dfind ${sev}"><span class="dm">${dm}</span>${body}</div>`; }
+    const GHDIFF = {
+      verify: (f) => ghWrap('core/verify.ts', '<span class="a">+22</span>', `
+    <div class="fdhunk">@@ new file @@</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">1</span><span class="sgn">+</span>export function verify(m: Matrix): Result&lt;Matrix&gt; {</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">2</span><span class="sgn">+</span>  if (m.length === 0) return err('empty')</div>
+    ${f === 'lint' ? anch('advisory', '● advisory · CI lint', '2 warnings on the new file — <span class="mono">normalize</span> import unused on the error branch.') : ''}
+    <div class="fdrow add"><span class="lo"></span><span class="ln">3</span><span class="sgn">+</span>  return ok(normalize(m))</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">4</span><span class="sgn">+</span>}</div>`),
+      rotation: () => ghWrap('core/rotation.ts', '<span class="a">+18</span> <span class="d">−4</span>', `
+    <div class="fdhunk">@@ -11,7 +11,21 @@ export function rotate(seed: Matrix)</div>
+    <div class="fdrow ctx"><span class="lo">11</span><span class="ln">11</span><span class="sgn"> </span>export function rotate(seed: Matrix) {</div>
+    <div class="fdrow del"><span class="lo">12</span><span class="ln"></span><span class="sgn">−</span>  return seed.map(x => x)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">12</span><span class="sgn">+</span>  const core = verify(seed)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">13</span><span class="sgn">+</span>  if (!core.ok) throw new RotationError(core.reason)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">14</span><span class="sgn">+</span>  return core.value.map(x => x)</div>
+    <div class="fdrow ctx"><span class="lo">15</span><span class="ln">15</span><span class="sgn"> </span>}</div>`),
+      /* the blocking evidence: spin.ts. Anchor the finding inline ONLY in Code Review (a==='spin'),
+         so the Overview change diff stays marker-only (no repeated finding text). */
+      spin: (a) => ghWrap('worker/spin.ts', '<span class="a">+20</span> <span class="d">−8</span>', `
+    <div class="fdhunk">@@ -30,8 +30,20 @@ export async function spin(job: Job)</div>
+    <div class="fdrow ctx"><span class="lo">33</span><span class="ln">33</span><span class="sgn"> </span> const m = job.matrix</div>
+    <div class="fdrow del"><span class="lo">34</span><span class="ln"></span><span class="sgn">−</span> return m.map(rotate)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">34</span><span class="sgn">+</span> return m.map(rotate)  // no verify() on this path</div>
+    ${a === 'spin' ? anch('blocking', '● blocking · code-review · conf 85%', 'Unhandled empty input reaches <span class="mono">.map()</span> before the guard — the worker path skips <span class="mono">verify()</span>.') : ''}
+    <div class="fdrow ctx"><span class="lo">35</span><span class="ln">35</span><span class="sgn"> </span>}</div>`),
+      tests: (f) => ghWrap('test/rotation.test.ts', '<span class="a">+40</span>', `
+    <div class="fdhunk">@@ new file @@</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">1</span><span class="sgn">+</span>it('rejects empty', () => expect(() => rotate([])).toThrow(RotationError))</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">2</span><span class="sgn">+</span>it('rejects malformed', () => expect(() => rotate(bad)).toThrow())</div>
+    ${f === 'tests' ? anch('advisory', '● advisory · code-review · conf 60%', 'No case exercises the reset path — add a test that re-runs <span class="mono">rotate()</span> after a thrown <span class="mono">RotationError</span>.') : ''}
+    <div class="fdrow add"><span class="lo"></span><span class="ln">3</span><span class="sgn">+</span>it('rotates a valid matrix', () => expect(rotate(ok)).toEqual(expected))</div>`),
+    };
+
+    /* ---------- Overview: left = walkthrough TOC · right = every change's what/why + diff ---------- */
+    function ovListHTML() {
+      return `<div class="dlab">Walkthrough · 4 changes</div>` + CHANGES.map((c, i) => `
+    <div class="lrow ${i === 0 ? 'sel' : ''}" data-nav="ov-${i}" onclick="feedJump('.ddetail','ov-${i}')">
+      <div class="l1"><span class="num">${c.n}</span><span class="what">${c.what}</span>${c.mark ? `<span class="mk ${c.mark}"></span>` : ''}</div>
+      <div class="l2"><span>${c.file}</span><span>·</span><span>${c.delta}</span></div>
+    </div>`).join('');
+    }
+    function ovDetail(i) {
+      const c = CHANGES[i];
+      return `<div class="dd">
+    <div class="ddhd"><span class="num">${c.n}</span>${c.what}</div>
+    <div class="ddsub">${c.file} · ${c.ds}</div>
+    <div class="ddwhy"><span class="k">WHAT</span> ${c.whatT}</div>
+    <div class="ddwhy dim"><span class="k">WHY</span> ${c.why}</div>
+    ${c.mark ? `<div class="ddmark"><span class="mk ${c.mark}"></span> 1 ${c.mark} finding on this change — full detail in Code Review</div>` : ''}
+    ${GHDIFF[c.diff]()}
+  </div>`;
+    }
+    function ovFeed() { return CHANGES.map((c, i) => `<section class="fsec" data-spy="ov-${i}">${ovDetail(i)}</section>`).join(''); }
+
+    /* ---------- Code Review: left = findings + reconcile group · right = anchored evidence ---------- */
+    function sevCls(f) { return f.conf.startsWith('check') ? 'check' : f.sev; }
+    /* finding → which gutter diff carries its evidence (the lint finding lives in the verify.ts diff) */
+    const EVDIFF = { spin: 'spin', tests: 'tests', lint: 'verify' };
+    function revListHTML() {
+      return `<div class="dlab">Findings · severity-ranked</div>` + FINDINGS.map((f, i) => `
+    <div class="lrow ${i === 0 ? 'sel' : ''}" data-nav="rev-${i}" onclick="feedJump('.ddetail','rev-${i}')">
+      <div class="l1"><span class="sd ${sevCls(f)}"></span><span class="claim">${f.claim}</span></div>
+      <div class="l2"><span>${f.loc}</span><span>·</span><span class="conf">${f.conf}</span>${f.from ? `<span>·</span><span>${f.from}</span>` : ''}</div>
+    </div>`).join('')
+        + `<div class="reconcile">
+      <div class="rh" onclick="this.parentElement.classList.toggle('open')">✓ ${FIXED.length} fixed since last review — reconciled, not piled up ⌄</div>
+      <div class="rl">${FIXED.map(x => `<div class="rf"><span class="sd"></span><span class="cl">${x.claim}</span><span class="fp">${x.fp}</span></div>`).join('')}</div>
+    </div>`;
+    }
+    function revDetail(i) {
+      const f = FINDINGS[i];
+      return `<div class="dd">
+    <div class="ddhd"><span class="sd ${sevCls(f)}"></span>${f.claim}</div>
+    <div class="ddsub">${f.loc} · ${sevCls(f)} · ${f.conf}${f.from ? ' · ' + f.from : ''}</div>
+    <div class="ddacts"><button class="mini ${f.apply && f.sev === 'blocking' ? 'on' : ''}" onclick="event.stopPropagation()">Apply fix</button><button class="mini no" onclick="event.stopPropagation()">Dismiss</button></div>
+    ${GHDIFF[EVDIFF[f.ev]](f.ev)}
+  </div>`;
+    }
+    function revFeed() { return FINDINGS.map((f, i) => `<section class="fsec" data-spy="rev-${i}">${revDetail(i)}</section>`).join(''); }
+
+    /* ---------- Files: left = file TOC · right = every file's gutter diff, concatenated ---------- */
+    /* feed order must match the left tree order so scroll-spy lines up */
+    const FILEORDER = ['core/verify.ts', 'core/rotation.ts', 'worker/spin.ts', 'docs/rotation-notes.md'];
+    function fileListHTML() {
+      return `<div class="dlab">Files · 11 changed</div>
+    <div class="ftg">▾ core</div>
+    ${ftrow('core/verify.ts', 'verify.ts', '<span class="a">+22</span>')}
+    ${ftrow('core/rotation.ts', 'rotation.ts', '<span class="a">+18</span> <span class="d">−4</span>')}
+    <div class="ftg">▾ worker</div>
+    ${ftrow('worker/spin.ts', 'spin.ts', '<span class="a">+20</span> <span class="d">−8</span>', true)}
+    <div class="ftg">▾ docs</div>
+    ${ftrow('docs/rotation-notes.md', 'rotation-notes.md', '<span class="a">+64</span>', false, true)}
+    <div class="ftg">▾ ui · api · test · migrations</div>
+    <div class="ftrow" style="color:var(--ink-faint);padding-left:26px"><span class="fn">6 more files…</span></div>`;
+    }
+    /* right feed = each file's diff (Viewed per file · artifact diff|rendered lens · inline finding) */
+    function filesFeed() {
+      return FILEORDER.map(p => fileSection(p, FILES[p])).join('')
+        + `<div class="dd" style="color:var(--ink-faint);font-family:var(--mono);font-size:11px;padding:16px 22px">6 more files — ui · api · test · migrations …</div>`;
+    }
+    function fileSection(path, f) { return `<section class="fsec" data-spy="${path}">${fileSectionInner(path, f)}</section>`; }
+    function fileSectionInner(path, f) {
+      return `<div class="fdiff">${fdHeadFeed(path, f)}<div class="fbody">${(FVIEW[path] === 'rendered' ? f.rendered : f.body)}</div></div>`;
+    }
+
+    /* the two-pane per sub-tab — list-left | continuous feed-right, exactly like Activity's .acol */
+    const DLV2 = {
+      overview: () => `<div class="dlv2"><div class="dlist">${ovListHTML()}</div><div class="ddetail" id="dldetail">${ovFeed()}</div></div>`,
+      review: () => `<div class="dlv2"><div class="dlist">${revListHTML()}</div><div class="ddetail" id="dldetail">${revFeed()}</div></div>`,
+      files: () => `<div class="dlv2"><div class="dlist">${fileListHTML()}</div><div class="ddetail" id="dldetail">${filesFeed()}</div></div>`,
+    };
+
+    /* Files — GitHub tree + gutter diff; artifacts carry a diff|rendered lens */
+    const FILES = {
+      'worker/spin.ts': {
+        d: '<span class="a">+20</span> <span class="d">−8</span>', flag: true, body: `
+    <div class="fdhunk">@@ -30,8 +30,20 @@ export async function spin(job: Job)</div>
+    <div class="fdrow ctx"><span class="lo">33</span><span class="ln">33</span><span class="sgn"> </span> const m = job.matrix<span class="addc" onclick="addComment(this)">＋</span></div>
+    <div class="fdrow del"><span class="lo">34</span><span class="ln"></span><span class="sgn">−</span> return m.map(rotate)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">34</span><span class="sgn">+</span> return m.map(rotate)  // no verify() on this path<span class="addc" onclick="addComment(this)">＋</span></div>
+    <div class="dfind"><span class="dm">● blocking · code-review · conf 85%</span>Unhandled empty input reaches <span class="mono">.map()</span> before the guard — the worker path skips <span class="mono">verify()</span>. <span class="dlvpill">Apply fix</span></div>
+    <div class="cthread"><div class="ccomment"><b>you</b><span class="ts">just now</span><span class="pendtag">pending</span><div style="margin-top:5px">Guard this at the job boundary instead of per-call — same fix belongs in <span class="mono">enqueue()</span> too.</div></div>
+      <div class="creply"><input placeholder="reply, or hit Address with agent above…"></div></div>
+    <div class="fdrow ctx"><span class="lo">35</span><span class="ln">35</span><span class="sgn"> </span>}<span class="addc" onclick="addComment(this)">＋</span></div>`},
+      'core/verify.ts': {
+        d: '<span class="a">+22</span>', body: `
+    <div class="fdhunk">@@ new file @@</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">1</span><span class="sgn">+</span>export function verify(m: Matrix): Result&lt;Matrix&gt; {</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">2</span><span class="sgn">+</span>  if (m.length === 0) return err('empty')</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">3</span><span class="sgn">+</span>  return ok(normalize(m))</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">4</span><span class="sgn">+</span>}</div>`},
+      'core/rotation.ts': {
+        d: '<span class="a">+18</span> <span class="d">−4</span>', body: `
+    <div class="fdhunk">@@ -11,7 +11,21 @@ export function rotate(seed: Matrix)</div>
+    <div class="fdrow ctx"><span class="lo">11</span><span class="ln">11</span><span class="sgn"> </span>export function rotate(seed: Matrix) {</div>
+    <div class="fdrow del"><span class="lo">12</span><span class="ln"></span><span class="sgn">−</span>  return seed.map(x => x)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">12</span><span class="sgn">+</span>  const core = verify(seed)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">13</span><span class="sgn">+</span>  if (!core.ok) throw new RotationError(core.reason)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">14</span><span class="sgn">+</span>  return core.value.map(x => x)</div>
+    <div class="fdrow ctx"><span class="lo">15</span><span class="ln">15</span><span class="sgn"> </span>}</div>`},
+      'docs/rotation-notes.md': {
+        d: '<span class="a">+64</span>', artifact: true, body: `
+    <div class="fdhunk">@@ new file @@</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">1</span><span class="sgn">+</span># Rotation core — verify() rollout</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">2</span><span class="sgn">+</span></div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">3</span><span class="sgn">+</span>Generated while implementing #418.</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">4</span><span class="sgn">+</span></div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">5</span><span class="sgn">+</span>## Problem</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">6</span><span class="sgn">+</span>Empty matrices from upstream reached \`rotate()\` and produced garbage…</div>`,
+        rendered: `<div class="artview">
+      <h1>Rotation core — verify() rollout</h1>
+      <div class="amuted">docs/rotation-notes.md · artifact produced by this session · committed to the branch</div>
+      <p>Generated while implementing <code>#418</code> to document the guard and its call-path impact.</p>
+      <h2>Problem</h2>
+      <p>Empty matrices from upstream reached <code>rotate()</code> and produced garbage rotations with no error — the corruption surfaced only downstream in the worker.</p>
+      <h2>Approach</h2>
+      <ul>
+        <li>New <code>verify()</code> guard rejecting empty / malformed matrices.</li>
+        <li>Wired into <code>rotate()</code>; throws <code>RotationError</code> on a bad core.</li>
+        <li>Three call sites updated to handle the throw; tests for both failure paths.</li>
+      </ul>
+      <h2>Follow-ups</h2>
+      <p>Guard the worker's <code>enqueue()</code> boundary too — tracked as a review comment on <code>worker/spin.ts</code>.</p>
+    </div>`},
+    };
+    /* per-file diff|rendered lens — each section carries its own view state (default diff, so the
+       concatenated stream reads as continuous gutter diffs; the artifact can be flipped to rendered) */
+    const FVIEW = {};
+    function fdHeadFeed(path, f) {
+      const view = FVIEW[path] || 'diff';
+      const tg = f.artifact ? `<span class="fview"><span class="fv ${view === 'diff' ? 'on' : ''}" onclick="setFV('${path}','diff')">diff</span><span class="fv ${view === 'rendered' ? 'on' : ''}" onclick="setFV('${path}','rendered')">rendered</span></span>` : '';
+      return `<div class="fdhead"><span>${path}</span><span class="cnt">${f.d}</span>${tg}
+    <span class="viewedbox" onclick="event.stopPropagation();this.classList.toggle('on')" style="margin-left:16px"><span class="bx"></span>Viewed</span></div>`;
+    }
+    function setFV(path, m) {
+      FVIEW[path] = m;
+      const sec = [...document.querySelectorAll('.fsec')].find(s => s.dataset.spy === path);
+      if (sec) sec.innerHTML = fileSectionInner(path, FILES[path]);
+    }
+    function ftrow(path, label, d, flag, art) {
+      return `<div class="ftrow ${path === 'core/verify.ts' ? 'sel on' : ''}" data-nav="${path}" onclick="feedJump('.ddetail','${path}')">
+    ${flag ? '<span class="fdot"></span>' : ''}<span class="fn">${label}</span>${art ? '<span class="fd" style="color:var(--accent)">◆</span>' : ''}<span class="fd">${d}</span></div>`;
+    }
+    function addComment(el) {
+      const row = el.closest('.fdrow');
+      if (row.nextElementSibling && row.nextElementSibling.classList.contains('newthread')) return;
+      const box = document.createElement('div'); box.className = 'cthread newthread';
+      box.innerHTML = '<div class="creply" style="border:none"><input placeholder="leave a comment on this line… (Address with agent picks it up)" autofocus></div>';
+      row.after(box); box.querySelector('input').focus();
+    }
+    /* fresh session "dock is home" invitation body */
+    function freshBody() {
+      return `<div id="panelwrap" style="padding:0;display:flex;flex-direction:column">
+  <div class="invite">
+    <div class="halo">✦</div>
+    <h2>Ready when you are</h2>
+    <p>This session is live at the project root. Type below to begin, or start from a ticket. A worktree is created only when work starts.</p>
+    <div class="chips">
+      <span class="sugg"><span class="m">/implement</span> 187 · Spawn UX</span>
+      <span class="sugg"><span class="m">/plan</span> a change</span>
+      <span class="sugg">Browse Work ↗</span>
+    </div>
   </div>
-  <div class="dsubtabs">
-    <div class="dsubtab on" onclick="setDsub('files',this)">Files <span class="cnt">3</span></div>
-    <div class="dsubtab" onclick="setDsub('review',this)">Review <span class="cnt find">1▲</span></div>
-  </div>
-  <div class="dbody">${filesView()}</div>
-</div>`;}
-function filesView(){return `<div class="dfiles">
-  <div class="ftree">
-    <input class="ffilter" placeholder="Filter changed files…" />
-    <div class="ftrow dir"><span class="fchev">▾</span><span class="fname">src/auth</span></div>
-    <div class="ftrow file sel" style="padding-left:20px"><span class="fname">rotation.ts</span><span class="fadd">+42</span><span class="fdel">−3</span></div>
-    <div class="ftrow file" style="padding-left:20px"><span class="fname">token.ts</span><span class="fadd">+8</span></div>
-    <div class="ftrow dir"><span class="fchev">▾</span><span class="fname">src/middleware</span></div>
-    <div class="ftrow file" style="padding-left:20px"><span class="fname">verify.ts</span><span class="fadd">+30</span><span class="fcm">💬 1</span></div>
-  </div>
-  <div class="fdiff">
-    <div class="fdhead"><span class="fdn">src/auth/rotation.ts</span><span class="fdstat"><span class="p">+42</span> <span class="m">−3</span></span><span class="viewed">◻ Viewed</span></div>
-    <div class="hunk"><span></span><span></span><span>@@ -18,7 +18,12 @@ export function verify(token, opts) {</span></div>
-    <div class="drow"><span class="lo">18</span><span class="ln">18</span><span class="code">  export function verify(token, opts) {</span></div>
-    <div class="drow del"><span class="lo">19</span><span class="ln"></span><span class="code"><span class="sgn">−</span>   const ok = rotate(token)</span></div>
-    <div class="drow add"><span class="lo"></span><span class="ln">19</span><span class="code"><span class="sgn">+</span>   const ok = rotate(token, { window: opts.window ?? 2 })</span></div>
-    <div class="dfind"><span class="fv">correctness ▲</span> window default is applied but never validated — a caller passing <span style="font-family:var(--mono)">opts.window = 0</span> silently disables rotation.</div>
-    <div class="drow add"><span class="lo"></span><span class="ln">20</span><span class="code"><span class="sgn">+</span>   if (!ok) return false</span></div>
-    <div class="drow"><span class="lo">20</span><span class="ln">21</span><span class="code">    return ok &amp;&amp; !expired(token)</span></div>
-    <div class="drow"><span class="lo">21</span><span class="ln">22</span><span class="code">  }</span></div>
-    <div class="hunk"><span></span><span></span><span>@@ -40,3 +41,9 @@ function expired(token) {</span></div>
-    <div class="drow"><span class="lo">40</span><span class="ln">41</span><span class="code">  function expired(token) {</span></div>
-    <div class="drow add"><span class="lo"></span><span class="ln">42</span><span class="code"><span class="sgn">+</span>   const skew = clockSkew()</span></div>
-    <div class="drow add"><span class="lo"></span><span class="ln">43</span><span class="code"><span class="sgn">+</span>   return token.exp + skew &lt; now()</span></div>
-    <div class="drow"><span class="lo">41</span><span class="ln">44</span><span class="code">  }</span></div>
-  </div>
-</div>`;}
-function checksView(){return `<div style="padding:14px 22px">
-  <div class="check"><span class="dot" style="background:var(--need);box-shadow:0 0 8px rgba(200,169,104,0.5)"></span><span class="cn">lint</span><span class="cv warn">2 warnings</span></div>
-  <div class="check"><span class="dot run"></span><span class="cn">typecheck</span><span class="cv">passing</span></div>
-  <div class="check"><span class="dot idle"></span><span class="cn">test (e2e)</span><span class="cv">queued</span></div>
-  <div class="dsub" style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:12px">code-host-sourced · click a check for its log</div>
-</div>`;}
-function reviewView(){return `<div style="padding:14px 22px">
-  <div class="oc"><span class="ico artifact" style="background:rgba(181,103,94,0.16);color:var(--block)">▲</span><div class="ob"><div class="ot">correctness — window default unguarded</div><div class="os">rotation.ts:19 · unresolved · jumps to diff</div></div><span class="go">Files →</span></div>
-  <div class="oc"><span class="ico code">✓</span><div class="ob"><div class="ot">security — replay window checked</div><div class="os">passed · no findings</div></div></div>
-</div>`;}
-function setDsub(name,el){document.querySelectorAll('.dsubtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');document.querySelector('.dbody').innerHTML=name==='checks'?checksView():name==='review'?reviewView():filesView();}
-function outcomesBody(){return `<div id="panelwrap">
-  <div class="outcomes" style="border-top:none;padding-top:6px">
-    <h4 class="label">Outcomes · what this session produced</h4>
-    <div class="oc"><span class="ico artifact">▤</span><div class="ob"><div class="ot">rotation-design.md</div><div class="os">artifact · path-addressed · uncommitted · <span style="color:var(--run)">DIRECT</span></div></div><span class="go">open ↗</span></div>
-    <div class="oc"><span class="ico artifact">▤</span><div class="ob"><div class="ot">ci-flake-notes.md</div><div class="os">artifact · path-addressed · <span style="color:var(--accent)">CONVENTION</span></div></div><span class="go">open ↗</span></div>
-    <div class="oc"><span class="ico code">◆</span><div class="ob"><div class="ot">Rotation core + middleware</div><div class="os">code · 6 files · +240 −80 · SHA <span class="mono">a1c9f2</span></div></div><span class="go">Delivery →</span></div>
-    <div class="oc"><span class="ico ticket">✎</span><div class="ob"><div class="ot">Created “Rate-limit the token endpoint”</div><div class="os">ticket · #58 · provider</div></div><span class="go">GitHub →</span></div>
-  </div>
-</div>`;}
-function externalBody(){return `<div id="panelwrap">
+</div>`;
+    }
+    function externalBody() {
+      return `<div id="panelwrap">
   <div class="banner"><span class="d"></span> External session · discovered from transcripts · read-only · no Outcomes emitted (honest gap)</div>
   <div class="tr">
     <div><span class="u">›</span> why does the join drift after restart?</div>
@@ -668,70 +4125,91 @@ function externalBody(){return `<div id="panelwrap">
     <div><span class="dm">▸ Read src/hub/join.ts · Grep "assemble"</span></div>
     <div><span class="dm">— turn ended · end_turn —</span></div>
   </div>
-</div>`;}
-function dock(o){
-  const h=o.expanded?340:120;
-  const body=o.kind==='transcript'
-    ? `<div class="lines" style="max-height:${o.expanded?250:56}px"><div class="dm">— replaying transcript (read-only) —</div><div><span class="p">▸</span> Read <span style="color:var(--ink)">src/hub/join.ts</span></div>${o.expanded?`<div class="dm">  window.assemble() → derived projection</div><div class="ok">  ✓ turn ended · end_turn</div>`:''}</div><div class="roprompt">⌾ read-only — external session, no PTY to steer</div>`
-    : `${o.expanded?`<div class="lines" style="max-height:250px"><div class="dm">  + const ok = rotation.verify(token,{window:2})</div><div class="ok">  ✓ 12 tests passed</div><div><span class="p">▸</span> Bash <span style="color:var(--ink)">bun run typecheck</span></div></div>`:''}<div class="prompt"><span class="car">›</span><input placeholder="type to steer · ask a question · ⌘↩ send" /></div>`;
-  const n=o.now;
-  const head = o.kind!=='pty'
-    ? `<span class="ticon">&gt;_</span><span class="tlabel">Transcript</span><span class="tsep">·</span><span class="now">replay</span>`
-    : n&&n.idle
-      ? `<span class="ticon">&gt;_</span><span class="tlabel">Terminal</span><span class="tsep">·</span><span class="now">idle · <span class="dm">last: ${n.last}</span></span>`
-      : `<span class="ticon">&gt;_</span><span class="tlabel">Terminal</span><span class="tsep">·</span><span class="now">${n?n.task:'live'}</span>${n&&n.plan?`<span class="prog">plan <span>${n.plan[0]}</span><span class="cx"> / ${n.plan[1]} ▾</span></span>`:''}`;
-  return `<div id="dock" style="height:${h}px"><div class="dhead" onclick="toggleDock()">${head}<span class="exp">${o.expanded?'⌄':'⌃'}</span></div>${body}</div>`;
-}
-function archivedBody(){return `<div id="archview">
+</div>`;
+    }
+    function dock(o) {
+      const h = o.expanded ? 340 : 120;
+      const body = o.kind === 'transcript'
+        ? `<div class="lines" style="max-height:${o.expanded ? 250 : 56}px"><div class="dm">— replaying transcript (read-only) —</div><div><span class="p">▸</span> Read <span style="color:var(--ink)">src/hub/join.ts</span></div>${o.expanded ? `<div class="dm">  window.assemble() → derived projection</div><div class="ok">  ✓ turn ended · end_turn</div>` : ''}</div><div class="roprompt">⌾ read-only — external session, no PTY to steer</div>`
+        : `${o.expanded ? `<div class="lines" style="max-height:250px"><div class="dm">  + const ok = rotation.verify(token,{window:2})</div><div class="ok">  ✓ 12 tests passed</div><div><span class="p">▸</span> Bash <span style="color:var(--ink)">bun run typecheck</span></div></div>` : ''}<div class="prompt"><span class="car">›</span><input placeholder="type to steer · ask a question · ⌘↩ send" /></div>`;
+      const n = o.now;
+      const head = o.kind !== 'pty'
+        ? `<span class="ticon">&gt;_</span><span class="tlabel">Transcript</span><span class="tsep">·</span><span class="now">replay</span>`
+        : n && n.fresh
+          ? `<span class="ticon">&gt;_</span><span class="tlabel">Terminal</span><span class="tsep">·</span><span class="now"><span class="dm">ready — type to begin</span></span>`
+          : n && n.idle
+            ? `<span class="ticon">&gt;_</span><span class="tlabel">Terminal</span><span class="tsep">·</span><span class="now">idle · <span class="dm">last: ${n.last}</span></span>`
+            : `<span class="ticon">&gt;_</span><span class="tlabel">Terminal</span><span class="tsep">·</span><span class="now">${n ? n.task : 'live'}</span>${n && n.plan ? `<span class="prog">plan <span>${n.plan[0]}</span><span class="cx"> / ${n.plan[1]} ▾</span></span>` : ''}`;
+      return `<div id="dock" style="height:${h}px"><div class="dhead" onclick="toggleDock()">${head}<span class="exp">${o.expanded ? '⌄' : '⌃'}</span></div>${body}</div>`;
+    }
+    function archivedBody() {
+      return `<div id="archview">
   <div class="aback" onclick="selectRow(0)">‹ Back to active</div>
   <div class="afilters"><span class="pill">Status · Archived ▾</span><span class="pill">Sort · Recency ▾</span><span class="pill">Group · None ▾</span></div>
-  ${[['Spawn UX grill — session model','ENDED','2d'],['Debug worktree tracking and naming','MERGED','3d'],['Research VRT best practices','ENDED','5d'],['Update and push argo-plugin readme','MERGED','6d'],['Investigate community naming issues','ENDED','1w'],['milads-mac-mini-local-magical-sun','ORPHANED','1w'],['Debug dark-mode components','MERGED','2w'],['Review existing Figma components','ENDED','3w']]
-   .map(a=>`<div class="arow" onclick="selectRow(0)"><span class="an">${a[0]}</span><span class="aw">${a[1]}</span><span class="at">${a[2]}</span></div>`).join('')}
-</div>`;}
+  ${[['Spawn UX grill — session model', 'ENDED', '2d'], ['Debug worktree tracking and naming', 'MERGED', '3d'], ['Research VRT best practices', 'ENDED', '5d'], ['Update and push argo-plugin readme', 'MERGED', '6d'], ['Investigate community naming issues', 'ENDED', '1w'], ['milads-mac-mini-local-magical-sun', 'ORPHANED', '1w'], ['Debug dark-mode components', 'MERGED', '2w'], ['Review existing Figma components', 'ENDED', '3w']]
+          .map(a => `<div class="arow" onclick="selectRow(0)"><span class="an">${a[0]}</span><span class="aw">${a[1]}</span><span class="at">${a[2]}</span></div>`).join('')}
+</div>`;
+    }
 
-/* ---------- headers per scene ---------- */
-const H_RUN={live:'run',model:'Opus 4.8',mode:'code',title:'Auth refactor',ctx:38,elapsed:'3m 12s',intent:{n:42,t:'Auth flow'},ws:{branch:'⎇ feat/auth-rotation',dirty:3,push:2}};
-const H_IDLE={live:'idle',model:'Opus 4.8',mode:'plan',title:'Auth refactor',ctx:38,elapsed:'idle 8m',intent:{n:42,t:'Auth flow'},ws:{branch:'⎇ feat/auth-rotation',dirty:3}};
-const H_EXT={live:'ext',model:'Sonnet 5',mode:'unknown',title:'~/argo · explore join drift',ctx:null,intent:null,ws:null};
-const NOW_RUN={task:'Wiring <span class="mono" style="color:var(--ink-dim)">verify()</span> onto the rotation core',plan:[4,7]};
-const NOW_IDLE={idle:true,last:'extract the rotation core'};
+    /* ---------- headers per scene ---------- */
+    const H_RUN = { live: 'run', model: 'Opus 4.8', mode: 'code', title: 'Auth refactor', ctx: 38, elapsed: '3m 12s', intent: { n: 42, t: 'Auth flow' }, ws: { branch: '⎇ feat/auth-rotation', dirty: 3, push: 2 } };
+    const H_IDLE = { live: 'idle', model: 'Opus 4.8', mode: 'plan', title: 'Auth refactor', ctx: 38, elapsed: 'idle 8m', intent: { n: 42, t: 'Auth flow' }, ws: { branch: '⎇ feat/auth-rotation', dirty: 3 } };
+    const H_EXT = { live: 'ext', model: 'Sonnet 5', mode: 'unknown', title: '~/argo · explore join drift', ctx: null, intent: null, ws: null };
+    const NOW_RUN = { task: 'Wiring <span class="mono" style="color:var(--ink-dim)">verify()</span> onto the rotation core', plan: [4, 7] };
+    const NOW_IDLE = { idle: true, last: 'extract the rotation core' };
+    const NOW_FRESH = { fresh: true };
 
-const SCENES={
-  activity:{sel:0,d:'managed · running · Activity · dock docked w/ input',render:()=>header(H_RUN,'activity','12','4')+activityBody()+dock({expanded:false,kind:'pty',now:NOW_RUN})},
-  delivery:{sel:0,d:'Delivery tab — lifecycle · Diff · Review verdicts · Checks',render:()=>header(H_RUN,'delivery','12','4')+deliveryBody()+dock({expanded:false,kind:'pty',now:NOW_RUN})},
-  outcomes:{sel:0,d:'Outcomes tab — session produces-ledger; artifacts resident, code/ticket deep-link',render:()=>header(H_RUN,'outcomes','12','4')+outcomesBody()+dock({expanded:false,kind:'pty',now:NOW_RUN})},
-  dock:{sel:0,d:'terminal dock EXPANDED — steer without leaving the tab',render:()=>header(H_RUN,'activity','12','4')+activityBody()+dock({expanded:true,kind:'pty',now:NOW_RUN})},
-  idle:{sel:1,d:'managed · idle — title falls back to identity, quiet',render:()=>header(H_IDLE,'activity','12','4')+activityBody()+dock({expanded:false,kind:'pty',now:NOW_IDLE})},
-  external:{sel:3,d:'external · read-only — dock tails transcript, NO input',render:()=>header(H_EXT,'activity','','')+externalBody()+dock({expanded:false,kind:'transcript'})},
-  archived:{sel:-1,d:'Archived opens as a dense list IN the panel + back-nav',render:()=>archivedBody()},
-};
-const ORDER=['activity','delivery','outcomes','dock','idle','external','archived'];
-const NAMES={activity:'Activity',delivery:'Delivery',outcomes:'Outcomes',dock:'Dock expanded',idle:'Idle session',external:'External (read-only)',archived:'Archived list'};
-let cur='activity';
-function paint(){
-  const s=SCENES[cur];
-  document.getElementById('rows').innerHTML=railHTML(s.sel);
-  document.getElementById('arch').className=cur==='archived'?'on':'';
-  document.getElementById('card').innerHTML=s.render();
-  const i=ORDER.indexOf(cur);
-  document.getElementById('swk').textContent=`${i+1}/${ORDER.length}`;
-  document.getElementById('swn').textContent=NAMES[cur];
-  document.getElementById('swd').textContent=s.d;
-  document.getElementById('capk').textContent=NAMES[cur];
-  document.getElementById('capd').textContent=s.d;
-  document.querySelectorAll('#hsw .hp').forEach(p=>p.classList.toggle('on',+p.dataset.h===curH));
-  const u=new URL(location);u.searchParams.set('state',cur);u.searchParams.set('header',curH);history.replaceState({},'',u);
-}
-function setHeader(n){curH=n;paint();}
-function cycle(d){const i=ORDER.indexOf(cur);cur=ORDER[(i+d+ORDER.length)%ORDER.length];paint();}
-function selectRow(i){cur=i===3?'external':i===1?'idle':'activity';paint();}
-function setTab(t){cur=t==='delivery'?'delivery':t==='outcomes'?'outcomes':'activity';paint();}
-function toggleDock(){cur=cur==='dock'?'activity':'dock';paint();}
-document.getElementById('arch').addEventListener('click',()=>{cur='archived';paint();});
-addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;if(e.key==='ArrowLeft')cycle(-1);if(e.key==='ArrowRight')cycle(1);});
-const init=new URL(location).searchParams.get('state');if(init&&SCENES[init])cur=init;
-const ih=parseInt(new URL(location).searchParams.get('header'),10);if(ih>=1&&ih<=3)curH=ih;
-paint();
-</script>
+    const SCENES = {
+      zero: { rail: 'zero', sel: -1, d: 'cold-start / empty cockpit (B6) — empty roster, only + New session', render: () => '' },
+      fresh: { rail: 'fresh', sel: 0, d: 'freshly spawned — "dock is home", input in the dock from t=0', render: () => freshHead() + freshBody() + dock({ expanded: false, kind: 'pty', now: NOW_FRESH }) },
+      activity: { sel: 0, d: 'managed · running · Activity · dock docked w/ input', render: () => header(H_RUN, 'activity') + activityBody() + dock({ expanded: false, kind: 'pty', now: NOW_RUN }) },
+      idle: { sel: 1, d: 'managed · idle — title falls back to identity, quiet', render: () => header(H_IDLE, 'activity') + activityBody() + dock({ expanded: false, kind: 'pty', now: NOW_IDLE }) },
+      delivery: { sel: 0, d: 'Delivery · Overview — walkthrough list (left) · change what/why + diff (right)', render: () => header(H_RUN, 'delivery') + deliveryBody('overview', 'open') + dock({ expanded: false, kind: 'pty', now: NOW_RUN }) },
+      'delivery-review': { sel: 0, d: 'Delivery · Code Review — findings list + reconcile (left) · anchored evidence (right)', render: () => header(H_RUN, 'delivery') + deliveryBody('review', 'open') + dock({ expanded: false, kind: 'pty', now: NOW_RUN }) },
+      'delivery-files': { sel: 0, d: 'Delivery · Files — file list (left) · gutter diff, inline finding, thread, artifact lens (right)', render: () => header(H_RUN, 'delivery') + deliveryBody('files', 'open') + dock({ expanded: false, kind: 'pty', now: NOW_RUN }) },
+      'delivery-prepr': { sel: 0, d: 'Delivery · pre-PR — rail at "commits" (not pushed), CTA = Push & open PR', render: () => header(H_RUN, 'delivery') + deliveryBody('overview', 'local') + dock({ expanded: false, kind: 'pty', now: NOW_RUN }) },
+      dock: { sel: 0, d: 'terminal dock EXPANDED — steer without leaving the tab', render: () => header(H_RUN, 'activity') + activityBody() + dock({ expanded: true, kind: 'pty', now: NOW_RUN }) },
+      external: { sel: 4, d: 'external · read-only — dock tails transcript, NO input; no Outcomes (honest gap)', render: () => header(H_EXT, 'activity') + externalBody() + dock({ expanded: false, kind: 'transcript' }) },
+      archived: { sel: -1, d: 'Archived opens as a dense list IN the panel + back-nav', render: () => archivedBody() },
+    };
+    const ORDER = ['zero', 'fresh', 'activity', 'idle', 'delivery', 'delivery-review', 'delivery-files', 'delivery-prepr', 'dock', 'external', 'archived'];
+    const NAMES = { zero: 'Zero-state (cold start)', fresh: 'Fresh session', activity: 'Activity', idle: 'Idle session', delivery: 'Delivery · Overview', 'delivery-review': 'Delivery · Code Review', 'delivery-files': 'Delivery · Files', 'delivery-prepr': 'Delivery · pre-PR', dock: 'Dock expanded', external: 'External (read-only)', archived: 'Archived list' };
+    let cur = 'activity';
+    function freshRailHTML() {
+      return `<div class="plane active"><div class="top"><span class="dot idle"></span><div class="name">New session</div><span class="word">READY</span></div><div class="meta">Claude · <span class="branch">root</span></div></div>`
+        + RAIL.slice(0, 3).map(r => `<div class="plane recede ${r.ext ? 'ext' : ''}"><div class="top"><span class="dot ${r.dot}"></span><div class="name">${r.name}</div><span class="word">${r.word}</span></div><div class="meta">${r.meta}</div></div>`).join('');
+    }
+    function paint() {
+      const s = SCENES[cur];
+      const rlabel = document.getElementById('rlabel'), arch = document.getElementById('arch');
+      if (s.rail === 'zero') { rlabel.style.display = 'none'; arch.style.display = 'none'; document.getElementById('rows').innerHTML = ''; }
+      else if (s.rail === 'fresh') { rlabel.style.display = ''; arch.style.display = ''; document.getElementById('rows').innerHTML = freshRailHTML(); }
+      else { rlabel.style.display = ''; arch.style.display = ''; document.getElementById('rows').innerHTML = railHTML(s.sel); }
+      arch.className = cur === 'archived' ? 'on' : '';
+      document.getElementById('card').innerHTML = s.render();
+      /* wire continuous-scroll spy for whichever master/detail surface just rendered */
+      if (cur.startsWith('delivery')) wireSpy('.ddetail', '.dlist');
+      if (cur === 'activity' || cur === 'idle' || cur === 'dock') wireSpy('.tldetail', '.tllist');
+      const i = ORDER.indexOf(cur);
+      document.getElementById('swk').textContent = `${i + 1}/${ORDER.length}`;
+      document.getElementById('swn').textContent = NAMES[cur];
+      document.getElementById('swd').textContent = s.d;
+      document.getElementById('capk').textContent = NAMES[cur];
+      document.getElementById('capd').textContent = s.d;
+      document.querySelectorAll('#hsw .hp').forEach(p => p.classList.toggle('on', +p.dataset.h === curH));
+      const u = new URL(location); u.searchParams.set('state', cur); u.searchParams.set('header', curH); history.replaceState({}, '', u);
+    }
+    function setHeader(n) { curH = n; paint(); }
+    function cycle(d) { const i = ORDER.indexOf(cur); cur = ORDER[(i + d + ORDER.length) % ORDER.length]; paint(); }
+    function selectRow(i) { cur = i === 4 ? 'external' : i === 1 ? 'idle' : 'activity'; paint(); }
+    function setTab(t) { cur = t === 'delivery' ? 'delivery' : 'activity'; paint(); }
+    function toggleDock() { cur = cur === 'dock' ? 'activity' : 'dock'; paint(); }
+    document.getElementById('arch').addEventListener('click', () => { cur = 'archived'; paint(); });
+    addEventListener('keydown', e => { if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return; if (e.key === 'ArrowLeft') cycle(-1); if (e.key === 'ArrowRight') cycle(1); });
+    const init = new URL(location).searchParams.get('state'); if (init && SCENES[init]) cur = init;
+    const ih = parseInt(new URL(location).searchParams.get('header'), 10); if (ih >= 1 && ih <= 3) curH = ih;
+    paint();
+  </script>
 </body>
+
 </html>
