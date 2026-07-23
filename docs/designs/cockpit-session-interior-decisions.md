@@ -23,6 +23,13 @@ the next surface grill inherits them, and keep the detail in the ticket sections
 - **C3b.3 — Git control = review actions, not a git GUI** (mechanical ops = cockpit; semantic = agent; no
   user-facing staging index; terminal = escape hatch).
 - **Artifact = render toggle in Files** (committed file, `diff | rendered` lens; no Outcomes storage). Part of C2.2.
+- **C3b.6 — Continuous-scroll master–detail** (GitHub "Files changed" feel): left list = nav/TOC only; right
+  detail = one continuous scrollable feed of all items concatenated (title headers); scroll flows item→next,
+  scroll-spy highlights the current item, click jumps, real builds virtualise. Governs EVERY master/detail
+  surface — Activity Timeline + Delivery Overview/Code Review/Files. Prototype: `cockpit-session-interior-prototype.html`.
+- **C3b.7 — One control line** (Delivery): tabs + CI pipeline rail + CTA on a single line; status baked into
+  the tabs (blocking = red badge on Code Review; `Files (N)` count), no free-text status string; multi-Delivery
+  glance banner cut (reverses C3b.4's glance). The pipeline-rail visual kept.
 
 ---
 
@@ -61,6 +68,12 @@ the next surface grill inherits them, and keep the detail in the ticket sections
 - **Decision:** A quiet, persistent `+ New session` (⌘N) row pinned at the **top** of the rail, above the roster. Dim, not a loud CTA. Opens the spawn flow (cwd · worktree · mode defaults — that flow is a later question). `⚙ Archived (n)` stays pinned at the rail **foot** (from #161). The rail is bookended: make-more at top, look-back at bottom.
 - **Why:** Starting work is a top-level action and the rail is the session list's home; top is where the eye starts and where "add" conventionally lives. Kept quiet so it never competes with attention dots.
 - **HTML change:** Added `#newses` row as first rail child + CSS. `#arch` unchanged.
+- **Note:** the "spawn flow (cwd · worktree · mode defaults)" phrasing is **superseded** — spawn is zero-config (`+ New session` opens a session, not a config surface; see #186 spawn-UX resolution / PR #187).
+
+### B6 — Roster zero-state (cold-start / empty cockpit) = just `+ New session`
+- **Decision:** When there are no sessions at all, the roster shows **only the `+ New session` button** — nothing else. No hero, no illustration, no orb foregrounding, no Next-up card, no onboarding copy. The empty rail with the pinned `+ New session` (B5) IS the zero-state.
+- **Why:** Cold-start is a one-time, transient state; anything fancy is chrome you see once and never again. The single obvious action carries it. Keeps the surface honest and quiet.
+- **HTML:** rail renders with an empty roster + the existing `#newses` row; no dedicated zero-state scene needed beyond that.
 
 ---
 
@@ -142,6 +155,24 @@ Explored in a dedicated throwaway prototype: **`docs/designs/cockpit-delivery-re
   - **Escape hatch:** genuine surgery (split a commit, interactive rebase, recover a deleted file) drops to the **terminal dock** (already present). Argo never builds a SourceTree and never becomes a dead end.
 - **Why:** Keeps one mental model — you direct at the review level, execution is deterministic-mechanical (cockpit) or semantic (agent). Hiding the staging index matches Cursor/GitHub-PR convention; the terminal covers the 5% power-git that a review UI shouldn't model.
 - **HTML:** conceptual (no staging UI added). Reject/Undo/exclude/Rewind/Abandon are the surfaced affordances; raw-git = terminal.
+
+### C3b.4 — Delivery is ONE object, work-item-anchored; multi-Delivery = active full + rest collapsed glance
+Resolves the #186 Delivery edge-case thread (teammate-PR-no-session · second-lifecycle-strip glance · Work-side vs Session-side).
+- **Decision (anchoring):** A Delivery is **one object, anchored to the work-item**. The Session-side view (the Delivery tab) is a **deep-link/embed of that same surface**, not a second rendering — one component, two entry points (Work room canonical · Session room embedded).
+  - **Teammate's PR with no local session** renders **Work-side only**; it has **no Session-side row** — an honest gap, not a stub. (So it produces no session-interior state; it's a Work-room concern.)
+  - **Work-side vs Session-side** is therefore not two framings — it's the same hybrid Delivery surface (C3b.2: Overview · Code Review · Files) reached from either room.
+- **Decision (multi-Delivery):** ~~active Delivery full + additional Deliveries collapse to a one-line "Also in this session · N more" glance strip.~~ **REVERSED (this session) — see C3b.7.** The glance banner is **cut** (user: "definitely remove this banner"; it was one strip too many). **Multi-Delivery rendering is DEFERRED**; v1 shows the single active Delivery. The **anchoring** decision above (one object, work-item-anchored, teammate-PR-no-session = Work-side only) **still stands**.
+- **Why:** Anchoring to the work-item is the de-dup: the same PR seen from a session and from its ticket must be one truth, so the Session tab embeds rather than re-renders. A teammate's PR having no session row is the correct honest degradation (no local Agent/Run to show). Primary-full/rest-glance keeps one Delivery legible at full density while extra PRs stay a quiet glance — the Penumbra "one bright thing" law applied to Deliveries.
+- **HTML:** anchoring stands; the glance render is cut (C3b.7).
+
+### C3b.5 — Delivery uses the SAME master–detail shape as Activity (list-left nav / detail-right, GitHub-style review) — REFINES C3b.2's rendering
+The Hybrid content of C3b.2 (Overview · Code Review · Files, review-is-the-bottleneck, pre-PR↔PR-open, findings reconcile, Address-with-agent) all **stands**. What changes is the *layout*: Delivery is rendered as the **same two-pane master–detail as the Activity tab** — a scannable **list on the left = pure navigation**, the **detail on the right = GitHub-style review**. The three sub-tabs (Overview · Code Review · Files) select **what the left list holds**; the right pane shows the selected item's detail. This kills the earlier "stack of strips" rendering (separate ribbon row + sub-tab strip + files-toolbar + frontier strip) the user rejected as far too dense. Prototype: `docs/designs/cockpit-session-interior-prototype.html`.
+
+### C3b.6 — Continuous-scroll master–detail (CROSS-SURFACE) — the interaction model for every list/detail surface
+The master/detail panes behave like **GitHub's "Files changed"**: the **left list is a table-of-contents / navigation only**; the **right detail is ONE continuous scrollable feed** of all the list's items concatenated, each with a title header. **Scrolling the detail flows item → next item → next** (no clicking) to the bottom of the list; a **scroll-spy** moves the left highlight to whatever section is in view; **clicking a list item smooth-jumps** to its section. Real builds **virtualise** the stream (content gets long). Applies to **every** master/detail surface — **Activity → Timeline** and **Delivery → Overview / Code Review / Files** — so the whole cockpit shares one navigation feel. **HOIST TO THE MAP** (cross-surface). Prototype: `cockpit-session-interior-prototype.html`.
+
+### C3b.7 — One control line: tabs + CI pipeline rail + CTA; status baked into the tabs; glance cut
+The Delivery pipeline ribbon, the sub-tab strip, and the primary action collapse into **one horizontal line**: `[Overview · Code Review · Files]` tabs (left) · the `commits — pr — ci — review — merge` **CI rail** (state readout, current node live) · the single **CTA** (`Push & open PR` pre-PR / gated `Merge` PR-open) (right). **No free-text status string.** The old trailing `#418 · CI running · review pending · 1 blocking · +2,755 −58 · 11 files` is **re-homed**: "CI running"/"review pending" are implicit in the rail's live/wait nodes; **"1 blocking" = a red badge on the Code Review tab**; **file count = `Files (N)`** on the Files tab; diffstat + `#418` dropped from the line. The **multi-Delivery glance banner is removed** (reverses C3b.4's glance). **Why:** the user's core complaint was "far too many strips and horizontal lines and layers" — this removes two whole bands and every restated fact, leaving header · one control line · two-pane · dock. *(The pipeline rail visual itself was explicitly liked and kept — only its redundant trailing text went.)* Prototype: `cockpit-session-interior-prototype.html`. **Status: settled by the user this session and FOLDED into `cockpit-session-interior-prototype.html` (the throwaway fanout alts a–f removed). Visual polish is deferred to Phase 2 foundations — these are prototypes, not designs.**
 
 ## Section C3a — Activity panel
 
