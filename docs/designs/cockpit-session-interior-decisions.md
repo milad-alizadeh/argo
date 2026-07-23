@@ -61,6 +61,12 @@ the next surface grill inherits them, and keep the detail in the ticket sections
 - **Decision:** A quiet, persistent `+ New session` (⌘N) row pinned at the **top** of the rail, above the roster. Dim, not a loud CTA. Opens the spawn flow (cwd · worktree · mode defaults — that flow is a later question). `⚙ Archived (n)` stays pinned at the rail **foot** (from #161). The rail is bookended: make-more at top, look-back at bottom.
 - **Why:** Starting work is a top-level action and the rail is the session list's home; top is where the eye starts and where "add" conventionally lives. Kept quiet so it never competes with attention dots.
 - **HTML change:** Added `#newses` row as first rail child + CSS. `#arch` unchanged.
+- **Note:** the "spawn flow (cwd · worktree · mode defaults)" phrasing is **superseded** — spawn is zero-config (`+ New session` opens a session, not a config surface; see #186 spawn-UX resolution / PR #187).
+
+### B6 — Roster zero-state (cold-start / empty cockpit) = just `+ New session`
+- **Decision:** When there are no sessions at all, the roster shows **only the `+ New session` button** — nothing else. No hero, no illustration, no orb foregrounding, no Next-up card, no onboarding copy. The empty rail with the pinned `+ New session` (B5) IS the zero-state.
+- **Why:** Cold-start is a one-time, transient state; anything fancy is chrome you see once and never again. The single obvious action carries it. Keeps the surface honest and quiet.
+- **HTML:** rail renders with an empty roster + the existing `#newses` row; no dedicated zero-state scene needed beyond that.
 
 ---
 
@@ -142,6 +148,15 @@ Explored in a dedicated throwaway prototype: **`docs/designs/cockpit-delivery-re
   - **Escape hatch:** genuine surgery (split a commit, interactive rebase, recover a deleted file) drops to the **terminal dock** (already present). Argo never builds a SourceTree and never becomes a dead end.
 - **Why:** Keeps one mental model — you direct at the review level, execution is deterministic-mechanical (cockpit) or semantic (agent). Hiding the staging index matches Cursor/GitHub-PR convention; the terminal covers the 5% power-git that a review UI shouldn't model.
 - **HTML:** conceptual (no staging UI added). Reject/Undo/exclude/Rewind/Abandon are the surfaced affordances; raw-git = terminal.
+
+### C3b.4 — Delivery is ONE object, work-item-anchored; multi-Delivery = active full + rest collapsed glance
+Resolves the #186 Delivery edge-case thread (teammate-PR-no-session · second-lifecycle-strip glance · Work-side vs Session-side).
+- **Decision (anchoring):** A Delivery is **one object, anchored to the work-item**. The Session-side view (the Delivery tab) is a **deep-link/embed of that same surface**, not a second rendering — one component, two entry points (Work room canonical · Session room embedded).
+  - **Teammate's PR with no local session** renders **Work-side only**; it has **no Session-side row** — an honest gap, not a stub. (So it produces no session-interior state; it's a Work-room concern.)
+  - **Work-side vs Session-side** is therefore not two framings — it's the same hybrid Delivery surface (C3b.2: Overview · Code Review · Files) reached from either room.
+- **Decision (multi-Delivery):** A session can touch **>1 Delivery** (multi-PR per ticket is first-class, #160/#185). The **active/newest** Delivery shows its **full** hybrid surface; **additional** Deliveries collapse to a **one-line glance strip** — `▸ branch → base   ● PR#nnn · CI ✓ · review pending` — under an `Also in this session · N more` label, click to expand/swap. (The ticket's "collapsed second-lifecycle-strip glance line.")
+- **Why:** Anchoring to the work-item is the de-dup: the same PR seen from a session and from its ticket must be one truth, so the Session tab embeds rather than re-renders. A teammate's PR having no session row is the correct honest degradation (no local Agent/Run to show). Primary-full/rest-glance keeps one Delivery legible at full density while extra PRs stay a quiet glance — the Penumbra "one bright thing" law applied to Deliveries.
+- **HTML:** **NOT applied to `cockpit-session-interior-prototype.html`** — that file still carries the pre-C2.2/C3b.2 3-tab + old-Delivery scaffolding and is pending reconcile. The glance belongs on the **hybrid** surface (`cockpit-delivery-review-prototype.html`) / the reconciled interior, rendered during that reconcile pass — not bolted onto the stale spine.
 
 ## Section C3a — Activity panel
 
