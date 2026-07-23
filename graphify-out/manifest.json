@@ -1328,5 +1328,15 @@
     "mtime": 1784719545.8481948,
     "ast_hash": "cd9da226dcbfb4f895661fe7295afe07",
     "semantic_hash": ""
+  },
+  "prototypes/grill-by-voice-latency/measure-warm.ts": {
+    "mtime": 1784839985.6593974,
+    "ast_hash": "ddb5fc00e1c005e887d0de5e3ee04853",
+    "semantic_hash": ""
+  },
+  "prototypes/grill-by-voice-latency/measure.ts": {
+    "mtime": 1784839372.4705694,
+    "ast_hash": "54da1b04ce47334b599033c61e6d6687",
+    "semantic_hash": ""
   }
 }

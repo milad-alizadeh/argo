@@ -98,5 +98,9 @@
   "96": "@electron-toolkit/tsconfig",
   "97": "react",
   "98": "react-dom",
-  "99": "@types/three"
+  "99": "@types/three",
+  "100": "Status.stories.tsx",
+  "101": "StatusDot.stories.tsx",
+  "102": "Roster",
+  "103": "electron"
 }

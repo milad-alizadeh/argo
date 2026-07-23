@@ -1242,8 +1242,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "apps_desktop_package_devdependencies_dependency_cruiser",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 9,
+      "community_name": "Electron & React Deps",
       "norm_label": "dependency-cruiser"
     },
     {
@@ -1253,8 +1253,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "dependency_cruiser",
-      "community": 15,
-      "community_name": "Electron Toolkit TSConfig",
+      "community": 9,
+      "community_name": "Electron & React Deps",
       "norm_label": "dependency-cruiser"
     },
     {
@@ -1264,8 +1264,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "apps_desktop_package_devdependencies_electron",
-      "community": 9,
-      "community_name": "Electron & React Deps",
+      "community": 103,
+      "community_name": "electron",
       "norm_label": "electron"
     },
     {
@@ -1275,8 +1275,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "electron",
-      "community": 9,
-      "community_name": "Electron & React Deps",
+      "community": 103,
+      "community_name": "electron",
       "norm_label": "electron"
     },
     {
@@ -1979,8 +1979,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionheader",
-      "community": 85,
-      "community_name": "deliveryState",
+      "community": 62,
+      "community_name": "drawerControls.tsx",
       "norm_label": "sessionheader.tsx"
     },
     {
@@ -1990,8 +1990,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionheader_sessionheaderprops",
-      "community": 85,
-      "community_name": "deliveryState",
+      "community": 62,
+      "community_name": "drawerControls.tsx",
       "norm_label": "sessionheaderprops"
     },
     {
@@ -2166,8 +2166,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen",
-      "community": 94,
-      "community_name": "SessionScreen.tsx",
+      "community": 48,
+      "community_name": "sessionFacts.ts",
       "norm_label": "sessionscreen.tsx"
     },
     {
@@ -2177,8 +2177,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen_sessionscreenhandlers",
-      "community": 94,
-      "community_name": "SessionScreen.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "sessionscreenhandlers"
     },
     {
@@ -2188,8 +2188,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen_sessionscreenprops",
-      "community": 94,
-      "community_name": "SessionScreen.tsx",
+      "community": 48,
+      "community_name": "sessionFacts.ts",
       "norm_label": "sessionscreenprops"
     },
     {
@@ -2210,8 +2210,8 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreen_sessionpanel",
-      "community": 94,
-      "community_name": "SessionScreen.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "sessionpanel()"
     },
     {
@@ -2639,8 +2639,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_activity_components_nowline_stories",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "nowline.stories.tsx"
     },
     {
@@ -2650,8 +2650,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_activity_components_nowline_stories_story",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "story"
     },
     {
@@ -2661,8 +2661,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_activity_components_nowline_stories_live",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "live"
     },
     {
@@ -2672,8 +2672,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_activity_components_nowline_stories_idle",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "idle"
     },
     {
@@ -4509,8 +4509,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_console_components_consolechanneltab",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 23,
+      "community_name": "Storybook Docs Addon",
       "norm_label": "consolechanneltab.tsx"
     },
     {
@@ -4520,8 +4520,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_console_components_consolechanneltab_consolechanneltabprops",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 23,
+      "community_name": "Storybook Docs Addon",
       "norm_label": "consolechanneltabprops"
     },
     {
@@ -4531,8 +4531,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_console_components_consolechanneltab_consolechanneltab",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 23,
+      "community_name": "Storybook Docs Addon",
       "norm_label": "consolechanneltab()"
     },
     {
@@ -4861,8 +4861,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_allfilesdiff",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "allfilesdiff.tsx"
     },
     {
@@ -4872,8 +4872,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_allfilesdiff_allfilesdifffile",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "allfilesdifffile"
     },
     {
@@ -4883,8 +4883,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_allfilesdiff_allfilesdiff",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "allfilesdiff()"
     },
     {
@@ -4894,8 +4894,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_stories",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "checkoutput.stories.tsx"
     },
     {
@@ -4905,8 +4905,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_stories_story",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -4916,8 +4916,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_stories_default",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "default"
     },
     {
@@ -4927,8 +4927,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_stories_everycheck",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "everycheck"
     },
     {
@@ -4938,8 +4938,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_stories_multilinefeed",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "multilinefeed"
     },
     {
@@ -4949,8 +4949,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "checkoutput.tsx"
     },
     {
@@ -4960,8 +4960,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_local_checks",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "local_checks"
     },
     {
@@ -4971,8 +4971,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_localcheck",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "localcheck"
     },
     {
@@ -4982,8 +4982,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_check_label",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "check_label"
     },
     {
@@ -4993,8 +4993,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_checkoutputprops",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "checkoutputprops"
     },
     {
@@ -5004,8 +5004,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_checkoutput_checkoutput",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "checkoutput()"
     },
     {
@@ -5158,8 +5158,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_commitgroup_commitgroupfile",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 20,
+      "community_name": "Vitest Browser Playwright",
       "norm_label": "commitgroupfile"
     },
     {
@@ -5312,8 +5312,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "delivery.tsx"
     },
     {
@@ -5323,8 +5323,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery_deliverycommitgroup",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "deliverycommitgroup"
     },
     {
@@ -5334,8 +5334,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery_content_label",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "content_label"
     },
     {
@@ -5345,8 +5345,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery_deliveryprops",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "deliveryprops"
     },
     {
@@ -5356,8 +5356,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_delivery_delivery",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "delivery()"
     },
     {
@@ -5477,8 +5477,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_deliverylifecycle",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "deliverylifecycle.tsx"
     },
     {
@@ -5488,8 +5488,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_deliverylifecycle_terminal_presentation",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "terminal_presentation"
     },
     {
@@ -5653,8 +5653,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_deliverytabs_deliverytab",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "deliverytab"
     },
     {
@@ -5675,8 +5675,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_deliverytabs_changesview",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "changesview"
     },
     {
@@ -5961,8 +5961,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_findingcard",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "findingcard.tsx"
     },
     {
@@ -5972,8 +5972,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_findingcard_severityaccent",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "severityaccent()"
     },
     {
@@ -5983,8 +5983,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_findingcard_findingcard",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "findingcard()"
     },
     {
@@ -6093,8 +6093,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenode",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "lifecyclenode.tsx"
     },
     {
@@ -6104,8 +6104,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenode_node_label",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "node_label"
     },
     {
@@ -6126,8 +6126,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenode_lifecyclenode",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "lifecyclenode()"
     },
     {
@@ -6379,8 +6379,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_cibody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "cibody.tsx"
     },
     {
@@ -6390,8 +6390,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_cibody_cibody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "cibody()"
     },
     {
@@ -6401,8 +6401,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_commitsbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "commitsbody.tsx"
     },
     {
@@ -6412,8 +6412,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_commitsbody_commitsstagebody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "commitsstagebody()"
     },
     {
@@ -6423,8 +6423,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_commitsbody_commitsbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "commitsbody()"
     },
     {
@@ -6434,8 +6434,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_drawercontrols",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 90,
+      "community_name": "lifecycleNodeState.ts",
       "norm_label": "drawercontrols.tsx"
     },
     {
@@ -6445,8 +6445,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_drawercontrols_growrow",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 90,
+      "community_name": "lifecycleNodeState.ts",
       "norm_label": "growrow()"
     },
     {
@@ -6456,8 +6456,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_drawercontrols_gateaction",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 90,
+      "community_name": "lifecycleNodeState.ts",
       "norm_label": "gateaction()"
     },
     {
@@ -6467,8 +6467,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_drawercontrols_delegatedrow",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 90,
+      "community_name": "lifecycleNodeState.ts",
       "norm_label": "delegatedrow()"
     },
     {
@@ -6478,8 +6478,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_index",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "index.tsx"
     },
     {
@@ -6489,8 +6489,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_index_nodedrawersession",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "nodedrawersession"
     },
     {
@@ -6500,8 +6500,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_index_nodedrawerprops",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "nodedrawerprops"
     },
     {
@@ -6511,8 +6511,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_index_nodedrawer",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "nodedrawer()"
     },
     {
@@ -6522,8 +6522,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_mergebody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 90,
+      "community_name": "lifecycleNodeState.ts",
       "norm_label": "mergebody.tsx"
     },
     {
@@ -6533,8 +6533,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_mergebody_mergebody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "mergebody()"
     },
     {
@@ -6544,8 +6544,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_prbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 90,
+      "community_name": "lifecycleNodeState.ts",
       "norm_label": "prbody.tsx"
     },
     {
@@ -6555,8 +6555,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_prbody_prbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "prbody()"
     },
     {
@@ -6566,8 +6566,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_reviewbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "reviewbody.tsx"
     },
     {
@@ -6577,8 +6577,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_reviewbody_reviewroundline",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "reviewroundline()"
     },
     {
@@ -6588,8 +6588,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_reviewbody_reviewbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "reviewbody()"
     },
     {
@@ -6599,8 +6599,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_terminalbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "terminalbody.tsx"
     },
     {
@@ -6610,8 +6610,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_terminalbody_terminalcard",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "terminalcard()"
     },
     {
@@ -6621,8 +6621,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_terminalbody_mergedbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "mergedbody()"
     },
     {
@@ -6632,8 +6632,8 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawer_terminalbody_closedbody",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "closedbody()"
     },
     {
@@ -6643,8 +6643,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor_stories",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "pranchor.stories.tsx"
     },
     {
@@ -6654,8 +6654,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor_stories_story",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -6665,8 +6665,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor_stories_default",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "default"
     },
     {
@@ -6676,8 +6676,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "pranchor.tsx"
     },
     {
@@ -6698,8 +6698,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_pranchor_pranchor",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "pranchor()"
     },
     {
@@ -6797,8 +6797,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist",
-      "community": 87,
-      "community_name": "PrChecksList.tsx",
+      "community": 91,
+      "community_name": "PrChecksList.stories.tsx",
       "norm_label": "prcheckslist.tsx"
     },
     {
@@ -6819,8 +6819,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_cirunstatus",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 91,
+      "community_name": "PrChecksList.stories.tsx",
       "norm_label": "cirunstatus"
     },
     {
@@ -6830,8 +6830,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_cirun",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "cirun"
     },
     {
@@ -6841,8 +6841,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_ci_run_presentation",
-      "community": 87,
-      "community_name": "PrChecksList.tsx",
+      "community": 91,
+      "community_name": "PrChecksList.stories.tsx",
       "norm_label": "ci_run_presentation"
     },
     {
@@ -6852,8 +6852,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_aggregate_tone",
-      "community": 87,
-      "community_name": "PrChecksList.tsx",
+      "community": 91,
+      "community_name": "PrChecksList.stories.tsx",
       "norm_label": "aggregate_tone"
     },
     {
@@ -6863,8 +6863,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_prcheckslistprops",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 91,
+      "community_name": "PrChecksList.stories.tsx",
       "norm_label": "prcheckslistprops"
     },
     {
@@ -6874,8 +6874,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_prcheckslist_prcheckslist",
-      "community": 87,
-      "community_name": "PrChecksList.tsx",
+      "community": 91,
+      "community_name": "PrChecksList.stories.tsx",
       "norm_label": "prcheckslist()"
     },
     {
@@ -6885,8 +6885,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel_test",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "diffmodel.test.ts"
     },
     {
@@ -6896,8 +6896,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "diffmodel.ts"
     },
     {
@@ -6907,8 +6907,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel_filechangekind",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 20,
+      "community_name": "Vitest Browser Playwright",
       "norm_label": "filechangekind"
     },
     {
@@ -6918,8 +6918,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel_diffhunkline",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 77,
+      "community_name": "react-dom",
       "norm_label": "diffhunkline"
     },
     {
@@ -6929,8 +6929,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel_difffinding",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "difffinding"
     },
     {
@@ -6940,8 +6940,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_diffmodel_findingbodystub",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "findingbodystub()"
     },
     {
@@ -6984,8 +6984,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_findingstate_findingstate",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "findingstate"
     },
     {
@@ -7061,8 +7061,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_findingstate_findingseverity",
-      "community": 89,
-      "community_name": "FindingCard.tsx",
+      "community": 83,
+      "community_name": "Roster.stories.tsx",
       "norm_label": "findingseverity"
     },
     {
@@ -7105,8 +7105,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenodestate_test",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "lifecyclenodestate.test.ts"
     },
     {
@@ -7116,8 +7116,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenodestate",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "lifecyclenodestate.ts"
     },
     {
@@ -7127,8 +7127,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenodestate_lifecyclenodestatepresentation",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "lifecyclenodestatepresentation"
     },
     {
@@ -7138,8 +7138,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_lifecyclenodestate_lifecycle_node_state",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 69,
+      "community_name": "BackgroundTasks.stories.tsx",
       "norm_label": "lifecycle_node_state"
     },
     {
@@ -7149,8 +7149,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "nodedrawermodel.ts"
     },
     {
@@ -7160,8 +7160,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_reviewroundview",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "reviewroundview"
     },
     {
@@ -7171,8 +7171,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_commitsdrawerdata",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "commitsdrawerdata"
     },
     {
@@ -7182,8 +7182,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_cidrawerdata",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "cidrawerdata"
     },
     {
@@ -7193,8 +7193,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_reviewdrawerdata",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "reviewdrawerdata"
     },
     {
@@ -7204,8 +7204,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_mergedsummary",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "mergedsummary"
     },
     {
@@ -7215,8 +7215,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_delivery_components_nodedrawermodel_closedsummary",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 15,
+      "community_name": "Electron Toolkit TSConfig",
       "norm_label": "closedsummary"
     },
     {
@@ -7303,8 +7303,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster_stories",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 93,
+      "community_name": "SessionRow.stories.tsx",
       "norm_label": "emptyroster.stories.tsx"
     },
     {
@@ -7314,8 +7314,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster_stories_story",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 93,
+      "community_name": "SessionRow.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -7325,8 +7325,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster_stories_default",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 93,
+      "community_name": "SessionRow.stories.tsx",
       "norm_label": "default"
     },
     {
@@ -7336,8 +7336,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 93,
+      "community_name": "SessionRow.stories.tsx",
       "norm_label": "emptyroster.tsx"
     },
     {
@@ -7347,8 +7347,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_emptyroster_emptyroster",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 93,
+      "community_name": "SessionRow.stories.tsx",
       "norm_label": "emptyroster()"
     },
     {
@@ -7523,8 +7523,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_roster",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 93,
+      "community_name": "SessionRow.stories.tsx",
       "norm_label": "roster.tsx"
     },
     {
@@ -7534,8 +7534,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_roster_roster",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 102,
+      "community_name": "Roster",
       "norm_label": "roster()"
     },
     {
@@ -7622,8 +7622,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_sessionrow",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 93,
+      "community_name": "SessionRow.stories.tsx",
       "norm_label": "sessionrow.tsx"
     },
     {
@@ -7633,8 +7633,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_domains_roster_components_sessionrow_sessionrow",
-      "community": 4,
-      "community_name": "Session Row & Button",
+      "community": 93,
+      "community_name": "SessionRow.stories.tsx",
       "norm_label": "sessionrow()"
     },
     {
@@ -7831,8 +7831,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_test",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "sessionscreenmodel.test.ts"
     },
     {
@@ -7842,8 +7842,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_test_default_ui",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "default_ui"
     },
     {
@@ -7853,8 +7853,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_test_sessionfrom",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "sessionfrom()"
     },
     {
@@ -7941,8 +7941,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_sessionheadermodel",
-      "community": 85,
-      "community_name": "deliveryState",
+      "community": 62,
+      "community_name": "drawerControls.tsx",
       "norm_label": "sessionheadermodel"
     },
     {
@@ -7963,8 +7963,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_sessionpanelmodel",
-      "community": 94,
-      "community_name": "SessionScreen.tsx",
+      "community": 48,
+      "community_name": "sessionFacts.ts",
       "norm_label": "sessionpanelmodel"
     },
     {
@@ -7985,8 +7985,8 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_paneluistate",
-      "community": 69,
-      "community_name": "BackgroundTasks.stories.tsx",
+      "community": 56,
+      "community_name": "SectionHeader.tsx",
       "norm_label": "paneluistate"
     },
     {
@@ -8018,8 +8018,8 @@
       "source_location": "L132",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionscreenmodel_buildsessionpanel",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "buildsessionpanel()"
     },
     {
@@ -8029,8 +8029,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore_test",
-      "community": 66,
-      "community_name": "FindingCard.stories.tsx",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "sessionstore.test.ts"
     },
     {
@@ -8040,8 +8040,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore",
-      "community": 66,
-      "community_name": "FindingCard.stories.tsx",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "sessionstore.ts"
     },
     {
@@ -8051,8 +8051,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore_sessionstore",
-      "community": 66,
-      "community_name": "FindingCard.stories.tsx",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "sessionstore"
     },
     {
@@ -8062,8 +8062,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore_usesessionstore",
-      "community": 66,
-      "community_name": "FindingCard.stories.tsx",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "usesessionstore"
     },
     {
@@ -8073,8 +8073,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_sessionstore_ts_docref_adr_0005",
-      "community": 66,
-      "community_name": "FindingCard.stories.tsx",
+      "community": 79,
+      "community_name": "sessionStore.ts",
       "norm_label": "adr-0005"
     },
     {
@@ -8194,8 +8194,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_iconbutton_stories",
-      "community": 85,
-      "community_name": "deliveryState",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "iconbutton.stories.tsx"
     },
     {
@@ -8205,8 +8205,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_iconbutton_stories_story",
-      "community": 85,
-      "community_name": "deliveryState",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "story"
     },
     {
@@ -8216,8 +8216,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_iconbutton_stories_default",
-      "community": 85,
-      "community_name": "deliveryState",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "default"
     },
     {
@@ -8535,8 +8535,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_status_stories",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 100,
+      "community_name": "Status.stories.tsx",
       "norm_label": "status.stories.tsx"
     },
     {
@@ -8546,8 +8546,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_status_stories_wordandtone",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 100,
+      "community_name": "Status.stories.tsx",
       "norm_label": "wordandtone()"
     },
     {
@@ -8557,8 +8557,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_status_stories_story",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 100,
+      "community_name": "Status.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -8568,8 +8568,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_status_stories_default",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 100,
+      "community_name": "Status.stories.tsx",
       "norm_label": "default"
     },
     {
@@ -8579,8 +8579,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_status_stories_pulsing",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 100,
+      "community_name": "Status.stories.tsx",
       "norm_label": "pulsing"
     },
     {
@@ -8590,8 +8590,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_status_stories_everystate",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 100,
+      "community_name": "Status.stories.tsx",
       "norm_label": "everystate"
     },
     {
@@ -8601,8 +8601,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_status",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "status.tsx"
     },
     {
@@ -8623,8 +8623,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_statusdot_stories",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 101,
+      "community_name": "StatusDot.stories.tsx",
       "norm_label": "statusdot.stories.tsx"
     },
     {
@@ -8634,8 +8634,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_statusdot_stories_story",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 101,
+      "community_name": "StatusDot.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -8645,8 +8645,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_statusdot_stories_default",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 101,
+      "community_name": "StatusDot.stories.tsx",
       "norm_label": "default"
     },
     {
@@ -8656,8 +8656,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_statusdot_stories_labelled",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 101,
+      "community_name": "StatusDot.stories.tsx",
       "norm_label": "labelled"
     },
     {
@@ -8667,8 +8667,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_statusdot_stories_pulsing",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 101,
+      "community_name": "StatusDot.stories.tsx",
       "norm_label": "pulsing"
     },
     {
@@ -8678,8 +8678,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_statusdot_stories_alltones",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 101,
+      "community_name": "StatusDot.stories.tsx",
       "norm_label": "alltones"
     },
     {
@@ -8689,8 +8689,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_statusdot",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "statusdot.tsx"
     },
     {
@@ -8700,8 +8700,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_statusdot_statusdot",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "statusdot()"
     },
     {
@@ -8832,8 +8832,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_type_role_class",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "type_role_class"
     },
     {
@@ -8843,8 +8843,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_defaultelement",
-      "community": 60,
-      "community_name": "Text.tsx",
+      "community": 90,
+      "community_name": "lifecycleNodeState.ts",
       "norm_label": "defaultelement()"
     },
     {
@@ -8865,8 +8865,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_text_text",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 90,
+      "community_name": "lifecycleNodeState.ts",
       "norm_label": "text()"
     },
     {
@@ -8975,8 +8975,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_badge",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "badge.tsx"
     },
     {
@@ -8986,8 +8986,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_badge_badgevariants",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "badgevariants"
     },
     {
@@ -8997,8 +8997,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_badge_badgevariant",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "badgevariant"
     },
     {
@@ -9008,8 +9008,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_badge_badge",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "badge()"
     },
     {
@@ -9151,8 +9151,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_button_buttonvariants",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 23,
+      "community_name": "Storybook Docs Addon",
       "norm_label": "buttonvariants"
     },
     {
@@ -9173,8 +9173,8 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_button_button",
-      "community": 40,
-      "community_name": "Electron",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "button()"
     },
     {
@@ -9184,8 +9184,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "checkbox.stories.tsx"
     },
     {
@@ -9195,8 +9195,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories_story",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "story"
     },
     {
@@ -9206,8 +9206,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories_default",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "default"
     },
     {
@@ -9217,8 +9217,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories_checked",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "checked"
     },
     {
@@ -9228,8 +9228,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_checkbox_stories_disabled",
-      "community": 73,
-      "community_name": "checkbox.stories.tsx",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "disabled"
     },
     {
@@ -9261,8 +9261,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowbenddownrighticon",
-      "community": 63,
-      "community_name": "button.stories.tsx",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "arrowbenddownrighticon.tsx"
     },
     {
@@ -9272,8 +9272,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowbenddownrighticon_arrowbenddownrighticon",
-      "community": 63,
-      "community_name": "button.stories.tsx",
+      "community": 92,
+      "community_name": "NowLine.stories.tsx",
       "norm_label": "arrowbenddownrighticon"
     },
     {
@@ -9294,8 +9294,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowclockwiseicon_arrowclockwiseicon",
-      "community": 5,
-      "community_name": "Runtime Dependencies",
+      "community": 66,
+      "community_name": "FindingCard.stories.tsx",
       "norm_label": "arrowclockwiseicon"
     },
     {
@@ -9327,8 +9327,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowlineupicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "arrowlineupicon.tsx"
     },
     {
@@ -9338,8 +9338,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowlineupicon_arrowlineupicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "arrowlineupicon"
     },
     {
@@ -9393,8 +9393,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowsclockwiseicon",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "arrowsclockwiseicon.tsx"
     },
     {
@@ -9404,8 +9404,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_arrowsclockwiseicon_arrowsclockwiseicon",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "arrowsclockwiseicon"
     },
     {
@@ -9613,8 +9613,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_checkicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "checkicon.tsx"
     },
     {
@@ -9624,8 +9624,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_checkicon_checkicon",
-      "community": 49,
-      "community_name": "index.ts",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "checkicon"
     },
     {
@@ -9679,8 +9679,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_circleicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "circleicon.tsx"
     },
     {
@@ -9690,8 +9690,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_circleicon_circleicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "circleicon"
     },
     {
@@ -9701,8 +9701,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_circlenotchicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "circlenotchicon.tsx"
     },
     {
@@ -9712,8 +9712,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_circlenotchicon_circlenotchicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "circlenotchicon"
     },
     {
@@ -9833,8 +9833,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gearicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "gearicon.tsx"
     },
     {
@@ -9844,8 +9844,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gearicon_gearicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "gearicon"
     },
     {
@@ -9877,8 +9877,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitcommiticon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "gitcommiticon.tsx"
     },
     {
@@ -9888,8 +9888,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitcommiticon_gitcommiticon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "gitcommiticon"
     },
     {
@@ -9921,8 +9921,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitmergeicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "gitmergeicon.tsx"
     },
     {
@@ -9932,8 +9932,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitmergeicon_gitmergeicon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "gitmergeicon"
     },
     {
@@ -9943,8 +9943,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitpullrequesticon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "gitpullrequesticon.tsx"
     },
     {
@@ -9954,8 +9954,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_gitpullrequesticon_gitpullrequesticon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "gitpullrequesticon"
     },
     {
@@ -9965,8 +9965,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_magnifyingglassicon",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "magnifyingglassicon.tsx"
     },
     {
@@ -9976,8 +9976,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_magnifyingglassicon_magnifyingglassicon",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "magnifyingglassicon"
     },
     {
@@ -10009,8 +10009,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_pencilsimpleicon",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "pencilsimpleicon.tsx"
     },
     {
@@ -10020,8 +10020,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_pencilsimpleicon_pencilsimpleicon",
-      "community": 92,
-      "community_name": "NowLine.stories.tsx",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "pencilsimpleicon"
     },
     {
@@ -10042,8 +10042,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_plusicon_plusicon",
-      "community": 85,
-      "community_name": "deliveryState",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "plusicon"
     },
     {
@@ -10053,8 +10053,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_prohibiticon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "prohibiticon.tsx"
     },
     {
@@ -10064,8 +10064,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_prohibiticon_prohibiticon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "prohibiticon"
     },
     {
@@ -10229,8 +10229,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_usericon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "usericon.tsx"
     },
     {
@@ -10240,8 +10240,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_usericon_usericon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "usericon"
     },
     {
@@ -10251,8 +10251,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_warningicon",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "warningicon.tsx"
     },
     {
@@ -10262,8 +10262,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_warningicon_warningicon",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "warningicon"
     },
     {
@@ -10295,8 +10295,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_xicon",
-      "community": 63,
-      "community_name": "button.stories.tsx",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "xicon.tsx"
     },
     {
@@ -10306,8 +10306,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_xicon_xicon",
-      "community": 63,
-      "community_name": "button.stories.tsx",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "xicon"
     },
     {
@@ -10339,8 +10339,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_createicon_iconatom",
-      "community": 90,
-      "community_name": "lifecycleNodeState.ts",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "iconatom"
     },
     {
@@ -10515,8 +10515,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_rostericon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 5,
+      "community_name": "Runtime Dependencies",
       "norm_label": "rostericon.ts"
     },
     {
@@ -10526,8 +10526,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_icons_rostericon_roster_icon",
-      "community": 74,
-      "community_name": "electron-vite",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "roster_icon"
     },
     {
@@ -10537,8 +10537,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_index",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "index.ts"
     },
     {
@@ -10548,8 +10548,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tabs.stories.tsx"
     },
     {
@@ -10559,8 +10559,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_tones",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tones"
     },
     {
@@ -10570,8 +10570,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_story",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "story"
     },
     {
@@ -10581,8 +10581,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_default",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "default"
     },
     {
@@ -10592,8 +10592,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_changestone",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "changestone"
     },
     {
@@ -10603,8 +10603,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_stories_alltones",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "alltones"
     },
     {
@@ -10614,8 +10614,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tabs.tsx"
     },
     {
@@ -10625,8 +10625,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabs",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tabs()"
     },
     {
@@ -10636,8 +10636,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabslist",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tabslist()"
     },
     {
@@ -10647,8 +10647,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabstriggervariants",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tabstriggervariants"
     },
     {
@@ -10658,8 +10658,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabstriggertone",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tabstriggertone"
     },
     {
@@ -10669,8 +10669,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabstrigger",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tabstrigger()"
     },
     {
@@ -10680,8 +10680,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tabs_tabscontent",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 73,
+      "community_name": "checkbox.stories.tsx",
       "norm_label": "tabscontent()"
     },
     {
@@ -10757,8 +10757,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_components_ui_tonerecipes",
-      "community": 53,
-      "community_name": "badge.stories.tsx",
+      "community": 40,
+      "community_name": "Electron",
       "norm_label": "tonerecipes.ts"
     },
     {
@@ -10856,8 +10856,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_lifecyclehot",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 102,
+      "community_name": "Roster",
       "norm_label": "lifecyclehot.ts"
     },
     {
@@ -10867,8 +10867,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_lifecyclehot_hot_head_states",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 102,
+      "community_name": "Roster",
       "norm_label": "hot_head_states"
     },
     {
@@ -10878,8 +10878,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_lifecyclehot_ishotheadstate",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 102,
+      "community_name": "Roster",
       "norm_label": "ishotheadstate()"
     },
     {
@@ -10889,8 +10889,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_lifecyclehot_lifecycleishot",
-      "community": 70,
-      "community_name": "ContextGauge.tsx",
+      "community": 102,
+      "community_name": "Roster",
       "norm_label": "lifecycleishot()"
     },
     {
@@ -10911,8 +10911,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 86,
+      "community_name": "deliveryState",
       "norm_label": "rosterstatus.ts"
     },
     {
@@ -10933,8 +10933,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus_rostertone",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 4,
+      "community_name": "Session Row & Button",
       "norm_label": "rostertone"
     },
     {
@@ -10977,8 +10977,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus_session_status",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 100,
+      "community_name": "Status.stories.tsx",
       "norm_label": "session_status"
     },
     {
@@ -10988,8 +10988,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus_terminal_status",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 86,
+      "community_name": "deliveryState",
       "norm_label": "terminal_status"
     },
     {
@@ -10999,8 +10999,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_rosterstatus_head_status",
-      "community": 14,
-      "community_name": "App Rail Shell",
+      "community": 86,
+      "community_name": "deliveryState",
       "norm_label": "head_status"
     },
     {
@@ -11032,8 +11032,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "statematrix.ts"
     },
     {
@@ -11043,8 +11043,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix_statematrixrow",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "statematrixrow"
     },
     {
@@ -11054,8 +11054,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix_pr",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "pr"
     },
     {
@@ -11065,8 +11065,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix_state_matrix_rows",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "state_matrix_rows"
     },
     {
@@ -11076,8 +11076,8 @@
       "source_location": "L124",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_shared_delivery_statematrix_statematrixinput",
-      "community": 86,
-      "community_name": "deliveryState",
+      "community": 14,
+      "community_name": "App Rail Shell",
       "norm_label": "statematrixinput()"
     },
     {
@@ -11098,8 +11098,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_usespinelayout_test",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "usespinelayout.test.ts"
     },
     {
@@ -11109,8 +11109,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_usespinelayout_test_base",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "base"
     },
     {
@@ -11120,8 +11120,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_usespinelayout",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "usespinelayout.ts"
     },
     {
@@ -11142,8 +11142,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_usespinelayout_spine",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "spine"
     },
     {
@@ -11153,8 +11153,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_usespinelayout_applyresize",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "applyresize()"
     },
     {
@@ -11175,8 +11175,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_usespinelayout_applysnap",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "applysnap()"
     },
     {
@@ -11186,8 +11186,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "apps_desktop_src_renderer_src_usespinelayout_usespinelayout",
-      "community": 79,
-      "community_name": "sessionStore.ts",
+      "community": 94,
+      "community_name": "SessionScreen.tsx",
       "norm_label": "usespinelayout()"
     },
     {
@@ -13092,6 +13092,226 @@
       "community": 1,
       "community_name": "Root Package Manifest",
       "norm_label": "node-pty"
+    },
+    {
+      "label": "measure-warm.ts",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "measure-warm.ts"
+    },
+    {
+      "label": "SAMPLES",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm_samples",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "samples"
+    },
+    {
+      "label": "now()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm_now",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "now()"
+    },
+    {
+      "label": "runWarmSession()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm_runwarmsession",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "runwarmsession()"
+    },
+    {
+      "label": "measureBoot()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L102",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm_measureboot",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "measureboot()"
+    },
+    {
+      "label": "boot",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L122",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm_boot",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "boot"
+    },
+    {
+      "label": "avg()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L128",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm_avg",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "avg()"
+    },
+    {
+      "label": "bootAvg",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L129",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm_bootavg",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "bootavg"
+    },
+    {
+      "label": "warmTurns",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L144",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_warm_warmturns",
+      "community": 89,
+      "community_name": "FindingCard.tsx",
+      "norm_label": "warmturns"
+    },
+    {
+      "label": "measure.ts",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "measure.ts"
+    },
+    {
+      "label": "SAMPLES",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_samples",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "samples"
+    },
+    {
+      "label": "MODELS",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L72",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_models",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "models"
+    },
+    {
+      "label": "Measure",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L79",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_measure",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "measure"
+    },
+    {
+      "label": "runRouter()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L81",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_runrouter",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "runrouter()"
+    },
+    {
+      "label": "rows",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L125",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_rows",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "rows"
+    },
+    {
+      "label": "samplesOfLead",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L126",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_samplesoflead",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "samplesoflead"
+    },
+    {
+      "label": "avg()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L144",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_avg",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "avg()"
+    },
+    {
+      "label": "key()",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L145",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_key",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "key()"
+    },
+    {
+      "label": "groups",
+      "file_type": "code",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L146",
+      "_origin": "ast",
+      "id": "prototypes_grill_by_voice_latency_measure_groups",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "groups"
+    },
+    {
+      "label": "ADR-0007",
+      "file_type": "concept",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L4",
+      "_origin": "ast",
+      "id": "docref_adr_0007",
+      "community": 74,
+      "community_name": "electron-vite",
+      "norm_label": "adr-0007"
     },
     {
       "label": "turbo.json",
@@ -42200,6 +42420,228 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L128",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_avg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_boot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L129",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_bootavg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L102",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_measureboot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_runwarmsession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_samples",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L144",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_warmturns",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L104",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm_measureboot",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure-warm.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure_warm_runwarmsession",
+      "target": "prototypes_grill_by_voice_latency_measure_warm_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "cites",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "docref_adr_0007",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L144",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_avg",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L146",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_groups",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L145",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_measure",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L72",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_models",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L125",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_rows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_runrouter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_samples",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "prototypes/grill-by-voice-latency/measure.ts",
+      "source_location": "L126",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "prototypes_grill_by_voice_latency_measure",
+      "target": "prototypes_grill_by_voice_latency_measure_samplesoflead",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "turbo.json",
       "source_location": "L2",
       "weight": 1.0,
@@ -42535,5 +42977,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "eb4ff55173a2e82388a04a7d4d0f42e4c045e6ab"
+  "built_at_commit": "1d3556054008fbb0b16b5fd6ee7c480229da11e2"
 }
