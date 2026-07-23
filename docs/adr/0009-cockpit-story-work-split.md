@@ -1,6 +1,13 @@
 # 0009 · Cockpit session screen: Story|Work split with a ship-ribbon lifecycle
 
-Status: accepted · 2026-07-19
+Status: superseded (#182 / #179) · 2026-07-19
+
+> **Superseded by the #182 rebuild.** This ADR is built entirely on dropped vocabulary
+> (`Actor`/`Run`/`PhaseGroup`, `AgentRow`/`RunRow`, the S0–S11 state table, the ship ribbon)
+> and on two design docs wiped in #179 (`cockpit-matrix.md`, `cockpit-inventory.md`). The
+> current model is `CONTEXT.md` (L3 Runtime tree). Retained for history only — do not treat its
+> component/story split or state table as authoritative.
+
 
 ## Context
 
@@ -29,12 +36,12 @@ The session screen is split by **data nature**, not by widget:
 Every fact has exactly one home; other appearances are pointers. Workspace
 identity is one header chip (branch names the worktree; shared-tree sessions
 warn). The full contract — facts model, rules R1–R16, state table S0–S11, pane
-anatomy — lives in `docs/designs/cockpit-matrix.md` and is written to become the
+anatomy — lived in `cockpit-matrix.md` (wiped #179; git history) and is written to become the
 component unit tests.
 
 ## Consequences
 
-- `/componentize-design` builds from `docs/designs/cockpit-inventory.md`;
+- `/componentize-design` builds from `cockpit-inventory.md` (wiped #179; git history);
   matrix rows become the test suite.
 - `--tone-landed` (Merged ≠ CI-green) is a proposed token to promote into
   `argo-tokens.css` at settle time.

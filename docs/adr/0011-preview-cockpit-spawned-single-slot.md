@@ -1,6 +1,12 @@
 # 0011 · Preview: the cockpit spawns and embeds one dev server at a time
 
-Status: accepted · 2026-07-20
+Status: accepted; terminology superseded (#182) · 2026-07-20
+
+> **Terminology superseded by #182** (see `CONTEXT.md`): read every "**Actor**" below as
+> "**Agent** (tree node)" — `Actor` is dropped, root-vs-child is carried by `parentId`. The
+> substance stands (Preview is a cockpit-level singleton, node-scoped, in the node's own
+> worktree).
+
 
 ## Context
 

@@ -1,10 +1,20 @@
 # 0010 · Workspace identity belongs to the Actor, not the Session
 
-Status: accepted · 2026-07-20
+Status: accepted; terminology superseded (#182) · 2026-07-20
+
+> **Terminology superseded by the #182 rebuild** (see `CONTEXT.md` → L3). The *substance*
+> stands — workspace identity + Preview attach at the recursive tree node, not the Session,
+> because a worktree-isolated child gets its own branch/dir. But the node is now **`Agent`**
+> (recursive; root-vs-child by `parentId`), **not `Actor`** (dropped: zero prior art), and the
+> rejected `SessionView.kind = session | agent` union is replaced by `parentId` — a Session is
+> the **root Agent**, a child is a **Subagent**. Read every "Actor" below as "Agent (tree
+> node)".
+
+
 
 ## Context
 
-ADR-0009 and `docs/designs/cockpit-inventory.md` make workspace identity a fact
+ADR-0009 and the retired `cockpit-inventory.md` (git history) make workspace identity a fact
 about a **Session** — the `WorkspaceIdentity` chip is "the ONE full home of where
 is this session working", and the rail's top tier is Sessions.
 

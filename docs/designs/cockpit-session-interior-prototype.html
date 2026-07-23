@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440, initial-scale=1" />
+<title>Argo — Session interior (prototype)</title>
+<!--
+  THROWAWAY PROTOTYPE for wayfinder #161 "Session interior".
+  Settled-surface prototype (map #157 rule): ONE shell, the floating bar toggles
+  STATES/SURFACES, never rival looks. CSS lifted from cockpit-sessions-room-prototype.html
+  (#159) — locked Penumbra language; content = the #161 grill decisions.
+  Structurally real / visually approximate. Do NOT settle tokens here (Phase 2).
+  Scenes (?state= + ←/→): activity · delivery · preview · dock · idle · external · archived
+-->
+<style>
+  :root{
+    --base:#0A0B0D; --ink:#E7E3DA; --ink-dim:#9A968C; --ink-faint:#615E58; --ink-ghost:#3C3A36;
+    --accent:#C8A968; --accent-deep:#8A7038; --run:#6FA890; --need:#C8A968; --block:#B5675E; --done:#5B6673;
+    --warm:200,169,104;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+    --sans:"Inter","Helvetica Neue",-apple-system,system-ui,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#050506;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+  body{display:flex;justify-content:center;align-items:flex-start}
+  .label{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  #room{position:relative;width:1440px;height:900px;overflow:hidden;
+    background:
+      radial-gradient(1150px 1000px at 1120px 440px, rgba(var(--warm),0.13), rgba(var(--warm),0.04) 32%, transparent 60%),
+      radial-gradient(1400px 1000px at 860px 460px, rgba(var(--warm),0.045), transparent 55%),
+      radial-gradient(900px 900px at 300px 780px, rgba(30,34,44,0.4), transparent 60%),
+      radial-gradient(1600px 1200px at 720px 40px, #101218, transparent 70%),
+      linear-gradient(160deg,#0B0C0F,#08090B 60%,#070709);}
+  #room::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+    background:
+      radial-gradient(1150px 950px at 1120px 440px, transparent 46%, rgba(0,0,0,0.32) 100%),
+      linear-gradient(to bottom, rgba(0,0,0,0.22), transparent 12%, transparent 82%, rgba(0,0,0,0.4));
+    mix-blend-mode:multiply;}
+
+  /* ===== BROW ===== */
+  #brow{position:absolute;top:26px;left:34px;right:34px;display:flex;align-items:center;justify-content:space-between;z-index:6}
+  #mark{display:flex;align-items:baseline;gap:12px}
+  #mark .glyph{font-weight:200;font-size:20px;letter-spacing:.34em;color:var(--ink);text-shadow:0 0 22px rgba(var(--warm),0.26)}
+  #mark .proj{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-dim)}
+  #rooms{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04)}
+  #rooms .rm{display:flex;align-items:center;gap:9px;padding:7px 15px;border-radius:8px;font-size:11.5px;color:var(--ink-dim);cursor:pointer}
+  #rooms .rm .k{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
+  #rooms .rm.on{color:#F1ECE1;background:linear-gradient(180deg, rgba(46,44,40,0.65), rgba(24,22,20,0.65));box-shadow:inset 0 1px 0 rgba(255,246,228,0.1)}
+  #rooms .rm.on .k{color:var(--accent)}
+
+  /* ===== ROSTER RAIL ===== */
+  #rail{position:absolute;top:82px;left:34px;width:264px;bottom:70px;z-index:5;display:flex;flex-direction:column;gap:12px}
+  #rail>.label{margin:6px 0 1px 4px}
+  .plane{position:relative;border-radius:14px;padding:13px 15px;overflow:hidden;cursor:pointer;
+    backdrop-filter:blur(9px) saturate(1.05);
+    background:linear-gradient(180deg, rgba(30,32,38,0.42), rgba(16,17,21,0.5));
+    box-shadow:inset 0 1px 0 rgba(255,246,228,0.05), inset 0 22px 40px -30px rgba(var(--warm),0.14), 0 20px 34px -22px rgba(0,0,0,0.7);}
+  .plane::before{content:"";position:absolute;left:-16%;right:-16%;top:-40%;height:120%;z-index:-1;background:radial-gradient(60% 70% at 50% 34%, rgba(var(--warm),0.10), transparent 70%);filter:blur(20px);opacity:.5}
+  .plane .top{display:flex;align-items:center;gap:9px}
+  .plane .name{flex:1;font-size:13.5px;font-weight:400;color:var(--ink);letter-spacing:.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .plane .word{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;flex:none}
+  .plane .word.attn{color:var(--accent);text-shadow:0 0 10px rgba(var(--warm),0.4)}
+  .plane .meta{padding-left:15px}
+  .plane .meta{margin-top:8px;font-size:10px;color:var(--ink-dim);font-family:var(--mono)}
+  .plane .branch{color:var(--ink-faint)}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;flex:none}
+  .chip.attn{color:var(--accent);text-shadow:0 0 10px rgba(var(--warm),0.4)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--done);flex:none}
+  .dot.run{background:var(--run);box-shadow:0 0 10px 1px rgba(111,168,144,0.6)}
+  .dot.need{background:var(--need);box-shadow:0 0 12px 2px rgba(200,169,104,0.7)}
+  .dot.block{background:var(--block);box-shadow:0 0 10px 1px rgba(181,103,94,0.55)}
+  .dot.idle{background:var(--ink-faint)} .dot.ext{background:transparent;border:1px solid var(--ink-ghost)}
+  .plane.active{background:linear-gradient(180deg, rgba(46,44,40,0.6), rgba(24,22,20,0.6));
+    box-shadow:inset 0 1px 0 rgba(255,246,228,0.12), inset 0 26px 46px -30px rgba(var(--warm),0.30), 0 30px 50px -20px rgba(0,0,0,0.78), 0 0 46px -6px rgba(var(--warm),0.14)}
+  .plane.active::before{opacity:.95;background:radial-gradient(60% 70% at 40% 30%, rgba(var(--warm),0.20), transparent 72%)}
+  .plane.active .name{color:#F1ECE1;text-shadow:0 0 20px rgba(var(--warm),0.25)}
+  .plane.recede{opacity:.7} .plane.ext .name{color:var(--ink-dim)}
+  .ctxline{margin-top:11px;display:flex;align-items:center;gap:9px}
+  .ctxline .num{font-family:var(--mono);font-size:9.5px;color:var(--accent)}
+  #newses{display:flex;align-items:center;gap:9px;padding:12px 15px;border-radius:12px;cursor:pointer;color:var(--ink-dim);font-size:12px}
+  #newses:hover{background:rgba(255,255,255,0.03);color:var(--ink)}
+  #newses .plus{font-size:15px;font-weight:200;color:var(--ink-faint);line-height:0}
+  #newses .k{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
+  #arch{margin-top:auto;display:flex;align-items:center;gap:9px;padding:12px 15px;border-radius:12px;cursor:pointer;color:var(--ink-dim);font-size:12px}
+  #arch:hover{background:rgba(255,255,255,0.03)}
+  #arch.on{background:linear-gradient(180deg, rgba(46,44,40,0.55), rgba(24,22,20,0.5));box-shadow:inset 0 1px 0 rgba(255,246,228,0.09);color:var(--ink)}
+  #arch .cnt{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+
+  /* ===== SESSION CARD (one continuous glass) ===== */
+  #card{position:absolute;top:82px;left:322px;right:34px;bottom:70px;z-index:4;display:flex;flex-direction:column;
+    border-radius:20px;overflow:hidden;backdrop-filter:blur(14px) saturate(1.04);
+    background:linear-gradient(180deg, rgba(28,29,35,0.5), rgba(15,16,20,0.56));
+    box-shadow:inset 0 1px 0 rgba(255,246,228,0.08), inset 0 30px 60px -44px rgba(var(--warm),0.22), 0 34px 60px -30px rgba(0,0,0,0.72);}
+  #card::before{content:"";position:absolute;left:20%;right:-14%;top:-24%;height:90%;z-index:0;pointer-events:none;background:radial-gradient(52% 58% at 74% 26%, rgba(var(--warm),0.12), transparent 70%);filter:blur(30px);opacity:.7}
+  #card>*{position:relative;z-index:1}
+
+  /* ===== header — 3 takes on ONE band (?header=1..3), all driven by H_RUN/H_IDLE/H_EXT =====
+     ONE skeleton: [large ctx ring] · [title / meta] ......... [Activity·Delivery·Outcomes tabs].
+     The band ABSORBS the tab row — there is no separate #tabs strip below it.
+     Every take sheds rail-carried facts (status word · model · branch NAME), keeps git ∆/↑,
+     and degrades honestly: live dot only when running · idle drops ↑push · external drops the
+     intent + renders the ring EMPTY / "unknown". NO action buttons / ⋯ menu. Takes vary only
+     (a) ring-centre + stroke, (b) tab style (text vs pills), (c) meta one line vs two. */
+
+  #chead{display:flex;align-items:center;gap:16px;box-shadow:inset 0 -1px 0 rgba(255,246,228,0.06)}
+  #chead .hleft{flex:1;min-width:0;display:flex;align-items:center;gap:15px}
+  #chead .htblk{min-width:0;display:flex;flex-direction:column;gap:4px}
+  #chead .h-title{font-weight:200;color:#F2EDE2;text-shadow:0 0 26px rgba(var(--warm),0.22);letter-spacing:.01em;line-height:1.12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #chead .h-live{width:6px;height:6px;border-radius:50%;background:var(--run);box-shadow:0 0 9px 1px rgba(111,168,144,0.6);flex:none}
+  #chead .m-code{color:var(--run)} #chead .m-plan{color:var(--accent)} #chead .m-ask{color:var(--ink)} #chead .m-unk{color:var(--ink-faint)}
+  #chead .mut{color:var(--accent)}
+  #chead .h-b{color:var(--ink-ghost)}
+  #chead .h-intent{color:var(--ink);cursor:pointer} #chead .h-intent .n{color:var(--accent)} #chead .h-intent:hover{text-decoration:underline}
+
+  /* title-block meta line(s) */
+  #chead .hmeta{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  #chead .hmeta.two{flex-direction:column;align-items:flex-start;gap:3px}
+  #chead .hmeta.two .mrow{display:flex;align-items:center;gap:7px}
+
+  /* large ctx ring — arc = derived ctx, centre + stroke vary per take */
+  #chead .hring{position:relative;flex:none}
+  #chead .hring svg{display:block}
+  #chead .hrc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;pointer-events:none}
+  #chead .hrcm{font-family:var(--mono);font-variant-numeric:tabular-nums;color:#E7E3DA;font-weight:300;line-height:1;font-size:13px}
+  #chead .hrcs{font-family:var(--mono);font-size:7px;letter-spacing:.03em;color:var(--ink-faint);line-height:1}
+  #chead .hring.unk .hrcm{color:var(--ink-faint);font-size:15px}
+  #chead .hglyph{color:var(--ink-faint);font-size:15px;line-height:1}
+
+  /* tabs absorbed into the band, right-aligned + vertically centred */
+  #chead .htabs{margin-left:auto;flex:none;display:flex;align-items:center;gap:2px;align-self:flex-end;margin-bottom:-4px}
+  #chead .htab{display:flex;align-items:center;gap:7px;padding:8px 14px 9px;font-size:12px;color:var(--ink-dim);cursor:pointer;position:relative;border-radius:8px;white-space:nowrap}
+  #chead .htab:hover{color:var(--ink)}
+  #chead .htab .cnt{font-family:var(--mono);font-size:9px;color:var(--accent)}
+  /* plain text tabs → underline indicator */
+  #chead .htabs.plain .htab.on{color:#F1ECE1}
+  #chead .htabs.plain .htab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:1px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 8px rgba(var(--warm),0.5)}
+  /* segmented pill tabs */
+  #chead .htabs.pills{gap:3px;padding:3px;border-radius:10px;background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04)}
+  #chead .htabs.pills .htab{padding:6px 13px;border-radius:7px}
+  #chead .htabs.pills .htab.on{color:#F1ECE1;background:linear-gradient(180deg,rgba(46,44,40,0.7),rgba(24,22,20,0.7));box-shadow:inset 0 1px 0 rgba(255,246,228,0.1)}
+
+  /* per-take dials */
+  #chead.t1{padding:8px 22px 8px 22px} #chead.t1 .h-title{font-size:19px}
+  #chead.t2{padding:7px 22px} #chead.t2 .h-title{font-size:18px}
+  #chead.t3{padding:6px 22px} #chead.t3 .h-title{font-size:20px}
+
+  /* header-variant mini-switcher (distinct from the design, like #sw) */
+  #hsw{position:fixed;bottom:66px;left:50%;transform:translateX(-50%);z-index:101;display:flex;align-items:center;gap:4px;
+    background:rgba(18,18,22,0.94);border:1px solid rgba(255,255,255,0.1);border-radius:11px;padding:5px 8px;box-shadow:0 18px 50px -12px rgba(0,0,0,0.85);backdrop-filter:blur(12px)}
+  #hsw .hlbl{font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin-right:4px}
+  #hsw .hp{font-family:var(--mono);font-size:11px;color:var(--ink-dim);padding:5px 11px;border-radius:7px;cursor:pointer}
+  #hsw .hp:hover{color:#fff;background:rgba(255,255,255,0.06)}
+  #hsw .hp.on{color:#0A0B0D;background:var(--accent);font-weight:600}
+
+  /* tabs */
+  #tabs{display:flex;gap:4px;padding:0 22px;margin-bottom:4px}
+  .tab{display:flex;align-items:center;gap:8px;padding:9px 16px 11px;border-radius:10px 10px 0 0;font-size:12px;color:var(--ink-dim);cursor:pointer;position:relative}
+  .tab.on{color:#F1ECE1}
+  .tab.on::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 8px rgba(var(--warm),0.5)}
+  .tab .cnt{font-family:var(--mono);font-size:9px;color:var(--accent)}
+  #divider{height:1px;margin:0 20px;background:linear-gradient(90deg,transparent,rgba(255,246,228,0.09),transparent)}
+
+  /* panel body */
+  #panelwrap{flex:1;min-height:0;overflow:auto;padding:16px 0 4px}
+  #panelwrap::-webkit-scrollbar{width:8px} #panelwrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.06);border-radius:4px}
+  .planline{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:11px;margin:0 22px 16px;
+    background:linear-gradient(180deg, rgba(30,32,38,0.4), rgba(16,17,21,0.44));box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
+  .planline .cur{flex:1;font-size:12.5px;color:var(--ink)}
+  .planline .prog{font-family:var(--mono);font-size:10px;color:var(--accent)}
+
+  /* two-column split — Agents | Checks */
+  .actgrid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .cell{padding:2px 22px 14px}
+  .cell + .cell{position:relative}
+  .cell h4{margin-bottom:12px}
+  .divmark{position:absolute;left:0;top:2px;bottom:10px;width:1px;background:linear-gradient(to bottom,transparent,rgba(255,246,228,0.09),transparent)}
+  /* runtime tree */
+  .agent{display:flex;align-items:center;gap:11px;padding:7px 0}
+  .agent .body{flex:1} .agent .an{font-size:12.5px;color:var(--ink)} .agent .as{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-top:2px}
+  .group{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase;margin:4px 0 3px 21px}
+  .subrows{margin:0 0 4px 21px;border-left:1px solid rgba(255,255,255,0.07);padding-left:14px;display:flex;flex-direction:column;gap:6px}
+  .subrows .r{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;color:var(--ink-dim)}
+  .tick{width:5px;height:5px;border-radius:50%;background:var(--run);box-shadow:0 0 7px rgba(111,168,144,0.55);flex:none} .tick.pend{background:var(--ink-faint);box-shadow:none}
+  .check{display:flex;align-items:center;gap:12px;padding:6px 0}
+  .check .cn{flex:1;font-size:12px;color:var(--ink)} .check .cv{font-family:var(--mono);font-size:10px;color:var(--ink-dim)} .check .cv.warn{color:var(--accent)}
+
+  /* Activity hybrid — now-head + folded Turn timeline */
+  .planline2{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 14px;border-radius:11px;background:linear-gradient(180deg,rgba(30,32,38,0.4),rgba(16,17,21,0.44));box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
+  .planline2 .cur{flex:1;font-size:12.5px;color:var(--ink)}
+  .planline2 .prog{font-family:var(--mono);font-size:10px;color:var(--accent);cursor:pointer} .planline2 .prog .cx{color:var(--ink-faint)}
+  .blueprint{display:flex;align-items:center;gap:10px;margin-top:9px;padding-left:4px;font-family:var(--mono);font-size:10px;color:var(--ink-dim)}
+  .blueprint .bp{display:inline-flex;align-items:center;gap:6px}
+  .tl{padding:2px 22px 0} .tl-lab{margin-bottom:9px;display:flex;align-items:center;gap:10px} .tl-lab .rev{font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
+  .turn{border-radius:11px;margin-bottom:7px;overflow:hidden}
+  .turn.past{background:rgba(255,255,255,0.02);cursor:pointer;display:flex;align-items:center;gap:11px;padding:11px 14px}
+  .turn.past:hover{background:rgba(255,255,255,0.04)}
+  .turn.past .fold{color:var(--ink-ghost);font-size:10px} .turn.past .tp{color:var(--ink-dim);font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .turn.past .st{font-family:var(--mono);font-size:10px;color:var(--ink-ghost)}
+  .turn.open{background:linear-gradient(180deg,rgba(30,32,38,0.34),rgba(16,17,21,0.4));box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
+  .turn.open .th{display:flex;align-items:center;gap:10px;padding:11px 14px 8px;font-size:12px;color:var(--ink)} .turn.open .th .fold{color:var(--accent);font-size:10px} .turn.open .th .run{font-family:var(--mono);font-size:9px;color:var(--run);letter-spacing:.14em;text-transform:uppercase;margin-left:auto}
+  .step{padding:5px 14px 5px 32px;position:relative} .step .sx{position:absolute;left:15px;top:7px;width:12px;text-align:center;font-family:var(--mono);font-size:10px} .step .sh{display:flex;align-items:center;gap:9px;font-size:12px}
+  .step.done .sx{color:var(--done)} .step.done .sh{color:var(--ink-dim)} .step.cur .sx{color:var(--run)} .step.cur .sh{color:var(--ink)} .step.pending .sx{color:var(--ink-ghost)} .step.pending .sh{color:var(--ink-faint)}
+  .step .coal{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-left:auto}
+  .events{margin:6px 0 6px 4px;border-left:1px solid rgba(255,255,255,0.07);padding-left:14px;display:flex;flex-direction:column;gap:6px}
+  .ev{display:flex;align-items:baseline;gap:10px;font-family:var(--mono);font-size:10.5px} .ev .k{width:36px;flex:none;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-ghost)}
+  .ev.mut{color:var(--ink)} .ev.mut .k{color:var(--run)} .ev.read{color:var(--ink-faint)} .ev.grp{color:var(--ink-dim);cursor:pointer} .ev.grp .k{color:var(--accent)}
+  .compaction{display:flex;align-items:center;gap:12px;margin:12px 4px;font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-ghost)} .compaction::before,.compaction::after{content:"";flex:1;height:1px;background:rgba(255,255,255,0.05)}
+  /* Activity master–detail: left = timeline list (fanouts collapse) · right = detail of selection */
+  .acol{display:grid;grid-template-columns:1fr 1fr}
+  .turn.open .plab{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);padding:2px 14px 6px}
+  .tllist{border-right:1px solid rgba(255,246,228,0.06);padding:8px 12px 12px 18px;min-width:0;align-self:start}
+  .tllist .tl-lab{padding:0 2px}
+  .tldetail{padding:10px 22px 4px;min-width:0}
+  /* list rows are compact; the selected row drives the detail pane */
+  .tllist .step{cursor:pointer;border-radius:8px}
+  .tllist .step:hover{background:rgba(255,255,255,0.03)}
+  .tllist .step.sel{background:linear-gradient(180deg,rgba(200,169,104,0.12),rgba(200,169,104,0.05));box-shadow:inset 0 0 0 1px rgba(200,169,104,0.18)}
+  .tllist .step .events{display:none}
+  /* Subagents = its own section; header styled IDENTICALLY to Timeline (.tl-lab). Rows selectable → right pane shows that agent's live feed. Dense rows scale to ~30. */
+  .salist{margin:4px 0 0;max-height:190px;overflow:auto}
+  .sarow{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:8px;font-size:12px;color:var(--ink-dim);cursor:pointer}
+  .sarow:hover{color:var(--ink);background:rgba(255,255,255,0.03)}
+  .sarow.sel{background:linear-gradient(180deg,rgba(200,169,104,0.12),rgba(200,169,104,0.05));box-shadow:inset 0 0 0 1px rgba(200,169,104,0.18);color:var(--ink)}
+  .sarow .sat{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--ink-faint)}
+  .sarow .adot{width:6px;height:6px;border-radius:50%;flex:none}
+  .sarow .adot.run{background:var(--run);box-shadow:0 0 6px rgba(111,168,144,0.55)} .sarow .adot.pend{background:var(--ink-ghost)} .sarow .adot.done{background:var(--done)}
+  /* detail pane */
+  .tldetail .dhd{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:13px;color:var(--ink)}
+  .tldetail .dhd .run{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--run);letter-spacing:.14em;text-transform:uppercase}
+  .tldetail .dsub{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-bottom:12px}
+  .tldetail .events{margin:0;border-left:none;padding-left:0}
+  .tldetail .diffpeek{margin-top:14px;border-radius:10px;background:rgba(0,0,0,0.24);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04);padding:10px 13px;font-family:var(--mono);font-size:10.5px;line-height:1.6}
+  .tldetail .diffpeek .add{color:var(--run)} .tldetail .diffpeek .ctx{color:var(--ink-faint)} .tldetail .diffpeek .fn{color:var(--ink-dim);margin-bottom:5px}
+
+  /* Outcomes — unified, typed rows (kept from the new prototype) */
+  .outcomes{padding:14px 22px 4px;margin-top:6px;border-top:1px solid rgba(255,246,228,0.05)}
+  .outcomes h4{margin-bottom:11px}
+  .oc{display:flex;align-items:center;gap:13px;padding:9px 11px;border-radius:11px;margin-bottom:5px;cursor:pointer}
+  .oc:hover{background:rgba(255,255,255,0.03)}
+  .oc .ico{width:24px;height:24px;border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .oc .ico.code{background:rgba(111,168,144,0.14);color:var(--run)}
+  .oc .ico.ticket{background:rgba(200,169,104,0.14);color:var(--accent)}
+  .oc .ico.artifact{background:rgba(120,130,150,0.16);color:#AEB4C0}
+  .oc .kind{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);width:56px;flex:none}
+  .oc .ob{flex:1} .oc .ot{font-size:12.5px;color:var(--ink)} .oc .os{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:2px}
+  .oc .go{font-family:var(--mono);font-size:10px;color:var(--ink-dim)}
+
+  /* delivery arc foot glance */
+  #lifecycle{padding:8px 24px 14px;margin-top:6px;border-top:1px solid rgba(255,246,228,0.05)}
+  #lcarc{position:relative;height:64px;margin-top:10px}
+  .snode{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;gap:8px;transform:translateX(-50%)}
+  .snode .nlab{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .snode.done .nlab,.snode.cur .nlab{color:var(--ink-dim)}
+  .snode .nd{width:9px;height:9px;border-radius:50%;background:#26282e;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06)}
+  .snode.done .nd{background:var(--accent);box-shadow:0 0 12px 2px rgba(var(--warm),0.55)}
+  .snode.cur .nd{background:var(--run);box-shadow:0 0 14px 3px rgba(111,168,144,0.6)}
+  .snode .nsub{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
+  .seam{margin:14px 24px 4px;padding:12px 14px;border-radius:10px;border:1px dashed rgba(255,255,255,0.08);color:var(--ink-faint);font-size:11px;font-family:var(--mono);line-height:1.5}
+  .seam b{color:var(--ink-dim);font-weight:400}
+
+  /* ===== DELIVERY (nested): compact lifecycle spine + gate · sub-tabs · GitHub-style file diff ===== */
+  .dspine{padding:12px 22px 10px}
+  .dtop{display:flex;align-items:flex-start;justify-content:space-between;gap:32px}
+  .dspine .dbranch{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--ink-dim);margin-bottom:12px}
+  .dspine .dbranch b{color:var(--ink);font-weight:400}
+  .lcstrip{display:flex;align-items:center;gap:0}
+  .lcn{display:flex;align-items:center;gap:7px;flex:none}
+  .lcn .lcd{width:7px;height:7px;border-radius:50%;background:#26282e;box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);flex:none}
+  .lcn.done .lcd{background:var(--accent);box-shadow:0 0 9px 1px rgba(var(--warm),0.5)}
+  .lcn.cur .lcd{background:var(--run);box-shadow:0 0 10px 2px rgba(111,168,144,0.6)}
+  .lcn .lcl{font-size:10.5px;color:var(--ink-dim)} .lcn.done .lcl,.lcn.cur .lcl{color:var(--ink)}
+  .lcn .lcs{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-left:1px}
+  .lcbar{width:26px;flex:none;height:1px;margin:0 9px;background:rgba(255,255,255,0.1)}
+  .lcbar.on{background:linear-gradient(90deg,rgba(200,169,104,0.7),rgba(200,169,104,0.2))}
+  /* checks — compact cluster on the right of the (now smaller) pipeline */
+  .dchecks{flex:none;text-align:right}
+  .dchecks .clab{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:12px}
+  .cchips{display:flex;align-items:center;gap:14px;justify-content:flex-end}
+  .cchip{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;color:var(--ink-dim);cursor:pointer}
+  .cchip:hover{color:var(--ink)}
+  .cchip .cd{width:7px;height:7px;border-radius:50%;flex:none}
+  .cchip .cd.warn{background:var(--need);box-shadow:0 0 8px rgba(200,169,104,0.5)} .cchip .cd.ok{background:var(--run);box-shadow:0 0 8px rgba(111,168,144,0.5)} .cchip .cd.idle{background:var(--ink-ghost)}
+  .cchip .cs{font-family:var(--mono);font-size:9px;color:var(--ink-faint)} .cchip .cs.warn{color:var(--need)}
+  .dgate{margin-top:12px;display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10px;color:var(--ink-dim);padding:8px 12px;border-radius:9px;background:rgba(181,103,94,0.08);box-shadow:inset 0 0 0 1px rgba(181,103,94,0.15)}
+  .dgate .gk{color:var(--block);letter-spacing:.14em;text-transform:uppercase;font-size:8.5px}
+  .dgate .gsep{color:var(--ink-ghost)}
+  /* Delivery sub-tabs */
+  .dsubtabs{display:flex;align-items:center;gap:2px;padding:0 22px;box-shadow:inset 0 -1px 0 rgba(255,246,228,0.06)}
+  .dsubtab{display:flex;align-items:center;gap:7px;padding:9px 14px;font-size:12px;color:var(--ink-dim);cursor:pointer;position:relative;white-space:nowrap}
+  .dsubtab:hover{color:var(--ink)}
+  .dsubtab.on{color:#F1ECE1}
+  .dsubtab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 8px rgba(var(--warm),0.5)}
+  .dsubtab .cnt{font-family:var(--mono);font-size:9px;color:var(--accent)} .dsubtab .cnt.warn{color:var(--need)} .dsubtab .cnt.find{color:var(--block)}
+  /* Files view: sticky tree | scrollable diff */
+  .dfiles{display:grid;grid-template-columns:minmax(230px,290px) 1fr}
+  .ftree{border-right:1px solid rgba(255,246,228,0.06);padding:12px 10px;position:sticky;top:0;align-self:start}
+  .ffilter{width:100%;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:7px 10px;color:var(--ink);font-size:11px;outline:none;margin-bottom:10px}
+  .ffilter::placeholder{color:var(--ink-ghost)}
+  .ftrow{display:flex;align-items:center;gap:7px;padding:4px 7px;border-radius:7px;font-size:12px;color:var(--ink-dim);cursor:pointer;white-space:nowrap;overflow:hidden}
+  .ftrow:hover{background:rgba(255,255,255,0.03);color:var(--ink)}
+  .ftrow.dir{color:var(--ink-faint)} .ftrow.dir .fchev{font-size:9px;color:var(--ink-ghost)}
+  .ftrow.file.sel{background:linear-gradient(180deg,rgba(200,169,104,0.12),rgba(200,169,104,0.05));box-shadow:inset 0 0 0 1px rgba(200,169,104,0.18);color:var(--ink)}
+  .ftrow .fname{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .ftrow .fadd{font-family:var(--mono);font-size:9px;color:var(--run)} .ftrow .fdel{font-family:var(--mono);font-size:9px;color:var(--block)}
+  .ftrow .fcm{font-family:var(--mono);font-size:9px;color:var(--ink-faint);display:flex;align-items:center;gap:3px}
+  /* Diff pane (scrollable) */
+  .fdiff{min-width:0;overflow:auto;max-height:430px}
+  .fdhead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;padding:10px 16px;background:rgba(10,11,14,0.9);backdrop-filter:blur(6px);box-shadow:inset 0 -1px 0 rgba(255,246,228,0.06)}
+  .fdhead .fdn{font-family:var(--mono);font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+  .fdhead .fdstat .p{color:var(--run)} .fdhead .fdstat .m{color:var(--block)} .fdhead .fdstat{font-family:var(--mono);font-size:10px}
+  .fdhead .viewed{font-family:var(--mono);font-size:10px;color:var(--ink-faint);display:flex;align-items:center;gap:5px}
+  .hunk{display:grid;grid-template-columns:44px 44px 1fr;font-family:var(--mono);font-size:10px;color:var(--accent);background:rgba(200,169,104,0.05);padding:3px 0}
+  .hunk span:last-child{padding-left:12px;color:var(--ink-faint)}
+  .drow{display:grid;grid-template-columns:44px 44px 1fr;font-family:var(--mono);font-size:11px;line-height:1.62}
+  .drow .lo,.drow .ln{text-align:right;padding-right:9px;color:var(--ink-ghost);user-select:none}
+  .drow .code{white-space:pre;padding-left:12px;color:#C7C2B6;overflow:hidden}
+  .drow.add{background:rgba(111,168,144,0.10)} .drow.add .code{color:#CFE3D6} .drow.add .ln{color:rgba(111,168,144,0.7)}
+  .drow.del{background:rgba(181,103,94,0.12)} .drow.del .code{color:#E6C9C3} .drow.del .lo{color:rgba(181,103,94,0.7)}
+  .drow .sgn{color:var(--run)} .drow.del .sgn{color:var(--block)}
+  .dfind{grid-column:1/-1;display:flex;align-items:flex-start;gap:8px;padding:8px 12px 8px 44px;background:rgba(181,103,94,0.06);box-shadow:inset 2px 0 0 var(--block);font-family:var(--sans);font-size:11px;color:var(--ink-dim)}
+  .dfind .fv{color:var(--block);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;flex:none;margin-top:2px}
+
+  /* preview */
+  .pv{padding:16px 24px;height:100%;display:flex;flex-direction:column}
+  .pvchip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin-bottom:14px}
+  .pvchip .d{width:6px;height:6px;border-radius:50%;background:var(--run);box-shadow:0 0 8px rgba(111,168,144,0.6)}
+  .pvframe{flex:1;border-radius:14px;background:repeating-linear-gradient(135deg,rgba(255,255,255,0.015) 0 12px,transparent 12px 24px),rgba(0,0,0,0.25);box-shadow:inset 0 1px 0 rgba(255,246,228,0.06);display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:12px}
+
+  /* transcript (external) */
+  .banner{display:flex;align-items:center;gap:10px;margin:0 22px 16px;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.03);font-size:11.5px;color:var(--ink-dim)}
+  .banner .d{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink-ghost);flex:none}
+  .tr{padding:0 24px;font-family:var(--mono);font-size:11px;line-height:1.75;color:#9C978B}
+  .tr .u{color:var(--accent)} .tr .a{color:var(--ink)} .tr .dm{color:var(--ink-faint)}
+
+  /* ===== TERMINAL DOCK ===== */
+  #dock{margin:8px 4px 4px;border-radius:14px;overflow:hidden;flex:none;position:relative;
+    backdrop-filter:blur(10px) saturate(0.95);
+    background:linear-gradient(180deg, rgba(10,11,14,0.74), rgba(6,7,9,0.84));
+    box-shadow:inset 0 1px 0 rgba(255,246,228,0.055), inset 0 20px 50px -40px rgba(var(--warm),0.16);
+    transition:height .28s cubic-bezier(.4,0,.2,1);}
+  #dock .dhead{display:flex;align-items:center;gap:11px;padding:10px 18px 7px;cursor:pointer}
+  #dock .dhead .ticon{font-family:var(--mono);font-size:12px;color:var(--ink-dim);flex:none;letter-spacing:-1px}
+  #dock .dhead .tlabel{font-size:12px;color:var(--ink-dim);flex:none}
+  #dock .dhead .tsep{color:var(--ink-ghost);flex:none}
+  #dock .dhead .live{width:6px;height:6px;border-radius:50%;background:var(--run);box-shadow:0 0 8px rgba(111,168,144,0.6);flex:none}
+  #dock .dhead .live.idle{background:var(--ink-faint);box-shadow:none}
+  /* now-head lives IN the dock header row (not a separate line): what the session is doing + plan progress */
+  #dock .dhead .now{font-size:12px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  #dock .dhead .now .dm{color:var(--ink-faint)}
+  #dock .dhead .prog{font-family:var(--mono);font-size:10px;color:var(--accent);flex:none} #dock .dhead .prog .cx{color:var(--ink-faint)}
+  #dock .dhead .src{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
+  #dock .dhead .exp{margin-left:auto;font-size:13px;color:var(--ink-faint);cursor:pointer}
+  #dock .dhead .dstop{font-size:10px;color:var(--ink-dim);padding:4px 10px;border-radius:7px;background:rgba(255,255,255,0.04);cursor:pointer;margin-right:12px} #dock .dhead .dstop:hover{color:var(--block);background:rgba(181,103,94,0.12)}
+  #dock .lines{padding:2px 18px 10px;font-family:var(--mono);font-size:11px;line-height:1.62;color:#B7B2A6;overflow:auto}
+  #dock .lines .p{color:var(--accent)} #dock .lines .dm{color:var(--ink-faint)} #dock .lines .ok{color:var(--run)}
+  #dock .prompt{display:flex;align-items:center;gap:9px;padding:9px 18px 12px;border-top:1px solid rgba(255,255,255,0.05)}
+  #dock .prompt .car{color:var(--accent);font-family:var(--mono);font-size:13px}
+  #dock .prompt input{flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:var(--mono);font-size:12px}
+  #dock .prompt input::placeholder{color:var(--ink-ghost)}
+  #dock .roprompt{padding:9px 18px 12px;border-top:1px solid rgba(255,255,255,0.05);font-family:var(--mono);font-size:11px;color:var(--ink-ghost);display:flex;align-items:center;gap:8px}
+
+  /* archived list (main panel) */
+  #archview{padding:12px 12px}
+  .aback{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);padding:8px 12px;border-radius:9px;cursor:pointer;margin-bottom:8px}
+  .aback:hover{background:rgba(255,255,255,0.04);color:var(--ink)}
+  .afilters{display:flex;gap:8px;padding:0 12px 12px;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:6px}
+  .pill{font-size:10px;font-family:var(--mono);color:var(--ink-dim);padding:5px 10px;border-radius:7px;background:rgba(255,255,255,0.03)}
+  .arow{display:flex;align-items:center;gap:13px;padding:10px 16px;border-radius:9px;cursor:pointer}
+  .arow:hover{background:rgba(255,255,255,0.035)}
+  .arow .an{flex:1;font-size:13px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .arow .aw{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);flex:none}
+  .arow .at{font-family:var(--mono);font-size:10px;color:var(--ink-ghost);flex:none;width:44px;text-align:right}
+
+  /* ===== CONCIERGE STRIP (context; owned by #159) ===== */
+  #cx{position:absolute;left:0;right:0;bottom:0;height:54px;z-index:9;display:flex;align-items:center;gap:16px;padding:0 22px;
+    background:linear-gradient(180deg, rgba(16,15,14,0.6), rgba(9,9,11,0.76));backdrop-filter:blur(16px);border-top:1px solid rgba(255,246,228,0.05)}
+  .ringorb{position:relative;width:38px;height:38px;flex:none}
+  .ringorb .ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from -40deg,rgba(var(--warm),0.92),rgba(var(--warm),0.42) 42deg,rgba(var(--warm),0.05) 120deg,transparent 205deg,transparent 300deg,rgba(var(--warm),0.3) 342deg,rgba(var(--warm),0.92));-webkit-mask:radial-gradient(circle,transparent 56%,#000 60%);mask:radial-gradient(circle,transparent 56%,#000 60%);filter:drop-shadow(0 0 6px rgba(var(--warm),0.55));animation:breath 7s ease-in-out infinite}
+  .ringorb .core{position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 50% 44%,#0c0d10,#060608);box-shadow:inset 0 0 12px 2px rgba(0,0,0,0.9)}
+  #cx .caption{flex:1;min-width:0;font-weight:200;font-size:14px;color:#CFC9BC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #cx .caption .q{color:var(--ink-faint)}
+  #cx .cmode{display:flex;align-items:center;gap:10px} #cx .cmode .ml{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .ctoggle{width:36px;height:20px;border-radius:11px;position:relative;background:linear-gradient(180deg,rgba(var(--warm),0.5),rgba(var(--warm),0.28));box-shadow:inset 0 0 8px rgba(var(--warm),0.4)}
+  .ctoggle .knob{position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(var(--warm),0.7)}
+
+  /* scene caption + band + switcher */
+  #cap{position:absolute;top:60px;left:50%;transform:translateX(-50%);z-index:7;font-size:10px;letter-spacing:.08em;color:var(--ink-faint);text-align:center}
+  #cap b{color:var(--accent);letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+  #band{position:fixed;top:0;left:0;right:0;height:3px;background:repeating-linear-gradient(90deg,var(--accent-deep) 0 14px,transparent 14px 28px);opacity:.5;z-index:100}
+  #sw{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:101;display:flex;align-items:center;gap:2px;
+    background:rgba(18,18,22,0.94);border:1px solid rgba(255,255,255,0.1);border-radius:13px;padding:6px;box-shadow:0 18px 50px -12px rgba(0,0,0,0.85);backdrop-filter:blur(12px)}
+  #sw .ar{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);cursor:pointer;font-size:15px;color:var(--ink-dim)}
+  #sw .ar:hover{background:rgba(255,255,255,0.1);color:#fff}
+  #sw .lb{min-width:240px;text-align:center;padding:0 12px;font-size:12px;color:#EDE8DD}
+  #sw .lb .k{font-family:var(--mono);font-size:10px;color:var(--accent);margin-right:8px}
+  #sw .lb .d{display:block;font-size:9.5px;color:var(--ink-faint);margin-top:2px}
+
+  @keyframes breath{0%,100%{opacity:.82;transform:scale(1)}50%{opacity:1;transform:scale(1.035)}}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+</style>
+</head>
+<body>
+<div id="band"></div>
+<div id="room">
+  <div id="cap"><b id="capk">Activity</b> &nbsp; <span id="capd"></span></div>
+
+  <div id="brow">
+    <div id="mark"><span class="glyph">ARGO</span><span class="proj">Argo · main</span></div>
+    <div id="rooms"><div class="rm"><span class="k">⌘1</span> Work</div><div class="rm on"><span class="k">⌘2</span> Sessions</div></div>
+  </div>
+
+  <div id="rail">
+    <div id="newses"><span class="plus">+</span> New session <span class="k">⌘N</span></div>
+    <div class="label">Roster · active</div>
+    <div id="rows"></div>
+    <div id="arch">⚙ Archived <span class="cnt">37</span></div>
+  </div>
+
+  <div id="card"></div>
+
+  <div id="cx">
+    <div class="ringorb"><div class="ring"></div><div class="core"></div></div>
+    <div class="caption"><span class="q">“</span>the auth refactor is on CI — one lint warning<span class="q">”</span></div>
+    <div class="cmode"><span class="ml">Conversation</span><div class="ctoggle"><span class="knob"></span></div></div>
+  </div>
+</div>
+
+<div id="hsw">
+  <span class="hlbl">Header</span>
+  <div class="hp" data-h="1" onclick="setHeader(1)">Elapsed</div>
+  <div class="hp" data-h="2" onclick="setHeader(2)">Percent</div>
+  <div class="hp" data-h="3" onclick="setHeader(3)">Glyph</div>
+</div>
+
+<div id="sw">
+  <div class="ar" onclick="cycle(-1)">‹</div>
+  <div class="lb"><span><span class="k" id="swk">1/7</span><span id="swn">Activity</span></span><span class="d" id="swd"></span></div>
+  <div class="ar" onclick="cycle(1)">›</div>
+</div>
+
+<script>
+/* ---------- roster ---------- */
+const RAIL=[
+  {dot:'run', name:'Auth refactor', meta:'Opus 4.8 · <span class="branch">feat/auth-rotation</span>', word:'CI RUNNING', ctx:42},
+  {dot:'idle',name:'Rate-limit endpoint', meta:'GPT-5 · <span class="branch">#58 · feat/ratelimit</span>', word:'PR OPEN'},
+  {dot:'need',name:'Why is CI flaky', meta:'Sonnet 5 · <span class="branch">"explore staleness…"</span>', word:'NEEDS YOU', attn:true},
+  {dot:'block',name:'Migrate config loader', meta:'Opus 4.8 · <span class="branch">feat/config-loader</span>', word:'CI FAILED', fail:true},
+  {dot:'ext', name:'~/argo', meta:'Sonnet 5 · <span class="branch">external · read-only</span>', word:'READ-ONLY', ext:true},
+];
+function railHTML(sel){return RAIL.map((r,i)=>`
+  <div class="plane ${i===sel?'active':'recede'} ${r.ext?'ext':''}" onclick="selectRow(${i})">
+    <div class="top"><span class="dot ${r.dot}"></span><div class="name">${r.name}</div><span class="word">${r.word}</span></div>
+    <div class="meta">${r.meta}</div>
+  </div>`).join('');}
+
+/* ---------- header — 3 takes on ONE band (?header=1..3) ----------
+   ONE skeleton per take: [large ctx ring] · [title / meta] ...... [tabs, right-aligned].
+   header(o,active,changes,outc) dispatches on curH and renders the tabs INSIDE the band —
+   there is no separate #tabs strip. Shared locked decisions live in the helpers below, so every
+   take degrades identically: title = fallback chain (o.title, never the task) · live dot only
+   when running · idle drops ↑push · external drops the intent + renders the ring EMPTY/"unknown"
+   · intent de-dups when titleSrc==='ticket' · NO action buttons. */
+function modeCls(m){return {code:'m-code',plan:'m-plan',ask:'m-ask',unknown:'m-unk'}[m]||'m-unk';}
+function modeTxt(m){return {code:'Code',plan:'Plan',ask:'Ask',unknown:'unknown'}[m]||'unknown';}
+function gitTxt(o){if(!o.ws)return null;const g=[];if(o.ws.dirty)g.push(`${o.ws.dirty}∆`);if(o.ws.push)g.push(`↑${o.ws.push}`);return g.length?g.join(' '):null;} /* branch NAME shed; only ∆/↑ */
+function hasIntent(o){return o.live!=='ext'&&!!o.intent;}                 /* external is read-only → no intent */
+function intentBody(o){return o.titleSrc==='ticket'                       /* title already = ticket name → link only, no repeat */
+  ? `intent <span class="n">#${o.intent.n}</span> ↗`
+  : `intent <span class="n">#${o.intent.n}</span> ${o.intent.t} ↗`;}
+function compactElapsed(e){if(!e)return null;const m=e.match(/\d+\s*[hm]/);return m?m[0].replace(/\s+/g,''):e;} /* '3m 12s'→'3m' · 'idle 8m'→'8m' */
+
+/* large ctx ring — arc = DERIVED ctx (honest tilde); centre + stroke passed per take.
+   ctx==null → NO arc drawn, ring reads empty/"unknown". Never encodes state/liveness. */
+function hringSVG(px,stroke,ctx){const r=(px-stroke-4)/2,c=2*Math.PI*r,m=px/2;
+  const track=`<circle cx="${m}" cy="${m}" r="${r}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="${stroke}"/>`;
+  const arc=ctx==null?'':`<circle cx="${m}" cy="${m}" r="${r}" fill="none" stroke="#C8A968" stroke-width="${stroke}" stroke-linecap="round"
+      stroke-dasharray="${(ctx/100*c).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${m} ${m})" opacity="0.9" style="filter:drop-shadow(0 0 5px rgba(200,169,104,0.55))"/>`;
+  return `<svg width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">${track}${arc}</svg>`;}
+function ring(px,stroke,ctx,centre,sub){
+  return `<div class="hring ${ctx==null?'unk':''}" style="width:${px}px;height:${px}px">${hringSVG(px,stroke,ctx)}
+    <div class="hrc"><span class="hrcm">${centre}</span>${sub?`<span class="hrcs">${sub}</span>`:''}</div></div>`;}
+
+/* meta line(s): Mode · elapsed · git ∆/↑ · intent ↗ */
+function metaParts(o){
+  const mode=`<span class="${modeCls(o.mode)}">${modeTxt(o.mode)}</span>`;
+  const el=o.elapsed?`<span>${o.elapsed}</span>`:null;
+  const g=gitTxt(o);const git=g?`<span class="mut">${g}</span>`:null;
+  const intent=hasIntent(o)?`<span class="h-intent">${intentBody(o)}</span>`:null;
+  return {mode,el,git,intent};
+}
+function metaOne(o){const p=metaParts(o);const out=[p.mode];
+  [p.el,p.git,p.intent].forEach(x=>{if(x)out.push('<span class="h-b">·</span>',x);});
+  return `<div class="hmeta">${out.join('')}</div>`;}
+function metaTwo(o){const p=metaParts(o);
+  const l1=[p.mode];if(p.el)l1.push('<span class="h-b">·</span>',p.el);
+  const l2=[];[p.git,p.intent].forEach(x=>{if(x){if(l2.length)l2.push('<span class="h-b">·</span>');l2.push(x);}});
+  return `<div class="hmeta two"><div class="mrow">${l1.join('')}</div>${l2.length?`<div class="mrow">${l2.join('')}</div>`:''}</div>`;}
+
+/* tabs absorbed into the band's right edge — keep counts, active indicator, setTab() wiring */
+function headTabs(active,changes,outc,style){
+  return `<div class="htabs ${style}">`+[['activity','Activity',''],['delivery','Delivery',changes||''],['outcomes','Outcomes',outc||'']]
+    .map(x=>`<div class="htab ${x[0]===active?'on':''}" onclick="setTab('${x[0]}')">${x[1]}${x[2]?`<span class="cnt">${x[2]}</span>`:''}</div>`).join('')+`</div>`;}
+
+function titleBlk(o,meta){return `<div class="htblk"><div class="h-title">${o.title}</div>${meta}</div>`;}
+function live(o){return o.live==='run'?'<span class="h-live"></span>':'';}
+
+/* TAKE 1 — ring centre = elapsed · medium stroke · plain text tabs · one-line meta */
+function h1(o,a,ch,oc){
+  const centre=o.ctx==null?'?':`~${o.ctx}%`;
+  const sub=o.ctx==null?'unknown':'ctx';
+  return `<div id="chead" class="t1">
+    <div class="hleft">${ring(56,3,o.ctx,centre,sub)}${titleBlk(o,`<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaOne(o)}</div>`)}</div>
+    ${headTabs(a,ch,oc,'plain')}</div>`;
+}
+/* TAKE 2 — ring centre = ~n% numeral · thin stroke · segmented pill tabs · two-line meta */
+function h2(o,a,ch,oc){
+  const centre=o.ctx==null?'?':`~${o.ctx}%`;
+  const sub=o.ctx==null?'unknown':'';
+  return `<div id="chead" class="t2">
+    <div class="hleft">${ring(54,2,o.ctx,centre,sub)}${titleBlk(o,`<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaTwo(o)}</div>`)}</div>
+    ${headTabs(a,ch,oc,'pills')}</div>`;
+}
+/* TAKE 3 — ring centre = quiet session glyph · heavy stroke · plain text tabs · one-line meta */
+function h3(o,a,ch,oc){
+  const centre=o.ctx==null?'?':'<span class="hglyph">◍</span>';
+  const sub=o.ctx==null?'unknown':`~${o.ctx}%`;
+  return `<div id="chead" class="t3">
+    <div class="hleft">${ring(58,4,o.ctx,centre,sub)}${titleBlk(o,`<div style="display:flex;align-items:center;gap:8px">${live(o)}${metaOne(o)}</div>`)}</div>
+    ${headTabs(a,ch,oc,'plain')}</div>`;
+}
+const HV={1:{fn:h1,n:'Elapsed-core · text tabs'},2:{fn:h2,n:'%-core · pill tabs · 2-line'},3:{fn:h3,n:'Glyph-core · text tabs'}};
+let curH=1;
+function header(o,active,changes,outc){return HV[curH].fn(o,active,changes,outc);}
+
+/* ---------- bodies ---------- */
+function activityBody(){return `<div id="panelwrap">
+  <div class="acol">
+    <div class="tllist">
+      <div class="tl-lab"><span class="label">Subagents</span><span class="rev">Verify · 3 running</span></div>
+      <div class="salist">
+        <div class="sarow sel" onclick="pickAgent(this,'correctness lens','rotation.ts','run')"><span class="adot run"></span>correctness lens<span class="sat">rotation.ts</span></div>
+        <div class="sarow" onclick="pickAgent(this,'security lens','replay window','run')"><span class="adot run"></span>security lens<span class="sat">replay window</span></div>
+        <div class="sarow" onclick="pickAgent(this,'repro lens','queued','pend')"><span class="adot pend"></span>repro lens<span class="sat">queued</span></div>
+      </div>
+      <div class="tl-lab" style="margin-top:16px"><span class="label">Timeline</span><span class="rev">newest first · past folded</span></div>
+      <div class="turn open">
+        <div class="th"><span class="fold">▾</span> Turn · “wire verify()” <span class="run">running</span></div>
+        <div class="plab">Plan · 4 of 7</div>
+        <div class="step done" onclick="pickStep(this,'Read the legacy auth module','done')"><span class="sx">✓</span><div class="sh">Read the legacy auth module<span class="coal">×4</span></div></div>
+        <div class="step done" onclick="pickStep(this,'Extract the rotation core','done')"><span class="sx">✓</span><div class="sh">Extract the rotation core<span class="coal">+180</span></div></div>
+        <div class="step cur" onclick="pickStep(this,'Wire verify() onto it','cur')"><span class="sx">▶</span><div class="sh">Wire verify() onto it</div></div>
+        <div class="step pending" onclick="pickStep(this,'Add middleware tests','pending')"><span class="sx">○</span><div class="sh">Add middleware tests</div></div>
+      </div>
+      <div class="compaction">compacted</div>
+      <div class="turn past"><span class="fold">▸</span><span class="tp">“extract the rotation core”</span><span class="st">8 tools · 6m</span></div>
+      <div class="turn past"><span class="fold">▸</span><span class="tp">“map the auth surface”</span><span class="st">5 tools · 3m</span></div>
+    </div>
+    <div class="tldetail">${agentFeed('correctness lens','rotation.ts','run')}</div>
+  </div>
+</div>`;}
+/* master–detail: clicking a subagent shows its live feed on the right; clicking a step shows the step detail */
+function agentFeed(name,target,st){
+  if(st==='pend') return `<div class="dhd">${name} <span class="run" style="color:var(--ink-faint)">queued</span></div><div class="dsub">subagent · verify group · waiting for a slot</div><div class="events"><div class="ev read"><span class="k">idle</span> no live feed yet — queued behind 2 running</div></div>`;
+  return `<div class="dhd">${name} <span class="run">live</span></div>
+    <div class="dsub">subagent · verify group · ${target} · 22s</div>
+    <div class="events">
+      <div class="ev read"><span class="k">read</span> ${target} · verify()</div>
+      <div class="ev mut"><span class="k">note</span> guards token expiry before the window check</div>
+      <div class="ev read"><span class="k">read</span> token.ts · expired()</div>
+      <div class="ev mut"><span class="k">run</span> asserting window default = 2 …</div>
+    </div>`;
+}
+function stepDetail(name,st){
+  if(st==='cur') return `<div class="dhd">${name} <span class="run">running</span></div><div class="dsub">step of current turn · started 40s ago</div>
+    <div class="events">
+      <div class="ev mut"><span class="k">edit</span> rotation.ts — verify(token, {window: 2})</div>
+      <div class="ev read"><span class="k">read</span> 4 files · join.ts · token.ts · legacy.ts</div>
+      <div class="ev grp"><span class="k">spawned</span> Verify · 3 subagents (see list ‹)</div>
+      <div class="ev mut"><span class="k">bash</span> bun test — 12 passed</div>
+    </div>
+    <div class="diffpeek"><div class="fn">rotation.ts</div><div class="ctx">  export function verify(token, opts) {</div><div class="add">+   const ok = rotate(token, { window: opts.window ?? 2 })</div><div class="add">+   return ok &amp;&amp; !expired(token)</div><div class="ctx">  }</div></div>`;
+  if(st==='pending') return `<div class="dhd">${name}</div><div class="dsub">not started · queued step</div><div class="events"><div class="ev read"><span class="k">idle</span> no activity yet</div></div>`;
+  return `<div class="dhd">${name} <span class="run" style="color:var(--done)">done</span></div><div class="dsub">completed step</div><div class="events"><div class="ev read"><span class="k">read</span> legacy modules · mapped the surface</div><div class="ev mut"><span class="k">edit</span> extracted the rotation core · +180</div></div>`;
+}
+function pickAgent(el,name,target,st){document.querySelectorAll('.tllist .sel').forEach(n=>n.classList.remove('sel'));el.classList.add('sel');document.querySelector('.tldetail').innerHTML=agentFeed(name,target,st);}
+function pickStep(el,name,st){document.querySelectorAll('.tllist .sel').forEach(n=>n.classList.remove('sel'));el.classList.add('sel');document.querySelector('.tldetail').innerHTML=stepDetail(name,st);}
+function deliveryBody(){return `<div id="panelwrap">
+  <div class="dspine">
+    <div class="dtop">
+      <div class="dleft">
+        <div class="dbranch"><b>feat/auth-rotation</b> → main</div>
+        <div class="lcstrip">
+          <div class="lcn done"><span class="lcd"></span><span class="lcl">commits</span><span class="lcs">6</span></div><div class="lcbar on"></div>
+          <div class="lcn done"><span class="lcd"></span><span class="lcl">PR</span><span class="lcs">#312</span></div><div class="lcbar on"></div>
+          <div class="lcn cur"><span class="lcd"></span><span class="lcl">CI</span></div><div class="lcbar"></div>
+          <div class="lcn"><span class="lcd"></span><span class="lcl">review</span></div><div class="lcbar"></div>
+          <div class="lcn"><span class="lcd"></span><span class="lcl">merge</span></div>
+        </div>
+      </div>
+      <div class="dchecks">
+        <div class="clab">Checks</div>
+        <div class="cchips">
+          <div class="cchip"><span class="cd warn"></span>lint <span class="cs warn">2!</span></div>
+          <div class="cchip"><span class="cd ok"></span>typecheck</div>
+          <div class="cchip"><span class="cd idle"></span>e2e <span class="cs">queued</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="dgate"><span class="gk">gate</span> blocked <span class="gsep">·</span> CI running <span class="gsep">·</span> review pending <span class="gsep">·</span> 1 unresolved finding</div>
+  </div>
+  <div class="dsubtabs">
+    <div class="dsubtab on" onclick="setDsub('files',this)">Files <span class="cnt">3</span></div>
+    <div class="dsubtab" onclick="setDsub('review',this)">Review <span class="cnt find">1▲</span></div>
+  </div>
+  <div class="dbody">${filesView()}</div>
+</div>`;}
+function filesView(){return `<div class="dfiles">
+  <div class="ftree">
+    <input class="ffilter" placeholder="Filter changed files…" />
+    <div class="ftrow dir"><span class="fchev">▾</span><span class="fname">src/auth</span></div>
+    <div class="ftrow file sel" style="padding-left:20px"><span class="fname">rotation.ts</span><span class="fadd">+42</span><span class="fdel">−3</span></div>
+    <div class="ftrow file" style="padding-left:20px"><span class="fname">token.ts</span><span class="fadd">+8</span></div>
+    <div class="ftrow dir"><span class="fchev">▾</span><span class="fname">src/middleware</span></div>
+    <div class="ftrow file" style="padding-left:20px"><span class="fname">verify.ts</span><span class="fadd">+30</span><span class="fcm">💬 1</span></div>
+  </div>
+  <div class="fdiff">
+    <div class="fdhead"><span class="fdn">src/auth/rotation.ts</span><span class="fdstat"><span class="p">+42</span> <span class="m">−3</span></span><span class="viewed">◻ Viewed</span></div>
+    <div class="hunk"><span></span><span></span><span>@@ -18,7 +18,12 @@ export function verify(token, opts) {</span></div>
+    <div class="drow"><span class="lo">18</span><span class="ln">18</span><span class="code">  export function verify(token, opts) {</span></div>
+    <div class="drow del"><span class="lo">19</span><span class="ln"></span><span class="code"><span class="sgn">−</span>   const ok = rotate(token)</span></div>
+    <div class="drow add"><span class="lo"></span><span class="ln">19</span><span class="code"><span class="sgn">+</span>   const ok = rotate(token, { window: opts.window ?? 2 })</span></div>
+    <div class="dfind"><span class="fv">correctness ▲</span> window default is applied but never validated — a caller passing <span style="font-family:var(--mono)">opts.window = 0</span> silently disables rotation.</div>
+    <div class="drow add"><span class="lo"></span><span class="ln">20</span><span class="code"><span class="sgn">+</span>   if (!ok) return false</span></div>
+    <div class="drow"><span class="lo">20</span><span class="ln">21</span><span class="code">    return ok &amp;&amp; !expired(token)</span></div>
+    <div class="drow"><span class="lo">21</span><span class="ln">22</span><span class="code">  }</span></div>
+    <div class="hunk"><span></span><span></span><span>@@ -40,3 +41,9 @@ function expired(token) {</span></div>
+    <div class="drow"><span class="lo">40</span><span class="ln">41</span><span class="code">  function expired(token) {</span></div>
+    <div class="drow add"><span class="lo"></span><span class="ln">42</span><span class="code"><span class="sgn">+</span>   const skew = clockSkew()</span></div>
+    <div class="drow add"><span class="lo"></span><span class="ln">43</span><span class="code"><span class="sgn">+</span>   return token.exp + skew &lt; now()</span></div>
+    <div class="drow"><span class="lo">41</span><span class="ln">44</span><span class="code">  }</span></div>
+  </div>
+</div>`;}
+function checksView(){return `<div style="padding:14px 22px">
+  <div class="check"><span class="dot" style="background:var(--need);box-shadow:0 0 8px rgba(200,169,104,0.5)"></span><span class="cn">lint</span><span class="cv warn">2 warnings</span></div>
+  <div class="check"><span class="dot run"></span><span class="cn">typecheck</span><span class="cv">passing</span></div>
+  <div class="check"><span class="dot idle"></span><span class="cn">test (e2e)</span><span class="cv">queued</span></div>
+  <div class="dsub" style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:12px">code-host-sourced · click a check for its log</div>
+</div>`;}
+function reviewView(){return `<div style="padding:14px 22px">
+  <div class="oc"><span class="ico artifact" style="background:rgba(181,103,94,0.16);color:var(--block)">▲</span><div class="ob"><div class="ot">correctness — window default unguarded</div><div class="os">rotation.ts:19 · unresolved · jumps to diff</div></div><span class="go">Files →</span></div>
+  <div class="oc"><span class="ico code">✓</span><div class="ob"><div class="ot">security — replay window checked</div><div class="os">passed · no findings</div></div></div>
+</div>`;}
+function setDsub(name,el){document.querySelectorAll('.dsubtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');document.querySelector('.dbody').innerHTML=name==='checks'?checksView():name==='review'?reviewView():filesView();}
+function outcomesBody(){return `<div id="panelwrap">
+  <div class="outcomes" style="border-top:none;padding-top:6px">
+    <h4 class="label">Outcomes · what this session produced</h4>
+    <div class="oc"><span class="ico artifact">▤</span><div class="ob"><div class="ot">rotation-design.md</div><div class="os">artifact · path-addressed · uncommitted · <span style="color:var(--run)">DIRECT</span></div></div><span class="go">open ↗</span></div>
+    <div class="oc"><span class="ico artifact">▤</span><div class="ob"><div class="ot">ci-flake-notes.md</div><div class="os">artifact · path-addressed · <span style="color:var(--accent)">CONVENTION</span></div></div><span class="go">open ↗</span></div>
+    <div class="oc"><span class="ico code">◆</span><div class="ob"><div class="ot">Rotation core + middleware</div><div class="os">code · 6 files · +240 −80 · SHA <span class="mono">a1c9f2</span></div></div><span class="go">Delivery →</span></div>
+    <div class="oc"><span class="ico ticket">✎</span><div class="ob"><div class="ot">Created “Rate-limit the token endpoint”</div><div class="os">ticket · #58 · provider</div></div><span class="go">GitHub →</span></div>
+  </div>
+</div>`;}
+function externalBody(){return `<div id="panelwrap">
+  <div class="banner"><span class="d"></span> External session · discovered from transcripts · read-only · no Outcomes emitted (honest gap)</div>
+  <div class="tr">
+    <div><span class="u">›</span> why does the join drift after restart?</div>
+    <div><span class="a">The Hub assembles the join in memory and never persists it…</span></div>
+    <div><span class="dm">▸ Read src/hub/join.ts · Grep "assemble"</span></div>
+    <div><span class="dm">— turn ended · end_turn —</span></div>
+  </div>
+</div>`;}
+function dock(o){
+  const h=o.expanded?340:120;
+  const body=o.kind==='transcript'
+    ? `<div class="lines" style="max-height:${o.expanded?250:56}px"><div class="dm">— replaying transcript (read-only) —</div><div><span class="p">▸</span> Read <span style="color:var(--ink)">src/hub/join.ts</span></div>${o.expanded?`<div class="dm">  window.assemble() → derived projection</div><div class="ok">  ✓ turn ended · end_turn</div>`:''}</div><div class="roprompt">⌾ read-only — external session, no PTY to steer</div>`
+    : `${o.expanded?`<div class="lines" style="max-height:250px"><div class="dm">  + const ok = rotation.verify(token,{window:2})</div><div class="ok">  ✓ 12 tests passed</div><div><span class="p">▸</span> Bash <span style="color:var(--ink)">bun run typecheck</span></div></div>`:''}<div class="prompt"><span class="car">›</span><input placeholder="type to steer · ask a question · ⌘↩ send" /></div>`;
+  const n=o.now;
+  const head = o.kind!=='pty'
+    ? `<span class="ticon">&gt;_</span><span class="tlabel">Transcript</span><span class="tsep">·</span><span class="now">replay</span>`
+    : n&&n.idle
+      ? `<span class="ticon">&gt;_</span><span class="tlabel">Terminal</span><span class="tsep">·</span><span class="now">idle · <span class="dm">last: ${n.last}</span></span>`
+      : `<span class="ticon">&gt;_</span><span class="tlabel">Terminal</span><span class="tsep">·</span><span class="now">${n?n.task:'live'}</span>${n&&n.plan?`<span class="prog">plan <span>${n.plan[0]}</span><span class="cx"> / ${n.plan[1]} ▾</span></span>`:''}`;
+  return `<div id="dock" style="height:${h}px"><div class="dhead" onclick="toggleDock()">${head}<span class="exp">${o.expanded?'⌄':'⌃'}</span></div>${body}</div>`;
+}
+function archivedBody(){return `<div id="archview">
+  <div class="aback" onclick="selectRow(0)">‹ Back to active</div>
+  <div class="afilters"><span class="pill">Status · Archived ▾</span><span class="pill">Sort · Recency ▾</span><span class="pill">Group · None ▾</span></div>
+  ${[['Spawn UX grill — session model','ENDED','2d'],['Debug worktree tracking and naming','MERGED','3d'],['Research VRT best practices','ENDED','5d'],['Update and push argo-plugin readme','MERGED','6d'],['Investigate community naming issues','ENDED','1w'],['milads-mac-mini-local-magical-sun','ORPHANED','1w'],['Debug dark-mode components','MERGED','2w'],['Review existing Figma components','ENDED','3w']]
+   .map(a=>`<div class="arow" onclick="selectRow(0)"><span class="an">${a[0]}</span><span class="aw">${a[1]}</span><span class="at">${a[2]}</span></div>`).join('')}
+</div>`;}
+
+/* ---------- headers per scene ---------- */
+const H_RUN={live:'run',model:'Opus 4.8',mode:'code',title:'Auth refactor',ctx:38,elapsed:'3m 12s',intent:{n:42,t:'Auth flow'},ws:{branch:'⎇ feat/auth-rotation',dirty:3,push:2}};
+const H_IDLE={live:'idle',model:'Opus 4.8',mode:'plan',title:'Auth refactor',ctx:38,elapsed:'idle 8m',intent:{n:42,t:'Auth flow'},ws:{branch:'⎇ feat/auth-rotation',dirty:3}};
+const H_EXT={live:'ext',model:'Sonnet 5',mode:'unknown',title:'~/argo · explore join drift',ctx:null,intent:null,ws:null};
+const NOW_RUN={task:'Wiring <span class="mono" style="color:var(--ink-dim)">verify()</span> onto the rotation core',plan:[4,7]};
+const NOW_IDLE={idle:true,last:'extract the rotation core'};
+
+const SCENES={
+  activity:{sel:0,d:'managed · running · Activity · dock docked w/ input',render:()=>header(H_RUN,'activity','12','4')+activityBody()+dock({expanded:false,kind:'pty',now:NOW_RUN})},
+  delivery:{sel:0,d:'Delivery tab — lifecycle · Diff · Review verdicts · Checks',render:()=>header(H_RUN,'delivery','12','4')+deliveryBody()+dock({expanded:false,kind:'pty',now:NOW_RUN})},
+  outcomes:{sel:0,d:'Outcomes tab — session produces-ledger; artifacts resident, code/ticket deep-link',render:()=>header(H_RUN,'outcomes','12','4')+outcomesBody()+dock({expanded:false,kind:'pty',now:NOW_RUN})},
+  dock:{sel:0,d:'terminal dock EXPANDED — steer without leaving the tab',render:()=>header(H_RUN,'activity','12','4')+activityBody()+dock({expanded:true,kind:'pty',now:NOW_RUN})},
+  idle:{sel:1,d:'managed · idle — title falls back to identity, quiet',render:()=>header(H_IDLE,'activity','12','4')+activityBody()+dock({expanded:false,kind:'pty',now:NOW_IDLE})},
+  external:{sel:3,d:'external · read-only — dock tails transcript, NO input',render:()=>header(H_EXT,'activity','','')+externalBody()+dock({expanded:false,kind:'transcript'})},
+  archived:{sel:-1,d:'Archived opens as a dense list IN the panel + back-nav',render:()=>archivedBody()},
+};
+const ORDER=['activity','delivery','outcomes','dock','idle','external','archived'];
+const NAMES={activity:'Activity',delivery:'Delivery',outcomes:'Outcomes',dock:'Dock expanded',idle:'Idle session',external:'External (read-only)',archived:'Archived list'};
+let cur='activity';
+function paint(){
+  const s=SCENES[cur];
+  document.getElementById('rows').innerHTML=railHTML(s.sel);
+  document.getElementById('arch').className=cur==='archived'?'on':'';
+  document.getElementById('card').innerHTML=s.render();
+  const i=ORDER.indexOf(cur);
+  document.getElementById('swk').textContent=`${i+1}/${ORDER.length}`;
+  document.getElementById('swn').textContent=NAMES[cur];
+  document.getElementById('swd').textContent=s.d;
+  document.getElementById('capk').textContent=NAMES[cur];
+  document.getElementById('capd').textContent=s.d;
+  document.querySelectorAll('#hsw .hp').forEach(p=>p.classList.toggle('on',+p.dataset.h===curH));
+  const u=new URL(location);u.searchParams.set('state',cur);u.searchParams.set('header',curH);history.replaceState({},'',u);
+}
+function setHeader(n){curH=n;paint();}
+function cycle(d){const i=ORDER.indexOf(cur);cur=ORDER[(i+d+ORDER.length)%ORDER.length];paint();}
+function selectRow(i){cur=i===3?'external':i===1?'idle':'activity';paint();}
+function setTab(t){cur=t==='delivery'?'delivery':t==='outcomes'?'outcomes':'activity';paint();}
+function toggleDock(){cur=cur==='dock'?'activity':'dock';paint();}
+document.getElementById('arch').addEventListener('click',()=>{cur='archived';paint();});
+addEventListener('keydown',e=>{if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;if(e.key==='ArrowLeft')cycle(-1);if(e.key==='ArrowRight')cycle(1);});
+const init=new URL(location).searchParams.get('state');if(init&&SCENES[init])cur=init;
+const ih=parseInt(new URL(location).searchParams.get('header'),10);if(ih>=1&&ih<=3)curH=ih;
+paint();
+</script>
+</body>
+</html>

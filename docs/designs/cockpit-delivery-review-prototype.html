@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1440, initial-scale=1"/>
+<title>Argo — Delivery review (4 approaches)</title>
+<!--
+  THROWAWAY PROTOTYPE — wayfinder #157 / ticket #186.
+  Question: how does the Delivery pane present pre-PR review + large-AI-diff review + PR/merge,
+  when an agent generates LOTS of code and raw file-diff must be the FALLBACK not the primary surface?
+  Four RADICALLY different review surfaces, switch with ?variant=A|B|C|D or the bottom bar / arrow keys.
+    A — Brief-first     (agent writes the review; diff is the appendix)
+    B — Cohort stack    (megadiff sliced into ordered small units)
+    C — Turn timeline   (review by time; scrubbable spine crosses the push boundary)
+    D — Findings inbox  (ranked risk list; diff is evidence)
+  Grounded in live research (Cursor/Windsurf/Zed/Codex/Aider/Graphite/CodeRabbit). Penumbra look LOCKED (#158).
+  Structurally real, visually approximate — do NOT settle tokens here. Shared shell (tabs + ribbon + switcher);
+  each body is hand-authored so a variant is free to throw out the layout.
+-->
+<style>
+:root{
+  --base:#0A0B0D; --panel:#101216; --panel-2:#14171C; --inset:#0C0E11;
+  --ink:#E7E3DA; --ink-dim:#9A968C; --ink-faint:#615E58; --line:#20242B; --line-2:#292E36;
+  --accent:#C8A968; --accent-deep:#8A7038; --accent-soft:rgba(200,169,104,.14);
+  --run:#6FA890; --need:#C8A968; --block:#B5675E; --done:#5B6673; --add:#5C8A6B; --del:#B5675E;
+  --warm:200,169,104;
+  --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+  --sans:"Inter","Helvetica Neue",-apple-system,system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1440px;height:920px;overflow:hidden;background:
+  radial-gradient(120% 80% at 50% -10%, #12141a 0%, var(--base) 55%);
+  color:var(--ink);font-family:var(--sans);font-size:13px;-webkit-font-smoothing:antialiased}
+.app{width:1180px;height:820px;margin:34px auto;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,var(--panel) 0%,#0d0f13 100%);
+  border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  box-shadow:0 40px 120px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.03)}
+
+/* ── session header + tabs ─────────────────────────────────────── */
+.head{display:flex;align-items:center;gap:14px;padding:16px 22px 0;position:relative}
+.ring{width:44px;height:44px;flex:none}
+.htitle{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.hmeta{font-size:11px;color:var(--ink-dim);margin-top:2px;font-family:var(--mono)}
+.tabs{margin-left:auto;align-self:flex-end;display:flex;gap:22px;font-size:12.5px;
+  color:var(--ink-faint);padding-bottom:10px}
+.tabs .t{cursor:default;position:relative;padding-bottom:9px}
+.tabs .t.on{color:var(--ink)}
+.tabs .t.on:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:var(--accent);border-radius:2px}
+
+/* ── lifecycle ribbon (thin state readout — never a diff/nav) ───── */
+.ribbon{display:flex;align-items:center;gap:0;padding:11px 22px;border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);background:rgba(0,0,0,.18)}
+.rnode{display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--ink-faint);
+  font-size:11.5px;font-family:var(--mono);letter-spacing:.02em;white-space:nowrap}
+.rnode .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);flex:none}
+.rnode.done{color:var(--ink-dim)} .rnode.done .dot{background:var(--done)}
+.rnode.live{color:var(--ink)} .rnode.live .dot{background:var(--run);
+  box-shadow:0 0 0 3px rgba(111,168,144,.16); animation:pulse 2.4s ease-in-out infinite}
+.rnode.wait .dot{background:var(--line-2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.rbar{flex:1;height:1px;background:var(--line-2);margin:0 12px;min-width:14px}
+.rbar.done{background:var(--done)}
+.rstate{margin-left:20px;font-size:11px;color:var(--ink-dim);font-family:var(--mono)}
+.rstate b{color:var(--accent);font-weight:500}
+
+/* ── pane body ─────────────────────────────────────────────────── */
+.pane{flex:1;overflow:hidden;position:relative}
+.subtabs{display:flex;gap:2px;padding:10px 22px 0;border-bottom:1px solid var(--line);background:rgba(0,0,0,.1)}
+.subtabs .s{font-size:12px;color:var(--ink-faint);padding:7px 13px;border-radius:7px 7px 0 0;cursor:pointer}
+.subtabs .s.on{color:var(--ink);background:var(--panel-2)}
+.subtabs .s .n{color:var(--ink-faint);font-family:var(--mono);font-size:10.5px;margin-left:5px}
+.body{position:absolute;inset:0;top:0;overflow:auto;padding:0}
+.scroll{height:100%;overflow:auto}
+.scroll::-webkit-scrollbar{width:9px} .scroll::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:5px}
+
+/* frontier action row (shared) */
+.frontier{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:12px;
+  padding:12px 22px;background:linear-gradient(180deg,rgba(13,15,19,0) 0%,#0d0f13 40%);
+  border-top:1px solid var(--line);backdrop-filter:blur(4px)}
+.frontier .lead{font-size:12px;color:var(--ink-dim);font-family:var(--mono)}
+.frontier .lead b{color:var(--ink)}
+.gatechip{font-size:10px;font-family:var(--mono);color:var(--ink-dim);border:1px solid var(--line-2);
+  border-radius:5px;padding:2px 7px;letter-spacing:.04em}
+.btn{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--base);background:var(--accent);
+  border:none;border-radius:8px;padding:8px 16px;cursor:pointer;letter-spacing:-.01em;
+  display:flex;align-items:center;gap:6px}
+.btn.ghost{background:transparent;color:var(--ink-dim);border:1px solid var(--line-2);margin-left:0}
+.btn.disabled{background:var(--line-2);color:var(--ink-faint);cursor:not-allowed}
+
+/* diff bits (shared) */
+.mono{font-family:var(--mono)}
+.diff{font-family:var(--mono);font-size:11.5px;line-height:1.65;background:var(--inset);
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.dhead{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);
+  background:rgba(0,0,0,.25);color:var(--ink-dim);font-size:11px}
+.dhead .fp{color:var(--ink)} .dhead .cnt{margin-left:auto;font-size:10.5px}
+.dhead .cnt .a{color:var(--add)} .dhead .cnt .d{color:var(--del)}
+.drow{display:flex;padding:0 12px;white-space:pre}
+.drow .g{width:34px;color:var(--ink-faint);text-align:right;padding-right:14px;user-select:none;flex:none}
+.drow.add{background:rgba(92,138,107,.10)} .drow.add .g{color:rgba(92,138,107,.7)}
+.drow.del{background:rgba(181,103,94,.10)} .drow.del .g{color:rgba(181,103,94,.7)}
+.drow .sgn{width:12px;flex:none} .drow.add .sgn{color:var(--add)} .drow.del .sgn{color:var(--del)}
+.drow.ctx{color:var(--ink-dim)}
+.hunkhead{padding:3px 12px;color:var(--accent-deep);background:rgba(200,169,104,.05);font-size:10.5px}
+
+.badge{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;letter-spacing:.03em}
+.b-add{color:var(--add);background:rgba(92,138,107,.14)}
+.b-del{color:var(--del);background:rgba(181,103,94,.14)}
+.pill{font-family:var(--mono);font-size:10px;color:var(--ink-dim);border:1px solid var(--line-2);border-radius:20px;padding:2px 9px}
+.risk{display:inline-flex;gap:2px;vertical-align:middle}
+.risk i{width:5px;height:9px;border-radius:1px;background:var(--line-2)}
+.risk i.on{background:var(--accent)}
+
+/* ── switcher ──────────────────────────────────────────────────── */
+.switch{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;
+  background:#05060880;border:1px solid var(--line-2);border-radius:12px;padding:5px;
+  backdrop-filter:blur(14px);box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:50}
+.switch button{background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:15px;
+  width:30px;height:30px;border-radius:8px}
+.switch button:hover{background:var(--panel-2);color:var(--ink)}
+.switch .lbl{font-size:12px;color:var(--ink);padding:0 12px;min-width:230px;text-align:center;font-weight:500}
+.switch .lbl b{color:var(--accent);font-family:var(--mono);margin-right:8px}
+.switch .dots{display:flex;gap:5px;padding:0 8px}
+.switch .dots i{width:6px;height:6px;border-radius:50%;background:var(--line-2)}
+.switch .dots i.on{background:var(--accent)}
+.switch .phz{font-size:11px;color:var(--ink-faint);font-family:var(--mono);padding:5px 10px;border-radius:7px;cursor:pointer}
+.switch .phz.on{background:var(--accent-soft);color:var(--accent)}
+
+/* ── A: brief ──────────────────────────────────────────────────── */
+.brief{padding:20px 24px 80px;max-width:760px}
+.brief .intent{font-size:14.5px;line-height:1.55;color:var(--ink);font-weight:500}
+.brief .isub{margin-top:8px;font-size:12px;color:var(--ink-dim);display:flex;align-items:center;gap:12px}
+.claim{margin-top:14px;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel-2)}
+.claim.reviewed{border-color:var(--line);opacity:.62}
+.claim .top{display:flex;align-items:center;gap:11px;padding:12px 14px;cursor:pointer}
+.claim .num{width:22px;height:22px;border-radius:50%;border:1px solid var(--line-2);color:var(--ink-dim);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;flex:none}
+.claim.reviewed .num{border-color:var(--done);color:var(--done)}
+.claim.attn .num{border-color:var(--accent);color:var(--accent)}
+.claim .txt{font-size:13px;color:var(--ink);flex:1}
+.claim .txt .fp{font-family:var(--mono);font-size:11px;color:var(--ink-dim);display:block;margin-top:3px}
+.claim .acts{display:flex;gap:6px;flex:none}
+.mini{font-size:11px;font-family:var(--mono);padding:4px 9px;border-radius:6px;border:1px solid var(--line-2);
+  background:transparent;color:var(--ink-dim);cursor:pointer}
+.mini.ok{color:var(--add);border-color:rgba(92,138,107,.4)}
+.mini.no{color:var(--block);border-color:rgba(181,103,94,.35)}
+.mini.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-deep)}
+.claim .expand{padding:0 14px 14px;display:none} .claim.open .expand{display:block}
+.diagnote{margin:14px 0;padding:12px 14px;border:1px dashed var(--line-2);border-radius:11px;
+  color:var(--ink-dim);font-size:12px;display:flex;align-items:center;gap:10px}
+.diagnote .ic{color:var(--accent)}
+
+/* ── B: cohort ─────────────────────────────────────────────────── */
+.cohort{display:grid;grid-template-columns:220px 1fr;height:100%}
+.crail{border-right:1px solid var(--line);overflow:auto;padding:12px 0}
+.crow{display:flex;flex-direction:column;gap:3px;padding:11px 16px;cursor:pointer;border-left:2px solid transparent}
+.crow.on{background:var(--panel-2);border-left-color:var(--accent)}
+.crow.done{opacity:.5}
+.crow .l1{display:flex;align-items:center;gap:8px}
+.crow .cd{width:8px;height:8px;border-radius:50%;background:var(--line-2)}
+.crow.done .cd{background:var(--done)} .crow.on .cd{background:var(--run)}
+.crow .nm{font-size:12.5px;color:var(--ink);font-weight:500} .crow.done .nm{font-weight:400}
+.crow .l2{font-size:10.5px;color:var(--ink-dim);font-family:var(--mono);padding-left:16px;display:flex;gap:8px}
+.cmain{overflow:auto;padding:16px 20px 80px}
+.cmain h4{font-size:12px;color:var(--ink-dim);font-weight:500;margin-bottom:4px}
+.csum{font-size:13px;color:var(--ink);margin-bottom:14px}
+.khunk{border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:12px}
+.khunk .kbar{display:flex;gap:6px;padding:6px 10px;border-top:1px solid var(--line);background:rgba(0,0,0,.2)}
+.moved{color:var(--ink-faint);font-style:italic;padding:4px 12px;font-size:10.5px;
+  background:rgba(0,0,0,.15);border-top:1px dashed var(--line-2)}
+
+/* ── C: timeline ───────────────────────────────────────────────── */
+.tl{padding:18px 24px 80px}
+.tlaxis{position:relative;padding:26px 0 20px;overflow-x:auto}
+.tltrack{display:flex;align-items:center;min-width:760px}
+.tnode{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;flex:none;position:relative}
+.tnode .tk{width:13px;height:13px;border-radius:50%;background:var(--line-2);border:2px solid var(--panel);z-index:2}
+.tnode.turn .tk{background:var(--done)}
+.tnode.sel .tk{background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.tnode.now .tk{background:var(--run);box-shadow:0 0 0 4px rgba(111,168,144,.18);animation:pulse 2.2s infinite}
+.tnode .cap{font-size:10px;color:var(--ink-faint);font-family:var(--mono);white-space:nowrap}
+.tnode.sel .cap{color:var(--accent)} .tnode.now .cap{color:var(--run)}
+.tseg{height:2px;background:var(--line-2);flex:1;min-width:30px}
+.tseg.done{background:var(--done)}
+.pushmark{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px;margin:0 4px}
+.pushmark .pl{writing-mode:horizontal-tb;font-size:9px;color:var(--accent-deep);font-family:var(--mono);
+  letter-spacing:.1em;border:1px dashed var(--accent-deep);border-radius:4px;padding:2px 6px}
+.pushmark .pbar{width:1px;height:38px;background:repeating-linear-gradient(180deg,var(--accent-deep) 0 4px,transparent 4px 8px)}
+.scope{display:flex;gap:2px;margin:6px 0 16px;font-family:var(--mono);font-size:11px}
+.scope .sc{padding:5px 12px;color:var(--ink-faint);border:1px solid var(--line);cursor:pointer}
+.scope .sc:first-child{border-radius:7px 0 0 7px} .scope .sc:last-child{border-radius:0 7px 7px 0;border-left:none}
+.scope .sc:not(:first-child):not(:last-child){border-left:none}
+.scope .sc.on{background:var(--panel-2);color:var(--ink)}
+.turncard{border:1px solid var(--line);border-radius:11px;background:var(--panel-2);overflow:hidden}
+.turncard .th{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line)}
+.turncard .th .w{font-size:12.5px;color:var(--ink)} .turncard .th .w b{color:var(--accent);font-weight:500}
+.turncard .th .acts{margin-left:auto;display:flex;gap:6px}
+.turncard .tb{padding:14px 15px}
+
+/* ── D: findings ───────────────────────────────────────────────── */
+.inbox{padding:16px 22px 80px;max-width:820px}
+.inhead{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.inhead .sev{font-family:var(--mono);font-size:12px;display:flex;gap:14px}
+.inhead .sev .blk{color:var(--block)} .inhead .sev .adv{color:var(--accent)} .inhead .sev .cln{color:var(--ink-dim)}
+.find{border:1px solid var(--line);border-radius:11px;background:var(--panel-2);margin-top:12px;overflow:hidden}
+.find.blocking{border-left:2px solid var(--block)}
+.find.advisory{border-left:2px solid var(--accent-deep)}
+.find.done{opacity:.5}
+.find .fh{display:flex;align-items:center;gap:11px;padding:12px 15px;cursor:pointer}
+.find .sd{width:8px;height:8px;border-radius:50%;flex:none}
+.find.blocking .sd{background:var(--block)} .find.advisory .sd{background:var(--accent)}
+.find.done .sd{background:var(--done)}
+.find .fc{flex:1} .find .fc .cl{font-size:13px;color:var(--ink)}
+.find .fc .fp{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);margin-top:2px}
+.find .conf{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);flex:none}
+.find .fa{display:flex;gap:6px;flex:none}
+.find .ev{display:none;padding:0 15px 14px} .find.open .ev{display:block}
+.cleanband{margin-top:14px;display:flex;align-items:center;gap:12px;padding:13px 16px;border:1px dashed var(--line-2);
+  border-radius:11px;color:var(--ink-dim);font-size:12px}
+.cleanband .pct{font-family:var(--mono);color:var(--ink-faint);margin-left:auto}
+.honest{margin-top:10px;font-size:10.5px;color:var(--ink-faint);font-family:var(--mono);text-align:center}
+.revbar{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
+  padding-bottom:12px;border-bottom:1px solid var(--line)}
+.revbar .rr{margin-left:auto;font-size:11px;color:var(--ink-dim);border:1px solid var(--line-2);border-radius:7px;
+  padding:5px 11px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.revbar .rr:hover{color:var(--ink);border-color:var(--ink-faint)}
+.resolved{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.rhead{font-family:var(--mono);font-size:11px;color:var(--done);display:flex;align-items:center;gap:8px;cursor:pointer}
+.find.done .cl{text-decoration:line-through;text-decoration-color:var(--ink-faint)}
+.newtag{font-family:var(--mono);font-size:9px;color:var(--base);background:var(--accent);border-radius:3px;padding:1px 5px;margin-left:8px}
+
+/* ── E: hybrid ─────────────────────────────────────────────────── */
+.orient{padding:15px 22px 13px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.14)}
+.orient .otop{display:flex;align-items:flex-start;gap:14px}
+.orient .oint{font-size:13.5px;line-height:1.5;color:var(--ink);flex:1}
+.orient .orisk{flex:none;text-align:right;font-size:10.5px;color:var(--ink-dim);font-family:var(--mono)}
+.orient .orisk .risk{margin-top:4px}
+.walk{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+.wchip{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-dim);font-family:var(--mono);
+  border:1px solid var(--line-2);border-radius:20px;padding:3px 10px 3px 8px;cursor:pointer}
+.wchip .wn{width:15px;height:15px;border-radius:50%;border:1px solid var(--line-2);display:flex;align-items:center;
+  justify-content:center;font-size:9px;color:var(--ink-faint)}
+.wchip.done{opacity:.55} .wchip.done .wn{border-color:var(--done);color:var(--done)}
+.wchip.flag{color:var(--block);border-color:rgba(181,103,94,.4)} .wchip.flag .wn{border-color:var(--block);color:var(--block)}
+.hbody{position:absolute;left:0;right:0;top:0;bottom:0;overflow:auto}
+/* narrated changes table (Overview) */
+.desc{display:flex;flex-direction:column;gap:11px;margin-bottom:8px}
+.desc .row{font-size:13px;line-height:1.5}
+.desc .row .k{display:inline-block;width:52px;font-family:var(--mono);font-size:10px;color:var(--accent);
+  vertical-align:top;padding-top:2px}
+.desc .row.dim{color:var(--ink-dim)}
+.ntab-h{font-size:11px;color:var(--ink-dim);font-family:var(--mono);letter-spacing:.04em;margin:20px 0 8px}
+.ntab{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.nr{display:grid;grid-template-columns:26px 1fr 210px 78px 92px;align-items:center;gap:10px;
+  padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.nr:last-of-type{border-bottom:none}
+.nr:hover{background:var(--panel-2)}
+.nr .num{width:20px;height:20px;border-radius:50%;border:1px solid var(--line-2);color:var(--ink-dim);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px}
+.nr .what{font-size:12.5px;color:var(--ink)}
+.nr .where{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nr .delta{font-family:var(--mono);font-size:10.5px}
+.nr .delta .a{color:var(--add)} .nr .delta .d{color:var(--del)}
+.nr .flag{font-family:var(--mono);font-size:10px;text-align:right}
+.nr .flag .blk{color:var(--block)} .nr .flag .adv{color:var(--accent)}
+.nx{display:none;padding:0 14px 14px;grid-column:1/-1}
+.nrow.open .nx{display:block}
+.nrow{display:contents}
+
+/* Files — GitHub-style tree + diff */
+.dfiles{display:grid;grid-template-columns:minmax(200px,250px) 1fr;height:100%}
+.ftree{border-right:1px solid var(--line);overflow:auto;padding:10px 0}
+.ffilter{padding:0 12px 10px}
+.ffilter input{width:100%;background:var(--inset);border:1px solid var(--line);border-radius:7px;color:var(--ink);
+  font-size:11px;padding:6px 9px;font-family:var(--mono);outline:none}
+.ftg{padding:7px 14px 3px;font-family:var(--mono);font-size:10px;color:var(--ink-faint);letter-spacing:.05em}
+.ftrow{display:flex;align-items:center;gap:7px;padding:5px 14px 5px 24px;cursor:pointer;font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+.ftrow:hover{background:var(--panel-2)} .ftrow.on{background:var(--accent-soft);color:var(--ink)}
+.ftrow .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftrow .fd{font-size:9.5px} .ftrow .fd .a{color:var(--add)} .ftrow .fd .d{color:var(--del)}
+.ftrow .fdot{width:6px;height:6px;border-radius:50%;background:var(--block);flex:none}
+.fdiff{overflow:auto;font-family:var(--mono);font-size:11.5px;line-height:1.6}
+.fdhead{position:sticky;top:0;background:#0d0f13;display:flex;align-items:center;gap:8px;padding:10px 16px;
+  border-bottom:1px solid var(--line);color:var(--ink);font-size:11px;z-index:2}
+.fdhead .cnt{margin-left:auto;font-size:10.5px} .fdhead .cnt .a{color:var(--add)} .fdhead .cnt .d{color:var(--del)}
+.fdrow{display:flex;padding:0 4px;white-space:pre}
+.fdrow .lo,.fdrow .ln{width:38px;text-align:right;padding-right:10px;color:var(--ink-faint);user-select:none;flex:none;font-size:10.5px}
+.fdrow .sgn{width:14px;flex:none;text-align:center}
+.fdrow.add{background:rgba(92,138,107,.10)} .fdrow.add .sgn{color:var(--add)}
+.fdrow.del{background:rgba(181,103,94,.10)} .fdrow.del .sgn{color:var(--del)}
+.fdrow.ctx{color:var(--ink-dim)}
+.fdhunk{padding:3px 16px;color:var(--accent-deep);background:rgba(200,169,104,.05);font-size:10.5px}
+.dfind{margin:6px 20px 6px 56px;padding:9px 12px;border-left:2px solid var(--block);background:rgba(181,103,94,.08);
+  border-radius:0 7px 7px 0;font-family:var(--sans);font-size:11.5px;color:var(--ink)}
+.dfind .dm{font-family:var(--mono);font-size:10px;color:var(--block);display:block;margin-bottom:3px}
+/* Files toolbar + viewed + comments */
+.ftoolbar{display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;color:var(--ink-dim);flex:none}
+.rbatch{margin-left:auto;display:flex;align-items:center;gap:10px}
+.rbatch .cc{color:var(--accent)}
+.addr-btn{font-size:11.5px;font-weight:600;color:var(--base);background:var(--accent);border:none;border-radius:7px;padding:6px 13px;cursor:pointer}
+.subm{font-size:11px;color:var(--ink-dim);border:1px solid var(--line-2);border-radius:7px;padding:6px 11px;cursor:pointer;background:none}
+.viewedbox{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);cursor:pointer}
+.viewedbox .bx{width:13px;height:13px;border:1px solid var(--line-2);border-radius:3px;flex:none}
+.viewedbox.on{color:var(--run)} .viewedbox.on .bx{background:var(--run);border-color:var(--run)}
+.fdrow{position:relative} .fdrow .addc{position:absolute;left:56px;opacity:0;color:var(--accent);cursor:pointer;font-weight:700}
+.fdrow:hover{background:rgba(200,169,104,.05)} .fdrow:hover .addc{opacity:.7}
+.cthread{margin:6px 20px 8px 56px;border:1px solid var(--line-2);border-radius:9px;overflow:hidden;background:var(--panel-2)}
+.ccomment{padding:9px 12px;font-family:var(--sans);font-size:12px;color:var(--ink);line-height:1.5}
+.ccomment b{color:var(--accent);font-weight:500;margin-right:8px;font-size:11px}
+.ccomment .ts{color:var(--ink-faint);font-family:var(--mono);font-size:10px}
+.creply{border-top:1px solid var(--line);padding:8px 10px}
+.creply input{width:100%;background:var(--inset);border:1px solid var(--line);border-radius:6px;color:var(--ink);
+  font-size:11.5px;padding:6px 9px;outline:none;font-family:var(--sans)}
+.pendtag{font-family:var(--mono);font-size:9px;color:var(--accent);border:1px solid var(--accent-deep);border-radius:3px;padding:1px 5px;margin-left:8px}
+.fview{margin-left:16px;display:inline-flex;font-family:var(--mono);font-size:10px;border:1px solid var(--line-2);border-radius:6px;overflow:hidden}
+.fview .fv{padding:3px 9px;color:var(--ink-faint);cursor:pointer}
+.fview .fv.on{background:var(--accent-soft);color:var(--accent)}
+.artview{padding:22px 26px;max-width:680px;font-family:var(--sans);line-height:1.62;color:var(--ink)}
+.artview h1{font-size:18px;margin-bottom:6px;letter-spacing:-.01em}
+.artview .amuted{color:var(--ink-faint);font-family:var(--mono);font-size:11px;margin-bottom:16px}
+.artview h2{font-size:13px;margin:18px 0 6px;color:var(--ink)}
+.artview p{color:var(--ink-dim);margin-bottom:8px}
+.artview code{font-family:var(--mono);background:var(--inset);padding:1px 5px;border-radius:4px;font-size:11px;color:var(--ink)}
+.artview ul{padding-left:18px;color:var(--ink-dim)} .artview li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <svg class="ring" viewBox="0 0 44 44">
+      <circle cx="22" cy="22" r="18" fill="none" stroke="#20242B" stroke-width="3"/>
+      <circle cx="22" cy="22" r="18" fill="none" stroke="#C8A968" stroke-width="3"
+        stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="70" transform="rotate(-90 22 22)"/>
+      <text x="22" y="20" text-anchor="middle" fill="#E7E3DA" font-size="10" font-family="var(--mono)">~38%</text>
+      <text x="22" y="30" text-anchor="middle" fill="#615E58" font-size="6" font-family="var(--mono)">ctx</text>
+    </svg>
+    <div>
+      <div class="htitle">Wire verify() onto the rotation core</div>
+      <div class="hmeta">#418 · claude · managed · argo/418-verify-rotation</div>
+    </div>
+    <div class="tabs">
+      <span class="t">Activity</span>
+      <span class="t on">Delivery</span>
+    </div>
+  </div>
+
+  <div class="ribbon" id="ribbon"></div>
+
+  <div class="pane" id="pane"></div>
+</div>
+
+<div class="switch">
+  <button onclick="cycle(-1)">‹</button>
+  <span class="lbl"><b id="vk">A</b><span id="vn">Brief-first</span></span>
+  <span class="dots" id="dots"></span>
+  <button onclick="cycle(1)">›</button>
+  <span style="width:1px;height:20px;background:var(--line-2);margin:0 6px"></span>
+  <span class="phz" id="pz-local" onclick="setPhase('local')">pre-PR</span>
+  <span class="phz" id="pz-open" onclick="setPhase('open')">PR open</span>
+</div>
+
+<script>
+const VARIANTS=[
+  {k:'A',n:'Brief-first',fn:renderBrief},
+  {k:'B',n:'Cohort stack',fn:renderCohort},
+  {k:'D',n:'Findings inbox',fn:renderFindings},
+  {k:'E',n:'Hybrid (recommended)',fn:renderHybrid},
+];
+function q(){return new URLSearchParams(location.search)}
+function cur(){const v=(q().get('variant')||'A').toUpperCase();return Math.max(0,VARIANTS.findIndex(x=>x.k===v))}
+function PHASE(){return q().get('phase')==='local'?'local':'open'}
+function cycle(d){const i=(cur()+d+VARIANTS.length)%VARIANTS.length;const u=new URL(location);u.searchParams.set('variant',VARIANTS[i].k);history.replaceState({},'',u);render()}
+function setPhase(p){const u=new URL(location);u.searchParams.set('phase',p);history.replaceState({},'',u);render()}
+function buildRibbon(){
+  const local=PHASE()==='local';
+  const n=(c,l)=>`<span class="rnode ${c}"><span class="dot"></span>${l}</span>`;
+  const bar=d=>`<span class="rbar ${d?'done':''}"></span>`;
+  if(local) return n('live','commits')+bar()+n('wait','pr')+bar()+n('wait','ci')+bar()+n('wait','review')+bar()+n('wait','merge')
+    +`<span class="rstate">local · committed · <b>not pushed</b> · reviewing before PR · +2,755 −58 · 11 files</span>`;
+  return n('done','commits')+bar(1)+n('done','pr')+bar(1)+n('live','ci')+bar()+n('wait','review')+bar()+n('wait','merge')
+    +`<span class="rstate">#418 · <b>CI running</b> · review pending · +2,755 −58 · 11 files</span>`;
+}
+function render(){
+  const i=cur(),v=VARIANTS[i];
+  document.getElementById('vk').textContent=v.k;
+  document.getElementById('vn').textContent=v.n;
+  document.getElementById('dots').innerHTML=VARIANTS.map((_,j)=>`<i class="${j===i?'on':''}"></i>`).join('');
+  document.getElementById('ribbon').innerHTML=buildRibbon();
+  document.getElementById('pz-local').classList.toggle('on',PHASE()==='local');
+  document.getElementById('pz-open').classList.toggle('on',PHASE()==='open');
+  document.getElementById('pane').innerHTML=v.fn();
+  if(PHASE()==='local') localizeFrontier();
+}
+// pre-PR: reshape whatever frontier the variant drew into a "push & open PR" action
+function localizeFrontier(){
+  const fr=document.querySelector('.frontier'); if(!fr)return;
+  const gc=fr.querySelector('.gatechip'); if(gc)gc.textContent='create-pr · ask';
+  const lead=fr.querySelector('.lead'); if(lead)lead.innerHTML='<b>Reviewing your local changes</b> before they go public · GitHub sees nothing yet';
+  const btns=fr.querySelectorAll('.btn'); const primary=btns[btns.length-1];
+  if(primary){primary.textContent='Push & open PR';primary.classList.remove('disabled')}
+}
+document.addEventListener('keydown',e=>{
+  const t=e.target.tagName; if(t==='INPUT'||t==='TEXTAREA'||e.target.isContentEditable)return;
+  if(e.key==='ArrowLeft')cycle(-1); if(e.key==='ArrowRight')cycle(1);
+});
+// toggles used inside variants
+function tog(el,cls){el.closest('.claim,.find,.khunk').classList.toggle(cls||'open')}
+function pick(el,sel,cls){el.parentNode.querySelectorAll(sel).forEach(x=>x.classList.remove(cls));el.classList.add(cls)}
+function markReviewed(btn,pos){const c=btn.closest('.claim');c.classList.remove('attn');c.classList.add('reviewed');
+  c.querySelectorAll('.mini').forEach(m=>m.classList.remove('on'));btn.classList.add('on')}
+function selCohort(el){el.parentNode.querySelectorAll('.crow').forEach(x=>x.classList.remove('on'));el.classList.add('on');
+  document.getElementById('cmain').innerHTML=COHORTS[el.dataset.i].body}
+function selTurn(el){el.closest('.tltrack').querySelectorAll('.tnode').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');
+  document.getElementById('turncard').innerHTML=TURNS[el.dataset.i].body}
+function resolveFinding(btn){const f=btn.closest('.find');f.classList.add('done');f.classList.remove('open')}
+
+/* ══ shared diff snippets ══ */
+function diffRotation(){return `
+<div class="diff">
+  <div class="dhead"><span class="fp">core/rotation.ts</span><span class="cnt"><span class="a">+18</span> <span class="d">−4</span></span></div>
+  <div class="hunkhead">@@ -11,7 +11,21 @@ export function rotate(seed: Matrix)</div>
+  <div class="drow ctx"><span class="g">11</span><span class="sgn"> </span>export function rotate(seed: Matrix) {</div>
+  <div class="drow del"><span class="g">12</span><span class="sgn">−</span>  return seed.map(x => x)</div>
+  <div class="drow add"><span class="g">12</span><span class="sgn">+</span>  const core = verify(seed)</div>
+  <div class="drow add"><span class="g">13</span><span class="sgn">+</span>  if (!core.ok) throw new RotationError(core.reason)</div>
+  <div class="drow add"><span class="g">14</span><span class="sgn">+</span>  return core.value.map(x => x)</div>
+  <div class="drow ctx"><span class="g">15</span><span class="sgn"> </span>}</div>
+</div>`}
+function diffVerify(){return `
+<div class="diff">
+  <div class="dhead"><span class="fp">core/verify.ts</span><span class="cnt"><span class="a">+22</span> <span class="d">−0</span></span></div>
+  <div class="hunkhead">@@ new file @@</div>
+  <div class="drow add"><span class="g">1</span><span class="sgn">+</span>export function verify(m: Matrix): Result&lt;Matrix&gt; {</div>
+  <div class="drow add"><span class="g">2</span><span class="sgn">+</span>  if (m.length === 0) return err('empty')</div>
+  <div class="drow add"><span class="g">3</span><span class="sgn">+</span>  return ok(normalize(m))</div>
+  <div class="drow add"><span class="g">4</span><span class="sgn">+</span>}</div>
+</div>`}
+
+/* ══ A — Brief-first ══ */
+function renderBrief(){
+  return `
+  <div class="scroll"><div class="brief">
+    <div class="intent">Wires the new <span class="mono">verify()</span> guard onto the rotation core so malformed matrices fail fast instead of silently producing garbage rotations.</div>
+    <div class="isub">
+      <span>Closes #418</span><span>·</span>
+      <span>risk <span class="risk"><i class="on"></i><i class="on"></i><i></i><i></i></span></span><span>·</span>
+      <span class="mono">4 claims · 11 files · +2,755 −58</span>
+    </div>
+
+    <div class="claim attn open">
+      <div class="top" onclick="tog(this)">
+        <div class="num">1</div>
+        <div class="txt">Added a <span class="mono">verify()</span> guard that rejects empty / malformed matrices
+          <span class="fp">core/verify.ts · new file · +22</span></div>
+        <div class="acts">
+          <button class="mini ok" onclick="event.stopPropagation();markReviewed(this)">✓ ok</button>
+          <button class="mini no" onclick="event.stopPropagation();markReviewed(this)">needs work</button>
+        </div>
+      </div>
+      <div class="expand">${diffVerify()}</div>
+    </div>
+
+    <div class="claim attn">
+      <div class="top" onclick="tog(this)">
+        <div class="num">2</div>
+        <div class="txt">Wired it into <span class="mono">rotate()</span> — throws <span class="mono">RotationError</span> on a bad core
+          <span class="fp">core/rotation.ts · +18 −4</span></div>
+        <div class="acts">
+          <button class="mini ok" onclick="event.stopPropagation();markReviewed(this)">✓ ok</button>
+          <button class="mini no" onclick="event.stopPropagation();markReviewed(this)">needs work</button>
+        </div>
+      </div>
+      <div class="expand">${diffRotation()}</div>
+    </div>
+
+    <div class="diagnote"><span class="ic">⌥</span> New error path introduced — <b>sequence diagram</b> rendered: rotate → verify → RotationError → caller. <span class="pill" style="margin-left:auto">view diagram</span></div>
+
+    <div class="claim attn">
+      <div class="top" onclick="tog(this)">
+        <div class="num">3</div>
+        <div class="txt">Updated 3 call sites to handle the throw
+          <span class="fp">ui/RotationPanel.tsx · api/rotate.ts · worker/spin.ts · +41 −18</span></div>
+        <div class="acts">
+          <button class="mini ok" onclick="event.stopPropagation();markReviewed(this)">✓ ok</button>
+          <button class="mini no" onclick="event.stopPropagation();markReviewed(this)">needs work</button>
+        </div>
+      </div>
+      <div class="expand">${diffRotation()}</div>
+    </div>
+
+    <div class="claim attn">
+      <div class="top" onclick="tog(this)">
+        <div class="num">4</div>
+        <div class="txt">Added tests for the empty-input and malformed paths
+          <span class="fp">test/rotation.test.ts · +40 −0</span></div>
+        <div class="acts">
+          <button class="mini ok" onclick="event.stopPropagation();markReviewed(this)">✓ ok</button>
+          <button class="mini no" onclick="event.stopPropagation();markReviewed(this)">needs work</button>
+        </div>
+      </div>
+      <div class="expand">${diffVerify()}</div>
+    </div>
+
+    <div class="diagnote" style="border-style:solid;border-color:var(--block);color:var(--block)">
+      <span class="ic">!</span> 1 hunk not covered by the brief — <b>migrations/004_rot.sql</b> (+8). Un-narrated changes always surface here. <span class="pill" style="margin-left:auto;color:var(--block);border-color:var(--block)">show</span></div>
+  </div></div>
+
+  <div class="frontier">
+    <span class="lead">The <b>brief becomes the PR body</b> on push · <span class="mono">2 of 4 claims reviewed</span></span>
+    <button class="btn ghost">open full diff</button>
+    <button class="btn">Approve &amp; continue</button>
+  </div>`;
+}
+
+/* ══ B — Cohort stack ══ */
+const COHORTS=[
+  {nm:'schema',st:'done',c:'+8 −0',files:'1 file',body:`
+    <h4>SCHEMA · foundational</h4>
+    <div class="csum">Adds the <span class="mono">rot_verified</span> column the guard writes to.</div>
+    <div class="diff"><div class="dhead"><span class="fp">migrations/004_rot.sql</span><span class="cnt"><span class="a">+8</span></span></div>
+    <div class="drow add"><span class="g">1</span><span class="sgn">+</span>ALTER TABLE rotations ADD COLUMN rot_verified boolean;</div></div>`},
+  {nm:'core guard',st:'on',c:'+40 −4',files:'2 files',body:`
+    <h4>CORE GUARD · depends on schema</h4>
+    <div class="csum">The <span class="mono">verify()</span> function and its wiring into <span class="mono">rotate()</span>.</div>
+    ${khunk(diffVerify())}
+    <div class="moved">↕ 6 lines moved from utils.ts unchanged — collapsed</div>
+    ${khunk(diffRotation())}`},
+  {nm:'call sites (ui)',st:'wait',c:'+41 −18',files:'3 files',body:`
+    <h4>CALL SITES · depends on core guard</h4>
+    <div class="csum">3 callers updated to catch <span class="mono">RotationError</span>.</div>
+    ${khunk(diffRotation())}`},
+  {nm:'tests',st:'wait',c:'+40 −0',files:'1 file',body:`
+    <h4>TESTS · depends on core guard</h4>
+    <div class="csum">Empty-input and malformed-matrix coverage.</div>
+    ${khunk(diffVerify())}`},
+];
+function khunk(inner){return `<div class="khunk">${inner}<div class="kbar">
+  <button class="mini ok">keep</button><button class="mini no">reject</button><button class="mini">comment</button></div></div>`}
+function renderCohort(){
+  return `<div class="cohort">
+    <div class="crail">
+      ${COHORTS.map((c,i)=>`<div class="crow ${c.st==='on'?'on':''} ${c.st==='done'?'done':''}" data-i="${i}" onclick="selCohort(this)">
+        <div class="l1"><span class="cd"></span><span class="nm">${c.nm}</span></div>
+        <div class="l2"><span>${c.c}</span><span>·</span><span>${c.files}</span>${c.st==='done'?'<span>· ✓</span>':''}</div>
+      </div>`).join('')}
+      <div style="padding:12px 16px;margin-top:6px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:10.5px" class="mono">
+        4 cohorts · topologically ordered<br>on push → 4 stacked PRs
+      </div>
+    </div>
+    <div class="cmain" id="cmain">${COHORTS[1].body}</div>
+    <div class="frontier">
+      <span class="lead">Reviewing <b>core guard</b> · 1 of 4 cohorts done</span>
+      <button class="btn ghost">open full diff</button>
+      <button class="btn">Approve cohort ▸</button>
+    </div>
+  </div>`;
+}
+
+/* ══ C — Turn timeline ══ */
+const TURNS=[
+  {cap:'turn 1',cls:'turn',body:''},
+  {cap:'turn 2',cls:'turn',body:''},
+  {cap:'turn 3',cls:'now sel',body:`
+    <div class="th"><span class="w"><b>turn 3</b> · wired verify() into rotate() + updated 3 callers</span>
+      <span class="acts"><button class="mini ok">keep</button><button class="mini no">reject</button><button class="mini">rewind ↺</button></span></div>
+    <div class="tb">${diffRotation()}</div>`},
+];
+function renderTimeline(){
+  return `<div class="scroll"><div class="tl">
+    <div class="tlaxis"><div class="tltrack">
+      <div class="tnode turn" data-i="0" onclick="selTurn(this)"><span class="tk"></span><span class="cap">turn 1</span></div>
+      <span class="tseg done"></span>
+      <div class="tnode turn" data-i="1" onclick="selTurn(this)"><span class="tk"></span><span class="cap">turn 2</span></div>
+      <span class="tseg done"></span>
+      <div class="tnode now sel" data-i="2" onclick="selTurn(this)"><span class="tk"></span><span class="cap">turn 3 · now</span></div>
+      <div class="pushmark"><span class="pl">PUSH</span><span class="pbar"></span></div>
+      <div class="tnode turn"><span class="tk"></span><span class="cap">commit</span></div>
+      <span class="tseg done"></span>
+      <div class="tnode turn"><span class="tk"></span><span class="cap">PR #418</span></div>
+      <span class="tseg"></span>
+      <div class="tnode"><span class="tk"></span><span class="cap">CI</span></div>
+      <span class="tseg"></span>
+      <div class="tnode"><span class="tk"></span><span class="cap">review</span></div>
+      <span class="tseg"></span>
+      <div class="tnode"><span class="tk"></span><span class="cap">merge</span></div>
+    </div></div>
+
+    <div class="scope">
+      <span class="sc on">latest turn</span>
+      <span class="sc">since I looked</span>
+      <span class="sc">whole change</span>
+    </div>
+
+    <div class="turncard" id="turncard">${TURNS[2].body}</div>
+
+    <div style="margin-top:14px;color:var(--ink-faint);font-size:11px" class="mono">
+      ← the same axis crosses the push marker · scrub left = local turns, right = GitHub events · read-only: scrubbing never mutates the tree
+    </div>
+  </div></div>
+
+  <div class="frontier">
+    <span class="lead">Reviewing <b>latest turn</b> · rewind informs the agent so it won't redo it</span>
+    <button class="btn ghost">collapse to by-file</button>
+    <button class="btn">Keep turn &amp; push</button>
+  </div>`;
+}
+
+/* ══ D — Findings inbox ══ */
+// shared by variant D and the hybrid's Findings tab
+function findingsBody(){
+  const f=(cls,title,fp,conf,primary,diff,dismiss)=>`
+    <div class="find ${cls}">
+      <div class="fh" onclick="tog(this)"><span class="sd"></span>
+        <div class="fc"><div class="cl">${title}</div><div class="fp">${fp}</div></div>
+        <span class="conf">${conf}</span>
+        <div class="fa">
+          <button class="mini ${primary==='Apply fix'&&cls.includes('blocking')?'on':''}" onclick="event.stopPropagation()">${primary}</button>
+          <button class="mini" onclick="event.stopPropagation();resolveFinding(this)">${dismiss}</button>
+        </div>
+      </div>
+      <div class="ev">${diff}</div>
+    </div>`;
+  return `
+    <div class="revbar">
+      <span>reviewed 2m ago · commit a1b2c3 · claude code-review</span>
+      <span class="rr">↻ Re-run review</span>
+    </div>
+    <div class="sev" style="margin:13px 0 2px">
+      <span class="blk">● 1 blocking</span><span class="adv">● 2 advisory</span><span class="cln">○ 2,710 lines clean</span></div>
+
+    ${f('blocking open','Unhandled empty input reaches <span class="mono">.map()</span> before the guard on the worker path',
+       'worker/spin.ts:37 · blocking · from change ③','conf 85%','Apply fix',diffRotation(),'Dismiss')}
+    ${f('advisory','Missing test for the reset path through <span class="mono">verify()</span>',
+       'test/rotation.test.ts · advisory · from change ④','conf 60%','Apply fix',diffVerify(),'Dismiss')}
+    ${f('advisory','CI: <span class="mono">lint</span> — 2 warnings on the new file',
+       'core/verify.ts · advisory · check: lint','check','Apply fix',diffVerify(),'Ignore')}
+
+    <div class="cleanband"><span>2,710 lines — moves, tests, boilerplate — nothing flagged, auto-passed.</span>
+      <span class="pct">review manually ›</span></div>
+
+    <div class="resolved">
+      <div class="rhead" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        ✓ 2 fixed since the last review — reconciled, not piled up ⌄</div>
+      <div>
+        <div class="find done"><div class="fh"><span class="sd"></span>
+          <div class="fc"><div class="cl">Null deref in <span class="mono">normalize()</span></div>
+            <div class="fp">core/verify.ts · was blocking · fixed in commit a1b2c3</div></div></div></div>
+        <div class="find done"><div class="fh"><span class="sd"></span>
+          <div class="fc"><div class="cl">Unused import</div>
+            <div class="fp">ui/RotationPanel.tsx · was advisory · fixed</div></div></div></div>
+      </div>
+    </div>`;
+}
+function renderFindings(){
+  return `<div class="scroll"><div class="inbox">${findingsBody()}</div></div>
+  <div class="frontier">
+    <span class="lead"><b>1 blocking</b> open · merge gated until resolved</span>
+    <button class="btn disabled">Merge ⌵</button>
+  </div>`;
+}
+
+/* ══ E — Hybrid (Overview · Code Review · Files) ══ */
+function hybSub(el,which){
+  el.parentNode.querySelectorAll('.s').forEach(x=>x.classList.remove('on'));el.classList.add('on');
+  document.getElementById('hbody').innerHTML=HYB[which]();
+}
+function togRow(el){el.closest('.nrow').classList.toggle('open')}
+
+// narrated change rows (Overview)
+function nrow(num,what,where,delta,flag,diff){
+  return `<div class="nrow"><div class="nr" onclick="togRow(this)">
+    <span class="num">${num}</span>
+    <span class="what">${what}</span>
+    <span class="where">${where}</span>
+    <span class="delta">${delta}</span>
+    <span class="flag">${flag}</span>
+  </div><div class="nx">${diff}</div></div>`;
+}
+
+// Files — GitHub tree + gutter diff
+const FILES={
+  'worker/spin.ts':{d:'<span class="a">+20</span> <span class="d">−8</span>',flag:true,body:`
+    <div class="fdhunk">@@ -30,8 +30,20 @@ export async function spin(job: Job)</div>
+    <div class="fdrow ctx"><span class="lo">33</span><span class="ln">33</span><span class="sgn"> </span> const m = job.matrix<span class="addc" onclick="addComment(this)">＋</span></div>
+    <div class="fdrow del"><span class="lo">34</span><span class="ln"></span><span class="sgn">−</span> return m.map(rotate)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">34</span><span class="sgn">+</span> return m.map(rotate)  // no verify() on this path<span class="addc" onclick="addComment(this)">＋</span></div>
+    <div class="dfind"><span class="dm">● blocking · code-review · conf 85%</span>Unhandled empty input reaches <span class="mono">.map()</span> before the guard — the worker path skips <span class="mono">verify()</span>. <span class="pill" style="border-color:var(--block);color:var(--block)">Apply fix</span></div>
+    <div class="cthread"><div class="ccomment"><b>you</b><span class="ts">just now</span><span class="pendtag">pending</span><div style="margin-top:5px">Guard this at the job boundary instead of per-call — same fix belongs in <span class="mono">enqueue()</span> too.</div></div>
+      <div class="creply"><input placeholder="reply, or hit Address with agent above…"></div></div>
+    <div class="fdrow ctx"><span class="lo">35</span><span class="ln">35</span><span class="sgn"> </span>}<span class="addc" onclick="addComment(this)">＋</span></div>`},
+  'core/verify.ts':{d:'<span class="a">+22</span>',body:`
+    <div class="fdhunk">@@ new file @@</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">1</span><span class="sgn">+</span>export function verify(m: Matrix): Result&lt;Matrix&gt; {</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">2</span><span class="sgn">+</span>  if (m.length === 0) return err('empty')</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">3</span><span class="sgn">+</span>  return ok(normalize(m))</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">4</span><span class="sgn">+</span>}</div>`},
+  'core/rotation.ts':{d:'<span class="a">+18</span> <span class="d">−4</span>',body:`
+    <div class="fdhunk">@@ -11,7 +11,21 @@ export function rotate(seed: Matrix)</div>
+    <div class="fdrow ctx"><span class="lo">11</span><span class="ln">11</span><span class="sgn"> </span>export function rotate(seed: Matrix) {</div>
+    <div class="fdrow del"><span class="lo">12</span><span class="ln"></span><span class="sgn">−</span>  return seed.map(x => x)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">12</span><span class="sgn">+</span>  const core = verify(seed)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">13</span><span class="sgn">+</span>  if (!core.ok) throw new RotationError(core.reason)</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">14</span><span class="sgn">+</span>  return core.value.map(x => x)</div>
+    <div class="fdrow ctx"><span class="lo">15</span><span class="ln">15</span><span class="sgn"> </span>}</div>`},
+  'docs/rotation-notes.md':{d:'<span class="a">+64</span>',artifact:true,body:`
+    <div class="fdhunk">@@ new file @@</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">1</span><span class="sgn">+</span># Rotation core — verify() rollout</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">2</span><span class="sgn">+</span></div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">3</span><span class="sgn">+</span>Generated while implementing #418.</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">4</span><span class="sgn">+</span></div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">5</span><span class="sgn">+</span>## Problem</div>
+    <div class="fdrow add"><span class="lo"></span><span class="ln">6</span><span class="sgn">+</span>Empty matrices from upstream reached \`rotate()\` and produced garbage…</div>`,
+    rendered:`<div class="artview">
+      <h1>Rotation core — verify() rollout</h1>
+      <div class="amuted">docs/rotation-notes.md · artifact produced by this session · committed to the branch</div>
+      <p>Generated while implementing <code>#418</code> to document the guard and its call-path impact.</p>
+      <h2>Problem</h2>
+      <p>Empty matrices from upstream reached <code>rotate()</code> and produced garbage rotations with no error — the corruption surfaced only downstream in the worker.</p>
+      <h2>Approach</h2>
+      <ul>
+        <li>New <code>verify()</code> guard rejecting empty / malformed matrices.</li>
+        <li>Wired into <code>rotate()</code>; throws <code>RotationError</code> on a bad core.</li>
+        <li>Three call sites updated to handle the throw; tests for both failure paths.</li>
+      </ul>
+      <h2>Follow-ups</h2>
+      <p>Guard the worker's <code>enqueue()</code> boundary too — tracked as a review comment on <code>worker/spin.ts</code>.</p>
+    </div>`},
+};
+// artifacts default to their rendered view; the toggle flips to the diff
+let CURFILE='worker/spin.ts',CURVIEW='diff';
+function fdHead(path,f){
+  const tog=f.artifact?`<span class="fview"><span class="fv ${CURVIEW==='diff'?'on':''}" onclick="setFileView('diff')">diff</span><span class="fv ${CURVIEW==='rendered'?'on':''}" onclick="setFileView('rendered')">rendered</span></span>`:'';
+  return `<div class="fdhead"><span>${path}</span><span class="cnt">${f.d}</span>${tog}
+    <span class="viewedbox" onclick="this.classList.toggle('on')" style="margin-left:16px"><span class="bx"></span>Viewed</span></div>`;
+}
+function paintFile(){const f=FILES[CURFILE];
+  document.getElementById('fdiff').innerHTML=fdHead(CURFILE,f)+(CURVIEW==='rendered'?f.rendered:f.body);}
+function setFileView(m){CURVIEW=m;paintFile()}
+function selFile(el,path){
+  el.closest('.ftree').querySelectorAll('.ftrow').forEach(x=>x.classList.remove('on'));el.classList.add('on');
+  CURFILE=path;CURVIEW=FILES[path].artifact?'rendered':'diff';paintFile();
+}
+function ftrow(path,label,d,flag,art){
+  return `<div class="ftrow ${path==='worker/spin.ts'?'on':''}" onclick="selFile(this,'${path}')">
+    ${flag?'<span class="fdot"></span>':''}<span class="fn">${label}</span>${art?'<span class="fd" style="color:var(--accent)">◆</span>':''}<span class="fd">${d}</span></div>`;
+}
+function addComment(el){
+  const row=el.closest('.fdrow');
+  if(row.nextElementSibling&&row.nextElementSibling.classList.contains('newthread'))return;
+  const box=document.createElement('div');box.className='cthread newthread';
+  box.innerHTML='<div class="creply" style="border:none"><input placeholder="leave a comment on this line… (Address with agent picks it up)" autofocus></div>';
+  row.after(box);box.querySelector('input').focus();
+}
+
+const HYB={
+  overview:()=>`<div style="padding:18px 22px 20px;max-width:880px">
+    <div style="display:flex;align-items:flex-start;gap:16px">
+      <div class="desc" style="flex:1">
+        <div class="row"><span class="k">WHAT</span>Adds a <span class="mono">verify()</span> guard on the rotation core — malformed matrices now fail fast with <span class="mono">RotationError</span> instead of silently producing garbage.</div>
+        <div class="row dim"><span class="k">WHY</span>#418 — empty matrices from upstream were reaching users as corrupted rotations with no error.</div>
+      </div>
+      <div class="orisk" style="flex:none">risk<div class="risk"><i class="on"></i><i class="on"></i><i></i><i></i></div></div>
+    </div>
+    <div class="ntab-h">WHAT THIS PR DID · 4 changes · +2,755 −58</div>
+    <div class="ntab">
+      ${nrow(1,'Added a <span class="mono">verify()</span> guard rejecting empty / malformed matrices','core/verify.ts','<span class="a">+22</span>','',diffVerify())}
+      ${nrow(2,'Wired it into <span class="mono">rotate()</span> — throws <span class="mono">RotationError</span>','core/rotation.ts','<span class="a">+18</span> <span class="d">−4</span>','',diffRotation())}
+      ${nrow(3,'Updated 3 call sites to handle the throw','ui/… · api/… · worker/…','<span class="a">+41</span> <span class="d">−18</span>','<span class="blk">● 1 review</span>',diffRotation())}
+      ${nrow(4,'Added tests for the empty-input + malformed paths','test/rotation.test.ts','<span class="a">+40</span>','<span class="adv">● 1 review</span>',diffVerify())}
+    </div>
+    <div class="honest" style="text-align:left;margin-top:14px">this is posted as the PR description on push · rows expand to their diff, or browse everything in Files</div>
+  </div>`,
+  review:()=>`<div class="inbox" style="padding-top:14px">${findingsBody()}</div>`,
+  files:()=>`<div style="display:flex;flex-direction:column;height:100%">
+    <div class="ftoolbar">
+      <span>3 / 11 viewed</span>
+      <span class="rbatch"><span><span class="cc">2 comments</span> pending</span>
+        <button class="addr-btn" onclick="alert('dispatches the 2 comments to the agent to address')">Address with agent →</button>
+        <button class="subm">Submit review</button></span>
+    </div>
+    <div class="dfiles" style="flex:1;min-height:0">
+      <div class="ftree">
+        <div class="ffilter"><input placeholder="filter files…"></div>
+        <div class="ftg">▾ core</div>
+        ${ftrow('core/verify.ts','verify.ts','<span class="a">+22</span>')}
+        ${ftrow('core/rotation.ts','rotation.ts','<span class="a">+18</span> <span class="d">−4</span>')}
+        <div class="ftg">▾ worker</div>
+        ${ftrow('worker/spin.ts','spin.ts','<span class="a">+20</span> <span class="d">−8</span>',true)}
+        <div class="ftg">▾ docs</div>
+        ${ftrow('docs/rotation-notes.md','rotation-notes.md','<span class="a">+64</span>',false,true)}
+        <div class="ftg">▾ ui · api · test · migrations</div>
+        <div class="ftrow" style="color:var(--ink-faint)"><span class="fn">6 more files…</span></div>
+      </div>
+      <div class="fdiff" id="fdiff">${(()=>{CURFILE=q().get('file')&&FILES[q().get('file')]?q().get('file'):'worker/spin.ts';CURVIEW=FILES[CURFILE].artifact?'rendered':'diff';const f=FILES[CURFILE];return fdHead(CURFILE,f)+(CURVIEW==='rendered'?f.rendered:f.body)})()}</div>
+    </div>
+  </div>`,
+};
+function renderHybrid(){
+  const tab=q().get('tab')||'overview';
+  const on=t=>t===tab?'on':'';
+  return `
+  <div class="subtabs">
+    <span class="s ${on('overview')}" onclick="hybSub(this,'overview')">Overview</span>
+    <span class="s ${on('review')}" onclick="hybSub(this,'review')">Code Review <span class="n" style="color:var(--block)">3</span></span>
+    <span class="s ${on('files')}" onclick="hybSub(this,'files')">Files <span class="n">11</span></span>
+  </div>
+  <div style="position:absolute;left:0;right:0;top:39px;bottom:57px;overflow:auto" class="scroll">
+    <div id="hbody" style="height:100%">${HYB[tab]()}</div>
+  </div>
+  <div class="frontier">
+    <span class="lead"><b>1 blocking</b> open · merge gated until resolved</span>
+    <button class="btn disabled">Merge ⌵</button>
+  </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
