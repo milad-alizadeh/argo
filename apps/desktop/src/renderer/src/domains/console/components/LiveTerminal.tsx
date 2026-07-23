@@ -1,5 +1,6 @@
 import '@xterm/xterm/css/xterm.css'
 import { FitAddon } from '@xterm/addon-fit'
+import { WebglAddon } from '@xterm/addon-webgl'
 import { Terminal } from '@xterm/xterm'
 import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
@@ -80,6 +81,20 @@ export function LiveTerminal({ id, className }: LiveTerminalProps): React.JSX.El
     term.loadAddon(fit)
     term.open(host)
     fit.fit()
+
+    // GPU glyph rendering (the Warp/Ghostty trick) instead of xterm's default DOM renderer, so a
+    // terminal blasting output stays smooth. `term.open` must run first — WebGL binds to the live
+    // canvas. If the GPU context is lost (driver hiccup, too many live contexts once there are
+    // many panes) we dispose the addon; xterm silently reverts to the DOM renderer, so the shell
+    // keeps working. Construction is guarded because xterm 6's renderer internals are newer than
+    // this addon's stable line — a throw must degrade to DOM, never break the pane.
+    try {
+      const webgl = new WebglAddon()
+      webgl.onContextLoss(() => webgl.dispose())
+      term.loadAddon(webgl)
+    } catch {
+      // WebGL unavailable — xterm's DOM renderer stays in place.
+    }
 
     const bridge = window.cockpit
     if (bridge?.openTerminal) {
