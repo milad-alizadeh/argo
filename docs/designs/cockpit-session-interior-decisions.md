@@ -9,6 +9,23 @@ C3c Preview · C4 Terminal dock · D Concierge (locked, out of scope) · cross-s
 
 ---
 
+## Cross-surface conventions (HOIST TO THE MAP #157, not just #186)
+
+These emerged while grilling the session interior but are **not** session-specific — they govern every
+surface. At #186 close, gist each of these onto the map's Decisions-so-far (flagged cross-surface) so
+the next surface grill inherits them, and keep the detail in the ticket sections below.
+
+- **C2.2 — Two tabs `Activity · Delivery`** (Outcomes cut). Reverses C2.1.
+- **C3b.2 — Delivery = Hybrid review surface** (Overview · Code Review · Files); review-is-the-bottleneck,
+  raw diff is the fallback; one surface across the pre-PR / PR boundary; lifecycle ribbon = state readout
+  (not nav); findings reconcile (no pile-up); inline comments → Address-with-agent. Prototype:
+  `docs/designs/cockpit-delivery-review-prototype.html`.
+- **C3b.3 — Git control = review actions, not a git GUI** (mechanical ops = cockpit; semantic = agent; no
+  user-facing staging index; terminal = escape hatch).
+- **Artifact = render toggle in Files** (committed file, `diff | rendered` lens; no Outcomes storage). Part of C2.2.
+
+---
+
 ## Section B — Roster rail
 
 ### B1 — Signal hierarchy: attention dominant (brightness), liveness always legible
