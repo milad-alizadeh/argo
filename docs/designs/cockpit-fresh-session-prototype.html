@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=1440, initial-scale=1">
+<title>Argo — Fresh session (prototype)</title>
+<!--
+  THROWAWAY PROTOTYPE for wayfinder #157 / ticket #186 — the fresh-session surface.
+  Spawn is zero-config (one primitive: + New session = blank session @ project root,
+  CLI defaults, prompt-ready; identity fills in post-hoc when /implement relocates
+  the cwd into a worktree via the existing EnterWorktree harness).
+  This file designs what that blank, prompt-ready interior looks like.
+  ?variant=A (dock-is-home) | B (center-stage cold-start).  Penumbra language, approximate.
+-->
+<style>
+:root{
+  --base:#0A0B0D;--ink:#E7E3DA;--ink-dim:#9A968C;--ink-faint:#615E58;--ink-ghost:#3C3A36;
+  --accent:#C8A968;--accent-deep:#8A7038;--run:#6FA890;--need:#C8A968;--block:#B5675E;--done:#5B6673;
+  --warm:200,169,104;
+  --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+  --sans:"Inter","Helvetica Neue",-apple-system,system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#050506;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;align-items:flex-start}
+.label{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);font-weight:500}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+#room{position:relative;width:1440px;height:900px;overflow:hidden;
+  background:
+    radial-gradient(1150px 1000px at 1120px 440px, rgba(var(--warm),0.13), rgba(var(--warm),0.04) 32%, transparent 60%),
+    radial-gradient(1400px 1000px at 860px 460px, rgba(var(--warm),0.045), transparent 55%),
+    radial-gradient(1600px 1200px at 720px 40px, #101218, transparent 70%),
+    linear-gradient(160deg,#0B0C0F,#08090B 60%,#070709);}
+#room::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:radial-gradient(1150px 950px at 1120px 440px, transparent 46%, rgba(0,0,0,0.32) 100%);mix-blend-mode:multiply}
+
+/* brow */
+#brow{position:absolute;top:26px;left:34px;right:34px;display:flex;align-items:center;justify-content:space-between;z-index:6}
+#mark{display:flex;align-items:baseline;gap:12px}
+#mark .glyph{font-weight:200;font-size:20px;letter-spacing:.34em;color:var(--ink);text-shadow:0 0 22px rgba(var(--warm),0.26)}
+#mark .proj{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-dim)}
+#rooms{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04)}
+#rooms .rm{display:flex;align-items:center;gap:9px;padding:7px 15px;border-radius:8px;font-size:11.5px;color:var(--ink-dim)}
+#rooms .rm.on{color:#F1ECE1;background:linear-gradient(180deg, rgba(46,44,40,0.65), rgba(24,22,20,0.65));box-shadow:inset 0 1px 0 rgba(255,246,228,0.1)}
+
+/* rail */
+#rail{position:absolute;top:82px;left:34px;width:264px;bottom:34px;z-index:5;display:flex;flex-direction:column;gap:10px}
+#rail>.label{margin:6px 0 1px 4px}
+#newrow{display:flex;align-items:center;gap:10px;padding:11px 15px;border-radius:12px;color:var(--ink-faint);
+  border:1px dashed rgba(255,255,255,0.08);font-size:12.5px}
+#newrow .plus{font-size:15px}#newrow .kbd{margin-left:auto;font-family:var(--mono);font-size:9px;opacity:.7}
+.plane{position:relative;border-radius:14px;padding:12px 15px;overflow:hidden;
+  background:linear-gradient(180deg, rgba(30,32,38,0.42), rgba(16,17,21,0.5));
+  box-shadow:inset 0 1px 0 rgba(255,246,228,0.05), 0 20px 34px -22px rgba(0,0,0,0.7)}
+.plane .top{display:flex;align-items:center;gap:9px}
+.plane .name{flex:1;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plane .word{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+.plane .meta{margin-top:7px;padding-left:15px;font-size:10px;color:var(--ink-dim);font-family:var(--mono)}
+.plane .branch{color:var(--ink-faint)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--done);flex:none}
+.dot.run{background:var(--run);box-shadow:0 0 10px 1px rgba(111,168,144,0.6)}
+.dot.need{background:var(--need);box-shadow:0 0 12px 2px rgba(200,169,104,0.7)}
+.dot.idle{background:var(--ink-faint)}.dot.fresh{background:var(--accent);box-shadow:0 0 11px 2px rgba(var(--warm),0.6)}
+.plane.recede{opacity:.62}
+.plane.active{background:linear-gradient(180deg, rgba(46,44,40,0.6), rgba(24,22,20,0.6));
+  box-shadow:inset 0 1px 0 rgba(255,246,228,0.12), inset 0 26px 46px -30px rgba(var(--warm),0.30), 0 0 46px -6px rgba(var(--warm),0.14)}
+.plane.active .name{color:#F1ECE1;text-shadow:0 0 20px rgba(var(--warm),0.25)}
+#arch{margin-top:auto;padding:10px 15px;font-size:11px;color:var(--ink-faint)}
+
+/* panel */
+#panel{position:absolute;top:82px;left:322px;right:34px;bottom:34px;z-index:4;display:flex;flex-direction:column;
+  border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg, rgba(24,25,30,0.4), rgba(12,13,16,0.52));
+  backdrop-filter:blur(14px) saturate(1.05);
+  box-shadow:inset 0 1px 0 rgba(255,246,228,0.06), 0 40px 90px -40px rgba(0,0,0,0.8)}
+
+/* header */
+#shead{padding:22px 26px 16px;flex:none;border-bottom:1px solid rgba(255,255,255,0.05)}
+#shead .trow{display:flex;align-items:center;gap:16px}
+#ring{width:44px;height:44px;border-radius:50%;flex:none;display:grid;place-items:center;
+  border:1.5px solid rgba(255,255,255,0.08);position:relative}
+#ring .n{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
+#shead .title{font-weight:200;font-size:23px;letter-spacing:.01em;color:#E9E3D6}
+#shead .title .mut{color:var(--ink-faint)}
+#shead .sub{margin-top:7px;display:flex;gap:13px;align-items:center;font-family:var(--mono);font-size:10.5px;color:var(--ink-dim)}
+#shead .sub .b{color:var(--ink-ghost)}
+#tabs{margin-top:16px;display:flex;gap:4px}
+#tabs .t{font-size:11.5px;letter-spacing:.02em;color:var(--ink-dim);padding:6px 14px;border-radius:8px}
+#tabs .t.on{color:#F1ECE1;background:rgba(255,255,255,0.05)}
+#tabs .t .badge{margin-left:7px;font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
+
+/* canvas */
+#canvas{flex:1;min-height:0;position:relative;display:flex;flex-direction:column}
+
+/* variant A invitation */
+.invite{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:13px;text-align:center;padding:40px 40px 22px}
+.invite .chips{margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.invite .sugg{font-size:11px;color:var(--ink-dim);padding:6px 12px;border-radius:8px;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)}
+.invite .sugg .m{font-family:var(--mono);color:var(--ink-faint)}
+.invite .halo{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 40%, rgba(var(--warm),0.16), transparent 70%);
+  border:1px solid rgba(var(--warm),0.14);color:var(--accent);font-weight:200;font-size:24px}
+.invite h2{font-weight:200;font-size:19px;color:#E5DFD2;letter-spacing:.01em}
+.invite p{font-size:12.5px;color:var(--ink-faint);max-width:420px;line-height:1.6}
+.invite p .k{font-family:var(--mono);color:var(--ink-dim);background:rgba(255,255,255,0.04);padding:1px 6px;border-radius:5px}
+.invite .link{margin-top:2px;font-size:11.5px;color:var(--accent);opacity:.85}
+
+/* dock (input home) */
+#dock{margin:8px 12px 12px;border-radius:14px;flex:none;
+  background:linear-gradient(180deg, rgba(18,19,23,0.7), rgba(10,11,14,0.8));
+  box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
+#dock .dhead{display:flex;align-items:center;gap:10px;padding:9px 16px 6px;font-size:11px;color:var(--ink-faint)}
+#dock .dhead .live{width:6px;height:6px;border-radius:50%;background:var(--ink-faint)}
+#dock .dhead .src{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
+#dock .prompt{display:flex;align-items:center;gap:10px;padding:11px 16px 13px;border-top:1px solid rgba(255,255,255,0.05)}
+#dock .prompt .car{color:var(--accent);font-family:var(--mono);font-size:14px}
+#dock .prompt .ph{flex:1;font-family:var(--mono);font-size:12.5px;color:var(--ink-ghost)}
+#dock .prompt .send{font-family:var(--mono);font-size:9px;color:var(--ink-ghost)}
+#dock .prompt .fcur{width:1.5px;height:15px;background:var(--accent);animation:blink 1.1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* variant B center-stage */
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:40px}
+.stage .halo{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 40%, rgba(var(--warm),0.18), transparent 70%);
+  border:1px solid rgba(var(--warm),0.16);color:var(--accent);font-weight:200;font-size:22px}
+.stage h2{font-weight:200;font-size:21px;color:#E9E3D6}
+.hero{width:min(560px,86%);border-radius:15px;
+  background:linear-gradient(180deg, rgba(22,23,28,0.85), rgba(12,13,16,0.9));
+  border:1px solid rgba(var(--warm),0.16);box-shadow:0 30px 70px -30px rgba(0,0,0,0.7), inset 0 30px 50px -46px rgba(var(--warm),0.2)}
+.hero .prompt{display:flex;align-items:center;gap:11px;padding:15px 18px}
+.hero .prompt .car{color:var(--accent);font-family:var(--mono);font-size:15px}
+.hero .prompt .ph{flex:1;font-family:var(--mono);font-size:13.5px;color:var(--ink-ghost)}
+.hero .prompt .fcur{width:1.5px;height:16px;background:var(--accent);animation:blink 1.1s step-end infinite}
+.hero .row{display:flex;gap:8px;padding:0 16px 15px;flex-wrap:wrap}
+.hero .sugg{font-size:11px;color:var(--ink-dim);padding:6px 12px;border-radius:8px;
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)}
+.hero .sugg .m{font-family:var(--mono);color:var(--ink-faint)}
+.stage .hint{font-size:11.5px;color:var(--ink-faint)}
+.stage .hint .k{font-family:var(--mono);color:var(--ink-dim);background:rgba(255,255,255,0.04);padding:1px 6px;border-radius:5px}
+.ghostdock{margin:8px 12px 12px;border-radius:14px;flex:none;padding:12px 16px;
+  border:1px dashed rgba(255,255,255,0.06);font-size:10.5px;color:var(--ink-ghost);font-family:var(--mono)}
+
+/* switcher */
+#sw{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:60;
+  padding:6px;border-radius:11px;background:rgba(20,21,24,0.92);border:1px solid rgba(255,255,255,0.08)}
+#sw a{font-size:11px;font-family:var(--mono);color:var(--ink-dim);text-decoration:none;padding:6px 12px;border-radius:7px}
+#sw a.on{background:rgba(var(--warm),0.16);color:var(--accent)}
+#sw .cap{font-size:10px;color:var(--ink-faint);padding:6px 8px;align-self:center}
+</style></head>
+<body>
+<div id="room">
+  <div id="brow">
+    <div id="mark"><span class="glyph">ARGO</span><span class="proj">Argo · main</span></div>
+    <div id="rooms"><span class="rm on">Sessions</span><span class="rm">Work</span></div>
+  </div>
+
+  <div id="rail">
+    <div class="label">Sessions</div>
+    <div id="newrow"><span class="plus">+</span> New session <span class="kbd">⌘N</span></div>
+    <div class="plane active"><div class="top"><span class="dot fresh"></span><span class="name">New session</span><span class="word">ready</span></div><div class="meta">claude · <span class="branch">root</span></div></div>
+    <div class="plane recede"><div class="top"><span class="dot run"></span><span class="name">Delivery review surface</span></div><div class="meta">claude · <span class="branch">feat/186</span></div></div>
+    <div class="plane recede"><div class="top"><span class="dot idle"></span><span class="name">Token audit sweep</span></div><div class="meta">claude · <span class="branch">chore/tokens</span></div></div>
+    <div id="arch">⚙ Archived (7)</div>
+  </div>
+
+  <div id="panel">
+    <div id="shead">
+      <div class="trow">
+        <div id="ring"><span class="n">—</span></div>
+        <div>
+          <div class="title">New session <span class="mut"></span></div>
+          <div class="sub"><span>claude</span><span class="b">·</span><span>root</span><span class="b">·</span><span>no branch yet</span><span class="b">·</span><span>ctx —</span></div>
+        </div>
+      </div>
+      <div id="tabs"><span class="t on">Activity</span><span class="t">Delivery <span class="badge">—</span></span></div>
+    </div>
+    <div id="canvas"><!-- filled by JS --></div>
+  </div>
+</div>
+
+<script>
+const V = new URLSearchParams(location.search).get('variant') || 'A';
+const canvas = document.getElementById('canvas');
+
+if(V==='A'){
+  canvas.innerHTML = `
+    <div class="invite">
+      <div class="halo">✦</div>
+      <h2>Ready when you are</h2>
+      <p>This session is live at the project root. Type below to begin, or start from a ticket. A worktree is created only when work starts.</p>
+      <div class="chips">
+        <span class="sugg"><span class="m">/implement</span> 187 · Spawn UX</span>
+        <span class="sugg"><span class="m">/plan</span> a change</span>
+        <span class="sugg">Browse Work ↗</span>
+      </div>
+    </div>
+    <div id="dock">
+      <div class="dhead"><span class="live"></span> claude · idle <span class="src">pty · zsh · ~/Developer/argo</span></div>
+      <div class="prompt"><span class="car">›</span><span class="ph">type to begin&nbsp;</span><span class="fcur"></span><span class="send" style="margin-left:auto">⌘↩ send</span></div>
+    </div>`;
+} else {
+  canvas.innerHTML = `
+    <div class="stage">
+      <div class="halo">✦</div>
+      <h2>What should we work on?</h2>
+      <div class="hero">
+        <div class="prompt"><span class="car">›</span><span class="ph">describe a task, or /implement a ticket&nbsp;</span><span class="fcur"></span></div>
+        <div class="row">
+          <span class="sugg"><span class="m">/implement</span> 187 · Spawn UX</span>
+          <span class="sugg"><span class="m">/plan</span> a change</span>
+          <span class="sugg">Just ask a question</span>
+        </div>
+      </div>
+      <div class="hint">Runs at the project root · a worktree is created when work starts · <span class="k">⌘↩</span> to send</div>
+    </div>
+    <div class="ghostdock">▸ the composer moves to a docked prompt here once the first turn begins</div>`;
+}
+
+const sw=document.createElement('div');sw.id='sw';
+const caps={A:'dock is home (input never moves)',B:'center-stage cold-start (relocates on send)'};
+sw.innerHTML=`<span class="cap">variant</span>`+['A','B'].map(v=>`<a href="?variant=${v}" class="${v===V?'on':''}">${v}</a>`).join('')+`<span class="cap">${caps[V]}</span>`;
+document.body.appendChild(sw);
+</script>
+</body></html>
