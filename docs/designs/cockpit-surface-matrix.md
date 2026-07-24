@@ -65,6 +65,11 @@ state on its Work Item.
   back to Roster + orb; external session → CONVENTION rows (Plan, Outcomes, agent
   Review verdict) absent, their sections hide; no code host → lifecycle ends at
   Commit. Surfaces hide whole — no half-filled skeletons.
+- **Hide-whole governs the *tier* axis only.** A fact that went **stale** (the provider
+  was reachable and no longer is) stays rendered at full fidelity; staleness is a
+  separate axis carried by the connection, not the fact. Mid-flight failure policy —
+  staleness, the connection chip, write failures, missing folder — is owned by
+  `cockpit-failure-states-spec.md` (#173).
 
 ## Open
 

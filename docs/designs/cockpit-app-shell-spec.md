@@ -86,6 +86,11 @@ Per the map's cross-cutting requirement, across the honesty tiers:
   enrich the roster and Concierge caption. Absent, the shell degrades down, hiding whole
   rather than faking a word.
 
+**Failure is a different axis, specced elsewhere.** The tiers above cover *never established*.
+What happens when a fact **was** established and goes bad mid-flight — stale connections, the
+brow's connection chip, rejected writes, a vanished project folder — is owned by
+`cockpit-failure-states-spec.md` (#173). The chip's placement and rendering land via #201.
+
 ## Follow-up
 
 - **Reconcile `cockpit-session-interior-prototype.html`** — its room tabs currently read

@@ -83,6 +83,9 @@ this surface drove it; it belongs in the shell spec.
 - **Unsupported / binary / too-large file** — `This file can't be shown here` with size/type and
   `Open in VS Code ↗`.
 - **No folder connected** — the Code room defers to the shell's empty-shell seam → onboarding (#165).
+- **Folder recorded but missing** — not a Code-room state: the whole project is disabled with one
+  error (Relocate / Remove). See `cockpit-failure-states-spec.md` §6 (#173), which also owns git-op
+  failure output — one-line summary at the control, real stderr in the scratch terminal.
 
 ## Spun out of #183 (not decided here)
 
