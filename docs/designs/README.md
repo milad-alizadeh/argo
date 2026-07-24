@@ -27,11 +27,23 @@ the code knowledge graph.
 
 ## Current set
 
+Prototypes are **standalone** — each opens on its own; #178 stitches them into one switcher as
+the final step of the map. The domain model is **not** here: it lives in `CONTEXT.md` at the repo
+root, with ADRs 0013–0018 under `docs/adr/`.
+
 | File | Screen | Notes |
 |---|---|---|
 | `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Colour/mood/effects only — layout & density deferred |
-| `cockpit-sessions-room-prototype.html` | Sessions room in Penumbra (wayfinder #159) | Proves the foundation holds on a real screen: project strip · roster · session card + Outcomes · Concierge as a fixed global bottom strip (cheap ring-orb + caption + conversation toggle). Prototype fidelity — not a settled build contract. Panel structure is a sketch, being re-derived under #157 |
-| `cockpit-domain-model.md` | The cockpit's domain model | Three-entity model (Actor · Agent · Run) and the two-port adapter architecture the surfaces are derived from; see ADRs 0013–0016 under `docs/adr/` |
+| `cockpit-session-interior-prototype.html` | Session interior (wayfinder #161 / #186) | The settled session card: master–detail Activity and Delivery, folded turn spine, expandable Dock. Absorbs the delivery-review and fresh-session studies |
+| `cockpit-session-interior-decisions.md` | Session-interior decision log | The grill behind the prototype above — roster rows, dot-carries-state, zero-state, panel natures |
+| `cockpit-work-room-prototype.html` | Work room interior (wayfinder #185, from #160) | List rail (Next-up hero over a hierarchy) + two-pane ticket detail. Generic node tree — any node opens in detail identically |
+| `cockpit-code-room-prototype.html` | Code room (wayfinder #183) | The light-IDE surfaces: file explorer, editor, scratch terminal, git chrome. Third top-level room, `Code ⌘3` |
+| `cockpit-delivery-review-prototype.html` | Delivery review study | Superseded as a standalone surface — absorbed into the session interior above; kept for its review-pane lineage |
+| `cockpit-fresh-session-prototype.html` | Spawn UX / fresh session (wayfinder #186) | The pre-first-turn session state |
+| `cockpit-session-moodboard.html` | Look exploration | Pre-#158 mood exploration; superseded by the Penumbra reference |
+| `cockpit-app-shell-spec.md` | App shell (wayfinder #172) | Written spec, not a pixel study: canonical chrome, room tabs, the ⌘K/keyboard model, and the shell's connective tissue |
+| `cockpit-code-room-spec.md` | Code room spec (wayfinder #183) | The written spec derived from the Code-room prototype |
+| `cockpit-failure-states-spec.md` | Failure states (wayfinder #173) | Cross-cutting policy for when a fact goes bad mid-flight: staleness as its own axis, the connection chip, pessimistic writes, real-output-not-paraphrase |
 | `cockpit-surface-matrix.md` | The surface × state matrix | Enumerates every cockpit surface and the states it must render — the testable spec the prototypes are checked against |
 
 ## Lineage & decisions
