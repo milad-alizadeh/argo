@@ -195,8 +195,14 @@ function thinkingLeaks(trials: Trial[]): string {
   return `⚠️ Thinking output appeared on ${leaked.length} trials (${byModel}). Non-thinking mode did not fully hold, so those rows measure a thinking model — treat them as suspect given arXiv 2606.09662's finding that thinking degrades exactly these constraint classes.`
 }
 
-const path = Bun.argv[2] ?? 'results.json'
-const { corpus, trials } = (await Bun.file(path).json()) as Results
+// Accepts several result files so cross-model tables render in one pass. Each sweep writes its
+// own file (models are run separately — local ones contend for the GPU), but every comparison
+// question is across models, so stitching them here beats eyeballing separate reports.
+const paths = Bun.argv.slice(2)
+if (paths.length === 0) paths.push('results.json')
+const loaded = await Promise.all(paths.map(async (p) => (await Bun.file(p).json()) as Results))
+const corpus = Math.max(...loaded.map((r) => r.corpus))
+const trials = loaded.flatMap((r) => r.trials)
 const ok = trials.filter((t) => !t.error)
 const errs = trials.filter((t) => t.error)
 

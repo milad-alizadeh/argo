@@ -14,7 +14,7 @@
 
 import { type Cap, systemPrompt, userPrompt } from './contract'
 
-export type ModelId = 'haiku' | 'qwen3.5-4b' | 'gemma4-e4b' | 'qwen3.5-9b'
+export type ModelId = 'haiku' | 'sonnet' | 'qwen3.5-4b' | 'gemma4-e4b' | 'qwen3.5-9b'
 
 export type ModelSpec = {
   readonly id: ModelId
@@ -26,6 +26,8 @@ export type ModelSpec = {
    * and a hardcoded id silently skips the model instead of failing loudly.
    */
   readonly key?: string
+  /** `--model` value for the claude-cli transport; unused by lmstudio. */
+  readonly cliModel?: string
   /** The card's recommended sampling temperature — the non-zero arm of the temp dial. */
   readonly recommendedTemp?: number
   /**
@@ -46,6 +48,13 @@ export const MODELS: Record<ModelId, ModelSpec> = {
     id: 'haiku',
     label: 'Haiku 4.5 (subscription CLI)',
     transport: 'claude-cli',
+    cliModel: 'claude-haiku-4-5',
+  },
+  sonnet: {
+    id: 'sonnet',
+    label: 'Sonnet 5 (subscription CLI)',
+    transport: 'claude-cli',
+    cliModel: 'claude-sonnet-5',
   },
   'qwen3.5-4b': {
     id: 'qwen3.5-4b',
@@ -190,11 +199,18 @@ async function viaLmStudio(
 }
 
 /**
- * Subscription Haiku via the CLI, stripped per #193's recipe. Run from a directory with no
+ * Subscription Claude via the CLI, stripped per #193's recipe. Run from a directory with no
  * CLAUDE.md so the repo's own instructions don't enter the prompt. No temperature flag exists,
- * so Haiku has only one temp arm — a real gap in the temp dial, reported rather than papered over.
+ * so CLI models have only one temp arm — a real gap in the temp dial, reported rather than
+ * papered over.
+ *
+ * Timing caveat for cross-model comparison: this pays #193's measured **agent-loop tax** (~2s
+ * of full-turn no flag removes) and a fresh process per call, so `ms` here is not the model's
+ * latency. It is comparable *between* CLI models — same tax on both — and not comparable to the
+ * lmstudio arms or to a bare-API deployment.
  */
 async function viaClaudeCli(
+  spec: ModelSpec,
   cap: Cap,
   source: string,
   extraTurns: readonly { role: 'assistant' | 'user'; content: string }[] = [],
@@ -204,13 +220,22 @@ async function viaClaudeCli(
     extraTurns.length === 0
       ? userPrompt(source)
       : `${userPrompt(source)}\n\nYour previous attempt: ${extraTurns[0]?.content}\n\n${extraTurns[1]?.content}`
+  const cliModel = spec.cliModel
+  if (!cliModel) {
+    return {
+      line: '',
+      ms: 0,
+      thoughtLeaked: false,
+      error: `${spec.label}: claude-cli transport requires cliModel`,
+    }
+  }
   try {
     const proc = Bun.spawn(
       [
         'claude',
         '-p',
         '--model',
-        'claude-haiku-4-5',
+        cliModel,
         '--strict-mcp-config',
         '--disable-slash-commands',
         '--setting-sources',
@@ -249,7 +274,7 @@ export const reshape = (
 ): Promise<Reshaped> =>
   spec.transport === 'lmstudio'
     ? viaLmStudio(spec, cap, source, temperature, extraTurns)
-    : viaClaudeCli(cap, source, extraTurns)
+    : viaClaudeCli(spec, cap, source, extraTurns)
 
 /** Which LM Studio model keys are actually loadable right now. */
 export async function availableLocalKeys(): Promise<string[]> {
