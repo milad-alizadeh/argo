@@ -36,6 +36,44 @@ in the repo equally.
   it orchestrates; UI separate from logic separate from data access.
 - If you can't name what a file does in one sentence without "and", split it.
 
+## Entry points dispatch, they don't decide
+
+An entry point — an HTTP route, an IPC handler, a CLI command, an event listener, a
+button's `onClick` — parses its input, calls ONE named unit that does the work, and
+maps the result to a response. Nothing else.
+
+- **Forbidden:** business rules, branching on domain state, or a query inside a
+  handler body. Those belong in a unit you can call from a test without constructing
+  a request.
+- Test: could you exercise this behavior without the transport? If reaching it needs
+  a fake request, a mock event, or a rendered component, the logic is in the wrong place.
+- A handler that grows past a screen is holding something that belongs elsewhere.
+
+## Compute where the data lives
+
+Work runs in the tier that owns the authoritative data; every other tier transports
+state rather than authoring it.
+
+- **Forbidden:** the same business rule implemented in two tiers (client re-deriving
+  what the server already shaped, a server re-checking a constraint the database
+  enforces).
+- **Forbidden:** a round-trip that exists only to format something.
+- Move outward — to the client, the edge, the device — only for a stated reason:
+  latency, privacy, or offline autonomy. Name the reason where you opt out.
+
+## Ground external calls, don't recall them
+
+Every call into an API you don't own — a library, a service, a CLI, a schema — is
+written against a **source consulted in this session**, never from memory. Model
+recall of an API is a snapshot that was already stale when training ended, and the
+failure mode is a confident, plausible, non-existent signature.
+
+- Before writing the call: read the installed version's types or source in
+  `node_modules`, grep an existing call site in this repo, fetch the current docs, or
+  query the documentation MCP. Any one of those. Zero is a guess.
+- The version that matters is **the one in the lockfile**, not the latest release.
+- If a call can't be grounded, say so in the report instead of shipping it silently.
+
 ## Simple, and only what's needed (KISS + YAGNI)
 
 - Prefer the boring, obvious solution: the fewest moving parts that solve the
@@ -48,6 +86,8 @@ in the repo equally.
 1. Is any value defined in more than one place?
 2. Does any caller name a concrete backend / model / host?
 3. Would adding the *next* variant force edits to existing files?
-4. Can each file's job be said in one sentence?
+4. Does any entry point decide something instead of dispatching?
+5. Is any external call written from recall rather than a source you opened?
+6. Can each file's job be said in one sentence?
 
-Any "yes" to 1–3, or "no" to 4 → fix it before reporting done.
+Any "yes" to 1–5, or "no" to 6 → fix it before reporting done.

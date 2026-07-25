@@ -30,14 +30,27 @@ The Tier-1+2 set is:
 | `comments.md` | comment discipline | always |
 | `typescript-style.md` | switch/ternary/naming/aliases | project has `.ts`/`.tsx` |
 | `dependencies.md` | lockfile + workspace hygiene | project has a package manager |
-| `file-structure.md` | domain folders, barrels, boundaries | always (TS/JS projects) |
+| `file-structure.md` | domain folders, barrels, boundaries, hoisting tiers | always (TS/JS projects) |
+| `testing.md` | behavior-not-implementation, no self-mocks, query ladder | project has a test runner |
 | `ui-components.md` | atomic design, container/View, icons | project has a UI component tree |
 | `design-system.md` | tokens-only, no magic numbers | project uses Tailwind v4 tokens |
 | `design-studies.md` | HTML design studies → `docs/designs/`, committed | project does UI design/prototyping |
 
-`testing.md`, `documentation-*.md`, and `database.md` are **not** in this set — bring
-them later, individually, once the infra they reference (test runner, docs site, DB)
-actually exists.
+`documentation-*.md` and `database.md` are **not** in this set — bring them later,
+individually, once the infra they reference (docs site, DB) actually exists.
+
+`testing.md` installs only when a runner exists. No runner in `package.json` and no
+test files? Defer it and say so — a testing rule in a repo with no tests is an
+instruction the agent can't act on. Its rules are written runner-agnostically
+(Vitest, Jest, Playwright, Bun) so detection only has to name the tool, not reshape
+the prose.
+
+These rules pair with the **`setup-quality-gates`** skill, which encodes the
+mechanically checkable subset (complexity, function length, parameter count, escape
+hatches, duplication) into whatever linter the repo runs, as errors. Prose for
+judgment, lint for arithmetic — and they must not contradict each other, so if the
+gates skill lands different numbers than a rule states, the rule text follows the
+config.
 
 ## 2. Detect the project's structure
 
@@ -81,6 +94,9 @@ Detect the values (step 2); don't copy the examples. The full token set:
 | `{{PKG_MANAGER}}` | package manager name | `bun` |
 | `{{PKG_ADD}}` / `{{PKG_REMOVE}}` | add/remove commands | `bun add` / `bun remove` |
 | `{{COMPONENT_KIT}}` | how this repo's configured kit supplies primitives | `This is a configured shadcn project (\`components.json\`) — \`bunx shadcn@latest add <name>\` is where a badge, dialog or select comes from.` |
+| `{{TEST_GLOB}}` | test-file glob for `testing.md`'s `paths:` | `**/*.{test,spec}.{ts,tsx}` (add `e2e/**` if a separate suite exists) |
+| `{{TEST_RUNNER}}` | the unit runner, named | `Vitest` |
+| `{{E2E_RUNNER}}` | the integration/E2E runner, or how to say there isn't one | `Playwright` (none yet: `no E2E suite yet — the critical-path rule below is the reason to add one`) |
 
 `{{COMPONENT_KIT}}` is a short block, not a bare value: name the kit, its add-command, its
 config file, and its icon-swap convention (e.g. shadcn: `bunx shadcn@latest add <name>`,
@@ -126,6 +142,7 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
   `typescript-style.md`, `dependencies.md`
+- **Tests** — also `testing.md`
 - **UI work** — also `ui-components.md`, `design-system.md`, `design-studies.md`
 ```
 

@@ -10,6 +10,24 @@ The end of an implement run: the diff is written and already reviewed in a fresh
 This turns it into a PR. Do not run it before the review — and never merge; merging stays
 with the human.
 
+## Definition of done
+
+Done is not "the code works" — it's this checklist passing. Run it before step 1, and
+report any line you cannot tick rather than shipping past it:
+
+- Every acceptance criterion on the ticket is satisfied, checked against the ticket text
+  rather than from memory of it.
+- Tests cover the behavior that changed, and the whole suite passes — not just the new file.
+- The repo's gates pass locally: types, lint, quality gates, boundaries, whatever the
+  manifest defines.
+- UI work has been verified visually against the spec, not only unit-tested.
+- The diff has been reviewed in a fresh context, and each finding is fixed or carried into
+  the PR body with its reason.
+- No debug leftovers: stray logging, commented-out code, a `.only` on a test, a TODO with
+  no ticket behind it.
+- Anything a future reader can't infer from the diff is written down — an ADR for a
+  decision, a rule update if the change moves a house standard.
+
 1. Confirm you are on the ticket branch, not the default branch
    (`git rev-parse --abbrev-ref HEAD` ≠ `git remote show origin` / the repo's default). If the
    work is on the default branch, stop and report it — it should have been built on a branch.

@@ -46,9 +46,36 @@ kind-buckets, and deleting a feature leaves orphans in each. A feature's schema,
 types, and validation live INSIDE that feature's folder (`checkout/schema.ts`, not
 `schemas/checkout.ts`).
 
-The one sanctioned exception is a single small `lib/` (or `shared/`) folder per
-module root for genuinely cross-cutting helpers used by 3+ sibling domains. If a
-"shared" file has one consumer domain, it belongs in that domain's folder.
+The one sanctioned exception is the shared tier described next.
+
+### Shared code is earned, not chosen — hoist on the third caller
+
+A helper is born **next to its only caller**, inside that domain's folder. There is no
+"where does this go?" decision to make on the way in. It moves up only when callers
+force it:
+
+| Callers | Where it lives |
+|---|---|
+| 1 | the caller's own folder |
+| 2 | either — copy it, or hoist; if the right shape isn't obvious yet, copy |
+| 3+ | hoist, no longer optional |
+
+Hoisting has two destinations, and the test is mechanical:
+
+- **`lib/` (domain-aware)** — it names a domain term (`formatInvoiceTotal`). Reachable
+  by any domain; may import from the generic tier.
+- **`lib/generic/` (product-agnostic)** — it would compile unchanged if you published
+  it to npm: no domain nouns, no app imports, no config. Imports nothing from the app.
+
+**Imports flow upward only.** A domain may import both tiers; `lib/` may import
+`lib/generic/`; `lib/generic/` imports neither. Two consequences worth naming, because
+both are signals rather than judgment calls: a sibling-domain import (`checkout/`
+reaching into `orders/`) means the shared thing wants hoisting, and a domain type
+appearing inside `lib/generic/` means that file wants demoting.
+
+Waiting for the third caller is the point. Abstractions designed from one example
+encode that example's accidents; by the third you can see which parts are the shape
+and which were the accident.
 
 **Folder = domain, file = concept.** A file is named after the one concept it owns
 (`formatPrice.ts` = amount→display-string mapping). A `types.ts` accreting every type in the

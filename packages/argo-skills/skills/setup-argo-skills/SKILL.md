@@ -40,6 +40,8 @@ recommendation instead of a blank menu:
   package.json? → informs rules + design handoff.
 - Scale: monorepo workspaces? >~30 source files? → informs graphify + boundaries.
 - Git hygiene: `.husky/` or hooks already present? CI workflows?
+- Linter: a `biome.json`, `eslint.config.*`, `.oxlintrc.json`, `ruff.toml`? → informs
+  quality gates (the existing linter is the one that gets the caps; never add a second).
 
 Then ask **one grouped multi-select question** — "which of these do you want set
 up?" — with the detected recommendation marked, covering:
@@ -49,6 +51,7 @@ up?" — with the detected recommendation marked, covering:
 | House engineering rules | `setup-rules` | always |
 | Terse output style (Claude Code default) | `setup-output-style` | always |
 | Pre-commit hooks (format/typecheck/test) | `setup-pre-commit` | package.json exists |
+| Quality gates (caps + duplication, as errors) | `setup-quality-gates` | repo has (or should have) a linter |
 | Knowledge graph (committed, hook-refreshed) | `setup-graphify` | repo beyond trivial size |
 | Module boundaries (dependency-cruiser) | `setup-module-boundaries` | monorepo / layered app |
 | Design handoff (tokens, studies, check) | `setup-design-handoff` | project has UI |
@@ -61,15 +64,17 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
 
 1. `setup-rules` — the prose contracts; design handoff and studies reference them.
 2. `setup-pre-commit` — husky baseline that later steps append to.
-3. `setup-graphify` — appends its refresh block to the pre-commit hook.
-4. `setup-module-boundaries` — lint config + CI gate.
-5. `setup-design-handoff` — token contract, study scaffolding, design-token
+3. `setup-quality-gates` — the arithmetic half of step 1's rules, as build failures;
+   appends to step 2's hook and lands the caps the rules state in prose.
+4. `setup-graphify` — appends its refresh block to the pre-commit hook.
+5. `setup-module-boundaries` — lint config + CI gate.
+6. `setup-design-handoff` — token contract, study scaffolding, design-token
    check; depends on the rules from step 1.
-6. `setup-visual-verify` — screenshot script + declared render method; points at
-   the studies/Storybook that step 5 (or the app) provides.
-7. `setup-output-style` — Terse output style as the Claude Code session default;
+7. `setup-visual-verify` — screenshot script + declared render method; points at
+   the studies/Storybook that step 6 (or the app) provides.
+8. `setup-output-style` — Terse output style as the Claude Code session default;
    independent of the rest, so it can run any time.
-8. Guardrail hooks (if chosen) — re-run the scaffolder with `--hooks`
+9. Guardrail hooks (if chosen) — re-run the scaffolder with `--hooks`
    (`npx github:milad-alizadeh/argo --hooks`); it's idempotent, so running it after
    the Phase-1 skills install just adds the hooks. No separate `setup-*` skill.
 

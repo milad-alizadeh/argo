@@ -1,0 +1,25 @@
+# Mechanical quality gates. Fails the PR on any cap breach — function length, complexity,
+# parameter count, type escape hatches, dead code, duplication, file length.
+# Installed by the setup-quality-gates skill; the caps themselves live in the linter config.
+#
+# Every gate is an error, not a warning. A new violation is fixed or ratcheted in the
+# exemption list — never suppressed inline.
+name: quality-gates
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2 # {{SWAP_FOR_YOUR_PM}}
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile # {{SWAP_FOR_YOUR_PM}}
+      - name: Quality gates
+        working-directory: "{{WORKSPACE_DIR}}" # e.g. apps/desktop; "." for a single-package repo
+        run: bun run quality # {{SWAP_FOR_YOUR_PM}} — the script wired in step 6 of the skill

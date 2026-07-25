@@ -18,6 +18,64 @@ Single-depth `a ? b : c` is fine. Chaining ternaries (`a ? b : c ? d : e`) is
 forbidden — use `switch` or early-return `if` blocks instead. Applies everywhere:
 action bodies, JSX, helper functions.
 
+## Guard clauses, not nesting
+
+Handle the exceptional case first and `return` / `throw` / `continue` out of it. The
+happy path stays at one indent level, at the bottom, unwrapped.
+
+- **Forbidden:** an `if` whose body is the entire rest of the function. Invert it and
+  return early.
+- **Forbidden:** an `else` after a branch that already returned — the `else` is noise.
+- Three levels of nesting inside one function is the signal: the inner levels are a
+  separate function, or the outer ones are guards you haven't inverted yet.
+
+## Three parameters, then an object
+
+A fourth positional parameter is forbidden — pass one object instead. Positional
+arguments encode order in every call site, and order is invisible at the call: nobody
+reads `render(node, true, false, 2)`. A named object is self-describing and extends
+without touching callers.
+
+Two booleans in a row is already the smell, at any arity: either name them in an
+object or split the function.
+
+## No escape hatches
+
+The type system is not optional. Each of these is forbidden in `src`:
+
+- **`any`** — use `unknown` and narrow. `any` doesn't silence one error, it disables
+  checking for everything downstream of that value.
+- **`as`** — an assertion is a claim the compiler stops checking. Narrow with a guard
+  or fix the source type. (Two sanctioned uses: `as const`, and the widening-free
+  `as unknown as T` at a genuine external boundary, with a comment naming the boundary.)
+- **`!` non-null assertion** — check, or restructure so the value can't be null.
+- **`@ts-ignore` / `@ts-expect-error`** — only in a test asserting a type error, or
+  with a comment naming the upstream bug and the version that fixes it.
+
+The test-data exception belongs to a tool, not a cast: partial fixtures use
+`@total-typescript/shoehorn`, never `as`.
+
+## Prove the type, don't assert it
+
+At an untrusted boundary — network response, `JSON.parse`, `process.env`, IPC
+payload, file read — parse into the type, don't declare it. A schema validator (Zod,
+Valibot, ArkType) or a hand-written `x is T` predicate returns a value the compiler
+knows about because something *checked* at runtime.
+
+- **Forbidden:** `const user = (await response.json()) as User`. That's a wish.
+- A type predicate must actually inspect the fields it claims — `return true` under a
+  `x is T` signature is a lie the compiler will honour everywhere.
+
+## Don't name what you use once
+
+A single-use `const` that only restates what the expression already says adds a hop
+for the reader without adding meaning. Inline it.
+
+Keep the name when it earns one: the expression is used twice, or the name encodes a
+unit, a domain term, or a why the expression can't state (`const isPastCutoff = …`).
+This is the counterweight to over-extraction, not a licence to nest calls four deep —
+if inlining makes the line unreadable, the name was earning its place.
+
 ## No comments on obvious code
 
 Default to writing no comments. Add one only when the WHY is non-obvious: a hidden

@@ -98,3 +98,14 @@ Add more by dropping another folder here (with any supporting files colocated in
 - [`setup-rules`](skills/setup-rules/SKILL.md) — install Argo's engineering rule set into
   a project, adapting every path to the detected structure. Its rule templates ship in
   its own `rules/` folder so it's self-contained per project.
+- [`setup-quality-gates`](skills/setup-quality-gates/SKILL.md) — the mechanical companion
+  to `setup-rules`: resolves each cap (function length, complexity, parameter count, type
+  escape hatches, duplication) to a real rule in whatever linter the project already runs,
+  as an error, wired to a script, pre-commit and CI.
+
+### Provenance
+
+Several rules in `setup-rules/rules/` and the whole gate list in `setup-quality-gates`
+were shaped by the tenet set at [prickles.org](https://prickles.org) (Lewis, A., 2026 —
+CC BY-NC 4.0). The tenets there are the map of what's worth enforcing; the prose here is
+Argo's own, in Argo's forbidden-list voice.
