@@ -19,8 +19,10 @@ mechanical git ops erroring, the project folder vanishing, Argo's own observatio
 
 **References, does not re-spec:** the reconnect flow → #165 · provider write intents and the
 canonical five → #167 · the session dot's four states → #164 · status words → the status
-vocabulary registry · the brow's chrome and the chip's rendering → #201 · OS-level notification
-of any of this → #188 · Concierge narration of failure → #190.
+vocabulary registry · the brow's chrome and the chip's rendering → #201 · Concierge narration of
+failure → #190. **OS-level notification of any of this: none** — #188 resolved that connection
+failures never raise a banner (they wait in the chip); see the app shell spec's
+*Out-of-window attention*.
 
 ---
 
