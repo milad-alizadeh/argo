@@ -94,12 +94,121 @@ different model than intended.
 
 ## Results
 
-_Pending — sweep in progress._
+42 chunks × 4 caps × {Haiku temp 0; Qwen3.5-4B temp 0 and 0.7}. 504 trials, 0 errors,
+1068 marker instances checked.
+
+### Marker-drop rate × cap × model
+
+| cap | Haiku 4.5 (temp 0) | Qwen3.5-4B (temp 0) | Qwen3.5-4B (temp 0.7) |
+|---|---:|---:|---:|
+| uncapped | 21.3% | **15.7%** | 21.3% |
+| 40 words | 22.5% | **16.9%** | 29.2% |
+| 25 words | 30.3% | 30.3% | 37.1% |
+| 15 words | 30.3% | 43.8% | 40.4% |
+
+Line-level violation rate (what actually gates speech) runs 31–43% for Haiku and 24–57% for
+Qwen. Median spoken words, uncapped → 15w: Haiku 30 / 32 / 25 / 21; Qwen 36 / 33 / 24 / 18.
+
+### Drop rate by marker class
+
+| class | Haiku | Qwen3.5-4B |
+|---|---:|---:|
+| negation | 19.3% (n=176) | 26.7% (n=352) |
+| restrictor | 26.2% (n=84) | **39.9%** (n=168) |
+| conditionality | **41.7%** (n=60) | 17.5% (n=120) |
+| hedging | 33.3% (n=36) | 37.5% (n=72) |
+
+### Substitution table — proposed rows against the data
+
+| corpus | seed table (contractions) | + proposed rows | drops explained |
+|---|---:|---:|---:|
+| Haiku | 26.1% | 26.1% | **0 of 93** |
+| Qwen3.5-4B | 29.4% | 29.2% | **1 of 209** |
+
+### Retry
+
+| model | violations | rescued by one named retry | fell back to extractive | median retry cost |
+|---|---:|---:|---:|---:|
+| Haiku | 61 | 41 (67.2%) | 20 | 11.1s (CLI loop tax) |
+| Qwen3.5-4B | 138 | 85 (61.6%) | 53 | **5.5s** |
 
 ## Findings
 
-_Pending._
+**1. The guard is not a cheap seatbelt — it is load-bearing.** #203's read said `<2%` → ship the
+check and keep the cap. The floor is **15.7%**, ten times that, and it is 21.3% on the cloud model.
+#199's retry-then-extractive path was reasoned about as a rare backstop whose clunkiness was
+acceptable; at these rates the model-free extractive fallback speaks roughly one line in eight.
+That is not an exception path, it is a significant fraction of the product's voice.
+
+**2. The cap is a real dial, and 25 words is a cliff.** Both models sit at 15–22% above 40 words
+and jump at 25. #193's ~20-word prototype value roughly doubles Qwen's rate (16.9% → 43.8%).
+Caveat that makes the recommendation blunter than the table looks: **"40 words" is barely a
+constraint** — both models write ~32 words when told 40, so what the data supports is *do not cap
+below ~30*, not a precise number.
+
+**3. But the cap is not the main cause.** ~16–21% of markers are lost with **no length pressure at
+all**. #203's third read — "high rate even uncapped → capacity, not brevity" — is the one that
+fired. Raising the cap is worth doing and cannot get near a seatbelt rate.
+
+**4. The generator constraint did not take.** #199's central bet was converting "preserve meaning"
+(a judgement that failed) into "these exact words must appear" (a constraint a small model can
+satisfy). Both models had that instruction verbatim in the system prompt and dropped markers on a
+third of lines. The bet is not obviously wrong — it may need few-shot examples or a fine-tune
+rather than a prompt clause — but as specified it does not hold.
+
+**5. The substitution table is a dead end — a useful negative.** Proposed rows explain 0 of 93 and
+1 of 209 drops. Beyond contractions (which are the same word, not a paraphrase), drops are genuine
+losses. #199 anticipated needing entries like `non-idempotent → not idempotent`; the data says keep
+the table minimal and spend the effort elsewhere. One row is worth adding for judgement, not rate:
+`probably ↔ likely`.
+
+**6. The two models have opposite weak classes, which breaks the pruning question as posed.**
+`if` is Haiku's worst token (50%) and one of Qwen's best (12.5%); `all` is 66.7% on Qwen and 25% on
+Haiku. #193 named conditionality as the residual weakness — true for Haiku, false for Qwen.
+#199 scoped the guard as one model-independent contract clause and expected #203 to prune the
+lexicon on rate. If the weak class depends on the reshaper, the lexicon cannot be pruned
+model-agnostically: either it becomes per-model config, or it stays wide at all four classes.
+The honest answer to "which classes get dropped" is **all of them, differently**.
+
+**7. Temp 0 holds — now measured rather than inherited.** #193 mandated it after a 3B fabricated at
+0.3. Qwen3.5-4B at its card-recommended 0.7 is worse at every cap (21.3% vs 15.7% uncapped,
+29.2% vs 16.9% at 40 words). The dial is settled: temperature 0.
+
+**8. The retry earns its place.** 61–67% of violations rescued for 5.5s on-device. Keep it.
+
+**9. Ranking flips with the cap.** Qwen3.5-4B is *more* faithful than Haiku above 40 words
+(15.7% vs 21.3%) and much worse below 25 (43.8% vs 30.3%). It partly keeps markers by refusing to
+condense — 36 median words uncapped against Haiku's 30 — so squeezing removes what it relied on.
+This is worth stating plainly: **a line that keeps every protected marker by not condensing passes
+#199's check and still fails the #192 contract.** The guard catches over-condensation only. Qwen's
+uncapped lines also repeatedly listed all options' content, a straight rule-3 violation the marker
+check is blind to.
+
+**10. Gemma 4 E4B is disqualified as a router, on latency, before fidelity is considered.**
+37–48s per line, thinking unstoppable (see method). For a channel whose target is ~1s to first
+token, that is not a close call.
+
+**11. LM Studio silently drops `chat_template_kwargs`.** `chat_template_kwargs`, `template_kwargs`,
+bare `enable_thinking` and `extra_body` all produce byte-identical reasoning-token counts. Qwen3.5's
+template does support the flag, so the workaround is to write its empty-`<think>` prefill by hand as
+a trailing assistant turn (1499 reasoning tokens → 0). Anyone benchmarking hybrid-thinking models
+through LM Studio and trusting that flag is measuring the thinking model and will not be told.
 
 ## Verdict
 
-_Pending._
+**The dials, answered:** cap ≥ 30–40 words (never ~20); temperature 0; keep the retry; keep the
+substitution table minimal; **do not prune the lexicon** — the class-level rates that were supposed
+to justify pruning turn out to be model-dependent.
+
+**The thing that outgrew the ticket:** #199 locked its shape on the premise that a deterministic
+check is a cheap seatbelt over a rare failure. The failure is not rare — 16% at best, on a corpus
+built to carry markers — and the generator constraint meant to prevent it does not hold under a
+prompt clause. Every amendment #199 made still stands (the ranking never depended on a rate, and
+severity is asymmetric), but "cheap and rare" was load-bearing in how the enforcement path was
+designed, and it is false. That belongs back in front of #199, not silently absorbed here.
+
+**For #193's on-device verdict:** it survives, and improves. Qwen3.5-4B is the better reshaper of
+the two above 40 words, at ~1.5s per line, free and private, in ~3GB — well inside the 16GB
+both-local budget #193 ruled out on a 7B. The caveat is that its advantage is contingent on not
+compressing hard, which is exactly what a voice channel wants to do.
+
