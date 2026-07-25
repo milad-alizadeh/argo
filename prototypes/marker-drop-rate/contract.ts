@@ -8,10 +8,10 @@
  * "the cap is mis-set" from "this is a capacity floor".
  */
 
-export const CAPS = [null, 40, 25, 15] as const;
-export type Cap = (typeof CAPS)[number];
+export const CAPS = [null, 40, 25, 15] as const
+export type Cap = (typeof CAPS)[number]
 
-export const capLabel = (cap: Cap): string => (cap === null ? "uncapped" : `${cap}w`);
+export const capLabel = (cap: Cap): string => (cap === null ? 'uncapped' : `${cap}w`)
 
 const RULES = `You turn one chunk of a coding agent's transcript into ONE spoken line for a voice
 concierge. The user's screen already shows the full text — you are the eyes-free channel over it.
@@ -46,7 +46,7 @@ Voice is allowed to be lossy. It is never allowed to be misleading.
 7. Your line will be checked mechanically for the protected markers of rule 4. A line missing
    one is discarded and never spoken. Carrying the marker matters more than sounding smooth.
 
-Output ONLY the spoken line. No preamble, no quotes, no explanation, no markdown.`;
+Output ONLY the spoken line. No preamble, no quotes, no explanation, no markdown.`
 
 /**
  * The uncapped arm must add NO length pressure at all.
@@ -60,7 +60,7 @@ Output ONLY the spoken line. No preamble, no quotes, no explanation, no markdown
 export const systemPrompt = (cap: Cap): string =>
   cap === null
     ? RULES
-    : `${RULES}\n\nLength: aim for about ${cap} words. Rule 2 says this target yields to rule 4 — exceed it rather than drop a protected marker.`;
+    : `${RULES}\n\nLength: aim for about ${cap} words. Rule 2 says this target yields to rule 4 — exceed it rather than drop a protected marker.`
 
 export const userPrompt = (source: string): string =>
-  `Reshape this transcript chunk into one spoken line:\n\n${source}`;
+  `Reshape this transcript chunk into one spoken line:\n\n${source}`

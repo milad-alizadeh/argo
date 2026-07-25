@@ -12,22 +12,22 @@
  * non-thinking is the faithful setting, not merely the fast one.
  */
 
-import { systemPrompt, userPrompt, type Cap } from "./contract";
+import { type Cap, systemPrompt, userPrompt } from './contract'
 
-export type ModelId = "haiku" | "qwen3.5-4b" | "gemma4-e4b" | "qwen3.5-9b";
+export type ModelId = 'haiku' | 'qwen3.5-4b' | 'gemma4-e4b' | 'qwen3.5-9b'
 
 export type ModelSpec = {
-  readonly id: ModelId;
-  readonly label: string;
-  readonly transport: "lmstudio" | "claude-cli";
+  readonly id: ModelId
+  readonly label: string
+  readonly transport: 'lmstudio' | 'claude-cli'
   /**
    * Substring matched against the LM Studio server's model ids, not the id itself — the
    * registry prefixes vary by publisher (`google/gemma-4-e4b` vs `lmstudio-community/...`),
    * and a hardcoded id silently skips the model instead of failing loudly.
    */
-  readonly key?: string;
+  readonly key?: string
   /** The card's recommended sampling temperature — the non-zero arm of the temp dial. */
-  readonly recommendedTemp?: number;
+  readonly recommendedTemp?: number
   /**
    * Assistant-turn prefill that forces non-thinking, or undefined if the model cannot be
    * stopped from thinking.
@@ -38,83 +38,87 @@ export type ModelSpec = {
    * support the flag (it prefills an empty `<think></think>`), so the fix is to write that
    * prefill ourselves as the last assistant message. Verified: reasoning_tokens 1499 → 0.
    */
-  readonly noThinkPrefill?: string;
-};
+  readonly noThinkPrefill?: string
+}
 
 export const MODELS: Record<ModelId, ModelSpec> = {
   haiku: {
-    id: "haiku",
-    label: "Haiku 4.5 (subscription CLI)",
-    transport: "claude-cli",
+    id: 'haiku',
+    label: 'Haiku 4.5 (subscription CLI)',
+    transport: 'claude-cli',
   },
-  "qwen3.5-4b": {
-    id: "qwen3.5-4b",
-    label: "Qwen3.5-4B (MLX 4bit)",
-    transport: "lmstudio",
-    key: "qwen3.5-4b",
+  'qwen3.5-4b': {
+    id: 'qwen3.5-4b',
+    label: 'Qwen3.5-4B (MLX 4bit)',
+    transport: 'lmstudio',
+    key: 'qwen3.5-4b',
     recommendedTemp: 0.7,
-    noThinkPrefill: "<think>\n\n</think>\n\n",
+    noThinkPrefill: '<think>\n\n</think>\n\n',
   },
-  "gemma4-e4b": {
-    id: "gemma4-e4b",
+  'gemma4-e4b': {
+    id: 'gemma4-e4b',
     // Runs THINKING and cannot be stopped. `enable_thinking:false` is ignored (LM Studio
     // drops it); `/no_think` and an explicit "do not reason" instruction both leave 300–440
     // reasoning tokens; the `<|channel>thought` prefill zeroes reasoning_tokens only by
     // moving the raw thought into `content`, which is worse. So this arm measures a thinking
     // model on purpose — a direct test of arXiv 2606.09662 on the class #199 protects.
-    label: "Gemma 4 E4B (MLX 4bit, THINKING — cannot disable)",
-    transport: "lmstudio",
-    key: "gemma-4-e4b",
+    label: 'Gemma 4 E4B (MLX 4bit, THINKING — cannot disable)',
+    transport: 'lmstudio',
+    key: 'gemma-4-e4b',
     recommendedTemp: 1.0,
   },
-  "qwen3.5-9b": {
-    id: "qwen3.5-9b",
-    label: "Qwen3.5-9B (MLX 4bit)",
-    transport: "lmstudio",
-    key: "qwen3.5-9b",
+  'qwen3.5-9b': {
+    id: 'qwen3.5-9b',
+    label: 'Qwen3.5-9B (MLX 4bit)',
+    transport: 'lmstudio',
+    key: 'qwen3.5-9b',
     recommendedTemp: 0.7,
-    noThinkPrefill: "<think>\n\n</think>\n\n",
+    noThinkPrefill: '<think>\n\n</think>\n\n',
   },
-};
+}
 
-const LMSTUDIO = "http://localhost:1234/v1/chat/completions";
+const LMSTUDIO = 'http://localhost:1234/v1/chat/completions'
 
 /** Models emit thinking in several wrappers; strip them all so the check sees the spoken line. */
 const stripThinking = (raw: string): { line: string; thought: boolean } => {
-  const before = raw;
+  const before = raw
   const line = raw
-    .replace(/<think>[\s\S]*?<\/think>/gi, "")
-    .replace(/<\|?think\|?>[\s\S]*?<\|?\/?think\|?>/gi, "")
-    .replace(/^[\s\S]*?<\/think>/i, "")
-    .trim();
-  return { line, thought: line !== before.trim() };
-};
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<\|?think\|?>[\s\S]*?<\|?\/?think\|?>/gi, '')
+    .replace(/^[\s\S]*?<\/think>/i, '')
+    .trim()
+  return { line, thought: line !== before.trim() }
+}
 
 /** The model sometimes wraps the line in quotes or a "Spoken line:" label despite the prompt. */
 const unwrap = (s: string): string =>
   s
-    .replace(/^(?:spoken line|line|output)\s*:\s*/i, "")
-    .replace(/^["'“”]|["'“”]$/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/^(?:spoken line|line|output)\s*:\s*/i, '')
+    .replace(/^["'“”]|["'“”]$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 
 export type Reshaped = {
-  readonly line: string;
-  readonly ms: number;
-  readonly thoughtLeaked: boolean;
-  readonly error?: string;
-};
+  readonly line: string
+  readonly ms: number
+  readonly thoughtLeaked: boolean
+  readonly error?: string
+}
 
 /** Resolved once per process: spec.key substring → the server's actual model id. */
-const resolvedIds = new Map<string, string>();
+const resolvedIds = new Map<string, string>()
 
 async function resolveId(spec: ModelSpec): Promise<string> {
-  const cached = resolvedIds.get(spec.key!);
-  if (cached) return cached;
-  const id = (await availableLocalKeys()).find((k) => k.includes(spec.key!));
-  if (!id) throw new Error(`${spec.label}: no LM Studio model id matching "${spec.key}"`);
-  resolvedIds.set(spec.key!, id);
-  return id;
+  // `key` is only optional because the CLI transport has no use for it; a missing key on an
+  // lmstudio spec is a config error, so say that rather than assert it away.
+  const { key } = spec
+  if (!key) throw new Error(`${spec.label}: lmstudio transport requires a model key`)
+  const cached = resolvedIds.get(key)
+  if (cached) return cached
+  const id = (await availableLocalKeys()).find((k) => k.includes(key))
+  if (!id) throw new Error(`${spec.label}: no LM Studio model id matching "${key}"`)
+  resolvedIds.set(key, id)
+  return id
 }
 
 async function viaLmStudio(
@@ -122,14 +126,14 @@ async function viaLmStudio(
   cap: Cap,
   source: string,
   temperature: number,
-  extraTurns: readonly { role: "assistant" | "user"; content: string }[] = [],
+  extraTurns: readonly { role: 'assistant' | 'user'; content: string }[] = [],
 ): Promise<Reshaped> {
-  const t0 = performance.now();
+  const t0 = performance.now()
   try {
-    const modelId = await resolveId(spec);
+    const modelId = await resolveId(spec)
     const res = await fetch(LMSTUDIO, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: modelId,
         temperature,
@@ -149,34 +153,39 @@ async function viaLmStudio(
         // finish_reason "length".
         chat_template_kwargs: { enable_thinking: false },
         messages: [
-          { role: "system", content: systemPrompt(cap) },
-          { role: "user", content: userPrompt(source) },
+          { role: 'system', content: systemPrompt(cap) },
+          { role: 'user', content: userPrompt(source) },
           ...extraTurns,
           // Must be LAST — it is the turn the model continues from.
           ...(spec.noThinkPrefill
-            ? [{ role: "assistant" as const, content: spec.noThinkPrefill }]
+            ? [{ role: 'assistant' as const, content: spec.noThinkPrefill }]
             : []),
         ],
       }),
-    });
-    const ms = performance.now() - t0;
+    })
+    const ms = performance.now() - t0
     if (!res.ok) {
-      return { line: "", ms, thoughtLeaked: false, error: `HTTP ${res.status}: ${await res.text()}` };
+      return {
+        line: '',
+        ms,
+        thoughtLeaked: false,
+        error: `HTTP ${res.status}: ${await res.text()}`,
+      }
     }
     const json = (await res.json()) as {
-      choices?: { message?: { content?: string; reasoning_content?: string } }[];
-    };
-    const raw = json.choices?.[0]?.message?.content ?? "";
-    const hadReasoningField = Boolean(json.choices?.[0]?.message?.reasoning_content);
-    const { line, thought } = stripThinking(raw);
-    return { line: unwrap(line), ms, thoughtLeaked: thought || hadReasoningField };
+      choices?: { message?: { content?: string; reasoning_content?: string } }[]
+    }
+    const raw = json.choices?.[0]?.message?.content ?? ''
+    const hadReasoningField = Boolean(json.choices?.[0]?.message?.reasoning_content)
+    const { line, thought } = stripThinking(raw)
+    return { line: unwrap(line), ms, thoughtLeaked: thought || hadReasoningField }
   } catch (e) {
     return {
-      line: "",
+      line: '',
       ms: performance.now() - t0,
       thoughtLeaked: false,
       error: e instanceof Error ? e.message : String(e),
-    };
+    }
   }
 }
 
@@ -188,46 +197,46 @@ async function viaLmStudio(
 async function viaClaudeCli(
   cap: Cap,
   source: string,
-  extraTurns: readonly { role: "assistant" | "user"; content: string }[] = [],
+  extraTurns: readonly { role: 'assistant' | 'user'; content: string }[] = [],
 ): Promise<Reshaped> {
-  const t0 = performance.now();
+  const t0 = performance.now()
   const prompt =
     extraTurns.length === 0
       ? userPrompt(source)
-      : `${userPrompt(source)}\n\nYour previous attempt: ${extraTurns[0]?.content}\n\n${extraTurns[1]?.content}`;
+      : `${userPrompt(source)}\n\nYour previous attempt: ${extraTurns[0]?.content}\n\n${extraTurns[1]?.content}`
   try {
     const proc = Bun.spawn(
       [
-        "claude",
-        "-p",
-        "--model",
-        "claude-haiku-4-5",
-        "--strict-mcp-config",
-        "--disable-slash-commands",
-        "--setting-sources",
-        "project",
-        "--exclude-dynamic-system-prompt-sections",
-        "--append-system-prompt",
+        'claude',
+        '-p',
+        '--model',
+        'claude-haiku-4-5',
+        '--strict-mcp-config',
+        '--disable-slash-commands',
+        '--setting-sources',
+        'project',
+        '--exclude-dynamic-system-prompt-sections',
+        '--append-system-prompt',
         systemPrompt(cap),
         prompt,
       ],
-      { cwd: "/tmp", stdout: "pipe", stderr: "pipe" },
-    );
+      { cwd: '/tmp', stdout: 'pipe', stderr: 'pipe' },
+    )
     const [out, err, code] = await Promise.all([
       new Response(proc.stdout).text(),
       new Response(proc.stderr).text(),
       proc.exited,
-    ]);
-    const ms = performance.now() - t0;
-    if (code !== 0) return { line: "", ms, thoughtLeaked: false, error: err.slice(0, 300) };
-    return { line: unwrap(out), ms, thoughtLeaked: false };
+    ])
+    const ms = performance.now() - t0
+    if (code !== 0) return { line: '', ms, thoughtLeaked: false, error: err.slice(0, 300) }
+    return { line: unwrap(out), ms, thoughtLeaked: false }
   } catch (e) {
     return {
-      line: "",
+      line: '',
       ms: performance.now() - t0,
       thoughtLeaked: false,
       error: e instanceof Error ? e.message : String(e),
-    };
+    }
   }
 }
 
@@ -236,20 +245,20 @@ export const reshape = (
   cap: Cap,
   source: string,
   temperature: number,
-  extraTurns?: readonly { role: "assistant" | "user"; content: string }[],
+  extraTurns?: readonly { role: 'assistant' | 'user'; content: string }[],
 ): Promise<Reshaped> =>
-  spec.transport === "lmstudio"
+  spec.transport === 'lmstudio'
     ? viaLmStudio(spec, cap, source, temperature, extraTurns)
-    : viaClaudeCli(cap, source, extraTurns);
+    : viaClaudeCli(cap, source, extraTurns)
 
 /** Which LM Studio model keys are actually loadable right now. */
 export async function availableLocalKeys(): Promise<string[]> {
   try {
-    const res = await fetch("http://localhost:1234/v1/models");
-    if (!res.ok) return [];
-    const json = (await res.json()) as { data?: { id: string }[] };
-    return (json.data ?? []).map((m) => m.id);
+    const res = await fetch('http://localhost:1234/v1/models')
+    if (!res.ok) return []
+    const json = (await res.json()) as { data?: { id: string }[] }
+    return (json.data ?? []).map((m) => m.id)
   } catch {
-    return [];
+    return []
   }
 }

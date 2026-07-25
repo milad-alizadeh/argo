@@ -7,45 +7,35 @@
  * and, run over a corpus, the measuring instrument for #203.
  */
 
-export type MarkerClass = "negation" | "restrictor" | "conditionality" | "hedging";
+export type MarkerClass = 'negation' | 'restrictor' | 'conditionality' | 'hedging'
 
 /**
  * #199 §1's four classes, deliberately WIDE. #203 prunes on the data, so a token that
  * turns out never to be dropped is a finding, not a bug — do not trim this by taste.
  */
 export const LEXICON: Record<MarkerClass, readonly string[]> = {
-  negation: [
-    "not",
-    "no",
-    "never",
-    "none",
-    "without",
-    "nor",
-    "cannot",
-    "neither",
-    "nothing",
-  ],
-  restrictor: ["only", "just", "except", "all", "some", "every", "any", "solely"],
-  conditionality: ["if", "unless", "until", "provided", "once", "whenever", "assuming"],
+  negation: ['not', 'no', 'never', 'none', 'without', 'nor', 'cannot', 'neither', 'nothing'],
+  restrictor: ['only', 'just', 'except', 'all', 'some', 'every', 'any', 'solely'],
+  conditionality: ['if', 'unless', 'until', 'provided', 'once', 'whenever', 'assuming'],
   hedging: [
-    "might",
-    "may",
-    "probably",
-    "seems",
-    "likely",
-    "could",
-    "appears",
-    "possibly",
-    "perhaps",
-    "unclear",
+    'might',
+    'may',
+    'probably',
+    'seems',
+    'likely',
+    'could',
+    'appears',
+    'possibly',
+    'perhaps',
+    'unclear',
   ],
-} as const;
+} as const
 
 const CLASS_OF = new Map<string, MarkerClass>(
   (Object.entries(LEXICON) as [MarkerClass, readonly string[]][]).flatMap(([cls, words]) =>
     words.map((w) => [w, cls] as [string, MarkerClass]),
   ),
-);
+)
 
 /**
  * The closed substitution table (#199 §2). An equivalence is allowed IFF it is in here —
@@ -61,7 +51,7 @@ export const SUBSTITUTIONS: Record<string, readonly string[]> = {
   // and scored `don't`/`couldn't` as drops, inflating the negation rate. Fixed, not forgiven:
   // genuinely *lexical* substitutes still have to be earned from the data.)
   not: [
-    "cannot",
+    'cannot',
     "can't",
     "won't",
     "don't",
@@ -79,30 +69,30 @@ export const SUBSTITUTIONS: Record<string, readonly string[]> = {
     "shouldn't",
     "ain't",
   ],
-  cannot: ["can't", "cannot"],
-  none: ["no"],
-  might: ["may"],
-  may: ["might"],
-} as const;
+  cannot: ["can't", 'cannot'],
+  none: ['no'],
+  might: ['may'],
+  may: ['might'],
+} as const
 
 /** Words that look like markers but are not, in the sense #199 protects. */
 const HOMOGRAPH_STOPLIST = new Set([
-  "just", // "just now" / "just released" — temporal, not restrictive
-]);
+  'just', // "just now" / "just released" — temporal, not restrictive
+])
 
 const tokenize = (text: string): string[] =>
   text
     .toLowerCase()
     .replace(/[‘’]/g, "'")
     .split(/[^a-z']+/)
-    .filter(Boolean);
+    .filter(Boolean)
 
 export type ExpectedMarker = {
-  readonly token: string;
-  readonly cls: MarkerClass;
+  readonly token: string
+  readonly cls: MarkerClass
   /** How many times it occurs in the faithful core — a second `not` can be load-bearing too. */
-  readonly count: number;
-};
+  readonly count: number
+}
 
 /**
  * Extract the protected markers a reshaping MUST carry.
@@ -112,30 +102,31 @@ export type ExpectedMarker = {
  * would drag every `if` out of pullable reasoning into the lead, which #199 explicitly rejects.
  */
 export function extractExpected(faithfulCore: string): ExpectedMarker[] {
-  const counts = new Map<string, number>();
+  // Keyed by token, carrying the class found on first sight — a second lookup after the loop
+  // would have to re-assert non-nullness the `has` check already established.
+  const counts = new Map<string, { cls: MarkerClass; count: number }>()
   for (const tok of tokenize(faithfulCore)) {
-    const bare = tok.replace(/^'+|'+$/g, "");
-    if (!CLASS_OF.has(bare) || HOMOGRAPH_STOPLIST.has(bare)) continue;
-    counts.set(bare, (counts.get(bare) ?? 0) + 1);
+    const bare = tok.replace(/^'+|'+$/g, '')
+    if (HOMOGRAPH_STOPLIST.has(bare)) continue
+    const cls = CLASS_OF.get(bare)
+    if (!cls) continue
+    const seen = counts.get(bare)
+    counts.set(bare, { cls, count: (seen?.count ?? 0) + 1 })
   }
-  return [...counts].map(([token, count]) => ({
-    token,
-    cls: CLASS_OF.get(token)!,
-    count,
-  }));
+  return [...counts].map(([token, { cls, count }]) => ({ token, cls, count }))
 }
 
-export type MarkerVerdict = "exact" | "substituted" | "missing";
+export type MarkerVerdict = 'exact' | 'substituted' | 'missing'
 
 export type MarkerResult = {
-  readonly token: string;
-  readonly cls: MarkerClass;
-  readonly expected: number;
-  readonly found: number;
-  readonly verdict: MarkerVerdict;
+  readonly token: string
+  readonly cls: MarkerClass
+  readonly expected: number
+  readonly found: number
+  readonly verdict: MarkerVerdict
   /** Set when missing but a plausible-but-untabled equivalent is present in the output. */
-  readonly untabledCandidate?: string;
-};
+  readonly untabledCandidate?: string
+}
 
 /**
  * Morphological forms that MEAN the marker survived but are not in the closed table.
@@ -143,8 +134,23 @@ export type MarkerResult = {
  * miss as `untabled` so #203 can report which table rows are actually earned.
  */
 const UNTABLED_HINTS: Record<string, readonly RegExp[]> = {
-  not: [/\b\w+n't\b/, /\bun[a-z]{3,}\b/, /\bnon-?[a-z]{3,}\b/, /\b\w+less\b/, /\bfail(?:s|ed)? to\b/, /\bskipp?(?:ed|s)\b/, /\bwithout\b/],
-  only: [/\balone\b/, /\bsolely\b/, /\bmerely\b/, /\bnothing but\b/, /\brestricted to\b/, /\blimited to\b/],
+  not: [
+    /\b\w+n't\b/,
+    /\bun[a-z]{3,}\b/,
+    /\bnon-?[a-z]{3,}\b/,
+    /\b\w+less\b/,
+    /\bfail(?:s|ed)? to\b/,
+    /\bskipp?(?:ed|s)\b/,
+    /\bwithout\b/,
+  ],
+  only: [
+    /\balone\b/,
+    /\bsolely\b/,
+    /\bmerely\b/,
+    /\bnothing but\b/,
+    /\brestricted to\b/,
+    /\blimited to\b/,
+  ],
   unless: [/\bexcept (?:if|when)\b/, /\bother than (?:if|when)\b/],
   until: [/\bbefore\b/, /\bup to\b/],
   if: [/\bwhen\b/, /\bin case\b/, /\bshould\b/, /\bassuming\b/, /\bdepend(?:s|ing) on\b/],
@@ -153,60 +159,60 @@ const UNTABLED_HINTS: Record<string, readonly RegExp[]> = {
   seems: [/\bappears?\b/, /\blooks like\b/],
   likely: [/\bprobabl[ey]\b/, /\bexpected to\b/],
   never: [/\bat no point\b/, /\bnot once\b/],
-};
+}
 
 export function checkLine(expected: readonly ExpectedMarker[], spoken: string): MarkerResult[] {
-  const tokens = tokenize(spoken);
-  const lower = spoken.toLowerCase();
-  const tally = new Map<string, number>();
-  for (const tok of tokens) tally.set(tok, (tally.get(tok) ?? 0) + 1);
+  const tokens = tokenize(spoken)
+  const lower = spoken.toLowerCase()
+  const tally = new Map<string, number>()
+  for (const tok of tokens) tally.set(tok, (tally.get(tok) ?? 0) + 1)
 
   return expected.map((exp) => {
-    const exactHits = tally.get(exp.token) ?? 0;
+    const exactHits = tally.get(exp.token) ?? 0
     if (exactHits >= exp.count) {
-      return { ...exp, expected: exp.count, found: exactHits, verdict: "exact" as const };
+      return { ...exp, expected: exp.count, found: exactHits, verdict: 'exact' as const }
     }
 
-    const subs = SUBSTITUTIONS[exp.token] ?? [];
+    const subs = SUBSTITUTIONS[exp.token] ?? []
     const subHits = subs.reduce(
-      (n, s) => n + (s.includes(" ") ? (lower.includes(s) ? 1 : 0) : (tally.get(s) ?? 0)),
+      (n, s) => n + (s.includes(' ') ? (lower.includes(s) ? 1 : 0) : (tally.get(s) ?? 0)),
       0,
-    );
+    )
     if (exactHits + subHits >= exp.count) {
       return {
         ...exp,
         expected: exp.count,
         found: exactHits + subHits,
-        verdict: "substituted" as const,
-      };
+        verdict: 'substituted' as const,
+      }
     }
 
-    const hint = (UNTABLED_HINTS[exp.token] ?? []).find((re) => re.test(lower));
+    const hint = (UNTABLED_HINTS[exp.token] ?? []).find((re) => re.test(lower))
     return {
       ...exp,
       expected: exp.count,
       found: exactHits + subHits,
-      verdict: "missing" as const,
+      verdict: 'missing' as const,
       ...(hint ? { untabledCandidate: lower.match(hint)?.[0] } : {}),
-    };
-  });
+    }
+  })
 }
 
 /** #199 §4: the violating line is never spoken. This is the gate that decides that. */
 export const isViolation = (results: readonly MarkerResult[]): boolean =>
-  results.some((r) => r.verdict === "missing");
+  results.some((r) => r.verdict === 'missing')
 
 /** The retry prompt names the violated markers explicitly (#199 §4). */
 export const namedRetryNote = (results: readonly MarkerResult[]): string => {
-  const dropped = results.filter((r) => r.verdict === "missing").map((r) => `"${r.token}"`);
-  return `Your previous line dropped ${dropped.join(", ")}. Carry ${
-    dropped.length === 1 ? "that exact word" : "those exact words"
-  } through into the spoken line. Say it again.`;
-};
+  const dropped = results.filter((r) => r.verdict === 'missing').map((r) => `"${r.token}"`)
+  return `Your previous line dropped ${dropped.join(', ')}. Carry ${
+    dropped.length === 1 ? 'that exact word' : 'those exact words'
+  } through into the spoken line. Say it again.`
+}
 
 /**
  * #199 §4's terminal fallback: model-free, extractive. Reads the source's own faithful
  * core aloud, uncapped. Clunky-but-honest beats a second pass through the failure mode
  * being caught.
  */
-export const extractiveFallback = (faithfulCore: string): string => faithfulCore.trim();
+export const extractiveFallback = (faithfulCore: string): string => faithfulCore.trim()
