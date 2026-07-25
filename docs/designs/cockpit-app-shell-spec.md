@@ -12,7 +12,8 @@
 
 **Owns:** the assembled chrome and its consistency across rooms; the navigation/IA between
 surfaces; the keyboard/command model; the empty first-run shell (the seam before onboarding);
-spawn (where a new session comes from and lands); how a finished session leaves the roster.
+spawn (where a new session comes from and lands); how a finished session leaves the roster;
+**out-of-window attention** — OS notifications and the dock badge (#188).
 
 **References, does not re-spec:** onboarding flow → #165 · provider connect/state → #167 ·
 session interior + delivery/merge → #161 · work-room interior → #160/#185.
@@ -90,6 +91,76 @@ Per the map's cross-cutting requirement, across the honesty tiers:
 What happens when a fact **was** established and goes bad mid-flight — stale connections, the
 brow's connection chip, rejected writes, a vanished project folder — is owned by
 `cockpit-failure-states-spec.md` (#173). The chip's placement and rendering land via #201.
+
+## Out-of-window attention (OS notifications)
+
+> Wayfinder #188. Owned here because the notification channel is shell-level connective
+> tissue — it belongs to no room, and it is the only part of the attention model that renders
+> outside the window. **macOS is the v1 target**; other platforms get banners only.
+
+**The governing rule: an OS notification is the out-of-window projection of the session dot.**
+It is not a notification *subsystem* — it introduces no state, no vocabulary, and no ranking of
+its own. Every property below is derived from #164's four-state dot, which is why external
+sessions and blind observation need no special-casing: they cannot honestly reach the firing
+states, so they cannot fire.
+
+- **Fires on** a session entering **amber `needs you`** or **red `failed`** — exactly the set
+  that lights a project-strip badge (#164). **Never on `idle`**, including a clean `end_turn`:
+  `idle` deliberately earns no badge, so notifying on it would invent an interrupt with nothing
+  in-app to answer or clear — and a session goes idle after *every* turn.
+- **Suppressed whenever any Argo window is focused.** The in-app channel is sufficient then:
+  a background project going amber lights its strip dot, which is always visible and is exactly
+  the surface #164 created for the sessions you cannot see. **Regaining focus closes outstanding
+  banners** — you are here now, and the dots are authoritative. OS Do Not Disturb / Focus is
+  honoured by never overriding it; there is no in-app quiet-hours.
+- **One live banner per session.** Dedupe on `(sessionId, state)` — one per entry into a state,
+  no re-fire while it sits there. amber→red **replaces** (Electron has no tag/replace, so main
+  holds the objects and closes them itself); leaving the state **clears** it. **No burst
+  coalescing** in v1: amber comes from a human-shaped event, not a poll, so simultaneous arrival
+  is rare, and macOS already groups per-app. A threshold collapse (`3 sessions need you`) is
+  purely additive later.
+- **Dock badge = count of amber + red across all projects** (`app.setBadgeCount`), the same set,
+  keeping one definition of "needs you" across dot, badge, and banner. **Focus-independent** —
+  banners are interrupts that focus answers; the badge is a state readout and stays until the
+  sessions actually leave those states. A *count*, not a dot, because unlike the project strip
+  (worst-state, no counts, per-project dots underneath) the dock icon is a single global object
+  with nothing underneath it.
+- **Click deep-links**: focus → swap to that session's project → `Sessions ⌘1` → select and open
+  that session. The payload carries `(projectId, sessionId)`; main→renderer needs a
+  navigate-to-session command, the same one ⌘K's jump requires. This **overrides remembered
+  per-project UI state** for that swap — #164 restores room/selection on return, but an explicit
+  deep-link is a fresh instruction and wins. Clicking a banner for a session that has since gone
+  green still deep-links; landing on it is honest, not an error.
+- **No in-app toggle and no sound control.** macOS's per-app notification settings already
+  separate banner from sound from badge — better granularity than we would ship, and where a Mac
+  user looks first. A Preferences surface existing only to hold one boolean would be this map's
+  first surface that exists for a setting rather than for work. Accepted cost: the OS permission
+  prompt appears at first send with no in-app framing, and a denial is recoverable only in System
+  Settings (onboarding copy may mention it — a copy amendment, not a surface). Sound is on by
+  default; this is the channel that has to reach you across the room.
+- **Copy** — title = `<session title>`, body = `<project> · needs you` or `<project> · failed`.
+  No `Argo` in the title (macOS renders the app name itself). The project is mandatory: this is
+  the one cross-project channel, and the session title alone does not say where. State words come
+  **verbatim from the status vocabulary registry**, so banner, dot, and roll-up read identically;
+  `stopped` and `ended` both render `failed`, the same fold as the dot. The agent's raw request is
+  **not** in the body — an OS surface we do not control the truncation of invites deciding from
+  the banner, when the real output lives one gesture away in the Dock (failure spec §5).
+
+**Nothing else notifies.**
+
+- **Connection failures do not** — `needs reconnect`, account-level OAuth expiry, `folder not
+  found` (failure spec §2/§3/§6). Connection state is surfaced only for the *active* project with
+  background projects silent, so there is no cross-project badge to project; and nothing is
+  *waiting* on you — writes stay live while `stale`. An interrupt that cannot be acted on faster
+  than "next time I look" trains you to dismiss the channel, which then costs the amber
+  notification that mattered. Cost: an overnight token expiry is discovered on return.
+- **Delivery does not** — CI checks, review requested, merges. They are provider-polled, so a
+  banner asserting *now* would fire off a possibly-minutes-old fact (a false `DIRECT` in banner
+  form); GitHub already notifies on all three; and #167 separated Delivery from session liveness
+  and Work Item status as its own axis — letting CI into this channel quietly re-merges them.
+- **A menu-bar / tray item is out of scope** for the Phase-1 map — a fourth rendering of the same
+  signal, with its own always-on menu surface, that only earns its place once the dock proves
+  insufficient in use.
 
 ## Follow-up
 
