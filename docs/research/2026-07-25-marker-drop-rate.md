@@ -97,6 +97,14 @@ different model than intended.
 42 chunks × 4 caps × {Haiku temp 0; Qwen3.5-4B temp 0 and 0.7}. 504 trials, 0 errors,
 1068 marker instances checked.
 
+**Not run: the Gemma 4 E4B fidelity arm.** It was started and stopped at 20/168. At 37–48s per
+line it projected to ~2.5 hours, and the model is already disqualified as a router on that
+latency alone — so its drop rate could not change any conclusion here. What it *would* have
+bought is a direct test of [arXiv 2606.09662](https://arxiv.org/pdf/2606.09662)'s claim on this
+exact constraint class (does thinking degrade marker retention?), which is a question for #207,
+not for the dials. The rig supports it unchanged: `bun sweep.ts --models gemma4-e4b`. Stated
+here rather than left as a silent gap in the model column.
+
 ### Marker-drop rate × cap × model
 
 | cap | Haiku 4.5 (temp 0) | Qwen3.5-4B (temp 0) | Qwen3.5-4B (temp 0.7) |
