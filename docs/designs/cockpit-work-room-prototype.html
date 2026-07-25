@@ -23,6 +23,17 @@
       action, workable Tasks only; a PRD shows its roll-up, never Implement.
     · Filter/search bar — text + state·label·type; flatten-on-filter hides the hero (shown
       here in its resting, unfiltered state).
+
+  CHROME RECONCILED to #201. The shell's canonical chrome is now the Code-room prototype's
+  merged floating top bar, in every room — copied here verbatim:
+    · one floating band, no fill, no divider line, no reserved height;
+    · Concierge (orb + caption) moved from the bottom strip into the bar's left half;
+      the CONVERSATION toggle is cut (concierge behaviour = map #190);
+    · no wordmark, no project label, no ⌘K button; borderless project strip;
+    · macOS traffic-light clearance; tabs Sessions ⌘1 · Work ⌘2 · Code ⌘3;
+    · the global git group (primary checkout) shows in every room;
+    · the OPEN/READY/BLOCKED counters left the bar for the rail's Backlog row — they are
+      room content, not chrome.
 -->
 <style>
   :root{
@@ -64,11 +75,10 @@
   }
 
   /* ===== PROJECT STRIP ===== */
+  /* #201: no surface, no border — tabs float on the scene background. Top padding clears
+     the macOS traffic lights. */
   #strip{position:absolute;top:0;left:0;width:60px;height:900px;z-index:8;
-    display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px 0;
-    background:linear-gradient(180deg, rgba(10,11,14,0.6), rgba(6,7,9,0.7));
-    border-right:1px solid rgba(255,246,228,0.04);
-    backdrop-filter:blur(6px);}
+    display:flex;flex-direction:column;align-items:center;gap:14px;padding:52px 0 22px;}
   .ptab{position:relative;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
     font-family:var(--sans);font-weight:400;font-size:14px;color:var(--ink-dim);
     background:rgba(30,32,38,0.4);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04);cursor:pointer}
@@ -81,22 +91,38 @@
   #strip .spacer{flex:1}
   #strip .add{color:var(--ink-faint);font-weight:200;font-size:20px}
 
-  /* ===== TOP BROW ===== */
-  #brow{position:absolute;top:26px;left:92px;right:34px;display:flex;align-items:center;justify-content:space-between;z-index:6}
-  #mark{display:flex;align-items:baseline;gap:12px}
-  #mark .glyph{font-family:var(--sans);font-weight:200;font-size:22px;letter-spacing:.34em;color:var(--ink);text-shadow:0 0 22px rgba(var(--warm),0.28)}
-  #mark .proj{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-dim)}
+  /* ===== macOS traffic lights (#201) ===== */
+  #tl{position:absolute;top:19px;left:18px;z-index:12;display:flex;gap:8px}
+  #tl i{width:12px;height:12px;border-radius:50%;display:block;box-shadow:inset 0 0 0 .5px rgba(0,0,0,0.25)}
+  #tl .c{background:#ED6A5E}#tl .m{background:#F5BF4F}#tl .x{background:#61C554}
+
+  /* ===== MERGED TOP BAR — right cluster (#201) =====
+     The shell's canonical chrome, copied from cockpit-code-room-prototype.html: one floating
+     band, no fill, no divider line, no reserved height. Concierge (orb + caption) occupies the
+     left; this is the right cluster. No wordmark, no project label, no ⌘K button, no counters
+     — the backlog counts moved into the rail's Backlog row where they are room content. */
+  #brow{position:absolute;top:15px;right:26px;display:flex;align-items:center;justify-content:flex-end;gap:22px;z-index:11}
   #rooms{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04)}
   #rooms .rm{display:flex;align-items:center;gap:9px;padding:7px 15px;border-radius:8px;font-size:11.5px;color:var(--ink-dim);cursor:pointer}
   #rooms .rm .k{font-family:var(--mono);font-size:9px;color:var(--ink-faint);letter-spacing:.05em}
   #rooms .rm.on{color:#F1ECE1;background:linear-gradient(180deg, rgba(46,44,40,0.65), rgba(24,22,20,0.65));box-shadow:inset 0 1px 0 rgba(255,246,228,0.1)}
   #rooms .rm.on .k{color:var(--accent)}
-  #brow .status{display:flex;gap:24px;align-items:center}
-  #brow .status .k{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim)}
-  #brow .status .v{font-size:11px;color:var(--ink)}
+
+  /* GIT button group — [selector] [manage]; global checkout chrome, present in every room.
+     Menus themselves are exercised in the Code-room prototype, not re-rendered here. */
+  #gitgroup{display:flex;align-items:stretch;gap:2px;padding:3px;border-radius:11px;
+    background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
+  .ggbtn{position:relative;display:flex;align-items:center;gap:8px;padding:6px 11px;border-radius:8px;cursor:pointer;color:var(--ink-dim)}
+  .ggbtn:hover{background:rgba(255,246,228,0.04)}
+  .ggbtn.narrow{padding:6px 9px}
+  .ggbtn .gg-g{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .ggbtn .gg-n{font-family:var(--mono);font-size:11px;color:var(--ink)}
+  .ggbtn .gg-car,.ggbtn .gg-dots{color:var(--ink-faint);font-size:10px}
+  .trk{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px}
+  .trk .ta{color:var(--run)}.trk .tb{color:var(--accent)}
 
   /* ===== LIST RAIL — hierarchy-first, two zones (Next-up hero + priority hierarchy) ===== */
-  #rail{position:absolute;top:82px;left:92px;width:384px;bottom:70px;z-index:5;display:flex;flex-direction:column;gap:12px}
+  #rail{position:absolute;top:64px;left:92px;width:384px;bottom:16px;z-index:5;display:flex;flex-direction:column;gap:12px}
 
   /* filter / search bar — text + state·label·type; flatten-on-filter (resting state shown) */
   #filter{display:flex;flex-direction:column;gap:9px}
@@ -133,6 +159,12 @@
   .nextup .reason .b{color:var(--ink-faint)}
 
   .zlabel{margin:2px 2px -2px 4px;display:flex;align-items:center;justify-content:space-between}
+  /* backlog counts — re-homed here from the shell bar (#201) */
+  .zlabel .counts{display:flex;align-items:center;gap:11px}
+  .zlabel .counts .c{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:10px;color:var(--ink-dim)}
+  .zlabel .counts .c em{font-style:normal;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .zlabel .counts .c.run{color:var(--run)}
+  .zlabel .counts .c.blk{color:var(--block)}
 
   .hier{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px}
   .hier::-webkit-scrollbar{width:0}
@@ -176,7 +208,7 @@
   .dot.idle{background:#3a3d45}
 
   /* ===== DETAIL CARD — two panes: scrolling main column + sticky glance sidebar ===== */
-  #detail{position:absolute;top:82px;left:492px;right:34px;bottom:70px;z-index:4;display:flex;overflow:hidden;
+  #detail{position:absolute;top:64px;left:492px;right:34px;bottom:16px;z-index:4;display:flex;overflow:hidden;
     border-radius:20px;
     backdrop-filter:blur(14px) saturate(1.04);
     background:linear-gradient(180deg, rgba(28,29,35,0.5), rgba(15,16,20,0.56));
@@ -269,12 +301,12 @@
   .relrow .rt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .relrow .rs{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);flex:0 0 auto}
 
-  /* ===== CONCIERGE — fixed global strip (same as Sessions room) ===== */
-  #concierge{position:absolute;left:60px;right:0;bottom:0;height:54px;z-index:9;
-    display:flex;align-items:center;gap:16px;padding:0 22px;
-    background:linear-gradient(180deg, rgba(16,15,14,0.6), rgba(9,9,11,0.76));
-    backdrop-filter:blur(16px);border-top:1px solid rgba(255,246,228,0.05);
-    box-shadow:0 -22px 44px -32px rgba(var(--warm),0.3);}
+  /* ===== CONCIERGE — left half of the merged top bar (#201) =====
+     Was a fixed bottom strip (#159). #201 moved it into the merged top bar in every room:
+     still global, persistent and state-bearing, just at the top — and the bottom edge is
+     freed for room content (the session Dock). Not a surface: no fill, no border, no shadow. */
+  #concierge{position:absolute;left:60px;right:0;top:0;height:52px;z-index:9;
+    display:flex;align-items:center;gap:16px;padding:0 22px 0 34px;}
   .ringorb{position:relative;width:42px;height:42px;flex:0 0 auto}
   .ringorb .ring{position:absolute;inset:0;border-radius:50%;
     background:conic-gradient(from -40deg, rgba(var(--warm),0.92), rgba(var(--warm),0.42) 42deg, rgba(var(--warm),0.05) 120deg,
@@ -285,15 +317,12 @@
   .ringorb .core{position:absolute;inset:8px;border-radius:50%;
     background:radial-gradient(circle at 50% 44%, #0c0d10, #060608);
     box-shadow:inset 0 0 12px 2px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,246,228,0.05)}
-  #concierge .caption{flex:1;min-width:0;font-weight:200;font-size:14px;line-height:1.4;color:#CFC9BC;letter-spacing:.005em;
+  /* caption is capped, not full-width — the right cluster shares the band (#201) */
+  #concierge .caption{flex:0 1 auto;max-width:440px;min-width:0;font-weight:200;font-size:13px;line-height:1.4;color:#CFC9BC;letter-spacing:.005em;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #concierge .caption .q{color:var(--ink-faint)}
-  #concierge .cdivide{width:1px;height:28px;background:linear-gradient(to bottom,transparent,rgba(255,246,228,0.1),transparent);flex:0 0 auto}
-  #concierge .cmode{display:flex;align-items:center;gap:10px;flex:0 0 auto}
-  #concierge .cmode .ml{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
-  .ctoggle{flex:0 0 auto;width:36px;height:20px;border-radius:11px;position:relative;cursor:pointer;
-    background:rgba(255,255,255,0.08);box-shadow:inset 0 1px 2px rgba(0,0,0,0.5)}
-  .ctoggle .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-dim)}
+  /* the CONVERSATION mode toggle is gone (#201) — concierge behaviour belongs to map #190,
+     and global chrome holds no permanent seat for an undesigned subsystem. */
   .ctoggle.on{background:linear-gradient(180deg, rgba(var(--warm),0.55), rgba(var(--warm),0.3));box-shadow:inset 0 0 8px rgba(var(--warm),0.45)}
   .ctoggle.on .knob{left:18px;background:var(--accent);box-shadow:0 0 8px rgba(var(--warm),0.7)}
 
@@ -335,6 +364,9 @@
 <body>
 <div id="room" class="state-leaf">
 
+  <!-- macOS traffic-light window controls — reserve top-left space (hiddenInset) -->
+  <div id="tl" data-component="WindowControls"><i class="c"></i><i class="m"></i><i class="x"></i></div>
+
   <!-- PROJECT STRIP -->
   <div id="strip" data-component="ProjectStrip">
     <div class="ptab on" data-component="ProjectTab">A</div>
@@ -345,20 +377,24 @@
     <div class="ptab add">+</div>
   </div>
 
-  <!-- TOP BROW — Work room active -->
+  <!-- MERGED TOP BAR, right cluster (#201) — room tabs + global git group.
+       No wordmark, no project label, no ⌘K button, no counters. The connection chip (#173 §3)
+       would sit first in this cluster; it is silent when healthy, so it does not render here. -->
   <div id="brow">
-    <div id="mark">
-      <span class="glyph">ARGO</span>
-      <span class="proj">Argo · cockpit</span>
-    </div>
     <div id="rooms" data-component="RoomSwitcher">
-      <div class="rm on"><span class="k">⌘1</span> Work</div>
-      <div class="rm"><span class="k">⌘2</span> Sessions</div>
+      <div class="rm"><span class="k">⌘1</span> Sessions</div>
+      <div class="rm on"><span class="k">⌘2</span> Work</div>
+      <div class="rm"><span class="k">⌘3</span> Code</div>
     </div>
-    <div class="status">
-      <div><span class="k">Open</span> &nbsp;<span class="v mono">23</span></div>
-      <div><span class="k">Ready</span> &nbsp;<span class="v mono" style="color:var(--run)">5</span></div>
-      <div><span class="k">Blocked</span> &nbsp;<span class="v mono" style="color:var(--block)">3</span></div>
+
+    <!-- GIT button group — the project's primary checkout, present in every room -->
+    <div id="gitgroup" data-component="GitControls">
+      <div class="ggbtn" data-component="BranchSelector">
+        <span class="gg-g">⎇</span><span class="gg-n">main</span>
+        <span class="trk"><span class="ta">↑2</span><span class="tb">↓1</span></span>
+        <span class="gg-car">▾</span>
+      </div>
+      <div class="ggbtn narrow" data-component="BranchManage"><span class="gg-dots">⋯</span></div>
     </div>
   </div>
 
@@ -384,7 +420,12 @@
       </div>
 
       <!-- Zone 2: hierarchy, priority-sorted -->
-      <div class="zlabel"><span class="label">Backlog · by priority</span><span class="label" style="color:var(--ink-faint)">23</span></div>
+      <!-- #201: the OPEN/READY/BLOCKED counters moved out of the shell bar to here.
+           They are Work-room content, not chrome — they would have had to blank out in
+           Sessions and Code. They fold into the count this row already carried. -->
+      <div class="zlabel"><span class="label">Backlog · by priority</span>
+        <span class="counts"><span class="c">23 <em>open</em></span><span class="c run">5 <em>ready</em></span><span class="c blk">3 <em>blocked</em></span></span>
+      </div>
       <div class="hier" data-component="WorkHierarchy">
 
         <!-- Parent node, expanded — it's just a work item that happens to have children -->
@@ -614,8 +655,6 @@
   <div id="concierge" data-component="ConciergeStrip">
     <div class="ringorb" data-component="OrbMini"><div class="ring"></div><div class="core"></div></div>
     <div class="caption" data-component="ConciergeCaption"><span class="q">“</span>What's the highest-priority thing I can start right now?<span class="q">”</span></div>
-    <div class="cdivide"></div>
-    <div class="cmode"><span class="ml">Conversation</span><div class="ctoggle on" data-component="ConciergeToggle"><span class="knob"></span></div></div>
   </div>
 
   <!-- per-file STATE SWITCHER -->

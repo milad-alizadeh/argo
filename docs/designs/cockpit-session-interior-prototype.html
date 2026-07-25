@@ -10,6 +10,18 @@
   master–detail direction chosen by the user. Decisions: docs/designs/cockpit-session-interior-decisions.md
   (C2.2, C3a.1, C3b.2, C3b.5–C3b.7). Absorbs the delivery-review + fresh-session studies.
 
+  CHROME RECONCILED to #201. The shell's canonical chrome is now the Code-room prototype's
+  merged floating top bar, in every room — copied here verbatim:
+    · one floating band, no fill, no divider line, no reserved height;
+    · Concierge (orb + caption) moved from the bottom strip into the bar's left half, which
+      also hands the bottom edge back to the Dock; the CONVERSATION toggle is cut (map #190);
+    · a project strip, which this study previously did not render at all — borderless;
+    · no wordmark, no project label, no ⌘K button; macOS traffic-light clearance;
+    · tabs corrected to Sessions ⌘1 · Work ⌘2 · Code ⌘3 (this file had ⌘1 Work · ⌘2 Sessions,
+      the reconciliation the shell spec listed as a follow-up);
+    · the global git group (primary checkout) shows in every room — a session's own branch
+      stays in its header, at a different altitude and visibly attached to the session.
+
   Delivery uses the SAME master–detail two-pane layout as Activity: LIST ON THE LEFT
   (pure navigation) · DETAIL ON THE RIGHT (GitHub-style review). The sub-tab selects
   WHAT THE LEFT LIST CONTAINS; the right pane shows the selected item's detail.
@@ -69,19 +81,54 @@
       linear-gradient(to bottom, rgba(0,0,0,0.22), transparent 12%, transparent 82%, rgba(0,0,0,0.4));
     mix-blend-mode:multiply;}
 
-  /* ===== BROW ===== */
-  #brow{position:absolute;top:26px;left:34px;right:34px;display:flex;align-items:center;justify-content:space-between;z-index:6}
-  #mark{display:flex;align-items:baseline;gap:12px}
-  #mark .glyph{font-weight:200;font-size:20px;letter-spacing:.34em;color:var(--ink);text-shadow:0 0 22px rgba(var(--warm),0.26)}
-  #mark .proj{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--ink-dim)}
+  /* ===== macOS traffic lights (#201) ===== */
+  #tl{position:absolute;top:19px;left:18px;z-index:12;display:flex;gap:8px}
+  #tl i{width:12px;height:12px;border-radius:50%;display:block;box-shadow:inset 0 0 0 .5px rgba(0,0,0,0.25)}
+  #tl .c{background:#ED6A5E}#tl .m{background:#F5BF4F}#tl .x{background:#61C554}
+
+  /* ===== PROJECT STRIP (#201) =====
+     This study previously rendered no strip at all. The shell carries one in every room:
+     borderless, tabs floating on the scene, one worst-state dot per project (#164). */
+  #strip{position:absolute;top:0;left:0;width:60px;height:900px;z-index:8;
+    display:flex;flex-direction:column;align-items:center;gap:14px;padding:52px 0 22px;}
+  .ptab{position:relative;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-weight:400;font-size:14px;color:var(--ink-dim);
+    background:rgba(30,32,38,0.4);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04);cursor:pointer}
+  .ptab.on{color:#F1ECE1;background:linear-gradient(180deg, rgba(46,44,40,0.7), rgba(24,22,20,0.7));
+    box-shadow:inset 0 1px 0 rgba(255,246,228,0.12), 0 0 22px -4px rgba(var(--warm),0.4)}
+  .ptab.on::before{content:"";position:absolute;left:-11px;top:50%;transform:translateY(-50%);
+    width:3px;height:22px;border-radius:2px;background:var(--accent);box-shadow:0 0 10px 1px rgba(var(--warm),0.7)}
+  .ptab .badge{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;
+    background:var(--need);box-shadow:0 0 10px 2px rgba(var(--warm),0.75)}
+  #strip .spacer{flex:1}
+  #strip .add{color:var(--ink-faint);font-weight:200;font-size:20px}
+
+  /* ===== MERGED TOP BAR — right cluster (#201) =====
+     Canonical chrome, copied from cockpit-code-room-prototype.html. One floating band, no
+     fill, no divider line. Concierge holds the left; this is the right cluster. No wordmark,
+     no project label, no ⌘K button. Tab order corrected to Sessions ⌘1 · Work ⌘2 · Code ⌘3. */
+  #brow{position:absolute;top:15px;right:26px;display:flex;align-items:center;justify-content:flex-end;gap:22px;z-index:11}
   #rooms{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.04)}
   #rooms .rm{display:flex;align-items:center;gap:9px;padding:7px 15px;border-radius:8px;font-size:11.5px;color:var(--ink-dim);cursor:pointer}
   #rooms .rm .k{font-family:var(--mono);font-size:9px;color:var(--ink-faint)}
   #rooms .rm.on{color:#F1ECE1;background:linear-gradient(180deg, rgba(46,44,40,0.65), rgba(24,22,20,0.65));box-shadow:inset 0 1px 0 rgba(255,246,228,0.1)}
   #rooms .rm.on .k{color:var(--accent)}
 
+  /* GIT button group — global checkout chrome, present in every room (#201).
+     Menus are exercised in the Code-room prototype, not re-rendered here. */
+  #gitgroup{display:flex;align-items:stretch;gap:2px;padding:3px;border-radius:11px;
+    background:rgba(10,11,14,0.5);box-shadow:inset 0 1px 0 rgba(255,246,228,0.05)}
+  .ggbtn{position:relative;display:flex;align-items:center;gap:8px;padding:6px 11px;border-radius:8px;cursor:pointer;color:var(--ink-dim)}
+  .ggbtn:hover{background:rgba(255,246,228,0.04)}
+  .ggbtn.narrow{padding:6px 9px}
+  .ggbtn .gg-g{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .ggbtn .gg-n{font-family:var(--mono);font-size:11px;color:var(--ink)}
+  .ggbtn .gg-car,.ggbtn .gg-dots{color:var(--ink-faint);font-size:10px}
+  .trk{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px}
+  .trk .ta{color:var(--run)}.trk .tb{color:var(--accent)}
+
   /* ===== ROSTER RAIL ===== */
-  #rail{position:absolute;top:82px;left:34px;width:264px;bottom:70px;z-index:5;display:flex;flex-direction:column;gap:12px}
+  #rail{position:absolute;top:64px;left:92px;width:264px;bottom:16px;z-index:5;display:flex;flex-direction:column;gap:12px}
   #rail>.label{margin:6px 0 1px 4px}
   .plane{position:relative;border-radius:14px;padding:13px 15px;overflow:hidden;cursor:pointer;
     backdrop-filter:blur(9px) saturate(1.05);
@@ -119,7 +166,7 @@
   #arch .cnt{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
 
   /* ===== SESSION CARD (one continuous glass) ===== */
-  #card{position:absolute;top:82px;left:322px;right:34px;bottom:70px;z-index:4;display:flex;flex-direction:column;
+  #card{position:absolute;top:64px;left:380px;right:34px;bottom:16px;z-index:4;display:flex;flex-direction:column;
     border-radius:20px;overflow:hidden;backdrop-filter:blur(14px) saturate(1.04);
     background:linear-gradient(180deg, rgba(28,29,35,0.5), rgba(15,16,20,0.56));
     box-shadow:inset 0 1px 0 rgba(255,246,228,0.08), inset 0 30px 60px -44px rgba(var(--warm),0.22), 0 34px 60px -30px rgba(0,0,0,0.72);}
@@ -561,19 +608,20 @@
   .arow .aw{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);flex:none}
   .arow .at{font-family:var(--mono);font-size:10px;color:var(--ink-ghost);flex:none;width:44px;text-align:right}
 
-  /* ===== CONCIERGE STRIP (context; owned by #159) ===== */
-  #cx{position:absolute;left:0;right:0;bottom:0;height:54px;z-index:9;display:flex;align-items:center;gap:16px;padding:0 22px;
-    background:linear-gradient(180deg, rgba(16,15,14,0.6), rgba(9,9,11,0.76));backdrop-filter:blur(16px);border-top:1px solid rgba(255,246,228,0.05)}
+  /* ===== CONCIERGE — left half of the merged top bar (context; #159, relocated by #201) =====
+     Was a fixed bottom strip. #201 moved it into the merged top bar in every room, which also
+     hands the bottom edge back to this room's Dock — the two no longer share an edge. */
+  #cx{position:absolute;left:60px;right:0;top:0;height:52px;z-index:9;display:flex;align-items:center;gap:16px;padding:0 22px 0 34px;}
   .ringorb{position:relative;width:38px;height:38px;flex:none}
   .ringorb .ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from -40deg,rgba(var(--warm),0.92),rgba(var(--warm),0.42) 42deg,rgba(var(--warm),0.05) 120deg,transparent 205deg,transparent 300deg,rgba(var(--warm),0.3) 342deg,rgba(var(--warm),0.92));-webkit-mask:radial-gradient(circle,transparent 56%,#000 60%);mask:radial-gradient(circle,transparent 56%,#000 60%);filter:drop-shadow(0 0 6px rgba(var(--warm),0.55));animation:breath 7s ease-in-out infinite}
   .ringorb .core{position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 50% 44%,#0c0d10,#060608);box-shadow:inset 0 0 12px 2px rgba(0,0,0,0.9)}
-  #cx .caption{flex:1;min-width:0;font-weight:200;font-size:14px;color:#CFC9BC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #cx .caption .q{color:var(--ink-faint)}
-  #cx .cmode{display:flex;align-items:center;gap:10px} #cx .cmode .ml{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
-  .ctoggle{width:36px;height:20px;border-radius:11px;position:relative;background:linear-gradient(180deg,rgba(var(--warm),0.5),rgba(var(--warm),0.28));box-shadow:inset 0 0 8px rgba(var(--warm),0.4)}
-  .ctoggle .knob{position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(var(--warm),0.7)}
+  #cx .caption{flex:0 1 auto;max-width:440px;min-width:0;font-weight:200;font-size:13px;color:#CFC9BC;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #cx .caption .q{color:var(--ink-faint)}
+  /* the CONVERSATION mode toggle is gone (#201) — concierge behaviour belongs to map #190. */
 
   /* scene caption + band + switcher */
-  #cap{position:absolute;top:60px;left:50%;transform:translateX(-50%);z-index:7;font-size:10px;letter-spacing:.08em;color:var(--ink-faint);text-align:center}
+  /* study annotation — rehomed into the merged bar's empty middle now that content starts at 64 */
+  #cap{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:12;font-size:10px;letter-spacing:.08em;color:var(--ink-faint);text-align:center;
+    max-width:500px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #cap b{color:var(--accent);letter-spacing:.16em;text-transform:uppercase;font-weight:600}
   #band{position:fixed;top:0;left:0;right:0;height:3px;background:repeating-linear-gradient(90deg,var(--accent-deep) 0 14px,transparent 14px 28px);opacity:.5;z-index:100}
   #sw{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:101;display:flex;align-items:center;gap:2px;
@@ -594,9 +642,35 @@
 <div id="room">
   <div id="cap"><b id="capk">Activity</b> &nbsp; <span id="capd"></span></div>
 
+  <!-- macOS traffic-light window controls — reserve top-left space (hiddenInset) -->
+  <div id="tl" data-component="WindowControls"><i class="c"></i><i class="m"></i><i class="x"></i></div>
+
+  <!-- PROJECT STRIP -->
+  <div id="strip" data-component="ProjectStrip">
+    <div class="ptab on" data-component="ProjectTab">A</div>
+    <div class="ptab" data-component="ProjectTab">D<span class="badge"></span></div>
+    <div class="ptab" data-component="ProjectTab">M</div>
+    <div class="ptab" data-component="ProjectTab">P</div>
+    <div class="spacer"></div>
+    <div class="ptab add">+</div>
+  </div>
+
+  <!-- MERGED TOP BAR, right cluster (#201) — room tabs + global git group.
+       The connection chip (#173 §3) would sit first here; silent when healthy, so absent. -->
   <div id="brow">
-    <div id="mark"><span class="glyph">ARGO</span><span class="proj">Argo · main</span></div>
-    <div id="rooms"><div class="rm"><span class="k">⌘1</span> Work</div><div class="rm on"><span class="k">⌘2</span> Sessions</div></div>
+    <div id="rooms" data-component="RoomSwitcher">
+      <div class="rm on"><span class="k">⌘1</span> Sessions</div>
+      <div class="rm"><span class="k">⌘2</span> Work</div>
+      <div class="rm"><span class="k">⌘3</span> Code</div>
+    </div>
+    <div id="gitgroup" data-component="GitControls">
+      <div class="ggbtn" data-component="BranchSelector">
+        <span class="gg-g">⎇</span><span class="gg-n">main</span>
+        <span class="trk"><span class="ta">↑2</span><span class="tb">↓1</span></span>
+        <span class="gg-car">▾</span>
+      </div>
+      <div class="ggbtn narrow" data-component="BranchManage"><span class="gg-dots">⋯</span></div>
+    </div>
   </div>
 
   <div id="rail">
@@ -608,10 +682,9 @@
 
   <div id="card"></div>
 
-  <div id="cx">
-    <div class="ringorb"><div class="ring"></div><div class="core"></div></div>
-    <div class="caption"><span class="q">“</span>the auth refactor is on CI — one lint warning<span class="q">”</span></div>
-    <div class="cmode"><span class="ml">Conversation</span><div class="ctoggle"><span class="knob"></span></div></div>
+  <div id="cx" data-component="ConciergeStrip">
+    <div class="ringorb" data-component="OrbMini"><div class="ring"></div><div class="core"></div></div>
+    <div class="caption" data-component="ConciergeCaption"><span class="q">“</span>the auth refactor is on CI — one lint warning<span class="q">”</span></div>
   </div>
 </div>
 

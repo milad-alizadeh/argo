@@ -53,28 +53,21 @@
 - A plain **PTY in the checkout's cwd, attached to no agent** (tagged `no agent`) — the shell
   sibling of first-party file editing. Docked below the editor, expandable; `New` opens another.
 
-## Global git chrome — SPUN OUT → app-shell spec amendment (#172)
+## Global git chrome — RATIFIED into the shell spec (#201)
 
-The branch control is project-global chrome, not owned by the Code room. Captured here because
-this surface drove it; it belongs in the shell spec.
+The branch control is project-global chrome, not owned by the Code room. #201 moved the whole
+definition into `cockpit-app-shell-spec.md` → **Canonical chrome / Global git · checkout
+chrome**, and put it in **all three rooms** (always the primary checkout). Read it there; this
+surface is just where it was discovered.
 
-- **Two-button group**: `[⎇ branch · ↑ahead ↓behind ▾]` (select) · `[⋯]` (manage).
-- **Select menu** — local branches + **remote/`origin` refs**, each with ahead/behind; a
-  worktree-held branch shows `worktree` + `↗` (open session); a remote ref offers `Check out`.
-- **Manage menu** — **safe sync only** (`Fetch`, `Pull` when fast-forward, `Push` when ahead) +
-  branch CRUD (`New branch`, `Rename`, `Delete`).
-- **Conflict policy** — **Argo ships no merge-conflict editor.** A **diverged** branch (ahead *and*
-  behind) does not auto-merge; it surfaces an **escape hatch**: *Open a scratch terminal* or
-  *Resolve with an agent ↗*. Conflict resolution is delegated, not a UI Argo maintains.
+## Shell chrome refinements — RATIFIED into the shell spec (#201)
 
-## Shell chrome refinements — SPUN OUT → app-shell spec amendment (#172)
-
-- **Merged single top bar**, floating on the scene: **no fill, no divider line**, no reserved band
-  pushing content down.
-- **No wordmark, no project label** (the project strip + window identity are enough). The
-  **project strip is borderless / surface-less** — tabs float on the background.
-- **macOS traffic-light clearance** reserved top-left (hiddenInset window).
-- **`⌘K` has no button** — the palette is a shortcut only.
+Everything the Code-room prototype does with the chrome — merged floating top bar with no fill
+or divider line, Concierge orb and caption inside it, no wordmark, no project label, borderless
+project strip, macOS traffic-light clearance, `⌘K` with no button — is now the **shell's chrome
+in every room**, not a Code-room look. **This prototype is the chrome reference**; the Work-room
+and Session-interior prototypes were reconciled to it. Definitions live in
+`cockpit-app-shell-spec.md` → **Canonical chrome**.
 
 ## Degraded / empty states (DIRECT is the floor — files read from disk)
 
@@ -87,9 +80,9 @@ this surface drove it; it belongs in the shell spec.
   error (Relocate / Remove). See `cockpit-failure-states-spec.md` §6 (#173), which also owns git-op
   failure output — one-line summary at the control, real stderr in the scratch terminal.
 
-## Spun out of #183 (not decided here)
+## Spun out of #183
 
-- **Global git/branch chrome** (chip, select/manage, sync, conflict hatch) → amendment to the
-  **app-shell spec #172**.
+- **Global git/branch chrome** (chip, select/manage, sync, conflict hatch) and the shell chrome
+  refinements → **settled by #201**, now in `cockpit-app-shell-spec.md`.
 - **Project-level "enable worktrees" setting** + how the file view relates to **live** worktrees
-  when agents work in parallel → its **own decision ticket**.
+  when agents work in parallel → open, ticket #202.

@@ -13,14 +13,16 @@ away). Nothing requires a third gesture except leaving the app (deep links).
 ## Top-level surfaces
 
 Scoping rule (domain model): **the window shows one active project; only the
-project strip and the Concierge cross projects.** Inside the project, two rooms
-switched by ⌘1/⌘2.
+project strip and the Concierge cross projects.** Inside the project, **three rooms**
+switched by ⌘1/⌘2/⌘3 (Sessions is home; Code added by #183).
 
 | Surface | Axis | Content |
 |---|---|---|
-| **Project strip** (far-left vertical tabs) | cross-project | one icon per project + attention badge; click = swap the whole window |
-| **Work room** (⌘1) | Work | provider-backed tickets, full-width; views: kanban ⇄ list+detail split; owns backlog + "what's next" |
-| **Sessions room** (⌘2) | Runtime | Roster rail + session card; zero-state = bright orb + one compact **Next up** pointer card |
+| **Project strip** (far-left vertical tabs) | cross-project | one icon per project + attention badge; click = swap the whole window. Borderless — tabs float on the scene (#201); hover the active tab for project name + `last synced` |
+| **Sessions room** (⌘1, home) | Runtime | Roster rail + session card; zero-state = bright orb + one compact **Next up** pointer card |
+| **Work room** (⌘2) | Work | provider-backed tickets, full-width; views: kanban ⇄ list+detail split; owns backlog + "what's next" |
+| **Code room** (⌘3) | Workspace | file explorer + lightweight editor + scratch terminal over the primary checkout; session-independent (#183) |
+| **Merged top bar** | chrome | one floating band (#201): Concierge orb + caption · connection chip · room tabs · global git group. No wordmark, no project label, no ⌘K button |
 | **Roster** (rail inside Sessions room) | Runtime | the observed Sessions of the active project |
 | **Session card** | Runtime + bridge | panels: Activity · Delivery · Preview · Console |
 
@@ -75,8 +77,9 @@ state on its Work Item.
 
 - Deploy node spec (deferred, see domain model).
 
-Decided since first draft: **navigation = two rooms (⌘1 Work / ⌘2 Sessions) inside a
-project-scoped window, with a far-left vertical project strip** (Slack-workspace
-idiom) as the only cross-project surface besides the Concierge. The Sessions-room
-zero-state carries a single Next-up *pointer* card; the backlog's home is the Work
-room.
+Decided since first draft: **navigation = three rooms (⌘1 Sessions · ⌘2 Work · ⌘3 Code)
+inside a project-scoped window, with a far-left vertical project strip** (Slack-workspace
+idiom) as the only cross-project surface besides the Concierge. Sessions is home — you land
+in the running world. The Sessions-room zero-state carries a single Next-up *pointer* card;
+the backlog's home is the Work room. Chrome is one merged floating top bar (#201); the
+Concierge rides in it rather than in a bottom strip.

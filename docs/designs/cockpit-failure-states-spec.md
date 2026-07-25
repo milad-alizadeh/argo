@@ -9,7 +9,8 @@
 > Re-triaged to `grilling` after audit: **empty states and tier-degradation were already
 > absorbed** by the per-surface tickets (see [What this doc does not own](#what-this-doc-does-not-own)),
 > leaving **failure** — the one class no surface ticket covered — as the residue. It produces
-> rules, not pixels; the single pixel question (the connection chip) hands to #201.
+> rules, not pixels; the single pixel question (the connection chip) handed to #201, which
+> **placed it** — see §3.
 
 ## Scope
 
@@ -19,7 +20,8 @@ mechanical git ops erroring, the project folder vanishing, Argo's own observatio
 
 **References, does not re-spec:** the reconnect flow → #165 · provider write intents and the
 canonical five → #167 · the session dot's four states → #164 · status words → the status
-vocabulary registry · the brow's chrome and the chip's rendering → #201 · Concierge narration of
+vocabulary registry · the merged top bar's chrome and the chip's placement → #201 (settled;
+`cockpit-app-shell-spec.md`) · Concierge narration of
 failure → #190. **OS-level notification of any of this: none** — #188 resolved that connection
 failures never raise a banner (they wait in the chip); see the app shell spec's
 *Out-of-window attention*.
@@ -73,8 +75,11 @@ visual vocabulary in the strip.
 
 ## 3 · One connection chip, rolling up the bindings
 
-Lives in the **top brow's right cluster**, beside the branch chip (#183). Its placement and
-rendering are an input to **#201**, which owns that chrome; this doc owns only its behaviour.
+Lives in the merged top bar's **right cluster**. **#201 placed it first in that cluster**, ahead
+of the room tabs and the git group — the cluster is right-aligned, so a silent-when-healthy
+element appearing at its end would shove the permanent chrome sideways every time a connection
+went stale. See `cockpit-app-shell-spec.md` → Canonical chrome → Connection chip; this doc owns
+only its behaviour.
 
 **Two visible states. Silent when healthy.**
 
@@ -93,8 +98,10 @@ rendering are an input to **#201**, which owns that chrome; this doc owns only i
   action and the only one whose blast radius is every project.
 - **`connected` renders nothing.** No green light: Penumbra's one-bright-thing law, and a
   permanently-lit healthy indicator trains you to ignore the spot the warning will appear in.
-  The accepted cost is that absence is ambiguous; answer it with `last synced` on **hover of the
-  project name**, not with a persistent chip.
+  The accepted cost is that absence is ambiguous; answer it with `last synced` on hover, not with
+  a persistent chip. **#201 rehomed that hover**: the merged top bar carries no project label, so
+  `last synced` (with the project name) rides the **active project tab's tooltip** in the strip.
+  Tooltip only — no dot, no state — so #164's session-only strip dot is untouched.
 
 ## 4 · No optimistic writes
 
