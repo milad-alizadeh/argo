@@ -1,0 +1,31 @@
+# Files the 150-line cap does not apply to, read by `bun run quality:file-length`.
+#
+# Two kinds of entry, and the difference matters:
+#   KIND    — the house rule exempts this whole category (pure data, declarative catalogs).
+#             Permanent.
+#   RATCHET — real code that is over the cap today. Each line is a debt to pay down, and
+#             this section must only ever shrink. Never add to it to make a build pass.
+
+# --- KIND: declarative story catalogs. A story is a named state, not logic; length here is
+# coverage, and the duplication between stories is the point (see rules/design-studies.md).
+**/*.stories.tsx
+
+# --- KIND: test files. Length is scenario count; the cap would push cases out of the suite.
+**/*.test.ts
+**/*.test.tsx
+
+# --- KIND: pure data / shader source. No control flow to split.
+apps/desktop/src/renderer/src/domains/concierge/sceneConfig.ts
+apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/shaders.ts
+
+# --- KIND: throwaway research prototypes (the `prototype` skill's output). Deliberately quick.
+prototypes/**
+
+# --- RATCHET: over the cap, to be split. Shrink this list; do not grow it.
+apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/createEclipseOrb.ts  # 601 — the big one; owns 3 lint ratchets too
+apps/desktop/src/renderer/src/domains/activity/components/RunRow.tsx            # 186
+apps/desktop/src/renderer/src/SessionScreen.tsx                                 # 180
+apps/desktop/src/renderer/src/domains/delivery/components/FileDiff.tsx          # 167
+packages/argo-skills/bin/scaffold.mjs                                           # 167
+apps/desktop/src/renderer/src/sessionScreenModel.ts                             # 154
+apps/desktop/src/renderer/src/domains/delivery/components/DeliveryTabs.tsx      # 154

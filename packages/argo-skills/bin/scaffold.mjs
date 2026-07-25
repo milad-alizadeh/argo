@@ -105,13 +105,20 @@ function buildArgs(entry, agents, scope) {
 // by removing the skill right after the source installs. A later entry may then
 // install its own skill under the excluded name (how Argo's implement fork
 // overrides upstream) — so any overriding source must come after this one.
-function buildRemoveArgs(name, entry, agents, scope) {
+function buildRemoveArgs({ name, entry, agents, scope }) {
   const agentList = entry.agents ?? agents
   const args = ['--yes', 'skills', 'remove', name]
   if (agentList?.length) args.push('--agent', ...agentList)
   if (scope === 'global') args.push('--global')
   args.push('--yes')
   return args
+}
+
+// How an entry's skill selection reads in the progress line.
+function describeSelection(entry, exclude) {
+  if (entry.skills && entry.skills !== '*') return ` [${[].concat(entry.skills).join(', ')}]`
+  if (exclude.length) return ` [* minus ${exclude.join(', ')}]`
+  return ''
 }
 
 function run(args) {
@@ -140,19 +147,14 @@ console.log(`manifest: ${path}\ninstalling into: ${process.cwd()}\n`)
 const failed = []
 for (const entry of entries) {
   const exclude = entry.skills === '*' ? [].concat(entry.exclude ?? []) : []
-  const detail =
-    entry.skills && entry.skills !== '*'
-      ? ` [${[].concat(entry.skills).join(', ')}]`
-      : exclude.length
-        ? ` [* minus ${exclude.join(', ')}]`
-        : ''
+  const detail = describeSelection(entry, exclude)
   console.log(`• ${entry.source}${detail}`)
   if (!run(buildArgs(entry, agents, scope))) {
     failed.push(entry.source)
     continue
   }
   for (const name of exclude) {
-    if (!run(buildRemoveArgs(name, entry, agents, scope)))
+    if (!run(buildRemoveArgs({ name, entry, agents, scope })))
       failed.push(`${entry.source} (remove ${name})`)
   }
 }

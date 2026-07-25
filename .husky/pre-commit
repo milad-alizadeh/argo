@@ -14,6 +14,14 @@ fi
 
 bunx lint-staged
 
+# --- quality gates: the caps lint can't express (installed by setup-quality-gates) ---
+# lint-staged already ran biome over the staged files, so the complexity/length/param caps
+# are covered there. This is the file-length cap, which is per-file and repo-wide — it reads
+# scripts/file-length-exempt.txt, where each exemption states its reason. Duplication is
+# whole-tree and belongs to CI, not to every commit.
+bun run quality:file-length
+# --- end quality gates ---
+
 # --- graphify: committed knowledge graph, refreshed in-commit (installed by setup-graphify) ---
 # Refresh + stage the graph INTO this commit, but ONLY in the main working tree — linked
 # worktrees are skipped (git-dir != git-common-dir), so feature branches never churn or

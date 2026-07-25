@@ -9,6 +9,13 @@ export const ROW_CARETS = ['open', 'closed', 'reserved'] as const
  * a row with nothing to open still lines its name up with its siblings. */
 export type RowCaret = (typeof ROW_CARETS)[number]
 
+/** The caret for a row that discloses children: nothing to open reserves the width rather
+ * than drawing a dead button, so every sibling's name starts at the same x. */
+export function rowCaret({ hasContent, open }: { hasContent: boolean; open: boolean }): RowCaret {
+  if (!hasContent) return 'reserved'
+  return open ? 'open' : 'closed'
+}
+
 export type RosterRowProps = {
   /** Whether the row discloses children, and which way. A row that never discloses has none.
    * `reserved` is never interactive, even when `onToggle` is passed — there is nothing to open. */

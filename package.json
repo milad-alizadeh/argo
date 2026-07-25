@@ -13,6 +13,9 @@
     "build": "turbo run build",
     "format-and-lint": "biome check . --error-on-warnings",
     "format-and-lint:fix": "biome check . --write",
+    "quality": "bun run format-and-lint && bun run quality:duplication && bun run quality:file-length",
+    "quality:duplication": "jscpd apps packages scripts",
+    "quality:file-length": "node scripts/file-length-check.mjs --max 150 --exempt-from scripts/file-length-exempt.txt \"apps/*/src/**/*.ts\" \"apps/*/src/**/*.tsx\" \"packages/*/bin/*.mjs\" \"scripts/*.mjs\"",
     "test": "turbo run test",
     "test:hooks": "node scripts/worktree-guard.test.mjs && node scripts/hooks-sync.test.mjs",
     "test:stories": "turbo run test:stories",
@@ -30,6 +33,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.4",
     "husky": "^9.1.7",
+    "jscpd": "^5.0.12",
     "lint-staged": "^17.1.0",
     "turbo": "^2.3.3"
   },

@@ -1,0 +1,18 @@
+{
+  "threshold": 1,
+  "minTokens": 50,
+  "minLines": 5,
+  "format": ["typescript", "tsx", "javascript"],
+  "reporters": ["console"],
+  "absolute": true,
+  "gitignore": true,
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/out/**",
+    "**/graphify-out/**",
+    "**/*.stories.tsx",
+    "prototypes/**",
+    "**/skills/**/templates/**"
+  ]
+}

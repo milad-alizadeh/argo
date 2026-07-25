@@ -18,7 +18,43 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "complexity": {
+        "noExcessiveLinesPerFunction": {
+          "level": "error",
+          "options": {
+            "maxLines": 50,
+            "skipBlankLines": true,
+            "skipIifes": true
+          }
+        },
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 15
+          }
+        },
+        "useMaxParams": {
+          "level": "error",
+          "options": {
+            "max": 3
+          }
+        }
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noTsIgnore": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "error",
+        "noNestedTernary": "error",
+        "noUselessElse": "error"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "noUnusedFunctionParameters": "error"
+      }
     }
   },
   "javascript": {
@@ -41,6 +77,39 @@
     }
   },
   "overrides": [
+    {
+      "includes": ["prototypes/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveLinesPerFunction": "off",
+            "noExcessiveCognitiveComplexity": "off",
+            "useMaxParams": "off"
+          },
+          "style": {
+            "noNestedTernary": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/createEclipseOrb.ts",
+        "apps/desktop/src/renderer/src/domains/console/components/Console.tsx",
+        "apps/desktop/src/renderer/src/domains/console/components/LiveTerminal.tsx",
+        "apps/desktop/src/renderer/src/domains/delivery/components/Delivery.tsx",
+        "apps/desktop/src/renderer/src/shared/components/ui/PanelSplitter.tsx",
+        "packages/argo-skills/bin/hooks-sync.mjs"
+      ],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveLinesPerFunction": "off",
+            "noExcessiveCognitiveComplexity": "off"
+          }
+        }
+      }
+    },
     {
       "includes": ["scripts/**"],
       "linter": {

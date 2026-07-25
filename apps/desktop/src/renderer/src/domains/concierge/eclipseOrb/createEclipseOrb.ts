@@ -461,7 +461,9 @@ export function createEclipseOrb(canvas: HTMLCanvasElement, options: OrbOptions 
 
     // Consistent glow across the active states, driven by the live sound level:
     // mic when listening, TTS when speaking, nothing when thinking (steady).
-    const sound = state === 'listening' ? micLevel : state === 'speaking' ? audioLevel : 0
+    let sound = 0
+    if (state === 'listening') sound = micLevel
+    if (state === 'speaking') sound = audioLevel
     const glowActive = state !== 'idle' // awake: every non-idle state keeps the baseline glow (no rim)
 
     sweepAngle += dt * (inListen ? an.sweep.listenSpeed : an.sweep.idleSpeed)

@@ -7,7 +7,7 @@ import { AgentRow } from './AgentRow'
 import { doneAgentCount } from './agentState'
 import { PhaseGroup } from './PhaseGroup'
 import { PHASE_PRESENTATION, type PhaseState, phaseOpensByDefault } from './phaseState'
-import { RosterRow } from './RosterRow'
+import { RosterRow, rowCaret } from './RosterRow'
 
 export const RUN_SHAPES = ['batch', 'pipeline'] as const
 
@@ -94,13 +94,12 @@ export function RunRow({
 }: RunRowProps): React.JSX.Element {
   const [open, toggleOpen] = useDisclosure({ open: openProp, defaultOpen, onOpenChange })
   const shapeWord = SHAPE_WORD[shape]
-  // A Run dispatched with nothing in it yet has nothing to open — the caret reserves its
-  // width rather than becoming a dead button (mirrors PhaseGroup's own empty-members rule).
+  // A phased Run discloses its phases; a flat one discloses its members.
   const hasContent = phases ? phases.length > 0 : members.length > 0
   return (
     <div className={className}>
       <RosterRow
-        caret={hasContent ? (open ? 'open' : 'closed') : 'reserved'}
+        caret={rowCaret({ hasContent, open })}
         onToggle={toggleOpen}
         toggleLabel={label}
         glyph={TreeStructureIcon}

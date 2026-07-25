@@ -8,7 +8,7 @@ import {
   type PhaseState,
   phaseStatusText,
 } from './phaseState'
-import { RosterRow } from './RosterRow'
+import { RosterRow, rowCaret } from './RosterRow'
 
 export type PhaseGroupProps = {
   /** Which Run this Phase belongs to — a Phase name is only unique within its Run. Lands as
@@ -56,9 +56,7 @@ export function PhaseGroup({
       className={cn('mt-hair mb-tight border-l-2 pl-snug', rail, className)}
     >
       <RosterRow
-        // A phase with nothing to open still reserves the caret, so every phase name in the
-        // Run starts at the same x.
-        caret={hasMembers ? (open ? 'open' : 'closed') : 'reserved'}
+        caret={rowCaret({ hasContent: hasMembers, open })}
         onToggle={toggleOpen}
         toggleLabel={label}
         title={`phase ${label} — ${statusText}`}

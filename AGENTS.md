@@ -37,6 +37,25 @@ gates it on every PR). When you add, split, or rename a module, update the map's
 `publicEntry` in the **same change**; a new module missing from the map is fixed by adding it,
 never by loosening a regex. `apps/desktop` locks Electron main ⊥ preload ⊥ renderer isolation.
 
+### Quality gates
+
+The arithmetic half of those rules is a build failure, not a review note — `bun run quality`
+(biome + duplication + file length), and every rule in it is an **error, never a warning**.
+Biome carries the per-function caps (50 lines, cognitive complexity 15, 3 parameters) and the
+escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries); `jscpd` gates whole-tree
+duplication at 1%; `scripts/file-length-check.mjs` gates the 150-line per-file ceiling. CI runs
+all three, pre-commit runs the file-length one.
+
+Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
+assertions (Biome 2.5.4 has no such rule) and exhaustive `switch` over a union
+(`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo).
+
+When a gate fires, fix it or ratchet it — never suppress it inline and never raise a global
+cap. Exemptions live in two files and each states its reason: `biome.json` `overrides` (lint
+caps) and `scripts/file-length-exempt.txt` (line ceiling). Both distinguish **kind**
+exemptions, which are permanent (stories, tests, pure data, skill payload templates), from
+**ratchet** entries, which are debt and may only shrink.
+
 ## Session isolation
 
 Multiple agent sessions run against this repo concurrently. Implementation work (ticket
