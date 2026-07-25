@@ -48,9 +48,18 @@ Voice is allowed to be lossy. It is never allowed to be misleading.
 
 Output ONLY the spoken line. No preamble, no quotes, no explanation, no markdown.`;
 
+/**
+ * The uncapped arm must add NO length pressure at all.
+ *
+ * The first run said "as short as you can make it", which is a brevity instruction — so the
+ * arm that exists to separate "the cap is mis-set" from "this is a capacity floor" was itself
+ * capped, just implicitly. It showed up in the data as uncapped (22.5%) scoring *worse* than
+ * a 40-word cap (15.7%), which is not a thing brevity pressure can do. Rule 2's "one breath"
+ * is contract text and stays; the extra sentence was the contamination.
+ */
 export const systemPrompt = (cap: Cap): string =>
   cap === null
-    ? `${RULES}\n\nLength: as short as you can make it while obeying every rule above.`
+    ? RULES
     : `${RULES}\n\nLength: aim for about ${cap} words. Rule 2 says this target yields to rule 4 — exceed it rather than drop a protected marker.`;
 
 export const userPrompt = (source: string): string =>

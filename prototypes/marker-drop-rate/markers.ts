@@ -56,8 +56,30 @@ const CLASS_OF = new Map<string, MarkerClass>(
  * turns those into proposed rows. Growing this by imagination defeats the measurement.
  */
 export const SUBSTITUTIONS: Record<string, readonly string[]> = {
-  not: ["n't", "cannot", "can't", "won't", "doesn't", "didn't", "isn't", "wasn't", "aren't"],
-  cannot: ["can't", "not able", "unable"],
+  // Contractions are the same word, not a paraphrase — this is a closed, enumerable class,
+  // so listing it in full is completeness, not a finding. (The first run seeded it partially
+  // and scored `don't`/`couldn't` as drops, inflating the negation rate. Fixed, not forgiven:
+  // genuinely *lexical* substitutes still have to be earned from the data.)
+  not: [
+    "cannot",
+    "can't",
+    "won't",
+    "don't",
+    "doesn't",
+    "didn't",
+    "isn't",
+    "wasn't",
+    "aren't",
+    "weren't",
+    "hasn't",
+    "haven't",
+    "hadn't",
+    "couldn't",
+    "wouldn't",
+    "shouldn't",
+    "ain't",
+  ],
+  cannot: ["can't", "cannot"],
   none: ["no"],
   might: ["may"],
   may: ["might"],

@@ -20,10 +20,25 @@ export type ModelSpec = {
   readonly id: ModelId;
   readonly label: string;
   readonly transport: "lmstudio" | "claude-cli";
-  /** LM Studio model key; unused for the CLI. */
+  /**
+   * Substring matched against the LM Studio server's model ids, not the id itself — the
+   * registry prefixes vary by publisher (`google/gemma-4-e4b` vs `lmstudio-community/...`),
+   * and a hardcoded id silently skips the model instead of failing loudly.
+   */
   readonly key?: string;
   /** The card's recommended sampling temperature — the non-zero arm of the temp dial. */
   readonly recommendedTemp?: number;
+  /**
+   * Assistant-turn prefill that forces non-thinking, or undefined if the model cannot be
+   * stopped from thinking.
+   *
+   * LM Studio does NOT forward `chat_template_kwargs` — measured: `chat_template_kwargs`,
+   * `template_kwargs`, bare `enable_thinking` and `extra_body` all produce byte-identical
+   * reasoning-token counts, so none of them reaches the template. Qwen3.5's template *does*
+   * support the flag (it prefills an empty `<think></think>`), so the fix is to write that
+   * prefill ourselves as the last assistant message. Verified: reasoning_tokens 1499 → 0.
+   */
+  readonly noThinkPrefill?: string;
 };
 
 export const MODELS: Record<ModelId, ModelSpec> = {
@@ -38,12 +53,18 @@ export const MODELS: Record<ModelId, ModelSpec> = {
     transport: "lmstudio",
     key: "qwen3.5-4b",
     recommendedTemp: 0.7,
+    noThinkPrefill: "<think>\n\n</think>\n\n",
   },
   "gemma4-e4b": {
     id: "gemma4-e4b",
-    label: "Gemma 4 E4B (MLX 4bit)",
+    // Runs THINKING and cannot be stopped. `enable_thinking:false` is ignored (LM Studio
+    // drops it); `/no_think` and an explicit "do not reason" instruction both leave 300–440
+    // reasoning tokens; the `<|channel>thought` prefill zeroes reasoning_tokens only by
+    // moving the raw thought into `content`, which is worse. So this arm measures a thinking
+    // model on purpose — a direct test of arXiv 2606.09662 on the class #199 protects.
+    label: "Gemma 4 E4B (MLX 4bit, THINKING — cannot disable)",
     transport: "lmstudio",
-    key: "gemma-4-e4b-it",
+    key: "gemma-4-e4b",
     recommendedTemp: 1.0,
   },
   "qwen3.5-9b": {
@@ -52,6 +73,7 @@ export const MODELS: Record<ModelId, ModelSpec> = {
     transport: "lmstudio",
     key: "qwen3.5-9b",
     recommendedTemp: 0.7,
+    noThinkPrefill: "<think>\n\n</think>\n\n",
   },
 };
 
@@ -83,6 +105,18 @@ export type Reshaped = {
   readonly error?: string;
 };
 
+/** Resolved once per process: spec.key substring → the server's actual model id. */
+const resolvedIds = new Map<string, string>();
+
+async function resolveId(spec: ModelSpec): Promise<string> {
+  const cached = resolvedIds.get(spec.key!);
+  if (cached) return cached;
+  const id = (await availableLocalKeys()).find((k) => k.includes(spec.key!));
+  if (!id) throw new Error(`${spec.label}: no LM Studio model id matching "${spec.key}"`);
+  resolvedIds.set(spec.key!, id);
+  return id;
+}
+
 async function viaLmStudio(
   spec: ModelSpec,
   cap: Cap,
@@ -92,22 +126,36 @@ async function viaLmStudio(
 ): Promise<Reshaped> {
   const t0 = performance.now();
   try {
+    const modelId = await resolveId(spec);
     const res = await fetch(LMSTUDIO, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: spec.key,
+        model: modelId,
         temperature,
-        max_tokens: 400,
+        // Generous, because thinking tokens are billed against this budget. Gemma 4 E4B
+        // spends 300–500 of them per line NO MATTER WHAT (see below), and at max_tokens 400
+        // that truncated mid-thought and returned empty content — which would have been
+        // silently scored as a total marker drop rather than a rig failure.
+        max_tokens: 1500,
         stream: false,
-        // Hybrid-thinking off. LM Studio forwards chat_template_kwargs to the template;
-        // `reasoning` is honoured by newer builds. Send both — harmless if one is ignored.
-        chat_template_kwargs: { enable_thinking: false, thinking: false },
-        reasoning: { enabled: false },
+        // Ask the chat template to skip the thinking block. Honoured by templates that gate
+        // on it; Gemma 4 E4B ignores it and thinks anyway (measured: `/no_think` and explicit
+        // "do not reason" instructions do not suppress it either), so `thoughtLeaked` is the
+        // authority on which arm a row actually belongs to — not this flag.
+        //
+        // Only this one kwarg is sent. An earlier version also passed `thinking: false` and
+        // `reasoning: {enabled: false}`; both made LM Studio return empty content with
+        // finish_reason "length".
+        chat_template_kwargs: { enable_thinking: false },
         messages: [
           { role: "system", content: systemPrompt(cap) },
           { role: "user", content: userPrompt(source) },
           ...extraTurns,
+          // Must be LAST — it is the turn the model continues from.
+          ...(spec.noThinkPrefill
+            ? [{ role: "assistant" as const, content: spec.noThinkPrefill }]
+            : []),
         ],
       }),
     });
