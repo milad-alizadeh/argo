@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Argo command-spine concept: a balanced session and hybrid delivery cockpit."
+    />
+    <title>Argo concept A — Command spine</title>
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+      :root {
+        --page: #0c1016;
+        --surface: #141b24;
+        --surface-raised: #1d2733;
+        --surface-hover: #263342;
+        --text: #f3f6fa;
+        --text-muted: #aeb8c5;
+        --text-faint: #758292;
+        --border: #2a3644;
+        --border-strong: #435468;
+        --accent: #ffb454;
+        --accent-bright: #ffc777;
+        --accent-ink: #251707;
+        --running: #58c7b3;
+        --attention: #ffb454;
+        --blocking: #ff7973;
+        --complete: #71cb94;
+        --focus: #87baff;
+        --code-background: #080c12;
+        --code-text: #d6dde7;
+      }
+
+      .command-shell {
+        display: grid;
+        min-height: calc(100vh - 86px);
+        grid-template-columns: 276px minmax(0, 1fr);
+        gap: var(--space-3);
+      }
+
+      .session-rail,
+      .command-main,
+      .activity-panel,
+      .delivery-panel {
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      .session-rail {
+        display: flex;
+        min-height: 0;
+        flex-direction: column;
+        border-radius: var(--radius-large);
+        padding: var(--space-4);
+      }
+
+      .rail-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-3);
+      }
+
+      .new-session {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-small);
+        background: var(--surface-raised);
+        color: var(--accent);
+        cursor: pointer;
+        font-size: 20px;
+      }
+
+      .rail-foot {
+        display: grid;
+        gap: var(--space-2);
+        margin-top: auto;
+        border-top: 1px solid var(--border);
+        padding-top: var(--space-4);
+      }
+
+      .rail-foot strong {
+        font-size: 13px;
+      }
+
+      .command-main {
+        min-width: 0;
+        overflow: hidden;
+        border-radius: var(--radius-large);
+      }
+
+      .handoff {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) 54px minmax(260px, 0.75fr);
+        align-items: stretch;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .now-block,
+      .gate-block {
+        padding: clamp(20px, 3vw, 36px);
+      }
+
+      .now-block {
+        background:
+          linear-gradient(110deg, color-mix(in srgb, var(--running) 12%, transparent), transparent 55%);
+      }
+
+      .gate-block {
+        background: var(--surface-raised);
+      }
+
+      .handoff-arrow {
+        display: grid;
+        place-items: center;
+        color: var(--accent);
+        font-family: var(--font-code);
+        font-size: 26px;
+      }
+
+      .now-detail {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        align-items: center;
+        margin-top: var(--space-4);
+        color: var(--text-muted);
+      }
+
+      .now-detail code {
+        color: var(--text);
+        font-family: var(--font-code);
+        font-size: 12px;
+      }
+
+      .gate-state {
+        display: flex;
+        gap: var(--space-2);
+        align-items: center;
+        margin-top: var(--space-3);
+        color: var(--blocking);
+        font-family: var(--font-code);
+        font-size: 12px;
+      }
+
+      .gate-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin-top: var(--space-4);
+      }
+
+      .work-grid {
+        display: grid;
+        min-height: 630px;
+        grid-template-columns: minmax(280px, 0.34fr) minmax(520px, 0.66fr);
+      }
+
+      .activity-panel,
+      .delivery-panel {
+        min-width: 0;
+        border-width: 0;
+      }
+
+      .activity-panel {
+        border-right: 1px solid var(--border);
+        padding: var(--space-5);
+      }
+
+      .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        margin-bottom: var(--space-5);
+      }
+
+      .panel-heading h2 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-size: 24px;
+      }
+
+      .activity-list {
+        display: grid;
+        gap: var(--space-3);
+      }
+
+      .activity-item {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: var(--space-3);
+        border-left: 1px solid var(--border-strong);
+        padding: 2px 0 var(--space-4) var(--space-4);
+      }
+
+      .activity-item:last-child {
+        padding-bottom: 0;
+      }
+
+      .activity-marker {
+        display: grid;
+        width: 24px;
+        height: 24px;
+        place-items: center;
+        margin-left: -29px;
+        border: 2px solid var(--surface);
+        border-radius: 50%;
+        background: var(--surface-raised);
+        color: var(--text-muted);
+        font-family: var(--font-code);
+        font-size: 11px;
+      }
+
+      .activity-item.current .activity-marker {
+        background: var(--running);
+        color: #071713;
+      }
+
+      .activity-name {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 720;
+      }
+
+      .activity-description {
+        margin: var(--space-1) 0 0;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .agent-group {
+        margin-top: var(--space-6);
+        border-top: 1px solid var(--border);
+        padding-top: var(--space-4);
+      }
+
+      .agent-row {
+        display: flex;
+        gap: var(--space-2);
+        align-items: center;
+        padding: var(--space-2) 0;
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      .agent-row strong {
+        color: var(--text);
+      }
+
+      .delivery-panel {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .delivery-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+        padding: var(--space-3) var(--space-5) 0;
+      }
+
+      .delivery-head .lifecycle {
+        width: min(390px, 46%);
+        padding-bottom: var(--space-3);
+      }
+
+      .tab-panel {
+        min-height: 0;
+        flex: 1;
+        overflow: auto;
+        padding: var(--space-5);
+      }
+
+      .overview-grid,
+      .files-grid {
+        display: grid;
+        grid-template-columns: minmax(210px, 0.34fr) minmax(0, 0.66fr);
+        gap: var(--space-4);
+      }
+
+      .change-list,
+      .file-list {
+        display: grid;
+        align-content: start;
+        gap: var(--space-2);
+      }
+
+      .change-button,
+      .file-button {
+        display: grid;
+        width: 100%;
+        gap: var(--space-1);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-small);
+        background: transparent;
+        color: var(--text);
+        padding: var(--space-3);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .change-button[aria-current="true"],
+      .file-button[aria-current="true"] {
+        border-color: var(--border-strong);
+        background: var(--surface-raised);
+      }
+
+      .change-button strong,
+      .file-button strong {
+        font-size: 13px;
+      }
+
+      .review-stack {
+        display: grid;
+        max-width: 860px;
+        gap: var(--space-3);
+      }
+
+      .inspection-note {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        align-items: center;
+        justify-content: space-between;
+        margin-top: var(--space-3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-small);
+        padding: var(--space-3);
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 1180px) {
+        .command-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .session-rail {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
+          gap: var(--space-3);
+          align-items: center;
+        }
+
+        .rail-heading {
+          margin: 0;
+        }
+
+        .session-list {
+          grid-template-columns: repeat(3, minmax(190px, 1fr));
+          overflow-x: auto;
+        }
+
+        .session-list .session-button:nth-child(n + 4) {
+          display: none;
+        }
+
+        .rail-foot {
+          margin: 0;
+          border: 0;
+          padding: 0;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .handoff {
+          grid-template-columns: 1fr 40px minmax(240px, 0.75fr);
+        }
+
+        .work-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .activity-panel {
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .activity-list {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .activity-item {
+          border-top: 1px solid var(--border-strong);
+          border-left: 0;
+          padding: var(--space-4) var(--space-3) 0 0;
+        }
+
+        .activity-marker {
+          margin: -29px 0 0;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .handoff {
+          grid-template-columns: 1fr;
+        }
+
+        .handoff-arrow {
+          min-height: 34px;
+          transform: rotate(90deg);
+        }
+
+        .session-rail {
+          grid-template-columns: 1fr auto;
+        }
+
+        .session-list {
+          grid-column: 1 / -1;
+          grid-row: 2;
+        }
+
+        .activity-list,
+        .overview-grid,
+        .files-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .delivery-head .lifecycle {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body data-demo-state="active">
+    <a class="skip-link" href="#main-content">Skip to session workspace</a>
+    <div class="app-frame">
+      <header class="topbar">
+        <a class="brand" href="index.html" aria-label="Back to concept index">
+          <span class="brand-mark" aria-hidden="true">A</span>
+          <span class="brand-name">Argo · Command spine</span>
+        </a>
+        <nav class="room-tabs" aria-label="Rooms">
+          <button class="room-tab" aria-current="page">Sessions <kbd>⌘1</kbd></button>
+          <button class="room-tab">Work <kbd>⌘2</kbd></button>
+          <button class="room-tab">Inspect <kbd>⌘3</kbd></button>
+        </nav>
+        <div class="demo-switch" aria-label="Demo state">
+          <button class="demo-button" data-demo="active" aria-pressed="true">Active</button>
+          <button class="demo-button" data-demo="empty" aria-pressed="false">Empty</button>
+        </div>
+        <span class="meta" data-demo-announcement aria-live="polite"></span>
+      </header>
+
+      <div class="command-shell">
+        <aside class="session-rail" aria-label="Sessions">
+          <div class="rail-heading">
+            <p class="eyebrow">Sessions · 4</p>
+            <button class="new-session" data-demo="empty" aria-label="Create a new session">+</button>
+          </div>
+          <nav class="session-list" aria-label="Active sessions">
+            <button class="session-button" aria-current="true">
+              <span class="status-dot running" aria-hidden="true"></span>
+              <span class="session-copy">
+                <span class="session-title">Auth rotation</span>
+                <span class="session-meta">Opus · feat/auth-rotation</span>
+              </span>
+              <span class="session-state">running</span>
+            </button>
+            <button class="session-button">
+              <span class="status-dot attention" aria-hidden="true"></span>
+              <span class="session-copy">
+                <span class="session-title">CI flake investigation</span>
+                <span class="session-meta">Sonnet · fix/ci-flake</span>
+              </span>
+              <span class="session-state">needs you</span>
+            </button>
+            <button class="session-button">
+              <span class="status-dot blocking" aria-hidden="true"></span>
+              <span class="session-copy">
+                <span class="session-title">Config migration</span>
+                <span class="session-meta">GPT-5 · feat/config-loader</span>
+              </span>
+              <span class="session-state">failed</span>
+            </button>
+            <button class="session-button">
+              <span class="status-dot complete" aria-hidden="true"></span>
+              <span class="session-copy">
+                <span class="session-title">Release notes</span>
+                <span class="session-meta">Codex · chore/release</span>
+              </span>
+              <span class="session-state">ready</span>
+            </button>
+          </nav>
+          <div class="rail-foot">
+            <strong>One session needs you</strong>
+            <span class="meta">CI flake investigation · waiting 6m</span>
+          </div>
+        </aside>
+
+        <main class="command-main" id="main-content">
+          <section data-state="active" aria-label="Selected session">
+            <header class="handoff">
+              <div class="now-block">
+                <p class="eyebrow">Now · step 4 of 7</p>
+                <h1 class="now-title">Wiring the guard into every auth entry point</h1>
+                <div class="now-detail">
+                  <span><span class="status-dot running" aria-hidden="true"></span> Agent running</span>
+                  <code>worker/spin.ts</code>
+                  <span>2 subagents verifying</span>
+                </div>
+              </div>
+              <div class="handoff-arrow" aria-hidden="true">→</div>
+              <div class="gate-block">
+                <p class="eyebrow">Next gate · Code review</p>
+                <h2 class="gate-title">Resolve one blocking finding before merge</h2>
+                <div class="gate-state">
+                  <span class="status-dot blocking" aria-hidden="true"></span>
+                  worker path skips verify()
+                </div>
+                <div class="gate-actions">
+                  <button class="primary-button">Review finding</button>
+                  <button class="quiet-button">Open delivery</button>
+                </div>
+              </div>
+            </header>
+
+            <div class="work-grid">
+              <section class="activity-panel" aria-labelledby="activity-heading">
+                <div class="panel-heading">
+                  <h2 id="activity-heading">Activity</h2>
+                  <span class="meta">live · 3m</span>
+                </div>
+                <div class="activity-list">
+                  <article class="activity-item">
+                    <span class="activity-marker" aria-hidden="true">✓</span>
+                    <div>
+                      <h3 class="activity-name">Read the legacy auth module</h3>
+                      <p class="activity-description">Mapped four entry points and the rotation window.</p>
+                    </div>
+                  </article>
+                  <article class="activity-item">
+                    <span class="activity-marker" aria-hidden="true">✓</span>
+                    <div>
+                      <h3 class="activity-name">Extract the rotation core</h3>
+                      <p class="activity-description">Added the typed guard and failure result.</p>
+                    </div>
+                  </article>
+                  <article class="activity-item current">
+                    <span class="activity-marker" aria-hidden="true">4</span>
+                    <div>
+                      <h3 class="activity-name">Wire every caller</h3>
+                      <p class="activity-description">Worker path is the last unguarded entry point.</p>
+                    </div>
+                  </article>
+                </div>
+                <div class="agent-group">
+                  <p class="eyebrow">Verification</p>
+                  <div class="agent-row">
+                    <span class="status-dot running" aria-hidden="true"></span>
+                    <strong>Correctness</strong>
+                    <span>rotation.ts</span>
+                  </div>
+                  <div class="agent-row">
+                    <span class="status-dot running" aria-hidden="true"></span>
+                    <strong>Security</strong>
+                    <span>replay window</span>
+                  </div>
+                </div>
+              </section>
+
+              <section class="delivery-panel" aria-label="Delivery">
+                <header class="delivery-head">
+                  <div class="delivery-tabs" role="tablist" aria-label="Delivery views">
+                    <button
+                      class="delivery-tab"
+                      id="overview-tab"
+                      role="tab"
+                      aria-selected="true"
+                      aria-controls="overview-panel"
+                    >
+                      Overview
+                    </button>
+                    <button
+                      class="delivery-tab"
+                      id="review-tab"
+                      role="tab"
+                      aria-selected="false"
+                      aria-controls="review-panel"
+                      tabindex="-1"
+                    >
+                      Review <span class="count-badge blocking">1</span>
+                    </button>
+                    <button
+                      class="delivery-tab"
+                      id="files-tab"
+                      role="tab"
+                      aria-selected="false"
+                      aria-controls="files-panel"
+                      tabindex="-1"
+                    >
+                      Files <span class="count-badge">11</span>
+                    </button>
+                  </div>
+                  <div class="lifecycle" aria-label="Delivery progress">
+                    <span class="lifecycle-step done"><span class="lifecycle-node"></span>Commit</span>
+                    <span class="lifecycle-step done"><span class="lifecycle-node"></span>PR</span>
+                    <span class="lifecycle-step done"><span class="lifecycle-node"></span>CI</span>
+                    <span class="lifecycle-step live"><span class="lifecycle-node"></span>Review</span>
+                    <span class="lifecycle-step"><span class="lifecycle-node"></span>Merge</span>
+                  </div>
+                </header>
+
+                <div
+                  class="tab-panel"
+                  id="overview-panel"
+                  role="tabpanel"
+                  aria-labelledby="overview-tab"
+                >
+                  <div class="overview-grid">
+                    <nav class="change-list" aria-label="Changes in this delivery">
+                      <button class="change-button" aria-current="true">
+                        <strong>Guard malformed matrices</strong>
+                        <span class="meta">core/verify.ts · +22</span>
+                      </button>
+                      <button class="change-button">
+                        <strong>Wire primary rotation path</strong>
+                        <span class="meta">core/rotation.ts · +18 −4</span>
+                      </button>
+                      <button class="change-button">
+                        <strong>Update three callers</strong>
+                        <span class="meta">3 files · one finding</span>
+                      </button>
+                    </nav>
+                    <article>
+                      <p class="eyebrow">What changed</p>
+                      <h2>Bad matrices now fail before rotation starts.</h2>
+                      <p class="muted">
+                        The new guard returns a typed failure and the primary path turns it into
+                        <code>RotationError</code>. One worker path still bypasses the guard.
+                      </p>
+                      <div class="code-inspector">
+                        <div class="code-header">
+                          <span class="code-path">core/verify.ts</span>
+                          <span class="meta">read-only</span>
+                          <button class="quiet-button">Open externally ↗</button>
+                        </div>
+                        <pre class="code-lines" aria-label="Read-only code preview"><code><span class="code-line added"><span class="line-number">1</span><span class="line-sign">+</span><span>export function verify(matrix: Matrix) {</span></span><span class="code-line added"><span class="line-number">2</span><span class="line-sign">+</span><span>  if (matrix.length === 0) return err("empty")</span></span><span class="code-line added"><span class="line-number">3</span><span class="line-sign">+</span><span>  return ok(normalize(matrix))</span></span><span class="code-line added"><span class="line-number">4</span><span class="line-sign">+</span><span>}</span></span></code></pre>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+
+                <div
+                  class="tab-panel"
+                  id="review-panel"
+                  role="tabpanel"
+                  aria-labelledby="review-tab"
+                  hidden
+                >
+                  <div class="review-stack">
+                    <article class="finding-card">
+                      <p class="eyebrow">Blocking · 85% confidence · worker/spin.ts:37</p>
+                      <h2 class="finding-title">The worker path still reaches map() before verify().</h2>
+                      <p class="finding-copy">
+                        Empty input can still crash a background job. Guard at the job boundary so
+                        every downstream caller receives the same typed failure.
+                      </p>
+                      <div class="finding-actions">
+                        <button class="primary-button">Address with agent</button>
+                        <button class="quiet-button">Comment on line</button>
+                        <button class="quiet-button">Dismiss</button>
+                      </div>
+                    </article>
+                    <article class="finding-card advisory">
+                      <p class="eyebrow">Advisory · test coverage</p>
+                      <h2 class="finding-title">The reset path has no regression test.</h2>
+                      <p class="finding-copy">Add one fixture that proves the guard survives a restarted job.</p>
+                    </article>
+                  </div>
+                </div>
+
+                <div
+                  class="tab-panel"
+                  id="files-panel"
+                  role="tabpanel"
+                  aria-labelledby="files-tab"
+                  hidden
+                >
+                  <div class="files-grid">
+                    <nav class="file-list" aria-label="Changed files">
+                      <button class="file-button" aria-current="true">
+                        <strong>worker/spin.ts</strong><span class="meta">+20 −8 · finding</span>
+                      </button>
+                      <button class="file-button">
+                        <strong>core/verify.ts</strong><span class="meta">+22</span>
+                      </button>
+                      <button class="file-button">
+                        <strong>core/rotation.ts</strong><span class="meta">+18 −4</span>
+                      </button>
+                    </nav>
+                    <div>
+                      <div class="code-inspector">
+                        <div class="code-header">
+                          <span class="code-path">worker/spin.ts</span>
+                          <span class="meta">read-only evidence</span>
+                          <button class="quiet-button">Open externally ↗</button>
+                        </div>
+                        <pre class="code-lines" aria-label="Read-only diff"><code><span class="code-line removed"><span class="line-number">34</span><span class="line-sign">−</span><span>return matrix.map(rotate)</span></span><span class="code-line added"><span class="line-number">34</span><span class="line-sign">+</span><span>return matrix.map(rotate) // verify missing here</span></span></code></pre>
+                      </div>
+                      <div class="inspection-note">
+                        <span>Need to edit? Keep Argo focused on review and use your configured editor.</span>
+                        <button class="quiet-button">Open at line 34 ↗</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="empty-state" data-state="empty" aria-labelledby="empty-title-a">
+            <div class="empty-card">
+              <div class="empty-symbol" aria-hidden="true">&gt;_</div>
+              <p class="eyebrow">No sessions in this project</p>
+              <h1 class="empty-title" id="empty-title-a">Start with a task, or inspect the work queue.</h1>
+              <p class="empty-copy">
+                New sessions begin at the project root. Argo creates an isolated worktree when
+                implementation starts and returns you here with the live plan and delivery gates.
+              </p>
+              <div class="gate-actions centered-actions">
+                <button class="primary-button" data-demo="active">Start a session</button>
+                <button class="quiet-button">Browse ready work</button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script src="shared.js"></script>
+  </body>
+</html>

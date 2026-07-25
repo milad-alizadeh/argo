@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Three visual directions for an accessible, responsive Argo Session and Hybrid Delivery cockpit."
+    />
+    <title>Argo concept variations — Session + Hybrid Delivery</title>
+    <link rel="stylesheet" href="shared.css" />
+    <style>
+      :root {
+        --page: #111318;
+        --surface: #171a20;
+        --surface-raised: #20242c;
+        --surface-hover: #292e38;
+        --text: #f2f4f7;
+        --text-muted: #aeb5c0;
+        --text-faint: #7f8794;
+        --border: #303641;
+        --border-strong: #47505e;
+        --accent: #ffb866;
+        --accent-bright: #ffc982;
+        --accent-ink: #241506;
+        --running: #66c7b0;
+        --attention: #ffb866;
+        --blocking: #ff7b76;
+        --complete: #77c890;
+        --focus: #8cb7ff;
+        --code-background: #0c0f14;
+        --code-text: #dae0e8;
+      }
+
+      .landing {
+        width: min(1180px, 100%);
+        margin: 0 auto;
+        padding: clamp(28px, 5vw, 72px) var(--space-5) var(--space-8);
+      }
+
+      .landing-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.75fr);
+        gap: var(--space-8);
+        align-items: end;
+        margin-bottom: var(--space-8);
+      }
+
+      .landing h1 {
+        max-width: 760px;
+        margin: var(--space-3) 0 0;
+        font-family: var(--font-display);
+        font-size: clamp(42px, 7vw, 78px);
+        line-height: 0.94;
+        letter-spacing: -0.045em;
+      }
+
+      .landing-summary {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 16px;
+        line-height: 1.65;
+      }
+
+      .concept-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-4);
+      }
+
+      .concept-card {
+        display: flex;
+        min-height: 390px;
+        flex-direction: column;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-large);
+        background: var(--surface);
+        color: inherit;
+        padding: var(--space-5);
+        text-decoration: none;
+      }
+
+      .concept-card:hover {
+        border-color: var(--border-strong);
+        background: var(--surface-raised);
+      }
+
+      .concept-number {
+        color: var(--accent);
+        font-family: var(--font-code);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .concept-card h2 {
+        margin: var(--space-6) 0 var(--space-3);
+        font-family: var(--font-display);
+        font-size: 31px;
+        line-height: 1;
+      }
+
+      .concept-card p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .concept-schematic {
+        display: grid;
+        min-height: 132px;
+        grid-template-columns: 28% 1fr;
+        grid-template-rows: 34% 1fr;
+        gap: 5px;
+        margin-top: auto;
+        border-radius: var(--radius-medium);
+        background: var(--page);
+        padding: var(--space-3);
+      }
+
+      .concept-schematic span {
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        background: var(--surface-raised);
+      }
+
+      .concept-schematic .wide {
+        grid-column: 2;
+      }
+
+      .concept-schematic.ledger {
+        grid-template-columns: 34% 1fr 24%;
+        grid-template-rows: 24% 1fr;
+      }
+
+      .concept-schematic.ledger .wide {
+        grid-column: 1 / -1;
+      }
+
+      .concept-schematic.focus {
+        grid-template-columns: 18% 1fr;
+        grid-template-rows: 20% 1fr 22%;
+      }
+
+      .concept-schematic.focus .wide {
+        grid-column: 2;
+      }
+
+      @media (max-width: 960px) {
+        .landing-head {
+          grid-template-columns: 1fr;
+          gap: var(--space-5);
+        }
+
+        .concept-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .concept-card {
+          min-height: 280px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="landing">
+      <header class="landing-head">
+        <div>
+          <p class="eyebrow">Argo design concepts · July 2026</p>
+          <h1>Supervise the work. Review the evidence. Ship with confidence.</h1>
+        </div>
+        <p class="landing-summary">
+          Three deliberately different answers to one question: how should a developer see what
+          an agent is doing now, understand the next delivery gate, and inspect code without
+          turning Argo into another IDE?
+        </p>
+      </header>
+
+      <section class="concept-grid" aria-label="Concept variations">
+        <a class="concept-card" href="concept-a-command-spine.html">
+          <span class="concept-number">A · Recommended</span>
+          <h2>Command spine</h2>
+          <p>
+            A balanced cockpit with a persistent session rail and a dominant handoff from the
+            current operation to the next delivery gate.
+          </p>
+          <span class="concept-schematic" aria-hidden="true">
+            <span></span><span class="wide"></span><span></span><span></span>
+          </span>
+        </a>
+
+        <a class="concept-card" href="concept-b-review-ledger.html">
+          <span class="concept-number">B · Review first</span>
+          <h2>Review ledger</h2>
+          <p>
+            A decision-oriented surface where risk, findings, and approval history lead; live
+            execution stays visible without owning the canvas.
+          </p>
+          <span class="concept-schematic ledger" aria-hidden="true">
+            <span class="wide"></span><span></span><span></span><span></span>
+          </span>
+        </a>
+
+        <a class="concept-card" href="concept-c-focus-canvas.html">
+          <span class="concept-number">C · Adaptive</span>
+          <h2>Focus canvas</h2>
+          <p>
+            One primary canvas with compact contextual rails. It tests a stronger reflow for
+            narrower desktop windows and lower cognitive load.
+          </p>
+          <span class="concept-schematic focus" aria-hidden="true">
+            <span></span><span class="wide"></span><span></span><span></span>
+          </span>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>
