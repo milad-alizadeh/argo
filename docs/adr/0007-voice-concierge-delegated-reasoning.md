@@ -13,3 +13,35 @@
 2. The intercept hook exposes **Moshi's own speech, not the user's** — capturing user intent for the router needs a plan (parallel STT or paraphrase-back).
 3. On-device M4 latency is **unproven** (the 200 ms figure was a datacenter GPU); it directly affects the "natural feel."
 4. Delegated round-trip latency and mid-stream re-injection robustness are unmeasured — must be validated before the build depends on them.
+
+---
+
+## Amendment — 2026-07-26: hosted audio leg for v1
+
+**The concierge/router split above is unchanged and remains settled.** What changes is *which model owns the audio leg, and where it runs*, for the first version.
+
+**Decision.** **v1 uses OpenAI's Realtime API (GPT Live) as the audio front end**, with Claude as the delegated router reached through a **function tool**. On-device full-duplex (Moshi/PersonaPlex) becomes the **v2 target**, not the v1 requirement. The audio leg is now explicitly **swappable behind the interface this ADR already mandates** — that isolation is what makes the reversal cheap.
+
+**Why the reversal.** Three research passes made the original premise untenable for a first version:
+
+- **No open-weights duplex model runs acceptably on Apple Silicon today** ([#213](https://github.com/milad-alizadeh/argo/issues/213)). PersonaPlex's MLX port is real and maintained, but its own docs put the coherent 8-bit config at **RTF ~1.4 on an M2 Max** — slower than real-time is *functional failure* for full duplex, not degraded quality — and a base M4 has ~⅓ the memory bandwidth. Moshi has the only vendor-supported Mac runtime and is **last in its cohort on naturalness**, which is this ADR's paramount requirement.
+- **The pattern stopped being speculative** ([#210](https://github.com/milad-alizadeh/argo/issues/210)). GPT-Live-1 ships exactly this architecture — a full-duplex audio model delegating to a frontier text reasoner and talking while it waits — with a system card, two named developer patterns, and the same read-only containment this ADR specifies.
+- **The naturalness gap runs the wrong way.** A hosted audio leg is more natural *today* than anything we can run locally, and naturalness was the constraint that justified rejecting a cascade in the first place.
+
+**What this resolves.** Three of the four risks above are answered rather than deferred:
+
+- **Risk #2 dissolves.** The seam is a **tool call, not a monologue tap** — the tool's arguments carry the user's intent as text. No parallel STT, no paraphrase-back, no `docs/research/2026-07-19` design gap. This was the ADR's hardest open problem and hosting removes it.
+- **Risk #4 dissolves for v1.** Mid-stream re-injection is the Realtime API's own job, not ours. (It returns in v2, where [#213](https://github.com/milad-alizadeh/argo/issues/213) found the decisive unverified question: nobody has shown that forcing text into a *stock* Moshi-family checkpoint yields coherent speech — the one working precedent, MoshiRAG, needed purpose-finetuned weights.)
+- **Risk #3 defers.** On-device M4 latency and the GPU-contention question ([#196](https://github.com/milad-alizadeh/argo/issues/196)) stop gating v1 and become v2 work.
+- **Risk #1 was already downgraded** by [#210](https://github.com/milad-alizadeh/argo/issues/210) to "shipping pattern with a published latency reference."
+
+**What it costs.** Four new consequences, none fatal, all worth stating plainly:
+
+1. **The audio leg is metered.** Roughly $0.02–0.05 per active minute. **The router stays on the subscription — "zero metered API" still holds for reasoning**, which is the expensive half; only audio is billed. [#194](https://github.com/milad-alizadeh/argo/issues/194)'s latching toggle doubles as the cost control, since off means no session.
+2. **Audio leaves the machine.** A real change in posture for a tool that sits over your codebase, and the one property no amount of engineering recovers. It is the strongest argument for the v2 on-device target and should be stated in the product, not buried here.
+3. **Vendor dependency on a leg with no Anthropic substitute.** The Messages API has no audio modality and there is no Anthropic realtime endpoint, so the audio leg is *permanently* third-party or local — there is no all-Anthropic configuration at any price. Metered-or-local is binary.
+4. **We inherit OpenAI's authoring default.** In the Chat-Supervisor pattern the *reasoner* authors the spoken line and the audio model reads it verbatim — which pre-empts [#212](https://github.com/milad-alizadeh/argo/issues/212) rather than leaving it open. If we want the concierge to reshape instead, that is now an active divergence from the reference, not a default.
+
+**What is unaffected.** The return-path work is the differentiator and none of it is absorbed: the fidelity contract ([#192](https://github.com/milad-alizadeh/argo/issues/192)), the brevity-vs-fidelity guard ([#199](https://github.com/milad-alizadeh/argo/issues/199)), its measured dials ([#203](https://github.com/milad-alizadeh/argo/issues/203)), activation and posture C ([#194](https://github.com/milad-alizadeh/argo/issues/194)), and answer-injection ([#198](https://github.com/milad-alizadeh/argo/issues/198)) all still apply — they govern *what the spoken line says*, which is independent of who synthesizes it. What v1 does drop is the local **TTS stage**: GPT Live synthesizes internally, so the Kokoro/Chatterbox question is v2-only.
+
+**v2 re-entry gate.** On-device returns when an open model clears **RTF < 1 at a coherent quantization on the target Mac** *and* the stock-checkpoint injection-coherence test passes. Until both hold, local full duplex is not a candidate — and the second test is cheap, needs a CUDA box rather than a Mac, and governs Moshi as much as PersonaPlex.
