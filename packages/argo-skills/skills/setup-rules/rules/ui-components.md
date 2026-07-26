@@ -8,6 +8,22 @@ paths:
 Applies to all UI components under `{{COMPONENTS_DIR}}`. Read together with the
 `design-system` rule (tokens + utilities, no magic numbers).
 
+**This file is written in one UI dialect — DOM elements, `className`, a class-merge helper —
+and those are its spelling, not its rules.** On a stack that has none of them, rewrite it the
+way `setup-rules` §3 writes a language binding: keep the intents, re-spell everything else.
+The intents are
+
+1. every unit is placed in a tier before it is written, and reused at that tier;
+2. a primitive that already exists is never re-implemented inline;
+3. every string the user reads goes through the one text atom, so the type ladder is applied
+   in exactly one place;
+4. a screen separates the part that fetches and decides from the part that renders.
+
+Where a rule below reads as an absolute ("never a `div`"), the absolute belongs to the
+**mechanism** — bypassing the atom — never to the element name. Re-spell it in this stack's
+primitives; do not carry the noun across, and do not leave a ban standing that another
+installed rule requires breaking (`setup-rules` §5a).
+
 ## Atomic design — always (atoms → molecules → organisms)
 
 Every piece of UI is one of three tiers. This vocabulary is what stops rogue,
@@ -131,6 +147,11 @@ fetching, store wiring; ~10 lines) and a pure presentational **View**
   which does nothing but wire and render `<XView {...props} />`.
 - Fixtures are typed off the container's own view-model types and live next to the
   screen — shape drift is a compile error, never a silent stale fixture.
+
+Landing this on a tree of single-file screens makes every one of them non-conforming at
+once. It binds **new screens and the next substantial edit to an existing one** — not a
+sweep. Whoever installs this rule states how many screens don't conform today, so the number
+is known rather than discovered by the first agent that reads the file and starts renaming.
 
 > If/when this project adds Storybook: render the View with typed fixtures, never the
 > container, and story **prop axes, not values**. Re-running the same render with a

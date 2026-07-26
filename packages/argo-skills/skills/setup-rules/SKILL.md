@@ -231,10 +231,26 @@ If you cannot tell which kind it is, it's load-bearing until proven otherwise �
 wrongly deferring to the repo is a rule that's weaker than intended; the cost of wrongly
 overruling it is a broken build.
 
-Two conflicts must never survive the run, whichever way you resolve them: a rule that
-contradicts **another installed rule** (check the pair whenever you edit one), and a rule
-naming a **path, folder, or file that doesn't exist here**. Grep the installed set for every
-path it mentions and confirm each resolves.
+Two conflicts must never survive the run, whichever way you resolve them.
+
+**A rule that contradicts another installed rule.** Rewriting one rule for this stack is what
+creates these, and the check has to run against the *whole installed set*, not the file's
+obvious pair — a rewrite that adapts a styling rule can collide with the file-structure rule
+three files away. Three collisions to sweep for by name, because each has shipped:
+
+- One rule **bans a folder** another rule **directs new work into**.
+- One rule bans a construct **absolutely** while another sanctions an escape hatch that
+  requires it.
+- One rule names a file as the **canonical example** of a practice that file doesn't follow.
+
+Read the full set once at the end, together, asking only "could an agent obey all of these at
+the same time?" A contradiction between two installed rules is worse than either rule being
+absent: it teaches that house rules are decorative.
+
+**A rule naming a path, folder, or file that doesn't exist here.** Grep the installed set for
+every path it mentions and confirm each resolves. If a path is *intended* rather than present,
+say so in the sentence — a prospective location written in the indicative reads as a claim
+about the repo, and the agent that goes looking for it stops trusting the file.
 
 ### 5b. Trim
 
