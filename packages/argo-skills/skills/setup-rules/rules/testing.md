@@ -10,7 +10,9 @@ the suite the only documentation that cannot drift — prose goes stale silently
 goes red. These rules exist to keep that property: a suite that passes while the
 product is broken is worse than no suite, because it launders the breakage as safety.
 
-Runner: `{{TEST_RUNNER}}`. End-to-end: `{{E2E_RUNNER}}`.
+Runner: {{TEST_RUNNER}}. End-to-end: {{E2E_RUNNER}}. The rules are about what a test
+proves and how it stays honest, so they hold in any language; only the tool names are
+this project's.
 
 ## Test the behavior, not the implementation
 
@@ -21,7 +23,7 @@ function's return, the rendered output, the HTTP response, the row that landed.
   state to assert on it. If a behavior is only reachable privately, either it's dead
   or the module's public surface is missing it.
 - **Forbidden:** asserting that a function *was called*, in place of asserting what
-  happened. `expect(save).toHaveBeenCalled()` passes when `save` is broken.
+  happened. A call-count assertion on `save` passes when `save` is completely broken.
 - The payoff is the whole point of the rule: a refactor that preserves behavior must
   leave the suite green. A suite that reds on every rename is measuring the shape of
   the code, and it will be deleted the first time it's inconvenient.
@@ -49,21 +51,24 @@ ran, the serialization that only fails over the wire.
 Unit tests prove your logic. Only an integrated test proves your *system*, and the
 system is what breaks in production.
 
-## Locate by structure, not by decoration
+## Address things by what they are, not by how they're decorated
 
-Query the accessibility tree, in this order: `getByRole` → `getByLabelText` →
-`getByText`. `getByTestId` is the last resort, and each use is a small admission that
-the element isn't reachable the way a screen reader reaches it.
+A test finds the thing it acts on through the same surface a real consumer would: a
+user-facing UI through its accessible role and label, an API through its documented
+contract, a queue through its message schema. Never through an incidental detail —
+a CSS class, a DOM position, a column order, a serialization quirk.
 
-- **Forbidden:** CSS-class and DOM-shape selectors (`.btn-primary`, `div > span:nth-child(2)`).
-  They assert styling and survive nothing.
-- **Forbidden:** a hardcoded URL for content that comes from a database. Discover
-  dynamic routes at test time (the sitemap, a fixture query, the router manifest).
-  Static paths that are themselves a contract — legal, marketing, a documented
-  webhook — keep their literals; that's what they're for.
+- **Forbidden:** selectors that assert styling or structure (`.btn-primary`,
+  `div > span:nth-child(2)`). They survive nothing and prove nothing.
+- **Forbidden:** a hardcoded identifier for something the system generates — a
+  database-derived URL, an auto-increment id, a generated file name. Discover it at test
+  time. Identifiers that are themselves a contract (a legal page path, a documented
+  webhook route) keep their literals; that's what makes them contracts.
 
-This rule pays twice: the query ladder is the same tree assistive technology walks, so
-a test that can't find the element is usually reporting a real accessibility defect.
+{{QUERY_LADDER}}
+
+This rule pays twice over: addressing a UI the way assistive technology addresses it means
+a test that can't find an element is usually reporting a real accessibility defect.
 
 ## One concept per test
 
@@ -86,7 +91,7 @@ in any order, in parallel, and still pass.
   row a later test depends on, a session reused across cases).
 - **Forbidden:** a test that passes in the suite and fails alone, or vice versa. That's
   a broken test, not a quirk — a failure elsewhere will be blamed on it for weeks.
-- Randomize execution order if `{{TEST_RUNNER}}` supports it, so coupling surfaces
+- Randomize execution order if the runner supports it, so coupling surfaces
   immediately rather than during an unrelated refactor.
 
 ## One scenario, many rows
@@ -103,7 +108,7 @@ different behavior and belongs in its own test.
 
 1. Does any assertion touch a private, an internal path, or "was called"?
 2. Is anything mocked that this repo owns?
-3. Is any element found by class, test-id, or DOM position where a role would work?
+3. Is anything addressed by an incidental detail — a class, a position, a generated id?
 4. Does any test name contain "and"?
 5. Would this test pass if run alone, first, or in parallel?
 6. Are there copy-pasted near-identical tests that should be one table?

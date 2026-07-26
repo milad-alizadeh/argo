@@ -1,10 +1,14 @@
 ---
 paths:
-  - "{{APP_GLOB}}"
-  - "packages/**/*.{ts,tsx}"
+  - "{{SOURCE_GLOBS}}"
 ---
 
 # File Structure Rules
+
+Where code lives, and which parts of a module the rest of the codebase may see. These
+rules are about structure rather than syntax, so they bind **every language in this
+repo**. One thing differs per language — what a module's public entry *is* — and this
+repo's is `{{PUBLIC_ENTRY}}`.
 
 ## Folder-split hygiene — extract before you dump
 
@@ -14,18 +18,18 @@ feature, not as a follow-up cleanup task.
 
 ### The split pattern
 
-`thing.ts` → `thing/` folder:
+One file becomes a folder of focused units behind one entry:
 
 ```
 thing/
-  index.ts       # orchestrator only: wires sub-units together, barrel re-exports
-  partA.ts       # one focused unit
-  partB.ts       # one focused unit
+  {{PUBLIC_ENTRY}}   # orchestrator only: wires sub-units together, re-exports the API
+  partA              # one focused unit
+  partB              # one focused unit
 ```
 
-`index.ts` is the **orchestrator** — wiring and re-exports only. No business logic
-lives in `index.ts`; that belongs in named leaf files. Callers import from
-`'./thing'` and TypeScript resolves to `thing/index.ts` — zero import churn.
+The entry file is the **orchestrator** — wiring and re-exports only. No business logic
+lives there; that belongs in named leaf files. Callers keep importing `thing`, and the
+language resolves the entry for them — zero import churn.
 
 ### When to extract
 
@@ -87,20 +91,24 @@ scoped to its own folder's domain is fine.
 One level of nesting covers almost every case. Never go deeper than two levels below
 the module root without a documented reason.
 
-### Public entry per module (barrels)
+### Public entry per module
 
-Every module exposes ONE public entry that is its API — the `index.ts` barrel;
-callers never import an internal leaf. The exception: when only one symbol from a
-leaf is needed and the barrel would re-export a very large surface, a direct leaf
-import is acceptable.
+Every module exposes ONE public entry that is its API — in this repo,
+`{{PUBLIC_ENTRY}}`. Callers never import an internal leaf. The exception: when only one
+symbol from a leaf is needed and the entry would re-export a very large surface, a direct
+leaf import is acceptable.
+
+Every ecosystem has this mechanism under a different name — a barrel file, a package
+`__init__`, a module declaration, an exported namespace. Whatever this repo's is, the rule
+is the same: one front door per module, and everything behind it is private.
 
 ## Module boundaries — ports and adapters
 
 Modules communicate through explicit contracts, never by reaching into each other's
 internals (information hiding / dependency inversion).
 
-- **A module's barrel IS its API.** Cross-module imports may only target another
-  module's `index.ts`. Anything not re-exported from the barrel is private.
+- **A module's public entry IS its API.** Cross-module imports may only target another
+  module's `{{PUBLIC_ENTRY}}`. Anything it doesn't re-export is private.
 - **Depend on ports, not implementations.** When module A needs behavior module B
   provides, A consumes an interface/registry (the port) and B registers into it
   (the adapter). A never imports B directly if B is a lower-trust or more specific layer.
@@ -116,8 +124,8 @@ internals (information hiding / dependency inversion).
 
 ### Enforce mechanically where you can
 
-If the repo has a boundary linter (e.g. `dependency-cruiser`), encode the layer
-rules there so a new leak fails the build instead of relying on review. Justified
+If the repo has a boundary linter — `dependency-cruiser` for JS/TS, `import-linter` for
+Python, the compiler's own visibility rules elsewhere — encode the layer rules there so a new leak fails the build instead of relying on review. Justified
 violations (vendored code, a migration in flight) go in a small explicit ignorelist
 next to the lint config — each entry scoped to one rule + one path glob, with a
 one-line reason. Never loosen the rule globally, never scatter inline disable comments.

@@ -67,6 +67,16 @@ defaults — a repo may land looser ones (§5), never at the cost of dropping th
 Intents 1–9 are ordinary lint rules in most ecosystems. 10 and 11 usually are not —
 they get their own tools in §4.
 
+**Not every intent exists in every language, and a missing one is not a gap to fill.** A
+language with no gradual-typing escape hatch has no intent 5; one whose compiler already
+rejects unused variables has intent 9 for free; one with no ternary has no intent 4. Mark
+those **n/a** in the report — distinct from *prose-only* (the intent applies here but this
+toolchain can't check it). Inventing a rule to cover an intent the language doesn't have is
+how a config ends up gating nothing.
+
+The intents that travel unchanged everywhere are 1, 2, 3, 10, and 11 — length, complexity,
+arity, duplication, file size are arithmetic, and arithmetic doesn't care about syntax.
+
 ## 3. Resolve each intent to a real rule — verify, don't recall
 
 For each intent, find the rule in **this** linter at **this** version, and prove the
@@ -101,19 +111,26 @@ back as an **error** is the check that the whole chain is live — delete it aft
 ## 4. The two intents that need their own tool
 
 **Duplication (intent 10).** Copy-paste is invisible to a linter that reads one file
-at a time. Install the ecosystem's copy-paste detector — for JS/TS that's `jscpd`
-today; confirm the current name and flags before wiring it — and configure:
+at a time. Install a copy-paste detector — `jscpd` is language-agnostic (it tokenizes
+by format, so one install covers a polyglot repo) and some ecosystems ship their own
+(`dupl` for Go, PMD-CPD for the JVM). Confirm the current name and flags before wiring
+it, then configure:
 
 - A minimum clone size in tokens/lines, so a shared import block isn't a "clone".
 - A **threshold** that exits non-zero when duplication crosses it, so it gates rather
   than reports.
 - Ignores for generated output, lockfiles, snapshots, and vendored code.
 
-**File length (intent 11).** Most linters cap function length, not file length. If
-this linter has a per-file rule, use it. Otherwise copy
-`templates/file-length-check.mjs` into the repo's scripts folder **verbatim** and run
-it with the source globs and cap as arguments. Exempt what the house rule exempts:
-generated files, pure-data modules, state machines, snapshots.
+**File length (intent 11).** Most linters cap function length, not file length. If this
+linter has a per-file rule, use it (ESLint's `max-lines`, Ruff's family). Otherwise copy
+`templates/file-length-check.mjs` into the repo's scripts folder **verbatim** and run it
+with the source globs and cap as arguments — it counts lines, so it works on any
+language's files, and needs only a Node or Bun runtime available in CI. Exempt what the
+house rule exempts: generated files, pure-data modules, state machines, snapshots.
+
+Record exemptions with `--exempt-from <file>`, one glob per line with a `#` comment giving
+the reason, and separate permanent **kind** exemptions from **ratchet** debt in that file
+(§5). A bare `--exempt` list with no reasons decays into a permanent allowlist.
 
 ## 5. Land it on an existing codebase — ratchet, never loosen
 

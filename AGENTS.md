@@ -21,8 +21,9 @@ Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agent
 House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
-- **All code** — `engineering-principles.md`, `comments.md`, `file-structure.md`,
-  `typescript-style.md`, `dependencies.md`
+- **All code, any language** — `engineering-principles.md`, `code-style.md`,
+  `comments.md`, `file-structure.md`, `dependencies.md`
+- **TypeScript** — also `typescript-style.md` (how TS spells `code-style.md`)
 - **Tests** — also `testing.md`
 - **UI work** — also `ui-components.md`, `design-system.md`, `design-studies.md`
 - **Skill authoring** — also `skill-authoring.md` (any `SKILL.md`)

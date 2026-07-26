@@ -33,18 +33,18 @@ Docs, `SKILL.md` files, rule files, and public API documentation are different �
 there, naming a verb, path, gate, or config key IS the contract the reader depends
 on. Referential naming is expected there, forbidden inside code.
 
-Three positions in UI code are that same surface, because Storybook renders them
-verbatim to a reader who never opens the file: the declaration of an exported
-component, each prop in its props type, and each exported story. A comment there
-is REQUIRED, not merely permitted.
+The same applies to any position a **documentation generator renders verbatim** to a
+reader who never opens the file — a published API reference, a component catalog. A
+comment there is REQUIRED, not merely permitted, and it must use the form the generator
+reads: the language's docblock (`/** */`, `"""…"""`, `///`), never a line comment. A
+generator that silently drops a line comment turns the omission into a defect rather than
+a style slip.
 
-- **Write it as `/** */`, never `//`.** react-docgen and Storybook's CSF enrichment
-  read docblocks only, so a `//` in one of those positions is silently dropped and
-  ships as documentation nobody will ever see. That makes it a defect, not a style
-  slip. `ui-components.md` states what each of the three has to say.
-- **Nothing else moves.** Inside a function body — a story's `render` or `play`
-  included — WHAT-restatement, tombstones, and multi-paragraph rationale stay
-  forbidden.
+Which positions those are is a property of the project's tooling, so the rule that names
+them lives with that tooling: for UI components, `ui-components.md`.
+
+**Nothing else moves.** Inside a function body — including a rendered example's body —
+WHAT-restatement, tombstones, and multi-paragraph rationale stay forbidden.
 
 ## Self-check — in-body comments
 
