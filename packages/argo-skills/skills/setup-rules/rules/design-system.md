@@ -5,15 +5,28 @@ paths:
 
 # Design System
 
-Style every UI through **design tokens** surfaced as **Tailwind v4 utility classes**,
-never as raw values or inline style objects. Two hard rules, no exceptions outside the
-documented escape hatches.
+Style every UI through **design tokens**, never as raw values or inline style objects.
+Two hard rules, no exceptions outside the documented escape hatches.
 
-> The contract is the **named token set**, not any file format. This file's wording is
-> Tailwind v4; on a non-Tailwind target (React Native / Tamagui, etc.) the same rules
-> bind against that framework's token layer (`createTokens`, styled props, StyleSheet
-> constants) — raw values stay banned everywhere, and token *names* stay identical
-> across targets.
+**This file is written in one styling dialect — Tailwind v4 `@theme`, utility classes,
+`className` — and those are its spelling, not its rules.** On a stack with a different
+token layer (React Native `StyleSheet` + a theme module, Tamagui `createTokens`, vanilla
+CSS custom properties), rewrite it the way `setup-rules` §3 writes a language binding: keep
+the intents, re-spell every mechanism. The intents are
+
+1. every visual constant lives in **one token source of truth**, and reaches components
+   only through the token layer's named form — never as a raw literal at a call site;
+2. tokens are named by **role**, not by value, and the role set stays deliberately small;
+3. per-state styling **selects among named styles**; it never computes raw values inline;
+4. drift is fixed at the **contract** (snap to a token or promote one), never patched at
+   the one offending line.
+
+Where a rule below reads as an absolute ("never inline `style`"), the absolute belongs to
+the **mechanism** — bypassing the token layer — never to the spelling. Re-spell the escape
+hatches too: every stack has values the token system genuinely cannot express, and the
+binding must say where they live, or the absolutes drive them underground. And before
+asserting any dialect is absent here, grep this file's own `paths:` glob (`setup-rules`
+§5a) — a platform-variant file can carry the other dialect inside this rule's own scope.
 
 ## Rule 1 — Tokens only, never magic numbers
 

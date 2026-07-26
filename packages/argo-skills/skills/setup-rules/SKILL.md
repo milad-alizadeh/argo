@@ -38,6 +38,7 @@ rule; it points at it.
 | `code-style.md` | guard clauses, parameter ceiling, line ceiling, naming, boundary validation |
 | `comments.md` | comment discipline |
 | `file-structure.md` | domain folders, public entry, hoisting tiers, layering |
+| `domain-types.md` | primitive obsession, illegal states unrepresentable, one owner per concept |
 
 **Conditional — install when the subject exists here:**
 
@@ -45,8 +46,9 @@ rule; it points at it.
 |---|---|
 | `testing.md` | project has a test runner |
 | `dependencies.md` | project has a package manager |
+| `database.md` | project owns a schema — a migrations directory, an ORM/schema file, or a query layer it maintains |
 | `ui-components.md` | project has a UI component tree |
-| `design-system.md` | project has a design-token layer (e.g. Tailwind v4 `@theme`) |
+| `design-system.md` | project has a design-token layer — **any** form: a Tailwind v4 `@theme` block, a TS/JSON token module, a generator, a native theme object |
 | `design-studies.md` | the repo holds a prototype/study directory, or a design-tool config, and its UI is the product surface — not merely "has UI" |
 
 `ui-components.md` ships shaped for a **TypeScript web** tree: Storybook, DOM elements,
@@ -66,8 +68,14 @@ Only the TypeScript binding ships. A binding is short and mechanical enough to d
 from the core rules plus the target language, so for any other language you write it
 during install rather than shipping five untested files. §3 is that procedure.
 
-`documentation-*.md` and `database.md` are **not** in this set — bring them later,
-individually, once the infra they reference (docs site, DB) actually exists.
+`documentation-*.md` is **not** in this set — bring it later, once the docs site it
+references actually exists.
+
+`database.md` is conditional in the strict sense: install it when the repo *owns* a schema,
+not when it merely talks to someone else's. A service calling a third-party API has no
+schema to govern; one holding migrations, an ORM schema file, or its own query layer does.
+Its whole subject is the derivation chain — schema → migrations → generated types → data
+access — so a repo with no migrations and a hand-written client is the case to defer.
 
 `testing.md` installs only when a runner exists. No runner and no test files? Defer it
 and say so — a testing rule in a repo with no tests is an instruction the agent can't act
@@ -101,14 +109,25 @@ Discover the concrete values before substituting — read each off the repo, nev
 - **Components dir** — search for an existing components folder (e.g.
   `.../components`). If none exists yet, still install `ui-components.md` but set the
   path to where components *will* live per the file-structure rule.
-- **Tokens CSS** — the file with the Tailwind v4 `@theme` block (search for `@theme`).
-  If Tailwind v4 isn't set up, **defer `design-system.md`** and say so.
+- **Token layer** — the single file every visual constant comes from. Tailwind v4 spells it
+  as an `@theme` block, but that is one spelling of several: a `theme.ts` exporting colour and
+  spacing objects, a token JSON with a generator, a native `StyleSheet` theme module. Find the
+  source of truth by looking for where colours and spacing are *defined once*, not by grepping
+  `@theme`. Defer `design-system.md` only when there is no token layer in **any** form — a
+  strong non-Tailwind token layer is the case where this rule is most useful, so keying the
+  decision on the framework rather than the layer deletes the best rule in the set.
 - **Layer dirs** — for the file-structure boundary example, the two top-level layers
   that must not cross-import (e.g. `main/` ↔ `renderer/` for Electron; `server/` ↔
   `client/` otherwise). **Many repos have no such split** — a single-process mobile or CLI
   app, or one whose environment split is a filename suffix rather than a directory. Don't
   manufacture one: `{{LAYER_BOUNDARY}}` is a whole sentence, and when there are no layers
   to name it degrades to the intra-layer half alone.
+- **Schema ownership** — does this repo own a schema? Look for a migrations directory, an
+  ORM/schema file (`schema.prisma`, `schema.sql`, a models module, `*.migration.*`), and the
+  commands that create a migration and regenerate types (read them off the manifest's scripts
+  or the tool's docs — they are what `database.md`'s rules point at). A repo with a query
+  layer but no migrations owns *queries*, not the schema: install `database.md` and cut the
+  migration sections rather than describing a directory that doesn't exist.
 - **Conventions already in force** — the casing of existing files and folders, any folder
   the framework reserves (a router directory whose filenames become URL segments, a
   migrations directory), and whether the bundler resolves platform variants by suffix
@@ -116,10 +135,18 @@ Discover the concrete values before substituting — read each off the repo, nev
   substituting, not after a rule has already contradicted one.
 - **Documentation-comment form and surfaces** — which generator, if any, renders comments
   verbatim here, and which form it reads. `comments.md` needs both by name, and the form is
-  language-specific and mutually exclusive: `go doc` reads a plain `//` block and a block
-  comment there fails `gofmt`; TSDoc/JSDoc read `/** */` and ignore `//`; Python tooling
-  reads a `"""…"""` docstring *inside* the definition. Check the generator; never assume
-  "docblock" means the C-style form.
+  language-specific: TSDoc/JSDoc read `/** */` and ignore `//`; Python tooling reads a
+  `"""…"""` docstring *inside* the definition; `go doc` accepts **either** `//` or `/* */`
+  immediately above the declaration, and `gofmt` is happy with both — the convention there is
+  `//`, but a block comment is not an error, and writing that it is puts a false fact in the
+  installed rules.
+
+  What is load-bearing in Go is **adjacency, not the marker**: one blank line between the
+  comment and the declaration and `go doc` drops the text entirely, with no complaint from
+  `gofmt` or `go vet`. Silent-drop conditions like that are what `comments.md` needs to name.
+  So run the generator on a two-case sample and read its output rather than asserting the
+  rule from what "everyone knows" — this exact bullet shipped backwards once, and every
+  installer that trusted it wrote the error into a consumer's repo.
 
 If a project is empty/fresh (app scaffold with no `src` yet), that's fine — install the
 always-on rules, and for the UI rules point paths at the intended structure, noting they
@@ -144,6 +171,7 @@ check the pragma and construct names against the installed version:
 | Checker-silencing pragmas | this language's list (`# type: ignore`, `@SuppressWarnings`, `//nolint`, `unsafe`, `@phpstan-ignore`) |
 | Validate at the boundary | the ecosystem's parse-don't-declare tool (Pydantic, `encoding/json` + validation, a schema library) |
 | Naming convention | the casing this language uses for files, types, functions, constants |
+| Nominal domain type | how this language makes two same-shaped types **incompatible** — a newtype, a branded alias, a distinct declared type, a value class — and whether it costs anything at runtime. Pairs with `domain-types.md`, which states the intent and deliberately names no spelling |
 | Public entry | how a module declares its API — pairs with `file-structure.md`'s `{{PUBLIC_ENTRY}}` |
 | Line-ceiling exemptions | which file kinds are genuinely exempt here (generated clients, migrations, fixtures) |
 
@@ -155,6 +183,21 @@ Two rules for the binding you write:
   is left out and reported, exactly like an unresolvable lint rule in
   `setup-quality-gates`. A binding that names a construct the language doesn't have is
   worse than a shorter one.
+- **Verify a pragma against the runner that actually gates, not the tool that owns it.**
+  Where an aggregate runner wraps several analysers, only its own directive is honoured:
+  under `golangci-lint`, staticcheck's `//lint:ignore <check> <reason>` is inert in either
+  placement while `//nolint:staticcheck // reason` suppresses the same finding. A binding
+  that lists the owning tool's spelling documents an escape hatch nobody can use and,
+  worse, teaches that the file's other rows are also unchecked. Plant a violation, apply
+  the pragma, and require the finding to disappear — a name that exists in the tool's docs
+  is not a name that works here.
+
+**One ordering note.** The rows above about pragmas and exhaustiveness describe a linter that
+`setup-quality-gates` installs *after* this skill runs. On a repo with no linter yet, those
+rows cannot be verified when you reach them, and the two honest options are to install the
+linter early (then finish the binding) or to write the binding without them and complete
+those rows during the gates run. Leaving them unverified and confidently spelled is the one
+option that isn't available.
 
 ## 4. Substitute the placeholders
 
@@ -182,6 +225,11 @@ Detect the values (§2); don't copy the examples. The full token set:
 | `{{PKG_ADD}}` / `{{PKG_REMOVE}}` | add/remove commands | `bun add` / `bun remove` (Python: `uv add` / `uv remove`) |
 | `{{COMPONENT_KIT}}` | how this repo's configured kit supplies primitives | `This is a configured shadcn project (\`components.json\`) — \`bunx shadcn@latest add <name>\` is where a badge, dialog or select comes from.` |
 | `{{TEST_GLOB}}` | test-file glob for `testing.md`'s `paths:` | `**/*.{test,spec}.{ts,tsx}` (add `e2e/**` if a separate suite exists) |
+| `{{DB_GLOBS}}` | the globs `database.md` governs: migrations, schema, data-access tier | `apps/server/db/**` + `apps/server/src/data/**` |
+| `{{MIGRATIONS_DIR}}` | the migrations directory | `apps/server/db/migrations/` |
+| `{{SCHEMA_FILE}}` | the schema source of truth | `apps/server/db/schema.prisma` (or `schema.sql`, a models module) |
+| `{{MIGRATION_CMD}}` | the command that creates a migration | `bunx prisma migrate dev --name <name>` |
+| `{{TYPEGEN_CMD}}` | the command that regenerates types from the schema | `bunx prisma generate` (none: `no generator — the row types are hand-written, which database.md flags as the debt to fix first`) |
 | `{{TEST_RUNNER}}` | the unit runner, named | `Vitest` (Python: `pytest`) |
 | `{{E2E_RUNNER}}` | the integration/E2E runner, or how to say there isn't one | `Playwright` (none yet: `no E2E suite yet — the critical-path rule below is the reason to add one`) |
 
@@ -198,8 +246,18 @@ config file, and its icon-swap convention (e.g. shadcn: `bunx shadcn@latest add 
 sentence pointing at the primitives directory ("no generator — build primitives by hand in
 `shared/components/ui/`"), so the reuse gate in `ui-components.md` still reads.
 
-A token is never wrapped in backticks in the template — several values carry their own
-inline code spans, and nesting them produces broken markdown. Format inside the value.
+**Check the backticks around each token before substituting.** Templates wrap the
+path-shaped tokens in backticks (`` `{{PUBLIC_ENTRY}}` ``, `` `{{TOKENS_CSS}}` ``,
+`` `{{COMPONENTS_DIR}}` ``, `` `{{SHARED_TIER}}` ``) because their usual value is one
+filename and a code span is right. That breaks the moment the value isn't:
+`{{DOC_COMMENT_FORM}}` is a whole sentence, `{{PKG_ADD}}` can be two commands for two
+package kinds, and `{{PUBLIC_ENTRY}}` has one spelling per language in a polyglot repo.
+A sentence inside a code span renders as code, and a value carrying its own spans nests
+them into broken markdown.
+
+So: if the value is a single bare filename or path, keep the template's backticks; if it is
+a sentence, a list, or anything already carrying inline code, **delete the backticks from
+the template line** and format inside the value. Never substitute without looking.
 
 After substitution, **grep the installed files for `\{\{[A-Z0-9_]+\}\}`** — a leftover token
 means detection missed something. Fix it before finishing; never ship one.
@@ -252,6 +310,15 @@ every path it mentions and confirm each resolves. If a path is *intended* rather
 say so in the sentence — a prospective location written in the indicative reads as a claim
 about the repo, and the agent that goes looking for it stops trusting the file.
 
+**A rule asserting that something is absent.** The inverse of the above, and more dangerous,
+because there is no path to grep unless you think to. Rewriting a rule for this stack invites
+sentences like "there is no DOM element, no `className` and no class-merge helper here" — and
+one platform-variant file (`*.web.tsx`) inside that rule's own `paths:` glob makes it false.
+An agent obeying the sentence literally deletes working code. **Grep for whatever you are
+about to declare absent, across the rule's own globs, before writing the sentence** — and if
+it turns up, say "this stack's primary spelling is X; Y appears only in Z" instead. Absence is
+a claim about the repo exactly like a path is.
+
 ### 5b. Trim
 
 Read each substituted file once and cut anything that doesn't apply here:
@@ -281,15 +348,29 @@ Keep the forbidden-lists and self-checks — those are the parts that change beh
 Write the adapted rules to **`rules/`** at the repo root (create it). Use a neutral,
 agent-agnostic location — not `.claude/rules/` — since the rules are consumed equally by
 every agent (Claude Code, Codex, …) via the pointer, and nothing auto-loads them by path.
-Keep each file's `paths:` frontmatter — it's how the rule scopes itself to matching files.
+
+Keep each file's `paths:` frontmatter — it's how the rule scopes itself to matching files —
+and **confirm every installed file has one before you write the pointer**, because §7's
+wording claims they all do. Any file that reaches this step without frontmatter gets
+`{{SOURCE_GLOBS}}`, the same value `code-style.md` carries: those rules bind all code, which
+is a scope, not an absence of one.
 
 ## 7. Wire the pointer (so agents actually load them)
 
 Stock Claude Code and Codex do **not** auto-load `rules/*.md` by path-glob. Without a
-pointer the files are inert. Add a **Rules** section at the repo root: if `CLAUDE.md` merely
-imports `AGENTS.md` (its whole body is `@AGENTS.md`), put the section in `AGENTS.md` only —
-adding it to both would duplicate it via the import. Otherwise wire both. Group by concern so
-a backend task isn't pulled into UI rules:
+pointer the files are inert. Add a **Rules** section at the repo root, to **the project docs
+that already exist**:
+
+- Both `CLAUDE.md` and `AGENTS.md` present, and `CLAUDE.md` merely imports `AGENTS.md` (its
+  whole body is `@AGENTS.md`)? Put the section in `AGENTS.md` only — adding it to both would
+  duplicate it via the import.
+- Both present and independent? Wire both.
+- **Only one present? Wire that one, and do not create the other.** A stub `AGENTS.md` holding
+  nothing but a Rules section is worse than no file: the harness that reads it gets a project
+  doc missing every convention the real one carries, and the two drift from the first commit.
+  Say in the report which file you wired and that the other doesn't exist here.
+
+Group by concern so a backend task isn't pulled into UI rules:
 
 ```markdown
 ## Rules
@@ -298,11 +379,15 @@ House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code** — `engineering-principles.md`, `code-style.md`, `comments.md`,
-  `file-structure.md`, `dependencies.md`
+  `file-structure.md`, `domain-types.md`, `dependencies.md`
 - **<Language> code** — also `<language>-style.md` (one line per language present)
 - **Tests** — also `testing.md`
+- **Database / migrations** — also `database.md`
 - **UI work** — also `ui-components.md`, `design-system.md`, `design-studies.md`
 ```
+
+List only what this run installed — a pointer naming a deferred rule is a dead end
+(§4's `{{DOC_SURFACES}}` note, same reason).
 
 The **All code** line lists only the core rules — those bind every language. Each binding
 gets its own line so a Python task isn't pulled into TypeScript's escape-hatch list.

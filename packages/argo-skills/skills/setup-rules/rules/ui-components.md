@@ -11,7 +11,11 @@ Applies to all UI components under `{{COMPONENTS_DIR}}`. Read together with the
 **This file is written in one UI dialect — DOM elements, `className`, a class-merge helper —
 and those are its spelling, not its rules.** On a stack that has none of them, rewrite it the
 way `setup-rules` §3 writes a language binding: keep the intents, re-spell everything else.
-The intents are
+Re-spell them; do **not** replace them with a claim that the old dialect is absent. Grep this
+file's own `paths:` glob first — a web-target variant (`*.web.tsx`) can render a `<div
+className>` inside the very tree this rule governs, and a rule asserting otherwise tells an
+agent to delete working code (`setup-rules` §5a). Name the primary spelling, then name the
+exception. The intents are
 
 1. every unit is placed in a tier before it is written, and reused at that tier;
 2. a primitive that already exists is never re-implemented inline;

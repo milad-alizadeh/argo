@@ -10,6 +10,23 @@ High-fidelity UI design studies — the HTML designs you produce while exploring
 a screen's layout, palette, or interaction model — are a **committed repo artifact**,
 not scratch files.
 
+**This file's spelling is HTML studies in `docs/designs/` plus four named skills
+(`frontend-design`, `design-foundations`, `componentize-design`, the kit); its rules are
+the intents.** On a stack whose studies take another form (a Storybook playground, a Figma
+file, RN screens behind a dev flag), or a repo where those skills aren't installed, rewrite
+the mechanism and keep the intents (`setup-rules` §3):
+
+1. exploratory designs are **committed and indexed**, never left in scratch space;
+2. the directory holds the **agreed-latest** set only — superseding deletes;
+3. studies are authored **from the token contract and the component tiers**, so they
+   transfer; a value the contract lacks is a *proposal*, snapped or promoted on settling;
+4. a settled study is a **spec, never a source** — the app is rebuilt from tokens and
+   components, and disagreement between app and settled study is fixed in the same change.
+
+A named skill that isn't installed here degrades to its manual step ("extract the
+inventory table by hand"), stated in this file — never to a pointer at a skill the agent
+can't run (`setup-rules` §5a: a rule naming a thing that doesn't exist here).
+
 ## Rule — studies live in `docs/designs/`, committed
 
 - When you generate an HTML design study (via `frontend-design`, `prototype`, an ad-hoc

@@ -63,11 +63,22 @@ doesn't apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 **Two of these three configs fail open when you comment them**, which is why the reasons sit
 where they do. Biome silently checks **zero files** if `biome.json` holds a comment — hence
-`biome.jsonc`. jscpd's auto-discovery silently skips the **entire** `.jscpd.json` if that holds
-one (no threshold, a larger file count, exit 0), and JSON is its only format — hence the
-reasons block in `file-length-exempt.txt`. Neither tool errors; both just stop gating. After
-editing either, prove it still gates rather than trusting a green run: `bunx jscpd apps
-packages scripts -t 0` must exit non-zero.
+`biome.jsonc`. jscpd's **auto-discovery** silently skips the entire `.jscpd.json` if that holds
+one (no threshold, a larger file count), and JSON is its only format — hence the reasons block
+in `file-length-exempt.txt`.
+
+jscpd's half is now closed at the source rather than by a documented check: `quality:duplication`
+passes **`--config .jscpd.json` explicitly**, and an explicitly-named config is parsed rather
+than discovered, so a malformed one prints `config file .jscpd.json line 1: expected value` and
+exits non-zero instead of quietly running unconfigured. Keep that flag on the command — dropping
+it restores the fail-open.
+
+Do not re-prove either by exit code alone. `jscpd … -t 0` exits **1 in both states** here —
+healthy it finds 1 clone in 154 files, silently-unconfigured it finds 16 in 238 — so the exit
+code cannot tell them apart and the file count is the only signal. Prove a config change by
+effect: check that the **analysed file count** still excludes the ignored paths, or plant a
+throwaway clone pair inside an ignored path and one outside and confirm only the outside pair
+is reported.
 
 ## Session isolation
 
