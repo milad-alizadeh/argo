@@ -101,6 +101,11 @@ confirm it neither errors on an unknown rule nor silently ignores the block. A
 deliberate one-line violation (a 5-parameter function in a scratch file) that comes
 back as an **error** is the check that the whole chain is live — delete it after.
 
+Plant that violation in **the least likely directory the rules claim to govern** — a
+`scripts/`, `tools/`, or `build/` folder, not next to the app code. A gate that fires in
+`src/` and is silent in `scripts/` looks identical to a working gate from the report, and
+§6.1 explains the usual cause.
+
 ## 4. The two intents that need their own tool
 
 **Duplication (intent 10).** Copy-paste is invisible to a linter that reads one file
@@ -136,14 +141,49 @@ violations, and pick per gate:
   and labelled **KIND** (the rule genuinely doesn't apply to this category; permanent) or
   **RATCHET** (real debt; the list may only shrink). Every linter has a form of this: Biome
   `overrides`, ESLint flat-config blocks, jscpd `ignore`, a baseline file.
+- **Small but not mechanical** — a handful of violations that each need a real judgement
+  call (a screen that wants splitting, a function whose complexity is the domain's) is
+  neither branch. Ratchet it *and* list those files in the report as the first debt to pay,
+  rather than making a design decision on the way past. Never leave them unlisted: an
+  unlisted ratchet entry is indistinguishable from a permanent exemption.
 - **Raising a global cap or scattering inline suppressions is out.** If a cap is wrong for
   this repo, change the config *and* the matching `rules/` prose in one commit, with the reason.
 
-A comment carrying that reason needs a config format that permits comments — prefer the
-`.jsonc` variant where the linter offers one, and **verify it still lints after the edit**.
-Biome, for one, silently checks zero files when `biome.json` contains a comment.
+### Scope every exemption as narrowly as the tool allows
+
+A path-only exemption silences the rule for the **whole file, forever** — including the
+violation someone adds tomorrow. That defeats the ratchet: the list stops shrinking because
+nothing forces it to. Where the tool can also match the message, symbol, or line
+(`golangci-lint` `text:`, a baseline file keyed by finding, an ESLint block scoped to one
+rule), use it — and where it can't, say so in the entry's reason.
+
+**Then prove it.** Add a *new* violation of the same rule to an exempted file and confirm
+the gate still fires. If it doesn't, the exemption is wider than the debt it was written for.
+
+### Reasons need somewhere to live
+
+An exemption without its reason decays into a permanent allowlist. So the reason needs a
+format that permits comments — prefer the `.jsonc` variant where the linter offers one, and
+**verify it still lints after the edit**: Biome silently checks zero files when `biome.json`
+contains a comment, rather than erroring.
+
+Some tools have **no commentable format at all** — `jscpd`'s `.jscpd.json` is plain JSON,
+and a comment there makes auto-discovery skip the entire config silently (no threshold, a
+different file count) while an explicit `-c` hard-errors. For those: keep the config
+comment-free, put the reasons in a sibling file that already holds them (the file-length
+exemption list is the natural home), and **verify the config is loaded by its effect** —
+compare the reported file count and confirm the threshold fires — never by the run's exit
+code alone.
 
 Report the starting violation count per gate — that number is the ratchet's baseline.
+
+### Violations the install itself introduced
+
+A base config you installed in §1 brings its own rules, and they can fail on day one — a
+framework's shareable config flagging existing code the repo has always had. Those are yours
+to resolve before finishing, on the same fix-or-ratchet terms as everything else. Finishing
+with `quality` red teaches the whole team, and every agent, that the gate is advisory —
+which is the one outcome this skill exists to prevent.
 
 ## 6. Wire it so it can't be skipped
 
@@ -151,12 +191,33 @@ Report the starting violation count per gate — that number is the ratchet's ba
    the linter, the duplication detector, and the file-length check. Name it `quality`
    unless the repo already has a convention. In a monorepo, add the aggregate at the
    root (turbo/nx) and the real script per workspace.
+
+   **Call the linter directly, with an explicit path.** Frameworks ship lint wrappers —
+   `expo lint`, `next lint`, and their kin — and a wrapper carries **its own hardcoded
+   default inputs**, which are its idea of where source lives, not yours. Expo's, for one,
+   is `['src', 'app', 'components']`: a 200-line four-parameter file in `scripts/` returns
+   exit 0 from the wrapper and a wall of errors from the linter run directly. The gate looks
+   configured, reports green, and governs a subset of what the rules claim.
+
+   So: prefer `eslint .` over bare `expo lint`, and whatever the equivalent is elsewhere. If
+   a wrapper must be kept (it supplies config the direct call can't reach), pass the paths
+   explicitly and **verify coverage** — the §3 planted violation, in the directory furthest
+   from the app source. The set of files the gate reads must equal the set the `paths:`
+   frontmatter in `rules/` claims to govern; where it can't, narrow the rules' claim to match
+   rather than leaving the difference undocumented.
 2. **Pre-commit** — if the repo has hooks (the `setup-pre-commit` skill installs
    them), append the gate to the existing hook rather than adding a second one, and
    keep it staged-files-only so committing stays fast.
+
+   No hooks here? Don't install a hook framework as a side effect of this skill — that's
+   `setup-pre-commit`'s job and its own decision. Wire CI (step 3), which is the gate that
+   actually can't be bypassed, and report that pre-commit is unwired and which skill wires it.
 3. **CI** — copy `templates/quality-gates.yml` into the workflows folder, swap the
-   package-manager setup line and the workspace directory. CI is the backstop that a
-   local `--no-verify` can't bypass.
+   package-manager setup line and the workspace directory, and **delete the
+   `{{SWAP_FOR_YOUR_PM}}` marker comments once swapped** — a leftover marker in a landed
+   workflow reads as unfinished install. If the repo already has a CI workflow that runs
+   lint, add the gate steps there instead of adding a second workflow. CI is the backstop
+   that a local `--no-verify` can't bypass.
 4. **Tell the agents** — add a short **Quality gates** note to `AGENTS.md` (and `CLAUDE.md`
    if it isn't just importing `AGENTS.md`): the script name, what it gates, every file that
    holds exemptions, and that a new violation is fixed or ratcheted, never suppressed inline.
@@ -166,8 +227,16 @@ Report the starting violation count per gate — that number is the ratchet's ba
 ## 7. Report
 
 Per gate: the intent, the rule name(s) actually resolved and their source, the number
-landed, and the starting violation count. Then: which intents came back
-**prose-only** and why, the script name, whether pre-commit and CI are wired, and the
-path to the exemption list with its current size. Point the user at the one file to
-edit when a cap needs to change — and remind them that the matching `rules/` prose
-changes in the same commit.
+landed, and the starting violation count. Then: which intents came back **n/a** (the
+language has no such construct) versus **prose-only** (it applies but this toolchain can't
+check it) and why, the script name, whether pre-commit and CI are wired, and the path to
+the exemption list with its current size.
+
+Two lines that are easy to omit and are the whole point of the run:
+
+- **What the gate covers, proved.** Name the directory you planted the violation in and
+  that it came back an error. "Configured" is not the claim; "fires" is.
+- **Is `quality` green right now?** If not, say what's red and why it was left that way.
+
+Point the user at the one file to edit when a cap needs to change — and remind them that
+the matching `rules/` prose changes in the same commit.

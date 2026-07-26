@@ -50,7 +50,20 @@ kind-buckets, and deleting a feature leaves orphans in each. A feature's schema,
 types, and validation live INSIDE that feature's folder (`checkout/schema`, not
 `schemas/checkout`).
 
-The one sanctioned exception is the shared tier described next.
+Three things this does **not** ban, because none of them is a grouping folder you chose:
+
+- **A file named after its kind inside a domain folder** — `checkout/schema`,
+  `orders/types`. The domain is the folder; the kind is only the file's one concept.
+- **A folder the framework or a tool reserves** — a router directory whose filenames
+  become URL segments, a migrations folder a tool writes into, a conventionally-loaded
+  plugin directory. Those are contracts with the tooling: renaming them breaks the build,
+  so they stay, and they are not evidence that kind-folders are fine here.
+- **A vendored-primitive folder a component kit generates into.** It's a vendor drop.
+
+Everything else is banned. An existing kind-folder that isn't one of those three is debt,
+not a licence: leave it until you next touch that feature, and don't add to it.
+
+The one sanctioned exception you may *create* is the shared tier described next.
 
 ### Shared code is earned, not chosen — hoist on the third caller
 
@@ -118,8 +131,7 @@ internals (information hiding / dependency inversion).
 - **Layering is one-directional.** Generic/core layers must not import from specific
   layers (adapters, domain packs, app features). Specific layers may import the
   generic layer's public API; two specific layers never import each other's internals.
-  In this project: `{{MAIN_DIR}}` never imports from `{{RENDERER_DIR}}`, and within a
-  layer, feature folders never import each other's leaves.
+  In this project: {{LAYER_BOUNDARY}}
 - **Side-effect imports for registration happen in exactly ONE composition root**
   (the entry point that wires the app together), never scattered across consumers.
 - **No god nodes.** A module with extreme fan-in or fan-out is a Single-Responsibility

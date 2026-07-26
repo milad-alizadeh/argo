@@ -6,8 +6,8 @@ paths:
 # Code Style
 
 How code reads on the page. These rules are about shape, not syntax, so they bind
-**every language in this repo** equally — a 200-line function is as unreadable in
-Python as in TypeScript.
+**every language in this repo** equally — a 200-line function is unreadable in every
+language that has functions.
 
 Each rule below is the *intent*. Where a language has its own spelling for one — its
 exhaustive branch construct, its checker-silencing pragmas, its file-naming
@@ -17,9 +17,9 @@ what they all agree on; that file is how one of them says it.
 ## Branch on a discriminant with the exhaustive construct
 
 When the condition is one of a known, closed set of values — a variant tag, an enum, a
-status — use the construct your language checks for exhaustiveness (`switch`, `match`,
-`case`). Reserve chained `if`/`elif` for genuinely open conditions: range checks,
-truthiness, arbitrary booleans.
+status — use the construct your language checks for exhaustiveness; the binding next to
+this file names it, and names how to make a missed case fail. Reserve chained conditionals
+for genuinely open conditions: range checks, truthiness, arbitrary booleans.
 
 The reason is the next variant, not this one. An exhaustive construct fails loudly when
 someone adds a case; a chain of `if`s silently falls through to the default and ships
@@ -27,9 +27,9 @@ the bug.
 
 ## No nested conditional expressions
 
-One level of inline conditional (`a ? b : c`, `b if a else c`) is fine. Chaining them is
-forbidden — the second level reads as one expression but branches like three. Use the
-exhaustive construct or early returns.
+One level of inline conditional is fine. Chaining them is forbidden — the second level
+reads as one expression but branches like three. Use the exhaustive construct or early
+returns.
 
 ## Guard clauses, not nesting
 
@@ -44,9 +44,9 @@ path stays at one indent level, at the bottom, unwrapped.
 
 ## Three parameters, then a structure
 
-A fourth positional parameter is forbidden — pass one named structure instead (an
-object, a dataclass, a struct, keyword arguments). Positional arguments encode order at
-every call site, and order is invisible there: nobody reads `render(node, true, false, 2)`.
+A fourth positional parameter is forbidden — pass one named structure instead, whatever
+this language calls that. Positional arguments encode order at every call site, and order
+is invisible there: nobody reads `render(node, true, false, 2)`.
 
 Two booleans in a row is already the smell, at any arity: either name them or split the
 function.

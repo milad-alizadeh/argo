@@ -59,10 +59,15 @@ doesn't apply to that category) or **RATCHET** (debt; the list may only shrink):
 |---|---|
 | `biome.jsonc` `overrides` | the lint caps — annotated, which is why it's `.jsonc` |
 | `scripts/file-length-exempt.txt` | the line ceiling, one glob per line with its reason |
-| `.jscpd.json` `ignore` | duplication — JSON takes no comments, so its reasons are the KIND entries in `file-length-exempt.txt` plus skill payload templates (a template and its installed copy are the same file by design) |
+| `.jscpd.json` `ignore` | duplication — its reasons live in a labelled block at the foot of `file-length-exempt.txt`, one per ignore glob |
 
-Never put a comment in `biome.json` — Biome then silently checks **zero files** rather than
-erroring. That fail-open is why the config is `biome.jsonc`.
+**Two of these three configs fail open when you comment them**, which is why the reasons sit
+where they do. Biome silently checks **zero files** if `biome.json` holds a comment — hence
+`biome.jsonc`. jscpd's auto-discovery silently skips the **entire** `.jscpd.json` if that holds
+one (no threshold, a larger file count, exit 0), and JSON is its only format — hence the
+reasons block in `file-length-exempt.txt`. Neither tool errors; both just stop gating. After
+editing either, prove it still gates rather than trusting a green run: `bunx jscpd apps
+packages scripts -t 0` must exit non-zero.
 
 ## Session isolation
 

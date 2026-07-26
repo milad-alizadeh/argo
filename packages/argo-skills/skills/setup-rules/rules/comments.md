@@ -2,8 +2,8 @@
 
 Comments are a liability: they drift from the code and nobody re-verifies them
 on every edit the way tests and types get re-verified. Default to NO comment.
-Good code and good names are the documentation. Binds `//`, `/* */`, and `#`
-alike, in every language in the repo.
+Good code and good names are the documentation. This binds every comment syntax
+in the repo equally, whatever each language's happens to be.
 
 ## The one sanctioned comment: WHY the code cannot say
 
@@ -34,14 +34,18 @@ there, naming a verb, path, gate, or config key IS the contract the reader depen
 on. Referential naming is expected there, forbidden inside code.
 
 The same applies to any position a **documentation generator renders verbatim** to a
-reader who never opens the file — a published API reference, a component catalog. A
-comment there is REQUIRED, not merely permitted, and it must use the form the generator
-reads: the language's docblock (`/** */`, `"""…"""`, `///`), never a line comment. A
-generator that silently drops a line comment turns the omission into a defect rather than
-a style slip.
+reader who never opens the file — a published API reference, a component catalog, a
+package's own docs. A comment there is REQUIRED, not merely permitted, and it must use
+**the form that generator actually reads**.
 
-Which positions those are is a property of the project's tooling, so the rule that names
-them lives with that tooling: for UI components, `ui-components.md`.
+Which form that is belongs to the language and its toolchain, not to taste, and the forms
+are mutually exclusive — so check before writing one rather than reaching for the shape
+that looks most like documentation. A comment in the wrong form isn't a style slip; it is
+silently dropped from the rendered output, and in some toolchains it also fails the
+formatter. `{{DOC_COMMENT_FORM}}`
+
+Which positions count as rendered surfaces is a property of the project's tooling, so the
+rule that names them lives with that tooling. {{DOC_SURFACES}}
 
 **Nothing else moves.** Inside a function body — including a rendered example's body —
 WHAT-restatement, tombstones, and multi-paragraph rationale stay forbidden.

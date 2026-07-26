@@ -49,11 +49,23 @@ predicate returns a value the compiler knows about because something *checked* a
 |---|---|---|
 | **Folders** (domain groupings) | `kebab-case` | `checkout/`, `user-profile/`, `settings/` |
 | **Component files** | `PascalCase` | `OrderRow.tsx`, `SettingsPanel.tsx` |
-| **Non-component files** (hooks, utils, types, machines) | `camelCase` | `formatPrice.ts`, `parseConfig.ts` |
+| **Non-component files** | `camelCase` | `formatPrice.ts`, `parseConfig.ts` |
 
 The rule in one sentence: **folders are always lowercase kebab, files are cased by what
-they export.** Vendored primitives under `components/ui/` keep their upstream lowercase
-filenames (e.g. `button.tsx`) — do not rename them.
+they export.**
+
+Two things this table does not say, and both matter:
+
+- It is about **casing only**. Naming a file after a kind (`types.ts`, `schema.ts`) is
+  governed by `file-structure.md` — which permits it inside a domain folder and bans it as
+  a grouping folder. Nothing here endorses a `utils/` or `types/` directory.
+- Files a generator or vendor owns keep their upstream names — a kit's primitives under its
+  own directory (e.g. `button.tsx`) are a vendor drop, not your naming. Do not rename them.
+
+If this repo's bundler resolves **platform or environment variants** by filename suffix
+(Metro's `.ios`/`.android`/`.web`, a bundler's `.node`/`.browser`), the suffix sits before
+the extension and the base name still follows the table: `AnimatedIcon.web.tsx`. The suffix
+is a resolution contract, so it is never renamed to satisfy a casing rule.
 
 Names themselves follow `code-style.md`; only the casing convention is TypeScript's.
 

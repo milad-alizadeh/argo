@@ -47,7 +47,13 @@ rule; it points at it.
 | `dependencies.md` | project has a package manager |
 | `ui-components.md` | project has a UI component tree |
 | `design-system.md` | project has a design-token layer (e.g. Tailwind v4 `@theme`) |
-| `design-studies.md` | project does UI design/prototyping |
+| `design-studies.md` | the repo holds a prototype/study directory, or a design-tool config, and its UI is the product surface — not merely "has UI" |
+
+`ui-components.md` ships shaped for a **TypeScript web** tree: Storybook, DOM elements,
+CSS classes. On any other UI stack that file needs *rewriting*, not trimming — treat it
+like a binding (§3) and derive it from the shipped one against the actual framework. If you
+can't do that faithfully, defer it and say so; a component rule whose every example is from
+another framework teaches an agent to discount the file.
 
 **Bindings — install the one(s) matching the languages actually present:**
 
@@ -99,7 +105,21 @@ Discover the concrete values before substituting — read each off the repo, nev
   If Tailwind v4 isn't set up, **defer `design-system.md`** and say so.
 - **Layer dirs** — for the file-structure boundary example, the two top-level layers
   that must not cross-import (e.g. `main/` ↔ `renderer/` for Electron; `server/` ↔
-  `client/` otherwise).
+  `client/` otherwise). **Many repos have no such split** — a single-process mobile or CLI
+  app, or one whose environment split is a filename suffix rather than a directory. Don't
+  manufacture one: `{{LAYER_BOUNDARY}}` is a whole sentence, and when there are no layers
+  to name it degrades to the intra-layer half alone.
+- **Conventions already in force** — the casing of existing files and folders, any folder
+  the framework reserves (a router directory whose filenames become URL segments, a
+  migrations directory), and whether the bundler resolves platform variants by suffix
+  (`.web.tsx`, `.ios.ts`). These decide the reconciliation in §5, so read them before
+  substituting, not after a rule has already contradicted one.
+- **Documentation-comment form and surfaces** — which generator, if any, renders comments
+  verbatim here, and which form it reads. `comments.md` needs both by name, and the form is
+  language-specific and mutually exclusive: `go doc` reads a plain `//` block and a block
+  comment there fails `gofmt`; TSDoc/JSDoc read `/** */` and ignore `//`; Python tooling
+  reads a `"""…"""` docstring *inside* the definition. Check the generator; never assume
+  "docblock" means the C-style form.
 
 If a project is empty/fresh (app scaffold with no `src` yet), that's fine — install the
 always-on rules, and for the UI rules point paths at the intended structure, noting they
@@ -151,8 +171,9 @@ Detect the values (§2); don't copy the examples. The full token set:
 | `{{MANIFEST}}` | the ecosystem's manifest glob | `**/package.json` (Python: `**/pyproject.toml`) |
 | `{{WORKSPACE_NOTE}}` | one sentence on where install runs, or empty | `This is a bun workspaces monorepo (\`apps/*\`, \`packages/*\`) — always install from the repo root so the single lockfile stays authoritative.` |
 | `{{QUERY_LADDER}}` | the project's UI query ladder, or empty when it has no UI | `Query the accessibility tree in this order: \`getByRole\` → \`getByLabelText\` → \`getByText\`. \`getByTestId\` is the last resort.` |
-| `{{APP_GLOB}}` | app source glob | `apps/desktop/**/*.{ts,tsx}` |
-| `{{MAIN_DIR}}` / `{{RENDERER_DIR}}` | the two non-cross-importing layers | `main/` / `renderer/` (web: `server/` / `client/`) |
+| `{{LAYER_BOUNDARY}}` | one sentence naming the boundaries that hold here | `\`main/\` never imports from \`renderer/\`, and within a layer, feature folders never import each other's leaves.` (no layer split: drop the first clause) |
+| `{{DOC_COMMENT_FORM}}` | one sentence naming the generator and the exact form it reads, or empty when nothing renders comments | `TSDoc renders \`/** */\` above the declaration; a \`//\` comment in that position is dropped.` |
+| `{{DOC_SURFACES}}` | where the rendered surfaces are documented, or empty | `For UI components, see \`ui-components.md\`.` |
 | `{{COMPONENTS_GLOB}}` | components glob | `apps/desktop/src/renderer/src/{domains,shared}/**/*.{ts,tsx}` |
 | `{{COMPONENTS_DIR}}` | components dir (trailing slash) | `apps/desktop/src/renderer/src/shared/components/` |
 | `{{RENDERER_GLOB}}` | renderer css/tsx glob | `apps/desktop/src/renderer/src/**/*.{css,tsx,jsx}` |
@@ -164,6 +185,13 @@ Detect the values (§2); don't copy the examples. The full token set:
 | `{{TEST_RUNNER}}` | the unit runner, named | `Vitest` (Python: `pytest`) |
 | `{{E2E_RUNNER}}` | the integration/E2E runner, or how to say there isn't one | `Playwright` (none yet: `no E2E suite yet — the critical-path rule below is the reason to add one`) |
 
+A token that resolves to nothing resolves to **empty**, and the sentence around it must
+still read — that's why several are whole sentences rather than values. Delete the orphaned
+lead-in when you empty one.
+
+`{{DOC_SURFACES}}` is empty unless the file it would point at is actually being installed.
+A pointer to a rule this run deferred is a dead end for the agent that follows it.
+
 `{{COMPONENT_KIT}}` is a short block, not a bare value: name the kit, its add-command, its
 config file, and its icon-swap convention (e.g. shadcn: `bunx shadcn@latest add <name>`,
 `components.json`, its generated-icon swap). On a repo with **no** kit, degrade it to a
@@ -173,10 +201,42 @@ sentence pointing at the primitives directory ("no generator — build primitive
 A token is never wrapped in backticks in the template — several values carry their own
 inline code spans, and nesting them produces broken markdown. Format inside the value.
 
-After substitution, **grep the installed files for any remaining `{{`** — a leftover
-token means detection missed something. Fix it before finishing; never ship a `{{...}}`.
+After substitution, **grep the installed files for `\{\{[A-Z0-9_]+\}\}`** — a leftover token
+means detection missed something. Fix it before finishing; never ship one.
 
-## 5. Trim to reality
+Match that pattern, not a bare `{{`: rule files legitimately contain `{{` inside code samples
+(JSX `style={{ }}`, a template language, a shell expansion), and a grep that flags those
+trains you to ignore it. Include the digits — `{{E2E_RUNNER}}` is invisible to `[A-Z_]+`, and
+a pattern that silently skips one token is worse than no check, because it reports clean.
+
+## 5. Reconcile with reality
+
+### 5a. When a shipped rule contradicts what the repo already does
+
+This is the most consequential judgement in the run, and it has an answer. Sort the
+conflict into one of two kinds before touching anything:
+
+- **The repo's convention is load-bearing** — the framework, bundler, or a tool reads it.
+  Filenames that become URL segments, a reserved directory, a platform-variant suffix, a
+  generator's output location. **The repo wins, always.** Rewrite the rule's text so it
+  states this repo's convention, and record the deviation in the report. Never install a
+  rule an agent must break to keep the build green: the first time a house rule loses to
+  reality, every other house rule becomes advisory too.
+- **The convention is merely habitual** — a casing style nothing enforces, a folder layout
+  that predates the rule. **The house rule wins**, and the existing files are pre-existing
+  non-conformance: don't mass-rename, don't weaken the rule. Say in the report how many
+  files don't conform, so the number is known rather than discovered.
+
+If you cannot tell which kind it is, it's load-bearing until proven otherwise — the cost of
+wrongly deferring to the repo is a rule that's weaker than intended; the cost of wrongly
+overruling it is a broken build.
+
+Two conflicts must never survive the run, whichever way you resolve them: a rule that
+contradicts **another installed rule** (check the pair whenever you edit one), and a rule
+naming a **path, folder, or file that doesn't exist here**. Grep the installed set for every
+path it mentions and confirm each resolves.
+
+### 5b. Trim
 
 Read each substituted file once and cut anything that doesn't apply here:
 
@@ -192,6 +252,11 @@ Read each substituted file once and cut anything that doesn't apply here:
   names, and ecosystem nouns that don't belong in this project (`.ts`, `npm`, `node_modules`,
   `pip`). Each hit is either rewritten in this stack's terms or dropped. A Python repo that
   reads house rules full of `.ts` filenames learns to discount them.
+- **Per-language enumerations, in either direction.** Any parenthetical listing several
+  languages' spellings of one idea collapses to this repo's single spelling — a
+  TypeScript-only repo should not be reading about `match`/`case` or dataclasses any more
+  than a Python one should be reading about `.ts` files. The core rules are written to keep
+  these to a minimum; the ones that remain live in the binding's table, not in the core.
 
 Keep the forbidden-lists and self-checks — those are the parts that change behavior.
 
@@ -233,5 +298,15 @@ If `CLAUDE.md`/`AGENTS.md` already has a Rules section, update it rather than du
 Tell the user: which core rules were installed, which bindings were installed vs
 **generated** (and for a generated one, any intent you left out because you couldn't verify
 its construct), which rules were **deferred** and why (e.g. "`design-system.md` deferred —
-no Tailwind v4 `@theme` block found yet"), and the files the pointer was wired into. Suggest they skim the installed rules and prune
-anything that still doesn't fit — the import step is where the value is.
+no Tailwind v4 `@theme` block found yet"), and the files the pointer was wired into.
+
+Then the two things only this run can know, which the user cannot recover by reading the
+installed files:
+
+- **Every rule you rewrote because the repo's convention won** (§5a), with the convention
+  and why it was load-bearing. This is where a bad call gets caught.
+- **Every rule the repo does not currently conform to**, with the file count. A house rule
+  that lands over 40 non-conforming files is a decision, and it should be a visible one.
+
+Suggest they skim the installed rules and prune anything that still doesn't fit — the import
+step is where the value is.

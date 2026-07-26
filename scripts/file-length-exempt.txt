@@ -23,3 +23,25 @@ packages/argo-skills/bin/scaffold.mjs                                           
 apps/desktop/src/renderer/src/sessionScreenModel.ts                             # 154
 apps/desktop/src/renderer/src/domains/delivery/components/DeliveryTabs.tsx      # 154
 apps/desktop/src/renderer/src/shared/delivery/stateMatrix.test.ts                # 154 — table-driven; the rows are the spec
+
+# ============================================================================
+# Reasons for the DUPLICATION gate's ignore list (`.jscpd.json`).
+#
+# They live here because `.jscpd.json` is plain JSON and a comment in it makes
+# jscpd's auto-discovery skip the whole config silently — no threshold, a
+# different file count, exit 0. (An explicit `-c` hard-errors instead.) So the
+# config stays comment-free and its reasons live in this file. Keep the two in
+# sync: an ignore glob with no reason below is an unexplained exemption.
+#
+#   **/node_modules/**, **/dist/**, **/out/**, **/graphify-out/**
+#     KIND: not our source. Vendored and generated output.
+#   **/*.stories.tsx
+#     KIND: declarative story catalogs — the duplication between stories IS the
+#     coverage. Same reason as the KIND entry at the top of this file.
+#   prototypes/**
+#     KIND: throwaway research prototypes; copy-paste is the fastest way to
+#     compare two variants, which is the point of a prototype.
+#   **/skills/**/templates/**
+#     KIND: a skill payload template and the copy it installs are the same file
+#     by design. Deduplicating them would break the payload.
+# ============================================================================
