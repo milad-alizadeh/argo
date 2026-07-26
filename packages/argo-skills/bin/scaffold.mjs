@@ -7,6 +7,11 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from 
 import { dirname, isAbsolute, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gitRoot, sync as syncHooks } from './hooks-sync.mjs'
+import {
+  describeRestore,
+  restoreOwnedSkills,
+  snapshotOwnedSkills,
+} from './protect-owned-skills.mjs'
 
 const STARTER_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // The Argo checkout root (STARTER_DIR is <root>/packages/argo-skills). `npx github:…`
@@ -144,6 +149,11 @@ console.log(
 )
 console.log(`manifest: ${path}\ninstalling into: ${process.cwd()}\n`)
 
+// Taken before the first source installs: `skills add` replaces a colliding skill directory
+// with a symlink into its own payload, deleting whatever the repo had there.
+const projectRoot = gitRoot(process.cwd())
+const ownedSkills = dryRun ? [] : snapshotOwnedSkills(projectRoot)
+
 const failed = []
 for (const entry of entries) {
   const exclude = entry.skills === '*' ? [].concat(entry.exclude ?? []) : []
@@ -158,6 +168,9 @@ for (const entry of entries) {
       failed.push(`${entry.source} (remove ${name})`)
   }
 }
+
+const restored = restoreOwnedSkills(projectRoot, ownedSkills)
+if (restored.length) console.log(describeRestore(restored))
 
 // Hooks are the opt-in other half of the cross-CLI setup: skills come from `skills add`
 // above; with --hooks, the guardrail hooks are copied in whole (descriptor + the scripts
