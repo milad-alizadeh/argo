@@ -12,8 +12,8 @@ repo's is `{{PUBLIC_ENTRY}}`.
 
 ## Folder-split hygiene — extract before you dump
 
-When a file approaches ~150 lines or a folder root accumulates 5+ peer files doing
-related things, extract into a subfolder. Do this proactively while authoring a
+When a file nears the line ceiling (`code-style.md` owns that number) or a folder root
+accumulates 5+ peer files doing related things, extract into a subfolder. Do this proactively while authoring a
 feature, not as a follow-up cleanup task.
 
 ### The split pattern
@@ -33,10 +33,10 @@ language resolves the entry for them — zero import churn.
 
 ### When to extract
 
-- A file exceeds ~150 lines (machines and pure data files are exempt)
+- A file passes the line ceiling `code-style.md` sets
 - A folder root has 5+ peer files that fall into natural sub-domains
-- Two or more files share a prefix (`orderCreate.ts`, `orderCancel.ts`) — that
-  prefix is the subfolder name
+- Two or more files share a prefix (`orderCreate`, `orderCancel`) — that prefix is the
+  subfolder name
 
 ### Group by domain, not by file type
 
@@ -47,8 +47,8 @@ files syntactically are. `checkout/`, `user-profile/`, `settings/` beat `utils/`
 `helpers/`, `constants/`, `interfaces/`, `validators/`, `handlers/` as grouping
 folders. They become junk drawers: touching one feature means hopping across five
 kind-buckets, and deleting a feature leaves orphans in each. A feature's schema,
-types, and validation live INSIDE that feature's folder (`checkout/schema.ts`, not
-`schemas/checkout.ts`).
+types, and validation live INSIDE that feature's folder (`checkout/schema`, not
+`schemas/checkout`).
 
 The one sanctioned exception is the shared tier described next.
 
@@ -66,10 +66,13 @@ force it:
 
 Hoisting has two destinations, and the test is mechanical:
 
-- **`lib/` (domain-aware)** — it names a domain term (`formatInvoiceTotal`). Reachable
-  by any domain; may import from the generic tier.
-- **`lib/generic/` (product-agnostic)** — it would compile unchanged if you published
-  it to npm: no domain nouns, no app imports, no config. Imports nothing from the app.
+- **the shared tier (domain-aware)** — it names a domain term (`formatInvoiceTotal`).
+  Reachable by any domain; may import from the generic tier.
+- **the generic tier (product-agnostic)** — it would stand alone as its own published
+  package: no domain nouns, no app imports, no config. Imports nothing from the app.
+
+This repo names those tiers `{{SHARED_TIER}}` and `{{GENERIC_TIER}}`. Neither exists until
+a third caller creates it — that's the point, not an omission.
 
 **Imports flow upward only.** A domain may import both tiers; `lib/` may import
 `lib/generic/`; `lib/generic/` imports neither. Two consequences worth naming, because
@@ -82,8 +85,8 @@ encode that example's accidents; by the third you can see which parts are the sh
 and which were the accident.
 
 **Folder = domain, file = concept.** A file is named after the one concept it owns
-(`formatPrice.ts` = amount→display-string mapping). A `types.ts` accreting every type in the
-module is the junk-drawer smell at file granularity; a small colocated `types.ts`
+(`formatPrice` = amount→display-string mapping). A catch-all `types` file accreting every
+type in the module is the junk-drawer smell at file granularity; a small colocated one
 scoped to its own folder's domain is fine.
 
 ### Keep subfolders shallow

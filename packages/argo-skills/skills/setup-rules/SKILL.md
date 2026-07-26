@@ -147,6 +147,7 @@ Detect the values (§2); don't copy the examples. The full token set:
 |---|---|---|
 | `{{SOURCE_GLOBS}}` | every source glob `file-structure.md` governs, one per line | `apps/desktop/**/*.{ts,tsx}` + `packages/**/*.{ts,tsx}` |
 | `{{PUBLIC_ENTRY}}` | this stack's module front door | `index.ts` (Python: `__init__.py`; Rust: `mod.rs`) |
+| `{{SHARED_TIER}}` / `{{GENERIC_TIER}}` | where a helper hoists on its third caller | `lib/` / `lib/generic/` |
 | `{{MANIFEST}}` | the ecosystem's manifest glob | `**/package.json` (Python: `**/pyproject.toml`) |
 | `{{WORKSPACE_NOTE}}` | one sentence on where install runs, or empty | `This is a bun workspaces monorepo (\`apps/*\`, \`packages/*\`) — always install from the repo root so the single lockfile stays authoritative.` |
 | `{{QUERY_LADDER}}` | the project's UI query ladder, or empty when it has no UI | `Query the accessibility tree in this order: \`getByRole\` → \`getByLabelText\` → \`getByText\`. \`getByTestId\` is the last resort.` |
@@ -186,6 +187,11 @@ Read each substituted file once and cut anything that doesn't apply here:
   aspiration but don't invent a config path.
 
 - Language the binding doesn't apply to? Cut the row rather than inventing a construct.
+- **Examples in the wrong language.** The core rules illustrate with names, not filenames,
+  but check anyway: grep the installed core rules for file extensions, package-manager
+  names, and ecosystem nouns that don't belong in this project (`.ts`, `npm`, `node_modules`,
+  `pip`). Each hit is either rewritten in this stack's terms or dropped. A Python repo that
+  reads house rules full of `.ts` filenames learns to discount them.
 
 Keep the forbidden-lists and self-checks — those are the parts that change behavior.
 

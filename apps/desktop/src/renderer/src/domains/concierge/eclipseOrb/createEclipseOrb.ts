@@ -14,6 +14,7 @@ import * as THREE from 'three'
 import cockpitBgUrl from '../assets/cockpit_bg.webp'
 import { SCENE_CONFIG } from '../sceneConfig'
 import { BEAM_FRAG, BG_FRAG, BG_VERT, DISC_FRAG, DOT_FRAG, RING_FRAG, RING_VERT } from './shaders'
+import { soundLevelFor } from './soundLevel'
 import type { OrbHandle, OrbOptions, OrbState, Rgb } from './types'
 
 const C = SCENE_CONFIG.eclipseOrb
@@ -459,11 +460,7 @@ export function createEclipseOrb(canvas: HTMLCanvasElement, options: OrbOptions 
     const dynBot = sBottom.v + audioLevel * s.audio.bottomAdd
     const dynBright = sBright.v + micLevel * s.mic.brightAdd
 
-    // Consistent glow across the active states, driven by the live sound level:
-    // mic when listening, TTS when speaking, nothing when thinking (steady).
-    let sound = 0
-    if (state === 'listening') sound = micLevel
-    if (state === 'speaking') sound = audioLevel
+    const sound = soundLevelFor(state, { micLevel, audioLevel })
     const glowActive = state !== 'idle' // awake: every non-idle state keeps the baseline glow (no rim)
 
     sweepAngle += dt * (inListen ? an.sweep.listenSpeed : an.sweep.idleSpeed)

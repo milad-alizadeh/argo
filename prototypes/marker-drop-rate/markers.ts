@@ -173,11 +173,15 @@ export function checkLine(expected: readonly ExpectedMarker[], spoken: string): 
       return { ...exp, expected: exp.count, found: exactHits, verdict: 'exact' as const }
     }
 
+    // A multi-word substitution can't be tallied by token, so it's matched against the
+    // whole transcript and counts at most once.
+    const hitsFor = (sub: string) => {
+      if (sub.includes(' ')) return lower.includes(sub) ? 1 : 0
+      return tally.get(sub) ?? 0
+    }
+
     const subs = SUBSTITUTIONS[exp.token] ?? []
-    const subHits = subs.reduce(
-      (n, s) => n + (s.includes(' ') ? (lower.includes(s) ? 1 : 0) : (tally.get(s) ?? 0)),
-      0,
-    )
+    const subHits = subs.reduce((n, s) => n + hitsFor(s), 0)
     if (exactHits + subHits >= exp.count) {
       return {
         ...exp,

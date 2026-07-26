@@ -1,3 +1,10 @@
+---
+paths:
+  - "apps/desktop/**/*.{ts,tsx}"
+  - "packages/**/*.{ts,tsx}"
+  - "scripts/**/*.mjs"
+---
+
 # Code Style
 
 How code reads on the page. These rules are about shape, not syntax, so they bind
@@ -49,8 +56,9 @@ function.
 ## One unit per file, and a line ceiling
 
 A file owns exactly one thing — one component, one class, one state machine, one
-top-level function — named by what it owns. Soft ceiling of **~150 lines**; pure-data
-files and generated output are exempt.
+top-level function — named by what it owns. Soft ceiling of **~150 lines** — this file is
+where that number lives; pure-data files and generated output are exempt, and
+`file-structure.md` covers where the pieces go when a file outgrows it.
 
 If you can't say what the file does in one sentence without "and", it's two files.
 

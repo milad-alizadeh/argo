@@ -12,21 +12,14 @@ with the human.
 
 ## Definition of done
 
-Done is not "the code works" — it's this checklist passing. Run it before step 1, and
-report any line you cannot tick rather than shipping past it:
+Run this before step 1. Report any line you cannot tick rather than shipping past it.
 
-- Every acceptance criterion on the ticket is satisfied, checked against the ticket text
-  rather than from memory of it.
-- Tests cover the behavior that changed, and the whole suite passes — not just the new file.
-- The repo's gates pass locally: types, lint, quality gates, boundaries, whatever the
-  manifest defines.
-- UI work has been verified visually against the spec, not only unit-tested.
-- The diff has been reviewed in a fresh context, and each finding is fixed or carried into
-  the PR body with its reason.
-- No debug leftovers: stray logging, commented-out code, a `.only` on a test, a TODO with
-  no ticket behind it.
-- Anything a future reader can't infer from the diff is written down — an ADR for a
-  decision, a rule update if the change moves a house standard.
+- Re-read the ticket's acceptance criteria and tick each against the diff.
+- Run every gate the manifest defines (types, lint, tests, and whatever else) — all green.
+- UI work: the affected states rendered and judged against the spec, not only unit-tested.
+- `git grep` the diff's files for `.only`, `console.log`/debug prints, commented-out code,
+  and TODOs with no ticket number.
+- Every review finding is either fixed in the diff or listed in step 4's PR body.
 
 1. Confirm you are on the ticket branch, not the default branch
    (`git rev-parse --abbrev-ref HEAD` ≠ `git remote show origin` / the repo's default). If the

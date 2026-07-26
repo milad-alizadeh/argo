@@ -7,7 +7,8 @@ import { AgentRow } from './AgentRow'
 import { doneAgentCount } from './agentState'
 import { PhaseGroup } from './PhaseGroup'
 import { PHASE_PRESENTATION, type PhaseState, phaseOpensByDefault } from './phaseState'
-import { RosterRow, rowCaret } from './RosterRow'
+import { RosterRow } from './RosterRow'
+import { rowCaret } from './rowCaret'
 
 export const RUN_SHAPES = ['batch', 'pipeline'] as const
 

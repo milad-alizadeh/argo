@@ -10,22 +10,16 @@
 # coverage, and the duplication between stories is the point (see rules/design-studies.md).
 **/*.stories.tsx
 
-# --- KIND: test files. Length is scenario count; the cap would push cases out of the suite.
-**/*.test.ts
-**/*.test.tsx
-
 # --- KIND: pure data / shader source. No control flow to split.
 apps/desktop/src/renderer/src/domains/concierge/sceneConfig.ts
 apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/shaders.ts
 
-# --- KIND: throwaway research prototypes (the `prototype` skill's output). Deliberately quick.
-prototypes/**
-
 # --- RATCHET: over the cap, to be split. Shrink this list; do not grow it.
-apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/createEclipseOrb.ts  # 601 — the big one; owns 3 lint ratchets too
+apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/createEclipseOrb.ts  # 601 — tracked by #215
 apps/desktop/src/renderer/src/domains/activity/components/RunRow.tsx            # 186
 apps/desktop/src/renderer/src/SessionScreen.tsx                                 # 180
 apps/desktop/src/renderer/src/domains/delivery/components/FileDiff.tsx          # 167
 packages/argo-skills/bin/scaffold.mjs                                           # 167
 apps/desktop/src/renderer/src/sessionScreenModel.ts                             # 154
 apps/desktop/src/renderer/src/domains/delivery/components/DeliveryTabs.tsx      # 154
+apps/desktop/src/renderer/src/shared/delivery/stateMatrix.test.ts                # 154 — table-driven; the rows are the spec

@@ -82,6 +82,18 @@ A test name states one behavior, and the body proves that one. If the name needs
 - Setup may be long; the assertion block should be short. A tail of unrelated
   assertions is other tests hiding.
 
+## Name the behavior in the domain's words
+
+A test name is a sentence about the domain, readable by someone who will never open the
+file — the person who wrote the requirement should recognise their own words in it.
+
+- **Forbidden:** naming the unit under test instead of the behavior (`parseConfig returns
+  an object`). Name what the system does: `rejects a config with no source globs`.
+- Reach for the vocabulary the glossary or the ticket uses. Where a test's wording and the
+  domain's disagree, one of them is wrong and it's worth finding out which.
+- A suite whose names read as a list of requirements is the specification. That's the
+  property that makes tests documentation rather than scaffolding.
+
 ## Tests are isolated and order-independent
 
 Each test builds the state it needs and leaves nothing behind. Any test can run alone,

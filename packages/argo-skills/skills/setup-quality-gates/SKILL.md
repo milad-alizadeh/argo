@@ -6,25 +6,18 @@ disable-model-invocation: true
 
 # Setup Quality Gates
 
-Some house rules are judgment ("is this the right seam?"); the rest are arithmetic
-("is this function 200 lines?"). Arithmetic belongs in a gate, not in review — an
-agent that has to *remember* a cap will drift past it, and a reviewer who has to
-count is being asked to do a machine's job.
+Install the arithmetic half of the house rules as build failures — the caps a reviewer
+would otherwise count by hand. `setup-rules` owns the judgment half; where the two
+disagree, this config is the authority.
 
-This skill installs the arithmetic half. The prose half is the `setup-rules` skill;
-the two must agree, and this config is the authority when they disagree.
+Two rules bind every step:
 
-**Every gate is an error, never a warning.** A warning is a violation with permission
-to stay. If a cap can't be an error in this repo yet, it gets ratcheted (§5) — not
-downgraded.
+- **Set every gate to `error`.** Most ship as `warn` or `info`, which is a violation with
+  standing permission. A cap this repo can't meet yet gets ratcheted (§5), not downgraded.
+- **Resolve rule names against the installed tool (§3), never from memory.** Linters
+  rename, promote and retire rules between minor versions.
 
-**Do not carry rule names in your head.** Linters rename, promote, and retire rules
-between minor versions, and a config with one unknown rule name can fail closed or
-silently do nothing. Every rule this skill writes is one you resolved against the
-installed version in §3.
-
-Templates ship inside this skill at `templates/`: `file-length-check.mjs` (the
-fallback for the one cap most linters lack) and `quality-gates.yml` (the CI job).
+Templates ship at `templates/`: `file-length-check.mjs` and `quality-gates.yml`.
 
 ## 1. Detect the toolchain
 
@@ -50,19 +43,19 @@ Read each off the repo:
 Each row is an intent with a target number, not a rule name. The numbers are the
 defaults — a repo may land looser ones (§5), never at the cost of dropping the gate.
 
-| # | Intent | Target | Why it's mechanical |
-|---|---|---|---|
-| 1 | Function body length | 50 lines | Length is countable; "too long" isn't |
-| 2 | Cognitive/cyclomatic complexity | 15 | The branch count nobody tracks by eye |
-| 3 | Positional parameters | 3 max | The 4th argument is invisible at the call site |
-| 4 | Nested ternaries | forbidden | Reads as one expression, branches like three |
-| 5 | `any` (or the language's opt-out type) | forbidden | Disables checking downstream, not just here |
-| 6 | Assertion escape hatches — `as`, non-null `!`, `@ts-ignore` | forbidden | A claim the compiler stops verifying |
-| 7 | `else` after a returning branch | forbidden | The guard-clause rule, mechanized |
-| 8 | Non-exhaustive switch over a union | error | The exhaustiveness the union was for |
-| 9 | Unused exports, variables, imports | error | Dead code the reader still has to read |
-| 10 | Duplicated blocks across files | threshold | Eyes don't diff files; §4 |
-| 11 | File length | ~150 lines | The extract-before-you-dump trigger; §4 |
+| # | Intent | Target |
+|---|---|---|
+| 1 | Function body length | 50 lines |
+| 2 | Cognitive/cyclomatic complexity | 15 |
+| 3 | Positional parameters | 3 max |
+| 4 | Nested ternaries | forbidden |
+| 5 | `any` (or the language's opt-out type) | forbidden |
+| 6 | Assertion escape hatches — `as`, non-null `!`, `@ts-ignore` | forbidden |
+| 7 | `else` after a returning branch | forbidden |
+| 8 | Non-exhaustive switch over a union | error |
+| 9 | Unused exports, variables, imports | error |
+| 10 | Duplicated blocks across files | threshold |
+| 11 | File length | ~150 lines |
 
 Intents 1–9 are ordinary lint rules in most ecosystems. 10 and 11 usually are not —
 they get their own tools in §4.
@@ -138,18 +131,19 @@ A fresh repo passes immediately. A real one won't. Run every gate, count the
 violations, and pick per gate:
 
 - **Fix now** if the count is small and the fixes are mechanical. Preferred.
-- **Ratchet** if it isn't: keep the cap at the house number and record the current
-  violations as scoped, expiring exemptions — one entry per path glob per rule, each
-  with a one-line reason. Every linter has a form of this (Biome `overrides`, ESLint
-  flat-config blocks, jscpd `ignore`, a baseline file). New code meets the cap; the
-  exemption list only ever shrinks.
-- **Never** raise the global number to make the count zero, and never scatter inline
-  suppressions — that converts a gate into decoration. If a cap is genuinely wrong for
-  this repo, change it deliberately in the config *and* in the matching `rules/` prose,
-  with the reason, in the same commit.
+- **Ratchet** if it isn't: keep the cap at the house number and record today's violations
+  as scoped exemptions — one entry per path glob per rule, each carrying a one-line reason
+  and labelled **KIND** (the rule genuinely doesn't apply to this category; permanent) or
+  **RATCHET** (real debt; the list may only shrink). Every linter has a form of this: Biome
+  `overrides`, ESLint flat-config blocks, jscpd `ignore`, a baseline file.
+- **Raising a global cap or scattering inline suppressions is out.** If a cap is wrong for
+  this repo, change the config *and* the matching `rules/` prose in one commit, with the reason.
 
-Report the starting violation count per gate. That number is the ratchet's baseline
-and the only way anyone can tell later whether it's shrinking.
+A comment carrying that reason needs a config format that permits comments — prefer the
+`.jsonc` variant where the linter offers one, and **verify it still lints after the edit**.
+Biome, for one, silently checks zero files when `biome.json` contains a comment.
+
+Report the starting violation count per gate — that number is the ratchet's baseline.
 
 ## 6. Wire it so it can't be skipped
 
@@ -163,9 +157,11 @@ and the only way anyone can tell later whether it's shrinking.
 3. **CI** — copy `templates/quality-gates.yml` into the workflows folder, swap the
    package-manager setup line and the workspace directory. CI is the backstop that a
    local `--no-verify` can't bypass.
-4. **Tell the agents** — add a short **Quality gates** note to `AGENTS.md` (and
-   `CLAUDE.md` if it isn't just importing `AGENTS.md`): the script name, what it gates,
-   and that a new violation is fixed or ratcheted, never suppressed inline.
+4. **Tell the agents** — add a short **Quality gates** note to `AGENTS.md` (and `CLAUDE.md`
+   if it isn't just importing `AGENTS.md`): the script name, what it gates, every file that
+   holds exemptions, and that a new violation is fixed or ratcheted, never suppressed inline.
+   Count the exemption files before you write that sentence — a duplication config's ignore
+   list is one of them.
 
 ## 7. Report
 

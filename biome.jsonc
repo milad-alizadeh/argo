@@ -76,7 +76,13 @@
       }
     }
   },
+  // Cap exemptions. Two kinds, and the difference matters — see AGENTS.md "Quality gates".
+  //   KIND    — the house rule exempts this category outright. Permanent.
+  //   RATCHET — real code over a cap today. Debt. This list may only ever shrink;
+  //             never add an entry to make a build pass.
   "overrides": [
+    // KIND: throwaway research prototypes (output of the `prototype` skill). Deliberately
+    // quick, deleted rather than maintained — the caps would tax exploration for no return.
     {
       "includes": ["prototypes/**"],
       "linter": {
@@ -85,20 +91,22 @@
             "noExcessiveLinesPerFunction": "off",
             "noExcessiveCognitiveComplexity": "off",
             "useMaxParams": "off"
-          },
-          "style": {
-            "noNestedTernary": "off"
           }
         }
       }
     },
+    // RATCHET: over the function-length or complexity cap when the gates landed. Each needs
+    // extraction, none is a quick fix. Split the file, then delete its line here.
     {
       "includes": [
+        // 601 lines, 3 of the lint ratchets — tracked by #215.
         "apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/createEclipseOrb.ts",
+        // Long component bodies: render trees that want sub-components extracted.
         "apps/desktop/src/renderer/src/domains/console/components/Console.tsx",
         "apps/desktop/src/renderer/src/domains/console/components/LiveTerminal.tsx",
         "apps/desktop/src/renderer/src/domains/delivery/components/Delivery.tsx",
         "apps/desktop/src/renderer/src/shared/components/ui/PanelSplitter.tsx",
+        // Cross-CLI hook projection: one branchy function over the harness matrix.
         "packages/argo-skills/bin/hooks-sync.mjs"
       ],
       "linter": {
@@ -110,6 +118,7 @@
         }
       }
     },
+    // KIND: repo tooling reads the ambient environment by design (CI vars, git env, TTY).
     {
       "includes": ["scripts/**"],
       "linter": {

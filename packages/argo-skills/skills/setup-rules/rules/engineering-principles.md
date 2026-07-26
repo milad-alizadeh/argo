@@ -68,10 +68,10 @@ written against a **source consulted in this session**, never from memory. Model
 recall of an API is a snapshot that was already stale when training ended, and the
 failure mode is a confident, plausible, non-existent signature.
 
-- Before writing the call: read the installed version's types or source in
-  `node_modules`, grep an existing call site in this repo, fetch the current docs, or
-  query the documentation MCP. Any one of those. Zero is a guess.
-- The version that matters is **the one in the lockfile**, not the latest release.
+- Before writing the call: read the installed dependency's own source or type
+  declarations, grep an existing call site in this repo, fetch the current docs, or query
+  the documentation MCP. Any one of those. Zero is a guess.
+- The version that matters is **the one this project has installed**, not the latest release.
 - If a call can't be grounded, say so in the report instead of shipping it silently.
 
 ## Simple, and only what's needed (KISS + YAGNI)

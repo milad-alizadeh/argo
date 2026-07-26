@@ -4,7 +4,8 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { Text } from '@/shared/components/ui'
 import { SparkleIcon } from '@/shared/components/ui/icons'
 import { AGENT_STATES } from './agentState'
-import { ROW_CARETS, RosterRow } from './RosterRow'
+import { RosterRow } from './RosterRow'
+import { ROW_CARETS } from './rowCaret'
 
 // The gallery's own state holder: RosterRow reports intent through `onToggle`, but never
 // flips its own `caret` — that decision belongs to whatever owns the open/closed state

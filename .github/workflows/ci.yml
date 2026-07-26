@@ -62,12 +62,15 @@ jobs:
       - name: Lint and format
         run: bun run format-and-lint
 
-      # The caps biome can't express: whole-tree duplication and the per-file line ceiling.
-      # A new violation is fixed or ratcheted in scripts/file-length-exempt.txt — never
-      # suppressed inline (see AGENTS.md "Quality gates").
-      - name: Quality gates
+      # The caps biome can't express. Separate steps so one breach doesn't hide the other's
+      # count — a PR gets both verdicts in one push (see AGENTS.md "Quality gates").
+      - name: Duplication gate
         if: ${{ !cancelled() }}
-        run: bun run quality:duplication && bun run quality:file-length
+        run: bun run quality:duplication
+
+      - name: File-length gate
+        if: ${{ !cancelled() }}
+        run: bun run quality:file-length
 
       - name: Typecheck
         if: ${{ !cancelled() }}

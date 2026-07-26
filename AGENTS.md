@@ -52,10 +52,17 @@ assertions (Biome 2.5.4 has no such rule) and exhaustive `switch` over a union
 (`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo).
 
 When a gate fires, fix it or ratchet it — never suppress it inline and never raise a global
-cap. Exemptions live in two files and each states its reason: `biome.json` `overrides` (lint
-caps) and `scripts/file-length-exempt.txt` (line ceiling). Both distinguish **kind**
-exemptions, which are permanent (stories, tests, pure data, skill payload templates), from
-**ratchet** entries, which are debt and may only shrink.
+cap. Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule
+doesn't apply to that category) or **RATCHET** (debt; the list may only shrink):
+
+| File | Covers |
+|---|---|
+| `biome.jsonc` `overrides` | the lint caps — annotated, which is why it's `.jsonc` |
+| `scripts/file-length-exempt.txt` | the line ceiling, one glob per line with its reason |
+| `.jscpd.json` `ignore` | duplication — JSON takes no comments, so its reasons are the KIND entries in `file-length-exempt.txt` plus skill payload templates (a template and its installed copy are the same file by design) |
+
+Never put a comment in `biome.json` — Biome then silently checks **zero files** rather than
+erroring. That fail-open is why the config is `biome.jsonc`.
 
 ## Session isolation
 

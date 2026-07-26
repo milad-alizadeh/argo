@@ -8,7 +8,8 @@ import {
   type PhaseState,
   phaseStatusText,
 } from './phaseState'
-import { RosterRow, rowCaret } from './RosterRow'
+import { RosterRow } from './RosterRow'
+import { rowCaret } from './rowCaret'
 
 export type PhaseGroupProps = {
   /** Which Run this Phase belongs to — a Phase name is only unique within its Run. Lands as
