@@ -167,6 +167,11 @@ Four ways an exemption comes out wider than intended. Each of these has shipped:
   wording ("cognitive complexity of func") exempts every future violation of that rule in
   that file, which is the path-only exemption with extra steps. Anchor on the symbol —
   the function or identifier the debt actually lives in.
+- **An expression is not a symbol either.** Anchoring on the offending *source line*
+  (`source: json\.NewEncoder\(w\)\.Encode\(`) reads like a pin to one place and is really a
+  pin to one *shape*: the next function in that file that writes the same line inherits the
+  exemption, brand new and silent. If the tool matches only source text, choose a fragment
+  that includes the symbol's own declaration — or accept it as blanket and label it so.
 - **A count-based baseline ratchets count, not magnitude.** Baseline files that record "this
   file had 3 findings" let an exempted file grow without limit: a 200-line function becomes
   800 and the count is still 3. That is a real ratchet for *new files* and no ratchet at all
@@ -178,6 +183,14 @@ Four ways an exemption comes out wider than intended. Each of these has shipped:
   ceiling the house rule waives — and since the header is a line anyone can type, that is an
   unlabelled, self-service escape hatch outside the exemption files entirely. Name the rules
   a category exclusion turns off, and keep it to those.
+
+  Where the tool offers a knob to turn that exclusion **off**, prove the knob **per rule,
+  not in aggregate**. `golangci-lint`'s `exclusions.generated: disable` restores errcheck,
+  funlen and dupl on a generated-header file while `revive` goes on skipping it under its own
+  logic — so the parameter cap, the line ceiling and three more stay switchable by typing one
+  comment, while the run reports enough other findings to look fixed. Two byte-identical
+  files, one with the header and one without, is the check; whatever the header still
+  suppresses is still an escape hatch.
 
 **Then prove it, with a new and different violation.** Not a copy of the recorded one — a
 *different* breach of the same rule, in an exempted file, and confirm the gate still fires.
@@ -253,7 +266,8 @@ which is the one outcome this skill exists to prevent.
    and only the second one is the gate.
 2. **Pre-commit** — if the repo has hooks (the `setup-pre-commit` skill installs
    them), append the gate to the existing hook rather than adding a second one, and
-   keep it staged-files-only so committing stays fast.
+   keep it staged-files-only so committing stays fast. A staged-files invocation runs from
+   the repo root by default, which is where it stops seeing per-workspace baselines — §6a.
 
    No hooks here? Don't install a hook framework as a side effect of this skill — that's
    `setup-pre-commit`'s job and its own decision. Wire CI (step 3), which is the gate that
@@ -270,6 +284,43 @@ which is the one outcome this skill exists to prevent.
    Count the exemption files before you write that sentence — a duplication config's ignore
    list is one of them. Claim only what you verified: "dead code" is not gated by a rule that
    catches unused *variables* if unused **exports** go unchecked.
+
+## 6a. Prove the gate in every context that runs it
+
+§6.1 asks for the wired command's exit code from a clean shell. That is **one of three**
+contexts, and a gate that passes in one and fails in another is worse than one that fails
+everywhere — the disagreement is what teaches a team to bypass it. Run it in each — local
+shell, the pre-commit hook, CI — and reconcile every difference before you finish. They must
+resolve the same config, the same exemption files, and the same toolchain.
+
+- **CI pins a toolchain from a file, and it may not be the one your command needs.** A Go
+  workflow with `go-version-file: go.mod` gets whatever `go.mod` declares; wire a command
+  using a flag introduced later (`go tool -modfile=…` needs 1.24+, `go.mod` said `go 1.23`)
+  and every PR run dies with a usage error before one file is linted. No toolchain
+  auto-switch rescues it — the CLI rejects the flag before it reads a module. Read the pin,
+  read the minimum version of each flag you wired, and make them agree explicitly.
+- **A hook running from the repo root does not load per-workspace state.** Piping staged
+  paths to a root-level linter skips the baseline or suppression file sitting in each
+  workspace, so the hook rejects exactly the recorded debt that `quality` and CI accept —
+  every ratcheted file becomes uncommittable. Run the linter per workspace, or point it at
+  the right state file.
+- **A workspace with no config of its own falls through to the root config**, whose patterns
+  anchor at the *root* — a block scoped `files: ["src/**/*.{ts,tsx}"]` matches nothing there,
+  and that workspace silently loses whichever intents the block carried. So the §6.1
+  enumeration runs per workspace, not once at the root.
+
+**Enumerate on a built tree, not only a clean checkout.** Generated output doesn't exist when
+you install and does exist in CI, because the build or codegen step runs *immediately before*
+the gate. A linter pointed at `.` will read a framework's generated types and fail on them.
+Build first, then run the gate, then ignore the generated trees by path. This is the one case
+where §6.1's rule cuts the other way: here the gate reads files `rules/` never claimed.
+
+**The exit code must reflect every rule you configured.** A shareable base config brings its
+own severities, and a wired command with no `--max-warnings 0` (or its equivalent) fails on
+none of them. Compute the effective severity of the whole ruleset — `eslint --print-config
+<file>` and its kin print it — count how many resolve to `warn`, and either raise them or
+pass the flag. Until then, "every rule is an error" is a claim about your config block and
+not about the gate, and §6.4 must not write it.
 
 ## 6b. Reconcile the prose with the config — mandatory, not aspirational
 
@@ -305,7 +356,9 @@ Four lines that are easy to omit and are the whole point of the run:
 - **What the gate covers, proved.** Name the directory you planted the violation in and
   that it came back an error, plus the result of the enumeration diff (§6.1) — how many files
   the gate read against how many `rules/` claims. "Configured" is not the claim; "fires" is.
-- **Does the wired command run?** Its exact exit code, from a clean shell.
+- **Does the wired command run — in all three contexts?** Its exact exit code from a clean
+  shell, from the pre-commit hook, and on CI's pinned toolchain (§6a), plus how many of the
+  configured rules resolve to `warn` and therefore can never fail it.
 - **Is `quality` green right now?** If not, say what's red and why it was left that way.
 - **Which exemptions are blanket rather than scoped**, and for any tool that ratchets by
   count, that magnitude in those files is ungated. This is the sentence a reader most needs
