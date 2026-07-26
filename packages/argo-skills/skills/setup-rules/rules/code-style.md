@@ -25,6 +25,13 @@ The reason is the next variant, not this one. An exhaustive construct fails loud
 someone adds a case; a chain of `if`s silently falls through to the default and ships
 the bug.
 
+**Selecting a value is not branching.** When the discriminant only picks *which value* to
+use — a style, a label, a colour, a threshold — a lookup keyed by the discriminant beats both
+a branch and a chain, and the compiler or linter can require the keys to be complete. A run
+of `kind === 'warning' && warningStyle` tests is that lookup, written out one key at a time:
+collapse it to the table. Reach for the branch construct when the cases *do* different things,
+and for the lookup when they *are* different things.
+
 ## No nested conditional expressions
 
 One level of inline conditional is fine. Chaining them is forbidden — the second level

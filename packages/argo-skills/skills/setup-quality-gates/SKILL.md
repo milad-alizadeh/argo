@@ -157,8 +157,33 @@ nothing forces it to. Where the tool can also match the message, symbol, or line
 (`golangci-lint` `text:`, a baseline file keyed by finding, an ESLint block scoped to one
 rule), use it — and where it can't, say so in the entry's reason.
 
-**Then prove it.** Add a *new* violation of the same rule to an exempted file and confirm
-the gate still fires. If it doesn't, the exemption is wider than the debt it was written for.
+Four ways an exemption comes out wider than intended. Each of these has shipped:
+
+- **Unanchored patterns match as substrings.** A linter's exclude-path list is usually
+  regexes, not globs: `vendor` also exempts `internal/vendorportal/`. Anchor every one
+  (`^vendor/`, `/testdata/`), and a bare-basename glob (`*.gen.ts`) matches at every depth —
+  say so deliberately or qualify the path.
+- **Message-scoped is not instance-scoped.** A `text:` regex that matches the *rule's*
+  wording ("cognitive complexity of func") exempts every future violation of that rule in
+  that file, which is the path-only exemption with extra steps. Anchor on the symbol —
+  the function or identifier the debt actually lives in.
+- **A count-based baseline ratchets count, not magnitude.** Baseline files that record "this
+  file had 3 findings" let an exempted file grow without limit: a 200-line function becomes
+  800 and the count is still 3. That is a real ratchet for *new files* and no ratchet at all
+  for the listed ones — so where the tool works this way, **say so in the exemption file and
+  in the note you write in §6.4**. Otherwise the repo is told the list may only shrink, and
+  that is false.
+- **Category exclusions turn off more than the category.** "Skip files with a
+  `Code generated … DO NOT EDIT` header" usually skips *every* rule, not just the line
+  ceiling the house rule waives — and since the header is a line anyone can type, that is an
+  unlabelled, self-service escape hatch outside the exemption files entirely. Name the rules
+  a category exclusion turns off, and keep it to those.
+
+**Then prove it, with a new and different violation.** Not a copy of the recorded one — a
+*different* breach of the same rule, in an exempted file, and confirm the gate still fires.
+A copy proves only that the tool matched the text you gave it. If the new one is silent, the
+exemption is wider than the debt it was written for; narrow it, or record it honestly as the
+blanket exemption it is.
 
 ### Reasons need somewhere to live
 
@@ -202,9 +227,30 @@ which is the one outcome this skill exists to prevent.
    So: prefer `eslint .` over bare `expo lint`, and whatever the equivalent is elsewhere. If
    a wrapper must be kept (it supplies config the direct call can't reach), pass the paths
    explicitly and **verify coverage** — the §3 planted violation, in the directory furthest
-   from the app source. The set of files the gate reads must equal the set the `paths:`
-   frontmatter in `rules/` claims to govern; where it can't, narrow the rules' claim to match
-   rather than leaving the difference undocumented.
+   from the app source.
+
+   **Then check coverage by enumeration, not by sampling.** Get the gate to list the files it
+   actually read (most linters have a flag for this; failing that, count them) and diff that
+   against the union of the `paths:` globs in `rules/`. One planted file proves a directory
+   is reachable; only the diff finds the files nothing reaches. Three ways they hide, all
+   observed, and none of them is a wrapper:
+
+   - **Conditional compilation.** Files behind a build tag or platform constraint are invisible
+     to a linter run without that tag — thousands of lines, silently, while the rules claim them.
+   - **A nested module or workspace** below the root the gate is invoked from. The run stops at
+     the boundary and exits 0.
+   - **A default include list** in the linter's own config that predates you.
+
+   The set of files the gate reads must equal what `rules/` claims to govern. Where it can't,
+   narrow the rules' claim to match — an unreachable claim is worse than a smaller one,
+   because an agent believes it.
+
+   Finally: **run the wired command yourself, exactly as written, in a clean shell**, and
+   record the exit code in the report. Not the underlying tool — the command. A gate that
+   calls a linter installed into a user-global bin dies with exit 127 wherever that bin isn't
+   on `PATH`, including CI, so pin such a tool into the repo and invoke it by path or through
+   the package manager's runner. "The linter passes" and "the gate runs" are different claims,
+   and only the second one is the gate.
 2. **Pre-commit** — if the repo has hooks (the `setup-pre-commit` skill installs
    them), append the gate to the existing hook rather than adding a second one, and
    keep it staged-files-only so committing stays fast.
@@ -222,7 +268,29 @@ which is the one outcome this skill exists to prevent.
    if it isn't just importing `AGENTS.md`): the script name, what it gates, every file that
    holds exemptions, and that a new violation is fixed or ratcheted, never suppressed inline.
    Count the exemption files before you write that sentence — a duplication config's ignore
-   list is one of them.
+   list is one of them. Claim only what you verified: "dead code" is not gated by a rule that
+   catches unused *variables* if unused **exports** go unchecked.
+
+## 6b. Reconcile the prose with the config — mandatory, not aspirational
+
+The rules in `rules/` were written before this config existed, so some of them now describe a
+world the gate contradicts. Re-read every installed rule against what you just landed and fix
+the mismatches **in the same commit**. §1 already says the config wins where the two disagree
+— this is the step where that gets applied rather than assumed.
+
+The mismatch that matters most is a **prose-sanctioned escape the gate forbids**: a rule
+saying "an assertion is allowed at a documented boundary" while the linter makes every
+assertion an error with no legal spelling. That leaves an agent no conforming move — it must
+break the rule or break the build, and whichever it picks it learns the rules are negotiable.
+Either tighten the prose to match the gate, or configure the gate to permit the escape the
+prose grants. Never ship both.
+
+Two more to sweep for, both cheap:
+
+- **An exemption the prose grants that the config doesn't implement** — "pure-data files are
+  exempt from the line ceiling" is false unless the file-length tool actually exempts them.
+- **A factual claim about this repo** that the install just invalidated: counts, file lists,
+  "the linter will not catch X". Re-derive each one or delete it.
 
 ## 7. Report
 
@@ -232,11 +300,16 @@ language has no such construct) versus **prose-only** (it applies but this toolc
 check it) and why, the script name, whether pre-commit and CI are wired, and the path to
 the exemption list with its current size.
 
-Two lines that are easy to omit and are the whole point of the run:
+Four lines that are easy to omit and are the whole point of the run:
 
 - **What the gate covers, proved.** Name the directory you planted the violation in and
-  that it came back an error. "Configured" is not the claim; "fires" is.
+  that it came back an error, plus the result of the enumeration diff (§6.1) — how many files
+  the gate read against how many `rules/` claims. "Configured" is not the claim; "fires" is.
+- **Does the wired command run?** Its exact exit code, from a clean shell.
 - **Is `quality` green right now?** If not, say what's red and why it was left that way.
+- **Which exemptions are blanket rather than scoped**, and for any tool that ratchets by
+  count, that magnitude in those files is ungated. This is the sentence a reader most needs
+  and is least likely to derive on their own.
 
 Point the user at the one file to edit when a cap needs to change — and remind them that
 the matching `rules/` prose changes in the same commit.
