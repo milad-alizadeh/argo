@@ -25,10 +25,25 @@ const inPath = join(import.meta.dir, process.argv[2] ?? 'results.jsonl')
 const outPath = join(import.meta.dir, process.argv[3] ?? 'rescored.jsonl')
 if (!existsSync(inPath)) throw new Error(`no results at ${inPath}`)
 
-const PANEL: Backend[] = [
-  { kind: 'openai', model: 'gpt-5', label: 'openai:gpt-5' },
-  { kind: 'claude-cli', model: 'sonnet', label: 'claude:sonnet' },
-]
+/**
+ * `--panel claude` falls back to a single-vendor panel. Not the default and not as good — two
+ * judges from one vendor are one lens — but the metered half of a mixed panel can die
+ * mid-run (it did: the OpenAI account hit its quota and 357 of 588 votes came back 429, which
+ * the report's unparsable counter caught before any of it was believed). A free single-vendor
+ * re-score is worth more than no re-score, PROVIDED the report says which panel voted, which
+ * it does.
+ */
+const PANEL: Backend[] =
+  process.argv.includes('--panel') && process.argv[process.argv.indexOf('--panel') + 1] === 'claude'
+    ? [
+        { kind: 'claude-cli', model: 'sonnet', label: 'claude:sonnet' },
+        { kind: 'claude-cli', model: 'haiku', label: 'claude:haiku' },
+      ]
+    : [
+        { kind: 'openai', model: 'gpt-5', label: 'openai:gpt-5' },
+        { kind: 'claude-cli', model: 'sonnet', label: 'claude:sonnet' },
+      ]
+console.log(`panel: ${PANEL.map((p) => p.label).join(' + ')}`)
 
 const trials = await readTrials(inPath)
 
