@@ -1,6 +1,8 @@
 # Cockpit surface matrix — Stage × Glance × Drill × Surface
 
-The "what shows when" spec. Companion to `cockpit-domain-model.md` (entities). The
+The "what shows when" spec. Companion to `CONTEXT.md` (entities — the domain model lives at the
+repo root; `cockpit-domain-model.md` was deleted in the #180 consolidation) and
+`cockpit-status-vocabulary.md` (the words). The
 delivery-lifecycle rendering (nodes, staleness, one-control) is being re-derived
 first-principles under wayfinder #157 — this doc's routing/panel references below are
 provisional and reconcile as the surface tickets land.

@@ -19,8 +19,8 @@ attempted and did not succeed. Provider reads failing, tokens expiring, writes r
 mechanical git ops erroring, the project folder vanishing, Argo's own observation going blind.
 
 **References, does not re-spec:** the reconnect flow → #165 · provider write intents and the
-canonical five → #167 · the session dot's four states → #164 · status words → the status
-vocabulary registry · the merged top bar's chrome and the chip's placement → #201 (settled;
+canonical five → #167 · the session dot's four states → #164 · status words →
+`cockpit-status-vocabulary.md` · the merged top bar's chrome and the chip's placement → #201 (settled;
 `cockpit-app-shell-spec.md`) · Concierge narration of
 failure → #190. **OS-level notification of any of this: none** — #188 resolved that connection
 failures never raise a banner (they wait in the chip); see the app shell spec's
@@ -222,8 +222,8 @@ you to distrust the loudest signal in the app.
 
 ## Status words this doc adds
 
-Argo-owned, for the connection block of the status vocabulary registry (which does not yet carry
-one — see the landing note below):
+Argo-owned. **Landed by #205** into `cockpit-status-vocabulary.md` → *Connection* — that registry
+is the authority; the table below is the derivation:
 
 | Thing | Words |
 | --- | --- |
@@ -246,10 +246,14 @@ settled** — this doc deliberately does not restate them:
 | Code room (#183) | empty folder · unsupported binary · no folder | `DIRECT` floor is files-on-disk |
 | Delivery (#161) | teammate PR with no session row | bare tracker ⇒ three statuses (#167) |
 
-## Landing note
+## Landing note — resolved (#205)
 
-Two artifacts this doc reconciles against are **not on `main`**: the status vocabulary registry
-(`cockpit-status-vocabulary.md`, #174) is stranded on `origin/research/dashvox-voicemode-return-path`,
-and #165's onboarding prototype and spec were never committed. Both tickets are closed. Tracked as
-its own map ticket; until it lands, §3's chip words and the table above have no registry entry to
-join, and the registry's "Empty / degraded" section still needs §1's narrowing applied.
+Two artifacts this doc reconciles against were **not on `main`** when it was written. Both landed
+with #205:
+
+- `cockpit-status-vocabulary.md` (#174) — recovered, de-staled, and amended with the **Connection**
+  block above; §1's narrowing is applied to its "Empty / degraded" section, which now separates the
+  **tier** axis (`hide whole`) from the **freshness** axis (keep and label).
+- #165's onboarding — landed as `cockpit-onboarding-spec.md`. The **prototype was cut**, not
+  recovered: it was agreed live in the grill and Phase 2 redoes the visual contract. Onboarding is
+  therefore the one surface with no prototype file for #178 to stitch.
