@@ -1,7 +1,7 @@
 # Designs
 
-Committed design studies for the Argo cockpit. These are high-fidelity static HTML designs —
-open any file in a browser.
+The committed design set for the Argo cockpit: written specs (`.md`) and high-fidelity static
+HTML studies — open any HTML file in a browser.
 
 > **Wayfinder [#157](https://github.com/milad-alizadeh/argo/issues/157) is the source of truth
 > for the redesigned cockpit.** The old design set (`cockpit.html`, `cockpit-matrix.md`,
@@ -9,6 +9,19 @@ open any file in a browser.
 > replaced. The cockpit is re-derived first-principles on the new domain model; foundations
 > and a fresh UI inventory are rebuilt downstream (Phase 2/3). The set below is the surviving
 > direction.
+
+## Start here — the assembled spec
+
+**[`cockpit-spec.md`](cockpit-spec.md) is the front door.** It states what the cockpit is in one
+document — shell, the three rooms, onboarding, status vocabulary, degradation, failure policy,
+out-of-window attention, and the architecture the domain model forces — and cites the per-surface
+docs below for the detail rather than restating them. It is the **join** of wayfinder #157's
+Phase 1 (#253 / #254), not a replacement for its artifacts.
+
+Two reasons to read it before anything in the table: the amendments that live only in closed issue
+comments (#201, #202, #178's audit) are applied **inline**, so the assembled read is the current
+read; and it states the **delta** between the running `apps/desktop` and the specified cockpit,
+which no per-surface doc owns.
 
 ## Authoring a new study
 
@@ -36,7 +49,8 @@ under `docs/adr/`.
 
 | File | Screen | Notes |
 |---|---|---|
-| `cockpit-prototype-switcher.html` | **Start here** — the review harness (wayfinder #178) | Left rail walking all 22 states across the three rooms + the look anchor; iframes each file untouched. `?surface=&state=` deep-links. Throwaway: expires with the prototypes it wraps. Manifest is an inline array in the file — `file://` blocks `fetch`, so it cannot be external |
+| `cockpit-spec.md` | **The assembled contract** (wayfinder #157 Phase 1, via #253/#254) | The front door above. Every row below is its detail of record; it cites them and restates none of them |
+| `cockpit-prototype-switcher.html` | The review harness — **start here for pixels** (wayfinder #178) | Left rail walking all 22 states across the three rooms + the look anchor; iframes each file untouched. `?surface=&state=` deep-links. Throwaway: expires with the prototypes it wraps. Manifest is an inline array in the file — `file://` blocks `fetch`, so it cannot be external |
 | `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Colour/mood/effects only — layout & density deferred |
 | `cockpit-session-interior-prototype.html` | Session interior (wayfinder #161 / #186) | The settled session card: master–detail Activity and Delivery, folded turn spine, expandable Dock. Absorbs the delivery-review and fresh-session studies |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | The grill behind the prototype above — roster rows, dot-carries-state, zero-state, panel natures |
