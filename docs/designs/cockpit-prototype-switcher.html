@@ -1,0 +1,188 @@
+<meta charset="utf-8">
+<title>Argo — prototype switcher (review harness)</title>
+<!--
+  THROWAWAY REVIEW HARNESS — wayfinder #178, the final step of map #157.
+
+  What it is: a thin wrapper that STITCHES the settled per-surface prototypes together so every
+  surface and state can be walked in one sitting. It never merges them — each file stays
+  standalone and openable on its own. The one thing no standalone file can do is show whether
+  the chrome is consistent across rooms after #201 reconciled them; that is this harness's job.
+
+  WHY IT IS BUILT THE WAY IT IS — forced by file://, not chosen:
+    Chrome gives file:// documents opaque origins, so `iframe.contentDocument` is null (verified,
+    not assumed). This wrapper therefore drives the iframe by `src` URL ONLY:
+      · no CSS injection      → it CANNOT hide each file's own floating bottom bar
+      · no fetch()            → the manifest CANNOT be an external prototypes.json
+      · no postMessage        → it cannot observe or be told the inner state
+    Hence: the manifest below is an inline array, and the rail is on the LEFT — the only free
+    edge, since the top is #201's floating chrome and the bottom is each file's state switcher.
+
+  ADDING A PROTOTYPE — one entry in SURFACES below:
+    { id, name, file, param, ticket, states: [[stateKey, label], …] }
+      param     the query param THAT FILE reads. They differ: the Sessions room reads `state`,
+                the Work and Code rooms read `variant`. Do not normalise the files to match —
+                they are settled; the manifest is what absorbs the difference.
+      param:null  single-state file (no query param appended).
+      file:null + missing:'…'  an honest dead slot for a surface with no prototype.
+
+  LIFETIME: expires with the prototypes it wraps — Phase 2 (token contract) and Phase 3 (UI
+  inventory) replace them, and Storybook is the durable render surface. Do not grow this into
+  tooling; it has no spec doc on purpose.
+-->
+<style>
+  :root{
+    --base:#0A0B0D; --ink:#E7E3DA; --ink-dim:#9A968C; --ink-faint:#615E58; --accent:#C8A968;
+    --sans:"Inter","Helvetica Neue",-apple-system,system-ui,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+    --rail:232px;
+  }
+  html,body{margin:0;height:100%;background:#000;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+  body{display:flex}
+
+  /* ── the rail: harness chrome, deliberately NOT app chrome ───────────────── */
+  #rail{width:var(--rail);flex:none;height:100%;overflow-y:auto;background:#070709;
+        border-right:1px solid #17171A;display:flex;flex-direction:column}
+  #rail h1{margin:0;padding:16px 14px 4px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+           color:var(--ink-faint);font-weight:500}
+  #rail .sub{padding:0 14px 14px;font-size:10.5px;line-height:1.5;color:var(--ink-faint)}
+  #rail .sub b{color:var(--accent);font-weight:500}
+  .grp{padding:10px 14px 3px;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .grp .tk{font-family:var(--mono);letter-spacing:0;text-transform:none;color:#3E3C39;margin-left:5px}
+  .st{display:block;width:100%;text-align:left;border:0;background:none;cursor:pointer;
+      font-family:var(--sans);font-size:12px;color:var(--ink-dim);padding:5px 14px 5px 22px;line-height:1.35}
+  .st:hover{color:var(--ink);background:#0E0E11}
+  .st.on{color:var(--base);background:var(--accent);font-weight:500}
+  .st .k{font-family:var(--mono);font-size:9.5px;color:var(--ink-faint);margin-left:6px}
+  .st.on .k{color:rgba(10,11,13,.55)}
+  .gap{padding:5px 14px 5px 22px;font-size:12px;color:#46443F;font-style:italic;cursor:not-allowed}
+  .gap small{display:block;font-style:normal;font-size:10px;color:#3A3835;margin-top:1px}
+  #foot{margin-top:auto;padding:12px 14px 14px;border-top:1px solid #17171A;
+        font-size:10px;line-height:1.55;color:var(--ink-faint)}
+  #foot .thr{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;
+             text-transform:uppercase;color:#6B4F1E;border:1px solid #3A2C13;border-radius:3px;
+             padding:1px 5px;margin-bottom:7px}
+  #foot code{font-family:var(--mono);color:var(--ink-faint)}
+
+  /* ── the stage: prototypes are authored at a fixed 1440×900, so scale to fit ─ */
+  #stage{flex:1;position:relative;display:grid;place-items:center;background:#000;overflow:hidden}
+  #fit{width:1440px;height:900px;transform-origin:center center;position:relative}
+  #fit iframe{width:1440px;height:900px;border:0;display:block;background:var(--base)}
+  #none{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:40px}
+  #none div{max-width:420px}
+  #none b{display:block;font-size:15px;color:var(--ink-dim);font-weight:400;margin-bottom:10px}
+  #none p{font-size:12px;line-height:1.7;color:var(--ink-faint);margin:0}
+  #zoom{position:absolute;right:10px;bottom:8px;font-family:var(--mono);font-size:9.5px;color:#2E2D2B}
+</style>
+
+<nav id="rail">
+  <h1>Prototype switcher</h1>
+  <div class="sub">Wayfinder <b>#178</b> — every settled surface and state, one sitting.
+    Files stay standalone; this only stitches.</div>
+  <div id="list"></div>
+  <div id="foot">
+    <span class="thr">throwaway</span>
+    <div><b style="color:var(--ink-dim);font-weight:500">↑ ↓</b> walks this list.
+      <b style="color:var(--ink-dim);font-weight:500">← →</b> belong to the prototype's own bottom bar.</div>
+    <div style="margin-top:7px">The highlight is <b style="color:var(--ink-dim);font-weight:500">what the rail last
+      loaded</b>. Driving from the inner bar changes the room without the rail knowing —
+      <code>file://</code> blocks reading into the frame.</div>
+  </div>
+</nav>
+
+<main id="stage">
+  <div id="fit"><iframe id="frame" title="prototype"></iframe></div>
+  <div id="none"><div><b id="none-t"></b><p id="none-p"></p></div></div>
+  <span id="zoom"></span>
+</main>
+
+<script>
+/* ── MANIFEST — the only thing you edit to register a prototype ──────────────── */
+const SURFACES=[
+  {id:'sessions',name:'Sessions room',ticket:'#161 · #186',file:'cockpit-session-interior-prototype.html',param:'state',
+   states:[['zero','Zero-state (cold start)'],['fresh','Fresh session'],['activity','Activity'],['idle','Idle session'],
+           ['delivery','Delivery · Overview'],['delivery-review','Delivery · Code Review'],['delivery-files','Delivery · Files'],
+           ['delivery-prepr','Delivery · pre-PR'],['dock','Dock expanded'],['external','External (read-only)'],
+           ['archived','Archived list']]},
+  {id:'work',name:'Work room',ticket:'#185 · #160',file:'cockpit-work-room-prototype.html',param:'variant',
+   states:[['leaf','Detail · leaf node'],['parent','Detail · parent node'],['filter','List · filtering']]},
+  {id:'code',name:'Code room',ticket:'#183 · #201 chrome ref',file:'cockpit-code-room-prototype.html',param:'variant',
+   states:[['editor','Editor'],['search','Search'],['preview','Markdown preview'],['empty','Empty folder'],
+           ['binary','Unsupported file'],['bselect','Branch ▾'],['bmanage','Manage ⋯']]},
+  {id:'penumbra',name:'Look anchor',ticket:'#158 locked',file:'cockpit-penumbra-reference.html',param:null,
+   states:[[null,'Penumbra reference']]},
+  {id:'onboarding',name:'Onboarding',ticket:'#165',file:null,
+   missing:'Spec only, no prototype. The #165 study was never committed and #205 chose not to reconstruct it — '
+          +'the pixels were agreed live in the grill and Phase 2 redoes the visual contract. '
+          +'Read docs/designs/cockpit-onboarding-spec.md.'},
+];
+
+/* flat walk order for ↑/↓ — surfaces in rail order, states nested */
+const FLAT=SURFACES.flatMap(s=>(s.states||[]).map(([k])=>[s.id,k]));
+const byId=id=>SURFACES.find(s=>s.id===id);
+let cur=-1;
+
+function srcFor(s,state){
+  return s.param&&state!=null ? `${s.file}?${s.param}=${encodeURIComponent(state)}` : s.file;
+}
+
+function load(sid,state,push){
+  const s=byId(sid); if(!s) return;
+  const gap=!s.file;
+  document.getElementById('fit').style.visibility=gap?'hidden':'visible';
+  document.getElementById('none').style.display=gap?'grid':'none';
+  if(gap){
+    document.getElementById('none-t').textContent=`${s.name} — no prototype`;
+    document.getElementById('none-p').textContent=s.missing;
+  }else{
+    document.getElementById('frame').src=srcFor(s,state);
+  }
+  cur=FLAT.findIndex(([a,b])=>a===sid&&b===state);
+  document.querySelectorAll('.st').forEach(el=>
+    el.classList.toggle('on',el.dataset.s===sid&&(el.dataset.k||null)===(state??null)));
+  if(push!==false){
+    const u=new URL(location);
+    u.searchParams.set('surface',sid);
+    state!=null?u.searchParams.set('state',state):u.searchParams.delete('state');
+    history.replaceState(0,'',u);
+  }
+  /* the iframe steals focus on load; take it back so ↑/↓ keep working */
+  setTimeout(()=>window.focus(),0);
+}
+
+/* ── rail ─────────────────────────────────────────────────────────────────── */
+document.getElementById('list').innerHTML=SURFACES.map(s=>{
+  const head=`<div class="grp">${s.name}<span class="tk">${s.ticket}</span></div>`;
+  if(!s.file) return head+`<div class="gap">no prototype<small>spec only — #205</small></div>`;
+  return head+s.states.map(([k,label])=>
+    `<button class="st" data-s="${s.id}"${k!=null?` data-k="${k}"`:''}>${label}`
+    +(k!=null?`<span class="k">${k}</span>`:'')+`</button>`).join('');
+}).join('');
+
+document.getElementById('list').addEventListener('click',e=>{
+  const b=e.target.closest('.st'); if(!b) return;
+  load(b.dataset.s,b.dataset.k??null);
+});
+
+/* ── keys: ↑/↓ are ours, ←/→ are deliberately left to the inner file ────────── */
+addEventListener('keydown',e=>{
+  if(e.key!=='ArrowUp'&&e.key!=='ArrowDown') return;
+  e.preventDefault();
+  const i=(cur+(e.key==='ArrowDown'?1:-1)+FLAT.length)%FLAT.length;
+  load(...FLAT[i]);
+});
+
+/* ── scale the fixed 1440×900 canvas into whatever room the window gives ────── */
+function fit(){
+  const st=document.getElementById('stage');
+  const k=Math.min(st.clientWidth/1440,st.clientHeight/900,1);
+  document.getElementById('fit').style.transform=`scale(${k})`;
+  document.getElementById('zoom').textContent=`1440×900 · ${Math.round(k*100)}%`;
+}
+addEventListener('resize',fit); fit();
+
+/* ── deep link: ?surface=&state= ────────────────────────────────────────────── */
+const q=new URL(location).searchParams;
+const s0=byId(q.get('surface'))||SURFACES[0];
+const k0=q.get('state')??(s0.states?s0.states[0][0]:null);
+load(s0.id,s0.states&&s0.states.some(([k])=>k===k0)?k0:(s0.states?s0.states[0][0]:null),false);
+</script>
