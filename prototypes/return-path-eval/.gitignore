@@ -5,6 +5,9 @@ corpus-b.json
 # Run output. Holds arm-B chunks inline, so it carries the same privacy constraint as the
 # corpus itself — findings go in the ticket resolution, never the raw rows.
 *.jsonl
+# ...except the redacted, committable run (`bun redact.ts`) — arm A whole, arm B
+# metrics-only. This is what makes the #224 numbers reproducible without the transcripts.
+!results-public.jsonl
 *.log
 
 # OPENAI_API_KEY for the stage-3 speaker. Bun auto-loads this from the run directory.

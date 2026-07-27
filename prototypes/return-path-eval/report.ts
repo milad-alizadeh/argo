@@ -67,14 +67,19 @@ for (const [k, ts] of groups(ok, (t) => `${t.corpusArm} / ${t.arm}`)) {
 
 // ------------------------------------------- 3. does the audio model change what it was given?
 console.log('\n## 3. Stage 3 — what the audio model did to the payload (#224 unknown 2)\n')
-const spokenTrials = ok.filter((t) => t.spoken !== undefined)
+// Keyed on `spokenWords`, not `spoken`: the redacted run drops the transcript but keeps its
+// length, and "did stage 3 produce a line" is what this section is actually asking.
+const spokenTrials = ok.filter((t) => t.spokenWords !== undefined)
 for (const [k, ts] of groups(spokenTrials, (t) => `${t.corpusArm} / ${t.arm}`)) {
   // Strip the `[REDUCED] ...` header only for the span arms, which have one. The control's
   // payload is a bare written line, and blindly slicing off a first paragraph emptied it —
   // which made the control read as 0% verbatim by construction rather than by measurement.
+  //
+  // `verbatim` is precomputed by `redact.ts` for rows whose text was removed before commit, so
+  // the committed run reproduces this number without carrying the transcripts that produced it.
   const spokenBody = (t: Trial): string =>
-    (t.payload.startsWith('[REDUCED]') ? t.payload.split('\n\n').slice(1).join('\n\n') : t.payload).trim()
-  const verbatim = ts.filter((t) => (t.spoken ?? '').trim() === spokenBody(t))
+    ((t.payload ?? '').startsWith('[REDUCED]') ? (t.payload ?? '').split('\n\n').slice(1).join('\n\n') : t.payload ?? '').trim()
+  const verbatim = ts.filter((t) => t.verbatim ?? (t.spoken ?? '').trim() === spokenBody(t))
   const shrank = ts.filter((t) => (t.spokenWords ?? 0) < 0.8 * t.payloadWords)
   console.log(`  ${k}   ${ts.length} trials`)
   console.log(`    spoke the payload verbatim   ${rate(verbatim.length, ts.length)}`)

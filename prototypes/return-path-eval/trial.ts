@@ -31,12 +31,15 @@ export type Trial = {
   readonly routerProblems: readonly string[]
   /** Span arms only. */
   readonly spans?: readonly SpanVerdict[]
-  readonly payload: string
+  /** Absent on redacted arm-B rows — see `redact.ts`. */
+  readonly payload?: string
   readonly payloadWords: number
   readonly spokenMs?: number
   readonly spoken?: string
   readonly spokenWords?: number
   readonly council?: CouncilResult
+  /** Precomputed by `redact.ts` so a text-free row still answers the verbatim question. */
+  readonly verbatim?: boolean
   readonly error?: string
 }
 
