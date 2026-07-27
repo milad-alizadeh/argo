@@ -7,6 +7,7 @@ const VARIANTS = Object.keys(TYPE_ROLE_CLASS) as TextVariant[]
 // One sample per role, phrased as the cockpit copy that role actually carries — the
 // specimen has to read like the product, not like lorem ipsum.
 const SPECIMEN: Record<TextVariant, string> = {
+  display: 'Auth refactor',
   headline: 'Changes requested · 2 blocking',
   title: 'Editing legacy.ts — now line',
   row: 'List primary text: checks, outcomes, tool rows',

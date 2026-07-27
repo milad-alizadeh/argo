@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Argo — Foundations (Penumbra)</title>
+<!--
+  The living specimen of the token contract (design-foundations step 5). It imports the
+  studies mirror (which imports the REAL argo-tokens.css) and styles ONLY via var(--token)
+  and the text-<role> classes — so opening it always shows the current contract and it
+  cannot drift. This is the one study that is not disposable; link it first in the README.
+-->
+<link rel="stylesheet" href="./tokens.css" />
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .theme { background: var(--background); color: var(--foreground); padding: var(--space-region); }
+  .theme > .wrap { max-width: 1080px; margin: 0 auto; padding: var(--space-region) var(--space-loose) var(--space-nest); }
+  h2 { color: var(--foreground-faint); margin: var(--space-nest) 0 var(--space-inset); }
+  h2:first-child { margin-top: var(--space-snug); }
+  .row { display: flex; align-items: baseline; gap: var(--space-region); padding: var(--space-tight) 0;
+         border-bottom: 1px solid var(--inset-hair); }
+  .row .k { width: 128px; flex: none; color: var(--foreground-faint); }
+  .row .tuple { width: 176px; flex: none; color: var(--foreground-soft); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-nest); }
+
+  /* Colour — ramps + chips, all via tokens */
+  .ramp { display: flex; border-radius: var(--radius); overflow: hidden; margin: var(--space-tight) 0 var(--space-inset);
+          box-shadow: 0 1px 0 var(--inset-lip) inset; }
+  .sw { flex: 1; height: 44px; display: flex; align-items: flex-end; padding: var(--space-tight); }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-gap); }
+  .chip { display: inline-flex; align-items: center; gap: var(--space-snug); padding: var(--space-snug) var(--space-inset);
+          border-radius: var(--radius-full); background: var(--panel); border: 1px solid var(--border); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+         box-shadow: 0 0 var(--glow-blur) color-mix(in srgb, currentColor var(--glow-strength), transparent); }
+  .vpill { padding: var(--space-tight) var(--space-inset); border-radius: var(--radius-full); }
+
+  /* Spacing — a bar per step */
+  .space-line { display: flex; align-items: center; gap: var(--space-gap); padding: var(--space-hair) 0; }
+  .space-line .k { width: 128px; color: var(--foreground-faint); }
+  .space-bar { height: 12px; border-radius: var(--radius-full); background: var(--primary); }
+
+  /* Shape + motion */
+  .shape-row, .motion-row { display: flex; gap: var(--space-region); align-items: center; flex-wrap: wrap; }
+  .radius-box { width: 72px; height: 52px; background: var(--secondary); border: 1px solid var(--border);
+                display: flex; align-items: flex-end; padding: var(--space-tight); color: var(--foreground-faint); }
+  .pulse { width: 14px; height: 14px; border-radius: 50%; background: var(--tone-run); color: var(--tone-run);
+           box-shadow: 0 0 var(--glow-blur) color-mix(in srgb, currentColor var(--glow-strength), transparent);
+           animation: pulse var(--time-pulse) ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: var(--pulse-dim) } }
+
+  /* Mood panel — the atmosphere tokens in one lit scene */
+  .panel { position: relative; border-radius: var(--radius); padding: var(--space-loose); overflow: hidden;
+           background: var(--panel); backdrop-filter: blur(12px); border: 1px solid var(--border);
+           box-shadow: 0 1px 0 var(--inset-lip) inset, 0 30px 60px -30px var(--shadow-3); }
+  .panel::before { content:""; position:absolute; left:-20%; right:-20%; top:-40%; height:120%; z-index:0;
+                   background: radial-gradient(50% 60% at 62% 28%, var(--panel-bloom), transparent 70%);
+                   filter: blur(var(--bloom-blur)); }
+  .panel > * { position: relative; z-index: 1; }
+  .inset { margin-top: var(--space-inset); border-radius: var(--radius-md); padding: var(--space-inset);
+           background: var(--inset); box-shadow: 0 1px 0 var(--inset-lip) inset; }
+  .btn { display: inline-block; margin-top: var(--space-inset); padding: var(--space-gap) var(--space-region);
+         border-radius: var(--radius-md); border: none; background: var(--primary); color: var(--primary-foreground); }
+</style>
+</head>
+<body>
+<template id="spec">
+  <div class="wrap">
+    <div class="text-display">Argo — Penumbra foundations</div>
+    <div class="text-meta" style="color:var(--foreground-faint)">warm near-black · eclipse-gold accent · teal / gold / terracotta / slate · thin display hero</div>
+
+    <div class="grid">
+      <div>
+        <h2 class="text-eyebrow">Typography</h2>
+        <div class="row"><span class="k text-meta">display</span><span class="tuple text-meta">24 · 200 · .01em</span><span class="text-display">Auth refactor</span></div>
+        <div class="row"><span class="k text-meta">headline</span><span class="tuple text-meta">16 · 700 · −.01em</span><span class="text-headline">Verdict: changes</span></div>
+        <div class="row"><span class="k text-meta">title</span><span class="tuple text-meta">14 · 600 · −.005em</span><span class="text-title">Delivery lifecycle</span></div>
+        <div class="row"><span class="k text-meta">row</span><span class="tuple text-meta">12 · 400</span><span class="text-row">feat/auth-rotation</span></div>
+        <div class="row"><span class="k text-meta">row-strong</span><span class="tuple text-meta">12 · 600</span><span class="text-row-strong">Running agents</span></div>
+        <div class="row"><span class="k text-meta">prose</span><span class="tuple text-meta">12 · 400 · 18lh</span><span class="text-prose">A calmer, longer line for reading dwell.</span></div>
+        <div class="row"><span class="k text-meta">meta</span><span class="tuple text-meta">10 · 500 · tnum</span><span class="text-meta">3m 12s · ctx 42%</span></div>
+        <div class="row"><span class="k text-meta">tag</span><span class="tuple text-meta">10 · 600 · caps</span><span class="text-tag">Needs input</span></div>
+        <div class="row"><span class="k text-meta">eyebrow</span><span class="tuple text-meta">10 · 600 · .18em</span><span class="text-eyebrow">Session · by depth</span></div>
+        <div class="row"><span class="k text-meta">code</span><span class="tuple text-meta">12 · mono</span><span class="text-code">rotation.verify(token)</span></div>
+        <div class="row"><span class="k text-meta">code-inline</span><span class="tuple text-meta">11 · mono</span><span class="text-code-inline">src/auth/legacy.ts</span></div>
+
+        <h2 class="text-eyebrow">Space</h2>
+        <div class="space-line"><span class="k text-meta">hair · 2</span><span class="space-bar" style="width:2px"></span></div>
+        <div class="space-line"><span class="k text-meta">tight · 4</span><span class="space-bar" style="width:4px"></span></div>
+        <div class="space-line"><span class="k text-meta">snug · 6</span><span class="space-bar" style="width:6px"></span></div>
+        <div class="space-line"><span class="k text-meta">gap · 8</span><span class="space-bar" style="width:8px"></span></div>
+        <div class="space-line"><span class="k text-meta">inset · 12</span><span class="space-bar" style="width:12px"></span></div>
+        <div class="space-line"><span class="k text-meta">region · 16</span><span class="space-bar" style="width:16px"></span></div>
+        <div class="space-line"><span class="k text-meta">loose · 20</span><span class="space-bar" style="width:20px"></span></div>
+        <div class="space-line"><span class="k text-meta">nest · 24</span><span class="space-bar" style="width:24px"></span></div>
+
+        <h2 class="text-eyebrow">Shape · motion</h2>
+        <div class="shape-row">
+          <div class="radius-box" style="border-radius:var(--radius-sm)"><span class="text-meta">sm</span></div>
+          <div class="radius-box" style="border-radius:var(--radius-md)"><span class="text-meta">md</span></div>
+          <div class="radius-box" style="border-radius:var(--radius)"><span class="text-meta">lg</span></div>
+          <div class="radius-box" style="border-radius:var(--radius-full);width:52px"><span class="text-meta">full</span></div>
+          <span class="pulse" title="time-pulse 2s"></span>
+          <span class="text-meta">pulse 2s · fast 150 · slow 300</span>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-eyebrow">Core ramps</h2>
+        <div class="text-meta" style="color:var(--foreground-faint)">graphite</div>
+        <div class="ramp" data-ramp="graphite" data-steps="950,900,850,800,700,600,500,400,300,200,100,50"></div>
+        <div class="text-meta" style="color:var(--foreground-faint)">gold — accent</div>
+        <div class="ramp" data-ramp="gold" data-steps="700,600,500,400,300,200,100"></div>
+        <div class="text-meta" style="color:var(--foreground-faint)">teal · terracotta · slate — status</div>
+        <div class="ramp" data-ramp="teal" data-steps="950,700,600,500,300,100"></div>
+        <div class="ramp" data-ramp="terra" data-steps="950,700,600,500,300,100"></div>
+        <div class="ramp" data-ramp="slate" data-steps="950,700,600,500,300,100"></div>
+
+        <h2 class="text-eyebrow">Lifecycle tones</h2>
+        <div class="chips">
+          <span class="chip text-tag" style="color:var(--tone-run)"><span class="dot"></span>run</span>
+          <span class="chip text-tag" style="color:var(--tone-amber)"><span class="dot"></span>amber</span>
+          <span class="chip text-tag" style="color:var(--tone-red)"><span class="dot"></span>red</span>
+          <span class="chip text-tag" style="color:var(--tone-done)"><span class="dot"></span>done</span>
+          <span class="chip text-tag" style="color:var(--tone-landed)"><span class="dot"></span>landed</span>
+          <span class="chip text-tag" style="color:var(--tone-gray)"><span class="dot"></span>gray</span>
+          <span class="chip text-tag" style="color:var(--tone-stale)"><span class="dot"></span>stale</span>
+        </div>
+
+        <h2 class="text-eyebrow">Verdict · signal</h2>
+        <div class="chips">
+          <span class="vpill text-tag" style="color:var(--verdict-approve);background:color-mix(in srgb,var(--verdict-approve-tint) 14%,transparent)">approve</span>
+          <span class="vpill text-tag" style="color:var(--verdict-changes);background:color-mix(in srgb,var(--verdict-changes-tint) 14%,transparent)">changes</span>
+          <span class="vpill text-tag" style="color:var(--verdict-block);background:color-mix(in srgb,var(--verdict-block-tint) 14%,transparent)">block</span>
+        </div>
+
+        <h2 class="text-eyebrow">Panel — mood</h2>
+        <div class="panel">
+          <div class="text-display">Concierge</div>
+          <div class="row" style="border:none;padding:var(--space-snug) 0"><span class="dot" style="color:var(--tone-run)"></span><span class="text-row">Listening · claude · running</span></div>
+          <div class="inset text-code">▸ Edit legacy.ts <span style="color:var(--signal-bad)">− compareLegacy</span> <span style="color:var(--signal-ok)">+ rotation.verify</span></div>
+          <button class="btn text-row-strong">Merge PR #312</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<div class="theme dark" id="dark"></div>
+<div class="theme" id="light"></div>
+
+<script>
+  const tpl = document.getElementById('spec');
+  for (const id of ['dark', 'light']) document.getElementById(id).appendChild(tpl.content.cloneNode(true));
+  for (const r of document.querySelectorAll('.ramp')) {
+    const name = r.dataset.ramp;
+    for (const s of r.dataset.steps.split(',')) {
+      const d = document.createElement('div');
+      d.className = 'sw text-meta';
+      d.style.background = `var(--${name}-${s})`;
+      d.style.color = (name === 'graphite' ? +s >= 500 : +s >= 500) ? 'var(--graphite-100)' : 'var(--graphite-950)';
+      d.textContent = s;
+      r.appendChild(d);
+    }
+  }
+</script>
+</body>
+</html>

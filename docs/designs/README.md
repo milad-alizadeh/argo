@@ -5,10 +5,13 @@ open any file in a browser.
 
 > **Wayfinder [#157](https://github.com/milad-alizadeh/argo/issues/157) is the source of truth
 > for the redesigned cockpit.** The old design set (`cockpit.html`, `cockpit-matrix.md`,
-> `cockpit-inventory.md`, `foundations.html`) was **wiped** — it described the app being
-> replaced. The cockpit is re-derived first-principles on the new domain model; foundations
-> and a fresh UI inventory are rebuilt downstream (Phase 2/3). The set below is the surviving
-> direction.
+> `cockpit-inventory.md`) was **wiped** — it described the app being replaced. The cockpit is
+> re-derived first-principles on the new domain model; a fresh UI inventory is rebuilt
+> downstream (Phase 2/3). The set below is the surviving direction.
+
+> **Start with [`foundations.html`](./foundations.html)** — the living specimen of the token
+> contract, settled by the `/design-foundations` ceremony from the Penumbra reference. It styles
+> only via `var(--token)`, so it always shows the current contract and cannot drift.
 
 ## Authoring a new study
 

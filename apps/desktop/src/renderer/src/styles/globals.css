@@ -37,6 +37,7 @@
   --color-foreground-faint: var(--foreground-faint);
 
   --color-panel: var(--panel);
+  --color-panel-bloom: var(--panel-bloom);
   --color-inset: var(--inset);
   --color-inset-hair: var(--inset-hair);
   --color-inset-lip: var(--inset-lip);
@@ -79,6 +80,10 @@
    * ladder below is the only type vocabulary (check:design-tokens enforces it).
    * Each text-<role> utility applies the full tuple. */
   --text-*: initial;
+  --text-display: var(--type-display);
+  --text-display--line-height: var(--type-display-leading);
+  --text-display--font-weight: var(--type-display-weight);
+  --text-display--letter-spacing: var(--type-display-tracking);
   --text-headline: var(--type-headline);
   --text-headline--line-height: var(--type-headline-leading);
   --text-headline--font-weight: var(--type-headline-weight);
@@ -127,6 +132,7 @@
   --spacing-gap: var(--space-gap);
   --spacing-inset: var(--space-inset);
   --spacing-region: var(--space-region);
+  --spacing-loose: var(--space-loose);
   --spacing-nest: var(--space-nest);
   --spacing-marker-col: var(--space-marker-col);
 

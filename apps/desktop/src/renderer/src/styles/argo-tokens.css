@@ -4,7 +4,7 @@
  * roles resolve to these variables; do not hardcode colours in components.
  *
  * Two-layer colour contract (settled by the /design-foundations ceremony from
- * docs/designs/cockpit.html — living specimen: docs/designs/foundations.html):
+ * docs/designs/cockpit-penumbra-reference.html — living specimen: docs/designs/foundations.html):
  *
  *   1. CORE ramps — raw values live ONLY here. Theme-agnostic, named by what
  *      they are. Never referenced by components or studies directly.
@@ -12,61 +12,67 @@
  *      referencing core steps only. Alpha variants are color-mix derivations of
  *      a core step, never a new hex.
  *
- * Palette: a warm near-black graphite with a single indigo accent, one frosted
- * `panel` surface per region and flat `inset` cards inside it (never
- * glass-on-glass). Lifecycle status and review verdict are DISJOINT families:
+ * Palette — PENUMBRA: a warm hue-biased near-black lit by a single eclipse-gold
+ * accent, one frosted `panel` surface per region carrying a warm bloom, flat
+ * `inset` cards inside it (never glass-on-glass). Status is a four-hue set —
+ * teal (live/ok), gold (attention == the accent), terracotta (block), slate
+ * (settled/done). Lifecycle status and review verdict are DISJOINT families:
  * verdict sits one ramp step further toward the theme's ink end than lifecycle
- * (dark: 500 vs 300; light: 600 vs 700), so they never render the same value.
+ * (dark: 300 vs 500; light: 700 vs 600), so they never render the same value.
  *
  * Orientation follows the shadcn convention: :root is light, `.dark` is dark. The
  * Cockpit is dark-first, so index.html sets `<html class="dark">` — keeping the
- * `.dark` mechanism live is what makes shadcn's `dark:` variants work.
+ * `.dark` mechanism live is what makes shadcn's `dark:` variants work. Penumbra is
+ * a dark scene; light is a re-binding of the same ramps (the ink becomes paper).
  */
 
 /* ---------------------------------------------------------------- core ramps */
 :root {
-  /* Warm gray (graphite) — surfaces + inks. */
-  --gray-50: #f6f0e6;
-  --gray-100: #efece6;
-  --gray-200: #dcd6cb;
-  --gray-300: #c6c0b5;
-  --gray-400: #9a938a;
-  --gray-500: #837b70;
-  --gray-600: #6b645b;
-  --gray-700: #3f3931; /* reserved: light-theme reading ink */
-  --gray-800: #211d17;
-  --gray-850: #1c1813;
-  --gray-900: #16130f;
-  --gray-950: #0b0a08;
+  /* Warm graphite — the near-black room floor at the dark end, warm off-white
+   * ink at the light end. Two-ended so light mode is a re-binding, not a re-mix. */
+  --graphite-50: #f2ede2; /* brightest ink — hero titles */
+  --graphite-100: #e7e3da; /* primary reading ink (Penumbra --ink) / light paper */
+  --graphite-200: #dad5c9; /* soft bright ink */
+  --graphite-300: #b7b2a6; /* dim reading ink — long-dwell body, terminal */
+  --graphite-400: #9a968c; /* --ink-dim */
+  --graphite-500: #615e58; /* --ink-faint */
+  --graphite-600: #46443e; /* warm mid */
+  --graphite-700: #26282e; /* raised hairline / tree-node track */
+  --graphite-800: #191a20; /* popover / inset card step */
+  --graphite-850: #101218; /* lifted panel tint */
+  --graphite-900: #0a0b0d; /* the room floor (Penumbra --base) */
+  --graphite-950: #08080a; /* deepest well / orb core */
 
-  /* Indigo — the single accent. */
-  --indigo-100: #eef0fb;
-  --indigo-200: #bfc9f4;
-  --indigo-400: #7b8bef;
-  --indigo-500: #5468ea;
-  --indigo-600: #4355d0;
+  /* Eclipse gold — the single accent (replaces indigo). */
+  --gold-100: #f3ecd8;
+  --gold-200: #e8d5a6;
+  --gold-300: #ddc488;
+  --gold-400: #d8be86;
+  --gold-500: #c8a968; /* eclipse gold — THE accent (Penumbra --accent) */
+  --gold-600: #a88a48;
+  --gold-700: #8a7038; /* Penumbra --accent-deep */
 
   /* Status hues — two-ended so light mode is a re-binding, not a re-mix. */
-  --green-100: #eaf6ef;
-  --green-300: #82ddad;
-  --green-500: #24ce7c;
-  --green-600: #17945c;
-  --green-700: #107a4c;
-  --green-950: #04140c;
+  --teal-100: #e4f0eb; /* live / ok / approve */
+  --teal-300: #a7cdbe;
+  --teal-500: #6fa890; /* Penumbra --run */
+  --teal-600: #4e7e6a;
+  --teal-700: #3d6656;
+  --teal-950: #0b1512;
 
-  --amber-100: #f3e6c8;
-  --amber-300: #f0cd8e;
-  --amber-500: #f6b23c;
-  --amber-600: #c07d15;
-  --amber-700: #9c6410;
-  --amber-950: #1a1204;
+  --terra-100: #f6e4e0; /* block / error / bad */
+  --terra-300: #dba79f;
+  --terra-500: #b5675e; /* Penumbra --block */
+  --terra-600: #94473f;
+  --terra-700: #7a3830;
+  --terra-950: #180a08;
 
-  --red-100: #ffeceb;
-  --red-300: #f29a91;
-  --red-500: #f5564f;
-  --red-600: #d03730;
-  --red-700: #ad2b26;
-  --red-950: #1b0908;
+  --slate-100: #e6e9ed; /* settled / done / landed — quiet, not celebratory */
+  --slate-300: #a6afbb;
+  --slate-500: #5b6673; /* Penumbra --done */
+  --slate-600: #434c57;
+  --slate-700: #353d46;
+  --slate-950: #0a0d10;
 }
 
 /* -------------------------------------------------- semantic roles — light */
@@ -75,96 +81,98 @@
   --radius-full: 999px; /* pills/chips; the app's rounded-full already covers this */
   --border-roster: 3px; /* the study's severity/state accent bar (finding, rvrow, phase group) */
 
-  --background: var(--gray-100);
-  --foreground: var(--gray-950);
+  --background: var(--graphite-100);
+  --foreground: var(--graphite-950);
 
-  --card: var(--gray-50);
-  --card-foreground: var(--gray-950);
+  --card: var(--graphite-50);
+  --card-foreground: var(--graphite-950);
 
-  --popover: var(--gray-50);
-  --popover-foreground: var(--gray-950);
+  --popover: var(--graphite-50);
+  --popover-foreground: var(--graphite-950);
 
-  --primary: var(--indigo-600);
-  --primary-foreground: var(--gray-50);
+  --primary: var(--gold-700);
+  --primary-foreground: var(--graphite-50);
   /* Primary ladder: bright = the light end of the primary gradient; soft = the
    * agent/auto accent ink (AI presence), quieter than primary. */
-  --primary-bright: var(--indigo-500);
-  --primary-soft: var(--indigo-600);
+  --primary-bright: var(--gold-600);
+  --primary-soft: var(--gold-700);
 
-  --secondary: var(--gray-200);
-  --secondary-foreground: var(--gray-800);
+  --secondary: var(--graphite-200);
+  --secondary-foreground: var(--graphite-800);
 
   /* `muted` is bound identically to `secondary` (no distinct job in the design);
    * kept for shadcn compatibility — prefer `secondary` in new code. */
-  --muted: var(--gray-200);
-  --muted-foreground: var(--gray-600);
+  --muted: var(--graphite-200);
+  --muted-foreground: var(--graphite-600);
 
   /* Selection/hover wash — the accent's rendered form is always the wash, never
-   * solid indigo (that is `primary`'s job). */
-  --accent: color-mix(in srgb, var(--indigo-500) 12%, transparent);
-  --accent-foreground: var(--gray-950);
+   * solid gold (that is `primary`'s job). */
+  --accent: color-mix(in srgb, var(--gold-500) 14%, transparent);
+  --accent-foreground: var(--graphite-950);
 
-  /* Terminal text-selection wash: a translucent indigo, glass not a solid block, so the
+  /* Terminal text-selection wash: a translucent gold, glass not a solid block, so the
    * panel reads through the highlight. Heavier than `--accent` so a selection still registers.
    * `LiveTerminal` resolves this to rgba() at runtime — xterm's parser can't read color-mix(). */
-  --terminal-selection: color-mix(in srgb, var(--indigo-500) 26%, transparent);
+  --terminal-selection: color-mix(in srgb, var(--gold-500) 26%, transparent);
 
-  --destructive: var(--red-600);
-  --destructive-foreground: var(--red-100);
+  --destructive: var(--terra-600);
+  --destructive-foreground: var(--terra-100);
 
-  --border: color-mix(in srgb, var(--gray-950) 9%, transparent);
-  --input: color-mix(in srgb, var(--gray-950) 13%, transparent);
-  --ring: var(--indigo-600);
+  --border: color-mix(in srgb, var(--graphite-950) 9%, transparent);
+  --input: color-mix(in srgb, var(--graphite-950) 13%, transparent);
+  --ring: var(--gold-700);
 
   /* Ink ladder: foreground → bright (ghost buttons, emphasized values) →
    * soft (long-dwell reading) → muted → faint (metas). */
-  --foreground-bright: var(--gray-850);
-  --foreground-soft: var(--gray-800);
-  --foreground-faint: var(--gray-500);
+  --foreground-bright: var(--graphite-850);
+  --foreground-soft: var(--graphite-800);
+  --foreground-faint: var(--graphite-500);
 
-  /* One frosted surface per region (panel); flat inset cards live inside it. */
-  --panel: color-mix(in srgb, var(--gray-50) 70%, transparent);
-  --inset: color-mix(in srgb, var(--gray-950) 2%, transparent);
-  --inset-hair: color-mix(in srgb, var(--gray-950) 6%, transparent);
-  --inset-lip: color-mix(in srgb, var(--gray-950) 4%, transparent);
+  /* One frosted surface per region (panel); flat inset cards live inside it.
+   * `panel-bloom` is the warm radial pool a panel carries behind it (Penumbra mood). */
+  --panel: color-mix(in srgb, var(--graphite-50) 70%, transparent);
+  --panel-bloom: color-mix(in srgb, var(--gold-500) 6%, transparent);
+  --inset: color-mix(in srgb, var(--graphite-950) 2%, transparent);
+  --inset-hair: color-mix(in srgb, var(--graphite-950) 6%, transparent);
+  --inset-lip: color-mix(in srgb, var(--graphite-950) 4%, transparent);
 
   /* Roster tones — named for the TONE the delivery derivation emits, not a lifecycle state,
    * because tone↔state is not 1:1 (the matrix keeps colour off the state deliberately).
    * Every tone resolves to a distinct value — none shares a token. `landed` (Merged) is
-   * green pulled toward indigo so Landed ≠ CI-green (ADR-0009). */
-  --tone-run: var(--indigo-600);
-  --tone-gray: var(--gray-600);
-  --tone-amber: var(--amber-600);
-  --tone-stale: var(--gray-500);
-  --tone-red: var(--red-600);
-  --tone-done: var(--green-600);
-  --tone-landed: color-mix(in srgb, var(--green-600) 55%, var(--indigo-600));
+   * slate pulled toward gold so Landed ≠ settled-done (ADR-0009). */
+  --tone-run: var(--teal-600);
+  --tone-gray: var(--graphite-600);
+  --tone-amber: var(--gold-600);
+  --tone-stale: var(--graphite-500);
+  --tone-red: var(--terra-600);
+  --tone-done: var(--slate-600);
+  --tone-landed: color-mix(in srgb, var(--slate-600) 55%, var(--gold-600));
 
   /* Review verdict — disjoint from lifecycle (700s vs lifecycle's 600s). */
-  --verdict-approve: var(--green-700);
-  --verdict-changes: var(--amber-700);
-  --verdict-block: var(--red-700);
+  --verdict-approve: var(--teal-700);
+  --verdict-changes: var(--gold-700);
+  --verdict-block: var(--terra-700);
   /* Verdict tints — the loud-step anchor verdict surfaces wash/border from
    * (use-sites alpha them: 12% wash, 40% border); text ink stays --verdict-*.
    * Deliberately the same steps as lifecycle's loud tier — separate names keep
    * the two families re-bindable apart. */
-  --verdict-approve-tint: var(--green-600);
-  --verdict-changes-tint: var(--amber-600);
-  --verdict-block-tint: var(--red-600);
+  --verdict-approve-tint: var(--teal-600);
+  --verdict-changes-tint: var(--gold-600);
+  --verdict-block-tint: var(--terra-600);
 
   /* Signal inks — reading-intensity outcome text on code/meta surfaces (diff
    * add/del, captured-feed colorization, check values). Same steps as the
    * verdict family by design: verdict IS this tier applied to review verdicts. */
-  --signal-ok: var(--green-700);
-  --signal-warn: var(--amber-700);
-  --signal-bad: var(--red-700);
+  --signal-ok: var(--teal-700);
+  --signal-warn: var(--gold-700);
+  --signal-bad: var(--terra-700);
 
   /* Shadows (colour steps; offsets live at the use site). `well` is a recessed
    * fill, not a shadow. */
   --shadow-1: color-mix(in srgb, black 8%, transparent);
   --shadow-2: color-mix(in srgb, black 12%, transparent);
   --shadow-3: color-mix(in srgb, black 18%, transparent);
-  --well: color-mix(in srgb, var(--gray-950) 4%, transparent);
+  --well: color-mix(in srgb, var(--graphite-950) 4%, transparent);
 
   /* Weaker on light, where a halo reads as blur rather than as light. */
   --glow-strength: 35%;
@@ -172,67 +180,72 @@
 
 /* --------------------------------------------------- semantic roles — dark */
 .dark {
-  --background: var(--gray-950);
-  --foreground: var(--gray-100);
+  --background: var(--graphite-900);
+  --foreground: var(--graphite-100);
 
-  --card: var(--gray-900);
-  --card-foreground: var(--gray-100);
+  --card: var(--graphite-850);
+  --card-foreground: var(--graphite-100);
 
-  --popover: var(--gray-850);
-  --popover-foreground: var(--gray-100);
+  --popover: var(--graphite-800);
+  --popover-foreground: var(--graphite-100);
 
-  --primary: var(--indigo-500);
-  --primary-foreground: var(--gray-50);
-  --primary-bright: var(--indigo-400);
-  --primary-soft: var(--indigo-200);
+  --primary: var(--gold-500);
+  /* Gold is a light accent — its readable ink is the near-black floor, not white
+   * (the indigo era used a light primary-foreground; gold flips it). */
+  --primary-foreground: var(--graphite-950);
+  --primary-bright: var(--gold-400);
+  --primary-soft: var(--gold-200);
 
-  --secondary: var(--gray-800);
-  --secondary-foreground: var(--gray-200);
+  --secondary: var(--graphite-800);
+  --secondary-foreground: var(--graphite-200);
 
-  --muted: var(--gray-800);
-  --muted-foreground: var(--gray-400);
+  --muted: var(--graphite-800);
+  --muted-foreground: var(--graphite-400);
 
-  --accent: color-mix(in srgb, var(--indigo-500) 12%, transparent);
-  --accent-foreground: var(--gray-100);
+  --accent: color-mix(in srgb, var(--gold-500) 14%, transparent);
+  --accent-foreground: var(--graphite-100);
 
   /* See the light-theme note: the selection wash reads brighter on the dark panel, so a
-   * lighter indigo mix keeps the same glassy weight. */
-  --terminal-selection: color-mix(in srgb, var(--indigo-400) 30%, transparent);
+   * lighter gold mix keeps the same glassy weight. */
+  --terminal-selection: color-mix(in srgb, var(--gold-400) 30%, transparent);
 
-  --destructive: var(--red-500);
-  --destructive-foreground: var(--red-100);
+  --destructive: var(--terra-500);
+  --destructive-foreground: var(--terra-100);
 
-  --border: color-mix(in srgb, var(--gray-50) 9%, transparent);
-  --input: color-mix(in srgb, var(--gray-50) 13%, transparent);
-  --ring: var(--indigo-500);
+  /* Warm-white borders — the cove lip of a lit room, not a cool hairline. */
+  --border: color-mix(in srgb, var(--graphite-50) 9%, transparent);
+  --input: color-mix(in srgb, var(--graphite-50) 13%, transparent);
+  --ring: var(--gold-500);
 
-  --foreground-bright: var(--gray-200);
-  --foreground-soft: var(--gray-300);
-  --foreground-faint: var(--gray-500);
+  --foreground-bright: var(--graphite-50);
+  --foreground-soft: var(--graphite-300);
+  --foreground-faint: var(--graphite-500);
 
-  --panel: color-mix(in srgb, var(--gray-900) 55%, transparent);
-  --inset: color-mix(in srgb, var(--gray-50) 2%, transparent);
-  --inset-hair: color-mix(in srgb, var(--gray-50) 6%, transparent);
-  --inset-lip: color-mix(in srgb, var(--gray-50) 4%, transparent);
+  --panel: color-mix(in srgb, var(--graphite-850) 55%, transparent);
+  --panel-bloom: color-mix(in srgb, var(--gold-500) 10%, transparent);
+  --inset: color-mix(in srgb, var(--graphite-50) 2%, transparent);
+  --inset-hair: color-mix(in srgb, var(--graphite-50) 6%, transparent);
+  /* The lit cove lip is a warm-white top edge, not a dark one, on the dark panel. */
+  --inset-lip: color-mix(in srgb, var(--graphite-50) 6%, transparent);
 
-  --tone-run: var(--indigo-500);
-  --tone-gray: var(--gray-400);
-  --tone-amber: var(--amber-500);
-  --tone-stale: var(--gray-600);
-  --tone-red: var(--red-500);
-  --tone-done: var(--green-500);
-  --tone-landed: color-mix(in srgb, var(--green-500) 55%, var(--indigo-400));
+  --tone-run: var(--teal-500);
+  --tone-gray: var(--graphite-400);
+  --tone-amber: var(--gold-500);
+  --tone-stale: var(--graphite-600);
+  --tone-red: var(--terra-500);
+  --tone-done: var(--slate-500);
+  --tone-landed: color-mix(in srgb, var(--slate-500) 55%, var(--gold-400));
 
-  --verdict-approve: var(--green-300);
-  --verdict-changes: var(--amber-300);
-  --verdict-block: var(--red-300);
-  --verdict-approve-tint: var(--green-500);
-  --verdict-changes-tint: var(--amber-500);
-  --verdict-block-tint: var(--red-500);
+  --verdict-approve: var(--teal-300);
+  --verdict-changes: var(--gold-300);
+  --verdict-block: var(--terra-300);
+  --verdict-approve-tint: var(--teal-500);
+  --verdict-changes-tint: var(--gold-500);
+  --verdict-block-tint: var(--terra-500);
 
-  --signal-ok: var(--green-300);
-  --signal-warn: var(--amber-300);
-  --signal-bad: var(--red-300);
+  --signal-ok: var(--teal-300);
+  --signal-warn: var(--gold-300);
+  --signal-bad: var(--terra-300);
 
   --shadow-1: color-mix(in srgb, black 15%, transparent);
   --shadow-2: color-mix(in srgb, black 25%, transparent);
@@ -254,6 +267,11 @@
    * text-* utilities in globals.css (which also adds the uppercase /
    * tabular-nums / mono facets where a role demands them). A new size snaps
    * to a role or gets promoted here, never inlined. */
+  --type-display: 24px; /* the thin hero — session title, concierge (Penumbra 26/thin, snapped) */
+  --type-display-leading: 28px;
+  --type-display-weight: 200;
+  --type-display-tracking: 0.01em;
+
   --type-headline: 16px; /* verdict hero, session-level headings */
   --type-headline-leading: 22px;
   --type-headline-weight: 700;
@@ -292,7 +310,7 @@
   --type-eyebrow: 10px; /* section headers (+ uppercase, wide tracking) */
   --type-eyebrow-leading: 14px;
   --type-eyebrow-weight: 600;
-  --type-eyebrow-tracking: 0.12em;
+  --type-eyebrow-tracking: 0.18em; /* Penumbra's airier label tracking (.16–.22em) */
 
   --type-code: 12px; /* terminal, diff hunks, code blocks (+ mono) */
   --type-code-leading: 18px;
@@ -311,6 +329,9 @@
   --space-gap: 8px;
   --space-inset: 12px;
   --space-region: 16px;
+  /* Surface padding — Penumbra pads a frosted panel more generously than a dense inset
+   * (its 18–22px cluster). One step above region, below the structural nest offset. */
+  --space-loose: 20px;
   /* Nesting depth — how far a tree's children sit in from their parent row. Above the
    * region step because it is a structural offset, not a gap between neighbours. */
   --space-nest: 24px;
@@ -327,10 +348,12 @@
    * future lifecycle build reads the same constant instead of re-measuring the study. */
   --strip-height: 41px;
 
-  /* Glow — the lit halo a live signal carries (status dots, the ctx fill). Its
-   * colour is the element's own currentColor, so one utility covers every tone;
-   * only the strength is themed. */
+  /* Glow + bloom — the lit halo a live signal carries (status dots, the ctx fill) and
+   * the warm radial pool a panel floats over. The halo colour is the element's own
+   * currentColor, so one utility covers every tone; only the strength is themed. The
+   * bloom colour is the themed `--panel-bloom`; its blur radius is shared here. */
   --glow-blur: 8px;
+  --bloom-blur: 22px;
 
   /* Icon glyph box — em-relative, so a glyph tracks the type role it sits in
    * rather than needing a size per call site (the default box is the icon's own

@@ -20,6 +20,10 @@ body {
 /* Typography roles — the same tuples the app gets as text-headline … text-code-inline.
  * One sans ladder (10/12/14/16); within a size, weight/case/tracking/leading
  * differentiate — never a 1px size step. */
+.text-display {
+  font: var(--type-display-weight) var(--type-display) / var(--type-display-leading) var(--sans);
+  letter-spacing: var(--type-display-tracking);
+}
 .text-headline {
   font: var(--type-headline-weight) var(--type-headline) / var(--type-headline-leading) var(--sans);
   letter-spacing: var(--type-headline-tracking);
