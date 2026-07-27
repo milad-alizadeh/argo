@@ -45,7 +45,7 @@ under `docs/adr/`.
 | `cockpit-delivery-review-prototype.html` | Delivery review study | Superseded as a standalone surface — absorbed into the session interior above; kept for its review-pane lineage |
 | `cockpit-fresh-session-prototype.html` | Spawn UX / fresh session (wayfinder #186) | The pre-first-turn session state |
 | `cockpit-session-moodboard.html` | Look exploration | Pre-#158 mood exploration; superseded by the Penumbra reference |
-| `cockpit-app-shell-spec.md` | App shell (wayfinder #172, amended by #201) | Written spec, not a pixel study: canonical chrome (merged top bar, borderless strip, global git control, connection-chip placement), room tabs, the ⌘K/keyboard model, and the shell's connective tissue |
+| `cockpit-app-shell-spec.md` | App shell (wayfinder #172, amended by #201 and #202) | Written spec, not a pixel study: canonical chrome (merged top bar, borderless strip, global git control, connection-chip placement), room tabs, the ⌘K/keyboard model, the shell's connective tissue, and Project Settings (= #165's connect panel re-entered) |
 | `cockpit-code-room-spec.md` | Code room spec (wayfinder #183) | The written spec derived from the Code-room prototype |
 | `cockpit-failure-states-spec.md` | Failure states (wayfinder #173) | Cross-cutting policy for when a fact goes bad mid-flight: staleness as its own axis, the connection chip, pessimistic writes, real-output-not-paraphrase |
 | `cockpit-onboarding-spec.md` | Onboarding (wayfinder #165) | Written spec, **no prototype** — the #165 study was never committed and was not reconstructed (#205). Two screens, three independent connect rows, folder-not-repo floor, device-flow sign-in, seven states |

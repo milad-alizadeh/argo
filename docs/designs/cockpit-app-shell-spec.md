@@ -81,6 +81,14 @@ ahead/behind on the primary tree is a useful ambient fact from anywhere.
 - **Select menu** — local branches + **remote/`origin` refs**, each with ahead/behind; a
   worktree-held branch shows `worktree` + `↗` (open its session) instead of a checkout; a
   remote ref offers `Check out`. The menu header reads *"Files follow this"*.
+- **The label follows git; the link follows the session** (#202). `worktree` is read from
+  `git worktree list`, so it renders for **every** worktree-held branch and the checkout is
+  always refused — git refuses it anyway, and predicting that is the only honest thing the menu
+  can do. The `↗` is the part that is conditional: it appears only while a **live session** maps
+  to that worktree. A worktree that outlives its session — `worktree-gc` reaps only after the PR
+  merges — renders the **worktree path** in place of the link. This is the domain's existing
+  DIRECT/DERIVED split showing through, not a new state word. Argo offers no `Remove worktree`:
+  a worktree may hold uncommitted work, and Argo does not destroy git state it did not create.
 - **Manage menu** — **safe sync only** (`Fetch`, `Pull` when fast-forward, `Push` when ahead) +
   branch CRUD (`New branch`, `Rename`, `Delete`).
 - **Conflict policy** — **Argo ships no merge-conflict editor.** A **diverged** branch (ahead
@@ -151,6 +159,27 @@ The shell owns the seams *between* the settled surfaces, not the surfaces themse
   ticket → `Esc` returns to the room. Drilling never leaves the shell; the chrome persists.
 - **Session exit** — a merged / archived / finished session leaves the active roster and moves
   to Archived (opened as a list, per #161). The roster shows the live world by default.
+
+### Project Settings — the onboarding panel, re-entered
+
+Named here by #202, which found it **asserted by two closed tickets and specced by none**: #186
+put the Agent/CLI choice "in Project Settings", and #165 said its connect panel "is re-entered
+later from Settings", with the entry points owned by this spec. It is not a new surface.
+
+- **Project Settings *is* #165's Connect panel opened on an existing project.** Onboarding =
+  creating a Project (ADR-0015), so the setup surface and the settings surface are the same
+  three rows — Folder · Connections · Companion plugin — with the CTA reading `Done` instead of
+  `Create project`. Nothing is designed here that #165 has not already settled, including the
+  in-panel `Reconnect` that #165 chose over a separate connections screen.
+- **It holds exactly one thing #165 did not**: the **Agent/CLI** for this project (#186 — set
+  per project because nobody runs two editors at once, and removed from spawn to keep `⌘N`
+  zero-config).
+- **Entry points**: the project tab's context menu, and ⌘K (`Project settings`). Per project —
+  it hangs off the Project entity that already owns adapter config (ADR-0015).
+- **There is no app-global Preferences surface.** #188 refused to create one for a single
+  notification boolean, and #202 refused to add a worktree toggle; the rule those two share is
+  that a surface exists for *work*, not for settings, and per-project configuration rides on the
+  panel that already creates the project.
 
 ## Graceful degradation
 

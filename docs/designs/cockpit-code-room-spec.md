@@ -4,7 +4,8 @@
 > editor, scratch terminal, open-in-editor. Visual source of truth:
 > `docs/designs/cockpit-code-room-prototype.html` (Penumbra #158). Look/density are Phase 2.
 > Derived from the settled prototype; it owns the Code room, and **spins out** two things it
-> surfaced (global git chrome → shell spec #172; the worktree-enable question → its own ticket).
+> surfaced (global git chrome → shell spec #172; the worktree-enable question → #202, which
+> answered *no setting* and left this spec's scoping intact).
 
 ## Placement
 
@@ -23,12 +24,28 @@
 
 ## Worktrees — primary checkout only; live worktrees are seen through their session
 
+**Settled by #202. Argo observes worktrees; it does not create them and offers no setting to
+enable them.** Spawn is zero-config at the project root (#186) and the CLI's own harness
+relocates itself afterwards, so `Workspace.kind: main | worktree` is a *read* — DIRECT for a
+managed session, DERIVED for an external one (`CONTEXT.md`). A project-level toggle was rejected
+as the one dial that survived #186's cull and, worse, an unenforceable one: flipping it off
+cannot stop a skill from running `git worktree add`. Argo would be displaying a preference as if
+it were a fact.
+
 - The Code room shows the **primary checkout** only. A branch held by a **live worktree** is
   **not checkout-able here** — the branch selector deep-links to that **session** (`Open session ↗`),
-  where its files and diff already live.
+  where its files and diff already live. The orphan case (worktree outlives its session) is
+  settled in the shell spec's git chrome, not here.
 - File access inside a running worktree, outside its session, is via **Open in External Editor**
   (pointed at the worktree path). Pointing the Code root at an arbitrary directory is a possible
   additive upgrade later; it is deliberately out of v1.
+- **There is nowhere in Argo to browse a live worktree's whole tree, and that is the v1
+  answer** (#202). The session shows its **diff**; the Code room mirrors one root. A tree of a
+  worktree is the primary tree plus that diff, so the missing case — reading an *untouched* file
+  in a running session's context — is served by External Editor. The alternatives both cost more
+  than they close: a root picker in the Code room is the workspace/worktree picker this spec
+  removed, and a full-tree mode in the session grows a second file explorer inside a surface
+  #161 specced as the product view.
 
 ## Surfaces
 
@@ -85,4 +102,5 @@ and Session-interior prototypes were reconciled to it. Definitions live in
 - **Global git/branch chrome** (chip, select/manage, sync, conflict hatch) and the shell chrome
   refinements → **settled by #201**, now in `cockpit-app-shell-spec.md`.
 - **Project-level "enable worktrees" setting** + how the file view relates to **live** worktrees
-  when agents work in parallel → open, ticket #202.
+  when agents work in parallel → **settled by #202: there is no such setting, and this spec's
+  scoping stands unchanged.** See *Worktrees* above.
