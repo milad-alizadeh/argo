@@ -27,13 +27,16 @@ the code knowledge graph.
 
 ## Current set
 
-Prototypes are **standalone** — each opens on its own; #178 stitches them into one switcher as
-the final step of the map. **Onboarding is the exception**: it has a spec and no prototype (#205).
+Prototypes are **standalone** — each opens on its own. `cockpit-prototype-switcher.html` (#178)
+stitches them into one review harness without merging them; open it to walk every surface and
+state in a sitting. **Onboarding is the exception**: it has a spec and no prototype (#205), and
+appears in the harness as a visible dead slot.
 The domain model is **not** here: it lives in `CONTEXT.md` at the repo root, with ADRs 0013–0018
 under `docs/adr/`.
 
 | File | Screen | Notes |
 |---|---|---|
+| `cockpit-prototype-switcher.html` | **Start here** — the review harness (wayfinder #178) | Left rail walking all 22 states across the three rooms + the look anchor; iframes each file untouched. `?surface=&state=` deep-links. Throwaway: expires with the prototypes it wraps. Manifest is an inline array in the file — `file://` blocks `fetch`, so it cannot be external |
 | `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Colour/mood/effects only — layout & density deferred |
 | `cockpit-session-interior-prototype.html` | Session interior (wayfinder #161 / #186) | The settled session card: master–detail Activity and Delivery, folded turn spine, expandable Dock. Absorbs the delivery-review and fresh-session studies |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | The grill behind the prototype above — roster rows, dot-carries-state, zero-state, panel natures |
