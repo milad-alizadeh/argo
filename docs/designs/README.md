@@ -28,8 +28,9 @@ the code knowledge graph.
 ## Current set
 
 Prototypes are **standalone** — each opens on its own; #178 stitches them into one switcher as
-the final step of the map. The domain model is **not** here: it lives in `CONTEXT.md` at the repo
-root, with ADRs 0013–0018 under `docs/adr/`.
+the final step of the map. **Onboarding is the exception**: it has a spec and no prototype (#205).
+The domain model is **not** here: it lives in `CONTEXT.md` at the repo root, with ADRs 0013–0018
+under `docs/adr/`.
 
 | File | Screen | Notes |
 |---|---|---|
@@ -44,6 +45,8 @@ root, with ADRs 0013–0018 under `docs/adr/`.
 | `cockpit-app-shell-spec.md` | App shell (wayfinder #172, amended by #201) | Written spec, not a pixel study: canonical chrome (merged top bar, borderless strip, global git control, connection-chip placement), room tabs, the ⌘K/keyboard model, and the shell's connective tissue |
 | `cockpit-code-room-spec.md` | Code room spec (wayfinder #183) | The written spec derived from the Code-room prototype |
 | `cockpit-failure-states-spec.md` | Failure states (wayfinder #173) | Cross-cutting policy for when a fact goes bad mid-flight: staleness as its own axis, the connection chip, pessimistic writes, real-output-not-paraphrase |
+| `cockpit-onboarding-spec.md` | Onboarding (wayfinder #165) | Written spec, **no prototype** — the #165 study was never committed and was not reconstructed (#205). Two screens, three independent connect rows, folder-not-repo floor, device-flow sign-in, seven states |
+| `cockpit-status-vocabulary.md` | The canonical status-word registry (wayfinder #174, amended by #173) | One word per state, identical everywhere. Argo-owned words (session · attention · delivery · check · connection) vs provider-owned Work Item status shown verbatim |
 | `cockpit-surface-matrix.md` | The surface × state matrix | Enumerates every cockpit surface and the states it must render — the testable spec the prototypes are checked against |
 
 ## Lineage & decisions
