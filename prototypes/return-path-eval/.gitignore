@@ -1,0 +1,11 @@
+# Arm B is mined from the user's own local Claude Code transcripts. It never leaves the
+# machine and is never committed — regenerate it with `bun mine-transcripts.ts --redact`.
+corpus-b.json
+
+# Run output. Holds arm-B chunks inline, so it carries the same privacy constraint as the
+# corpus itself — findings go in the ticket resolution, never the raw rows.
+*.jsonl
+*.log
+
+# OPENAI_API_KEY for the stage-3 speaker. Bun auto-loads this from the run directory.
+.env
