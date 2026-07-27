@@ -63,6 +63,8 @@ constructor, nowhere else. Everything outside constructs a `UserId` through that
 doesn't have one. A schema validator's `.brand<'UserId'>()` (Zod and kin) is the same
 spelling with the parse built in — prefer it where the value enters from outside anyway.
 
+## File and folder naming
+
 | Thing | Case | Example |
 |---|---|---|
 | **Folders** (domain groupings) | `kebab-case` | `checkout/`, `user-profile/`, `settings/` |

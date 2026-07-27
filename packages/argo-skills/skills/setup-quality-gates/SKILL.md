@@ -116,6 +116,12 @@ Rules for the resolution pass:
   as configured and gates nothing. For any rule one level down, verification by name is
   unavailable and the only proof is behavioural: plant a violation of that specific rule and
   require its own name in the output. No firing, no row.
+- **A co-located finding can mask the one you planted.** Runners dedupe by line
+  (golangci-lint's `uniq-by-line` is on by default), so a probe function that also
+  trips a second rule on its declaration line reports only one of them — and the
+  require-its-own-name proof above "fails" against a rule that works. Before concluding
+  a rule is dropped, plant it in a probe that violates nothing else, or turn the dedup
+  off for the proof run.
 
 Then write the config, and prove the config itself loads: run the linter once and
 confirm it neither errors on an unknown rule nor silently ignores the block. A
@@ -126,6 +132,12 @@ Plant that violation in **the least likely directory the rules claim to govern**
 `scripts/`, `tools/`, or `build/` folder, not next to the app code. A gate that fires in
 `src/` and is silent in `scripts/` looks identical to a working gate from the report, and
 §6.1 explains the usual cause.
+
+Every exit code this skill asks you to record must come **from the gate command itself**,
+not from anything wrapped around it: piping through `head` or `tee` reports the pipe's
+status, and a backgrounded command's wrapper can report 0 while the tool inside failed.
+Capture the code at the command (`cmd; echo $?`, or `pipefail` where a pipe is
+unavoidable) — a proof built on a wrapper's exit code proves the wrapper.
 
 ## 4. The intents that need their own tool
 
@@ -156,7 +168,14 @@ nothing imports needs a whole-graph pass: `knip` for JS/TS, `deadcode` (`golang.
 for Go, `vulture` for Python. Rust's compiler already reports it — mark 12 **n/a** there
 rather than installing anything. Wire it into `quality` like any other gate, and expect a
 large first run on an existing repo: ratchet it (§5) rather than deleting a hundred exports
-on the way past.
+on the way past. Two knip specifics: its narrowest baseline is a **per-file ignore** — a
+file in the list is unguarded for every future dead export it grows, so say that in the
+entry's reason the way §5 says it for count-based ratchets. And knip prints *configuration
+hints* suggesting you delete ignores it thinks are unused — including the deliberately
+prospective ones (platform-variant globs, prospective entries). Label those **KIND** where
+they live, or the next agent will obey the hint and remove them. Its `project` globs are
+also an enumerated scope in the §6.1 sense: workspaces or top-level directories outside
+them are invisible, so either widen the globs with the repo or name the scope in §6.4.
 
 **The import graph (intents 13 and 14).** These are the same tool in most ecosystems, and
 they are what turn `file-structure.md` from prose into a gate: `dependency-cruiser` for JS/TS
@@ -167,6 +186,12 @@ on the JVM. Two things to get right:
 - **Circular imports may already be impossible.** Go's compiler rejects an import cycle
   outright, so intent 14 is **n/a** there, for free — the distinction §2 draws between *n/a*
   and *prose-only*, and the reason to check before installing a tool to find zero of them.
+- **On TypeScript, make the cruiser see type-only imports.** dependency-cruiser's
+  `tsPreCompilationDeps` defaults to **false**, and compilation erases `import type` — so
+  both the boundary rule and `no-circular` are blind to every type-level edge, and a deep
+  `import type` of a module's internals exits 0 while the same import as a value exits 1.
+  Set `tsPreCompilationDeps: true` and take the re-baseline it causes; prove it with a
+  planted type-only deep import, not just a value one.
 - **The boundary rules need a map, and the map is the artefact that rots.** Write the
   module → public-entry table as data the config compiles into rules, not as hand-written
   regexes: a new module missing from the map must be *added to the map*, never fixed by
@@ -189,6 +214,10 @@ one most often left as prose in `testing.md`.
 
 A fresh repo passes immediately. A real one won't. Run every gate, count the
 violations, and pick per gate:
+
+(If the repo carries a **previous, unfinished run of this skill** — staged or uncommitted
+gate configs, a half-written baseline — that work is yours now: verify each piece as if you
+wrote it and finish or revert it. Never layer a second parallel install beside it.)
 
 - **Fix now** if the count is small and the fixes are mechanical. Preferred.
 - **Ratchet** if it isn't: keep the cap at the house number and record today's violations
@@ -345,6 +374,14 @@ which is the one outcome this skill exists to prevent.
    keep it staged-files-only so committing stays fast. A staged-files invocation runs from
    the repo root by default, which is where it stops seeing per-workspace baselines — §6a.
 
+   Two inherited-hook cases the rule above doesn't decide for you. An existing hook that is
+   already whole-repo (format + lint + typecheck over everything) stays whole-repo —
+   consistency with the hook you inherited beats the staged-files preference; say which you
+   chose and why. And a hook that is **red for a reason unrelated to your gates** (a
+   pre-existing typecheck failure in a stage you didn't add) is not yours to absorb
+   silently: fix it in its own commit when the fix is mechanical, otherwise report it as a
+   blocker — either way the report names it, or the gate gets blamed for the hook.
+
    No hooks here? Don't install a hook framework as a side effect of this skill — that's
    `setup-pre-commit`'s job and its own decision. Wire CI (step 3), which is the gate that
    actually can't be bypassed, and report that pre-commit is unwired and which skill wires it.
@@ -375,6 +412,12 @@ resolve the same config, the same exemption files, and the same toolchain.
   and every PR run dies with a usage error before one file is linted. No toolchain
   auto-switch rescues it — the CLI rejects the flag before it reads a module. Read the pin,
   read the minimum version of each flag you wired, and make them agree explicitly.
+
+  When the hosted CI itself is unreachable from the install session, the honest fallback is
+  **emulation**: run the workflow's steps, in order, on the toolchain the pin resolves —
+  and report it as emulation, never as a CI run. That is a real proof of the pinned-version
+  agreement; it is not a proof of the runner's environment, and the report says which claim
+  it makes.
 - **A hook running from the repo root does not load per-workspace state.** Piping staged
   paths to a root-level linter skips the baseline or suppression file sitting in each
   workspace, so the hook rejects exactly the recorded debt that `quality` and CI accept —
@@ -394,6 +437,9 @@ resolve the same config, the same exemption files, and the same toolchain.
   file. **Have the gate check the tool it is about to run** (`<tool> --version` matched against
   the pinned constant, re-bootstrapping on mismatch), and prove it by running the wired command
   against a deliberately wrong binary. The version constant must be load-bearing, not a comment.
+  The check must **execute the binary** — comparing a manifest or lockfile entry to the pin
+  checks the package metadata, and a stubbed `.bin` script passes every manifest comparison
+  while gating nothing.
 
 **Enumerate on a built tree, not only a clean checkout.** Generated output doesn't exist when
 you install and does exist in CI, because the build or codegen step runs *immediately before*
@@ -428,6 +474,13 @@ Two more to sweep for, both cheap:
   exempt from the line ceiling" is false unless the file-length tool actually exempts them.
 - **A factual claim about this repo** that the install just invalidated: counts, file lists,
   "the linter will not catch X". Re-derive each one or delete it.
+
+The sweep covers **every agent-docs file, not just `rules/`** — and the claim most often
+missed is the **host profile**. A `CLAUDE.md` that says "the host needs only Docker and
+bun" is false the moment the wired gate or the pre-commit hook shells out to a host `go`
+or a user-GOPATH binary: a fresh checkout on the documented profile then can't commit.
+Either make the gate honor the documented profile (run the tool through the container or
+the package runner) or update the claim — in the same commit as the gate that broke it.
 
 ## 7. Report
 
