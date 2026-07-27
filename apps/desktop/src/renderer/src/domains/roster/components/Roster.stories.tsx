@@ -58,6 +58,8 @@ const oneSession: SessionView[] = [
     id: 'demo-claude-1',
     title: 'Refactor auth module',
     cli: 'claude',
+    cwd: null,
+    projectId: null,
     facts: sessionFacts({ status: 'running' }),
   },
 ]
@@ -109,6 +111,8 @@ const everyState: SessionView[] = SESSION_STATES.map((status) => ({
   id: status,
   title: `Session ${status}`,
   cli: 'claude',
+  cwd: null,
+  projectId: null,
   facts: sessionFacts({ status }),
 }))
 
@@ -151,12 +155,16 @@ const deliveryStates: SessionView[] = [
     id: 'ci-failing',
     title: 'Why is CI flaky',
     cli: 'claude',
+    cwd: null,
+    projectId: null,
     facts: sessionFacts({ headSha: HEAD, pr: PR, ci: { status: 'failed', sha: HEAD } }),
   },
   {
     id: 'ready-to-merge',
     title: 'Voice input spike',
     cli: 'codex',
+    cwd: null,
+    projectId: null,
     facts: sessionFacts({
       headSha: HEAD,
       pr: PR,
@@ -168,6 +176,8 @@ const deliveryStates: SessionView[] = [
     id: 'commit-ready',
     title: 'Auth refactor',
     cli: 'claude',
+    cwd: null,
+    projectId: null,
     facts: sessionFacts({ headSha: HEAD, dirty: 3, agent: 'idle' }),
   },
 ]
@@ -194,12 +204,16 @@ const needsYou: SessionView[] = [
     id: 'running',
     title: 'Refactor auth module',
     cli: 'claude',
+    cwd: null,
+    projectId: null,
     facts: sessionFacts({ status: 'running' }),
   },
   {
     id: 'needs-input',
     title: 'Voice input spike',
     cli: 'codex',
+    cwd: null,
+    projectId: null,
     facts: sessionFacts({ status: 'needs-input' }),
   },
 ]
@@ -231,6 +245,8 @@ const commitReady: SessionView[] = [
     id: 'commit-ready',
     title: 'Auth refactor',
     cli: 'claude',
+    cwd: null,
+    projectId: null,
     facts: sessionFacts({ headSha: HEAD, dirty: 3, agent: 'idle' }),
   },
 ]

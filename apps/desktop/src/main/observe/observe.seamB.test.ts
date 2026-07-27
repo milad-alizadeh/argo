@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import type { ProjectionDelta } from '../../shared'
+import type { ProjectionDelta, ProjectView } from '../../shared'
 import { createHub } from '../hub'
 import {
   deriveLiveness,
@@ -24,8 +24,10 @@ const parseFixture = (name: string) =>
 function observe(
   fixtures: string[],
   processMatch: boolean,
+  projects: ProjectView[] = [],
 ): { observed: ObservedSession[]; deltas: ProjectionDelta[] } {
   const hub = createHub()
+  for (const project of projects) hub.apply({ type: 'project-registered', project })
   const deltas: ProjectionDelta[] = []
   hub.subscribe((delta) => {
     if (delta.type !== 'snapshot') deltas.push(delta)
@@ -54,6 +56,8 @@ describe('Seam B observes real claude sessions', () => {
         id: 'externalBasic',
         title: 'Refactor the auth module',
         cli: 'claude',
+        cwd: '/Users/x/proj',
+        projectId: null,
         facts: expect.objectContaining({ status: 'running' }),
       },
     })
@@ -63,6 +67,14 @@ describe('Seam B observes real claude sessions', () => {
     expect(session.title).toEqual({ value: 'Refactor the auth module', tier: 'derived' })
     expect(session.cwd).toEqual({ value: '/Users/x/proj', tier: 'direct' })
     expect(session.status).toEqual({ value: 'running', tier: 'derived' })
+  })
+
+  it('attributes an observed session to the registered Project its cwd sits in', () => {
+    const { deltas } = observe(['externalBasic'], true, [
+      { id: 'p-proj', name: 'proj', path: '/Users/x/proj' },
+    ])
+
+    expect(deltas[0]).toMatchObject({ session: { projectId: 'p-proj' } })
   })
 
   it('stitches a resume pair into exactly one logical session keyed to its root', () => {

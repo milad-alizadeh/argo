@@ -11,6 +11,7 @@ export function seedDemoSession(hub: Hub): void {
       id: 'demo-claude-1',
       title: 'Refactor auth module',
       cli: 'claude',
+      cwd: null,
       facts: sessionFacts({ status: 'running' }),
     },
   })

@@ -42,12 +42,16 @@ const AUTH: SessionView = {
   id: 'auth',
   title: 'Refactor auth module',
   cli: 'claude',
+  cwd: null,
+  projectId: null,
   facts: sessionFacts(stateMatrixInput('S6')),
 }
 const VOICE: SessionView = {
   id: 'voice',
   title: 'Voice input spike',
   cli: 'codex',
+  cwd: null,
+  projectId: null,
   facts: sessionFacts(stateMatrixInput('S8')),
 }
 const SESSIONS: readonly SessionView[] = [AUTH, VOICE]

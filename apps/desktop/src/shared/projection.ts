@@ -4,74 +4,85 @@
 // with zero interpretation. Both sides run the SAME pure code here so the two
 // copies can never drift.
 
-import type { SessionFacts } from './sessionFacts'
+import {
+  activateProject,
+  addProject,
+  addSession,
+  attribute,
+  type CockpitState,
+  repointProject,
+  type SessionIntake,
+  type SessionView,
+} from './cockpitState'
+import type { ProjectView } from './projects'
 
-export type Cli = 'claude' | 'codex'
+// The event vocabulary the hub consumes (the Seam B → Seam A contract). Sessions are
+// observed; Projects are registered — the one entity above the Session that Argo owns.
+export type HubEvent =
+  | { type: 'session-created'; session: SessionIntake }
+  | { type: 'project-registered'; project: ProjectView }
+  | { type: 'project-relocated'; id: string; path: string }
+  | { type: 'project-activated'; id: string }
 
-// The roster-row view-model. It carries the Session's identity and the FACTS main
-// observed — never a rendered state: the row's word, tone and icon are derived from
-// `facts` by the renderer's delivery module, so no state crosses the bridge pre-graded.
-// Seam B will enrich this (honesty tiers, derived fields).
-export interface SessionView {
-  id: string
-  title: string
-  cli: Cli
-  facts: SessionFacts
-}
-
-// The event vocabulary the hub consumes (the Seam B → Seam A contract). One member
-// for now; agent/run/phase/outcome events land with the adapter.
-export type HubEvent = { type: 'session-created'; session: SessionView }
-
-// The projected state the renderer renders.
-export interface CockpitState {
-  sessions: SessionView[]
-}
+export type SessionCreated = Extract<HubEvent, { type: 'session-created' }>
 
 // The deltas main pushes over IPC. `snapshot` hydrates a fresh subscriber (or a
-// reconnecting one) with current truth; `session-added` is a live incremental patch.
+// reconnecting one) with current truth; the rest are live incremental patches.
 export type ProjectionDelta =
   | { type: 'snapshot'; state: CockpitState }
   | { type: 'session-added'; session: SessionView }
-
-export const emptyState = (): CockpitState => ({ sessions: [] })
+  | { type: 'project-added'; project: ProjectView }
+  | { type: 'project-path-changed'; id: string; path: string }
+  | { type: 'active-project-changed'; id: string }
 
 function assertNever(value: never): never {
   throw new Error(`Unhandled discriminant: ${JSON.stringify(value)}`)
 }
 
-// Append a Session, idempotent on id: a re-observed Session returns the SAME state
-// reference, which both reducers below use to decide "nothing changed".
-function addSession(state: CockpitState, session: SessionView): CockpitState {
-  if (state.sessions.some((existing) => existing.id === session.id)) return state
-  return { sessions: [...state.sessions, session] }
-}
-
-// Authoritative intake (main side): fold one event into state and return the deltas
-// to broadcast.
+// Authoritative intake (main side): fold one event into state and return the deltas to
+// broadcast. It reduces through `applyDelta` rather than beside it, so main's copy and the
+// renderer's are produced by one code path and cannot diverge. A no-op event (a re-observed
+// Session, an unknown Project) leaves state untouched and broadcasts nothing.
 export function applyEvent(
   state: CockpitState,
   event: HubEvent,
 ): { state: CockpitState; deltas: ProjectionDelta[] } {
+  const delta = toDelta(state, event)
+  const next = applyDelta(state, delta)
+  return next === state ? { state, deltas: [] } : { state: next, deltas: [delta] }
+}
+
+// The one place a Session is attributed to a Project, so the delta the renderer replays
+// already carries the answer (ADR-0015: attribution is resolved from cwd, never chosen).
+function toDelta(state: CockpitState, event: HubEvent): ProjectionDelta {
   switch (event.type) {
-    case 'session-created': {
-      const next = addSession(state, event.session)
-      // A duplicate Session leaves state untouched and broadcasts nothing.
-      const deltas: ProjectionDelta[] =
-        next === state ? [] : [{ type: 'session-added', session: event.session }]
-      return { state: next, deltas }
-    }
+    case 'session-created':
+      return { type: 'session-added', session: attribute(state.projects, event.session) }
+    case 'project-registered':
+      return { type: 'project-added', project: event.project }
+    case 'project-relocated':
+      return { type: 'project-path-changed', id: event.id, path: event.path }
+    case 'project-activated':
+      return { type: 'active-project-changed', id: event.id }
+    default:
+      return assertNever(event)
   }
 }
 
 // Renderer-side projection: mechanically apply one delta. No business logic — the
-// interpretation already happened in `applyEvent`.
+// interpretation already happened in `toDelta`.
 export function applyDelta(state: CockpitState, delta: ProjectionDelta): CockpitState {
   switch (delta.type) {
     case 'snapshot':
       return delta.state
     case 'session-added':
       return addSession(state, delta.session)
+    case 'project-added':
+      return addProject(state, delta.project)
+    case 'project-path-changed':
+      return repointProject(state, delta.id, delta.path)
+    case 'active-project-changed':
+      return activateProject(state, delta.id)
     default:
       return assertNever(delta)
   }

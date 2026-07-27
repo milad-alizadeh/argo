@@ -1,7 +1,7 @@
 import {
   derived,
   direct,
-  type HubEvent,
+  type SessionCreated,
   type SessionStatus,
   sessionFacts,
   type Tiered,
@@ -40,13 +40,14 @@ function resolveTitle(aiTitle: string | null, firstPrompt: string | null): Tiere
 
 // Cross the Seam B → Seam A contract. SessionView carries the graded VALUE only (its shape is
 // frozen); the honesty tiers are the adapter's tested guarantee, not something the bridge ships.
-export function toSessionEvent(observed: ObservedSession): HubEvent {
+export function toSessionEvent(observed: ObservedSession): SessionCreated {
   return {
     type: 'session-created',
     session: {
       id: observed.id,
       title: observed.title.value,
       cli: 'claude',
+      cwd: observed.cwd?.value ?? null,
       facts: sessionFacts({ status: observed.status.value }),
     },
   }

@@ -3,10 +3,19 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import { seedDemoSession } from './demoSeed'
-import { createHub } from './hub'
+import { createHub, type Hub } from './hub'
 import { startObservation } from './observe'
 import { wireProjection } from './projectionBridge'
+import { REGISTRY_FILENAME, readRegistry, toProjectEvents } from './projectRegistry'
 import { wireTerminal } from './terminalBridge'
+
+// The Project registry is the one thing Argo owns rather than observes (ADR-0017). Replaying
+// it before the launch sweep means observed Sessions attribute to their Project as they
+// arrive, rather than appearing unattributed and then jumping.
+async function restoreProjects(hub: Hub): Promise<void> {
+  const registry = await readRegistry(join(app.getPath('userData'), REGISTRY_FILENAME))
+  for (const event of toProjectEvents(registry)) hub.apply(event)
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -65,7 +74,7 @@ app.whenReady().then(() => {
   wireProjection(hub)
   // Seam B now observes real external claude sessions on launch: a single sweep of the CLI
   // transcript dirs discovers, stitches and grades each Session into the roster (ADR-0008).
-  void startObservation(hub)
+  void restoreProjects(hub).then(() => startObservation(hub))
   // Seam B: the steering PTY behind the Console's live channel — a renderer attaches and main
   // spawns its shell.
   wireTerminal()

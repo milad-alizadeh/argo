@@ -1,11 +1,25 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type HubEvent, type ProjectionDelta, sessionFacts } from '../shared'
+import {
+  emptyState,
+  type HubEvent,
+  type ProjectionDelta,
+  type SessionIntake,
+  type SessionView,
+  sessionFacts,
+} from '../shared'
 import { createHub } from './hub'
 
-const created = (id: string): HubEvent => ({
-  type: 'session-created',
-  session: { id, title: id, cli: 'claude', facts: sessionFacts() },
+const intake = (id: string): SessionIntake => ({
+  id,
+  title: id,
+  cli: 'claude',
+  cwd: null,
+  facts: sessionFacts(),
 })
+
+const created = (id: string): HubEvent => ({ type: 'session-created', session: intake(id) })
+
+const projected = (id: string): SessionView => ({ ...intake(id), projectId: null })
 
 describe('createHub', () => {
   it('hydrates a new subscriber with a snapshot of current state', () => {
@@ -15,7 +29,9 @@ describe('createHub', () => {
     const deltas: ProjectionDelta[] = []
     hub.subscribe((delta) => deltas.push(delta))
 
-    expect(deltas).toEqual([{ type: 'snapshot', state: { sessions: [created('a').session] } }])
+    expect(deltas).toEqual([
+      { type: 'snapshot', state: { ...emptyState(), sessions: [projected('a')] } },
+    ])
   })
 
   it('pushes a session-added delta to subscribers when an event is applied', () => {
@@ -25,7 +41,7 @@ describe('createHub', () => {
 
     hub.apply(created('a'))
 
-    expect(deltas).toContainEqual({ type: 'session-added', session: created('a').session })
+    expect(deltas).toContainEqual({ type: 'session-added', session: projected('a') })
   })
 
   it('stops delivering after unsubscribe', () => {
@@ -38,7 +54,7 @@ describe('createHub', () => {
 
     // Only the initial hydrating snapshot was delivered; nothing after unsubscribe.
     expect(listener).toHaveBeenCalledTimes(1)
-    expect(listener).toHaveBeenCalledWith({ type: 'snapshot', state: { sessions: [] } })
+    expect(listener).toHaveBeenCalledWith({ type: 'snapshot', state: emptyState() })
   })
 
   it('exposes authoritative state through getState', () => {
