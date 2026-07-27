@@ -1,5 +1,7 @@
 export * from './channels'
+export * from './cockpitState'
 export * from './honesty'
 export * from './lifecycleModel'
 export * from './projection'
+export * from './projects'
 export * from './sessionFacts'

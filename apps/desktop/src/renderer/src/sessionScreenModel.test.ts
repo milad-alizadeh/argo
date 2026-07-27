@@ -16,6 +16,8 @@ const sessionFrom = (id: string): SessionView => ({
   id,
   title: `Session ${id}`,
   cli: 'claude',
+  cwd: null,
+  projectId: null,
   facts: sessionFacts(stateMatrixInput(id)),
 })
 

@@ -20,7 +20,10 @@ const config: StorybookConfig = {
     getAbsolutePath('@storybook/addon-docs'),
     getAbsolutePath('@storybook/addon-mcp'),
   ],
-  framework: getAbsolutePath('@storybook/react-vite') as '@storybook/react-vite',
+  // The package NAME, not `getAbsolutePath`: Storybook imports `<framework>/preset` through
+  // Node's ESM resolver, which honours the package's exports map but rejects an extensionless
+  // absolute path — the absolute form fails the whole storybook vitest project at config load.
+  framework: '@storybook/react-vite',
   // Storybook runs its own Vite (not electron-vite), so re-declare what our renderer
   // components rely on: Tailwind 4 and the "@" / "@shared" aliases.
   viteFinal: async (viteConfig) => {

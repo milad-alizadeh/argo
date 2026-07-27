@@ -29,6 +29,8 @@ const stateRow = (status: SessionStatus): SessionView => ({
   id: status,
   title: `Session ${status}`,
   cli: 'claude',
+  cwd: null,
+  projectId: null,
   facts: sessionFacts({ status }),
 })
 
@@ -45,6 +47,8 @@ export const Default: Story = {
       id: 'auth-refactor',
       title: 'Refactor auth module',
       cli: 'claude',
+      cwd: null,
+      projectId: null,
       facts: sessionFacts({ status: 'running' }),
     },
   },
@@ -68,6 +72,8 @@ export const Selected: Story = {
       id: 'auth-refactor',
       title: 'Refactor auth module',
       cli: 'claude',
+      cwd: null,
+      projectId: null,
       facts: sessionFacts({ status: 'running' }),
     },
     selected: true,
