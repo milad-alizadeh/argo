@@ -27,6 +27,7 @@ import { convene, type CouncilResult } from './council'
 import type { Backend } from './llm'
 import { mapLimit } from './llm'
 import { sessionInstructions, speakerFromEnv } from './speaker'
+import { dedupe, type Trial } from './trial'
 
 const argv = process.argv.slice(2)
 const flag = (name: string): string | undefined => {
@@ -49,35 +50,20 @@ const PANEL: Backend[] = [
 
 const OUT = join(import.meta.dir, flag('out') ?? 'results.jsonl')
 
-export type Trial = {
-  readonly key: string
-  readonly chunkId: string
-  readonly corpusArm: Arm
-  readonly arm: ArmId
-  readonly sourceWords: number
-  readonly routerMs: number
-  readonly routerProblems: readonly string[]
-  /** Span arms only. */
-  readonly spans?: readonly SpanVerdict[]
-  readonly payload: string
-  readonly payloadWords: number
-  readonly spokenMs?: number
-  readonly spoken?: string
-  readonly spokenWords?: number
-  readonly council?: CouncilResult
-  readonly error?: string
-}
 
 const words = (s: string): number => s.split(/\s+/).filter(Boolean).length
 
 /**
  * `--retry-errors` re-runs trials that previously errored, leaving successful ones cached. The
- * retried row is appended, so `report.ts` dedupes by key with last-wins and a transient
- * failure never counts against a rate twice.
+ * retried row is appended rather than replacing the old one, and `trial.ts`'s dedupe prefers a
+ * success over a failure regardless of order — so a transient failure never counts against a
+ * rate, and neither does a stale failure appended after a good result by a colliding run.
  */
-const prior: Trial[] = existsSync(OUT)
-  ? readFileSync(OUT, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as Trial)
-  : []
+const prior: Trial[] = dedupe(
+  existsSync(OUT)
+    ? readFileSync(OUT, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as Trial)
+    : [],
+)
 const done = new Set<string>(prior.filter((t) => !(has('retry-errors') && t.error)).map((t) => t.key))
 
 const speaker = speakerFromEnv()

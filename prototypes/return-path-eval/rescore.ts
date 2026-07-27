@@ -14,12 +14,12 @@
  *   bun rescore.ts results.jsonl rescored.jsonl
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { convene } from './council'
 import type { Backend } from './llm'
 import { mapLimit } from './llm'
-import type { Trial } from './sweep'
+import { readTrials } from './trial'
 
 const inPath = join(import.meta.dir, process.argv[2] ?? 'results.jsonl')
 const outPath = join(import.meta.dir, process.argv[3] ?? 'rescored.jsonl')
@@ -30,17 +30,7 @@ const PANEL: Backend[] = [
   { kind: 'claude-cli', model: 'sonnet', label: 'claude:sonnet' },
 ]
 
-// Dedupe by key first — `--retry-errors` appends rather than replaces, and re-judging a
-// superseded row would put a stale verdict back into the report.
-const trials = [
-  ...new Map(
-    readFileSync(inPath, 'utf8')
-      .split('\n')
-      .filter(Boolean)
-      .map((l) => JSON.parse(l) as Trial)
-      .map((t) => [t.key, t] as const),
-  ).values(),
-]
+const trials = await readTrials(inPath)
 
 // Only trials that actually have a spoken line and a source to score it against. The source
 // is not stored on the trial, so it is re-derived from the corpus by id.

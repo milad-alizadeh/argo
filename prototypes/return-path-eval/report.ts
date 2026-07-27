@@ -6,25 +6,14 @@
  * different claims, and #203's resolution turned on exactly that distinction.
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { AXES } from './judges'
-import type { Trial } from './sweep'
+import { readTrials, type Trial } from './trial'
 
 const path = join(import.meta.dir, process.argv[2] ?? 'results.jsonl')
 if (!existsSync(path)) throw new Error(`no results at ${path} — run sweep.ts first`)
-// Dedupe by key, last-wins: `sweep.ts --retry-errors` appends a fresh row rather than editing
-// the old one, so a trial that failed once and then succeeded must count exactly once, as a
-// success.
-const trials = [
-  ...new Map(
-    readFileSync(path, 'utf8')
-      .split('\n')
-      .filter(Boolean)
-      .map((l) => JSON.parse(l) as Trial)
-      .map((t) => [t.key, t] as const),
-  ).values(),
-]
+const trials = await readTrials(path)
 
 const pct = (n: number, d: number): string => (d === 0 ? '   n/a' : `${((100 * n) / d).toFixed(1).padStart(5)}%`)
 const rate = (n: number, d: number): string => `${pct(n, d)}  (${n}/${d})`
