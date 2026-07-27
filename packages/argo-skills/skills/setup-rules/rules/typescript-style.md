@@ -15,6 +15,7 @@ section here seems to be missing its rationale, the rationale is there.
 | Nested conditional expressions | chained `a ? b : c ? d : e` |
 | Checker-silencing pragmas | see **No escape hatches** below |
 | Line ceiling exemptions | state machines and pure-data modules |
+| Nominal domain type (`domain-types.md`) | see **Branded types** below |
 
 ## No escape hatches
 
@@ -43,7 +44,26 @@ predicate returns a value the compiler knows about because something *checked* a
 - A type predicate must actually inspect the fields it claims — `return true` under an
   `x is T` signature is a lie the compiler will honour everywhere.
 
-## File naming — cased by what the file exports
+## Branded types
+
+TypeScript is structural, so `type UserId = string` is an alias, not a boundary — every
+string is a `UserId`. The nominal type `domain-types.md` asks for is spelled with a brand:
+
+```ts
+type UserId = string & { readonly __brand: 'UserId' }
+const UserId = (raw: string): UserId => {
+  // the one place the invariant is checked
+  return raw as UserId
+}
+```
+
+The brand exists only at compile time — no wrapper object, no runtime cost — and the `as`
+inside the constructor is the boundary cast `code-style.md` sanctions: one per type, in the
+constructor, nowhere else. Everything outside constructs a `UserId` through that function or
+doesn't have one. A schema validator's `.brand<'UserId'>()` (Zod and kin) is the same
+spelling with the parse built in — prefer it where the value enters from outside anyway.
+
+## File and folder naming
 
 | Thing | Case | Example |
 |---|---|---|

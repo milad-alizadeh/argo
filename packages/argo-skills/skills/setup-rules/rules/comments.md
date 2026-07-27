@@ -1,3 +1,8 @@
+---
+paths:
+  - "{{SOURCE_GLOBS}}"
+---
+
 # Comment Discipline
 
 Comments are a liability: they drift from the code and nobody re-verifies them

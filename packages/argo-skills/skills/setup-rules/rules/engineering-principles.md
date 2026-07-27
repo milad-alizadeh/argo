@@ -1,3 +1,8 @@
+---
+paths:
+  - "{{SOURCE_GLOBS}}"
+---
+
 # Engineering Principles
 
 Write code that's easy to change **without a chain reaction**. These are rules,

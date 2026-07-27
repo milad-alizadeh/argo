@@ -29,9 +29,16 @@ apps/desktop/src/renderer/src/shared/delivery/stateMatrix.test.ts               
 #
 # They live here because `.jscpd.json` is plain JSON and a comment in it makes
 # jscpd's auto-discovery skip the whole config silently — no threshold, a
-# different file count, exit 0. (An explicit `-c` hard-errors instead.) So the
-# config stays comment-free and its reasons live in this file. Keep the two in
-# sync: an ignore glob with no reason below is an unexplained exemption.
+# different file count. So the config stays comment-free and its reasons live in
+# this file. Keep the two in sync: an ignore glob with no reason below is an
+# unexplained exemption.
+#
+# `quality:duplication` now passes `--config .jscpd.json` explicitly, which
+# parses rather than discovers and hard-errors on a malformed file — that is
+# what closes the fail-open. Keep the flag. And do not re-prove a config change
+# by exit code: `jscpd … -t 0` exits 1 whether the config loaded or not. Check
+# the analysed file count, or plant a clone pair in an ignored path and one
+# outside it. See AGENTS.md.
 #
 #   **/node_modules/**, **/dist/**, **/out/**, **/graphify-out/**
 #     KIND: not our source. Vendored and generated output.
