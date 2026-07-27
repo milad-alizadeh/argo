@@ -31,9 +31,9 @@ export function projectName(path: string): string {
 export function projectForCwd(projects: ProjectView[], cwd: string | null): string | null {
   if (cwd === null) return null
   const containing = projects.filter((project) => contains(project.path, cwd))
+  const depth = (project: ProjectView): number => trimSeparator(project.path).length
   const innermost = containing.reduce<ProjectView | null>(
-    (deepest, project) =>
-      deepest && deepest.path.length >= project.path.length ? deepest : project,
+    (deepest, project) => (deepest && depth(deepest) >= depth(project) ? deepest : project),
     null,
   )
   return innermost?.id ?? null

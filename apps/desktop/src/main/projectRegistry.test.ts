@@ -94,10 +94,16 @@ describe('reading a registry Argo did not write', () => {
     expect(await readRegistry(registryFile())).toEqual({ activeProjectId: null, projects: [] })
   })
 
-  it('reads as empty rather than throwing when the file is unreadable', async () => {
+  it('reads as empty rather than throwing when the file holds malformed JSON', async () => {
     await writeFile(registryFile(), '{ this is not json', 'utf8')
 
     expect(await readRegistry(registryFile())).toEqual({ activeProjectId: null, projects: [] })
+  })
+
+  it('surfaces a genuine read failure instead of masking it as empty', async () => {
+    // A directory in the file's place fails readFile with EISDIR — a real I/O error, not a
+    // missing file. Reading it as empty would let `registerProject` clobber the real registry.
+    await expect(readRegistry(userData)).rejects.toThrow()
   })
 
   it('drops a stored entry that carries no folder path', async () => {

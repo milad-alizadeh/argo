@@ -22,15 +22,28 @@ export interface ProjectRegistry {
 
 const emptyRegistry = (): ProjectRegistry => ({ activeProjectId: null, projects: [] })
 
-// A registry that cannot be read is an empty one: a machine that never registered, a
-// half-written file, a hand-edit gone wrong. Launching into an empty project strip is
-// recoverable; refusing to launch is not.
+// A registry that is absent or unparseable is an empty one: a machine that never registered,
+// a half-written file, a hand-edit gone wrong. Launching into an empty project strip is
+// recoverable. But a genuine read failure (permissions, I/O) must NOT read as empty —
+// `registerProject` persists over what it read, so swallowing it would clobber a registry
+// that is only temporarily unreadable. Surface that; only ENOENT and bad JSON fall back.
 export async function readRegistry(file: string): Promise<ProjectRegistry> {
+  let raw: string
   try {
-    return parseRegistry(JSON.parse(await readFile(file, 'utf8')))
+    raw = await readFile(file, 'utf8')
+  } catch (error) {
+    if (isNotFound(error)) return emptyRegistry()
+    throw error
+  }
+  try {
+    return parseRegistry(JSON.parse(raw))
   } catch {
     return emptyRegistry()
   }
+}
+
+function isNotFound(error: unknown): boolean {
+  return isRecord(error) && error.code === 'ENOENT'
 }
 
 // Registration is the act that creates a Project (CONTEXT.md L1) — a folder is all it

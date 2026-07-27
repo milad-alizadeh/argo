@@ -74,7 +74,11 @@ app.whenReady().then(() => {
   wireProjection(hub)
   // Seam B now observes real external claude sessions on launch: a single sweep of the CLI
   // transcript dirs discovers, stitches and grades each Session into the roster (ADR-0008).
-  void restoreProjects(hub).then(() => startObservation(hub))
+  // Restore is best-effort: a failure here must not sink the launch sweep, so observation
+  // starts either way. `readRegistry` surfaces genuine read failures rather than masking them.
+  void restoreProjects(hub)
+    .catch((error) => console.error('Failed to restore Project registry', error))
+    .finally(() => startObservation(hub))
   // Seam B: the steering PTY behind the Console's live channel — a renderer attaches and main
   // spawns its shell.
   wireTerminal()
