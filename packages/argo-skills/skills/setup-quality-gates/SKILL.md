@@ -169,8 +169,10 @@ for Go, `vulture` for Python. Rust's compiler already reports it — mark 12 **n
 rather than installing anything. Wire it into `quality` like any other gate, and expect a
 large first run on an existing repo: ratchet it (§5) rather than deleting a hundred exports
 on the way past. Two knip specifics: its narrowest baseline is a **per-file ignore** — a
-file in the list is unguarded for every future dead export it grows, so say that in the
-entry's reason the way §5 says it for count-based ratchets. And knip prints *configuration
+file in the list is unguarded for every future dead export it grows, so state that
+consequence in a comment on the ignore entry itself, the way §5 says it for count-based
+ratchets — a warning that lives only in the agent docs is invisible to the next agent
+editing the config. And knip prints *configuration
 hints* suggesting you delete ignores it thinks are unused — including the deliberately
 prospective ones (platform-variant globs, prospective entries). Label those **KIND** where
 they live, or the next agent will obey the hint and remove them. Its `project` globs are
@@ -344,8 +346,11 @@ which is the one outcome this skill exists to prevent.
    is reachable; only the diff finds the files nothing reaches. Three ways they hide, all
    observed, and none of them is a wrapper:
 
-   - **Conditional compilation.** Files behind a build tag or platform constraint are invisible
-     to a linter run without that tag — thousands of lines, silently, while the rules claim them.
+   - **Conditional compilation.** Files behind a build tag or platform constraint (GOOS
+     filename suffixes, `.web.tsx`/`.native.tsx` variants) are invisible to a linter run
+     without that tag — thousands of lines, silently, while the rules claim them. This escape
+     outlives the install, so it goes in the repo's §6.4 list like any other enumerated
+     scope — disclosed only in your install report, it is read once and lost.
    - **A nested module or workspace** below the root the gate is invoked from. The run stops at
      the boundary and exits 0.
    - **A default include list** in the linter's own config that predates you.
@@ -439,7 +444,9 @@ resolve the same config, the same exemption files, and the same toolchain.
   against a deliberately wrong binary. The version constant must be load-bearing, not a comment.
   The check must **execute the binary** — comparing a manifest or lockfile entry to the pin
   checks the package metadata, and a stubbed `.bin` script passes every manifest comparison
-  while gating nothing.
+  while gating nothing. Even executed, this is a staleness guard, not an integrity guard —
+  a stub that echoes the pinned version string still passes — so don't claim more for it
+  than it does.
 
 **Enumerate on a built tree, not only a clean checkout.** Generated output doesn't exist when
 you install and does exist in CI, because the build or codegen step runs *immediately before*

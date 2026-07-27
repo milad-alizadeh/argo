@@ -27,8 +27,9 @@ The type system is not optional. Each of these is forbidden in `src`:
   fix the source type. Two sanctioned uses: `as const`, and `as unknown as T` at a
   genuine external boundary, with a comment naming the boundary.
 - **`!` non-null assertion** — check, or restructure so the value can't be null.
-- **`@ts-ignore` / `@ts-expect-error`** — only in a test asserting a type error, or with
-  a comment naming the upstream bug and the version that fixes it.
+- **`@ts-expect-error`** — only in a test asserting a type error, or with a comment
+  naming the upstream bug and the version that fixes it. `@ts-ignore` is never
+  sanctioned: it keeps suppressing after the error it hid is gone.
 
 The test-data exception belongs to a tool, not a cast: partial fixtures use
 `@total-typescript/shoehorn`, never `as`.
