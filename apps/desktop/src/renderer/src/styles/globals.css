@@ -148,6 +148,32 @@
   /* animate-pulse-status — the screen's ONE animation budget (at most one pulsing
    * element per render). Pair it with motion-safe:. */
   --animate-pulse-status: pulse-status var(--time-pulse) ease-in-out infinite;
+
+  /* Ambient motions of the Penumbra scene — the corona breath and the glow sweep. Pair
+   * with motion-safe:. `glow-sweep` translates a masked sheen; wrap it in `overflow-hidden`. */
+  --animate-breath: breath var(--time-breath) ease-in-out infinite;
+  --animate-glow-sweep: glow-sweep var(--time-sweep) ease-in-out infinite;
+}
+
+@keyframes breath {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.035);
+  }
+}
+
+@keyframes glow-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
 }
 
 @keyframes pulse-status {
@@ -189,6 +215,38 @@
  * card off the frosted panel it sits in without adding a second glass layer. */
 @utility inset-lip {
   box-shadow: 0 1px 0 var(--inset-lip) inset;
+}
+
+/* Concealed lighting — the pronounced warm cove edge along a surface's top (stronger than
+ * `inset-lip`, which is the subtle edge of a flat inset card). */
+@utility cove {
+  box-shadow: 0 1px 0 var(--cove-lip) inset;
+}
+
+/* The frosted panel surface: the glass gradient plus its cove edge. `surface-lit` is the
+ * warm-lit (active/selected/driven) variant — a warmer gradient and the cove spilling light
+ * inward. Pair with `backdrop-blur`; these set only the fill + concealed lighting. */
+@utility surface {
+  background-image: var(--surface-glass);
+  box-shadow: 0 1px 0 var(--cove-lip) inset;
+}
+
+@utility surface-lit {
+  background-image: var(--surface-glass-lit);
+  box-shadow:
+    0 1px 0 var(--cove-lip) inset,
+    inset 0 26px 46px -30px var(--cove-spill);
+}
+
+/* The signature gold button: gradient fill, a white top-lip sheen, a warm outer glow, and a
+ * grounding drop shadow. Ink is `--primary-foreground` (near-black on the light gold). */
+@utility btn-primary {
+  background-image: var(--btn-primary);
+  color: var(--primary-foreground);
+  box-shadow:
+    inset 0 1px 0 var(--btn-primary-sheen),
+    0 0 30px -6px var(--btn-primary-glow),
+    0 10px 24px -12px var(--shadow-3);
 }
 
 /* The live channel is a real xterm terminal that sits directly on the panel's ONE frosted

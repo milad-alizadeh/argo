@@ -73,6 +73,10 @@
   --slate-600: #434c57;
   --slate-700: #353d46;
   --slate-950: #0a0d10;
+
+  /* Warm-white — the colour of concealed light (a lit cove edge / a button sheen). Kept as
+   * space-separated channels so a theme can alpha it inline: rgb(var(--warm-white) / 10%). */
+  --warm-white: 255 246 228;
 }
 
 /* -------------------------------------------------- semantic roles — light */
@@ -135,6 +139,27 @@
   --inset: color-mix(in srgb, var(--graphite-950) 2%, transparent);
   --inset-hair: color-mix(in srgb, var(--graphite-950) 6%, transparent);
   --inset-lip: color-mix(in srgb, var(--graphite-950) 4%, transparent);
+
+  /* --- Penumbra atmosphere: concealed light, glass, the gold button (lifted from the
+   * reference prototypes so the mood is a contract, not per-component CSS). `cove-lip` is
+   * the lit top edge of concealed lighting; `cove-spill` the warm glow it throws inward.
+   * `surface-glass`/`-lit` are the frosted panel fills (resting / warm-lit). `btn-*` are the
+   * gold primary button. On light these read as soft daylight, not a glow. */
+  --cove-lip: rgb(255 255 255 / 55%);
+  --cove-spill: color-mix(in srgb, var(--gold-500) 12%, transparent);
+  --surface-glass: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--graphite-50) 82%, transparent),
+    color-mix(in srgb, var(--graphite-100) 74%, transparent)
+  );
+  --surface-glass-lit: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--graphite-50) 92%, transparent),
+    color-mix(in srgb, var(--gold-100) 60%, transparent)
+  );
+  --btn-primary: linear-gradient(180deg, var(--gold-500), var(--gold-600) 60%, var(--gold-700));
+  --btn-primary-sheen: rgb(255 255 255 / 45%);
+  --btn-primary-glow: color-mix(in srgb, var(--gold-600) 30%, transparent);
 
   /* Roster tones — named for the TONE the delivery derivation emits, not a lifecycle state,
    * because tone↔state is not 1:1 (the matrix keeps colour off the state deliberately).
@@ -227,6 +252,25 @@
   --inset-hair: color-mix(in srgb, var(--graphite-50) 6%, transparent);
   /* The lit cove lip is a warm-white top edge, not a dark one, on the dark panel. */
   --inset-lip: color-mix(in srgb, var(--graphite-50) 6%, transparent);
+
+  /* See the light note. On dark these are the Penumbra room: warm-white cove edges, a
+   * cool-lifted glass gradient that warms toward the accent when lit, and a gold button
+   * that throws light — a white top-lip sheen over a warm outer glow. */
+  --cove-lip: rgb(var(--warm-white) / 10%);
+  --cove-spill: color-mix(in srgb, var(--gold-500) 22%, transparent);
+  --surface-glass: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--graphite-700) 40%, transparent),
+    color-mix(in srgb, var(--graphite-900) 52%, transparent)
+  );
+  --surface-glass-lit: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--graphite-600) 58%, transparent),
+    color-mix(in srgb, var(--graphite-850) 62%, transparent)
+  );
+  --btn-primary: linear-gradient(180deg, var(--gold-400), var(--gold-500) 60%, var(--gold-700));
+  --btn-primary-sheen: rgb(255 255 255 / 35%);
+  --btn-primary-glow: color-mix(in srgb, var(--gold-500) 55%, transparent);
 
   --tone-run: var(--teal-500);
   --tone-gray: var(--graphite-400);
@@ -368,4 +412,6 @@
   --time-slow: 300ms;
   --time-pulse: 2s;
   --pulse-dim: 0.45; /* the opacity that one pulsing element dips to */
+  --time-breath: 7s; /* the corona/orb breath — a slow ambient swell */
+  --time-sweep: 2.4s; /* the glow sweep — a light band travelling across a lit surface */
 }
