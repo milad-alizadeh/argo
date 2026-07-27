@@ -46,6 +46,13 @@ false. Flipped polarity, a hedge stated as certainty, a condition dropped so an 
 becomes a bare "Y", a scope widened from "only the parser" to "the whole module", a
 recommendation attributed to the wrong option.
 
+WHO DID WHAT is part of this. If the source says the agent did something ("I did not touch the
+STT adapter") and the spoken line attributes it to the listener ("You did not touch the STT
+adapter"), or the reverse, that is a contradiction — the listener now believes they performed
+an action they did not, which is exactly the kind of error they cannot catch by ear. Judge
+person and agency as strictly as you judge polarity. (Added because a real run produced this
+flip and three judges scored it clean.)
+
 Omission alone is NOT a contradiction — that is other axes. Judge only whether the spoken line
 makes a claim the source refutes.`,
   },

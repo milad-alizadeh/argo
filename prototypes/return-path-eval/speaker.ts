@@ -63,6 +63,16 @@ const REALTIME_URL = 'wss://api.openai.com/v1/realtime'
  * conversation history between trials, so trial N's payload would sit in trial N+1's context
  * and the model could condense with reference to it. Independence beats throughput here.
  */
+/**
+ * Audio generation runs at roughly 10 spoken words per second (measured: 52 words in 6.5s), so
+ * the timeout has to scale with the payload or the long tail of arm B fails by construction —
+ * which is exactly what a 60s constant did on the first run, erroring 8 trials, four of them
+ * the control arm. A timeout that correlates with arm would have silently biased the
+ * comparison.
+ */
+const timeoutFor = (payload: string): number =>
+  Math.min(300_000, 60_000 + 150 * payload.split(/\s+/).filter(Boolean).length)
+
 export const realtimeSpeaker = (apiKey: string, model = 'gpt-realtime'): Speaker => ({
   label: `realtime:${model}`,
   speak: (payload, instructions) =>
@@ -71,10 +81,11 @@ export const realtimeSpeaker = (apiKey: string, model = 'gpt-realtime'): Speaker
       const ws = new WebSocket(`${REALTIME_URL}?model=${encodeURIComponent(model)}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       } as unknown as string[])
+      const budget = timeoutFor(payload)
       const timer = setTimeout(() => {
         ws.close()
-        reject(new Error('realtime timeout after 60s'))
-      }, 60_000)
+        reject(new Error(`realtime timeout after ${Math.round(budget / 1000)}s`))
+      }, budget)
       const finish = (fn: () => void) => {
         clearTimeout(timer)
         ws.close()

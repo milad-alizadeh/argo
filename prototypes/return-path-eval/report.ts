@@ -13,7 +13,18 @@ import type { Trial } from './sweep'
 
 const path = join(import.meta.dir, process.argv[2] ?? 'results.jsonl')
 if (!existsSync(path)) throw new Error(`no results at ${path} — run sweep.ts first`)
-const trials = readFileSync(path, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as Trial)
+// Dedupe by key, last-wins: `sweep.ts --retry-errors` appends a fresh row rather than editing
+// the old one, so a trial that failed once and then succeeded must count exactly once, as a
+// success.
+const trials = [
+  ...new Map(
+    readFileSync(path, 'utf8')
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Trial)
+      .map((t) => [t.key, t] as const),
+  ).values(),
+]
 
 const pct = (n: number, d: number): string => (d === 0 ? '   n/a' : `${((100 * n) / d).toFixed(1).padStart(5)}%`)
 const rate = (n: number, d: number): string => `${pct(n, d)}  (${n}/${d})`
@@ -69,7 +80,12 @@ for (const [k, ts] of groups(ok, (t) => `${t.corpusArm} / ${t.arm}`)) {
 console.log('\n## 3. Stage 3 — what the audio model did to the payload (#224 unknown 2)\n')
 const spokenTrials = ok.filter((t) => t.spoken !== undefined)
 for (const [k, ts] of groups(spokenTrials, (t) => `${t.corpusArm} / ${t.arm}`)) {
-  const verbatim = ts.filter((t) => (t.spoken ?? '').trim() === (t.payload.split('\n\n').slice(1).join('\n\n')).trim())
+  // Strip the `[REDUCED] ...` header only for the span arms, which have one. The control's
+  // payload is a bare written line, and blindly slicing off a first paragraph emptied it —
+  // which made the control read as 0% verbatim by construction rather than by measurement.
+  const spokenBody = (t: Trial): string =>
+    (t.payload.startsWith('[REDUCED]') ? t.payload.split('\n\n').slice(1).join('\n\n') : t.payload).trim()
+  const verbatim = ts.filter((t) => (t.spoken ?? '').trim() === spokenBody(t))
   const shrank = ts.filter((t) => (t.spokenWords ?? 0) < 0.8 * t.payloadWords)
   console.log(`  ${k}   ${ts.length} trials`)
   console.log(`    spoke the payload verbatim   ${rate(verbatim.length, ts.length)}`)

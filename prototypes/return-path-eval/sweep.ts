@@ -70,14 +70,15 @@ export type Trial = {
 
 const words = (s: string): number => s.split(/\s+/).filter(Boolean).length
 
-const done = new Set<string>(
-  existsSync(OUT)
-    ? readFileSync(OUT, 'utf8')
-        .split('\n')
-        .filter(Boolean)
-        .map((l) => (JSON.parse(l) as Trial).key)
-    : [],
-)
+/**
+ * `--retry-errors` re-runs trials that previously errored, leaving successful ones cached. The
+ * retried row is appended, so `report.ts` dedupes by key with last-wins and a transient
+ * failure never counts against a rate twice.
+ */
+const prior: Trial[] = existsSync(OUT)
+  ? readFileSync(OUT, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as Trial)
+  : []
+const done = new Set<string>(prior.filter((t) => !(has('retry-errors') && t.error)).map((t) => t.key))
 
 const speaker = speakerFromEnv()
 const scoreStage3 = !has('no-speak')
