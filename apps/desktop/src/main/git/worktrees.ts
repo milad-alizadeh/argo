@@ -6,8 +6,8 @@ const WORKTREE_ARGS = ['worktree', 'list', '--porcelain']
 const WORKTREE_FIELD = 'worktree '
 const BRANCH_FIELD = 'branch refs/heads/'
 
-export async function readWorktrees(repoPath: string): Promise<Map<string, string>> {
-  return parseWorktrees((await runGit(repoPath, WORKTREE_ARGS)).stdout)
+export async function readWorktrees(repositoryPath: string): Promise<Map<string, string>> {
+  return parseWorktrees((await runGit(repositoryPath, WORKTREE_ARGS)).stdout)
 }
 
 // `git worktree list --porcelain` (grounded on git 2.50.1) emits one blank-line-separated record

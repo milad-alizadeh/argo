@@ -14,15 +14,8 @@ const ACTIVE_RAIL =
 type ProjectTabProps = {
   /** The projected tab: its glyph, whether it is the active project, and the one worst-state dot. */
   tab: ProjectTabView
-  /** How long ago this project last synced, rendered in the active tab's tooltip. `null` while
-   * the fact is unavailable — the name still shows, the line does not. */
-  lastSynced: string | null
-  /** True while the project's context menu is open on this tab, so the tab stays lit under it. */
-  contextMenuOpen?: boolean
   /** Make this project the active one. Swapping is a view change, not a teardown. */
   onSelect: () => void
-  /** Open the project's context menu. The menu itself belongs to Project Settings (issue 265). */
-  onOpenContextMenu: () => void
 }
 
 /**
@@ -33,13 +26,7 @@ type ProjectTabProps = {
  * The active tab is the only place the project's name and `last synced` appear at all, and they
  * appear on hover.
  */
-export function ProjectTab({
-  tab,
-  lastSynced,
-  contextMenuOpen,
-  onSelect,
-  onOpenContextMenu,
-}: ProjectTabProps): React.JSX.Element {
+export function ProjectTab({ tab, onSelect }: ProjectTabProps): React.JSX.Element {
   const trigger = (
     <button
       type="button"
@@ -47,15 +34,7 @@ export function ProjectTab({
       aria-label={tab.name}
       aria-current={tab.active ? 'true' : undefined}
       onClick={onSelect}
-      onContextMenu={(event) => {
-        event.preventDefault()
-        onOpenContextMenu()
-      }}
-      className={cn(
-        TAB_BASE,
-        tab.active && 'bg-secondary text-foreground-bright',
-        contextMenuOpen && 'bg-accent-strong text-foreground',
-      )}
+      className={cn(TAB_BASE, tab.active && 'bg-secondary text-foreground-bright')}
     >
       <Text variant="title">{tab.initial}</Text>
       {tab.active ? <span aria-hidden className={ACTIVE_RAIL} /> : null}
@@ -72,9 +51,9 @@ export function ProjectTab({
         <Text variant="row" as="div">
           {tab.name}
         </Text>
-        {lastSynced === null ? null : (
+        {tab.lastSynced === null ? null : (
           <Text variant="meta" as="div" className="text-foreground-faint">
-            last synced {lastSynced}
+            last synced {tab.lastSynced}
           </Text>
         )}
       </TooltipContent>

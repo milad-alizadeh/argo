@@ -39,7 +39,7 @@ const rows = branchMenuRows(facts, new Map([[TOKENS_WORKTREE, 'session-7']]))
 const meta = {
   title: 'Shell/GitControls/BranchMenu',
   component: BranchMenu,
-  args: { rows, onCheckout: fn(), onOpenSession: fn() },
+  args: { rows, onCheckout: fn(), onOpenSession: fn(), onDelete: fn() },
   render: (args) => (
     <DropdownMenu defaultOpen>
       <DropdownMenuTrigger asChild>
@@ -65,7 +65,7 @@ export const Default: Story = {
     await expect(held).toHaveAttribute('aria-disabled', 'true')
     await expect(orphaned).toHaveAttribute('aria-disabled', 'true')
     await expect(orphaned).toHaveTextContent(AUDIT_WORKTREE)
-    await expect(menu.getByText('Files follow this')).toBeVisible()
+    await expect(menu.getByText('Files follow this')).toBeInTheDocument()
     await expect(menu.getByRole('menuitem', { name: /^main/ })).toHaveAttribute(
       'aria-disabled',
       'true',
@@ -78,13 +78,19 @@ export const Default: Story = {
 }
 
 /** A checkout that has never seen a remote: the `Remote · origin` group is absent rather than
- * empty, and an actionable local row checks out through `onCheckout`. */
+ * empty, an actionable local row checks out through `onCheckout`, and that row is the only kind
+ * that also offers a delete — git refuses to delete the branch you are on or one a worktree
+ * holds, and deleting a remote ref would lose work that is not yours. */
 export const LocalOnly: Story = {
   args: { rows: branchMenuRows(localOnlyFacts, new Map()) },
   play: async ({ args }) => {
     const menu = within(document.body)
     await expect(menu.queryByText('Remote · origin')).not.toBeInTheDocument()
-    await userEvent.click(await menu.findByRole('menuitem', { name: /fix\/ci-flake/ }))
+    await expect(
+      await menu.findByRole('menuitem', { name: 'Delete fix/ci-flake' }),
+    ).toBeInTheDocument()
+    await expect(menu.queryByRole('menuitem', { name: 'Delete main' })).not.toBeInTheDocument()
+    await userEvent.click(menu.getByRole('menuitem', { name: /^fix\/ci-flake/ }))
     await expect(args.onCheckout).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'fix/ci-flake' }),
     )

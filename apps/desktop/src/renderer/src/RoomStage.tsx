@@ -24,6 +24,10 @@ export function RoomStage({
       return <UnbuiltRoom name="Work room" />
     case 'code':
       return <UnbuiltRoom name="Code room" />
+    default: {
+      const unreachable: never = room
+      return unreachable
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>
  * menu refuses with its reason stated beside it, and a destructive row. */
 export const Default: Story = {
   render: () => (
-    <DropdownMenu defaultOpen>
+    <DropdownMenu>
       <DropdownMenuTrigger>
         <Text variant="row">Branch</Text>
       </DropdownMenuTrigger>
@@ -49,9 +49,12 @@ export const Default: Story = {
       </DropdownMenuContent>
     </DropdownMenu>
   ),
-  play: async () => {
-    const menu = within(document.body)
-    await expect(await menu.findByText('Fetch')).toBeVisible()
+  play: async ({ canvasElement }) => {
+    // Opened by a click, then scoped to the menu that click created. Querying document.body for a
+    // `defaultOpen` menu finds sibling stories' portals, including torn-down ones.
+    await userEvent.click(within(canvasElement).getByText('Branch'))
+    const menu = within(await within(document.body).findByRole('menu', { name: 'Branch' }))
+    await expect(menu.getByText('Fetch')).toBeInTheDocument()
     await expect(menu.getByRole('menuitem', { name: 'Pull up to date' })).toHaveAttribute(
       'aria-disabled',
       'true',

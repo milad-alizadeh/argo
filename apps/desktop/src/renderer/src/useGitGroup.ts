@@ -22,7 +22,8 @@ export function useGitGroup(hatches: GitHatches): GitControlsProps {
     facts,
     rows: facts === null ? [] : branchMenuRows(facts, liveWorktreeSessions(facts, sessions)),
     onCheckout: (ref) => void run('checkout', ref.name),
-    onOperation: (operation) => void run(operation),
+    onOperation: (operation, ref) => void run(operation, ref),
+    onDelete: (ref) => void run('delete', ref.name),
     ...hatches,
   }
 }

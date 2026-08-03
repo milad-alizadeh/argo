@@ -10,7 +10,8 @@ import type { ShellState } from '@/useShellState'
 export interface ShellCommands {
   /** Main owns the folder picker, so the renderer names the act and never a path. */
   addProject: () => void
-  openProjectMenu: (projectId: string) => void
+  /** ⌘N's other half: the roster's visible spawn affordance. Nothing here is keyboard-only. */
+  spawnSession: () => void
   /** The diverged branch's first escape hatch. The terminal itself lives in the Code room. */
   openScratchTerminal: () => void
   /** The diverged branch's other hatch: an agent in the project root, which is what ⌘N spawns. */
@@ -18,7 +19,12 @@ export interface ShellCommands {
 }
 
 export function useShellCommands(shell: ShellState): ShellCommands {
-  const spawn = useCallback(() => void window.cockpit?.spawnSession(), [])
+  // Spawn lands you where the session will appear: main starts the agent and the observation
+  // re-sweep puts it in the roster, so the Sessions room is the only honest destination.
+  const spawn = useCallback(() => {
+    shell.selectRoom('sessions')
+    void window.cockpit?.spawnSession()
+  }, [shell])
 
   const run = useCallback(
     (command: ShellCommand) => {
@@ -35,6 +41,10 @@ export function useShellCommands(shell: ShellState): ShellCommands {
           // The palette is its own ticket. Claiming the chord and opening nothing is the honest
           // half: the shell has no surface to show, and it advertises none in the bar either.
           return
+        default: {
+          const unreachable: never = command
+          return unreachable
+        }
       }
     },
     [shell, spawn],
@@ -44,9 +54,7 @@ export function useShellCommands(shell: ShellState): ShellCommands {
 
   return {
     addProject: useCallback(() => void window.cockpit?.registerProject(), []),
-    openProjectMenu: useCallback(() => {
-      // Project Settings is the onboarding panel re-entered, and that panel is its own ticket.
-    }, []),
+    spawnSession: spawn,
     openScratchTerminal: useCallback(() => shell.selectRoom('code'), [shell]),
     resolveWithAgent: spawn,
   }

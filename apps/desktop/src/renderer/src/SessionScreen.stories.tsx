@@ -28,6 +28,7 @@ const EXPANDED_LAYOUT: SpineLayout = { ...DEFAULT_LAYOUT, console: SPINE.console
 const NOOP_HANDLERS: SessionScreenHandlers = {
   onSelectSession: fn(),
   onCloseSession: fn(),
+  onSpawnSession: fn(),
   onResize: fn(),
   onToggleVariant: fn(),
   onSelectTab: fn(),

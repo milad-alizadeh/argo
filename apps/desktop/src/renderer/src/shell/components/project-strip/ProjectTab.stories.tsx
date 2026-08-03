@@ -15,12 +15,13 @@ const inactive = (dot: RosterTone | null): ProjectTabView => ({
   initial: 'D',
   active: false,
   dot,
+  lastSynced: null,
 })
 
 const meta = {
   title: 'Shell/ProjectStrip/ProjectTab',
   component: ProjectTab,
-  args: { onSelect: fn(), onOpenContextMenu: fn() },
+  args: { onSelect: fn() },
   argTypes: {
     tab: { control: 'object', table: { type: { summary: 'ProjectTabView' } } },
   },
@@ -45,8 +46,14 @@ type Story = StoryObj<typeof meta>
  */
 export const Active: Story = {
   args: {
-    tab: { id: 'argo', name: 'argo', initial: 'A', active: true, dot: null },
-    lastSynced: '4m ago',
+    tab: {
+      id: 'argo',
+      name: 'argo',
+      initial: 'A',
+      active: true,
+      dot: null,
+      lastSynced: '4m ago',
+    },
   },
   play: async ({ canvasElement }) => {
     await userEvent.hover(within(canvasElement).getByRole('button', { name: 'argo' }))
@@ -60,8 +67,7 @@ export const Active: Story = {
  * tooltip is the only place it appears at all; the missing fact is simply absent. */
 export const NeverSynced: Story = {
   args: {
-    tab: { id: 'argo', name: 'argo', initial: 'A', active: true, dot: null },
-    lastSynced: null,
+    tab: { id: 'argo', name: 'argo', initial: 'A', active: true, dot: null, lastSynced: null },
   },
   play: async ({ canvasElement }) => {
     await userEvent.hover(within(canvasElement).getByRole('button', { name: 'argo' }))
@@ -74,7 +80,7 @@ export const NeverSynced: Story = {
 /** A project you are not looking at: quieter, and carrying the one worst state its sessions
  * reached. It reveals nothing on hover — name and sync age belong to the active tab. */
 export const Inactive: Story = {
-  args: { tab: inactive('amber'), lastSynced: '4m ago' },
+  args: { tab: inactive('amber') },
   play: async ({ canvasElement }) => {
     const tab = within(canvasElement).getByRole('button', { name: 'dashboard' })
     await expect(tab).not.toHaveAttribute('aria-current')
@@ -86,7 +92,7 @@ export const Inactive: Story = {
 /** Every dot an inactive tab can carry, one tab each — the visual-diff surface for the tone the
  * strip rolls a project's sessions up to. */
 export const EveryDot: Story = {
-  args: { tab: inactive('amber'), lastSynced: null },
+  args: { tab: inactive('amber') },
   render: (args) => (
     <div className="flex gap-region">
       {STRIP_DOTS.map((dot) => (
@@ -97,10 +103,4 @@ export const EveryDot: Story = {
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getAllByRole('button')).toHaveLength(STRIP_DOTS.length)
   },
-}
-
-/** The tab stays lit while its context menu is open, so the menu reads as belonging to this
- * project rather than floating over the strip. The menu itself is Project Settings' (issue 265). */
-export const ContextMenuOpen: Story = {
-  args: { tab: inactive('run'), lastSynced: null, contextMenuOpen: true },
 }

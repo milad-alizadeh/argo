@@ -19,6 +19,9 @@ export interface ProjectTabView {
   active: boolean
   /** The one worst-state dot, or null when this project's sessions want nothing. */
   dot: RosterTone | null
+  /** How long ago THIS project last synced, for the active tab's tooltip. `null` while the
+   * fact is unobserved — the tooltip shows the name alone rather than inventing an age. */
+  lastSynced: string | null
 }
 
 export interface ShellModel {
@@ -37,6 +40,7 @@ export function buildShellModel(state: CockpitState): ShellModel {
       initial: project.name.slice(0, 1).toUpperCase(),
       active,
       dot: active ? null : worstStateDot(state.sessions, project.id),
+      lastSynced: null,
     }
   })
   return { tabs, connected: tabs.length > 0 }

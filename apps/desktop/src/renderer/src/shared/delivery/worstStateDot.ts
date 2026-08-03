@@ -14,5 +14,8 @@ const RANKED: readonly { status: SessionStatus; tone: RosterTone }[] = [
 /** The one dot a project tab carries, or null when its sessions want nothing from you. */
 export function worstStateDot(sessions: SessionView[], projectId: string): RosterTone | null {
   const mine = sessions.filter((session) => session.projectId === projectId)
-  return RANKED.find((rank) => mine.some((s) => s.facts.status === rank.status))?.tone ?? null
+  return (
+    RANKED.find((rank) => mine.some((session) => session.facts.status === rank.status))?.tone ??
+    null
+  )
 }

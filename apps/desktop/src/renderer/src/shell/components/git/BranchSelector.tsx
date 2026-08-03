@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { Button, CaretDownIcon, GitBranchIcon, Text } from '@/shared/components/ui'
+import { TrackingCounts } from './TrackingCounts'
 
 type BranchSelectorProps = React.ComponentProps<'button'> & {
   /** The checked-out branch, or the short sha when HEAD is detached — whatever git can
@@ -37,8 +38,7 @@ export function BranchSelector({
       <Text variant="code" className="text-foreground">
         {branch}
       </Text>
-      {ahead > 0 && <Text variant="meta" className="text-tone-run">{`↑${ahead}`}</Text>}
-      {behind > 0 && <Text variant="meta" className="text-tone-amber">{`↓${behind}`}</Text>}
+      <TrackingCounts ahead={ahead} behind={behind} />
       <CaretDownIcon className="icon-sm text-foreground-faint" />
     </Button>
   )

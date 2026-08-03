@@ -18,10 +18,10 @@ export interface GitOutput {
 // branch name carrying a space, a quote or a `;` stays one argument instead of becoming a second
 // command. Credential prompting is off: main has no terminal to answer one on, so an
 // unauthenticated fetch must fail fast rather than hang the process forever.
-export async function runGit(repoPath: string, args: string[]): Promise<GitOutput> {
+export async function runGit(repositoryPath: string, args: string[]): Promise<GitOutput> {
   try {
     const { stdout, stderr } = await execFileAsync('git', args, {
-      cwd: repoPath,
+      cwd: repositoryPath,
       maxBuffer: OUTPUT_CEILING_BYTES,
       env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
     })

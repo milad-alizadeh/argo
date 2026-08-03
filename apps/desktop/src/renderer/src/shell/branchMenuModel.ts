@@ -49,7 +49,9 @@ export function liveWorktreeSessions(
   )
   return new Map(
     paths.flatMap((path) => {
-      const session = sessions.find((s) => s.cwd !== null && containsPath(path, s.cwd))
+      const session = sessions.find(
+        (candidate) => candidate.cwd !== null && containsPath(path, candidate.cwd),
+      )
       return session ? [[path, session.id] as const] : []
     }),
   )
@@ -63,9 +65,18 @@ export function manageMenu(facts: GitFacts): ManageMenu {
       ...(facts.behind > 0 && !diverged ? (['pull'] as const) : []),
       ...(facts.ahead > 0 && !diverged ? (['push'] as const) : []),
     ],
-    branch: ['new-branch', 'rename', 'delete'],
+    // `delete` is deliberately absent: this menu speaks for the CHECKED-OUT branch, and git
+    // refuses to delete the branch you are on. Deleting lives on the branch rows, where a
+    // branch is actually named — see `isDeletable`.
+    branch: ['new-branch', 'rename'],
     diverged,
   }
+}
+
+/** Whether a row may offer a delete. A local branch nobody is standing on and no worktree holds:
+ * git refuses the other two, and deleting a remote ref is a push that loses someone else's work. */
+export function isDeletable(row: BranchRow): boolean {
+  return !row.remote && row.action.kind === 'checkout'
 }
 
 function rowAction(

@@ -12,8 +12,8 @@ const HEAD_FACTS_ARGS = ['status', '--porcelain=v2', '--branch', '--untracked-fi
 const DETACHED = '(detached)'
 const SHORT_SHA_LENGTH = 7
 
-export async function readHeadFacts(repoPath: string): Promise<HeadFacts> {
-  return parseHeadFacts((await runGit(repoPath, HEAD_FACTS_ARGS)).stdout)
+export async function readHeadFacts(repositoryPath: string): Promise<HeadFacts> {
+  return parseHeadFacts((await runGit(repositoryPath, HEAD_FACTS_ARGS)).stdout)
 }
 
 // `git status --porcelain=v2 --branch` (grounded on git 2.50.1) heads its output with

@@ -6,14 +6,10 @@ type ProjectStripProps = {
   /** One tab per connected project, in the order the registry holds them. Empty is a real
    * state: nothing is connected yet and the strip is just `+`. */
   tabs: ProjectTabView[]
-  /** How long ago the active project last synced, for its tooltip. `null` when unavailable. */
-  lastSynced: string | null
   /** Make a project the active one. */
   onSelectProject: (projectId: string) => void
   /** Start connecting a new project. */
   onAddProject: () => void
-  /** Open a project's context menu, whose one entry is Project Settings (issue 265). */
-  onOpenProjectMenu: (projectId: string) => void
 }
 
 /**
@@ -25,10 +21,8 @@ type ProjectStripProps = {
  */
 export function ProjectStrip({
   tabs,
-  lastSynced,
   onSelectProject,
   onAddProject,
-  onOpenProjectMenu,
 }: ProjectStripProps): React.JSX.Element {
   return (
     <TooltipProvider>
@@ -38,13 +32,7 @@ export function ProjectStrip({
         className="flex h-full w-project-strip shrink-0 flex-col items-center gap-inset pt-traffic-lights pb-plane"
       >
         {tabs.map((tab) => (
-          <ProjectTab
-            key={tab.id}
-            tab={tab}
-            lastSynced={lastSynced}
-            onSelect={() => onSelectProject(tab.id)}
-            onOpenContextMenu={() => onOpenProjectMenu(tab.id)}
-          />
+          <ProjectTab key={tab.id} tab={tab} onSelect={() => onSelectProject(tab.id)} />
         ))}
         <IconButton label="Add a project" onClick={onAddProject} className="mt-auto">
           <PlusIcon className="size-4" />

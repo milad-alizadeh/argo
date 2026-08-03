@@ -21,7 +21,7 @@ const DEFAULT_PANEL_UI: PanelUiState = {
 export interface SessionPanel {
   panel: ReturnType<typeof buildSessionPanel> | null
   layout: SpineLayout
-  handlers: Omit<SessionScreenHandlers, 'onSelectSession' | 'onCloseSession'>
+  handlers: Omit<SessionScreenHandlers, 'onSelectSession' | 'onCloseSession' | 'onSpawnSession'>
 }
 
 export function useSessionPanel(selected: SessionView | null): SessionPanel {

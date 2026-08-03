@@ -12,8 +12,11 @@ export interface GitControlsProps {
   rows: BranchRow[]
   /** Check a ref out on the primary checkout. */
   onCheckout: (ref: BranchRef) => void
-  /** Run a manage-menu operation on the primary checkout. */
-  onOperation: (operation: GitOperation) => void
+  /** Run a manage-menu operation on the primary checkout. `ref` carries the name for the
+   * operations that take one (`new-branch`, `rename`, `delete`). */
+  onOperation: (operation: GitOperation, ref?: string) => void
+  /** Delete a local branch nobody is standing on. */
+  onDelete: (ref: BranchRef) => void
   /** Open the live session working inside the worktree that holds a branch. */
   onOpenSession: (sessionId: string) => void
   /** Open a scratch terminal — the diverged branch's escape hatch. */
@@ -35,6 +38,7 @@ export function GitControls({
   rows,
   onCheckout,
   onOperation,
+  onDelete,
   onOpenSession,
   onOpenScratchTerminal,
   onResolveWithAgent,
@@ -46,7 +50,12 @@ export function GitControls({
         <DropdownMenuTrigger asChild>
           <BranchSelector branch={facts.branch} ahead={facts.ahead} behind={facts.behind} />
         </DropdownMenuTrigger>
-        <BranchMenu rows={rows} onCheckout={onCheckout} onOpenSession={onOpenSession} />
+        <BranchMenu
+          rows={rows}
+          onCheckout={onCheckout}
+          onOpenSession={onOpenSession}
+          onDelete={onDelete}
+        />
       </DropdownMenu>
       <BranchManage
         menu={manageMenu(facts)}

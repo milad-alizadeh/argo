@@ -1,6 +1,6 @@
 import { type BranchRef, type GitFacts, type SessionView, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { branchMenuRows, liveWorktreeSessions, manageMenu } from './branchMenuModel'
+import { branchMenuRows, isDeletable, liveWorktreeSessions, manageMenu } from './branchMenuModel'
 
 function session(id: string, cwd: string | null): SessionView {
   return { id, title: id, cli: 'claude', cwd, projectId: 'p1', facts: sessionFacts() }
@@ -64,6 +64,31 @@ describe('the branch menu', () => {
   })
 })
 
+describe('which branches a row may delete', () => {
+  const rowFor = (over: Partial<BranchRef>) =>
+    branchMenuRows(facts({ branches: [ref('feat/x', over)] }), new Map())[0]
+
+  it('offers to delete a local branch nobody is standing on', () => {
+    const row = rowFor({})
+    expect(row && isDeletable(row)).toBe(true)
+  })
+
+  it('never offers to delete the checked-out branch', () => {
+    const row = branchMenuRows(facts(), new Map())[0]
+    expect(row && isDeletable(row)).toBe(false)
+  })
+
+  it('never offers to delete a branch a worktree holds', () => {
+    const row = rowFor({ worktreePath: '/code/argo/.worktrees/x' })
+    expect(row && isDeletable(row)).toBe(false)
+  })
+
+  it('never offers to delete a remote ref, which would lose work that is not yours', () => {
+    const row = rowFor({ remote: true })
+    expect(row && isDeletable(row)).toBe(false)
+  })
+})
+
 describe('which worktree a session is working in', () => {
   const held = ref('feat/tokens', { worktreePath: '/code/argo/.worktrees/tokens' })
 
@@ -109,12 +134,16 @@ describe('the manage menu', () => {
     expect(manageMenu(facts({ ahead: 2, behind: 1 })).sync).not.toContain('push')
   })
 
-  it('offers branch CRUD whatever the branch is tracking', () => {
-    expect(manageMenu(facts({ ahead: 2, behind: 1 })).branch).toEqual([
-      'new-branch',
-      'rename',
-      'delete',
-    ])
+  it('offers branch creation and rename whatever the branch is tracking', () => {
+    expect(manageMenu(facts({ ahead: 2, behind: 1 })).branch).toEqual(['new-branch', 'rename'])
+  })
+
+  it('offers a fetch even on a diverged branch, because fetching cannot lose work either', () => {
+    expect(manageMenu(facts({ ahead: 2, behind: 1 })).sync).toEqual(['fetch'])
+  })
+
+  it('never offers to delete the branch the files follow, which git would refuse', () => {
+    expect(manageMenu(facts()).branch).not.toContain('delete')
   })
 
   it('hands a diverged branch the escape hatch instead of a merge', () => {

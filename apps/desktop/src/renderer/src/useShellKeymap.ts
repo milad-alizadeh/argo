@@ -10,6 +10,13 @@ export function useShellKeymap(onCommand: (command: ShellCommand) => void): void
     function handle(event: KeyboardEvent): void {
       const command = shellCommand(event)
       if (command === null) return
+      // Escape belongs to whatever is layered on top first: Radix portals its open menus into
+      // a popper wrapper, and closing one must not also clear the session selection behind it.
+      if (command.kind === 'dismiss') {
+        if (document.querySelector('[data-radix-popper-content-wrapper]')) return
+        onCommand(command)
+        return
+      }
       event.preventDefault()
       onCommand(command)
     }

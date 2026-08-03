@@ -31,14 +31,15 @@ type Story = StoryObj<typeof meta>
 
 /** A branch in step with origin. `Fetch` is offered because it cannot lose work; `Pull` and
  * `Push` are absent because there is nothing to fast-forward or send. Nothing here merges,
- * rebases, forces, or removes a worktree — this menu holds no operation that can lose work. */
+ * rebases, forces, or removes a worktree — this menu holds no operation that can lose work, and
+ * no `Delete` either: it speaks for the checked-out branch, which git refuses to delete. */
 export const Default: Story = {
   play: async ({ args, canvasElement }) => {
     const menu = await openMenu(canvasElement)
     await expect(await menu.findByRole('menuitem', { name: 'Fetch' })).toBeInTheDocument()
     await expect(menu.queryByRole('menuitem', { name: 'Pull' })).not.toBeInTheDocument()
     await expect(menu.queryByRole('menuitem', { name: 'Push' })).not.toBeInTheDocument()
-    await expect(menu.getByRole('menuitem', { name: 'Delete' })).toBeInTheDocument()
+    await expect(menu.queryByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument()
     await userEvent.click(menu.getByRole('menuitem', { name: 'Fetch' }))
     await expect(args.onOperation).toHaveBeenCalledWith('fetch')
   },
@@ -64,8 +65,9 @@ export const Ahead: Story = {
   },
 }
 
-/** Ahead *and* behind: neither sync is safe, so `ConflictHatch` replaces the whole sync group.
- * Branch CRUD is unaffected — a divergence does not stop you branching. */
+/** Ahead *and* behind: neither `Pull` nor `Push` is safe, so `ConflictHatch` takes their place.
+ * `Fetch` survives — fetching cannot lose work whatever the branch has done — and branch CRUD is
+ * unaffected, because a divergence does not stop you branching. */
 export const Diverged: Story = {
   args: { menu: manageMenu(facts({ ahead: 2, behind: 1 })) },
   play: async ({ canvasElement }) => {
@@ -73,7 +75,9 @@ export const Diverged: Story = {
     await expect(
       await menu.findByText('Diverged from origin. A pull will conflict.'),
     ).toBeInTheDocument()
-    await expect(menu.queryByRole('menuitem', { name: 'Fetch' })).not.toBeInTheDocument()
+    await expect(menu.getByRole('menuitem', { name: 'Fetch' })).toBeInTheDocument()
+    await expect(menu.queryByRole('menuitem', { name: 'Pull' })).not.toBeInTheDocument()
+    await expect(menu.queryByRole('menuitem', { name: 'Push' })).not.toBeInTheDocument()
     await expect(menu.getByRole('menuitem', { name: 'New branch' })).toBeInTheDocument()
   },
 }

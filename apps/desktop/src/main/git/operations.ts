@@ -5,7 +5,7 @@ import { runGit } from './runGit'
 const REF_OPERATIONS: GitOperation[] = ['new-branch', 'rename', 'delete', 'checkout']
 
 export async function runGitOperation(
-  repoPath: string,
+  repositoryPath: string,
   request: GitRequest,
 ): Promise<CommandResult> {
   const ref = request.ref ?? ''
@@ -13,7 +13,7 @@ export async function runGitOperation(
     return { ok: false, detail: `${request.operation} names no branch` }
   }
 
-  const output = await runGit(repoPath, argumentsFor(request.operation, ref))
+  const output = await runGit(repositoryPath, argumentsFor(request.operation, ref))
   return { ok: output.ok, detail: output.stderr.trim() || output.stdout.trim() }
 }
 

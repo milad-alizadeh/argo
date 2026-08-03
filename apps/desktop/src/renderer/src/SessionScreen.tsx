@@ -15,6 +15,8 @@ export interface SessionScreenHandlers {
   onSelectSession: (id: string) => void
   /** Close the open session detail — deselects, collapsing the spine to the roster alone. */
   onCloseSession: () => void
+  /** Spawn a session in the active project, from the roster's own affordance. */
+  onSpawnSession: () => void
   onResize: (edge: SpineEdge, px: number) => void
   onToggleVariant: () => void
   onSelectTab: (tab: DeliveryTab) => void
@@ -84,6 +86,7 @@ export function SessionScreen({
             sessions={sessions}
             selectedId={selectedId}
             onSelectSession={handlers.onSelectSession}
+            onSpawnSession={handlers.onSpawnSession}
           />
           {panel && (
             <>

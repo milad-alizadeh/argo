@@ -15,15 +15,15 @@ export function selectWorkingSet(files: TranscriptFile[], nowMs: number): string
   return files.filter((file) => file.mtimeMs >= oldest).map((file) => file.path)
 }
 
-// Scan every project dir under the CLI transcript root for its recent `*.jsonl` files. A missing
+// Scan every project directory under the CLI transcript root for its recent `*.jsonl` files. A missing
 // root (headless CI, a machine that never ran claude) is a clean empty result, never a throw.
 export async function discoverWorkingSet(root: string, nowMs: number): Promise<string[]> {
-  const projectDirs = await readDirNames(root)
+  const projectDirectories = await readDirectoryNames(root)
   const files: TranscriptFile[] = []
 
-  for (const dir of projectDirs) {
-    const projectPath = join(root, dir)
-    for (const entry of await readDirNames(projectPath)) {
+  for (const directory of projectDirectories) {
+    const projectPath = join(root, directory)
+    for (const entry of await readDirectoryNames(projectPath)) {
       if (!entry.endsWith('.jsonl')) continue
       const path = join(projectPath, entry)
       const mtimeMs = await mtimeOf(path)
@@ -34,7 +34,7 @@ export async function discoverWorkingSet(root: string, nowMs: number): Promise<s
   return selectWorkingSet(files, nowMs)
 }
 
-async function readDirNames(path: string): Promise<string[]> {
+async function readDirectoryNames(path: string): Promise<string[]> {
   try {
     return await readdir(path)
   } catch {

@@ -21,8 +21,8 @@ interface RawRef {
   track: string
 }
 
-export async function readBranchRefs(repoPath: string): Promise<BranchRef[]> {
-  return parseBranchRefs((await runGit(repoPath, BRANCH_REF_ARGS)).stdout)
+export async function readBranchRefs(repositoryPath: string): Promise<BranchRef[]> {
+  return parseBranchRefs((await runGit(repositoryPath, BRANCH_REF_ARGS)).stdout)
 }
 
 // One tab-separated line per ref from the format above (grounded on git 2.50.1). `worktreePath`

@@ -4,10 +4,24 @@ import type { ProjectTabView } from '../../shellModel'
 import { ProjectStrip } from './ProjectStrip'
 
 const TABS: ProjectTabView[] = [
-  { id: 'argo', name: 'argo', initial: 'A', active: true, dot: null },
-  { id: 'dashboard', name: 'dashboard', initial: 'D', active: false, dot: 'amber' },
-  { id: 'marketing-site', name: 'marketing-site', initial: 'M', active: false, dot: 'run' },
-  { id: 'payments', name: 'payments', initial: 'P', active: false, dot: null },
+  { id: 'argo', name: 'argo', initial: 'A', active: true, dot: null, lastSynced: null },
+  {
+    id: 'dashboard',
+    name: 'dashboard',
+    initial: 'D',
+    active: false,
+    dot: 'amber',
+    lastSynced: null,
+  },
+  {
+    id: 'marketing-site',
+    name: 'marketing-site',
+    initial: 'M',
+    active: false,
+    dot: 'run',
+    lastSynced: null,
+  },
+  { id: 'payments', name: 'payments', initial: 'P', active: false, dot: null, lastSynced: null },
 ]
 
 const meta = {
@@ -15,10 +29,8 @@ const meta = {
   component: ProjectStrip,
   args: {
     tabs: TABS,
-    lastSynced: '4m ago',
     onSelectProject: fn(),
     onAddProject: fn(),
-    onOpenProjectMenu: fn(),
   },
   argTypes: {
     tabs: { control: 'object', table: { type: { summary: 'ProjectTabView[]' } } },

@@ -1,12 +1,14 @@
 ---
 paths:
-  - "apps/desktop/src/renderer/src/{domains,shared}/**/*.{ts,tsx}"
+  - "apps/desktop/src/renderer/src/*.{ts,tsx}"
+  - "apps/desktop/src/renderer/src/{domains,shared,shell,rooms}/**/*.{ts,tsx}"
 ---
 
 # UI Component Rules
 
-Applies to all UI components under `apps/desktop/src/renderer/src/domains/` and
-`apps/desktop/src/renderer/src/shared/`. Read
+Applies to all UI components under `apps/desktop/src/renderer/src/` — the `shell/` and `rooms/`
+slices (`cockpit-spec.md` §11.2), the retired `domains/`, the shared primitive kit, and the
+renderer root where the shell and the active room are composed. Read
 together with the `design-system` rule (tokens + utilities, no magic numbers).
 
 ## Atomic design — always (atoms → molecules → organisms)

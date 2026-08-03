@@ -24,6 +24,7 @@ const meta = {
     onCheckout: fn(),
     onOperation: fn(),
     onOpenSession: fn(),
+    onDelete: fn(),
     onOpenScratchTerminal: fn(),
     onResolveWithAgent: fn(),
   },
