@@ -46,6 +46,11 @@ export interface TimelineTurnModel {
    * long as the session lives — numbering from the newest would renumber every card each time the
    * agent answered, which is the one thing a list you are reading must not do. */
   ordinal: number
+  /** The opening line of the prompt that caused this turn, verbatim — what the exchange is ABOUT,
+   * which the ordinal cannot say. `null` where the record carried no prompt (a chain resumed
+   * mid-turn): an absent prompt is an absent fact, and the card falls back to its number rather
+   * than to a title Argo wrote. */
+  promptLine: string | null
   /** Open: no stop reason observed yet, which is the signal the session is still working. */
   open: boolean
   /** `unknown` is rendered as itself — a guessed reason would be a fabricated fact. */
@@ -73,6 +78,9 @@ export type ActivityItem =
       key: string
       kind: 'turn'
       ordinal: number
+      /** The same title its navigation row wears, derived once — the head of a section and the row
+       * that jumps to it must name one thing, and two derivations of it are two facts to keep true. */
+      promptLine: string | null
       stopReason: StopReason | null
       /** The exchange as prose, derived once in `@shared` — what the agent was asked, what it
        * thought, and what it said, in the order it happened. */
@@ -85,7 +93,8 @@ export interface ActivityModel {
   plan: PlanProgressModel | null
   /** `null` where the session spawned none: there is no group to collapse, so none is drawn. */
   subagents: SubagentGroupModel | null
-  /** Newest turn first — the open one leads, past turns fold behind it. */
+  /** Oldest turn first, so the live one is at the BOTTOM — a session reads the way a chat does, and
+   * the place new work appears is the place you are already looking. Past turns fold behind it. */
   turns: readonly TimelineTurnModel[]
   /** The items split by WHOSE work they are, in feed order: every delegate's first, then this
    * session's own turns. The split is domain-meaningful, not a rendering convenience — a
@@ -93,9 +102,10 @@ export interface ActivityModel {
    * behind identical seams reads as one timeline. The surface heads and indents by this, so nothing
    * downstream has to re-derive whose work it is looking at.
    *
-   * `own` runs OLDEST FIRST, unlike `turns` above: this is the pane you read, and prose only reads
-   * downward — a paragraph answers what came before it. The navigation list stays newest-first
-   * until issue 319 reconciles the two panes; the keys match either way, so the highlight still tracks. */
+   * `own` runs OLDEST FIRST, the same way `turns` does: the two panes are one list read twice, and a
+   * navigation row above another whose section sits below it would make the highlight travel
+   * backwards as the reader scrolls. Downward is also how prose reads — a paragraph answers what
+   * came above it — so the live turn is the one at the bottom, where a chat puts it. */
   delegated: readonly ActivityItem[]
   own: readonly ActivityItem[]
 }
@@ -121,6 +131,14 @@ interface TimelineContext {
   nowMs: number | null
 }
 
+/** The title reading of a verbatim prompt: its first non-blank line, kept word for word. A line
+ * rather than a summary, because summarising a DERIVED fact is writing one — the card gives the
+ * prompt one line of width and the rest stays in the feed, unaltered. */
+function promptLine(prompt: string | null): string | null {
+  const line = prompt?.trim().split('\n')[0] ?? ''
+  return line === '' ? null : line
+}
+
 function timelineTurn(
   turn: Turn,
   { compacted, ordinal, nowMs }: TimelineContext,
@@ -128,6 +146,7 @@ function timelineTurn(
   return {
     key: `turn:${turn.id}`,
     ordinal,
+    promptLine: promptLine(turn.prompt),
     open: turn.stopReason === null,
     stopReason: turn.stopReason,
     steps: turn.toolCalls.map((call) => toolStep(call, nowMs)),
@@ -157,8 +176,6 @@ function spawnedItems(session: SessionView, nowMs: number | null): ActivityItem[
 export function buildActivity(session: SessionView, nowMs: number | null = null): ActivityModel {
   const root = rootAgent(session.agents)
   const compacted = new Set(root?.compactions.map((mark) => mark.beforeTurnId) ?? [])
-  // Numbered before the reverse, so the ordinal counts from the oldest turn while the list draws the
-  // newest first.
   // The navigation row and the feed section for one turn are built in ONE pass, from one Turn: the
   // key and the ordinal they share are then a single derivation rather than two that must agree.
   const chronological = (root?.turns ?? []).map((turn, index) => {
@@ -168,10 +185,27 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
   return {
     plan: sessionPlan(session),
     subagents: subagentGroup(session, nowMs),
-    turns: chronological.map(({ model }) => model).reverse(),
+    turns: chronological.map(({ model }) => model),
     delegated: spawnedItems(session, nowMs),
     own: chronological.map(({ item }) => item),
   }
+}
+
+/** How much prompt a head is trusted to show whole. Deliberately short of what the head can fit: the
+ * head truncates in CSS, so its real capacity is a width nothing here can measure, and the cost of
+ * the two guesses is not symmetric — under-trusting repeats a short prompt, over-trusting drops the
+ * only unclipped rendering of a long one and leaves it readable nowhere. */
+const HEAD_TELLS_IT_WHOLE = 60
+
+/** The rows a turn's section renders UNDER its own head. A short one-line prompt drops out of them,
+ * because the head above is already telling it and one fact printed twice an inch apart is noise.
+ * Anything longer — more lines, or one line past what a head shows whole — keeps its row, which is
+ * the only place that prompt is readable unclipped and verbatim. */
+function sectionRows(turn: Turn, line: string | null): readonly FeedRow[] {
+  const rows = turnFeedRows(turn)
+  const toldByTheHead =
+    line === null || (turn.prompt?.trim() === line && line.length <= HEAD_TELLS_IT_WHOLE)
+  return toldByTheHead ? rows.filter(({ kind }) => kind !== 'prompt') : rows
 }
 
 /** One section per Turn, holding that turn's rows. The section is the turn because the turn is what
@@ -182,7 +216,8 @@ function ownItem(model: TimelineTurnModel, turn: Turn): ActivityItem {
     key: model.key,
     kind: 'turn',
     ordinal: model.ordinal,
+    promptLine: model.promptLine,
     stopReason: model.stopReason,
-    rows: turnFeedRows(turn),
+    rows: sectionRows(turn, model.promptLine),
   }
 }

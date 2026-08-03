@@ -21,8 +21,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The section: its header in the Subagents group's treatment, then the turns newest first with the
- * open one leading. Nothing from the fanout appears here — a subagent is not a step of this turn.
+ * The section: its header in the Subagents group's treatment, then the turns oldest first with the
+ * open one last. Nothing from the fanout appears here — a subagent is not a step of this turn.
  */
 export const Timeline: Story = {
   play: async ({ canvasElement }) => {

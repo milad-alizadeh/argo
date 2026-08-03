@@ -31,6 +31,9 @@ const proseRow = (turn: Turn, prose: Prose, index: number): FeedRow => {
  * A turn opens with the prompt that caused it, so the work beneath always has a stated reason. A
  * turn whose record carried no prompt (a chain resumed mid-turn) opens with none: an absent prompt
  * is an absent fact, and a row reading as "you asked for nothing" would be a fabricated one.
+ *
+ * The row is always OFFERED here. A surface that heads its section with that prompt drops the row
+ * itself rather than asking this derivation to know what its own head is showing.
  */
 export function turnFeedRows(turn: Turn): FeedRow[] {
   const opening: FeedRow[] =

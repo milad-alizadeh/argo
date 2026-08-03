@@ -3,9 +3,14 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { interiorOf, RUNNING } from '../__fixtures__/interior'
 import { TurnRow } from './TurnRow'
 
+// The timeline runs oldest-first, so the live turn is the LAST one and the finished one leads.
 const turns = interiorOf(RUNNING).activity.turns
-const open = turns[0]
-const past = turns[1]
+const open = turns.at(-1)
+const past = turns[0]
+
+if (open === undefined || past === undefined) {
+  throw new Error('the fixture must carry a finished turn and a live one')
+}
 
 const meta = {
   title: 'Sessions/Activity/TurnTimeline/TurnRow',
@@ -32,6 +37,13 @@ type Story = StoryObj<typeof meta>
 export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    // Titled by what was asked, not by where in the session it sits — the ordinal survives beside it.
+    const title = canvas.getByText(/^Pull the token rotation out of the legacy auth module/)
+    await expect(title).toBeInTheDocument()
+    // A prompt wider than the card gives up width, never words: it truncates on one line rather
+    // than wrapping the card open, and the unclipped text stays in the feed beside it.
+    await expect(title).toHaveClass('truncate')
+    await expect(canvas.getByText('2')).toBeInTheDocument()
     await expect(canvas.getByText('running')).toBeInTheDocument()
     await expect(canvas.getByText('compacted')).toBeInTheDocument()
     await expect(canvas.getByRole('list', { name: 'Tool calls' })).toBeInTheDocument()
@@ -68,5 +80,21 @@ export const UnknownStopReason: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { expanded: false }))
     await expect(canvas.getByText('unknown')).toBeInTheDocument()
+  },
+}
+
+/**
+ * A turn whose record carried no prompt — a chain resumed mid-turn. It keeps its ordinal and nothing
+ * else: an absent prompt is an absent fact, and a title invented for it would read as a prompt that
+ * was never typed.
+ */
+export const NoPromptInTheRecord: Story = {
+  args: { turn: { ...open, promptLine: null } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('2')).toBeInTheDocument()
+    await expect(
+      canvas.queryByText(/^Pull the token rotation out of the legacy auth module/),
+    ).not.toBeInTheDocument()
   },
 }

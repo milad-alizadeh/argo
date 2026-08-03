@@ -7,6 +7,10 @@ import { Text } from './Text'
  * The count drops the eyebrow's uppercase and tracking so a sha or a phrase stays
  * readable, and it is separated by the gap alone — a leading `·` after the label reads as
  * a segment missing in front of it, and the count is not a segment of a list.
+ *
+ * It carries its own bottom inset rather than leaving the space to each section's stack gap: a
+ * heading needs more air under it than the rows under it need between them, and one column gap
+ * cannot say both. The padding is the header's, so every section says it the same way.
  */
 export function SectionHeader({
   label,
@@ -21,7 +25,7 @@ export function SectionHeader({
   className?: string
 }): React.JSX.Element {
   return (
-    <div className={cn('flex items-baseline gap-gap text-muted-foreground', className)}>
+    <div className={cn('flex items-baseline gap-gap pb-gap text-muted-foreground', className)}>
       <Text variant="eyebrow">{label}</Text>
       {count !== undefined && (
         <Text variant="eyebrow" className="text-foreground-faint normal-case tracking-normal">

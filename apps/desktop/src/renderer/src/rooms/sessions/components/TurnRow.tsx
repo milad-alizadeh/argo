@@ -1,11 +1,5 @@
 import { cn } from '@/lib/utils'
-import {
-  CaretDownIcon,
-  CaretRightIcon,
-  SectionHeader,
-  Text,
-  useDisclosure,
-} from '@/shared/components/ui'
+import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
 import { turnWord } from '../activityStates'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
@@ -44,6 +38,10 @@ export function TurnRow({
   const holdsActive = turn.key === activeKey
   return (
     <li data-component="TurnRow" className="flex flex-col gap-tight">
+      {/* The mark sits BEFORE this turn in time, and the list runs oldest first — so it renders
+          ABOVE the turn it precedes. Below it would claim the history was condensed after the work
+          it actually came before. */}
+      {turn.compactedBefore && <CompactionMarker />}
       <div className={cn(open ? TURN_CARD : TURN_CARD_PAST, holdsActive && NAV_ROW_SELECTED)}>
         <button
           type="button"
@@ -64,17 +62,22 @@ export function TurnRow({
           >
             <Caret className="icon-sm" />
           </Text>
-          {/* Numbered, because a stack of cards all reading `Turn` names its own type and nothing
-              else — the ordinal is the only thing here that tells one exchange from another until the
-              transcript parser carries the prompt that opened it (issue 324). */}
-          <Text variant="row" className="shrink-0 text-foreground-soft">
-            {`Turn ${turn.ordinal}`}
+          {/* The prompt names the exchange, so it takes the width; the ordinal only says where in
+              the session you are. A turn with no prompt in the record keeps the number alone. */}
+          <Text variant="row" className="shrink-0 tabular-nums text-foreground-faint">
+            {turn.ordinal}
           </Text>
           {/* No time on the turn itself. A turn is a bookkeeping seam — where one prompt ended and
               the next began — and timing the seam says nothing you can act on. The times worth
               reading are one level in (each call's own clock time) and one level out (the session's
               duration in the header). */}
-          <span className="flex-1" />
+          {turn.promptLine === null ? (
+            <span className="flex-1" />
+          ) : (
+            <Text variant="row" className="min-w-0 flex-1 truncate text-left text-foreground">
+              {turn.promptLine}
+            </Text>
+          )}
           {/* A past card reports its WEIGHT and nothing else. The stop reason of finished work is the
               least interesting fact about it, and spending the row's right edge on `END_TURN` says
               nothing a reader came for — the open turn's live state is the one worth the width. */}
@@ -94,11 +97,10 @@ export function TurnRow({
         {open && (
           <div className="flex flex-col gap-region px-inset pb-inset">
             {turn.steps.length > 0 && (
+              // No header over the calls. An unfolded card holds one list, and a heading that names
+              // the only thing under it just counts what the rows already show — the folded card is
+              // where the weight is worth a number, because there the rows are not there to count.
               <div className="flex flex-col gap-tight">
-                <SectionHeader
-                  label="Did"
-                  count={`${turn.steps.length} ${turn.steps.length === 1 ? 'call' : 'calls'}`}
-                />
                 <ul aria-label="Tool calls" className="-mx-tight flex flex-col">
                   {turn.steps.map((step) => (
                     // A step jumps to the turn it belongs to, which is where the feed reads it.
@@ -111,10 +113,6 @@ export function TurnRow({
           </div>
         )}
       </div>
-      {/* The mark sits BEFORE this turn in time, and the list runs newest first — so it renders
-          UNDER the turn it precedes. Above it would claim the history was condensed after the work
-          it actually came before. */}
-      {turn.compactedBefore && <CompactionMarker />}
     </li>
   )
 }
