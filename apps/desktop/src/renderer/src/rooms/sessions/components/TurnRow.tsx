@@ -55,8 +55,11 @@ export function TurnRow({
           >
             <Caret className="icon-sm" />
           </Text>
+          {/* Numbered, because a stack of cards all reading `Turn` names its own type and nothing
+              else — the ordinal is the only thing here that tells one exchange from another until the
+              transcript parser carries the prompt that opened it (issue 324). */}
           <Text variant="row" className="min-w-0 flex-1 truncate text-foreground-soft">
-            Turn
+            {`Turn ${turn.ordinal}`}
           </Text>
           {/* A past card reports its WEIGHT and nothing else. The stop reason of finished work is the
               least interesting fact about it, and spending the row's right edge on `END_TURN` says

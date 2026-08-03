@@ -39,6 +39,10 @@ export interface ToolStepModel {
 
 export interface TimelineTurnModel {
   key: string
+  /** Which exchange of the session this is, counted from the OLDEST. A turn keeps its number for as
+   * long as the session lives — numbering from the newest would renumber every card each time the
+   * agent answered, which is the one thing a list you are reading must not do. */
+  ordinal: number
   /** Open: no stop reason observed yet, which is the signal the session is still working. */
   open: boolean
   /** `unknown` is rendered as itself — a guessed reason would be a fabricated fact. */
@@ -106,9 +110,14 @@ function toolStep(call: ToolCall): ToolStepModel {
   }
 }
 
-function timelineTurn(turn: Turn, compacted: ReadonlySet<string>): TimelineTurnModel {
+function timelineTurn(
+  turn: Turn,
+  compacted: ReadonlySet<string>,
+  ordinal: number,
+): TimelineTurnModel {
   return {
     key: `turn:${turn.id}`,
+    ordinal,
     open: turn.stopReason === null,
     stopReason: turn.stopReason,
     plan: planProgress(turn),
@@ -139,7 +148,11 @@ function spawnedItems(session: SessionView): ActivityItem[] {
 export function buildActivity(session: SessionView): ActivityModel {
   const root = rootAgent(session.agents)
   const compacted = new Set(root?.compactions.map((mark) => mark.beforeTurnId) ?? [])
-  const turns = (root?.turns ?? []).map((turn) => timelineTurn(turn, compacted)).reverse()
+  // Numbered before the reverse, so the ordinal counts from the oldest turn while the list draws the
+  // newest first.
+  const turns = (root?.turns ?? [])
+    .map((turn, index) => timelineTurn(turn, compacted, index + 1))
+    .reverse()
   return {
     subagents: subagentGroup(session),
     turns,

@@ -25,6 +25,26 @@ describe('buildActivity', () => {
     expect(turns[1]?.open).toBe(false)
   })
 
+  // The property that matters: a card you are reading must not be renumbered when the agent answers
+  // again. Counting from the oldest is what holds it, even though the list draws the newest first.
+  it('numbers turns from the oldest, so a turn keeps its number as new ones arrive', () => {
+    const two = [turn({ id: 'first' }), turn({ id: 'second' })]
+    const before = buildActivity(sessionView({ id: 's', agents: [rootWith(two)] }))
+    expect(before.turns.map(({ key, ordinal }) => [key, ordinal])).toEqual([
+      ['turn:second', 2],
+      ['turn:first', 1],
+    ])
+
+    const after = buildActivity(
+      sessionView({
+        id: 's',
+        agents: [rootWith([...two, turn({ id: 'third', stopReason: null })])],
+      }),
+    )
+    expect(after.turns.find(({ key }) => key === 'turn:first')?.ordinal).toBe(1)
+    expect(after.turns[0]?.ordinal).toBe(3)
+  })
+
   it('renders an uninferable stop reason as itself rather than guessing one', () => {
     const session = sessionView({
       id: 's',
