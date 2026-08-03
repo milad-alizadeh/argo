@@ -9,9 +9,11 @@ import { TurnFeed } from './TurnFeed'
  * edge of the SECTION — never flung to the far side of the pane, where it would sit a screen away
  * from the thing it describes.
  *
- * A PLAIN name, with no dot in front of it. The nav rows beside this feed are the surface's dotted
- * channel; a dot here too would make the head compete with the rows that led you to it, and the
- * word already at its right edge tells the state once. */
+ * A PLAIN name — the only mark allowed in front of it is a turn's ordinal. The nav rows beside this
+ * feed are the surface's dotted channel; a dot here too would make the head compete with the rows
+ * that led you to it, and the word already at its right edge tells the state once. Where nothing
+ * observed can name the item, the MARK becomes the heading rather than sitting beside an empty one:
+ * a heading with no accessible name is worse than a quiet one. */
 function DetailHead({
   name,
   prefix,
@@ -26,13 +28,20 @@ function DetailHead({
 }): React.JSX.Element {
   return (
     <div className="flex items-baseline gap-snug">
-      {prefix !== undefined && (
+      {name !== null && prefix !== undefined && (
         <Text variant="title" className="shrink-0 tabular-nums text-foreground-faint">
           {prefix}
         </Text>
       )}
-      <Text as="h3" variant="title" className="min-w-0 flex-1 truncate text-foreground">
-        {name}
+      <Text
+        as="h3"
+        variant="title"
+        className={cn(
+          'min-w-0 flex-1 truncate',
+          name === null ? 'tabular-nums text-foreground-faint' : 'text-foreground',
+        )}
+      >
+        {name ?? prefix}
       </Text>
       <Text variant="eyebrow" className="shrink-0 text-foreground-faint">
         {word}

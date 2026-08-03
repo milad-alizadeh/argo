@@ -58,4 +58,15 @@ describe('the prompt row under that title', () => {
   it('stays where the prompt runs past the line the head shows', () => {
     expect(rowsOf('wire it\nand keep the export')).toEqual(['prompt', 'message'])
   })
+
+  // Whitespace has no title in it and nothing to read either, so it leaves no blank row behind.
+  it('drops out where the prompt is whitespace alone', () => {
+    expect(rowsOf('  \n\n')).toEqual(['message'])
+  })
+
+  // Both renderings of the title clip in CSS, so dropping the row for a long one-line prompt would
+  // leave its text readable NOWHERE — the failure a verbatim tier exists to prevent.
+  it('stays for a one-line prompt too long for a head to show whole', () => {
+    expect(rowsOf('wire it '.repeat(20))).toEqual(['prompt', 'message'])
+  })
 })

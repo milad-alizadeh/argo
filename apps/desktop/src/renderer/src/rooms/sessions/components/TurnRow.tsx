@@ -62,12 +62,8 @@ export function TurnRow({
           >
             <Caret className="icon-sm" />
           </Text>
-          {/* What names an exchange is the prompt that opened it, so the prompt takes the width and
-              the ordinal shrinks to the bare number that says WHERE in the session you are — the word
-              `Turn` in front of it only names the type of every card in the stack. The line is the
-              prompt's own first line, never a summary of it, and it truncates rather than wrapping:
-              one card, one line. A turn the record carried no prompt for keeps the number alone —
-              an absent prompt is an absent fact, not a placeholder. */}
+          {/* The prompt names the exchange, so it takes the width; the ordinal only says where in
+              the session you are. A turn with no prompt in the record keeps the number alone. */}
           <Text variant="row" className="shrink-0 tabular-nums text-foreground-faint">
             {turn.ordinal}
           </Text>

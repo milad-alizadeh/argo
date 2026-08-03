@@ -36,8 +36,9 @@ export const TwoPane: Story = {
     await expect(canvas.getAllByText('Subagents')).toHaveLength(2)
     await expect(canvas.getByText('Timeline')).toBeInTheDocument()
     // The nav pane's reading order: delegated work first, then the plan, then this session's own
-    // turns. Asserted as an ORDER because it is the one thing three sections stacked in a column
-    // can get wrong while every one of them still renders.
+    // turns — asserted as an ORDER, the one thing three stacked sections can get wrong while every
+    // one of them still renders. The trailing `Subagents` is the feed's own heading, further down
+    // the document than the whole nav column.
     const sections = canvas.getAllByText(/^(Subagents|Plan|Timeline)$/)
     await expect(sections.map((node) => node.textContent)).toEqual([
       'Subagents',

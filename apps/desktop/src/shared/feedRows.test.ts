@@ -46,8 +46,8 @@ describe('feedRows', () => {
     ])
   })
 
-  // The order the whole feed is read in. The nav list beside it runs newest-first until issue 319
-  // reconciles the two; this is the pane you READ, and prose only reads downward.
+  // The order the whole feed is read in, and now the order the nav list beside it runs in too: prose
+  // only reads downward, so the live turn is the one at the bottom.
   it('runs chronologically, oldest turn first', () => {
     const rows = feedRows(
       anAgent([

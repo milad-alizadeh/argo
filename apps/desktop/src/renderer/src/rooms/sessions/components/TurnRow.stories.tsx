@@ -38,9 +38,11 @@ export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // Titled by what was asked, not by where in the session it sits — the ordinal survives beside it.
-    await expect(
-      canvas.getByText(/^Pull the token rotation out of the legacy auth module/),
-    ).toBeInTheDocument()
+    const title = canvas.getByText(/^Pull the token rotation out of the legacy auth module/)
+    await expect(title).toBeInTheDocument()
+    // A prompt wider than the card gives up width, never words: it truncates on one line rather
+    // than wrapping the card open, and the unclipped text stays in the feed beside it.
+    await expect(title).toHaveClass('truncate')
     await expect(canvas.getByText('2')).toBeInTheDocument()
     await expect(canvas.getByText('running')).toBeInTheDocument()
     await expect(canvas.getByText('compacted')).toBeInTheDocument()
@@ -94,19 +96,5 @@ export const NoPromptInTheRecord: Story = {
     await expect(
       canvas.queryByText(/^Pull the token rotation out of the legacy auth module/),
     ).not.toBeInTheDocument()
-  },
-}
-
-/**
- * A prompt longer than the card is wide truncates rather than wrapping — one card, one line — and the
- * full text stays verbatim in the feed beside it. What is dropped here is width, never words.
- */
-export const LongPrompt: Story = {
-  args: {
-    turn: {
-      ...open,
-      promptLine:
-        'Pull the token rotation out of the legacy auth module and wire verify() onto it, keeping the old export working for every caller that still reaches for it through the barrel',
-    },
   },
 }

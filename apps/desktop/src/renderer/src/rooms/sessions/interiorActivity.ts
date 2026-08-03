@@ -176,8 +176,6 @@ function spawnedItems(session: SessionView, nowMs: number | null): ActivityItem[
 export function buildActivity(session: SessionView, nowMs: number | null = null): ActivityModel {
   const root = rootAgent(session.agents)
   const compacted = new Set(root?.compactions.map((mark) => mark.beforeTurnId) ?? [])
-  // Numbered before the reverse, so the ordinal counts from the oldest turn while the list draws the
-  // newest first.
   // The navigation row and the feed section for one turn are built in ONE pass, from one Turn: the
   // key and the ordinal they share are then a single derivation rather than two that must agree.
   const chronological = (root?.turns ?? []).map((turn, index) => {
@@ -193,13 +191,21 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
   }
 }
 
-/** The rows a turn's section renders UNDER its own head. The prompt drops out of them when the head
- * is already telling the whole of it: a one-line prompt read twice, an inch apart, is one fact
- * printed twice. A prompt with more in it than its first line keeps its row, because the head only
- * ever shows that line — the rest is only readable here, and it is read verbatim. */
-function sectionRows(turn: Turn, promptLine: string | null): readonly FeedRow[] {
+/** How much prompt a head is trusted to show whole. Deliberately short of what the head can fit: the
+ * head truncates in CSS, so its real capacity is a width nothing here can measure, and the cost of
+ * the two guesses is not symmetric — under-trusting repeats a short prompt, over-trusting drops the
+ * only unclipped rendering of a long one and leaves it readable nowhere. */
+const HEAD_TELLS_IT_WHOLE = 60
+
+/** The rows a turn's section renders UNDER its own head. A short one-line prompt drops out of them,
+ * because the head above is already telling it and one fact printed twice an inch apart is noise.
+ * Anything longer — more lines, or one line past what a head shows whole — keeps its row, which is
+ * the only place that prompt is readable unclipped and verbatim. */
+function sectionRows(turn: Turn, line: string | null): readonly FeedRow[] {
   const rows = turnFeedRows(turn)
-  return turn.prompt?.trim() === promptLine ? rows.filter(({ kind }) => kind !== 'prompt') : rows
+  const toldByTheHead =
+    line === null || (turn.prompt?.trim() === line && line.length <= HEAD_TELLS_IT_WHOLE)
+  return toldByTheHead ? rows.filter(({ kind }) => kind !== 'prompt') : rows
 }
 
 /** One section per Turn, holding that turn's rows. The section is the turn because the turn is what
