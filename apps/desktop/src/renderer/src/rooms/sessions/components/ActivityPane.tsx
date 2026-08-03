@@ -6,6 +6,7 @@ import {
 } from '@/shared/components/ui'
 import type { ActivityItem, ActivityModel } from '../interiorActivity'
 import { AgentFeed } from './AgentFeed'
+import { PlanProgress } from './PlanProgress'
 import { SubagentGroup } from './SubagentGroup'
 import { TurnTimeline } from './TurnTimeline'
 
@@ -39,10 +40,14 @@ function feedGroups(activity: ActivityModel): MasterDetailGroup[] {
 /**
  * Organism: the Activity surface — two panes, master left and one continuous detail feed right.
  *
- * The left pane holds two sections that are never merged: a Subagents group above the Timeline. The
- * right pane concatenates every item's detail in the same order, so scrolling flows item to item and
- * the highlight follows the scroll rather than the last click — but it concatenates in the same two
- * runs, headed and indented, so a delegate's feed is never read as a step of this session's turn.
+ * The left pane holds the session's plan over two sections that are never merged: a Subagents group
+ * above the Timeline. The plan sits ABOVE both and outside the navigation, because it is neither: a
+ * plan belongs to the SESSION, not to a turn, so there is one of it, it is not a list of places to
+ * jump to, and it stays legible while every turn below it is folded.
+ *
+ * The right pane concatenates every item's detail in the same order, so scrolling flows item to item
+ * and the highlight follows the scroll rather than the last click — but it concatenates in the same
+ * two runs, headed and indented, so a delegate's feed is never read as a step of this session's turn.
  */
 export function ActivityPane({
   activity,
@@ -68,6 +73,7 @@ export function ActivityPane({
           groups={groups}
           nav={({ activeKey, jumpTo }) => (
             <>
+              {activity.plan && <PlanProgress plan={activity.plan} />}
               {activity.subagents && (
                 <SubagentGroup group={activity.subagents} activeKey={activeKey} onSelect={jumpTo} />
               )}

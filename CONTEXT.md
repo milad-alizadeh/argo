@@ -224,9 +224,14 @@ agent` is dropped (every spec treats a session **as** an agent) — root-vs-chil
 - **Tool Call** — the atomic observable action within a Turn (kind read/edit/execute/search/…,
   status pending/in_progress/completed/failed, target file, diff). *The* unit users watch
   scroll by (ACP-native).
-- **Plan** — the agent-authored live to-do list within a Turn: `PlanEntry[]`, status
-  `pending | in_progress | completed` (ACP `Plan`; CC's TodoWrite maps onto it). Distinct from
-  Work Item (external intent) and from Delivery lifecycle.
+- **Plan** — the agent-authored live to-do list, **Session-scoped and agent-replaced whole**:
+  `PlanEntry[]`, status `pending | in_progress | completed` (ADR-0020). One list per Session, not
+  one per Turn — ACP delivers it as a session-level update carrying the **complete** entry list
+  each time, and CC's TodoWrite outlives the turn that wrote it. A **Turn** therefore carries at
+  most the **snapshot** in force while it ran; the Session's current plan is the newest snapshot
+  observed, which is **DERIVED** (not provably the newest that exists) and is why a turn that
+  touched no plan does not blank it. Distinct from Work Item (external intent) and from Delivery
+  lifecycle.
 - **Workspace** — the git working context attached to an Agent: `kind: main | worktree`, plus
   `branch`, `baseRef`, `dirty`, `unpushed`, `headSha`, `ahead`/`behind`, `sharedCount`. **The
   join key `branch` lives here** — Delivery is keyed by `Workspace.branch`. Node-scoped
@@ -402,9 +407,11 @@ that assembles the join — ADR-0005/0017) and the **transcript-tailing parser**
   inherits its parent's) and attaches **`0..1` Preview** — both node-scoped (ADR-0010); Preview
   is additionally a **cockpit-level singleton** (one running instance globally). A **Workspace**
   holds `0—N` **File** (its working tree; the explorer/editor surface).
-- **Inside an Agent**: `1—N` **Turn**; each **Turn** `0—N` **Tool Call**, `0..1` **Plan**,
-  `0..1` **Usage**, rolled up to a **Session**-level Usage; `0—N` **Compaction** markers
-  punctuate the Turn sequence.
+- **Inside an Agent**: `1—N` **Turn**; each **Turn** `0—N` **Tool Call** and `0..1` **Usage**,
+  rolled up to a **Session**-level Usage; `0—N` **Compaction** markers punctuate the Turn
+  sequence. The **Plan** is **not** on this line: a **Session** holds `0..1` **Plan** (the live
+  list), and a **Turn** carries `0..1` **snapshot** of it — the version in force while it ran
+  (ADR-0020).
 - **Delivery detail**: **Delivery** `1—1` **Diff** (current change-set), `0—N` **Review**
   (`0—N` **Finding**), `0—N` **Check**, and `1—N` **Gate** (per automatable step).
 - **Session** `0—N` **Outcome** (the `produces` link; each refs a typed target —

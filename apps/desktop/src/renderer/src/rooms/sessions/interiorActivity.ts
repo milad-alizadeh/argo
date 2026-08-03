@@ -47,7 +47,6 @@ export interface TimelineTurnModel {
   open: boolean
   /** `unknown` is rendered as itself — a guessed reason would be a fabricated fact. */
   stopReason: StopReason | null
-  plan: PlanProgressModel | null
   steps: readonly ToolStepModel[]
   /** A compaction marker sits in FRONT of this turn, so condensed history reads as continuous. */
   compactedBefore: boolean
@@ -70,6 +69,9 @@ export type ActivityItem =
   | { key: string; kind: 'step'; step: ToolStepModel }
 
 export interface ActivityModel {
+  /** The session's own live to-do list, or `null` where the CLI reported none. Session-scoped, so ONE
+   * tracker is drawn for the surface rather than one inside every turn card. */
+  plan: PlanProgressModel | null
   /** `null` where the session spawned none: there is no group to collapse, so none is drawn. */
   subagents: SubagentGroupModel | null
   /** Newest turn first — the open one leads, past turns fold behind it. */
@@ -87,9 +89,9 @@ export interface ActivityModel {
   own: readonly ActivityItem[]
 }
 
-/** A turn's plan as `N/M` plus its entries, or `null` where the CLI reported no plan. Exported
- * because the Dock's now-head reads the same `N/M`: two counts of one plan would drift. */
-export function planProgress(turn: Turn): PlanProgressModel | null {
+/** ONE turn's plan SNAPSHOT — the version in force while it ran. Internal: no surface reads a turn's
+ * plan, because the plan is not the turn's (see `sessionPlan`). */
+function planSnapshot(turn: Turn): PlanProgressModel | null {
   if (turn.plan === null) return null
   const { entries } = turn.plan
   return {
@@ -120,10 +122,29 @@ function timelineTurn(
     ordinal,
     open: turn.stopReason === null,
     stopReason: turn.stopReason,
-    plan: planProgress(turn),
     steps: turn.toolCalls.map(toolStep),
     compactedBefore: compacted.has(turn.id),
   }
+}
+
+/**
+ * The SESSION's live plan — one list, not one per turn.
+ *
+ * The plan belongs to the Session and the agent replaces it wholesale (ACP re-sends the complete
+ * entry list; Claude Code's TodoWrite is a session list that survives the next prompt). A Turn only
+ * carries the SNAPSHOT in force while it ran, which is why this reads the newest snapshot observed
+ * rather than the open turn's: an agent that opened a turn without touching its plan still has the
+ * plan it had, and reading the open turn alone would blank it.
+ *
+ * DERIVED — the newest version Argo observed, which is not provably the newest that exists.
+ */
+export function sessionPlan(session: SessionView): PlanProgressModel | null {
+  const turns = rootAgent(session.agents)?.turns ?? []
+  for (const turn of [...turns].reverse()) {
+    const snapshot = planSnapshot(turn)
+    if (snapshot !== null) return snapshot
+  }
+  return null
 }
 
 function spawnedItems(session: SessionView): ActivityItem[] {
@@ -154,6 +175,7 @@ export function buildActivity(session: SessionView): ActivityModel {
     .map((turn, index) => timelineTurn(turn, compacted, index + 1))
     .reverse()
   return {
+    plan: sessionPlan(session),
     subagents: subagentGroup(session),
     turns,
     delegated: spawnedItems(session),

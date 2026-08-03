@@ -4,7 +4,7 @@ import { planEntries } from '../__fixtures__/runtimeTree'
 import { PlanProgress } from './PlanProgress'
 
 const meta = {
-  title: 'Sessions/Activity/TurnTimeline/TurnRow/PlanProgress',
+  title: 'Sessions/Activity/PlanProgress',
   component: PlanProgress,
   args: {
     plan: {

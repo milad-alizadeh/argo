@@ -3,7 +3,6 @@ import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/com
 import { turnWord } from '../activityStates'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
-import { PlanProgress } from './PlanProgress'
 import { NAV_ROW_SELECTED, TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
 import { ToolCallRow } from './ToolCallRow'
 
@@ -78,12 +77,10 @@ export function TurnRow({
           )}
         </button>
         {open && (
-          // `gap-region`, not `gap-tight`: the plan and the calls are two CHANNELS — what the agent
-          // said it would do, and what it has actually done — and at a tight gap they read as one
-          // flat list of eight rows. Each channel is named, because a card holding two of them has
-          // to say which is which.
+          // One channel: what this exchange DID. The plan used to sit here too, but a plan belongs to
+          // the SESSION — the agent replaces one list wholesale — so a card per turn was drawing the
+          // same tracker N times and hiding it whenever the turn folded.
           <div className="flex flex-col gap-region px-inset pb-inset">
-            {turn.plan && <PlanProgress plan={turn.plan} />}
             {turn.steps.length > 0 && (
               <div className="flex flex-col gap-tight">
                 <Text variant="tag" className="text-foreground-faint">
