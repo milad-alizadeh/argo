@@ -1,6 +1,6 @@
 import type { PrFacts, SessionFacts } from './sessionFacts'
 
-// The lifecycle's render state, derived from facts alone (cockpit-matrix.md R1/R3/R5/
+// The lifecycle's render state, derived from facts alone (cockpit-surface-matrix.md R1/R3/R5/
 // R7/R8). Every done-state is a fact about a sha — which is why it can go stale.
 
 export const LIFECYCLE_KEYS = ['commits', 'pr', 'ci', 'review', 'merge'] as const

@@ -1,14 +1,13 @@
 import { cn } from '@/lib/utils'
 
 /**
- * Molecule: the one header bar every panel in the spine wears — the roster's "Projects" row and
- * the session panel's breadcrumb are the same chrome, so it lives in one place.
+ * Molecule: the one header bar a panel wears — an eyebrow-plus-count row and a breadcrumb are
+ * the same chrome, so it lives in one place.
  *
- * The chrome is fixed: the shared strip height (`min-h-strip`, the 41px the Delivery strips also
- * settled on, so the columns' headers line up across the spine), a bottom hairline, and the
- * horizontal inset. Only the content differs, so it arrives through two slots — `left` grows and
- * truncates, `right` stays its natural width at the end. What Text role each slot spends is the
- * caller's call; the bar imposes none.
+ * The chrome is fixed: the shared strip height (`min-h-strip`, `--strip-height`), a bottom
+ * hairline, and the horizontal inset. Only the content differs, so it arrives through two slots
+ * — `left` grows and truncates, `right` stays its natural width at the end. What Text role each
+ * slot spends is the caller's call; the bar imposes none.
  */
 export function PanelHeader({
   left,

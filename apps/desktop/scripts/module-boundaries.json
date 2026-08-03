@@ -168,15 +168,15 @@
         "CockpitScreenView.stories.tsx": "KIND — the root View's story, which ui-components.md makes mandatory. Lives beside its View."
       },
       "ratchet": {
-        "SessionScreen.tsx": "RATCHET — pre-#264 screen for the retired panel domains; leaves when rooms-sessions lands (#265).",
+        "SessionScreen.tsx": "RATCHET — pre-#264 screen for the retired panel domains; deleted when rooms-sessions lands (#268).",
         "SessionScreen.stories.tsx": "RATCHET — story for the above; goes with it.",
-        "SessionHeader.tsx": "RATCHET — session-interior component at the root; belongs in rooms-sessions (#265).",
+        "SessionHeader.tsx": "RATCHET — session-interior component at the root; superseded by the room's own header (#268).",
         "SessionHeader.stories.tsx": "RATCHET — story for the above; goes with it.",
-        "sessionScreenModel.ts": "RATCHET — the retired screen's derivation; belongs in rooms-sessions (#265).",
-        "sessionScreenModel.test.ts": "RATCHET — test for the above; goes with it.",
-        "useSpineLayout.ts": "RATCHET — the retired screen's layout hook; belongs in rooms-sessions (#265).",
+        "sessionScreenModel.ts": "RATCHET — the retired screen's derivation; deleted with the screen (#268).",
+        "sessionScreenModel.test.ts": "RATCHET — test for the above. Its stateMatrix sweep is the only end-to-end cover of deliveryState → lifecycleModel + rosterStatus, all of which survive: re-base it onto local fixtures rather than deleting the coverage (#268).",
+        "useSpineLayout.ts": "RATCHET — the retired screen's layout hook; deleted with the spine (#268).",
         "useSpineLayout.test.ts": "RATCHET — test for the above; goes with it.",
-        "WorkspaceIdentity.tsx": "RATCHET — session-interior component at the root; belongs in rooms-sessions (#265).",
+        "WorkspaceIdentity.tsx": "RATCHET — session-interior component at the root; superseded by SessionMeta's branch segment (#268).",
         "WorkspaceIdentity.stories.tsx": "RATCHET — story for the above; goes with it.",
         "WorkspaceIdentity.test.ts": "RATCHET — test for the above; goes with it.",
         "sessionStore.ts": "RATCHET — the projected-state store. Read only by `cockpit/`, so it wants to move in there; kept at the root this pass to hold the diff to structure.",
@@ -188,12 +188,12 @@
       "module": "renderer-shared",
       "minImportingModules": 2,
       "exclude": ["^src/renderer/src/shared/components/"],
-      "ratchet_": "Each entry below is a symbol in the domain-aware tier with one caller left; they leave when the retired panel domains do (#284). The tier itself is now `shared/status`; #284 renamed it.",
+      "ratchet_": "Each entry below is a symbol in the domain-aware tier with one caller left. These rot SILENTLY rather than reddening: earned-shared-check.mjs defines stale as 'now wanted by >= 2 modules', so when the last caller is deleted the count drops to zero and the gate says nothing. The ticket that deletes the caller deletes the entry. The tier itself is `shared/status`; #284 renamed it.",
       "_exclude_comment": "KIND — the framework-primitive kit (`components/ui`, its icons, the docs blocks). file-structure.md earns the generic tier by CATEGORY, not by caller count: these would stand alone as a published package, so a vendored Radix wrapper or an icon belongs to the kit from its first caller. Counting callers here would flag 50 icons and demand they be scattered into the slices that happen to use one each.",
       "ratchet": {
-        "isHotHeadState": "RATCHET — only `delivery` reads it; moves in with the lifecycle rail (#265).",
-        "lifecycleIsHot": "RATCHET — only `roster` reads it; moves in with the roster rail (#265).",
-        "RosterIcon": "RATCHET — the status-icon type, read only by `delivery` today; earns the tier again once a second room renders a status icon."
+        "isHotHeadState": "RATCHET — only `delivery` reads it; moves in with the lifecycle rail, or dies if #269's live/wait readout retires the pulse budget (#269).",
+        "lifecycleIsHot": "RATCHET — only `roster` reads it; moves in with the roster rail (#267).",
+        "RosterIcon": "RATCHET — the status-icon type, read only by `delivery` today; earns the tier again once a second room renders a status icon (#269)."
       }
     },
     "kindFolders": {
@@ -211,7 +211,7 @@
         "models"
       ],
       "ratchet": {
-        "src/renderer/src/hooks": "RATCHET — pre-#264 kind-folder holding one generic hook (`useDisclosure`). Its callers decide its home: one caller means it moves in beside it, three means it earns `lib/`."
+        "src/renderer/src/hooks": "RATCHET — pre-#264 kind-folder holding a SECOND, API-divergent `useDisclosure` ({isOpen,open,close,toggle}) beside the kit's kept tuple version. Its only importers are `delivery`'s FileDiff and CommitGroup, so the folder, this entry and the `components.json` \"hooks\" alias all die together when #271 lands — one commit, since kind-folder-check.mjs fails on a stale key as well as a breach."
       }
     }
   }

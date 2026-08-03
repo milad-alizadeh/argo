@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { LIFECYCLE_KEYS, lifecycleModel } from './lifecycleModel'
 import { type SessionFactsInput, sessionFacts } from './sessionFacts'
 
-// The lifecycle rules of `docs/designs/cockpit-matrix.md` that the S-row table alone
+// The lifecycle rules of `docs/designs/cockpit-surface-matrix.md` that the S-row table alone
 // cannot pin down.
 
 const HEAD = 'a1b2c3d'

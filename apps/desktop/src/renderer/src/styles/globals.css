@@ -70,9 +70,6 @@
   --color-primary-bright: var(--primary-bright);
   --color-primary-soft: var(--primary-soft);
 
-  /* Shadow colour steps (offsets live at the use site):
-   * box-shadow: 0 18px 40px var(--shadow-3). Not mapped to utilities. */
-
   /* Radius ladder — explicit steps, not calc() off one base: the four rungs are
    * separate decisions (rounded-sm … rounded-xl = the plane). */
   --radius-hair: var(--radius-step-hair);
@@ -151,8 +148,8 @@
   --spacing-project-tab: var(--project-tab-size);
   --spacing-traffic-lights: var(--traffic-lights-clearance);
 
-  /* The one shared strip height (min-h-strip): the Delivery panel's tab strip and the
-   * Delivery lifecycle it stacks against. Row heights are the density's vertical half. */
+  /* The one shared strip height (min-h-strip): every tab strip and header bar stands this
+   * tall, so columns line up. Row heights are the density's vertical half. */
   --height-strip: var(--strip-height);
   --height-row: var(--row-h);
   --height-row-tight: var(--row-h-tight);

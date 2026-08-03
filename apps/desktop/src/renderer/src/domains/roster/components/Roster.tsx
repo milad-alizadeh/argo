@@ -28,7 +28,6 @@ export function Roster({
   selectedId = null,
   onSelectSession,
   onSpawnSession,
-  dock,
 }: {
   /** The observed roster, in the order it is listed. Callers read it off the projected
    * state the sessionStore replays from main (`CockpitState.sessions`) — the roster derives
@@ -42,9 +41,6 @@ export function Roster({
   /** Spawn a session in the active project — the visible half of `⌘N`, so spawn is never
    * keyboard-only. Optional so the read-only roster stories still typecheck. */
   onSpawnSession?: () => void
-  /** Flat footer slot pinned to the panel's foot — the screen injects the Concierge dock
-   * here, so the roster stays agnostic (roster ⊥ concierge) and never imports it. */
-  dock?: React.ReactNode
 }): React.JSX.Element {
   const [open, toggleOpen] = useDisclosure({ defaultOpen: true })
   const listId = useId()
@@ -118,7 +114,6 @@ export function Roster({
           )}
         </div>
       )}
-      {dock}
     </section>
   )
 }

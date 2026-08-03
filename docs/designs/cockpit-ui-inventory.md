@@ -94,6 +94,9 @@ ADR-0019 records why.
 | Existing | Disposition |
 |---|---|
 | `domains/activity/`: `RunRow`, `AgentRow`, `PhaseGroup`, `NowLine`, `BackgroundTasks`, `RosterRow`, `phaseState`, `agentState` | **Delete.** `Run`, `Phase` and `Actor` are retired vocabulary (§11.3). `NowLine` is superseded by `NowHead` inside the Dock header row. `RosterRow` is superseded by `SessionRow`, which already exists in `domains/roster/`. |
+| `domains/activity/components/rowCaret.ts` | **Delete, unless #272 wants the `reserved` rule.** Read by `RunRow`, `PhaseGroup` and `RosterRow`, all of which are deletions. Its one idea worth carrying is that a non-expandable row still reserves the caret's width, which the Work room's generic node tree will want. |
+| `domains/console/components/`: `consoleChannels`, `captureLabel`, `resolveActiveChannel`, `feedLines` | **`consoleChannels` travels with the salvage; the other three delete.** `LiveTerminal` (→ `TerminalPane`, #274) reads `LIVE_CHANNEL_LABEL` from `consoleChannels`, so that module moves with it. The channel-strip derivations die with the strip. |
+| `domains/delivery/components/`: `diffModel`, `nodeDrawerModel` | **Travel with the salvage (#269–#271).** These are the type modules beneath the components marked salvage above — `diffModel` under `FindingCard`/`FileDiff`/`AllFilesDiff`/`CommitGroup`, `nodeDrawerModel` under `NodeDrawer/*`. Moving a component without its type module is what makes a salvage import across the boundary instead of relocating. |
 | `domains/roster/`: `Roster`, `SessionRow`, `ContextGauge`, `EmptyRoster` | **Salvage into `rooms-sessions`.** Each has a row below carrying `partial · <path>`. |
 | `domains/delivery/`: `Delivery`, `DeliveryTabs`, `DeliveryLifecycle`, `LifecycleNode`, `NodeDrawer/*`, `CiCard`, `CheckOutput`, `PrChecksList`, `PrAnchor`, `CommitGroup`, `FileDiff`, `AllFilesDiff`, `FindingCard`, `findingState`, `lifecycleNodeState` | **Salvage into `rooms-sessions`.** The lifecycle rail, the node drawer bodies, the check rows and the diff views all have rows below. Salvage means moving the file, never importing across the boundary. |
 | `domains/console/`: `Console`, `ConsoleChannel`, `ConsoleChannelTab`, `LiveTerminal` | **Delete the channel strip, salvage `LiveTerminal`.** The Console panel's job belongs to the Dock and to the Code room's scratch terminal; the one thing worth keeping is the PTY view, which becomes `TerminalPane`. |
@@ -143,10 +146,10 @@ the first Sessions-room ticket:
 
 | Component | Tier | Status | States | Seed / authority |
 |---|---|---|---|---|
-| `sessionStatusWord` | pure fn | `partial · shared/delivery/rosterStatus.ts` | the four words above, plus `external` (identity, no word) | registry, Session status |
-| `deliveryClaimWord` | pure fn | `partial · shared/delivery/deliveryState.ts` | `commits · pr · ci · review · merge` node words, e.g. `CI failed` | registry, Delivery lifecycle |
-| `rosterWord` | pure fn | `partial · shared/delivery/rosterStatus.ts` | the priority pick: attention needs-input → attention failure → delivery milestone → liveness → kind. A delivery claim beats session status. | `cockpit-spec.md` §4.1 |
-| `worstStateDot` | pure fn | `built · shared/delivery/worstStateDot.ts` | `needs you > failed > running > none`, active project always `none` | registry, Attention |
+| `sessionStatusWord` | pure fn | `partial · shared/status/rosterStatus.ts` | the four words above, plus `external` (identity, no word) | registry, Session status |
+| `deliveryClaimWord` | pure fn | `partial · shared/status/deliveryState.ts` | `commits · pr · ci · review · merge` node words, e.g. `CI failed` | registry, Delivery lifecycle |
+| `rosterWord` | pure fn | `partial · shared/status/rosterStatus.ts` | the priority pick: attention needs-input → attention failure → delivery milestone → liveness → kind. A delivery claim beats session status. | `cockpit-spec.md` §4.1 |
+| `worstStateDot` | pure fn | `built · shell/worstStateDot.ts` | `needs you > failed > running > none`, active project always `none` | registry, Attention |
 | `connectionRollup` | pure fn | `spec` | `healthy` (renders nothing) · `stale` · `needs reconnect`, plus auth escalating past the roll-up. Keyed by **binding**, not project. | failure spec §2, §3 |
 
 ### Primitives the settled surfaces earn
