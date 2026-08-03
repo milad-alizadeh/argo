@@ -39,9 +39,9 @@ export function ProjectTab({ tab, onSelect }: ProjectTabProps): React.JSX.Elemen
       <Text variant="title">{tab.initial}</Text>
       {tab.active ? <span aria-hidden className={ACTIVE_RAIL} /> : null}
       {tab.dot === null ? null : (
-        // The dot exists only when an unwatched project wants you, so the halo IS the attention
+        // The dot exists only when an unwatched project wants you, so its halo IS the attention
         // rather than a decoration on a calm state — and the active tab never has one to light.
-        <StatusDot glow tone={tab.dot} className="absolute -top-hair -right-hair" />
+        <StatusDot tone={tab.dot} className="absolute -top-hair -right-hair" />
       )}
     </button>
   )

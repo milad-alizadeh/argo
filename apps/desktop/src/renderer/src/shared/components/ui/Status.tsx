@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { RosterTone } from '@/shared/status'
+import type { DotGlow, RosterTone } from '@/shared/status'
 import { StatusDot } from './StatusDot'
 import { Text } from './Text'
 
@@ -28,9 +28,9 @@ export function Status({
   tone: RosterTone
   /** A ring with no fill, for a session Argo only observes. */
   hollow?: boolean
-  /** The live glow, granted to `running` alone. */
-  glow?: boolean
-  /** Spend the screen's ONE animation budget on this row. At most one per render. */
+  /** How hard the dot's halo burns. Every state glows; the weight is its liveness. */
+  glow?: DotGlow
+  /** Whether the dot breathes — a property of the state, not a budget. */
   pulse?: boolean
   className?: string
 }): React.JSX.Element {

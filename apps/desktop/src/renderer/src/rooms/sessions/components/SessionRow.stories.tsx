@@ -105,6 +105,32 @@ export const External: Story = {
 }
 
 /**
+ * The one row asking for you: its dot burns gold and breathes, and a faint ray of the same gold
+ * travels the plane's ring — the rail's one rationed animation, and the only thing state is
+ * allowed to add to a plane.
+ */
+export const NeedsYou: Story = {
+  args: {
+    row: rowOf(
+      session({
+        id: 'perms',
+        title: 'Rotate the deploy key',
+        facts: sessionFacts({ status: 'asking' }),
+      }),
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const row = within(canvasElement).getByRole('listitem')
+    await expect(within(row).getByText('needs you')).toBeInTheDocument()
+    const plane = within(row).getByRole('button')
+    await expect(plane).toHaveClass('sweep')
+    // Asserting the computed animation, not the class: an unregistered `--sweep-angle` leaves the
+    // ring lit but parked, which is the failure a class check cannot see.
+    await expect(getComputedStyle(plane, '::before').animationName).toBe('sweep-travel')
+  },
+}
+
+/**
  * A delivery claim outranks the session's own liveness: this row is `status: running` and says
  * `CI failed`, because that is the one decision-relevant word.
  */
@@ -131,16 +157,16 @@ export const DeliveryClaim: Story = {
 
 const DOT_STATES: readonly SessionView[] = [
   session({ id: 'running', title: 'Running' }),
-  session({ id: 'idle', title: 'Idle', facts: sessionFacts({ status: 'idle' }) }),
   session({ id: 'asking', title: 'Needs you', facts: sessionFacts({ status: 'asking' }) }),
   session({ id: 'stopped', title: 'Failed', facts: sessionFacts({ status: 'stopped' }) }),
+  session({ id: 'idle', title: 'Idle', facts: sessionFacts({ status: 'idle' }) }),
   session({ id: 'external', title: 'External', posture: 'external', cwd: '/w/theirs' }),
 ]
 
 /**
- * Every dot the rail can draw, side by side: running green with its live glow, idle grey, needs-you
- * gold, failed red, external hollow. The dot is the whole state channel — no plane in this frame is
- * tinted and no word is coloured.
+ * Every dot the rail can draw, stacked as the rail stacks them: running green and needs-you gold
+ * lit and breathing, then failed red lit but still, an idle grey holding quiet, and a hollow
+ * external ring. Exactly one plane carries the sweep, which is how "one thing shouting" is judged.
  */
 export const EveryDot: Story = {
   args: { row: rowOf(session({ id: 'auth' })) },
@@ -158,5 +184,6 @@ export const EveryDot: Story = {
       const { dot } = rowOf(DOT_STATES[index])
       await expect(row.querySelector('span')).toHaveClass(`text-tone-${dot.tone}`)
     }
+    await expect(canvasElement.querySelectorAll('.sweep')).toHaveLength(1)
   },
 }

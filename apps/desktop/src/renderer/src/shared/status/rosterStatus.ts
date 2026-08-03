@@ -46,12 +46,24 @@ export type DeliveryClaim = 'blocked' | 'CI failed' | 'CI running' | 'PR open' |
  * one-word-per-state rule is intact. */
 export type RosterWord = SessionWord | DeliveryClaim | 'read-only'
 
+/** How hard a dot's halo burns. Every state glows — the weight IS the state's liveness, so a
+ * resting state stays lit without competing with a live one. */
+export const DOT_GLOWS = ['live', 'quiet', 'faint'] as const
+
+export type DotGlow = (typeof DOT_GLOWS)[number]
+
 export interface SessionDot {
   tone: RosterTone
   /** A ring with no fill: the registry's rendering for a session Argo only observes. */
   hollow: boolean
-  /** The live glow, which the registry grants to `running` alone. */
-  glow: boolean
+  glow: DotGlow
+  /** Whether the dot breathes. A session still in motion does — it is running, or it is asking
+   * you something and waiting on the answer. Everything that has come to rest holds still: idle,
+   * failed, and a session Argo merely observes. So motion in the rail always means something is
+   * moving, never merely that something is wrong. */
+  pulse: boolean
+  /** The one state asking for you, which the row answers with the attention sweep. */
+  attention: boolean
 }
 
 export interface RailStatus {
@@ -74,13 +86,23 @@ const SESSION_WORDS: Record<SessionStatus, SessionWord> = {
 }
 
 const SESSION_DOTS: Record<SessionWord, SessionDot> = {
-  running: { tone: 'run', hollow: false, glow: true },
-  idle: { tone: 'gray', hollow: false, glow: false },
-  'needs you': { tone: 'amber', hollow: false, glow: false },
-  failed: { tone: 'red', hollow: false, glow: false },
+  running: { tone: 'run', hollow: false, glow: 'live', pulse: true, attention: false },
+  idle: { tone: 'gray', hollow: false, glow: 'quiet', pulse: false, attention: false },
+  'needs you': { tone: 'amber', hollow: false, glow: 'live', pulse: true, attention: true },
+  // A failure burns as bright as `needs you` (registry, Session status: both are "come here"
+  // signals, hue-distinct) but it does NOT breathe. Motion is reserved for the states that are
+  // still moving, and a failed session has already stopped: nothing more will happen to it until
+  // you act. Pulsing it would spend the eye's attention on a state that is only waiting.
+  failed: { tone: 'red', hollow: false, glow: 'live', pulse: false, attention: false },
 }
 
-const OBSERVED_DOT: SessionDot = { tone: 'gray', hollow: true, glow: false }
+const OBSERVED_DOT: SessionDot = {
+  tone: 'gray',
+  hollow: true,
+  glow: 'faint',
+  pulse: false,
+  attention: false,
+}
 
 /** Whether Argo merely observes this Session, in which case its status degrades away rather
  * than being faked (registry, Session status: "identity, no state word"). `orphaned` renders as

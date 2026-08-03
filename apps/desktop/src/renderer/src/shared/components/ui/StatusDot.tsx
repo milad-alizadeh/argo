@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { RosterTone } from '@/shared/status'
+import type { DotGlow, RosterTone } from '@/shared/status'
 
 /**
  * Atom: a state as a small coloured dot.
@@ -12,7 +12,7 @@ export function StatusDot({
   tone,
   label,
   hollow,
-  glow,
+  glow = 'live',
   pulse,
   className,
 }: {
@@ -22,10 +22,12 @@ export function StatusDot({
   label?: string
   /** A ring with no fill: how a session Argo only observes renders (registry, External). */
   hollow?: boolean
-  /** The live glow. The registry grants it to `running` alone, so it is opt-in: an
-   * always-glowing dot spends attention on states that never earned it. */
-  glow?: boolean
-  /** Spend the screen's ONE animation budget on this dot. At most one per render. */
+  /** How hard the halo burns. Every dot glows — a state is never unlit — so this weighs the
+   * glow rather than switching it on: `quiet` for a resting state, `faint` for the hollow
+   * ring of a session Argo only observes. */
+  glow?: DotGlow
+  /** Whether the dot breathes. A property of the state it draws — everything live or asking
+   * for you does — not a budget: several dots may breathe at once. */
   pulse?: boolean
   className?: string
 }): React.JSX.Element {
@@ -33,8 +35,8 @@ export function StatusDot({
     'inline-block size-2 shrink-0 rounded-full',
     hollow ? 'border border-current' : 'bg-current',
     `text-tone-${tone}`,
-    // A hollow dot is the absence of a claim about state, so it never glows however it is asked.
-    glow && !hollow && 'glow',
+    'glow',
+    `glow-${glow}`,
     pulse && 'motion-safe:animate-pulse-status',
     className,
   )

@@ -1,5 +1,5 @@
-import type { LifecycleModel, SessionView } from '@shared'
-import { deliveryState, isHotHeadState } from '@/shared/status'
+import type { SessionView } from '@shared'
+import { deliveryState } from '@/shared/status'
 
 // The Sessions room's rail derivation: the active project's observed sessions turned into the rows
 // the rail draws, in render order, with the finished ones already gone to Archived. Pure and
@@ -20,7 +20,8 @@ export interface RosterRow {
    * conversation-derived) is resolved upstream by the observer, so the rail never re-derives it. */
   name: string
   word: Graded['rail']['word']
-  /** State is carried ENTIRELY by the dot: its tone, its hollow ring and its glow. */
+  /** State is carried ENTIRELY by the dot: its tone, its hollow ring, its glow weight, whether it
+   * breathes, and whether it is the state asking for you. */
   dot: Graded['rail']['dot']
   /** The model id verbatim as the transcript reported it, or `unknown`. */
   model: string
@@ -30,8 +31,6 @@ export interface RosterRow {
   /** Argo only observes this session, so the row is ghosted and earns no state word. */
   external: boolean
   selected: boolean
-  /** Spend the screen's ONE animation budget on this row's dot. At most one row per render. */
-  pulse: boolean
 }
 
 export interface SessionsRoomModel {
@@ -41,18 +40,6 @@ export interface SessionsRoomModel {
   /** The `(n)` the footer spells. `archived.length`, named so the footer takes a count rather
    * than a list it does not render. */
   archivedCount: number
-}
-
-interface Selection {
-  selectedId: string | null
-  pulsingId: string | null
-}
-
-/** Whether a lifecycle's head is hot: a live (non-terminal) model whose head node is stalled on a
- * human. `null`/terminal models are never hot — there is no head to pulse. */
-export function lifecycleIsHot(model: LifecycleModel | null): boolean {
-  if (!model || model.terminal) return false
-  return isHotHeadState(model.nodes[model.head])
 }
 
 /** Whether Argo merely observes this session, in which case its status degrades away rather than
@@ -90,16 +77,7 @@ function byRecentActivity(sessions: readonly SessionView[]): SessionView[] {
     .map(({ session }) => session)
 }
 
-// At most one dot pulses per render, and only while the selected session's lifecycle is quiet —
-// otherwise the Delivery rail owns the budget. Motion, never a second telling of the state: the
-// state itself is still the dot's tone alone.
-function pulsingRowId(graded: readonly Graded[], selectedId: string | null): string | null {
-  const selected = graded.find((row) => row.session.id === selectedId)
-  if (selected && lifecycleIsHot(selected.lifecycle)) return null
-  return graded.find((row) => row.rail.dot.tone === 'amber')?.session.id ?? null
-}
-
-function rowFor({ session, rail }: Graded, selection: Selection): RosterRow {
+function rowFor({ session, rail }: Graded, selectedId: string | null): RosterRow {
   const external = isExternal(session)
   return {
     id: session.id,
@@ -111,8 +89,7 @@ function rowFor({ session, rail }: Graded, selection: Selection): RosterRow {
     // checkout, so the path is the honest disambiguator.
     place: (external ? session.cwd : session.branch) ?? UNKNOWN,
     external,
-    selected: session.id === selection.selectedId,
-    pulse: session.id === selection.pulsingId,
+    selected: session.id === selectedId,
   }
 }
 
@@ -131,14 +108,10 @@ export function buildSessionsRoomModel({
     session,
     ...deliveryState(session.facts, session.posture),
   }))
-  const selection: Selection = {
-    selectedId,
-    pulsingId: pulsingRowId(graded, selectedId),
-  }
   const gone = graded.filter(hasLeftForArchived)
   return {
-    rows: graded.filter((row) => !hasLeftForArchived(row)).map((row) => rowFor(row, selection)),
-    archived: gone.map((row) => rowFor(row, selection)),
+    rows: graded.filter((row) => !hasLeftForArchived(row)).map((row) => rowFor(row, selectedId)),
+    archived: gone.map((row) => rowFor(row, selectedId)),
     archivedCount: gone.length,
   }
 }

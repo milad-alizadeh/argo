@@ -53,7 +53,7 @@ export const NeutralWord: Story = {
   },
 }
 
-/** The screen's ONE animation budget, spent on the row stalled on a human. */
+/** A breathing dot: pulse belongs to the state, so anything live or asking for you carries it. */
 export const Pulsing: Story = {
   args: { ...propsOf('asking'), pulse: true },
   play: async ({ canvasElement }) => {
