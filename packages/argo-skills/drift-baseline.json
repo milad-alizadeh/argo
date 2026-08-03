@@ -5,6 +5,12 @@
       "sha": "decdff43d05908b4c1fc2cfd2d80fc5743440934"
     }
   },
+  "anthropics/skills": {
+    "skill-creator": {
+      "path": "skills/skill-creator/SKILL.md",
+      "sha": "65b3a402dbd09b8e83f9d637c6b553875189085c"
+    }
+  },
   "mattpocock/skills": {
     "ask-matt": {
       "path": "skills/engineering/ask-matt/SKILL.md",
@@ -137,7 +143,7 @@
     },
     "to-tickets": {
       "path": "skills/engineering/to-tickets/SKILL.md",
-      "sha": "23140c577f71c98993523f0dbec74f250561b708"
+      "sha": "96deac51d4391a3f691478d48f85f43261516c08"
     },
     "triage": {
       "path": "skills/engineering/triage/SKILL.md",
