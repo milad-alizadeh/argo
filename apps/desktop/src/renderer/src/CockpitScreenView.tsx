@@ -43,7 +43,9 @@ export function CockpitScreenView({
 }: CockpitScreenProps): React.JSX.Element {
   return (
     // No background of its own: the chrome floats on the ONE lit scene the room paints behind
-    // it (a fixed `-z-10` backdrop), and an opaque shell root would cover it.
+    // it (a fixed `-z-10` backdrop), and an opaque shell root would cover it. No room paints
+    // one yet — ADR-0019 deleted the three.js scene and the Sessions room paints its own, so
+    // the stage is flat `--background` until then.
     <div className="flex h-screen w-screen overflow-hidden">
       <ProjectStrip
         tabs={shell.tabs}

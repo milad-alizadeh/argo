@@ -1,5 +1,5 @@
-// The renderer's delivery-flow surface: the roster's presentation vocabulary and the `deliveryState`
-// composition that binds it to the lifecycle. The lifecycle derivation itself is the cross-process
+// The status presentation vocabulary every room reads: the status word/tone/icon tables and the
+// `deliveryState` composition that binds them to the lifecycle. That derivation is the cross-process
 // contract (`@shared`) — main drives gates from the same pure code the roster reads — so this
 // barrel consumes it rather than declaring it. `deliveryState` stays the only derivation entry
 // point, so the lifecycle and the roster row can never disagree about a Session.

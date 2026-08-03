@@ -67,5 +67,5 @@ gradient originating at the orb.
 - The Sessions room owes a backdrop (#267). Between this change and that one the
   cockpit's stage is flat, which is honest: no surface claims a scene it lacks.
 - `domains/concierge/` leaves `apps/desktop/scripts/module-boundaries.json`. The
-  four remaining retired domains keep their rules until their last file moves
-  (#284 blocked on #267–#274).
+  four remaining retired panel domains keep their rules until their last file
+  moves.

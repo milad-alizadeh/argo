@@ -191,7 +191,7 @@ both copies rot the day the child changes — the upstairs copy just fails later
 further from the cause.
 
 The sharpest case is **`SessionScreen` and the delivery lifecycle**: the S0–S11 matrix
-(`cockpit-matrix.md`) is the Delivery region's union, told once in its gallery
+(`cockpit-surface-matrix.md`) is the Delivery region's union, told once in its gallery
 (`InReview`, `Merged`, …). The screen must **not** carry one story per S-row — that is the
 region's gallery multiplied by the spine. The screen gets one representative composed story
 (a populated spine, proving the roster word and the Delivery strip agree) plus its own
