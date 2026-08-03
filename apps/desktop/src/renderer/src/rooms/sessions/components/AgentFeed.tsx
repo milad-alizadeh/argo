@@ -1,7 +1,7 @@
 import type { ToolCallKind } from '@shared'
 import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
-import { stepWord, subagentWord } from '../activityWords'
+import { STEP_STATES, SUBAGENT_STATES } from '../activityStates'
 import type { ActivityItem, ToolStepModel } from '../interiorActivity'
 
 /** The head every detail section wears: what the item is, and its one state word held to the right
@@ -39,11 +39,9 @@ function MetaLine({ parts }: { parts: readonly (string | null)[] }): React.JSX.E
   )
 }
 
-// What the gutter is TONED by when nothing failed: the kind of thing the call did. A wall of thirty
-// events then shows its shape before a word of it is read — where the agent was looking, where it
-// changed something, where it handed work off. Three tones only, because a fourth is a wall again:
-// mutating in the live ink, delegation in the attention ink, everything observational left quiet.
-// Written out literally rather than interpolated so Tailwind's scanner still sees each class.
+// The gutter's tone is the call's KIND, so a wall of thirty events shows its shape before it is
+// read. Three tones only, because a fourth is a wall again. Written out literally rather than
+// interpolated so Tailwind's scanner still sees each class.
 const KIND_TONE: Record<ToolCallKind, string> = {
   edit: 'text-tone-run',
   delegate: 'text-primary',
@@ -103,7 +101,7 @@ function SubagentDetail({
   const { subagent, group, events } = item
   return (
     <>
-      <DetailHead name={subagent.name} word={subagentWord(subagent.status)} />
+      <DetailHead name={subagent.name} word={SUBAGENT_STATES[subagent.status].word} />
       <MetaLine parts={['subagent', group, subagent.target]} />
       {events.length === 0 ? (
         <Text variant="meta" className="text-foreground-faint">
@@ -131,7 +129,7 @@ const STEP_META: Record<ToolStepModel['status'], string> = {
 function StepDetail({ step }: { step: ToolStepModel }): React.JSX.Element {
   return (
     <>
-      <DetailHead name={step.name} word={stepWord(step.status)} />
+      <DetailHead name={step.name} word={STEP_STATES[step.status].word} />
       <MetaLine parts={[STEP_META[step.status], step.kind]} />
       <Text variant="code" className="truncate text-foreground-soft">
         {step.target ?? 'this call named no target'}

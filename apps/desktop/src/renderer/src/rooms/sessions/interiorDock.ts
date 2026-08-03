@@ -1,5 +1,6 @@
 import { isSteerable, openTurn, rootAgent, type SessionView } from '@shared'
-import type { PlanProgressModel } from './interiorActivity'
+import { type PlanProgressModel, planProgress } from './interiorActivity'
+import { toolCallsOf } from './interiorSubagents'
 
 // The Dock's derivation: what the session is doing right now, and whether there is a PTY to steer.
 // The now-head lives IN the dock's header row rather than on a strip of its own, so live-process
@@ -37,19 +38,15 @@ export function nowHead(session: SessionView): NowHeadModel {
   const root = rootAgent(session.agents)
   if (root === null) return IDLE_NOW
   const open = openTurn(root)
-  const calls = root.turns.flatMap((turn) => turn.toolCalls)
   const running = open?.toolCalls.findLast((call) => call.status === 'in_progress') ?? null
-  const plan = open?.plan ?? null
+  // The newest call that actually RAN. A pending call is one the agent has not started, so naming it
+  // as the last thing done would report work that never happened.
+  const done = toolCallsOf(root).findLast((call) => call.status !== 'pending') ?? null
+  const progress = open === null ? null : planProgress(open)
   return {
     task: running === null ? null : describe(running.name, running.target),
-    plan:
-      plan === null
-        ? null
-        : {
-            done: plan.entries.filter((entry) => entry.status === 'completed').length,
-            total: plan.entries.length,
-          },
-    last: running !== null ? null : (calls.at(-1)?.name ?? null),
+    plan: progress === null ? null : { done: progress.done, total: progress.total },
+    last: running !== null || done === null ? null : describe(done.name, done.target),
     live: open !== null,
   }
 }

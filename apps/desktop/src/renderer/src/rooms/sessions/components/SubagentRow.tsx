@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { StatusDot, Text } from '@/shared/components/ui'
+import { SUBAGENT_STATES } from '../activityStates'
 import type { SubagentRowModel } from '../interiorSubagents'
 import { NAV_ROW, NAV_ROW_SELECTED } from './rowRecipes'
 
@@ -38,9 +39,9 @@ export function SubagentRow({
         <Text variant="row" className="min-w-0 flex-1 truncate text-foreground">
           {row.name}
         </Text>
-        {row.target === '' ? (
+        {row.target === null ? (
           <Text variant="eyebrow" className="shrink-0 text-foreground-faint">
-            {row.status}
+            {SUBAGENT_STATES[row.status].word}
           </Text>
         ) : (
           <Text variant="code-inline" className="min-w-0 truncate text-foreground-faint">

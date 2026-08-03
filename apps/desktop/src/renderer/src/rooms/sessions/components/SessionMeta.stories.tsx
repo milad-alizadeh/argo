@@ -25,7 +25,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The whole line — the status dot, then `mode · branch(+∆/↑) · elapsed · intent ↗`.
+ * The whole line — the status dot, then `mode · branch(+counts) · elapsed`, then the intent link.
  *
  * The status word and the model are deliberately NOT here: the roster rail beside this plane already
  * carries both, so the line spends its width on what the rail does not say. This story is where that
@@ -34,7 +34,9 @@ type Story = StoryObj<typeof meta>
 export const Full: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    for (const text of ['Code', '3∆ ↑2']) {
+    // The branch keeps its NAME as well as its counts: what changed is change against a branch, and a
+    // session whose branch the header will not say is a session you cannot place.
+    for (const text of ['Code', 'feat/auth-rotation']) {
       await expect(canvas.getByText(text)).toBeInTheDocument()
     }
     // The two facts the rail owns are shed here, not restyled — their absence is the design.

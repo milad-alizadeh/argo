@@ -1,6 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, within } from 'storybook/test'
-import { groupOf, RUNNING, WIDE_FANOUT } from '../__fixtures__/interior'
+import {
+  FLAT_FANOUT,
+  groupOf,
+  LABELLED_FANOUT,
+  MIXED_PHASES,
+  RUNNING,
+  WIDE_FANOUT,
+} from '../__fixtures__/interior'
 import { SubagentGroup } from './SubagentGroup'
 
 const phased = groupOf(RUNNING)
@@ -40,9 +47,27 @@ export const Phased: Story = {
  * them instead of inventing a phase name.
  */
 export const Labelled: Story = {
-  args: { group: { ...phased, tier: 'labelled', group: null } },
+  args: { group: groupOf(LABELLED_FANOUT), activeKey: null },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('3 · 2 running')).toBeInTheDocument()
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('3 · 2 running')).toBeInTheDocument()
+    // Said for this tier too: only the note separates "reported no phases" from "phases we did not
+    // draw". What distinguishes it from a bare CLI is the row names, which the rows carry.
+    await expect(canvas.getByText('this CLI reported no phases')).toBeInTheDocument()
+  },
+}
+
+/**
+ * Two phases at once — the case the tier gating exists for. Naming the first over rows that mostly
+ * belong to the other would be an invented fact, so the header counts them and each row's own phase
+ * reaches its detail head instead.
+ */
+export const MixedPhases: Story = {
+  args: { group: groupOf(MIXED_PHASES), activeKey: null },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('4 · 2 running')).toBeInTheDocument()
+    await expect(canvas.queryByText(/Verify ·/)).not.toBeInTheDocument()
   },
 }
 
@@ -51,7 +76,7 @@ export const Labelled: Story = {
  * This is the degradation contract — the cockpit never fills a tier in.
  */
 export const Flat: Story = {
-  args: { group: { ...phased, tier: 'flat', group: null } },
+  args: { group: groupOf(FLAT_FANOUT), activeKey: null },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('this CLI reported no phases')).toBeInTheDocument()
   },

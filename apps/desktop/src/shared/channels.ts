@@ -6,14 +6,21 @@ import type { ProjectionDelta } from './projection'
 export const PROJECTION_CHANNEL = 'cockpit:projection'
 export const PROJECTION_READY_CHANNEL = 'cockpit:projection-ready'
 
-// The steering PTY (ADR-0005's companion to the projection): the Console's live channel is a
-// real shell. A renderer attaches with its viewport size; main spawns the PTY and streams its
-// output, while keystrokes and resizes flow back. Names are shared so all three processes
-// agree on the string.
+// The steering PTY (ADR-0005's companion to the projection): a session's Dock is a real shell. A
+// renderer attaches with the SESSION it is attaching for plus its viewport size; main keys the PTY
+// by that session, so two open sessions never share one shell and switching between them cannot show
+// the other's. Names are shared so all three processes agree on the string.
 export const TERMINAL_ATTACH_CHANNEL = 'cockpit:terminal-attach'
 export const TERMINAL_DATA_CHANNEL = 'cockpit:terminal-data'
 export const TERMINAL_INPUT_CHANNEL = 'cockpit:terminal-input'
 export const TERMINAL_RESIZE_CHANNEL = 'cockpit:terminal-resize'
+
+/** Which session's shell an attach/input/resize is for, plus the size where one is carried. The id
+ * travels on every message because one window holds many sessions and each keeps its own PTY. */
+export interface TerminalAttachRequest {
+  sessionId: string
+  size: TerminalSize
+}
 
 /** A terminal's size in character cells — what the PTY is told, derived from the viewport. */
 export interface TerminalSize {
@@ -55,10 +62,14 @@ export interface CommandResult {
 // patches) and pipes the shell.
 export interface CockpitBridge {
   subscribeProjection(listener: (delta: ProjectionDelta) => void): () => void
-  /** Attach to the session's live shell PTY (ADR-0005). Main spawns the shell on first
-   * attach and streams its output to `onData` — a live shell, so there is no snapshot to
-   * replay. The returned session writes keystrokes back and resizes the PTY to the viewport. */
-  openTerminal(size: TerminalSize, onData: (chunk: string) => void): TerminalSession
+  /** Attach to ONE session's live shell PTY (ADR-0005), spawned in that session's own cwd. Main
+   * spawns it on first attach and streams its output to `onData` — a live shell, so there is no
+   * snapshot to replay. The returned handle writes keystrokes back and resizes the PTY. */
+  openTerminal(
+    sessionId: string,
+    size: TerminalSize,
+    onData: (chunk: string) => void,
+  ): TerminalSession
   /** Read one Project's primary checkout. `null` means the folder is no git repository, which
    * the shell renders by hiding the whole git group. */
   readGitFacts(projectId: string): Promise<GitFacts | null>

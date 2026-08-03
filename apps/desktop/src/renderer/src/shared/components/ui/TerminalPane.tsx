@@ -71,12 +71,9 @@ function openTerminal(host: HTMLElement): { term: Terminal; fit: FitAddon } {
   term.open(host)
   fit.fit()
 
-  // GPU glyph rendering (the Warp/Ghostty trick) instead of xterm's default DOM renderer, so a
-  // terminal blasting output stays smooth. `term.open` must run first — WebGL binds to the live
-  // canvas. If the GPU context is lost (driver hiccup, too many live contexts once there are
-  // many panes) we dispose the addon; xterm silently reverts to the DOM renderer, so the shell
-  // keeps working. Construction is guarded because xterm 6's renderer internals are newer than
-  // this addon's stable line — a throw must degrade to DOM, never break the pane.
+  // GPU glyph rendering, so a terminal blasting output stays smooth. `term.open` must run first —
+  // WebGL binds to the live canvas — and both the context loss and the construction throw degrade
+  // to xterm's DOM renderer, because a renderer fault must never break the pane.
   try {
     const webgl = new WebglAddon()
     webgl.onContextLoss(() => webgl.dispose())

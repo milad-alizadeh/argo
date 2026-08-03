@@ -1,7 +1,7 @@
 import { isSteerable, type SessionView } from '@shared'
 import { deliveryState } from '@/shared/status'
+import type { ActivityDot } from './activityStates'
 import { contextPercent } from './contextEstimate'
-import type { ActivityDot } from './interiorSubagents'
 
 // The session header's derivation: the one band's title, its context ring, its meta line and its
 // intent chip. Pure and React-free — the header is glance-only, so every judgement it makes (which
@@ -41,18 +41,19 @@ export const noSessionLink = (): SessionLink => ({
   mode: null,
 })
 
-/** One segment of the meta line. `mono` marks the segments that carry an identifier (a branch, a
- * count) rather than prose.
+/** One segment of the meta line — prose, or the branch with whatever has changed against it.
  *
  * `status` and `model` are deliberately NOT members. The band sheds every fact the roster rail
  * already carries: the rail row names the model and spells the status word, so repeating them here
  * buys nothing and costs the line its scannability. The status survives as the dot beside the
- * segments — a state one glyph can carry does not need a word too. */
-export interface MetaSegment {
-  id: 'mode' | 'branch' | 'elapsed'
-  text: string
-  mono: boolean
-}
+ * segments — a state one glyph can carry does not need a word too.
+ *
+ * The branch case carries what changed as NUMBERS, never as a rendered string: how a count is drawn
+ * (an icon and a number) is the View's business, and a derivation that formats one is presentation
+ * living in a model. */
+export type MetaSegment =
+  | { id: 'mode' | 'elapsed'; text: string }
+  | { id: 'branch'; text: string; dirty: number; unpushed: number }
 
 /** The navigable ticket link. `text` never echoes the title: a ticket-titled session collapses to
  * `#42`, so the chip stays the jump and stops being a second copy of the name. */
@@ -87,22 +88,20 @@ function elapsed(session: SessionView, nowMs: number | null): string | null {
   return minutes < 60 ? `idle ${minutes}m` : `idle ${Math.floor(minutes / 60)}h`
 }
 
-// The branch segment sheds the branch NAME once there is something to say about it — the top bar's
-// git group already names the checked-out branch and the roster row already named this session's,
-// so what is worth the width here is what changed against it.
-function branchSegment(session: SessionView): string | null {
+// The branch and what has changed against it, together: the deltas are what is worth the width here,
+// but they are what changed against a NAME, and a session whose branch the header will not say is a
+// session you cannot place. Dropped whole where there is no branch — deltas belong to one.
+function branchSegment(session: SessionView): MetaSegment[] {
+  if (session.branch === null) return []
   const { dirty, unpushed } = session.facts
-  const parts: string[] = []
-  if (dirty > 0) parts.push(`${dirty}∆`)
-  if (unpushed > 0) parts.push(`↑${unpushed}`)
-  return parts.length === 0 ? session.branch : parts.join(' ')
+  return [{ id: 'branch', text: session.branch, dirty, unpushed }]
 }
 
-function segment(id: MetaSegment['id'], text: string | null, mono = false): MetaSegment[] {
-  return text === null ? [] : [{ id, text, mono }]
+function segment(id: 'mode' | 'elapsed', text: string | null): MetaSegment[] {
+  return text === null ? [] : [{ id, text }]
 }
 
-/** The meta line, in the ONE fixed order `mode · branch(+∆/↑) · elapsed`, led by the status dot the
+/** The meta line, in the ONE fixed order `mode · branch(+counts) · elapsed`, led by the status dot the
  * model carries separately. A segment Argo cannot establish is absent rather than filled in, except
  * the mode, whose absence is itself worth saying out loud. */
 export function metaSegments(
@@ -112,7 +111,7 @@ export function metaSegments(
 ): MetaSegment[] {
   return [
     ...segment('mode', link.mode ?? UNKNOWN),
-    ...segment('branch', branchSegment(session), true),
+    ...branchSegment(session),
     ...segment('elapsed', elapsed(session, nowMs)),
   ]
 }

@@ -413,8 +413,8 @@
 }
 
 /* The room's dust — one multiply pass over the whole scene that pulls the edges down
- * and keeps the lit centre-right where the corona spills. Applied to the scene's own
- * ::after in RoomScene; here so the values stay in one place. */
+ * and keeps the lit centre-right where the corona spills. Painted by RoomScene's own scrim
+ * layer; the values live here so there is one place to tune them. */
 @utility room-scrim {
   background:
     radial-gradient(1150px 950px at 85% 50% in oklab, transparent 44%, var(--scrim-edge) 100%),

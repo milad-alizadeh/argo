@@ -53,10 +53,6 @@ export {
 } from './toneRecipes'
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 export { type DisclosureProps, useDisclosure } from './useDisclosure'
-export {
-  activeSection,
-  jumpToSection,
-  SPY_ATTRIBUTE,
-  useFeedHighlight,
-  useScrollSpy,
-} from './useScrollSpy'
+// `MasterDetail` is the only surface that mounts the spy — the rest of the module (the trip-line
+// measurement, the jump, the attribute) is its internals, and its tests import them directly.
+export { useFeedHighlight } from './useScrollSpy'

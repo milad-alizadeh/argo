@@ -1,8 +1,7 @@
 import { addUsage, isSteerable, rootAgent, type SessionView, type Usage } from '@shared'
 
-// The context ring's estimate. It is an ESTIMATE and says so on screen (`~n%`): the window is
-// Argo-owned versioned knowledge, the tokens are what the transcript reported, and neither half
-// arriving means the ring draws no arc and reads `unknown` (`cockpit-spec.md` §4.2).
+// The context ring's estimate. Either half missing means no arc and `unknown`, never a default:
+// the window is Argo-owned knowledge and the tokens are the transcript's (`cockpit-spec.md` §4.2).
 
 // Every window Argo knows, keyed by the model-id prefix a transcript reports verbatim. An id no
 // entry matches yields no percentage at all: guessing a window would turn the ring into a

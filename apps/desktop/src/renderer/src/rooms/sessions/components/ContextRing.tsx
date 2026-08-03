@@ -17,7 +17,7 @@ export function clampPercentage(percentage: number): number {
 }
 
 /**
- * Atom: the ONE shape for a Session's context window — a large ring whose arc is the estimate and
+ * Molecule: the ONE shape for a Session's context window — a large ring whose arc is the estimate and
  * whose centre reads it.
  *
  * With no percentage the ring draws **no arc at all** and reads `unknown`, which is how an external

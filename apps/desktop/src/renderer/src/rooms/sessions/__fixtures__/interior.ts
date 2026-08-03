@@ -116,6 +116,41 @@ export const WIDE_FANOUT: SessionView = sessionView({
   ],
 })
 
+// The lower two blueprint tiers, as REAL trees rather than a phased model with its fields blanked:
+// the tier is read off what the subagents carry, so a fixture that contradicts itself would let a
+// story pass on a model the derivation can never produce.
+const withoutPhases = (labelled: boolean): SessionView =>
+  sessionView({
+    ...RUNNING,
+    agents: [
+      aRoot({ turns: [OPEN_TURN] }),
+      ...LENSES.map((lens, index) =>
+        aSubagent({
+          id: lens.id,
+          turns: lens.turns,
+          ...(labelled ? { label: `lens ${index + 1}` } : {}),
+        }),
+      ),
+    ],
+  })
+
+/** A labelled tree — Codex's tier: the subagents name themselves but report no phase. */
+export const LABELLED_FANOUT: SessionView = withoutPhases(true)
+
+/** A bare CLI: no names, no phases, nothing but a count. */
+export const FLAT_FANOUT: SessionView = withoutPhases(false)
+
+/** A phased blueprint whose subagents sit in TWO phases — the case a single group name would
+ * misreport, since most of these rows belong to the phase the header would not be naming. */
+export const MIXED_PHASES: SessionView = sessionView({
+  ...RUNNING,
+  agents: [
+    aRoot({ turns: [OPEN_TURN] }),
+    aSubagent({ id: 'find', label: 'find lens', group: 'Find' }),
+    ...LENSES,
+  ],
+})
+
 const NOW_MS = 8 * 60_000
 
 export const interiorOf = (session: SessionView): SessionInteriorModel =>

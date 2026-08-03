@@ -28,13 +28,17 @@ const cockpit: CockpitBridge = {
       ipcRenderer.removeListener(PROJECTION_CHANNEL, handler)
     }
   },
-  openTerminal(size, onData) {
-    const handler = (_event: IpcRendererEvent, chunk: string): void => onData(chunk)
+  openTerminal(sessionId, size, onData) {
+    // Output is filtered by session on the way in: one window holds many Docks, and every shell
+    // streams down the same channel.
+    const handler = (_event: IpcRendererEvent, chunk: string, from: string): void => {
+      if (from === sessionId) onData(chunk)
+    }
     ipcRenderer.on(TERMINAL_DATA_CHANNEL, handler)
-    ipcRenderer.send(TERMINAL_ATTACH_CHANNEL, size)
+    ipcRenderer.send(TERMINAL_ATTACH_CHANNEL, { sessionId, size })
     return {
-      write: (data) => ipcRenderer.send(TERMINAL_INPUT_CHANNEL, data),
-      resize: (next) => ipcRenderer.send(TERMINAL_RESIZE_CHANNEL, next),
+      write: (data) => ipcRenderer.send(TERMINAL_INPUT_CHANNEL, { sessionId, data }),
+      resize: (next) => ipcRenderer.send(TERMINAL_RESIZE_CHANNEL, { sessionId, size: next }),
       dispose: () => {
         ipcRenderer.removeListener(TERMINAL_DATA_CHANNEL, handler)
       },

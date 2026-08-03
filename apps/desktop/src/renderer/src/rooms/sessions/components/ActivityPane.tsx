@@ -21,7 +21,9 @@ function feedGroups(activity: ActivityModel): MasterDetailGroup[] {
     groups.push({
       key: 'delegated',
       label: 'Subagents',
-      count: activity.subagents?.group ?? undefined,
+      // The SAME summary the navigation pane's header wears, derived once — the two headings name
+      // one group, and a second spelling of it is a second fact to keep true.
+      count: activity.subagents?.summary,
       nested: true,
       sections: sectionsOf(activity.delegated),
     })

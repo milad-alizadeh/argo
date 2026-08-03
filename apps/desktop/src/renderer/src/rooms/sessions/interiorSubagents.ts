@@ -1,78 +1,41 @@
-import type { Agent, SessionView, ToolCall, ToolCallStatus } from '@shared'
+import type { Agent, SessionView, ToolCall } from '@shared'
 import { openTurn } from '@shared'
-import type { DotGlow, RosterTone } from '@/shared/status'
+import { type ActivityDot, SUBAGENT_STATES, type SubagentStatus } from './activityStates'
 
-// The Subagents group's derivation, and the dot vocabulary the whole Activity surface reads. Kept
-// beside the group rather than inside the timeline's file because the blueprint's per-CLI
-// degradation is the one judgement here worth reading on its own.
+// The Subagents group's derivation. The one judgement here worth reading on its own is the
+// blueprint's per-CLI degradation: the cockpit never invents a phase a CLI did not report.
 
-/** How much structure the CLI reported about its subagents. The cockpit never invents a phase a
- * CLI did not report, so the tier is read off what the tree actually carries: `phased` where the
- * subagents name a group, `labelled` where they only name themselves, `flat` otherwise. */
+/** How much structure the CLI reported about its subagents: `phased` where the subagents name a
+ * group, `labelled` where they only name themselves, `flat` otherwise. */
 export type BlueprintTier = 'phased' | 'labelled' | 'flat'
-
-/** The dot a row draws. Same three channels as the rail's, because state is carried entirely by
- * the dot wherever it appears. */
-export interface ActivityDot {
-  tone: RosterTone
-  glow: DotGlow
-  pulse: boolean
-}
 
 export interface SubagentRowModel {
   key: string
   /** The subagent's own label, or its id where the CLI reported none. */
   name: string
-  /** What it is working on — the newest tool call's target. Empty where it has touched nothing. */
-  target: string
-  /** `running` while a turn is open, `queued` before its first, `done` once every turn closed. */
-  status: 'running' | 'queued' | 'done'
+  /** What it is working on — the newest tool call's target. `null` where it has touched nothing. */
+  target: string | null
+  status: SubagentStatus
   dot: ActivityDot
 }
 
 export interface SubagentGroupModel {
   tier: BlueprintTier
-  /** The group's own name, present ONLY where the CLI reported one — the label the section wears
-   * beside `Subagents`. */
+  /** The ONE phase every subagent reports, or `null`. Null covers both a CLI that reported no
+   * phases and a phased blueprint whose subagents sit in MORE than one: naming the first of several
+   * over rows that mostly belong to another is the invented fact the tier gating exists to refuse.
+   * A mixed set says its count instead, and each row's own phase reaches its detail head. */
   group: string | null
+  /** What the section header says beside `Subagents`, derived once so the navigation pane and the
+   * detail feed's heading cannot spell one summary two ways. */
+  summary: string
   rows: readonly SubagentRowModel[]
   runningCount: number
 }
 
-const RUNNING_DOT: ActivityDot = { tone: 'run', glow: 'live', pulse: true }
-const QUEUED_DOT: ActivityDot = { tone: 'gray', glow: 'faint', pulse: false }
-const DONE_DOT: ActivityDot = { tone: 'done', glow: 'quiet', pulse: false }
-const FAILED_DOT: ActivityDot = { tone: 'red', glow: 'quiet', pulse: false }
-
-/** The dot a tool call draws. A failure burns red and holds still — it is as bright as needs-you,
- * it just is not still in motion. */
-export function stepDot(status: ToolCallStatus): ActivityDot {
-  switch (status) {
-    case 'in_progress':
-      return RUNNING_DOT
-    case 'completed':
-      return DONE_DOT
-    case 'failed':
-      return FAILED_DOT
-    case 'pending':
-      return QUEUED_DOT
-  }
-}
-
-function subagentStatus(agent: Agent): SubagentRowModel['status'] {
+function subagentStatus(agent: Agent): SubagentStatus {
   if (openTurn(agent) !== null) return 'running'
   return agent.turns.length === 0 ? 'queued' : 'done'
-}
-
-function subagentDot(status: SubagentRowModel['status']): ActivityDot {
-  switch (status) {
-    case 'running':
-      return RUNNING_DOT
-    case 'queued':
-      return QUEUED_DOT
-    case 'done':
-      return DONE_DOT
-  }
 }
 
 export const toolCallsOf = (agent: Agent): ToolCall[] =>
@@ -86,9 +49,9 @@ export function subagentRow(agent: Agent): SubagentRowModel {
   return {
     key: `subagent:${agent.id}`,
     name: agent.label ?? agent.id,
-    target: toolCallsOf(agent).at(-1)?.target ?? '',
+    target: toolCallsOf(agent).at(-1)?.target ?? null,
     status,
-    dot: subagentDot(status),
+    dot: SUBAGENT_STATES[status].dot,
   }
 }
 
@@ -100,16 +63,32 @@ function blueprintTier(agents: readonly Agent[]): BlueprintTier {
   return agents.some((agent) => agent.label !== undefined) ? 'labelled' : 'flat'
 }
 
+// The phase the whole group is in, or null the moment they disagree — including when only some of
+// them reported one, since the rest are then in no named phase at all.
+function sharedPhase(agents: readonly Agent[]): string | null {
+  const phases = new Set(agents.map((agent) => agent.group ?? null))
+  const [only] = [...phases]
+  return phases.size === 1 && only !== undefined ? only : null
+}
+
 /** The Subagents group, or `null` when the session spawned none. Never interleaved into the
  * timeline: two sections, one header style (`cockpit-spec.md` §4.2). */
 export function subagentGroup(session: SessionView): SubagentGroupModel | null {
   const children = subagentsOf(session)
   if (children.length === 0) return null
   const rows = children.map(subagentRow)
+  const group = sharedPhase(children)
+  const runningCount = rows.filter((row) => row.status === 'running').length
   return {
     tier: blueprintTier(children),
-    group: children.find((agent) => agent.group !== undefined)?.group ?? null,
+    group,
+    // A named phase replaces the count rather than joining it: the phase is the more specific fact,
+    // and the rows below are the count.
+    summary:
+      group === null
+        ? `${rows.length} · ${runningCount} running`
+        : `${group} · ${runningCount} running`,
     rows,
-    runningCount: rows.filter((row) => row.status === 'running').length,
+    runningCount,
   }
 }

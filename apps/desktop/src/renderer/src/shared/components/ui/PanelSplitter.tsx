@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -80,6 +80,13 @@ export function PanelSplitter({
 }: PanelSplitterProps): React.JSX.Element {
   const [drag, setDrag] = useState<{ origin: number; size: number } | null>(null)
 
+  // The callback is held in a ref so it stays OUT of the drag effect's dependencies. Every call site
+  // passes an inline lambda, so a new identity arrives on each parent render — and a render is
+  // exactly what `onResize` causes, so leaving it in the deps tears the window listeners down and
+  // re-adds them on every pointermove of a drag.
+  const resizeRef = useRef(onResize)
+  resizeRef.current = onResize
+
   // Where the panel is RIGHT NOW: measured when the caller can measure, else the stored px, else
   // the floor. Called only from the two gesture handlers, so no layout read happens on render.
   const current = (): number => measure?.() ?? size ?? min
@@ -90,7 +97,7 @@ export function PanelSplitter({
       orientation === 'v' ? event.clientX : event.clientY
     const move = (event: PointerEvent): void => {
       const travelled = axisOf(event) - drag.origin
-      onResize(clampPanelSize(drag.size + (invert ? -travelled : travelled), min, max))
+      resizeRef.current(clampPanelSize(drag.size + (invert ? -travelled : travelled), min, max))
     }
     const stop = (): void => setDrag(null)
     // The listeners live on the window so a pointer that outruns the 6px bar — which it
@@ -103,7 +110,7 @@ export function PanelSplitter({
       window.removeEventListener('pointerup', stop)
       window.removeEventListener('pointercancel', stop)
     }
-  }, [drag, orientation, invert, min, max, onResize])
+  }, [drag, orientation, invert, min, max])
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>): void {
     // Without this the drag selects the text in both panels it sits between.

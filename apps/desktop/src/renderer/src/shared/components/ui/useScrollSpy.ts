@@ -63,8 +63,13 @@ export function useScrollSpy(feed: RefObject<HTMLElement | null>, keys: string):
     }
     measure()
     root.addEventListener('scroll', onScroll, { passive: true })
+    // A resize moves every section past the trip line without a scroll event — the pane is a flex
+    // child of a splitter, so this fires on a drag as well as on a window resize.
+    const observer = new ResizeObserver(onScroll)
+    observer.observe(root)
     return () => {
       root.removeEventListener('scroll', onScroll)
+      observer.disconnect()
       if (frame !== 0) cancelAnimationFrame(frame)
     }
   }, [feed, keys])
@@ -72,10 +77,21 @@ export function useScrollSpy(feed: RefObject<HTMLElement | null>, keys: string):
   return active
 }
 
-/** Smooth-scroll a feed section to the top of its pane — what a click on a nav row does. */
+/** Smooth-scroll a feed section to the top of its pane — what a click on a nav row does. Keys come
+ * from transcript data (a tool call's own id), so the value is escaped: a `"` or `]` in one would
+ * otherwise throw a `SyntaxError` out of the click handler rather than simply not matching. */
 export function jumpToSection(feed: HTMLElement | null, key: string): void {
-  const section = feed?.querySelector(`[${SPY_ATTRIBUTE}="${key}"]`)
+  const section = feed?.querySelector(`[${SPY_ATTRIBUTE}="${CSS.escape(key)}"]`)
   section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+/** Which key the pin names, or `null` once it has been retired.
+ *
+ * A pin is retired by ARITHMETIC rather than by an effect that resets after a render: it remembers
+ * which section list it was set against, so a rebuilt list drops it in the same pass that rebuilt
+ * it. A pin outliving the section it names would strand the highlight on a key nothing renders. */
+export function pinnedKey(pin: { key: string; keys: string } | null, keys: string): string | null {
+  return pin !== null && pin.keys === keys ? pin.key : null
 }
 
 // The gestures that mean "I am moving myself now". Deliberately NOT `scroll`: the smooth scroll a
@@ -98,11 +114,8 @@ export function useFeedHighlight(
   keys: string,
 ): { activeKey: string | null; jumpTo: (key: string) => void } {
   const spied = useScrollSpy(feed, keys)
-  // The pin remembers WHICH section list it was set against, so a rebuilt list retires it by
-  // arithmetic rather than by an effect that resets after a render — a pin outliving the section it
-  // names would strand the highlight on a key nothing renders.
   const [pin, setPin] = useState<{ key: string; keys: string } | null>(null)
-  const pinned = pin !== null && pin.keys === keys ? pin.key : null
+  const pinned = pinnedKey(pin, keys)
 
   useEffect(() => {
     const root = feed.current

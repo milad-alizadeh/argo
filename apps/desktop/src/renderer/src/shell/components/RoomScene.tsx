@@ -1,5 +1,5 @@
 /**
- * Atom: the ONE lit scene the whole cockpit floats on.
+ * Organism: the ONE lit scene the whole cockpit floats on.
  *
  * Every plane in the app carries a cove lip and a warm bloom "as if the orb lit it" — but nothing
  * was painting the light those effects imply, so the planes read as unmotivated gradients on flat

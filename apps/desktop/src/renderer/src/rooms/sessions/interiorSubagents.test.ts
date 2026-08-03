@@ -49,6 +49,46 @@ describe('subagentGroup', () => {
   })
 })
 
+// The case the blueprint exists for: a Workflow whose subagents sit in two phases. Naming the first
+// over rows that mostly belong to the other is the invented fact the tier gating refuses.
+describe('the phase a group claims', () => {
+  it('names no phase when the subagents sit in more than one', () => {
+    const session = sessionView({
+      id: 's',
+      agents: [
+        rootWith([]),
+        agent({ id: 'a', label: 'find', group: 'Find' }),
+        agent({ id: 'b', label: 'verify one', group: 'Verify' }),
+        agent({ id: 'c', label: 'verify two', group: 'Verify' }),
+      ],
+    })
+    const group = subagentGroup(session)
+    expect(group?.tier).toBe('phased')
+    expect(group?.group).toBeNull()
+    expect(group?.summary).toBe('3 · 0 running')
+  })
+
+  it('names no phase when only some of them reported one', () => {
+    const session = sessionView({
+      id: 's',
+      agents: [rootWith([]), agent({ id: 'a', group: 'Find' }), agent({ id: 'b' })],
+    })
+    expect(subagentGroup(session)?.group).toBeNull()
+  })
+
+  it('spells the summary once, phase-first where they share one', () => {
+    const session = sessionView({
+      id: 's',
+      agents: [
+        rootWith([]),
+        agent({ id: 'a', group: 'Verify', turns: [turn({ id: 't', stopReason: null })] }),
+        agent({ id: 'b', group: 'Verify' }),
+      ],
+    })
+    expect(subagentGroup(session)?.summary).toBe('Verify · 1 running')
+  })
+})
+
 describe('the subagent rows', () => {
   it('grades each row off its own turns and counts the running ones', () => {
     const session = sessionView({
@@ -73,6 +113,8 @@ describe('the subagent rows', () => {
     const group = subagentGroup(session)
     expect(group?.rows.map((row) => row.status)).toEqual(['running', 'queued', 'done'])
     expect(group?.rows[0]?.target).toBe('rotation.ts')
+    // `null`, not an empty string: one encoding of absence, the same one a tool step's target uses.
+    expect(group?.rows[1]?.target).toBeNull()
     expect(group?.rows[0]?.dot).toEqual({ tone: 'run', glow: 'live', pulse: true })
     expect(group?.runningCount).toBe(1)
   })

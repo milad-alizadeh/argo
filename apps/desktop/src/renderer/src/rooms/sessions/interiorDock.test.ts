@@ -36,12 +36,38 @@ describe('nowHead', () => {
     })
   })
 
-  it('names what it last did once nothing is in flight', () => {
+  // The same `name target` the live task reads: what it last did is worth as much of the row as what
+  // it is doing, and a bare verb names nothing.
+  it('names what it last did, target and all, once nothing is in flight', () => {
     const session = sessionView({
       id: 's',
-      agents: [root([turn({ id: 't', toolCalls: [call({ id: 'c', name: 'Bash' })] })])],
+      agents: [
+        root([
+          turn({ id: 't', toolCalls: [call({ id: 'c', name: 'Edit', target: 'rotation.ts' })] }),
+        ]),
+      ],
     })
-    expect(nowHead(session)).toMatchObject({ task: null, last: 'Bash', live: false })
+    expect(nowHead(session)).toMatchObject({ task: null, last: 'Edit rotation.ts', live: false })
+  })
+
+  // A pending call is one the agent has not started, so naming it as the last thing done would
+  // report work that never happened.
+  it('skips a queued call when naming the last thing done', () => {
+    const session = sessionView({
+      id: 's',
+      agents: [
+        root([
+          turn({
+            id: 't',
+            toolCalls: [
+              call({ id: 'ran', name: 'Bash', status: 'completed' }),
+              call({ id: 'queued', name: 'Edit', status: 'pending' }),
+            ],
+          }),
+        ]),
+      ],
+    })
+    expect(nowHead(session).last).toBe('Bash')
   })
 
   it('claims nothing for a session with no readable tree', () => {

@@ -1,10 +1,76 @@
-import { ArrowSquareOutIcon, Button, StatusDot, Text } from '@/shared/components/ui'
+import {
+  ArrowLineUpIcon,
+  ArrowSquareOutIcon,
+  Button,
+  PencilSimpleIcon,
+  StatusDot,
+  Text,
+} from '@/shared/components/ui'
+import type { ActivityDot } from '../activityStates'
 import type { IntentChip, MetaSegment } from '../interiorHeader'
-import type { ActivityDot } from '../interiorSubagents'
+
+/** One count of what has changed against the branch — an ICON and a number, never a typed-in mark.
+ * Nested in a `Text` so the em-relative icon box tracks the line it sits on. */
+function Delta({
+  Glyph,
+  count,
+  label,
+  tone,
+}: {
+  Glyph: typeof PencilSimpleIcon
+  count: number
+  label: string
+  tone: string
+}): React.JSX.Element {
+  return (
+    <Text variant="meta" className={`flex items-center gap-tight ${tone}`}>
+      <Glyph aria-label={label} className="icon-sm" />
+      {count}
+    </Text>
+  )
+}
+
+/** One segment's own words. The branch keeps its NAME and wears its counts beside it. A zero renders
+ * nothing, so a clean branch shows no counts rather than two zeroes reading as state. */
+function Segment({ segment }: { segment: MetaSegment }): React.JSX.Element {
+  switch (segment.id) {
+    case 'branch':
+      return (
+        <>
+          <Text variant="code-inline" className="min-w-0 truncate text-foreground-soft">
+            {segment.text}
+          </Text>
+          {segment.dirty > 0 && (
+            <Delta
+              Glyph={PencilSimpleIcon}
+              count={segment.dirty}
+              label="uncommitted files"
+              tone="text-tone-amber"
+            />
+          )}
+          {segment.unpushed > 0 && (
+            <Delta
+              Glyph={ArrowLineUpIcon}
+              count={segment.unpushed}
+              label="unpushed commits"
+              tone="text-tone-run"
+            />
+          )}
+        </>
+      )
+    case 'mode':
+    case 'elapsed':
+      return (
+        <Text variant="meta" className="min-w-0 truncate text-foreground-soft">
+          {segment.text}
+        </Text>
+      )
+  }
+}
 
 /**
- * Molecule: the header's one meta line — a status dot, then `mode · branch(+∆/↑) · elapsed` with the
- * intent link last.
+ * Molecule: the header's one meta line — a status dot, then `mode · branch(+counts) · elapsed` with
+ * the intent link last.
  *
  * The state leads as a DOT and never also as a word: the roster rail beside this plane already
  * spells the word, and the model it also names is shed here for the same reason. What is left is
@@ -36,12 +102,7 @@ export function SessionMeta({
               ·
             </Text>
           )}
-          <Text
-            variant={segment.mono ? 'code-inline' : 'meta'}
-            className="min-w-0 truncate text-foreground-soft"
-          >
-            {segment.text}
-          </Text>
+          <Segment segment={segment} />
         </div>
       ))}
       {intent && (

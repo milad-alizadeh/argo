@@ -2,13 +2,8 @@ import type { PlanEntryStatus } from '@shared'
 import { CaretRightIcon, CheckIcon, CircleIcon, Text } from '@/shared/components/ui'
 import type { PlanProgressModel } from '../interiorActivity'
 
-// A plan entry is a step of a plan, not a live process: it carries a MARK — done, here, not yet —
-// rather than a status dot. A dot would put it in the same channel as a running tool call and make
-// the eye read four live things where there is one.
-//
-// Icons, never a typed-in glyph: the icon set is the one vocabulary for marks, and a `▲` in a
-// string is a symbol nothing else in the app can match, restyle, or swap. Their size is handled by
-// where they SIT — see the mark column below.
+// A plan entry carries a MARK, not a status dot: a dot would read as a fourth live thing beside the
+// running tool calls. Icons rather than typed-in glyphs, sized by where they sit (the mark column).
 const ENTRY_MARK: Record<
   PlanEntryStatus,
   { Glyph: typeof CheckIcon; tone: string; label: string }

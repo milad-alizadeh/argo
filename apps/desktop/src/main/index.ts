@@ -82,9 +82,9 @@ app.whenReady().then(() => {
   const observer = createObserver(hub, { root: transcriptRoot(process.env) })
   void restoreProjects(hub, registryFile).then(() => observer.start())
   app.on('will-quit', () => observer.stop())
-  // Seam B: the steering PTY behind the Console's live channel — a renderer attaches and main
-  // spawns its shell.
-  wireTerminal()
+  // Seam B: the steering PTY behind a session's Dock — a renderer attaches for one session and main
+  // spawns that session's own shell, in its own cwd (which is why it takes the hub).
+  wireTerminal(hub)
   // The app shell's own seams (#264): the global git group over the active project's primary
   // checkout, the project strip's register/activate, and ⌘N's spawn. Spawn claims the folder in
   // the observer's ownership registry, which is what makes a spawned Session `managed`.

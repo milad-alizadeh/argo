@@ -8,10 +8,9 @@ import type {
   Turn,
 } from '@shared'
 import { rootAgent } from '@shared'
+import { type ActivityDot, STEP_STATES } from './activityStates'
 import {
-  type ActivityDot,
   type SubagentGroupModel,
-  stepDot,
   subagentGroup,
   subagentRow,
   subagentsOf,
@@ -75,12 +74,18 @@ export interface ActivityModel {
    * session's own turn steps. The split is domain-meaningful, not a rendering convenience — a
    * subagent's tool call and the root Agent's are different agents' work, and a feed that
    * concatenates them behind identical seams reads as one timeline. The surface heads and indents
-   * by this, so nothing downstream has to re-derive whose call it is looking at. */
+   * by this, so nothing downstream has to re-derive whose call it is looking at.
+   *
+   * `own` runs turn-descending but step-ASCENDING inside each turn, which is deliberate and is the
+   * order the navigation pane draws: newest turn first because that is the work in flight, and its
+   * steps in the order the agent made them because a turn read backwards is not a sequence. */
   delegated: readonly ActivityItem[]
   own: readonly ActivityItem[]
 }
 
-function planProgress(turn: Turn): PlanProgressModel | null {
+/** A turn's plan as `N/M` plus its entries, or `null` where the CLI reported no plan. Exported
+ * because the Dock's now-head reads the same `N/M`: two counts of one plan would drift. */
+export function planProgress(turn: Turn): PlanProgressModel | null {
   if (turn.plan === null) return null
   const { entries } = turn.plan
   return {
@@ -97,7 +102,7 @@ function toolStep(call: ToolCall): ToolStepModel {
     kind: call.kind,
     target: call.target,
     status: call.status,
-    dot: stepDot(call.status),
+    dot: STEP_STATES[call.status].dot,
   }
 }
 

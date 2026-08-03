@@ -1,9 +1,10 @@
+import { cn } from '@/lib/utils'
 import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
-import { turnWord } from '../activityWords'
+import { turnWord } from '../activityStates'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
 import { PlanProgress } from './PlanProgress'
-import { TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
+import { NAV_ROW_SELECTED, TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
 import { ToolCallRow } from './ToolCallRow'
 
 // What a folded turn says about itself instead of its steps: how much work is inside it. The record
@@ -33,9 +34,12 @@ export function TurnRow({
 }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: turn.open })
   const Caret = open ? CaretDownIcon : CaretRightIcon
+  // A folded turn whose step the feed is showing wears the selection itself: the scroll-spy can name
+  // a step whose own row is not rendered, and a highlight on nothing visible tracks nothing.
+  const holdsActive = !open && turn.steps.some((step) => step.key === activeKey)
   return (
     <li data-component="TurnRow" className="flex flex-col gap-tight">
-      <div className={open ? TURN_CARD : TURN_CARD_PAST}>
+      <div className={cn(open ? TURN_CARD : TURN_CARD_PAST, holdsActive && NAV_ROW_SELECTED)}>
         <button
           type="button"
           onClick={toggle}
