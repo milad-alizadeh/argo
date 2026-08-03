@@ -8,8 +8,7 @@
   },
   "files": [
     "bin",
-    "skills",
-    "bundle.json"
+    "skills"
   ],
   "scripts": {
     "start": "node bin/scaffold.mjs",

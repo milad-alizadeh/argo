@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Drift check for the third-party skill sources in bundle.json.
+// Drift check for the third-party skills the skills-lock.json manifest pins.
 //
 // Compares each tracked SKILL.md's upstream git blob SHA (source repo HEAD)
 // against drift-baseline.json. The skills-lock hash is opaque to us, so we keep
@@ -44,19 +44,30 @@ const readJson = (file, fallback) => {
 const sortedByKey = (obj) =>
   Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)))
 
+// source -> the skill names the manifest pins to it.
+function groupBySource(lock) {
+  const sources = new Map()
+  for (const [name, entry] of Object.entries(lock.skills)) {
+    if (entry.source === OWN_SOURCE) continue
+    const names = sources.get(entry.source) ?? []
+    names.push(name)
+    sources.set(entry.source, names)
+  }
+  return sources
+}
+
 try {
-  const bundle = readJson(path.join(pkgRoot, 'bundle.json'), null)
-  if (!bundle) throw new Error('bundle.json not found or unparsable')
+  const lock = readJson(path.join(pkgRoot, '..', '..', 'skills-lock.json'), null)
+  if (!lock?.skills) throw new Error('skills-lock.json not found or unparsable')
   const baseline = readJson(baselinePath, {})
   const nextBaseline = {}
   const report = []
   let drift = false
 
-  for (const entry of bundle.bundle) {
-    if (entry.source === OWN_SOURCE) continue
-    const sourceBaseline = baseline[entry.source] ?? {}
-    const defaultBranch = gh(`repos/${entry.source}`).default_branch
-    const tree = gh(`repos/${entry.source}/git/trees/${defaultBranch}?recursive=1`)
+  for (const [source, pinned] of groupBySource(lock)) {
+    const sourceBaseline = baseline[source] ?? {}
+    const defaultBranch = gh(`repos/${source}`).default_branch
+    const tree = gh(`repos/${source}/git/trees/${defaultBranch}?recursive=1`)
 
     // name -> { path, sha }, from every */SKILL.md blob in the source repo
     const upstream = new Map()
@@ -68,16 +79,12 @@ try {
       })
     }
 
-    const excluded = new Set([].concat(entry.exclude ?? []))
-    const pinned = (entry.skills === '*' ? [...upstream.keys()] : (entry.skills ?? [])).filter(
-      (name) => !excluded.has(name),
-    )
     const watched = Object.keys(sourceBaseline).filter((name) => sourceBaseline[name].watch)
     const tracked = [...new Set([...pinned, ...watched])].sort()
 
     const lines = []
-    const historyUrl = (p) => `https://github.com/${entry.source}/commits/${defaultBranch}/${p}`
-    nextBaseline[entry.source] = {}
+    const historyUrl = (p) => `https://github.com/${source}/commits/${defaultBranch}/${p}`
+    nextBaseline[source] = {}
 
     for (const name of tracked) {
       const known = sourceBaseline[name]
@@ -88,14 +95,14 @@ try {
         drift = true
         lines.push(
           pinned.includes(name)
-            ? `- **${name} vanished upstream** — the installer will break; drop it from bundle.json or find where it moved`
+            ? `- **${name} vanished upstream** — the installer will break; drop it from skills-lock.json or find where it moved`
             : `- ${label} vanished upstream`,
         )
         continue
       }
       const record = { path: head.path, sha: head.sha }
       if (known?.watch) record.watch = true
-      nextBaseline[entry.source][name] = record
+      nextBaseline[source][name] = record
 
       if (!known?.sha) {
         if (!update) {
@@ -118,27 +125,27 @@ try {
       lines.push('- upstream tree listing was truncated by the API; results are incomplete')
     }
 
-    if (REPORT_NEW.has(entry.source)) {
+    if (REPORT_NEW.has(source)) {
       const trackedSet = new Set(tracked)
       for (const name of [...upstream.keys()].sort()) {
         // sourceBaseline check: --update records unadopted skills as seen, so
         // they report as new once, not on every run.
-        if (trackedSet.has(name) || excluded.has(name) || sourceBaseline[name]) continue
+        if (trackedSet.has(name) || sourceBaseline[name]) continue
         drift = true
         lines.push(
-          `- new upstream skill \`${name}\` — adopt in bundle.json or accept via \`--update\``,
+          `- new upstream skill \`${name}\` — adopt with \`npx skills add ${source} --skill ${name}\` + commit the lock, or accept via \`--update\``,
         )
       }
       // Accepting via --update records it as seen without installing it.
       for (const name of upstream.keys()) {
-        if (!nextBaseline[entry.source][name]) {
+        if (!nextBaseline[source][name]) {
           const head = upstream.get(name)
-          nextBaseline[entry.source][name] = { path: head.path, sha: head.sha }
+          nextBaseline[source][name] = { path: head.path, sha: head.sha }
         }
       }
     }
 
-    if (lines.length > 0) report.push(`### ${entry.source}`, ...lines, '')
+    if (lines.length > 0) report.push(`### ${source}`, ...lines, '')
   }
 
   if (update) {

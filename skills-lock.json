@@ -229,6 +229,12 @@
       "skillPath": "skills/misc/setup-pre-commit/SKILL.md",
       "computedHash": "1b140af948d0a6330c4cf52d46ca2e06a0e96fdc34d22ec8888d2b9751b99b62"
     },
+    "setup-quality-gates": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/setup-quality-gates/SKILL.md",
+      "computedHash": "a60dbd87a8bbbd74bc48ce1834682dc90a4fc8e1c668ce0feb2b63f1a9ab49e2"
+    },
     "setup-rules": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
