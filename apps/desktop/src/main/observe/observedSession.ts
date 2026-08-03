@@ -55,11 +55,19 @@ export function toObservedSession(
  * Subagent is a non-root Agent parented to the root; there is no `kind` discriminant anywhere.
  */
 function toAgents(logical: LogicalSession): Agent[] {
+  const turns = logical.files.flatMap((file) => file.tree.turns)
   const root: Agent = {
     id: logical.id,
     parentId: null,
-    turns: logical.files.flatMap((file) => file.tree.turns),
+    turns,
     compactions: logical.files.flatMap((file) => file.tree.compactions),
+    // The chain's whole span: its first prompt to its last stop. The final turn's end is `null`
+    // while that turn is open, which is exactly the reading a running session should carry.
+    startedAtMs: turns[0]?.startedAtMs ?? null,
+    endedAtMs: turns.at(-1)?.endedAtMs ?? null,
+    // The root's spend is on its Turns, one reading per assistant record — there is no separate
+    // whole-agent report for it, and inventing one by summing here would state the same tokens twice.
+    usage: null,
   }
   const subagents = logical.files.flatMap((file) =>
     file.tree.subagents.map(

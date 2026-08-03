@@ -59,6 +59,7 @@ function Segment({ segment }: { segment: MetaSegment }): React.JSX.Element {
         </>
       )
     case 'mode':
+    case 'duration':
     case 'elapsed':
     case 'tokens':
       return (
@@ -70,8 +71,8 @@ function Segment({ segment }: { segment: MetaSegment }): React.JSX.Element {
 }
 
 /**
- * Molecule: the header's one meta line — a status dot, then `mode · branch(+counts) · elapsed` with
- * the intent link last.
+ * Molecule: the header's one meta line — a status dot, then
+ * `mode · branch(+counts) · duration · tokens` with the intent link last.
  *
  * The state leads as a DOT and never also as a word: the roster rail beside this plane already
  * spells the word, and the model it also names is shed here for the same reason. What is left is

@@ -1,39 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { derived, rootAgent } from '../../shared'
+import { derived } from '../../shared'
+import { file, logicalOf, running } from './__fixtures__/logical'
 import { toObservedSession, toSessionUpdate } from './observedSession'
-import type { LogicalSession, ParsedTranscript } from './types'
-
-const file = (over: Partial<ParsedTranscript>): ParsedTranscript => ({
-  sessionId: 'file-1',
-  headLeafUuid: null,
-  messageUuids: [],
-  cwd: null,
-  model: null,
-  gitBranch: null,
-  aiTitle: null,
-  firstPrompt: null,
-  firstTimestampMs: null,
-  lastTimestampMs: null,
-  tree: { turns: [], compactions: [], subagents: [] },
-  ...over,
-})
-
-const logicalOf = (...files: ParsedTranscript[]): LogicalSession => ({
-  id: files[0].sessionId,
-  fileIds: files.map((entry) => entry.sessionId),
-  files,
-})
-
-const running = () => derived('running' as const)
-
-const turn = (id: string) => ({
-  id,
-  stopReason: null,
-  toolCalls: [],
-  plan: null,
-  usage: null,
-  endedAtMs: null,
-})
 
 describe('toObservedSession', () => {
   it('grades an ai-title as DIRECT and cwd as DIRECT', () => {
@@ -57,45 +25,6 @@ describe('toObservedSession', () => {
   it('uses a DERIVED placeholder when neither title source is present', () => {
     const observed = toObservedSession(logicalOf(file({})), 'external', running)
     expect(observed.title).toEqual({ value: 'Untitled session', tier: 'derived' })
-  })
-
-  it('makes the Session the ROOT Agent, keyed by parentId with no kind discriminant', () => {
-    const observed = toObservedSession(logicalOf(file({})), 'external', running)
-    const root = rootAgent(observed.agents)
-
-    expect(root).toEqual({ id: 'file-1', parentId: null, turns: [], compactions: [] })
-    expect(Object.keys(root ?? {})).not.toContain('kind')
-  })
-
-  it('concatenates the chain’s turns onto one root Agent, in root → leaf order', () => {
-    const root = file({
-      sessionId: 'chain-root',
-      tree: { turns: [turn('t1')], compactions: [], subagents: [] },
-    })
-    const leaf = file({
-      sessionId: 'chain-leaf',
-      tree: { turns: [turn('t2')], compactions: [{ beforeTurnId: 't2' }], subagents: [] },
-    })
-    const observed = toObservedSession(logicalOf(root, leaf), 'external', running)
-
-    expect(rootAgent(observed.agents)?.turns.map((entry) => entry.id)).toEqual(['t1', 't2'])
-    expect(rootAgent(observed.agents)?.compactions).toEqual([{ beforeTurnId: 't2' }])
-  })
-
-  it('parents every Subagent to the root and keeps an unreported label absent', () => {
-    const leaf = file({
-      tree: {
-        turns: [],
-        compactions: [],
-        subagents: [{ id: 'sub-1', label: 'research: chains' }, { id: 'sub-2' }],
-      },
-    })
-    const observed = toObservedSession(logicalOf(leaf), 'external', running)
-
-    expect(observed.agents.filter((agent) => agent.parentId === 'file-1')).toEqual([
-      { id: 'sub-1', label: 'research: chains', parentId: 'file-1', turns: [], compactions: [] },
-      { id: 'sub-2', parentId: 'file-1', turns: [], compactions: [] },
-    ])
   })
 })
 

@@ -8,7 +8,7 @@ import {
   subagentsOf,
   toolCallsOf,
 } from './interiorSubagents'
-import { relativeAge } from './relativeAge'
+import { clockTime, duration } from './sessionClock'
 import { type PlanProgressModel, sessionPlan } from './sessionPlan'
 
 // The Activity surface's derivation: the Timeline, and the ONE ordered item list the master list and
@@ -23,6 +23,13 @@ export interface ToolStepModel {
   target: string | null
   status: ToolCallStatus
   dot: ActivityDot
+  /** The wall-clock time the agent made the call, `14:03`, or `null` where the record carried none.
+   * A time rather than an age: a turn's calls land seconds apart, so ages would read identically
+   * down the whole list and tell you nothing about the order of the work. */
+  at: string | null
+  /** How long the call took, or how long it has been running. `null` until it has a start to
+   * measure from. */
+  took: string | null
 }
 
 export interface TimelineTurnModel {
@@ -35,10 +42,6 @@ export interface TimelineTurnModel {
   open: boolean
   /** `unknown` is rendered as itself — a guessed reason would be a fabricated fact. */
   stopReason: StopReason | null
-  /** How long ago this turn ENDED — `4m`, `2h`, `3d` — or `null` for the turn still running and for
-   * a record carrying no end time. Deliberately coarse: the reading is old-versus-new, and a
-   * timestamp per row would cost the list the scannability the whole surface is for. */
-  age: string | null
   steps: readonly ToolStepModel[]
   /** A compaction marker sits in FRONT of this turn, so condensed history reads as continuous. */
   compactedBefore: boolean
@@ -81,7 +84,7 @@ export interface ActivityModel {
   own: readonly ActivityItem[]
 }
 
-function toolStep(call: ToolCall): ToolStepModel {
+function toolStep(call: ToolCall, nowMs: number | null): ToolStepModel {
   return {
     key: `step:${call.id}`,
     name: call.name,
@@ -89,6 +92,8 @@ function toolStep(call: ToolCall): ToolStepModel {
     target: call.target,
     status: call.status,
     dot: STEP_STATES[call.status].dot,
+    at: clockTime(call.atMs),
+    took: duration(call.atMs, call.endedAtMs, nowMs),
   }
 }
 
@@ -109,21 +114,20 @@ function timelineTurn(
     ordinal,
     open: turn.stopReason === null,
     stopReason: turn.stopReason,
-    age: relativeAge(turn.endedAtMs, nowMs),
-    steps: turn.toolCalls.map(toolStep),
+    steps: turn.toolCalls.map((call) => toolStep(call, nowMs)),
     compactedBefore: compacted.has(turn.id),
   }
 }
 
-function spawnedItems(session: SessionView): ActivityItem[] {
+function spawnedItems(session: SessionView, nowMs: number | null): ActivityItem[] {
   return subagentsOf(session).map((agent) => {
-    const row = subagentRow(agent)
+    const row = subagentRow(agent, nowMs)
     return {
       key: row.key,
       kind: 'subagent',
       subagent: row,
       group: agent.group ?? null,
-      events: toolCallsOf(agent).map(toolStep),
+      events: toolCallsOf(agent).map((call) => toolStep(call, nowMs)),
     }
   })
 }
@@ -144,9 +148,9 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
     .reverse()
   return {
     plan: sessionPlan(session),
-    subagents: subagentGroup(session),
+    subagents: subagentGroup(session, nowMs),
     turns,
-    delegated: spawnedItems(session),
+    delegated: spawnedItems(session, nowMs),
     own: turns.flatMap((turn) =>
       turn.steps.map((step): ActivityItem => ({ key: step.key, kind: 'step', step })),
     ),

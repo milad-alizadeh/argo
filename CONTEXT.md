@@ -223,7 +223,11 @@ agent` is dropped (every spec treats a session **as** an agent) — root-vs-chil
   never guessed.
 - **Tool Call** — the atomic observable action within a Turn (kind read/edit/execute/search/…,
   status pending/in_progress/completed/failed, target file, diff). *The* unit users watch
-  scroll by (ACP-native).
+  scroll by (ACP-native). Carries **when it was emitted and when its result came back** — the grain
+  at which a time is worth rendering, since a Turn is a bookkeeping seam and its calls land seconds
+  apart. A **Turn** likewise carries its own start and end, which is what a Session's duration is
+  measured from; an agent still working has no end, so its duration runs against the wall clock
+  rather than closing at a fabricated one.
 - **Plan** — the agent-authored live to-do list, **Session-scoped and agent-replaced whole**:
   `PlanEntry[]`, status `pending | in_progress | completed` (ADR-0020). One list per Session, not
   one per Turn — ACP delivers it as a session-level update carrying the **complete** entry list
@@ -243,7 +247,9 @@ agent` is dropped (every spec treats a session **as** an agent) — root-vs-chil
 - **Compaction** — a marker in an Agent's Turn sequence where history was condensed; the
   resume-chain stitches across it.
 - **Usage** — token/cost/context telemetry, DERIVED, rolled up to the Session. Not a tree node
-  — a fact on Turn + Session. *Partially ACP-informed, not one ACP object*: context `used`/
+  — a fact on Turn + Session, **and on a Subagent as a whole**: a Subagent's own turns run in a
+  sidechain the parent transcript does not attribute, so its spend is read off the delegating Tool
+  Call's result, which is the only place it is ever reported. The Session roll-up sums both grains. *Partially ACP-informed, not one ACP object*: context `used`/
   `size` + `cost` map to ACP's session-level `UsageUpdate`; per-turn in/out tokens map to ACP's
   `PromptResponse.usage` (RFD-stage, unpopulated in real agents today); **cache tokens are not
   in any ACP shape** (a Claude-specific extra). **Cost is derived from an Argo-owned, versioned

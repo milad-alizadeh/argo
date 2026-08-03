@@ -1,8 +1,8 @@
-import { isSteerable, type SessionView } from '@shared'
+import { isSteerable, rootAgent, type SessionView } from '@shared'
 import { deliveryState } from '@/shared/status'
 import type { ActivityDot } from './activityStates'
-import { contextPercent, sessionUsage } from './contextEstimate'
-import { relativeAge } from './relativeAge'
+import { contextPercent, sessionUsage, tokenSpend } from './contextEstimate'
+import { duration, relativeAge } from './sessionClock'
 
 // The session header's derivation: the one band's title, its context ring, its meta line and its
 // intent chip. Pure and React-free — the header is glance-only, so every judgement it makes (which
@@ -53,7 +53,7 @@ export const noSessionLink = (): SessionLink => ({
  * (an icon and a number) is the View's business, and a derivation that formats one is presentation
  * living in a model. */
 export type MetaSegment =
-  | { id: 'mode' | 'elapsed' | 'tokens'; text: string }
+  | { id: 'mode' | 'duration' | 'elapsed' | 'tokens'; text: string }
   | { id: 'branch'; text: string; dirty: number; unpushed: number }
 
 /** The navigable ticket link. `text` never echoes the title: a ticket-titled session collapses to
@@ -78,13 +78,30 @@ export interface SessionHeaderModel {
   external: boolean
 }
 
-// `elapsed` is only claimed where it is observable. A running session's turn start is not in the
-// runtime tree, so the segment degrades away rather than reporting the age of the last record as
-// though it were the turn's duration; a session at rest genuinely has been at rest that long.
+// How long the session has been at REST, which only a session at rest has — a running one is not
+// idle at all, and reporting the age of its last record would read as its turn's duration.
 function elapsed(session: SessionView, nowMs: number | null): string | null {
   if (session.facts.status === 'running') return null
   const age = relativeAge(session.lastActivityAt, nowMs)
   return age === null ? null : `idle ${age}`
+}
+
+// Everything the session has been observed to spend, its delegates' share included — the header has
+// the width to name the unit, which is why the bare count arrives without one.
+function tokens(session: SessionView): string | null {
+  const spend = tokenSpend(sessionUsage(session))
+  return spend === null ? null : `${spend} tokens`
+}
+
+// The session's whole working span — its first prompt to its last stop, or to the wall clock while
+// it is still going. The verb carries which of those it is: a `running` reading grows as you watch
+// it, and a session that has stopped `ran` for a fixed length.
+function ran(session: SessionView, nowMs: number | null): string | null {
+  const root = rootAgent(session.agents)
+  if (root === null) return null
+  const span = duration(root.startedAtMs, root.endedAtMs, nowMs)
+  if (span === null) return null
+  return root.endedAtMs === null ? `running ${span}` : `ran ${span}`
 }
 
 // The branch and what has changed against it, together: the deltas are what is worth the width here,
@@ -96,27 +113,19 @@ function branchSegment(session: SessionView): MetaSegment[] {
   return [{ id: 'branch', text: session.branch, dirty, unpushed }]
 }
 
-// Every token the session has been observed to spend — the input side, the output side and both
-// cache lines, because what this answers is "what has this cost", not "what is in the window" (the
-// ring's separate question, which deliberately drops output). `Intl` does the compacting: 48k is a
-// locale-aware format, not a divide-by-a-thousand.
-const COMPACT = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 })
-
-function tokens(session: SessionView): string | null {
-  const usage = sessionUsage(session)
-  if (usage === null) return null
-  const total =
-    usage.inputTokens + usage.outputTokens + usage.cacheReadTokens + usage.cacheCreationTokens
-  return total === 0 ? null : `${COMPACT.format(total)} tokens`
-}
-
-function segment(id: 'mode' | 'elapsed' | 'tokens', text: string | null): MetaSegment[] {
+function segment(
+  id: 'mode' | 'duration' | 'elapsed' | 'tokens',
+  text: string | null,
+): MetaSegment[] {
   return text === null ? [] : [{ id, text }]
 }
 
-/** The meta line, in the ONE fixed order `mode · branch(+counts) · elapsed · tokens`, led by the dot the
- * model carries separately. A segment Argo cannot establish is absent rather than filled in, except
- * the mode, whose absence is itself worth saying out loud. */
+/** The meta line, in the ONE fixed order `mode · branch(+counts) · duration · elapsed · tokens`, led
+ * by the dot the model carries separately. A segment Argo cannot establish is absent rather than
+ * filled in, except the mode, whose absence is itself worth saying out loud.
+ *
+ * `duration` and `elapsed` never both appear: one is how long the session worked, the other how long
+ * it has been at rest since, and only a stopped session has the second. */
 export function metaSegments(
   session: SessionView,
   link: SessionLink,
@@ -125,6 +134,7 @@ export function metaSegments(
   return [
     ...segment('mode', link.mode ?? UNKNOWN),
     ...branchSegment(session),
+    ...segment('duration', ran(session, nowMs)),
     ...segment('elapsed', elapsed(session, nowMs)),
     ...segment('tokens', tokens(session)),
   ]

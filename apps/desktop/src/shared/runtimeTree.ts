@@ -44,6 +44,15 @@ export interface ToolCall {
   status: ToolCallStatus
   /** The file or command the call names, when it names one. */
   target: string | null
+  /** When the agent emitted the call — the timestamp of the record carrying it. */
+  atMs: number | null
+  /** When its result came back, so a call has a duration and not just a moment. `null` while it is
+   * still running, and for a result the record never carried. */
+  endedAtMs: number | null
+  /** What the call itself reported spending. `null` for the ordinary call, which spends nothing of
+   * its own — a DELEGATING call is the case this exists for: its result carries the whole token
+   * spend of the subagent it ran, which is the only place that spend is visible at all. */
+  usage: Usage | null
 }
 
 export const PLAN_ENTRY_STATUSES = ['pending', 'in_progress', 'completed'] as const
@@ -82,6 +91,8 @@ export interface Turn {
   toolCalls: ToolCall[]
   plan: Plan | null
   usage: Usage | null
+  /** When the prompt that opened this Turn landed. */
+  startedAtMs: number | null
   endedAtMs: number | null
 }
 
@@ -97,6 +108,18 @@ export interface Agent {
   compactions: Compaction[]
   label?: string
   group?: string
+  /** When this agent's work began, and when it ended. Two sources, one field: the root Agent's span
+   * runs from its first Turn to its last, and a Subagent's from the delegating Tool Call that
+   * spawned it — a Subagent's own interior turns live in a sidechain the parent cannot attribute.
+   * `endedAtMs` is `null` while the agent is still working, which is what makes a duration honest:
+   * measured against the wall clock rather than against a fabricated end. */
+  startedAtMs: number | null
+  endedAtMs: number | null
+  /** Spend reported for this agent AS A WHOLE, where the host reports one instead of per Turn.
+   * `null` on the root Agent, whose spend is on its Turns; a Subagent's is here, because its own
+   * turns are in a sidechain the parent cannot attribute and the delegating call's result is the
+   * only place its tokens are ever named. */
+  usage: Usage | null
 }
 
 export function addUsage(left: Usage, right: Usage): Usage {

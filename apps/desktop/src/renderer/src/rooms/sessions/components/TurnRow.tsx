@@ -12,13 +12,12 @@ import { CompactionMarker } from './CompactionMarker'
 import { NAV_ROW_SELECTED, TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
 import { ToolCallRow } from './ToolCallRow'
 
-// What a folded turn says about itself instead of its steps: how much work is inside it. The record
-// carries no turn start, so the summary counts what it observed and never reports a duration.
+// What a folded turn says about itself instead of its steps: how much work is inside it.
 const foldedSummary = (turn: TimelineTurnModel): string =>
   `${turn.steps.length} ${turn.steps.length === 1 ? 'tool' : 'tools'}`
 
 /**
- * Molecule: one Turn in the timeline — how long ago it ended, its stop reason, and its tool calls.
+ * Molecule: one Turn in the timeline — its ordinal, its stop reason, and its tool calls.
  *
  * The open turn is expanded and past turns fold, because what a session is doing now is what you
  * came to see. Folding is the row's own business, which is why it holds that state rather than
@@ -66,16 +65,11 @@ export function TurnRow({
           <Text variant="row" className="shrink-0 text-foreground-soft">
             {`Turn ${turn.ordinal}`}
           </Text>
-          {/* Beside the name rather than at the right edge, where the state and the weight already
-              sit: an age is a property OF this turn, and the eye reading down the ordinals picks up
-              old-versus-new without a column of its own. Absent on the open turn — it has not ended,
-              and "now" is what running already says. */}
-          {turn.age !== null && (
-            <Text variant="meta" className="min-w-0 flex-1 truncate text-foreground-faint">
-              {turn.age}
-            </Text>
-          )}
-          {turn.age === null && <span className="flex-1" />}
+          {/* No time on the turn itself. A turn is a bookkeeping seam — where one prompt ended and
+              the next began — and timing the seam says nothing you can act on. The times worth
+              reading are one level in (each call's own clock time) and one level out (the session's
+              duration in the header). */}
+          <span className="flex-1" />
           {/* A past card reports its WEIGHT and nothing else. The stop reason of finished work is the
               least interesting fact about it, and spending the row's right edge on `END_TURN` says
               nothing a reader came for — the open turn's live state is the one worth the width. */}

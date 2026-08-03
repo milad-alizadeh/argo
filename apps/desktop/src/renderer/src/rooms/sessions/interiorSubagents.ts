@@ -1,6 +1,8 @@
 import type { Agent, SessionView, ToolCall } from '@shared'
 import { openTurn } from '@shared'
 import { type ActivityDot, SUBAGENT_STATES, type SubagentStatus } from './activityStates'
+import { tokenSpend } from './contextEstimate'
+import { duration } from './sessionClock'
 
 // The Subagents group's derivation. The one judgement here worth reading on its own is the
 // blueprint's per-CLI degradation: the cockpit never invents a phase a CLI did not report.
@@ -17,6 +19,13 @@ export interface SubagentRowModel {
   target: string | null
   status: SubagentStatus
   dot: ActivityDot
+  /** How long it has been working, or how long it took. `null` for a subagent whose spawning call
+   * carried no time — a fanout you cannot time is not a fanout that took no time. */
+  took: string | null
+  /** What it spent, as the host reported it when the delegate finished. `null` while it is still
+   * running: the spend arrives with the result, so a running subagent has no figure yet and a `0`
+   * would read as a delegate that cost nothing. */
+  tokens: string | null
 }
 
 export interface SubagentGroupModel {
@@ -44,7 +53,7 @@ export const toolCallsOf = (agent: Agent): ToolCall[] =>
 export const subagentsOf = (session: SessionView): Agent[] =>
   session.agents.filter((agent) => agent.parentId !== null)
 
-export function subagentRow(agent: Agent): SubagentRowModel {
+export function subagentRow(agent: Agent, nowMs: number | null): SubagentRowModel {
   const status = subagentStatus(agent)
   return {
     key: `subagent:${agent.id}`,
@@ -52,6 +61,8 @@ export function subagentRow(agent: Agent): SubagentRowModel {
     target: toolCallsOf(agent).at(-1)?.target ?? null,
     status,
     dot: SUBAGENT_STATES[status].dot,
+    took: duration(agent.startedAtMs, agent.endedAtMs, nowMs),
+    tokens: tokenSpend(agent.usage),
   }
 }
 
@@ -73,10 +84,13 @@ function sharedPhase(agents: readonly Agent[]): string | null {
 
 /** The Subagents group, or `null` when the session spawned none. Never interleaved into the
  * timeline: two sections, one header style (`cockpit-spec.md` §4.2). */
-export function subagentGroup(session: SessionView): SubagentGroupModel | null {
+export function subagentGroup(
+  session: SessionView,
+  nowMs: number | null,
+): SubagentGroupModel | null {
   const children = subagentsOf(session)
   if (children.length === 0) return null
-  const rows = children.map(subagentRow)
+  const rows = children.map((agent) => subagentRow(agent, nowMs))
   const group = sharedPhase(children)
   const runningCount = rows.filter((row) => row.status === 'running').length
   return {

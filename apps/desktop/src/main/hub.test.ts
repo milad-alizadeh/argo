@@ -19,7 +19,17 @@ const intake = (id: string): SessionIntake => ({
   lastActivityAt: null,
   posture: 'external',
   facts: sessionFacts(),
-  agents: [{ id, parentId: null, turns: [], compactions: [] }],
+  agents: [
+    {
+      id,
+      parentId: null,
+      turns: [],
+      compactions: [],
+      startedAtMs: null,
+      endedAtMs: null,
+      usage: null,
+    },
+  ],
 })
 
 const created = (id: string): HubEvent => ({ type: 'session-created', session: intake(id) })
