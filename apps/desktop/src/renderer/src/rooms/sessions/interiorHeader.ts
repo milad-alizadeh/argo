@@ -1,7 +1,8 @@
 import { isSteerable, type SessionView } from '@shared'
 import { deliveryState } from '@/shared/status'
 import type { ActivityDot } from './activityStates'
-import { contextPercent } from './contextEstimate'
+import { contextPercent, sessionUsage } from './contextEstimate'
+import { relativeAge } from './relativeAge'
 
 // The session header's derivation: the one band's title, its context ring, its meta line and its
 // intent chip. Pure and React-free — the header is glance-only, so every judgement it makes (which
@@ -52,7 +53,7 @@ export const noSessionLink = (): SessionLink => ({
  * (an icon and a number) is the View's business, and a derivation that formats one is presentation
  * living in a model. */
 export type MetaSegment =
-  | { id: 'mode' | 'elapsed'; text: string }
+  | { id: 'mode' | 'elapsed' | 'tokens'; text: string }
   | { id: 'branch'; text: string; dirty: number; unpushed: number }
 
 /** The navigable ticket link. `text` never echoes the title: a ticket-titled session collapses to
@@ -81,11 +82,9 @@ export interface SessionHeaderModel {
 // runtime tree, so the segment degrades away rather than reporting the age of the last record as
 // though it were the turn's duration; a session at rest genuinely has been at rest that long.
 function elapsed(session: SessionView, nowMs: number | null): string | null {
-  if (session.facts.status === 'running' || nowMs === null) return null
-  if (session.lastActivityAt === null) return null
-  const minutes = Math.floor((nowMs - session.lastActivityAt) / 60_000)
-  if (minutes < 0) return null
-  return minutes < 60 ? `idle ${minutes}m` : `idle ${Math.floor(minutes / 60)}h`
+  if (session.facts.status === 'running') return null
+  const age = relativeAge(session.lastActivityAt, nowMs)
+  return age === null ? null : `idle ${age}`
 }
 
 // The branch and what has changed against it, together: the deltas are what is worth the width here,
@@ -97,11 +96,25 @@ function branchSegment(session: SessionView): MetaSegment[] {
   return [{ id: 'branch', text: session.branch, dirty, unpushed }]
 }
 
-function segment(id: 'mode' | 'elapsed', text: string | null): MetaSegment[] {
+// Every token the session has been observed to spend — the input side, the output side and both
+// cache lines, because what this answers is "what has this cost", not "what is in the window" (the
+// ring's separate question, which deliberately drops output). `Intl` does the compacting: 48k is a
+// locale-aware format, not a divide-by-a-thousand.
+const COMPACT = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 })
+
+function tokens(session: SessionView): string | null {
+  const usage = sessionUsage(session)
+  if (usage === null) return null
+  const total =
+    usage.inputTokens + usage.outputTokens + usage.cacheReadTokens + usage.cacheCreationTokens
+  return total === 0 ? null : `${COMPACT.format(total)} tokens`
+}
+
+function segment(id: 'mode' | 'elapsed' | 'tokens', text: string | null): MetaSegment[] {
   return text === null ? [] : [{ id, text }]
 }
 
-/** The meta line, in the ONE fixed order `mode · branch(+counts) · elapsed`, led by the status dot the
+/** The meta line, in the ONE fixed order `mode · branch(+counts) · elapsed · tokens`, led by the dot the
  * model carries separately. A segment Argo cannot establish is absent rather than filled in, except
  * the mode, whose absence is itself worth saying out loud. */
 export function metaSegments(
@@ -113,6 +126,7 @@ export function metaSegments(
     ...segment('mode', link.mode ?? UNKNOWN),
     ...branchSegment(session),
     ...segment('elapsed', elapsed(session, nowMs)),
+    ...segment('tokens', tokens(session)),
   ]
 }
 

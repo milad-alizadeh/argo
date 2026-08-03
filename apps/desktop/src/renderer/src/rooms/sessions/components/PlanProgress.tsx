@@ -1,6 +1,6 @@
 import type { PlanEntryStatus } from '@shared'
-import { CaretRightIcon, CheckIcon, CircleIcon, Text } from '@/shared/components/ui'
-import type { PlanProgressModel } from '../interiorActivity'
+import { CaretRightIcon, CheckIcon, CircleIcon, SectionHeader, Text } from '@/shared/components/ui'
+import type { PlanProgressModel } from '../sessionPlan'
 
 // A plan entry carries a MARK, not a status dot: a dot would read as a fourth live thing beside the
 // running tool calls. Icons rather than typed-in glyphs, sized by where they sit (the mark column).
@@ -32,10 +32,8 @@ const ENTRY_TEXT: Record<PlanEntryStatus, string> = {
  */
 export function PlanProgress({ plan }: { plan: PlanProgressModel }): React.JSX.Element {
   return (
-    <div data-component="PlanProgress" className="flex flex-col gap-tight">
-      <Text variant="tag" className="text-foreground-faint">
-        {`Plan · ${plan.done} of ${plan.total}`}
-      </Text>
+    <section data-component="PlanProgress" className="flex flex-col gap-tight">
+      <SectionHeader label="Plan" count={`${plan.done} of ${plan.total}`} />
       <ul
         aria-label="Plan"
         className="flex flex-col gap-hair border-l border-l-inset-hair pl-inset"
@@ -62,6 +60,6 @@ export function PlanProgress({ plan }: { plan: PlanProgressModel }): React.JSX.E
           )
         })}
       </ul>
-    </div>
+    </section>
   )
 }

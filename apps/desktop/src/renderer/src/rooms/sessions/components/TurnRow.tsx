@@ -1,5 +1,11 @@
 import { cn } from '@/lib/utils'
-import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  SectionHeader,
+  Text,
+  useDisclosure,
+} from '@/shared/components/ui'
 import { turnWord } from '../activityStates'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
@@ -12,7 +18,7 @@ const foldedSummary = (turn: TimelineTurnModel): string =>
   `${turn.steps.length} ${turn.steps.length === 1 ? 'tool' : 'tools'}`
 
 /**
- * Molecule: one Turn in the timeline — its stop reason, its plan, and its tool calls as steps.
+ * Molecule: one Turn in the timeline — how long ago it ended, its stop reason, and its tool calls.
  *
  * The open turn is expanded and past turns fold, because what a session is doing now is what you
  * came to see. Folding is the row's own business, which is why it holds that state rather than
@@ -57,9 +63,19 @@ export function TurnRow({
           {/* Numbered, because a stack of cards all reading `Turn` names its own type and nothing
               else — the ordinal is the only thing here that tells one exchange from another until the
               transcript parser carries the prompt that opened it (issue 324). */}
-          <Text variant="row" className="min-w-0 flex-1 truncate text-foreground-soft">
+          <Text variant="row" className="shrink-0 text-foreground-soft">
             {`Turn ${turn.ordinal}`}
           </Text>
+          {/* Beside the name rather than at the right edge, where the state and the weight already
+              sit: an age is a property OF this turn, and the eye reading down the ordinals picks up
+              old-versus-new without a column of its own. Absent on the open turn — it has not ended,
+              and "now" is what running already says. */}
+          {turn.age !== null && (
+            <Text variant="meta" className="min-w-0 flex-1 truncate text-foreground-faint">
+              {turn.age}
+            </Text>
+          )}
+          {turn.age === null && <span className="flex-1" />}
           {/* A past card reports its WEIGHT and nothing else. The stop reason of finished work is the
               least interesting fact about it, and spending the row's right edge on `END_TURN` says
               nothing a reader came for — the open turn's live state is the one worth the width. */}
@@ -77,15 +93,13 @@ export function TurnRow({
           )}
         </button>
         {open && (
-          // One channel: what this exchange DID. The plan used to sit here too, but a plan belongs to
-          // the SESSION — the agent replaces one list wholesale — so a card per turn was drawing the
-          // same tracker N times and hiding it whenever the turn folded.
           <div className="flex flex-col gap-region px-inset pb-inset">
             {turn.steps.length > 0 && (
               <div className="flex flex-col gap-tight">
-                <Text variant="tag" className="text-foreground-faint">
-                  {`Did · ${turn.steps.length} ${turn.steps.length === 1 ? 'call' : 'calls'}`}
-                </Text>
+                <SectionHeader
+                  label="Did"
+                  count={`${turn.steps.length} ${turn.steps.length === 1 ? 'call' : 'calls'}`}
+                />
                 <ul aria-label="Tool calls" className="-mx-tight flex flex-col">
                   {turn.steps.map((step) => (
                     <ToolCallRow

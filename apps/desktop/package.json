@@ -29,6 +29,7 @@
     "@xterm/xterm": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "node-pty": "^1.1.0",
     "radix-ui": "^1.6.2",
     "tailwind-merge": "^3.6.0",

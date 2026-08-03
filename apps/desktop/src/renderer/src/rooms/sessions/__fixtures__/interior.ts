@@ -7,6 +7,11 @@ import { aRoot, aSubagent, aToolCall, aTurn, aUsage, namedPlan } from './runtime
 // same world. Typed off `SessionView`, so a change to the projection is a compile error here rather
 // than a stale fixture that still renders.
 
+// The wall clock every fixture below is read against. Declared first so a turn's end time can be
+// written as a distance back from it rather than as a bare number nothing explains.
+const NOW_MS = 8 * 60 * 60_000
+const MINUTE = 60_000
+
 const CONTEXT_USED = aUsage({ inputTokens: 26_000, cacheReadTokens: 50_000 })
 
 const OPEN_TURN = aTurn({
@@ -39,6 +44,9 @@ const OPEN_TURN = aTurn({
 
 const PAST_TURN = aTurn({
   id: 'past',
+  // Ended a while back, so the timeline has an age to draw. The OPEN turn deliberately keeps
+  // `endedAtMs: null` — it has not ended, and `running` already says it is the new one.
+  endedAtMs: NOW_MS - 42 * MINUTE,
   toolCalls: [
     aToolCall({ id: 'p1', name: 'Read', target: 'src/auth/token.ts' }),
     aToolCall({ id: 'p2', name: 'Write', kind: 'edit', status: 'failed', target: 'src/auth/x.ts' }),
@@ -73,7 +81,7 @@ export const RUNNING: SessionView = sessionView({
   title: 'Auth refactor',
   model: 'claude-opus-5',
   branch: 'feat/auth-rotation',
-  lastActivityAt: 0,
+  lastActivityAt: NOW_MS - 3 * MINUTE,
   agents: [
     aRoot({ turns: [PAST_TURN, OPEN_TURN], compactions: [{ beforeTurnId: 'now' }] }),
     ...LENSES,
@@ -150,8 +158,6 @@ export const MIXED_PHASES: SessionView = sessionView({
     ...LENSES,
   ],
 })
-
-const NOW_MS = 8 * 60_000
 
 export const interiorOf = (session: SessionView): SessionInteriorModel =>
   buildSessionInterior({ session, nowMs: NOW_MS })

@@ -1,12 +1,4 @@
-import type {
-  PlanEntry,
-  SessionView,
-  StopReason,
-  ToolCall,
-  ToolCallKind,
-  ToolCallStatus,
-  Turn,
-} from '@shared'
+import type { SessionView, StopReason, ToolCall, ToolCallKind, ToolCallStatus, Turn } from '@shared'
 import { rootAgent } from '@shared'
 import { type ActivityDot, STEP_STATES } from './activityStates'
 import {
@@ -16,15 +8,11 @@ import {
   subagentsOf,
   toolCallsOf,
 } from './interiorSubagents'
+import { relativeAge } from './relativeAge'
+import { type PlanProgressModel, sessionPlan } from './sessionPlan'
 
 // The Activity surface's derivation: the Timeline, and the ONE ordered item list the master list and
 // the detail feed both read. Built once so the two panes cannot fall out of step.
-
-export interface PlanProgressModel {
-  done: number
-  total: number
-  entries: readonly PlanEntry[]
-}
 
 export interface ToolStepModel {
   key: string
@@ -47,6 +35,10 @@ export interface TimelineTurnModel {
   open: boolean
   /** `unknown` is rendered as itself — a guessed reason would be a fabricated fact. */
   stopReason: StopReason | null
+  /** How long ago this turn ENDED — `4m`, `2h`, `3d` — or `null` for the turn still running and for
+   * a record carrying no end time. Deliberately coarse: the reading is old-versus-new, and a
+   * timestamp per row would cost the list the scannability the whole surface is for. */
+  age: string | null
   steps: readonly ToolStepModel[]
   /** A compaction marker sits in FRONT of this turn, so condensed history reads as continuous. */
   compactedBefore: boolean
@@ -89,18 +81,6 @@ export interface ActivityModel {
   own: readonly ActivityItem[]
 }
 
-/** ONE turn's plan SNAPSHOT — the version in force while it ran. Internal: no surface reads a turn's
- * plan, because the plan is not the turn's (see `sessionPlan`). */
-function planSnapshot(turn: Turn): PlanProgressModel | null {
-  if (turn.plan === null) return null
-  const { entries } = turn.plan
-  return {
-    done: entries.filter((entry) => entry.status === 'completed').length,
-    total: entries.length,
-    entries,
-  }
-}
-
 function toolStep(call: ToolCall): ToolStepModel {
   return {
     key: `step:${call.id}`,
@@ -112,39 +92,27 @@ function toolStep(call: ToolCall): ToolStepModel {
   }
 }
 
+/** What every turn of one build shares, so the per-turn call takes a turn and its context rather
+ * than four positional arguments. */
+interface TimelineContext {
+  compacted: ReadonlySet<string>
+  ordinal: number
+  nowMs: number | null
+}
+
 function timelineTurn(
   turn: Turn,
-  compacted: ReadonlySet<string>,
-  ordinal: number,
+  { compacted, ordinal, nowMs }: TimelineContext,
 ): TimelineTurnModel {
   return {
     key: `turn:${turn.id}`,
     ordinal,
     open: turn.stopReason === null,
     stopReason: turn.stopReason,
+    age: relativeAge(turn.endedAtMs, nowMs),
     steps: turn.toolCalls.map(toolStep),
     compactedBefore: compacted.has(turn.id),
   }
-}
-
-/**
- * The SESSION's live plan — one list, not one per turn.
- *
- * The plan belongs to the Session and the agent replaces it wholesale (ACP re-sends the complete
- * entry list; Claude Code's TodoWrite is a session list that survives the next prompt). A Turn only
- * carries the SNAPSHOT in force while it ran, which is why this reads the newest snapshot observed
- * rather than the open turn's: an agent that opened a turn without touching its plan still has the
- * plan it had, and reading the open turn alone would blank it.
- *
- * DERIVED — the newest version Argo observed, which is not provably the newest that exists.
- */
-export function sessionPlan(session: SessionView): PlanProgressModel | null {
-  const turns = rootAgent(session.agents)?.turns ?? []
-  for (const turn of [...turns].reverse()) {
-    const snapshot = planSnapshot(turn)
-    if (snapshot !== null) return snapshot
-  }
-  return null
 }
 
 function spawnedItems(session: SessionView): ActivityItem[] {
@@ -166,13 +134,13 @@ function spawnedItems(session: SessionView): ActivityItem[] {
  * An unparseable transcript yields no root, which renders as an empty surface rather than an
  * error: observation failure is not work failure (`cockpit-failure-states-spec.md` §8).
  */
-export function buildActivity(session: SessionView): ActivityModel {
+export function buildActivity(session: SessionView, nowMs: number | null = null): ActivityModel {
   const root = rootAgent(session.agents)
   const compacted = new Set(root?.compactions.map((mark) => mark.beforeTurnId) ?? [])
   // Numbered before the reverse, so the ordinal counts from the oldest turn while the list draws the
   // newest first.
   const turns = (root?.turns ?? [])
-    .map((turn, index) => timelineTurn(turn, compacted, index + 1))
+    .map((turn, index) => timelineTurn(turn, { compacted, ordinal: index + 1, nowMs }))
     .reverse()
   return {
     plan: sessionPlan(session),

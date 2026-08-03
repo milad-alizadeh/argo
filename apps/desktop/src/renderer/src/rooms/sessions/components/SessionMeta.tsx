@@ -60,6 +60,7 @@ function Segment({ segment }: { segment: MetaSegment }): React.JSX.Element {
       )
     case 'mode':
     case 'elapsed':
+    case 'tokens':
       return (
         <Text variant="meta" className="min-w-0 truncate text-foreground-soft">
           {segment.text}

@@ -1,8 +1,8 @@
-# ADR-0020 — The Plan is Session-scoped, and a Turn carries only a snapshot
+# 0020 · The Plan is Session-scoped, and a Turn carries only a snapshot
 
-- **Status:** accepted
-- **Date:** 2026-08-03
-- **Supersedes:** the Turn-scoped `Plan` in CONTEXT.md L3 (`each Turn 0..1 Plan`)
+Status: accepted · 2026-08-03
+
+Supersedes the Turn-scoped `Plan` in CONTEXT.md L3 (`each Turn 0..1 Plan`).
 
 ## Context
 

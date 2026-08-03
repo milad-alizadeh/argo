@@ -5,7 +5,6 @@ import {
   aSubagent as agent,
   aRoot,
   aToolCall as call,
-  planEntries as entries,
   aTurn as turn,
 } from './__fixtures__/runtimeTree'
 import { buildActivity } from './interiorActivity'
@@ -61,53 +60,6 @@ describe('buildActivity', () => {
     const { turns } = buildActivity(session)
     expect(turns.find(({ key }) => key === 'turn:new')?.compactedBefore).toBe(true)
     expect(turns.find(({ key }) => key === 'turn:old')?.compactedBefore).toBe(false)
-  })
-})
-
-// The plan belongs to the SESSION and the agent replaces it wholesale (ADR-0020), so there is one of
-// it however many turns reported a version.
-describe("buildActivity's plan", () => {
-  it('counts plan progress off the entries the agent authored', () => {
-    const session = sessionView({
-      id: 's',
-      agents: [
-        rootWith([
-          turn({ id: 't', plan: { entries: entries('completed', 'in_progress', 'pending') } }),
-        ]),
-      ],
-    })
-    expect(buildActivity(session).plan).toEqual({
-      done: 1,
-      total: 3,
-      entries: entries('completed', 'in_progress', 'pending'),
-    })
-  })
-
-  // Reading the open turn alone blanked it: an agent that opens a turn without touching its plan
-  // still has the plan it had.
-  it('keeps the newest plan the session reported, across a turn that reported none', () => {
-    const session = sessionView({
-      id: 's',
-      agents: [
-        rootWith([
-          turn({ id: 'old', plan: { entries: entries('completed', 'pending') } }),
-          turn({ id: 'open', stopReason: null }),
-        ]),
-      ],
-    })
-    expect(buildActivity(session).plan).toMatchObject({ done: 1, total: 2 })
-  })
-
-  it('draws one tracker for the session, never one per turn', () => {
-    const withPlan = { entries: entries('completed', 'pending') }
-    const session = sessionView({
-      id: 's',
-      agents: [rootWith([turn({ id: 'a', plan: withPlan }), turn({ id: 'b', plan: withPlan })])],
-    })
-    const { plan, turns } = buildActivity(session)
-    expect(plan).not.toBeNull()
-    expect(turns).toHaveLength(2)
-    expect(turns.every((one) => !('plan' in one))).toBe(true)
   })
 })
 

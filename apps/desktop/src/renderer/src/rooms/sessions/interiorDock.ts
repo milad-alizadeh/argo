@@ -1,6 +1,6 @@
 import { isSteerable, openTurn, rootAgent, type SessionView } from '@shared'
-import { type PlanProgressModel, sessionPlan } from './interiorActivity'
 import { toolCallsOf } from './interiorSubagents'
+import { type PlanProgressModel, sessionPlan } from './sessionPlan'
 
 // The Dock's derivation: what the session is doing right now, and whether there is a PTY to steer.
 // The now-head lives IN the dock's header row rather than on a strip of its own, so live-process

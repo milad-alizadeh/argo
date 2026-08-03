@@ -62,9 +62,16 @@ export function ActivityPane({
   return (
     <div data-component="ActivityPane" className="flex min-h-0 min-w-0 flex-1">
       {groups.length === 0 ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center p-region">
+        // The feed is empty when nothing has been CALLED yet — but an agent that wrote its plan
+        // before its first tool call has something to show, and the Dock's now-head is already
+        // reporting its `N/M`. Drawing the zero-state over a plan we hold would make the two
+        // surfaces disagree in exactly the state the tracker is most worth reading.
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-region p-region">
+          {activity.plan && <PlanProgress plan={activity.plan} />}
           <Text variant="meta" className="text-foreground-faint">
-            nothing observed yet — the Dock below is where this session starts
+            {activity.plan === null
+              ? 'nothing observed yet — the Dock below is where this session starts'
+              : 'no calls yet — this is the plan it opened with'}
           </Text>
         </div>
       ) : (
