@@ -50,37 +50,47 @@ root.
 ### Quality gates
 
 The arithmetic half of those rules is a build failure, not a review note — `bun run quality`
-(biome + duplication + file length + placement), and every rule in it is an **error, never a
-warning**. Biome carries the per-function caps (50 lines, cognitive complexity 15, 3 parameters)
-and the escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries); `jscpd` gates whole-tree
-duplication at 1%; `scripts/file-length-check.mjs` gates the 150-line per-file ceiling; the three
-placement gates above hold `file-structure.md`'s folder rules. CI runs all of them, pre-commit
-runs the file-length one.
+(biome + duplication + placement), and every rule in it is an **error, never a warning**. Biome
+carries every per-file cap: the per-function ones (50 lines, cognitive complexity 15, 3
+parameters), the 150-line per-file ceiling (`style/noExcessiveLinesPerFile`), and the
+escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries). `jscpd` gates whole-tree
+duplication at 1%, and the three placement gates above hold `file-structure.md`'s folder rules.
+CI runs all of them; pre-commit runs biome over the staged files via lint-staged, so the caps are
+covered at commit time and the whole-tree gates are CI's.
+
+The file ceiling counts **lines of code**: blank lines are skipped by the option and comment
+lines are not counted by the rule at all. The cap is about the code you must hold in your head,
+not about how far the file scrolls, so a heavily-commented file is judged on its code. That is a
+deliberate loosening from the hand-rolled gate this replaced, which counted every non-blank line
+and needed six ratchet entries this rule does not.
 
 Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
 assertions (Biome 2.5.4 has no such rule) and exhaustive `switch` over a union
-(`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo).
+(`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo). A third is
+prose-only by policy rather than for want of a rule: biome offers a per-file
+`// biome-ignore-all` suppression for the line ceiling, and **that is not the sanctioned escape
+hatch here** — exemptions go in `biome.jsonc` `overrides`, where they carry a KIND/RATCHET label
+and a reason.
 
 When a gate fires, fix it or ratchet it — never suppress it inline and never raise a global
-cap. Exemptions live in **four** files, each entry labelled **KIND** (permanent — the rule
+cap. Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule
 doesn't apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 | File | Covers |
 |---|---|
-| `biome.jsonc` `overrides` | the lint caps — annotated, which is why it's `.jsonc` |
-| `scripts/file-length-exempt.txt` | the line ceiling, one glob per line with its reason |
-| `.jscpd.json` `ignore` | duplication — its reasons live in a labelled block at the foot of `file-length-exempt.txt`, one per ignore glob |
+| `biome.jsonc` `overrides` | every lint cap, the line ceiling included — annotated, which is why it's `.jsonc` |
+| `.jscpd.json` `ignore` | duplication — its reasons live in `scripts/jscpd-ignore-reasons.txt`, one per ignore glob |
 | the map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude` keyed by file, folder or symbol, each value its own reason |
 
 The placement gates fail on a **stale** exemption too: an entry naming no file is deleted, not
 left to re-authorise a future breach. That's what makes "the list may only shrink" arithmetic
 rather than an intention.
 
-**Two of these three configs fail open when you comment them**, which is why the reasons sit
-where they do. Biome silently checks **zero files** if `biome.json` holds a comment — hence
+**Two of these configs fail open when you comment them**, which is why the reasons sit where
+they do. Biome silently checks **zero files** if `biome.json` holds a comment — hence
 `biome.jsonc`. jscpd's **auto-discovery** silently skips the entire `.jscpd.json` if that holds
-one (no threshold, a larger file count), and JSON is its only format — hence the reasons block
-in `file-length-exempt.txt`.
+one (no threshold, a larger file count), and JSON is its only format — hence the sidecar
+`scripts/jscpd-ignore-reasons.txt`.
 
 jscpd's half is now closed at the source rather than by a documented check: `quality:duplication`
 passes **`--config .jscpd.json` explicitly**, and an explicitly-named config is parsed rather
@@ -89,7 +99,7 @@ exits non-zero instead of quietly running unconfigured. Keep that flag on the co
 it restores the fail-open.
 
 Do not re-prove either by exit code alone. `jscpd … -t 0` exits **1 in both states** here —
-healthy it finds 1 clone in 154 files, silently-unconfigured it finds 16 in 238 — so the exit
+healthy it finds 1 clone in 211 files, silently-unconfigured it finds 16 in 312 — so the exit
 code cannot tell them apart and the file count is the only signal. Prove a config change by
 effect: check that the **analysed file count** still excludes the ignored paths, or plant a
 throwaway clone pair inside an ignored path and one outside and confirm only the outside pair

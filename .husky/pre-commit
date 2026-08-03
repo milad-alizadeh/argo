@@ -15,11 +15,10 @@ fi
 bunx lint-staged
 
 # --- quality gates: the caps lint can't express (installed by setup-quality-gates) ---
-# lint-staged already ran biome over the staged files, so the complexity/length/param caps
-# are covered there. This is the file-length cap, which is per-file and repo-wide — it reads
-# scripts/file-length-exempt.txt, where each exemption states its reason. Duplication is
-# whole-tree and belongs to CI, not to every commit.
-bun run quality:file-length
+# Nothing runs here any more. lint-staged already ran biome over the staged files, and biome
+# now carries every per-file cap including the 150-line ceiling
+# (style/noExcessiveLinesPerFile, exemptions in biome.jsonc). Duplication and placement are
+# whole-tree gates and belong to CI, not to every commit.
 # --- end quality gates ---
 
 # --- graphify: committed knowledge graph, refreshed in-commit (installed by setup-graphify) ---

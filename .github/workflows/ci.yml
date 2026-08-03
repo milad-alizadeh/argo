@@ -62,15 +62,12 @@ jobs:
       - name: Lint and format
         run: bun run format-and-lint
 
-      # The caps biome can't express. Separate steps so one breach doesn't hide the other's
-      # count — a PR gets both verdicts in one push (see AGENTS.md "Quality gates").
+      # The one cap biome can't express: duplication is whole-tree, and a linter reads one
+      # file at a time. Its own step so a breach doesn't hide the placement gates' counts
+      # (see AGENTS.md "Quality gates").
       - name: Duplication gate
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
-
-      - name: File-length gate
-        if: ${{ !cancelled() }}
-        run: bun run quality:file-length
 
       # Where files may LIVE, which the boundary linter cannot see: it judges imports, and a
       # misplaced file's imports are all legal. One step per gate, same reason as above.

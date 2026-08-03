@@ -156,7 +156,7 @@
     ]
   },
   "placement": {
-    "_comment": "WHERE FILES MAY LIVE, as opposed to what they may import. dependency-cruiser only sees edges, so a feature's own file parked at the app root — or a one-caller helper parked in the shared tier — passes every boundary rule while sitting in the wrong folder. These two blocks compile into the gates `scripts/composition-root-check.mjs` and `scripts/earned-shared-check.mjs` (run by `bun run quality`), which is what turns the prose in rules/file-structure.md into arithmetic. Each exemption is labelled KIND (the rule does not apply to that category) or RATCHET (debt; the list may only shrink), the same convention as biome.jsonc and file-length-exempt.txt.",
+    "_comment": "WHERE FILES MAY LIVE, as opposed to what they may import. dependency-cruiser only sees edges, so a feature's own file parked at the app root — or a one-caller helper parked in the shared tier — passes every boundary rule while sitting in the wrong folder. These two blocks compile into the gates `scripts/composition-root-check.mjs` and `scripts/earned-shared-check.mjs` (run by `bun run quality`), which is what turns the prose in rules/file-structure.md into arithmetic. Each exemption is labelled KIND (the rule does not apply to that category) or RATCHET (debt; the list may only shrink), the same convention as biome.jsonc and scripts/jscpd-ignore-reasons.txt.",
     "compositionRoot": {
       "comment": "The renderer root holds only what belongs to no module: the bootstrap, the container that wires the slices, and its View. Slice-owned files and slice-serving wiring both have homes — `<slice>/` and `cockpit/` — so a file loose here is a file that skipped the decision.",
       "path": "^src/renderer/src/[^/]+$",

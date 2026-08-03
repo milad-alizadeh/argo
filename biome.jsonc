@@ -46,6 +46,17 @@
         "noTsIgnore": "error"
       },
       "style": {
+        // The 150-line per-file ceiling (rules/file-structure.md). Counts LINES OF CODE:
+        // blank lines are skipped by the option, and comment lines are not counted by the
+        // rule at all — a heavily-commented file is judged on the code you must hold in
+        // your head, not on how far it scrolls.
+        "noExcessiveLinesPerFile": {
+          "level": "error",
+          "options": {
+            "maxLines": 150,
+            "skipBlankLines": true
+          }
+        },
         "noNonNullAssertion": "error",
         "noNestedTernary": "error",
         "noUselessElse": "error"
@@ -91,6 +102,9 @@
             "noExcessiveLinesPerFunction": "off",
             "noExcessiveCognitiveComplexity": "off",
             "useMaxParams": "off"
+          },
+          "style": {
+            "noExcessiveLinesPerFile": "off"
           }
         }
       }
@@ -112,6 +126,34 @@
           "complexity": {
             "noExcessiveLinesPerFunction": "off",
             "noExcessiveCognitiveComplexity": "off"
+          }
+        }
+      }
+    },
+    // KIND: declarative catalogs the line ceiling does not apply to. A story is a named
+    // state, not logic, so length here is coverage and the repetition between stories is the
+    // point (rules/design-studies.md). The style layers are custom-property tables and
+    // Tailwind's @theme block — one value per line, no control flow to extract.
+    {
+      "includes": ["**/*.stories.tsx", "apps/desktop/src/renderer/src/styles/*.css"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": "off"
+          }
+        }
+      }
+    },
+    // RATCHET: over the 150-line file ceiling. Split the file, then delete its line here.
+    {
+      "includes": [
+        // 167 lines: the scaffold wizard, one long sequence of prompts and file writes.
+        "packages/argo-skills/bin/scaffold.mjs"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noExcessiveLinesPerFile": "off"
           }
         }
       }
