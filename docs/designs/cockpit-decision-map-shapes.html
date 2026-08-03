@@ -1,0 +1,2059 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8" />
+<title>Decision map — two shapes over real wayfinder data</title>
+<style>
+/*
+ * Study-side token vocabulary. Imports the REAL contract (argo-tokens.css) so
+ * studies and the app share one source and cannot drift — never copy values in
+ * here. The classes below mirror the text-* utilities globals.css generates for
+ * the app. Style only via var(--token) and these classes; a value the contract
+ * lacks is a proposal to snap or promote when the study settles, never a bare
+ * literal to keep (rules/design-studies.md).
+ */
+/*
+ * Argo design tokens — the single source of raw values (ADR-0006: argo-tokens.css → globals.css).
+ * globals.css imports this and maps these onto Tailwind's @theme. shadcn/ui semantic
+ * roles resolve to these variables; do not hardcode colours in components.
+ *
+ * Two-layer colour contract (settled by the /design-foundations ceremony from the
+ * Penumbra reference + the four room prototypes in docs/designs/ — living specimen:
+ * docs/designs/foundations.html):
+ *
+ *   1. CORE ramps — raw values live ONLY here. Theme-agnostic, named by what
+ *      they are. Never referenced by components or studies directly.
+ *   2. SEMANTIC roles — named by job, bound per theme (:root light / .dark dark),
+ *      referencing core steps only. Alpha variants are color-mix derivations of
+ *      a core step, never a new hex.
+ *
+ * Palette: Penumbra (#158, locked). A cool warm-biased near-black graphite scene lit by
+ * the Concierge orb as key light, with Eclipse gold as the single accent. Colour is scarce
+ * and attention is brightness. One frosted `panel` surface per region, flat `inset` cards
+ * inside it, and `plane` for a card that floats in the lit scene (never glass-on-glass).
+ *
+ * Gold means attention, full stop: `needs you` IS the accent. That is why selection and
+ * hover are an INK wash plus a brighter cove lip, never a gold wash — a gold row and a
+ * selected row must never be confusable.
+ *
+ * Lifecycle status, review verdict and signal inks are DISJOINT families: verdict sits one
+ * ramp step further toward the theme's ink end than lifecycle (dark: 300 vs 500; light:
+ * 700 vs 600), so they never render the same value. `done` is quiet slate rather than
+ * green — completion is not an event that wants the eye.
+ *
+ * Orientation follows the shadcn convention: :root is light, `.dark` is dark. The
+ * Cockpit is dark-first, so index.html sets `<html class="dark">` — keeping the
+ * `.dark` mechanism live is what makes shadcn's `dark:` variants work. Penumbra is
+ * drawn in the dark; light is a working re-binding of the same ramps, not a second design.
+ */
+
+/* ---------------------------------------------------------------- core ramps */
+:root {
+  /* Graphite — the scene and its surfaces. Cool-biased near-blacks; higher = deeper. */
+  --graphite-400: #3b3e46;
+  --graphite-500: #26282e;
+  --graphite-600: #1c1d23;
+  --graphite-700: #101218;
+  --graphite-800: #0c0d10;
+  --graphite-850: #0a0b0d; /* the locked Penumbra base */
+  --graphite-900: #08090b;
+  --graphite-950: #070709;
+
+  /* Bone — the warm inks that read on graphite (and the light theme's surfaces). */
+  --bone-50: #f6f2e9;
+  --bone-100: #f2ede2;
+  --bone-200: #e7e3da;
+  --bone-300: #dad5c9;
+  --bone-400: #c6c1b5;
+  --bone-500: #9a968c;
+  --bone-600: #7c786f;
+  --bone-700: #615e58;
+
+  /* Eclipse gold — the single accent, and `needs you`. */
+  --gold-300: #dfc591;
+  --gold-500: #c8a968;
+  --gold-600: #a5854a;
+  --gold-700: #8a7038;
+
+  /* Monolith teal — running. */
+  --teal-300: #8fc0ab;
+  --teal-500: #6fa890;
+  --teal-600: #4e8570;
+  --teal-700: #3f6e5b;
+
+  /* Moss — approve, and a diff addition. Deliberately duller than teal so a
+   * running dot and an added line never read as the same green. */
+  --moss-300: #8fbf9c;
+  --moss-500: #5c8a6b;
+  --moss-600: #4a7357;
+  --moss-700: #3e6349;
+
+  /* Terracotta — failed, blocked, a diff deletion. A muted red: the scene has no
+   * saturated alarm colour. */
+  --terracotta-300: #d08c83;
+  --terracotta-500: #b5675e;
+  --terracotta-600: #9a5249;
+  --terracotta-700: #8a4a43;
+
+  /* Slate — done, and stale. Quiet by design: finished work leaves the eye. */
+  --slate-300: #97a0ab;
+  --slate-500: #5b6673;
+  --slate-600: #4a5460;
+  --slate-700: #3e4650;
+}
+
+/* -------------------------------------------------- semantic roles — light */
+:root {
+  --background: var(--bone-100);
+  --foreground: var(--graphite-900);
+
+  --card: var(--bone-50);
+  --card-foreground: var(--graphite-900);
+
+  --popover: var(--bone-50);
+  --popover-foreground: var(--graphite-900);
+
+  --primary: var(--gold-700);
+  --primary-foreground: var(--bone-50);
+  /* Primary ladder: bright = the light end of the primary gradient; soft = the
+   * agent/auto accent ink (AI presence), quieter than primary. */
+  --primary-bright: var(--gold-600);
+  /* On light there is no dimmer gold step below primary (gold-700 IS primary), so the
+   * quieter agent-presence ink is a wash of it rather than a fifth ramp step. */
+  --primary-soft: color-mix(in srgb, var(--gold-700) 72%, transparent);
+
+  --secondary: var(--bone-300);
+  --secondary-foreground: var(--graphite-700);
+
+  /* `muted` is bound identically to `secondary` (no distinct job in the design);
+   * kept for shadcn compatibility — prefer `secondary` in new code. */
+  --muted: var(--bone-300);
+  --muted-foreground: var(--bone-700);
+
+  /* Selection/hover wash — an INK wash, never gold (gold means attention), and two
+   * quiet steps rather than one loud one: `accent` is hover, `accent-strong` is the
+   * current row. Nothing else marks selection — no lip, no border, no shift. */
+  --accent: color-mix(in srgb, var(--graphite-900) 3%, transparent);
+  --accent-strong: color-mix(in srgb, var(--graphite-900) 6%, transparent);
+  --accent-foreground: var(--graphite-900);
+
+  /* Terminal text-selection wash: translucent ink, glass not a solid block, so the
+   * panel reads through the highlight. Heavier than `--accent` so a selection still
+   * registers. `LiveTerminal` resolves this to rgba() at runtime — xterm's parser
+   * can't read color-mix(). */
+  --terminal-selection: color-mix(in srgb, var(--graphite-900) 16%, transparent);
+
+  --destructive: var(--terracotta-600);
+  --destructive-foreground: var(--bone-50);
+
+  --border: color-mix(in srgb, var(--graphite-900) 9%, transparent);
+  --input: color-mix(in srgb, var(--graphite-900) 13%, transparent);
+  --ring: var(--gold-600);
+
+  /* Ink ladder: foreground → bright (ghost buttons, emphasized values) →
+   * soft (long-dwell reading) → muted → faint (metas). */
+  --foreground-bright: var(--graphite-950);
+  --foreground-soft: var(--graphite-700);
+  --foreground-faint: var(--bone-700);
+
+  /* One frosted surface per region (panel); flat inset cards live inside it. */
+  --panel: color-mix(in srgb, var(--bone-50) 70%, transparent);
+  --inset: color-mix(in srgb, var(--graphite-900) 3%, transparent);
+  --inset-hair: color-mix(in srgb, var(--graphite-900) 6%, transparent);
+  --inset-lip: color-mix(in srgb, var(--graphite-900) 4%, transparent);
+
+  /* Plane — a card that floats in the lit scene, on its own depth. Ingredients
+   * only; the recipe is the `plane` utility in globals.css. On light there is no
+   * cove to conceal, so the lip is an ink hair and the bloom stays faint. */
+  --plane-top: color-mix(in srgb, var(--bone-50) 70%, transparent);
+  --plane-bottom: color-mix(in srgb, var(--bone-200) 60%, transparent);
+  --plane-top-lit: var(--bone-50);
+  --plane-bottom-lit: color-mix(in srgb, var(--bone-100) 90%, transparent);
+  --cove-lip: color-mix(in srgb, var(--graphite-900) 5%, transparent);
+  --cove-lip-lit: color-mix(in srgb, var(--graphite-900) 9%, transparent);
+  --bloom-warm: color-mix(in srgb, var(--gold-600) 10%, transparent);
+  --bloom-warm-lit: color-mix(in srgb, var(--gold-600) 18%, transparent);
+  --plane-cast: color-mix(in srgb, var(--graphite-900) 14%, transparent);
+  --plane-cast-lit: color-mix(in srgb, var(--graphite-900) 22%, transparent);
+
+  /* The room's dust scrim — a multiply pass over the whole scene. */
+  --scrim-edge: color-mix(in srgb, var(--graphite-900) 8%, transparent);
+  --scrim-top: color-mix(in srgb, var(--graphite-900) 5%, transparent);
+  --scrim-bottom: color-mix(in srgb, var(--graphite-900) 10%, transparent);
+
+  /* ONE value per meaning, across every family: a failure is a failure whether it is a
+   * failed check, a blocked ticket or a bad signal, and the same holds for the gold that
+   * asks for you. Two steps of the same hue read as sloppiness, not as hierarchy, so
+   * these two anchors override the family-disjointness rule for red and gold. */
+  --status-fail: var(--terracotta-700);
+  --status-attention: var(--gold-700);
+  --status-ok: var(--moss-700);
+
+  /* Roster tones — named for the TONE the delivery derivation emits, not a lifecycle state,
+   * because tone↔state is not 1:1 (the matrix keeps colour off the state deliberately).
+   * `landed` (Merged) is moss pulled toward gold so Landed ≠ approve-moss and ≠ done-slate
+   * (ADR-0009). */
+  --tone-run: var(--teal-600);
+  --tone-gray: var(--bone-700);
+  --tone-amber: var(--status-attention);
+  --tone-stale: var(--slate-600);
+  --tone-red: var(--status-fail);
+  --tone-done: var(--slate-600);
+  --tone-landed: color-mix(in srgb, var(--moss-600) 55%, var(--gold-600));
+
+  /* Review verdict — the same three anchors as every other family. A verdict is not a
+   * different kind of good or bad from a check's. */
+  --verdict-approve: var(--status-ok);
+  --verdict-changes: var(--status-attention);
+  --verdict-block: var(--status-fail);
+  /* Verdict tints — the loud-step anchor verdict surfaces wash/border from
+   * (use-sites alpha them: 12% wash, 40% border); text ink stays --verdict-*.
+   * Deliberately the same steps as lifecycle's loud tier — separate names keep
+   * the two families re-bindable apart. */
+  --verdict-approve-tint: var(--moss-600);
+  --verdict-changes-tint: var(--gold-600);
+  --verdict-block-tint: var(--terracotta-600);
+
+  /* Signal inks — reading-intensity outcome text on code/meta surfaces (diff
+   * add/del, captured-feed colorization, check values). The same three anchors: these
+   * names exist so a use site reads its own vocabulary, not so it gets its own hue. */
+  --signal-ok: var(--status-ok);
+  --signal-warn: var(--status-attention);
+  --signal-bad: var(--status-fail);
+
+  /* `well` is a recessed fill, not a shadow: #262 settled depth as brightness only,
+   * so the plane family carries cast and there is no shadow ladder. */
+  --well: color-mix(in srgb, var(--graphite-900) 4%, transparent);
+
+  /* Weaker on light, where a halo reads as blur rather than as light. */
+  --glow-strength: 35%;
+
+  /* Frost — the panel's blur pass. Light needs less to stay legible. */
+  --frost: 10px;
+  --frost-saturate: 1;
+}
+
+/* --------------------------------------------------- semantic roles — dark */
+.dark {
+  --background: var(--graphite-850);
+  --foreground: var(--bone-200);
+
+  --card: var(--graphite-800);
+  --card-foreground: var(--bone-200);
+
+  --popover: var(--graphite-700);
+  --popover-foreground: var(--bone-200);
+
+  --primary: var(--gold-500);
+  --primary-foreground: var(--graphite-950);
+  --primary-bright: var(--gold-300);
+  --primary-soft: var(--gold-700);
+
+  --secondary: var(--graphite-600);
+  --secondary-foreground: var(--bone-300);
+
+  --muted: var(--graphite-600);
+  --muted-foreground: var(--bone-500);
+
+  --accent: color-mix(in srgb, var(--bone-100) 3%, transparent);
+  --accent-strong: color-mix(in srgb, var(--bone-100) 6%, transparent);
+  --accent-foreground: var(--bone-100);
+
+  /* See the light-theme note: the selection wash reads brighter on the dark panel, so a
+   * lighter mix keeps the same glassy weight. */
+  --terminal-selection: color-mix(in srgb, var(--bone-100) 18%, transparent);
+
+  --destructive: var(--terracotta-500);
+  --destructive-foreground: var(--bone-100);
+
+  --border: color-mix(in srgb, var(--bone-100) 6%, transparent);
+  --input: color-mix(in srgb, var(--bone-100) 9%, transparent);
+  --ring: var(--gold-500);
+
+  --foreground-bright: var(--bone-50);
+  --foreground-soft: var(--bone-300);
+  --foreground-faint: var(--bone-700);
+
+  --panel: color-mix(in srgb, var(--graphite-700) 50%, transparent);
+  --inset: color-mix(in srgb, var(--bone-100) 3%, transparent);
+  --inset-hair: color-mix(in srgb, var(--bone-100) 6%, transparent);
+  --inset-lip: color-mix(in srgb, var(--bone-100) 5%, transparent);
+
+  /* Plane — the signature Penumbra card: a cool translucent slab with a concealed
+   * cove lip along its top edge and a warm bloom washing in from above. `-lit` is
+   * the driven plane (the session you are in), which warms and gains an outer spill.
+   * Depth is carried by BRIGHTNESS ONLY — see the recede tokens. */
+  --plane-top: color-mix(in srgb, var(--graphite-500) 42%, transparent);
+  --plane-bottom: color-mix(in srgb, var(--graphite-700) 50%, transparent);
+  --plane-top-lit: color-mix(in srgb, var(--bone-700) 55%, transparent);
+  --plane-bottom-lit: color-mix(in srgb, var(--graphite-600) 60%, transparent);
+  --cove-lip: color-mix(in srgb, var(--bone-100) 5%, transparent);
+  --cove-lip-lit: color-mix(in srgb, var(--bone-100) 12%, transparent);
+  --bloom-warm: color-mix(in srgb, var(--gold-500) 14%, transparent);
+  --bloom-warm-lit: color-mix(in srgb, var(--gold-500) 30%, transparent);
+  --plane-cast: color-mix(in srgb, black 70%, transparent);
+  --plane-cast-lit: color-mix(in srgb, black 78%, transparent);
+
+  --scrim-edge: color-mix(in srgb, black 34%, transparent);
+  --scrim-top: color-mix(in srgb, black 22%, transparent);
+  --scrim-bottom: color-mix(in srgb, black 40%, transparent);
+
+  /* One value per meaning — see the light block. On dark the anchors sit at the 300
+   * step: a failure or a request for you is the brightest thing in the region, which is
+   * how "attention = brightness" is spelled. */
+  --status-fail: var(--terracotta-300);
+  --status-attention: var(--gold-300);
+  --status-ok: var(--moss-300);
+
+  --tone-run: var(--teal-500);
+  --tone-gray: var(--bone-500);
+  --tone-amber: var(--status-attention);
+  --tone-stale: var(--slate-600);
+  --tone-red: var(--status-fail);
+  --tone-done: var(--slate-500);
+  --tone-landed: color-mix(in srgb, var(--moss-500) 55%, var(--gold-500));
+
+  --verdict-approve: var(--status-ok);
+  --verdict-changes: var(--status-attention);
+  --verdict-block: var(--status-fail);
+  --verdict-approve-tint: var(--moss-500);
+  --verdict-changes-tint: var(--gold-500);
+  --verdict-block-tint: var(--terracotta-500);
+
+  --signal-ok: var(--status-ok);
+  --signal-warn: var(--status-attention);
+  --signal-bad: var(--status-fail);
+
+  --well: color-mix(in srgb, black 15%, transparent);
+
+  --glow-strength: 60%;
+
+  --frost: 14px;
+  --frost-saturate: 1.05;
+}
+
+/* ---- Non-themed families (identical in light and dark, defined once) ---- */
+:root {
+  /* Font stacks — studies and the app both speak these names. Inter ships with the
+   * app (@fontsource-variable/inter, imported by globals.css) rather than loading
+   * from a CDN: the cockpit runs offline, and the 200-weight wide-tracked mark
+   * renders visibly differently in SF. */
+  --sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Typography roles — ONE sans ladder at 9/11/13/15 (+23 hero), every step 2px.
+   * This ladder IS the cockpit's density: it is the Penumbra prototypes' own
+   * measure, decided here rather than deferred per surface. All further hierarchy
+   * is carried inside a size by weight, case+tracking, or line-height, never by a
+   * 1px size step — the half-steps the prototypes explored in (8.5/9.5/10.5/11.5/
+   * 12.5) are jitter and do not exist in the contract. Full tuple per role; wired
+   * to text-* utilities in globals.css (which also adds the uppercase /
+   * tabular-nums / mono facets where a role demands them). A new size snaps to a
+   * role or gets promoted here, never inlined. */
+  /* The one large role: a screen's own title (a ticket's hero line, a stage heading, a
+   * rendered markdown h1). Light weight rather than bold — at this size the scene's
+   * quiet is carried by the stroke, not by the size. There is deliberately NO wordmark
+   * role: the shell has no wordmark (#264), so the reference's wide-tracked ARGO mark
+   * has no use site and does not enter the contract. */
+  --type-hero: 23px;
+  --type-hero-leading: 28px;
+  --type-hero-weight: 200;
+  --type-hero-tracking: 0.01em;
+
+  --type-headline: 15px; /* verdict hero, session-level headings */
+  --type-headline-leading: 20px;
+  --type-headline-weight: 600;
+  --type-headline-tracking: -0.01em;
+
+  --type-title: 13px; /* now-line, a panel's or plane's single hero row */
+  --type-title-leading: 18px;
+  --type-title-weight: 500;
+  --type-title-tracking: -0.005em;
+
+  --type-row: 11px; /* list primary text */
+  --type-row-leading: 16px;
+  --type-row-weight: 400;
+  --type-row-tracking: 0em;
+
+  --type-row-strong: 11px; /* same size — weight differentiates: row titles, buttons */
+  --type-row-strong-leading: 16px;
+  --type-row-strong-weight: 600;
+  --type-row-strong-tracking: 0em;
+
+  --type-prose: 11px; /* same size — leading differentiates: multi-line reading */
+  --type-prose-leading: 18px;
+  --type-prose-weight: 400;
+  --type-prose-tracking: 0em;
+
+  --type-meta: 9px; /* timestamps, counts, k/v keys (+ tabular-nums) */
+  /* 14, not 13: it matches the observed 1.5–1.6 leading cluster, and an even leading is
+   * what keeps a meta-only chip an even number of pixels tall against the 4px rhythm
+   * (ConsoleChannelTab's height canary counts this box). */
+  --type-meta-leading: 14px;
+  --type-meta-weight: 500;
+  --type-meta-tracking: 0.02em;
+
+  --type-tag: 9px; /* state chips, severity words (+ uppercase) */
+  --type-tag-leading: 12px;
+  --type-tag-weight: 600;
+  --type-tag-tracking: 0.14em;
+
+  --type-eyebrow: 9px; /* section headers (+ uppercase, wider tracking, lighter) */
+  --type-eyebrow-leading: 12px;
+  --type-eyebrow-weight: 500;
+  --type-eyebrow-tracking: 0.22em;
+
+  --type-code: 11px; /* terminal, diff hunks, code blocks (+ mono) */
+  --type-code-leading: 18px;
+  --type-code-weight: 400;
+  --type-code-tracking: 0em;
+
+  /* The one deliberately off-ladder size: mono renders ~1px larger than sans at the
+   * same value, so an inline path or SHA inside an 11px row is set at 10px to match
+   * it optically. Never a starting point for a new size. */
+  --type-code-inline: 10px;
+  --type-code-inline-leading: 15px;
+  --type-code-inline-weight: 400;
+  --type-code-inline-tracking: 0em;
+
+  /* Spacing rhythm — the nine steps the design actually uses. */
+  --space-hair: 2px;
+  --space-tight: 4px;
+  --space-snug: 6px;
+  --space-gap: 8px;
+  --space-row: 10px; /* a list row's own vertical inset — the density's smallest padding */
+  --space-inset: 12px;
+  --space-region: 16px;
+  --space-plane: 20px; /* a floating plane's own inset, one step above a region */
+  /* Nesting depth — how far a tree's children sit in from their parent row. Above the
+   * region step because it is a structural offset, not a gap between neighbours. */
+  --space-nest: 24px;
+  /* Roster tree marker column — ONE fixed box shared by the caret and the glyph, so a
+   * caret and an icon that share a column centre on the same vertical axis. Sized to the
+   * icon (16px). Structural icon-box width like --space-nest, not a rhythm step: a fixed
+   * box is what holds a marker in its column as a row nests deeper. One marker box (16) +
+   * one row gap (8) = 24 = --space-nest, so each tree level steps by exactly one nest. */
+  --space-marker-col: 16px;
+
+  /* Shell chrome geometry (#264). Structural boxes rather than rhythm steps: they hold
+   * the chrome's columns, and the traffic-light reserve is fixed by macOS rather than by
+   * the design. Proposals promoted from the Code-room prototype's own measure. */
+  --project-strip-width: 60px;
+  --project-tab-size: 38px;
+  --traffic-lights-clearance: 52px;
+
+  /* Row heights — the density's vertical half, as the prototypes measured it. */
+  --row-h-tight: 20px; /* a tree row, a chip row */
+  --row-h: 22px; /* a roster/list row */
+
+  /* The one shared strip height: the Delivery panel's tab strip IS its header, sized to
+   * match the Delivery lifecycle's own strip so the two stack with no visual seam. Named
+   * rather than left implicit so a future build reads the same constant instead of
+   * re-measuring a prototype. */
+  --strip-height: 38px;
+
+  /* Radius ladder — a doubling from the hair to the plane. `--radius` is the shadcn
+   * base and stays bound to the md step. */
+  --radius-step-hair: 2px;
+  --radius-step-sm: 4px;
+  --radius-step-md: 8px;
+  --radius-step-lg: 12px;
+  --radius-plane: 16px;
+  --radius: var(--radius-step-md);
+  --radius-full: 999px; /* pills/chips; the app's rounded-full already covers this */
+
+  --border-roster: 3px; /* the severity/state accent bar (finding, rvrow, phase group) */
+
+  /* Glow — the lit halo a status signal carries (status dots, the ctx fill). Its
+   * colour is the element's own currentColor, so one utility covers every tone;
+   * only the strength is themed.
+   * EVERY state glows and the WEIGHT is the state's liveness: `live` burns at the
+   * themed strength, `quiet` (a state at rest — idle, landed) at a fraction of it,
+   * `faint` at the least — the hollow ring of a session Argo only observes. A failure
+   * keeps `live`: it burns as bright as needs-you, it just does not breathe. The two
+   * steps down are derived from the themed base so a theme still makes ONE glow
+   * decision. */
+  --glow-blur: 8px;
+  --glow-strength-quiet: calc(var(--glow-strength) * 0.4);
+  --glow-strength-faint: calc(var(--glow-strength) * 0.22);
+  --glow-blur-quiet: calc(var(--glow-blur) * 0.75);
+  --glow-blur-faint: calc(var(--glow-blur) * 0.5);
+
+  /* Icon glyph box — em-relative, so a glyph tracks the type role it sits in
+   * rather than needing a size per call site (the default box is the icon's own
+   * 1em). The baseline nudge optically centres a glyph against lowercase text
+   * instead of sitting it on the baseline. */
+  --icon-box-sm: 0.86em;
+  --icon-baseline: -0.14em;
+
+  /* Motion. `pulse` is the period a status dot breathes at — a property of the STATE
+   * (live or asking), not a budget handed to one element. The rationed animation is the
+   * attention sweep below, which only a row asking for you ever gets. */
+  --time-fast: 150ms;
+  --time-slow: 300ms;
+  --time-pulse: 2s;
+  --time-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --pulse-dim: 0.45; /* the opacity a pulsing dot dips to */
+
+  /* Attention sweep — a faint ray of light travelling the ring of the one row asking for
+   * you. The mix steps keep it a ray of the attention ink rather than a drawn border:
+   * `base` is the always-on ring so the edge never drops out behind the ray, and `still`
+   * is the whole ring under reduced motion. The ray's BODY is deliberately long (see the
+   * gradient in globals.css): an angle crosses a row's long edges and its short ones at
+   * different speeds, and a long soft body is what keeps that from reading as a stutter. */
+  --sweep-ring: 1.5px;
+  --sweep-period: 2.4s;
+  --sweep-ray: 30%;
+  --sweep-tail: 10%;
+  --sweep-base: 7%;
+  --sweep-still: 12%;
+
+  /* Depth staging — how far a dormant plane recedes behind the driven one. Two steps
+   * only (the scene never stacks deeper than second-back), and BRIGHTNESS only: the
+   * reference also scaled and shifted each step, which at cockpit width reads as cards
+   * of inconsistent size rather than as depth. Attention is brightness; that is enough. */
+  --recede-1-opacity: 0.66;
+  --recede-2-opacity: 0.5;
+}
+
+
+/* Cockpit is dark-first: studies set <html class="dark"> (see study-template.html). */
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: var(--type-row-weight) var(--type-row) / var(--type-row-leading) var(--sans);
+  letter-spacing: var(--type-row-tracking);
+}
+
+/* Typography roles — the same tuples the app gets as text-hero … text-code-inline.
+ * One sans ladder (9/11/13/15 + 23 hero) — that ladder IS the cockpit's density;
+ * within a size, weight/case/tracking/leading differentiate, never a 1px size step. */
+.text-hero {
+  font: var(--type-hero-weight) var(--type-hero) / var(--type-hero-leading) var(--sans);
+  letter-spacing: var(--type-hero-tracking);
+}
+.text-headline {
+  font: var(--type-headline-weight) var(--type-headline) / var(--type-headline-leading) var(--sans);
+  letter-spacing: var(--type-headline-tracking);
+}
+.text-title {
+  font: var(--type-title-weight) var(--type-title) / var(--type-title-leading) var(--sans);
+  letter-spacing: var(--type-title-tracking);
+}
+.text-row {
+  font: var(--type-row-weight) var(--type-row) / var(--type-row-leading) var(--sans);
+  letter-spacing: var(--type-row-tracking);
+}
+.text-row-strong {
+  font: var(--type-row-strong-weight) var(--type-row-strong) / var(--type-row-strong-leading)
+    var(--sans);
+  letter-spacing: var(--type-row-strong-tracking);
+}
+.text-prose {
+  font: var(--type-prose-weight) var(--type-prose) / var(--type-prose-leading) var(--sans);
+  letter-spacing: var(--type-prose-tracking);
+}
+.text-meta {
+  font: var(--type-meta-weight) var(--type-meta) / var(--type-meta-leading) var(--sans);
+  letter-spacing: var(--type-meta-tracking);
+  font-variant-numeric: tabular-nums;
+}
+.text-tag {
+  font: var(--type-tag-weight) var(--type-tag) / var(--type-tag-leading) var(--sans);
+  letter-spacing: var(--type-tag-tracking);
+  text-transform: uppercase;
+}
+.text-eyebrow {
+  font: var(--type-eyebrow-weight) var(--type-eyebrow) / var(--type-eyebrow-leading) var(--sans);
+  letter-spacing: var(--type-eyebrow-tracking);
+  text-transform: uppercase;
+}
+.text-code {
+  font: var(--type-code-weight) var(--type-code) / var(--type-code-leading) var(--mono);
+  letter-spacing: var(--type-code-tracking);
+}
+.text-code-inline {
+  font: var(--type-code-inline-weight) var(--type-code-inline) / var(--type-code-inline-leading)
+    var(--mono);
+  letter-spacing: var(--type-code-inline-tracking);
+}
+.mono {
+  font-family: var(--mono);
+}
+
+/* The lit halo on a live signal — mirrors the app's `glow` utility. The colour is the
+ * element's own currentColor, so one class covers every tone. */
+.glow {
+  box-shadow: 0 0 var(--glow-blur) color-mix(in srgb, currentColor var(--glow-strength), transparent);
+}
+
+/* The Penumbra plane and its depth states — mirrors the app's `plane` / `plane-lit` /
+ * `plane-recede-*` utilities. A plane floats in the lit scene; an `inset` card sits flat
+ * on a panel. Never assemble one by hand from the ingredients. */
+.plane {
+  border-radius: var(--radius-plane);
+  background: linear-gradient(180deg, var(--plane-top), var(--plane-bottom));
+  backdrop-filter: blur(var(--frost)) saturate(var(--frost-saturate));
+  box-shadow:
+    inset 0 1px 0 var(--cove-lip),
+    inset 0 22px 40px -30px var(--bloom-warm),
+    0 20px 34px -22px var(--plane-cast);
+}
+.plane-lit {
+  background: linear-gradient(180deg, var(--plane-top-lit), var(--plane-bottom-lit));
+  box-shadow:
+    inset 0 1px 0 var(--cove-lip-lit),
+    inset 0 26px 46px -30px var(--bloom-warm-lit),
+    0 30px 50px -20px var(--plane-cast-lit),
+    0 0 46px -6px var(--bloom-warm);
+}
+/* Depth by brightness alone — a plane never changes size or position to express it. */
+.plane-recede-1 {
+  opacity: var(--recede-1-opacity);
+}
+.plane-recede-2 {
+  opacity: var(--recede-2-opacity);
+}
+
+/* Status is a dot plus a word — never a filled or outlined pill. The colour is the
+ * status tone as currentColor, so the dot and the word always agree. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-snug);
+}
+.status > .dot {
+  width: var(--space-snug);
+  height: var(--space-snug);
+  border-radius: var(--radius-full);
+  background: currentColor;
+  flex: none;
+}
+.room-scrim {
+  background:
+    radial-gradient(1150px 950px at 85% 50%, transparent 44%, var(--scrim-edge) 100%),
+    linear-gradient(to bottom, var(--scrim-top), transparent 12%, transparent 82%, var(--scrim-bottom));
+  mix-blend-mode: multiply;
+}
+
+body { margin: 0; background: var(--background); color: var(--foreground);
+  font-family: var(--sans); }
+.wrap { padding: 20px 26px 34px; max-width: 1400px; margin: 0 auto; }
+.bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; align-items: center; }
+.bar .cap { font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--foreground-faint); width: 62px; flex: none; }
+.bar > span[id] { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { appearance: none; border: 0; cursor: pointer; font: 11px var(--sans);
+  color: var(--muted-foreground); background: var(--plane-top); padding: 5px 12px;
+  border-radius: 999px; box-shadow: inset 0 1px 0 var(--cove-lip); }
+.tab:hover { color: var(--foreground-soft); }
+.tab[aria-pressed="true"] { color: var(--foreground-bright);
+  box-shadow: inset 0 1px 0 var(--cove-lip), 0 0 0 1px var(--primary); }
+.head { display: flex; align-items: baseline; gap: 14px; margin: 18px 0 5px; }
+.head h1 { font-size: 15px; font-weight: 500; margin: 0; color: var(--foreground-bright); }
+.head .m { color: var(--muted-foreground); font-size: 10.5px; font-family: var(--mono); }
+.blurb { color: var(--foreground-soft); font-size: 12px; max-width: 96ch;
+  margin: 0 0 14px; line-height: 1.55; }
+
+#stage { position: relative; border-radius: var(--radius-plane); min-height: 600px;
+  background: radial-gradient(900px 620px at 60% 44%, rgba(255,247,232,0.035), transparent 70%),
+    linear-gradient(180deg, var(--plane-top), var(--plane-bottom));
+  box-shadow: inset 0 1px 0 var(--cove-lip); overflow: hidden; }
+#stage.flow { overflow: auto; }
+
+/* ------------------------------------------------------------- constellation */
+.con { display: grid; grid-template-columns: 1fr 330px; gap: 8px; height: 600px; }
+.sky { width: 100%; height: 100%; }
+.st .glow { fill: none; }
+.st .disc { fill: var(--plane-top); stroke: var(--foreground-faint); stroke-width: 1; }
+.st .num { font: 10px var(--mono); fill: var(--muted-foreground); }
+.st .claim { fill: none; stroke: var(--primary); stroke-width: 1; opacity: 0.9; }
+.st[data-s="takeable"] .disc { fill: var(--bone-50); stroke: none; }
+.st[data-s="takeable"] .glow { fill: url(#gw); }
+.st[data-s="takeable"] .num { fill: var(--background); }
+.st[data-s="claimed"] .disc { fill: var(--bone-50); stroke: none; }
+.st[data-s="claimed"] .glow { fill: url(#gw); }
+.st[data-s="claimed"] .num { fill: var(--background); }
+.st[data-s="blocked"] .disc { fill: none; stroke: var(--status-fail); }
+.st[data-s="blocked"] .num { fill: var(--status-fail); }
+.st[data-s="stranded"] .disc { fill: var(--status-fail); stroke: none; }
+.st[data-s="stranded"] .glow { fill: url(#gf); }
+.st[data-s="stranded"] .num { fill: var(--background); }
+/* Resolved work recedes, but it is still a star — an outline so faint it vanished left
+   the numbers floating on the plane with nothing under them. Depth is brightness, not
+   absence: it keeps its disc and gives up its glow. */
+.st[data-s="decided"] .disc { fill: var(--plane-top); stroke: var(--foreground-faint);
+  stroke-opacity: 0.55; }
+.st[data-s="decided"] .num { fill: var(--muted-foreground); }
+.st[data-s="ruled_out"] .disc { fill: var(--plane-bottom); stroke: var(--foreground-faint);
+  stroke-opacity: 0.45; stroke-dasharray: 2 2.5; }
+.st[data-s="ruled_out"] .num { fill: var(--foreground-faint); }
+.ln { stroke: var(--foreground-faint); stroke-width: 1; opacity: 0.45; fill: none; }
+.ln.held { stroke: var(--status-fail); opacity: 0.7; }
+.ah { fill: var(--foreground-faint); opacity: 0.5; }
+.ah.held { fill: var(--status-fail); opacity: 0.8; }
+
+.road { stroke: var(--foreground-faint); stroke-width: 1; opacity: 0.45; }
+.stem { stroke: var(--foreground-faint); stroke-width: 1; opacity: 0.3; }
+.fogband { fill: url(#fog); }
+.cap { font: 8.5px var(--sans); letter-spacing: 0.14em; fill: var(--foreground-faint); }
+.cap.dest { fill: var(--muted-foreground); }
+.destmark { fill: none; stroke: var(--primary); stroke-width: 1; opacity: 0.75; }
+
+.con.solo { grid-template-columns: 1fr; }
+/* On-canvas titles, next to their dot — state carries the ink, as everywhere else.
+   The plane-coloured halo knocks lines out from behind the letterforms, so the NOW
+   line and the edges pass visually BEHIND type instead of through it. */
+.st .ttl { font: 9.5px var(--sans); fill: var(--muted-foreground);
+  paint-order: stroke; stroke: var(--plane-top); stroke-width: 3px; }
+.st[data-s="takeable"] .ttl, .st[data-s="stranded"] .ttl { fill: var(--foreground-bright); }
+.st[data-s="claimed"] .ttl { fill: var(--foreground-soft); }
+.st[data-s="blocked"] .ttl { fill: var(--foreground-soft); }
+.st[data-s="decided"] .ttl, .st[data-s="ruled_out"] .ttl { fill: var(--foreground-faint); }
+.st .rtag { fill: var(--foreground-faint); font: 7.5px var(--mono);
+  letter-spacing: 0.09em; text-transform: uppercase;
+  paint-order: stroke; stroke: var(--plane-top); stroke-width: 3px; }
+.st[data-s="takeable"] .rtag { fill: var(--muted-foreground); }
+/* waiting — open but not takeable and not dependency-blocked: a human step (needs-info,
+   needs-triage) stands before it. Neutral, never red: nothing is wrong, it is just early. */
+.st[data-s="waiting"] .disc { fill: var(--plane-top); stroke: var(--muted-foreground); }
+.st[data-s="waiting"] .num { fill: var(--muted-foreground); }
+.st[data-s="waiting"] .ttl { fill: var(--foreground-soft); }
+.nowline { stroke: var(--primary); stroke-width: 1.5; opacity: 0.8; }
+.cap.now { fill: var(--primary); opacity: 0.85; }
+
+/* ---- hub shapes: membership wiring + the map-as-hub mark */
+.mem { stroke: var(--foreground-faint); opacity: 0.22; }
+.hub .hubdisc { fill: var(--plane-top); stroke: var(--primary); stroke-opacity: 0.5; }
+.hub .hubnum { fill: var(--muted-foreground); font: 8.5px var(--mono); }
+.wfog { fill: var(--muted-foreground); }
+#stage.dim .mem { opacity: 0.07; }
+#stage.dim .hub { opacity: 0.4; }
+
+.rail { overflow: auto; padding: 6px 4px 6px 0; display: flex; flex-direction: column; gap: 1px; }
+.rail .row { display: grid; grid-template-columns: 24px 1fr; gap: 9px; align-items: baseline;
+  padding: 4px 8px; border-radius: var(--radius-inset); cursor: default; }
+.rail .ro { font: 10px var(--mono); color: var(--foreground-faint); }
+.rail .rt { font-size: 11.5px; color: var(--muted-foreground); line-height: 1.35; }
+.rail .row[data-s="takeable"] .rt, .rail .row[data-s="stranded"] .rt { color: var(--foreground-bright); }
+.rail .row[data-s="claimed"] .rt { color: var(--foreground-soft); }
+.rail .row[data-s="claimed"] .ro { color: var(--primary); }
+.rail .row[data-s="blocked"] .ro, .rail .row[data-s="stranded"] .ro { color: var(--status-fail); }
+.rail .row[data-s="decided"] .rt, .rail .row[data-s="ruled_out"] .rt { color: var(--foreground-faint); }
+
+/* --------------------------------------------------------------------- flow */
+.flow { padding: 22px; }
+.board { position: relative; }
+.wires { position: absolute; inset: 0; overflow: visible; }
+.wr { stroke: var(--foreground-faint); stroke-width: 1; opacity: 0.5; }
+.wr.held { stroke: var(--status-fail); opacity: 0.75; }
+.card { position: absolute; width: 168px; height: 42px; box-sizing: border-box;
+  display: grid; grid-template-columns: 22px 1fr; gap: 7px; align-items: center;
+  padding: 6px 9px; border-radius: var(--radius-inset); background: var(--plane-top);
+  box-shadow: inset 0 1px 0 var(--cove-lip), 0 0 0 1px var(--border-inset-hair); }
+.card .co { font: 10px var(--mono); color: var(--foreground-faint); align-self: start; }
+.card .ct { font-size: 10.5px; line-height: 1.28; color: var(--muted-foreground);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card[data-s="takeable"] { box-shadow: inset 0 1px 0 var(--cove-lip), 0 0 0 1px var(--primary); }
+.card[data-s="takeable"] .ct { color: var(--foreground-bright); }
+.card[data-s="takeable"] .co { color: var(--primary); }
+.card[data-s="claimed"] .co { color: var(--primary); }
+.card[data-s="claimed"] .ct { color: var(--foreground-soft); }
+.card[data-s="blocked"] .co, .card[data-s="stranded"] .co { color: var(--status-fail); }
+.card[data-s="stranded"] .ct { color: var(--foreground-bright); }
+.card[data-s="decided"] .ct, .card[data-s="ruled_out"] .ct { color: var(--foreground-faint); }
+.card[data-s="ruled_out"] { opacity: 0.6; }
+.tray { margin-top: 26px; padding-top: 16px; border-top: 1px solid var(--border-inset-hair); }
+.trayhead { font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--foreground-faint); margin-bottom: 12px; }
+.traygrid { display: flex; flex-wrap: wrap; gap: 10px; }
+.traygrid .card { position: static; }
+
+/* ------------------------------------------------- one hovered ticket, everywhere */
+#stage.dim .st, #stage.dim .card, #stage.dim .row { opacity: 0.34; }
+#stage.dim .ln, #stage.dim .wr, #stage.dim .ah { opacity: 0.12; }
+#stage .hot { opacity: 1 !important; }
+.st.hot .disc { stroke: var(--primary); stroke-width: 1.5; }
+.card.hot { box-shadow: inset 0 1px 0 var(--cove-lip), 0 0 0 1px var(--primary); }
+.row.hot { background: var(--plane-top); }
+.ln.hot, .wr.hot { stroke: var(--primary); opacity: 0.95 !important; }
+.ah.hot { fill: var(--primary); opacity: 0.95 !important; }
+.st.sel .disc, .card.sel { outline: 1px solid var(--primary); outline-offset: 3px; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"><span class="cap">shape</span><span id="tShape"></span></div>
+  <div class="bar"><span class="cap">real map</span><span id="tMap"></span></div>
+  <div class="bar" id="dirwrap"><span class="cap">flow</span><span id="tDir"></span></div>
+  <div class="head"><h1 id="sname"></h1><span class="m" id="smeta"></span></div>
+  <p class="blurb" id="sblurb"></p>
+  <svg width="0" height="0" style="position:absolute"><defs>
+    <radialGradient id="gw"><stop offset="0%" stop-color="#FFF3DC" stop-opacity="0.42"/><stop offset="100%" stop-color="#FFF3DC" stop-opacity="0"/></radialGradient>
+    <linearGradient id="fog" x1="0" x2="1"><stop offset="0%" stop-color="#FFF3DC" stop-opacity="0"/><stop offset="100%" stop-color="#FFF3DC" stop-opacity="0.05"/></linearGradient>
+    <radialGradient id="gf"><stop offset="0%" stop-color="var(--status-fail)" stop-opacity="0.4"/><stop offset="100%" stop-color="var(--status-fail)" stop-opacity="0"/></radialGradient>
+  </defs></svg>
+  <div id="stage"></div>
+</div>
+<script>
+const TICKETS = {
+  // ---- #290, the live map
+  291: { t: "The Answer: what a resolved decision is, and where its text lives",
+         closure: "completed", role: "grilling",
+         ans: "Not an entity: WorkItem.answer, a value object under the decision-ticket role, held verbatim." },
+  292: { t: "Port capability probe: what each provider can express of the decision model",
+         closure: "completed", role: "research",
+         ans: "Both providers report closure kind natively, and neither honours it in a dependency edge — proven live." },
+  293: { t: "The canonical decision model, and how a port normalizes onto it",
+         closure: "completed", role: "grilling",
+         ans: "The canonical model is settled. CONTEXT.md updated: the state bucket, the edge asymmetry, Session→Work Item as the claim lease." },
+  294: { t: "Frontier vs Next-up: one surface or two",
+         closure: "completed", role: "grilling",
+         ans: "One pool, one predicate — two presentations, and the hero is kind-blind by exclusion." },
+  295: { t: "The brief composer: what goes in, in what order, and how it is delivered",
+         closure: "completed", role: "grilling",
+         ans: "One role-parameterised composer, five slots, thin by construction. Carries a correction: the auto-load premise was half wrong." },
+  296: { t: "The brief vs the harness's own auto-loaded context",
+         closure: "completed", role: "grilling",
+         ans: "The brief carries only what does not live in the working tree — a locational rule, not a list. The repo's law outranks it." },
+  297: { t: "The drive loop: claim, spawn, land the answer, unblock",
+         closure: "completed", role: "grilling",
+         ans: "Take → the agent works → Argo observes. Argo starts sessions and reads consequences; it never lands the answer itself." },
+  298: { t: "Where the planning surface lives, and its anatomy",
+         claim: "milad-alizadeh", role: "prototype",
+         q: "Where does the planning surface live in the cockpit, and what is its anatomy? Taken once the model, the frontier question and the drive loop were settled." },
+  303: { t: "The invariants Argo enforces over a decision map, and where each lives",
+         role: "grilling",
+         q: "Which invariants does Argo enforce over a decision map, and where does each live — the port, the canonical model, the surface, or the agent skill?" },
+  306: { t: "The brief's context budget: bounded, and against whose limit",
+         role: "grilling",
+         q: "Is the brief bounded, and against whose limit? The composer ships with no sizes shown until this picks a denominator." },
+
+  // ---- #157, the largest map in the repo
+  158: { t: "Design foundations from a blank slate", closure: "completed", role: "prototype" },
+  159: { t: "One-screen cockpit prototype in the leading direction", closure: "completed", role: "prototype" },
+  160: { t: "Work room interior", closure: "completed", role: "grilling" },
+  161: { t: "Session detail absorbs the new links", closure: "completed", role: "prototype" },
+  164: { t: "Attention model and project-switching semantics", closure: "completed", role: "grilling" },
+  165: { t: "Onboarding flow", closure: "completed", role: "prototype" },
+  166: { t: "The what's-next judgement", closure: "completed", role: "grilling" },
+  167: { t: "Provider write-ops and canonical state mapping", closure: "completed", role: "grilling" },
+  169: { t: "Grill-promotion contract", closure: "completed", role: "grilling" },
+  170: { t: "Disposition of the 28 pre-existing tickets", closure: "completed", role: "task" },
+  171: { t: "GitHub port capabilities: sub-issues, dependencies, closing refs, issue types",
+         closure: "completed", role: "research" },
+  172: { t: "App skeleton — shell, information architecture, core journeys, keyboard model",
+         closure: "completed", role: "grilling",
+         ans: "Resolved as a written shell-spec, not a pixel study — re-triaged prototype→grilling. The spec owns only what no room file owns." },
+  173: { t: "Edge, empty, and error states across all surfaces", closure: "completed", role: "grilling" },
+  174: { t: "Content — microcopy, status vocabulary, Concierge narration", closure: "completed", role: "grilling" },
+  175: { t: "Concierge in the data model", closure: "completed", role: "grilling" },
+  176: { t: "Concierge expanded conversation view + narration triggers", closure: "completed", role: "prototype" },
+  177: { t: "Discovery / vault scope decision", closure: "not_planned", role: "grilling",
+         ans: "Ruled out of scope for this effort." },
+  178: { t: "Prototype switcher: stitch the settled per-surface prototypes into one thin wrapper",
+         closure: "completed", role: "grilling",
+         ans: "Built as cockpit-prototype-switcher.html (PR #250). Not an index page and not cut: a cross-surface review harness." },
+  181: { t: "Adopt ACP-native modeling for the session-runtime layer", closure: "completed", role: "grilling" },
+  182: { t: "Domain model — the locked source of truth (from scratch, ACP-aligned)",
+         closure: "completed", role: "grilling" },
+  183: { t: "Light IDE surfaces: file explorer/editor + scratch terminal + open-in-editor",
+         closure: "completed", role: "prototype" },
+  186: { t: "Finish the session-room interior (grill + prototype)", closure: "completed", role: "prototype" },
+  188: { t: "OS-level notifications vs in-app attention", closure: "completed", role: "grilling" },
+  201: { t: "App-shell amendment: global git/checkout chrome + merged floating top bar",
+         closure: "completed", role: "task" },
+  202: { t: "Project setting: enable worktrees + how the file view relates to live worktrees",
+         closure: "completed", role: "grilling" },
+  205: { t: "Land the stranded #174 / #165 artifacts", closure: "completed", role: "task" },
+  184: { t: "Render-pass closer: fold every settled surface into the /prototype switcher shell",
+         role: "task",
+         q: "Fold every settled surface into the /prototype switcher shell, now that the per-surface prototypes have landed." },
+
+  // ---- #190, resolved end to end
+  191: { t: "Deep-dive DashVox & VoiceMode's return path", closure: "completed", role: "research" },
+  192: { t: "The return-path fidelity contract", closure: "completed", role: "grilling" },
+  193: { t: "Grill-by-voice walking skeleton", closure: "completed", role: "prototype" },
+  194: { t: "Activation + foreground session model", closure: "completed", role: "grilling" },
+  198: { t: "Answer-injection: how a spoken answer re-enters the session", closure: "completed", role: "grilling" },
+  199: { t: "Brevity-vs-fidelity guard: negations outrank the length cap", closure: "completed", role: "grilling" },
+  203: { t: "Measure the marker-drop rate: set the guard's dials", closure: "completed", role: "prototype" },
+  207: { t: "Enforcement when a violation is the common case, not a backstop",
+         closure: "completed", role: "grilling" },
+  210: { t: "How ChatGPT's in-session voice routes to a reasoning model", closure: "completed", role: "research" },
+  211: { t: "Voice-in-session: what Argo replicates from the ChatGPT model", closure: "completed", role: "grilling" },
+  212: { t: "Which side of the seam authors the spoken line", closure: "completed", role: "grilling",
+         ans: "Carries a correction: the output leg is refuted at the incumbent. The input leg is confirmed, more strongly than this resolution claimed." },
+  213: { t: "Can PersonaPlex replace GPT Live as Argo's voice front end", closure: "completed", role: "research" },
+  214: { t: "Why OpenAI split the supervisor out instead of tools in-turn", closure: "completed", role: "research" },
+  216: { t: "Concierge as coordinator vs #194's on-screen routing rule", closure: "completed", role: "grilling" },
+  217: { t: "Fan-out: how many workers, and what happens past the cap", closure: "completed", role: "grilling",
+         ans: "Adopt the incumbent's shape wholesale: four live slots, app-wide, queue past it, never refuse. Voice constrains nothing." },
+  218: { t: "Merging concurrent results into one utterance", closure: "completed", role: "grilling" },
+  219: { t: "Posture C timing: does anything ever interrupt?", closure: "completed", role: "grilling" },
+  220: { t: "Addressing a session by voice: the naming grammar", closure: "completed", role: "grilling" },
+  221: { t: "Does GPT Live coordinate sessions itself — is the separate router redundant?",
+         closure: "completed", role: "research",
+         ans: "The router coordinates, the audio model condenses, and no verbatim mode exists on the public API." },
+  222: { t: "The last hop re-generates: where can the fidelity contract actually bind?",
+         closure: "completed", role: "grilling" },
+  224: { t: "Eval the return path: council judges over the spoken line", closure: "completed", role: "prototype" },
+  231: { t: "Does the fidelity contract name slots, or just a kernel?", closure: "completed", role: "grilling",
+         ans: "No slots at either stage. #234 unblocked and its blocking question answered." },
+  232: { t: "Markdown in the spans: strip it, or protect containment?", closure: "completed", role: "grilling" },
+  233: { t: "Resumable speech after a barge-in: what is retained, and for how long?",
+         closure: "completed", role: "grilling" },
+  234: { t: "The session.instructions \"there's more\" clause: unconditional or judged?",
+         closure: "completed", role: "prototype" },
+};
+// Fill the answer every closed ticket has but whose prose we did not pull in — the
+// pane's honest read when the provider carries one it has not fetched.
+Object.entries(TICKETS).forEach(([, t]) => {
+  if (t.closure === "completed" && !t.ans) t.ans = "Resolved — see the resolution comment on the ticket.";
+});
+
+// ---- Real `blocked_by` edges, [blocker, dependent], as GitHub reports them.
+const EDGES = [
+  // #290
+  [291, 293], [292, 293], [293, 294], [291, 295], [293, 295], [295, 296],
+  [293, 297], [295, 297], [294, 298], [297, 298], [296, 306],
+  // #157
+  [158, 159], [182, 161], [182, 164], [182, 165], [172, 165], [182, 166],
+  [171, 167], [182, 167], [171, 169], [182, 169], [159, 170], [160, 170],
+  [182, 172], [182, 173], [172, 173], [181, 174], [182, 174], [181, 175],
+  [182, 175], [182, 176], [172, 176], [182, 177], [205, 178], [182, 183],
+  [172, 183], [178, 184], [172, 184],
+  // #190
+  [192, 193], [212, 207], [221, 207], [222, 207], [210, 211], [217, 218],
+  [231, 234],
+];
+// No live map has a stranded ticket: nothing in the repo is blocked by a `not_planned`
+// ticket. #177 IS really ruled out and #184 IS really open, so the `stranded` state
+// asserts this ONE edge that GitHub does not report, to exercise the state the model
+// says earns the attention channel (#294). It is the only invented fact in this file.
+const SEVERED = [[177, 184]];
+
+const MAP_157 = [158, 159, 160, 161, 164, 165, 166, 167, 169, 170, 171, 172, 173, 174,
+  175, 176, 177, 178, 181, 182, 183, 186, 188, 201, 202, 205, 184];
+const MAP_190 = [191, 192, 193, 194, 198, 199, 203, 207, 210, 211, 212, 213, 214, 216,
+  217, 218, 219, 220, 221, 222, 224, 231, 232, 233, 234];
+const MAP_290 = [291, 292, 293, 294, 295, 296, 297, 298, 303, 306];
+
+const STATES = {
+  // The live map, as it stands: one claimed, two takeable, seven resolved.
+  frontier: { nodes: MAP_290, sel: 303, id: 290,
+              title: "Planning-of-work as a cockpit surface", fog: 4 },
+  // The largest real map. #184 is genuinely open and blocked by nothing now — its two
+  // blockers closed — so this state rewinds #178 and #205 to open, which is how the map
+  // actually stood in July: a real blocked chain, 205 → 178 → 184.
+  large:    { nodes: MAP_157, sel: 184, id: 157, title: "Cockpit footing reset", fog: 2,
+              reopen: [178, 205] },
+  // The same map with the ruled-out #177 blocking #184 (see SEVERED).
+  stranded: { nodes: MAP_157, sel: 184, id: 157, title: "Cockpit footing reset", fog: 2 },
+  // A map that reached its destination: every ticket resolved, nothing left but fog.
+  clear:    { nodes: MAP_190, sel: null, id: 190, fog: 3,
+              title: "Voice concierge interaction model" },
+  // The same 27-ticket map on DAY ONE: everything reopened, nothing walked yet. The
+  // frontier is at its widest and every dependent ticket stands ahead of the line.
+  dayone:   { nodes: MAP_157, sel: null, id: 157, title: "Cockpit footing reset", fog: 2,
+              reopen: MAP_157 },
+};
+// ---- Derivation. Identical to the prototype's: state is computed from the artifact plus the
+// edges, never stored (#293).
+const isOpen = (id, cfg) => (cfg.reopen ?? []).includes(id) || !TICKETS[id].closure;
+const severedOnly = (cfg) => cfg.nodes === MAP_157 && !cfg.reopen;
+function derive(id, cfg) {
+  const t = TICKETS[id];
+  if (isOpen(id, cfg)) {
+    const liveSet = new Set(cfg.nodes);
+    const severed = severedOnly(cfg) ? SEVERED.filter(([, d]) => d === id).map(([b]) => b) : [];
+    if (severed.some((b) => liveSet.has(b))) return "stranded";
+    const blocked = EDGES.filter(([, d]) => d === id).map(([b]) => b)
+      .filter((b) => liveSet.has(b) && isOpen(b, cfg));
+    if (blocked.length) return "blocked";
+    return t.claim ? "claimed" : "takeable";
+  }
+  return t.closure === "not_planned" ? "ruled_out" : "decided";
+}
+
+// One MAP object per lab option: the real data, derived, plus the edges that are live in it.
+function buildMap(key) {
+  const cfg = STATES[key];
+  const ids = cfg.nodes;
+  const set = new Set(ids);
+  const edges = [...EDGES, ...(severedOnly(cfg) ? SEVERED : [])]
+    .filter(([b, d]) => set.has(b) && set.has(d));
+  const nodes = ids.map((id) => ({
+    id,
+    title: TICKETS[id].t,
+    role: TICKETS[id].role,
+    // The wayfinder type label, worn as a tag: it says WHO can take the ticket —
+    // research is AFK-delegable, grilling and prototype need the human.
+    tag: TICKETS[id].role,
+    state: derive(id, cfg),
+    claimed: !!TICKETS[id].claim,
+    sel: id === cfg.sel,
+  }));
+  // Longest path from a root. Every placer gets it; most use it.
+  const depth = {};
+  const depthOf = (id, seen = new Set()) => {
+    if (depth[id] !== undefined) return depth[id];
+    if (seen.has(id)) return 0;
+    seen.add(id);
+    const bs = edges.filter(([, d]) => d === id).map(([b]) => b);
+    return (depth[id] = bs.length ? 1 + Math.max(...bs.map((b) => depthOf(b, seen))) : 0);
+  };
+  ids.forEach((id) => depthOf(id));
+  nodes.forEach((n) => (n.depth = depth[n.id]));
+  // Weakly-connected components, biggest first. Several placers lay strands out as units.
+  const root = {};
+  const find = (x) => (root[x] === x ? x : (root[x] = find(root[x])));
+  ids.forEach((id) => (root[id] = id));
+  edges.forEach(([b, d]) => (root[find(b)] = find(d)));
+  const groups = {};
+  ids.forEach((id) => (groups[find(id)] ??= []).push(id));
+  const strands = Object.values(groups).sort((a, b) => b.length - a.length);
+  return { key, id: cfg.id, title: cfg.title, fog: cfg.fog, sel: cfg.sel, nodes, edges, strands,
+           byId: Object.fromEntries(nodes.map((n) => [n.id, n])) };
+}
+// ---- INVENTED, and marked so: one spec with implementation sub-tickets, to prove the
+// map is a LENS, not a model. Same geometry; the states are the repo's own triage labels
+// (docs/agents/triage-labels.md) read verbatim, plus blocked derived from the edges —
+// nothing wayfinder-specific. Ids 9xx are not real tickets.
+const SPEC = {
+  id: 900, title: "Session roster — build plan",
+  tickets: {
+    901: { t: "Extract RosterRow primitive from the session rail", state: "decided", word: "closed" },
+    902: { t: "Roster slice: store shape + selectors", state: "decided", word: "closed" },
+    903: { t: "Wire transcript-tail liveness into the slice", state: "decided", word: "closed" },
+    904: { t: "RosterRow states: running, permission, asking, idle", state: "takeable",
+           word: "ready-for-agent", tag: "ready-for-agent" },
+    905: { t: "Zero-state: no sessions yet", state: "takeable",
+           word: "ready-for-agent", tag: "ready-for-agent" },
+    906: { t: "Keyboard model: j/k walk, enter opens", state: "takeable",
+           word: "ready-for-human", tag: "ready-for-human" },
+    907: { t: "Attention sweep animation on state change", state: "blocked", word: "blocked" },
+    908: { t: "Orphaned-session demotion banner", state: "blocked", word: "blocked" },
+    909: { t: "Roster virtualization past 30 sessions", state: "waiting",
+           word: "needs-info", tag: "needs-info", notReady: true },
+    910: { t: "Sort order: attention first vs stable", state: "waiting",
+           word: "needs-triage", tag: "needs-triage", notReady: true },
+    911: { t: "Per-row context menu", state: "ruled_out", word: "wontfix", tag: "wontfix" },
+    912: { t: "Storybook stories for every row state", state: "blocked", word: "blocked" },
+  },
+  edges: [[904, 907], [907, 908], [905, 912], [906, 912]],
+};
+function buildSpecMap() {
+  const ids = Object.keys(SPEC.tickets).map(Number);
+  const edges = SPEC.edges;
+  const nodes = ids.map((id) => ({ id, ...SPEC.tickets[id], title: SPEC.tickets[id].t,
+    claimed: false, sel: false }));
+  const depth = {};
+  const depthOf = (id, seen = new Set()) => {
+    if (depth[id] !== undefined) return depth[id];
+    if (seen.has(id)) return 0;
+    seen.add(id);
+    const bs = edges.filter(([, d]) => d === id).map(([b]) => b);
+    return (depth[id] = bs.length ? 1 + Math.max(...bs.map((b) => depthOf(b, seen))) : 0);
+  };
+  ids.forEach((id) => depthOf(id));
+  nodes.forEach((n) => (n.depth = depth[n.id]));
+  const root = {};
+  const find = (x) => (root[x] === x ? x : (root[x] = find(root[x])));
+  ids.forEach((id) => (root[id] = id));
+  edges.forEach(([b, d]) => (root[find(b)] = find(d)));
+  const groups = {};
+  ids.forEach((id) => (groups[find(id)] ??= []).push(id));
+  const strands = Object.values(groups).sort((a, b) => b.length - a.length);
+  return { key: "spec", id: SPEC.id, title: SPEC.title, fog: 0, sel: null, nodes, edges,
+    strands, byId: Object.fromEntries(nodes.map((n) => [n.id, n])) };
+}
+
+const MAPS = {
+  m290: { label: "#290 · live · 10", build: () => buildMap("frontier") },
+  m157d0: { label: "#157 · day one · 27", build: () => buildMap("dayone") },
+  m157: { label: "#157 · rewound · 27", build: () => buildMap("large") },
+  m157s: { label: "#157 · stranded", build: () => buildMap("stranded") },
+  m190: { label: "#190 · resolved · 25", build: () => buildMap("clear") },
+  mspec: { label: "#900 · spec build · 12 (invented)", build: buildSpecMap },
+};
+window.LAB = { MAPS, buildMap, TICKETS };
+window.PLACERS = {};
+window.PAINTERS = {};
+
+</script>
+<script>
+/* Two candidate presentations of a wayfinder map, over the real data.
+
+   The lesson from the nine-layout lab: legibility is decided by what a NODE CARRIES,
+   not by the layout engine. A 30-character title beside every star needs ~186 units of
+   clearance, so the layout gets driven apart by type and the shape stops reading. Both
+   shapes below shrink the node instead — the constellation to a numbered dot with the
+   naming moved off-canvas, the flow to a card that carries its own title and is packed
+   in a grid where cards cannot collide by construction. */
+(() => {
+  const SVG = "http://www.w3.org/2000/svg";
+  const el = (n, a = {}) => {
+    const e = document.createElementNS(SVG, n);
+    for (const [k, v] of Object.entries(a)) e.setAttribute(k, v);
+    return e;
+  };
+  const div = (cls, text) => {
+    const d = document.createElement("div");
+    d.className = cls;
+    if (text !== undefined) d.textContent = text;
+    return d;
+  };
+  // The ordinal is LOCAL to the map and stable: reading order, two digits. It is what
+  // makes a node small enough to lay out, and what lets the rail and the map refer to
+  // the same ticket without repeating its title.
+  const ordinals = (map) => {
+    const o = {};
+    map.nodes.forEach((n, i) => (o[n.id] = String(i + 1).padStart(2, "0")));
+    return o;
+  };
+  const depthsOf = (map) => {
+    const d = {};
+    const blockers = {};
+    map.edges.forEach(([b, x]) => (blockers[x] ??= []).push(b));
+    const walk = (id, seen = new Set()) => {
+      if (d[id] !== undefined) return d[id];
+      if (seen.has(id)) return 0;
+      seen.add(id);
+      const bs = blockers[id] ?? [];
+      return (d[id] = bs.length ? 1 + Math.max(...bs.map((b) => walk(b, seen))) : 0);
+    };
+    map.nodes.forEach((n) => walk(n.id));
+    return d;
+  };
+
+  /* The rail is where the map is READ. Ordinal + full title, in the order the ordinals
+     run, so the eye goes number → name and the canvas carries no prose at all. Shared by
+     every shape whose node is a numbered star. */
+  const railOf = (map, ord, on) => {
+    const rail = div("rail");
+    map.nodes.forEach((n) => {
+      const row = div(`row${n.sel ? " sel" : ""}`);
+      row.dataset.id = n.id;
+      row.dataset.s = n.state;
+      row.append(div("ro", ord[n.id]), div("rt", n.title));
+      row.addEventListener("mouseenter", () => on(n.id));
+      row.addEventListener("mouseleave", () => on(null));
+      rail.append(row);
+    });
+    return rail;
+  };
+
+  /* ---------------------------------------------------------------- constellation */
+
+  const SIM = { W: 760, H: 560, R: 15, ITER: 420, REST: 96, SPRING: 0.05,
+    REPEL: 2600, GRAV: 0.006, BIAS: 0.02, STEP: 0.55, DAMP: 0.86, MIN: 46 };
+
+  /* Deterministic golden-angle seed — the same map must always yield the same sky, or
+     it is a slot machine rather than a design study. */
+  const seed = (map) => {
+    const pos = {};
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    map.nodes.forEach((n, i) => {
+      const a = i * golden, r = Math.sqrt(i + 0.5) / Math.sqrt(map.nodes.length);
+      pos[n.id] = { x: SIM.W / 2 + r * Math.cos(a) * SIM.W * 0.44,
+        y: SIM.H / 2 + r * Math.sin(a) * SIM.H * 0.44, vx: 0, vy: 0 };
+    });
+    return pos;
+  };
+
+  const relax = (map, pos, depth) => {
+    const ids = map.nodes.map((n) => n.id);
+    const maxD = Math.max(1, ...Object.values(depth));
+    const deg = {};
+    map.edges.flat().forEach((id) => (deg[id] = (deg[id] ?? 0) + 1));
+    for (let step = 0; step < SIM.ITER; step++) {
+      for (let i = 0; i < ids.length; i++)
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = pos[ids[i]], b = pos[ids[j]];
+          let dx = b.x - a.x, dy = b.y - a.y;
+          let d = Math.hypot(dx, dy) || 0.01;
+          if (d > 340) continue;
+          const f = SIM.REPEL / (d * d);
+          dx /= d; dy /= d;
+          a.vx -= dx * f; a.vy -= dy * f;
+          b.vx += dx * f; b.vy += dy * f;
+        }
+      map.edges.forEach(([p, q]) => {
+        const a = pos[p], b = pos[q];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.hypot(dx, dy) || 0.01;
+        const f = (d - SIM.REST) * SIM.SPRING;
+        a.vx += (dx / d) * f; a.vy += (dy / d) * f;
+        b.vx -= (dx / d) * f; b.vy -= (dy / d) * f;
+      });
+      // A blocker sits left of what it blocks — only for nodes that HAVE an edge. A
+      // ticket with no dependency has no column to belong to, and anchoring it would
+      // stack every loose one into a wall, which is the bug the lab surfaced.
+      ids.forEach((id) => {
+        const p = pos[id];
+        if (deg[id]) p.vx += (SIM.W * (0.16 + 0.68 * (depth[id] / maxD)) - p.x) * SIM.BIAS;
+        p.vx += (SIM.W / 2 - p.x) * SIM.GRAV;
+        p.vy += (SIM.H / 2 - p.y) * SIM.GRAV;
+        p.x += (p.vx *= SIM.DAMP) * SIM.STEP;
+        p.y += (p.vy *= SIM.DAMP) * SIM.STEP;
+        p.x = Math.min(SIM.W - SIM.R, Math.max(SIM.R, p.x));
+        p.y = Math.min(SIM.H - SIM.R, Math.max(SIM.R, p.y));
+      });
+    }
+    // Hard de-overlap pass: the sim keeps stars apart on average, this guarantees it.
+    for (let pass = 0; pass < 90; pass++)
+      for (let i = 0; i < ids.length; i++)
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = pos[ids[i]], b = pos[ids[j]];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.01;
+          if (d >= SIM.MIN) continue;
+          const push = (SIM.MIN - d) / 2;
+          a.x -= (dx / d) * push; a.y -= (dy / d) * push;
+          b.x += (dx / d) * push; b.y += (dy / d) * push;
+          [a, b].forEach((p) => {
+            p.x = Math.min(SIM.W - SIM.R, Math.max(SIM.R, p.x));
+            p.y = Math.min(SIM.H - SIM.R, Math.max(SIM.R, p.y));
+          });
+        }
+    // Spread to fill the sky. The sim settles at whatever size its forces balance at,
+    // which on a 10-ticket map is a knot in the middle of an empty stage — the shape is
+    // right, the scale is not, and only the scale is free to change.
+    const xs = ids.map((id) => pos[id].x), ys = ids.map((id) => pos[id].y);
+    const spanX = Math.max(1, Math.max(...xs) - Math.min(...xs));
+    const spanY = Math.max(1, Math.max(...ys) - Math.min(...ys));
+    const m = SIM.R + 26;
+    const s = Math.min((SIM.W - m * 2) / spanX, (SIM.H - m * 2) / spanY);
+    const offX = m + (SIM.W - m * 2 - spanX * s) / 2 - Math.min(...xs) * s;
+    const offY = m + (SIM.H - m * 2 - spanY * s) / 2 - Math.min(...ys) * s;
+    ids.forEach((id) => {
+      pos[id].x = pos[id].x * s + offX;
+      pos[id].y = pos[id].y * s + offY;
+    });
+    return pos;
+  };
+
+  const constellation = (host, map, on) => {
+    const ord = ordinals(map);
+    const depth = depthsOf(map);
+    const pos = relax(map, seed(map), depth);
+    const wrap = div("con");
+    const sky = el("svg", { viewBox: `0 0 ${SIM.W} ${SIM.H}`, class: "sky" });
+    const gEdge = el("g"), gStar = el("g");
+    sky.append(gEdge, gStar);
+
+    map.edges.forEach(([b, d]) => {
+      const A = pos[b], B = pos[d];
+      const held = ["blocked", "stranded"].includes(map.byId[d].state);
+      const mx = (A.x + B.x) / 2 - (B.y - A.y) * 0.13;
+      const my = (A.y + B.y) / 2 + (B.x - A.x) * 0.13;
+      gEdge.append(el("path", { class: `ln${held ? " held" : ""}`, fill: "none",
+        "data-a": b, "data-b": d, d: `M${A.x} ${A.y} Q${mx} ${my} ${B.x} ${B.y}` }));
+      const ang = Math.atan2(B.y - my, B.x - mx) * 180 / Math.PI;
+      const t = 0.72;
+      const px = (1 - t) ** 2 * A.x + 2 * (1 - t) * t * mx + t * t * B.x;
+      const py = (1 - t) ** 2 * A.y + 2 * (1 - t) * t * my + t * t * B.y;
+      gEdge.append(el("path", { class: `ah${held ? " held" : ""}`,
+        transform: `translate(${px} ${py}) rotate(${ang})`, d: "M0 0 L-6 3 L-6 -3 Z" }));
+    });
+
+    map.nodes.forEach((n) => {
+      const p = pos[n.id];
+      const g = el("g", { class: `st${n.sel ? " sel" : ""}`, "data-s": n.state, "data-id": n.id });
+      g.append(el("circle", { class: "glow", cx: p.x, cy: p.y, r: SIM.R * 2.6 }));
+      g.append(el("circle", { class: "disc", cx: p.x, cy: p.y, r: SIM.R }));
+      if (n.claimed) g.append(el("circle", { class: "claim", cx: p.x, cy: p.y, r: SIM.R + 4 }));
+      Object.assign(g.appendChild(el("text", { class: "num", x: p.x, y: p.y + 3.6,
+        "text-anchor": "middle" })), { textContent: ord[n.id] });
+      const ttl = el("title");
+      ttl.textContent = `${n.id} · ${n.title} — ${n.state}`;
+      g.append(ttl);
+      g.addEventListener("mouseenter", () => on(n.id));
+      g.addEventListener("mouseleave", () => on(null));
+      gStar.append(g);
+    });
+
+    wrap.append(sky, railOf(map, ord, on));
+    host.append(wrap);
+  };
+
+  /* ----------------------------------------------------------------------- spine */
+
+  const SP = { W: 1020, H: 520, R: 12, pad: 62, lift: [92, 148] };
+
+  /* The spine is the ROUTE WALKED — tickets in the order the map authored them, start
+     on the left, destination on the right. It is chronology, not dependency, and those
+     are different truths: the arcs above carry what waits on what, so neither is made
+     to stand in for the other. Resolved work sits ON the line, because it is the road;
+     live work lifts OFF it on a stem, because it is not road yet. */
+  const spine = (host, map, on) => {
+    const ord = ordinals(map);
+    const done = (n) => ["decided", "ruled_out"].includes(n.state);
+    const mid = SP.H / 2;
+    const n = map.nodes.length;
+    // The right end is not the last ticket — the fog and the destination live past it,
+    // and the map is only honest if there is visibly road left to walk.
+    const step = (SP.W - SP.pad - 168) / Math.max(1, n - 1);
+    const pos = {};
+    let up = true;
+    map.nodes.forEach((node, i) => {
+      const x = SP.pad + i * step;
+      if (done(node)) { pos[node.id] = { x, y: mid, off: false }; return; }
+      // Live work alternates above and below, and steps out to the far rank when the
+      // near one is already taken by its neighbour — two lifted stars one step apart
+      // at the same height would touch.
+      const near = pos[map.nodes[i - 1]?.id];
+      const far = near?.off && Math.abs(near.x - x) < SP.R * 2.6;
+      pos[node.id] = { x, y: mid + (up ? -1 : 1) * SP.lift[far ? 1 : 0], off: true };
+      up = !up;
+    });
+
+    const wrap = div("con");
+    const sky = el("svg", { viewBox: `0 0 ${SP.W} ${SP.H}`, class: "sky" });
+    const gRoad = el("g"), gEdge = el("g"), gStar = el("g");
+    sky.append(gRoad, gEdge, gStar);
+
+    // The fog runs the full height of the sky: a banded rectangle has hard top and
+    // bottom edges, which read as a drawn box rather than as the way ahead dissolving.
+    const x0 = SP.pad - 34, xN = SP.pad + (n - 1) * step;
+    const xDest = SP.W - 30;
+    gRoad.append(el("rect", { class: "fogband", x: xN + 6, y: 0,
+      width: SP.W - xN - 6, height: SP.H }));
+    gRoad.append(el("line", { class: "road", x1: x0, y1: mid, x2: xDest - 12, y2: mid }));
+    Object.assign(gRoad.appendChild(el("text", { class: "cap", x: x0, y: mid - 26 })),
+      { textContent: "START" });
+    Object.assign(gRoad.appendChild(el("text", { class: "cap dest", x: xDest + 9,
+      y: mid - 26, "text-anchor": "end" })), { textContent: "DESTINATION" });
+    gRoad.append(el("path", { class: "destmark",
+      transform: `translate(${xDest} ${mid})`, d: "M0 -9 L9 0 L0 9 L-9 0 Z" }));
+
+    // Dependency, drawn as an arc OVER the road so it never reads as the road itself.
+    map.edges.forEach(([b, d]) => {
+      const A = pos[b], B = pos[d];
+      if (!A || !B) return;
+      const held = ["blocked", "stranded"].includes(map.byId[d].state);
+      const rise = Math.min(196, 46 + Math.abs(B.x - A.x) * 0.34);
+      const cy = Math.min(A.y, B.y) - rise;
+      gEdge.append(el("path", { class: `ln${held ? " held" : ""}`, fill: "none",
+        "data-a": b, "data-b": d,
+        d: `M${A.x} ${A.y} C${A.x} ${cy} ${B.x} ${cy} ${B.x} ${B.y}` }));
+      gEdge.append(el("path", { class: `ah${held ? " held" : ""}`,
+        transform: `translate(${B.x} ${B.y - SP.R - 2}) rotate(90)`,
+        d: "M0 0 L-6 3 L-6 -3 Z" }));
+    });
+
+    map.nodes.forEach((node) => {
+      const p = pos[node.id];
+      const g = el("g", { class: `st${node.sel ? " sel" : ""}`, "data-s": node.state,
+        "data-id": node.id });
+      if (p.off) g.append(el("line", { class: "stem", x1: p.x, y1: mid, x2: p.x, y2: p.y }));
+      g.append(el("circle", { class: "glow", cx: p.x, cy: p.y, r: SP.R * 2.8 }));
+      g.append(el("circle", { class: "disc", cx: p.x, cy: p.y, r: SP.R }));
+      if (node.claimed) g.append(el("circle", { class: "claim", cx: p.x, cy: p.y, r: SP.R + 4 }));
+      Object.assign(g.appendChild(el("text", { class: "num", x: p.x, y: p.y + 3.4,
+        "text-anchor": "middle" })), { textContent: ord[node.id] });
+      const ttl = el("title");
+      ttl.textContent = `${node.id} · ${node.title} — ${node.state}`;
+      g.append(ttl);
+      g.addEventListener("mouseenter", () => on(node.id));
+      g.addEventListener("mouseleave", () => on(null));
+      gStar.append(g);
+    });
+
+    wrap.append(sky, railOf(map, ord, on));
+    host.append(wrap);
+  };
+
+  /* ------------------------------------------------------- hub variations (chartr) */
+
+  /* chartr's constellations hold together because every node is wired to its PARENT —
+     membership, not dependency. A wayfinder map has membership too, but it is FLAT:
+     every ticket's parent is the same one map issue, so the graph it makes is a star
+     with a single hub. These three shapes draw that star three ways. Membership spokes
+     are drawn only where a chain does not already imply them — a chain member is
+     connected to the hub THROUGH its blocker, and a second line would only cross. */
+
+  const paintDep = (gEdge, map, pos, heldStates = ["blocked", "stranded"]) => {
+    map.edges.forEach(([b, d]) => {
+      const A = pos[b], B = pos[d];
+      const held = heldStates.includes(map.byId[d].state);
+      const mx = (A.x + B.x) / 2 - (B.y - A.y) * 0.13;
+      const my = (A.y + B.y) / 2 + (B.x - A.x) * 0.13;
+      gEdge.append(el("path", { class: `ln${held ? " held" : ""}`, fill: "none",
+        "data-a": b, "data-b": d, d: `M${A.x} ${A.y} Q${mx} ${my} ${B.x} ${B.y}` }));
+      const ang = Math.atan2(B.y - my, B.x - mx) * 180 / Math.PI;
+      const t = 0.72;
+      const px = (1 - t) ** 2 * A.x + 2 * (1 - t) * t * mx + t * t * B.x;
+      const py = (1 - t) ** 2 * A.y + 2 * (1 - t) * t * my + t * t * B.y;
+      gEdge.append(el("path", { class: `ah${held ? " held" : ""}`,
+        transform: `translate(${px} ${py}) rotate(${ang})`, d: "M0 0 L-6 3 L-6 -3 Z" }));
+    });
+  };
+
+  /* The label sits NEXT TO its dot, on the canvas — not in a side list. Radial labelling:
+     the title extends AWAY from the hub, which is the one direction guaranteed to point at
+     empty sky rather than at another ring of the map. */
+  const paintStars = (gStar, map, pos, ord, on, Rr, hub, opts = {}) => {
+    const below = opts.below ?? new Set();
+    const leftSide = opts.left ?? new Set();
+    map.nodes.forEach((n) => {
+      const p = pos[n.id];
+      const g = el("g", { class: `st${n.sel ? " sel" : ""}`, "data-s": n.state, "data-id": n.id });
+      g.append(el("circle", { class: "glow", cx: p.x, cy: p.y, r: Rr * 2.6 }));
+      g.append(el("circle", { class: "disc", cx: p.x, cy: p.y, r: Rr }));
+      if (n.claimed) g.append(el("circle", { class: "claim", cx: p.x, cy: p.y, r: Rr + 4 }));
+      Object.assign(g.appendChild(el("text", { class: "num", x: p.x, y: p.y + 3.4,
+        "text-anchor": "middle" })), { textContent: ord[n.id] });
+      const right = leftSide.has(n.id) ? false : !hub || p.x >= hub.x;
+      const short = n.title.length > 26 ? `${n.title.slice(0, 25)}…` : n.title;
+      // The ticket's own label, worn as a tag on its OWN line under the title —
+      // wayfinder:<type> on a decision map, the triage label on a spec's sub-tickets.
+      // Micro mono, letter-spaced, quiet: metadata, not a second title. History wears none.
+      const tag = n.tag && !["decided", "ruled_out"].includes(n.state) ? n.tag : null;
+      if (opts.row) {
+        // Row form: a LEFT-ALIGNED two-line block beside the dot — title over tag —
+        // exactly the hierarchy a cockpit row uses. Nothing is ever centered under a
+        // dot, so no vertical line can pass through type.
+        const lx = p.x + Rr + 9;
+        Object.assign(g.appendChild(el("text", { class: "ttl", x: lx,
+          y: p.y + (tag ? -1 : 3), "text-anchor": "start" })), { textContent: short });
+        if (tag)
+          Object.assign(g.appendChild(el("text", { class: "rtag", x: lx,
+            y: p.y + 10, "text-anchor": "start" })), { textContent: tag });
+      } else {
+        const und = below.has(n.id);
+        const lx = und ? p.x : p.x + (Rr + 6) * (right ? 1 : -1);
+        const anchor = und ? "middle" : right ? "start" : "end";
+        Object.assign(g.appendChild(el("text", { class: "ttl", x: lx,
+          y: und ? p.y + Rr + 13 : p.y + 3, "text-anchor": anchor })),
+          { textContent: short });
+        if (tag)
+          Object.assign(g.appendChild(el("text", { class: "rtag", x: lx,
+            y: und ? p.y + Rr + 24 : p.y + 14, "text-anchor": anchor })),
+            { textContent: tag });
+      }
+      const ttl = el("title");
+      ttl.textContent = `${n.id} · ${n.title} — ${n.state}`;
+      g.append(ttl);
+      g.addEventListener("mouseenter", () => on(n.id));
+      g.addEventListener("mouseleave", () => on(null));
+      gStar.append(g);
+    });
+  };
+
+  const paintHub = (g, map, p) => {
+    const hg = el("g", { class: "hub" });
+    hg.append(el("circle", { class: "hubdisc", cx: p.x, cy: p.y, r: 19 }));
+    Object.assign(hg.appendChild(el("text", { class: "hubnum", x: p.x, y: p.y + 3,
+      "text-anchor": "middle" })), { textContent: `#${map.id}` });
+    const ttl = el("title");
+    ttl.textContent = `#${map.id} · ${map.title} — the map`;
+    hg.append(ttl);
+    g.append(hg);
+  };
+
+  /* Horizontal margin is label-sized, vertical is dot-sized: every title extends
+     outward, so the widest thing on the canvas is a dot plus ~150 units of type. */
+  const fitBox = (pos, W, H, mx, my) => {
+    const ps = Object.values(pos);
+    const xs = ps.map((p) => p.x), ys = ps.map((p) => p.y);
+    const spanX = Math.max(1, Math.max(...xs) - Math.min(...xs));
+    const spanY = Math.max(1, Math.max(...ys) - Math.min(...ys));
+    const s = Math.min((W - mx * 2) / spanX, (H - my * 2) / spanY, 1.5);
+    const ox = mx + (W - mx * 2 - spanX * s) / 2 - Math.min(...xs) * s;
+    const oy = my + (H - my * 2 - spanY * s) / 2 - Math.min(...ys) * s;
+    ps.forEach((p) => { p.x = p.x * s + ox; p.y = p.y * s + oy; });
+  };
+
+  const components = (map) => {
+    const parent = {};
+    const find = (x) => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+    map.nodes.forEach((n) => (parent[n.id] = n.id));
+    map.edges.forEach(([a, b]) => (parent[find(a)] = find(b)));
+    const comps = {};
+    map.nodes.forEach((n) => (comps[find(n.id)] ??= []).push(n.id));
+    return Object.values(comps);
+  };
+
+  const RAD = { W: 1180, H: 560 };
+  const radialShell = (host, map, on, build) => {
+    const ord = ordinals(map);
+    const wrap = div("con solo");
+    const sky = el("svg", { viewBox: `0 0 ${RAD.W} ${RAD.H}`, class: "sky" });
+    const gMem = el("g"), gEdge = el("g"), gStar = el("g");
+    sky.append(gMem, gEdge, gStar);
+    const { pos, hub, spokes, extra } = build();
+    spokes.forEach((id) => gMem.append(el("line", { class: "mem",
+      x1: hub.x, y1: hub.y, x2: pos[id].x, y2: pos[id].y })));
+    paintDep(gEdge, map, pos);
+    if (extra) extra(gMem);
+    paintHub(gStar, map, hub);
+    paintStars(gStar, map, pos, ord, on, 13, hub);
+    wrap.append(sky);
+    host.append(wrap);
+  };
+
+  /* Dandelion — chartr's actual mechanics: a spring sim where every chain root and
+     singleton is wired to the hub, and the hub is PINNED at the centre. Organic like
+     chartr's canvas; and like chartr's canvas, position means nothing but adjacency. */
+  const dandelion = (host, map, on) => {
+    const depth = depthsOf(map);
+    const ids = map.nodes.map((n) => n.id);
+    const C = { x: SIM.W / 2, y: SIM.H / 2 };
+    const pos = seed(map);
+    const roots = ids.filter((id) => depth[id] === 0);
+    const springs = [
+      ...map.edges.map(([a, b]) => [a, b, 80]),
+      ...roots.map((id) => [null, id, 126]),
+    ];
+    const at = (id) => (id === null ? C : pos[id]);
+    for (let step = 0; step < 420; step++) {
+      for (let i = 0; i < ids.length; i++)
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = pos[ids[i]], b = pos[ids[j]];
+          let dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.01;
+          if (d > 320) continue;
+          const f = 2400 / (d * d);
+          dx /= d; dy /= d;
+          a.vx -= dx * f; a.vy -= dy * f;
+          b.vx += dx * f; b.vy += dy * f;
+        }
+      ids.forEach((id) => { // the hub repels: nothing may sit on the middle
+        const p = pos[id];
+        const dx = p.x - C.x, dy = p.y - C.y;
+        const d = Math.hypot(dx, dy) || 0.01;
+        const f = 5200 / (d * d);
+        p.vx += (dx / d) * f; p.vy += (dy / d) * f;
+      });
+      springs.forEach(([a, b, rest]) => {
+        const A = at(a), B = at(b);
+        const dx = B.x - A.x, dy = B.y - A.y;
+        const d = Math.hypot(dx, dy) || 0.01;
+        const f = (d - rest) * 0.05;
+        if (a !== null) { A.vx += (dx / d) * f; A.vy += (dy / d) * f; }
+        B.vx -= (dx / d) * f; B.vy -= (dy / d) * f;
+      });
+      ids.forEach((id) => {
+        const p = pos[id];
+        p.vx += (C.x - p.x) * 0.008;
+        p.vy += (C.y - p.y) * 0.008;
+        p.x += (p.vx *= 0.86) * 0.55;
+        p.y += (p.vy *= 0.86) * 0.55;
+      });
+    }
+    for (let pass = 0; pass < 80; pass++)
+      for (let i = 0; i < ids.length; i++)
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = pos[ids[i]], b = pos[ids[j]];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.01;
+          if (d >= 42) continue;
+          const push = (42 - d) / 2;
+          a.x -= (dx / d) * push; a.y -= (dy / d) * push;
+          b.x += (dx / d) * push; b.y += (dy / d) * push;
+        }
+    const all = { ...pos, hub: { x: C.x, y: C.y } };
+    fitBox(all, RAD.W, RAD.H, 155, 34);
+    radialShell(host, map, on, () => ({ pos, hub: all.hub, spokes: roots }));
+  };
+
+  /* Comet — the dandelion given an arrow of time. The hub is pinned at the LEFT edge as
+     START; every ticket is anchored to an x set by its place in the map's chronology, and
+     the sim only ever bends things vertically around that. The right edge is the fog and
+     the destination, so start and finish are the first things the shape says. */
+  const comet = (host, map, on) => {
+    const depth = depthsOf(map);
+    const ids = map.nodes.map((n) => n.id);
+    const n = ids.length;
+    const hub = { x: 84, y: RAD.H / 2 };
+    const x0 = 225, x1 = RAD.W - 300;
+    const xa = {};
+    ids.forEach((id, i) => (xa[id] = x0 + (x1 - x0) * (n === 1 ? 0 : i / (n - 1))));
+    const pos = {};
+    ids.forEach((id, i) => (pos[id] = { x: xa[id],
+      y: RAD.H / 2 + (i % 2 ? 1 : -1) * (30 + ((i * 37) % 150)), vx: 0, vy: 0 }));
+    const roots = ids.filter((id) => depth[id] === 0);
+    const springs = [
+      ...map.edges.map(([a, b]) => [a, b, 90]),
+      ...roots.map((id) => [null, id, 170]),
+    ];
+    const at = (id) => (id === null ? hub : pos[id]);
+    for (let step = 0; step < 380; step++) {
+      for (let i = 0; i < ids.length; i++)
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = pos[ids[i]], b = pos[ids[j]];
+          let dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.01;
+          if (d > 240) continue;
+          const f = 2200 / (d * d);
+          dx /= d; dy /= d;
+          a.vx -= dx * f; a.vy -= dy * f;
+          b.vx += dx * f; b.vy += dy * f;
+        }
+      springs.forEach(([a, b]) => {
+        const A = at(a), B = at(b);
+        const dx = B.x - A.x, dy = B.y - A.y;
+        const d = Math.hypot(dx, dy) || 0.01;
+        const f = (d - 90) * 0.03;
+        if (a !== null) { A.vx += (dx / d) * f; A.vy += (dy / d) * f; }
+        B.vx -= (dx / d) * f; B.vy -= (dy / d) * f;
+      });
+      ids.forEach((id) => {
+        const p = pos[id];
+        p.vx += (xa[id] - p.x) * 0.06; // chronology is firm; the sim only bends y
+        p.vy += (RAD.H / 2 - p.y) * 0.012;
+        p.x += (p.vx *= 0.85) * 0.5;
+        p.y += (p.vy *= 0.85) * 0.5;
+        p.y = Math.min(RAD.H - 40, Math.max(40, p.y));
+      });
+    }
+    for (let pass = 0; pass < 70; pass++)
+      for (let i = 0; i < ids.length; i++)
+        for (let j = i + 1; j < ids.length; j++) {
+          const a = pos[ids[i]], b = pos[ids[j]];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.01;
+          if (d >= 40) continue;
+          const push = (40 - d) / 2;
+          a.x -= (dx / d) * push; a.y -= (dy / d) * push;
+          b.x += (dx / d) * push; b.y += (dy / d) * push;
+        }
+    radialShell(host, map, on, () => ({
+      pos, hub, spokes: roots,
+      extra: (g) => {
+        const mid = RAD.H / 2;
+        Object.assign(g.appendChild(el("text", { class: "cap", x: hub.x - 20, y: mid - 34 })),
+          { textContent: "START" });
+        for (let i = 0; i < map.fog; i++)
+          g.append(el("circle", { class: "wfog", cx: x1 + 96 + i * 26, cy: mid, r: 2.6,
+            opacity: Math.max(0.12, 0.4 - i * 0.08) }));
+        const xd = RAD.W - 44;
+        g.append(el("path", { class: "destmark", transform: `translate(${xd} ${mid})`,
+          d: "M0 -9 L9 0 L0 9 L-9 0 Z" }));
+        Object.assign(g.appendChild(el("text", { class: "cap dest", x: xd + 9, y: mid - 26,
+          "text-anchor": "end" })), { textContent: "DESTINATION" });
+      },
+    }));
+  };
+
+  /* Wheel — the hub star made to also carry ORDER: angle is the map's own chronology,
+     radius is dependency depth. The gap in the sweep is the fog, and the destination
+     closes the circle the route has not yet reached. */
+  const wheel = (host, map, on) => {
+    const depth = depthsOf(map);
+    const C = { x: SIM.W / 2, y: SIM.H / 2 };
+    const n = map.nodes.length;
+    const slots = n + map.fog + 1;
+    const stepA = (Math.PI * 2 - 0.55) / slots;
+    const a0 = -Math.PI / 2 + 0.28;
+    const angle = (i) => a0 + stepA * i;
+    const pos = {};
+    map.nodes.forEach((node, i) => {
+      const a = angle(i), r = 145 + depth[node.id] * 72;
+      pos[node.id] = { x: C.x + Math.cos(a) * r, y: C.y + Math.sin(a) * r };
+    });
+    const all = { ...pos, hub: { x: C.x, y: C.y } };
+    fitBox(all, SIM.W, SIM.H, 40);
+    const hub = all.hub;
+    radialShell(host, map, on, () => ({
+      pos, hub,
+      spokes: map.nodes.filter((nd) => depth[nd.id] === 0).map((nd) => nd.id),
+      extra: (g) => {
+        // What the sweep has not reached: one faint mark per fog patch, then the
+        // destination — the wheel closes only when the route does.
+        const rr = Math.hypot(pos[map.nodes[0].id].x - hub.x, pos[map.nodes[0].id].y - hub.y);
+        for (let i = 0; i < map.fog; i++) {
+          const a = angle(n + i);
+          g.append(el("circle", { class: "wfog", cx: hub.x + Math.cos(a) * rr,
+            cy: hub.y + Math.sin(a) * rr, r: 2.6, opacity: Math.max(0.12, 0.4 - i * 0.08) }));
+        }
+        const ad = angle(n + map.fog);
+        g.append(el("path", { class: "destmark",
+          transform: `translate(${hub.x + Math.cos(ad) * rr} ${hub.y + Math.sin(ad) * rr})`
+            + ` rotate(${(ad * 180) / Math.PI + 90})`,
+          d: "M0 -9 L9 0 L0 9 L-9 0 Z" }));
+      },
+    }));
+  };
+
+  /* Sectors — the dandelion made deterministic: every strand gets a wedge of the
+     circle sized by its ticket count, depth walks outward. Same hub star, no sim. */
+  const sectors = (host, map, on) => {
+    const depth = depthsOf(map);
+    const units = components(map).sort((a, b) => b.length - a.length);
+    const total = map.nodes.length;
+    const pos = {};
+    let a0 = -Math.PI / 2;
+    units.forEach((u) => {
+      const span = (u.length / total) * Math.PI * 2;
+      const byD = {};
+      u.forEach((id) => (byD[depth[id]] ??= []).push(id));
+      Object.entries(byD).forEach(([d, ids2]) => {
+        ids2.forEach((id, i) => {
+          const a = a0 + span * ((i + 0.5) / ids2.length);
+          const r = 118 + Number(d) * 78;
+          pos[id] = { x: Math.cos(a) * r, y: Math.sin(a) * r };
+        });
+      });
+      a0 += span;
+    });
+    const all = { ...pos, hub: { x: 0, y: 0 } };
+    fitBox(all, SIM.W, SIM.H, 40);
+    radialShell(host, map, on, () => ({
+      pos, hub: all.hub,
+      spokes: map.nodes.filter((n) => depth[n.id] === 0).map((n) => n.id),
+    }));
+  };
+
+  /* ----------------------------------------------------------------------- route */
+
+  /* The axis is PROGRESS, not chronology and not raw depth. Everything left of the NOW
+     line is walked road; whatever stands ON the line is takeable today; everything right
+     of it is why the map is not finished, pushed further right the more decisions must
+     close before it can open. The distance from the line to the destination IS the work
+     remaining, and a finished map is one where the line has walked into the fog. */
+  const route = (host, map, on) => {
+    const ord = ordinals(map);
+    const openS = ["takeable", "claimed", "blocked", "stranded", "waiting"];
+    const isOpen = (id) => openS.includes(map.byId[id].state);
+    // Captions speak the TICKET'S OWN WORDS — the derived state word for a wayfinder
+    // map, the triage label verbatim for a spec's sub-tickets. The view is a lens; it
+    // never mints vocabulary of its own.
+    const wordOf = (n) => n.word
+      ?? ({ decided: "resolved", ruled_out: "ruled out" }[n.state] ?? n.state);
+    const countCap = (ns) => {
+      const c = {};
+      ns.forEach((n) => (c[wordOf(n)] = (c[wordOf(n)] || 0) + 1));
+      return Object.entries(c).map(([w, k]) => `${w} · ${k}`).join("   ");
+    };
+    // Remaining depth: how many OPEN decisions stand between this ticket and the line.
+    const rd = {};
+    const calcRd = (id, seen = new Set()) => {
+      if (rd[id] !== undefined) return rd[id];
+      if (seen.has(id)) return 0;
+      seen.add(id);
+      const obs = map.edges.filter(([b, d]) => d === id && isOpen(b)).map(([b]) => b);
+      return (rd[id] = obs.length ? 1 + Math.max(...obs.map((b) => calcRd(b, seen))) : 0);
+    };
+    map.nodes.filter((n) => isOpen(n.id)).forEach((n) => calcRd(n.id));
+    // Stranded never reaches the line — its blocker was ruled out, nothing opens it.
+    // And a ticket waiting on a HUMAN step (needs-info, needs-triage) is not takeable
+    // either: it stands ahead of the line with no edge, not on the frontier.
+    map.nodes.forEach((n) => {
+      if (n.state === "stranded" || n.notReady) rd[n.id] = Math.max(1, rd[n.id] ?? 1);
+    });
+    const done = map.nodes.filter((n) => !isOpen(n.id));
+    const lineNodes = map.nodes.filter((n) => isOpen(n.id) && rd[n.id] === 0);
+    const ahead = map.nodes.filter((n) => isOpen(n.id) && rd[n.id] > 0);
+
+    const H = RAD.H;
+    const pos = {};
+    // Every label is a left-aligned block beside its dot, so a node's true footprint is
+    // dot + type. Spacing derives from THESE widths — overlap is prevented by geometry,
+    // not tuning — and the canvas widens rather than squashing when a map needs room.
+    const R2 = 11;
+    const shortLen = (n) => Math.min(n.title.length, 26);
+    const tagOf = (n) => (n.tag && isOpen(n.id) ? n.tag : null);
+    const labW = (n) => R2 + 12
+      + Math.max(shortLen(n) * 5.2 + 12, (tagOf(n)?.length ?? 0) * 5.6 + 12);
+    // Walked road: charted order, stacked in quiet columns. History is a list, and a
+    // list is the honest shape of it — its dependencies are all satisfied, so they
+    // draw nothing.
+    const perCol = 13, rowH = 27, colW = 260;
+    done.forEach((n, i) => {
+      const c = Math.floor(i / perCol), r = i % perCol;
+      const colLen = Math.min(perCol, done.length - c * perCol);
+      pos[n.id] = { x: 64 + c * colW, y: H / 2 + (r - (colLen - 1) / 2) * rowH };
+    });
+    const doneCols = done.length ? Math.ceil(done.length / perCol) : 0;
+    const nowX = 64 + doneCols * colW + (done.length ? 46 : 60);
+    // The line compresses when the frontier is wide — day one on a 27-ticket map puts a
+    // dozen tickets on it — but never below the height of a two-line label block.
+    const lgap = Math.max(34, Math.min(78, (H - 116) / Math.max(1, lineNodes.length - 1)));
+    lineNodes.forEach((n, i) =>
+      (pos[n.id] = { x: nowX, y: H / 2 + (i - (lineNodes.length - 1) / 2) * lgap }));
+    // One dependency step must clear the widest label block that can sit in a column.
+    const stepX = 24 + Math.max(180,
+      ...[...lineNodes, ...ahead].map((n) => labW(n)));
+    // Ahead of the line: column = distance from takeable, row = near its blockers —
+    // placed column by column so a chain stays roughly level, with a greedy min-gap
+    // pass instead of a shove-down loop, so a crowded column spreads rather than piles.
+    const cols = {};
+    ahead.forEach((n) => (cols[rd[n.id]] ??= []).push(n));
+    Object.keys(cols).map(Number).sort((a, b) => a - b).forEach((k) => {
+      const col = cols[k];
+      const want = (n) => {
+        const bys = map.edges.filter(([b, d]) => d === n.id && pos[b]).map(([b]) => pos[b].y);
+        return bys.length ? bys.reduce((s, v) => s + v, 0) / bys.length : H / 2;
+      };
+      const gap = Math.max(34, Math.min(48, (H - 116) / Math.max(1, col.length - 1)));
+      let prev = -1e9;
+      [...col].sort((a, b) => want(a) - want(b)).forEach((n) => {
+        const y = Math.max(58, Math.min(H - 58, want(n)), prev + gap);
+        pos[n.id] = { x: nowX + 46 + k * stepX, y };
+        prev = y;
+      });
+      const over = prev - (H - 58);
+      if (over > 0) col.forEach((n) => (pos[n.id].y = Math.max(58, pos[n.id].y - over)));
+    });
+
+    // The fog starts where the charted work ENDS — the gap between the line and the
+    // destination is the remaining work, literally — and the canvas is exactly as wide
+    // as the route needs, never squashed to a frame.
+    const maxX = Math.max(nowX,
+      ...[...lineNodes, ...ahead].map((n) => pos[n.id].x + labW(n)));
+    const fogX = maxX + 130;
+    const xd = fogX + map.fog * 26 + 110, mid = H / 2;
+    const W = Math.max(RAD.W, xd + 60);
+
+    const wrap = div("con solo");
+    const sky = el("svg", { viewBox: `0 0 ${W} ${H}`, class: "sky" });
+    const gBack = el("g"), gEdge = el("g"), gStar = el("g");
+    sky.append(gBack, gEdge, gStar);
+
+    if (done.length)
+      Object.assign(gBack.appendChild(el("text", { class: "cap", x: 64, y: 38 })),
+        { textContent: countCap(done) });
+    gBack.append(el("line", { class: "nowline", x1: nowX, y1: 54, x2: nowX, y2: H - 54 }));
+    Object.assign(gBack.appendChild(el("text", { class: "cap now", x: Math.max(nowX, 190),
+      y: 38, "text-anchor": "middle" })),
+      { textContent: lineNodes.length
+        ? `frontier — ${countCap(lineNodes)}` : "frontier — nothing unblocked" });
+    if (ahead.length)
+      Object.assign(gBack.appendChild(el("text", { class: "cap", x: nowX + 46 + stepX,
+        y: 38 })), { textContent: countCap(ahead) });
+
+    // Only live dependency is drawn: an edge into a ticket the line has not reached —
+    // including the severed story, a stranded ticket held by a ruled-out decision.
+    // Waiting is the NORMAL state of the road ahead (quiet slate); red is spent only on
+    // stranded. An edge LEAVES its blocker after the label block and ENTERS its
+    // dependent before the dot, with flat tangents at both ends — so no line can ever
+    // cross type, because the span it travels is empty by construction.
+    const liveEdges = map.edges.filter(([b, d]) => isOpen(d)
+      && (isOpen(b) || map.byId[d].state === "stranded"));
+    liveEdges.forEach(([b, d]) => {
+      const A = pos[b], B = pos[d];
+      const held = map.byId[d].state === "stranded";
+      const ax = A.x + labW(map.byId[b]) + 2;
+      const bx = B.x - R2 - 6;
+      const r = Math.max(40, (bx - ax) * 0.35);
+      gEdge.append(el("path", { class: `ln${held ? " held" : ""}`, fill: "none",
+        "data-a": b, "data-b": d,
+        d: `M${ax} ${A.y} C${ax + r} ${A.y} ${bx - r} ${B.y} ${bx} ${B.y}` }));
+      gEdge.append(el("path", { class: `ah${held ? " held" : ""}`,
+        transform: `translate(${bx} ${B.y})`, d: "M0 0 L-6 3 L-6 -3 Z" }));
+    });
+
+    for (let i = 0; i < map.fog; i++)
+      gBack.append(el("circle", { class: "wfog", cx: fogX + i * 26, cy: mid, r: 2.6,
+        opacity: Math.max(0.12, 0.4 - i * 0.08) }));
+    gBack.append(el("path", { class: "destmark", transform: `translate(${xd} ${mid})`,
+      d: "M0 -9 L9 0 L0 9 L-9 0 Z" }));
+    Object.assign(gBack.appendChild(el("text", { class: "cap dest", x: xd + 9, y: mid - 26,
+      "text-anchor": "end" })), { textContent: "DESTINATION" });
+
+    paintStars(gStar, map, pos, ord, on, R2, { x: -1e9 }, { row: true });
+    wrap.append(sky);
+    host.append(wrap);
+  };
+
+  /* ------------------------------------------------------------------------ flow */
+
+  const CARD = { w: 168, h: 42, gapMain: 74, gapCross: 16 };
+
+  /* Layered by dependency depth, packed on a lattice so two cards can never occupy the
+     same cell — collision is impossible by construction rather than by tuning. */
+  const flowPlaces = (map, depth) => {
+    const linked = map.nodes.filter((n) => map.edges.some(([b, d]) => b === n.id || d === n.id));
+    const loose = map.nodes.filter((n) => !linked.includes(n));
+    const cols = {};
+    linked.forEach((n) => (cols[depth[n.id]] ??= []).push(n));
+    const strandOf = {};
+    map.strands.forEach((s, i) => s.forEach((id) => (strandOf[id] = i)));
+    const cell = {};
+    Object.keys(cols).map(Number).sort((a, b) => a - b).forEach((c) => {
+      cols[c].sort((a, b) => strandOf[a.id] - strandOf[b.id] || a.id - b.id)
+        .forEach((n, r) => (cell[n.id] = { c, r }));
+    });
+    return { cell, loose, cols };
+  };
+
+  const flow = (host, map, on, vertical) => {
+    const ord = ordinals(map);
+    const depth = depthsOf(map);
+    const { cell, loose } = flowPlaces(map, depth);
+    const stage = div("flow");
+    const board = div("board");
+    const mainStep = CARD.w + CARD.gapMain;
+    const crossStep = CARD.h + CARD.gapCross;
+    const at = (id) => {
+      const { c, r } = cell[id];
+      return vertical
+        ? { x: r * (CARD.w + CARD.gapCross), y: c * (CARD.h + CARD.gapMain) }
+        : { x: c * mainStep, y: r * crossStep };
+    };
+    const linkedIds = Object.keys(cell).map(Number);
+    const W = Math.max(...linkedIds.map((id) => at(id).x), 0) + CARD.w + 8;
+    const H = Math.max(...linkedIds.map((id) => at(id).y), 0) + CARD.h + 8;
+    board.style.width = `${W}px`;
+    board.style.height = `${H}px`;
+
+    const wires = el("svg", { class: "wires", viewBox: `0 0 ${W} ${H}`, width: W, height: H });
+    map.edges.forEach(([b, d]) => {
+      if (!cell[b] || !cell[d]) return;
+      const A = at(b), B = at(d);
+      const held = ["blocked", "stranded"].includes(map.byId[d].state);
+      const a = vertical
+        ? { x: A.x + CARD.w / 2, y: A.y + CARD.h }
+        : { x: A.x + CARD.w, y: A.y + CARD.h / 2 };
+      const z = vertical
+        ? { x: B.x + CARD.w / 2, y: B.y }
+        : { x: B.x, y: B.y + CARD.h / 2 };
+      const mid = vertical ? (a.y + z.y) / 2 : (a.x + z.x) / 2;
+      const path = vertical
+        ? `M${a.x} ${a.y} L${a.x} ${mid} L${z.x} ${mid} L${z.x} ${z.y}`
+        : `M${a.x} ${a.y} L${mid} ${a.y} L${mid} ${z.y} L${z.x} ${z.y}`;
+      wires.append(el("path", { class: `wr${held ? " held" : ""}`, fill: "none",
+        "data-a": b, "data-b": d, d: path }));
+      wires.append(el("path", { class: `ah${held ? " held" : ""}`,
+        transform: `translate(${z.x} ${z.y}) rotate(${vertical ? 90 : 0})`,
+        d: "M0 0 L-6 3 L-6 -3 Z" }));
+    });
+    board.append(wires);
+
+    const card = (n) => {
+      const c = div(`card${n.sel ? " sel" : ""}`);
+      c.dataset.id = n.id;
+      c.dataset.s = n.state;
+      c.append(div("co", ord[n.id]), div("ct", n.title));
+      c.title = `${n.id} · ${n.title} — ${n.state}`;
+      c.addEventListener("mouseenter", () => on(n.id));
+      c.addEventListener("mouseleave", () => on(null));
+      return c;
+    };
+    map.nodes.filter((n) => cell[n.id]).forEach((n) => {
+      const c = card(n);
+      const p = at(n.id);
+      c.style.left = `${p.x}px`;
+      c.style.top = `${p.y}px`;
+      board.append(c);
+    });
+
+    stage.append(board);
+    // Tickets that block nothing and wait on nothing have no place in a flow — giving
+    // them a fake column 0 is what built the wall. They get their own tray, counted.
+    if (loose.length) {
+      const tray = div("tray");
+      tray.append(div("trayhead", `waiting on nothing, blocking nothing · ${loose.length}`));
+      const grid = div("traygrid");
+      loose.forEach((n) => grid.append(card(n)));
+      tray.append(grid);
+      stage.append(tray);
+    }
+    host.append(stage);
+  };
+
+  /* ------------------------------------------------------------------------ shell */
+
+  const SHAPES = {
+    route: {
+      name: "The Route",
+      blurb: "The axis is progress. Walked road on the left — resolved decisions, stacked and quiet. The gold NOW line is where you stand: everything ON it is takeable or claimed today. Right of the line is why the map is not finished — blocked work pushed further right the more decisions must close before it can open, held by the red lines you can trace back to the exact ticket standing in the way. Then fog, then the destination. What to take next is whatever stands on the line; a finished map is one where the line has walked into the fog.",
+      run: (host, map, on) => route(host, map, on),
+    },
+    comet: {
+      name: "Comet",
+      blurb: "The dandelion given an arrow of time: the map itself is the hub, pinned at the left as START; every ticket drifts right by its place in the map's chronology while the sim bends chains around each other vertically. Fog and destination close the right edge. Organic like chartr, but it points.",
+      run: (host, map, on) => comet(host, map, on),
+    },
+    dandelion: {
+      name: "Dandelion",
+      blurb: "chartr's actual mechanics on wayfinder data: every ticket is a child of the map, so the map itself is drawn as the hub and membership is the wiring — a spring sim with the hub pinned, chain roots and singletons on hub springs, dependency chains hanging outward as limbs. Organic like chartr's canvas, and honest about the same thing chartr is honest about: position means adjacency and nothing else. Chronology is gone, and every spoke says the same sentence — this belongs to the map.",
+      run: (host, map, on) => dandelion(host, map, on),
+    },
+    wheel: {
+      name: "Wheel",
+      blurb: "The hub star made to carry order as well as membership: angle is the map's own chronology, radius is dependency depth — a ticket sits further out the more decisions had to close before it could open. The gap in the sweep is the fog, and the destination mark closes the circle the route has not yet reached, so a finished map is a complete wheel. The trade: depth rings are honest but coarse, and a long chain reads as a radial line rather than as a journey.",
+      run: (host, map, on) => wheel(host, map, on),
+    },
+    sectors: {
+      name: "Sectors",
+      blurb: "The dandelion made deterministic: every strand gets a wedge of the circle sized by its ticket count, and dependency depth walks outward from the hub — the same map always yields the same picture, and a strand is a visible slice rather than an emergent clump. Tidier than the sim, at the cost of looking designed rather than grown; singletons ring the hub as a field of takeable-or-settled dots.",
+      run: (host, map, on) => sectors(host, map, on),
+    },
+    constellation: {
+      name: "Constellation",
+      blurb: "The map is a picture, the rail is the text. A ticket is a numbered star and nothing else, so the layout is free to be driven by structure instead of by type — which is exactly how chartr's canvas stays open. Hovering either side lights the other. It makes connectedness and clustering obvious; it hides everything you would read, which is the trade: you look at the map, then read the rail.",
+      run: (host, map, on) => constellation(host, map, on),
+    },
+    spine: {
+      name: "Spine and branches",
+      blurb: "The spine is the route actually walked: tickets in the order the map authored them, START on the left, DESTINATION in the fog on the right. Resolved decisions sit on the line because they are the road; live work lifts off it on a stem because it is not road yet. Dependency is deliberately NOT the spine — it arcs above, so chronology and blocking stay two separate truths instead of one misleading line. It makes progress and remaining distance obvious; it hides how much of the order is causal versus merely when someone got to it.",
+      run: (host, map, on) => spine(host, map, on),
+    },
+    flow: {
+      name: "Flow",
+      blurb: "A layered DAG where a card carries its own title, packed on a lattice so cards cannot collide. Column is dependency depth, so a blocker is always upstream of what it blocks and the arrows only ever run one way. Tickets that neither block nor wait are not given a fake column 0 — they drop to a counted tray, because pretending they are the start of the graph is what built the wall.",
+      run: (host, map, on, dir) => flow(host, map, on, dir === "v"),
+    },
+  };
+
+  const q = new URLSearchParams(location.search);
+  let shape = SHAPES[q.get("shape")] ? q.get("shape") : "route";
+  let mapKey = window.LAB.MAPS[q.get("map")] ? q.get("map") : "m290";
+  let dir = q.get("dir") === "v" ? "v" : "h";
+
+  const stageEl = document.getElementById("stage");
+  const tabs = (host, items, get, set) => {
+    items.forEach(([k, label]) => {
+      const b = document.createElement("button");
+      b.className = "tab";
+      b.textContent = label;
+      b.dataset.k = k;
+      b.onclick = () => { set(k); draw(); };
+      host.append(b);
+    });
+    return () => [...host.querySelectorAll(".tab")]
+      .forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.k === get())));
+  };
+  const syncS = tabs(document.getElementById("tShape"),
+    Object.entries(SHAPES).map(([k, s]) => [k, s.name]), () => shape, (k) => (shape = k));
+  const syncM = tabs(document.getElementById("tMap"),
+    Object.entries(window.LAB.MAPS).map(([k, m]) => [k, m.label]), () => mapKey, (k) => (mapKey = k));
+  const syncD = tabs(document.getElementById("tDir"),
+    [["h", "left → right"], ["v", "top → down"]], () => dir, (k) => (dir = k));
+
+  // Cross-highlight: one hovered ticket, lit in the map, the rail and its own edges.
+  const highlight = (id) => {
+    document.querySelectorAll("[data-id]").forEach((e) =>
+      e.classList.toggle("hot", id !== null && Number(e.dataset.id) === id));
+    document.querySelectorAll("[data-a]").forEach((e) =>
+      e.classList.toggle("hot", id !== null
+        && (Number(e.dataset.a) === id || Number(e.dataset.b) === id)));
+    stageEl.classList.toggle("dim", id !== null);
+  };
+
+  function draw() {
+    syncS(); syncM(); syncD();
+    document.getElementById("dirwrap").hidden = shape !== "flow";
+    try { history.replaceState(null, "", `?shape=${shape}&map=${mapKey}&dir=${dir}`); } catch {}
+    const map = window.LAB.MAPS[mapKey].build();
+    const s = SHAPES[shape];
+    document.getElementById("sname").textContent = s.name;
+    document.getElementById("sblurb").textContent = s.blurb;
+    document.getElementById("smeta").textContent =
+      `${map.title} · ${map.nodes.length} tickets · ${map.edges.length} edges · ${map.strands.length} strands`;
+    stageEl.innerHTML = "";
+    stageEl.className = shape;
+    s.run(stageEl, map, highlight, dir);
+  }
+  draw();
+})();
+
+</script>
+</body>
+</html>
