@@ -10,6 +10,7 @@ export type TextElement = (typeof TEXT_ELEMENTS)[number]
 // as `text-${variant}` so Tailwind's scanner still sees each class literally; the Record
 // makes a role added to TYPE_ROLES and forgotten here a compile error.
 export const TYPE_ROLE_CLASS: Record<TextVariant, string> = {
+  display: 'text-display',
   headline: 'text-headline',
   title: 'text-title',
   row: 'text-row',

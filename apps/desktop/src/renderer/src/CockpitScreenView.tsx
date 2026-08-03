@@ -5,6 +5,7 @@ import {
   type GitControlsProps,
   ProjectStrip,
   type Room,
+  RoomScene,
   type ShellModel,
   TopBar,
 } from '@/shell/components'
@@ -42,11 +43,12 @@ export function CockpitScreenView({
   children,
 }: CockpitScreenProps): React.JSX.Element {
   return (
-    // No background of its own: the chrome floats on the ONE lit scene the room paints behind
-    // it (a fixed `-z-10` backdrop), and an opaque shell root would cover it. No room paints
-    // one yet — ADR-0019 deleted the three.js scene and the Sessions room paints its own, so
-    // the stage is flat `--background` until then.
+    // No background of its own: the chrome floats on the ONE lit scene `RoomScene` paints behind
+    // it as a fixed `-z-10` backdrop, and an opaque shell root would cover it. The SHELL paints
+    // it, not each room: the light does not change when you change rooms, and while nothing
+    // painted it at all every plane's cove lip and warm bloom implied a source that was not there.
     <div className="flex h-screen w-screen overflow-hidden">
+      <RoomScene />
       <ProjectStrip
         tabs={shell.tabs}
         onSelectProject={handlers.onSelectProject}

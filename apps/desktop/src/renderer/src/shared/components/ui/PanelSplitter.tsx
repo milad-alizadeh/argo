@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
@@ -37,8 +37,15 @@ export function keyStepDelta(key: string, orientation: PanelOrientation): number
 type PanelSplitterProps = {
   /** Which way the bar runs: `v` between two columns, `h` between two rows. */
   orientation: PanelOrientation
-  /** Current px size of the panel this splitter resizes — the parent owns it. */
-  size: number
+  /** Current px size of the panel this splitter resizes — the parent owns it. `null` where the
+   * parent has not stored one yet, which is how a panel opens at a FRACTION of its room
+   * (`1fr 1fr`) instead of at a px guess: the drag reads the panel's real width through
+   * `measure` and the parent starts storing px from there. */
+  size: number | null
+  /** Read the resized panel's live width/height. Preferred over `size` at drag start, so a
+   * fractional or content-sized panel resizes from where it actually is rather than jumping to
+   * the stored number. One layout read per drag start — never on render, never observed. */
+  measure?: () => number
   /** Smallest px the panel may shrink to. */
   min: number
   /** Largest px the panel may grow to. */
@@ -63,6 +70,7 @@ type PanelSplitterProps = {
 export function PanelSplitter({
   orientation,
   size,
+  measure,
   min,
   max,
   invert = false,
@@ -72,13 +80,24 @@ export function PanelSplitter({
 }: PanelSplitterProps): React.JSX.Element {
   const [drag, setDrag] = useState<{ origin: number; size: number } | null>(null)
 
+  // The callback is held in a ref so it stays OUT of the drag effect's dependencies. Every call site
+  // passes an inline lambda, so a new identity arrives on each parent render — and a render is
+  // exactly what `onResize` causes, so leaving it in the deps tears the window listeners down and
+  // re-adds them on every pointermove of a drag.
+  const resizeRef = useRef(onResize)
+  resizeRef.current = onResize
+
+  // Where the panel is RIGHT NOW: measured when the caller can measure, else the stored px, else
+  // the floor. Called only from the two gesture handlers, so no layout read happens on render.
+  const current = (): number => measure?.() ?? size ?? min
+
   useEffect(() => {
     if (drag === null) return
     const axisOf = (event: PointerEvent): number =>
       orientation === 'v' ? event.clientX : event.clientY
     const move = (event: PointerEvent): void => {
       const travelled = axisOf(event) - drag.origin
-      onResize(clampPanelSize(drag.size + (invert ? -travelled : travelled), min, max))
+      resizeRef.current(clampPanelSize(drag.size + (invert ? -travelled : travelled), min, max))
     }
     const stop = (): void => setDrag(null)
     // The listeners live on the window so a pointer that outruns the 6px bar — which it
@@ -91,19 +110,19 @@ export function PanelSplitter({
       window.removeEventListener('pointerup', stop)
       window.removeEventListener('pointercancel', stop)
     }
-  }, [drag, orientation, invert, min, max, onResize])
+  }, [drag, orientation, invert, min, max])
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>): void {
     // Without this the drag selects the text in both panels it sits between.
     event.preventDefault()
-    setDrag({ origin: orientation === 'v' ? event.clientX : event.clientY, size })
+    setDrag({ origin: orientation === 'v' ? event.clientX : event.clientY, size: current() })
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>): void {
     const step = keyStepDelta(event.key, orientation)
     if (step === 0) return
     event.preventDefault()
-    onResize(clampPanelSize(size + (invert ? -step : step), min, max))
+    onResize(clampPanelSize(current() + (invert ? -step : step), min, max))
   }
 
   const dragging = drag !== null
@@ -118,7 +137,9 @@ export function PanelSplitter({
       tabIndex={0}
       aria-label={label}
       aria-orientation={orientation === 'v' ? 'vertical' : 'horizontal'}
-      aria-valuenow={size}
+      // Absent until the parent stores a px: a panel still sized by its fraction has a width
+      // nobody has established, and a nominal number here would be a fabricated one.
+      aria-valuenow={size ?? undefined}
       aria-valuemin={min}
       aria-valuemax={max}
       data-slot="panel-splitter"

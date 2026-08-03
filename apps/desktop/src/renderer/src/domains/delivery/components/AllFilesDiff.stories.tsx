@@ -41,7 +41,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('vs merge-base')).toBeInTheDocument()
-    await expect(canvas.getByText('· +20 −4 · uncommitted included')).toBeInTheDocument()
+    await expect(canvas.getByText('+20 −4 · uncommitted included')).toBeInTheDocument()
     await expect(canvas.getByText('src/auth/rotateToken.ts')).toBeInTheDocument()
     // Committed file: no badge. Dirty file: the wip badge.
     await expect(canvas.getByText('uncommitted')).toBeInTheDocument()

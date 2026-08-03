@@ -147,6 +147,11 @@
   --inset: color-mix(in srgb, var(--graphite-900) 3%, transparent);
   --inset-hair: color-mix(in srgb, var(--graphite-900) 6%, transparent);
   --inset-lip: color-mix(in srgb, var(--graphite-900) 4%, transparent);
+  /* The live card's fill falls from its lit lip to its foot rather than sitting flat —
+   * the same top-down wash the plane has, one depth shallower. The two stops average
+   * `--inset`, so a card gains the fall without gaining weight. */
+  --inset-top: color-mix(in srgb, var(--graphite-900) 5%, transparent);
+  --inset-bottom: color-mix(in srgb, var(--graphite-900) 1.5%, transparent);
 
   /* Plane — a card that floats in the lit scene, on its own depth. Ingredients
    * only; the recipe is the `plane` utility in globals.css. On light there is no
@@ -166,6 +171,19 @@
   --scrim-edge: color-mix(in srgb, var(--graphite-900) 8%, transparent);
   --scrim-top: color-mix(in srgb, var(--graphite-900) 5%, transparent);
   --scrim-bottom: color-mix(in srgb, var(--graphite-900) 10%, transparent);
+
+  /* The LIT SCENE the whole cockpit floats on — the light the planes are lit BY, which is why
+   * every plane's bloom and lip has looked unmotivated: there was no source. Four layers, in the
+   * order the prototype stacks them: the orb's warm corona off-centre right, a wider warm wash
+   * behind it, a cool fill low-left so the room is not one hue, and a lift along the top. On light
+   * these stay very faint — a warm wash on a pale ground reads as a stain, not as light. */
+  --scene-corona: color-mix(in srgb, var(--gold-600) 6%, transparent);
+  --scene-corona-wide: color-mix(in srgb, var(--gold-600) 3%, transparent);
+  --scene-cool: color-mix(in srgb, var(--bone-300) 42%, transparent);
+  --scene-lift: color-mix(in srgb, var(--bone-50) 70%, transparent);
+  /* The dither's weight. Lighter on light: grain on a pale ground reads as dirt, and a light
+   * ground bands far less to begin with. */
+  --grain: 0.02;
 
   /* ONE value per meaning, across every family: a failure is a failure whether it is a
    * failed check, a blocked ticket or a bad signal, and the same holds for the gold that
@@ -208,8 +226,19 @@
   --signal-bad: var(--status-fail);
 
   /* `well` is a recessed fill, not a shadow: #262 settled depth as brightness only,
-   * so the plane family carries cast and there is no shadow ladder. */
+   * so the plane family carries cast and there is no shadow ladder. Pair it with
+   * `inset-lip` for a track pressed INTO its bar — that is the house segmented-control
+   * box (GitControls, the room switcher). */
   --well: color-mix(in srgb, var(--graphite-900) 4%, transparent);
+
+  /* The RAISED seat — the one segment of a segmented control standing proud of its well.
+   * Same language as a card (a top-down fall beneath a lit lip), one step stronger, because
+   * this face is what the light is actually landing on. It is the only way a switcher says
+   * "here" by FORM rather than by a flat tint: a filled rectangle in a recessed track reads
+   * as a hole, and depth here is still brightness only — no shadow ladder. */
+  --seat-raised-top: var(--bone-50);
+  --seat-raised-bottom: color-mix(in srgb, var(--bone-200) 80%, transparent);
+  --seat-raised-lip: color-mix(in srgb, var(--bone-50) 90%, transparent);
 
   /* Weaker on light, where a halo reads as blur rather than as light. */
   --glow-strength: 35%;
@@ -264,6 +293,8 @@
   --inset: color-mix(in srgb, var(--bone-100) 3%, transparent);
   --inset-hair: color-mix(in srgb, var(--bone-100) 6%, transparent);
   --inset-lip: color-mix(in srgb, var(--bone-100) 5%, transparent);
+  --inset-top: color-mix(in srgb, var(--bone-100) 5%, transparent);
+  --inset-bottom: color-mix(in srgb, var(--bone-100) 1.5%, transparent);
 
   /* Plane — the signature Penumbra card: a cool translucent slab with a concealed
    * cove lip along its top edge and a warm bloom washing in from above. `-lit` is
@@ -283,6 +314,15 @@
   --scrim-edge: color-mix(in srgb, black 34%, transparent);
   --scrim-top: color-mix(in srgb, black 22%, transparent);
   --scrim-bottom: color-mix(in srgb, black 40%, transparent);
+
+  /* Dark is where the scene does its work: the corona is the orb read as a key light, and the cool
+   * fill is what keeps the dark from going flat black in the corner it does not reach. */
+  --scene-corona: color-mix(in srgb, var(--gold-500) 13%, transparent);
+  --scene-corona-wide: color-mix(in srgb, var(--gold-500) 5%, transparent);
+  --scene-cool: color-mix(in srgb, var(--graphite-500) 40%, transparent);
+  --scene-lift: var(--graphite-700);
+  /* Heavier on dark, where a shallow ramp over a near-black ground bands the worst. */
+  --grain: 0.035;
 
   /* One value per meaning — see the light block. On dark the anchors sit at the 300
    * step: a failure or a request for you is the brightest thing in the region, which is
@@ -312,6 +352,12 @@
 
   --well: color-mix(in srgb, black 15%, transparent);
 
+  /* On dark the raised face lifts toward the graphite mids and its lip is bone, which is the
+   * warm hair of light the prototype draws along the top of the active key. */
+  --seat-raised-top: color-mix(in srgb, var(--graphite-400) 55%, transparent);
+  --seat-raised-bottom: color-mix(in srgb, var(--graphite-600) 62%, transparent);
+  --seat-raised-lip: color-mix(in srgb, var(--bone-100) 10%, transparent);
+
   --glow-strength: 60%;
 
   --frost: 14px;
@@ -327,15 +373,20 @@
   --sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 
-  /* Typography roles — ONE sans ladder at 9/11/13/15 (+23 hero), every step 2px.
-   * This ladder IS the cockpit's density: it is the Penumbra prototypes' own
+  /* Typography roles — ONE sans ladder at 9/11/13/15 (+19 display, +23 hero), every
+   * step 2px. This ladder IS the cockpit's density: it is the Penumbra prototypes' own
    * measure, decided here rather than deferred per surface. All further hierarchy
    * is carried inside a size by weight, case+tracking, or line-height, never by a
    * 1px size step — the half-steps the prototypes explored in (8.5/9.5/10.5/11.5/
    * 12.5) are jitter and do not exist in the contract. Full tuple per role; wired
    * to text-* utilities in globals.css (which also adds the uppercase /
    * tabular-nums / mono facets where a role demands them). A new size snaps to a
-   * role or gets promoted here, never inlined. */
+   * role or gets promoted here, never inlined.
+   *
+   * Weights run LIGHT: 400 is the ladder's baseline and only `row-strong` reaches past
+   * it. Hierarchy at these sizes is carried by size, case and colour — a dense 11px row
+   * set at 600 does not read as structure, it reads as shouting, which is what the
+   * session interior measured against its own prototype (#268). */
   /* The one large role: a screen's own title (a ticket's hero line, a stage heading, a
    * rendered markdown h1). Light weight rather than bold — at this size the scene's
    * quiet is carried by the stroke, not by the size. There is deliberately NO wordmark
@@ -346,14 +397,23 @@
   --type-hero-weight: 200;
   --type-hero-tracking: 0.01em;
 
+  /* The rung between `hero` and the dense ladder: a plane's OWN name, set as a display
+   * line rather than as the first row of a list. 19px holds the 2px cadence up from 15,
+   * and the weight is extra-light for the same reason `hero`'s is — at this size the
+   * quiet is carried by the stroke. Never a list row, never a section head. */
+  --type-display: 19px;
+  --type-display-leading: 24px;
+  --type-display-weight: 200;
+  --type-display-tracking: 0.01em;
+
   --type-headline: 15px; /* verdict hero, session-level headings */
   --type-headline-leading: 20px;
-  --type-headline-weight: 600;
+  --type-headline-weight: 400;
   --type-headline-tracking: -0.01em;
 
   --type-title: 13px; /* now-line, a panel's or plane's single hero row */
   --type-title-leading: 18px;
-  --type-title-weight: 500;
+  --type-title-weight: 400;
   --type-title-tracking: -0.005em;
 
   --type-row: 11px; /* list primary text */
@@ -363,7 +423,7 @@
 
   --type-row-strong: 11px; /* same size — weight differentiates: row titles, buttons */
   --type-row-strong-leading: 16px;
-  --type-row-strong-weight: 600;
+  --type-row-strong-weight: 500;
   --type-row-strong-tracking: 0em;
 
   --type-prose: 11px; /* same size — leading differentiates: multi-line reading */
@@ -376,17 +436,17 @@
    * what keeps a meta-only chip an even number of pixels tall against the 4px rhythm
    * (ConsoleChannelTab's height canary counts this box). */
   --type-meta-leading: 14px;
-  --type-meta-weight: 500;
+  --type-meta-weight: 400;
   --type-meta-tracking: 0.02em;
 
   --type-tag: 9px; /* state chips, severity words (+ uppercase) */
   --type-tag-leading: 12px;
-  --type-tag-weight: 600;
+  --type-tag-weight: 500;
   --type-tag-tracking: 0.14em;
 
   --type-eyebrow: 9px; /* section headers (+ uppercase, wider tracking, lighter) */
   --type-eyebrow-leading: 12px;
-  --type-eyebrow-weight: 500;
+  --type-eyebrow-weight: 400;
   --type-eyebrow-tracking: 0.22em;
 
   --type-code: 11px; /* terminal, diff hunks, code blocks (+ mono) */
@@ -420,6 +480,17 @@
    * box is what holds a marker in its column as a row nests deeper. One marker box (16) +
    * one row gap (8) = 24 = --space-nest, so each tree level steps by exactly one nest. */
   --space-marker-col: 16px;
+  /* Feed gutter column — the fixed box the kind label sits in on every event row of a detail
+   * feed, so the content beside it starts on ONE axis down the whole feed. Structural like
+   * --space-marker-col: sized to the longest kind word at the tag ramp, never a rhythm step.
+   * Too narrow is not a cosmetic miss — the label overruns the content and the two paint over
+   * each other. */
+  --space-kind-col: 52px;
+  /* Plan-mark column — the fixed box a plan entry's glyph sits in, so three different marks
+   * down a list never shift the text beside them. Structural like the two above, and narrower
+   * than --space-marker-col on purpose: this holds a glyph riding the text's baseline, not an
+   * icon box. */
+  --space-mark-col: 12px;
 
   /* Shell chrome geometry (#264). Structural boxes rather than rhythm steps: they hold
    * the chrome's columns, and the traffic-light reserve is fixed by macOS rather than by
@@ -427,6 +498,11 @@
   --project-strip-width: 60px;
   --project-tab-size: 38px;
   --traffic-lights-clearance: 52px;
+
+  /* The session header's context ring (#268). A structural box like the chrome's above: it is
+   * sized to be glanceable across the band rather than to a rhythm step. Promoted from the
+   * session-interior prototype's own measure. */
+  --context-ring-size: 56px;
 
   /* Row heights — the density's vertical half, as the prototypes measured it. */
   --row-h-tight: 20px; /* a tree row, a chip row */

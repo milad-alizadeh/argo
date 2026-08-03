@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   args: { label: 'Checks', count: '8f3a1c +2 uncommitted' },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('· 8f3a1c +2 uncommitted')).toBeInTheDocument()
+    await expect(within(canvasElement).getByText('8f3a1c +2 uncommitted')).toBeInTheDocument()
   },
 }
 

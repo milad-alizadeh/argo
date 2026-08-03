@@ -5,6 +5,6 @@
 export { RoomStage } from './RoomStage'
 export { useSessionStore } from './sessionStore'
 export { type GitHatches, useGitGroup } from './useGitGroup'
-export { useSessionPanel } from './useSessionPanel'
+export { useSessionInterior } from './useSessionInterior'
 export { useShellCommands } from './useShellCommands'
 export { type ShellState, useShellState } from './useShellState'

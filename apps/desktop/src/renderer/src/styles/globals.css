@@ -92,6 +92,10 @@
   --text-hero--line-height: var(--type-hero-leading);
   --text-hero--font-weight: var(--type-hero-weight);
   --text-hero--letter-spacing: var(--type-hero-tracking);
+  --text-display: var(--type-display);
+  --text-display--line-height: var(--type-display-leading);
+  --text-display--font-weight: var(--type-display-weight);
+  --text-display--letter-spacing: var(--type-display-tracking);
   --text-headline: var(--type-headline);
   --text-headline--line-height: var(--type-headline-leading);
   --text-headline--font-weight: var(--type-headline-weight);
@@ -144,12 +148,15 @@
   --spacing-plane: var(--space-plane);
   --spacing-nest: var(--space-nest);
   --spacing-marker-col: var(--space-marker-col);
+  --spacing-kind-col: var(--space-kind-col);
+  --spacing-mark-col: var(--space-mark-col);
 
   /* Shell chrome boxes reach the screen as spacing utilities (w-project-strip,
    * size-project-tab, pt-traffic-lights) because each one sizes a box, not a gap. */
   --spacing-project-strip: var(--project-strip-width);
   --spacing-project-tab: var(--project-tab-size);
   --spacing-traffic-lights: var(--traffic-lights-clearance);
+  --spacing-context-ring: var(--context-ring-size);
 
   /* The one shared strip height (min-h-strip): every tab strip and header bar stands this
    * tall, so columns line up. Row heights are the density's vertical half. */
@@ -316,6 +323,31 @@
   box-shadow: 0 1px 0 var(--inset-lip) inset;
 }
 
+/* The raised key of a segmented control — the one segment standing proud of the well it sits in.
+ * A top-down fall beneath a lit lip, same language as a card but one step stronger, because this
+ * face is what the light is landing on. Pair it with `bg-well inset-lip` on the track: the pair is
+ * what makes a switcher read as a switcher rather than as a tint on a flat bar. */
+@utility seat-raised {
+  background: linear-gradient(180deg, var(--seat-raised-top), var(--seat-raised-bottom));
+  box-shadow: 0 1px 0 var(--seat-raised-lip) inset;
+}
+
+/* A hairline that fades out at both ends. The scene draws no lines — an edge is light falling
+ * off — so a rule that stops dead reads as ruled paper. This is how a band closes over the
+ * content below it. */
+@utility rule-taper {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--inset-hair), transparent);
+}
+
+/* The live inset card — the lit lip plus a fill that falls from it. Still ONE surface: a
+ * gradient of the foreground ink, never a second glass layer. The lip and the fall are one
+ * recipe because they are one light: a lip over a flat box reads as a drawn line. */
+@utility inset-card {
+  background: linear-gradient(180deg, var(--inset-top), var(--inset-bottom));
+  box-shadow: 0 1px 0 var(--inset-lip) inset;
+}
+
 /* The Penumbra plane — a card that floats in the lit scene on its own depth, as opposed
  * to a flat `inset` card that sits ON a panel. Three ingredients, none of them a border:
  * a cool translucent slab, a concealed cove lip along the top edge (1px of light, never a
@@ -352,14 +384,42 @@
   opacity: var(--recede-2-opacity);
 }
 
+/* The lit scene itself — the light every plane in the cockpit is lit BY. Positions are
+ * PERCENTAGES rather than the prototype's fixed pixels, so the corona stays put relative to the
+ * window instead of drifting off a wide one. Order matters: the corona sits over the wider wash,
+ * which sits over the cool fill, over the top lift, over the base. Painted by RoomScene as a fixed
+ * backdrop; the values live here so the scene and the plane family stay one decision. */
+/* `in oklab` on every ramp is not a flourish — a gradient to bare `transparent` interpolates
+ * through transparent BLACK in sRGB, which greys the midpoint of a warm ramp and turns the
+ * quantization steps into visible bands. oklab interpolation keeps the hue to the end and
+ * spaces the steps perceptually, which is most of the banding fixed. `room-grain` above
+ * dithers away the rest. */
+@utility room-scene {
+  background:
+    radial-gradient(80% 110% at 78% 49% in oklab, var(--scene-corona), transparent 70%),
+    radial-gradient(98% 110% at 60% 51% in oklab, var(--scene-corona-wide), transparent 72%),
+    radial-gradient(62% 100% at 21% 87% in oklab, var(--scene-cool), transparent 65%),
+    radial-gradient(110% 130% at 50% 4% in oklab, var(--scene-lift), transparent 70%),
+    var(--background);
+}
+
+/* The dither. A fullscreen ramp this shallow cannot avoid 8-bit banding on its own — the fix is
+ * not a smoother ramp but NOISE, one pixel of grain breaking each step's edge so the eye stops
+ * finding the seam. Tiled from an inline SVG (no network, so the CSP is satisfied) and rasterized
+ * once, which is why this costs nothing to scroll over. */
+@utility room-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: var(--grain);
+}
+
 /* The room's dust — one multiply pass over the whole scene that pulls the edges down
- * and keeps the lit centre-right where the corona spills. Applied to the scene's own
- * ::after in RoomScene; here so the values stay in one place. */
+ * and keeps the lit centre-right where the corona spills. Painted by RoomScene's own scrim
+ * layer; the values live here so there is one place to tune them. */
 @utility room-scrim {
   background:
-    radial-gradient(1150px 950px at 85% 50%, transparent 44%, var(--scrim-edge) 100%),
+    radial-gradient(1150px 950px at 85% 50% in oklab, transparent 44%, var(--scrim-edge) 100%),
     linear-gradient(
-      to bottom,
+      in oklab to bottom,
       var(--scrim-top),
       transparent 12%,
       transparent 82%,
@@ -368,9 +428,17 @@
   mix-blend-mode: multiply;
 }
 
+/* xterm sizes its own DOM in px, so a pane whose width may be read from its contents feeds the
+ * fit addon's own output back in: fit → wider host → ResizeObserver → fit, one column per pass,
+ * forever. Containment cuts that loop at the pane rather than at each ancestor, so the terminal
+ * takes the box it is given wherever it is mounted and never widens the surface around it. */
+.live-terminal {
+  contain: inline-size;
+}
+
 /* The live channel is a real xterm terminal that sits directly on the panel's ONE frosted
  * surface. Every xterm layer stays transparent so the glass reads through — no glass on glass.
- * (Paired with `allowTransparency` + a transparent theme in `LiveTerminal`.) */
+ * (Paired with `allowTransparency` + a transparent theme in `TerminalPane`.) */
 .live-terminal .xterm,
 .live-terminal .xterm .xterm-viewport,
 .live-terminal .xterm .xterm-screen {

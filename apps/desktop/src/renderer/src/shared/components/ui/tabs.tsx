@@ -33,7 +33,7 @@ function TabsList({
 // Named after the token spent, never a domain word — `changes` is the one caller (DeliveryTabs'
 // Review tab) reaching for the amber wash the study spells `.dtab.review`.
 const tabsTriggerVariants = cva(
-  `${TYPE_ROLE_CLASS.row} cursor-pointer rounded-lg px-gap py-tight text-muted-foreground outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40 data-[state=active]:bg-foreground/6 data-[state=active]:text-foreground`,
+  `${TYPE_ROLE_CLASS.row} cursor-pointer px-gap py-tight text-muted-foreground outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-40 data-[state=active]:text-foreground`,
   {
     variants: {
       tone: {
@@ -41,8 +41,15 @@ const tabsTriggerVariants = cva(
         changes:
           'text-verdict-changes tabular-nums data-[state=active]:bg-verdict-changes-tint/12 data-[state=active]:text-verdict-changes data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-verdict-changes-tint/40',
       },
+      // How the active tab is marked. `fill` washes the whole seat; `rail` underlines it in the
+      // attention ink and leaves the seat unpainted, for a tab strip that sits INSIDE a band it
+      // must not out-shout.
+      seat: {
+        fill: 'rounded-lg data-[state=active]:bg-foreground/6',
+        rail: 'rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary',
+      },
     },
-    defaultVariants: { tone: 'neutral' },
+    defaultVariants: { tone: 'neutral', seat: 'fill' },
   },
 )
 
@@ -51,13 +58,14 @@ export type TabsTriggerTone = NonNullable<VariantProps<typeof tabsTriggerVariant
 function TabsTrigger({
   className,
   tone,
+  seat,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Trigger> &
   VariantProps<typeof tabsTriggerVariants>): React.JSX.Element {
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
-      className={cn(tabsTriggerVariants({ tone }), className)}
+      className={cn(tabsTriggerVariants({ tone, seat }), className)}
       {...props}
     />
   )
