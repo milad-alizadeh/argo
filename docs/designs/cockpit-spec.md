@@ -229,6 +229,14 @@ Detail: `cockpit-session-interior-decisions.md`, `cockpit-session-interior-proto
   must not compete with it.
   - **Pool:** open, leaf, `todo`, unblocked, session-less. Parents are never candidates; blocked
     items are shown but not recommended.
+  - **`unblocked` is closure-kind-aware, one definition app-wide.** A blocker closed as ruled-out
+    satisfies no edge, so a **stranded** node is shown-but-not-recommended exactly as a blocked one
+    is — the provider's `blocked_by` scalar reports it as clear and must never be trusted alone.
+    The per-blocker walk is **lazy**: only the ranked leader is verified, and a stranded leader is
+    dropped and the next one walked.
+  - **Decision tickets never enter the hero.** They share the pool's predicate but not the
+    recommendation: "answer this question" versus "ship this leaf" is a best-move-overall
+    judgement, which this hero exists not to make. The planning surface picks the question.
   - **Ranking is dumb and legible:** `priority desc → PRD sequence → age`. You can predict the
     answer without reading a scoring function.
   - **At most two *earned* reason chips** (`high priority` → `unblocked` → `next in <PRD>`,
@@ -239,7 +247,8 @@ Detail: `cockpit-session-interior-decisions.md`, `cockpit-session-interior-proto
   - **Re-ranked as a live projection** — on provider-poll deltas and instantly on local session
     start/stop. It needs no timer of its own.
   - **Empty pool degrades in tiers** — nothing unblocked / all in progress / backlog clear. "Nothing
-    to do" says *which* nothing.
+    to do" says *which* nothing. The nothing-unblocked tier may **point at** open decisions
+    (`nothing unblocked · 2 decisions open ↗`) — a count and a route, never a recommendation.
 - **Ticket detail** is a scrolling main column with a sticky sidebar (Deliveries · Properties ·
   Labels · blockedBy), so metadata stays put while the body scrolls. **Multiple PRs per ticket are
   first-class** — a ticket that took two branches is not misrepresented.
@@ -371,8 +380,12 @@ special case: they cannot honestly reach the firing states.
   OS surface. The real output lives in the Dock.
 - **No in-app toggle and no sound control** — macOS's own per-app settings are the switch; no
   Preferences surface is invented for a boolean.
-- **Nothing else notifies.** Not connection failure, not Delivery events (CI / review / merge) —
-  the channel keeps the credibility the amber banner depends on.
+- **Nothing else notifies.** Not connection failure, not Delivery events (CI / review / merge), and
+  **no state of a decision map** — a map is not a running world, and this channel projects the
+  running world. A blocked frontier and a stale claim are state readouts that live where you would
+  act on them; a **stranded** node is a permanent deadlock needing a human, so it lights the
+  **project-strip badge** — visible without entering the room — and stops there. No session dot
+  moves for any of the three.
 
 Detail: `cockpit-app-shell-spec.md` → *Out-of-window attention*.
 
