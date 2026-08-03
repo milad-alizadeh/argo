@@ -32,7 +32,7 @@ const meta = {
   decorators: [
     (Story) => (
       <div
-        className="flex h-screen bg-background p-inset"
+        className="flex h-screen w-screen bg-background p-inset"
         style={{ '--c-act': `${LAYOUT.activity}px`, '--r-dock': `${LAYOUT.dock}px` }}
       >
         <Story />

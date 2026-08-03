@@ -15,7 +15,10 @@ const meta = {
   // The Dock sizes off the screen-local `--r-dock` the splitter drives, so the decorator pins it.
   decorators: [
     (Story) => (
-      <div className="flex h-screen flex-col justify-end bg-panel" style={{ '--r-dock': '170px' }}>
+      <div
+        className="flex h-screen w-screen flex-col justify-end bg-panel"
+        style={{ '--r-dock': '170px' }}
+      >
         <Story />
       </div>
     ),
@@ -48,7 +51,10 @@ export const Expanded: Story = {
   args: { expanded: true },
   decorators: [
     (Story) => (
-      <div className="flex h-screen flex-col justify-end bg-panel" style={{ '--r-dock': '320px' }}>
+      <div
+        className="flex h-screen w-screen flex-col justify-end bg-panel"
+        style={{ '--r-dock': '320px' }}
+      >
         <Story />
       </div>
     ),

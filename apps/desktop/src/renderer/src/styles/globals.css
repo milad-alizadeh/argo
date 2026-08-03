@@ -144,6 +144,7 @@
   --spacing-plane: var(--space-plane);
   --spacing-nest: var(--space-nest);
   --spacing-marker-col: var(--space-marker-col);
+  --spacing-kind-col: var(--space-kind-col);
 
   /* Shell chrome boxes reach the screen as spacing utilities (w-project-strip,
    * size-project-tab, pt-traffic-lights) because each one sizes a box, not a gap. */
@@ -369,9 +370,17 @@
   mix-blend-mode: multiply;
 }
 
+/* xterm sizes its own DOM in px, so a pane whose width may be read from its contents feeds the
+ * fit addon's own output back in: fit → wider host → ResizeObserver → fit, one column per pass,
+ * forever. Containment cuts that loop at the pane rather than at each ancestor, so the terminal
+ * takes the box it is given wherever it is mounted and never widens the surface around it. */
+.live-terminal {
+  contain: inline-size;
+}
+
 /* The live channel is a real xterm terminal that sits directly on the panel's ONE frosted
  * surface. Every xterm layer stays transparent so the glass reads through — no glass on glass.
- * (Paired with `allowTransparency` + a transparent theme in `LiveTerminal`.) */
+ * (Paired with `allowTransparency` + a transparent theme in `TerminalPane`.) */
 .live-terminal .xterm,
 .live-terminal .xterm .xterm-viewport,
 .live-terminal .xterm .xterm-screen {

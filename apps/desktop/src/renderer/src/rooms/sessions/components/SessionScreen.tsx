@@ -46,7 +46,7 @@ export function SessionScreen({
         '--c-act': `${layout.activity}px`,
         '--r-dock': `${layout.dock}px`,
       }}
-      className="flex min-h-0 flex-1 p-inset text-foreground"
+      className="flex min-h-0 min-w-0 flex-1 p-inset text-foreground"
     >
       {/* The rail sits OUTSIDE the glass: its rows are planes floating in the room's lit scene, and a
           frosted panel behind them would be glass on glass. The session plane keeps the one frosted
