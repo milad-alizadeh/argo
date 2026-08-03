@@ -99,7 +99,7 @@ function Row({ row }: { row: FeedRow }): React.JSX.Element {
 export function TurnFeed({ rows }: { rows: readonly FeedRow[] }): React.JSX.Element {
   if (rows.length === 0) {
     return (
-      <Text variant="meta" className="text-foreground-faint">
+      <Text variant="prose" className="text-foreground-faint">
         nothing said in this turn — no prompt and no prose in the record
       </Text>
     )

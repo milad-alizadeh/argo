@@ -29,12 +29,13 @@ function DetailHead({ name, word }: { name: string; word: string }): React.JSX.E
  * from what was observed and nothing else — an absent part drops out rather than reading empty.
  *
  * Mono at its own case, NOT the uppercasing tag role: a path or a command shouted back as
- * `ROTATION.TS` is no longer the string that was observed. */
+ * `ROTATION.TS` is no longer the string that was observed. Mono at the COLUMN's size, not at the
+ * `code` roles' — every line in this feed stands on one rung and is separated by colour. */
 function MetaLine({ parts }: { parts: readonly (string | null)[] }): React.JSX.Element | null {
   const text = parts.filter((part) => part !== null && part !== '').join(' · ')
   if (text === '') return null
   return (
-    <Text variant="code-inline" className="truncate text-foreground-faint">
+    <Text variant="prose" className="truncate font-mono text-foreground-faint">
       {text}
     </Text>
   )
@@ -113,7 +114,7 @@ function SubagentDetail({
         ]}
       />
       {events.length === 0 ? (
-        <Text variant="meta" className="text-foreground-faint">
+        <Text variant="prose" className="text-foreground-faint">
           no live feed yet — nothing observed from this subagent
         </Text>
       ) : (
