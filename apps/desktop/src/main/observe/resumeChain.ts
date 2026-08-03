@@ -63,6 +63,21 @@ export function latestInChain<T>(
   return null
 }
 
+// Reduce a numeric reading over the WHOLE chain. Recency is a max, not a chain position: a
+// leaf file can be the older one (it is created on resume, then sat on), so scanning for the
+// leaf-most present value would report a stale reading as the newest.
+export function maxInChain(
+  files: ParsedTranscript[],
+  select: (file: ParsedTranscript) => number | null,
+): number | null {
+  let highest: number | null = null
+  for (const file of files) {
+    const value = select(file)
+    if (value !== null && (highest === null || value > highest)) highest = value
+  }
+  return highest
+}
+
 // Scan a chain root → leaf and take the first present value — the mirror of `latestInChain`, for
 // a field whose EARLIEST reading is the true one (when the Session began, not where it is now).
 export function firstInChain<T>(

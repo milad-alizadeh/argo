@@ -10,7 +10,7 @@ import {
   sessionFacts,
   type Tiered,
 } from '../../shared'
-import { latestInChain } from './resumeChain'
+import { latestInChain, maxInChain } from './resumeChain'
 import type { LogicalSession, ObservedSession } from './types'
 
 /** Grade the Session's status FROM its tree, so the two readings can never be differently timed. */
@@ -28,6 +28,9 @@ export function toObservedSession(
   const aiTitle = latestInChain(logical.files, (file) => file.aiTitle)
   const firstPrompt = latestInChain(logical.files, (file) => file.firstPrompt)
   const cwd = latestInChain(logical.files, (file) => file.cwd)
+  const model = latestInChain(logical.files, (file) => file.model)
+  const branch = latestInChain(logical.files, (file) => file.gitBranch)
+  const lastActivityAt = maxInChain(logical.files, (file) => file.lastTimestampMs)
   const agents = toAgents(logical)
 
   return {
@@ -37,6 +40,9 @@ export function toObservedSession(
     posture,
     title: resolveTitle(aiTitle, firstPrompt),
     cwd: cwd === null ? null : direct(cwd),
+    model: model === null ? null : direct(model),
+    branch: branch === null ? null : direct(branch),
+    lastActivityAt: lastActivityAt === null ? null : derived(lastActivityAt),
     status: gradeStatus(agents),
     agents,
   }
@@ -77,6 +83,9 @@ function toIntake(observed: ObservedSession): SessionIntake {
     title: observed.title.value,
     cli: 'claude',
     cwd: observed.cwd?.value ?? null,
+    model: observed.model?.value ?? null,
+    branch: observed.branch?.value ?? null,
+    lastActivityAt: observed.lastActivityAt?.value ?? null,
     posture: observed.posture,
     facts: sessionFacts({ status: observed.status.value }),
     agents: observed.agents,
