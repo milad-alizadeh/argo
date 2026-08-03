@@ -1,5 +1,5 @@
 import { BackgroundTasks, NowLine } from '@/domains/activity/components'
-import { ConciergeDock, EclipseScene, type OrbState } from '@/domains/concierge/components'
+import { EclipseScene, type OrbState } from '@/domains/concierge/components'
 import { Console } from '@/domains/console/components'
 import { type ChangesView, Delivery, type DeliveryTab } from '@/domains/delivery/components'
 import { Roster } from '@/domains/roster/components'
@@ -84,7 +84,6 @@ export function SessionScreen({
             sessions={sessions}
             selectedId={selectedId}
             onSelectSession={handlers.onSelectSession}
-            dock={<ConciergeDock orbState={orbState} active={detailOpen} />}
           />
           {panel && (
             <>

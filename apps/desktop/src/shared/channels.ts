@@ -1,3 +1,4 @@
+import type { GitFacts, GitRequest } from './git'
 import type { ProjectionDelta } from './projection'
 
 // IPC channel names for the main → renderer projection (ADR-0005). Shared so the
@@ -30,6 +31,25 @@ export interface TerminalSession {
   dispose(): void
 }
 
+// The project's primary checkout (ADR-0004: main runs git). Request/response rather than a
+// projection: git's answer is a snapshot the renderer asks for when it opens the group, not a
+// stream main can push, because nothing tells main when a branch moved outside the app.
+export const GIT_FACTS_CHANNEL = 'cockpit:git-facts'
+export const GIT_OPERATION_CHANNEL = 'cockpit:git-operation'
+
+// The two acts Argo owns above the Session (ADR-0017), plus ⌘N's spawn. Main owns the folder
+// dialog and the registry file, so the renderer names the act and never the mechanism.
+export const PROJECT_REGISTER_CHANNEL = 'cockpit:project-register'
+export const PROJECT_ACTIVATE_CHANNEL = 'cockpit:project-activate'
+export const SESSION_SPAWN_CHANNEL = 'cockpit:session-spawn'
+
+/** What an act reports back: it happened, or the reason it did not — in the underlying tool's
+ * own words where the tool refused, so the shell never invents an explanation. */
+export interface CommandResult {
+  ok: boolean
+  detail: string
+}
+
 // The preload bridge the renderer sees as `window.cockpit`. The renderer subscribes to the
 // projection and opens the live terminal; main streams deltas (a snapshot first, then live
 // patches) and pipes the shell.
@@ -39,4 +59,14 @@ export interface CockpitBridge {
    * attach and streams its output to `onData` — a live shell, so there is no snapshot to
    * replay. The returned session writes keystrokes back and resizes the PTY to the viewport. */
   openTerminal(size: TerminalSize, onData: (chunk: string) => void): TerminalSession
+  /** Read one Project's primary checkout. `null` means the folder is no git repository, which
+   * the shell renders by hiding the whole git group. */
+  readGitFacts(projectId: string): Promise<GitFacts | null>
+  runGitOperation(request: GitRequest): Promise<CommandResult>
+  /** Register a folder as a Project. Main opens the folder picker, so the renderer has no
+   * path to supply and nothing to validate. */
+  registerProject(): Promise<CommandResult>
+  activateProject(projectId: string): Promise<CommandResult>
+  /** Spawn a session in the ACTIVE project's root folder — zero-config, no arguments to pick. */
+  spawnSession(): Promise<CommandResult>
 }

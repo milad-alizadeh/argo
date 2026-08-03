@@ -427,6 +427,13 @@
    * one row gap (8) = 24 = --space-nest, so each tree level steps by exactly one nest. */
   --space-marker-col: 16px;
 
+  /* Shell chrome geometry (#264). Structural boxes rather than rhythm steps: they hold
+   * the chrome's columns, and the traffic-light reserve is fixed by macOS rather than by
+   * the design. Proposals promoted from the Code-room prototype's own measure. */
+  --project-strip-width: 60px;
+  --project-tab-size: 38px;
+  --traffic-lights-clearance: 52px;
+
   /* Row heights — the density's vertical half, as the prototypes measured it. */
   --row-h-tight: 20px; /* a tree row, a chip row */
   --row-h: 22px; /* a roster/list row */

@@ -1,0 +1,16 @@
+// The shell slice's ONE public entry (apps/desktop/scripts/module-boundaries.json). The renderer
+// root composes the chrome plus the active room from here; everything else in `shell/` is private.
+export * from '../branchMenuModel'
+export * from '../projectUi'
+export * from '../shellCommand'
+export * from '../shellModel'
+export { EmptyShell } from './EmptyShell'
+export * from './git'
+export { ProjectStrip } from './project-strip/ProjectStrip'
+export { ProjectTab } from './project-strip/ProjectTab'
+export { ConciergeCaption } from './top-bar/ConciergeCaption'
+export { ConciergeStrip } from './top-bar/ConciergeStrip'
+export { OrbMini } from './top-bar/OrbMini'
+export { RoomSwitcher } from './top-bar/RoomSwitcher'
+export { TopBar } from './top-bar/TopBar'
+export { WindowControls } from './top-bar/WindowControls'

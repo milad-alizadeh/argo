@@ -2,9 +2,14 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
 import {
   type CockpitBridge,
+  GIT_FACTS_CHANNEL,
+  GIT_OPERATION_CHANNEL,
+  PROJECT_ACTIVATE_CHANNEL,
+  PROJECT_REGISTER_CHANNEL,
   PROJECTION_CHANNEL,
   PROJECTION_READY_CHANNEL,
   type ProjectionDelta,
+  SESSION_SPAWN_CHANNEL,
   TERMINAL_ATTACH_CHANNEL,
   TERMINAL_DATA_CHANNEL,
   TERMINAL_INPUT_CHANNEL,
@@ -34,6 +39,21 @@ const cockpit: CockpitBridge = {
         ipcRenderer.removeListener(TERMINAL_DATA_CHANNEL, handler)
       },
     }
+  },
+  readGitFacts(projectId) {
+    return ipcRenderer.invoke(GIT_FACTS_CHANNEL, projectId)
+  },
+  runGitOperation(request) {
+    return ipcRenderer.invoke(GIT_OPERATION_CHANNEL, request)
+  },
+  registerProject() {
+    return ipcRenderer.invoke(PROJECT_REGISTER_CHANNEL)
+  },
+  activateProject(projectId) {
+    return ipcRenderer.invoke(PROJECT_ACTIVATE_CHANNEL, projectId)
+  },
+  spawnSession() {
+    return ipcRenderer.invoke(SESSION_SPAWN_CHANNEL)
   },
 }
 

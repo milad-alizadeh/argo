@@ -145,6 +145,12 @@
   --spacing-nest: var(--space-nest);
   --spacing-marker-col: var(--space-marker-col);
 
+  /* Shell chrome boxes reach the screen as spacing utilities (w-project-strip,
+   * size-project-tab, pt-traffic-lights) because each one sizes a box, not a gap. */
+  --spacing-project-strip: var(--project-strip-width);
+  --spacing-project-tab: var(--project-tab-size);
+  --spacing-traffic-lights: var(--traffic-lights-clearance);
+
   /* The one shared strip height (min-h-strip): the Delivery panel's tab strip and the
    * Delivery lifecycle it stacks against. Row heights are the density's vertical half. */
   --height-strip: var(--strip-height);

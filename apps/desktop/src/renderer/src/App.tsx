@@ -1,67 +1,79 @@
-import { useEffect, useState } from 'react'
-import { LIVE_CHANNEL_ID } from '@/domains/console/components'
-import { SessionScreen, type SessionScreenHandlers } from '@/SessionScreen'
-import { buildSessionPanel, type PanelUiState } from '@/sessionScreenModel'
+import { useCallback, useEffect } from 'react'
+import { CockpitScreen } from '@/CockpitScreen'
+import { RoomStage } from '@/RoomStage'
+import { SessionScreen } from '@/SessionScreen'
 import { useSessionStore } from '@/sessionStore'
-import { isConsoleExpanded, useSpineLayout } from '@/useSpineLayout'
+import { buildShellModel } from '@/shell/components'
+import { useGitGroup } from '@/useGitGroup'
+import { useSessionPanel } from '@/useSessionPanel'
+import { useShellCommands } from '@/useShellCommands'
+import { useShellState } from '@/useShellState'
 
-// The screen opens with the Delivery region showing, no drawer or capture open, the Changes
-// tab flat, and the console at its short height on the live channel.
-const DEFAULT_PANEL_UI: PanelUiState = {
-  variant: 'split',
-  openNode: null,
-  tab: 'changes',
-  changesView: 'all',
-  activeChannel: LIVE_CHANNEL_ID,
-}
-
-// Container: wires the projection bridge into the store and holds the screen's UI state
-// (selection, panel UI, splitter layout), then renders SessionScreen as a pure View of it
-// (ADR-0005). All business logic lives in main; the only thing derived here is the delivery
-// lifecycle (inside buildSessionPanel) — the rich per-Session data stays honest-empty until
-// Seam B enriches the projection.
+// Container: wires the projection bridge into the store, then renders the chrome and the active
+// room as pure Views of it (ADR-0005). All business logic lives in main; the only things derived
+// here are the shell's own projections — the strip's dots, the git menu's refusals — and each is
+// a pure function tested away from the DOM.
 function App(): React.JSX.Element {
-  const sessions = useSessionStore((state) => state.sessions)
-  const applyDelta = useSessionStore((state) => state.applyDelta)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [ui, setUi] = useState<PanelUiState>(DEFAULT_PANEL_UI)
-  const { layout, resize, snapConsole } = useSpineLayout()
+  const state = useSessionStore()
+  const applyDelta = useSessionStore((store) => store.applyDelta)
+  const shell = useShellState()
+  const commands = useShellCommands(shell)
 
   useEffect(() => window.cockpit?.subscribeProjection(applyDelta), [applyDelta])
 
-  const selected = sessions.find((session) => session.id === selectedId) ?? null
-  // The console's expanded state is derived from its height — the single source of truth — so a
-  // splitter drag past the preset and the expand caret can never disagree.
-  const consoleExpanded = isConsoleExpanded(layout.console)
-  const panel = selected ? buildSessionPanel({ session: selected, ui, consoleExpanded }) : null
-
-  const handlers: SessionScreenHandlers = {
-    onSelectSession: setSelectedId,
-    onCloseSession: () => setSelectedId(null),
-    onResize: resize,
-    onToggleVariant: () =>
-      setUi((state) => ({ ...state, variant: state.variant === 'split' ? 'solo' : 'split' })),
-    onSelectTab: (tab) => setUi((state) => ({ ...state, tab })),
-    onChangeChangesView: (changesView) => setUi((state) => ({ ...state, changesView })),
-    onAdvanceFindingState: () => {
-      /* Seam B: the app derives no findings yet, so advancing one is inert. */
+  const openSession = useCallback(
+    (sessionId: string) => {
+      shell.selectRoom('sessions')
+      shell.selectSession(sessionId)
     },
-    onSelectChannel: (activeChannel) => setUi((state) => ({ ...state, activeChannel })),
-    onCloseCapture: () => setUi((state) => ({ ...state, activeChannel: LIVE_CHANNEL_ID })),
-    onToggleConsoleExpanded: () => snapConsole(!consoleExpanded),
-  }
+    [shell],
+  )
+  const git = useGitGroup({
+    onOpenSession: openSession,
+    onOpenScratchTerminal: commands.openScratchTerminal,
+    onResolveWithAgent: commands.resolveWithAgent,
+  })
+  const panel = useSessionPanel(
+    state.sessions.find((session) => session.id === shell.selectedSessionId) ?? null,
+  )
 
   return (
-    <SessionScreen
-      sessions={sessions}
-      selectedId={selectedId}
-      panel={panel}
-      layout={layout}
-      handlers={handlers}
-      // The Concierge state is a pure prop with no live signal yet (issue 153): the app sits
-      // idle; every state is exercised in Storybook. Mapping it to a signal is a follow-up (134).
-      orbState="idle"
-    />
+    <CockpitScreen
+      shell={buildShellModel(state)}
+      room={shell.room}
+      // The Concierge is a seat only: no live signal reaches it until the voice map lands, and a
+      // fabricated caption would be the shell claiming to have heard something.
+      caption={null}
+      // `last synced` has no observed fact yet (it arrives with the connection roll-up), so the
+      // tab tooltip shows the project's name alone rather than inventing an age.
+      lastSynced={null}
+      git={git}
+      handlers={{
+        onSelectProject: shell.swapProject,
+        onAddProject: commands.addProject,
+        onOpenProjectMenu: commands.openProjectMenu,
+        onSelectRoom: shell.selectRoom,
+        onConnect: commands.addProject,
+      }}
+    >
+      <RoomStage
+        room={shell.room}
+        sessions={
+          <SessionScreen
+            sessions={state.sessions}
+            selectedId={shell.selectedSessionId}
+            panel={panel.panel}
+            layout={panel.layout}
+            handlers={{
+              ...panel.handlers,
+              onSelectSession: shell.selectSession,
+              onCloseSession: () => shell.selectSession(null),
+            }}
+            orbState="idle"
+          />
+        }
+      />
+    </CockpitScreen>
   )
 }
 

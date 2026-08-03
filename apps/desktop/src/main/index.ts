@@ -3,17 +3,20 @@ import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
 import { seedDemoSession } from './demoSeed'
+import { wireGit } from './gitBridge'
 import { createHub, type Hub } from './hub'
 import { startObservation } from './observe'
+import { wireProjects } from './projectBridge'
 import { wireProjection } from './projectionBridge'
 import { REGISTRY_FILENAME, readRegistry, toProjectEvents } from './projectRegistry'
+import { wireSpawn } from './spawnSession'
 import { wireTerminal } from './terminalBridge'
 
 // The Project registry is the one thing Argo owns rather than observes (ADR-0017). Replaying
 // it before the launch sweep means observed Sessions attribute to their Project as they
 // arrive, rather than appearing unattributed and then jumping.
-async function restoreProjects(hub: Hub): Promise<void> {
-  const registry = await readRegistry(join(app.getPath('userData'), REGISTRY_FILENAME))
+async function restoreProjects(hub: Hub, registryFile: string): Promise<void> {
+  const registry = await readRegistry(registryFile)
   for (const event of toProjectEvents(registry)) hub.apply(event)
 }
 
@@ -71,13 +74,19 @@ app.whenReady().then(() => {
 
   // Seam A: the authoritative hub and its IPC projection into the renderer (ADR-0005).
   const hub = createHub()
+  const registryFile = join(app.getPath('userData'), REGISTRY_FILENAME)
   wireProjection(hub)
   // Seam B now observes real external claude sessions on launch: a single sweep of the CLI
   // transcript dirs discovers, stitches and grades each Session into the roster (ADR-0008).
-  void restoreProjects(hub).then(() => startObservation(hub))
+  void restoreProjects(hub, registryFile).then(() => startObservation(hub))
   // Seam B: the steering PTY behind the Console's live channel — a renderer attaches and main
   // spawns its shell.
   wireTerminal()
+  // The app shell's own seams (#264): the global git group over the active project's primary
+  // checkout, the project strip's register/activate, and ⌘N's spawn.
+  wireGit(hub)
+  wireProjects(hub, registryFile)
+  wireSpawn(hub)
   // Opt-in synthetic Session that drives the projection pipeline end-to-end (the
   // launch smoke sets this; run `ARGO_SEED_DEMO=1 bun run dev` to see it locally).
   // Nothing real is observed yet — drop when the session adapter lands.

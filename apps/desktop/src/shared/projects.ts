@@ -30,7 +30,7 @@ export function projectName(path: string): string {
 // claims its own sessions. A cwd inside no registered Project is unattributed, never guessed.
 export function projectForCwd(projects: ProjectView[], cwd: string | null): string | null {
   if (cwd === null) return null
-  const containing = projects.filter((project) => contains(project.path, cwd))
+  const containing = projects.filter((project) => containsPath(project.path, cwd))
   const innermost = containing.reduce<ProjectView | null>(
     (deepest, project) =>
       deepest && deepest.path.length >= project.path.length ? deepest : project,
@@ -39,8 +39,11 @@ export function projectForCwd(projects: ProjectView[], cwd: string | null): stri
   return innermost?.id ?? null
 }
 
-function contains(projectPath: string, cwd: string): boolean {
-  const root = trimSeparator(projectPath)
+// Whether one folder sits at or inside another, on either platform's separator. Shared
+// because the same containment answers two questions: which Project a cwd belongs to, and
+// which worktree a Session is working in.
+export function containsPath(rootPath: string, cwd: string): boolean {
+  const root = trimSeparator(rootPath)
   const candidate = trimSeparator(cwd)
   if (candidate === root) return true
   return SEPARATORS.some((separator) => candidate.startsWith(root + separator))

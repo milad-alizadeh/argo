@@ -36,3 +36,24 @@ test('projects a seeded Session into a rail row', async () => {
   await expect(list.getByText('Running')).toBeVisible()
   await expect(window.getByText('No Sessions observed yet.')).toBeHidden()
 })
+
+// A registered Project takes a tab in the strip, and the active one stays quiet: its own
+// sessions are a glance away in the roster, so a badge on it would be a second telling.
+test('projects a seeded Project into a quiet active strip tab', async () => {
+  const tab = window.getByRole('navigation', { name: 'Projects' }).getByRole('button', {
+    name: 'argo',
+  })
+  await expect(tab).toHaveAttribute('aria-current', 'true')
+  await expect(tab.getByRole('img')).toBeHidden()
+})
+
+// ⌘2 leaves the running world for the backlog, and ⌘1 comes back — the room switch is the
+// shell's, and it survives whatever the room is showing.
+test('switches rooms with the canonical keymap', async () => {
+  const rooms = window.getByRole('navigation', { name: 'Rooms' })
+  await window.keyboard.press('Meta+2')
+  await expect(rooms.getByRole('button', { name: /Work/ })).toHaveAttribute('aria-current', 'page')
+  await expect(window.getByRole('list', { name: 'Sessions' })).toBeHidden()
+  await window.keyboard.press('Meta+1')
+  await expect(window.getByRole('list', { name: 'Sessions' })).toBeVisible()
+})
