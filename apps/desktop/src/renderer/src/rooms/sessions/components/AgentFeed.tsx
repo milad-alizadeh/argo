@@ -1,8 +1,9 @@
 import type { ToolCallKind } from '@shared'
 import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
-import { STEP_STATES, SUBAGENT_STATES } from '../activityStates'
+import { SUBAGENT_STATES, turnWord } from '../activityStates'
 import type { ActivityItem, ToolStepModel } from '../interiorActivity'
+import { TurnFeed } from './TurnFeed'
 
 /** The head every detail section wears: what the item is, and its one state word held to the right
  * edge of the SECTION — never flung to the far side of the pane, where it would sit a screen away
@@ -122,33 +123,26 @@ function SubagentDetail({
   )
 }
 
-// What a step's own section says it is. The time it happened and how long it took join this line
-// when the record carried them, and drop out silently when it did not.
-const STEP_META: Record<ToolStepModel['status'], string> = {
-  in_progress: 'step of the current turn',
-  completed: 'completed step',
-  failed: 'the step that failed',
-  pending: 'not started · queued step',
-}
-
-/** A step's section is the step itself — head, what kind of step it is, and the one thing it named.
- * It gets no event list: a single call listed under its own heading would say the same thing twice
- * in three lines, which is what a feed of thirty of them cannot afford. */
-function StepDetail({ step }: { step: ToolStepModel }): React.JSX.Element {
+/** One exchange, read rather than listed: its head, then the prose of the turn beneath it.
+ *
+ * The head is numbered from the oldest turn, so a section you are reading keeps its number as the
+ * agent answers again — and it is the SAME ordinal its navigation row wears. */
+function TurnDetail({
+  item,
+}: {
+  item: Extract<ActivityItem, { kind: 'turn' }>
+}): React.JSX.Element {
   return (
     <>
-      <DetailHead name={step.name} word={STEP_STATES[step.status].word} />
-      <MetaLine parts={[STEP_META[step.status], step.kind, step.at, step.took]} />
-      <Text variant="code" className="truncate text-foreground-soft">
-        {step.target ?? 'this call named no target'}
-      </Text>
+      <DetailHead name={`Turn ${item.ordinal}`} word={turnWord(item.stopReason)} />
+      <TurnFeed rows={item.rows} />
     </>
   )
 }
 
 /**
- * Organism: the detail pane's content for one item — a subagent's live feed, or a tool step's own
- * record.
+ * Organism: the detail pane's content for one item — a subagent's live feed, or one of this
+ * session's own turns read as prose.
  *
  * The pane is always populated: every item in the list has a section here, which is what makes the
  * continuous feed continuous and leaves no empty gutter to look at.
@@ -156,7 +150,7 @@ function StepDetail({ step }: { step: ToolStepModel }): React.JSX.Element {
 export function AgentFeed({ item }: { item: ActivityItem }): React.JSX.Element {
   return (
     <div data-component="AgentFeed" className="flex flex-col gap-snug">
-      {item.kind === 'subagent' ? <SubagentDetail item={item} /> : <StepDetail step={item.step} />}
+      {item.kind === 'subagent' ? <SubagentDetail item={item} /> : <TurnDetail item={item} />}
     </div>
   )
 }

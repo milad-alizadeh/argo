@@ -1,6 +1,7 @@
 import { createTreeBuilder } from './tree'
+import { promptText } from './turnFacts'
 import type { ParsedTranscript } from './types'
-import { asArray, asString, isRecord, parseLine, stringField, timestampMs } from './untrusted'
+import { asString, isRecord, parseLine, stringField, timestampMs } from './untrusted'
 
 // THE untrusted-input boundary: one raw .jsonl becomes one tamed ParsedTranscript. A model
 // wrote it, so every line is parsed defensively (a malformed line is skipped, never thrown),
@@ -9,23 +10,12 @@ import { asArray, asString, isRecord, parseLine, stringField, timestampMs } from
 
 const PROMPT_CLAMP = 120
 
-// A user message's content is either a raw string or an array of parts; take the first
-// textual part so a title can be derived from it. Never infer meaning beyond the text.
+// The session's TITLE reading of the same prompt the runtime tree keeps verbatim: trimmed and
+// clamped, because a rail row has one line to spend. The two readings share one parse so a prompt
+// can never be found for the tree and missed for the title.
 function coercePromptText(content: unknown): string | null {
-  if (typeof content === 'string') return clampPrompt(content)
-  for (const part of asArray(content)) {
-    if (typeof part === 'string') return clampPrompt(part)
-    if (isRecord(part) && part.type === 'text' && typeof part.text === 'string') {
-      return clampPrompt(part.text)
-    }
-  }
-  return null
-}
-
-function clampPrompt(text: string): string | null {
-  const trimmed = text.trim()
-  if (trimmed === '') return null
-  return trimmed.slice(0, PROMPT_CLAMP)
+  const text = promptText(content)
+  return text === null ? null : text.trim().slice(0, PROMPT_CLAMP)
 }
 
 /** A transcript before a single record has been read: every derived fact absent, not defaulted. */

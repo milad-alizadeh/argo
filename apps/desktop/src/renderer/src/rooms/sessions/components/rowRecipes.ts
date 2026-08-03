@@ -6,6 +6,11 @@ export const NAV_ROW =
 
 export const NAV_ROW_SELECTED = 'bg-primary/10 ring-1 ring-inset ring-primary/20'
 
+// What every control that opens something wears, layout excluded: the surface has three of them
+// (a turn card, the subagents group, a thought) and they must all take focus the same way.
+export const DISCLOSURE =
+  'cursor-pointer text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60'
+
 // A turn is a CARD because its plan and steps belong to it — inset, never a second glass layer. The
 // folded past turn is flat as well as quieter: the fall is what says a card is live.
 export const TURN_CARD = 'rounded-lg inset-card'

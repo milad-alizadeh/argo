@@ -16,6 +16,22 @@ export const OPEN_TURN = aTurn({
   stopReason: null,
   startedAtMs: NOW_MS - 12 * MINUTE,
   usage: CONTEXT_USED,
+  // Prose an agent would actually write, and a prompt a human would actually type — the feed is the
+  // one surface whose whole job is to be READ, so `lorem` here would hide whether it reads at all.
+  prompt:
+    'Pull the token rotation out of the legacy auth module and wire verify() onto it. Keep the old export working.',
+  prose: [
+    {
+      kind: 'thought',
+      markdown:
+        'The legacy module exports verify() and rotate() from one file, and the tests import both from the barrel.\nSo the extraction has to keep the barrel re-exporting or every caller breaks at once.',
+    },
+    {
+      kind: 'message',
+      markdown:
+        'legacy.ts holds two unrelated jobs: rotation and verification. I have moved rotation into its own module and left the old barrel re-exporting both, so nothing downstream has to change yet.\n\nverify() now takes the rotation as an argument rather than reaching for the module-level key, which is what made it untestable.',
+    },
+  ],
   // Real plan prose, not `step N`: a placeholder entry hides exactly what these surfaces are for —
   // whether an agent's own to-do list reads as work at a glance.
   plan: {
@@ -64,6 +80,16 @@ export const PAST_TURN = aTurn({
   id: 'past',
   startedAtMs: NOW_MS - 50 * MINUTE,
   endedAtMs: NOW_MS - 42 * MINUTE,
+  prompt: 'Where does the auth token get refreshed?',
+  // No thought on this one: an agent that answered without visible reasoning is the ordinary case,
+  // and a feed that only ever renders with a thought row hides how it reads without one.
+  prose: [
+    {
+      kind: 'message',
+      markdown:
+        'In token.ts, on every request through the middleware — there is no scheduled refresh. The write to x.ts failed, so that path is still on the old key.',
+    },
+  ],
   toolCalls: [
     aToolCall({
       id: 'p1',

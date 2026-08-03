@@ -9,7 +9,7 @@ import {
 import { turnWord } from '../activityStates'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
-import { NAV_ROW_SELECTED, TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
+import { DISCLOSURE, NAV_ROW_SELECTED, TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
 import { ToolCallRow } from './ToolCallRow'
 
 // What a folded turn says about itself instead of its steps: how much work is inside it.
@@ -33,22 +33,27 @@ export function TurnRow({
   turn: TimelineTurnModel
   /** Which item the detail feed is showing, tracked by scroll-spy. */
   activeKey: string | null
-  /** Jump the detail feed to a step's events. */
+  /** Jump the detail feed to this turn's section. */
   onSelect?: (key: string) => void
 }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: turn.open })
   const Caret = open ? CaretDownIcon : CaretRightIcon
-  // A folded turn whose step the feed is showing wears the selection itself: the scroll-spy can name
-  // a step whose own row is not rendered, and a highlight on nothing visible tracks nothing.
-  const holdsActive = !open && turn.steps.some((step) => step.key === activeKey)
+  // The TURN is what the feed sections by, so the turn card is what wears the selection — folded or
+  // not. Its own header both folds it and jumps to it: one control, because a card that folds
+  // without taking you to what it folded reads as two different lists of the same thing.
+  const holdsActive = turn.key === activeKey
   return (
     <li data-component="TurnRow" className="flex flex-col gap-tight">
       <div className={cn(open ? TURN_CARD : TURN_CARD_PAST, holdsActive && NAV_ROW_SELECTED)}>
         <button
           type="button"
-          onClick={toggle}
+          aria-current={holdsActive ? 'true' : undefined}
+          onClick={() => {
+            toggle()
+            onSelect?.(turn.key)
+          }}
           aria-expanded={open}
-          className="flex w-full cursor-pointer items-center gap-snug px-inset py-gap text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
+          className={cn(DISCLOSURE, 'flex w-full items-center gap-snug px-inset py-gap')}
         >
           {/* The one gold thing inside the card. Inside a `Text` so the em-relative icon box tracks
               the row it opens rather than the 15px body — see PlanProgress for the same trick. */}
@@ -96,12 +101,9 @@ export function TurnRow({
                 />
                 <ul aria-label="Tool calls" className="-mx-tight flex flex-col">
                   {turn.steps.map((step) => (
-                    <ToolCallRow
-                      key={step.key}
-                      step={step}
-                      selected={step.key === activeKey}
-                      onSelect={onSelect}
-                    />
+                    // A step jumps to the turn it belongs to, which is where the feed reads it.
+                    // Its own anchor arrives with the tool rows in issue 317.
+                    <ToolCallRow key={step.key} step={step} onSelect={() => onSelect?.(turn.key)} />
                   ))}
                 </ul>
               </div>
