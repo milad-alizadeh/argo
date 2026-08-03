@@ -123,10 +123,28 @@ without removing.
 ## Cross-CLI guardrail hooks
 
 `hooks.json` (repo root) is the neutral SSOT for the three guardrail hooks (graphify-before-grep,
-worktree edit guard, worktree-gc), projected per-harness like `bundle.json` projects skills.
-**Edit `hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json`
-(claude-code) and `.codex/hooks.json` (codex); never hand-edit those blocks. Consumers get the
-hooks opt-in via `scaffold.mjs --hooks`. Details in `hooks.json` and the code comments.
+worktree edit guard, worktree-gc), projected per-harness into each agent its own `agents` key
+names. **Edit `hooks.json`, then run `bun run hooks:sync`** — it regenerates
+`.claude/settings.json` (claude-code) and `.codex/hooks.json` (codex); never hand-edit those
+blocks. Consumers get the hooks opt-in via `scaffold.mjs --hooks`. Details in `hooks.json` and
+the code comments.
+
+## Skill bundle
+
+The repo-root `skills-lock.json` is the bundle manifest **and** this repo's own install record
+— a standard vercel `skills` lock, enumerating every bundled skill by name. `bun run scaffold`
+(= `npx github:milad-alizadeh/argo`) installs from it with one `npx skills add` per source;
+`--skill a,b` installs a subset. `skills experimental_install` reads the same lock in one call
+but reaches only agents whose skills dir is `.agents/skills`, which excludes Claude Code — the
+reason the per-source fan-out survives; see `packages/argo-skills/README.md`.
+
+Because a lock has no `"*"` wildcard, the set is **deliberate**: add a skill with
+`npx skills add <source> --skill <name>` and commit the lock; sweep a source for
+newly-published ones with `--skill '*'` and review the diff. Nothing appears on its own. The
+weekly `skills-drift` workflow reports what showed up upstream. Editing one of Argo's own
+skills still needs a push to `main` before a reinstall sees it — the manifest installs
+`milad-alizadeh/argo` from GitHub, not from your checkout. Full workflow in
+`packages/argo-skills/README.md`.
 
 ## Code review
 

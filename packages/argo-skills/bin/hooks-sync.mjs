@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Project the neutral hooks.json descriptor into each harness's own hook config (the
-// hooks half of the cross-CLI setup; bundle.json is the skills half). project() is pure
+// hooks half of the cross-CLI setup; skills-lock.json is the skills half). project() is pure
 // and unit-tested; sync() does the IO. Per-hook rationale lives in hooks.json.
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -82,6 +82,16 @@ export function mergeHooks(existing = {}, ours) {
   return merged
 }
 
+/**
+ * Which harnesses a descriptor is projected into. Lives in hooks.json so the hook SSOT
+ * carries its own audience; `scaffold.mjs` and `main()` below read it through here.
+ * @param {{ agents?: string[] }} descriptor
+ * @returns {string[]}
+ */
+export function hookAgents(descriptor) {
+  return descriptor.agents ?? ['claude-code']
+}
+
 export function gitRoot(cwd) {
   try {
     return execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' }).trim()
@@ -139,14 +149,7 @@ function main() {
   }
   const descriptor = JSON.parse(readFileSync(descriptorPath, 'utf8'))
 
-  let agents = ['claude-code']
-  const bundlePath = path.join(root, 'packages/argo-skills/bundle.json')
-  if (existsSync(bundlePath)) {
-    try {
-      agents = JSON.parse(readFileSync(bundlePath, 'utf8')).agents ?? agents
-    } catch {}
-  }
-
+  const agents = hookAgents(descriptor)
   console.log(`hooks-sync — agents=[${agents.join(', ')}]${dryRun ? ' (dry run)' : ''}`)
   sync({ root, descriptor, agents, dryRun })
   console.log('✓ hooks projected.')

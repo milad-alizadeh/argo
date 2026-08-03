@@ -10,10 +10,10 @@ one-command scaffolder that installs them — plus a curated third-party
 packages/argo-skills/   the project-AGNOSTIC source of Argo's skills (the toolkit)
   skills/               Argo's own skills — one SKILL.md folder each, supporting
                         files (e.g. setup-rules/rules/) colocated so each is self-contained
-  bundle.json           the manifest: third-party `bundle` + own `mine`
-  bin/scaffold.mjs      installs every bundle source via `npx skills add`
+  bin/scaffold.mjs      installs the manifest with one `npx skills add` per source
 apps/                   consumers (e.g. the cockpit app) — set up per project, not source
-skills-lock.json        committed record of the installed bundle (dogfooded into this repo)
+skills-lock.json        the bundle manifest — every skill by name, third-party and own
+                        (also this repo's own install record; dogfooded)
 ```
 
 The `argo-skills` package is the single source; everything else — the cockpit app, and
@@ -27,8 +27,9 @@ first — installs Argo's own skills **and** the third-party bundle for Claude C
 other agent:
 
 ```bash
-npx github:milad-alizadeh/argo             # the single command that does it all
-npx github:milad-alizadeh/argo --dry-run   # preview
+npx github:milad-alizadeh/argo                    # the single command that does it all
+npx github:milad-alizadeh/argo --dry-run          # preview
+npx github:milad-alizadeh/argo --skill tdd,ship   # a subset of the bundle
 ```
 
 Or, from a checkout of this repo:
@@ -37,15 +38,18 @@ Or, from a checkout of this repo:
 bun run scaffold
 ```
 
-Under the hood it runs the `argo-skills` scaffolder, which reads `bundle.json` and fans
-out `npx skills add` for each source. Edit the bundle in
-[`packages/argo-skills/bundle.json`](packages/argo-skills/bundle.json).
+Under the hood the `argo-skills` scaffolder reads the manifest and runs one
+`npx skills add` per source, installing exactly the skills it names. Edit the bundle in
+[`skills-lock.json`](skills-lock.json) — see
+[`packages/argo-skills/README.md`](packages/argo-skills/README.md) for how to add a skill or
+sweep a source for newly-published ones.
 
 ## Dogfooding
 
 This monorepo is itself a scaffold target: running `bun run scaffold` at the root installs
-the whole bundle into this repo's `.agents/` / `.claude/` (gitignored) and records it in
-the committed `skills-lock.json`, restorable anywhere with `npx skills experimental_install`.
+the whole bundle into this repo's `.agents/` / `.claude/` (gitignored). The manifest it
+installs from *is* this repo's own lock, so the file is both the bundle definition and the
+install record, and the installer rewrites it with what it actually installed.
 
 ## Dev
 

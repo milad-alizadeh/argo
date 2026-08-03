@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process'
 import { lstatSync, unlinkSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
-// Every location the agents in `bundle.json` publish skills into.
+// Every location `skills add` publishes into for the agents it treats as universal.
 const SKILL_DIRS = ['.claude/skills', '.agents/skills', '.cursor/skills', '.codex/skills']
 
 function git(root, args) {
