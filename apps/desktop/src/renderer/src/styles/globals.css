@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Inter ships with the app — the cockpit runs offline, so no CDN webfont. */
+@import "@fontsource-variable/inter";
 @import "./argo-tokens.css";
 
 /* Tone colour utilities reach the screen via `text-tone-${tone}` interpolation
@@ -25,6 +27,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
@@ -41,6 +44,9 @@
   --color-inset-hair: var(--inset-hair);
   --color-inset-lip: var(--inset-lip);
   --color-well: var(--well);
+
+  /* Plane ingredients reach the screen through the `plane` / `plane-lit` utilities
+   * below, not as colour utilities — a plane is a recipe, not a fill. */
 
   --color-tone-run: var(--tone-run);
   --color-tone-gray: var(--tone-gray);
@@ -67,10 +73,13 @@
   /* Shadow colour steps (offsets live at the use site):
    * box-shadow: 0 18px 40px var(--shadow-3). Not mapped to utilities. */
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Radius ladder — explicit steps, not calc() off one base: the four rungs are
+   * separate decisions (rounded-sm … rounded-xl = the plane). */
+  --radius-hair: var(--radius-step-hair);
+  --radius-sm: var(--radius-step-sm);
+  --radius-md: var(--radius-step-md);
+  --radius-lg: var(--radius-step-lg);
+  --radius-xl: var(--radius-plane);
 
   --font-sans: var(--sans);
   --font-mono: var(--mono);
@@ -79,6 +88,10 @@
    * ladder below is the only type vocabulary (check:design-tokens enforces it).
    * Each text-<role> utility applies the full tuple. */
   --text-*: initial;
+  --text-hero: var(--type-hero);
+  --text-hero--line-height: var(--type-hero-leading);
+  --text-hero--font-weight: var(--type-hero-weight);
+  --text-hero--letter-spacing: var(--type-hero-tracking);
   --text-headline: var(--type-headline);
   --text-headline--line-height: var(--type-headline-leading);
   --text-headline--font-weight: var(--type-headline-weight);
@@ -125,19 +138,24 @@
   --spacing-tight: var(--space-tight);
   --spacing-snug: var(--space-snug);
   --spacing-gap: var(--space-gap);
+  --spacing-row: var(--space-row);
   --spacing-inset: var(--space-inset);
   --spacing-region: var(--space-region);
+  --spacing-plane: var(--space-plane);
   --spacing-nest: var(--space-nest);
   --spacing-marker-col: var(--space-marker-col);
 
   /* The one shared strip height (min-h-strip): the Delivery panel's tab strip and the
-   * Delivery lifecycle it stacks against. */
+   * Delivery lifecycle it stacks against. Row heights are the density's vertical half. */
   --height-strip: var(--strip-height);
+  --height-row: var(--row-h);
+  --height-row-tight: var(--row-h-tight);
 
-  /* Motion roles: duration-fast / duration-slow / duration-pulse. */
+  /* Motion roles: duration-fast / duration-slow / duration-pulse, ease-standard. */
   --transition-duration-fast: var(--time-fast);
   --transition-duration-slow: var(--time-slow);
   --transition-duration-pulse: var(--time-pulse);
+  --ease-standard: var(--time-ease);
 
   /* animate-pulse-status — the screen's ONE animation budget (at most one pulsing
    * element per render). Pair it with motion-safe:. */
@@ -152,6 +170,22 @@
   50% {
     opacity: var(--pulse-dim);
   }
+}
+
+/* Status is a dot plus a word — never a filled or outlined pill. Colour is the status
+ * tone carried as currentColor, so the dot and the word can never disagree. */
+@utility status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-snug);
+}
+
+@utility status-dot {
+  width: var(--space-snug);
+  height: var(--space-snug);
+  border-radius: var(--radius-full);
+  background: currentColor;
+  flex: none;
 }
 
 /* The lit halo on a live signal. Colour is taken from the element's own currentColor,
@@ -183,6 +217,58 @@
  * card off the frosted panel it sits in without adding a second glass layer. */
 @utility inset-lip {
   box-shadow: 0 1px 0 var(--inset-lip) inset;
+}
+
+/* The Penumbra plane — a card that floats in the lit scene on its own depth, as opposed
+ * to a flat `inset` card that sits ON a panel. Three ingredients, none of them a border:
+ * a cool translucent slab, a concealed cove lip along the top edge (1px of light, never a
+ * drawn line), and a warm bloom washing in from above as if the orb lit it. Offsets live
+ * here because the recipe IS the token — a plane assembled by hand would drift. */
+@utility plane {
+  border-radius: var(--radius-plane);
+  background: linear-gradient(180deg, var(--plane-top), var(--plane-bottom));
+  backdrop-filter: blur(var(--frost)) saturate(var(--frost-saturate));
+  box-shadow:
+    inset 0 1px 0 var(--cove-lip),
+    inset 0 22px 40px -30px var(--bloom-warm),
+    0 20px 34px -22px var(--plane-cast);
+}
+
+/* The driven plane — the session you are in. Comes forward and warms: attention is
+ * brightness, so this is the only plane that carries an outer warm spill. */
+@utility plane-lit {
+  background: linear-gradient(180deg, var(--plane-top-lit), var(--plane-bottom-lit));
+  box-shadow:
+    inset 0 1px 0 var(--cove-lip-lit),
+    inset 0 26px 46px -30px var(--bloom-warm-lit),
+    0 30px 50px -20px var(--plane-cast-lit),
+    0 0 46px -6px var(--bloom-warm);
+}
+
+/* Dormant planes recede — two steps only, and by brightness alone: a plane never changes
+ * size or position to express depth (see the recede tokens). */
+@utility plane-recede-1 {
+  opacity: var(--recede-1-opacity);
+}
+
+@utility plane-recede-2 {
+  opacity: var(--recede-2-opacity);
+}
+
+/* The room's dust — one multiply pass over the whole scene that pulls the edges down
+ * and keeps the lit centre-right where the corona spills. Applied to the scene's own
+ * ::after in RoomScene; here so the values stay in one place. */
+@utility room-scrim {
+  background:
+    radial-gradient(1150px 950px at 85% 50%, transparent 44%, var(--scrim-edge) 100%),
+    linear-gradient(
+      to bottom,
+      var(--scrim-top),
+      transparent 12%,
+      transparent 82%,
+      var(--scrim-bottom)
+    );
+  mix-blend-mode: multiply;
 }
 
 /* The live channel is a real xterm terminal that sits directly on the panel's ONE frosted

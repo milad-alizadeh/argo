@@ -6,9 +6,24 @@ HTML studies — open any HTML file in a browser.
 > **Wayfinder [#157](https://github.com/milad-alizadeh/argo/issues/157) is the source of truth
 > for the redesigned cockpit.** The old design set (`cockpit.html`, `cockpit-matrix.md`,
 > `cockpit-inventory.md`, `foundations.html`) was **wiped** — it described the app being
-> replaced. The cockpit is re-derived first-principles on the new domain model; foundations
-> and a fresh UI inventory are rebuilt downstream (Phase 2/3). The set below is the surviving
-> direction.
+> replaced. The cockpit is re-derived first-principles on the new domain model. Phase 2
+> (#262) is **landed**: `foundations.html` below is the rebuilt token contract on Penumbra.
+> The fresh UI inventory is Phase 3 (#263).
+
+## The contract — [`foundations.html`](foundations.html)
+
+The living specimen of `apps/desktop/src/renderer/src/styles/argo-tokens.css`: every type
+role, core ramp, semantic role, status family, spacing step, radius rung, plane depth and
+motion token, rendered on the real Penumbra scene with a light/dark toggle. It styles only
+via `var(--token)` and reads its own labels back off the computed values, so it **cannot
+drift** — if the contract changes, this page changes with it. It is the one study that is
+not disposable.
+
+Settled by #262: Eclipse gold is the single accent **and** `needs you` (so selection is an
+ink wash, never gold), `done` is quiet slate rather than green, the density is one 9/11/13/15
+sans ladder, and Inter ships with the app. A study that needs a value the contract lacks
+marks it a **proposal**; promoting one is a contract change that comes back through the
+bless step of `/design-foundations`.
 
 ## Start here — the assembled spec
 
@@ -49,9 +64,10 @@ under `docs/adr/`.
 
 | File | Screen | Notes |
 |---|---|---|
+| `foundations.html` | **The token contract, rendered** (wayfinder #157 Phase 2, via #262) | Above. Not disposable, and not drift-able — it reads the contract it documents |
 | `cockpit-spec.md` | **The assembled contract** (wayfinder #157 Phase 1, via #253/#254) | The front door above. Every row below is its detail of record; it cites them and restates none of them |
 | `cockpit-prototype-switcher.html` | The review harness — **start here for pixels** (wayfinder #178) | Left rail walking all 22 states across the three rooms + the look anchor; iframes each file untouched. `?surface=&state=` deep-links. Throwaway: expires with the prototypes it wraps. Manifest is an inline array in the file — `file://` blocks `fetch`, so it cannot be external |
-| `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Colour/mood/effects only — layout & density deferred |
+| `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Its values are now **in the contract** (#262) — read `foundations.html` for the settled form; this file stays as the look's provenance |
 | `cockpit-session-interior-prototype.html` | Session interior (wayfinder #161 / #186) | The settled session card: master–detail Activity and Delivery, folded turn spine, expandable Dock. Absorbs the delivery-review and fresh-session studies |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | The grill behind the prototype above — roster rows, dot-carries-state, zero-state, panel natures |
 | `cockpit-work-room-prototype.html` | Work room interior (wayfinder #185, from #160) | List rail (Next-up hero over a hierarchy) + two-pane ticket detail. Generic node tree — any node opens in detail identically |
