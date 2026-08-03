@@ -1,9 +1,15 @@
 import { cn } from '@/lib/utils'
-import { StatusDot, Text, Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui'
+import {
+  FOCUS_RING,
+  StatusDot,
+  Text,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/shared/components/ui'
 import type { ProjectTabView } from '../../shellModel'
 
-const TAB_BASE =
-  'relative grid size-project-tab cursor-pointer place-items-center rounded-lg bg-inset text-muted-foreground inset-lip transition-colors duration-fast hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
+const TAB_BASE = `relative grid size-project-tab cursor-pointer place-items-center rounded-lg bg-inset text-muted-foreground inset-lip transition-colors duration-fast hover:bg-accent hover:text-foreground ${FOCUS_RING}`
 
 // The rail is a positioned decorative span, never a `border-*`: cn() collapses same-group
 // border-colour utilities, so a rail expressed as a border silently renders 0px over a frame

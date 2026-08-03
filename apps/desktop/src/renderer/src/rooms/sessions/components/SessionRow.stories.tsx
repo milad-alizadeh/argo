@@ -1,4 +1,4 @@
-import { type SessionView, sessionFacts } from '@shared'
+import { type SessionView, sessionFacts, sessionView } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { buildSessionsRoomModel, type RosterRow } from '../sessionsRoomModel'
@@ -28,20 +28,13 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const HEAD = 'a1b2c3d'
+const OLD = '9f0e1d2'
+const PR = { num: 42, state: 'open', base: 'main' } as const
 
-const session = (over: Partial<SessionView> & { id: string }): SessionView => ({
-  title: 'Refactor auth module',
-  cli: 'claude',
-  cwd: null,
-  model: 'claude-opus-4',
-  branch: 'feat/auth-rotation',
-  lastActivityAt: null,
-  projectId: null,
-  posture: 'managed',
-  agents: [],
-  facts: sessionFacts(),
-  ...over,
-})
+// A session Argo drives, which is what every row here is bar the external one. Only the facts a
+// story is actually about get spelled out.
+const driven = (over: Partial<SessionView> & { id: string }): SessionView =>
+  sessionView({ model: 'claude-opus-4', branch: 'feat/auth-rotation', ...over })
 
 // Rows are never hand-written: they come off the same derivation the app renders, so a story cannot
 // spell a word the model would not produce.
@@ -57,7 +50,7 @@ const rowOf = (one: SessionView, selectedId: string | null = null): RosterRow =>
  * carries, never something you compare across rows.
  */
 export const Running: Story = {
-  args: { row: rowOf(session({ id: 'auth' })) },
+  args: { row: rowOf(driven({ id: 'auth', title: 'Refactor auth module' })) },
   play: async ({ args, canvasElement }) => {
     const row = within(canvasElement).getByRole('listitem')
     await expect(within(row).getByText('Refactor auth module')).toBeInTheDocument()
@@ -71,7 +64,7 @@ export const Running: Story = {
 
 /** The selected row: the plane brightens, and that is the ONLY thing selection changes. */
 export const Selected: Story = {
-  args: { row: rowOf(session({ id: 'auth' }), 'auth') },
+  args: { row: rowOf(driven({ id: 'auth', title: 'Refactor auth module' }), 'auth') },
   play: async ({ canvasElement }) => {
     const row = within(canvasElement).getByRole('listitem')
     await expect(within(row).getByRole('button')).toHaveAttribute('aria-current', 'true')
@@ -86,11 +79,10 @@ export const Selected: Story = {
 export const External: Story = {
   args: {
     row: rowOf(
-      session({
+      sessionView({
         id: 'watched',
         title: 'Someone else’s session',
         posture: 'external',
-        model: null,
         cwd: '/Users/dev/other-repo',
       }),
     ),
@@ -105,16 +97,17 @@ export const External: Story = {
 }
 
 /**
- * The one row asking for you: its dot burns gold and breathes, and a faint ray of the same gold
- * travels the plane's ring — the rail's one rationed animation, and the only thing state is
- * allowed to add to a plane.
+ * A row asking for you: its dot burns gold and breathes, and a faint ray of the same gold travels
+ * the plane's ring — the rail's one rationed animation, and the only thing state is allowed to add
+ * to a plane.
  */
 export const NeedsYou: Story = {
   args: {
     row: rowOf(
-      session({
+      driven({
         id: 'perms',
         title: 'Rotate the deploy key',
+        branch: 'feat/key-rotation',
         facts: sessionFacts({ status: 'asking' }),
       }),
     ),
@@ -122,29 +115,27 @@ export const NeedsYou: Story = {
   play: async ({ canvasElement }) => {
     const row = within(canvasElement).getByRole('listitem')
     await expect(within(row).getByText('needs you')).toBeInTheDocument()
+    // Asserting the computed animation rather than a class: an unregistered `--sweep-angle` leaves
+    // the ring lit but parked, which is the failure a class check cannot see.
     const plane = within(row).getByRole('button')
-    await expect(plane).toHaveClass('sweep')
-    // Asserting the computed animation, not the class: an unregistered `--sweep-angle` leaves the
-    // ring lit but parked, which is the failure a class check cannot see.
     await expect(getComputedStyle(plane, '::before').animationName).toBe('sweep-travel')
   },
 }
 
 /**
- * A delivery claim outranks the session's own liveness: this row is `status: running` and says
- * `CI failed`, because that is the one decision-relevant word.
+ * A delivery claim outranks the session's own liveness: this row is `status: running` and reads
+ * `CI failed`, because that is the one decision-relevant word — and the dot follows THE WORD, so it
+ * is red and at rest rather than the green of the session underneath. No sweep: a failed check is
+ * not going to change until you act, and motion is reserved for what is still moving.
  */
-export const DeliveryClaim: Story = {
+export const CiFailed: Story = {
   args: {
     row: rowOf(
-      session({
+      driven({
         id: 'ci',
         title: 'Why is CI flaky',
-        facts: sessionFacts({
-          headSha: HEAD,
-          pr: { num: 42, state: 'open', base: 'main' },
-          ci: { status: 'failed', sha: HEAD },
-        }),
+        branch: 'fix/ci-flake',
+        facts: sessionFacts({ headSha: HEAD, pr: PR, ci: { status: 'failed', sha: HEAD } }),
       }),
     ),
   },
@@ -152,38 +143,32 @@ export const DeliveryClaim: Story = {
     const row = within(canvasElement).getByRole('listitem')
     await expect(within(row).getByText('CI failed')).toBeInTheDocument()
     await expect(within(row).queryByText('running')).not.toBeInTheDocument()
+    const plane = within(row).getByRole('button')
+    await expect(getComputedStyle(plane, '::before').animationName).not.toBe('sweep-travel')
   },
 }
 
-const DOT_STATES: readonly SessionView[] = [
-  session({ id: 'running', title: 'Running' }),
-  session({ id: 'asking', title: 'Needs you', facts: sessionFacts({ status: 'asking' }) }),
-  session({ id: 'stopped', title: 'Failed', facts: sessionFacts({ status: 'stopped' }) }),
-  session({ id: 'idle', title: 'Idle', facts: sessionFacts({ status: 'idle' }) }),
-  session({ id: 'external', title: 'External', posture: 'external', cwd: '/w/theirs' }),
-]
-
 /**
- * Every dot the rail can draw, stacked as the rail stacks them: running green and needs-you gold
- * lit and breathing, then failed red lit but still, an idle grey holding quiet, and a hollow
- * external ring. Exactly one plane carries the sweep, which is how "one thing shouting" is judged.
+ * The other half of the same claim, and the state nothing rendered before: a check that no longer
+ * speaks for the head commit locks the Merge node, so the row reads `blocked`. That is a needs-input
+ * word, which means it earns the gold dot AND the attention sweep exactly as a permission prompt
+ * does — attention is attention wherever in the session it came from.
  */
-export const EveryDot: Story = {
-  args: { row: rowOf(session({ id: 'auth' })) },
-  render: () => (
-    <>
-      {DOT_STATES.map((one) => (
-        <SessionRow key={one.id} row={rowOf(one)} />
-      ))}
-    </>
-  ),
+export const Blocked: Story = {
+  args: {
+    row: rowOf(
+      driven({
+        id: 'stale',
+        title: 'Split the observer',
+        branch: 'refactor/observer',
+        facts: sessionFacts({ headSha: HEAD, pr: PR, ci: { status: 'passed', sha: OLD } }),
+      }),
+    ),
+  },
   play: async ({ canvasElement }) => {
-    const rows = within(canvasElement).getAllByRole('listitem')
-    await expect(rows).toHaveLength(DOT_STATES.length)
-    for (const [index, row] of rows.entries()) {
-      const { dot } = rowOf(DOT_STATES[index])
-      await expect(row.querySelector('span')).toHaveClass(`text-tone-${dot.tone}`)
-    }
-    await expect(canvasElement.querySelectorAll('.sweep')).toHaveLength(1)
+    const row = within(canvasElement).getByRole('listitem')
+    await expect(within(row).getByText('blocked')).toBeInTheDocument()
+    const plane = within(row).getByRole('button')
+    await expect(getComputedStyle(plane, '::before').animationName).toBe('sweep-travel')
   },
 }

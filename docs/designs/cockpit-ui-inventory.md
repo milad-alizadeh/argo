@@ -150,8 +150,8 @@ the first Sessions-room ticket:
 | Component | Tier | Status | States | Seed / authority |
 |---|---|---|---|---|
 | `sessionStatusWord` | pure fn | `built · shared/status/rosterStatus.ts` | the four words above, plus `external` (identity, no word) | registry, Session status |
-| `deliveryClaimWord` | pure fn | `built · shared/status/rosterStatus.ts` | `commits · pr · ci · review · merge` node words, e.g. `CI failed` | registry, Delivery lifecycle |
-| `rosterWord` | pure fn | `built · shared/status/rosterStatus.ts` | the priority pick: attention needs-input → attention failure → delivery milestone → liveness → kind. A delivery claim beats session status. | `cockpit-spec.md` §4.1 |
+| `deliveryClaimWord` | pure fn | `built · shared/status/rosterStatus.ts` | the registry's own delivery spellings: `blocked` · `CI failed` · `CI running` · `PR #42` · `landed`. The two attention words (`blocked`, `CI failed`) are read across the WHOLE lifecycle; a milestone stays head-scoped, so a dirty tree can suppress a milestone but never a failure. | registry, Delivery lifecycle (Merge/PR/CI states; the `CI failed` form is the registry's own Roster note) |
+| `railStatus` | pure fn | `built · shared/status/rosterStatus.ts` | the priority pick: attention needs-input → attention failure → delivery milestone → liveness → kind. A delivery claim beats session status. Returns the word AND the dot from ONE pick over `railVocabulary.ts`'s state alphabet, so a row cannot report one state in text and another in colour. | `cockpit-spec.md` §4.1 |
 | `worstStateDot` | pure fn | `built · shell/worstStateDot.ts` | `needs you > failed > running > none`, active project always `none` | registry, Attention |
 | `connectionRollup` | pure fn | `spec` | `healthy` (renders nothing) · `stale` · `needs reconnect`, plus auth escalating past the roll-up. Keyed by **binding**, not project. | failure spec §2, §3 |
 
@@ -241,7 +241,8 @@ delivery-review · delivery-files · delivery-prepr · dock · external · archi
 | Component | Tier | Status | States | Seed |
 |---|---|---|---|---|
 | `Roster` | organism | `built · rooms/sessions/components/Roster.tsx` | populated · **zero-state is just the `+ New session` row** (a one-time transient costs no permanent chrome) · archived list open | `data-component="Roster"` |
-| `SessionRow` | molecule | `built · rooms/sessions/components/SessionRow.tsx` | `dot · name · word` over `model · branch`. Dot: running green · idle grey · needs-you gold · failed red · external **hollow**. Row: selected · unselected · external (ghosted, so read-only awareness looks different from a session you can drive). | `data-component="SessionRow"` (study template) |
+| `SessionRow` | molecule | `built · rooms/sessions/components/SessionRow.tsx` | `dot · name · word` over `model · branch`. Dot: running green · idle grey · needs-you gold · failed red · external **hollow** — and it follows THE WORD, so a `blocked` row is gold and sweeping and a `CI failed` row is red, whatever the session status underneath says. Row: selected · unselected · external (ghosted, so read-only awareness looks different from a session you can drive). | `data-component="SessionRow"` (study template) |
+| `RailActionRow` | molecule | `built · rooms/sessions/components/RailActionRow.tsx` | the quiet glyph+label row both ends of the rail wear, over the `Button` primitive. One shape, two labels — extracted rather than written twice. | the two rows below |
 | `NewSessionRow` | molecule | `built · rooms/sessions/components/NewSessionRow.tsx` | pinned quiet at the top. `⌘N` spawns zero-config at the project root. | `cockpit-spec.md` §4.1 |
 | `ArchivedFooter` | molecule | `built · rooms/sessions/components/ArchivedFooter.tsx` | `⚙ Archived (n)`. Archiving is a status transition, never a button. | `cockpit-spec.md` §4.1 |
 

@@ -36,6 +36,7 @@ export {
 } from './tabs'
 export { ToggleGroup, ToggleGroupItem } from './toggle-group'
 export {
+  FOCUS_RING,
   SOLID_PRIMARY_TONE,
   VERDICT_APPROVE_WASH,
   VERDICT_BLOCK_WASH,

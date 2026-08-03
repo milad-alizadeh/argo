@@ -10,17 +10,14 @@ export {
   type DeliveryClaim,
   DOT_GLOWS,
   type DotGlow,
-  deliveryClaimWord,
   type RailStatus,
   ROSTER_ICONS,
   ROSTER_TONES,
   type RosterIcon,
   type RosterTone,
   type RosterWord,
-  rosterWord,
   type SessionDot,
   type SessionWord,
-  sessionDot,
-  sessionStatusWord,
-} from './rosterStatus'
+} from './railVocabulary'
+export { deliveryClaimWord, railStatus, sessionStatusWord } from './rosterStatus'
 export { STATE_MATRIX_ROWS, type StateMatrixRow, stateMatrixInput } from './stateMatrix'

@@ -4,7 +4,7 @@
 
 import { type ProjectView, projectForCwd, projectName } from './projects'
 import type { Agent } from './runtimeTree'
-import type { SessionFacts } from './sessionFacts'
+import { type SessionFacts, sessionFacts } from './sessionFacts'
 import type { SessionPosture } from './sessionPosture'
 
 export type Cli = 'claude' | 'codex'
@@ -37,6 +37,29 @@ export interface SessionIntake {
 // derived from `facts` by the renderer, so no state crosses the bridge pre-graded.
 export interface SessionView extends SessionIntake {
   projectId: string | null
+}
+
+/**
+ * A `SessionView` from just the identity a case is about — the roster-row counterpart to
+ * `sessionFacts`, and the one home for that shape.
+ *
+ * Defaults are the honest unobserved ones: no cwd, no model, no branch, no activity Argo saw, and a
+ * session Argo drives — so a caller states only what its case is actually about.
+ */
+export function sessionView(over: Partial<SessionView> & { id: string }): SessionView {
+  return {
+    title: `Session ${over.id}`,
+    cli: 'claude',
+    cwd: null,
+    model: null,
+    branch: null,
+    lastActivityAt: null,
+    projectId: null,
+    posture: 'managed',
+    agents: [],
+    facts: sessionFacts(),
+    ...over,
+  }
 }
 
 export interface CockpitState {

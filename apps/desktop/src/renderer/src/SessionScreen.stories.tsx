@@ -1,4 +1,4 @@
-import { type SessionView, sessionFacts } from '@shared'
+import { type SessionView, sessionFacts, sessionView } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import {
@@ -43,32 +43,23 @@ const NOOP_HANDLERS: SessionScreenHandlers = {
   onToggleConsoleExpanded: fn(),
 }
 
-const AUTH: SessionView = {
+const AUTH: SessionView = sessionView({
   id: 'auth',
   title: 'Refactor auth module',
-  cli: 'claude',
-  cwd: null,
   model: 'claude-opus-4',
   branch: 'feat/auth-rotation',
   lastActivityAt: 2_000,
-  projectId: null,
-  posture: 'managed',
-  agents: [],
   facts: sessionFacts(stateMatrixInput('S6')),
-}
-const VOICE: SessionView = {
+})
+const VOICE: SessionView = sessionView({
   id: 'voice',
   title: 'Voice input spike',
   cli: 'codex',
-  cwd: null,
   model: 'gpt-5',
   branch: 'feat/voice',
   lastActivityAt: 1_000,
-  projectId: null,
-  posture: 'managed',
-  agents: [],
   facts: sessionFacts(stateMatrixInput('S8')),
-}
+})
 const SESSIONS: readonly SessionView[] = [AUTH, VOICE]
 
 const rosterOf = (sessions: readonly SessionView[], selectedId: string | null = null) =>

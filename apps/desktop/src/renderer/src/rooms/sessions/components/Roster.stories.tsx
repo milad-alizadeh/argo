@@ -1,47 +1,57 @@
-import { type SessionView, sessionFacts } from '@shared'
+import { type SessionView, sessionFacts, sessionView } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { buildSessionsRoomModel } from '../sessionsRoomModel'
 import { Roster } from './Roster'
 
 const HEAD = 'a1b2c3d'
-
-const session = (over: Partial<SessionView> & { id: string }): SessionView => ({
-  title: `Session ${over.id}`,
-  cli: 'claude',
-  cwd: null,
-  model: 'claude-opus-4',
-  branch: 'feat/auth-rotation',
-  lastActivityAt: null,
-  projectId: null,
-  posture: 'managed',
-  agents: [],
-  facts: sessionFacts(),
-  ...over,
-})
+const OLD = '9f0e1d2'
+const PR = { num: 42, state: 'open', base: 'main' } as const
 
 const POPULATED: readonly SessionView[] = [
-  session({ id: 'auth', title: 'Refactor auth module', lastActivityAt: 4_000 }),
-  session({
+  sessionView({
+    id: 'auth',
+    title: 'Refactor auth module',
+    model: 'claude-opus-4',
+    branch: 'feat/auth-rotation',
+    lastActivityAt: 6_000,
+  }),
+  sessionView({
     id: 'flaky',
     title: 'Why is CI flaky',
     model: 'gpt-5',
     branch: 'fix/ci-flake',
-    lastActivityAt: 3_000,
+    lastActivityAt: 5_000,
     facts: sessionFacts({ status: 'asking' }),
   }),
-  session({
+  sessionView({
+    id: 'checks',
+    title: 'Rotate the deploy key',
+    model: 'claude-opus-4',
+    branch: 'feat/key-rotation',
+    lastActivityAt: 4_000,
+    facts: sessionFacts({ headSha: HEAD, pr: PR, ci: { status: 'failed', sha: HEAD } }),
+  }),
+  sessionView({
+    id: 'stale',
+    title: 'Split the observer',
+    model: 'claude-opus-4',
+    branch: 'refactor/observer',
+    lastActivityAt: 3_000,
+    facts: sessionFacts({ headSha: HEAD, pr: PR, ci: { status: 'passed', sha: OLD } }),
+  }),
+  sessionView({
     id: 'hero',
     title: 'Landing hero',
+    model: 'claude-opus-4',
     branch: 'feat/landing-hero',
     lastActivityAt: 2_000,
     facts: sessionFacts({ status: 'idle' }),
   }),
-  session({
+  sessionView({
     id: 'watched',
     title: 'Someone else’s session',
     posture: 'external',
-    model: null,
     cwd: '/Users/dev/other-repo',
     lastActivityAt: 1_000,
   }),
@@ -49,9 +59,11 @@ const POPULATED: readonly SessionView[] = [
 
 const ARCHIVED: readonly SessionView[] = [
   ...POPULATED,
-  session({
+  sessionView({
     id: 'landed',
     title: 'Release notes',
+    model: 'claude-opus-4',
+    branch: 'chore/release-notes',
     lastActivityAt: 500,
     facts: sessionFacts({ headSha: HEAD, pr: { num: 38, state: 'merged', base: 'main' } }),
   }),
@@ -76,7 +88,7 @@ const meta = {
     (Story) => (
       <div
         className="flex h-screen w-screen bg-background text-foreground"
-        style={{ '--c-rail': '300px' } as React.CSSProperties}
+        style={{ '--c-rail': '300px' }}
       >
         <Story />
       </div>
@@ -89,9 +101,10 @@ type Story = StoryObj<typeof meta>
 
 /**
  * The populated rail: `+ New session` pinned at the top, then one plane per session in
- * most-recent-first order, each reading `dot · name · word` over `model · branch`. This is where
- * the attention read is judged — one row asking for you carries the gold sweep on its rim while
- * the rest stay quiet.
+ * most-recent-first order, each reading `dot · name · word` over `model · branch`. This is where the
+ * whole read is judged — the two rows asking for you carry the gold sweep (a permission prompt, and
+ * a delivery locked by a check that no longer speaks for its commit), the failed check burns red and
+ * holds still, and the rest stay quiet.
  */
 export const Populated: Story = {
   args: { model: buildSessionsRoomModel({ sessions: POPULATED }) },
@@ -99,12 +112,22 @@ export const Populated: Story = {
     const canvas = within(canvasElement)
     const list = canvas.getByRole('list', { name: 'Sessions' })
     const rows = within(list).getAllByRole('listitem')
-    await expect(rows.map((row) => row.textContent)).toEqual([
-      'Refactor auth modulerunningclaude-opus-4·feat/auth-rotation',
-      'Why is CI flakyneeds yougpt-5·fix/ci-flake',
-      'Landing heroidleclaude-opus-4·feat/landing-hero',
-      'Someone else’s sessionread-onlyunknown·/Users/dev/other-repo',
-    ])
+    // Order is the model's claim, asserted as arithmetic in `sessionsRoomModel.test.ts`; the story
+    // only proves it reached the screen intact — each row by the name and the one word a person reads.
+    const railed: [string, string][] = [
+      ['Refactor auth module', 'running'],
+      ['Why is CI flaky', 'needs you'],
+      ['Rotate the deploy key', 'CI failed'],
+      ['Split the observer', 'blocked'],
+      ['Landing hero', 'idle'],
+      ['Someone else’s session', 'read-only'],
+    ]
+    await expect(rows).toHaveLength(railed.length)
+    for (const [index, [name, word]] of railed.entries()) {
+      const row = within(rows[index] ?? canvasElement)
+      await expect(row.getByText(name)).toBeInTheDocument()
+      await expect(row.getByText(word)).toBeInTheDocument()
+    }
     await userEvent.click(within(list).getByText('Landing hero'))
     await expect(args.onSelectSession).toHaveBeenCalledWith('hero')
   },
@@ -136,7 +159,7 @@ export const Zero: Story = {
 }
 
 /**
- * A merged session has left the live rail by itself and is counted at the foot. The footer opens the
+ * A landed session has left the live rail by itself and is counted at the foot. The footer opens the
  * archived list; it archives nothing, because archiving is a status transition and not a button.
  */
 export const ArchivedOpen: Story = {
@@ -149,6 +172,6 @@ export const ArchivedOpen: Story = {
     await userEvent.click(footer)
     const archived = canvas.getByRole('list', { name: 'Archived sessions' })
     await expect(within(archived).getByText('Release notes')).toBeInTheDocument()
-    await expect(within(archived).getByText('merged')).toBeInTheDocument()
+    await expect(within(archived).getByText('landed')).toBeInTheDocument()
   },
 }

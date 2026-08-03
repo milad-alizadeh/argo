@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { DotGlow, RosterTone } from '@/shared/status'
+import type { RosterTone } from '@/shared/status'
 import { StatusDot } from './StatusDot'
 import { Text } from './Text'
 
@@ -15,8 +15,6 @@ import { Text } from './Text'
 export function Status({
   word,
   tone,
-  hollow,
-  glow,
   pulse,
   className,
 }: {
@@ -26,10 +24,6 @@ export function Status({
   word: string
   /** The tone the dot carries, from the same derivation. It never reaches the word. */
   tone: RosterTone
-  /** A ring with no fill, for a session Argo only observes. */
-  hollow?: boolean
-  /** How hard the dot's halo burns. Every state glows; the weight is its liveness. */
-  glow?: DotGlow
   /** Whether the dot breathes — a property of the state, not a budget. */
   pulse?: boolean
   className?: string
@@ -40,7 +34,7 @@ export function Status({
       className={cn('inline-flex shrink-0 items-center gap-snug text-foreground-soft', className)}
     >
       {word}
-      <StatusDot tone={tone} hollow={hollow} glow={glow} pulse={pulse} />
+      <StatusDot tone={tone} pulse={pulse} />
     </Text>
   )
 }
