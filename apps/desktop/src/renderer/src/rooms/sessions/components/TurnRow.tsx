@@ -1,11 +1,5 @@
 import { cn } from '@/lib/utils'
-import {
-  CaretDownIcon,
-  CaretRightIcon,
-  SectionHeader,
-  Text,
-  useDisclosure,
-} from '@/shared/components/ui'
+import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
 import { turnWord } from '../activityStates'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
@@ -107,11 +101,10 @@ export function TurnRow({
         {open && (
           <div className="flex flex-col gap-region px-inset pb-inset">
             {turn.steps.length > 0 && (
+              // No header over the calls. An unfolded card holds one list, and a heading that names
+              // the only thing under it just counts what the rows already show — the folded card is
+              // where the weight is worth a number, because there the rows are not there to count.
               <div className="flex flex-col gap-tight">
-                <SectionHeader
-                  label="Did"
-                  count={`${turn.steps.length} ${turn.steps.length === 1 ? 'call' : 'calls'}`}
-                />
                 <ul aria-label="Tool calls" className="-mx-tight flex flex-col">
                   {turn.steps.map((step) => (
                     // A step jumps to the turn it belongs to, which is where the feed reads it.
