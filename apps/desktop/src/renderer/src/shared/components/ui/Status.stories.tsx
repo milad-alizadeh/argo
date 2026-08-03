@@ -1,7 +1,7 @@
 import { SESSION_STATES } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { ROSTER_TONES, type RosterStatus, SESSION_STATUS } from '@/shared/delivery'
+import { ROSTER_TONES, type RosterStatus, SESSION_STATUS } from '@/shared/status'
 import { Status } from './Status'
 
 // The molecule renders the word and its tone; the icon column of the same row belongs to

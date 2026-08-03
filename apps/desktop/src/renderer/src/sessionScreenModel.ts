@@ -10,7 +10,7 @@ import type {
   NodeDrawerSession,
 } from '@/domains/delivery/components'
 import type { SessionView } from '@/sessionStore'
-import { deliveryState } from '@/shared/delivery'
+import { deliveryState } from '@/shared/status'
 import type { WorkspaceTree } from './WorkspaceIdentity'
 
 // The SessionScreen's view-model: the pure derivation between the projection (sessions + facts)

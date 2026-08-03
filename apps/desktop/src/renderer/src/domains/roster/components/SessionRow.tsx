@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import type { SessionView } from '@/sessionStore'
 import { Status, StatusIcon, Text } from '@/shared/components/ui'
-import { deliveryState } from '@/shared/delivery'
+import { deliveryState } from '@/shared/status'
 
 /**
  * Organism: one Session as a flat inset card (the wireframe's `.srow`), now a full-bleed

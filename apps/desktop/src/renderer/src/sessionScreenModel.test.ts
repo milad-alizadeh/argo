@@ -1,7 +1,7 @@
 import { sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
 import type { SessionView } from '@/sessionStore'
-import { stateMatrixInput } from '@/shared/delivery'
+import { stateMatrixInput } from '@/shared/status'
 import { buildSessionPanel, type PanelUiState } from './sessionScreenModel'
 
 const DEFAULT_UI: PanelUiState = {

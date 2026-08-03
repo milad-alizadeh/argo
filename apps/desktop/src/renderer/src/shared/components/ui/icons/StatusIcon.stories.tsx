@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { ROSTER_ICONS, ROSTER_TONES } from '@/shared/delivery'
+import { ROSTER_ICONS, ROSTER_TONES } from '@/shared/status'
 import { Text } from '../Text'
 import { StatusIcon } from './StatusIcon'
 

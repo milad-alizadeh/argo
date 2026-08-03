@@ -2,7 +2,7 @@ import { SESSION_STATES, type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import type { SessionView } from '@/sessionStore'
-import type { RosterTone } from '@/shared/delivery'
+import type { RosterTone } from '@/shared/status'
 import { Roster } from './Roster'
 
 const meta = {

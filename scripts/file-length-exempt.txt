@@ -10,19 +10,14 @@
 # coverage, and the duplication between stories is the point (see rules/design-studies.md).
 **/*.stories.tsx
 
-# --- KIND: pure data / shader source. No control flow to split.
-apps/desktop/src/renderer/src/domains/concierge/sceneConfig.ts
-apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/shaders.ts
-
 # --- RATCHET: over the cap, to be split. Shrink this list; do not grow it.
-apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/createEclipseOrb.ts  # 601 — tracked by #215
 apps/desktop/src/renderer/src/domains/activity/components/RunRow.tsx            # 186
-apps/desktop/src/renderer/src/SessionScreen.tsx                                 # 180
+apps/desktop/src/renderer/src/SessionScreen.tsx                                 # 167
 apps/desktop/src/renderer/src/domains/delivery/components/FileDiff.tsx          # 167
 packages/argo-skills/bin/scaffold.mjs                                           # 167
 apps/desktop/src/renderer/src/sessionScreenModel.ts                             # 154
 apps/desktop/src/renderer/src/domains/delivery/components/DeliveryTabs.tsx      # 154
-apps/desktop/src/renderer/src/shared/delivery/stateMatrix.test.ts                # 154 — table-driven; the rows are the spec
+apps/desktop/src/renderer/src/shared/status/stateMatrix.test.ts                 # 154 — table-driven; the rows are the spec
 
 # ============================================================================
 # Reasons for the DUPLICATION gate's ignore list (`.jscpd.json`).

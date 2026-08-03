@@ -1,7 +1,7 @@
 import type { LifecycleNodeKey, LifecycleNodeState } from '@shared'
 import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
-import { isHotHeadState } from '@/shared/delivery'
+import { isHotHeadState } from '@/shared/status'
 import { LIFECYCLE_NODE_STATE } from './lifecycleNodeState'
 
 const NODE_LABEL: Record<LifecycleNodeKey, string> = {

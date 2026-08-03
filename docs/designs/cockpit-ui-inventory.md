@@ -76,20 +76,20 @@ Two of the slice `Owns` cells add detail §11.2 does not spell out. `rooms-code`
 "the degraded file states" from `cockpit-code-room-spec.md`, and `shell` gains "the
 disabled-project error" from failure spec §6. Both are the same surfaces §11.2 lists, enumerated.
 
-`renderer-shared/delivery/` is renamed to `renderer-shared/status/`, because what it actually holds
-is the status word and tone vocabulary that every room reads, and the name promised a Delivery
-coupling that the room slices must not have. The map carries **both** barrels as public entries so
-the rename can land in the ticket that does it without the boundary gate firing in between.
+`renderer-shared/delivery/` **was renamed** to `renderer-shared/status/` (#284), because what it
+actually holds is the status word and tone vocabulary that every room reads, and the old name
+promised a Delivery coupling that the room slices must not have. The map carries one barrel for it.
 
 ---
 
 ## Retired, awaiting removal
 
-**The five current panel domains are retired, not deleted by this ticket.** `roster/`, `activity/`,
-`delivery/`, `console/` and `concierge/` derive from ADR-0009's story/work split, which the
-redesign retires (`cockpit-spec.md` §12). They stay in the boundary map while their code is on
-disk, so the gate keeps guarding them, and each entry is removed by the ticket that moves its last
-file. Their components are listed here so that nothing in the tree lacks a row.
+**Four panel domains are still standing.** `roster/`, `activity/`, `delivery/` and `console/`
+derive from ADR-0009's story/work split, which the redesign retires (`cockpit-spec.md` §12). They
+stay in the boundary map while their code is on disk, so the gate keeps guarding them, and each
+entry is removed by the ticket that moves its last file. Their components are listed here so that
+nothing in the tree lacks a row. The fifth, `concierge/`, is **gone**: #284 deleted it whole and
+ADR-0019 records why.
 
 | Existing | Disposition |
 |---|---|
@@ -97,7 +97,7 @@ file. Their components are listed here so that nothing in the tree lacks a row.
 | `domains/roster/`: `Roster`, `SessionRow`, `ContextGauge`, `EmptyRoster` | **Salvage into `rooms-sessions`.** Each has a row below carrying `partial · <path>`. |
 | `domains/delivery/`: `Delivery`, `DeliveryTabs`, `DeliveryLifecycle`, `LifecycleNode`, `NodeDrawer/*`, `CiCard`, `CheckOutput`, `PrChecksList`, `PrAnchor`, `CommitGroup`, `FileDiff`, `AllFilesDiff`, `FindingCard`, `findingState`, `lifecycleNodeState` | **Salvage into `rooms-sessions`.** The lifecycle rail, the node drawer bodies, the check rows and the diff views all have rows below. Salvage means moving the file, never importing across the boundary. |
 | `domains/console/`: `Console`, `ConsoleChannel`, `ConsoleChannelTab`, `LiveTerminal` | **Delete the channel strip, salvage `LiveTerminal`.** The Console panel's job belongs to the Dock and to the Code room's scratch terminal; the one thing worth keeping is the PTY view, which becomes `TerminalPane`. |
-| `domains/concierge/`: `EclipseScene`, `ConciergeDock`, `eclipseOrb/`, `sceneConfig` | **Salvage into `shell`.** The orb engine is the shell's orb (`OrbMini`). Its behaviour stays out of scope: map #190 owns it. |
+| `domains/concierge/`: `EclipseScene`, `ConciergeDock`, `eclipseOrb/`, `sceneConfig` | **Deleted (#284, ADR-0019).** The orb is a CSS rendering, not a WebGL scene: Penumbra draws it as a corona plus sphere, the spec ships only the top-bar seat, and #264 built `OrbMini` as a CSS ring — so the engine rendered in zero settled surfaces. The lit backdrop each room paints is the plane family plus the dust scrim, and the Sessions room paints its own in #267. If map #190 wants a procedural orb it re-derives one; it does not inherit a full-screen scene. |
 | Renderer root: `SessionScreen`, `SessionHeader`, `WorkspaceIdentity`, `App` | **Rewrite.** #264 landed the root composition as `CockpitScreen` (the pure View: strip + bar + stage) over `RoomStage` (the room switch), so `SessionScreen` stays the **Sessions room** for #267 to rewrite rather than becoming the root. `App` is the container. `RoomStage`'s Work and Code arms are scaffolding #272/#274 delete. `SessionHeader` has a row below. `WorkspaceIdentity` is superseded by `SessionMeta`'s branch segment. |
 
 ---

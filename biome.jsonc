@@ -99,8 +99,6 @@
     // extraction, none is a quick fix. Split the file, then delete its line here.
     {
       "includes": [
-        // 601 lines, 3 of the lint ratchets — tracked by #215.
-        "apps/desktop/src/renderer/src/domains/concierge/eclipseOrb/createEclipseOrb.ts",
         // Long component bodies: render trees that want sub-components extracted.
         "apps/desktop/src/renderer/src/domains/console/components/Console.tsx",
         "apps/desktop/src/renderer/src/domains/console/components/LiveTerminal.tsx",

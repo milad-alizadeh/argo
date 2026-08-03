@@ -30,12 +30,11 @@
     },
     {
       "name": "renderer-shared",
-      "comment": "The renderer's shared leaf (feature-sliced `shared/`): the framework-primitive kit (`components/ui` + its icons) that every Panel composes, and the status presentation vocabulary (`shared/delivery`: the Roster status word/icon and the `deliveryState` composition over the `@shared` lifecycle derivation). That folder is being RENAMED to `shared/status/`, because what it holds is the status word/tone vocabulary every room reads and the old name promised a Delivery coupling the room slices must not have; both barrels are public entries so the rename lands in one ticket without the gate firing mid-flight. A building block imported by two or more domains lives here, so every domain may import it and it imports no domain in return. External code reaches it only through the three barrels; its internals are private.",
+      "comment": "The renderer's shared leaf (feature-sliced `shared/`): the framework-primitive kit (`components/ui` + its icons) that every slice composes, and the status presentation vocabulary (`shared/status`: the Roster status word/icon and the `deliveryState` composition over the `@shared` lifecycle derivation). That folder was named `shared/delivery` until #284 renamed it, because what it holds is the status word/tone vocabulary every room reads and the old name promised a Delivery coupling the room slices must not have. A building block imported by two or more domains lives here, so every domain may import it and it imports no domain in return. External code reaches it only through the three barrels; its internals are private.",
       "path": "^src/renderer/src/shared/",
       "publicEntry": [
         "^src/renderer/src/shared/components/ui/index\\.ts$",
         "^src/renderer/src/shared/components/ui/icons/index\\.ts$",
-        "^src/renderer/src/shared/delivery/index\\.ts$",
         "^src/renderer/src/shared/status/index\\.ts$"
       ]
     },
@@ -92,16 +91,10 @@
       "comment": "RETIRED (#157; disposition in docs/designs/cockpit-ui-inventory.md). The Console Panel (CONTEXT.md region, cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/console/",
       "publicEntry": ["^src/renderer/src/domains/console/components/index\\.ts$"]
-    },
-    {
-      "name": "concierge",
-      "comment": "RETIRED (#157; disposition in docs/designs/cockpit-ui-inventory.md). The Concierge (CONTEXT.md: the read-only voice layer) rendered — its eclipse-orb three.js engine (`eclipseOrb/` + `sceneConfig.ts`, framework-free) and the two prop-driven React surfaces that mount it: the full-screen `EclipseScene` stage backdrop and the roster `ConciergeDock` mini orb. A feature slice composed by the screen through its barrel; the engine and tuning config are private internals. IO-free — `orbState` is a pure prop, no audio, no machine bridge (#153).",
-      "path": "^src/renderer/src/domains/concierge/",
-      "publicEntry": ["^src/renderer/src/domains/concierge/components/index\\.ts$"]
     }
   ],
   "layers": {
-    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation, unchanged in kind by the #157 redesign and now applied to the shell + room slices as well: a slice must not reach into another slice's internals (slices ⊥ slices, so shell ⊥ rooms and room ⊥ room); every slice may import `renderer-shared`; `renderer-shared` is a leaf that imports no slice. The shell is a PEER of the rooms, not their parent: the renderer root composes shell + active room outside every slice, exactly as `SessionScreen` composes the retired panel domains today. The five retired domains keep their rules until their last file moves. (3) The composition root's wiring (`cockpit`) is the only renderer code that reads the store or the bridge, and the dependency runs one way: it imports slices, no slice imports it.",
+    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation, unchanged in kind by the #157 redesign and now applied to the shell + room slices as well: a slice must not reach into another slice's internals (slices ⊥ slices, so shell ⊥ rooms and room ⊥ room); every slice may import `renderer-shared`; `renderer-shared` is a leaf that imports no slice. The shell is a PEER of the rooms, not their parent: the renderer root composes shell + active room outside every slice, exactly as `SessionScreen` composes the retired panel domains today. The four remaining retired domains keep their rules until their last file moves; `concierge` left in #284 (ADR-0019). (3) The composition root's wiring (`cockpit`) is the only renderer code that reads the store or the bridge, and the dependency runs one way: it imports slices, no slice imports it.",
     "main": ["renderer", "preload"],
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],
@@ -114,8 +107,7 @@
       "roster",
       "activity",
       "delivery",
-      "console",
-      "concierge"
+      "console"
     ],
     "rooms-sessions": [
       "cockpit",
@@ -125,8 +117,7 @@
       "roster",
       "activity",
       "delivery",
-      "console",
-      "concierge"
+      "console"
     ],
     "rooms-work": [
       "cockpit",
@@ -136,8 +127,7 @@
       "roster",
       "activity",
       "delivery",
-      "console",
-      "concierge"
+      "console"
     ],
     "rooms-code": [
       "cockpit",
@@ -147,14 +137,12 @@
       "roster",
       "activity",
       "delivery",
-      "console",
-      "concierge"
+      "console"
     ],
-    "roster": ["cockpit", "activity", "delivery", "console", "concierge"],
-    "activity": ["cockpit", "roster", "delivery", "console", "concierge"],
-    "delivery": ["cockpit", "roster", "activity", "console", "concierge"],
-    "console": ["cockpit", "roster", "activity", "delivery", "concierge"],
-    "concierge": ["cockpit", "roster", "activity", "delivery", "console"],
+    "roster": ["cockpit", "activity", "delivery", "console"],
+    "activity": ["cockpit", "roster", "delivery", "console"],
+    "delivery": ["cockpit", "roster", "activity", "console"],
+    "console": ["cockpit", "roster", "activity", "delivery"],
     "renderer-shared": [
       "cockpit",
       "shell",
@@ -164,8 +152,7 @@
       "roster",
       "activity",
       "delivery",
-      "console",
-      "concierge"
+      "console"
     ]
   },
   "placement": {
@@ -201,7 +188,7 @@
       "module": "renderer-shared",
       "minImportingModules": 2,
       "exclude": ["^src/renderer/src/shared/components/"],
-      "ratchet_": "Each entry below is a symbol in the domain-aware tier with one caller left; they leave when the retired panel domains do (#265), which is also when `shared/delivery` becomes `shared/status`.",
+      "ratchet_": "Each entry below is a symbol in the domain-aware tier with one caller left; they leave when the retired panel domains do (#284). The tier itself is now `shared/status`; #284 renamed it.",
       "_exclude_comment": "KIND — the framework-primitive kit (`components/ui`, its icons, the docs blocks). file-structure.md earns the generic tier by CATEGORY, not by caller count: these would stand alone as a published package, so a vendored Radix wrapper or an icon belongs to the kit from its first caller. Counting callers here would flag 50 icons and demand they be scattered into the slices that happen to use one each.",
       "ratchet": {
         "isHotHeadState": "RATCHET — only `delivery` reads it; moves in with the lifecycle rail (#265).",

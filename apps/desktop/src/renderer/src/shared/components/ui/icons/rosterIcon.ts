@@ -1,4 +1,4 @@
-import type { RosterIcon } from '@/shared/delivery'
+import type { RosterIcon } from '@/shared/status'
 import { ArrowLineUpIcon } from './ArrowLineUpIcon'
 import { CheckIcon } from './CheckIcon'
 import { CircleIcon } from './CircleIcon'

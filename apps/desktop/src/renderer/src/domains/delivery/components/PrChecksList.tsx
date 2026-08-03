@@ -1,7 +1,7 @@
 import type { CiStatus } from '@shared'
 import { cn } from '@/lib/utils'
 import { ArrowSquareOutIcon, Button, StatusIcon, Text } from '@/shared/components/ui'
-import type { RosterIcon, RosterTone } from '@/shared/delivery'
+import type { RosterIcon, RosterTone } from '@/shared/status'
 import { CiCard } from './CiCard'
 
 export const CI_RUN_STATUSES = ['queued', 'running', 'passed', 'failed'] as const

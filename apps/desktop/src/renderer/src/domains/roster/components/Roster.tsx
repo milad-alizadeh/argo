@@ -9,7 +9,7 @@ import {
   Text,
   useDisclosure,
 } from '@/shared/components/ui'
-import { deliveryState, lifecycleIsHot } from '@/shared/delivery'
+import { deliveryState, lifecycleIsHot } from '@/shared/status'
 import { EmptyRoster } from './EmptyRoster'
 import { SessionRow } from './SessionRow'
 
