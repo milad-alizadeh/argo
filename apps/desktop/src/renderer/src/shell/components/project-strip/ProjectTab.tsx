@@ -1,9 +1,15 @@
 import { cn } from '@/lib/utils'
-import { StatusDot, Text, Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui'
+import {
+  FOCUS_RING,
+  StatusDot,
+  Text,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/shared/components/ui'
 import type { ProjectTabView } from '../../shellModel'
 
-const TAB_BASE =
-  'relative grid size-project-tab cursor-pointer place-items-center rounded-lg bg-inset text-muted-foreground inset-lip transition-colors duration-fast hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
+const TAB_BASE = `relative grid size-project-tab cursor-pointer place-items-center rounded-lg bg-inset text-muted-foreground inset-lip transition-colors duration-fast hover:bg-accent hover:text-foreground ${FOCUS_RING}`
 
 // The rail is a positioned decorative span, never a `border-*`: cn() collapses same-group
 // border-colour utilities, so a rail expressed as a border silently renders 0px over a frame
@@ -39,6 +45,8 @@ export function ProjectTab({ tab, onSelect }: ProjectTabProps): React.JSX.Elemen
       <Text variant="title">{tab.initial}</Text>
       {tab.active ? <span aria-hidden className={ACTIVE_RAIL} /> : null}
       {tab.dot === null ? null : (
+        // The dot exists only when an unwatched project wants you, so its halo IS the attention
+        // rather than a decoration on a calm state — and the active tab never has one to light.
         <StatusDot tone={tab.dot} className="absolute -top-hair -right-hair" />
       )}
     </button>

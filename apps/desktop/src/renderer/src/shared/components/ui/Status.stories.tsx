@@ -1,15 +1,23 @@
-import { SESSION_STATES } from '@shared'
+import { type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { ROSTER_TONES, type RosterStatus, SESSION_STATUS } from '@/shared/status'
+import { deliveryState, ROSTER_TONES } from '@/shared/status'
 import { Status } from './Status'
 
-// The molecule renders the word and its tone; the icon column of the same row belongs to
-// the organism around it, so the fixtures drop it rather than the props widening.
-const wordAndTone = ({ word, tone }: RosterStatus): Pick<RosterStatus, 'tone' | 'word'> => ({
-  word,
-  tone,
-})
+// The molecule renders one derived row, so the fixtures come from the one derivation the rail
+// reads rather than from words typed here.
+const propsOf = (status: SessionStatus) => {
+  const { word, dot } = deliveryState(sessionFacts({ status }), 'managed').rail
+  return { word, tone: dot.tone }
+}
+
+// The dot is aria-hidden beside a visible word, so it has no role to address — which is the point:
+// the word is the accessible name and the dot must not announce it twice.
+const dotOf = (row: HTMLElement): Element => {
+  const dot = row.querySelector('span')
+  if (dot === null) throw new Error('the row rendered no dot')
+  return dot
+}
 
 const meta = {
   title: 'Shared/Status',
@@ -25,47 +33,39 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * Word and tone arrive already derived (`SESSION_STATUS` here, `rosterStatus()` on a real row),
- * so the molecule never spells a state itself. The dot is decorative: the visible word
- * already names the state and must not be announced twice.
+ * Word and tone arrive already derived, so the molecule never spells a state itself. The dot is
+ * decorative: the visible word already names the state and must not be announced twice.
  */
 export const Default: Story = {
-  args: wordAndTone(SESSION_STATUS.running),
+  args: propsOf('running'),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Running')).toBeInTheDocument()
+    await expect(canvas.getByText('running')).toBeInTheDocument()
     await expect(canvas.queryByRole('img')).not.toBeInTheDocument()
   },
 }
 
-/** The screen's ONE animation budget, spent on the row stalled on a human. */
-export const Pulsing: Story = {
-  args: { ...wordAndTone(SESSION_STATUS.asking), pulse: true },
+/**
+ * The registry's rule this molecule exists to honour: the dot carries the state and the word stays
+ * neutral. Proving the two colours differ is what catches the tone leaking back onto the text —
+ * including on the TopBar's connection chip, which passes a tone and still reads as dim text.
+ */
+export const NeutralWord: Story = {
+  args: propsOf('permission'),
   play: async ({ canvasElement }) => {
-    const dot = canvasElement.querySelector('span > span')
-    await expect(getComputedStyle(dot as Element).animationName).toBe('pulse-status')
+    const row = within(canvasElement).getByText('needs you')
+    await expect(getComputedStyle(row).color).not.toBe(getComputedStyle(dotOf(row)).color)
   },
 }
 
 /**
- * The whole Session lifecycle in one frame — the visual-diff surface for words, tones and
- * glow. Delivery words ("Ready to merge", "CI failing") render through the same two props.
+ * A breathing dot: pulse belongs to the state, so anything live or asking for you carries it.
+ * Asserting the computed animation, not the class, is what catches the utility failing to resolve.
  */
-export const EveryState: Story = {
-  args: wordAndTone(SESSION_STATUS.running),
-  render: () => (
-    <div className="flex flex-col items-start gap-gap">
-      {SESSION_STATES.map((state) => (
-        <Status key={state} {...wordAndTone(SESSION_STATUS[state])} />
-      ))}
-    </div>
-  ),
+export const Pulsing: Story = {
+  args: { ...propsOf('asking'), pulse: true },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    // `permission` and `asking` are the one attention state, so `Needs you` renders twice.
-    await expect(canvas.getAllByText('Needs you')).toHaveLength(2)
-    for (const word of ['Running', 'Idle', 'Failed', 'Ended']) {
-      await expect(canvas.getByText(word)).toBeInTheDocument()
-    }
+    const row = within(canvasElement).getByText('needs you')
+    await expect(getComputedStyle(dotOf(row)).animationName).toBe('pulse-status')
   },
 }

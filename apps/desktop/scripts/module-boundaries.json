@@ -69,12 +69,6 @@
       "publicEntry": ["^src/renderer/src/rooms/code/components/index\\.ts$"]
     },
     {
-      "name": "roster",
-      "comment": "RETIRED (#157; disposition in docs/designs/cockpit-ui-inventory.md). The Roster Panel (CONTEXT.md region): the session roster column and its rows. A feature slice — owns its `components/` and, as they arrive, its hooks/store/types. Composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
-      "path": "^src/renderer/src/domains/roster/",
-      "publicEntry": ["^src/renderer/src/domains/roster/components/index\\.ts$"]
-    },
-    {
       "name": "delivery",
       "comment": "RETIRED (#157; disposition in docs/designs/cockpit-ui-inventory.md). The Delivery Panel (CONTEXT.md region; supersedes ADR-0009's `work/`): the Delivery lifecycle and node drawers — DeliveryLifecycle + NodeDrawer, the CI card molecules, the LifecycleNode state→icon/tone vocabulary. Pure Views over the pre-derived `LifecycleModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/delivery/",
@@ -88,57 +82,23 @@
     }
   ],
   "layers": {
-    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation, unchanged in kind by the #157 redesign and now applied to the shell + room slices as well: a slice must not reach into another slice's internals (slices ⊥ slices, so shell ⊥ rooms and room ⊥ room); every slice may import `renderer-shared`; `renderer-shared` is a leaf that imports no slice. The shell is a PEER of the rooms, not their parent: the renderer root composes shell + active room outside every slice, exactly as `SessionScreen` composes the retired panel domains today. The three remaining retired domains keep their rules until their last file moves (`activity` is gone: #261 retired the Run/Phase/Actor vocabulary it was named for). (3) The composition root's wiring (`cockpit`) is the only renderer code that reads the store or the bridge, and the dependency runs one way: it imports slices, no slice imports it.",
+    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation, unchanged in kind by the #157 redesign and now applied to the shell + room slices as well: a slice must not reach into another slice's internals (slices ⊥ slices, so shell ⊥ rooms and room ⊥ room); every slice may import `renderer-shared`; `renderer-shared` is a leaf that imports no slice. The shell is a PEER of the rooms, not their parent: the renderer root composes shell + active room outside every slice, exactly as `SessionScreen` composes the retired panel domains today. The two remaining retired domains keep their rules until their last file moves (`activity` is gone: #261 retired the Run/Phase/Actor vocabulary it was named for; `roster` is gone: #267 moved the rail into `rooms-sessions`). (3) The composition root's wiring (`cockpit`) is the only renderer code that reads the store or the bridge, and the dependency runs one way: it imports slices, no slice imports it.",
     "main": ["renderer", "preload"],
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],
     "shared": ["main", "renderer", "preload"],
-    "shell": [
-      "cockpit",
-      "rooms-sessions",
-      "rooms-work",
-      "rooms-code",
-      "roster",
-      "delivery",
-      "console"
-    ],
-    "rooms-sessions": [
-      "cockpit",
-      "shell",
-      "rooms-work",
-      "rooms-code",
-      "roster",
-      "delivery",
-      "console"
-    ],
-    "rooms-work": [
-      "cockpit",
-      "shell",
-      "rooms-sessions",
-      "rooms-code",
-      "roster",
-      "delivery",
-      "console"
-    ],
-    "rooms-code": [
-      "cockpit",
-      "shell",
-      "rooms-sessions",
-      "rooms-work",
-      "roster",
-      "delivery",
-      "console"
-    ],
-    "roster": ["cockpit", "delivery", "console"],
-    "delivery": ["cockpit", "roster", "console"],
-    "console": ["cockpit", "roster", "delivery"],
+    "shell": ["cockpit", "rooms-sessions", "rooms-work", "rooms-code", "delivery", "console"],
+    "rooms-sessions": ["cockpit", "shell", "rooms-work", "rooms-code", "delivery", "console"],
+    "rooms-work": ["cockpit", "shell", "rooms-sessions", "rooms-code", "delivery", "console"],
+    "rooms-code": ["cockpit", "shell", "rooms-sessions", "rooms-work", "delivery", "console"],
+    "delivery": ["cockpit", "console"],
+    "console": ["cockpit", "delivery"],
     "renderer-shared": [
       "cockpit",
       "shell",
       "rooms-sessions",
       "rooms-work",
       "rooms-code",
-      "roster",
       "delivery",
       "console"
     ]
@@ -156,19 +116,15 @@
         "CockpitScreenView.stories.tsx": "KIND — the root View's story, which ui-components.md makes mandatory. Lives beside its View."
       },
       "ratchet": {
-        "SessionScreen.tsx": "RATCHET — pre-#264 screen for the retired panel domains; deleted when rooms-sessions lands (#268).",
+        "SessionScreen.tsx": "RATCHET — the Sessions room's interior composition, blocked from the slice by the boundary: it renders `domains/{console,delivery}`, which `rooms-sessions` must not import. Moves when #268 rewrites the interior onto the room's own components.",
         "SessionScreen.stories.tsx": "RATCHET — story for the above; goes with it.",
-        "SessionHeader.tsx": "RATCHET — session-interior component at the root; superseded by the room's own header (#268).",
+        "SessionHeader.tsx": "RATCHET — session-interior component at the root, reading the model below; superseded by the room's own header (#268).",
         "SessionHeader.stories.tsx": "RATCHET — story for the above; goes with it.",
-        "sessionScreenModel.ts": "RATCHET — the retired screen's derivation; deleted with the screen (#268).",
-        "sessionScreenModel.test.ts": "RATCHET — test for the above. Its stateMatrix sweep is the only end-to-end cover of deliveryState → lifecycleModel + rosterStatus, all of which survive: re-base it onto local fixtures rather than deleting the coverage (#268).",
-        "useSpineLayout.ts": "RATCHET — the retired screen's layout hook; deleted with the spine (#268).",
-        "useSpineLayout.test.ts": "RATCHET — test for the above; goes with it.",
-        "WorkspaceIdentity.tsx": "RATCHET — session-interior component at the root; superseded by SessionMeta's branch segment (#268).",
+        "sessionScreenModel.ts": "RATCHET — the interior's derivation, blocked from the slice for the same reason as SessionScreen: its Delivery and Console prop types come from the two retired domains. Merges into `rooms/sessions/sessionsRoomModel.ts` with #268.",
+        "sessionScreenModel.test.ts": "RATCHET — test for the above. Its stateMatrix sweep is the only end-to-end cover of deliveryState → lifecycleModel, which survives: re-base it onto local fixtures rather than deleting the coverage (#268).",
+        "WorkspaceIdentity.tsx": "RATCHET — session-interior component at the root; its only composer is SessionHeader, which cannot move yet, and moving it alone would make the room export a component the room does not render. Superseded by SessionMeta's branch segment (#268).",
         "WorkspaceIdentity.stories.tsx": "RATCHET — story for the above; goes with it.",
-        "WorkspaceIdentity.test.ts": "RATCHET — test for the above; goes with it.",
-        "sessionStore.ts": "RATCHET — the projected-state store. Read only by `cockpit/`, so it wants to move in there; kept at the root this pass to hold the diff to structure.",
-        "sessionStore.test.ts": "RATCHET — test for the above; goes with it."
+        "WorkspaceIdentity.test.ts": "RATCHET — test for the above; goes with it."
       }
     },
     "earnedShared": {
@@ -179,9 +135,9 @@
       "ratchet_": "Each entry below is a symbol in the domain-aware tier with one caller left. These rot SILENTLY rather than reddening: earned-shared-check.mjs defines stale as 'now wanted by >= 2 modules', so when the last caller is deleted the count drops to zero and the gate says nothing. The ticket that deletes the caller deletes the entry.",
       "_exclude_comment": "KIND — the framework-primitive kit (`components/ui`, its icons, the docs blocks). file-structure.md earns the generic tier by CATEGORY, not by caller count: these would stand alone as a published package, so a vendored Radix wrapper or an icon belongs to the kit from its first caller. Counting callers here would flag 50 icons and demand they be scattered into the slices that happen to use one each.",
       "ratchet": {
-        "isHotHeadState": "RATCHET — only `delivery` reads it; moves in with the lifecycle rail, or dies if #269's live/wait readout retires the pulse budget (#269).",
-        "lifecycleIsHot": "RATCHET — only `roster` reads it; moves in with the roster rail (#267).",
-        "RosterIcon": "RATCHET — the status-icon type, read only by `delivery` today; earns the tier again once a second room renders a status icon (#269)."
+        "DeliveryState": "KIND — the declared return type of `deliveryState`, whose function this tier already earns. The caller-count rule cannot apply to a function's own return type: it has no home other than beside the function, so a single caller does not make it misplaced and a second caller would not move it. Named here rather than re-derived at the call site as `ReturnType<typeof deliveryState>`, which only hid it from this count.",
+        "RosterIcon": "RATCHET — the status-icon type, read only by `delivery` today; earns the tier again once a second room renders a status icon (#269).",
+        "isHotHeadState": "RATCHET — the lifecycle's stalled-on-a-human state set. Its second caller was the rail's pulse budget, which issue 267 retired: a session's dot now pulses on its own state, so nothing asks whether the lifecycle is louder. Read only by `delivery`'s LifecycleNode until the Delivery strip becomes a room (issue 269), which is also when it either earns the tier back or moves into that module."
       }
     },
     "kindFolders": {

@@ -1,7 +1,14 @@
 // The cockpit's tone recipes, spent by name instead of hand-copied — a washed tint is a
 // border+background(+text) triple that no single Tailwind token covers, so each recipe
 // lives here once and every caller (button.tsx, badge.tsx, the lifecycle's own state
-// vocabulary) reads the same literal instead of re-typing the opacity pair.
+// vocabulary) reads the same literal instead of re-typing the opacity pair. The focus
+// ring below is the same category: a multi-class spelling with no single token.
+
+/** The keyboard focus ring every quiet chrome control wears — the project strip's tabs and the
+ * rail's action rows. A row that must out-shout nothing spells its own thinner ring instead
+ * (`SessionRow`), because `--ring` is gold and gold is the attention ink. */
+export const FOCUS_RING =
+  'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50'
 
 /** The screen's ONE primary — a gradient disc/pill (R2). button.tsx's `primary` variant and
  * a state vocabulary's "active" glyph both spend this. */

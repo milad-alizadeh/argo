@@ -3,6 +3,7 @@
 // View. Slices never import this — the store and the bridge are read on this side of the seam so
 // that every slice can stay a pure View.
 export { RoomStage } from './RoomStage'
+export { useSessionStore } from './sessionStore'
 export { type GitHatches, useGitGroup } from './useGitGroup'
 export { useSessionPanel } from './useSessionPanel'
 export { useShellCommands } from './useShellCommands'

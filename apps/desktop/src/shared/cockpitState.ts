@@ -4,7 +4,7 @@
 
 import { type ProjectView, projectForCwd, projectName } from './projects'
 import type { Agent } from './runtimeTree'
-import type { SessionFacts } from './sessionFacts'
+import { type SessionFacts, sessionFacts } from './sessionFacts'
 import type { SessionPosture } from './sessionPosture'
 
 export type Cli = 'claude' | 'codex'
@@ -16,6 +16,14 @@ export interface SessionIntake {
   title: string
   cli: Cli
   cwd: string | null
+  // The model id verbatim as the transcript reported it, never prettified — DIRECT, and
+  // `null` means no assistant record named one, not a default model.
+  model: string | null
+  // The git branch the newest record reported — DIRECT, `null` when unobserved.
+  branch: string | null
+  // Epoch ms of the newest record across the resume chain — DERIVED from record timestamps,
+  // `null` when no record carried a readable one.
+  lastActivityAt: number | null
   posture: SessionPosture
   facts: SessionFacts
   // The runtime tree (CONTEXT.md L3), flat and keyed by `parentId`: the Session is the root
@@ -29,6 +37,29 @@ export interface SessionIntake {
 // derived from `facts` by the renderer, so no state crosses the bridge pre-graded.
 export interface SessionView extends SessionIntake {
   projectId: string | null
+}
+
+/**
+ * A `SessionView` from just the identity a case is about — the roster-row counterpart to
+ * `sessionFacts`, and the one home for that shape.
+ *
+ * Defaults are the honest unobserved ones: no cwd, no model, no branch, no activity Argo saw, and a
+ * session Argo drives — so a caller states only what its case is actually about.
+ */
+export function sessionView(over: Partial<SessionView> & { id: string }): SessionView {
+  return {
+    title: `Session ${over.id}`,
+    cli: 'claude',
+    cwd: null,
+    model: null,
+    branch: null,
+    lastActivityAt: null,
+    projectId: null,
+    posture: 'managed',
+    agents: [],
+    facts: sessionFacts(),
+    ...over,
+  }
 }
 
 export interface CockpitState {

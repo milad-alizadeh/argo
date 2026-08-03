@@ -1,98 +1,133 @@
-import type {
-  LifecycleModel,
-  LifecycleNodeKey,
-  LifecycleNodeState,
-  SessionFacts,
-  SessionStatus,
-  TerminalState,
+import {
+  isSteerable,
+  LIFECYCLE_KEYS,
+  type LifecycleModel,
+  type LifecycleNodeKey,
+  type LifecycleNodeState,
+  type PrFacts,
+  type SessionFacts,
+  type SessionPosture,
+  type SessionStatus,
 } from '@shared'
+import {
+  type Candidate,
+  RAIL_DOTS,
+  type RailState,
+  type RailStatus,
+  type RosterWord,
+  type SessionWord,
+  STATE_TIERS,
+} from './railVocabulary'
 
-// The roster row's word — a POINTER into the lifecycle's head node, never a value of its
-// own. Tone is a name equal to its `--tone-*` token; a View interpolates
-// `text-tone-${tone}` directly, no map. No colour lives here.
+// The rail's ONE word per row and the dot that goes with it. Both come out of a single pick over the
+// state alphabet, so a row cannot report one state in text and another in colour.
 
-export const ROSTER_TONES = ['run', 'amber', 'done', 'gray', 'red', 'stale', 'landed'] as const
-
-export type RosterTone = (typeof ROSTER_TONES)[number]
-
-export const ROSTER_ICONS = [
-  'arrow-line-up',
-  'check',
-  'circle',
-  'circle-notch',
-  'gear',
-  'git-commit',
-  'git-merge',
-  'git-pull-request',
-  'prohibit',
-  'user',
-  'warning',
-  'x',
-] as const
-
-export type RosterIcon = (typeof ROSTER_ICONS)[number]
-
-export interface RosterStatus {
-  word: string
-  tone: RosterTone
-  icon: RosterIcon
+// `stopped` and `ended` both fold to `failed` — settled by `cockpit-app-shell-spec.md`, Copy
+// ("the same fold as the dot"), which is also why `ended`'s dot folds to red rather than keeping
+// the registry table's dim grey.
+// `permission` and `asking` both fold to `needs you`. That leg is DERIVED BY
+// `cockpit-ui-inventory.md` AND STATED BY NO SETTLED SPEC — the weakest leg of this table.
+const SESSION_CANDIDATES: Record<SessionStatus, { state: RailState; word: SessionWord }> = {
+  running: { state: 'running', word: 'running' },
+  idle: { state: 'idle', word: 'idle' },
+  permission: { state: 'needs-you', word: 'needs you' },
+  asking: { state: 'needs-you', word: 'needs you' },
+  stopped: { state: 'failed', word: 'failed' },
+  ended: { state: 'failed', word: 'failed' },
 }
 
-// The registry's Session-status words (cockpit-status-vocabulary.md): `permission` and `asking`
-// are the ONE attention state and share its word, because a row saying which flavour of "come
-// here" this is would be two tellings of the same interrupt. Posture (`external`/`orphaned`) is
-// an identity attribute rather than a state, so it has no word here at all.
-export const SESSION_STATUS: Record<SessionStatus, RosterStatus> = {
-  running: { word: 'Running', tone: 'run', icon: 'circle-notch' },
-  permission: { word: 'Needs you', tone: 'amber', icon: 'warning' },
-  asking: { word: 'Needs you', tone: 'amber', icon: 'warning' },
-  idle: { word: 'Idle', tone: 'gray', icon: 'circle' },
-  stopped: { word: 'Failed', tone: 'red', icon: 'x' },
-  ended: { word: 'Ended', tone: 'stale', icon: 'circle' },
+const OBSERVED: Candidate = { state: 'read-only', word: 'read-only' }
+
+const LANDED: Candidate = { state: 'landed', word: 'landed' }
+
+export function sessionStatusWord(
+  facts: SessionFacts,
+  posture: SessionPosture,
+): SessionWord | null {
+  return isSteerable(posture) ? SESSION_CANDIDATES[facts.status].word : null
 }
 
-const TERMINAL_STATUS: Record<TerminalState, RosterStatus> = {
-  merged: { word: 'Landed', tone: 'landed', icon: 'git-merge' },
-  closed: { word: 'Closed', tone: 'stale', icon: 'prohibit' },
+type NodeReading = `${LifecycleNodeKey}:${LifecycleNodeState}`
+
+// Keyed by node and state so the rail cannot re-rank the lifecycle's nodes behind its back. The
+// ATTENTION claims are read across the WHOLE lifecycle rather than off its head node alone: a failed
+// check is a failed check whichever node the lifecycle happens to call head, so a dirty working tree
+// must not suppress it. `ci:stale` / `review:stale` are `blocked` — a check or an approval that no
+// longer speaks for the head commit is exactly what locks the Merge node.
+const ATTENTION_CLAIMS: Partial<Record<NodeReading, Candidate>> = {
+  'ci:stale': { state: 'blocked', word: 'blocked' },
+  'review:stale': { state: 'blocked', word: 'blocked' },
+  'ci:fail': { state: 'ci-failed', word: 'CI failed' },
 }
 
-// Keyed by the head node and the state it is in — the row can only ever speak for
-// the stage R1 already chose, so it cannot re-rank the nodes behind the lifecycle's
-// back. A pair absent from the table wants nothing from you (`now`/`wait`/`done`),
-// which is where the Session's own triage word belongs.
-const HEAD_STATUS: Partial<
-  Record<
-    `${LifecycleNodeKey}:${LifecycleNodeState}`,
-    RosterStatus | ((facts: SessionFacts) => RosterStatus)
-  >
-> = {
-  'commits:gate': { word: 'Commit ready', tone: 'amber', icon: 'git-commit' },
-  'commits:sync': (facts) => ({
-    word: `↑${facts.unpushed} unpushed`,
-    tone: 'run',
-    icon: 'arrow-line-up',
-  }),
-  'pr:gate': { word: 'Create PR ready', tone: 'amber', icon: 'git-pull-request' },
-  'pr:auto': { word: 'Opening PR · auto', tone: 'run', icon: 'gear' },
-  // CI only runs against a PR (R4), so the row names the PR triage is watching.
-  'ci:now': (facts) =>
-    facts.pr
-      ? { word: `PR #${facts.pr.num} · CI`, tone: 'run', icon: 'git-pull-request' }
-      : SESSION_STATUS[facts.status],
-  'ci:fail': { word: 'CI failing', tone: 'amber', icon: 'warning' },
-  'review:now': { word: 'In review', tone: 'run', icon: 'user' },
-  'review:warn': { word: 'Changes requested', tone: 'amber', icon: 'user' },
-  'merge:gate': { word: 'Ready to merge', tone: 'amber', icon: 'git-pull-request' },
-  'merge:auto': { word: 'Auto-merge armed', tone: 'run', icon: 'gear' },
+type MilestoneState = Extract<RailState, 'ci-running' | 'pr-open' | 'landed'>
+
+// A MILESTONE stays head-scoped, unlike a failure: it genuinely is a claim about where the work has
+// reached, so only the node holding the head is entitled to make it.
+const MILESTONE_CLAIMS: Partial<Record<NodeReading, MilestoneState>> = {
+  'ci:wait': 'pr-open',
+  'ci:now': 'ci-running',
+  'review:now': 'pr-open',
+  'review:warn': 'pr-open',
+  'merge:gate': 'pr-open',
+  'merge:auto': 'pr-open',
 }
 
-// Takes the model the lifecycle is already rendering, so the row cannot be derived
-// from a second, differently-timed reading of the same facts.
-export function rosterStatus(facts: SessionFacts, model: LifecycleModel | null): RosterStatus {
-  if (!model) return SESSION_STATUS[facts.status]
-  if (model.terminal) return TERMINAL_STATUS[model.terminal]
+function milestone(state: MilestoneState, pr: PrFacts | null): Candidate | null {
+  switch (state) {
+    case 'ci-running':
+      return { state, word: 'CI running' }
+    case 'landed':
+      return LANDED
+    // A milestone is head-scoped and every head that reaches one sits past the PR node, so `pr` is
+    // always here; the guard belongs to the type rather than to a case that can happen.
+    case 'pr-open':
+      return pr === null ? null : { state, word: `PR #${pr.num}` }
+  }
+}
 
-  const status = HEAD_STATUS[`${model.head}:${model.nodes[model.head]}`]
-  if (!status) return SESSION_STATUS[facts.status]
-  return typeof status === 'function' ? status(facts) : status
+function claimsOf(facts: SessionFacts, model: LifecycleModel | null): Candidate[] {
+  if (model === null) return []
+  if (model.terminal !== null) return model.terminal === 'merged' ? [LANDED] : []
+  const { nodes, head } = model
+  const attention = LIFECYCLE_KEYS.map((key) => ATTENTION_CLAIMS[`${key}:${nodes[key]}`]).filter(
+    (claim): claim is Candidate => claim !== undefined,
+  )
+  const reached = MILESTONE_CLAIMS[`${head}:${nodes[head]}`]
+  const milestoneClaim = reached === undefined ? null : milestone(reached, facts.pr)
+  return milestoneClaim === null ? attention : [...attention, milestoneClaim]
+}
+
+/** The word the lifecycle alone claims for a row, or `null` where it has nothing to say. */
+export function deliveryClaimWord(
+  facts: SessionFacts,
+  model: LifecycleModel | null,
+): RosterWord | null {
+  return pick(claimsOf(facts, model))?.word ?? null
+}
+
+function pick(candidates: readonly Candidate[]): Candidate | null {
+  for (const tier of STATE_TIERS) {
+    for (const state of tier) {
+      const won = candidates.find((candidate) => candidate.state === state)
+      if (won !== undefined) return won
+    }
+  }
+  return null
+}
+
+/**
+ * The rail's whole status for one Session: its one word, and the dot derived from the same pick.
+ *
+ * A delivery claim beats session status (registry, Roster note), and the kind tier is the last
+ * resort — only a row Argo merely observes, with nothing else to claim, reaches `read-only`.
+ */
+export function railStatus(
+  facts: SessionFacts,
+  posture: SessionPosture,
+  lifecycle: LifecycleModel | null,
+): RailStatus {
+  const session = isSteerable(posture) ? [SESSION_CANDIDATES[facts.status]] : []
+  const { state, word } = pick([...claimsOf(facts, lifecycle), ...session]) ?? OBSERVED
+  return { word, dot: RAIL_DOTS[state] }
 }

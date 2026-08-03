@@ -1,6 +1,6 @@
+import type { SessionView } from '@shared'
 import { sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
-import type { SessionView } from '@/sessionStore'
 import { stateMatrixInput } from '@/shared/status'
 import { buildSessionPanel, type PanelUiState } from './sessionScreenModel'
 
@@ -17,6 +17,9 @@ const sessionFrom = (id: string): SessionView => ({
   title: `Session ${id}`,
   cli: 'claude',
   cwd: null,
+  model: null,
+  branch: null,
+  lastActivityAt: null,
   projectId: null,
   posture: 'external',
   agents: [],

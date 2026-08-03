@@ -1,170 +1,137 @@
-import { type SessionFactsInput, sessionFacts } from '@shared'
+import { type LifecycleModel, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
 import { deliveryState } from './deliveryState'
-import { stateMatrixInput } from './stateMatrix'
+import type { RosterWord } from './railVocabulary'
+import { STATE_MATRIX_ROWS, stateMatrixInput } from './stateMatrix'
 
-// The state table of `docs/designs/cockpit-surface-matrix.md`, one case per row: given the
-// facts, the lifecycle, its head, and the roster word are fully determined. The inputs now
-// live in `stateMatrix.ts` so the SessionScreen stories replay the same rows; this test still
-// owns the expected outputs, and swapping in `stateMatrixInput(id)` leaves them untouched.
+// The state table of `docs/designs/cockpit-surface-matrix.md`, one row per case: given the facts,
+// the lifecycle, its head, and the rail's one word are fully determined. The inputs live in
+// `stateMatrix.ts` so the SessionScreen stories replay the same rows; this test owns the expected
+// outputs. The dot each word carries is `rosterStatus.test.ts`'s subject, not this sweep's.
 
-const row = (input: SessionFactsInput) => {
-  const { lifecycle, roster } = deliveryState(sessionFacts(input))
-  return { model: lifecycle, roster }
-}
-
-describe('S0 — clean tree, no commits', () => {
-  it('grows no lifecycle and stays Running', () => {
-    const { model, roster } = row(stateMatrixInput('S0'))
-    expect(model).toBeNull()
-    expect(roster).toEqual({ word: 'Running', tone: 'run', icon: 'circle-notch' })
-  })
-})
-
-describe('S1 — dirty 3 · agent working', () => {
-  it('narrates Commits and stays Running', () => {
-    const { model, roster } = row(stateMatrixInput('S1'))
-    expect(model).toEqual({
+const outcomes: readonly { id: string; model: LifecycleModel | null; word: RosterWord }[] = [
+  { id: 'S0', model: null, word: 'running' },
+  {
+    id: 'S1',
+    model: {
       nodes: { commits: 'now', pr: 'wait', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'commits',
       terminal: null,
-    })
-    expect(roster.word).toBe('Running')
-  })
-})
-
-describe('S2 — dirty 3 · agent idle', () => {
-  it('hands Commits back as a gate', () => {
-    const { model, roster } = row(stateMatrixInput('S2'))
-    expect(model).toEqual({
+    },
+    word: 'running',
+  },
+  {
+    id: 'S2',
+    model: {
       nodes: { commits: 'gate', pr: 'wait', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'commits',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'Commit ready', tone: 'amber', icon: 'git-commit' })
-  })
-})
-
-describe('S3 — commits ✓ · no PR', () => {
-  it('puts the head on the PR gate', () => {
-    const { model, roster } = row(stateMatrixInput('S3'))
-    expect(model).toEqual({
+    },
+    word: 'idle',
+  },
+  {
+    id: 'S3',
+    model: {
       nodes: { commits: 'done', pr: 'gate', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'pr',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'Create PR ready', tone: 'amber', icon: 'git-pull-request' })
-  })
-})
-
-describe('S3b — S3 · create_pr: auto', () => {
-  it('delegates the PR gate and narrates it', () => {
-    const { model, roster } = row(stateMatrixInput('S3b'))
-    expect(model).toEqual({
+    },
+    word: 'idle',
+  },
+  {
+    id: 'S3b',
+    model: {
       nodes: { commits: 'done', pr: 'auto', ci: 'wait', review: 'wait', merge: 'wait' },
       head: 'pr',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'Opening PR · auto', tone: 'run', icon: 'gear' })
-  })
-})
-
-describe('S4 — PR #42 · CI running', () => {
-  it('moves the head to CI and points the roster at the PR', () => {
-    const { model, roster } = row(stateMatrixInput('S4'))
-    expect(model).toEqual({
+    },
+    word: 'running',
+  },
+  {
+    id: 'S4',
+    model: {
       nodes: { commits: 'done', pr: 'done', ci: 'now', review: 'wait', merge: 'wait' },
       head: 'ci',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'PR #42 · CI', tone: 'run', icon: 'git-pull-request' })
-  })
-})
-
-describe('S5 — CI failed', () => {
-  it('fails the CI node and calls the roster out', () => {
-    const { model, roster } = row(stateMatrixInput('S5'))
-    expect(model).toEqual({
+    },
+    word: 'CI running',
+  },
+  {
+    id: 'S5',
+    model: {
       nodes: { commits: 'done', pr: 'done', ci: 'fail', review: 'wait', merge: 'wait' },
       head: 'ci',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'CI failing', tone: 'amber', icon: 'warning' })
-  })
-})
-
-describe('S6 — CI ✓ · review round running', () => {
-  it('moves the head to Review with no gate', () => {
-    const { model, roster } = row(stateMatrixInput('S6'))
-    expect(model).toEqual({
+    },
+    word: 'CI failed',
+  },
+  {
+    id: 'S6',
+    model: {
       nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'now', merge: 'wait' },
       head: 'review',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'In review', tone: 'run', icon: 'user' })
-  })
-})
-
-describe('S7 — changes requested · 2 open', () => {
-  it('marks Review changed and keeps the head there', () => {
-    const { model, roster } = row(stateMatrixInput('S7'))
-    expect(model).toEqual({
+    },
+    word: 'PR #42',
+  },
+  {
+    id: 'S7',
+    model: {
       nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'warn', merge: 'wait' },
       head: 'review',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'Changes requested', tone: 'amber', icon: 'user' })
-  })
-})
-
-describe('S8 — approved · all fresh', () => {
-  it('opens the Merge gate', () => {
-    const { model, roster } = row(stateMatrixInput('S8'))
-    expect(model).toEqual({
+    },
+    word: 'PR #42',
+  },
+  {
+    id: 'S8',
+    model: {
       nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'done', merge: 'gate' },
       head: 'merge',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'Ready to merge', tone: 'amber', icon: 'git-pull-request' })
-  })
-})
-
-describe('S8b — S8 · merge: auto', () => {
-  it('arms the Merge gate instead of asking', () => {
-    const { model, roster } = row(stateMatrixInput('S8b'))
-    expect(model).toEqual({
+    },
+    word: 'PR #42',
+  },
+  {
+    id: 'S8b',
+    model: {
       nodes: { commits: 'done', pr: 'done', ci: 'done', review: 'done', merge: 'auto' },
       head: 'merge',
       terminal: null,
-    })
-    expect(roster).toEqual({ word: 'Auto-merge armed', tone: 'run', icon: 'gear' })
-  })
-})
-
-describe('S9 — +1 commit while PR open', () => {
-  it('syncs Commits, stales CI and Review, locks Merge', () => {
-    const { model, roster } = row(stateMatrixInput('S9'))
-    expect(model).toEqual({
+    },
+    word: 'PR #42',
+  },
+  {
+    id: 'S9',
+    model: {
       nodes: { commits: 'sync', pr: 'done', ci: 'stale', review: 'stale', merge: 'lock' },
       head: 'commits',
       terminal: null,
+    },
+    // A check and an approval that stopped speaking for the head commit lock the Merge node, and the
+    // rail says so over the unpushed commit above them: an attention claim is not head-scoped.
+    word: 'blocked',
+  },
+  { id: 'S10', model: { nodes: null, head: null, terminal: 'merged' }, word: 'landed' },
+  { id: 'S11', model: { nodes: null, head: null, terminal: 'closed' }, word: 'running' },
+]
+
+const labelOf = (id: string) => STATE_MATRIX_ROWS.find((row) => row.id === id)?.label
+
+describe('the delivery matrix', () => {
+  it('states an outcome for every row of the matrix', () => {
+    expect(outcomes.map(({ id }) => id)).toEqual(STATE_MATRIX_ROWS.map((row) => row.id))
+  })
+
+  for (const { id, model } of outcomes) {
+    it(`grows the lifecycle the matrix records for ${id} — ${labelOf(id)}`, () => {
+      expect(deliveryState(sessionFacts(stateMatrixInput(id)), 'managed').lifecycle).toEqual(model)
     })
-    expect(roster).toEqual({ word: '↑1 unpushed', tone: 'run', icon: 'arrow-line-up' })
-  })
-})
+  }
 
-describe('S10 — merged', () => {
-  it('replaces the lifecycle with the merged terminal and lands the roster', () => {
-    const { model, roster } = row(stateMatrixInput('S10'))
-    expect(model).toEqual({ nodes: null, head: null, terminal: 'merged' })
-    expect(roster).toEqual({ word: 'Landed', tone: 'landed', icon: 'git-merge' })
-  })
-})
-
-describe('S11 — closed w/o merge', () => {
-  it('replaces the lifecycle with the closed terminal', () => {
-    const { model, roster } = row(stateMatrixInput('S11'))
-    expect(model).toEqual({ nodes: null, head: null, terminal: 'closed' })
-    expect(roster).toEqual({ word: 'Closed', tone: 'stale', icon: 'prohibit' })
-  })
+  for (const { id, word } of outcomes) {
+    it(`reads "${word}" on ${id} — ${labelOf(id)}`, () => {
+      expect(deliveryState(sessionFacts(stateMatrixInput(id)), 'managed').rail.word).toBe(word)
+    })
+  }
 })

@@ -15,6 +15,8 @@ The five canonical triage roles, each label string equal to its name. See `docs/
 ### Domain docs
 
 Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+The domain model is imported below, so it is injected rather than left to a pointer a session
+may not follow.
 
 ## Rules
 
@@ -182,3 +184,5 @@ rtk err  bun run typecheck
 ```
 
 @RTK.md
+
+@CONTEXT.md

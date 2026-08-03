@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react'
-import { useSessionStore } from '@/sessionStore'
 import {
   DEFAULT_PROJECT_UI,
   nextProjectId,
@@ -9,6 +8,7 @@ import {
   recallProjectUi,
   rememberProjectUi,
 } from '@/shell/components'
+import { useSessionStore } from './sessionStore'
 
 // The shell's own UI state, which is what makes a project swap a VIEW CHANGE: the room and
 // selection you left a project in are filed under its id and handed back on return. Nothing is

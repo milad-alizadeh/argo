@@ -1,11 +1,15 @@
-import { sessionFacts } from '@shared'
+import { type SessionView, sessionFacts, sessionView } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import type { SessionView } from '@/sessionStore'
-import { deliveryState, stateMatrixInput } from '@/shared/status'
+import {
+  buildSessionsRoomModel,
+  isConsoleExpanded,
+  SPINE,
+  type SpineLayout,
+} from '@/rooms/sessions/components'
+import { stateMatrixInput } from '@/shared/status'
 import { SessionScreen, type SessionScreenHandlers } from './SessionScreen'
 import { buildSessionPanel, type PanelUiState } from './sessionScreenModel'
-import { isConsoleExpanded, SPINE, type SpineLayout } from './useSpineLayout'
 
 const DEFAULT_UI: PanelUiState = {
   variant: 'split',
@@ -39,37 +43,36 @@ const NOOP_HANDLERS: SessionScreenHandlers = {
   onToggleConsoleExpanded: fn(),
 }
 
-const AUTH: SessionView = {
+const AUTH: SessionView = sessionView({
   id: 'auth',
   title: 'Refactor auth module',
-  cli: 'claude',
-  cwd: null,
-  projectId: null,
-  posture: 'external',
-  agents: [],
+  model: 'claude-opus-4',
+  branch: 'feat/auth-rotation',
+  lastActivityAt: 2_000,
   facts: sessionFacts(stateMatrixInput('S6')),
-}
-const VOICE: SessionView = {
+})
+const VOICE: SessionView = sessionView({
   id: 'voice',
   title: 'Voice input spike',
   cli: 'codex',
-  cwd: null,
-  projectId: null,
-  posture: 'external',
-  agents: [],
+  model: 'gpt-5',
+  branch: 'feat/voice',
+  lastActivityAt: 1_000,
   facts: sessionFacts(stateMatrixInput('S8')),
-}
+})
 const SESSIONS: readonly SessionView[] = [AUTH, VOICE]
+
+const rosterOf = (sessions: readonly SessionView[], selectedId: string | null = null) =>
+  buildSessionsRoomModel({ sessions, selectedId })
 
 const meta = {
   title: 'SessionScreen',
   component: SessionScreen,
   parameters: { layout: 'fullscreen' },
   // Baseline props so every story inherits a complete set; each story's `render` supplies the
-  // sessions, selection and panel its case needs.
+  // rail, the panel and the layout its case needs.
   args: {
-    sessions: SESSIONS,
-    selectedId: null,
+    roster: rosterOf(SESSIONS),
     panel: null,
     layout: DEFAULT_LAYOUT,
     handlers: NOOP_HANDLERS,
@@ -81,16 +84,15 @@ type Story = StoryObj<typeof meta>
 
 /**
  * The one fact the SCREEN adds over its regions: a selected session composes into the full spine —
- * header, Activity ‖ Delivery, Console — and the roster's derived word agrees with the Delivery
- * strip, both standing for the same Session. The lifecycle states themselves (in-review, merged,
- * stale-after-approval, …) are the Delivery region's own gallery; re-telling them here would just
- * multiply that coverage by the spine, so this proves composition on one representative session.
+ * the rail beside the frosted panel holding header, Activity ‖ Delivery and the Console — and the
+ * rail's derived word agrees with the Delivery strip, both standing for the same Session. The
+ * lifecycle states are the Delivery region's own gallery and the rail's states are the Roster's;
+ * re-telling either here would multiply that coverage by the spine.
  */
 export const SelectedSession: Story = {
   render: () => (
     <SessionScreen
-      sessions={SESSIONS}
-      selectedId={AUTH.id}
+      roster={rosterOf(SESSIONS, AUTH.id)}
       panel={buildSessionPanel({
         session: AUTH,
         ui: DEFAULT_UI,
@@ -102,26 +104,26 @@ export const SelectedSession: Story = {
   ),
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    // Read off the same derivation the roster renders, so the assertion cannot drift.
-    const { word } = deliveryState(AUTH.facts).roster
+    // Read off the same derivation the rail renders, so the assertion cannot drift.
+    const { word } = rosterOf(SESSIONS, AUTH.id).rows[0]
     const list = canvas.getByRole('list', { name: 'Sessions' })
-    await expect(within(list).getByText(word)).toBeInTheDocument()
+    const selectedRow = within(list).getByRole('button', { current: true })
+    await expect(within(selectedRow).getByText(word)).toBeInTheDocument()
     await expect(canvas.getByRole('region', { name: 'Activity' })).toBeInTheDocument()
     await expect(canvas.getByRole('region', { name: 'Delivery' })).toBeInTheDocument()
     // The session header leads with a close "✕" that reports through onCloseSession — the
-    // container drops the selection, which the NoSelection story renders as roster-only.
+    // container drops the selection, which the NoSelection story renders as rail-only.
     await userEvent.click(canvas.getByRole('button', { name: 'Close session' }))
     await expect(args.handlers.onCloseSession).toHaveBeenCalledOnce()
   },
 }
 
-/** Sessions present but none selected → the session panel is gone; the card collapses to the
- * roster alone (what closing a session leaves on screen). */
+/** Sessions present but none selected → the session panel is gone and the rail stands alone on the
+ * scene (what closing a session leaves on screen). */
 export const NoSelection: Story = {
   render: () => (
     <SessionScreen
-      sessions={SESSIONS}
-      selectedId={null}
+      roster={rosterOf(SESSIONS)}
       panel={null}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
@@ -130,7 +132,7 @@ export const NoSelection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByTestId('cockpit-root')).toBeInTheDocument()
-    // Only the roster: its list is here, but no session panel regions and no header close.
+    // Only the rail: its list is here, but no session panel regions and no header close.
     await expect(canvas.getByRole('list', { name: 'Sessions' })).toBeInTheDocument()
     await expect(canvas.queryByRole('region', { name: 'Delivery' })).not.toBeInTheDocument()
     await expect(canvas.queryByRole('region', { name: 'Activity' })).not.toBeInTheDocument()
@@ -138,12 +140,11 @@ export const NoSelection: Story = {
   },
 }
 
-/** The empty hub — no sessions observed, the same empty-roster copy the launch e2e asserts. */
-export const EmptyRoster: Story = {
+/** The empty hub — nothing observed, so the whole screen is the bare `+ New session` row. */
+export const ZeroState: Story = {
   render: () => (
     <SessionScreen
-      sessions={[]}
-      selectedId={null}
+      roster={rosterOf([])}
       panel={null}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
@@ -152,7 +153,8 @@ export const EmptyRoster: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByTestId('cockpit-root')).toBeInTheDocument()
-    await expect(canvas.getByText('No Sessions observed yet.')).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: 'New session' })).toBeInTheDocument()
+    await expect(canvas.queryByRole('list')).not.toBeInTheDocument()
   },
 }
 
@@ -160,8 +162,7 @@ export const EmptyRoster: Story = {
 export const SoloWorkHidden: Story = {
   render: () => (
     <SessionScreen
-      sessions={SESSIONS}
-      selectedId={AUTH.id}
+      roster={rosterOf(SESSIONS, AUTH.id)}
       panel={buildSessionPanel({
         session: AUTH,
         ui: { ...DEFAULT_UI, variant: 'solo' },
@@ -177,8 +178,7 @@ export const SoloWorkHidden: Story = {
 export const ConsoleExpanded: Story = {
   render: () => (
     <SessionScreen
-      sessions={SESSIONS}
-      selectedId={AUTH.id}
+      roster={rosterOf(SESSIONS, AUTH.id)}
       panel={buildSessionPanel({
         session: AUTH,
         ui: DEFAULT_UI,

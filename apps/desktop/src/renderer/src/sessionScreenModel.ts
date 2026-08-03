@@ -1,4 +1,4 @@
-import type { LifecycleNodeKey } from '@shared'
+import type { LifecycleNodeKey, SessionView } from '@shared'
 import type { ConsoleCapture } from '@/domains/console/components'
 import type {
   AllFilesDiffFile,
@@ -8,7 +8,6 @@ import type {
   DeliveryTab,
   NodeDrawerSession,
 } from '@/domains/delivery/components'
-import type { SessionView } from '@/sessionStore'
 import { deliveryState } from '@/shared/status'
 import type { WorkspaceTree } from './WorkspaceIdentity'
 
@@ -20,8 +19,6 @@ import type { WorkspaceTree } from './WorkspaceIdentity'
 
 /** Whether the work row is split (Activity ‖ Delivery) or solo (Activity alone, Delivery out). */
 export type SpineVariant = 'split' | 'solo'
-/** The three resizable edges of the spine — one custom property each. */
-export type SpineEdge = 'roster' | 'activity' | 'console'
 
 /** Everything `Delivery` reads, minus the callbacks and chrome the View wires itself. */
 export type DeliveryData = Omit<
@@ -109,7 +106,7 @@ export const emptyRichSession = (): RichSessionData => ({
 })
 
 /** Turn one Session plus the screen's UI state into the panel model each region reads. The
- * only derivation is the delivery `lifecycle` (via `deliveryState`, the same one the roster
+ * only derivation is the delivery `lifecycle` (via `deliveryState`, the same one the rail
  * grades from) — everything else is threaded straight through from `ui` and `rich`. */
 export function buildSessionPanel({
   session,
@@ -123,7 +120,7 @@ export function buildSessionPanel({
   consoleExpanded: boolean
   rich?: RichSessionData
 }): SessionPanelModel {
-  const { lifecycle } = deliveryState(session.facts)
+  const { lifecycle } = deliveryState(session.facts, session.posture)
   return {
     variant: ui.variant,
     header: {
