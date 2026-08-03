@@ -54,13 +54,11 @@ export function SessionScreen({
   return (
     <main
       data-testid="cockpit-root"
-      style={
-        {
-          '--c-rail': `${layout.roster}px`,
-          '--c-act': `${layout.activity}px`,
-          '--r-term': `${layout.console}px`,
-        } as React.CSSProperties
-      }
+      style={{
+        '--c-rail': `${layout.roster}px`,
+        '--c-act': `${layout.activity}px`,
+        '--r-term': `${layout.console}px`,
+      }}
       className="flex h-screen w-screen p-inset text-foreground"
     >
       {/* The rail sits OUTSIDE the glass: its rows are planes floating in the room's lit scene, and

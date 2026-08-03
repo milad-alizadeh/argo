@@ -1,11 +1,12 @@
-import { GearIcon, Text } from '@/shared/components/ui'
+import { GearIcon } from '@/shared/components/ui'
+import { RailActionRow } from './RailActionRow'
 
 /**
  * Molecule: `⚙ Archived (n)` at the foot of the rail.
  *
  * It opens the archived list and nothing else — archiving is a status transition a finished session
- * makes by itself, never a button (`cockpit-spec.md` §4.1). As quiet as the spawn row: the sessions
- * behind it are done, and done is not an event that wants the eye.
+ * makes by itself, never a button (`cockpit-spec.md` §4.1). As quiet as the spawn row, and for the
+ * same reason: the sessions behind it are done, and done is not an event that wants the eye.
  */
 export function ArchivedFooter({
   count,
@@ -22,15 +23,12 @@ export function ArchivedFooter({
   onToggle?: () => void
 }): React.JSX.Element {
   return (
-    <button
-      type="button"
+    <RailActionRow
+      icon={GearIcon}
+      label={`Archived (${count})`}
       aria-expanded={open}
       aria-controls={controls}
       onClick={onToggle}
-      className="flex w-full items-center gap-snug rounded-lg px-region py-row text-left text-foreground-faint transition-colors duration-fast hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-    >
-      <GearIcon aria-hidden className="icon-sm" />
-      <Text variant="row">{`Archived (${count})`}</Text>
-    </button>
+    />
   )
 }

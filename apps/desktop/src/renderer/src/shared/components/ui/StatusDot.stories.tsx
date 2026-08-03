@@ -1,7 +1,7 @@
 import { type SessionPosture, type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { DOT_GLOWS, ROSTER_TONES, sessionDot } from '@/shared/status'
+import { DOT_GLOWS, deliveryState, ROSTER_TONES } from '@/shared/status'
 import { StatusDot } from './StatusDot'
 import { Text } from './Text'
 
@@ -81,44 +81,45 @@ export const Quiet: Story = {
   },
 }
 
-// The five states the rail can draw, each with its glow weight and pulse read off the one
+// The five states the rail can draw, each with its tone, glow weight and pulse read off the one
 // derivation — a story cannot show a dot the model would not produce.
-const RAIL_STATES: readonly [string, SessionStatus, SessionPosture][] = [
-  ['running', 'running', 'managed'],
-  ['needs you', 'asking', 'managed'],
-  ['idle', 'idle', 'managed'],
-  ['failed', 'stopped', 'managed'],
-  ['read-only', 'running', 'external'],
+const RAIL_STATES: readonly [SessionStatus, SessionPosture][] = [
+  ['running', 'managed'],
+  ['asking', 'managed'],
+  ['idle', 'managed'],
+  ['stopped', 'managed'],
+  ['running', 'external'],
 ]
 
 /**
  * Every state the rail draws, with its motion truth: running and needs-you burn bright and breathe,
  * failed burns just as bright but holds still, idle stays lit and quiet, and the observed row is a
  * faint hollow ring. The gallery is where "one thing shouting" is judged, so the animating dots are
- * masked for pixel diffing.
+ * masked for pixel diffing. That each of these dots resolves its animation is `Pulsing`'s claim, and
+ * which state breathes at all is `rosterStatus.test.ts`'s.
  */
 export const EveryState: Story = {
   args: { tone: 'run' },
   render: () => (
     <div className="flex items-start gap-region" data-vrt-mask>
-      {RAIL_STATES.map(([word, status, posture]) => (
-        <span className="flex w-20 flex-col items-center gap-gap" key={word}>
-          <StatusDot {...sessionDot(sessionFacts({ status }), posture)} />
-          <Text variant="meta" className="text-foreground-faint">
-            {word}
-          </Text>
-        </span>
-      ))}
+      {RAIL_STATES.map(([status, posture]) => {
+        const { word, dot } = deliveryState(sessionFacts({ status }), posture).rail
+        return (
+          <span className="flex w-20 flex-col items-center gap-gap" key={word}>
+            <StatusDot {...dot} />
+            <Text variant="meta" className="text-foreground-faint">
+              {word}
+            </Text>
+          </span>
+        )
+      })}
     </div>
   ),
   play: async ({ canvasElement }) => {
-    const spans = canvasElement.querySelectorAll('span')
-    const breathing = [...spans].filter(
-      (span) => getComputedStyle(span).animationName === 'pulse-status',
-    )
-    // Two of the five breathe — running and needs-you, the states still moving. Everything that has
-    // come to rest holds still: failed, idle, and the row Argo merely observes.
-    await expect(breathing).toHaveLength(2)
+    const canvas = within(canvasElement)
+    for (const word of ['running', 'needs you', 'idle', 'failed', 'read-only']) {
+      await expect(canvas.getByText(word)).toBeInTheDocument()
+    }
   },
 }
 

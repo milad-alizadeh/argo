@@ -1,4 +1,4 @@
-import { SESSION_STATES, type SessionStatus, sessionFacts } from '@shared'
+import { type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { deliveryState, ROSTER_TONES } from '@/shared/status'
@@ -8,7 +8,15 @@ import { Status } from './Status'
 // reads rather than from words typed here.
 const propsOf = (status: SessionStatus) => {
   const { word, dot } = deliveryState(sessionFacts({ status }), 'managed').rail
-  return { word, tone: dot.tone, glow: dot.glow }
+  return { word, tone: dot.tone }
+}
+
+// The dot is aria-hidden beside a visible word, so it has no role to address — which is the point:
+// the word is the accessible name and the dot must not announce it twice.
+const dotOf = (row: HTMLElement): Element => {
+  const dot = row.querySelector('span')
+  if (dot === null) throw new Error('the row rendered no dot')
+  return dot
 }
 
 const meta = {
@@ -17,8 +25,6 @@ const meta = {
   argTypes: {
     word: { control: 'text' },
     tone: { control: 'select', options: ROSTER_TONES },
-    hollow: { control: 'boolean' },
-    glow: { control: 'boolean' },
     pulse: { control: 'boolean' },
   },
 } satisfies Meta<typeof Status>
@@ -40,54 +46,26 @@ export const Default: Story = {
 }
 
 /**
- * The registry's rule this molecule exists to honour: the dot carries the state and the word
- * stays neutral. Proving the two colours differ is what catches the tone leaking back onto the
- * text.
+ * The registry's rule this molecule exists to honour: the dot carries the state and the word stays
+ * neutral. Proving the two colours differ is what catches the tone leaking back onto the text —
+ * including on the TopBar's connection chip, which passes a tone and still reads as dim text.
  */
 export const NeutralWord: Story = {
   args: propsOf('permission'),
   play: async ({ canvasElement }) => {
     const row = within(canvasElement).getByText('needs you')
-    const dot = row.querySelector('span')
-    await expect(getComputedStyle(row).color).not.toBe(getComputedStyle(dot as Element).color)
-  },
-}
-
-/** A breathing dot: pulse belongs to the state, so anything live or asking for you carries it. */
-export const Pulsing: Story = {
-  args: { ...propsOf('asking'), pulse: true },
-  play: async ({ canvasElement }) => {
-    const dot = canvasElement.querySelector('span > span')
-    await expect(getComputedStyle(dot as Element).animationName).toBe('pulse-status')
+    await expect(getComputedStyle(row).color).not.toBe(getComputedStyle(dotOf(row)).color)
   },
 }
 
 /**
- * Every word the rail can speak for a session, in one frame — the visual-diff surface for the
- * neutral word, the dot tones and the glow. `read-only` is the observed-only row, which earns
- * identity and no state word, so its dot is hollow.
+ * A breathing dot: pulse belongs to the state, so anything live or asking for you carries it.
+ * Asserting the computed animation, not the class, is what catches the utility failing to resolve.
  */
-export const EveryState: Story = {
-  args: propsOf('running'),
-  render: () => {
-    const observed = deliveryState(sessionFacts({}), 'external').rail
-    return (
-      <div className="flex flex-col items-start gap-gap">
-        {SESSION_STATES.map((state) => (
-          <Status key={state} {...propsOf(state)} />
-        ))}
-        <Status word={observed.word} tone={observed.dot.tone} hollow={observed.dot.hollow} />
-      </div>
-    )
-  },
+export const Pulsing: Story = {
+  args: { ...propsOf('asking'), pulse: true },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    // `permission` and `asking` are the one attention state, so `needs you` renders twice; so
-    // do `stopped` and `ended`, which fold to `failed`.
-    await expect(canvas.getAllByText('needs you')).toHaveLength(2)
-    await expect(canvas.getAllByText('failed')).toHaveLength(2)
-    for (const word of ['running', 'idle', 'read-only']) {
-      await expect(canvas.getByText(word)).toBeInTheDocument()
-    }
+    const row = within(canvasElement).getByText('needs you')
+    await expect(getComputedStyle(dotOf(row)).animationName).toBe('pulse-status')
   },
 }

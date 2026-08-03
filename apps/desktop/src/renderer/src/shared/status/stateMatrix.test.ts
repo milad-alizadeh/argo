@@ -1,7 +1,7 @@
 import { type LifecycleModel, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
 import { deliveryState } from './deliveryState'
-import type { RosterWord } from './rosterStatus'
+import type { RosterWord } from './railVocabulary'
 import { STATE_MATRIX_ROWS, stateMatrixInput } from './stateMatrix'
 
 // The state table of `docs/designs/cockpit-surface-matrix.md`, one row per case: given the facts,
@@ -72,7 +72,7 @@ const outcomes: readonly { id: string; model: LifecycleModel | null; word: Roste
       head: 'review',
       terminal: null,
     },
-    word: 'PR open',
+    word: 'PR #42',
   },
   {
     id: 'S7',
@@ -81,7 +81,7 @@ const outcomes: readonly { id: string; model: LifecycleModel | null; word: Roste
       head: 'review',
       terminal: null,
     },
-    word: 'PR open',
+    word: 'PR #42',
   },
   {
     id: 'S8',
@@ -90,7 +90,7 @@ const outcomes: readonly { id: string; model: LifecycleModel | null; word: Roste
       head: 'merge',
       terminal: null,
     },
-    word: 'PR open',
+    word: 'PR #42',
   },
   {
     id: 'S8b',
@@ -99,7 +99,7 @@ const outcomes: readonly { id: string; model: LifecycleModel | null; word: Roste
       head: 'merge',
       terminal: null,
     },
-    word: 'PR open',
+    word: 'PR #42',
   },
   {
     id: 'S9',
@@ -108,9 +108,11 @@ const outcomes: readonly { id: string; model: LifecycleModel | null; word: Roste
       head: 'commits',
       terminal: null,
     },
-    word: 'running',
+    // A check and an approval that stopped speaking for the head commit lock the Merge node, and the
+    // rail says so over the unpushed commit above them: an attention claim is not head-scoped.
+    word: 'blocked',
   },
-  { id: 'S10', model: { nodes: null, head: null, terminal: 'merged' }, word: 'merged' },
+  { id: 'S10', model: { nodes: null, head: null, terminal: 'merged' }, word: 'landed' },
   { id: 'S11', model: { nodes: null, head: null, terminal: 'closed' }, word: 'running' },
 ]
 

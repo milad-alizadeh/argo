@@ -1,5 +1,5 @@
-import type { SessionView } from '@shared'
-import { deliveryState } from '@/shared/status'
+import { isSteerable, type SessionView } from '@shared'
+import { type DeliveryState, deliveryState } from '@/shared/status'
 
 // The Sessions room's rail derivation: the active project's observed sessions turned into the rows
 // the rail draws, in render order, with the finished ones already gone to Archived. Pure and
@@ -8,7 +8,7 @@ import { deliveryState } from '@/shared/status'
 
 /** The rail's status pair, read off `deliveryState` rather than re-declared: the row must not grow
  * a second status vocabulary beside the one every room reads. */
-type Graded = { session: SessionView } & ReturnType<typeof deliveryState>
+type Graded = { session: SessionView } & DeliveryState
 
 /** A fact Argo could not establish reads `unknown` — never a default, never invented
  * (`cockpit-failure-states-spec.md` §8). */
@@ -42,13 +42,6 @@ export interface SessionsRoomModel {
   archivedCount: number
 }
 
-/** Whether Argo merely observes this session, in which case its status degrades away rather than
- * being faked (registry, Session status). `orphaned` takes the same shape: it is a posture on the
- * `managed | external` axis, not a state word (`cockpit-ui-inventory.md`). */
-function isExternal(session: SessionView): boolean {
-  return session.posture !== 'managed'
-}
-
 // A finished or merged session leaves the live rail for Archived by itself — `cockpit-spec.md` §4.1:
 // "archiving is a status transition, never a button". Read off the facts rather than a flag: the
 // lifecycle reached a terminal state, or the session's own process ended.
@@ -78,7 +71,10 @@ function byRecentActivity(sessions: readonly SessionView[]): SessionView[] {
 }
 
 function rowFor({ session, rail }: Graded, selectedId: string | null): RosterRow {
-  const external = isExternal(session)
+  // A session Argo merely observes is ghosted and earns no state word of its own: its status
+  // degrades away rather than being faked. `orphaned` takes the same shape — it is a posture on the
+  // `managed | external` axis, not a state word (`cockpit-ui-inventory.md`).
+  const external = !isSteerable(session.posture)
   return {
     id: session.id,
     name: session.title,
@@ -108,9 +104,11 @@ export function buildSessionsRoomModel({
     session,
     ...deliveryState(session.facts, session.posture),
   }))
-  const gone = graded.filter(hasLeftForArchived)
+  const live: Graded[] = []
+  const gone: Graded[] = []
+  for (const row of graded) (hasLeftForArchived(row) ? gone : live).push(row)
   return {
-    rows: graded.filter((row) => !hasLeftForArchived(row)).map((row) => rowFor(row, selectedId)),
+    rows: live.map((row) => rowFor(row, selectedId)),
     archived: gone.map((row) => rowFor(row, selectedId)),
     archivedCount: gone.length,
   }

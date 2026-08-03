@@ -454,9 +454,11 @@
    * colour is the element's own currentColor, so one utility covers every tone;
    * only the strength is themed.
    * EVERY state glows and the WEIGHT is the state's liveness: `live` burns at the
-   * themed strength, `quiet` (resting, failed) at a fraction of it, `faint` at the
-   * least — the hollow ring of a session Argo only observes. The two steps down are
-   * derived from the themed base so a theme still makes ONE glow decision. */
+   * themed strength, `quiet` (a state at rest — idle, landed) at a fraction of it,
+   * `faint` at the least — the hollow ring of a session Argo only observes. A failure
+   * keeps `live`: it burns as bright as needs-you, it just does not breathe. The two
+   * steps down are derived from the themed base so a theme still makes ONE glow
+   * decision. */
   --glow-blur: 8px;
   --glow-strength-quiet: calc(var(--glow-strength) * 0.4);
   --glow-strength-faint: calc(var(--glow-strength) * 0.22);
