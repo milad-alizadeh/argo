@@ -9,6 +9,8 @@ const meta = {
   component: StatusDot,
   argTypes: {
     tone: { control: 'select', options: ROSTER_TONES },
+    hollow: { control: 'boolean' },
+    glow: { control: 'boolean' },
     pulse: { control: 'boolean' },
     label: { control: 'text' },
   },
@@ -50,7 +52,32 @@ export const Pulsing: Story = {
   },
 }
 
-/** The whole tone union in one frame — the visual-diff surface for the palette and its glow. */
+/**
+ * A session Argo only observes: the dot keeps the row's identity and drops every claim about
+ * its state, so it renders as a ring with nothing inside it.
+ */
+export const Hollow: Story = {
+  args: { tone: 'gray', label: 'Read-only', hollow: true },
+  play: async ({ canvasElement }) => {
+    const ring = getComputedStyle(within(canvasElement).getByRole('img', { name: 'Read-only' }))
+    await expect(ring.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(ring.borderTopWidth).not.toBe('0px')
+  },
+}
+
+/**
+ * The live glow, which `running` alone earns. Every other state renders the flat dot above —
+ * an always-glowing dot spends attention on states that never asked for it.
+ */
+export const Glowing: Story = {
+  args: { tone: 'run', label: 'Running', glow: true },
+  play: async ({ canvasElement }) => {
+    const dot = within(canvasElement).getByRole('img', { name: 'Running' })
+    await expect(getComputedStyle(dot).boxShadow).not.toBe('none')
+  },
+}
+
+/** The whole tone union in one frame — the visual-diff surface for the palette. */
 export const AllTones: Story = {
   args: { tone: 'run' },
   render: () => (

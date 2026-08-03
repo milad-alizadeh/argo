@@ -3,18 +3,20 @@ import type {
   LifecycleNodeKey,
   LifecycleNodeState,
   SessionFacts,
+  SessionPosture,
   SessionStatus,
-  TerminalState,
 } from '@shared'
 
-// The roster row's word — a POINTER into the lifecycle's head node, never a value of its
-// own. Tone is a name equal to its `--tone-*` token; a View interpolates
-// `text-tone-${tone}` directly, no map. No colour lives here.
+// The rail's status vocabulary, derived from `docs/designs/cockpit-status-vocabulary.md`. State is
+// carried by the DOT; the word stays neutral, so nothing here is a colour. A tone is a name equal
+// to its `--tone-*` token and a View interpolates `text-tone-${tone}` directly, no map.
 
 export const ROSTER_TONES = ['run', 'amber', 'done', 'gray', 'red', 'stale', 'landed'] as const
 
 export type RosterTone = (typeof ROSTER_TONES)[number]
 
+// The icon vocabulary the Delivery strip still draws from (`domains/delivery`). The rail itself
+// renders no status icon: `dot · name · word` says each thing once.
 export const ROSTER_ICONS = [
   'arrow-line-up',
   'check',
@@ -32,67 +34,117 @@ export const ROSTER_ICONS = [
 
 export type RosterIcon = (typeof ROSTER_ICONS)[number]
 
-export interface RosterStatus {
-  word: string
+/** The registry's four Session-status words. `null` is the external/orphaned row, which earns
+ * identity but no state word. */
+export type SessionWord = 'running' | 'idle' | 'needs you' | 'failed'
+
+/** The five delivery milestones the rail may claim over session status (issue 267). */
+export type DeliveryClaim = 'blocked' | 'CI failed' | 'CI running' | 'PR open' | 'merged'
+
+/** `read-only` is the kind label for an external/orphaned row. It is the one rail word absent
+ * from the registry, added by issue 267 — and it is a KIND, not a state, so the registry's
+ * one-word-per-state rule is intact. */
+export type RosterWord = SessionWord | DeliveryClaim | 'read-only'
+
+export interface SessionDot {
   tone: RosterTone
-  icon: RosterIcon
+  /** A ring with no fill: the registry's rendering for a session Argo only observes. */
+  hollow: boolean
+  /** The live glow, which the registry grants to `running` alone. */
+  glow: boolean
 }
 
-// The registry's Session-status words (cockpit-status-vocabulary.md): `permission` and `asking`
-// are the ONE attention state and share its word, because a row saying which flavour of "come
-// here" this is would be two tellings of the same interrupt. Posture (`external`/`orphaned`) is
-// an identity attribute rather than a state, so it has no word here at all.
-export const SESSION_STATUS: Record<SessionStatus, RosterStatus> = {
-  running: { word: 'Running', tone: 'run', icon: 'circle-notch' },
-  permission: { word: 'Needs you', tone: 'amber', icon: 'warning' },
-  asking: { word: 'Needs you', tone: 'amber', icon: 'warning' },
-  idle: { word: 'Idle', tone: 'gray', icon: 'circle' },
-  stopped: { word: 'Failed', tone: 'red', icon: 'x' },
-  ended: { word: 'Ended', tone: 'stale', icon: 'circle' },
+export interface RailStatus {
+  word: RosterWord
+  dot: SessionDot
 }
 
-const TERMINAL_STATUS: Record<TerminalState, RosterStatus> = {
-  merged: { word: 'Landed', tone: 'landed', icon: 'git-merge' },
-  closed: { word: 'Closed', tone: 'stale', icon: 'prohibit' },
+// `stopped` and `ended` both fold to `failed` — settled by `cockpit-app-shell-spec.md`, Copy
+// ("the same fold as the dot"), which is also why `ended`'s dot folds to red rather than keeping
+// the registry table's dim grey.
+// `permission` and `asking` both fold to `needs you`. That leg is DERIVED BY
+// `cockpit-ui-inventory.md` AND STATED BY NO SETTLED SPEC — the weakest leg of this table.
+const SESSION_WORDS: Record<SessionStatus, SessionWord> = {
+  running: 'running',
+  idle: 'idle',
+  permission: 'needs you',
+  asking: 'needs you',
+  stopped: 'failed',
+  ended: 'failed',
 }
 
-// Keyed by the head node and the state it is in — the row can only ever speak for
-// the stage R1 already chose, so it cannot re-rank the nodes behind the lifecycle's
-// back. A pair absent from the table wants nothing from you (`now`/`wait`/`done`),
-// which is where the Session's own triage word belongs.
-const HEAD_STATUS: Partial<
-  Record<
-    `${LifecycleNodeKey}:${LifecycleNodeState}`,
-    RosterStatus | ((facts: SessionFacts) => RosterStatus)
-  >
-> = {
-  'commits:gate': { word: 'Commit ready', tone: 'amber', icon: 'git-commit' },
-  'commits:sync': (facts) => ({
-    word: `↑${facts.unpushed} unpushed`,
-    tone: 'run',
-    icon: 'arrow-line-up',
-  }),
-  'pr:gate': { word: 'Create PR ready', tone: 'amber', icon: 'git-pull-request' },
-  'pr:auto': { word: 'Opening PR · auto', tone: 'run', icon: 'gear' },
-  // CI only runs against a PR (R4), so the row names the PR triage is watching.
-  'ci:now': (facts) =>
-    facts.pr
-      ? { word: `PR #${facts.pr.num} · CI`, tone: 'run', icon: 'git-pull-request' }
-      : SESSION_STATUS[facts.status],
-  'ci:fail': { word: 'CI failing', tone: 'amber', icon: 'warning' },
-  'review:now': { word: 'In review', tone: 'run', icon: 'user' },
-  'review:warn': { word: 'Changes requested', tone: 'amber', icon: 'user' },
-  'merge:gate': { word: 'Ready to merge', tone: 'amber', icon: 'git-pull-request' },
-  'merge:auto': { word: 'Auto-merge armed', tone: 'run', icon: 'gear' },
+const SESSION_DOTS: Record<SessionWord, SessionDot> = {
+  running: { tone: 'run', hollow: false, glow: true },
+  idle: { tone: 'gray', hollow: false, glow: false },
+  'needs you': { tone: 'amber', hollow: false, glow: false },
+  failed: { tone: 'red', hollow: false, glow: false },
 }
 
-// Takes the model the lifecycle is already rendering, so the row cannot be derived
-// from a second, differently-timed reading of the same facts.
-export function rosterStatus(facts: SessionFacts, model: LifecycleModel | null): RosterStatus {
-  if (!model) return SESSION_STATUS[facts.status]
-  if (model.terminal) return TERMINAL_STATUS[model.terminal]
+const OBSERVED_DOT: SessionDot = { tone: 'gray', hollow: true, glow: false }
 
-  const status = HEAD_STATUS[`${model.head}:${model.nodes[model.head]}`]
-  if (!status) return SESSION_STATUS[facts.status]
-  return typeof status === 'function' ? status(facts) : status
+/** Whether Argo merely observes this Session, in which case its status degrades away rather
+ * than being faked (registry, Session status: "identity, no state word"). `orphaned` renders as
+ * an `external`-shaped row (`cockpit-ui-inventory.md`). */
+function isObservedOnly(posture: SessionPosture): boolean {
+  return posture !== 'managed'
+}
+
+export function sessionStatusWord(
+  facts: SessionFacts,
+  posture: SessionPosture,
+): SessionWord | null {
+  return isObservedOnly(posture) ? null : SESSION_WORDS[facts.status]
+}
+
+export function sessionDot(facts: SessionFacts, posture: SessionPosture): SessionDot {
+  return isObservedOnly(posture) ? OBSERVED_DOT : SESSION_DOTS[SESSION_WORDS[facts.status]]
+}
+
+// Keyed by the head node and the state it is in, so the rail cannot re-rank the lifecycle's
+// nodes behind its back. A pair absent from the table has no milestone to claim, which is where
+// the Session's own word belongs. `ci:stale` / `review:stale` are `blocked`: a check or an
+// approval that no longer speaks for the head commit is exactly what locks the Merge node.
+const DELIVERY_CLAIMS: Partial<Record<`${LifecycleNodeKey}:${LifecycleNodeState}`, DeliveryClaim>> =
+  {
+    'ci:wait': 'PR open',
+    'ci:now': 'CI running',
+    'ci:fail': 'CI failed',
+    'ci:stale': 'blocked',
+    'review:now': 'PR open',
+    'review:warn': 'PR open',
+    'review:stale': 'blocked',
+    'merge:gate': 'PR open',
+    'merge:auto': 'PR open',
+  }
+
+export function deliveryClaimWord(model: LifecycleModel | null): DeliveryClaim | null {
+  if (!model) return null
+  if (model.terminal) return model.terminal === 'merged' ? 'merged' : null
+  return DELIVERY_CLAIMS[`${model.head}:${model.nodes[model.head]}`] ?? null
+}
+
+// The priority pick (issue 267): attention/needs-input → attention/failure → delivery milestone →
+// liveness → kind. A delivery claim beats session status (registry, Roster note).
+// The ticket's tier-2 `errored` is absent: no observed fact can produce it today, and inventing
+// one to reach a word would be a fabrication. It joins the table when a fact exists.
+const WORD_TIERS: readonly (readonly RosterWord[])[] = [
+  ['needs you', 'blocked'],
+  ['failed', 'CI failed'],
+  ['CI running', 'PR open', 'merged'],
+  ['running', 'idle'],
+]
+
+export function rosterWord(
+  facts: SessionFacts,
+  posture: SessionPosture,
+  lifecycle: LifecycleModel | null,
+): RosterWord {
+  const session = sessionStatusWord(facts, posture)
+  const claim = deliveryClaimWord(lifecycle)
+  for (const tier of WORD_TIERS) {
+    const won = tier.find((word) => word === session || word === claim)
+    if (won) return won
+  }
+  // Only an observed-only row reaches here: a managed row always has a liveness word.
+  return 'read-only'
 }
