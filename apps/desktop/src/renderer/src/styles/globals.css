@@ -150,6 +150,7 @@
   --spacing-project-strip: var(--project-strip-width);
   --spacing-project-tab: var(--project-tab-size);
   --spacing-traffic-lights: var(--traffic-lights-clearance);
+  --spacing-context-ring: var(--context-ring-size);
 
   /* The one shared strip height (min-h-strip): every tab strip and header bar stands this
    * tall, so columns line up. Row heights are the density's vertical half. */

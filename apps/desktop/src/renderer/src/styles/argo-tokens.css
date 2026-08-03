@@ -428,6 +428,11 @@
   --project-tab-size: 38px;
   --traffic-lights-clearance: 52px;
 
+  /* The session header's context ring (#268). A structural box like the chrome's above: it is
+   * sized to be glanceable across the band rather than to a rhythm step. Promoted from the
+   * session-interior prototype's own measure. */
+  --context-ring-size: 56px;
+
   /* Row heights — the density's vertical half, as the prototypes measured it. */
   --row-h-tight: 20px; /* a tree row, a chip row */
   --row-h: 22px; /* a roster/list row */

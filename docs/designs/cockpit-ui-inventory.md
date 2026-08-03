@@ -84,27 +84,28 @@ promised a Delivery coupling that the room slices must not have. The map carries
 
 ## Retired, awaiting removal
 
-**Two panel domains are still standing.** `delivery/` and `console/` derive from
-ADR-0009's story/work split, which the redesign retires (`cockpit-spec.md` §12). They stay in the
-boundary map while their code is on disk, so the gate keeps guarding them, and each entry is
-removed by the ticket that moves its last file. Their components are listed here so that nothing
-in the tree lacks a row. Three are **gone**: `roster/` (#267 rebuilt the rail inside
+**One panel domain is still standing.** `delivery/` derives from
+ADR-0009's story/work split, which the redesign retires (`cockpit-spec.md` §12). It stays in the
+boundary map while its code is on disk, so the gate keeps guarding it, and the entry is
+removed by the ticket that moves its last file. Its components are listed here so that nothing
+in the tree lacks a row. Four are **gone**: `roster/` (#267 rebuilt the rail inside
 `rooms-sessions` and removed the module from the boundary map), `concierge/` (#284 deleted it whole,
 ADR-0019 records why) and `activity/` (#261 deleted it whole, along with `rowCaret.ts` — `Run`, `Phase` and
 `Actor` are retired vocabulary and #261's own criterion is that no such name survives anywhere.
 `NowLine`'s successor is `NowHead` inside the Dock header row; `RosterRow`'s is `SessionRow`.
 `rowCaret`'s one idea worth carrying — a non-expandable row still reserving the caret's width —
-is recorded here for #272's generic node tree, which is the only thing that wanted it).
+is recorded here for #272's generic node tree, which is the only thing that wanted it) and
+`console/` (#268 deleted it whole: the channel strip died with the Console panel, and the PTY view
+became the shared `TerminalPane`).
 
 | Existing | Disposition |
 |---|---|
 | `domains/activity/components/rowCaret.ts` | **Delete, unless #272 wants the `reserved` rule.** Read by `RunRow`, `PhaseGroup` and `RosterRow`, all of which are deletions. Its one idea worth carrying is that a non-expandable row still reserves the caret's width, which the Work room's generic node tree will want. |
-| `domains/console/components/`: `consoleChannels`, `captureLabel`, `resolveActiveChannel`, `feedLines` | **`consoleChannels` travels with the salvage; the other three delete.** `LiveTerminal` (→ `TerminalPane`, #274) reads `LIVE_CHANNEL_LABEL` from `consoleChannels`, so that module moves with it. The channel-strip derivations die with the strip. |
 | `domains/delivery/components/`: `diffModel`, `nodeDrawerModel` | **Travel with the salvage (#269–#271).** These are the type modules beneath the components marked salvage above — `diffModel` under `FindingCard`/`FileDiff`/`AllFilesDiff`/`CommitGroup`, `nodeDrawerModel` under `NodeDrawer/*`. Moving a component without its type module is what makes a salvage import across the boundary instead of relocating. |
 | ~~`domains/roster/`~~ | **Done (#267).** `Roster` and `SessionRow` were rebuilt onto the registry in `rooms/sessions/components/`, `ContextGauge` moved there unchanged for #268 to render as `ContextRing`, and `EmptyRoster` was **deleted**: the zero-state is the bare `+ New session` row, so there is no empty block to hold. |
 | `domains/delivery/`: `Delivery`, `DeliveryTabs`, `DeliveryLifecycle`, `LifecycleNode`, `NodeDrawer/*`, `CiCard`, `CheckOutput`, `PrChecksList`, `PrAnchor`, `CommitGroup`, `FileDiff`, `AllFilesDiff`, `FindingCard`, `findingState`, `lifecycleNodeState` | **Salvage into `rooms-sessions`.** The lifecycle rail, the node drawer bodies, the check rows and the diff views all have rows below. Salvage means moving the file, never importing across the boundary. |
-| `domains/console/`: `Console`, `ConsoleChannel`, `ConsoleChannelTab`, `LiveTerminal` | **Delete the channel strip, salvage `LiveTerminal`.** The Console panel's job belongs to the Dock and to the Code room's scratch terminal; the one thing worth keeping is the PTY view, which becomes `TerminalPane`. |
-| Renderer root: `SessionScreen`, `SessionHeader`, `WorkspaceIdentity`, `App` | **Rewrite.** #264 landed the root composition as `CockpitScreen` (the pure View: strip + bar + stage) over `RoomStage` (the room switch), so `SessionScreen` stays the **Sessions room** for #268 to rewrite rather than becoming the root. #267 took its RAIL (now `rooms/sessions/components/Roster`) and left the interior here: `SessionScreen` and `sessionScreenModel` render and type `domains/{console,delivery}`, which `rooms-sessions` is forbidden to import, so the interior moves with the salvage rather than ahead of it. `App` is the container. `RoomStage`'s Work and Code arms are scaffolding #272/#274 delete. `SessionHeader` has a row below. `WorkspaceIdentity` is superseded by `SessionMeta`'s branch segment. |
+| ~~`domains/console/`~~ | **Done (#268).** The channel strip (`Console`, `ConsoleChannel`, `ConsoleChannelTab`) and its three derivations (`captureLabel`, `resolveActiveChannel`, `feedLines`) were **deleted** — the Dock is the session's one monospace surface and the Code room's scratch terminal is the other. `LiveTerminal` became `renderer-shared`'s `TerminalPane`, and `consoleChannels` did **not** travel with it: the pane takes its accessible name as a prop, so the channel vocabulary had nothing left to name. |
+| Renderer root: ~~`SessionScreen`~~, ~~`SessionHeader`~~, ~~`WorkspaceIdentity`~~, `App` | **Done for three of four (#268); `App` stays the container.** #264 landed the root composition as `CockpitScreen` (the pure View: strip + bar + stage) over `RoomStage` (the room switch), so `SessionScreen` stays the **Sessions room** for #268 to rewrite rather than becoming the root. #267 took its RAIL (now `rooms/sessions/components/Roster`) and left the interior here: `SessionScreen` and `sessionScreenModel` render and type `domains/{console,delivery}`, which `rooms-sessions` is forbidden to import, so the interior moves with the salvage rather than ahead of it. `App` is the container. `RoomStage`'s Work and Code arms are scaffolding #272/#274 delete. #268 moved `SessionScreen` into `rooms/sessions/components/` and split `sessionScreenModel` into the room's four derivations; `SessionHeader` was rebuilt as the room's own, and `WorkspaceIdentity` was **deleted** — `SessionMeta`'s branch segment supersedes it. Its `sessionScreenModel.test.ts` stateMatrix sweep was dropped rather than re-based: `shared/status/stateMatrix.test.ts` already sweeps every S-row through `deliveryState` → `lifecycleModel`, so re-basing it would have been a second copy of that coverage. |
 
 ---
 
@@ -162,12 +163,13 @@ own molecule.
 
 | Primitive | Tier | Status | States | Seed / authority |
 |---|---|---|---|---|
-| `MasterDetail` | organism | `spec` | list-left navigation plus one continuous virtualised feed right, scroll-spy highlight, click-to-jump | `cockpit-spec.md` §4.3, "Cross-surface interaction model": the whole cockpit shares one navigation feel |
+| `MasterDetail` | organism | `built · shared/components/ui/MasterDetail.tsx` | list-left navigation plus one continuous feed right, scroll-spy highlight, click-to-jump. The nav pane is a render prop, so each surface composes its own sections while the highlight and the jump stay the primitive's. **Not virtualised yet** — #268 built the interaction model and left the windowing to the first surface that measures a problem. | `cockpit-spec.md` §4.3, "Cross-surface interaction model": the whole cockpit shares one navigation feel |
 | `GutterDiff` | organism | `partial · domains/delivery/components/FileDiff.tsx` | added · removed · context · anchored finding · comment thread · collapsed hunk | session-interior prototype, "self-contained GitHub gutter diffs (shared by every detail pane)" |
-| `TerminalPane` | organism | `partial · domains/console/components/LiveTerminal.tsx` | live · dead PTY (offers `Relaunch`, never a status word) · expanded · collapsed | `CONTEXT.md`, Scratch terminal: "same PTY machinery as a session terminal, minus the agent" |
+| `TerminalPane` | organism | `built · shared/components/ui/TerminalPane.tsx` | live · **unattached** (no PTY: it says so rather than painting a fake prompt) · expanded · collapsed. Dead-PTY `Relaunch` stays unbuilt — nothing reports a dead PTY yet. It takes `attach` as a prop rather than reading `window.cockpit`, so a primitive never knows the bridge (#268). | `CONTEXT.md`, Scratch terminal: "same PTY machinery as a session terminal, minus the agent" |
 | `Menu` | molecule | `built · shared/components/ui/dropdown-menu.tsx` | closed · open · row enabled · row disabled with reason | `BranchMenu` and `BranchManage` (prototype seeds), the project tab context menu |
 | `Tooltip` | molecule | `built · shared/components/ui/tooltip.tsx` | hidden · shown | the active project tab's name plus `last synced` (#201) is the only mandated tooltip in the shell |
 | `EmptyState` | molecule | `spec` | one line of copy plus zero, one or two actions | the Code room's `EmptyFolder` / `NoFileOpen` / `UnsupportedFile`, the Work room's four empty-pool tiers. **Not** the roster zero-state: #267 settled that as the bare `+ New session` row, with no empty block at all |
+| `useScrollSpy` | pure hook | `built · shared/components/ui/useScrollSpy.ts` | which feed section is in view, and the jump to one. `MasterDetail`'s half that is not markup; named here by #268 so the interaction model has one implementation rather than one per surface. | `cockpit-spec.md` §4.3 |
 | `Kbd` | atom | `spec` | a rendered key hint | the canonical keymap is shown in the palette, not in chrome |
 
 `TerminalPane` must import `@xterm/xterm/css/xterm.css`. Without it the pane renders ghost rows and
@@ -253,22 +255,36 @@ model concern, asserted in `buildSessionsRoomModel`, not a component state.
 
 | Component | Tier | Status | States | Seed |
 |---|---|---|---|---|
-| `SessionPlane` | organism | `spec` | one continuous glass surface holding header, tabs, body and Dock. Per settled state: `fresh · activity · idle · delivery* · external`. Absent in `zero`. | `data-component="SessionPlane"`; the settled prototype's own section reads `SESSION CARD (one continuous glass)`. The plane spelling matches the contract's plane family; `SessionCard` is recorded as its superseded synonym so no ticket coins both. |
-| `SessionHeader` | organism | `partial · SessionHeader.tsx` (renderer root) | one band, glance only: **no action buttons and no `⋯` menu**. Takes per state: running · idle · external · fresh. | `data-component="SessionHeader"` |
-| `ContextRing` | atom | `partial · rooms/sessions/components/ContextGauge.tsx` | honest `~n%` · **empty ring reading `unknown`** for external · `—/ready` for a fresh session. An estimate is never dressed as a measurement. | `cockpit-spec.md` §4.2 |
-| `SessionMeta` | molecule | `partial · WorkspaceIdentity.tsx` (branch segment only) | order is fixed: `status · model · mode · branch(+∆/↑) · elapsed · intent ↗`. Collapses the intent chip to `#<n> ↗` when the session is titled from its ticket. External drops `intent` (read-only). `mode ∈ Ask · Plan · Code · unknown`. | `cockpit-spec.md` §4.2; `CONTEXT.md`, Autonomy cluster |
-| `SessionTabs` | molecule | `spec` | **exactly two**: `Activity · Delivery`. Outcomes was cut (C2.2). | `cockpit-spec.md` §4.2 |
+| `SessionScreen` | screen | `built · rooms/sessions/components/SessionScreen.tsx` | rail alone (nothing selected, which is also `zero`) · rail + plane. Pure View: it writes the room's three layout px onto `--c-rail`/`--c-act`/`--r-dock` and nothing inside sizes off a token. | the room itself; named here by #268, which moved it off the renderer root |
+| `SessionPlane` | organism | `built · rooms/sessions/components/SessionPlane.tsx` | one continuous glass surface holding header, tabs, body and Dock. Per settled state: `fresh · activity · idle · delivery* · external`. Absent in `zero`. | `data-component="SessionPlane"`; the settled prototype's own section reads `SESSION CARD (one continuous glass)`. The plane spelling matches the contract's plane family; `SessionCard` is recorded as its superseded synonym so no ticket coins both. |
+| `SessionHeader` | organism | `built · rooms/sessions/components/SessionHeader.tsx` | one band, glance only: **no action buttons and no `⋯` menu**. Takes per state: running · idle · external · fresh. | `data-component="SessionHeader"` |
+| `ContextRing` | atom | `built · rooms/sessions/components/ContextRing.tsx` | honest `~n%` · **empty ring reading `unknown`** for external · `—`/`unknown` for a session whose context Argo cannot establish, which is also the fresh-session reading. An estimate is never dressed as a measurement — hence the tilde, and hence the ring drawing NO arc rather than one that could read as `0%`. **The estimate is `contextEstimate.ts`: the newest turn's input side (prompt + cache reads) over an Argo-owned model→window table. That table is derived here and wants a bless** — an id it does not know yields `unknown` rather than a guessed window. | `cockpit-spec.md` §4.2 |
+| `SessionMeta` | molecule | `built · rooms/sessions/components/SessionMeta.tsx` | order is fixed: `status · model · mode · branch(+∆/↑) · elapsed · intent ↗`. Collapses the intent chip to `#<n> ↗` when the session is titled from its ticket. External drops `intent` (read-only). `mode ∈ Ask · Plan · Code · unknown`. The branch segment sheds the branch NAME once there is a `∆`/`↑` to report — the top bar and the roster row already named it. **`elapsed` is claimed only where it is observable**: a running turn's start is not in the runtime tree, so the segment is absent rather than reporting the age of the last record as a duration. | `cockpit-spec.md` §4.2; `CONTEXT.md`, Autonomy cluster |
+| `SessionTabs` | molecule | `built · rooms/sessions/components/SessionTabs.tsx` | **exactly two**: `Activity · Delivery`. Outcomes was cut (C2.2). | `cockpit-spec.md` §4.2 |
 
 The title resolves through a stable fallback chain (explicit name → linked ticket →
 conversation-derived) and never rewrites per turn, so the rail and the header always match. That is
 a model rule, not a component state.
 
+The room's own derivations, added by #268 for the same reason the shell has its own: what the
+interior refuses to claim belongs in a tested pure function rather than in a View's branches. Each
+lives inside the slice and reaches the renderer root through its barrel.
+
+| Component | Tier | Status | States | Seed / authority |
+|---|---|---|---|---|
+| `buildSessionInterior` | pure fn | `built · rooms/sessions/interiorModel.ts` | one Session + the room's UI state → header, tab, Activity, Dock, plus `fresh` (nothing observed yet, so the Dock is home) | `cockpit-spec.md` §4.2 |
+| `buildInteriorHeader` | pure fn | `built · rooms/sessions/interiorHeader.ts` | the title as resolved, the ring's estimate, the meta line in its ONE fixed order, and the intent chip's two forms. A segment Argo cannot establish is ABSENT, except model and mode, whose absence is worth saying out loud. | `cockpit-spec.md` §4.2 |
+| `contextPercent` · `contextWindow` · `sessionUsage` | pure fn | `built · rooms/sessions/contextEstimate.ts` | the ring's arc, or `null` when either half of the estimate is missing. External floors at `null` by POSTURE, not by data. | `CONTEXT.md`, Usage; `cockpit-spec.md` §4.2 |
+| `subagentGroup` · `stepDot` | pure fn | `built · rooms/sessions/interiorSubagents.ts` | the group and its rows, plus the blueprint tier read off what the tree carries: `phased` (a group name) · `labelled` (labels only) · `flat`. Nothing fills a tier in. | `CONTEXT.md` L3, sub-agent grouping |
+| `buildActivity` | pure fn | `built · rooms/sessions/interiorActivity.ts` | the timeline newest-first, each turn's steps and plan, the compaction marks, and the ONE ordered item list both panes read. An unparseable transcript yields an empty surface, not an error. | `cockpit-failure-states-spec.md` §8 |
+| `buildDock` · `nowHead` | pure fn | `built · rooms/sessions/interiorDock.ts` | `pty` for a session Argo drives, `transcript` for one it only watches; the now-head's task, plan and `last`. | `cockpit-spec.md` §4.2 |
+
 ### Dock
 
 | Component | Tier | Status | States | Seed |
 |---|---|---|---|---|
-| `Dock` | organism | `spec` | always-on and expandable: collapsed (header row only) · expanded · **fresh, where the Dock is home** (the invitation body lifted from the fresh-session study) | session-interior prototype, `TERMINAL DOCK` and `FRESH SESSION` sections |
-| `NowHead` | molecule | `spec` | current task plus plan `N/M`, living **in** the Dock header row, not on a line of its own | prototype: "now-head lives IN the dock header row" |
+| `Dock` | organism | `built · rooms/sessions/components/Dock.tsx` | always-on and expandable: collapsed (header row only) · expanded · **fresh, where the Dock is home** (the invitation body lifted from the fresh-session study) | session-interior prototype, `TERMINAL DOCK` and `FRESH SESSION` sections |
+| `NowHead` | molecule | `built · rooms/sessions/components/NowHead.tsx` | current task plus plan `N/M`, living **in** the Dock header row, not on a line of its own | prototype: "now-head lives IN the dock header row" |
 
 **You steer by typing at the Dock's prompt and stop with Ctrl-C.** There is no steer widget and no
 Stop button, so neither is in this inventory. A `permission` prompt is answered here too: it is a
@@ -284,15 +300,16 @@ Workspace · Compaction · Usage`.
 
 | Component | Tier | Status | States | Seed |
 |---|---|---|---|---|
-| `ActivityPane` | organism | `spec` | left holds a `Subagents` group above a `Timeline` list, right holds the selected item's detail | prototype, `Activity master–detail` |
-| `SubagentGroup` | organism | `spec` | one collapsible group, **never interleaved into the timeline and never cards**. Blueprint degrades per CLI: full phased (Claude Code) · labelled tree, no phases (Codex) · flat `N subagents running` (bare). The cockpit never invents a phase a CLI did not report. | prototype, `Subagents = its own section`; `CONTEXT.md` L3 blueprint |
-| `SubagentRow` | molecule | `spec` | `dot · name · target · status`, dense enough to scale to ~30 | prototype, "Dense rows scale to ~30" |
-| `TurnTimeline` | organism | `spec` | the step list, folded by default | prototype, `folded Turn timeline` |
-| `TurnRow` | molecule | `spec` | stop reason ∈ `end_turn · max_tokens · max_turn_requests · refusal · cancelled · unknown`. `unknown` is rendered, never guessed. | `CONTEXT.md` L3, Turn |
-| `ToolCallRow` | molecule | `spec` | status `pending · in_progress · completed · failed`; kind read/edit/execute/search; target file | `CONTEXT.md` L3, Tool Call |
-| `PlanProgress` | molecule | `spec` | `N/M` plus per-entry `pending · in_progress · completed` | `CONTEXT.md` L3, Plan |
-| `CompactionMarker` | molecule | `spec` | rendered **in** the turn sequence with the resume chain stitched across it, so condensed history reads as continuous | `cockpit-spec.md` §4.2 |
-| `AgentFeed` | organism | `spec` | the detail pane: the selected subagent's live feed, or the selected step's prose | prototype, `detail pane` |
+| `ActivityPane` | organism | `built · rooms/sessions/components/ActivityPane.tsx` | left holds a `Subagents` group above a `Timeline` list, right holds the selected item's detail | prototype, `Activity master–detail` |
+| `SubagentGroup` | organism | `built · rooms/sessions/components/SubagentGroup.tsx` | one collapsible group, **never interleaved into the timeline and never cards**. Blueprint degrades per CLI: full phased (Claude Code) · labelled tree, no phases (Codex) · flat `N subagents running` (bare). The cockpit never invents a phase a CLI did not report. | prototype, `Subagents = its own section`; `CONTEXT.md` L3 blueprint |
+| `SubagentRow` | molecule | `built · rooms/sessions/components/SubagentRow.tsx` | `dot · name · target · status`, dense enough to scale to ~30 | prototype, "Dense rows scale to ~30" |
+| `TurnTimeline` | organism | `built · rooms/sessions/components/TurnTimeline.tsx` | the step list, folded by default | prototype, `folded Turn timeline` |
+| `TurnRow` | molecule | `built · rooms/sessions/components/TurnRow.tsx` | stop reason ∈ `end_turn · max_tokens · max_turn_requests · refusal · cancelled · unknown`. `unknown` is rendered, never guessed. | `CONTEXT.md` L3, Turn |
+| `ToolCallRow` | molecule | `built · rooms/sessions/components/ToolCallRow.tsx` | status `pending · in_progress · completed · failed`; kind read/edit/execute/search; target file | `CONTEXT.md` L3, Tool Call |
+| `PlanProgress` | molecule | `built · rooms/sessions/components/PlanProgress.tsx` | `N/M` plus per-entry `pending · in_progress · completed` | `CONTEXT.md` L3, Plan |
+| `CompactionMarker` | molecule | `built · rooms/sessions/components/CompactionMarker.tsx` | rendered **in** the turn sequence with the resume chain stitched across it, so condensed history reads as continuous | `cockpit-spec.md` §4.2 |
+| `rowRecipes` | pure fn | `built · rooms/sessions/components/rowRecipes.ts` | the ONE box and the ONE selected wash every row of the Activity list wears — `SubagentRow` and `ToolCallRow` — so the two sections read as one list. Selection is an ink wash, never a fill: the dot is already carrying that row's state. Named here by #268. | `penumbra` token contract (#262) |
+| `AgentFeed` | organism | `built · rooms/sessions/components/AgentFeed.tsx` | the detail pane: the selected subagent's live feed, or the selected step's prose | prototype, `detail pane` |
 
 An unparseable transcript renders `unknown` on the affected fact and **leaves the dot alone**.
 Observation failure is not work failure, and red is reserved for the work actually breaking.
@@ -303,7 +320,7 @@ One review surface across the pre-PR / PR-open boundary, reshaping only its rail
 
 | Component | Tier | Status | States | Seed |
 |---|---|---|---|---|
-| `DeliveryPane` | organism | `partial · domains/delivery/components/Delivery.tsx` | the same two-pane master/detail as Activity; the sub-tab selects what the left list contains | prototype, `DELIVERY master–detail two-pane` |
+| `DeliveryPane` | organism | `spec` (the tab exists and says what it is waiting for; #268 left the review surface to #269–#271, and `domains/delivery/` is no longer composed by anything) | the same two-pane master/detail as Activity; the sub-tab selects what the left list contains | prototype, `DELIVERY master–detail two-pane` |
 | `DeliveryControlLine` | organism | `spec` | one line: sub-tabs with badges, the lifecycle rail, one CTA. **No trailing free-text status string.** | prototype, `ONE control line` |
 | `DeliverySubTabs` | molecule | `partial · domains/delivery/components/DeliveryTabs.tsx` | `Overview · Code Review · Files (N)`, with a red blocking badge on Code Review | `cockpit-spec.md` §4.3 |
 | `LifecycleRail` | organism | `partial · domains/delivery/components/DeliveryLifecycle.tsx` | a **state readout, not navigation**. It never tries to be a router. | prototype, `CI pipeline rail`; matrix rows 5 to 9 |
@@ -442,6 +459,13 @@ one-line decision, not a design question, but the decision is this document's an
   observation-only with steering unrecoverable, which is exactly external's posture, so it takes
   external's ghosted row and hollow dot rather than a word of its own.
 - **`queued` is dropped.** It is in today's `SESSION_STATUS` table and in no settled document.
+- **The model → context-window table** (`rooms/sessions/contextEstimate.ts`, #268). The ring shows an
+  honest `~n%`, and `CONTEXT.md` maps context `used`/`size` onto ACP's session-level `UsageUpdate` —
+  but nothing observes `size` today, and no settled document says where a window comes from. #268
+  derives it as an Argo-owned versioned table keyed by the model-id prefix a transcript reports, the
+  same shape `CONTEXT.md` sanctions for the pricing table, with **`unknown` for any id it does not
+  know** rather than a guessed window. The *shape* is the decision that wants a bless; the numbers
+  are a maintained fact like any published price.
 
 ## Unhomed and open
 

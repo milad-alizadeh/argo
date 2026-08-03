@@ -3,13 +3,12 @@ import { CockpitScreenView } from '@/CockpitScreenView'
 import {
   RoomStage,
   useGitGroup,
-  useSessionPanel,
+  useSessionInterior,
   useSessionStore,
   useShellCommands,
   useShellState,
 } from '@/cockpit'
-import { buildSessionsRoomModel } from '@/rooms/sessions/components'
-import { SessionScreen } from '@/SessionScreen'
+import { buildSessionsRoomModel, SessionScreen } from '@/rooms/sessions/components'
 import { buildShellModel } from '@/shell/components'
 
 // Container: wires the projection bridge into the store, then renders the chrome and the active
@@ -45,8 +44,8 @@ function App(): React.JSX.Element {
   // (ADR-0015), so showing every project's sessions beside a per-project strip dot would be two
   // surfaces disagreeing about the same world. A Session inside no Project is nobody's.
   const roster = sessions.filter((session) => session.projectId === activeProjectId)
-  const panel = useSessionPanel(
-    roster.find((session) => session.id === shell.selectedSessionId) ?? null,
+  const session = useSessionInterior(
+    roster.find((candidate) => candidate.id === shell.selectedSessionId) ?? null,
   )
 
   return (
@@ -72,12 +71,12 @@ function App(): React.JSX.Element {
               sessions: roster,
               selectedId: shell.selectedSessionId,
             })}
-            panel={panel.panel}
-            layout={panel.layout}
+            interior={session.interior}
+            layout={session.layout}
+            attach={session.attach}
             handlers={{
-              ...panel.handlers,
+              ...session.handlers,
               onSelectSession: shell.selectSession,
-              onCloseSession: () => shell.selectSession(null),
               onSpawnSession: commands.spawnSession,
             }}
           />

@@ -12,6 +12,6 @@ declare module 'csstype' {
     WebkitAppRegion?: 'drag' | 'no-drag'
     '--c-rail'?: string
     '--c-act'?: string
-    '--r-term'?: string
+    '--r-dock'?: string
   }
 }
