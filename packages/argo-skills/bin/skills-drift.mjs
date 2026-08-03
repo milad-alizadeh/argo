@@ -16,6 +16,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { groupBySource, LOCK_PATH } from './skills-lock.mjs'
 
 const OWN_SOURCE = 'milad-alizadeh/argo'
 // Sources whose catalog we browse for adoption; new skills elsewhere are noise.
@@ -44,27 +45,18 @@ const readJson = (file, fallback) => {
 const sortedByKey = (obj) =>
   Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)))
 
-// source -> the skill names the manifest pins to it.
-function groupBySource(lock) {
-  const sources = new Map()
-  for (const [name, entry] of Object.entries(lock.skills)) {
-    if (entry.source === OWN_SOURCE) continue
-    const names = sources.get(entry.source) ?? []
-    names.push(name)
-    sources.set(entry.source, names)
-  }
-  return sources
-}
+const thirdPartyNames = (lock) =>
+  Object.keys(lock.skills).filter((name) => lock.skills[name].source !== OWN_SOURCE)
 
 try {
-  const lock = readJson(path.join(pkgRoot, '..', '..', 'skills-lock.json'), null)
+  const lock = readJson(LOCK_PATH, null)
   if (!lock?.skills) throw new Error('skills-lock.json not found or unparsable')
   const baseline = readJson(baselinePath, {})
   const nextBaseline = {}
   const report = []
   let drift = false
 
-  for (const [source, pinned] of groupBySource(lock)) {
+  for (const [source, pinned] of groupBySource(lock, thirdPartyNames(lock))) {
     const sourceBaseline = baseline[source] ?? {}
     const defaultBranch = gh(`repos/${source}`).default_branch
     const tree = gh(`repos/${source}/git/trees/${defaultBranch}?recursive=1`)

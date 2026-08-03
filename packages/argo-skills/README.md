@@ -34,9 +34,15 @@ command (push first, then reinstall).
 
 ```bash
 # from anywhere, inside the target project directory:
-npx github:milad-alizadeh/argo   # canonical — installs straight from GitHub
-# npx argo-skills                # once published to npm
+npx github:milad-alizadeh/argo   # the only supported install path
 ```
+
+**GitHub is the only install path, deliberately.** The manifest is the *repo root's*
+`skills-lock.json` — the same file that is Argo's own install record — so it sits outside this
+package and `files` ships no copy of it; duplicating it into the tarball would mean two
+manifests to keep in sync. An npm-published `argo-skills` would therefore have a `bin/` with
+nothing to install from, so the scaffolder fails on a missing manifest by naming the command
+above rather than pretending to work.
 
 Preview without touching anything:
 
@@ -64,9 +70,10 @@ error rather than quietly installing project-scoped.
 single call. It is not used, for one reason: it hardcodes its agent list to
 `getUniversalAgents()` — every agent whose skills directory is `.agents/skills`. Claude
 Code's is `.claude/skills`, so it is not in that set and receives **nothing** (verified
-against `skills@1.5.21`: a full `experimental_install` into an empty project produced 58
-entries under `.agents/skills/` and no `.claude/` directory at all; `claude` 2.1.220 has no
-`.agents/skills` code path). Passing `--agent` is the only way to reach Claude Code, and
+against `skills@1.5.21`: a full `experimental_install` into an empty project produced one
+entry per locked skill under `.agents/skills/` and no `.claude/` directory at all; `claude`
+2.1.220 has no `.agents/skills` code path). Passing `--agent` is the only way to reach Claude
+Code, and
 `experimental_install` accepts no agent argument. The moment it does, the per-source loop in
 `bin/scaffold.mjs` collapses into one call and nothing else changes.
 
@@ -102,6 +109,21 @@ means it is simultaneously the manifest Argo ships and the install record of Arg
 It is **not a version pin.** Entries carry no `ref`, so a restore installs whatever each
 source's default branch holds today; `computedHash` is drift detection (what
 `bin/skills-drift.mjs` reads), not a lock.
+
+### What a subset install leaves in the target
+
+The scaffolder writes no lock of its own, on either path — `skills add` writes the target's
+`skills-lock.json`, and for a subset that lock **is** the filtered manifest. Verified against
+`skills@1.5.21`: `--skill ship,tdd` (two sources) into an empty project produced a lock
+byte-identical to the manifest's two entries filtered down — `computedHash` included, because
+the hash is content-derived and source-independent (installing the same skill from
+`milad-alizadeh/argo` and from a local path yields the same hash). `skills list --json` reports
+both skills and `skills update --project` refreshes both against the emitted file. Emitting a
+filtered lock from the scaffolder would therefore write the same bytes `skills add` already
+writes, so it doesn't.
+
+One property that is *not* free: entries the target project locked itself are kept, so a subset
+install into a non-empty project yields the union, not just the subset.
 
 ### Add a bundled skill
 

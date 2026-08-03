@@ -1,6 +1,6 @@
 ---
 name: review-componentization
-description: Blind rules-judge for a design→code conversion — audit the componentization judgment no linter catches: over/under-extraction, component naming and altitude (tier/domain), snap-vs-promote, and a parent screen re-telling a child region's state matrix. A fresh agent sees artifacts only, never the author's reasoning; pixel parity belongs to visual-verify and diff-level standards to code-review, not here. Use when the user wants to review or check a componentization or a design→code handoff before the PR, or when componentize-design reaches its verify step.
+description: "Blind rules-judge for a design→code conversion — audit the componentization judgment no linter catches: over/under-extraction, component naming and altitude (tier/domain), snap-vs-promote, and a parent screen re-telling a child region's state matrix. A fresh agent sees artifacts only, never the author's reasoning; pixel parity belongs to visual-verify and diff-level standards to code-review, not here. Use when the user wants to review or check a componentization or a design→code handoff before the PR, or when componentize-design reaches its verify step."
 ---
 
 # Review Componentization

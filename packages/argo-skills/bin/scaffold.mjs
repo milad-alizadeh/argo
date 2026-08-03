@@ -18,12 +18,12 @@ import {
   restoreOwnedSkills,
   snapshotOwnedSkills,
 } from './protect-owned-skills.mjs'
+import { groupBySource, LOCK_PATH } from './skills-lock.mjs'
 
 const STARTER_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // The Argo checkout root (STARTER_DIR is <root>/packages/argo-skills). `npx github:…`
-// clones the whole repo, so the manifest and the guardrail-hook assets sit here.
+// clones the whole repo, so the guardrail-hook assets sit here.
 const SOURCE_ROOT = resolve(STARTER_DIR, '..', '..')
-const MANIFEST = resolve(SOURCE_ROOT, 'skills-lock.json')
 // Which harnesses the skills are published to. `.agents/skills` is shared by every agent
 // the CLI calls universal, so only Claude Code needs naming — the other two are kept
 // explicit because they document the intended audience.
@@ -39,10 +39,7 @@ const HOOK_ASSETS = [
 ]
 // A lock has no scope field: `skills add --global` writes a different lock format in a
 // different place, which is a second install path rather than an option on this one.
-const REMOVED_FLAGS = [
-  ['--global', '-g', 'the manifest is a project lock; there is no global bundle'],
-  ['--project', '-p', 'project is the only scope now, so the override is redundant'],
-]
+const SCOPE_FLAGS = ['--global', '-g', '--project', '-p']
 
 function fail(message) {
   console.error(`✗ ${message}`)
@@ -86,31 +83,26 @@ function installHooks(cwd, dryRun) {
 
 // `--skill a b` / `--skill a,b` — the subset to install. Absent means the whole manifest.
 function parseSelection(argv) {
-  const at = argv.indexOf('--skill')
-  if (at === -1) return null
+  const flagIndex = argv.indexOf('--skill')
+  if (flagIndex === -1) return null
   const names = []
-  for (let i = at + 1; i < argv.length && !argv[i].startsWith('-'); i++) {
+  for (let i = flagIndex + 1; i < argv.length && !argv[i].startsWith('-'); i++) {
     names.push(...argv[i].split(',').filter(Boolean))
   }
   if (names.length === 0) fail('--skill needs at least one skill name')
   return names
 }
 
-// source -> the manifest names to install from it. A name appears once in the manifest, so
-// the source that owns it is unambiguous and no install can silently overwrite another's.
-function groupBySource(manifest, selection) {
+// The names to install, every one checked against the manifest before any source runs — a
+// typo must not install a partial bundle and then report failure.
+function selectedNames(manifest, selection) {
   const names = selection ?? Object.keys(manifest.skills)
   const unknown = names.filter((name) => !manifest.skills[name])
   if (unknown.length) {
     const available = Object.keys(manifest.skills).join(', ')
     fail(`not in the bundle: ${unknown.join(', ')}\n  available: ${available}`)
   }
-  const bySource = new Map()
-  for (const name of names) {
-    const { source } = manifest.skills[name]
-    bySource.set(source, [...(bySource.get(source) ?? []), name])
-  }
-  return bySource
+  return names
 }
 
 const argv = process.argv.slice(2)
@@ -120,25 +112,31 @@ const dryRun = has('--dry-run', '-n')
 // edit guard, worktree reaper) on the project, so a consumer chooses them explicitly.
 const wantHooks = has('--hooks') && !has('--no-hooks')
 
-for (const [long, short, reason] of REMOVED_FLAGS) {
-  if (has(long, short)) fail(`${long} was removed: ${reason}`)
+if (has(...SCOPE_FLAGS)) {
+  fail(
+    `scope flags are not supported (${SCOPE_FLAGS.join(', ')}) — this installer only writes a project lock`,
+  )
 }
 
 let manifest = null
 try {
-  manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'))
+  manifest = JSON.parse(readFileSync(LOCK_PATH, 'utf8'))
 } catch (err) {
-  fail(`Could not read the bundle manifest at ${MANIFEST}\n  ${err.message}`)
+  // The manifest is the Argo checkout's root lock, outside this package, and `files` ships
+  // no copy of it — so only a git-based install has one. Say which install path works.
+  fail(
+    `No bundle manifest at ${LOCK_PATH}\n  Install with: npx github:milad-alizadeh/argo\n  (${err.message})`,
+  )
 }
-if (!manifest.skills) fail(`${MANIFEST} has no "skills" map — it is not a skills lock.`)
+if (!manifest.skills) fail(`${LOCK_PATH} has no "skills" map — it is not a skills lock.`)
 
 const selection = parseSelection(argv)
-const bySource = groupBySource(manifest, selection)
-const total = [...bySource.values()].reduce((n, names) => n + names.length, 0)
+const bySource = groupBySource(manifest, selectedNames(manifest, selection))
+const total = [...bySource.values()].reduce((count, names) => count + names.length, 0)
 console.log(
   `\nargo-skills — ${total} skill(s) from ${bySource.size} source(s), agents=[${SKILL_AGENTS.join(', ')}]${selection ? ' (subset)' : ''}${dryRun ? ' (dry run)' : ''}`,
 )
-console.log(`manifest: ${MANIFEST}\ninstalling into: ${process.cwd()}\n`)
+console.log(`manifest: ${LOCK_PATH}\ninstalling into: ${process.cwd()}\n`)
 
 // Taken before the first source installs: `skills add` replaces a colliding skill directory
 // with a symlink into its own payload, deleting whatever the repo had there.

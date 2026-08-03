@@ -169,6 +169,12 @@
       "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
       "computedHash": "28aad6f8b1b7025abc8892fa8890f68fe1533499b28a565f416b159131d22fad"
     },
+    "review-componentization": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/review-componentization/SKILL.md",
+      "computedHash": "962217e0f1f2b6207f7cd26a383872e8c98e4e0a36e193a02782a03e57a34ed4"
+    },
     "run-desktop": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
