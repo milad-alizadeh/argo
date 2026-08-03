@@ -1,6 +1,6 @@
 import { useSessionStore } from '@/sessionStore'
 import { branchMenuRows, type GitControlsProps, liveWorktreeSessions } from '@/shell/components'
-import { useGitFacts } from '@/useGitFacts'
+import { useGitFacts } from './useGitFacts'
 
 // The git group's props, assembled where the facts and the roster are both in reach: the menu's
 // `↗` needs to know which live session is working in a worktree, and only the roster knows that.

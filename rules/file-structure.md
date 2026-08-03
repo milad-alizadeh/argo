@@ -54,6 +54,11 @@ types, and validation live INSIDE that feature's folder (`checkout/schema`, not
 
 The one sanctioned exception is the shared tier described next.
 
+A kind-folder is the one structural mistake that looks tidy while it spreads, so where the
+repo can count it, it does: `kind-folder-check.mjs` fails the build on a banned folder name.
+`components/` is not banned — a slice's own `components/` holds one feature's components,
+which is the opposite of a junk drawer.
+
 ### Shared code is earned, not chosen — hoist on the third caller
 
 A helper is born **next to its only caller**, inside that domain's folder. There is no
@@ -76,6 +81,15 @@ Hoisting has two destinations, and the test is mechanical:
 This repo names those tiers `lib/` and `lib/generic/`. Neither exists until
 a third caller creates it — that's the point, not an omission.
 
+The two tiers are **earned differently**, which matters because only one of them can be
+counted. The domain-aware tier is earned by callers, so `earned-shared-check.mjs` counts them
+per symbol and fails a symbol only one module wanted. The generic tier is earned by
+**category** — "would stand alone as its own published package" — so a vendored primitive or an
+icon belongs there from its first caller, and those paths are excluded from the count rather
+than exempted one by one. Counting per symbol is not an optimisation: everything leaves a tier
+through a barrel, so a file-level import graph shows every module depending on every leaf
+behind it and can prove nothing about who wanted what.
+
 **Imports flow upward only.** A domain may import both tiers; `lib/` may import
 `lib/generic/`; `lib/generic/` imports neither. Two consequences worth naming, because
 both are signals rather than judgment calls: a sibling-domain import (`checkout/`
@@ -95,6 +109,22 @@ scoped to its own folder's domain is fine.
 
 One level of nesting covers almost every case. Never go deeper than two levels below
 the module root without a documented reason.
+
+### The composition root is not a folder for leftovers
+
+Every app has one place that wires the modules together and belongs to none of them. It holds
+the bootstrap, the container, and the container's own View — and nothing else. The pull towards
+it is strong and specific: a feature's hook that reads the store or the network can't sit inside
+the feature when features are pure Views, so it gets dropped at the root "for now". Do that five
+times and the root is the junk drawer the kind-folder ban exists to prevent, except no folder
+name gives it away.
+
+The wiring is real and it does belong outside the feature. It still needs a **named home** —
+one domain-named folder behind its own entry, which the container is the only caller of, and
+which no feature may import back. `composition-root-check.mjs` fails the build on anything else
+loose at the root, because placement is invisible to an import linter: a feature's hook parked
+at the root imports its feature through the feature's declared public entry, so every edge is
+legal while the file is in the wrong place.
 
 ### Public entry per module
 
@@ -130,7 +160,14 @@ internals (information hiding / dependency inversion).
 ### Enforce mechanically where you can
 
 If the repo has a boundary linter — `dependency-cruiser` for JS/TS, `import-linter` for
-Python, the compiler's own visibility rules elsewhere — encode the layer rules there so a new leak fails the build instead of relying on review. Justified
+Python, the compiler's own visibility rules elsewhere — encode the layer rules there so a new leak fails the build instead of relying on review.
+
+Know what that linter cannot see: it judges **edges**, never **placement**. Every rule above
+about where a file lives is invisible to it, and the failure mode is not a loud one — the
+misplaced file's imports are all legal, so the gate goes green and the structure drifts anyway.
+Placement is a glob predicate, so it can have gates of its own; this repo runs three
+(`composition-root-check.mjs`, `kind-folder-check.mjs`, `earned-shared-check.mjs`), all
+compiled from the same module map the boundary linter reads. Justified
 violations (vendored code, a migration in flight) go in a small explicit ignorelist
 next to the lint config — each entry scoped to one rule + one path glob, with a
 one-line reason. Never loosen the rule globally, never scatter inline disable comments.

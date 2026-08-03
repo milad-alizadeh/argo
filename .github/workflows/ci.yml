@@ -57,8 +57,8 @@ jobs:
         with:
           save-cache: "true"
 
-      # Each gate runs even after an earlier one fails, so a PR gets all three
-      # verdicts in one push instead of three round trips.
+      # Each gate runs even after an earlier one fails, so a PR gets every
+      # verdict in one push instead of one round trip per breach.
       - name: Lint and format
         run: bun run format-and-lint
 
@@ -71,6 +71,20 @@ jobs:
       - name: File-length gate
         if: ${{ !cancelled() }}
         run: bun run quality:file-length
+
+      # Where files may LIVE, which the boundary linter cannot see: it judges imports, and a
+      # misplaced file's imports are all legal. One step per gate, same reason as above.
+      - name: Composition-root gate
+        if: ${{ !cancelled() }}
+        run: bun run quality:placement:root
+
+      - name: Kind-folder gate
+        if: ${{ !cancelled() }}
+        run: bun run quality:placement:kind
+
+      - name: Earned-shared gate
+        if: ${{ !cancelled() }}
+        run: bun run quality:placement:shared
 
       - name: Typecheck
         if: ${{ !cancelled() }}

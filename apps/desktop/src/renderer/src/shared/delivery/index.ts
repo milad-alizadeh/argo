@@ -15,4 +15,3 @@ export {
   SESSION_STATUS,
 } from './rosterStatus'
 export { STATE_MATRIX_ROWS, type StateMatrixRow, stateMatrixInput } from './stateMatrix'
-export { worstStateDot } from './worstStateDot'

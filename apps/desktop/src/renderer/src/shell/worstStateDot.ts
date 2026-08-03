@@ -1,5 +1,5 @@
 import type { SessionStatus, SessionView } from '@shared'
-import type { RosterTone } from './rosterStatus'
+import type { RosterTone } from '@/shared/delivery'
 
 // The project-strip roll-up: ONE dot per project for the sessions you cannot see. The
 // ranking is the attention registry's — `needs you` outranks `failed` outranks `running` —

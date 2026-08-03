@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import type { ShellCommand } from '@/shell/components'
-import { useShellKeymap } from '@/useShellKeymap'
-import type { ShellState } from '@/useShellState'
+import { useShellKeymap } from './useShellKeymap'
+import type { ShellState } from './useShellState'
 
 // Where the keymap and the chrome's clicks both land. Every command here is reachable BOTH ways —
 // direct manipulation is the floor and the keymap is the spine over it — so this is the one place

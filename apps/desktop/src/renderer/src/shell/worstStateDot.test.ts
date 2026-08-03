@@ -1,6 +1,6 @@
 import type { SessionStatus, SessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
-import type { RosterTone } from './rosterStatus'
+import type { RosterTone } from '@/shared/delivery'
 import { worstStateDot } from './worstStateDot'
 
 function session(status: SessionStatus, projectId: string | null = 'p1'): SessionView {

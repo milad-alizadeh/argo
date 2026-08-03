@@ -1,13 +1,9 @@
 import { useCallback, useEffect } from 'react'
 import { CockpitScreenView } from '@/CockpitScreenView'
-import { RoomStage } from '@/RoomStage'
+import { RoomStage, useGitGroup, useSessionPanel, useShellCommands, useShellState } from '@/cockpit'
 import { SessionScreen } from '@/SessionScreen'
 import { useSessionStore } from '@/sessionStore'
 import { buildShellModel } from '@/shell/components'
-import { useGitGroup } from '@/useGitGroup'
-import { useSessionPanel } from '@/useSessionPanel'
-import { useShellCommands } from '@/useShellCommands'
-import { useShellState } from '@/useShellState'
 
 // Container: wires the projection bridge into the store, then renders the chrome and the active
 // room as pure Views of it (ADR-0005). All business logic lives in main; the only things derived
