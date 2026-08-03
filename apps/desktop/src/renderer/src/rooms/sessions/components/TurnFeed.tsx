@@ -1,12 +1,13 @@
 import type { FeedRow } from '@shared'
 import { cn } from '@/lib/utils'
 import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import { Prose } from './Prose'
 import { DISCLOSURE } from './rowRecipes'
 
-// The narrative rows of one Turn. Prose is rendered as PLAIN TEXT with its whitespace kept: markdown
-// is interpreted in issue 315, and until it is, an agent's `**bold**` reads as the characters it wrote
-// rather than as markup this surface guessed at. Nothing here is dangerouslySet — model prose is
-// untrusted input all the way to the screen.
+// The narrative rows of one Turn. The agent's own rows read as markdown (`Prose`, whose subset is
+// decided at the parser); the prompt does not, because it is the human's typed text and never
+// carried markup intent. Nothing here is dangerouslySet — model prose is untrusted input all the
+// way to the screen.
 const PROSE = 'whitespace-pre-wrap break-words'
 
 /** The prompt that opened the turn, verbatim. It hangs off a rail because it is the one row that is
@@ -28,9 +29,9 @@ function PromptRow({ text }: { text: string }): React.JSX.Element {
  * heading is prose nobody finishes. */
 function MessageRow({ markdown }: { markdown: string }): React.JSX.Element {
   return (
-    <Text as="p" variant="prose" className={`text-foreground-soft ${PROSE}`}>
-      {markdown}
-    </Text>
+    <div className="text-foreground-soft">
+      <Prose markdown={markdown} />
+    </div>
   )
 }
 
@@ -45,6 +46,9 @@ const firstLine = (markdown: string): string => markdown.trim().split('\n')[0] ?
  * Collapsed by default because reasoning is what you consult when a conclusion surprises you, not
  * what you read first — and because a Turn's final message routinely contradicts its own thinking,
  * so reasoning presented at the same weight as the answer invites acting on an abandoned one.
+ *
+ * That quieting is BRIGHTNESS, not size: the agent's words read at one size across the whole feed,
+ * and stepping the type down for a thought steps it mid-column against the message above it.
  */
 function ThoughtRow({ markdown }: { markdown: string }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: false })
@@ -57,17 +61,17 @@ function ThoughtRow({ markdown }: { markdown: string }): React.JSX.Element {
         aria-expanded={open}
         className={cn(DISCLOSURE, 'flex w-full items-baseline gap-snug')}
       >
-        <Text aria-hidden variant="meta" className="shrink-0 text-foreground-faint">
+        <Text aria-hidden variant="prose" className="shrink-0 text-foreground-faint">
           <Caret className="icon-sm" />
         </Text>
-        <Text variant="meta" className="min-w-0 flex-1 truncate text-foreground-faint">
+        <Text variant="prose" className="min-w-0 flex-1 truncate text-foreground-faint">
           {open ? 'thought' : firstLine(markdown)}
         </Text>
       </button>
       {open && (
-        <Text as="p" variant="meta" className={`pl-mark-col text-foreground-faint ${PROSE}`}>
-          {markdown}
-        </Text>
+        <div className="pl-mark-col text-foreground-faint">
+          <Prose markdown={markdown} />
+        </div>
       )}
     </div>
   )
@@ -95,7 +99,7 @@ function Row({ row }: { row: FeedRow }): React.JSX.Element {
 export function TurnFeed({ rows }: { rows: readonly FeedRow[] }): React.JSX.Element {
   if (rows.length === 0) {
     return (
-      <Text variant="meta" className="text-foreground-faint">
+      <Text variant="prose" className="text-foreground-faint">
         nothing said in this turn — no prompt and no prose in the record
       </Text>
     )
