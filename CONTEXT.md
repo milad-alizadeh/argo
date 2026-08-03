@@ -51,7 +51,26 @@ Project registry and the small set of user-asserted links no external signal car
   children / is a leaf) only when the provider carries none — so a childless PRD isn't miscast
   as a Task. `blockedBy` is a
   provider-sourced dependency DAG, Argo-normalized, with blocker states **verified directly**
-  (the provider's summary count is stale). **Every provider is remote** — GitHub Issues /
+  (the provider's summary count is stale). **`answer`** is a value object present *only* under the
+  **decision-ticket** role (derived like the others, from the `wayfinder:<type>` label): the resolved
+  text of a decision, **DERIVED and held verbatim**, formed from the `Answer:`-marked comment plus
+  every later `Correction:`/`Amendment:`-marked one in creation order — a `ruled_out` closure carries
+  `Out of scope:` instead, and is uncomposable by construction rather than filtered. It has **no
+  identity of its own**, addressed by the Work Item link. Markers are matched on a **plain-text
+  projection** each Port supplies alongside a flat, creation-ordered comment list, because provider
+  bodies are not uniformly markdown (Linear threads replies; Jira Cloud stores ADF).
+  That same role carries a derived **state bucket** — `open · claimed · resolved · ruled_out`,
+  **never stored**, and a *bucket, not a word*: the provider's own status word still renders
+  verbatim (#272) and the bucket surfaces only where Argo must compute or group across providers.
+  Its authority splits: closure is **DERIVED per-port** (GitHub `state_reason`, Linear state
+  `type`, Jira's per-project `resolution` through a configured mapping), while `claimed` is
+  **DIRECT** — no provider carries a claim, so Argo is the authority (see Session → Work Item).
+  A confirmed `ruled_out` blocker **satisfies no `blockedBy` edge**, so its dependents render
+  **stranded** until a human re-scopes one of the two — Argo deliberately disagreeing with the
+  GitHub and Linear UIs, which both count a cancelled blocker as satisfied. An **unresolvable**
+  blocker blocks and reads `unknown`; a blocker closed with an **unreadable kind satisfies**, so
+  ruling-out detection degrades to a chrome notice rather than stranding a whole map.
+  **Every provider is remote** — GitHub Issues /
   Linear via OAuth (Ports, below); no provider connected → no Work Items → all sessions
   unlinked. (A local-file/vault provider was considered and **descoped**.)
 
@@ -76,7 +95,14 @@ Delivery"):
   session pinned to a ticket). Persisted as a **user-asserted link only as the fallback** —
   when there is no Delivery to derive it through (Session→Delivery→Work Item). A branch-backed
   link is *derived*, never also asserted; the assertion exists precisely for the branchless
-  case (ADR-0017), so the edge is never double-sourced.
+  case (ADR-0017), so the edge is never double-sourced. This edge **is** the **claim lease** on a
+  decision ticket — a ticket is `claimed` exactly while a live Session links to it, its age
+  `now − link.createdAt` (DIRECT, since Argo owns the link) and its release the session's own end,
+  so there is no TTL to tune. Across a restart the link survives but liveness drops to DERIVED, so
+  the claim degrades to **stale** rather than reading as held: stale-on-open is takeable with a
+  warning, stale-on-closed is inert, because closure is read before claims. The provider assignee
+  is written as a **visible echo** for teammates, never as the lease — it carries no age and
+  nothing releases it.
 - **Session → Delivery** — "which branch / product am I moving."
 - **Delivery → Work Item** — "what intent does this branch serve" (survives with no session:
   the teammate-PR case), derived via the join precedence (native-ref → id-in-branch →
@@ -145,8 +171,10 @@ Delivery"):
 A property **of each rendered fact**, not a session-wide mode — one Session mixes tiers.
 
 - **DIRECT** — Argo owns the fact (managed pid, a mode Argo set).
-- **DERIVED** — inferred from an observable signal (external liveness via process-match +
-  mtime; the `~n%` context estimate).
+- **DERIVED** — observed from outside Argo, whether **inferred** from a signal (external
+  liveness via process-match + mtime; the `~n%` context estimate) **or read verbatim** from an
+  external authority (a code-host Review or Check; a Work Item's Answer prose). Verbatim reads
+  are never reworded or summarized — L4's "keep the host's vocabulary" rule generalized.
 - **CONVENTION** — arrived over the companion-plugin/MCP channel (managed-only; e.g.
   `report_status`); never existed in a transcript.
 
@@ -322,7 +350,14 @@ stores per-machine tokens in the OS keychain; polled, since a desktop app receiv
 webhooks). `gh` remains how *agents* operate the repo (AGENTS.md) — a different layer.
 
 - **Work Item provider** — sources intent. GitHub Issues / Linear for v1; pluggable. One
-  interface, per-provider adapters.
+  interface, per-provider adapters. The read contract is children **in author order** (native on
+  every provider: sub-issue position, `sortOrder`, rank); per ticket the verbatim status word,
+  open/closed, closure kind, assignee, priority and labels; `blockedBy` **verified per-blocker**;
+  and comments as `{ id, text, revisedAt }`, flat and creation-ordered. An adapter declares its
+  gaps two ways — **a static capability descriptor** for what must be known before any read
+  (`canAssign`, `canComment`, `closureKind: native | configured | none`), and **per-fact
+  `unknown`** for a value it reads but cannot establish. Capabilities decide whether an affordance
+  exists; `unknown` decides what a present affordance shows.
 - **Code host** — sources Delivery truth (PR/CI/review/merge). GitHub for v1. One GitHub OAuth
   grant can feed **both** ports (Issues + PRs); Linear is Work-Item-only.
 - **MCP server** — *distinct from the ports above*: tool/context providers the **observed
