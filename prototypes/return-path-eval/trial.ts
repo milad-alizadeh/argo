@@ -16,9 +16,9 @@
  * recency second.
  */
 
-import type { Arm } from './corpus'
 import type { ArmId } from './arms'
 import type { SpanVerdict } from './containment'
+import type { Arm } from './corpus'
 import type { CouncilResult } from './council'
 
 export type Trial = {

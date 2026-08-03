@@ -27,7 +27,10 @@ const outPath = join(import.meta.dir, process.argv[3] ?? 'results-public.jsonl')
 
 /** The report's verbatim test, evaluated here so the redacted row does not need the text. */
 const spokenBody = (t: Trial): string =>
-  (t.payload.startsWith('[REDUCED]') ? t.payload.split('\n\n').slice(1).join('\n\n') : t.payload).trim()
+  (t.payload.startsWith('[REDUCED]')
+    ? t.payload.split('\n\n').slice(1).join('\n\n')
+    : t.payload
+  ).trim()
 
 const redactRow = (t: Trial): Record<string, unknown> => {
   const verbatim = t.spoken !== undefined && t.spoken.trim() === spokenBody(t)
@@ -41,7 +44,13 @@ const redactRow = (t: Trial): Record<string, unknown> => {
     // only ever the evidence for them.
     spans: t.spans?.map(({ span: _span, ...v }) => v),
     council: t.council
-      ? { ...t.council, axes: t.council.axes.map(({ evidence: _e, ...a }) => ({ ...a, evidenceCount: _e.length })) }
+      ? {
+          ...t.council,
+          axes: t.council.axes.map(({ evidence: _e, ...a }) => ({
+            ...a,
+            evidenceCount: _e.length,
+          })),
+        }
       : undefined,
   }
 }
@@ -53,5 +62,11 @@ const armB = rows.filter((r) => r.corpusArm === 'B-real')
 console.log(`wrote ${rows.length} rows to ${outPath}`)
 console.log(`  arm A kept whole:  ${rows.length - armB.length}`)
 console.log(`  arm B redacted:    ${armB.length}`)
-const leak = rows.filter((r) => r.corpusArm === 'B-real' && (r.payload !== undefined || r.spoken !== undefined))
-console.log(leak.length === 0 ? '  no arm-B text present — safe to commit' : `  !!! ${leak.length} ROWS STILL CARRY TEXT`)
+const leak = rows.filter(
+  (r) => r.corpusArm === 'B-real' && (r.payload !== undefined || r.spoken !== undefined),
+)
+console.log(
+  leak.length === 0
+    ? '  no arm-B text present — safe to commit'
+    : `  !!! ${leak.length} ROWS STILL CARRY TEXT`,
+)

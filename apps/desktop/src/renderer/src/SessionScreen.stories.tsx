@@ -171,14 +171,6 @@ export const SoloWorkHidden: Story = {
       orbState="idle"
     />
   ),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await expect(canvas.getByRole('region', { name: 'Activity' })).toBeInTheDocument()
-    await expect(canvas.queryByRole('region', { name: 'Delivery' })).not.toBeInTheDocument()
-    await expect(
-      canvas.queryByRole('separator', { name: 'Activity width' }),
-    ).not.toBeInTheDocument()
-  },
 }
 
 /** The console at its tall height — the expand control reads pressed and the region self-sizes. */

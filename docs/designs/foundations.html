@@ -1,0 +1,548 @@
+<!doctype html>
+<!-- The living specimen of the token contract (#262). NOT disposable: this is the one
+     study that never gets deleted, because it is the rendered face of
+     apps/desktop/src/renderer/src/styles/argo-tokens.css. It styles ONLY via
+     var(--token) and role classes, and every label is read back off the computed
+     value at load, so it cannot drift from the contract — if a token changes, this
+     page changes with it. Fragments are real cockpit shapes (a session plane, a
+     roster row, a diff pair) rather than abstract swatches: the foundation is only
+     true if it holds on the surfaces it has to hold on. -->
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Foundations — Penumbra token contract</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      /* The room: one lit scene. The gradient stack is the scene component's own
+         (RoomScene), not a token — five layers of key light are a recipe. */
+      body {
+        min-height: 100vh;
+        background:
+          radial-gradient(1150px 1000px at 88% 40%, var(--bloom-warm-lit), var(--bloom-warm) 30%, transparent 62%),
+          radial-gradient(1400px 1000px at 60% 44%, var(--bloom-warm), transparent 55%),
+          radial-gradient(1600px 1200px at 45% 0%, var(--popover), transparent 70%),
+          linear-gradient(160deg, var(--card), var(--background) 60%);
+        position: relative;
+      }
+      /* Absolute, not fixed: a fixed layer ghosts in full-page headless captures, and
+         the scene has to cover the whole document anyway. */
+      body::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+      body.scrim::after {
+        background:
+          radial-gradient(1150px 950px at 85% 50%, transparent 44%, var(--scrim-edge) 100%),
+          linear-gradient(to bottom, var(--scrim-top), transparent 12%, transparent 82%, var(--scrim-bottom));
+        mix-blend-mode: multiply;
+      }
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: var(--space-plane) var(--space-region) calc(var(--space-nest) * 3);
+        display: grid;
+        gap: var(--space-nest);
+      }
+      section {
+        display: grid;
+        gap: var(--space-inset);
+      }
+      h2 {
+        margin: 0;
+        color: var(--foreground-faint);
+      }
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: var(--space-inset);
+        padding: var(--space-gap) var(--space-region);
+        backdrop-filter: blur(var(--frost)) saturate(var(--frost-saturate));
+        background: var(--panel);
+      }
+      .bar .grow {
+        margin-left: auto;
+        display: flex;
+        gap: var(--space-tight);
+      }
+      button {
+        font: var(--type-tag-weight) var(--type-tag) / var(--type-tag-leading) var(--sans);
+        letter-spacing: var(--type-tag-tracking);
+        text-transform: uppercase;
+        color: var(--foreground-soft);
+        background: var(--inset);
+        border: 1px solid var(--inset-hair);
+        border-radius: var(--radius-full);
+        padding: var(--space-tight) var(--space-inset);
+        cursor: pointer;
+      }
+      button[aria-pressed="true"] {
+        color: var(--primary);
+        border-color: var(--primary);
+      }
+      /* Specimen rows: name · rendered sample · the tuple read off the contract. */
+      .spec {
+        display: grid;
+        grid-template-columns: 9rem 1fr auto;
+        align-items: baseline;
+        gap: var(--space-region);
+        padding: var(--space-row) 0;
+        border-bottom: 1px solid var(--inset-hair);
+      }
+      .spec .n,
+      .spec .t {
+        color: var(--foreground-faint);
+      }
+      .spec .t {
+        font-family: var(--mono);
+        white-space: nowrap;
+      }
+      .ramp {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+        gap: var(--space-hair);
+      }
+      .ramp div {
+        height: var(--space-nest);
+        border-radius: var(--radius-step-hair);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: var(--space-hair);
+      }
+      #roles {
+        grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+        gap: var(--space-gap);
+      }
+      #roles figure {
+        margin: 0;
+        display: grid;
+        gap: var(--space-hair);
+        color: var(--foreground-faint);
+      }
+      #roles i {
+        display: block;
+        height: var(--space-nest);
+        border-radius: var(--radius-step-sm);
+        box-shadow: 0 0 0 1px var(--inset-hair) inset;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-region);
+      }
+      /* Status is a dot and a word. No pill, no fill, no outline — anywhere. */
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-snug);
+      }
+      .dot {
+        width: var(--space-snug);
+        height: var(--space-snug);
+        border-radius: var(--radius-full);
+        background: currentColor;
+      }
+      .blocks {
+        display: flex;
+        align-items: flex-end;
+        gap: var(--space-region);
+      }
+      .blocks figure {
+        margin: 0;
+        display: grid;
+        gap: var(--space-tight);
+        justify-items: center;
+        color: var(--foreground-faint);
+      }
+      .blocks i {
+        display: block;
+        background: var(--primary-soft);
+        height: var(--space-gap);
+        border-radius: var(--radius-step-hair);
+      }
+      .radii {
+        display: flex;
+        gap: var(--space-region);
+      }
+      .radii figure {
+        margin: 0;
+        display: grid;
+        gap: var(--space-tight);
+        justify-items: center;
+        color: var(--foreground-faint);
+      }
+      .radii i {
+        display: block;
+        width: var(--space-nest);
+        height: var(--space-nest);
+        background: var(--inset-hair);
+        box-shadow: 0 1px 0 var(--inset-lip) inset;
+      }
+      /* Real fragments — the shapes the foundation has to survive. */
+      .planes {
+        display: grid;
+        gap: var(--space-region);
+        max-width: 20rem;
+      }
+      .planes > div {
+        padding: var(--space-region) var(--space-region) var(--space-region);
+        display: grid;
+        gap: var(--space-tight);
+      }
+      .planes .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-row);
+      }
+      .rows {
+        background: var(--inset);
+        border-radius: var(--radius-step-md);
+        box-shadow: 0 1px 0 var(--inset-lip) inset;
+        overflow: hidden;
+      }
+      .rows > div {
+        display: flex;
+        align-items: center;
+        gap: var(--space-gap);
+        height: var(--row-h);
+        padding: 0 var(--space-inset);
+      }
+      .rows > div + div {
+        border-top: 1px solid var(--inset-hair);
+      }
+      .rows .hov {
+        background: var(--accent);
+      }
+      .rows .sel {
+        background: var(--accent-strong);
+        color: var(--accent-foreground);
+      }
+      .rows .sp {
+        margin-left: auto;
+      }
+      .diff > div {
+        display: flex;
+        gap: var(--space-gap);
+        padding: 0 var(--space-inset);
+      }
+      .diff .add {
+        background: color-mix(in srgb, var(--verdict-approve-tint) 10%, transparent);
+        color: var(--signal-ok);
+      }
+      .diff .del {
+        background: color-mix(in srgb, var(--verdict-block-tint) 10%, transparent);
+        color: var(--signal-bad);
+      }
+      .motion i {
+        display: inline-block;
+        width: var(--space-gap);
+        height: var(--space-gap);
+        border-radius: var(--radius-full);
+        background: var(--tone-run);
+        color: var(--tone-run);
+        animation: pulse var(--time-pulse) ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: var(--pulse-dim);
+        }
+      }
+      .swap {
+        transition: transform var(--time-slow) var(--time-ease);
+      }
+      .swap:hover {
+        transform: translateX(var(--space-nest));
+      }
+    </style>
+  </head>
+  <body class="scrim">
+    <!-- No wordmark: the shell has none (#264), so the contract carries no mark role. -->
+    <div class="bar">
+      <span class="text-eyebrow">Foundations · Penumbra</span>
+      <span class="grow">
+        <button id="theme" type="button" aria-pressed="true">Dark</button>
+        <button id="scrim" type="button" aria-pressed="true">Scrim</button>
+      </span>
+    </div>
+
+    <main>
+      <section>
+        <h2 class="text-eyebrow">Typography — one ladder, 9 / 11 / 13 / 15 (+23 hero)</h2>
+        <div id="type"></div>
+      </section>
+
+      <section>
+        <h2 class="text-eyebrow">Colour — core ramps (raw values live only here)</h2>
+        <div id="ramps"></div>
+      </section>
+
+      <section>
+        <h2 class="text-eyebrow">Colour — semantic roles, this theme</h2>
+        <div id="roles" class="ramp"></div>
+      </section>
+
+      <section>
+        <h2 class="text-eyebrow">
+          Status — one value per meaning, three vocabularies. Dot + word, never a pill
+        </h2>
+        <div class="chips" id="tones"></div>
+        <div class="chips" id="verdicts"></div>
+        <div class="chips" id="signals"></div>
+      </section>
+
+      <section>
+        <h2 class="text-eyebrow">Space — the rhythm</h2>
+        <div class="blocks" id="space"></div>
+      </section>
+
+      <section>
+        <h2 class="text-eyebrow">Shape — the radius ladder</h2>
+        <div class="radii" id="radii"></div>
+      </section>
+
+      <section>
+        <h2 class="text-eyebrow">Plane — depth in the lit scene</h2>
+        <div class="planes">
+          <div class="plane plane-lit">
+            <div class="top">
+              <span class="text-title">argo · design foundations</span>
+              <span class="chip text-tag" style="color: var(--tone-run)">
+                <i class="dot glow"></i>working
+              </span>
+            </div>
+            <div class="text-code-inline" style="color: var(--muted-foreground)">
+              worktree-argo+262 · <span style="color: var(--foreground-faint)">3 files</span>
+            </div>
+          </div>
+          <div class="plane plane-recede-1">
+            <div class="top">
+              <span class="text-title">work item provider port</span>
+              <span class="chip text-tag" style="color: var(--tone-amber)">
+                <i class="dot glow"></i>needs you
+              </span>
+            </div>
+            <div class="text-code-inline" style="color: var(--muted-foreground)">worktree-argo+256</div>
+          </div>
+          <div class="plane plane-recede-2">
+            <div class="top">
+              <span class="text-title">project registry</span>
+              <span class="chip text-tag" style="color: var(--tone-done)">
+                <i class="dot"></i>done
+              </span>
+            </div>
+            <div class="text-code-inline" style="color: var(--muted-foreground)">merged · #279</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-eyebrow">Rows — the density, and selection without gold</h2>
+        <div class="rows">
+          <div class="text-row">
+            <span style="color: var(--tone-run)"><i class="dot glow"></i></span>
+            <span class="text-row-strong">Resting row</span>
+            <span class="text-meta sp" style="color: var(--foreground-faint)">2m ago</span>
+          </div>
+          <div class="text-row hov">
+            <span style="color: var(--tone-amber)"><i class="dot glow"></i></span>
+            <span class="text-row-strong">Hover — 3% ink</span>
+            <span class="text-meta sp" style="color: var(--foreground-faint)">5m</span>
+          </div>
+          <div class="text-row sel">
+            <span style="color: var(--tone-run)"><i class="dot glow"></i></span>
+            <span class="text-row-strong">Current row — 6% ink, no lip, no border</span>
+            <span class="text-meta sp" style="color: var(--foreground-faint)">now</span>
+          </div>
+          <div class="text-row">
+            <span style="color: var(--tone-stale)"><i class="dot"></i></span>
+            <span>Prose measure sits at the same size, differentiated by leading.</span>
+            <span class="text-meta sp" style="color: var(--foreground-faint)">4h</span>
+          </div>
+        </div>
+        <div class="rows diff text-code">
+          <div class="add"><span>+</span><span>--gold-500: #c8a968;</span></div>
+          <div class="del"><span>−</span><span>--indigo-500: #5468ea;</span></div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-eyebrow">Motion — one pulse budget, one easing</h2>
+        <div class="chips motion">
+          <span class="chip text-tag" style="color: var(--tone-run)"><i></i>pulse 2s</span>
+          <span class="chip text-tag swap">hover · slow · ease-standard</span>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const css = getComputedStyle(document.documentElement)
+      const v = (n) => css.getPropertyValue(n).trim()
+      const el = (tag, cls, text) => {
+        const n = document.createElement(tag)
+        if (cls) n.className = cls
+        if (text !== undefined) n.textContent = text
+        return n
+      }
+
+      const TYPE = [
+        ['hero', 'Work Item provider port: the read path'],
+        ['headline', 'Changes requested'],
+        ['title', 'Work item provider port'],
+        ['row', 'A list row of primary text'],
+        ['row-strong', 'A row title, same size'],
+        ['prose', 'Multi-line reading measure, differentiated by leading alone.'],
+        ['meta', '14:02 · 3 files · 2m'],
+        ['tag', 'needs you'],
+        ['eyebrow', 'Section header'],
+        ['code', 'bun run quality'],
+        ['code-inline', 'src/renderer/styles/argo-tokens.css'],
+      ]
+      const type = document.getElementById('type')
+      for (const [name, sample] of TYPE) {
+        const row = el('div', 'spec')
+        row.append(el('span', 'n text-meta', name))
+        row.append(el('span', `text-${name}`, sample))
+        const size = v(`--type-${name}`)
+        const lead = v(`--type-${name}-leading`)
+        const weight = v(`--type-${name}-weight`)
+        const track = v(`--type-${name}-tracking`)
+        row.append(el('span', 't text-meta', `${size} / ${lead} / ${weight} / ${track}`))
+        type.append(row)
+      }
+
+      const RAMPS = {
+        graphite: [400, 500, 600, 700, 800, 850, 900, 950],
+        bone: [50, 100, 200, 300, 400, 500, 600, 700],
+        gold: [300, 500, 600, 700],
+        teal: [300, 500, 600, 700],
+        moss: [300, 500, 600, 700],
+        terracotta: [300, 500, 600, 700],
+        slate: [300, 500, 600, 700],
+      }
+      const ramps = document.getElementById('ramps')
+      for (const [hue, steps] of Object.entries(RAMPS)) {
+        const row = el('div', 'spec')
+        row.append(el('span', 'n text-meta', hue))
+        const strip = el('div', 'ramp')
+        for (const s of steps) {
+          const cell = el('div', 'text-meta', String(s))
+          cell.style.background = `var(--${hue}-${s})`
+          // Label ink follows the step, not the hue: only bone and the 300 rungs are
+          // light enough to carry dark text.
+          const lightStep = hue === 'bone' || s <= 300
+          cell.style.color = lightStep ? 'var(--graphite-900)' : 'var(--bone-200)'
+          strip.append(cell)
+        }
+        row.append(strip)
+        row.append(el('span', 't text-meta', `${steps.length} steps`))
+        ramps.append(row)
+      }
+
+      const ROLES = [
+        'background', 'foreground', 'card', 'popover', 'primary', 'primary-bright',
+        'primary-soft', 'secondary', 'muted', 'muted-foreground', 'accent',
+        'accent-strong', 'destructive', 'border', 'input', 'ring', 'foreground-bright',
+        'foreground-soft', 'foreground-faint', 'panel', 'inset', 'inset-hair',
+        'inset-lip', 'well',
+      ]
+      const roles = document.getElementById('roles')
+      for (const r of ROLES) {
+        // Label sits under the swatch, not on it: a role has to be readable even when
+        // it is bound to a value with no contrast against ink (border, inset, well).
+        const fig = el('figure')
+        const swatch = el('i')
+        swatch.style.background = `var(--${r})`
+        fig.append(swatch, el('figcaption', 'text-meta', r))
+        roles.append(fig)
+      }
+
+      const FAMILIES = {
+        tones: ['run', 'amber', 'red', 'gray', 'stale', 'done', 'landed'].map((t) => [
+          `tone-${t}`,
+          t,
+        ]),
+        verdicts: [
+          ['verdict-approve', 'approve'],
+          ['verdict-changes', 'changes'],
+          ['verdict-block', 'block'],
+        ],
+        signals: [
+          ['signal-ok', 'ok'],
+          ['signal-warn', 'warn'],
+          ['signal-bad', 'bad'],
+        ],
+      }
+      for (const [id, entries] of Object.entries(FAMILIES)) {
+        const host = document.getElementById(id)
+        for (const [token, label] of entries) {
+          const chip = el('span', 'chip text-tag')
+          chip.style.color = `var(--${token})`
+          chip.append(el('i', 'dot'), document.createTextNode(label))
+          host.append(chip)
+        }
+      }
+
+      const SPACE = ['hair', 'tight', 'snug', 'gap', 'row', 'inset', 'region', 'plane', 'nest']
+      const space = document.getElementById('space')
+      for (const s of SPACE) {
+        const fig = el('figure')
+        const bar = el('i')
+        bar.style.width = `var(--space-${s})`
+        fig.append(bar, el('figcaption', 'text-meta', `${s} ${v(`--space-${s}`)}`))
+        space.append(fig)
+      }
+
+      const RADII = [
+        ['step-hair', 'hair'],
+        ['step-sm', 'sm'],
+        ['step-md', 'md'],
+        ['step-lg', 'lg'],
+        ['plane', 'plane'],
+        ['full', 'full'],
+      ]
+      const radii = document.getElementById('radii')
+      for (const [token, label] of RADII) {
+        const fig = el('figure')
+        const box = el('i')
+        box.style.borderRadius = `var(--radius-${token})`
+        fig.append(box, el('figcaption', 'text-meta', `${label} ${v(`--radius-${token}`)}`))
+        radii.append(fig)
+      }
+
+      const toggle = (btn, apply) => {
+        const set = (on) => {
+          btn.setAttribute('aria-pressed', String(on))
+          apply(on)
+        }
+        btn.addEventListener('click', () => set(btn.getAttribute('aria-pressed') !== 'true'))
+        return set
+      }
+      const themeBtn = document.getElementById('theme')
+      const setTheme = toggle(themeBtn, (dark) => {
+        document.documentElement.classList.toggle('dark', dark)
+        themeBtn.textContent = dark ? 'Dark' : 'Light'
+      })
+      const setScrim = toggle(document.getElementById('scrim'), (on) =>
+        document.body.classList.toggle('scrim', on),
+      )
+      // `?theme=light` / `?scrim=off` so a headless screenshot can capture either
+      // binding without a click — the same deep-link shape the switcher harness uses.
+      const q = new URLSearchParams(location.search)
+      if (q.get('theme') === 'light') setTheme(false)
+      if (q.get('scrim') === 'off') setScrim(false)
+    </script>
+  </body>
+</html>

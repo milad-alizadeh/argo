@@ -50,7 +50,9 @@ const trials = await readTrials(inPath)
 // Only trials that actually have a spoken line and a source to score it against. The source
 // is not stored on the trial, so it is re-derived from the corpus by id.
 const { loadCorpus } = await import('./corpus')
-const sources = new Map(loadCorpus(['A-synthetic', 'B-real']).map((c) => [`${c.arm}/${c.id}`, c.source]))
+const sources = new Map(
+  loadCorpus(['A-synthetic', 'B-real']).map((c) => [`${c.arm}/${c.id}`, c.source]),
+)
 
 const scorable = trials.filter((t) => t.spoken && sources.has(`${t.corpusArm}/${t.chunkId}`))
 console.log(`re-judging ${scorable.length} of ${trials.length} trials (rest have no spoken line)`)
@@ -63,7 +65,9 @@ const rescored = await mapLimit(scorable, 4, async (t) => {
   const changed = council.axes.filter(
     (a) => a.violation !== t.council?.axes.find((o) => o.axis === a.axis)?.violation,
   )
-  console.log(`[${n}/${scorable.length}] ${t.key}${changed.length > 0 ? `  CHANGED: ${changed.map((c) => c.axis).join(', ')}` : ''}`)
+  console.log(
+    `[${n}/${scorable.length}] ${t.key}${changed.length > 0 ? `  CHANGED: ${changed.map((c) => c.axis).join(', ')}` : ''}`,
+  )
   return { ...t, council }
 })
 

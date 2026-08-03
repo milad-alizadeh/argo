@@ -111,19 +111,28 @@ export const realtimeSpeaker = (apiKey: string, model = 'gpt-realtime'): Speaker
         ws.send(
           JSON.stringify({
             type: 'conversation.item.create',
-            item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: payload }] },
+            item: {
+              type: 'message',
+              role: 'user',
+              content: [{ type: 'input_text', text: payload }],
+            },
           }),
         )
         ws.send(JSON.stringify({ type: 'response.create' }))
       })
 
       ws.addEventListener('message', (ev) => {
-        const msg = JSON.parse(String(ev.data)) as { type?: string; transcript?: string; error?: { message?: string } }
+        const msg = JSON.parse(String(ev.data)) as {
+          type?: string
+          transcript?: string
+          error?: { message?: string }
+        }
         // The model's own transcript of what it spoke — the thing the council scores.
         if (msg.type === 'response.output_audio_transcript.done' && msg.transcript) {
           finish(() => resolve({ transcript: msg.transcript ?? '', ms: performance.now() - t0 }))
         }
-        if (msg.type === 'error') finish(() => reject(new Error(msg.error?.message ?? 'realtime error')))
+        if (msg.type === 'error')
+          finish(() => reject(new Error(msg.error?.message ?? 'realtime error')))
       })
       ws.addEventListener('error', () => finish(() => reject(new Error('realtime socket error'))))
     }),

@@ -122,7 +122,5 @@ writeFileSync(outPath, `${JSON.stringify(picked, null, 2)}\n`)
 
 const ws = picked.map((c) => c.words).sort((a, b) => a - b)
 console.log(`candidates: ${all.length}  picked: ${picked.length}`)
-console.log(
-  `words — min ${ws[0]} median ${ws[Math.floor(ws.length / 2)]} max ${ws[ws.length - 1]}`,
-)
+console.log(`words — min ${ws[0]} median ${ws[Math.floor(ws.length / 2)]} max ${ws[ws.length - 1]}`)
 console.log(`wrote ${outPath}`)

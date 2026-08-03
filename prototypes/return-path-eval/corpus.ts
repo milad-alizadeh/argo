@@ -33,7 +33,9 @@ export type EvalChunk = {
 const armB = (): EvalChunk[] => {
   const path = join(import.meta.dir, 'corpus-b.json')
   if (!existsSync(path)) {
-    console.warn('corpus-b.json absent — run `bun mine-transcripts.ts --redact` first. Arm B skipped.')
+    console.warn(
+      'corpus-b.json absent — run `bun mine-transcripts.ts --redact` first. Arm B skipped.',
+    )
     return []
   }
   const rows = JSON.parse(readFileSync(path, 'utf8')) as { id: string; source: string }[]

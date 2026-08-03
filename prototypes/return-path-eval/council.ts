@@ -14,7 +14,15 @@
  * solely by the family that produced the text.
  */
 
-import { type Axis, AXES, type AxisId, JUDGE_SYSTEM_PROMPT, judgePrompt, parseVerdict, type Verdict } from './judges'
+import {
+  AXES,
+  type Axis,
+  type AxisId,
+  JUDGE_SYSTEM_PROMPT,
+  judgePrompt,
+  parseVerdict,
+  type Verdict,
+} from './judges'
 import { type Backend, complete, mapLimit, vendorOf } from './llm'
 
 export type AxisResult = {
@@ -42,7 +50,11 @@ const judgeOnce = async (
   axis: Axis,
   pair: { source: string; spoken: string },
 ): Promise<Verdict & { error?: string }> => {
-  const res = await complete(backend, JUDGE_SYSTEM_PROMPT, judgePrompt(axis, pair.source, pair.spoken))
+  const res = await complete(
+    backend,
+    JUDGE_SYSTEM_PROMPT,
+    judgePrompt(axis, pair.source, pair.spoken),
+  )
   if (res.error) return { violation: false, evidence: '', unparsable: true, error: res.error }
   return parseVerdict(res.text)
 }
@@ -61,14 +73,21 @@ export async function convene(
   // single-backend panels degrade to the obvious thing, and a two-vendor panel guarantees the
   // three-voter axis is never unanimous-by-construction.
   const ballots = AXES.flatMap((axis) =>
-    Array.from({ length: axis.voters }, (_, i) => ({ axis, backend: panel[i % panel.length] as Backend })),
+    Array.from({ length: axis.voters }, (_, i) => ({
+      axis,
+      backend: panel[i % panel.length] as Backend,
+    })),
   )
-  const cast = await mapLimit(ballots, concurrency, (b) => judgeOnce(b.backend, b.axis, { source, spoken }))
+  const cast = await mapLimit(ballots, concurrency, (b) =>
+    judgeOnce(b.backend, b.axis, { source, spoken }),
+  )
 
   const errors: string[] = []
   const axes = AXES.map((axis) => {
     const idx = ballots.map((b, i) => (b.axis.id === axis.id ? i : -1)).filter((i) => i >= 0)
-    const mine = idx.map((i) => cast[i]).filter((v): v is Verdict & { error?: string } => v !== undefined)
+    const mine = idx
+      .map((i) => cast[i])
+      .filter((v): v is Verdict & { error?: string } => v !== undefined)
     for (const m of mine) if (m.error) errors.push(`${axis.id}: ${m.error}`)
     const violationVotes = mine.filter((m) => m.violation).length
     return {
