@@ -30,7 +30,7 @@ function PromptRow({ text }: { text: string }): React.JSX.Element {
 function MessageRow({ markdown }: { markdown: string }): React.JSX.Element {
   return (
     <div className="text-foreground-soft">
-      <Prose markdown={markdown} variant="prose" />
+      <Prose markdown={markdown} />
     </div>
   )
 }
@@ -46,6 +46,9 @@ const firstLine = (markdown: string): string => markdown.trim().split('\n')[0] ?
  * Collapsed by default because reasoning is what you consult when a conclusion surprises you, not
  * what you read first — and because a Turn's final message routinely contradicts its own thinking,
  * so reasoning presented at the same weight as the answer invites acting on an abandoned one.
+ *
+ * That quieting is BRIGHTNESS, not size: the agent's words read at one size across the whole feed,
+ * and stepping the type down for a thought steps it mid-column against the message above it.
  */
 function ThoughtRow({ markdown }: { markdown: string }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: false })
@@ -58,16 +61,16 @@ function ThoughtRow({ markdown }: { markdown: string }): React.JSX.Element {
         aria-expanded={open}
         className={cn(DISCLOSURE, 'flex w-full items-baseline gap-snug')}
       >
-        <Text aria-hidden variant="meta" className="shrink-0 text-foreground-faint">
+        <Text aria-hidden variant="prose" className="shrink-0 text-foreground-faint">
           <Caret className="icon-sm" />
         </Text>
-        <Text variant="meta" className="min-w-0 flex-1 truncate text-foreground-faint">
+        <Text variant="prose" className="min-w-0 flex-1 truncate text-foreground-faint">
           {open ? 'thought' : firstLine(markdown)}
         </Text>
       </button>
       {open && (
         <div className="pl-mark-col text-foreground-faint">
-          <Prose markdown={markdown} variant="meta" />
+          <Prose markdown={markdown} />
         </div>
       )}
     </div>

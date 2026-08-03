@@ -5,8 +5,7 @@ import { Prose } from './Prose'
 // Rendered to static markup rather than mounted, because every claim here is about WHICH markup a
 // transcript string is allowed to become — and the string the browser would receive is exactly the
 // thing under test. A story proves it looks right; this proves nothing else got through.
-const render = (markdown: string): string =>
-  renderToStaticMarkup(<Prose markdown={markdown} variant="prose" />)
+const render = (markdown: string): string => renderToStaticMarkup(<Prose markdown={markdown} />)
 
 describe('the constructs the feed reads', () => {
   it.each([
@@ -84,10 +83,10 @@ describe('where a link in agent prose can take you', () => {
     { kind: 'a data URL', markdown: '[click](data:text/html,alert)' },
     { kind: 'a file URL', markdown: '[click](file:///etc/passwd)' },
     { kind: 'a relative path', markdown: '[click](./local.md)' },
-  ])('keeps the words of $kind and drops its destination', ({ markdown }) => {
+  ])('keeps the words of $kind and drops the link', ({ markdown }) => {
     const html = render(markdown)
     expect(html).toContain('click')
-    expect(html).not.toContain('href')
+    expect(html).not.toContain('<a')
   })
 })
 
@@ -97,7 +96,17 @@ describe('markup the agent left half-finished', () => {
     { malformed: 'a stray backtick', markdown: 'a ` lonely backtick' },
     { malformed: 'an unclosed emphasis', markdown: 'a **dangling bold' },
     { malformed: 'an unclosed link', markdown: 'a [dangling link' },
-  ])('renders $malformed without losing the rest of the row', ({ markdown }) => {
-    expect(render(`${markdown}\n\nthe row continues`)).toContain('the row continues')
+  ])('renders $malformed as literal text', ({ markdown }) => {
+    const html = render(`${markdown}\n\nthe row continues`)
+    expect(html).toContain('the row continues')
+    expect(html).not.toContain('<pre')
+  })
+
+  it('keeps reading past an unclosed fence rather than taking the rest into the block', () => {
+    // A closed fence next to an open one: the block is read, and the paragraph the open fence would
+    // have swallowed under CommonMark's own rule is still a paragraph.
+    const html = render('```ts\nclosed\n```\n\n```ts\nopen\n\nthe row continues')
+    expect(html.match(/<pre/g)).toHaveLength(1)
+    expect(html).toContain('```ts\nopen')
   })
 })

@@ -8,17 +8,8 @@ const meta = {
   args: {
     markdown:
       'Line 444 closes `#list` but I labelled it as closing `.railrest`. That is **wrong** and the fix is *small*, so I took it — see [the ticket](https://example.test/315).',
-    variant: 'prose',
   },
-  argTypes: {
-    markdown: { control: 'text' },
-    variant: {
-      control: 'select',
-      options: ['prose', 'meta'],
-      description: 'Which rung of the type ladder this run reads at.',
-      table: { type: { summary: 'TextVariant' } },
-    },
-  },
+  argTypes: { markdown: { control: 'text' } },
   decorators: [
     (Story) => (
       <div className="w-lg bg-panel p-region text-foreground-soft">
@@ -108,6 +99,3 @@ export const UnbrowsableLink: Story = {
     await expect(canvas.queryByRole('link')).not.toBeInTheDocument()
   },
 }
-
-/** The same subset at a thought's weight, which is the second surface it serves. */
-export const AtThoughtWeight: Story = { args: { variant: 'meta' } }

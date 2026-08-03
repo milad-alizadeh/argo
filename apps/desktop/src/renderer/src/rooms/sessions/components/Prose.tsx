@@ -1,17 +1,13 @@
-import { useMemo } from 'react'
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
-import { Text, type TextVariant } from '@/shared/components/ui'
+import { Text } from '@/shared/components/ui'
 import { PROSE_SUBSET } from './proseSubset'
 
-// Agent prose, read as the small markdown subset `proseSubset` admits. Nothing here is
-// dangerouslySet and no HTML string is ever assembled: react-markdown builds React elements, so a
-// transcript string reaches the screen as a text node whatever it contains.
-
+// Line breaks are kept: markdown reads a lone newline as a space, but the line an agent broke is
+// part of a verbatim fact, and it is what makes a literalised fence read as the block it was.
 const WRAP = 'whitespace-pre-wrap break-words'
 
-// A link opens in the browser rather than in the window. `target="_blank"` is what routes it
-// through main's window-open handler (`shell.openExternal`, then deny), so the cockpit cannot be
-// navigated away from itself by something an agent typed.
+// `target="_blank"` is load-bearing: it routes the click through main's window-open handler
+// (`shell.openExternal`, then deny) rather than navigating the cockpit away from itself.
 const SAFE_SCHEMES = ['http:', 'https:', 'mailto:']
 
 const browsableHref = (href: string | undefined): string | undefined => {
@@ -27,18 +23,16 @@ const browsableHref = (href: string | undefined): string | undefined => {
  * will open — a `javascript:` or `file:` destination loses its href rather than its text. */
 function ProseLink({
   href,
-  variant,
   children,
 }: {
   href: string | undefined
-  variant: TextVariant
   children: React.ReactNode
 }): React.JSX.Element {
   const browsable = browsableHref(href)
-  if (browsable === undefined) return <Text variant={variant}>{children}</Text>
+  if (browsable === undefined) return <Text variant="prose">{children}</Text>
   return (
     <a href={browsable} target="_blank" rel="noreferrer noopener">
-      <Text variant={variant} className="text-primary-soft underline underline-offset-2">
+      <Text variant="prose" className="text-primary-soft underline underline-offset-2">
         {children}
       </Text>
     </a>
@@ -61,7 +55,7 @@ function ProseCodeBlock({ node }: { node: ExtraProps['node'] }): React.JSX.Eleme
         </Text>
       )}
       <pre className="overflow-x-auto">
-        <Text as="code" variant="code" className="text-foreground-soft">
+        <Text as="code" variant="prose" className="font-mono text-foreground-soft">
           {text}
         </Text>
       </pre>
@@ -69,32 +63,32 @@ function ProseCodeBlock({ node }: { node: ExtraProps['node'] }): React.JSX.Eleme
   )
 }
 
-// Every element the subset can produce, mapped to the type ladder. Written as a function of the
-// row's own variant so a thought reads at `meta` and a message at `prose` without the two rows
-// keeping separate maps.
-const elementsAt = (variant: TextVariant): Components => ({
+// Every element the subset can produce, all on the ONE `prose` rung. Code is mono at the same size
+// rather than at the `code` roles' — those are sized for a terminal and a diff, and spending one
+// mid-sentence steps the body type mid-line. What quiets a row is its colour, never its size.
+const ELEMENTS: Components = {
   p: ({ children }) => (
-    <Text as="p" variant={variant} className={WRAP}>
+    <Text as="p" variant="prose" className={WRAP}>
       {children}
     </Text>
   ),
   strong: ({ children }) => (
-    <Text as="strong" variant={variant} className="font-semibold text-foreground">
+    <Text as="strong" variant="prose" className="font-semibold text-foreground">
       {children}
     </Text>
   ),
   em: ({ children }) => (
-    <Text as="em" variant={variant} className="italic">
+    <Text as="em" variant="prose" className="italic">
       {children}
     </Text>
   ),
-  a: ({ href, children }) => (
-    <ProseLink href={href} variant={variant}>
-      {children}
-    </ProseLink>
-  ),
+  a: ({ href, children }) => <ProseLink href={href}>{children}</ProseLink>,
   code: ({ children }) => (
-    <Text variant="code-inline" className="rounded-hair bg-foreground/8 px-hair text-foreground">
+    <Text
+      as="code"
+      variant="prose"
+      className="rounded-hair bg-foreground/6 px-hair font-mono text-foreground"
+    >
       {children}
     </Text>
   ),
@@ -104,11 +98,11 @@ const elementsAt = (variant: TextVariant): Components => ({
     <ol className="flex list-decimal flex-col gap-tight pl-nest">{children}</ol>
   ),
   li: ({ children }) => (
-    <Text as="li" variant={variant} className={WRAP}>
+    <Text as="li" variant="prose" className={WRAP}>
       {children}
     </Text>
   ),
-})
+}
 
 /**
  * Molecule: one run of agent prose, read as markdown rather than as characters.
@@ -120,19 +114,13 @@ const elementsAt = (variant: TextVariant): Components => ({
  */
 export function Prose({
   markdown,
-  variant,
 }: {
   /** The prose, verbatim as the record carried it. */
   markdown: string
-  /** Which rung of the type ladder this run reads at — a message speaks, a thought murmurs. */
-  variant: TextVariant
 }): React.JSX.Element {
-  // Held across renders: a fresh component map is a fresh identity for every element in the run,
-  // and the feed re-renders on every transcript tick with dozens of these rows mounted.
-  const elements = useMemo(() => elementsAt(variant), [variant])
   return (
     <div data-component="Prose" className="flex min-w-0 flex-col gap-gap">
-      <Markdown remarkPlugins={PROSE_SUBSET} components={elements}>
+      <Markdown remarkPlugins={PROSE_SUBSET} components={ELEMENTS}>
         {markdown}
       </Markdown>
     </div>
