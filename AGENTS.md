@@ -51,26 +51,14 @@ root.
 
 The arithmetic half of those rules is a build failure, not a review note — `bun run quality`
 (biome + duplication + placement), and every rule in it is an **error, never a warning**. Biome
-carries every per-file cap: the per-function ones (50 lines, cognitive complexity 15, 3
-parameters), the 150-line per-file ceiling (`style/noExcessiveLinesPerFile`), and the
-escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries). `jscpd` gates whole-tree
-duplication at 1%, and the three placement gates above hold `file-structure.md`'s folder rules.
-CI runs all of them; pre-commit runs biome over the staged files via lint-staged, so the caps are
-covered at commit time and the whole-tree gates are CI's.
-
-The file ceiling counts **lines of code**: blank lines are skipped by the option and comment
-lines are not counted by the rule at all. The cap is about the code you must hold in your head,
-not about how far the file scrolls, so a heavily-commented file is judged on its code. That is a
-deliberate loosening from the hand-rolled gate this replaced, which counted every non-blank line
-and needed six ratchet entries this rule does not.
+carries every per-file cap (50 lines per function, cognitive complexity 15, 3 parameters, a
+150-line file ceiling counting code lines only) and the escape-hatch bans (`any`, `@ts-ignore`,
+`!`, nested ternaries); `jscpd` gates whole-tree duplication at 1%; the three placement gates
+above hold `file-structure.md`'s folder rules. CI runs all of them, pre-commit runs biome.
 
 Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
 assertions (Biome 2.5.4 has no such rule) and exhaustive `switch` over a union
-(`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo). A third is
-prose-only by policy rather than for want of a rule: biome offers a per-file
-`// biome-ignore-all` suppression for the line ceiling, and **that is not the sanctioned escape
-hatch here** — exemptions go in `biome.jsonc` `overrides`, where they carry a KIND/RATCHET label
-and a reason.
+(`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo).
 
 When a gate fires, fix it or ratchet it — never suppress it inline and never raise a global
 cap. Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule
