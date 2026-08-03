@@ -378,7 +378,10 @@
   --type-prose-tracking: 0em;
 
   --type-meta: 9px; /* timestamps, counts, k/v keys (+ tabular-nums) */
-  --type-meta-leading: 13px;
+  /* 14, not 13: it matches the observed 1.5–1.6 leading cluster, and an even leading is
+   * what keeps a meta-only chip an even number of pixels tall against the 4px rhythm
+   * (ConsoleChannelTab's height canary counts this box). */
+  --type-meta-leading: 14px;
   --type-meta-weight: 500;
   --type-meta-tracking: 0.02em;
 
