@@ -172,6 +172,19 @@
   --scrim-top: color-mix(in srgb, var(--graphite-900) 5%, transparent);
   --scrim-bottom: color-mix(in srgb, var(--graphite-900) 10%, transparent);
 
+  /* The LIT SCENE the whole cockpit floats on — the light the planes are lit BY, which is why
+   * every plane's bloom and lip has looked unmotivated: there was no source. Four layers, in the
+   * order the prototype stacks them: the orb's warm corona off-centre right, a wider warm wash
+   * behind it, a cool fill low-left so the room is not one hue, and a lift along the top. On light
+   * these stay very faint — a warm wash on a pale ground reads as a stain, not as light. */
+  --scene-corona: color-mix(in srgb, var(--gold-600) 6%, transparent);
+  --scene-corona-wide: color-mix(in srgb, var(--gold-600) 3%, transparent);
+  --scene-cool: color-mix(in srgb, var(--bone-300) 42%, transparent);
+  --scene-lift: color-mix(in srgb, var(--bone-50) 70%, transparent);
+  /* The dither's weight. Lighter on light: grain on a pale ground reads as dirt, and a light
+   * ground bands far less to begin with. */
+  --grain: 0.02;
+
   /* ONE value per meaning, across every family: a failure is a failure whether it is a
    * failed check, a blocked ticket or a bad signal, and the same holds for the gold that
    * asks for you. Two steps of the same hue read as sloppiness, not as hierarchy, so
@@ -213,8 +226,19 @@
   --signal-bad: var(--status-fail);
 
   /* `well` is a recessed fill, not a shadow: #262 settled depth as brightness only,
-   * so the plane family carries cast and there is no shadow ladder. */
+   * so the plane family carries cast and there is no shadow ladder. Pair it with
+   * `inset-lip` for a track pressed INTO its bar — that is the house segmented-control
+   * box (GitControls, the room switcher). */
   --well: color-mix(in srgb, var(--graphite-900) 4%, transparent);
+
+  /* The RAISED seat — the one segment of a segmented control standing proud of its well.
+   * Same language as a card (a top-down fall beneath a lit lip), one step stronger, because
+   * this face is what the light is actually landing on. It is the only way a switcher says
+   * "here" by FORM rather than by a flat tint: a filled rectangle in a recessed track reads
+   * as a hole, and depth here is still brightness only — no shadow ladder. */
+  --seat-raised-top: var(--bone-50);
+  --seat-raised-bottom: color-mix(in srgb, var(--bone-200) 80%, transparent);
+  --seat-raised-lip: color-mix(in srgb, var(--bone-50) 90%, transparent);
 
   /* Weaker on light, where a halo reads as blur rather than as light. */
   --glow-strength: 35%;
@@ -291,6 +315,15 @@
   --scrim-top: color-mix(in srgb, black 22%, transparent);
   --scrim-bottom: color-mix(in srgb, black 40%, transparent);
 
+  /* Dark is where the scene does its work: the corona is the orb read as a key light, and the cool
+   * fill is what keeps the dark from going flat black in the corner it does not reach. */
+  --scene-corona: color-mix(in srgb, var(--gold-500) 13%, transparent);
+  --scene-corona-wide: color-mix(in srgb, var(--gold-500) 5%, transparent);
+  --scene-cool: color-mix(in srgb, var(--graphite-500) 40%, transparent);
+  --scene-lift: var(--graphite-700);
+  /* Heavier on dark, where a shallow ramp over a near-black ground bands the worst. */
+  --grain: 0.035;
+
   /* One value per meaning — see the light block. On dark the anchors sit at the 300
    * step: a failure or a request for you is the brightest thing in the region, which is
    * how "attention = brightness" is spelled. */
@@ -318,6 +351,12 @@
   --signal-bad: var(--status-fail);
 
   --well: color-mix(in srgb, black 15%, transparent);
+
+  /* On dark the raised face lifts toward the graphite mids and its lip is bone, which is the
+   * warm hair of light the prototype draws along the top of the active key. */
+  --seat-raised-top: color-mix(in srgb, var(--graphite-400) 55%, transparent);
+  --seat-raised-bottom: color-mix(in srgb, var(--graphite-600) 62%, transparent);
+  --seat-raised-lip: color-mix(in srgb, var(--bone-100) 10%, transparent);
 
   --glow-strength: 60%;
 

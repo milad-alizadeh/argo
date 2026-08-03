@@ -3,6 +3,7 @@ import {
   CaretUpIcon,
   type TerminalAttach,
   TerminalPane,
+  TerminalWindowIcon,
   Text,
 } from '@/shared/components/ui'
 import type { DockModel } from '../interiorDock'
@@ -58,11 +59,7 @@ export function Dock({
         aria-expanded={expanded}
         className="flex shrink-0 cursor-pointer items-center gap-snug px-plane py-gap text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
       >
-        {/* `>_` rather than a terminal-window icon: the prompt IS the thing, and a chrome glyph of a
-            window frame says less about it than the two characters it opens with. */}
-        <Text aria-hidden variant="code-inline" className="shrink-0 text-foreground-faint">
-          &gt;_
-        </Text>
+        <TerminalWindowIcon aria-hidden className="icon-sm shrink-0 text-foreground-faint" />
         <Text variant="meta" className="shrink-0 text-foreground-soft">
           {KIND_LABEL[dock.kind]}
         </Text>

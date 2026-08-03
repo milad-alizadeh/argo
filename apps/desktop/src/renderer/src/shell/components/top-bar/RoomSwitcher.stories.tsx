@@ -1,12 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { ROOMS } from '../../shellModel'
+import { RoomScene } from '../RoomScene'
 import { RoomSwitcher } from './RoomSwitcher'
 
 const meta = {
   title: 'Shell/TopBar/RoomSwitcher',
   component: RoomSwitcher,
   args: { room: 'sessions', onSelectRoom: fn() },
+  // ON THE SCENE, because the switcher's track is a WELL: it works by darkening the ground under
+  // it, so on a bare canvas it has nothing to darken and the whole control reads flat. Judging it
+  // against a void would be tuning the tokens against a surface the app does not have.
+  decorators: [
+    (Story) => (
+      <div className="relative flex min-h-96 items-start p-plane">
+        <RoomScene />
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     room: {
       control: 'select',

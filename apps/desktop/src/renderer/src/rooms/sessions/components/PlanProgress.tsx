@@ -1,25 +1,21 @@
 import type { PlanEntryStatus } from '@shared'
-import { Text } from '@/shared/components/ui'
+import { CaretRightIcon, CheckIcon, CircleIcon, Text } from '@/shared/components/ui'
 import type { PlanProgressModel } from '../interiorActivity'
 
 // A plan entry is a step of a plan, not a live process: it carries a MARK — done, here, not yet —
 // rather than a status dot. A dot would put it in the same channel as a running tool call and make
 // the eye read four live things where there is one.
 //
-// GLYPHS, not icons. An icon box is sized for a control and lands heavier than the 11px line it
-// marks, which made the plan read as four buttons; a mono glyph sits inside the text's own weight
-// and rides its baseline. The column is fixed and centred so the three marks never shift the text.
-const ENTRY_MARK: Record<PlanEntryStatus, { glyph: string; tone: string }> = {
-  completed: { glyph: '✓', tone: 'text-tone-done' },
-  in_progress: { glyph: '▲', tone: 'text-tone-run' },
-  pending: { glyph: '○', tone: 'text-foreground-faint' },
-}
-
-/** What a mark means, for the reader who cannot see it. The glyph itself is decorative. */
-const ENTRY_MARK_LABEL: Record<PlanEntryStatus, string> = {
-  completed: 'done',
-  in_progress: 'in progress',
-  pending: 'not started',
+// Icons, never a typed-in glyph: the icon set is the one vocabulary for marks, and a `▲` in a
+// string is a symbol nothing else in the app can match, restyle, or swap. Their size is handled by
+// where they SIT — see the mark column below.
+const ENTRY_MARK: Record<
+  PlanEntryStatus,
+  { Glyph: typeof CheckIcon; tone: string; label: string }
+> = {
+  completed: { Glyph: CheckIcon, tone: 'text-tone-done', label: 'done' },
+  in_progress: { Glyph: CaretRightIcon, tone: 'text-tone-run', label: 'in progress' },
+  pending: { Glyph: CircleIcon, tone: 'text-foreground-faint', label: 'not started' },
 }
 
 const ENTRY_TEXT: Record<PlanEntryStatus, string> = {
@@ -51,15 +47,19 @@ export function PlanProgress({ plan }: { plan: PlanProgressModel }): React.JSX.E
         className="flex flex-col gap-hair border-l border-l-inset-hair pl-inset"
       >
         {plan.entries.map((entry) => {
-          const { glyph, tone } = ENTRY_MARK[entry.status]
+          const { Glyph, tone, label } = ENTRY_MARK[entry.status]
           return (
             <li key={entry.text} className="flex items-baseline gap-snug">
+              {/* The icon rides INSIDE a `Text`, which is the whole trick: `--icon-box-sm` is
+                  em-relative, so an icon dropped straight into this row would size against the
+                  15px body and land heavier than the 11px line it marks. Inside the row's own type
+                  context it tracks the text it belongs to. */}
               <Text
-                variant="code-inline"
-                aria-label={ENTRY_MARK_LABEL[entry.status]}
-                className={`w-mark-col shrink-0 text-center ${tone}`}
+                variant="row"
+                aria-label={label}
+                className={`grid w-mark-col shrink-0 place-items-center ${tone}`}
               >
-                {glyph}
+                <Glyph aria-hidden className="icon-sm" />
               </Text>
               <Text variant="row" className={`min-w-0 truncate ${ENTRY_TEXT[entry.status]}`}>
                 {entry.text}

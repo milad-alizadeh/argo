@@ -17,8 +17,14 @@ const ENTRY_BASE =
  * Molecule: where you are, and how to get to the other two rooms.
  *
  * A router rather than a tab set — the rooms are destinations, not panes of one view — so it is
- * a `nav` of buttons carrying `aria-current`, and it draws no track behind them: the bar is not
- * a surface, and only the room you are in takes any ink.
+ * a `nav` of buttons carrying `aria-current` rather than a `tablist`.
+ *
+ * It sits in a WELL and the current room is a RAISED key, which is the same box `GitControls`
+ * wears one group over: `bg-well inset-lip` for the track pressed into the bar, `seat-raised` for
+ * the face standing proud of it. Depth is doing the work a flat tint was doing before — three
+ * destinations at one altitude with one of them washed a different colour reads as decoration,
+ * whereas a key that stands up reads as position. The chord goes gold on the current room only,
+ * so the accent marks where you are rather than labelling all three.
  */
 export function RoomSwitcher({
   room,
@@ -30,7 +36,11 @@ export function RoomSwitcher({
   onSelectRoom: (room: Room) => void
 }): React.JSX.Element {
   return (
-    <nav aria-label="Rooms" data-component="RoomSwitcher" className="flex items-center gap-hair">
+    <nav
+      aria-label="Rooms"
+      data-component="RoomSwitcher"
+      className="inset-lip flex items-center gap-hair rounded-lg bg-well p-hair"
+    >
       {ROOMS.map((candidate) => {
         const current = candidate === room
         return (
@@ -39,7 +49,7 @@ export function RoomSwitcher({
             type="button"
             aria-current={current ? 'page' : undefined}
             onClick={() => onSelectRoom(candidate)}
-            className={cn(ENTRY_BASE, current && 'bg-secondary text-foreground-bright')}
+            className={cn(ENTRY_BASE, current && 'seat-raised text-foreground-bright')}
           >
             <Text variant="row">{ROOM_ENTRIES[candidate].label}</Text>
             <Text variant="meta" className={cn('text-foreground-faint', current && 'text-primary')}>

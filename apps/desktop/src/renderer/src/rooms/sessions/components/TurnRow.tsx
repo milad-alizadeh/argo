@@ -1,4 +1,4 @@
-import { Text, useDisclosure } from '@/shared/components/ui'
+import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
 import { turnWord } from '../activityWords'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
@@ -32,6 +32,7 @@ export function TurnRow({
   onSelect?: (key: string) => void
 }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: turn.open })
+  const Caret = open ? CaretDownIcon : CaretRightIcon
   return (
     <li data-component="TurnRow" className="flex flex-col gap-tight">
       <div className={open ? TURN_CARD : TURN_CARD_PAST}>
@@ -41,14 +42,14 @@ export function TurnRow({
           aria-expanded={open}
           className="flex w-full cursor-pointer items-center gap-snug px-inset py-gap text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
         >
-          {/* A glyph in the accent ink, not an icon: the fold is the one gold thing inside the card,
-              and an icon box at control size out-weighs the 11px line it opens. */}
+          {/* The one gold thing inside the card. Inside a `Text` so the em-relative icon box tracks
+              the row it opens rather than the 15px body — see PlanProgress for the same trick. */}
           <Text
             aria-hidden
-            variant="code-inline"
-            className="w-mark-col shrink-0 text-center text-primary"
+            variant="row"
+            className="grid w-mark-col shrink-0 place-items-center text-primary"
           >
-            {open ? '▾' : '▸'}
+            <Caret className="icon-sm" />
           </Text>
           <Text variant="row" className="min-w-0 flex-1 truncate text-foreground-soft">
             Turn
