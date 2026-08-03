@@ -64,17 +64,26 @@ export function TurnRow({
           >
             <Caret className="icon-sm" />
           </Text>
-          {/* Numbered, because a stack of cards all reading `Turn` names its own type and nothing
-              else — the ordinal is the only thing here that tells one exchange from another until the
-              transcript parser carries the prompt that opened it (issue 324). */}
-          <Text variant="row" className="shrink-0 text-foreground-soft">
-            {`Turn ${turn.ordinal}`}
+          {/* What names an exchange is the prompt that opened it, so the prompt takes the width and
+              the ordinal shrinks to the bare number that says WHERE in the session you are — the word
+              `Turn` in front of it only names the type of every card in the stack. The line is the
+              prompt's own first line, never a summary of it, and it truncates rather than wrapping:
+              one card, one line. A turn the record carried no prompt for keeps the number alone —
+              an absent prompt is an absent fact, not a placeholder. */}
+          <Text variant="row" className="shrink-0 tabular-nums text-foreground-faint">
+            {turn.ordinal}
           </Text>
           {/* No time on the turn itself. A turn is a bookkeeping seam — where one prompt ended and
               the next began — and timing the seam says nothing you can act on. The times worth
               reading are one level in (each call's own clock time) and one level out (the session's
               duration in the header). */}
-          <span className="flex-1" />
+          {turn.promptLine === null ? (
+            <span className="flex-1" />
+          ) : (
+            <Text variant="row" className="min-w-0 flex-1 truncate text-left text-foreground">
+              {turn.promptLine}
+            </Text>
+          )}
           {/* A past card reports its WEIGHT and nothing else. The stop reason of finished work is the
               least interesting fact about it, and spending the row's right edge on `END_TURN` says
               nothing a reader came for — the open turn's live state is the one worth the width. */}

@@ -99,14 +99,13 @@ describe('the feed the own items carry', () => {
     expect(turns.map(({ key }) => key)).toEqual(['turn:second', 'turn:first'])
   })
 
-  it('carries each turn its own prose rows, opening on the prompt that caused it', () => {
+  it('carries each turn its own prose rows, under the ordinal its navigation row wears', () => {
     const session = sessionView({
       id: 's',
       agents: [
         rootWith([
           turn({
             id: 't',
-            prompt: 'wire it',
             prose: [
               { kind: 'thought', markdown: 'weigh it' },
               { kind: 'message', markdown: 'wired' },
@@ -118,7 +117,6 @@ describe('the feed the own items carry', () => {
     const item = buildActivity(session).own[0]
 
     expect(item?.kind === 'turn' && item.rows.map(({ kind }) => kind)).toEqual([
-      'prompt',
       'thought',
       'message',
     ])

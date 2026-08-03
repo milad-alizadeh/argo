@@ -12,9 +12,25 @@ import { TurnFeed } from './TurnFeed'
  * A PLAIN name, with no dot in front of it. The nav rows beside this feed are the surface's dotted
  * channel; a dot here too would make the head compete with the rows that led you to it, and the
  * word already at its right edge tells the state once. */
-function DetailHead({ name, word }: { name: string; word: string }): React.JSX.Element {
+function DetailHead({
+  name,
+  prefix,
+  word,
+}: {
+  /** What the item is. `null` where nothing observed can name it, which leaves the prefix to. */
+  name: string | null
+  /** A quiet mark in front of the name — a turn's ordinal, which locates the section without
+   * claiming to name it. */
+  prefix?: string
+  word: string
+}): React.JSX.Element {
   return (
     <div className="flex items-baseline gap-snug">
+      {prefix !== undefined && (
+        <Text variant="title" className="shrink-0 tabular-nums text-foreground-faint">
+          {prefix}
+        </Text>
+      )}
       <Text as="h3" variant="title" className="min-w-0 flex-1 truncate text-foreground">
         {name}
       </Text>
@@ -126,8 +142,10 @@ function SubagentDetail({
 
 /** One exchange, read rather than listed: its head, then the prose of the turn beneath it.
  *
- * The head is numbered from the oldest turn, so a section you are reading keeps its number as the
- * agent answers again — and it is the SAME ordinal its navigation row wears. */
+ * Headed by the prompt that opened it — the same line its navigation row wears, so a section and
+ * the row that jumps to it read as one thing. The ordinal stays in front as the quiet mark that
+ * locates it, counted from the oldest turn so a section keeps its number as the agent answers
+ * again. A turn the record carried no prompt for is headed by that number alone. */
 function TurnDetail({
   item,
 }: {
@@ -135,7 +153,11 @@ function TurnDetail({
 }): React.JSX.Element {
   return (
     <>
-      <DetailHead name={`Turn ${item.ordinal}`} word={turnWord(item.stopReason)} />
+      <DetailHead
+        prefix={String(item.ordinal)}
+        name={item.promptLine}
+        word={turnWord(item.stopReason)}
+      />
       <TurnFeed rows={item.rows} />
     </>
   )

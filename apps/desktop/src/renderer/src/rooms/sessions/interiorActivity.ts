@@ -46,6 +46,11 @@ export interface TimelineTurnModel {
    * long as the session lives — numbering from the newest would renumber every card each time the
    * agent answered, which is the one thing a list you are reading must not do. */
   ordinal: number
+  /** The opening line of the prompt that caused this turn, verbatim — what the exchange is ABOUT,
+   * which the ordinal cannot say. `null` where the record carried no prompt (a chain resumed
+   * mid-turn): an absent prompt is an absent fact, and the card falls back to its number rather
+   * than to a title Argo wrote. */
+  promptLine: string | null
   /** Open: no stop reason observed yet, which is the signal the session is still working. */
   open: boolean
   /** `unknown` is rendered as itself — a guessed reason would be a fabricated fact. */
@@ -73,6 +78,9 @@ export type ActivityItem =
       key: string
       kind: 'turn'
       ordinal: number
+      /** The same title its navigation row wears, derived once — the head of a section and the row
+       * that jumps to it must name one thing, and two derivations of it are two facts to keep true. */
+      promptLine: string | null
       stopReason: StopReason | null
       /** The exchange as prose, derived once in `@shared` — what the agent was asked, what it
        * thought, and what it said, in the order it happened. */
@@ -121,6 +129,14 @@ interface TimelineContext {
   nowMs: number | null
 }
 
+/** The title reading of a verbatim prompt: its first non-blank line, kept word for word. A line
+ * rather than a summary, because summarising a DERIVED fact is writing one — the card gives the
+ * prompt one line of width and the rest stays in the feed, unaltered. */
+function promptLine(prompt: string | null): string | null {
+  const line = prompt?.trim().split('\n')[0] ?? ''
+  return line === '' ? null : line
+}
+
 function timelineTurn(
   turn: Turn,
   { compacted, ordinal, nowMs }: TimelineContext,
@@ -128,6 +144,7 @@ function timelineTurn(
   return {
     key: `turn:${turn.id}`,
     ordinal,
+    promptLine: promptLine(turn.prompt),
     open: turn.stopReason === null,
     stopReason: turn.stopReason,
     steps: turn.toolCalls.map((call) => toolStep(call, nowMs)),
@@ -174,6 +191,15 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
   }
 }
 
+/** The rows a turn's section renders UNDER its own head. The prompt drops out of them when the head
+ * is already telling the whole of it: a one-line prompt read twice, an inch apart, is one fact
+ * printed twice. A prompt with more in it than its first line keeps its row, because the head only
+ * ever shows that line — the rest is only readable here, and it is read verbatim. */
+function sectionRows(turn: Turn, promptLine: string | null): readonly FeedRow[] {
+  const rows = turnFeedRows(turn)
+  return turn.prompt?.trim() === promptLine ? rows.filter(({ kind }) => kind !== 'prompt') : rows
+}
+
 /** One section per Turn, holding that turn's rows. The section is the turn because the turn is what
  * a prompt opens and a stop reason closes — a feed cut anywhere else would put a paragraph under a
  * heading that did not cause it. */
@@ -182,7 +208,8 @@ function ownItem(model: TimelineTurnModel, turn: Turn): ActivityItem {
     key: model.key,
     kind: 'turn',
     ordinal: model.ordinal,
+    promptLine: model.promptLine,
     stopReason: model.stopReason,
-    rows: turnFeedRows(turn),
+    rows: sectionRows(turn, model.promptLine),
   }
 }

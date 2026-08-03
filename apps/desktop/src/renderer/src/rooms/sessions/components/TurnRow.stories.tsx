@@ -32,6 +32,11 @@ type Story = StoryObj<typeof meta>
 export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    // Titled by what was asked, not by where in the session it sits — the ordinal survives beside it.
+    await expect(
+      canvas.getByText(/^Pull the token rotation out of the legacy auth module/),
+    ).toBeInTheDocument()
+    await expect(canvas.getByText('2')).toBeInTheDocument()
     await expect(canvas.getByText('running')).toBeInTheDocument()
     await expect(canvas.getByText('compacted')).toBeInTheDocument()
     await expect(canvas.getByRole('list', { name: 'Tool calls' })).toBeInTheDocument()
@@ -68,5 +73,35 @@ export const UnknownStopReason: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { expanded: false }))
     await expect(canvas.getByText('unknown')).toBeInTheDocument()
+  },
+}
+
+/**
+ * A turn whose record carried no prompt — a chain resumed mid-turn. It keeps its ordinal and nothing
+ * else: an absent prompt is an absent fact, and a title invented for it would read as a prompt that
+ * was never typed.
+ */
+export const NoPromptInTheRecord: Story = {
+  args: { turn: { ...open, promptLine: null } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('2')).toBeInTheDocument()
+    await expect(
+      canvas.queryByText(/^Pull the token rotation out of the legacy auth module/),
+    ).not.toBeInTheDocument()
+  },
+}
+
+/**
+ * A prompt longer than the card is wide truncates rather than wrapping — one card, one line — and the
+ * full text stays verbatim in the feed beside it. What is dropped here is width, never words.
+ */
+export const LongPrompt: Story = {
+  args: {
+    turn: {
+      ...open,
+      promptLine:
+        'Pull the token rotation out of the legacy auth module and wire verify() onto it, keeping the old export working for every caller that still reaches for it through the barrel',
+    },
   },
 }

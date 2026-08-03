@@ -55,13 +55,29 @@ export const QueuedSubagent: Story = {
 
 /**
  * One of this session's own turns, read as prose: the prompt that opened it, the reasoning collapsed
- * to a line, and what the agent actually said.
+ * to a line, and what the agent actually said. The head is that prompt's first line — the same title
+ * its navigation row wears — with the ordinal in front of it as the mark that locates the section.
  */
 export const TurnSection: Story = {
   args: { item: turn },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('heading', { name: /^Turn \d+$/ })).toBeInTheDocument()
-    await expect(canvas.getByText(/Pull the token rotation/)).toBeInTheDocument()
+    await expect(
+      canvas.getByRole('heading', { name: /^Pull the token rotation/ }),
+    ).toBeInTheDocument()
+    await expect(canvas.getByText('2')).toBeInTheDocument()
+  },
+}
+
+/**
+ * A turn whose record carried no prompt is headed by its ordinal alone. An absent prompt is an absent
+ * fact — a head reading `untitled` would be prose Argo wrote standing in for prose nobody typed.
+ */
+export const TurnWithoutAPrompt: Story = {
+  args: { item: { ...turn, promptLine: null } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('2')).toBeInTheDocument()
+    await expect(canvas.queryByRole('heading', { name: /Pull the token/ })).not.toBeInTheDocument()
   },
 }
