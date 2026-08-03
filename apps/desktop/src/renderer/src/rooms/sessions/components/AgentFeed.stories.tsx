@@ -9,7 +9,9 @@ const subagent = delegated.find((item) => item.kind === 'subagent')
 // opens the surface for, and the only one carrying both a thought and an answer.
 const turn = own.at(-1)
 
-if (!subagent || !turn) throw new Error('the fixture must carry both item kinds')
+if (subagent?.kind !== 'subagent' || turn?.kind !== 'turn') {
+  throw new Error('the fixture must carry both item kinds')
+}
 
 const meta = {
   title: 'Sessions/Activity/AgentFeed',

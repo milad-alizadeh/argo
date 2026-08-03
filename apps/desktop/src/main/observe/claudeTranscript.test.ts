@@ -57,6 +57,27 @@ describe('parseTranscript', () => {
     expect(parsed.aiTitle).toBeNull()
     expect(parsed.firstPrompt).toBe('Fix the bug')
   })
+
+  // The title reads the same prompt the runtime tree keeps, then trims and clamps it — so an empty
+  // leading part is skipped rather than ending the search, and a rail row still gets a title.
+  it('titles from the first part that actually says something, trimmed', () => {
+    const parsed = parseTranscript(
+      's',
+      linesOf({
+        type: 'user',
+        uuid: 'u-1',
+        timestamp: '2026-07-20T10:00:00.000Z',
+        message: {
+          role: 'user',
+          content: [
+            { type: 'text', text: '   ' },
+            { type: 'text', text: '  Refactor the auth module  ' },
+          ],
+        },
+      }),
+    )
+    expect(parsed.firstPrompt).toBe('Refactor the auth module')
+  })
 })
 
 describe('parseTranscript reads the model and branch', () => {

@@ -1,5 +1,7 @@
 import type { FeedRow } from '@shared'
+import { cn } from '@/lib/utils'
 import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import { DISCLOSURE } from './rowRecipes'
 
 // The narrative rows of one Turn. Prose is rendered as PLAIN TEXT with its whitespace kept: markdown
 // is interpreted in issue 315, and until it is, an agent's `**bold**` reads as the characters it wrote
@@ -21,7 +23,9 @@ function PromptRow({ text }: { text: string }): React.JSX.Element {
   )
 }
 
-/** What the agent said — the feed's primary content, and the only row that reads at full strength. */
+/** What the agent said — the feed's primary content, and the row the eye should land on. Body tone
+ * rather than full strength: it is the longest row on the surface, and prose read at the weight of a
+ * heading is prose nobody finishes. */
 function MessageRow({ markdown }: { markdown: string }): React.JSX.Element {
   return (
     <Text as="p" variant="prose" className={`text-foreground-soft ${PROSE}`}>
@@ -51,7 +55,7 @@ function ThoughtRow({ markdown }: { markdown: string }): React.JSX.Element {
         type="button"
         onClick={toggle}
         aria-expanded={open}
-        className="flex w-full cursor-pointer items-baseline gap-snug text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
+        className={cn(DISCLOSURE, 'flex w-full items-baseline gap-snug')}
       >
         <Text aria-hidden variant="meta" className="shrink-0 text-foreground-faint">
           <Caret className="icon-sm" />

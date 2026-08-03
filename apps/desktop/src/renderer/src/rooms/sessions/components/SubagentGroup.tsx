@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { SectionHeader, Text, useDisclosure } from '@/shared/components/ui'
 import type { SubagentGroupModel } from '../interiorSubagents'
-import { NAV_ROW_SELECTED } from './rowRecipes'
+import { DISCLOSURE, NAV_ROW_SELECTED } from './rowRecipes'
 import { SubagentRow } from './SubagentRow'
 
 /**
@@ -35,7 +35,8 @@ export function SubagentGroup({
         onClick={toggle}
         aria-expanded={open}
         className={cn(
-          'flex cursor-pointer items-baseline gap-gap rounded-md text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60',
+          DISCLOSURE,
+          'flex items-baseline gap-gap rounded-md',
           holdsActive && NAV_ROW_SELECTED,
         )}
       >

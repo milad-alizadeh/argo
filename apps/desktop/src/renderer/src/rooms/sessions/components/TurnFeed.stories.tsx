@@ -1,31 +1,16 @@
-import type { FeedRow } from '@shared'
+import { turnFeedRows } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
+import { OPEN_TURN } from '../__fixtures__/interiorTree'
 import { TurnFeed } from './TurnFeed'
 
-// The rows a real exchange produces, written as the derivation emits them. Prose an agent would
-// actually write, because this is the one surface whose whole job is to be read.
-const PROMPT: FeedRow = {
-  kind: 'prompt',
-  key: 'prompt:t1',
-  turnId: 't1',
-  text: 'Pull the token rotation out of legacy auth and wire verify() onto it.',
-}
+// Run through the REAL derivation rather than hand-written rows: a story that spells its own rows
+// can keep passing after the derivation stops producing them, which is the one thing these stories
+// exist to catch. The prose is the interior fixture's, so this surface and the assembled one are
+// demonstrably reading the same exchange.
+const [PROMPT, THOUGHT, MESSAGE] = turnFeedRows(OPEN_TURN)
 
-const THOUGHT: FeedRow = {
-  kind: 'thought',
-  key: 'prose:t1:0',
-  collapsed: true,
-  markdown:
-    'The tests import verify() and rotate() from the same barrel.\nSo the extraction has to keep re-exporting both, or every caller breaks at once.',
-}
-
-const MESSAGE: FeedRow = {
-  kind: 'message',
-  key: 'prose:t1:1',
-  markdown:
-    'Rotation now lives in its own module, and the old barrel re-exports it so nothing downstream changes yet.\n\nverify() takes the rotation as an argument rather than reaching for the module-level key — that is what made it untestable.',
-}
+if (!PROMPT || !THOUGHT || !MESSAGE) throw new Error('the fixture turn must carry all three rows')
 
 const meta = {
   title: 'Sessions/Activity/TurnFeed',
@@ -45,12 +30,12 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /** The whole vocabulary of this ticket in one frame: the prompt that caused the turn, the reasoning
- * folded to a line, and the answer at full strength. */
+ * folded to a line, and the answer it went on to give. */
 export const Exchange: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/Pull the token rotation/)).toBeInTheDocument()
-    await expect(canvas.getByText(/Rotation now lives/)).toBeInTheDocument()
+    await expect(canvas.getByText(/legacy.ts holds two unrelated jobs/)).toBeInTheDocument()
     // Collapsed: the first line is shown, the second is not — and the reasoning is not mistakable
     // for the answer.
     await expect(canvas.getByRole('button', { expanded: false })).toBeInTheDocument()

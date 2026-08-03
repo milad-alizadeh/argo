@@ -1,5 +1,4 @@
 import type {
-  Agent,
   FeedRow,
   SessionView,
   StopReason,
@@ -160,29 +159,30 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
   const compacted = new Set(root?.compactions.map((mark) => mark.beforeTurnId) ?? [])
   // Numbered before the reverse, so the ordinal counts from the oldest turn while the list draws the
   // newest first.
-  const chronological = (root?.turns ?? []).map((turn, index) =>
-    timelineTurn(turn, { compacted, ordinal: index + 1, nowMs }),
-  )
+  // The navigation row and the feed section for one turn are built in ONE pass, from one Turn: the
+  // key and the ordinal they share are then a single derivation rather than two that must agree.
+  const chronological = (root?.turns ?? []).map((turn, index) => {
+    const model = timelineTurn(turn, { compacted, ordinal: index + 1, nowMs })
+    return { model, item: ownItem(model, turn) }
+  })
   return {
     plan: sessionPlan(session),
     subagents: subagentGroup(session, nowMs),
-    turns: [...chronological].reverse(),
+    turns: chronological.map(({ model }) => model).reverse(),
     delegated: spawnedItems(session, nowMs),
-    own: root === null ? [] : ownItems(root, chronological),
+    own: chronological.map(({ item }) => item),
   }
 }
 
-/** One section per Turn, each holding that turn's rows. The section is the turn because the turn is
- * what a prompt opens and a stop reason closes — a feed cut anywhere else would put a paragraph
- * under a heading that did not cause it. */
-function ownItems(root: Agent, timeline: readonly TimelineTurnModel[]): ActivityItem[] {
-  // Zipped against the timeline models rather than re-derived: the key and the ordinal a section
-  // carries must be the SAME two facts its navigation row carries, or the panes stop matching.
-  return timeline.map((model, index) => ({
+/** One section per Turn, holding that turn's rows. The section is the turn because the turn is what
+ * a prompt opens and a stop reason closes — a feed cut anywhere else would put a paragraph under a
+ * heading that did not cause it. */
+function ownItem(model: TimelineTurnModel, turn: Turn): ActivityItem {
+  return {
     key: model.key,
     kind: 'turn',
     ordinal: model.ordinal,
     stopReason: model.stopReason,
-    rows: turnFeedRows(root.turns[index]),
-  }))
+    rows: turnFeedRows(turn),
+  }
 }

@@ -9,7 +9,7 @@ import {
 import { turnWord } from '../activityStates'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
-import { NAV_ROW_SELECTED, TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
+import { DISCLOSURE, NAV_ROW_SELECTED, TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
 import { ToolCallRow } from './ToolCallRow'
 
 // What a folded turn says about itself instead of its steps: how much work is inside it.
@@ -53,7 +53,7 @@ export function TurnRow({
             onSelect?.(turn.key)
           }}
           aria-expanded={open}
-          className="flex w-full cursor-pointer items-center gap-snug px-inset py-gap text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
+          className={cn(DISCLOSURE, 'flex w-full items-center gap-snug px-inset py-gap')}
         >
           {/* The one gold thing inside the card. Inside a `Text` so the em-relative icon box tracks
               the row it opens rather than the 15px body — see PlanProgress for the same trick. */}
