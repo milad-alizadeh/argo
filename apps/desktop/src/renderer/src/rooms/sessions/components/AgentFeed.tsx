@@ -102,7 +102,15 @@ function SubagentDetail({
   return (
     <>
       <DetailHead name={subagent.name} word={SUBAGENT_STATES[subagent.status].word} />
-      <MetaLine parts={['subagent', group, subagent.target]} />
+      <MetaLine
+        parts={[
+          'subagent',
+          group,
+          subagent.took,
+          subagent.tokens === null ? null : `${subagent.tokens} tokens`,
+          subagent.target,
+        ]}
+      />
       {events.length === 0 ? (
         <Text variant="meta" className="text-foreground-faint">
           no live feed yet — nothing observed from this subagent
@@ -114,8 +122,8 @@ function SubagentDetail({
   )
 }
 
-// What a step's own section says it is, from its status alone — the record carries no start time for
-// a running call, so the line names the state rather than reporting an age it never observed.
+// What a step's own section says it is. The time it happened and how long it took join this line
+// when the record carried them, and drop out silently when it did not.
 const STEP_META: Record<ToolStepModel['status'], string> = {
   in_progress: 'step of the current turn',
   completed: 'completed step',
@@ -130,7 +138,7 @@ function StepDetail({ step }: { step: ToolStepModel }): React.JSX.Element {
   return (
     <>
       <DetailHead name={step.name} word={STEP_STATES[step.status].word} />
-      <MetaLine parts={[STEP_META[step.status], step.kind]} />
+      <MetaLine parts={[STEP_META[step.status], step.kind, step.at, step.took]} />
       <Text variant="code" className="truncate text-foreground-soft">
         {step.target ?? 'this call named no target'}
       </Text>

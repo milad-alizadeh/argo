@@ -38,7 +38,11 @@ export const Phased: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Subagents')).toBeInTheDocument()
     await expect(canvas.getByText('Verify · 2 running')).toBeInTheDocument()
-    await expect(within(canvas.getByRole('list')).getAllByRole('listitem')).toHaveLength(3)
+    await expect(within(canvas.getByRole('list')).getAllByRole('listitem')).toHaveLength(4)
+    // Only the FINISHED delegate names a cost: a running one's spend arrives with its result, and a
+    // figure before then would be a number the record never carried.
+    await expect(canvas.getByText('86.3K')).toBeInTheDocument()
+    await expect(canvas.getByText('4 minutes')).toBeInTheDocument()
   },
 }
 
@@ -50,7 +54,7 @@ export const Labelled: Story = {
   args: { group: groupOf(LABELLED_FANOUT), activeKey: null },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('3 · 2 running')).toBeInTheDocument()
+    await expect(canvas.getByText('4 · 2 running')).toBeInTheDocument()
     // Said for this tier too: only the note separates "reported no phases" from "phases we did not
     // draw". What distinguishes it from a bare CLI is the row names, which the rows carry.
     await expect(canvas.getByText('this CLI reported no phases')).toBeInTheDocument()
@@ -66,7 +70,7 @@ export const MixedPhases: Story = {
   args: { group: groupOf(MIXED_PHASES), activeKey: null },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('4 · 2 running')).toBeInTheDocument()
+    await expect(canvas.getByText('5 · 2 running')).toBeInTheDocument()
     await expect(canvas.queryByText(/Verify ·/)).not.toBeInTheDocument()
   },
 }

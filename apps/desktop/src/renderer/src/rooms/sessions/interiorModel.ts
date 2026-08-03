@@ -51,7 +51,7 @@ export function buildSessionInterior({
   /** Wall clock, injected so the derivation stays pure. */
   nowMs?: number | null
 }): SessionInteriorModel {
-  const activity = buildActivity(session)
+  const activity = buildActivity(session, nowMs)
   return {
     header: buildInteriorHeader({ session, link, nowMs }),
     tab: ui.tab,

@@ -1,5 +1,6 @@
 import { sessionFacts, sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
+import { aRoot, aTurn, aUsage } from './__fixtures__/runtimeTree'
 import { buildInteriorHeader, type SessionLink } from './interiorHeader'
 
 const MINUTE = 60_000
@@ -32,7 +33,33 @@ describe('buildInteriorHeader', () => {
     })
     const header = buildInteriorHeader({ session, link: link({ mode: 'Plan' }), nowMs: NOW })
     expect(header.meta.map(({ id }) => id)).toEqual(['mode', 'branch', 'elapsed'])
-    expect(textOf(header.meta)).toEqual(['Plan', 'feat/auth', 'idle 8m'])
+    expect(textOf(header.meta)).toEqual(['Plan', 'feat/auth', 'idle 8 minutes'])
+  })
+
+  // What the session has COST, which is every token it was observed to spend — not the ring's
+  // separate question of what currently sits in the window.
+  it('sums the whole observed token spend, compacted', () => {
+    const session = sessionView({
+      id: 's',
+      agents: [
+        aRoot({
+          turns: [
+            aTurn({
+              id: 't',
+              usage: aUsage({ inputTokens: 12_000, outputTokens: 3_000, cacheReadTokens: 33_000 }),
+            }),
+          ],
+        }),
+      ],
+    })
+    const spend = buildInteriorHeader({ session }).meta.find(({ id }) => id === 'tokens')
+    expect(spend?.text).toBe('48K tokens')
+  })
+
+  it('claims no spend where the record carried no usage at all', () => {
+    const session = sessionView({ id: 's', agents: [aRoot({ turns: [aTurn({ id: 't' })] })] })
+    const header = buildInteriorHeader({ session })
+    expect(header.meta.some(({ id }) => id === 'tokens')).toBe(false)
   })
 })
 
@@ -90,6 +117,8 @@ describe("the header's other meta segments", () => {
     expect(header.meta.some(({ id }) => id === 'elapsed')).toBe(false)
   })
 
+  // date-fns picks the unit and ROUNDS to it (150 minutes is nearer 3 hours than 2), where the old
+  // hand-rolled formatter floored. Rounding is the better reading of a rest.
   it('spells a long rest in hours', () => {
     const session = sessionView({
       id: 's',
@@ -97,7 +126,7 @@ describe("the header's other meta segments", () => {
       facts: sessionFacts({ status: 'idle' }),
     })
     const header = buildInteriorHeader({ session, nowMs: NOW })
-    expect(header.meta.find(({ id }) => id === 'elapsed')?.text).toBe('idle 2h')
+    expect(header.meta.find(({ id }) => id === 'elapsed')?.text).toBe('idle 3 hours')
   })
 })
 

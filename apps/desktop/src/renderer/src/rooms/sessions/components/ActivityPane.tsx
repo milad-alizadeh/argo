@@ -6,6 +6,7 @@ import {
 } from '@/shared/components/ui'
 import type { ActivityItem, ActivityModel } from '../interiorActivity'
 import { AgentFeed } from './AgentFeed'
+import { PlanProgress } from './PlanProgress'
 import { SubagentGroup } from './SubagentGroup'
 import { TurnTimeline } from './TurnTimeline'
 
@@ -39,10 +40,14 @@ function feedGroups(activity: ActivityModel): MasterDetailGroup[] {
 /**
  * Organism: the Activity surface — two panes, master left and one continuous detail feed right.
  *
- * The left pane holds two sections that are never merged: a Subagents group above the Timeline. The
- * right pane concatenates every item's detail in the same order, so scrolling flows item to item and
- * the highlight follows the scroll rather than the last click — but it concatenates in the same two
- * runs, headed and indented, so a delegate's feed is never read as a step of this session's turn.
+ * The left pane holds the session's plan over two sections that are never merged: a Subagents group
+ * above the Timeline. The plan sits ABOVE both and outside the navigation, because it is neither: a
+ * plan belongs to the SESSION, not to a turn, so there is one of it, it is not a list of places to
+ * jump to, and it stays legible while every turn below it is folded.
+ *
+ * The right pane concatenates every item's detail in the same order, so scrolling flows item to item
+ * and the highlight follows the scroll rather than the last click — but it concatenates in the same
+ * two runs, headed and indented, so a delegate's feed is never read as a step of this session's turn.
  */
 export function ActivityPane({
   activity,
@@ -57,9 +62,16 @@ export function ActivityPane({
   return (
     <div data-component="ActivityPane" className="flex min-h-0 min-w-0 flex-1">
       {groups.length === 0 ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center p-region">
+        // The feed is empty when nothing has been CALLED yet — but an agent that wrote its plan
+        // before its first tool call has something to show, and the Dock's now-head is already
+        // reporting its `N/M`. Drawing the zero-state over a plan we hold would make the two
+        // surfaces disagree in exactly the state the tracker is most worth reading.
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-region p-region">
+          {activity.plan && <PlanProgress plan={activity.plan} />}
           <Text variant="meta" className="text-foreground-faint">
-            nothing observed yet — the Dock below is where this session starts
+            {activity.plan === null
+              ? 'nothing observed yet — the Dock below is where this session starts'
+              : 'no calls yet — this is the plan it opened with'}
           </Text>
         </div>
       ) : (
@@ -68,6 +80,7 @@ export function ActivityPane({
           groups={groups}
           nav={({ activeKey, jumpTo }) => (
             <>
+              {activity.plan && <PlanProgress plan={activity.plan} />}
               {activity.subagents && (
                 <SubagentGroup group={activity.subagents} activeKey={activeKey} onSelect={jumpTo} />
               )}

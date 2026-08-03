@@ -1,6 +1,6 @@
 import type { PlanEntryStatus } from '@shared'
-import { CaretRightIcon, CheckIcon, CircleIcon, Text } from '@/shared/components/ui'
-import type { PlanProgressModel } from '../interiorActivity'
+import { CaretRightIcon, CheckIcon, CircleIcon, SectionHeader, Text } from '@/shared/components/ui'
+import type { PlanProgressModel } from '../sessionPlan'
 
 // A plan entry carries a MARK, not a status dot: a dot would read as a fourth live thing beside the
 // running tool calls. Icons rather than typed-in glyphs, sized by where they sit (the mark column).
@@ -25,18 +25,15 @@ const ENTRY_TEXT: Record<PlanEntryStatus, string> = {
  * The plan is the agent's, not Argo's: the entries are rendered as it wrote them, and the count is
  * arithmetic over their statuses rather than a separate claim.
  *
- * The entries hang off a SPINE and are not selectable. Both facts are the same point: a plan is what
- * the agent said it would do, and the rows below it in the card are what it has actually done — two
- * different channels that were reading as one flat list. The spine says this block belongs to the
- * turn rather than being another run of its rows, and the entries are set at the same size as those
- * rows because intent is not the smaller fact.
+ * The entries hang off a SPINE and are NOT selectable: this is what the session said it would do,
+ * while every list below it is places to go. The spine is what keeps the block from reading as another
+ * run of navigation rows, and the entries are set at the size of those rows because intent is not the
+ * smaller fact.
  */
 export function PlanProgress({ plan }: { plan: PlanProgressModel }): React.JSX.Element {
   return (
-    <div data-component="PlanProgress" className="flex flex-col gap-tight">
-      <Text variant="tag" className="text-foreground-faint">
-        {`Plan · ${plan.done} of ${plan.total}`}
-      </Text>
+    <section data-component="PlanProgress" className="flex flex-col gap-tight">
+      <SectionHeader label="Plan" count={`${plan.done} of ${plan.total}`} />
       <ul
         aria-label="Plan"
         className="flex flex-col gap-hair border-l border-l-inset-hair pl-inset"
@@ -63,6 +60,6 @@ export function PlanProgress({ plan }: { plan: PlanProgressModel }): React.JSX.E
           )
         })}
       </ul>
-    </div>
+    </section>
   )
 }

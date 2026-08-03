@@ -1,6 +1,6 @@
 import { isSteerable, openTurn, rootAgent, type SessionView } from '@shared'
-import { type PlanProgressModel, planProgress } from './interiorActivity'
 import { toolCallsOf } from './interiorSubagents'
+import { type PlanProgressModel, sessionPlan } from './sessionPlan'
 
 // The Dock's derivation: what the session is doing right now, and whether there is a PTY to steer.
 // The now-head lives IN the dock's header row rather than on a strip of its own, so live-process
@@ -12,7 +12,8 @@ export type DockKind = 'pty' | 'transcript'
 export interface NowHeadModel {
   /** What the session is doing right now — the tool call in flight. `null` where nothing is. */
   task: string | null
-  /** The agent's own plan, `N/M`. Absent where the CLI reported no plan. */
+  /** The SESSION's own plan, `N/M` — the same list the Activity surface's tracker draws, so the two
+   * can never report different progress. Absent where the CLI reported no plan. */
   plan: Pick<PlanProgressModel, 'done' | 'total'> | null
   /** The last thing it did, for a session at rest. Mutually exclusive with `task` in practice. */
   last: string | null
@@ -42,7 +43,7 @@ export function nowHead(session: SessionView): NowHeadModel {
   // The newest call that actually RAN. A pending call is one the agent has not started, so naming it
   // as the last thing done would report work that never happened.
   const done = toolCallsOf(root).findLast((call) => call.status !== 'pending') ?? null
-  const progress = open === null ? null : planProgress(open)
+  const progress = sessionPlan(session)
   return {
     task: running === null ? null : describe(running.name, running.target),
     plan: progress === null ? null : { done: progress.done, total: progress.total },

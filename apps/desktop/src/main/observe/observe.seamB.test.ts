@@ -141,7 +141,15 @@ describe('Seam B emits the locked runtime tree', () => {
     expect(session.title).toEqual({ value: 'Untitled session', tier: 'derived' })
     // The tree is absent, not faked — and liveness is untouched by the parse failure.
     expect(session.agents).toEqual([
-      { id: 'unparseableBody', parentId: null, turns: [], compactions: [] },
+      {
+        id: 'unparseableBody',
+        parentId: null,
+        turns: [],
+        compactions: [],
+        startedAtMs: null,
+        endedAtMs: null,
+        usage: null,
+      },
     ])
     expect(session.status.value).toBe('running')
   })

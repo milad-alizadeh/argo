@@ -5,7 +5,6 @@ import {
   aSubagent as agent,
   aRoot,
   aToolCall as call,
-  planEntries as entries,
   aTurn as turn,
 } from './__fixtures__/runtimeTree'
 import { buildActivity } from './interiorActivity'
@@ -51,22 +50,6 @@ describe('buildActivity', () => {
       agents: [rootWith([turn({ id: 't', stopReason: 'unknown' })])],
     })
     expect(buildActivity(session).turns[0]?.stopReason).toBe('unknown')
-  })
-
-  it('counts plan progress off the entries the agent authored', () => {
-    const session = sessionView({
-      id: 's',
-      agents: [
-        rootWith([
-          turn({ id: 't', plan: { entries: entries('completed', 'in_progress', 'pending') } }),
-        ]),
-      ],
-    })
-    expect(buildActivity(session).turns[0]?.plan).toEqual({
-      done: 1,
-      total: 3,
-      entries: entries('completed', 'in_progress', 'pending'),
-    })
   })
 
   it('marks the turn a compaction sits in front of, so history reads as continuous', () => {
@@ -117,6 +100,6 @@ describe("buildActivity's item list", () => {
 
   it('renders an unparseable transcript as an empty surface, not an error', () => {
     const empty = buildActivity(sessionView({ id: 's' }))
-    expect(empty).toEqual({ subagents: null, turns: [], delegated: [], own: [] })
+    expect(empty).toEqual({ plan: null, subagents: null, turns: [], delegated: [], own: [] })
   })
 })

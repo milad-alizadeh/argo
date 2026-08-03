@@ -30,10 +30,31 @@ export function usageFrom(message: Record<string, unknown>): Turn['usage'] {
   }
 }
 
+/**
+ * The spend a `tool_result` record reports for the call it answers, off `toolUseResult` — the same
+ * token shape the assistant records use, one level down.
+ *
+ * This is where a Subagent's tokens live and the ONLY place they are visible: its own turns run in
+ * a sidechain the parent transcript does not attribute, so without this reading a delegate's whole
+ * spend would be invisible rather than merely untiered. Absent for every call whose host reported
+ * none, which is every non-delegating one.
+ */
+export function reportedUsage(record: Record<string, unknown>): Turn['usage'] {
+  return isRecord(record.toolUseResult) ? usageFrom(record.toolUseResult) : null
+}
+
 export function contentParts(record: Record<string, unknown>): unknown[] {
   return isRecord(record.message) ? asArray(record.message.content) : []
 }
 
-export function emptyTurn(id: string): Turn {
-  return { id, stopReason: null, toolCalls: [], plan: null, usage: null, endedAtMs: null }
+export function emptyTurn(id: string, startedAtMs: number | null): Turn {
+  return {
+    id,
+    stopReason: null,
+    toolCalls: [],
+    plan: null,
+    usage: null,
+    startedAtMs,
+    endedAtMs: null,
+  }
 }

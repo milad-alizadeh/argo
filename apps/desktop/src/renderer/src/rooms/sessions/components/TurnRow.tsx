@@ -1,19 +1,23 @@
 import { cn } from '@/lib/utils'
-import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  SectionHeader,
+  Text,
+  useDisclosure,
+} from '@/shared/components/ui'
 import { turnWord } from '../activityStates'
 import type { TimelineTurnModel } from '../interiorActivity'
 import { CompactionMarker } from './CompactionMarker'
-import { PlanProgress } from './PlanProgress'
 import { NAV_ROW_SELECTED, TURN_CARD, TURN_CARD_PAST } from './rowRecipes'
 import { ToolCallRow } from './ToolCallRow'
 
-// What a folded turn says about itself instead of its steps: how much work is inside it. The record
-// carries no turn start, so the summary counts what it observed and never reports a duration.
+// What a folded turn says about itself instead of its steps: how much work is inside it.
 const foldedSummary = (turn: TimelineTurnModel): string =>
   `${turn.steps.length} ${turn.steps.length === 1 ? 'tool' : 'tools'}`
 
 /**
- * Molecule: one Turn in the timeline — its stop reason, its plan, and its tool calls as steps.
+ * Molecule: one Turn in the timeline — its ordinal, its stop reason, and its tool calls.
  *
  * The open turn is expanded and past turns fold, because what a session is doing now is what you
  * came to see. Folding is the row's own business, which is why it holds that state rather than
@@ -58,9 +62,14 @@ export function TurnRow({
           {/* Numbered, because a stack of cards all reading `Turn` names its own type and nothing
               else — the ordinal is the only thing here that tells one exchange from another until the
               transcript parser carries the prompt that opened it (issue 324). */}
-          <Text variant="row" className="min-w-0 flex-1 truncate text-foreground-soft">
+          <Text variant="row" className="shrink-0 text-foreground-soft">
             {`Turn ${turn.ordinal}`}
           </Text>
+          {/* No time on the turn itself. A turn is a bookkeeping seam — where one prompt ended and
+              the next began — and timing the seam says nothing you can act on. The times worth
+              reading are one level in (each call's own clock time) and one level out (the session's
+              duration in the header). */}
+          <span className="flex-1" />
           {/* A past card reports its WEIGHT and nothing else. The stop reason of finished work is the
               least interesting fact about it, and spending the row's right edge on `END_TURN` says
               nothing a reader came for — the open turn's live state is the one worth the width. */}
@@ -78,17 +87,13 @@ export function TurnRow({
           )}
         </button>
         {open && (
-          // `gap-region`, not `gap-tight`: the plan and the calls are two CHANNELS — what the agent
-          // said it would do, and what it has actually done — and at a tight gap they read as one
-          // flat list of eight rows. Each channel is named, because a card holding two of them has
-          // to say which is which.
           <div className="flex flex-col gap-region px-inset pb-inset">
-            {turn.plan && <PlanProgress plan={turn.plan} />}
             {turn.steps.length > 0 && (
               <div className="flex flex-col gap-tight">
-                <Text variant="tag" className="text-foreground-faint">
-                  {`Did · ${turn.steps.length} ${turn.steps.length === 1 ? 'call' : 'calls'}`}
-                </Text>
+                <SectionHeader
+                  label="Did"
+                  count={`${turn.steps.length} ${turn.steps.length === 1 ? 'call' : 'calls'}`}
+                />
                 <ul aria-label="Tool calls" className="-mx-tight flex flex-col">
                   {turn.steps.map((step) => (
                     <ToolCallRow

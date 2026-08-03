@@ -13,7 +13,17 @@ function agentsOf(fixture: string): Agent[] {
     fixture,
     readFileSync(join(__dirname, '__fixtures__', `${fixture}.jsonl`), 'utf8').split('\n'),
   )
-  return [{ id: fixture, parentId: null, turns: tree.turns, compactions: tree.compactions }]
+  return [
+    {
+      id: fixture,
+      parentId: null,
+      turns: tree.turns,
+      compactions: tree.compactions,
+      startedAtMs: null,
+      endedAtMs: null,
+      usage: null,
+    },
+  ]
 }
 
 const DEFAULT_POSTURE: SessionPosture = 'external'

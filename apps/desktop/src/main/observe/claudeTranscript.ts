@@ -28,9 +28,9 @@ function clampPrompt(text: string): string | null {
   return trimmed.slice(0, PROMPT_CLAMP)
 }
 
-export function parseTranscript(sessionId: string, lines: string[]): ParsedTranscript {
-  const tree = createTreeBuilder()
-  const parsed: ParsedTranscript = {
+/** A transcript before a single record has been read: every derived fact absent, not defaulted. */
+export function emptyTranscript(sessionId: string): ParsedTranscript {
+  return {
     sessionId,
     headLeafUuid: null,
     messageUuids: [],
@@ -43,6 +43,11 @@ export function parseTranscript(sessionId: string, lines: string[]): ParsedTrans
     lastTimestampMs: null,
     tree: { turns: [], compactions: [], subagents: [] },
   }
+}
+
+export function parseTranscript(sessionId: string, lines: string[]): ParsedTranscript {
+  const tree = createTreeBuilder()
+  const parsed = emptyTranscript(sessionId)
 
   for (const line of lines) {
     const record = parseLine(line)

@@ -120,7 +120,9 @@ export function MasterDetail({
       <div
         ref={navPane}
         className={cn(
-          'flex min-h-0 min-w-0 flex-col gap-gap overflow-y-auto p-inset',
+          // `gap-region` between sections against the `gap-tight` inside one: a header sitting the
+          // same distance from the list above it as from its own rows attaches to the wrong one.
+          'flex min-h-0 min-w-0 flex-col gap-region overflow-y-auto p-inset',
           navClassName ?? 'w-[var(--c-act)] shrink-0',
         )}
       >

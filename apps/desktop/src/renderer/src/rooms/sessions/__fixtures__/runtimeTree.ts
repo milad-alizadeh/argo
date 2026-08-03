@@ -17,6 +17,9 @@ export const aToolCall = (over: Partial<ToolCall> & { id: string }): ToolCall =>
   kind: 'read',
   status: 'completed',
   target: null,
+  atMs: null,
+  endedAtMs: null,
+  usage: null,
   ...over,
 })
 
@@ -25,6 +28,7 @@ export const aTurn = (over: Partial<Turn> & { id: string }): Turn => ({
   toolCalls: [],
   plan: null,
   usage: null,
+  startedAtMs: null,
   endedAtMs: null,
   ...over,
 })
@@ -34,6 +38,9 @@ export const aSubagent = (over: Partial<Agent> & { id: string }): Agent => ({
   parentId: 'root',
   turns: [],
   compactions: [],
+  startedAtMs: null,
+  endedAtMs: null,
+  usage: null,
   ...over,
 })
 
@@ -43,6 +50,9 @@ export const aRoot = (over: Partial<Agent> = {}): Agent => ({
   parentId: null,
   turns: [],
   compactions: [],
+  startedAtMs: null,
+  endedAtMs: null,
+  usage: null,
   ...over,
 })
 

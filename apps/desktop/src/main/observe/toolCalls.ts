@@ -5,6 +5,7 @@ import {
   type PlanEntryStatus,
   type ToolCall,
   type ToolCallKind,
+  type Usage,
 } from '../../shared'
 import { asArray, asString, isRecord, stringField } from './untrusted'
 
@@ -62,7 +63,7 @@ export function toolCallTarget(input: unknown): string | null {
  * A `tool_use` part → a pending Tool Call. Pending is the honest opening state: the matching
  * `tool_result` has not been read yet, and it may never arrive (the turn was interrupted).
  */
-export function toolCallFrom(part: unknown): ToolCall | null {
+export function toolCallFrom(part: unknown, atMs: number | null): ToolCall | null {
   if (!isRecord(part) || part.type !== 'tool_use') return null
   const id = asString(part.id)
   const name = asString(part.name)
@@ -73,6 +74,9 @@ export function toolCallFrom(part: unknown): ToolCall | null {
     kind: toolCallKind(name),
     status: 'pending',
     target: toolCallTarget(part.input),
+    atMs,
+    endedAtMs: null,
+    usage: null,
   }
 }
 
@@ -108,12 +112,21 @@ export function subagentFrom(call: ToolCall, input: unknown): SubagentSeed {
     id: call.id,
     ...(label === null ? {} : { label }),
     ...(group === null ? {} : { group }),
+    startedAtMs: call.atMs,
+    endedAtMs: call.endedAtMs,
+    usage: call.usage,
   }
 }
 
-/** The Subagent facts a parent's Turn can honestly carry: identity plus whatever it was told. */
+/** The Subagent facts a parent's Turn can honestly carry: identity, whatever it was told, and the
+ * span and spend of the delegating call — which ARE the subagent's own, since the parent's record is
+ * the only place its life is visible. Read once the call has resolved, so a finished subagent
+ * carries the end and the tokens its `tool_result` reported. */
 export interface SubagentSeed {
   id: string
   label?: string
   group?: string
+  startedAtMs: number | null
+  endedAtMs: number | null
+  usage: Usage | null
 }

@@ -53,11 +53,32 @@ export function contextPercent(session: SessionView): number | null {
   return (contextTokens(usage) / window) * 100
 }
 
-/** The Session's whole observed token spend — the roll-up `CONTEXT.md` puts on the Session. */
+/**
+ * The Session's whole observed token spend — the roll-up `CONTEXT.md` puts on the Session.
+ *
+ * Two sources, because the tree reports spend at two grains: per Turn for an agent whose turns are
+ * in this transcript, and whole-agent for a Subagent, whose own turns are not. Summing both is what
+ * makes the header's figure the session's real cost rather than only the part it spent itself.
+ */
 export function sessionUsage(session: SessionView): Usage | null {
-  const observed = session.agents
-    .flatMap((agent) => agent.turns)
-    .map((turn) => turn.usage)
-    .filter((usage) => usage !== null)
+  const observed = [
+    ...session.agents.flatMap((agent) => agent.turns).map((turn) => turn.usage),
+    ...session.agents.map((agent) => agent.usage),
+  ].filter((usage) => usage !== null)
   return observed.length === 0 ? null : observed.reduce(addUsage)
+}
+
+/** A token count as the surfaces spell it — `86k`, `Intl`-compacted rather than divided by a
+ * thousand. The whole spend: both input sides and both cache lines, since the question is what it
+ * COST — the ring's separate question drops output, because output leaves the window.
+ *
+ * Bare, with no unit word: the header has room to say `tokens` and a dense subagent row does not, so
+ * the noun is the caller's to add. */
+const COMPACT = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 })
+
+export function tokenSpend(usage: Usage | null): string | null {
+  if (usage === null) return null
+  const total =
+    usage.inputTokens + usage.outputTokens + usage.cacheReadTokens + usage.cacheCreationTokens
+  return total === 0 ? null : COMPACT.format(total)
 }

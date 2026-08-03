@@ -4,7 +4,7 @@ import { planEntries } from '../__fixtures__/runtimeTree'
 import { PlanProgress } from './PlanProgress'
 
 const meta = {
-  title: 'Sessions/Activity/TurnTimeline/TurnRow/PlanProgress',
+  title: 'Sessions/Activity/PlanProgress',
   component: PlanProgress,
   args: {
     plan: {
@@ -34,7 +34,10 @@ type Story = StoryObj<typeof meta>
 export const Plan: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Plan · 2 of 4')).toBeInTheDocument()
+    // The SAME section header Subagents and Timeline wear — label and count as two elements, not one
+    // sentence, so every section of the pane opens identically.
+    await expect(canvas.getByText('Plan')).toBeInTheDocument()
+    await expect(canvas.getByText('2 of 4')).toBeInTheDocument()
     await expect(within(canvas.getByRole('list')).getAllByRole('listitem')).toHaveLength(4)
   },
 }

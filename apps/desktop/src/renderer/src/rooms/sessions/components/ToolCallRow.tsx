@@ -4,10 +4,15 @@ import type { ToolStepModel } from '../interiorActivity'
 import { NAV_ROW, NAV_ROW_SELECTED } from './rowRecipes'
 
 /**
- * Molecule: one tool call as a step of its turn — `dot · name · target`.
+ * Molecule: one tool call as a step of its turn — `dot · name · target`, with the time it happened
+ * held at the right edge.
  *
  * The name is the host's own tool name, never renamed, and the target is the file or command it
  * actually named. State is carried by the dot; a failed call burns red and holds still.
+ *
+ * The time is the row's one right-hand column and is a CLOCK time, not an age: a turn's calls land
+ * seconds apart, so ages would read identically down the whole list. Its column holds even where a
+ * record carried no time, so the targets beside it stay on one axis.
  */
 export function ToolCallRow({
   step,
@@ -34,9 +39,12 @@ export function ToolCallRow({
         <Text variant="row" className="shrink-0 text-foreground">
           {step.name}
         </Text>
-        {step.target !== null && (
-          <Text variant="code-inline" className="min-w-0 flex-1 truncate text-foreground-faint">
-            {step.target}
+        <Text variant="code-inline" className="min-w-0 flex-1 truncate text-foreground-faint">
+          {step.target}
+        </Text>
+        {step.at !== null && (
+          <Text variant="meta" className="shrink-0 tabular-nums text-foreground-faint">
+            {step.at}
           </Text>
         )}
       </button>
