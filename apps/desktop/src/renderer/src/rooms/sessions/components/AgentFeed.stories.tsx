@@ -5,8 +5,8 @@ import { AgentFeed } from './AgentFeed'
 
 const { delegated, own } = interiorOf(RUNNING).activity
 const subagent = delegated.find((item) => item.kind === 'subagent')
-// The LAST own item: the feed runs oldest-first, so that is the turn in flight — the one a reader
-// opens the surface for, and the only one carrying both a thought and an answer.
+// The LAST own item: the feed runs oldest-first, so the live turn is at the bottom — the turn a
+// reader opens the surface for, and the only one carrying both a thought and an answer.
 const turn = own.at(-1)
 
 if (subagent?.kind !== 'subagent' || turn?.kind !== 'turn') {

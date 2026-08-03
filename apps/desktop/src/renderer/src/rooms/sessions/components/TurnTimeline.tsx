@@ -3,7 +3,7 @@ import type { TimelineTurnModel } from '../interiorActivity'
 import { TurnRow } from './TurnRow'
 
 /**
- * Organism: the Timeline section — this session's turns, newest first, past ones folded.
+ * Organism: the Timeline section — this session's turns, oldest first, past ones folded.
  *
  * It shares the Subagents group's header treatment: two distinct sections, one header style. Nothing
  * from the fanout is interleaved here, because a subagent is not a step of the session's own turn.
@@ -13,7 +13,7 @@ export function TurnTimeline({
   activeKey,
   onSelect,
 }: {
-  /** The turns, already ordered newest first. */
+  /** The turns, already ordered oldest first — the live one last. */
   turns: readonly TimelineTurnModel[]
   /** Which item the detail feed is showing, tracked by scroll-spy. */
   activeKey: string | null
@@ -22,7 +22,7 @@ export function TurnTimeline({
 }): React.JSX.Element {
   return (
     <section data-component="TurnTimeline" className="flex flex-col gap-tight">
-      <SectionHeader label="Timeline" count="newest first · past folded" />
+      <SectionHeader label="Timeline" count="live turn last · past folded" />
       {turns.length === 0 ? (
         <Text variant="meta" className="text-foreground-faint">
           nothing observed yet

@@ -44,6 +44,10 @@ export function TurnRow({
   const holdsActive = turn.key === activeKey
   return (
     <li data-component="TurnRow" className="flex flex-col gap-tight">
+      {/* The mark sits BEFORE this turn in time, and the list runs oldest first — so it renders
+          ABOVE the turn it precedes. Below it would claim the history was condensed after the work
+          it actually came before. */}
+      {turn.compactedBefore && <CompactionMarker />}
       <div className={cn(open ? TURN_CARD : TURN_CARD_PAST, holdsActive && NAV_ROW_SELECTED)}>
         <button
           type="button"
@@ -120,10 +124,6 @@ export function TurnRow({
           </div>
         )}
       </div>
-      {/* The mark sits BEFORE this turn in time, and the list runs newest first — so it renders
-          UNDER the turn it precedes. Above it would claim the history was condensed after the work
-          it actually came before. */}
-      {turn.compactedBefore && <CompactionMarker />}
     </li>
   )
 }

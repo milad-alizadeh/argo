@@ -3,9 +3,14 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { interiorOf, RUNNING } from '../__fixtures__/interior'
 import { TurnRow } from './TurnRow'
 
+// The timeline runs oldest-first, so the live turn is the LAST one and the finished one leads.
 const turns = interiorOf(RUNNING).activity.turns
-const open = turns[0]
-const past = turns[1]
+const open = turns.at(-1)
+const past = turns[0]
+
+if (open === undefined || past === undefined) {
+  throw new Error('the fixture must carry a finished turn and a live one')
+}
 
 const meta = {
   title: 'Sessions/Activity/TurnTimeline/TurnRow',

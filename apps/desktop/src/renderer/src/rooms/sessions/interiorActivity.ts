@@ -93,7 +93,8 @@ export interface ActivityModel {
   plan: PlanProgressModel | null
   /** `null` where the session spawned none: there is no group to collapse, so none is drawn. */
   subagents: SubagentGroupModel | null
-  /** Newest turn first — the open one leads, past turns fold behind it. */
+  /** Oldest turn first, so the live one is at the BOTTOM — a session reads the way a chat does, and
+   * the place new work appears is the place you are already looking. Past turns fold behind it. */
   turns: readonly TimelineTurnModel[]
   /** The items split by WHOSE work they are, in feed order: every delegate's first, then this
    * session's own turns. The split is domain-meaningful, not a rendering convenience — a
@@ -101,9 +102,10 @@ export interface ActivityModel {
    * behind identical seams reads as one timeline. The surface heads and indents by this, so nothing
    * downstream has to re-derive whose work it is looking at.
    *
-   * `own` runs OLDEST FIRST, unlike `turns` above: this is the pane you read, and prose only reads
-   * downward — a paragraph answers what came before it. The navigation list stays newest-first
-   * until issue 319 reconciles the two panes; the keys match either way, so the highlight still tracks. */
+   * `own` runs OLDEST FIRST, the same way `turns` does: the two panes are one list read twice, and a
+   * navigation row above another whose section sits below it would make the highlight travel
+   * backwards as the reader scrolls. Downward is also how prose reads — a paragraph answers what
+   * came above it — so the live turn is the one at the bottom, where a chat puts it. */
   delegated: readonly ActivityItem[]
   own: readonly ActivityItem[]
 }
@@ -185,7 +187,7 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
   return {
     plan: sessionPlan(session),
     subagents: subagentGroup(session, nowMs),
-    turns: chronological.map(({ model }) => model).reverse(),
+    turns: chronological.map(({ model }) => model),
     delegated: spawnedItems(session, nowMs),
     own: chronological.map(({ item }) => item),
   }
