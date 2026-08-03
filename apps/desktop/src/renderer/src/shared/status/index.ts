@@ -8,6 +8,8 @@ export { type DeliveryState, deliveryState } from './deliveryState'
 export { isHotHeadState } from './lifecycleHot'
 export {
   type DeliveryClaim,
+  DOT_GLOWS,
+  type DotGlow,
   deliveryClaimWord,
   type RailStatus,
   ROSTER_ICONS,

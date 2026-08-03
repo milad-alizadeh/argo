@@ -1,7 +1,7 @@
 import { lifecycleModel, type SessionPosture, type SessionStatus, sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
 import { deliveryState } from './deliveryState'
-import { deliveryClaimWord, type RosterTone, sessionDot, sessionStatusWord } from './rosterStatus'
+import { deliveryClaimWord, type SessionDot, sessionDot, sessionStatusWord } from './rosterStatus'
 
 const HEAD = 'a1b2c3d'
 const OLD = '9f0e1d2'
@@ -37,35 +37,32 @@ describe('the Session-status word', () => {
 })
 
 describe('the dot that carries the state', () => {
-  const tones: [SessionStatus, RosterTone][] = [
-    ['running', 'run'],
-    ['idle', 'gray'],
-    ['permission', 'amber'],
-    ['asking', 'amber'],
-    ['stopped', 'red'],
-    ['ended', 'red'],
+  // One row per status and the WHOLE dot: its tone, how hard its halo burns, whether it breathes,
+  // and whether it is the state asking for you. Asserted wholesale, because the defect worth
+  // catching is a state that took the right tone and another state's motion.
+  const dots: [SessionStatus, SessionDot][] = [
+    ['running', { tone: 'run', hollow: false, glow: 'live', pulse: true, attention: false }],
+    ['permission', { tone: 'amber', hollow: false, glow: 'live', pulse: true, attention: true }],
+    ['asking', { tone: 'amber', hollow: false, glow: 'live', pulse: true, attention: true }],
+    ['stopped', { tone: 'red', hollow: false, glow: 'live', pulse: false, attention: false }],
+    ['ended', { tone: 'red', hollow: false, glow: 'live', pulse: false, attention: false }],
+    ['idle', { tone: 'gray', hollow: false, glow: 'quiet', pulse: false, attention: false }],
   ]
 
-  for (const [status, tone] of tones) {
-    it(`tones a ${status} session ${tone}`, () => {
-      expect(sessionDot(sessionFacts({ status }), 'managed').tone).toBe(tone)
+  for (const [status, dot] of dots) {
+    it(`draws a ${status} session ${dot.tone}, ${dot.glow}, ${dot.pulse ? 'breathing' : 'still'}`, () => {
+      expect(sessionDot(sessionFacts({ status }), 'managed')).toEqual(dot)
     })
   }
-
-  it('glows only while the session is running', () => {
-    expect(sessionDot(sessionFacts({ status: 'running' }), 'managed').glow).toBe(true)
-  })
-
-  it('leaves an idle session unlit', () => {
-    expect(sessionDot(sessionFacts({ status: 'idle' }), 'managed').glow).toBe(false)
-  })
 
   for (const posture of ['external', 'orphaned'] as const) {
     it(`hollows an ${posture} session rather than colouring it`, () => {
       expect(sessionDot(sessionFacts({ status: 'running' }), posture)).toEqual({
         tone: 'gray',
         hollow: true,
-        glow: false,
+        glow: 'faint',
+        pulse: false,
+        attention: false,
       })
     })
   }

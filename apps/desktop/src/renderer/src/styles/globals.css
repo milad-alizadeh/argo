@@ -8,6 +8,9 @@
  * (no runtime map), so the scanner can't see them as literals. Safelist the closed
  * tone set here; every RosterTone must appear (toneSafelist.test.ts locks the two). */
 @source inline("text-tone-{run,amber,done,gray,red,stale,landed}");
+/* Same story for the glow weight, interpolated as `glow-${dot.glow}` (toneSafelist.test.ts
+ * locks this set against DOT_GLOWS). */
+@source inline("glow-{live,quiet,faint}");
 
 /* Raw values live in argo-tokens.css (ADR-0006). This file only wires them into
  * Tailwind's theme so utilities like bg-background / text-muted-foreground resolve. */
@@ -160,8 +163,11 @@
   --transition-duration-pulse: var(--time-pulse);
   --ease-standard: var(--time-ease);
 
-  /* animate-pulse-status — the screen's ONE animation budget (at most one pulsing
-   * element per render). Pair it with motion-safe:. */
+  /* animate-pulse-status — a status signal breathing. Pulse is a property of the STATE
+   * (a session still in motion breathes; one that has come to rest holds still), not a
+   * budget one element is handed, so several dots may breathe at once. The rationed
+   * animation is the `sweep` below, which only a row asking for you gets. Pair it with
+   * motion-safe:. */
   --animate-pulse-status: pulse-status var(--time-pulse) ease-in-out infinite;
 }
 
@@ -172,6 +178,20 @@
   }
   50% {
     opacity: var(--pulse-dim);
+  }
+}
+
+/* The sweep's travelling angle. Registering it as an <angle> is what makes the conic
+ * gradient interpolate — an unregistered custom property would jump, not travel. */
+@property --sweep-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes sweep-travel {
+  to {
+    --sweep-angle: 360deg;
   }
 }
 
@@ -191,11 +211,85 @@
   flex: none;
 }
 
-/* The lit halo on a live signal. Colour is taken from the element's own currentColor,
+/* The lit halo on a status signal. Colour is taken from the element's own currentColor,
  * so one utility covers every status tone — pair it with a text-* colour class. */
 @utility glow {
-  box-shadow: 0 0 var(--glow-blur)
-    color-mix(in srgb, currentColor var(--glow-strength), transparent);
+  box-shadow: 0 0 var(--glow-blur-weight, var(--glow-blur))
+    color-mix(in srgb, currentColor var(--glow-strength-weight, var(--glow-strength)), transparent);
+}
+
+/* Glow weights. Every state glows and the weight is its liveness, so a weight only names
+ * which pair of glow tokens is in force — a custom property resolves on the element, which
+ * is why `glow glow-quiet` needs no second box-shadow. Weighting through their own
+ * `-weight` names rather than rebinding `--glow-strength` keeps the two out of a cycle,
+ * and lets `glow` alone stay the themed base for a call site with no state to weigh. */
+@utility glow-live {
+  --glow-strength-weight: var(--glow-strength);
+  --glow-blur-weight: var(--glow-blur);
+}
+
+@utility glow-quiet {
+  --glow-strength-weight: var(--glow-strength-quiet);
+  --glow-blur-weight: var(--glow-blur-quiet);
+}
+
+@utility glow-faint {
+  --glow-strength-weight: var(--glow-strength-faint);
+  --glow-blur-weight: var(--glow-blur-faint);
+}
+
+/* The attention sweep — a faint ray of the attention ink travelling the ring of the one row
+ * asking for you (issue 131's technique, reassigned there). BORDER-ONLY: a masked conic
+ * `::before` riding the host's own radius, so it adds no second glass layer and draws no
+ * border. The ray sits over a faint always-on ring so the edge never drops out on the dark
+ * phase of the loop, and its body is long and soft — a short hard ray makes the speed
+ * difference between a row's long and short edges read as a stutter. Colour comes from
+ * `--sweep-tone`, defaulting to the host's own currentColor, so a non-attention reuse needs
+ * no second copy. Reduced motion → the static lit ring, matching `pulse-status`. */
+@utility sweep {
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: var(--sweep-ring);
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      conic-gradient(
+        from var(--sweep-angle),
+        transparent 0deg,
+        color-mix(in srgb, var(--sweep-tone, currentColor) var(--sweep-ray), transparent) 100deg,
+        color-mix(in srgb, var(--sweep-tone, currentColor) var(--sweep-tail), transparent) 210deg,
+        transparent 320deg 360deg
+      ),
+      color-mix(in srgb, var(--sweep-tone, currentColor) var(--sweep-base), transparent);
+    /* Punch the content box out of the padding box: what is left is the ring alone. */
+    mask:
+      linear-gradient(black 0 0) content-box,
+      linear-gradient(black 0 0);
+    mask-composite: exclude;
+    animation: sweep-travel var(--sweep-period) linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      background: color-mix(
+        in srgb,
+        var(--sweep-tone, currentColor) var(--sweep-still),
+        transparent
+      );
+      animation: none;
+    }
+  }
+}
+
+/* The sweep in the attention ink. Gold is what "come here" is spelled in (`--status-attention`,
+ * surfaced as `--tone-amber`), and naming the meaning rather than the tone is what keeps a
+ * component from typing a colour. */
+@utility sweep-attention {
+  --sweep-tone: var(--tone-amber);
 }
 
 /* The shared icon sizing convention (`size: default | sm` in the inventory), the app's

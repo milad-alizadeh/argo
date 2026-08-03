@@ -4,7 +4,8 @@ import type { RosterRow } from '../sessionsRoomModel'
 
 // A plane, not a flat inset card: the rail's rows float in the lit scene on their own depth
 // (`cockpit-penumbra-reference.html`, `#rail > .plane`). Selection is the ONE thing that brightens
-// it — no plane tints or glows by state, because the dot already said it.
+// it, and the attention sweep the ONE thing state adds — no plane tints by state, because the dot
+// already said what the state is.
 const ROW_PLANE = 'block w-full plane px-region py-inset text-left'
 
 /**
@@ -34,11 +35,17 @@ export function SessionRow({
         aria-current={row.selected ? 'true' : undefined}
         className={cn(
           ROW_PLANE,
-          'focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+          // A hairline, not the kit's 3px ring: `--ring` is gold, and gold is the attention ink, so
+          // a thick focus ring on a quiet row out-shouts the row that is actually asking for you.
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring/60',
           row.selected && 'plane-lit',
           // Ghosted, so read-only awareness looks different from a session you can drive. A
           // brightness step, which is the only channel depth is allowed to use.
           row.external && 'plane-recede-1',
+          // A ray of the attention ink travels the ring of a row asking for you — the rail's one
+          // rationed animation, riding the plane's own radius rather than drawing a border.
+          // Gold, and never a word comparison: the derivation says which state is asking.
+          row.dot.attention && 'sweep sweep-attention',
         )}
       >
         <div className="flex items-center gap-snug">
@@ -46,7 +53,7 @@ export function SessionRow({
             tone={row.dot.tone}
             hollow={row.dot.hollow}
             glow={row.dot.glow}
-            pulse={row.pulse}
+            pulse={row.dot.pulse}
           />
           <Text variant="row-strong" className="min-w-0 flex-1 truncate text-foreground">
             {row.name}

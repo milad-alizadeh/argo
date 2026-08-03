@@ -135,7 +135,8 @@
       "ratchet_": "Each entry below is a symbol in the domain-aware tier with one caller left. These rot SILENTLY rather than reddening: earned-shared-check.mjs defines stale as 'now wanted by >= 2 modules', so when the last caller is deleted the count drops to zero and the gate says nothing. The ticket that deletes the caller deletes the entry.",
       "_exclude_comment": "KIND — the framework-primitive kit (`components/ui`, its icons, the docs blocks). file-structure.md earns the generic tier by CATEGORY, not by caller count: these would stand alone as a published package, so a vendored Radix wrapper or an icon belongs to the kit from its first caller. Counting callers here would flag 50 icons and demand they be scattered into the slices that happen to use one each.",
       "ratchet": {
-        "RosterIcon": "RATCHET — the status-icon type, read only by `delivery` today; earns the tier again once a second room renders a status icon (#269)."
+        "RosterIcon": "RATCHET — the status-icon type, read only by `delivery` today; earns the tier again once a second room renders a status icon (#269).",
+        "isHotHeadState": "RATCHET — the lifecycle's stalled-on-a-human state set. Its second caller was the rail's pulse budget, which issue 267 retired: a session's dot now pulses on its own state, so nothing asks whether the lifecycle is louder. Read only by `delivery`'s LifecycleNode until the Delivery strip becomes a room (issue 269), which is also when it either earns the tier back or moves into that module."
       }
     },
     "kindFolders": {

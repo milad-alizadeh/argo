@@ -450,10 +450,18 @@
 
   --border-roster: 3px; /* the severity/state accent bar (finding, rvrow, phase group) */
 
-  /* Glow — the lit halo a live signal carries (status dots, the ctx fill). Its
+  /* Glow — the lit halo a status signal carries (status dots, the ctx fill). Its
    * colour is the element's own currentColor, so one utility covers every tone;
-   * only the strength is themed. */
+   * only the strength is themed.
+   * EVERY state glows and the WEIGHT is the state's liveness: `live` burns at the
+   * themed strength, `quiet` (resting, failed) at a fraction of it, `faint` at the
+   * least — the hollow ring of a session Argo only observes. The two steps down are
+   * derived from the themed base so a theme still makes ONE glow decision. */
   --glow-blur: 8px;
+  --glow-strength-quiet: calc(var(--glow-strength) * 0.4);
+  --glow-strength-faint: calc(var(--glow-strength) * 0.22);
+  --glow-blur-quiet: calc(var(--glow-blur) * 0.75);
+  --glow-blur-faint: calc(var(--glow-blur) * 0.5);
 
   /* Icon glyph box — em-relative, so a glyph tracks the type role it sits in
    * rather than needing a size per call site (the default box is the icon's own
@@ -462,13 +470,27 @@
   --icon-box-sm: 0.86em;
   --icon-baseline: -0.14em;
 
-  /* Motion. `pulse` is the period of the screen's ONE animation budget
-   * (at most one pulsing element per render). */
+  /* Motion. `pulse` is the period a status dot breathes at — a property of the STATE
+   * (live or asking), not a budget handed to one element. The rationed animation is the
+   * attention sweep below, which only a row asking for you ever gets. */
   --time-fast: 150ms;
   --time-slow: 300ms;
   --time-pulse: 2s;
   --time-ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --pulse-dim: 0.45; /* the opacity that one pulsing element dips to */
+  --pulse-dim: 0.45; /* the opacity a pulsing dot dips to */
+
+  /* Attention sweep — a faint ray of light travelling the ring of the one row asking for
+   * you. The mix steps keep it a ray of the attention ink rather than a drawn border:
+   * `base` is the always-on ring so the edge never drops out behind the ray, and `still`
+   * is the whole ring under reduced motion. The ray's BODY is deliberately long (see the
+   * gradient in globals.css): an angle crosses a row's long edges and its short ones at
+   * different speeds, and a long soft body is what keeps that from reading as a stutter. */
+  --sweep-ring: 1.5px;
+  --sweep-period: 2.4s;
+  --sweep-ray: 30%;
+  --sweep-tail: 10%;
+  --sweep-base: 7%;
+  --sweep-still: 12%;
 
   /* Depth staging — how far a dormant plane recedes behind the driven one. Two steps
    * only (the scene never stacks deeper than second-back), and BRIGHTNESS only: the

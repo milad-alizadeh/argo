@@ -89,7 +89,9 @@ type Story = StoryObj<typeof meta>
 
 /**
  * The populated rail: `+ New session` pinned at the top, then one plane per session in
- * most-recent-first order, each reading `dot · name · word` over `model · branch`.
+ * most-recent-first order, each reading `dot · name · word` over `model · branch`. This is where
+ * the attention read is judged — one row asking for you carries the gold sweep on its rim while
+ * the rest stay quiet.
  */
 export const Populated: Story = {
   args: { model: buildSessionsRoomModel({ sessions: POPULATED }) },

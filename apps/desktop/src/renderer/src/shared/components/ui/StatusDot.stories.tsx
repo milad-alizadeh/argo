@@ -1,6 +1,7 @@
+import { type SessionPosture, type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
-import { ROSTER_TONES } from '@/shared/status'
+import { DOT_GLOWS, ROSTER_TONES, sessionDot } from '@/shared/status'
 import { StatusDot } from './StatusDot'
 import { Text } from './Text'
 
@@ -10,7 +11,7 @@ const meta = {
   argTypes: {
     tone: { control: 'select', options: ROSTER_TONES },
     hollow: { control: 'boolean' },
-    glow: { control: 'boolean' },
+    glow: { control: 'select', options: DOT_GLOWS },
     pulse: { control: 'boolean' },
     label: { control: 'text' },
   },
@@ -39,8 +40,9 @@ export const Labelled: Story = {
 }
 
 /**
- * The screen's ONE animation budget — at most one pulsing dot per render. Asserting the
- * computed animation, not just the class, is what catches the utility failing to resolve.
+ * A breathing dot. Pulse is a property of the STATE — a session still moving breathes and one that
+ * has come to rest holds still — so several may breathe at once. Asserting the computed
+ * animation, not just the class, is what catches the utility failing to resolve.
  */
 export const Pulsing: Story = {
   args: { tone: 'amber', label: 'Needs input', pulse: true },
@@ -54,26 +56,69 @@ export const Pulsing: Story = {
 
 /**
  * A session Argo only observes: the dot keeps the row's identity and drops every claim about
- * its state, so it renders as a ring with nothing inside it.
+ * its state, so it renders as a ring with nothing inside it — lit at the faintest weight, which
+ * is as much as an unclaimed state earns.
  */
 export const Hollow: Story = {
-  args: { tone: 'gray', label: 'Read-only', hollow: true },
+  args: { tone: 'gray', label: 'Read-only', hollow: true, glow: 'faint' },
   play: async ({ canvasElement }) => {
     const ring = getComputedStyle(within(canvasElement).getByRole('img', { name: 'Read-only' }))
     await expect(ring.backgroundColor).toBe('rgba(0, 0, 0, 0)')
     await expect(ring.borderTopWidth).not.toBe('0px')
+    await expect(ring.boxShadow).not.toBe('none')
   },
 }
 
 /**
- * The live glow, which `running` alone earns. Every other state renders the flat dot above —
- * an always-glowing dot spends attention on states that never asked for it.
+ * Weighted down for a state at rest. Every dot glows — brightness is what liveness is spelled in,
+ * so a resting state is dimmer rather than unlit, and only the weight changes.
  */
-export const Glowing: Story = {
-  args: { tone: 'run', label: 'Running', glow: true },
+export const Quiet: Story = {
+  args: { tone: 'gray', label: 'Idle', glow: 'quiet' },
   play: async ({ canvasElement }) => {
-    const dot = within(canvasElement).getByRole('img', { name: 'Running' })
-    await expect(getComputedStyle(dot).boxShadow).not.toBe('none')
+    const quiet = getComputedStyle(within(canvasElement).getByRole('img', { name: 'Idle' }))
+    await expect(quiet.boxShadow).not.toBe('none')
+  },
+}
+
+// The five states the rail can draw, each with its glow weight and pulse read off the one
+// derivation — a story cannot show a dot the model would not produce.
+const RAIL_STATES: readonly [string, SessionStatus, SessionPosture][] = [
+  ['running', 'running', 'managed'],
+  ['needs you', 'asking', 'managed'],
+  ['idle', 'idle', 'managed'],
+  ['failed', 'stopped', 'managed'],
+  ['read-only', 'running', 'external'],
+]
+
+/**
+ * Every state the rail draws, with its motion truth: running and needs-you burn bright and breathe,
+ * failed burns just as bright but holds still, idle stays lit and quiet, and the observed row is a
+ * faint hollow ring. The gallery is where "one thing shouting" is judged, so the animating dots are
+ * masked for pixel diffing.
+ */
+export const EveryState: Story = {
+  args: { tone: 'run' },
+  render: () => (
+    <div className="flex items-start gap-region" data-vrt-mask>
+      {RAIL_STATES.map(([word, status, posture]) => (
+        <span className="flex w-20 flex-col items-center gap-gap" key={word}>
+          <StatusDot {...sessionDot(sessionFacts({ status }), posture)} />
+          <Text variant="meta" className="text-foreground-faint">
+            {word}
+          </Text>
+        </span>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const spans = canvasElement.querySelectorAll('span')
+    const breathing = [...spans].filter(
+      (span) => getComputedStyle(span).animationName === 'pulse-status',
+    )
+    // Two of the five breathe — running and needs-you, the states still moving. Everything that has
+    // come to rest holds still: failed, idle, and the row Argo merely observes.
+    await expect(breathing).toHaveLength(2)
   },
 }
 

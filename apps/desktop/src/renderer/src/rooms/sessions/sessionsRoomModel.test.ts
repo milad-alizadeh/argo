@@ -146,19 +146,27 @@ describe('the row a rail draws', () => {
   })
 })
 
-describe('the one pulse budget', () => {
-  it('spends it on the first session asking for you', () => {
-    const sessions = [
-      session({ id: 'running', lastActivityAt: 2_000 }),
-      session({ id: 'asking', lastActivityAt: 1_000, facts: sessionFacts({ status: 'asking' }) }),
-    ]
-    expect(buildSessionsRoomModel({ sessions }).rows.map((row) => row.pulse)).toEqual([false, true])
+// Motion is no longer rationed by the rail: a dot breathes on its own state and every row asking
+// for you carries the sweep, so the row's job is only to hand the derived dot through untouched.
+describe('the motion a row carries', () => {
+  it('breathes and asks for the sweep on every session asking for you, not just the first', () => {
+    const asking = (id: string, at: number) =>
+      session({ id, lastActivityAt: at, facts: sessionFacts({ status: 'asking' }) })
+    const sessions = [asking('first', 2_000), asking('second', 1_000)]
+    const model = buildSessionsRoomModel({ sessions })
+    expect(model.rows.map((row) => row.dot.pulse)).toEqual([true, true])
+    expect(model.rows.map((row) => row.dot.attention)).toEqual([true, true])
   })
 
-  it('spends nothing while the selected session has a stalled lifecycle of its own', () => {
-    const facts = sessionFacts({ headSha: HEAD, dirty: 3, agent: 'idle', status: 'permission' })
-    const sessions = [session({ id: 'commit-ready', facts })]
-    const model = buildSessionsRoomModel({ sessions, selectedId: 'commit-ready' })
-    expect(model.rows.map((row) => row.pulse)).toEqual([false])
+  it('keeps a running row breathing without the sweep, which only attention earns', () => {
+    const row = rowFor(session({ id: 'running' }))
+    expect(row.dot.pulse).toBe(true)
+    expect(row.dot.attention).toBe(false)
+  })
+
+  it('holds an idle row still', () => {
+    const row = rowFor(session({ id: 'idle', facts: sessionFacts({ status: 'idle' }) }))
+    expect(row.dot.pulse).toBe(false)
+    expect(row.dot.glow).toBe('quiet')
   })
 })
