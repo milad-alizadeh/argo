@@ -7,7 +7,15 @@ import {
   subagentFrom,
   toolCallFrom,
 } from './toolCalls'
-import { contentParts, emptyTurn, mapStopReason, reportedUsage, usageFrom } from './turnFacts'
+import {
+  contentParts,
+  emptyTurn,
+  mapStopReason,
+  promptText,
+  proseFrom,
+  reportedUsage,
+  usageFrom,
+} from './turnFacts'
 import { asString, isRecord, timestampMs } from './untrusted'
 
 // One file's slice of the runtime tree, folded out of its records in order. Turns are segmented
@@ -33,13 +41,22 @@ interface TreeState extends Omit<ParsedTree, 'subagents'> {
   compactionPending: boolean
 }
 
+/** What opens a Turn: the record's own id, when it landed, and the prompt it carried — `null` for a
+ * turn no prompt opened, which is a chain resumed mid-turn rather than a prompt of nothing. */
+interface TurnOpening {
+  id: string
+  atMs: number | null
+  prompt: string | null
+}
+
 // A new prompt means the previous Turn is over. If no stop reason was ever recorded for it the
 // honest reading is `unknown` — the transcript simply stopped speaking for it.
-function beginTurn(state: TreeState, id: string, atMs: number | null): Turn {
+function beginTurn(state: TreeState, { id, atMs, prompt }: TurnOpening): Turn {
   if (state.current !== null && state.current.stopReason === null) {
     state.current.stopReason = 'unknown'
   }
   const turn = emptyTurn(id, atMs)
+  turn.prompt = prompt
   state.turns.push(turn)
   if (state.compactionPending) {
     state.compactions.push({ beforeTurnId: id })
@@ -55,7 +72,14 @@ interface CallContext {
   atMs: number | null
 }
 
-function absorbCall(state: TreeState, { turn, atMs }: CallContext, part: unknown): void {
+/** One content part folded into its Turn: prose if it is prose, a tool call if it is a call. Both
+ * live in `content`, so one reader takes them apart rather than two passes over the same array. */
+function absorbPart(state: TreeState, { turn, atMs }: CallContext, part: unknown): void {
+  const prose = proseFrom(part)
+  if (prose !== null) {
+    turn.prose.push(prose)
+    return
+  }
   const call = toolCallFrom(part, atMs)
   if (call === null) return
   turn.toolCalls.push(call)
@@ -102,9 +126,10 @@ function absorbAssistant(state: TreeState, record: Record<string, unknown>): voi
   if (uuid === null) return
   const atMs = timestampMs(record)
   // An assistant record with no prompt in front of it (a chain resumed mid-turn) still gets a
-  // Turn keyed to itself, so its tool calls are reported rather than dropped.
-  const turn = state.current ?? beginTurn(state, uuid, atMs)
-  for (const part of contentParts(record)) absorbCall(state, { turn, atMs }, part)
+  // Turn keyed to itself, so its tool calls are reported rather than dropped. Its prompt is absent
+  // rather than empty: there was one, this file just does not carry it.
+  const turn = state.current ?? beginTurn(state, { id: uuid, atMs, prompt: null })
+  for (const part of contentParts(record)) absorbPart(state, { turn, atMs }, part)
   closeTurn(state, turn, record)
 }
 
@@ -120,7 +145,11 @@ function absorbUser(state: TreeState, record: Record<string, unknown>): void {
   const resolved = contentParts(record).map((part) => resolveResult(state, context, part))
   if (resolved.some(Boolean)) return
   const uuid = asString(record.uuid)
-  if (uuid !== null) beginTurn(state, uuid, context.atMs)
+  if (uuid === null) return
+  // The prompt is read from the same record that opens the turn, so a Turn's cause and its id come
+  // from one reading rather than being matched up afterwards.
+  const content = isRecord(record.message) ? record.message.content : null
+  beginTurn(state, { id: uuid, atMs: context.atMs, prompt: promptText(content) })
 }
 
 export interface TreeBuilder {

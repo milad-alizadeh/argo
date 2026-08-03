@@ -25,6 +25,8 @@ export const aToolCall = (over: Partial<ToolCall> & { id: string }): ToolCall =>
 
 export const aTurn = (over: Partial<Turn> & { id: string }): Turn => ({
   stopReason: 'end_turn',
+  prompt: null,
+  prose: [],
   toolCalls: [],
   plan: null,
   usage: null,

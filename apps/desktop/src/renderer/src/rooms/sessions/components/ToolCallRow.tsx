@@ -21,9 +21,11 @@ export function ToolCallRow({
 }: {
   /** The step, already derived. */
   step: ToolStepModel
-  /** Whether the detail feed is currently showing this step. */
-  selected: boolean
-  /** Jump the detail feed to this step's events. */
+  /** Whether the detail feed is currently showing this step. Absent while the feed's sections are
+   * TURNS rather than steps: a step earns its own anchor back when tool rows join the feed (issue 317),
+   * and until then a highlight here would name a section that does not exist. */
+  selected?: boolean
+  /** Jump the detail feed to where this step is read. */
   onSelect?: (key: string) => void
 }): React.JSX.Element {
   return (
@@ -32,8 +34,8 @@ export function ToolCallRow({
         type="button"
         data-component="ToolCallRow"
         onClick={() => onSelect?.(step.key)}
-        aria-current={selected ? 'true' : undefined}
-        className={cn(NAV_ROW, selected && NAV_ROW_SELECTED)}
+        aria-current={selected === true ? 'true' : undefined}
+        className={cn(NAV_ROW, selected === true && NAV_ROW_SELECTED)}
       >
         <StatusDot tone={step.dot.tone} glow={step.dot.glow} pulse={step.dot.pulse} />
         <Text variant="row" className="shrink-0 text-foreground">

@@ -221,6 +221,18 @@ agent` is dropped (every spec treats a session **as** an agent) — root-vs-chil
   `end_turn · max_tokens · max_turn_requests · refusal · cancelled` (ACP's enum, adopted
   agnostically), plus **`unknown`** for CC where the reason can't be inferred from the DAG —
   never guessed.
+- **Message** — what the agent **said** within a Turn (ACP's `agent_message_chunk`; a `text`
+  content block in CC's record). **DERIVED and held verbatim** — prose is read, never reworded,
+  summarized, or lifted into a fact. A Turn carries `0—N`, in the order they were emitted.
+- **Thought** — what the agent **reasoned** within a Turn (ACP's `agent_thought_chunk`; a
+  `thinking` block). DERIVED, verbatim, `0—N` per Turn, and **never read as a Message**: "the
+  agent said this" and "the agent thought this" are different provenance claims, and a Turn's
+  final message routinely contradicts its own reasoning. Kept in ONE ordered sequence with
+  Message rather than in two lists, because the order the two were emitted in is the only thing
+  that says which reasoning produced which answer.
+  A Turn additionally carries **the prompt that opened it**, verbatim and DERIVED — the exchange's
+  own cause, and absent rather than invented for a record that carried none. Steering text typed
+  mid-run is a prompt like any other and needs no second concept.
 - **Tool Call** — the atomic observable action within a Turn (kind read/edit/execute/search/…,
   status pending/in_progress/completed/failed, target file, diff). *The* unit users watch
   scroll by (ACP-native). Carries **when it was emitted and when its result came back** — the grain
@@ -413,9 +425,10 @@ that assembles the join — ADR-0005/0017) and the **transcript-tailing parser**
   inherits its parent's) and attaches **`0..1` Preview** — both node-scoped (ADR-0010); Preview
   is additionally a **cockpit-level singleton** (one running instance globally). A **Workspace**
   holds `0—N` **File** (its working tree; the explorer/editor surface).
-- **Inside an Agent**: `1—N` **Turn**; each **Turn** `0—N` **Tool Call** and `0..1` **Usage**,
-  rolled up to a **Session**-level Usage; `0—N` **Compaction** markers punctuate the Turn
-  sequence. The **Plan** is **not** on this line: a **Session** holds `0..1` **Plan** (the live
+- **Inside an Agent**: `1—N` **Turn**; each **Turn** `0—N` **Tool Call**, `0—N` **Message** and
+  `0—N` **Thought** (one ordered prose sequence, the two kinds distinct within it), `0..1` its
+  opening **prompt**, and `0..1` **Usage**, rolled up to a **Session**-level Usage; `0—N`
+  **Compaction** markers punctuate the Turn sequence. The **Plan** is **not** on this line: a **Session** holds `0..1` **Plan** (the live
   list), and a **Turn** carries `0..1` **snapshot** of it — the version in force while it ran
   (ADR-0020).
 - **Delivery detail**: **Delivery** `1—1` **Diff** (current change-set), `0—N` **Review**

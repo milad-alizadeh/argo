@@ -76,10 +76,54 @@ describe("buildActivity's item list", () => {
     })
     const { delegated, own } = buildActivity(session)
     expect(delegated.map(({ key, kind }) => [kind, key])).toEqual([['subagent', 'subagent:a']])
-    expect(own.map(({ key, kind }) => [kind, key])).toEqual([
-      ['step', 'step:c1'],
-      ['step', 'step:c2'],
+    expect(own.map(({ key, kind }) => [kind, key])).toEqual([['turn', 'turn:t']])
+  })
+
+  it('renders an unparseable transcript as an empty surface, not an error', () => {
+    const empty = buildActivity(sessionView({ id: 's' }))
+    expect(empty).toEqual({ plan: null, subagents: null, turns: [], delegated: [], own: [] })
+  })
+})
+
+describe('the feed the own items carry', () => {
+  // The feed is what you READ, so it runs the way prose does — while the navigation list beside it
+  // still leads with the work in flight. issue 319 reconciles the two; the keys match in the meantime.
+  it('runs the feed oldest-first while the timeline list stays newest-first', () => {
+    const session = sessionView({
+      id: 's',
+      agents: [rootWith([turn({ id: 'first' }), turn({ id: 'second', stopReason: null })])],
+    })
+    const { own, turns } = buildActivity(session)
+
+    expect(own.map(({ key }) => key)).toEqual(['turn:first', 'turn:second'])
+    expect(turns.map(({ key }) => key)).toEqual(['turn:second', 'turn:first'])
+  })
+
+  it('carries each turn its own prose rows, opening on the prompt that caused it', () => {
+    const session = sessionView({
+      id: 's',
+      agents: [
+        rootWith([
+          turn({
+            id: 't',
+            prompt: 'wire it',
+            prose: [
+              { kind: 'thought', markdown: 'weigh it' },
+              { kind: 'message', markdown: 'wired' },
+            ],
+          }),
+        ]),
+      ],
+    })
+    const item = buildActivity(session).own[0]
+
+    expect(item?.kind === 'turn' && item.rows.map(({ kind }) => kind)).toEqual([
+      'prompt',
+      'thought',
+      'message',
     ])
+    // The section and its navigation row wear ONE ordinal and one key, not two derivations of them.
+    expect(item?.kind === 'turn' && item.ordinal).toBe(1)
   })
 
   it('carries each subagent its own feed, so the detail pane never re-looks-it-up', () => {
@@ -96,10 +140,5 @@ describe("buildActivity's item list", () => {
     })
     const item = buildActivity(session).delegated[0]
     expect(item?.kind === 'subagent' && item.events.map(({ name }) => name)).toEqual(['Grep'])
-  })
-
-  it('renders an unparseable transcript as an empty surface, not an error', () => {
-    const empty = buildActivity(sessionView({ id: 's' }))
-    expect(empty).toEqual({ plan: null, subagents: null, turns: [], delegated: [], own: [] })
   })
 })

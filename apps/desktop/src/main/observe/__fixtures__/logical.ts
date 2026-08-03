@@ -1,5 +1,6 @@
 import { derived } from '../../../shared'
 import { emptyTranscript } from '../claudeTranscript'
+import { emptyTurn } from '../turnFacts'
 import type { LogicalSession, ParsedTranscript } from '../types'
 
 // The parsed-transcript builders the observer's tests read. One home for the shape, so a field added
@@ -21,13 +22,8 @@ export const logicalOf = (...files: ParsedTranscript[]): LogicalSession => ({
 
 export const running = () => derived('running' as const)
 
+// Built on the parser's own empty Turn, for the same reason `file` is built on `emptyTranscript`.
 export const turn = (id: string, over: { startedAtMs?: number; endedAtMs?: number } = {}) => ({
-  id,
-  stopReason: null,
-  toolCalls: [],
-  plan: null,
-  usage: null,
-  startedAtMs: null,
-  endedAtMs: null,
+  ...emptyTurn(id, null),
   ...over,
 })

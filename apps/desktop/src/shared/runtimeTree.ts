@@ -83,11 +83,36 @@ export interface Compaction {
   beforeTurnId: string
 }
 
+/** What the agent SAID within a Turn (ACP `agent_message_chunk`; a `text` block in CC's record).
+ * Held verbatim — prose is read, never reworded or summarized. */
+export interface Message {
+  kind: 'message'
+  markdown: string
+}
+
+/** What the agent REASONED within a Turn (ACP `agent_thought_chunk`; a `thinking` block). Never
+ * read as a Message: the two are different provenance claims, and a Turn's final message routinely
+ * contradicts its own reasoning. */
+export interface Thought {
+  kind: 'thought'
+  markdown: string
+}
+
+/** The Turn's prose, in ONE sequence rather than two lists. The order the agent emitted them in is
+ * the only thing that says which reasoning produced which answer, and two lists lose it. */
+export type Prose = Message | Thought
+
 /** One exchange within an Agent: prompt in → stop reason out. */
 export interface Turn {
   id: string
   /** null = still in progress (no stop observed); `unknown` = ended, reason not inferable. */
   stopReason: StopReason | null
+  /** The prompt that opened this exchange, verbatim. `null` where the record carried none (a chain
+   * resumed mid-turn), which is an absent fact and not an empty one. Steering text typed mid-run
+   * arrives here too: a steer is a prompt into the same sequence. */
+  prompt: string | null
+  /** Messages and thoughts in emission order. */
+  prose: Prose[]
   toolCalls: ToolCall[]
   plan: Plan | null
   usage: Usage | null
