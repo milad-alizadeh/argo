@@ -98,11 +98,14 @@ Delivery"):
   case (ADR-0017), so the edge is never double-sourced. This edge **is** the **claim lease** on a
   decision ticket — a ticket is `claimed` exactly while a live Session links to it, its age
   `now − link.createdAt` (DIRECT, since Argo owns the link) and its release the session's own end,
-  so there is no TTL to tune. Across a restart the link survives but liveness drops to DERIVED, so
-  the claim degrades to **stale** rather than reading as held: stale-on-open is takeable with a
-  warning, stale-on-closed is inert, because closure is read before claims. The provider assignee
-  is written as a **visible echo** for teammates, never as the lease — it carries no age and
-  nothing releases it.
+  so there is no TTL to tune. Across a restart the link survives — **re-derived from the session's
+  own read of its brief file**, which lands at the transcript floor — but liveness drops to
+  DERIVED, so the claim degrades to **stale** rather than reading as held: stale-on-open is
+  takeable with a warning, stale-on-closed is inert, because closure is read before claims. That
+  derivation is why an **orphaned** session keeps its claim and a purely **external** session
+  never holds one: only a session Argo spawned has a brief to have read. The provider assignee is
+  a **visible echo** for teammates, never the lease — it carries no age, nothing releases it, and
+  it is written by the **agent** under `/wayfinder`, not by Argo.
 - **Session → Delivery** — "which branch / product am I moving."
 - **Delivery → Work Item** — "what intent does this branch serve" (survives with no session:
   the teammate-PR case), derived via the join precedence (native-ref → id-in-branch →
