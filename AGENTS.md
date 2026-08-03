@@ -38,21 +38,31 @@ gates it on every PR). When you add, split, or rename a module, update the map's
 `publicEntry` in the **same change**; a new module missing from the map is fixed by adding it,
 never by loosening a regex. `apps/desktop` locks Electron main ⊥ preload ⊥ renderer isolation.
 
+That linter sees **edges only**, so the same map carries a `placement` block for the rules about
+where a file may *live* — which no import linter can see, because a misplaced file's imports are
+all legal. Three gates compile from it (`bun run quality:placement`): the composition root holds
+only the bootstrap, the container and its View; kind-folders (`utils/`, `types/`, `hooks/`, …)
+are banned outright; and a symbol in the domain-aware shared tier needs more than one module to
+want it. Feature-serving wiring that can't live in the feature — store and bridge reads, when
+slices are pure Views — goes in one named folder no slice may import back, never loose at the
+root.
+
 ### Quality gates
 
 The arithmetic half of those rules is a build failure, not a review note — `bun run quality`
-(biome + duplication + file length), and every rule in it is an **error, never a warning**.
-Biome carries the per-function caps (50 lines, cognitive complexity 15, 3 parameters) and the
-escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries); `jscpd` gates whole-tree
-duplication at 1%; `scripts/file-length-check.mjs` gates the 150-line per-file ceiling. CI runs
-all three, pre-commit runs the file-length one.
+(biome + duplication + file length + placement), and every rule in it is an **error, never a
+warning**. Biome carries the per-function caps (50 lines, cognitive complexity 15, 3 parameters)
+and the escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries); `jscpd` gates whole-tree
+duplication at 1%; `scripts/file-length-check.mjs` gates the 150-line per-file ceiling; the three
+placement gates above hold `file-structure.md`'s folder rules. CI runs all of them, pre-commit
+runs the file-length one.
 
 Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
 assertions (Biome 2.5.4 has no such rule) and exhaustive `switch` over a union
 (`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo).
 
 When a gate fires, fix it or ratchet it — never suppress it inline and never raise a global
-cap. Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule
+cap. Exemptions live in **four** files, each entry labelled **KIND** (permanent — the rule
 doesn't apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 | File | Covers |
@@ -60,6 +70,11 @@ doesn't apply to that category) or **RATCHET** (debt; the list may only shrink):
 | `biome.jsonc` `overrides` | the lint caps — annotated, which is why it's `.jsonc` |
 | `scripts/file-length-exempt.txt` | the line ceiling, one glob per line with its reason |
 | `.jscpd.json` `ignore` | duplication — its reasons live in a labelled block at the foot of `file-length-exempt.txt`, one per ignore glob |
+| the map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude` keyed by file, folder or symbol, each value its own reason |
+
+The placement gates fail on a **stale** exemption too: an entry naming no file is deleted, not
+left to re-authorise a future breach. That's what makes "the list may only shrink" arithmetic
+rather than an intention.
 
 **Two of these three configs fail open when you comment them**, which is why the reasons sit
 where they do. Biome silently checks **zero files** if `biome.json` holds a comment — hence

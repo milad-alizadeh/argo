@@ -2,6 +2,15 @@ export { AccentCard, AccentCardHeader, type AccentCardTone } from './AccentCard'
 export { Badge, type BadgeVariant, badgeVariants } from './badge'
 export { Button, type ButtonVariant, buttonVariants } from './button'
 export { Checkbox } from './checkbox'
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './dropdown-menu'
 export { IconButton } from './IconButton'
 export * from './icons'
 export { StatusIcon } from './icons/StatusIcon'
@@ -33,4 +42,5 @@ export {
   VERDICT_CHANGES_WASH,
   WASH_PRIMARY_TONE,
 } from './toneRecipes'
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 export { type DisclosureProps, useDisclosure } from './useDisclosure'

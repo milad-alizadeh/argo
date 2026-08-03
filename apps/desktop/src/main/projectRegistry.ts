@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import { type HubEvent, normalizeProjectPath, projectName } from '../shared'
+import { type HubEvent, normalizeProjectPath, type ProjectView, projectName } from '../shared'
 
 // The one piece of glue Argo owns rather than observes (ADR-0017): the set of known
 // Projects and which one is active, as a plain JSON file in per-machine `userData`. Never
@@ -67,11 +67,26 @@ export async function relocateProject(
   })
 }
 
+// Which Project the shell opens into. An id no record carries is left alone: an unknown active
+// Project is the same nothing as an unreadable registry, and the caller reads the result back to
+// learn whether the switch took.
+export async function setActiveProject(file: string, id: string): Promise<ProjectRegistry> {
+  const registry = await readRegistry(file)
+  if (!registry.projects.some((project) => project.id === id)) return registry
+  return persist(file, { ...registry, activeProjectId: id })
+}
+
+// One spelling of a record as the view the hub carries, so a Project registered now and the same
+// Project replayed on the next launch can never disagree about its name.
+export function toProjectView(record: ProjectRecord): ProjectView {
+  return { id: record.id, name: projectName(record.path), path: record.path }
+}
+
 // What the hub replays on launch to learn the world it can open.
 export function toProjectEvents(registry: ProjectRegistry): HubEvent[] {
   const events: HubEvent[] = registry.projects.map((project) => ({
     type: 'project-registered',
-    project: { id: project.id, name: projectName(project.path), path: project.path },
+    project: toProjectView(project),
   }))
   const { activeProjectId } = registry
   if (activeProjectId !== null) events.push({ type: 'project-activated', id: activeProjectId })

@@ -1,5 +1,6 @@
 export * from './channels'
 export * from './cockpitState'
+export * from './git'
 export * from './honesty'
 export * from './lifecycleModel'
 export * from './projection'

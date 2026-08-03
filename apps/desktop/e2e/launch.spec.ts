@@ -33,8 +33,24 @@ test('boots to a window titled Argo Cockpit', async () => {
   await expect(window).toHaveTitle('Argo Cockpit')
 })
 
-test('renders the empty cockpit root', async () => {
-  const root = window.getByTestId('cockpit-root')
-  await expect(root).toBeVisible()
-  await expect(window.getByText('No Sessions observed yet.')).toBeVisible()
+// A machine with no registered Project is the honest-empty shell: the strip offers only `+`,
+// the stage hosts the connect seam, and no room is faked behind it.
+test('renders an honestly empty shell with nothing connected', async () => {
+  await expect(window.getByRole('navigation', { name: 'Projects' })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Add a project' })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Connect a provider' })).toBeVisible()
+  await expect(window.getByTestId('cockpit-root')).toBeHidden()
+})
+
+// The chrome is in every room, so it is there before any project is: the bar carries the room
+// tabs and no wordmark, and the git group hides whole when there is no checkout to speak for.
+test('renders the merged top bar without a wordmark or a branch', async () => {
+  const rooms = window.getByRole('navigation', { name: 'Rooms' })
+  await expect(rooms.getByRole('button', { name: /Sessions/ })).toHaveAttribute(
+    'aria-current',
+    'page',
+  )
+  await expect(rooms.getByRole('button', { name: /Work/ })).toBeVisible()
+  await expect(rooms.getByRole('button', { name: /Code/ })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Manage this branch' })).toBeHidden()
 })

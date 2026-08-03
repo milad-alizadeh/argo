@@ -27,6 +27,7 @@ export function Roster({
   sessions,
   selectedId = null,
   onSelectSession,
+  onSpawnSession,
   dock,
 }: {
   /** The observed roster, in the order it is listed. Callers read it off the projected
@@ -38,6 +39,9 @@ export function Roster({
   selectedId?: string | null
   /** Select a Session by id. Optional so the read-only roster stories still typecheck. */
   onSelectSession?: (id: string) => void
+  /** Spawn a session in the active project — the visible half of `⌘N`, so spawn is never
+   * keyboard-only. Optional so the read-only roster stories still typecheck. */
+  onSpawnSession?: () => void
   /** Flat footer slot pinned to the panel's foot — the screen injects the Concierge dock
    * here, so the roster stays agnostic (roster ⊥ concierge) and never imports it. */
   dock?: React.ReactNode
@@ -91,7 +95,7 @@ export function Roster({
               )}
               <Text variant="row-strong">argo</Text>
             </button>
-            <IconButton label="New session in argo">
+            <IconButton label="New session in argo" onClick={onSpawnSession}>
               <PlusIcon aria-hidden className="size-4" />
             </IconButton>
           </div>

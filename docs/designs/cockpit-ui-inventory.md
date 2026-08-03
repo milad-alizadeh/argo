@@ -98,7 +98,7 @@ file. Their components are listed here so that nothing in the tree lacks a row.
 | `domains/delivery/`: `Delivery`, `DeliveryTabs`, `DeliveryLifecycle`, `LifecycleNode`, `NodeDrawer/*`, `CiCard`, `CheckOutput`, `PrChecksList`, `PrAnchor`, `CommitGroup`, `FileDiff`, `AllFilesDiff`, `FindingCard`, `findingState`, `lifecycleNodeState` | **Salvage into `rooms-sessions`.** The lifecycle rail, the node drawer bodies, the check rows and the diff views all have rows below. Salvage means moving the file, never importing across the boundary. |
 | `domains/console/`: `Console`, `ConsoleChannel`, `ConsoleChannelTab`, `LiveTerminal` | **Delete the channel strip, salvage `LiveTerminal`.** The Console panel's job belongs to the Dock and to the Code room's scratch terminal; the one thing worth keeping is the PTY view, which becomes `TerminalPane`. |
 | `domains/concierge/`: `EclipseScene`, `ConciergeDock`, `eclipseOrb/`, `sceneConfig` | **Salvage into `shell`.** The orb engine is the shell's orb (`OrbMini`). Its behaviour stays out of scope: map #190 owns it. |
-| Renderer root: `SessionScreen`, `SessionHeader`, `WorkspaceIdentity`, `App` | **Rewrite.** `SessionScreen` becomes the root that composes shell plus the active room. `SessionHeader` has a row below. `WorkspaceIdentity` is superseded by `SessionMeta`'s branch segment. |
+| Renderer root: `SessionScreen`, `SessionHeader`, `WorkspaceIdentity`, `App` | **Rewrite.** #264 landed the root composition as `CockpitScreen` (the pure View: strip + bar + stage) over `RoomStage` (the room switch), so `SessionScreen` stays the **Sessions room** for #267 to rewrite rather than becoming the root. `App` is the container. `RoomStage`'s Work and Code arms are scaffolding #272/#274 delete. `SessionHeader` has a row below. `WorkspaceIdentity` is superseded by `SessionMeta`'s branch segment. |
 
 ---
 
@@ -146,7 +146,7 @@ the first Sessions-room ticket:
 | `sessionStatusWord` | pure fn | `partial · shared/delivery/rosterStatus.ts` | the four words above, plus `external` (identity, no word) | registry, Session status |
 | `deliveryClaimWord` | pure fn | `partial · shared/delivery/deliveryState.ts` | `commits · pr · ci · review · merge` node words, e.g. `CI failed` | registry, Delivery lifecycle |
 | `rosterWord` | pure fn | `partial · shared/delivery/rosterStatus.ts` | the priority pick: attention needs-input → attention failure → delivery milestone → liveness → kind. A delivery claim beats session status. | `cockpit-spec.md` §4.1 |
-| `worstStateDot` | pure fn | `spec` | `needs you > failed > running > none`, active project always `none` | registry, Attention |
+| `worstStateDot` | pure fn | `built · shared/delivery/worstStateDot.ts` | `needs you > failed > running > none`, active project always `none` | registry, Attention |
 | `connectionRollup` | pure fn | `spec` | `healthy` (renders nothing) · `stale` · `needs reconnect`, plus auth escalating past the roll-up. Keyed by **binding**, not project. | failure spec §2, §3 |
 
 ### Primitives the settled surfaces earn
@@ -159,8 +159,8 @@ own molecule.
 | `MasterDetail` | organism | `spec` | list-left navigation plus one continuous virtualised feed right, scroll-spy highlight, click-to-jump | `cockpit-spec.md` §4.3, "Cross-surface interaction model": the whole cockpit shares one navigation feel |
 | `GutterDiff` | organism | `partial · domains/delivery/components/FileDiff.tsx` | added · removed · context · anchored finding · comment thread · collapsed hunk | session-interior prototype, "self-contained GitHub gutter diffs (shared by every detail pane)" |
 | `TerminalPane` | organism | `partial · domains/console/components/LiveTerminal.tsx` | live · dead PTY (offers `Relaunch`, never a status word) · expanded · collapsed | `CONTEXT.md`, Scratch terminal: "same PTY machinery as a session terminal, minus the agent" |
-| `Menu` | molecule | `spec` | closed · open · row enabled · row disabled with reason | `BranchMenu` and `BranchManage` (prototype seeds), the project tab context menu |
-| `Tooltip` | molecule | `spec` | hidden · shown | the active project tab's name plus `last synced` (#201) is the only mandated tooltip in the shell |
+| `Menu` | molecule | `built · shared/components/ui/dropdown-menu.tsx` | closed · open · row enabled · row disabled with reason | `BranchMenu` and `BranchManage` (prototype seeds), the project tab context menu |
+| `Tooltip` | molecule | `built · shared/components/ui/tooltip.tsx` | hidden · shown | the active project tab's name plus `last synced` (#201) is the only mandated tooltip in the shell |
 | `EmptyState` | molecule | `partial · domains/roster/components/EmptyRoster.tsx` | one line of copy plus zero, one or two actions | the Code room's `EmptyFolder` / `NoFileOpen` / `UnsupportedFile`, the Work room's four empty-pool tiers, the roster zero-state |
 | `Kbd` | atom | `spec` | a rendered key hint | the canonical keymap is shown in the palette, not in chrome |
 
@@ -177,26 +177,42 @@ row is `spec` unless stated.
 
 | Component | Tier | Status | States | Seed |
 |---|---|---|---|---|
-| `ProjectStrip` | organism | `spec` | one project · many · **none** (just `+`) | `data-component="ProjectStrip"` |
-| `ProjectTab` | molecule | `spec` | active (quiet, never dotted) · inactive with worst-state dot (`needs you` / `failed` / `running` / none) · hovered (tooltip: name plus `last synced`) · context menu open | `data-component="ProjectTab"` |
-| `TopBar` | organism | `spec` | one fixed layout: `[traffic lights] [orb + caption] ⋯ [chip] [room tabs] [git group]` | `cockpit-app-shell-spec.md`, Canonical chrome; the prototypes' `MERGED TOP BAR` sections |
-| `WindowControls` | atom | `spec` | a static clearance reserve, no states. `hiddenInset` clearance only: Argo draws no traffic lights. | `data-component="WindowControls"` |
-| `ConciergeStrip` | organism | `spec` | seat only in v1: it renders the orb and the caption and owns no behaviour | `data-component="ConciergeStrip"` |
-| `OrbMini` | molecule | `partial · domains/concierge/components/ConciergeDock.tsx` | `idle` in v1. The full state set belongs to map #190. Engine salvaged with it (`eclipseOrb/`, `sceneConfig.ts`). | `data-component="OrbMini"` |
-| `ConciergeCaption` | atom | `spec` | silent (renders nothing) · caption text, width-capped so the right cluster keeps its room | `data-component="ConciergeCaption"` |
+| `ProjectStrip` | organism | `built · shell/components/project-strip/ProjectStrip.tsx` | one project · many · **none** (just `+`) | `data-component="ProjectStrip"` |
+| `ProjectTab` | molecule | `built · shell/components/project-strip/ProjectTab.tsx` | active (quiet, never dotted) · inactive with worst-state dot (`needs you` / `failed` / `running` / none) · hovered (tooltip: the project's name, plus `last synced` only where that fact exists — it has no observed source yet, so the name shows alone). The **context-menu-open** state ships with the menu itself (#265): #264 left no dead right-click behind. | `data-component="ProjectTab"` |
+| `TopBar` | organism | `built · shell/components/top-bar/TopBar.tsx` | one fixed layout: `[traffic lights] [orb + caption] ⋯ [chip] [room tabs] [git group]` | `cockpit-app-shell-spec.md`, Canonical chrome; the prototypes' `MERGED TOP BAR` sections |
+| `WindowControls` | atom | `built · shell/components/top-bar/WindowControls.tsx` | a static clearance reserve, no states. `hiddenInset` clearance only: Argo draws no traffic lights. | `data-component="WindowControls"` |
+| `ConciergeStrip` | organism | `built · shell/components/top-bar/ConciergeStrip.tsx` | seat only in v1: it renders the orb and the caption and owns no behaviour | `data-component="ConciergeStrip"` |
+| `OrbMini` | molecule | `built · shell/components/top-bar/OrbMini.tsx` | `idle` in v1. The full state set belongs to map #190. Built as the **cheap CSS ring-orb** the shell spec names, NOT the salvaged three.js engine: the bar wants a 38px glyph, and `eclipseOrb/` stays the retired domain's until a room claims it. | `data-component="OrbMini"` |
+| `ConciergeCaption` | atom | `built · shell/components/top-bar/ConciergeCaption.tsx` | silent (renders nothing) · caption text, width-capped so the right cluster keeps its room | `data-component="ConciergeCaption"` |
 | `ConnectionChip` | molecule | `spec` | **healthy renders nothing, there is no green light** · `stale` with age and cause (`offline` / `unreachable` / `rate limited`) · `needs reconnect` (a button into the connect panel) · account-level auth, escalated past the roll-up | failure spec §3, placed first in the right cluster by #201 |
-| `RoomSwitcher` | molecule | `spec` | active ∈ `Sessions ⌘1 · Work ⌘2 · Code ⌘3`. Not the `Tabs` primitive: it is a router, styled as floating chrome with no track. | `data-component="RoomSwitcher"` |
-| `GitControls` | organism | `spec` | present · **hidden whole** when the project folder is not a git repository | `data-component="GitControls"` |
-| `BranchSelector` | molecule | `spec` | clean · ahead · behind · diverged (ahead and behind) | `data-component="BranchSelector"` |
-| `BranchMenu` | organism | `spec` | per row: checkout-able local · remote `origin` ref offering `Check out` · worktree-held with a live session (`worktree` plus `↗ open its session`) · worktree-held and orphaned (`worktree` plus its **path**, no dead link). Header reads "Files follow this". | `data-component="BranchMenu"` |
-| `BranchManage` | organism | `spec` | `Fetch` always · `Pull` only when fast-forward · `Push` only when ahead · `New branch` / `Rename` / `Delete`. **No `Remove worktree`** (#202). | `data-component="BranchManage"` |
-| `ConflictHatch` | molecule | `spec` | shown only on diverged: `Open a scratch terminal` · `Resolve with an agent ↗`. Argo ships no merge-conflict editor. | `data-component="ConflictHatch"` |
+| `RoomSwitcher` | molecule | `built · shell/components/top-bar/RoomSwitcher.tsx` | active ∈ `Sessions ⌘1 · Work ⌘2 · Code ⌘3`. Not the `Tabs` primitive: it is a router, styled as floating chrome with no track. | `data-component="RoomSwitcher"` |
+| `GitControls` | organism | `built · shell/components/git/GitControls.tsx` | present · **hidden whole** when the project folder is not a git repository | `data-component="GitControls"` |
+| `BranchSelector` | molecule | `built · shell/components/git/BranchSelector.tsx` | clean · ahead · behind · diverged (ahead and behind) | `data-component="BranchSelector"` |
+| `BranchMenu` | organism | `built · shell/components/git/BranchMenu.tsx` | per row: checkout-able local · remote `origin` ref offering `Check out` · worktree-held with a live session (`worktree` plus `↗ open its session`) · worktree-held and orphaned (`worktree` plus its **path**, no dead link) · a local checkout-able row additionally offering **`Delete`** (never the current branch, a worktree-held one, or a remote ref). Header reads "Files follow this". | `data-component="BranchMenu"` |
+| `BranchManage` | organism | `built · shell/components/git/BranchManage.tsx` | `Fetch` always — **including on a diverged branch**, since fetching cannot lose work either · `Pull` only when fast-forward · `Push` only when ahead · `New branch` / `Rename`, each opening `BranchNameField` rather than firing without one. **No `Remove worktree`** (#202), and **no `Delete`**: this menu speaks for the checked-out branch, which git refuses to delete, so deleting moved to the branch rows where a branch is named. | `data-component="BranchManage"` |
+| `ConflictHatch` | molecule | `built · shell/components/git/ConflictHatch.tsx` | shown only on diverged, beside the surviving `Fetch`: `Open a scratch terminal` · `Resolve with an agent ↗`. Argo ships no merge-conflict editor. | `data-component="ConflictHatch"` |
+| `BranchMenuRow` | molecule | `built · shell/components/git/BranchMenuRow.tsx` | one row per ref, rendering the `BranchRowAction` the model derived. Extracted from `BranchMenu` at the line ceiling; named here by #264. | `data-component="BranchMenu"` (its rows) |
+| `BranchNameField` | molecule | `built · shell/components/git/BranchNameField.tsx` | the name `New branch` / `Rename` need: empty (submit refused) · named. Opened in place of the row firing, because an operation with no name can only fail. Named here by #264. | `cockpit-app-shell-spec.md`, Manage menu (branch CRUD) |
+| `TrackingCounts` | atom | `built · shell/components/git/TrackingCounts.tsx` | `↑ahead ↓behind`, each count silent at zero. One spelling shared by `BranchSelector` and every branch row. Named here by #264. | the spec's own `[⎇ main ↑2↓1 ▾]` notation |
 | `CommandPalette` | organism | `spec` | closed · open and empty · results grouped (sessions · tickets · projects · commands) · no results. **No affordance in the bar.** | `cockpit-app-shell-spec.md`, ⌘K |
-| `EmptyShell` | organism | `spec` | the strip shows only `+`, one connect seam that hands off to the connect panel | `cockpit-app-shell-spec.md`, Connective tissue |
+| `EmptyShell` | organism | `built · shell/components/EmptyShell.tsx` | the strip shows only `+`, one connect seam that hands off to the connect panel | `cockpit-app-shell-spec.md`, Connective tissue |
 | `ConnectPanel` | organism | `spec` | `welcome · fresh · direct · connecting · partial · wired · error` | `cockpit-onboarding-spec.md`, States. **No prototype exists** (#205), so the pixels are Phase 2's contract plus this spec. |
 | `ConnectRow` | molecule | `spec` | per row (Folder · Connections · Companion plugin), independently: unset · set · `connecting` (shows the device code and verification URL, it does not spin blind) · error offering `Continue offline` and `Reconnect` | `cockpit-onboarding-spec.md`, Shape |
 | `AgentCliRow` | molecule | `spec` | the project's Agent/CLI choice. The one thing Project Settings holds that onboarding does not. | `cockpit-app-shell-spec.md`, Project Settings (#186 / #202) |
 | `ProjectDisabled` | organism | `spec` | one error offering `Relocate` (first-class, the id survives and the path is re-pointed) or `Remove` | failure spec §6 |
+
+The shell's own derivations, added by #264 because the chrome's refusals belong in tested pure
+functions rather than in a View's branches. Each lives inside the slice and reaches the renderer
+root through its barrel.
+
+| Component | Tier | Status | States | Seed / authority |
+|---|---|---|---|---|
+| `buildShellModel` | pure fn | `built · shell/shellModel.ts` | the strip's tabs: active (dot forced to none) · inactive carrying `worstStateDot` · `connected` false when no project is registered | `cockpit-app-shell-spec.md`, Canonical chrome |
+| `branchMenuRows` | pure fn | `built · shell/branchMenuModel.ts` | one `BranchRowAction` per ref: `current` · `checkout` · `worktree-session` · `worktree-orphaned`. The last two are the menu's refusals, so no View decides them. | `cockpit-app-shell-spec.md`, Global git chrome (#202) |
+| `liveWorktreeSessions` | pure fn | `built · shell/branchMenuModel.ts` | worktree path → the roster session working in it. The label follows git; the link follows the session. | `cockpit-app-shell-spec.md`, Global git chrome (#202) |
+| `manageMenu` | pure fn | `built · shell/branchMenuModel.ts` | `fetch` always · `pull` only fast-forward · `push` only ahead · CRUD always · `diverged` swaps the sync group for `ConflictHatch` | `cockpit-app-shell-spec.md`, Manage menu + Conflict policy |
+| `shellCommand` | pure fn | `built · shell/shellCommand.ts` | the canonical keymap as one table: `⌘1/⌘2/⌘3` · `⌘[`/`⌘]` · `⌘K` · `⌘N` · `Esc` | `cockpit-app-shell-spec.md`, Canonical keymap |
+| `recallProjectUi` · `rememberProjectUi` · `nextProjectId` | pure fn | `built · shell/projectUi.ts` | the remembered room and selection per project, and where `⌘[`/`⌘]` land. A swap is a view change, not a teardown. | `cockpit-app-shell-spec.md` (#164) |
 
 **Project Settings is not a component.** It is `ConnectPanel` re-entered on an existing project
 with its CTA reading `Done`, plus `AgentCliRow`. Building a second panel would be the duplication
