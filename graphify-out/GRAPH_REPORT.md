@@ -1,16 +1,16 @@
 # Graph Report - argo  (2026-08-03)
 
 ## Corpus Check
-- 294 files · ~216,732 words
+- 357 files · ~162,532 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1514 nodes · 3168 edges · 118 communities (83 shown, 35 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 17 edges (avg confidence: 0.68)
+- 1766 nodes · 3901 edges · 123 communities (89 shown, 34 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 18 edges (avg confidence: 0.67)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8fa829f4`
+- Built from commit: `33bfac6a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -59,6 +59,7 @@
 - Renderer Env Types
 - Storybook Preview
 - Vitest Config
+- Env Type Declarations
 - sessionFacts.ts
 - index.ts
 - Text.tsx
@@ -129,35 +130,40 @@
 - electron-builder
 - electron-vite
 - @fontsource-variable/inter
+- BranchNameField.stories.tsx
+- liveness.ts
+- electron
+- @electron-toolkit/tsconfig
+- @types/react
 
 ## God Nodes (most connected - your core abstractions)
-1. `cn()` - 83 edges
-2. `Text()` - 50 edges
-3. `createIcon()` - 46 edges
-4. `scripts` - 20 edges
-5. `Button()` - 18 edges
-6. `OrbState` - 16 edges
-7. `scripts` - 14 edges
-8. `sessionFacts` - 14 edges
-9. `NodeDrawerSession` - 13 edges
-10. `CheckIcon` - 13 edges
+1. `cn()` - 90 edges
+2. `Text()` - 60 edges
+3. `createIcon()` - 49 edges
+4. `scripts` - 23 edges
+5. `Button()` - 20 edges
+6. `parseTranscript()` - 16 edges
+7. `isRecord()` - 16 edges
+8. `asString()` - 15 edges
+9. `scripts` - 14 edges
+10. `runGit()` - 14 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `collect()` --indirect_call--> `file()`  [INFERRED]
   prototypes/return-path-eval/mine-transcripts.ts → apps/desktop/src/main/observe/observedSession.test.ts
 - `main()` --indirect_call--> `model()`  [INFERRED]
   prototypes/marker-drop-rate/sweep.ts → apps/desktop/src/shared/lifecycleModel.test.ts
-- `main()` --indirect_call--> `flag()`  [INFERRED]
-  prototypes/marker-drop-rate/sweep.ts → prototypes/return-path-eval/sweep.ts
-- `observe()` --indirect_call--> `session()`  [INFERRED]
-  apps/desktop/src/main/observe/observe.seamB.test.ts → apps/desktop/src/shared/projection.test.ts
+- `wireSpawn()` --indirect_call--> `state()`  [INFERRED]
+  apps/desktop/src/main/spawnSession.ts → apps/desktop/src/renderer/src/shell/shellModel.test.ts
+- `agentsOf()` --calls--> `parseTranscript()`  [EXTRACTED]
+  apps/desktop/src/main/observe/sessionStatus.test.ts → apps/desktop/src/main/observe/claudeTranscript.ts
 - `observe()` --indirect_call--> `project()`  [INFERRED]
   apps/desktop/src/main/observe/observe.seamB.test.ts → apps/desktop/src/shared/projects.test.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (118 total, 35 thin omitted)
+## Communities (123 total, 34 thin omitted)
 
 ### Community 0 - "Biome Config"
 Cohesion: 0.13
@@ -165,7 +171,7 @@ Nodes (20): ADR-0007, AxisResult, convene(), judgeOnce(), AXES, Axis, AxisId, ju
 
 ### Community 1 - "Root Package Manifest"
 Cohesion: 0.05
-Nodes (41): @biomejs/biome, husky, jscpd, lint-staged, bin, argo, devDependencies, @biomejs/biome (+33 more)
+Nodes (42): @biomejs/biome, husky, jscpd, lint-staged, bin, argo, devDependencies, @biomejs/biome (+34 more)
 
 ### Community 2 - "Turbo Build Pipeline"
 Cohesion: 0.07
@@ -173,11 +179,11 @@ Nodes (31): ^build, dist/**, OPENAI_API_KEY, out/**, REALTIME_MODEL, storybook-s
 
 ### Community 3 - "Desktop App Package"
 Cohesion: 0.04
-Nodes (47): dependencies, class-variance-authority, clsx, @electron-toolkit/preload, @electron-toolkit/utils, node-pty, @phosphor-icons/react, radix-ui (+39 more)
+Nodes (45): dependencies, class-variance-authority, clsx, @electron-toolkit/preload, @electron-toolkit/utils, node-pty, @phosphor-icons/react, radix-ui (+37 more)
 
 ### Community 4 - "Session Row & Button"
 Cohesion: 0.15
-Nodes (18): NowLine(), Delivery(), DeliveryLifecycle(), TERMINAL_PRESENTATION, LifecycleNode(), NODE_LABEL, PrAnchor(), Default (+10 more)
+Nodes (13): TERMINAL_PRESENTATION, LifecycleNode(), NODE_LABEL, PrAnchor(), Default, Story, cn(), twMerge (+5 more)
 
 ### Community 5 - "Runtime Dependencies"
 Cohesion: 0.09
@@ -197,7 +203,7 @@ Nodes (17): compilerOptions, baseUrl, composite, jsx, paths, extends, include, s
 
 ### Community 9 - "Electron & React Deps"
 Cohesion: 0.22
-Nodes (9): devDependencies, electron, @electron-toolkit/tsconfig, @types/react, @vitest/browser-playwright, electron, @electron-toolkit/tsconfig, @types/react (+1 more)
+Nodes (9): devDependencies, electron-builder, electron-vite, @fontsource-variable/inter, @vitest/browser-playwright, electron-builder, electron-vite, @fontsource-variable/inter (+1 more)
 
 ### Community 10 - "Root TSConfig References"
 Cohesion: 0.33
@@ -205,39 +211,39 @@ Nodes (5): compilerOptions, baseUrl, paths, files, references
 
 ### Community 14 - "App Rail Shell"
 Cohesion: 0.12
-Nodes (13): AllIcons, Default, Story, Default, EveryState, Pulsing, Story, HEAD_STATUS (+5 more)
+Nodes (20): AllIcons, Default, Story, Default, EveryState, Pulsing, Story, deliveryState (+12 more)
 
 ### Community 19 - "Dependency Cruiser"
 Cohesion: 0.14
 Nodes (13): AUTH, ConsoleExpanded, DEFAULT_LAYOUT, DEFAULT_UI, EmptyRoster, EXPANDED_LAYOUT, NOOP_HANDLERS, NoSelection (+5 more)
 
 ### Community 20 - "Vitest Browser Playwright"
-Cohesion: 0.52
-Nodes (4): Disclosure, DisclosureAction, disclosureReducer(), useDisclosure()
+Cohesion: 0.27
+Nodes (9): FileDiff(), hunkLineTone(), kindGlyph(), FindingCard(), severityAccent(), Disclosure, DisclosureAction, disclosureReducer() (+1 more)
 
 ### Community 23 - "Storybook Docs Addon"
-Cohesion: 0.13
-Nodes (22): Console(), ConsoleProps, ConsoleChannel(), ConsoleChannelProps, feedNodes(), Capture, CaptureOfEmptyFeed, CaptureOfMarkup (+14 more)
+Cohesion: 0.07
+Nodes (39): captureLabel(), Console(), ConsoleProps, CAPTURE, CaptureActive, CaptureIdle, Default, Expanded (+31 more)
 
 ### Community 25 - "Electron Vite"
-Cohesion: 0.19
-Nodes (16): RosterActor, AllFilesDiffFile, CONTENT_LABEL, DeliveryCommitGroup, DeliveryProps, ChangesView, DeliveryTab, SessionScreenHandlers (+8 more)
+Cohesion: 0.17
+Nodes (18): DEFAULT_PANEL_UI, SessionPanel, ChangesView, DeliveryTab, SessionPanel(), SessionScreen(), SessionScreenHandlers, SessionScreenProps (+10 more)
 
 ### Community 31 - "React Types"
-Cohesion: 0.16
-Nodes (22): checkLine(), CLASS_OF, ExpectedMarker, extractExpected(), extractiveFallback(), HOMOGRAPH_STOPLIST, isViolation(), LEXICON (+14 more)
+Cohesion: 0.15
+Nodes (23): CAPS, checkLine(), CLASS_OF, ExpectedMarker, extractExpected(), extractiveFallback(), HOMOGRAPH_STOPLIST, isViolation() (+15 more)
 
 ### Community 39 - "Session State Hub"
 Cohesion: 0.10
-Nodes (28): ciState(), commitsState(), LIFECYCLE_KEYS, lifecycleModel, LifecycleNodeKey, LifecycleNodes, LifecycleNodeState, mergeState() (+20 more)
+Nodes (32): BRANCH_REF_ARGS, commitsIn(), mirroredDrift(), parseBranchRefs(), parseTrack(), RawRef, readBranchRefs(), named() (+24 more)
 
 ### Community 40 - "Electron"
-Cohesion: 0.19
-Nodes (11): ConsoleChannelTab(), ConsoleChannelTabProps, AgentChannel, Capture, Default, EveryChannel, LinkedToItsPanel, LongCaptureLabel (+3 more)
+Cohesion: 0.17
+Nodes (14): ConsoleChannelTab(), ConsoleChannelTabProps, AccentCard(), AccentCardHeader(), AccentCardTone, accentCardVariants, Blocking, Landed (+6 more)
 
 ### Community 48 - "sessionFacts.ts"
-Cohesion: 0.06
-Nodes (37): ConciergeDock(), ConciergeDockProps, ErrorState, Idle, Inactive, Listening, ORB_STATES, Playground (+29 more)
+Cohesion: 0.12
+Nodes (22): Hub, Claim, createManagedSessions(), ManagedSessions, ADR-0013, toSessionUpdate(), Context, createObserver() (+14 more)
 
 ### Community 49 - "index.ts"
 Cohesion: 0.09
@@ -245,31 +251,31 @@ Nodes (21): CiFailingHead, CiRunning, CommitsGate, CommitsGateNotHead, CommitsNo
 
 ### Community 50 - "Text.tsx"
 Cohesion: 0.13
-Nodes (16): AgentRowModel, actorKey(), BackgroundTasks(), BackgroundTasksProps, Default, Empty, retryAudit, reviewAgent (+8 more)
+Nodes (17): App(), ADR-0005, ADR-0015, RoomStage(), GitGroup, useGitFacts(), GitHatches, useGitGroup() (+9 more)
 
 ### Community 51 - "PaneSplitter.stories.tsx"
-Cohesion: 0.18
-Nodes (10): Collapsed, Controlled, deepReadMembers, Default, EveryState, MEMBERS_BY_STATE, Story, surveyMembers (+2 more)
+Cohesion: 0.11
+Nodes (16): RosterTone, ProjectStrip(), Default, NoProjects, OneProject, Story, TABS, Active (+8 more)
 
 ### Community 52 - "icons.stories.tsx"
-Cohesion: 0.17
-Nodes (14): AgentRow(), AgentRowProps, Default, EveryState, InformativeAgainstRollup, Story, SuppressedByRollup, WithoutDuration (+6 more)
+Cohesion: 0.14
+Nodes (14): ConciergeCaption(), Default, Silent, Story, ConciergeStrip(), Default, Story, OrbMini() (+6 more)
 
 ### Community 53 - "badge.stories.tsx"
-Cohesion: 0.16
-Nodes (16): CHANGES_VIEWS, DELIVERY_TABS, DeliveryTabs(), isChangesView(), isDeliveryTab(), AllTones, ChangesTone, Default (+8 more)
+Cohesion: 0.18
+Nodes (14): DeliveryTabs(), isChangesView(), isDeliveryTab(), AllTones, ChangesTone, Default, Story, TONES (+6 more)
 
 ### Community 54 - "button.stories.tsx"
-Cohesion: 0.12
-Nodes (16): RUN_SHAPES, RunMember, batchMembers, CollapsedBatch, CollapsedWorkflow, Controlled, Default, EmptyBatch (+8 more)
+Cohesion: 0.19
+Nodes (15): DropdownMenu(), DropdownMenuContent(), DropdownMenuGroup(), DropdownMenuItem(), DropdownMenuLabel(), DropdownMenuSeparator(), DropdownMenuTrigger(), Default (+7 more)
 
 ### Community 55 - "ContextGauge.tsx"
 Cohesion: 0.17
-Nodes (11): agentStateWordClass(), RosterRow(), RosterRowProps, Default, EveryCaret, ReservedIsNeverAButton, Story, Toggleable (+3 more)
+Nodes (15): deriveSessionStatus(), HALTING_REASONS, hasPendingAsk(), isRecent(), quietStatus(), statusOf(), agentsOf(), NOW (+7 more)
 
 ### Community 56 - "SectionHeader.tsx"
-Cohesion: 0.17
-Nodes (11): ALL_FILES, ArtifactsTab, ByCommit, COMMIT_GROUPS, IN_REVIEW, InReview, Merged, PR (+3 more)
+Cohesion: 0.15
+Nodes (12): Delivery(), ALL_FILES, ArtifactsTab, ByCommit, COMMIT_GROUPS, IN_REVIEW, InReview, Merged (+4 more)
 
 ### Community 58 - "PanelSplitter.stories.tsx"
 Cohesion: 0.20
@@ -280,24 +286,24 @@ Cohesion: 0.24
 Nodes (10): leaf(), AllVariants, Clean, Default, Story, syncLabel(), tagContent(), tagTitle() (+2 more)
 
 ### Community 60 - "Text.tsx"
-Cohesion: 0.10
-Nodes (29): TypeRole, AccentCard(), AccentCardHeader(), AccentCardTone, accentCardVariants, Blocking, Landed, Story (+21 more)
+Cohesion: 0.12
+Nodes (18): TYPE_ROLES, TypeRole, StatusDot(), AllTones, Default, Labelled, Pulsing, Story (+10 more)
 
 ### Community 61 - "icons.stories.tsx"
 Cohesion: 0.17
 Nodes (12): AllGlyphs, boxOf(), Decorative, Default, glyph(), GLYPHS, InlineWithText, Labelled (+4 more)
 
 ### Community 62 - "drawerControls.tsx"
-Cohesion: 0.25
-Nodes (7): HonestEmpty, Story, ToggleSolo, WORKSPACE, WorkspacePresent, WorkspaceModel, WorkspaceTree
+Cohesion: 0.22
+Nodes (8): SessionHeader(), HonestEmpty, Story, ToggleSolo, WORKSPACE, WorkspacePresent, WorkspaceModel, WorkspaceTree
 
 ### Community 63 - "button.stories.tsx"
 Cohesion: 0.13
 Nodes (12): AllVariants, AsChild, Bare, Default, Disabled, Quiet, SIZES, Story (+4 more)
 
 ### Community 64 - "DeliveryLifecycle.stories.tsx"
-Cohesion: 0.20
-Nodes (9): Absent, BeforePr, Closed, Default, DeliveryLifecycleProps, IN_REVIEW, Merged, PR (+1 more)
+Cohesion: 0.18
+Nodes (10): DeliveryLifecycle(), Absent, BeforePr, Closed, Default, DeliveryLifecycleProps, IN_REVIEW, Merged (+2 more)
 
 ### Community 65 - "DeliveryTabs.stories.tsx"
 Cohesion: 0.20
@@ -305,7 +311,7 @@ Nodes (9): ArtifactsSelected, Default, onBack, ReviewOutstanding, Scoped, Story,
 
 ### Community 66 - "FindingCard.stories.tsx"
 Cohesion: 0.12
-Nodes (19): ARMS, Arm, armB(), EvalChunk, loadCorpus(), argv, byArm, corpus (+11 more)
+Nodes (18): ARMS, Arm, armB(), EvalChunk, loadCorpus(), argv, byArm, corpus (+10 more)
 
 ### Community 67 - "LifecycleNode.stories.tsx"
 Cohesion: 0.22
@@ -316,20 +322,20 @@ Cohesion: 0.22
 Nodes (8): AllVariants, AsChild, Default, SHAPES, Story, VARIANTS, VERDICT_VARIANTS, WithIcon
 
 ### Community 69 - "BackgroundTasks.stories.tsx"
-Cohesion: 0.27
-Nodes (12): CheckOutputProps, DeliveryLifecycleProps, LifecycleNodeProps, NodeDrawerSession, CiDrawerData, ClosedSummary, CommitsDrawerData, MergedSummary (+4 more)
+Cohesion: 0.25
+Nodes (13): createHub(), parseTranscript(), observe(), parseFixture(), toObservedSession(), toSessionEvent(), latestInChain(), stitch() (+5 more)
 
 ### Community 70 - "ContextGauge.tsx"
-Cohesion: 0.18
-Nodes (10): clampPercentage(), ContextGauge(), Default, Story, EmptyRoster(), Default, Story, Roster() (+2 more)
+Cohesion: 0.27
+Nodes (6): EmptyRoster(), Default, Story, SessionRow(), CaretRightIcon, Status()
 
 ### Community 71 - "SectionHeader.tsx"
-Cohesion: 0.40
-Nodes (4): SectionHeader(), Default, Story, WithoutCount
+Cohesion: 0.19
+Nodes (10): Badge(), BadgeVariant, badgeVariants, ButtonVariant, StatusIcon(), SectionHeader(), Default, Story (+2 more)
 
 ### Community 72 - "toggle-group.tsx"
-Cohesion: 0.12
-Nodes (19): seedDemoSession(), createHub(), Hub, ProjectionListener, created(), intake(), projected(), ADR-0005 (+11 more)
+Cohesion: 0.11
+Nodes (13): ADR-0005, ADR-0008, ADR-0017, transcriptRoot(), ADR-0005, wireProjection(), shellCommand(), ADR-0005 (+5 more)
 
 ### Community 73 - "checkbox.stories.tsx"
 Cohesion: 0.33
@@ -337,35 +343,35 @@ Nodes (5): Checkbox(), Checked, Default, Disabled, Story
 
 ### Community 74 - "electron-vite"
 Cohesion: 0.11
-Nodes (15): LIFECYCLE_NODE_STATE, LifecycleNodeStatePresentation, ArrowLineUpIcon, ArrowsClockwiseIcon, CircleIcon, CircleNotchIcon, IconAtom, GearIcon (+7 more)
+Nodes (16): LIFECYCLE_NODE_STATE, LifecycleNodeStatePresentation, ArrowLineUpIcon, ArrowsClockwiseIcon, CheckIcon, CircleIcon, CircleNotchIcon, IconAtom (+8 more)
 
 ### Community 76 - "react"
-Cohesion: 0.22
-Nodes (15): ciBody(), commitsBody(), commitsStageBody(), DelegatedRow(), GateAction(), GrowRow(), NodeDrawer(), NodeDrawerProps (+7 more)
+Cohesion: 0.18
+Nodes (20): CheckOutputProps, ciBody(), commitsBody(), commitsStageBody(), NodeDrawer(), NodeDrawerProps, NodeDrawerSession, mergeBody() (+12 more)
 
 ### Community 77 - "react-dom"
-Cohesion: 0.33
-Nodes (5): AllFilesDiff(), Default, Empty, FILES, Story
+Cohesion: 0.14
+Nodes (15): CockpitHandlers, CockpitScreenProps, CockpitScreenView(), CONNECTED, Default, FACTS, NotAGitRepository, NothingConnected (+7 more)
 
 ### Community 78 - "projection.ts"
-Cohesion: 0.12
-Nodes (32): activateProject(), addProject(), addSession(), attribute(), Cli, CockpitState, repointProject(), SessionIntake (+24 more)
+Cohesion: 0.05
+Nodes (67): created(), intake(), projected(), toIntake(), activateProject(), addProject(), addSession(), attribute() (+59 more)
 
 ### Community 79 - "sessionStore.ts"
-Cohesion: 0.17
-Nodes (16): App(), DEFAULT_PANEL_UI, ADR-0005, root, SessionScreenProps, buildSessionPanel(), SessionPanelModel, SpineEdge (+8 more)
+Cohesion: 0.46
+Nodes (6): applyResize(), applySnap(), isConsoleExpanded(), SPINE, base, useSpineLayout()
 
 ### Community 80 - "sessionFacts.ts"
-Cohesion: 0.11
-Nodes (34): parseTranscript(), matchesLiveProcess(), ObservationOptions, startObservation(), deriveLiveness(), gatherClaudeProcesses(), isRecent(), LivenessSignals (+26 more)
+Cohesion: 0.14
+Nodes (19): GradeStatus, resolveTitle(), file(), running(), toAgents(), StatusSignals, LogicalSession, ObservedSession (+11 more)
 
 ### Community 81 - "terminalBridge.ts"
-Cohesion: 0.23
-Nodes (15): restoreProjects(), emptyRegistry(), isProjectRecord(), isRecord(), knownProjectId(), parseRegistry(), persist(), ProjectRecord (+7 more)
+Cohesion: 0.16
+Nodes (24): restoreProjects(), registryFile(), twoProjects(), activate(), chooseFolder(), register(), ADR-0017, wireProjects() (+16 more)
 
 ### Community 82 - "channels.ts"
-Cohesion: 0.16
-Nodes (8): cockpit, Window, ADR-0005, CockpitBridge, TerminalSession, TerminalSize, ADR-0005, ProjectionDelta
+Cohesion: 0.08
+Nodes (27): isGitOperation(), isGitRequest(), isProjectId(), refuse(), ADR-0004, wireGit(), ProjectionListener, ADR-0005 (+19 more)
 
 ### Community 83 - "Roster.stories.tsx"
 Cohesion: 0.12
@@ -376,52 +382,60 @@ Cohesion: 0.13
 Nodes (13): CollapsedGroup, commitReady, deliveryStates, Empty, everyState, needsYou, NeedsYouPulse, oneSession (+5 more)
 
 ### Community 85 - "deliveryState"
-Cohesion: 0.23
-Nodes (8): SessionHeader(), SessionHeaderProps, SessionHeaderModel, IconButton(), PanelHeader(), Default, LeftOnly, Story
+Cohesion: 0.25
+Nodes (7): SessionHeaderProps, SessionHeaderModel, IconButton(), PanelHeader(), Default, LeftOnly, Story
 
 ### Community 86 - "deliveryState"
-Cohesion: 0.28
-Nodes (9): DEFAULT_UI, sessionFrom(), HOT_HEAD_STATES, isHotHeadState(), lifecycleIsHot(), PR, STATE_MATRIX_ROWS, stateMatrixInput() (+1 more)
+Cohesion: 0.19
+Nodes (10): BranchSelector(), BranchSelectorProps, Default, Story, TRACKING, TrackingStates, Default, InStep (+2 more)
 
 ### Community 87 - "PrChecksList.tsx"
-Cohesion: 0.15
-Nodes (13): CHECK_LABEL, CheckOutput(), LOCAL_CHECKS, LocalCheck, Default, EveryCheck, MultilineFeed, Story (+5 more)
+Cohesion: 0.13
+Nodes (18): CHECK_LABEL, CheckOutput(), LOCAL_CHECKS, LocalCheck, Default, EveryCheck, MultilineFeed, Story (+10 more)
 
 ### Community 88 - "FileDiff.stories.tsx"
 Cohesion: 0.20
 Nodes (9): AllKinds, Default, DefaultViewed, FINDINGS, HUNK, KINDS, MarkedUncommitted, Story (+1 more)
 
 ### Community 89 - "FindingCard.tsx"
-Cohesion: 0.28
-Nodes (12): CommitGroupFile, DiffFinding, DiffHunkLine, FileChangeKind, findingBodyStub(), FileDiff(), hunkLineTone(), kindGlyph() (+4 more)
+Cohesion: 0.14
+Nodes (22): AllFilesDiff(), AllFilesDiffFile, Default, Empty, FILES, Story, CommitGroup(), CommitGroupFile (+14 more)
 
 ### Community 90 - "lifecycleNodeState.ts"
-Cohesion: 0.25
-Nodes (14): PhaseGroup(), PHASE_PRESENTATION, PHASE_ROLLUP_STATE, phaseOpensByDefault(), PhasePresentation, PhaseState, phaseStatusText(), rowCaret (+6 more)
+Cohesion: 0.29
+Nodes (8): BranchRow, BranchRowAction, isDeletable(), BranchMenu(), BranchMenuProps, BranchMenuRow(), BranchRowHandlers, GitControlsProps
 
 ### Community 91 - "PrChecksList.stories.tsx"
 Cohesion: 0.15
 Nodes (13): AGGREGATE_TONE, CI_RUN_PRESENTATION, CI_RUN_STATUSES, CiRunStatus, PrChecksList(), PrChecksListProps, Default, EveryRunStatus (+5 more)
 
 ### Community 92 - "NowLine.stories.tsx"
-Cohesion: 0.25
-Nodes (5): Idle, Live, Story, MagnifyingGlassIcon, PencilSimpleIcon
+Cohesion: 0.26
+Nodes (9): Default, Story, Tooltip(), TooltipContent(), TooltipProvider(), TooltipTrigger(), ProjectStripProps, ProjectTab() (+1 more)
 
 ### Community 93 - "SessionRow.stories.tsx"
-Cohesion: 0.17
-Nodes (7): Default, EveryState, Pulsing, Selected, Story, SessionStore, ADR-0005
+Cohesion: 0.29
+Nodes (5): Default, EveryState, Pulsing, Selected, Story
 
 ### Community 94 - "SessionScreen.tsx"
 Cohesion: 0.16
 Nodes (15): capLabel(), byClass(), byToken(), capKey(), corpus, errs, lengthTable(), ok (+7 more)
 
+### Community 95 - "useDisclosure"
+Cohesion: 0.33
+Nodes (5): DelegatedRow(), GateAction(), GrowRow(), DisclosureProps, useDisclosure()
+
 ### Community 96 - "@electron-toolkit/tsconfig"
 Cohesion: 0.12
 Nodes (14): armKeys, contested, failed, judged, ok, parseProblems, path, pct() (+6 more)
 
+### Community 99 - "@types/three"
+Cohesion: 0.17
+Nodes (9): manageMenu, facts(), ref(), BranchManageProps, GitControls(), Default, facts, NotAGitRepository (+1 more)
+
 ### Community 100 - "arms.ts"
-Cohesion: 0.23
-Nodes (13): CAPS, systemPrompt(), userPrompt(), viaClaudeCli(), ArmSpec, RouterOutput, runRouter(), ChunkType (+5 more)
+Cohesion: 0.14
+Nodes (23): Cap, systemPrompt(), userPrompt(), availableLocalKeys(), ModelId, MODELS, ModelSpec, Reshaped (+15 more)
 
 ### Community 101 - "rescore.ts"
 Cohesion: 0.14
@@ -436,16 +450,16 @@ Cohesion: 0.16
 Nodes (12): all, bands, collect(), Mined, mostlyCode(), outPath, perBand, picked (+4 more)
 
 ### Community 104 - "Console.stories.tsx"
-Cohesion: 0.18
-Nodes (9): captureLabel(), CAPTURE, CaptureActive, CaptureIdle, Default, Expanded, LongCaptureLabel, StaleSelection (+1 more)
+Cohesion: 0.15
+Nodes (11): RoomSwitcher(), Default, EveryRoom, Story, ConnectionStale, Default, LongCaption, NoGitControls (+3 more)
 
 ### Community 105 - "claudeTranscript.ts"
-Cohesion: 0.36
-Nodes (8): absorb(), absorbMessage(), asString(), clampPrompt(), coercePromptText(), isRecord(), parseLine(), timestampMs()
+Cohesion: 0.09
+Nodes (51): absorb(), absorbMessage(), clampPrompt(), coercePromptText(), DELEGATING_TOOLS, KIND_BY_NAME, planEntryStatus(), planFrom() (+43 more)
 
 ### Community 106 - "models.ts"
-Cohesion: 0.24
-Nodes (10): Cap, ModelId, MODELS, ModelSpec, Reshaped, resolvedIds, resolveId(), stripThinking() (+2 more)
+Cohesion: 0.27
+Nodes (6): ShellCommands, useShellCommands(), useShellKeymap(), ShellState, shellCommand, WITH_META
 
 ### Community 107 - "containment.ts"
 Cohesion: 0.33
@@ -453,47 +467,67 @@ Nodes (8): checkAll(), checkSpan(), matchedPrefixWords(), normalise(), Transform
 
 ### Community 108 - "discover.ts"
 Cohesion: 0.33
-Nodes (7): discoverWorkingSet(), mtimeOf(), readDirNames(), selectWorkingSet(), NOW, TranscriptFile, ADR-0008
+Nodes (7): discoverWorkingSet(), mtimeOf(), readDirectoryNames(), selectWorkingSet(), NOW, TranscriptFile, ADR-0008
 
 ### Community 109 - "speaker.ts"
 Cohesion: 0.43
 Nodes (6): absentSpeaker(), realtimeSpeaker(), sessionInstructions(), Speaker, speakerFromEnv(), timeoutFor()
 
 ### Community 110 - "CommitGroup.stories.tsx"
-Cohesion: 0.33
-Nodes (5): CommitGroup(), Default, FILES, Story, Uncommitted
+Cohesion: 0.47
+Nodes (7): useShellState(), DEFAULT_PROJECT_UI, nextProjectId(), ProjectUi, ProjectUiMemory, recallProjectUi(), rememberProjectUi()
 
 ### Community 111 - "StatusDot.stories.tsx"
-Cohesion: 0.33
-Nodes (5): AllTones, Default, Labelled, Pulsing, Story
+Cohesion: 0.22
+Nodes (6): BranchManage(), Ahead, Behind, Default, Diverged, Story
 
 ### Community 112 - "deliveryState"
-Cohesion: 0.60
-Nodes (3): deliveryState, rosterStatus, row()
+Cohesion: 0.36
+Nodes (4): NO_WATCHER, ADR-0008, Watcher, watchTranscripts()
 
 ### Community 113 - "IconButton.stories.tsx"
+Cohesion: 0.13
+Nodes (8): Default, Story, ArrowLineDownIcon, GitBranchIcon, PencilSimpleIcon, PlusIcon, TrashIcon, OPERATIONS
+
+### Community 115 - "electron-builder"
+Cohesion: 0.39
+Nodes (4): clampPercentage(), ContextGauge(), Default, Story
+
+### Community 116 - "electron-vite"
+Cohesion: 0.25
+Nodes (6): Default, facts, LocalOnly, localOnlyFacts, rows, Story
+
+### Community 117 - "@fontsource-variable/inter"
+Cohesion: 0.60
+Nodes (4): Roster(), HOT_HEAD_STATES, isHotHeadState(), lifecycleIsHot()
+
+### Community 118 - "BranchNameField.stories.tsx"
 Cohesion: 0.40
-Nodes (3): Default, Story, PlusIcon
+Nodes (4): BranchNameField(), Default, Story, WhitespaceOnly
+
+### Community 119 - "liveness.ts"
+Cohesion: 1.00
+Nodes (3): gatherClaudeProcesses(), processCwd(), run
 
 ## Knowledge Gaps
-- **617 isolated node(s):** `*.css`, `projectRoot`, `config`, `project`, `$schema` (+612 more)
+- **658 isolated node(s):** `*.css`, `projectRoot`, `config`, `project`, `$schema` (+653 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **35 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **34 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `createEclipseOrb()` connect `sessionFacts.ts` to `channels.ts`?**
-  _High betweenness centrality (0.333) - this node is a cross-community bridge._
-- **Why does `TerminalSession` connect `channels.ts` to `toggle-group.tsx`?**
-  _High betweenness centrality (0.333) - this node is a cross-community bridge._
-- **Why does `model()` connect `Session State Hub` to `toggle-group.tsx`, `React Types`?**
-  _High betweenness centrality (0.186) - this node is a cross-community bridge._
+- **Why does `PanelSplitter()` connect `PanelSplitter.stories.tsx` to `sessionFacts.ts`, `Electron Vite`, `Session Row & Button`, `SectionHeader.tsx`?**
+  _High betweenness centrality (0.326) - this node is a cross-community bridge._
+- **Why does `Observer` connect `sessionFacts.ts` to `BackgroundTasks.stories.tsx`?**
+  _High betweenness centrality (0.323) - this node is a cross-community bridge._
+- **Why does `model()` connect `projection.ts` to `React Types`?**
+  _High betweenness centrality (0.125) - this node is a cross-community bridge._
 - **What connects `*.css`, `projectRoot`, `config` to the rest of the system?**
-  _617 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _658 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Biome Config` be split into smaller, more focused modules?**
   _Cohesion score 0.1339031339031339 - nodes in this community are weakly interconnected._
 - **Should `Root Package Manifest` be split into smaller, more focused modules?**
-  _Cohesion score 0.047619047619047616 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.046511627906976744 - nodes in this community are weakly interconnected._
 - **Should `Turbo Build Pipeline` be split into smaller, more focused modules?**
   _Cohesion score 0.06653225806451613 - nodes in this community are weakly interconnected._
