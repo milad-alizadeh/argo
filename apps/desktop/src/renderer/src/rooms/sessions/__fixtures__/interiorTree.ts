@@ -29,7 +29,7 @@ export const OPEN_TURN = aTurn({
     {
       kind: 'message',
       markdown:
-        'legacy.ts holds two unrelated jobs: rotation and verification. I have moved rotation into its own module and left the old barrel re-exporting both, so nothing downstream has to change yet.\n\nverify() now takes the rotation as an argument rather than reaching for the module-level key, which is what made it untestable.',
+        'legacy.ts holds two unrelated jobs: rotation and verification. I have moved rotation into its own module and left the old barrel re-exporting both, so nothing downstream has to change yet.\n\n`verify()` now takes the rotation as an argument rather than reaching for the module-level key, which is what made it untestable.',
     },
   ],
   // Real plan prose, not `step N`: a placeholder entry hides exactly what these surfaces are for —

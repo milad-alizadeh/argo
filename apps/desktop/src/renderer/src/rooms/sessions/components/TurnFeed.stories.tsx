@@ -65,24 +65,20 @@ export const PromptOnly: Story = {
   },
 }
 
-/** Prose is rendered as PLAIN TEXT: whitespace is kept and markup is shown as the characters the
- * model wrote, never interpreted (markdown-lite is issue 315) and never injected as HTML. */
-export const VerbatimProse: Story = {
+/** Which rows read as markdown: the agent's do, the prompt's does not. The prompt is the human's
+ * typed text and never carried markup intent, so its asterisks stay asterisks while the message
+ * beneath sets the same characters as emphasis. The subset itself is `Prose`'s to story. */
+export const PromptIsNotMarkdown: Story = {
   args: {
     rows: [
-      {
-        kind: 'message',
-        key: 'prose:t2:0',
-        markdown:
-          'Indented block:\n\n    const rail = "#rail"\n    // two spaces after this ->  \n\n**not bold**, <b>not html</b>, and a `code span` that stays punctuation.',
-      },
+      { kind: 'prompt', key: 'prompt:t2', text: 'rename **rail** in `#list`', turnId: 't2' },
+      { kind: 'message', key: 'prose:t2:0', markdown: 'renamed **rail** in `#list`' },
     ],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/not bold/)).toBeInTheDocument()
-    // The tag is text, not an element: nothing in the feed may become markup.
-    await expect(canvasElement.querySelector('b')).toBeNull()
+    await expect(canvas.getByText(/rename \*\*rail\*\* in `#list`/)).toBeInTheDocument()
+    await expect(canvas.getByText('rail')).toBeInTheDocument()
   },
 }
 

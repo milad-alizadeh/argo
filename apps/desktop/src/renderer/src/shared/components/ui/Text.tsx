@@ -2,7 +2,21 @@ import { cn, type TypeRole } from '@/lib/utils'
 
 export type TextVariant = TypeRole
 
-export const TEXT_ELEMENTS = ['span', 'p', 'div', 'h1', 'h2', 'h3', 'code', 'header'] as const
+export const TEXT_ELEMENTS = [
+  'span',
+  'p',
+  'div',
+  'h1',
+  'h2',
+  'h3',
+  'code',
+  'header',
+  // Rendered markdown puts text inside these three, and the rule is that every string the reader
+  // sees is typed by this atom rather than inheriting from an ancestor that may change.
+  'strong',
+  'em',
+  'li',
+] as const
 
 export type TextElement = (typeof TEXT_ELEMENTS)[number]
 

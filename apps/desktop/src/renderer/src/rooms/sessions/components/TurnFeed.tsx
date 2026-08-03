@@ -1,12 +1,13 @@
 import type { FeedRow } from '@shared'
 import { cn } from '@/lib/utils'
 import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import { Prose } from './Prose'
 import { DISCLOSURE } from './rowRecipes'
 
-// The narrative rows of one Turn. Prose is rendered as PLAIN TEXT with its whitespace kept: markdown
-// is interpreted in issue 315, and until it is, an agent's `**bold**` reads as the characters it wrote
-// rather than as markup this surface guessed at. Nothing here is dangerouslySet — model prose is
-// untrusted input all the way to the screen.
+// The narrative rows of one Turn. The agent's own rows read as markdown (`Prose`, whose subset is
+// decided at the parser); the prompt does not, because it is the human's typed text and never
+// carried markup intent. Nothing here is dangerouslySet — model prose is untrusted input all the
+// way to the screen.
 const PROSE = 'whitespace-pre-wrap break-words'
 
 /** The prompt that opened the turn, verbatim. It hangs off a rail because it is the one row that is
@@ -28,9 +29,9 @@ function PromptRow({ text }: { text: string }): React.JSX.Element {
  * heading is prose nobody finishes. */
 function MessageRow({ markdown }: { markdown: string }): React.JSX.Element {
   return (
-    <Text as="p" variant="prose" className={`text-foreground-soft ${PROSE}`}>
-      {markdown}
-    </Text>
+    <div className="text-foreground-soft">
+      <Prose markdown={markdown} variant="prose" />
+    </div>
   )
 }
 
@@ -65,9 +66,9 @@ function ThoughtRow({ markdown }: { markdown: string }): React.JSX.Element {
         </Text>
       </button>
       {open && (
-        <Text as="p" variant="meta" className={`pl-mark-col text-foreground-faint ${PROSE}`}>
-          {markdown}
-        </Text>
+        <div className="pl-mark-col text-foreground-faint">
+          <Prose markdown={markdown} variant="meta" />
+        </div>
       )}
     </div>
   )
