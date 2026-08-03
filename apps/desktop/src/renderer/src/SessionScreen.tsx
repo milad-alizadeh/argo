@@ -1,12 +1,16 @@
 import { Console } from '@/domains/console/components'
 import { type ChangesView, Delivery, type DeliveryTab } from '@/domains/delivery/components'
-import { Roster } from '@/domains/roster/components'
 import { cn } from '@/lib/utils'
-import type { SessionView } from '@/sessionStore'
+import {
+  Roster,
+  type SessionsRoomModel,
+  SPINE,
+  type SpineEdge,
+  type SpineLayout,
+} from '@/rooms/sessions/components'
 import { PanelSplitter } from '@/shared/components/ui'
 import { SessionHeader } from './SessionHeader'
-import type { SessionPanelModel, SpineEdge } from './sessionScreenModel'
-import { SPINE, type SpineLayout } from './useSpineLayout'
+import type { SessionPanelModel } from './sessionScreenModel'
 
 /** Every callback the spine's regions raise, gathered so the container wires them once. */
 export interface SessionScreenHandlers {
@@ -26,10 +30,8 @@ export interface SessionScreenHandlers {
 }
 
 export interface SessionScreenProps {
-  /** The observed roster — the spine's left column. */
-  sessions: readonly SessionView[]
-  /** The selected Session's id, or `null` for none (the empty panel). */
-  selectedId: string | null
+  /** The roster rail's derived view-model — the spine's left column. */
+  roster: SessionsRoomModel
   /** The selected Session's assembled panel model, or `null` when nothing is selected. */
   panel: SessionPanelModel | null
   /** The three splitter-driven px sizes the custom properties carry. */
@@ -44,8 +46,7 @@ export interface SessionScreenProps {
  * the panels size off them, never off a token.
  */
 export function SessionScreen({
-  sessions,
-  selectedId,
+  roster,
   panel,
   layout,
   handlers,
@@ -62,38 +63,35 @@ export function SessionScreen({
       }
       className="flex h-screen w-screen p-inset text-foreground"
     >
-      {/* ONE frosted surface for the whole spine (R13): the roster and the session panel are flat
-            columns inside it, divided only by the splitter's 1px hairline — no glass on glass, and
-            no double border where two cards would otherwise meet. With no session open the card hugs
-            the roster (`w-fit`), so closing a session leaves only the roster on screen. */}
-      <div className={cn(GLASS_CARD, panel ? 'min-w-0 flex-1' : 'w-fit')}>
-        <Roster
-          sessions={sessions}
-          selectedId={selectedId}
-          onSelectSession={handlers.onSelectSession}
-          onSpawnSession={handlers.onSpawnSession}
-        />
-        {panel && (
-          <>
-            <PanelSplitter
-              orientation="v"
-              label="Roster width"
-              size={layout.roster}
-              min={SPINE.roster.min}
-              max={SPINE.roster.max}
-              onResize={(px) => handlers.onResize('roster', px)}
-            />
+      {/* The rail sits OUTSIDE the glass: its rows are planes floating in the room's lit scene, and
+            a frosted panel behind them would be glass on glass (R13). The session panel keeps the
+            one frosted surface, so closing a session leaves the rail alone on the scene. */}
+      <Roster
+        model={roster}
+        onSelectSession={handlers.onSelectSession}
+        onSpawnSession={handlers.onSpawnSession}
+      />
+      {panel && (
+        <>
+          <PanelSplitter
+            orientation="v"
+            label="Roster width"
+            size={layout.roster}
+            min={SPINE.roster.min}
+            max={SPINE.roster.max}
+            onResize={(px) => handlers.onResize('roster', px)}
+          />
+          <div className={cn(GLASS_CARD, 'min-w-0 flex-1')}>
             <SessionPanel panel={panel} layout={layout} handlers={handlers} />
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </main>
   )
 }
 
-// The spine's ONE frosted surface (R13): the roster and the session panel are flat columns inside
-// it. The invariant lives here, in one place, so a surface tweak can't drift between regions. The
-// caller toggles `flex-1` (a session is open) vs `w-fit` (roster alone).
+// The session panel's ONE frosted surface (R13): its regions are flat columns inside it. The
+// invariant lives here, in one place, so a surface tweak can't drift between regions.
 const GLASS_CARD =
   'flex overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl'
 

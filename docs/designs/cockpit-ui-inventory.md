@@ -84,12 +84,13 @@ promised a Delivery coupling that the room slices must not have. The map carries
 
 ## Retired, awaiting removal
 
-**Three panel domains are still standing.** `roster/`, `delivery/` and `console/` derive from
+**Two panel domains are still standing.** `delivery/` and `console/` derive from
 ADR-0009's story/work split, which the redesign retires (`cockpit-spec.md` §12). They stay in the
 boundary map while their code is on disk, so the gate keeps guarding them, and each entry is
 removed by the ticket that moves its last file. Their components are listed here so that nothing
-in the tree lacks a row. Two are **gone**: `concierge/` (#284 deleted it whole, ADR-0019 records
-why) and `activity/` (#261 deleted it whole, along with `rowCaret.ts` — `Run`, `Phase` and
+in the tree lacks a row. Three are **gone**: `roster/` (#267 rebuilt the rail inside
+`rooms-sessions` and removed the module from the boundary map), `concierge/` (#284 deleted it whole,
+ADR-0019 records why) and `activity/` (#261 deleted it whole, along with `rowCaret.ts` — `Run`, `Phase` and
 `Actor` are retired vocabulary and #261's own criterion is that no such name survives anywhere.
 `NowLine`'s successor is `NowHead` inside the Dock header row; `RosterRow`'s is `SessionRow`.
 `rowCaret`'s one idea worth carrying — a non-expandable row still reserving the caret's width —
@@ -100,10 +101,10 @@ is recorded here for #272's generic node tree, which is the only thing that want
 | `domains/activity/components/rowCaret.ts` | **Delete, unless #272 wants the `reserved` rule.** Read by `RunRow`, `PhaseGroup` and `RosterRow`, all of which are deletions. Its one idea worth carrying is that a non-expandable row still reserves the caret's width, which the Work room's generic node tree will want. |
 | `domains/console/components/`: `consoleChannels`, `captureLabel`, `resolveActiveChannel`, `feedLines` | **`consoleChannels` travels with the salvage; the other three delete.** `LiveTerminal` (→ `TerminalPane`, #274) reads `LIVE_CHANNEL_LABEL` from `consoleChannels`, so that module moves with it. The channel-strip derivations die with the strip. |
 | `domains/delivery/components/`: `diffModel`, `nodeDrawerModel` | **Travel with the salvage (#269–#271).** These are the type modules beneath the components marked salvage above — `diffModel` under `FindingCard`/`FileDiff`/`AllFilesDiff`/`CommitGroup`, `nodeDrawerModel` under `NodeDrawer/*`. Moving a component without its type module is what makes a salvage import across the boundary instead of relocating. |
-| `domains/roster/`: `Roster`, `SessionRow`, `ContextGauge`, `EmptyRoster` | **Salvage into `rooms-sessions`.** Each has a row below carrying `partial · <path>`. |
+| ~~`domains/roster/`~~ | **Done (#267).** `Roster` and `SessionRow` were rebuilt onto the registry in `rooms/sessions/components/`, `ContextGauge` moved there unchanged for #268 to render as `ContextRing`, and `EmptyRoster` was **deleted**: the zero-state is the bare `+ New session` row, so there is no empty block to hold. |
 | `domains/delivery/`: `Delivery`, `DeliveryTabs`, `DeliveryLifecycle`, `LifecycleNode`, `NodeDrawer/*`, `CiCard`, `CheckOutput`, `PrChecksList`, `PrAnchor`, `CommitGroup`, `FileDiff`, `AllFilesDiff`, `FindingCard`, `findingState`, `lifecycleNodeState` | **Salvage into `rooms-sessions`.** The lifecycle rail, the node drawer bodies, the check rows and the diff views all have rows below. Salvage means moving the file, never importing across the boundary. |
 | `domains/console/`: `Console`, `ConsoleChannel`, `ConsoleChannelTab`, `LiveTerminal` | **Delete the channel strip, salvage `LiveTerminal`.** The Console panel's job belongs to the Dock and to the Code room's scratch terminal; the one thing worth keeping is the PTY view, which becomes `TerminalPane`. |
-| Renderer root: `SessionScreen`, `SessionHeader`, `WorkspaceIdentity`, `App` | **Rewrite.** #264 landed the root composition as `CockpitScreen` (the pure View: strip + bar + stage) over `RoomStage` (the room switch), so `SessionScreen` stays the **Sessions room** for #267 to rewrite rather than becoming the root. `App` is the container. `RoomStage`'s Work and Code arms are scaffolding #272/#274 delete. `SessionHeader` has a row below. `WorkspaceIdentity` is superseded by `SessionMeta`'s branch segment. |
+| Renderer root: `SessionScreen`, `SessionHeader`, `WorkspaceIdentity`, `App` | **Rewrite.** #264 landed the root composition as `CockpitScreen` (the pure View: strip + bar + stage) over `RoomStage` (the room switch), so `SessionScreen` stays the **Sessions room** for #268 to rewrite rather than becoming the root. #267 took its RAIL (now `rooms/sessions/components/Roster`) and left the interior here: `SessionScreen` and `sessionScreenModel` render and type `domains/{console,delivery}`, which `rooms-sessions` is forbidden to import, so the interior moves with the salvage rather than ahead of it. `App` is the container. `RoomStage`'s Work and Code arms are scaffolding #272/#274 delete. `SessionHeader` has a row below. `WorkspaceIdentity` is superseded by `SessionMeta`'s branch segment. |
 
 ---
 
@@ -117,8 +118,8 @@ is recorded here for #272's generic node tree, which is the only thing that want
 | `Button` | atom | `built · shared/components/ui/button.tsx` | **Keep, prune variants.** The `review-secondary` and `verdict-*` variants are ADR-0009-era. The settled Delivery has exactly **one** primary CTA per control line (`cockpit-spec.md` §4.3), so the variant set re-derives to primary · ghost · destructive plus the verdict washes `toneRecipes` already names. |
 | `IconButton` | atom | `built · shared/components/ui/IconButton.tsx` | **Keep unchanged.** |
 | `Badge` | atom | `built · shared/components/ui/badge.tsx` | **Keep.** Carries the two count-and-alarm jobs the settled control line needs: `Files (N)` and the red blocking badge on Code Review. No free-text status string is ever a Badge. |
-| `StatusDot` | atom | `partial · shared/components/ui/StatusDot.tsx` | **Keep, extend.** The single carrier of session state colour. Needs one addition: a **hollow** rendering for `external` (registry, Session status table). Extension of an existing primitive, not a new atom. |
-| `Status` | molecule | `partial · shared/components/ui/Status.tsx` | **Change.** It currently colours the word (`text-tone-${tone}`). The registry forbids that: state is carried by the dot, the word stays neutral dim text, no double-encoding. The word takes `--foreground-soft`; the tone reaches only the dot. |
+| `StatusDot` | atom | `built · shared/components/ui/StatusDot.tsx` | **Keep, extend.** The single carrier of session state colour. Needs one addition: a **hollow** rendering for `external` (registry, Session status table). Extension of an existing primitive, not a new atom. |
+| `Status` | molecule | `built · shared/components/ui/Status.tsx` | **Change.** It currently colours the word (`text-tone-${tone}`). The registry forbids that: state is carried by the dot, the word stays neutral dim text, no double-encoding. The word takes `--foreground-soft`; the tone reaches only the dot. |
 | `Tabs` | molecule | `built · shared/components/ui/tabs.tsx` | **Keep.** Two callers: the session's `Activity · Delivery` pair and Delivery's `Overview · Code Review · Files` sub-tabs. The shell's room tabs are **not** this primitive (see `RoomSwitcher`). |
 | `PanelSplitter` | molecule | `built · shared/components/ui/PanelSplitter.tsx` | **Keep.** Every master/detail surface in the app is a two-pane split, and the split is resizable in the prototypes. |
 | `SectionHeader`, `PanelHeader` | molecule | `built · shared/components/ui/` | **Keep.** The eyebrow-plus-count header the Subagents group, the Timeline group and the Work rail's `BACKLOG · BY PRIORITY` row all share. |
@@ -148,9 +149,9 @@ the first Sessions-room ticket:
 
 | Component | Tier | Status | States | Seed / authority |
 |---|---|---|---|---|
-| `sessionStatusWord` | pure fn | `partial · shared/status/rosterStatus.ts` | the four words above, plus `external` (identity, no word) | registry, Session status |
-| `deliveryClaimWord` | pure fn | `partial · shared/status/deliveryState.ts` | `commits · pr · ci · review · merge` node words, e.g. `CI failed` | registry, Delivery lifecycle |
-| `rosterWord` | pure fn | `partial · shared/status/rosterStatus.ts` | the priority pick: attention needs-input → attention failure → delivery milestone → liveness → kind. A delivery claim beats session status. | `cockpit-spec.md` §4.1 |
+| `sessionStatusWord` | pure fn | `built · shared/status/rosterStatus.ts` | the four words above, plus `external` (identity, no word) | registry, Session status |
+| `deliveryClaimWord` | pure fn | `built · shared/status/rosterStatus.ts` | `commits · pr · ci · review · merge` node words, e.g. `CI failed` | registry, Delivery lifecycle |
+| `rosterWord` | pure fn | `built · shared/status/rosterStatus.ts` | the priority pick: attention needs-input → attention failure → delivery milestone → liveness → kind. A delivery claim beats session status. | `cockpit-spec.md` §4.1 |
 | `worstStateDot` | pure fn | `built · shell/worstStateDot.ts` | `needs you > failed > running > none`, active project always `none` | registry, Attention |
 | `connectionRollup` | pure fn | `spec` | `healthy` (renders nothing) · `stale` · `needs reconnect`, plus auth escalating past the roll-up. Keyed by **binding**, not project. | failure spec §2, §3 |
 
@@ -166,7 +167,7 @@ own molecule.
 | `TerminalPane` | organism | `partial · domains/console/components/LiveTerminal.tsx` | live · dead PTY (offers `Relaunch`, never a status word) · expanded · collapsed | `CONTEXT.md`, Scratch terminal: "same PTY machinery as a session terminal, minus the agent" |
 | `Menu` | molecule | `built · shared/components/ui/dropdown-menu.tsx` | closed · open · row enabled · row disabled with reason | `BranchMenu` and `BranchManage` (prototype seeds), the project tab context menu |
 | `Tooltip` | molecule | `built · shared/components/ui/tooltip.tsx` | hidden · shown | the active project tab's name plus `last synced` (#201) is the only mandated tooltip in the shell |
-| `EmptyState` | molecule | `partial · domains/roster/components/EmptyRoster.tsx` | one line of copy plus zero, one or two actions | the Code room's `EmptyFolder` / `NoFileOpen` / `UnsupportedFile`, the Work room's four empty-pool tiers, the roster zero-state |
+| `EmptyState` | molecule | `spec` | one line of copy plus zero, one or two actions | the Code room's `EmptyFolder` / `NoFileOpen` / `UnsupportedFile`, the Work room's four empty-pool tiers. **Not** the roster zero-state: #267 settled that as the bare `+ New session` row, with no empty block at all |
 | `Kbd` | atom | `spec` | a rendered key hint | the canonical keymap is shown in the palette, not in chrome |
 
 `TerminalPane` must import `@xterm/xterm/css/xterm.css`. Without it the pane renders ghost rows and
@@ -239,10 +240,10 @@ delivery-review · delivery-files · delivery-prepr · dock · external · archi
 
 | Component | Tier | Status | States | Seed |
 |---|---|---|---|---|
-| `Roster` | organism | `partial · domains/roster/components/Roster.tsx` | populated · **zero-state is just the `+ New session` row** (a one-time transient costs no permanent chrome) · archived list open | `data-component="Roster"` |
-| `SessionRow` | molecule | `partial · domains/roster/components/SessionRow.tsx` | `dot · name · word` over `model · branch`. Dot: running green · idle grey · needs-you gold · failed red · external **hollow**. Row: selected · unselected · external (ghosted, so read-only awareness looks different from a session you can drive). | `data-component="SessionRow"` (study template) |
-| `NewSessionRow` | molecule | `spec` | pinned quiet at the top. `⌘N` spawns zero-config at the project root. | `cockpit-spec.md` §4.1 |
-| `ArchivedFooter` | molecule | `spec` | `⚙ Archived (n)`. Archiving is a status transition, never a button. | `cockpit-spec.md` §4.1 |
+| `Roster` | organism | `built · rooms/sessions/components/Roster.tsx` | populated · **zero-state is just the `+ New session` row** (a one-time transient costs no permanent chrome) · archived list open | `data-component="Roster"` |
+| `SessionRow` | molecule | `built · rooms/sessions/components/SessionRow.tsx` | `dot · name · word` over `model · branch`. Dot: running green · idle grey · needs-you gold · failed red · external **hollow**. Row: selected · unselected · external (ghosted, so read-only awareness looks different from a session you can drive). | `data-component="SessionRow"` (study template) |
+| `NewSessionRow` | molecule | `built · rooms/sessions/components/NewSessionRow.tsx` | pinned quiet at the top. `⌘N` spawns zero-config at the project root. | `cockpit-spec.md` §4.1 |
+| `ArchivedFooter` | molecule | `built · rooms/sessions/components/ArchivedFooter.tsx` | `⚙ Archived (n)`. Archiving is a status transition, never a button. | `cockpit-spec.md` §4.1 |
 
 Order is stable by most-recent activity and **attention never reorders the list**. Ordering is a
 model concern, asserted in `buildSessionsRoomModel`, not a component state.
@@ -253,7 +254,7 @@ model concern, asserted in `buildSessionsRoomModel`, not a component state.
 |---|---|---|---|---|
 | `SessionPlane` | organism | `spec` | one continuous glass surface holding header, tabs, body and Dock. Per settled state: `fresh · activity · idle · delivery* · external`. Absent in `zero`. | `data-component="SessionPlane"`; the settled prototype's own section reads `SESSION CARD (one continuous glass)`. The plane spelling matches the contract's plane family; `SessionCard` is recorded as its superseded synonym so no ticket coins both. |
 | `SessionHeader` | organism | `partial · SessionHeader.tsx` (renderer root) | one band, glance only: **no action buttons and no `⋯` menu**. Takes per state: running · idle · external · fresh. | `data-component="SessionHeader"` |
-| `ContextRing` | atom | `partial · domains/roster/components/ContextGauge.tsx` | honest `~n%` · **empty ring reading `unknown`** for external · `—/ready` for a fresh session. An estimate is never dressed as a measurement. | `cockpit-spec.md` §4.2 |
+| `ContextRing` | atom | `partial · rooms/sessions/components/ContextGauge.tsx` | honest `~n%` · **empty ring reading `unknown`** for external · `—/ready` for a fresh session. An estimate is never dressed as a measurement. | `cockpit-spec.md` §4.2 |
 | `SessionMeta` | molecule | `partial · WorkspaceIdentity.tsx` (branch segment only) | order is fixed: `status · model · mode · branch(+∆/↑) · elapsed · intent ↗`. Collapses the intent chip to `#<n> ↗` when the session is titled from its ticket. External drops `intent` (read-only). `mode ∈ Ask · Plan · Code · unknown`. | `cockpit-spec.md` §4.2; `CONTEXT.md`, Autonomy cluster |
 | `SessionTabs` | molecule | `spec` | **exactly two**: `Activity · Delivery`. Outcomes was cut (C2.2). | `cockpit-spec.md` §4.2 |
 

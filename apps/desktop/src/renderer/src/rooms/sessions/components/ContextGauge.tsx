@@ -11,7 +11,8 @@ export function clampPercentage(percentage: number): number {
  * Atom: the ONE shape for a Session's context window — a labelled bar plus the estimated
  * percentage.
  *
- * Roster-only; no other surface repeats it.
+ * The session header's, not the rail's: ctx is per-session detail, never something you compare
+ * across rows. Issue 268 renders it as `ContextRing`.
  */
 export function ContextGauge({
   percentage,

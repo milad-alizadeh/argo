@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { LIVE_CHANNEL_ID } from '@/domains/console/components'
+import { isConsoleExpanded, type SpineLayout, useSpineLayout } from '@/rooms/sessions/components'
 import type { SessionScreenHandlers } from '@/SessionScreen'
 import { buildSessionPanel, type PanelUiState } from '@/sessionScreenModel'
-import type { SessionView } from '@/sessionStore'
-import { isConsoleExpanded, type SpineLayout, useSpineLayout } from '@/useSpineLayout'
+import type { SessionView } from './sessionStore'
 
 // The Sessions room's own UI state, held apart from the shell's: the room a project is showing
 // is the shell's business, and what the open session's panels are doing is the room's.

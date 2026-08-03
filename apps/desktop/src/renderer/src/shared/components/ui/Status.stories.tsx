@@ -7,7 +7,7 @@ import { Status } from './Status'
 // The molecule renders one derived row, so the fixtures come from the one derivation the rail
 // reads rather than from words typed here.
 const propsOf = (status: SessionStatus) => {
-  const { word, dot } = deliveryState(sessionFacts({ status })).rail
+  const { word, dot } = deliveryState(sessionFacts({ status }), 'managed').rail
   return { word, tone: dot.tone, glow: dot.glow }
 }
 

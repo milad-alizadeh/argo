@@ -125,7 +125,8 @@ export function WorkspaceIdentity({
           title={`${dirty} uncommitted file${dirty > 1 ? 's' : ''}`}
         >
           {dirty} dirty
-          <StatusDot tone="amber" className="size-snug" />
+          {/* Lit: an uncommitted tree is the chip's one live signal, and attention is brightness. */}
+          <StatusDot glow tone="amber" className="size-snug" />
         </Text>
       )}
       <Text variant="meta" className="text-foreground-faint" title="commits ahead/behind main">

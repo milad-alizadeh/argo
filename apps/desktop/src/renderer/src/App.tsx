@@ -1,8 +1,15 @@
 import { useCallback, useEffect } from 'react'
 import { CockpitScreenView } from '@/CockpitScreenView'
-import { RoomStage, useGitGroup, useSessionPanel, useShellCommands, useShellState } from '@/cockpit'
+import {
+  RoomStage,
+  useGitGroup,
+  useSessionPanel,
+  useSessionStore,
+  useShellCommands,
+  useShellState,
+} from '@/cockpit'
+import { buildSessionsRoomModel } from '@/rooms/sessions/components'
 import { SessionScreen } from '@/SessionScreen'
-import { useSessionStore } from '@/sessionStore'
 import { buildShellModel } from '@/shell/components'
 
 // Container: wires the projection bridge into the store, then renders the chrome and the active
@@ -61,8 +68,10 @@ function App(): React.JSX.Element {
         room={shell.room}
         sessions={
           <SessionScreen
-            sessions={roster}
-            selectedId={shell.selectedSessionId}
+            roster={buildSessionsRoomModel({
+              sessions: roster,
+              selectedId: shell.selectedSessionId,
+            })}
             panel={panel.panel}
             layout={panel.layout}
             handlers={{

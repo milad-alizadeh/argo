@@ -1,6 +1,6 @@
+import type { SessionView } from '@shared'
 import { sessionFacts } from '@shared'
 import { describe, expect, it } from 'vitest'
-import type { SessionView } from '@/sessionStore'
 import { stateMatrixInput } from '@/shared/status'
 import { buildSessionPanel, type PanelUiState } from './sessionScreenModel'
 
