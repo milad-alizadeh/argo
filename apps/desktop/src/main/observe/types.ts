@@ -7,6 +7,8 @@ export interface ParsedTranscript {
   headLeafUuid: string | null // from the line-0 last-prompt record
   messageUuids: string[] // every record uuid seen (for resume-chain matching)
   cwd: string | null // DIRECT when present
+  model: string | null // DIRECT: the id off the LATEST assistant record — a run can switch model
+  gitBranch: string | null // DIRECT: the LATEST reading — a run can switch branch
   aiTitle: string | null // DIRECT title when present
   firstPrompt: string | null // fallback title source (DERIVED)
   firstTimestampMs: number | null // oldest record timestamp (DERIVED: which claim window it began in)
@@ -29,6 +31,9 @@ export interface ObservedSession {
   posture: SessionPosture
   title: Tiered<string>
   cwd: Tiered<string> | null
+  model: Tiered<string> | null
+  branch: Tiered<string> | null
+  lastActivityAt: Tiered<number> | null
   status: Tiered<SessionStatus>
   /** The flat runtime tree: the root Agent (`parentId: null`) plus its Subagents. */
   agents: Agent[]

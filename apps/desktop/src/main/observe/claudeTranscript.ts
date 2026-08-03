@@ -1,6 +1,6 @@
 import { createTreeBuilder } from './tree'
 import type { ParsedTranscript } from './types'
-import { asArray, asString, isRecord, parseLine, timestampMs } from './untrusted'
+import { asArray, asString, isRecord, parseLine, stringField, timestampMs } from './untrusted'
 
 // THE untrusted-input boundary: one raw .jsonl becomes one tamed ParsedTranscript. A model
 // wrote it, so every line is parsed defensively (a malformed line is skipped, never thrown),
@@ -35,6 +35,8 @@ export function parseTranscript(sessionId: string, lines: string[]): ParsedTrans
     headLeafUuid: null,
     messageUuids: [],
     cwd: null,
+    model: null,
+    gitBranch: null,
     aiTitle: null,
     firstPrompt: null,
     firstTimestampMs: null,
@@ -74,7 +76,14 @@ function absorb(parsed: ParsedTranscript, record: Record<string, unknown>): void
       if (prompt !== null && parsed.firstPrompt === null) parsed.firstPrompt = prompt
       return
     }
-    case 'assistant':
+    case 'assistant': {
+      absorbMessage(parsed, record)
+      // Only an assistant record names a model, and records run oldest → newest, so the last
+      // one read is what the session is on NOW — the rail's question, not what it started on.
+      const model = stringField(record.message, 'model')
+      if (model !== null) parsed.model = model
+      return
+    }
     case 'attachment': {
       absorbMessage(parsed, record)
       return
@@ -92,6 +101,11 @@ function absorbMessage(parsed: ParsedTranscript, record: Record<string, unknown>
 
   const cwd = asString(record.cwd)
   if (cwd !== null && parsed.cwd === null) parsed.cwd = cwd
+
+  // Unlike cwd, the branch takes its LATEST reading: a run can switch branch mid-session and
+  // the rail shows where it is now. A record without one leaves the previous reading standing.
+  const gitBranch = asString(record.gitBranch)
+  if (gitBranch !== null) parsed.gitBranch = gitBranch
 
   const ms = timestampMs(record)
   if (ms === null) return

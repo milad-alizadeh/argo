@@ -16,6 +16,14 @@ export interface SessionIntake {
   title: string
   cli: Cli
   cwd: string | null
+  // The model id verbatim as the transcript reported it, never prettified — DIRECT, and
+  // `null` means no assistant record named one, not a default model.
+  model: string | null
+  // The git branch the newest record reported — DIRECT, `null` when unobserved.
+  branch: string | null
+  // Epoch ms of the newest record across the resume chain — DERIVED from record timestamps,
+  // `null` when no record carried a readable one.
+  lastActivityAt: number | null
   posture: SessionPosture
   facts: SessionFacts
   // The runtime tree (CONTEXT.md L3), flat and keyed by `parentId`: the Session is the root

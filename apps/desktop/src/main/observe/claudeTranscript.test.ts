@@ -6,6 +6,15 @@ import { parseTranscript } from './claudeTranscript'
 const readFixtureLines = (name: string): string[] =>
   readFileSync(join(__dirname, '__fixtures__', name), 'utf8').split('\n')
 
+const linesOf = (...records: unknown[]): string[] => records.map((record) => JSON.stringify(record))
+
+const assistantRecord = (over: Record<string, unknown>): Record<string, unknown> => ({
+  type: 'assistant',
+  uuid: 'u-a',
+  timestamp: '2026-07-20T10:00:00.000Z',
+  ...over,
+})
+
 describe('parseTranscript', () => {
   it('extracts the head pointer, cwd, first prompt and recency from a root file', () => {
     const parsed = parseTranscript('externalBasic', readFixtureLines('externalBasic.jsonl'))
@@ -47,5 +56,76 @@ describe('parseTranscript', () => {
     )
     expect(parsed.aiTitle).toBeNull()
     expect(parsed.firstPrompt).toBe('Fix the bug')
+  })
+})
+
+describe('parseTranscript reads the model and branch', () => {
+  it('takes the model from the LATEST assistant record, so a mid-run switch wins', () => {
+    const parsed = parseTranscript(
+      's',
+      linesOf(
+        assistantRecord({ message: { model: 'claude-sonnet-4-5' } }),
+        assistantRecord({ uuid: 'u-b', message: { model: 'claude-opus-5' } }),
+      ),
+    )
+
+    expect(parsed.model).toBe('claude-opus-5')
+  })
+
+  it('takes the branch from the latest record carrying one', () => {
+    const parsed = parseTranscript(
+      's',
+      linesOf(
+        { type: 'user', uuid: 'u-1', gitBranch: 'main', message: { content: 'go' } },
+        assistantRecord({ gitBranch: 'argo/#267' }),
+      ),
+    )
+
+    expect(parsed.gitBranch).toBe('argo/#267')
+  })
+
+  it('keeps an earlier branch reading when a later record carries none', () => {
+    const parsed = parseTranscript(
+      's',
+      linesOf(assistantRecord({ gitBranch: 'main' }), assistantRecord({ uuid: 'u-b' })),
+    )
+
+    expect(parsed.gitBranch).toBe('main')
+  })
+
+  it('never invents either when no record reports them', () => {
+    const parsed = parseTranscript('s', linesOf(assistantRecord({ message: { content: [] } })))
+
+    expect(parsed.model).toBeNull()
+    expect(parsed.gitBranch).toBeNull()
+  })
+
+  it('ignores a non-string model or branch rather than coercing it', () => {
+    const parsed = parseTranscript(
+      's',
+      linesOf(assistantRecord({ gitBranch: { name: 'main' }, message: { model: 42 } })),
+    )
+
+    expect(parsed.model).toBeNull()
+    expect(parsed.gitBranch).toBeNull()
+  })
+
+  it('reads a model past a malformed line instead of throwing', () => {
+    const lines = [
+      '{not valid json',
+      ...linesOf(assistantRecord({ gitBranch: 'main', message: { model: 'claude-opus-5' } })),
+    ]
+
+    expect(() => parseTranscript('s', lines)).not.toThrow()
+    const parsed = parseTranscript('s', lines)
+    expect(parsed.model).toBe('claude-opus-5')
+    expect(parsed.gitBranch).toBe('main')
+  })
+
+  it('reads the branch off a real transcript fixture', () => {
+    const parsed = parseTranscript('externalBasic', readFixtureLines('externalBasic.jsonl'))
+
+    expect(parsed.gitBranch).toBe('main')
+    expect(parsed.model).toBe('claude-opus-5')
   })
 })
