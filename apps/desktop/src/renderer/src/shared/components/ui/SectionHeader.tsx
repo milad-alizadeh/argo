@@ -2,10 +2,11 @@ import { cn } from '@/lib/utils'
 import { Text } from './Text'
 
 /**
- * Atom: the uppercase eyebrow that opens a section ("Outcomes · 4", "Checks · 8f3a1c").
+ * Atom: the uppercase eyebrow that opens a section ("Outcomes  4", "Checks  8f3a1c").
  *
  * The count drops the eyebrow's uppercase and tracking so a sha or a phrase stays
- * readable.
+ * readable, and it is separated by the gap alone — a leading `·` after the label reads as
+ * a segment missing in front of it, and the count is not a segment of a list.
  */
 export function SectionHeader({
   label,
@@ -24,7 +25,7 @@ export function SectionHeader({
       <Text variant="eyebrow">{label}</Text>
       {count !== undefined && (
         <Text variant="eyebrow" className="text-foreground-faint normal-case tracking-normal">
-          · {count}
+          {count}
         </Text>
       )}
     </div>

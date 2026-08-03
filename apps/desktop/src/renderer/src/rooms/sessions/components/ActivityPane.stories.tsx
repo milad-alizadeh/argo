@@ -30,7 +30,10 @@ type Story = StoryObj<typeof meta>
 export const TwoPane: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Subagents')).toBeInTheDocument()
+    // `Subagents` heads the run TWICE on purpose: once in the nav pane, once over the delegated
+    // sections of the feed. That second heading is what stops a delegate's work from reading as a
+    // step of this session's own turn.
+    await expect(canvas.getAllByText('Subagents')).toHaveLength(2)
     await expect(canvas.getByText('Timeline')).toBeInTheDocument()
     // Clicking a nav row jumps the feed rather than swapping the pane's content out — the section was
     // already there, which is what makes the feed continuous.

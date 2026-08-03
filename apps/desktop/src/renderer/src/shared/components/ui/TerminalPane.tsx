@@ -99,12 +99,18 @@ function openTerminal(host: HTMLElement): { term: Terminal; fit: FitAddon } {
 export function TerminalPane({
   label,
   attach,
+  resting = '│ live shell — attaches to a real PTY when the app runs',
   className,
 }: {
   /** What this terminal is, for assistive tech — the surface has no visible heading of its own. */
   label: string
   /** Reaches a live PTY. Absent (Storybook, a plain browser preview) leaves the pane inert. */
   attach?: TerminalAttach
+  /** The ONE line the pane rests on while no PTY is attached. The caller owns the words because
+   * only it knows what typing here would do — a Dock says what you can steer, a preview says it is
+   * a preview. Written into the terminal itself rather than laid over it, so an attached PTY's
+   * first frame is the only thing that can be on screen. */
+  resting?: string
   className?: string
 }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -115,8 +121,7 @@ export function TerminalPane({
     const { term, fit } = openTerminal(host)
 
     if (!attach) {
-      term.writeln('\x1b[2m│ live shell — attaches to a real PTY when the app runs\x1b[0m')
-      term.write('\x1b[2m│ (no terminal attached)\x1b[0m')
+      term.write(`\x1b[2m${resting}\x1b[0m`)
       const idle = new ResizeObserver(() => fit.fit())
       idle.observe(host)
       return () => {
@@ -138,7 +143,7 @@ export function TerminalPane({
       session.dispose()
       term.dispose()
     }
-  }, [attach])
+  }, [attach, resting])
 
   return (
     <section

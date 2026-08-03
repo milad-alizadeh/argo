@@ -1,6 +1,7 @@
 import { isSteerable, type SessionView } from '@shared'
 import { deliveryState } from '@/shared/status'
 import { contextPercent } from './contextEstimate'
+import type { ActivityDot } from './interiorSubagents'
 
 // The session header's derivation: the one band's title, its context ring, its meta line and its
 // intent chip. Pure and React-free — the header is glance-only, so every judgement it makes (which
@@ -40,10 +41,15 @@ export const noSessionLink = (): SessionLink => ({
   mode: null,
 })
 
-/** One segment of the meta line, in the fixed order the spec sets. `mono` marks the segments that
- * carry an identifier (a model id, a branch) rather than prose. */
+/** One segment of the meta line. `mono` marks the segments that carry an identifier (a branch, a
+ * count) rather than prose.
+ *
+ * `status` and `model` are deliberately NOT members. The band sheds every fact the roster rail
+ * already carries: the rail row names the model and spells the status word, so repeating them here
+ * buys nothing and costs the line its scannability. The status survives as the dot beside the
+ * segments — a state one glyph can carry does not need a word too. */
 export interface MetaSegment {
-  id: 'status' | 'model' | 'mode' | 'branch' | 'elapsed'
+  id: 'mode' | 'branch' | 'elapsed'
   text: string
   mono: boolean
 }
@@ -57,6 +63,10 @@ export interface IntentChip {
 
 export interface SessionHeaderModel {
   title: string
+  /** The session's state, as the dot the band leads with. The room's own dot vocabulary rather than
+   * the rail's wider one: this reads the same three channels the rest of the interior does, so a
+   * roster row and its open plane can never disagree about what the session is doing. */
+  status: ActivityDot
   /** Share of the context window in use, or `null` for a session whose context Argo cannot
    * establish — the ring then draws NO arc and reads `unknown`. */
   contextPercent: number | null
@@ -92,18 +102,15 @@ function segment(id: MetaSegment['id'], text: string | null, mono = false): Meta
   return text === null ? [] : [{ id, text, mono }]
 }
 
-/** The meta line, in the ONE fixed order `status · model · mode · branch(+∆/↑) · elapsed`. A
- * segment Argo cannot establish is absent rather than filled in, except the model and the mode,
- * whose absence is itself worth saying out loud. */
+/** The meta line, in the ONE fixed order `mode · branch(+∆/↑) · elapsed`, led by the status dot the
+ * model carries separately. A segment Argo cannot establish is absent rather than filled in, except
+ * the mode, whose absence is itself worth saying out loud. */
 export function metaSegments(
   session: SessionView,
   link: SessionLink,
   nowMs: number | null,
 ): MetaSegment[] {
-  const { rail } = deliveryState(session.facts, session.posture)
   return [
-    ...segment('status', rail.word),
-    ...segment('model', session.model ?? UNKNOWN, true),
     ...segment('mode', link.mode ?? UNKNOWN),
     ...segment('branch', branchSegment(session), true),
     ...segment('elapsed', elapsed(session, nowMs)),
@@ -137,6 +144,7 @@ export function buildInteriorHeader({
 }): SessionHeaderModel {
   return {
     title: session.title,
+    status: deliveryState(session.facts, session.posture).rail.dot,
     contextPercent: contextPercent(session),
     meta: metaSegments(session, link, nowMs),
     intent: intentChip(session, link),

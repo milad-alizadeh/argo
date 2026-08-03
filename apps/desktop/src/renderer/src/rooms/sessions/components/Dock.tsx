@@ -3,7 +3,6 @@ import {
   CaretUpIcon,
   type TerminalAttach,
   TerminalPane,
-  TerminalWindowIcon,
   Text,
 } from '@/shared/components/ui'
 import type { DockModel } from '../interiorDock'
@@ -13,6 +12,12 @@ const KIND_LABEL: Record<DockModel['kind'], string> = {
   pty: 'Terminal',
   transcript: 'Transcript',
 }
+
+// What the Dock's own resting pane says when there is no PTY attached to paint over it. A terminal
+// with nothing in it is indistinguishable from a terminal that is broken, and every story plus every
+// fresh session lands in exactly that state — so the pane names the three things you can do at it
+// rather than going black and reading dead.
+const RESTING_PROMPT = '> type to steer · ask a question · ⌘↵ send'
 
 /**
  * Organism: the always-on Dock beneath both tabs — the live PTY, with the now-head in its header
@@ -53,7 +58,11 @@ export function Dock({
         aria-expanded={expanded}
         className="flex shrink-0 cursor-pointer items-center gap-snug px-plane py-gap text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
       >
-        <TerminalWindowIcon aria-hidden className="icon-sm text-foreground-faint" />
+        {/* `>_` rather than a terminal-window icon: the prompt IS the thing, and a chrome glyph of a
+            window frame says less about it than the two characters it opens with. */}
+        <Text aria-hidden variant="code-inline" className="shrink-0 text-foreground-faint">
+          &gt;_
+        </Text>
         <Text variant="meta" className="shrink-0 text-foreground-soft">
           {KIND_LABEL[dock.kind]}
         </Text>
@@ -64,7 +73,12 @@ export function Dock({
         <Caret aria-hidden className="icon-sm shrink-0 text-foreground-faint" />
       </button>
       {dock.kind === 'pty' ? (
-        <TerminalPane label="Session terminal" attach={attach} className="flex-1" />
+        <TerminalPane
+          label="Session terminal"
+          attach={attach}
+          resting={RESTING_PROMPT}
+          className="flex-1"
+        />
       ) : (
         <div className="flex min-h-0 flex-1 items-start px-plane pb-inset">
           <Text variant="code" className="text-foreground-faint">

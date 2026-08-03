@@ -43,7 +43,9 @@ export function SessionScreen({
       data-testid="cockpit-root"
       style={{
         '--c-rail': `${layout.roster}px`,
-        '--c-act': `${layout.activity}px`,
+        // An undragged Activity pane is a FRACTION, not a px guess: `50%` is the even split the
+        // surface is drawn on, and it stays even at every window size. The first drag stores px.
+        '--c-act': layout.activity === null ? '50%' : `${layout.activity}px`,
         '--r-dock': `${layout.dock}px`,
       }}
       className="flex min-h-0 min-w-0 flex-1 p-inset text-foreground"

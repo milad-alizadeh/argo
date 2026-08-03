@@ -37,6 +37,7 @@ describe('buildSessionInterior', () => {
     expect(interior.header.title).toBe('Auth refactor')
     expect(interior.header.external).toBe(true)
     expect(interior.dock.kind).toBe('transcript')
-    expect(interior.activity.items).toEqual([])
+    expect(interior.activity.delegated).toEqual([])
+    expect(interior.activity.own).toEqual([])
   })
 })

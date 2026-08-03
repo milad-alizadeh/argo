@@ -147,6 +147,11 @@
   --inset: color-mix(in srgb, var(--graphite-900) 3%, transparent);
   --inset-hair: color-mix(in srgb, var(--graphite-900) 6%, transparent);
   --inset-lip: color-mix(in srgb, var(--graphite-900) 4%, transparent);
+  /* The live card's fill falls from its lit lip to its foot rather than sitting flat —
+   * the same top-down wash the plane has, one depth shallower. The two stops average
+   * `--inset`, so a card gains the fall without gaining weight. */
+  --inset-top: color-mix(in srgb, var(--graphite-900) 5%, transparent);
+  --inset-bottom: color-mix(in srgb, var(--graphite-900) 1.5%, transparent);
 
   /* Plane — a card that floats in the lit scene, on its own depth. Ingredients
    * only; the recipe is the `plane` utility in globals.css. On light there is no
@@ -264,6 +269,8 @@
   --inset: color-mix(in srgb, var(--bone-100) 3%, transparent);
   --inset-hair: color-mix(in srgb, var(--bone-100) 6%, transparent);
   --inset-lip: color-mix(in srgb, var(--bone-100) 5%, transparent);
+  --inset-top: color-mix(in srgb, var(--bone-100) 5%, transparent);
+  --inset-bottom: color-mix(in srgb, var(--bone-100) 1.5%, transparent);
 
   /* Plane — the signature Penumbra card: a cool translucent slab with a concealed
    * cove lip along its top edge and a warm bloom washing in from above. `-lit` is
@@ -327,15 +334,20 @@
   --sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 
-  /* Typography roles — ONE sans ladder at 9/11/13/15 (+23 hero), every step 2px.
-   * This ladder IS the cockpit's density: it is the Penumbra prototypes' own
+  /* Typography roles — ONE sans ladder at 9/11/13/15 (+19 display, +23 hero), every
+   * step 2px. This ladder IS the cockpit's density: it is the Penumbra prototypes' own
    * measure, decided here rather than deferred per surface. All further hierarchy
    * is carried inside a size by weight, case+tracking, or line-height, never by a
    * 1px size step — the half-steps the prototypes explored in (8.5/9.5/10.5/11.5/
    * 12.5) are jitter and do not exist in the contract. Full tuple per role; wired
    * to text-* utilities in globals.css (which also adds the uppercase /
    * tabular-nums / mono facets where a role demands them). A new size snaps to a
-   * role or gets promoted here, never inlined. */
+   * role or gets promoted here, never inlined.
+   *
+   * Weights run LIGHT: 400 is the ladder's baseline and only `row-strong` reaches past
+   * it. Hierarchy at these sizes is carried by size, case and colour — a dense 11px row
+   * set at 600 does not read as structure, it reads as shouting, which is what the
+   * session interior measured against its own prototype (#268). */
   /* The one large role: a screen's own title (a ticket's hero line, a stage heading, a
    * rendered markdown h1). Light weight rather than bold — at this size the scene's
    * quiet is carried by the stroke, not by the size. There is deliberately NO wordmark
@@ -346,14 +358,23 @@
   --type-hero-weight: 200;
   --type-hero-tracking: 0.01em;
 
+  /* The rung between `hero` and the dense ladder: a plane's OWN name, set as a display
+   * line rather than as the first row of a list. 19px holds the 2px cadence up from 15,
+   * and the weight is extra-light for the same reason `hero`'s is — at this size the
+   * quiet is carried by the stroke. Never a list row, never a section head. */
+  --type-display: 19px;
+  --type-display-leading: 24px;
+  --type-display-weight: 200;
+  --type-display-tracking: 0.01em;
+
   --type-headline: 15px; /* verdict hero, session-level headings */
   --type-headline-leading: 20px;
-  --type-headline-weight: 600;
+  --type-headline-weight: 400;
   --type-headline-tracking: -0.01em;
 
   --type-title: 13px; /* now-line, a panel's or plane's single hero row */
   --type-title-leading: 18px;
-  --type-title-weight: 500;
+  --type-title-weight: 400;
   --type-title-tracking: -0.005em;
 
   --type-row: 11px; /* list primary text */
@@ -363,7 +384,7 @@
 
   --type-row-strong: 11px; /* same size — weight differentiates: row titles, buttons */
   --type-row-strong-leading: 16px;
-  --type-row-strong-weight: 600;
+  --type-row-strong-weight: 500;
   --type-row-strong-tracking: 0em;
 
   --type-prose: 11px; /* same size — leading differentiates: multi-line reading */
@@ -376,17 +397,17 @@
    * what keeps a meta-only chip an even number of pixels tall against the 4px rhythm
    * (ConsoleChannelTab's height canary counts this box). */
   --type-meta-leading: 14px;
-  --type-meta-weight: 500;
+  --type-meta-weight: 400;
   --type-meta-tracking: 0.02em;
 
   --type-tag: 9px; /* state chips, severity words (+ uppercase) */
   --type-tag-leading: 12px;
-  --type-tag-weight: 600;
+  --type-tag-weight: 500;
   --type-tag-tracking: 0.14em;
 
   --type-eyebrow: 9px; /* section headers (+ uppercase, wider tracking, lighter) */
   --type-eyebrow-leading: 12px;
-  --type-eyebrow-weight: 500;
+  --type-eyebrow-weight: 400;
   --type-eyebrow-tracking: 0.22em;
 
   --type-code: 11px; /* terminal, diff hunks, code blocks (+ mono) */
@@ -426,6 +447,11 @@
    * Too narrow is not a cosmetic miss — the label overruns the content and the two paint over
    * each other. */
   --space-kind-col: 52px;
+  /* Plan-mark column — the fixed box a plan entry's glyph sits in, so three different marks
+   * down a list never shift the text beside them. Structural like the two above, and narrower
+   * than --space-marker-col on purpose: this holds a glyph riding the text's baseline, not an
+   * icon box. */
+  --space-mark-col: 12px;
 
   /* Shell chrome geometry (#264). Structural boxes rather than rhythm steps: they hold
    * the chrome's columns, and the traffic-light reserve is fixed by macOS rather than by

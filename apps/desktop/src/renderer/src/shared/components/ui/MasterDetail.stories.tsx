@@ -19,13 +19,26 @@ const SECTIONS = ITEMS.map((key) => ({
   ),
 }))
 
+// Two runs, which is the shape the feed exists to keep straight: work that belongs to somebody else,
+// headed and indented onto its own spine, then the surface's own work back on the root axis.
+const GROUPS = [
+  {
+    key: 'delegated',
+    label: 'Delegated',
+    count: 'someone else’s work',
+    nested: true,
+    sections: SECTIONS.slice(0, 2),
+  },
+  { key: 'own', label: null, sections: SECTIONS.slice(2) },
+]
+
 const meta = {
   title: 'Shared/MasterDetail',
   component: MasterDetail,
   parameters: { layout: 'fullscreen' },
-  args: { sections: SECTIONS },
+  args: { groups: GROUPS },
   argTypes: {
-    sections: { control: false, table: { type: { summary: 'MasterDetailSection[]' } } },
+    groups: { control: false, table: { type: { summary: 'MasterDetailGroup[]' } } },
     nav: { control: false, table: { type: { summary: '(api: MasterDetailNav) => ReactNode' } } },
   },
   decorators: [
@@ -72,5 +85,7 @@ export const TwoPane: Story = {
     await expect(within(nav).getAllByRole('listitem')).toHaveLength(ITEMS.length)
     await userEvent.click(within(nav).getByText('third'))
     await expect(canvas.getByRole('heading', { name: 'third' })).toBeInTheDocument()
+    // The delegated run is headed; the root run is not. That asymmetry is the whole seam.
+    await expect(canvas.getByText('Delegated')).toBeInTheDocument()
   },
 }

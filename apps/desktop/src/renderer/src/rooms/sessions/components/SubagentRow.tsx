@@ -4,10 +4,14 @@ import type { SubagentRowModel } from '../interiorSubagents'
 import { NAV_ROW, NAV_ROW_SELECTED } from './rowRecipes'
 
 /**
- * Molecule: one subagent as the group draws it — `dot · name · target · status`.
+ * Molecule: one subagent as the group draws it — `dot · name`, then ONE right-hand column.
  *
- * Dense on purpose: a fanout of thirty has to stay scannable, which a card grid cannot do. State is
- * carried entirely by the dot, so the status word stays neutral dim text.
+ * That column holds the target, or the state word where there is no target — never both. State is
+ * already carried by the dot, so a word beside a target is the same fact twice and costs the row
+ * the width its target needs. A subagent that has touched nothing has nothing to name, and that is
+ * exactly when its state is worth spelling out.
+ *
+ * Dense on purpose: a fanout of thirty has to stay scannable, which a card grid cannot do.
  */
 export function SubagentRow({
   row,
@@ -34,14 +38,15 @@ export function SubagentRow({
         <Text variant="row" className="min-w-0 flex-1 truncate text-foreground">
           {row.name}
         </Text>
-        {row.target !== '' && (
+        {row.target === '' ? (
+          <Text variant="eyebrow" className="shrink-0 text-foreground-faint">
+            {row.status}
+          </Text>
+        ) : (
           <Text variant="code-inline" className="min-w-0 truncate text-foreground-faint">
             {row.target}
           </Text>
         )}
-        <Text variant="eyebrow" className="shrink-0 text-foreground-soft">
-          {row.status}
-        </Text>
       </button>
     </li>
   )

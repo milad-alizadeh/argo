@@ -28,9 +28,10 @@ export const Timeline: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Timeline')).toBeInTheDocument()
-    // Both turns are here: the open one leading, the closed one reporting the reason it stopped.
+    // Both turns are here: the open one reporting that it is running, the folded one reporting its
+    // weight. Only the live turn spends its right edge on a state word.
     await expect(canvas.getByText('running')).toBeInTheDocument()
-    await expect(canvas.getByText('end_turn')).toBeInTheDocument()
+    await expect(canvas.getByText('2 tools')).toBeInTheDocument()
   },
 }
 

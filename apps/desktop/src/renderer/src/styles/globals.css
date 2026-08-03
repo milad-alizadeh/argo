@@ -92,6 +92,10 @@
   --text-hero--line-height: var(--type-hero-leading);
   --text-hero--font-weight: var(--type-hero-weight);
   --text-hero--letter-spacing: var(--type-hero-tracking);
+  --text-display: var(--type-display);
+  --text-display--line-height: var(--type-display-leading);
+  --text-display--font-weight: var(--type-display-weight);
+  --text-display--letter-spacing: var(--type-display-tracking);
   --text-headline: var(--type-headline);
   --text-headline--line-height: var(--type-headline-leading);
   --text-headline--font-weight: var(--type-headline-weight);
@@ -145,6 +149,7 @@
   --spacing-nest: var(--space-nest);
   --spacing-marker-col: var(--space-marker-col);
   --spacing-kind-col: var(--space-kind-col);
+  --spacing-mark-col: var(--space-mark-col);
 
   /* Shell chrome boxes reach the screen as spacing utilities (w-project-strip,
    * size-project-tab, pt-traffic-lights) because each one sizes a box, not a gap. */
@@ -315,6 +320,22 @@
 /* The lit top edge of a flat inset card — 1px of the foreground, which is what lifts the
  * card off the frosted panel it sits in without adding a second glass layer. */
 @utility inset-lip {
+  box-shadow: 0 1px 0 var(--inset-lip) inset;
+}
+
+/* A hairline that fades out at both ends. The scene draws no lines — an edge is light falling
+ * off — so a rule that stops dead reads as ruled paper. This is how a band closes over the
+ * content below it. */
+@utility rule-taper {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--inset-hair), transparent);
+}
+
+/* The live inset card — the lit lip plus a fill that falls from it. Still ONE surface: a
+ * gradient of the foreground ink, never a second glass layer. The lip and the fall are one
+ * recipe because they are one light: a lip over a flat box reads as a drawn line. */
+@utility inset-card {
+  background: linear-gradient(180deg, var(--inset-top), var(--inset-bottom));
   box-shadow: 0 1px 0 var(--inset-lip) inset;
 }
 

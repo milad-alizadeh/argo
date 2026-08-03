@@ -23,20 +23,32 @@ export function SessionHeader({
   onOpenIntent?: (number: number) => void
 }): React.JSX.Element {
   return (
-    <header
-      data-component="SessionHeader"
-      className="flex items-end justify-between gap-region px-plane pt-plane"
-    >
-      <div className="flex min-w-0 items-center gap-region pb-inset">
-        <ContextRing percentage={header.contextPercent} />
-        <div className="flex min-w-0 flex-col gap-tight">
-          <Text as="h2" variant="title" className="truncate text-foreground-bright">
-            {header.title}
-          </Text>
-          <SessionMeta segments={header.meta} intent={header.intent} onOpenIntent={onOpenIntent} />
+    <>
+      <header
+        data-component="SessionHeader"
+        className="flex items-end justify-between gap-region px-plane pt-plane"
+      >
+        <div className="flex min-w-0 items-center gap-region pb-inset">
+          <ContextRing percentage={header.contextPercent} />
+          <div className="flex min-w-0 flex-col gap-tight">
+            {/* `display`, not `title`: a session's name is the plane's own line, the one thing above
+                the dense ladder here. Set light and wide, it stops competing with the rows below it. */}
+            <Text as="h2" variant="display" className="truncate text-foreground-bright">
+              {header.title}
+            </Text>
+            <SessionMeta
+              status={header.status}
+              segments={header.meta}
+              intent={header.intent}
+              onOpenIntent={onOpenIntent}
+            />
+          </div>
         </div>
-      </div>
-      <SessionTabs />
-    </header>
+        <SessionTabs />
+      </header>
+      {/* The band closes over the panes rather than letting them run into it. A tapered hair, not a
+          ruled line: the scene's edges are light falling off. */}
+      <span aria-hidden className="mx-plane shrink-0 rule-taper" />
+    </>
   )
 }

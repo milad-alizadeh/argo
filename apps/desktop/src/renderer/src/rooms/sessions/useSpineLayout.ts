@@ -8,7 +8,10 @@ export type SpineEdge = 'roster' | 'activity' | 'dock'
  * splitters and to the custom properties the panels size off. */
 export interface SpineLayout {
   roster: number
-  activity: number
+  /** `null` until the user drags: the Activity panes open as an EVEN split of whatever room the
+   * plane has, which is the balance the surface is drawn on and which no px can hold across
+   * window sizes. A drag replaces the fraction with px from the pane's measured width. */
+  activity: number | null
   dock: number
 }
 
@@ -17,7 +20,7 @@ export interface SpineLayout {
  * decorators, which pin `--c-rail` there so those VRT baselines stay pixel-identical. */
 export const SPINE = {
   roster: { initial: 300, min: 200, max: 420 },
-  activity: { initial: 420, min: 300, max: 720 },
+  activity: { initial: null, min: 300, max: 720 },
   dock: { initial: 170, min: 120, max: 480, expanded: 320 },
 } as const
 

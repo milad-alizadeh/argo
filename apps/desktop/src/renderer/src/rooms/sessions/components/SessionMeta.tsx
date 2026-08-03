@@ -1,19 +1,24 @@
-import { ArrowSquareOutIcon, Button, Text } from '@/shared/components/ui'
+import { ArrowSquareOutIcon, Button, StatusDot, Text } from '@/shared/components/ui'
 import type { IntentChip, MetaSegment } from '../interiorHeader'
+import type { ActivityDot } from '../interiorSubagents'
 
 /**
- * Molecule: the header's one meta line — `status · model · mode · branch(+∆/↑) · elapsed` with the
+ * Molecule: the header's one meta line — a status dot, then `mode · branch(+∆/↑) · elapsed` with the
  * intent link last.
  *
- * The order is fixed by the spec and comes pre-derived, so this renders segments rather than
- * deciding them: reading left to right is the triage sweep state → identity → delivery → time →
- * link. A segment Argo could not establish is simply absent from the list.
+ * The state leads as a DOT and never also as a word: the roster rail beside this plane already
+ * spells the word, and the model it also names is shed here for the same reason. What is left is
+ * what the rail does not carry. The order comes pre-derived, so this renders segments rather than
+ * deciding them, and a segment Argo could not establish is simply absent from the list.
  */
 export function SessionMeta({
+  status,
   segments,
   intent,
   onOpenIntent,
 }: {
+  /** The session's state, as the dot the line leads with. */
+  status: ActivityDot
   /** The line's segments, already in order. */
   segments: readonly MetaSegment[]
   /** The navigable ticket link, or `null` where there is nothing to jump to. */
@@ -23,6 +28,7 @@ export function SessionMeta({
 }): React.JSX.Element {
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-snug">
+      <StatusDot tone={status.tone} glow={status.glow} pulse={status.pulse} />
       {segments.map((segment, index) => (
         <div key={segment.id} className="flex min-w-0 items-center gap-snug">
           {index > 0 && (

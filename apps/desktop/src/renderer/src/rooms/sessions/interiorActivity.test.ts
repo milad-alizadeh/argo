@@ -61,7 +61,9 @@ describe('buildActivity', () => {
 })
 
 describe("buildActivity's item list", () => {
-  it('orders the item list subagents first, then steps — the order both panes read', () => {
+  // The split is the point, not the concatenation: a delegate's work and the root Agent's arrive in
+  // two lists so the feed can head and indent them, and no surface has to re-derive whose call it is.
+  it('splits the items into delegated work and this session’s own, in feed order', () => {
     const session = sessionView({
       id: 's',
       agents: [
@@ -69,8 +71,9 @@ describe("buildActivity's item list", () => {
         agent({ id: 'a', label: 'lens' }),
       ],
     })
-    expect(buildActivity(session).items.map(({ key, kind }) => [kind, key])).toEqual([
-      ['subagent', 'subagent:a'],
+    const { delegated, own } = buildActivity(session)
+    expect(delegated.map(({ key, kind }) => [kind, key])).toEqual([['subagent', 'subagent:a']])
+    expect(own.map(({ key, kind }) => [kind, key])).toEqual([
       ['step', 'step:c1'],
       ['step', 'step:c2'],
     ])
@@ -88,12 +91,12 @@ describe("buildActivity's item list", () => {
         }),
       ],
     })
-    const item = buildActivity(session).items[0]
+    const item = buildActivity(session).delegated[0]
     expect(item?.kind === 'subagent' && item.events.map(({ name }) => name)).toEqual(['Grep'])
   })
 
   it('renders an unparseable transcript as an empty surface, not an error', () => {
     const empty = buildActivity(sessionView({ id: 's' }))
-    expect(empty).toEqual({ subagents: null, turns: [], items: [] })
+    expect(empty).toEqual({ subagents: null, turns: [], delegated: [], own: [] })
   })
 })

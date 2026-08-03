@@ -1,14 +1,25 @@
 import type { PlanEntryStatus } from '@shared'
-import { CaretRightIcon, CheckIcon, CircleIcon, Text } from '@/shared/components/ui'
+import { Text } from '@/shared/components/ui'
 import type { PlanProgressModel } from '../interiorActivity'
 
 // A plan entry is a step of a plan, not a live process: it carries a MARK — done, here, not yet —
 // rather than a status dot. A dot would put it in the same channel as a running tool call and make
 // the eye read four live things where there is one.
-const ENTRY_MARK: Record<PlanEntryStatus, { Glyph: typeof CheckIcon; tone: string }> = {
-  completed: { Glyph: CheckIcon, tone: 'text-tone-done' },
-  in_progress: { Glyph: CaretRightIcon, tone: 'text-tone-run' },
-  pending: { Glyph: CircleIcon, tone: 'text-foreground-faint' },
+//
+// GLYPHS, not icons. An icon box is sized for a control and lands heavier than the 11px line it
+// marks, which made the plan read as four buttons; a mono glyph sits inside the text's own weight
+// and rides its baseline. The column is fixed and centred so the three marks never shift the text.
+const ENTRY_MARK: Record<PlanEntryStatus, { glyph: string; tone: string }> = {
+  completed: { glyph: '✓', tone: 'text-tone-done' },
+  in_progress: { glyph: '▲', tone: 'text-tone-run' },
+  pending: { glyph: '○', tone: 'text-foreground-faint' },
+}
+
+/** What a mark means, for the reader who cannot see it. The glyph itself is decorative. */
+const ENTRY_MARK_LABEL: Record<PlanEntryStatus, string> = {
+  completed: 'done',
+  in_progress: 'in progress',
+  pending: 'not started',
 }
 
 const ENTRY_TEXT: Record<PlanEntryStatus, string> = {
@@ -18,24 +29,39 @@ const ENTRY_TEXT: Record<PlanEntryStatus, string> = {
 }
 
 /**
- * Molecule: the agent's own live to-do list — `N/M` over one row per entry.
+ * Molecule: the agent's own live to-do list — `PLAN · N OF M` over one row per entry.
  *
  * The plan is the agent's, not Argo's: the entries are rendered as it wrote them, and the count is
  * arithmetic over their statuses rather than a separate claim.
+ *
+ * The entries hang off a SPINE and are not selectable. Both facts are the same point: a plan is what
+ * the agent said it would do, and the rows below it in the card are what it has actually done — two
+ * different channels that were reading as one flat list. The spine says this block belongs to the
+ * turn rather than being another run of its rows, and the entries are set at the same size as those
+ * rows because intent is not the smaller fact.
  */
 export function PlanProgress({ plan }: { plan: PlanProgressModel }): React.JSX.Element {
   return (
-    <div data-component="PlanProgress" className="flex flex-col gap-hair">
-      <Text variant="tag" className="px-gap text-foreground-faint">
+    <div data-component="PlanProgress" className="flex flex-col gap-tight">
+      <Text variant="tag" className="text-foreground-faint">
         {`Plan · ${plan.done} of ${plan.total}`}
       </Text>
-      <ul aria-label="Plan" className="flex flex-col gap-hair">
+      <ul
+        aria-label="Plan"
+        className="flex flex-col gap-hair border-l border-l-inset-hair pl-inset"
+      >
         {plan.entries.map((entry) => {
-          const { Glyph, tone } = ENTRY_MARK[entry.status]
+          const { glyph, tone } = ENTRY_MARK[entry.status]
           return (
-            <li key={entry.text} className="flex items-center gap-snug px-gap">
-              <Glyph aria-hidden className={`icon-sm shrink-0 ${tone}`} />
-              <Text variant="meta" className={`min-w-0 truncate ${ENTRY_TEXT[entry.status]}`}>
+            <li key={entry.text} className="flex items-baseline gap-snug">
+              <Text
+                variant="code-inline"
+                aria-label={ENTRY_MARK_LABEL[entry.status]}
+                className={`w-mark-col shrink-0 text-center ${tone}`}
+              >
+                {glyph}
+              </Text>
+              <Text variant="row" className={`min-w-0 truncate ${ENTRY_TEXT[entry.status]}`}>
                 {entry.text}
               </Text>
             </li>

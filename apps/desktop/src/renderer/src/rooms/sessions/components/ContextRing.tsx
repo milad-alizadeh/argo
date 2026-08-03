@@ -70,10 +70,12 @@ export function ContextRing({
         )}
       </svg>
       <div className="flex flex-col items-center">
-        <Text variant="meta" className="text-foreground">
+        <Text variant="row" className="text-foreground">
           {clamped === null ? '—' : `~${clamped}%`}
         </Text>
-        <Text variant="tag" className="text-foreground-faint">
+        {/* `meta`, not the `tag` role: tag uppercases, and a caption shouting `CTX` under its own
+            number is the loudest thing in a band whose whole job is to be glanced at. */}
+        <Text variant="meta" className="text-foreground-faint">
           {clamped === null ? 'unknown' : 'ctx'}
         </Text>
       </div>

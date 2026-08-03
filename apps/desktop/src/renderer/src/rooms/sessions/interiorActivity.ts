@@ -71,7 +71,13 @@ export interface ActivityModel {
   subagents: SubagentGroupModel | null
   /** Newest turn first — the open one leads, past turns fold behind it. */
   turns: readonly TimelineTurnModel[]
-  items: readonly ActivityItem[]
+  /** The items split by WHOSE work they are, in feed order: every delegate's first, then this
+   * session's own turn steps. The split is domain-meaningful, not a rendering convenience — a
+   * subagent's tool call and the root Agent's are different agents' work, and a feed that
+   * concatenates them behind identical seams reads as one timeline. The surface heads and indents
+   * by this, so nothing downstream has to re-derive whose call it is looking at. */
+  delegated: readonly ActivityItem[]
+  own: readonly ActivityItem[]
 }
 
 function planProgress(turn: Turn): PlanProgressModel | null {
@@ -132,11 +138,9 @@ export function buildActivity(session: SessionView): ActivityModel {
   return {
     subagents: subagentGroup(session),
     turns,
-    items: [
-      ...spawnedItems(session),
-      ...turns.flatMap((turn) =>
-        turn.steps.map((step): ActivityItem => ({ key: step.key, kind: 'step', step })),
-      ),
-    ],
+    delegated: spawnedItems(session),
+    own: turns.flatMap((turn) =>
+      turn.steps.map((step): ActivityItem => ({ key: step.key, kind: 'step', step })),
+    ),
   }
 }

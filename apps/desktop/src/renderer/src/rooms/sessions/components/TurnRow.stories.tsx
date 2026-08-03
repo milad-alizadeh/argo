@@ -39,18 +39,22 @@ export const Open: Story = {
 }
 
 /**
- * A past turn folds, and reports the stop reason the CLI gave. Clicking the header unfolds it —
- * folding is the row's own state, which is the one thing this tier adds over its children.
+ * A past turn folds and reports its WEIGHT — how much work is inside it — not the reason it stopped.
+ * The stop reason of finished work is the least interesting fact about it, and it would spend the
+ * row's right edge saying nothing a reader came for. Unfolding is where it becomes available.
  */
 export const Past: Story = {
   args: { turn: past },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const header = canvas.getByRole('button', { expanded: false })
-    await expect(canvas.getByText('end_turn')).toBeInTheDocument()
+    await expect(canvas.getByText('2 tools')).toBeInTheDocument()
+    await expect(canvas.queryByText('end_turn')).not.toBeInTheDocument()
     await expect(canvas.queryByRole('list', { name: 'Tool calls' })).not.toBeInTheDocument()
     await userEvent.click(header)
     await expect(canvas.getByRole('list', { name: 'Tool calls' })).toBeInTheDocument()
+    // Unfolded, the card has room for the reason and the summary is no longer what you need.
+    await expect(canvas.getByText('end_turn')).toBeInTheDocument()
   },
 }
 
@@ -61,6 +65,8 @@ export const Past: Story = {
 export const UnknownStopReason: Story = {
   args: { turn: { ...past, stopReason: 'unknown' } },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('unknown')).toBeInTheDocument()
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { expanded: false }))
+    await expect(canvas.getByText('unknown')).toBeInTheDocument()
   },
 }

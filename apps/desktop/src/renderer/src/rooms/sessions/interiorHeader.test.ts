@@ -22,7 +22,7 @@ describe('buildInteriorHeader', () => {
     expect(header.title).toBe('Auth refactor')
   })
 
-  it('orders the meta line status · model · mode · branch · elapsed', () => {
+  it('orders the meta line mode · branch · elapsed', () => {
     const session = sessionView({
       id: 's',
       model: 'claude-opus-5',
@@ -31,20 +31,27 @@ describe('buildInteriorHeader', () => {
       facts: sessionFacts({ status: 'idle', dirty: 3, unpushed: 2 }),
     })
     const header = buildInteriorHeader({ session, link: link({ mode: 'Plan' }), nowMs: NOW })
-    expect(header.meta.map(({ id }) => id)).toEqual([
-      'status',
-      'model',
-      'mode',
-      'branch',
-      'elapsed',
-    ])
-    expect(textOf(header.meta)).toEqual(['idle', 'claude-opus-5', 'Plan', '3∆ ↑2', 'idle 8m'])
+    expect(header.meta.map(({ id }) => id)).toEqual(['mode', 'branch', 'elapsed'])
+    expect(textOf(header.meta)).toEqual(['Plan', '3∆ ↑2', 'idle 8m'])
   })
 
-  it('says `unknown` for the model and the mode rather than defaulting them', () => {
+  // The band sheds every fact the roster rail already carries. The status survives as the dot, so
+  // the state is still told — once, in the channel that costs no width.
+  it('sheds the status word and the model, and keeps the status as a dot', () => {
+    const session = sessionView({
+      id: 's',
+      model: 'claude-opus-5',
+      facts: sessionFacts({ status: 'idle' }),
+    })
+    const header = buildInteriorHeader({ session })
+    expect(textOf(header.meta)).not.toContain('idle')
+    expect(textOf(header.meta)).not.toContain('claude-opus-5')
+    expect(header.status.tone).toBeDefined()
+  })
+
+  it('says `unknown` for the mode rather than defaulting it', () => {
     const header = buildInteriorHeader({ session: sessionView({ id: 's' }) })
     const spoken = new Map(header.meta.map(({ id, text }) => [id, text]))
-    expect(spoken.get('model')).toBe('unknown')
     expect(spoken.get('mode')).toBe('unknown')
   })
 

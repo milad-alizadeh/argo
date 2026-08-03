@@ -5,6 +5,7 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // needs it (below) and components may import lib, never the reverse; Text.tsx binds each
 // name to its `text-<role>` class.
 export const TYPE_ROLES = [
+  'display',
   'headline',
   'title',
   'row',

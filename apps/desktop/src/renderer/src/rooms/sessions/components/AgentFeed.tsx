@@ -1,25 +1,20 @@
+import type { ToolCallKind } from '@shared'
 import { cn } from '@/lib/utils'
-import { StatusDot, Text } from '@/shared/components/ui'
+import { Text } from '@/shared/components/ui'
 import { stepWord, subagentWord } from '../activityWords'
 import type { ActivityItem, ToolStepModel } from '../interiorActivity'
-import type { ActivityDot } from '../interiorSubagents'
 
 /** The head every detail section wears: what the item is, and its one state word held to the right
  * edge of the SECTION — never flung to the far side of the pane, where it would sit a screen away
- * from the thing it describes. */
-function DetailHead({
-  dot,
-  name,
-  word,
-}: {
-  dot: ActivityDot
-  name: string
-  word: string
-}): React.JSX.Element {
+ * from the thing it describes.
+ *
+ * A PLAIN name, with no dot in front of it. The nav rows beside this feed are the surface's dotted
+ * channel; a dot here too would make the head compete with the rows that led you to it, and the
+ * word already at its right edge tells the state once. */
+function DetailHead({ name, word }: { name: string; word: string }): React.JSX.Element {
   return (
-    <div className="flex items-center gap-snug">
-      <StatusDot tone={dot.tone} glow={dot.glow} pulse={dot.pulse} />
-      <Text as="h3" variant="row-strong" className="min-w-0 flex-1 truncate text-foreground">
+    <div className="flex items-baseline gap-snug">
+      <Text as="h3" variant="title" className="min-w-0 flex-1 truncate text-foreground">
         {name}
       </Text>
       <Text variant="eyebrow" className="shrink-0 text-foreground-faint">
@@ -44,6 +39,22 @@ function MetaLine({ parts }: { parts: readonly (string | null)[] }): React.JSX.E
   )
 }
 
+// What the gutter is TONED by when nothing failed: the kind of thing the call did. A wall of thirty
+// events then shows its shape before a word of it is read — where the agent was looking, where it
+// changed something, where it handed work off. Three tones only, because a fourth is a wall again:
+// mutating in the live ink, delegation in the attention ink, everything observational left quiet.
+// Written out literally rather than interpolated so Tailwind's scanner still sees each class.
+const KIND_TONE: Record<ToolCallKind, string> = {
+  edit: 'text-tone-run',
+  delegate: 'text-primary',
+  read: 'text-foreground-faint',
+  search: 'text-foreground-faint',
+  fetch: 'text-foreground-faint',
+  execute: 'text-foreground-faint',
+  plan: 'text-foreground-faint',
+  other: 'text-foreground-faint',
+}
+
 /** One observed event: its kind in a fixed gutter, its content beside. The gutter is a column, not
  * a prefix — every row's content starts on the same axis, which is what makes a long feed scannable
  * rather than ragged. */
@@ -51,12 +62,13 @@ function EventRow({ step }: { step: ToolStepModel }): React.JSX.Element {
   return (
     <li className="flex items-baseline gap-gap">
       {/* State on a row is ONE channel: the gutter burns for the call that failed, and the word
-          itself is told once, by the section's head. Both would be the same state told twice. */}
+          itself is told once, by the section's head. Both would be the same state told twice.
+          Failure outranks kind — a failed edit is a failure first. */}
       <Text
         variant="tag"
         className={cn(
           'w-kind-col shrink-0 truncate',
-          step.status === 'failed' ? 'text-tone-red' : 'text-foreground-faint',
+          step.status === 'failed' ? 'text-tone-red' : KIND_TONE[step.kind],
         )}
       >
         {step.kind}
@@ -91,7 +103,7 @@ function SubagentDetail({
   const { subagent, group, events } = item
   return (
     <>
-      <DetailHead dot={subagent.dot} name={subagent.name} word={subagentWord(subagent.status)} />
+      <DetailHead name={subagent.name} word={subagentWord(subagent.status)} />
       <MetaLine parts={['subagent', group, subagent.target]} />
       {events.length === 0 ? (
         <Text variant="meta" className="text-foreground-faint">
@@ -119,7 +131,7 @@ const STEP_META: Record<ToolStepModel['status'], string> = {
 function StepDetail({ step }: { step: ToolStepModel }): React.JSX.Element {
   return (
     <>
-      <DetailHead dot={step.dot} name={step.name} word={stepWord(step.status)} />
+      <DetailHead name={step.name} word={stepWord(step.status)} />
       <MetaLine parts={[STEP_META[step.status], step.kind]} />
       <Text variant="code" className="truncate text-foreground-soft">
         {step.target ?? 'this call named no target'}

@@ -16,8 +16,10 @@ export * from './icons'
 export { StatusIcon } from './icons/StatusIcon'
 export {
   MasterDetail,
+  type MasterDetailGroup,
   type MasterDetailNav,
   type MasterDetailSection,
+  type MasterDetailSplitter,
 } from './MasterDetail'
 export { PanelHeader } from './PanelHeader'
 export { PANEL_ORIENTATIONS, type PanelOrientation, PanelSplitter } from './PanelSplitter'
@@ -51,4 +53,10 @@ export {
 } from './toneRecipes'
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 export { type DisclosureProps, useDisclosure } from './useDisclosure'
-export { jumpToSection, SPY_ATTRIBUTE, useScrollSpy } from './useScrollSpy'
+export {
+  activeSection,
+  jumpToSection,
+  SPY_ATTRIBUTE,
+  useFeedHighlight,
+  useScrollSpy,
+} from './useScrollSpy'

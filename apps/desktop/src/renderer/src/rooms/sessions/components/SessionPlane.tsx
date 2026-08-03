@@ -16,8 +16,15 @@ export interface SessionPlaneHandlers {
 
 // The plane's ONE frosted surface: its regions are flat columns inside it, never a second glass
 // layer. The invariant lives in one place so a surface tweak cannot drift between regions.
-const GLASS_PLANE =
-  'flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-panel shadow-2xl backdrop-blur-xl'
+//
+// `plane` rather than a border and a flat fill: the recipe carries the top-down slab gradient, the
+// concealed cove lip along the band's top edge, and the warm bloom washing in from above. A drawn
+// border is the one thing the direction refuses — the lit lip is the edge.
+//
+// NOT `plane-lit`: that is the roster's driven-row treatment, and its stops are bone rather than
+// graphite — a whole panel wearing it comes out a bright wash instead of the prototype's cool dark
+// slab. Brightness marks the row you picked, not the surface you are already inside.
+const GLASS_PLANE = 'plane flex min-w-0 flex-1 flex-col overflow-hidden'
 
 /**
  * Organism: the session plane — one continuous glass surface holding the header band, the selected
@@ -52,16 +59,17 @@ export function SessionPlane({
       <TabsContent value="activity" className="flex min-h-0 min-w-0 flex-1">
         <ActivityPane
           activity={interior.activity}
-          splitter={
+          splitter={({ measure }) => (
             <PanelSplitter
               orientation="v"
               label="Activity width"
               size={layout.activity}
+              measure={measure}
               min={SPINE.activity.min}
               max={SPINE.activity.max}
               onResize={handlers.onResizeActivity}
             />
-          }
+          )}
         />
       </TabsContent>
       <TabsContent

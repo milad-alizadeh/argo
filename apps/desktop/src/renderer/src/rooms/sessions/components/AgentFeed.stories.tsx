@@ -3,9 +3,9 @@ import { expect, within } from 'storybook/test'
 import { interiorOf, RUNNING } from '../__fixtures__/interior'
 import { AgentFeed } from './AgentFeed'
 
-const items = interiorOf(RUNNING).activity.items
-const subagent = items.find((item) => item.kind === 'subagent')
-const step = items.find((item) => item.kind === 'step')
+const { delegated, own } = interiorOf(RUNNING).activity
+const subagent = delegated.find((item) => item.kind === 'subagent')
+const step = own.find((item) => item.kind === 'step')
 
 if (!subagent || !step) throw new Error('the fixture must carry both item kinds')
 

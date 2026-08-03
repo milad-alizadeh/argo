@@ -53,7 +53,8 @@ export const Activity: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('heading', { name: 'Auth refactor' })).toBeInTheDocument()
-    await expect(canvas.getByText('Subagents')).toBeInTheDocument()
+    // Twice: the nav pane's section head and the feed's own head over the delegated run.
+    await expect(canvas.getAllByText('Subagents')).toHaveLength(2)
     await expect(canvas.getByText('Bash bun run typecheck')).toBeInTheDocument()
   },
 }

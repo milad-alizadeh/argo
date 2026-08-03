@@ -30,7 +30,7 @@ export const Phased: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Subagents')).toBeInTheDocument()
-    await expect(canvas.getByText('· Verify · 2 running')).toBeInTheDocument()
+    await expect(canvas.getByText('Verify · 2 running')).toBeInTheDocument()
     await expect(within(canvas.getByRole('list')).getAllByRole('listitem')).toHaveLength(3)
   },
 }
@@ -42,7 +42,7 @@ export const Phased: Story = {
 export const Labelled: Story = {
   args: { group: { ...phased, tier: 'labelled', group: null } },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('· 3 · 2 running')).toBeInTheDocument()
+    await expect(within(canvasElement).getByText('3 · 2 running')).toBeInTheDocument()
   },
 }
 

@@ -8,8 +8,14 @@ const full = withIntent(RUNNING).header
 const meta = {
   title: 'Sessions/SessionPlane/SessionHeader/SessionMeta',
   component: SessionMeta,
-  args: { segments: full.meta, intent: full.intent, onOpenIntent: fn() },
+  args: {
+    status: full.status,
+    segments: full.meta,
+    intent: full.intent,
+    onOpenIntent: fn(),
+  },
   argTypes: {
+    status: { control: false, table: { type: { summary: 'SessionDot' } } },
     segments: { control: false, table: { type: { summary: 'MetaSegment[]' } } },
     intent: { control: false, table: { type: { summary: 'IntentChip | null' } } },
   },
@@ -19,15 +25,21 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The whole line in its fixed order — `status · model · mode · branch(+∆/↑) · elapsed · intent ↗`.
- * The order is the triage sweep and comes pre-derived, so this story is where the reading is judged
- * rather than where the order is decided.
+ * The whole line — the status dot, then `mode · branch(+∆/↑) · elapsed · intent ↗`.
+ *
+ * The status word and the model are deliberately NOT here: the roster rail beside this plane already
+ * carries both, so the line spends its width on what the rail does not say. This story is where that
+ * reading is judged.
  */
 export const Full: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    for (const text of ['running', 'claude-opus-5', 'Code', '3∆ ↑2']) {
+    for (const text of ['Code', '3∆ ↑2']) {
       await expect(canvas.getByText(text)).toBeInTheDocument()
+    }
+    // The two facts the rail owns are shed here, not restyled — their absence is the design.
+    for (const shed of ['running', 'claude-opus-5']) {
+      await expect(canvas.queryByText(shed)).not.toBeInTheDocument()
     }
     await userEvent.click(canvas.getByText('intent #42 Auth flow'))
     await expect(args.onOpenIntent).toHaveBeenCalledWith(42)
@@ -40,7 +52,11 @@ export const Full: Story = {
  * being filled in.
  */
 export const Observed: Story = {
-  args: { segments: interiorOf(EXTERNAL).header.meta, intent: null },
+  args: {
+    status: interiorOf(EXTERNAL).header.status,
+    segments: interiorOf(EXTERNAL).header.meta,
+    intent: null,
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('unknown')).toBeInTheDocument()
