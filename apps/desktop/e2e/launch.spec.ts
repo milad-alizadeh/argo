@@ -19,8 +19,14 @@ let window: Page
 test.beforeAll(async () => {
   app = await electron.launch({
     args: [join(here, '..', 'out', 'main', 'index.js')],
-    // Headless CI has no display server; tell Chromium not to require one.
-    env: { ...process.env, ELECTRON_DISABLE_SANDBOX: '1' },
+    env: {
+      ...process.env,
+      // Headless CI has no display server; tell Chromium not to require one.
+      ELECTRON_DISABLE_SANDBOX: '1',
+      // "Honestly empty" has to mean empty: point the observer at a root with no transcripts,
+      // so a developer's own session history cannot populate the shell this asserts is bare.
+      ARGO_TRANSCRIPT_ROOT: join(here, '..', 'out', 'no-transcripts'),
+    },
   })
   window = await app.firstWindow()
 })

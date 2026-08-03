@@ -12,6 +12,8 @@ const row = (id: string, over: Partial<SessionView> = {}): SessionView => ({
   cli: 'claude',
   cwd: null,
   projectId: null,
+  posture: 'external',
+  agents: [],
   facts: sessionFacts(),
   ...over,
 })

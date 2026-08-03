@@ -38,13 +38,17 @@ export interface RosterStatus {
   icon: RosterIcon
 }
 
+// The registry's Session-status words (cockpit-status-vocabulary.md): `permission` and `asking`
+// are the ONE attention state and share its word, because a row saying which flavour of "come
+// here" this is would be two tellings of the same interrupt. Posture (`external`/`orphaned`) is
+// an identity attribute rather than a state, so it has no word here at all.
 export const SESSION_STATUS: Record<SessionStatus, RosterStatus> = {
   running: { word: 'Running', tone: 'run', icon: 'circle-notch' },
-  'needs-input': { word: 'Needs input', tone: 'amber', icon: 'warning' },
-  done: { word: 'Done', tone: 'done', icon: 'check' },
-  failed: { word: 'Failed', tone: 'red', icon: 'x' },
-  queued: { word: 'Queued', tone: 'gray', icon: 'circle' },
-  orphaned: { word: 'Orphaned', tone: 'stale', icon: 'circle' },
+  permission: { word: 'Needs you', tone: 'amber', icon: 'warning' },
+  asking: { word: 'Needs you', tone: 'amber', icon: 'warning' },
+  idle: { word: 'Idle', tone: 'gray', icon: 'circle' },
+  stopped: { word: 'Failed', tone: 'red', icon: 'x' },
+  ended: { word: 'Ended', tone: 'stale', icon: 'circle' },
 }
 
 const TERMINAL_STATUS: Record<TerminalState, RosterStatus> = {

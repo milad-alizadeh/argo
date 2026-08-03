@@ -3,16 +3,22 @@
 // They live in the contract because main is the only process that can observe them
 // (it runs git and gh — ADR-0004) and the renderer is a projection (ADR-0005).
 
-// Every state main can observe, in `cockpit-surface-matrix.md` R16's roster-column order — the
-// domain's own ordering, which is why the list lives here and not beside a view. The
-// union derives from the tuple so a seventh state cannot reach one without the other.
+// Every state main can observe (CONTEXT.md L2), in attention order — the domain's own
+// ordering, which is why the list lives here and not beside a view. The union derives from the
+// tuple so a seventh state cannot reach one without the other.
+//
+// Honesty-gated per class: `permission` is DIRECT and managed-only (the prompt is not reliably
+// in a transcript); `asking` is CONVENTION for managed and DERIVED for external only when
+// "pending" is confirmable from the record; `stopped` needs a stop reason an external transcript
+// may not carry. So external floors at `running · asking? · idle · ended`, and an agent's
+// free-form question reads as `idle` rather than a fabricated `asking`.
 export const SESSION_STATES = [
   'running',
-  'needs-input',
-  'done',
-  'failed',
-  'queued',
-  'orphaned',
+  'permission',
+  'asking',
+  'idle',
+  'stopped',
+  'ended',
 ] as const
 
 // The one word for what state a Session is in, shared by both processes: `status` on

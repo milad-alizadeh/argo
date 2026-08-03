@@ -19,8 +19,7 @@ export function Status({
 }: {
   /** The state's word, already derived. A screen reads it off the delivery vocabulary
    * (`SESSION_STATUS` / `rosterStatus()`) — never a word typed at the call site. A molecule
-   * whose word is fixed by the design rather than by session state (NowLine's `live`)
-   * supplies its own. */
+   * whose word is fixed by the design rather than by session state supplies its own. */
   word: string
   /** The tone that word carries, from the same derivation. */
   tone: RosterTone

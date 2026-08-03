@@ -60,6 +60,8 @@ const oneSession: SessionView[] = [
     cli: 'claude',
     cwd: null,
     projectId: null,
+    posture: 'external',
+    agents: [],
     facts: sessionFacts({ status: 'running' }),
   },
 ]
@@ -113,6 +115,8 @@ const everyState: SessionView[] = SESSION_STATES.map((status) => ({
   cli: 'claude',
   cwd: null,
   projectId: null,
+  posture: 'external',
+  agents: [],
   facts: sessionFacts({ status }),
 }))
 
@@ -120,11 +124,11 @@ const everyState: SessionView[] = SESSION_STATES.map((status) => ({
 // only proves nothing falls through, not that the cockpit says what R16 settled on.
 const vocabulary: [SessionStatus, string, RosterTone][] = [
   ['running', 'Running', 'run'],
-  ['needs-input', 'Needs input', 'amber'],
-  ['done', 'Done', 'done'],
-  ['failed', 'Failed', 'red'],
-  ['queued', 'Queued', 'gray'],
-  ['orphaned', 'Orphaned', 'stale'],
+  ['permission', 'Needs you', 'amber'],
+  ['asking', 'Needs you', 'amber'],
+  ['idle', 'Idle', 'gray'],
+  ['stopped', 'Failed', 'red'],
+  ['ended', 'Ended', 'stale'],
 ]
 
 /**
@@ -157,6 +161,8 @@ const deliveryStates: SessionView[] = [
     cli: 'claude',
     cwd: null,
     projectId: null,
+    posture: 'external',
+    agents: [],
     facts: sessionFacts({ headSha: HEAD, pr: PR, ci: { status: 'failed', sha: HEAD } }),
   },
   {
@@ -165,6 +171,8 @@ const deliveryStates: SessionView[] = [
     cli: 'codex',
     cwd: null,
     projectId: null,
+    posture: 'external',
+    agents: [],
     facts: sessionFacts({
       headSha: HEAD,
       pr: PR,
@@ -178,6 +186,8 @@ const deliveryStates: SessionView[] = [
     cli: 'claude',
     cwd: null,
     projectId: null,
+    posture: 'external',
+    agents: [],
     facts: sessionFacts({ headSha: HEAD, dirty: 3, agent: 'idle' }),
   },
 ]
@@ -206,15 +216,19 @@ const needsYou: SessionView[] = [
     cli: 'claude',
     cwd: null,
     projectId: null,
+    posture: 'external',
+    agents: [],
     facts: sessionFacts({ status: 'running' }),
   },
   {
-    id: 'needs-input',
+    id: 'asking',
     title: 'Voice input spike',
     cli: 'codex',
     cwd: null,
     projectId: null,
-    facts: sessionFacts({ status: 'needs-input' }),
+    posture: 'external',
+    agents: [],
+    facts: sessionFacts({ status: 'asking' }),
   },
 ]
 
@@ -247,6 +261,8 @@ const commitReady: SessionView[] = [
     cli: 'claude',
     cwd: null,
     projectId: null,
+    posture: 'external',
+    agents: [],
     facts: sessionFacts({ headSha: HEAD, dirty: 3, agent: 'idle' }),
   },
 ]

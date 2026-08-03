@@ -24,12 +24,12 @@ export const STATE_MATRIX_ROWS: readonly StateMatrixRow[] = [
   {
     id: 'S2',
     label: 'dirty 3 · agent idle',
-    input: { dirty: 3, agent: 'idle', status: 'needs-input' },
+    input: { dirty: 3, agent: 'idle', status: 'idle' },
   },
   {
     id: 'S3',
     label: 'commits ✓ · no PR',
-    input: { headSha: HEAD, agent: 'idle', status: 'needs-input' },
+    input: { headSha: HEAD, agent: 'idle', status: 'idle' },
   },
   {
     id: 'S3b',

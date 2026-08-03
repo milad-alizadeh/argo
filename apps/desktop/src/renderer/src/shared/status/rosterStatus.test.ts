@@ -8,11 +8,12 @@ import { deliveryState } from './deliveryState'
 describe('rosterStatus fallback', () => {
   const words: [SessionStatus, string][] = [
     ['running', 'Running'],
-    ['needs-input', 'Needs input'],
-    ['done', 'Done'],
-    ['failed', 'Failed'],
-    ['queued', 'Queued'],
-    ['orphaned', 'Orphaned'],
+    // `permission` and `asking` are the one attention state, so they share its word.
+    ['permission', 'Needs you'],
+    ['asking', 'Needs you'],
+    ['idle', 'Idle'],
+    ['stopped', 'Failed'],
+    ['ended', 'Ended'],
   ]
 
   for (const [status, word] of words) {

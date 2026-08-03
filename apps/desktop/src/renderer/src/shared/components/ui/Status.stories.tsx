@@ -40,7 +40,7 @@ export const Default: Story = {
 
 /** The screen's ONE animation budget, spent on the row stalled on a human. */
 export const Pulsing: Story = {
-  args: { ...wordAndTone(SESSION_STATUS['needs-input']), pulse: true },
+  args: { ...wordAndTone(SESSION_STATUS.asking), pulse: true },
   play: async ({ canvasElement }) => {
     const dot = canvasElement.querySelector('span > span')
     await expect(getComputedStyle(dot as Element).animationName).toBe('pulse-status')
@@ -62,7 +62,9 @@ export const EveryState: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    for (const word of ['Running', 'Needs input', 'Done', 'Failed', 'Queued', 'Orphaned']) {
+    // `permission` and `asking` are the one attention state, so `Needs you` renders twice.
+    await expect(canvas.getAllByText('Needs you')).toHaveLength(2)
+    for (const word of ['Running', 'Idle', 'Failed', 'Ended']) {
       await expect(canvas.getByText(word)).toBeInTheDocument()
     }
   },

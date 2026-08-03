@@ -62,3 +62,16 @@ export function latestInChain<T>(
   }
   return null
 }
+
+// Scan a chain root → leaf and take the first present value — the mirror of `latestInChain`, for
+// a field whose EARLIEST reading is the true one (when the Session began, not where it is now).
+export function firstInChain<T>(
+  files: ParsedTranscript[],
+  select: (file: ParsedTranscript) => T | null,
+): T | null {
+  for (const file of files) {
+    const value = select(file)
+    if (value !== null) return value
+  }
+  return null
+}

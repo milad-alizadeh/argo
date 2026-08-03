@@ -3,7 +3,9 @@
 // and a Session belongs to the Project its cwd sits in.
 
 import { type ProjectView, projectForCwd, projectName } from './projects'
+import type { Agent } from './runtimeTree'
 import type { SessionFacts } from './sessionFacts'
+import type { SessionPosture } from './sessionPosture'
 
 export type Cli = 'claude' | 'codex'
 
@@ -14,7 +16,12 @@ export interface SessionIntake {
   title: string
   cli: Cli
   cwd: string | null
+  posture: SessionPosture
   facts: SessionFacts
+  // The runtime tree (CONTEXT.md L3), flat and keyed by `parentId`: the Session is the root
+  // Agent and every Subagent is a non-root node. Empty when the transcript yielded no tree —
+  // an unparseable record leaves the Session standing on its direct facts (failure policy §8).
+  agents: Agent[]
 }
 
 // The roster-row view-model: the Session's identity, the FACTS main observed and the
@@ -45,6 +52,19 @@ export function attribute(projects: ProjectView[], session: SessionIntake): Sess
 export function addSession(state: CockpitState, session: SessionView): CockpitState {
   if (state.sessions.some((existing) => existing.id === session.id)) return state
   return { ...state, sessions: [...state.sessions, session] }
+}
+
+// Replace an already-observed Session with a fresh reading of it. The OBSERVER is the change
+// detector — it holds the previous observation and only emits when something moved — so this
+// replaces unconditionally. An update for a Session the roster never saw is a no-op rather than
+// a back-door insert: an observation that skipped `session-created` is a bug upstream, and
+// silently healing it would hide the drift.
+export function updateSession(state: CockpitState, session: SessionView): CockpitState {
+  const index = state.sessions.findIndex((existing) => existing.id === session.id)
+  if (index === -1) return state
+  const sessions = [...state.sessions]
+  sessions[index] = session
+  return { ...state, sessions }
 }
 
 export function addProject(state: CockpitState, project: ProjectView): CockpitState {

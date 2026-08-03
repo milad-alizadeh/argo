@@ -5,9 +5,12 @@ import type { RosterTone } from '@/shared/status'
 // ranking is the attention registry's — `needs you` outranks `failed` outranks `running` —
 // and everything else earns no dot at all, because a badge nobody can clear is noise.
 
+// `permission` and `asking` are the same amber "come here"; `stopped` is the red one. `idle` and
+// `ended` earn nothing — a session that wants nothing from you is not a badge.
 const RANKED: readonly { status: SessionStatus; tone: RosterTone }[] = [
-  { status: 'needs-input', tone: 'amber' },
-  { status: 'failed', tone: 'red' },
+  { status: 'permission', tone: 'amber' },
+  { status: 'asking', tone: 'amber' },
+  { status: 'stopped', tone: 'red' },
   { status: 'running', tone: 'run' },
 ]
 

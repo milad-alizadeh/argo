@@ -18,6 +18,8 @@ const sessionFrom = (id: string): SessionView => ({
   cli: 'claude',
   cwd: null,
   projectId: null,
+  posture: 'external',
+  agents: [],
   facts: sessionFacts(stateMatrixInput(id)),
 })
 
@@ -49,8 +51,6 @@ describe('buildSessionPanel', () => {
     })
     expect(panel.header.project).toBe('argo')
     expect(panel.header.workspace).toBeNull()
-    expect(panel.activity.actors).toEqual([])
-    expect(panel.activity.nowLine).toBeNull()
     expect(panel.delivery.pr).toBeNull()
     expect(panel.console.capture).toBeUndefined()
     // The console defaults to the live channel — no capture fabricated.

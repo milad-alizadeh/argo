@@ -1,0 +1,119 @@
+// The locked runtime tree (CONTEXT.md L3): Agent · Subagent · Turn · Tool Call · Plan ·
+// Compaction · Usage. Names re-derived from what Claude Code / Codex / ACP literally use —
+// the `Run` / `Phase` / `Actor` coinages are retired, and with them the `kind: session |
+// agent` discriminant: root-vs-child is carried by `parentId` alone.
+
+// ACP's prompt-turn stop reasons, adopted agnostically, plus `unknown` for a record the
+// reason cannot be inferred from. A guess here would be a fabricated DIRECT.
+export const STOP_REASONS = [
+  'end_turn',
+  'max_tokens',
+  'max_turn_requests',
+  'refusal',
+  'cancelled',
+  'unknown',
+] as const
+
+export type StopReason = (typeof STOP_REASONS)[number]
+
+// What the tool did, coarse enough to be CLI-agnostic. The CLI's own tool name travels
+// verbatim beside it (`ToolCall.name`), so nothing the host said is renamed away.
+export const TOOL_CALL_KINDS = [
+  'read',
+  'edit',
+  'execute',
+  'search',
+  'fetch',
+  'delegate',
+  'plan',
+  'other',
+] as const
+
+export type ToolCallKind = (typeof TOOL_CALL_KINDS)[number]
+
+export const TOOL_CALL_STATUSES = ['pending', 'in_progress', 'completed', 'failed'] as const
+
+export type ToolCallStatus = (typeof TOOL_CALL_STATUSES)[number]
+
+/** The atomic observable action within a Turn — the unit users watch scroll by. */
+export interface ToolCall {
+  id: string
+  /** The host's own tool name, never normalized. */
+  name: string
+  kind: ToolCallKind
+  status: ToolCallStatus
+  /** The file or command the call names, when it names one. */
+  target: string | null
+}
+
+export const PLAN_ENTRY_STATUSES = ['pending', 'in_progress', 'completed'] as const
+
+export type PlanEntryStatus = (typeof PLAN_ENTRY_STATUSES)[number]
+
+export interface PlanEntry {
+  text: string
+  status: PlanEntryStatus
+}
+
+/** The agent-authored live to-do list within a Turn (ACP `Plan`; CC's TodoWrite maps onto it). */
+export interface Plan {
+  entries: PlanEntry[]
+}
+
+/** Token telemetry, DERIVED, a fact on Turn and rolled up to the Session. */
+export interface Usage {
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheCreationTokens: number
+}
+
+/** A marker where history was condensed; the resume chain stitches across it. */
+export interface Compaction {
+  /** The Turn the condensed history sits in front of. */
+  beforeTurnId: string
+}
+
+/** One exchange within an Agent: prompt in → stop reason out. */
+export interface Turn {
+  id: string
+  /** null = still in progress (no stop observed); `unknown` = ended, reason not inferable. */
+  stopReason: StopReason | null
+  toolCalls: ToolCall[]
+  plan: Plan | null
+  usage: Usage | null
+  endedAtMs: number | null
+}
+
+/**
+ * A node in the execution tree, recursive. `parentId === null` marks the root, which is the
+ * Session itself — there is no `kind` tag. `label` and `group` are tier-gated: they exist only
+ * when the CLI reported them, and are ABSENT rather than invented when it did not.
+ */
+export interface Agent {
+  id: string
+  parentId: string | null
+  turns: Turn[]
+  compactions: Compaction[]
+  label?: string
+  group?: string
+}
+
+export function addUsage(left: Usage, right: Usage): Usage {
+  return {
+    inputTokens: left.inputTokens + right.inputTokens,
+    outputTokens: left.outputTokens + right.outputTokens,
+    cacheReadTokens: left.cacheReadTokens + right.cacheReadTokens,
+    cacheCreationTokens: left.cacheCreationTokens + right.cacheCreationTokens,
+  }
+}
+
+/** The root Agent — the Session's own node. `null` for a tree that could not be parsed at all. */
+export function rootAgent(agents: readonly Agent[]): Agent | null {
+  return agents.find((agent) => agent.parentId === null) ?? null
+}
+
+/** The Turn in progress, if the Agent has one — the signal a Session is `running`. */
+export function openTurn(agent: Agent): Turn | null {
+  return agent.turns.find((turn) => turn.stopReason === null) ?? null
+}
