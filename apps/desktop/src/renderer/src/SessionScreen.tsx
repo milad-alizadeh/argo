@@ -1,4 +1,3 @@
-import { BackgroundTasks, NowLine } from '@/domains/activity/components'
 import { Console } from '@/domains/console/components'
 import { type ChangesView, Delivery, type DeliveryTab } from '@/domains/delivery/components'
 import { Roster } from '@/domains/roster/components'
@@ -122,16 +121,16 @@ function SessionPanel({
         onClose={handlers.onCloseSession}
       />
       <div className="flex min-h-0 flex-1">
+        {/* Empty since the retired Run/Phase/Actor components were deleted (issue 261). The
+            region keeps its label and its resizable width so the spine still holds; issue 268
+            fills it with the Activity surface on the locked runtime tree. */}
         <section
           aria-label="Activity"
           className={cn(
             'flex min-w-0 flex-col overflow-y-auto p-inset',
             split ? 'w-[var(--c-act)] shrink-0' : 'flex-1',
           )}
-        >
-          {panel.activity.nowLine && <NowLine {...panel.activity.nowLine} />}
-          <BackgroundTasks actors={panel.activity.actors} />
-        </section>
+        />
         {split && (
           <>
             <PanelSplitter

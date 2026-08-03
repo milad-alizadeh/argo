@@ -2,10 +2,9 @@ import { join } from 'node:path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
-import { seedDemoSession } from './demoSeed'
 import { wireGit } from './gitBridge'
 import { createHub, type Hub } from './hub'
-import { startObservation } from './observe'
+import { createObserver, transcriptRoot } from './observe'
 import { wireProjects } from './projectBridge'
 import { wireProjection } from './projectionBridge'
 import { REGISTRY_FILENAME, readRegistry, toProjectEvents } from './projectRegistry'
@@ -76,21 +75,22 @@ app.whenReady().then(() => {
   const hub = createHub()
   const registryFile = join(app.getPath('userData'), REGISTRY_FILENAME)
   wireProjection(hub)
-  // Seam B now observes real external claude sessions on launch: a single sweep of the CLI
-  // transcript dirs discovers, stitches and grades each Session into the roster (ADR-0008).
-  void restoreProjects(hub, registryFile).then(() => startObservation(hub))
+  // Seam B observes real claude sessions: one launch sweep of the CLI transcript dirs discovers,
+  // stitches and grades each Session into the roster, then a watch keeps them current by
+  // re-reading only the file that moved (ADR-0008). The root is env-overridable so a packaged
+  // run can be pointed at a deterministic fixture world.
+  const observer = createObserver(hub, { root: transcriptRoot(process.env) })
+  void restoreProjects(hub, registryFile).then(() => observer.start())
+  app.on('will-quit', () => observer.stop())
   // Seam B: the steering PTY behind the Console's live channel — a renderer attaches and main
   // spawns its shell.
   wireTerminal()
   // The app shell's own seams (#264): the global git group over the active project's primary
-  // checkout, the project strip's register/activate, and ⌘N's spawn.
+  // checkout, the project strip's register/activate, and ⌘N's spawn. Spawn claims the folder in
+  // the observer's ownership registry, which is what makes a spawned Session `managed`.
   wireGit(hub)
   wireProjects(hub, registryFile)
-  wireSpawn(hub)
-  // Opt-in synthetic Session that drives the projection pipeline end-to-end (the
-  // launch smoke sets this; run `ARGO_SEED_DEMO=1 bun run dev` to see it locally).
-  // Nothing real is observed yet — drop when the session adapter lands.
-  if (process.env.ARGO_SEED_DEMO === '1') seedDemoSession(hub)
+  wireSpawn(hub, observer.managed)
 
   createWindow()
 

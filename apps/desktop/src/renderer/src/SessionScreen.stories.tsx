@@ -45,6 +45,8 @@ const AUTH: SessionView = {
   cli: 'claude',
   cwd: null,
   projectId: null,
+  posture: 'external',
+  agents: [],
   facts: sessionFacts(stateMatrixInput('S6')),
 }
 const VOICE: SessionView = {
@@ -53,6 +55,8 @@ const VOICE: SessionView = {
   cli: 'codex',
   cwd: null,
   projectId: null,
+  posture: 'external',
+  agents: [],
   facts: sessionFacts(stateMatrixInput('S8')),
 }
 const SESSIONS: readonly SessionView[] = [AUTH, VOICE]

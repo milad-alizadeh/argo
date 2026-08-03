@@ -517,21 +517,24 @@ Prior art to follow rather than re-invent: `src/shared/projection.test.ts`,
 **The running `apps/desktop` renders the *retired* model. It is not a partial implementation of
 this spec.** Concretely, on `main` today:
 
-- one `SessionScreen` composing **five panel domains** — `roster`, `activity`, `delivery`,
-  `console`, `concierge` — from ADR-0009's story/work split;
-- the retired runtime vocabulary in the components themselves: `RunRow`, `AgentRow`, `PhaseGroup`,
-  `phaseState`, `agentState`;
-- a `demoSeed` standing in for observed reality;
+- one `SessionScreen` composing the panel domains that are left — `roster`, `delivery`,
+  `console` — from ADR-0009's story/work split (`concierge` went with #284, `activity` with #261);
 - no project strip, no rooms, no Work or Code surface, no ports.
+
+Two bullets that stood here are now closed: the retired runtime vocabulary in the components
+(`RunRow`, `AgentRow`, `PhaseGroup`, `phaseState`, `agentState`) and the `demoSeed` standing in
+for observed reality both died with #261, which put the locked tree behind an incremental
+observer and pointed the packaged e2e run at a fixture transcript root instead.
 
 The redesign is **three rooms on `Agent` / `Subagent` / `Turn` / `Tool Call`**. Nobody should read
 the current UI as a step toward it.
 
 **What survives and is reused, not restarted** — the observation floor:
 
-- **`main/observe/`** — transcript parse (`claudeTranscript.ts`), resume-chain stitch
-  (`resumeChain.ts`), liveness derivation (`liveness.ts`), working-set discovery (`discover.ts`),
-  with fixtures.
+- **`main/observe/`** — transcript parse (`claudeTranscript.ts`) now folding the runtime tree
+  (`tree.ts`), resume-chain stitch (`resumeChain.ts`), the process probe (`liveness.ts`) under a
+  class-gated status derivation (`sessionStatus.ts`), working-set discovery (`discover.ts`), and
+  the incremental observer over them (`observer.ts` + `watch.ts`), with fixtures.
 - **`@shared/projection`** — the `applyEvent` / `applyDelta` reducer pair (§11.1 widens it).
 - **`@shared/lifecycleModel`** — session facts → delivery render state.
 - **`main/terminalBridge.ts`** — the PTY bridge the Dock and the scratch terminal both need.

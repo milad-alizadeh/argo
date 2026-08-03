@@ -9,6 +9,8 @@ function session(id: string, projectId: string, status: SessionStatus): SessionV
     cli: 'claude',
     cwd: '/code/argo',
     projectId,
+    posture: 'external',
+    agents: [],
     facts: sessionFacts({ status }),
   }
 }
@@ -48,12 +50,12 @@ describe('the project strip', () => {
   })
 
   it('keeps the active project quiet even when its own sessions want you', () => {
-    const sessions = [session('s1', 'p1', 'needs-input')]
+    const sessions = [session('s1', 'p1', 'asking')]
     expect(buildShellModel(state({ sessions })).tabs[0]?.dot).toBeNull()
   })
 
   it('badges a background project with its worst session state', () => {
-    const sessions = [session('s1', 'p2', 'running'), session('s2', 'p2', 'failed')]
+    const sessions = [session('s1', 'p2', 'running'), session('s2', 'p2', 'stopped')]
     expect(buildShellModel(state({ sessions })).tabs[1]?.dot).toBe('red')
   })
 })

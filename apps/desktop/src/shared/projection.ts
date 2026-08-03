@@ -13,24 +13,31 @@ import {
   repointProject,
   type SessionIntake,
   type SessionView,
+  updateSession,
 } from './cockpitState'
 import type { ProjectView } from './projects'
 
 // The event vocabulary the hub consumes (the Seam B → Seam A contract). Sessions are
 // observed; Projects are registered — the one entity above the Session that Argo owns.
+// Observation is incremental: `session-created` announces a Session the roster has never
+// seen, `session-updated` carries a later reading of one it has, so a live Session changes
+// without the sweep that found it running again.
 export type HubEvent =
   | { type: 'session-created'; session: SessionIntake }
+  | { type: 'session-updated'; session: SessionIntake }
   | { type: 'project-registered'; project: ProjectView }
   | { type: 'project-relocated'; id: string; path: string }
   | { type: 'project-activated'; id: string }
 
 export type SessionCreated = Extract<HubEvent, { type: 'session-created' }>
+export type SessionUpdated = Extract<HubEvent, { type: 'session-updated' }>
 
 // The deltas main pushes over IPC. `snapshot` hydrates a fresh subscriber (or a
 // reconnecting one) with current truth; the rest are live incremental patches.
 export type ProjectionDelta =
   | { type: 'snapshot'; state: CockpitState }
   | { type: 'session-added'; session: SessionView }
+  | { type: 'session-changed'; session: SessionView }
   | { type: 'project-added'; project: ProjectView }
   | { type: 'project-path-changed'; id: string; path: string }
   | { type: 'active-project-changed'; id: string }
@@ -58,6 +65,8 @@ function toDelta(state: CockpitState, event: HubEvent): ProjectionDelta {
   switch (event.type) {
     case 'session-created':
       return { type: 'session-added', session: attribute(state.projects, event.session) }
+    case 'session-updated':
+      return { type: 'session-changed', session: attribute(state.projects, event.session) }
     case 'project-registered':
       return { type: 'project-added', project: event.project }
     case 'project-relocated':
@@ -77,6 +86,8 @@ export function applyDelta(state: CockpitState, delta: ProjectionDelta): Cockpit
       return delta.state
     case 'session-added':
       return addSession(state, delta.session)
+    case 'session-changed':
+      return updateSession(state, delta.session)
     case 'project-added':
       return addProject(state, delta.project)
     case 'project-path-changed':

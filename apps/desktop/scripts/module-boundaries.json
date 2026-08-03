@@ -6,7 +6,7 @@
   "modules": [
     {
       "name": "shared",
-      "comment": "Cross-process contract: the Session state list and the union derived from it, the delivery facts main observes, the event vocabulary, projected-state types, IPC channel names, the pure projection reducer, and the lifecycle derivation (session facts → delivery render state). Types, frozen constants and pure functions only — no I/O, no framework. `SessionView` carries facts, never a rendered state, so grading stays on the renderer's side of the bridge. Imported by all three processes (renderer files reach it through the `@shared` alias), imports none of them.",
+      "comment": "Cross-process contract: the Session state list and the union derived from it, the locked runtime tree (Agent · Subagent · Turn · Tool Call · Plan · Compaction · Usage), the Session class/posture axis, the delivery facts main observes, the event vocabulary, projected-state types, IPC channel names, the pure projection reducer, and the lifecycle derivation (session facts → delivery render state). Types, frozen constants and pure functions only — no I/O, no framework. `SessionView` carries facts, never a rendered state, so grading stays on the renderer's side of the bridge. Imported by all three processes (renderer files reach it through the `@shared` alias), imports none of them.",
       "path": "^src/shared/",
       "publicEntry": ["^src/shared/index\\.ts$"]
     },
@@ -75,12 +75,6 @@
       "publicEntry": ["^src/renderer/src/domains/roster/components/index\\.ts$"]
     },
     {
-      "name": "activity",
-      "comment": "RETIRED (#157; disposition in docs/designs/cockpit-ui-inventory.md). The Activity Panel (CONTEXT.md region; supersedes ADR-0009's `story/`): the Background Tasks roster — Runs, Agents, phases. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
-      "path": "^src/renderer/src/domains/activity/",
-      "publicEntry": ["^src/renderer/src/domains/activity/components/index\\.ts$"]
-    },
-    {
       "name": "delivery",
       "comment": "RETIRED (#157; disposition in docs/designs/cockpit-ui-inventory.md). The Delivery Panel (CONTEXT.md region; supersedes ADR-0009's `work/`): the Delivery lifecycle and node drawers — DeliveryLifecycle + NodeDrawer, the CI card molecules, the LifecycleNode state→icon/tone vocabulary. Pure Views over the pre-derived `LifecycleModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/delivery/",
@@ -94,7 +88,7 @@
     }
   ],
   "layers": {
-    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation, unchanged in kind by the #157 redesign and now applied to the shell + room slices as well: a slice must not reach into another slice's internals (slices ⊥ slices, so shell ⊥ rooms and room ⊥ room); every slice may import `renderer-shared`; `renderer-shared` is a leaf that imports no slice. The shell is a PEER of the rooms, not their parent: the renderer root composes shell + active room outside every slice, exactly as `SessionScreen` composes the retired panel domains today. The four remaining retired domains keep their rules until their last file moves. (3) The composition root's wiring (`cockpit`) is the only renderer code that reads the store or the bridge, and the dependency runs one way: it imports slices, no slice imports it.",
+    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation, unchanged in kind by the #157 redesign and now applied to the shell + room slices as well: a slice must not reach into another slice's internals (slices ⊥ slices, so shell ⊥ rooms and room ⊥ room); every slice may import `renderer-shared`; `renderer-shared` is a leaf that imports no slice. The shell is a PEER of the rooms, not their parent: the renderer root composes shell + active room outside every slice, exactly as `SessionScreen` composes the retired panel domains today. The three remaining retired domains keep their rules until their last file moves (`activity` is gone: #261 retired the Run/Phase/Actor vocabulary it was named for). (3) The composition root's wiring (`cockpit`) is the only renderer code that reads the store or the bridge, and the dependency runs one way: it imports slices, no slice imports it.",
     "main": ["renderer", "preload"],
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],
@@ -105,7 +99,6 @@
       "rooms-work",
       "rooms-code",
       "roster",
-      "activity",
       "delivery",
       "console"
     ],
@@ -115,7 +108,6 @@
       "rooms-work",
       "rooms-code",
       "roster",
-      "activity",
       "delivery",
       "console"
     ],
@@ -125,7 +117,6 @@
       "rooms-sessions",
       "rooms-code",
       "roster",
-      "activity",
       "delivery",
       "console"
     ],
@@ -135,14 +126,12 @@
       "rooms-sessions",
       "rooms-work",
       "roster",
-      "activity",
       "delivery",
       "console"
     ],
-    "roster": ["cockpit", "activity", "delivery", "console"],
-    "activity": ["cockpit", "roster", "delivery", "console"],
-    "delivery": ["cockpit", "roster", "activity", "console"],
-    "console": ["cockpit", "roster", "activity", "delivery"],
+    "roster": ["cockpit", "delivery", "console"],
+    "delivery": ["cockpit", "roster", "console"],
+    "console": ["cockpit", "roster", "delivery"],
     "renderer-shared": [
       "cockpit",
       "shell",
@@ -150,7 +139,6 @@
       "rooms-work",
       "rooms-code",
       "roster",
-      "activity",
       "delivery",
       "console"
     ]

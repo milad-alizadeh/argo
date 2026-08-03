@@ -31,6 +31,8 @@ const stateRow = (status: SessionStatus): SessionView => ({
   cli: 'claude',
   cwd: null,
   projectId: null,
+  posture: 'external',
+  agents: [],
   facts: sessionFacts({ status }),
 })
 
@@ -49,6 +51,8 @@ export const Default: Story = {
       cli: 'claude',
       cwd: null,
       projectId: null,
+      posture: 'external',
+      agents: [],
       facts: sessionFacts({ status: 'running' }),
     },
   },
@@ -74,6 +78,8 @@ export const Selected: Story = {
       cli: 'claude',
       cwd: null,
       projectId: null,
+      posture: 'external',
+      agents: [],
       facts: sessionFacts({ status: 'running' }),
     },
     selected: true,
@@ -90,7 +96,7 @@ export const Selected: Story = {
  * the budget itself — the roster grants it — so `pulse` is a plain flag the row obeys.
  */
 export const Pulsing: Story = {
-  args: { session: stateRow('needs-input'), pulse: true },
+  args: { session: stateRow('asking'), pulse: true },
   play: async ({ canvasElement }) => {
     const dot = canvasElement.querySelector('span > span')
     await expect(getComputedStyle(dot as Element).animationName).toBe('pulse-status')

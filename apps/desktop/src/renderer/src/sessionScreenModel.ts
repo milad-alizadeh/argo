@@ -1,5 +1,4 @@
 import type { LifecycleNodeKey } from '@shared'
-import type { RosterActor } from '@/domains/activity/components'
 import type { ConsoleCapture } from '@/domains/console/components'
 import type {
   AllFilesDiffFile,
@@ -48,13 +47,6 @@ export interface WorkspaceModel {
   sharedCount: number
 }
 
-/** The "doing now" strip — an already-composed icon and line the caller hands `NowLine`. */
-export interface NowLineModel {
-  icon: React.ReactNode
-  line: React.ReactNode
-  live: boolean
-}
-
 export interface SessionHeaderModel {
   project: string
   title: string
@@ -62,15 +54,9 @@ export interface SessionHeaderModel {
   variant: SpineVariant
 }
 
-export interface ActivityModel {
-  nowLine: NowLineModel | null
-  actors: readonly RosterActor[]
-}
-
 export interface SessionPanelModel {
   variant: SpineVariant
   header: SessionHeaderModel
-  activity: ActivityModel
   delivery: DeliveryData
   console: ConsoleData
 }
@@ -80,8 +66,6 @@ export interface SessionPanelModel {
  * genuinely derived this ticket; the rest arrives empty rather than fabricated. */
 export interface RichSessionData {
   workspace: WorkspaceModel | null
-  nowLine: NowLineModel | null
-  actors: readonly RosterActor[]
   pr: { num: number; ghUrl: string } | null
   drawerSession: NodeDrawerSession
   reviewOutstanding: number
@@ -116,8 +100,6 @@ export const EMPTY_DRAWER_SESSION: NodeDrawerSession = {
 /** The honest-empty rich data the app passes until Seam B enriches the projection. */
 export const emptyRichSession = (): RichSessionData => ({
   workspace: null,
-  nowLine: null,
-  actors: [],
   pr: null,
   drawerSession: EMPTY_DRAWER_SESSION,
   reviewOutstanding: 0,
@@ -150,7 +132,6 @@ export function buildSessionPanel({
       workspace: rich.workspace,
       variant: ui.variant,
     },
-    activity: { nowLine: rich.nowLine, actors: rich.actors },
     delivery: {
       lifecycle,
       openNode: ui.openNode,

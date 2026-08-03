@@ -49,10 +49,11 @@ neutral dim text — no coloured words, no double-encoding.
 | State | Word | Dot | Notes |
 |---|---|---|---|
 | Running | `running` | green, live glow | the normal state with 3–4 sessions; liveness stays legible under attention |
-| Idle | `idle` | dim grey | agent alive, not currently working |
-| Needs you | `needs you` | amber/gold | the one attention state (#164) — a "come here", not a calm state |
+| Idle | `idle` | dim grey | agent alive, not currently working — **and the honest reading of an agent's free-form question**, which the record cannot tell apart from idle |
+| Needs you | `needs you` | amber/gold | the one attention state (#164) — a "come here", not a calm state. **Two domain states share this one word** (`CONTEXT.md` L2): `permission` (blocked on a permission prompt, DIRECT and managed-only) and `asking` (blocked on a structured question). Which flavour of "come here" it is would be a second telling, so the row never spells it |
 | Failed | `failed` | red | crash / canceled / `stopped`→red; a "come here" signal, hue-distinct from needs-you |
-| External | *(identity, no state word)* | hollow | observed non-managed session; status degrades away, not faked |
+| Ended | `ended` | dim grey | the session terminated. Needs a process exit Argo witnessed, so an external session floors above it at `idle` rather than claiming a shutdown it never saw |
+| External | *(identity, no state word)* | hollow | observed non-managed session; status degrades away, not faked. **`orphaned`** — a managed session whose owning Argo process is gone — renders the same way: it is a posture on the `managed \| external` axis, not a state word |
 
 - **Roster = one word** (surface matrix, Session status row): the single most
   decision-relevant word for the row. **A Delivery claim beats session status** — a row

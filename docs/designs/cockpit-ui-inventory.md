@@ -84,16 +84,19 @@ promised a Delivery coupling that the room slices must not have. The map carries
 
 ## Retired, awaiting removal
 
-**Four panel domains are still standing.** `roster/`, `activity/`, `delivery/` and `console/`
-derive from ADR-0009's story/work split, which the redesign retires (`cockpit-spec.md` §12). They
-stay in the boundary map while their code is on disk, so the gate keeps guarding them, and each
-entry is removed by the ticket that moves its last file. Their components are listed here so that
-nothing in the tree lacks a row. The fifth, `concierge/`, is **gone**: #284 deleted it whole and
-ADR-0019 records why.
+**Three panel domains are still standing.** `roster/`, `delivery/` and `console/` derive from
+ADR-0009's story/work split, which the redesign retires (`cockpit-spec.md` §12). They stay in the
+boundary map while their code is on disk, so the gate keeps guarding them, and each entry is
+removed by the ticket that moves its last file. Their components are listed here so that nothing
+in the tree lacks a row. Two are **gone**: `concierge/` (#284 deleted it whole, ADR-0019 records
+why) and `activity/` (#261 deleted it whole, along with `rowCaret.ts` — `Run`, `Phase` and
+`Actor` are retired vocabulary and #261's own criterion is that no such name survives anywhere.
+`NowLine`'s successor is `NowHead` inside the Dock header row; `RosterRow`'s is `SessionRow`.
+`rowCaret`'s one idea worth carrying — a non-expandable row still reserving the caret's width —
+is recorded here for #272's generic node tree, which is the only thing that wanted it).
 
 | Existing | Disposition |
 |---|---|
-| `domains/activity/`: `RunRow`, `AgentRow`, `PhaseGroup`, `NowLine`, `BackgroundTasks`, `RosterRow`, `phaseState`, `agentState` | **Delete.** `Run`, `Phase` and `Actor` are retired vocabulary (§11.3). `NowLine` is superseded by `NowHead` inside the Dock header row. `RosterRow` is superseded by `SessionRow`, which already exists in `domains/roster/`. |
 | `domains/activity/components/rowCaret.ts` | **Delete, unless #272 wants the `reserved` rule.** Read by `RunRow`, `PhaseGroup` and `RosterRow`, all of which are deletions. Its one idea worth carrying is that a non-expandable row still reserves the caret's width, which the Work room's generic node tree will want. |
 | `domains/console/components/`: `consoleChannels`, `captureLabel`, `resolveActiveChannel`, `feedLines` | **`consoleChannels` travels with the salvage; the other three delete.** `LiveTerminal` (→ `TerminalPane`, #274) reads `LIVE_CHANNEL_LABEL` from `consoleChannels`, so that module moves with it. The channel-strip derivations die with the strip. |
 | `domains/delivery/components/`: `diffModel`, `nodeDrawerModel` | **Travel with the salvage (#269–#271).** These are the type modules beneath the components marked salvage above — `diffModel` under `FindingCard`/`FileDiff`/`AllFilesDiff`/`CommitGroup`, `nodeDrawerModel` under `NodeDrawer/*`. Moving a component without its type module is what makes a salvage import across the boundary instead of relocating. |

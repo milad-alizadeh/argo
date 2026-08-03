@@ -26,7 +26,9 @@ const session = (over: Partial<SessionIntake> = {}): SessionIntake => ({
   title: 'Refactor auth module',
   cli: 'claude',
   cwd: null,
+  posture: 'external',
   facts: sessionFacts(),
+  agents: [],
   ...over,
 })
 

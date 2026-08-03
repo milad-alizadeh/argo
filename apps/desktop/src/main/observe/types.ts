@@ -1,6 +1,5 @@
-import type { SessionStatus, Tiered } from '../../shared'
-
-export type SessionSource = 'external' | 'managed'
+import type { Agent, SessionPosture, SessionStatus, Tiered } from '../../shared'
+import type { ParsedTree } from './tree'
 
 /** One parsed transcript file — the pure product of reading one .jsonl, untrusted input already tamed. */
 export interface ParsedTranscript {
@@ -11,6 +10,7 @@ export interface ParsedTranscript {
   aiTitle: string | null // DIRECT title when present
   firstPrompt: string | null // fallback title source (DERIVED)
   lastTimestampMs: number | null // newest record timestamp (DERIVED recency signal)
+  tree: ParsedTree // this file's slice of the runtime tree (CONTEXT.md L3)
 }
 
 /** A resume-chain stitched into one logical rail Session. Nothing is re-keyed: each file keeps its own sessionId. */
@@ -25,8 +25,10 @@ export interface ObservedSession {
   id: string
   fileIds: string[]
   cli: 'claude'
-  source: SessionSource
+  posture: SessionPosture
   title: Tiered<string>
   cwd: Tiered<string> | null
   status: Tiered<SessionStatus>
+  /** The flat runtime tree: the root Agent (`parentId: null`) plus its Subagents. */
+  agents: Agent[]
 }

@@ -3,7 +3,16 @@ import { describe, expect, it } from 'vitest'
 import { branchMenuRows, isDeletable, liveWorktreeSessions, manageMenu } from './branchMenuModel'
 
 function session(id: string, cwd: string | null): SessionView {
-  return { id, title: id, cli: 'claude', cwd, projectId: 'p1', facts: sessionFacts() }
+  return {
+    id,
+    title: id,
+    cli: 'claude',
+    cwd,
+    projectId: 'p1',
+    posture: 'external',
+    agents: [],
+    facts: sessionFacts(),
+  }
 }
 
 function ref(name: string, over: Partial<BranchRef> = {}): BranchRef {
