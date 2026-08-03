@@ -96,16 +96,21 @@ export const parseRouterReply = (
   const problems: string[] = []
   const lines = reply.split('\n').map((l) => l.trim())
   const field = (name: string): string | undefined =>
-    lines.find((l) => l.toUpperCase().startsWith(`${name}:`))?.slice(name.length + 1).trim()
+    lines
+      .find((l) => l.toUpperCase().startsWith(`${name}:`))
+      ?.slice(name.length + 1)
+      .trim()
 
   const rawType = field('TYPE')?.toLowerCase()
   const type = TYPES.find((t) => rawType?.includes(t)) ?? 'result'
-  if (!TYPES.some((t) => rawType?.includes(t))) problems.push(`unparsable TYPE: ${rawType ?? '(absent)'}`)
+  if (!TYPES.some((t) => rawType?.includes(t)))
+    problems.push(`unparsable TYPE: ${rawType ?? '(absent)'}`)
 
   const rawOptions = field('OPTIONS')?.toLowerCase() ?? 'none'
   const optionsMatch = rawOptions.match(/\d+/)
   const optionCount = optionsMatch ? Number(optionsMatch[0]) : null
-  if (!optionsMatch && !rawOptions.includes('none')) problems.push(`unparsable OPTIONS: ${rawOptions}`)
+  if (!optionsMatch && !rawOptions.includes('none'))
+    problems.push(`unparsable OPTIONS: ${rawOptions}`)
 
   const destructive = (field('DESTRUCTIVE') ?? 'no').toLowerCase().startsWith('y')
 

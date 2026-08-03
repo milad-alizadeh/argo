@@ -21,9 +21,9 @@
 import { appendFileSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ARMS, type ArmId, runRouter } from './arms'
+import { checkAll } from './containment'
 import { type Arm, type EvalChunk, loadCorpus } from './corpus'
-import { checkAll, type SpanVerdict } from './containment'
-import { convene, type CouncilResult } from './council'
+import { convene } from './council'
 import type { Backend } from './llm'
 import { mapLimit } from './llm'
 import { sessionInstructions, speakerFromEnv } from './speaker'
@@ -36,7 +36,11 @@ const flag = (name: string): string | undefined => {
 }
 const has = (name: string): boolean => argv.includes(`--${name}`)
 
-const ROUTER: Backend = { kind: 'claude-cli', model: flag('router') ?? 'sonnet', label: `claude:${flag('router') ?? 'sonnet'}` }
+const ROUTER: Backend = {
+  kind: 'claude-cli',
+  model: flag('router') ?? 'sonnet',
+  label: `claude:${flag('router') ?? 'sonnet'}`,
+}
 
 /**
  * Mixed by default — see council.ts. The Claude arm judges the OpenAI speaker's output and the
@@ -44,12 +48,19 @@ const ROUTER: Backend = { kind: 'claude-cli', model: flag('router') ?? 'sonnet',
  * homework on the axis that carries three votes.
  */
 const PANEL: Backend[] = [
-  { kind: 'openai', model: flag('judge-openai') ?? 'gpt-5', label: `openai:${flag('judge-openai') ?? 'gpt-5'}` },
-  { kind: 'claude-cli', model: flag('judge-claude') ?? 'sonnet', label: `claude:${flag('judge-claude') ?? 'sonnet'}` },
+  {
+    kind: 'openai',
+    model: flag('judge-openai') ?? 'gpt-5',
+    label: `openai:${flag('judge-openai') ?? 'gpt-5'}`,
+  },
+  {
+    kind: 'claude-cli',
+    model: flag('judge-claude') ?? 'sonnet',
+    label: `claude:${flag('judge-claude') ?? 'sonnet'}`,
+  },
 ]
 
 const OUT = join(import.meta.dir, flag('out') ?? 'results.jsonl')
-
 
 const words = (s: string): number => s.split(/\s+/).filter(Boolean).length
 
@@ -61,10 +72,15 @@ const words = (s: string): number => s.split(/\s+/).filter(Boolean).length
  */
 const prior: Trial[] = dedupe(
   existsSync(OUT)
-    ? readFileSync(OUT, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as Trial)
+    ? readFileSync(OUT, 'utf8')
+        .split('\n')
+        .filter(Boolean)
+        .map((l) => JSON.parse(l) as Trial)
     : [],
 )
-const done = new Set<string>(prior.filter((t) => !(has('retry-errors') && t.error)).map((t) => t.key))
+const done = new Set<string>(
+  prior.filter((t) => !(has('retry-errors') && t.error)).map((t) => t.key),
+)
 
 const speaker = speakerFromEnv()
 const scoreStage3 = !has('no-speak')
@@ -73,7 +89,13 @@ async function runTrial(chunk: EvalChunk, armId: ArmId): Promise<Trial> {
   const arm = ARMS.find((a) => a.id === armId)
   if (!arm) throw new Error(`unknown arm ${armId}`)
   const key = `${chunk.arm}/${chunk.id}/${armId}`
-  const base = { key, chunkId: chunk.id, corpusArm: chunk.arm, arm: armId, sourceWords: words(chunk.source) }
+  const base = {
+    key,
+    chunkId: chunk.id,
+    corpusArm: chunk.arm,
+    arm: armId,
+    sourceWords: words(chunk.source),
+  }
 
   const router = await runRouter(arm, ROUTER, chunk.source)
   const common = {
@@ -90,20 +112,29 @@ async function runTrial(chunk: EvalChunk, armId: ArmId): Promise<Trial> {
   try {
     const said = await speaker.speak(router.payload, sessionInstructions(arm.preReducedClause))
     const council = await convene(PANEL, chunk.source, said.transcript)
-    return { ...common, spokenMs: said.ms, spoken: said.transcript, spokenWords: words(said.transcript), council }
+    return {
+      ...common,
+      spokenMs: said.ms,
+      spoken: said.transcript,
+      spokenWords: words(said.transcript),
+      council,
+    }
   } catch (e) {
     return { ...common, error: `speaker: ${e instanceof Error ? e.message : String(e)}` }
   }
 }
 
-const corpusArms = ((flag('arms') ?? 'AB').toUpperCase().split('') as string[])
-  .map((c) => (c === 'A' ? 'A-synthetic' : 'B-real') as Arm)
+const corpusArms = ((flag('arms') ?? 'AB').toUpperCase().split('') as string[]).map(
+  (c) => (c === 'A' ? 'A-synthetic' : 'B-real') as Arm,
+)
 const limit = has('full') ? Number.POSITIVE_INFINITY : Number(flag('limit') ?? 6)
 
 const corpus = loadCorpus(corpusArms)
-const byArm = corpusArms.map((a) => corpus.filter((c) => c.arm === a).slice(0, limit)).flat()
+const byArm = corpusArms.flatMap((a) => corpus.filter((c) => c.arm === a).slice(0, limit))
 const armIds = (flag('only')?.split(',') as ArmId[] | undefined) ?? ARMS.map((a) => a.id)
-const work = byArm.flatMap((c) => armIds.map((a) => ({ chunk: c, arm: a }))).filter((w) => !done.has(`${w.chunk.arm}/${w.chunk.id}/${w.arm}`))
+const work = byArm
+  .flatMap((c) => armIds.map((a) => ({ chunk: c, arm: a })))
+  .filter((w) => !done.has(`${w.chunk.arm}/${w.chunk.id}/${w.arm}`))
 
 console.log(`router  ${ROUTER.label}`)
 console.log(`panel   ${PANEL.map((p) => p.label).join(' + ')}`)
@@ -115,8 +146,12 @@ await mapLimit(work, Number(flag('concurrency') ?? 3), async (w) => {
   const t = await runTrial(w.chunk, w.arm)
   appendFileSync(OUT, `${JSON.stringify(t)}\n`)
   n++
-  const spanNote = t.spans ? ` spans ${t.spans.filter((s) => s.contained).length}/${t.spans.length}` : ''
-  console.log(`[${n}/${work.length}] ${t.key}${spanNote}${t.error ? `  ERROR ${t.error.slice(0, 80)}` : ''}`)
+  const spanNote = t.spans
+    ? ` spans ${t.spans.filter((s) => s.contained).length}/${t.spans.length}`
+    : ''
+  console.log(
+    `[${n}/${work.length}] ${t.key}${spanNote}${t.error ? `  ERROR ${t.error.slice(0, 80)}` : ''}`,
+  )
 })
 
 console.log(`\ndone — ${OUT}\nnext: bun report.ts`)

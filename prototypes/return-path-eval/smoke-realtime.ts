@@ -33,7 +33,12 @@ ws.addEventListener('open', () => {
       item: {
         type: 'message',
         role: 'user',
-        content: [{ type: 'input_text', text: '[REDUCED] result\n\n412 tests pass, 3 fail. I did not touch the STT adapter.' }],
+        content: [
+          {
+            type: 'input_text',
+            text: '[REDUCED] result\n\n412 tests pass, 3 fail. I did not touch the STT adapter.',
+          },
+        ],
       },
     }),
   )
@@ -50,4 +55,6 @@ ws.addEventListener('message', (ev) => {
   }
 })
 ws.addEventListener('error', (e) => console.log('socket error', e))
-ws.addEventListener('close', (e) => console.log('closed', (e as CloseEvent).code, (e as CloseEvent).reason))
+ws.addEventListener('close', (e) =>
+  console.log('closed', (e as CloseEvent).code, (e as CloseEvent).reason),
+)

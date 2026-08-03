@@ -38,11 +38,7 @@ const TRANSFORMS: readonly Transform[] = [
   {
     name: 'typography',
     apply: (s) =>
-      s
-        .replace(/[‘’‛]/g, "'")
-        .replace(/[“”‟]/g, '"')
-        .replace(/[–—]/g, '-')
-        .replace(/…/g, '...'),
+      s.replace(/[‘’‛]/g, "'").replace(/[“”‟]/g, '"').replace(/[–—]/g, '-').replace(/…/g, '...'),
   },
   // Markdown emphasis and code delimiters. The delimiters are display instructions; the text
   // between them is the content and survives untouched.
@@ -65,8 +61,7 @@ const TRANSFORMS: readonly Transform[] = [
   { name: 'whitespace', apply: (s) => s.replace(/\s+/g, ' ').trim() },
 ]
 
-export const normalise = (s: string): string =>
-  TRANSFORMS.reduce((acc, t) => t.apply(acc), s)
+export const normalise = (s: string): string => TRANSFORMS.reduce((acc, t) => t.apply(acc), s)
 
 export type SpanVerdict = {
   readonly span: string
@@ -116,7 +111,9 @@ export const checkSpan = (rawSource: string, rawSpan: string): SpanVerdict => {
     exact,
     contained,
     normalisationRescued: contained && !exact,
-    matchedPrefixWords: contained ? span.split(' ').filter(Boolean).length : matchedPrefixWords(source, span),
+    matchedPrefixWords: contained
+      ? span.split(' ').filter(Boolean).length
+      : matchedPrefixWords(source, span),
   }
 }
 

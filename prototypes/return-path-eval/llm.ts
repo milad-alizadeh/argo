@@ -15,8 +15,16 @@ export type Backend =
   | { readonly kind: 'lmstudio'; readonly key: string; readonly label: string }
 
 /** Vendor, for the mixed-panel logic in `council.ts`. Two judges from one vendor are one lens. */
-export const vendorOf = (b: Backend): string =>
-  b.kind === 'claude-cli' ? 'anthropic' : b.kind === 'openai' ? 'openai' : 'local'
+export const vendorOf = (b: Backend): string => {
+  switch (b.kind) {
+    case 'claude-cli':
+      return 'anthropic'
+    case 'openai':
+      return 'openai'
+    case 'lmstudio':
+      return 'local'
+  }
+}
 
 export type Completion = {
   readonly text: string
@@ -114,7 +122,11 @@ export async function complete(b: Backend, system: string, user: string): Promis
     const text = await CALL[b.kind](b as never, system, user)
     return { text, ms: performance.now() - t0 }
   } catch (e) {
-    return { text: '', ms: performance.now() - t0, error: e instanceof Error ? e.message : String(e) }
+    return {
+      text: '',
+      ms: performance.now() - t0,
+      error: e instanceof Error ? e.message : String(e),
+    }
   }
 }
 

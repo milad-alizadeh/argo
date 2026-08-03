@@ -15,7 +15,8 @@ const path = join(import.meta.dir, process.argv[2] ?? 'results.jsonl')
 if (!existsSync(path)) throw new Error(`no results at ${path} — run sweep.ts first`)
 const trials = await readTrials(path)
 
-const pct = (n: number, d: number): string => (d === 0 ? '   n/a' : `${((100 * n) / d).toFixed(1).padStart(5)}%`)
+const pct = (n: number, d: number): string =>
+  d === 0 ? '   n/a' : `${((100 * n) / d).toFixed(1).padStart(5)}%`
 const rate = (n: number, d: number): string => `${pct(n, d)}  (${n}/${d})`
 const groups = <T>(xs: readonly T[], key: (x: T) => string): Map<string, T[]> => {
   const m = new Map<string, T[]>()
@@ -23,12 +24,14 @@ const groups = <T>(xs: readonly T[], key: (x: T) => string): Map<string, T[]> =>
   return m
 }
 const median = (xs: readonly number[]): number =>
-  xs.length === 0 ? 0 : [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0
+  xs.length === 0 ? 0 : ([...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0)
 
 const ok = trials.filter((t) => !t.error)
 const failed = trials.filter((t) => t.error)
 
-console.log(`# #224 return-path eval — ${trials.length} trials (${failed.length} errored, excluded from rates)\n`)
+console.log(
+  `# #224 return-path eval — ${trials.length} trials (${failed.length} errored, excluded from rates)\n`,
+)
 
 // ---------------------------------------------------------------- 1. quotation fidelity
 console.log('## 1. Quotation fidelity — does the router actually quote? (#224 unknown 1)\n')
@@ -40,16 +43,27 @@ for (const [k, ts] of groups(spanTrials, (t) => `${t.corpusArm} / ${t.arm}`)) {
   const drift = spans.filter((s) => !s.contained)
   console.log(`  ${k}   ${ts.length} trials, ${spans.length} spans`)
   console.log(`    contained (normalised) ${rate(contained.length, spans.length)}`)
-  console.log(`    contained (strict)     ${rate(spans.filter((s) => s.exact).length, spans.length)}`)
-  console.log(`    rescued by normaliser  ${rate(rescued.length, spans.length)}   <- what the leniency bought`)
-  console.log(`    trials with >=1 miss   ${rate(ts.filter((t) => (t.spans ?? []).some((s) => !s.contained)).length, ts.length)}`)
+  console.log(
+    `    contained (strict)     ${rate(spans.filter((s) => s.exact).length, spans.length)}`,
+  )
+  console.log(
+    `    rescued by normaliser  ${rate(rescued.length, spans.length)}   <- what the leniency bought`,
+  )
+  console.log(
+    `    trials with >=1 miss   ${rate(ts.filter((t) => (t.spans ?? []).some((s) => !s.contained)).length, ts.length)}`,
+  )
   if (drift.length > 0) {
-    console.log(`    of the misses: median ${median(drift.map((s) => s.matchedPrefixWords))} words copied before drift`)
+    console.log(
+      `    of the misses: median ${median(drift.map((s) => s.matchedPrefixWords))} words copied before drift`,
+    )
   }
 }
 const parseProblems = ok.filter((t) => t.routerProblems.length > 0)
 console.log(`\n  router replies with a format problem: ${rate(parseProblems.length, ok.length)}`)
-for (const [p, ts] of groups(parseProblems.flatMap((t) => t.routerProblems.map((p) => ({ p }))), (x) => x.p.replace(/\d+/g, 'N'))) {
+for (const [p, ts] of groups(
+  parseProblems.flatMap((t) => t.routerProblems.map((p) => ({ p }))),
+  (x) => x.p.replace(/\d+/g, 'N'),
+)) {
   console.log(`    ${ts.length}x  ${p}`)
 }
 
@@ -78,13 +92,20 @@ for (const [k, ts] of groups(spokenTrials, (t) => `${t.corpusArm} / ${t.arm}`)) 
   // `verbatim` is precomputed by `redact.ts` for rows whose text was removed before commit, so
   // the committed run reproduces this number without carrying the transcripts that produced it.
   const spokenBody = (t: Trial): string =>
-    ((t.payload ?? '').startsWith('[REDUCED]') ? (t.payload ?? '').split('\n\n').slice(1).join('\n\n') : t.payload ?? '').trim()
+    ((t.payload ?? '').startsWith('[REDUCED]')
+      ? (t.payload ?? '').split('\n\n').slice(1).join('\n\n')
+      : (t.payload ?? '')
+    ).trim()
   const verbatim = ts.filter((t) => t.verbatim ?? (t.spoken ?? '').trim() === spokenBody(t))
   const shrank = ts.filter((t) => (t.spokenWords ?? 0) < 0.8 * t.payloadWords)
   console.log(`  ${k}   ${ts.length} trials`)
   console.log(`    spoke the payload verbatim   ${rate(verbatim.length, ts.length)}`)
-  console.log(`    compressed by >20%           ${rate(shrank.length, ts.length)}   <- what §3's clause is meant to stop`)
-  console.log(`    median latency               ${Math.round(median(ts.map((t) => t.spokenMs ?? 0)))}ms`)
+  console.log(
+    `    compressed by >20%           ${rate(shrank.length, ts.length)}   <- what §3's clause is meant to stop`,
+  )
+  console.log(
+    `    median latency               ${Math.round(median(ts.map((t) => t.spokenMs ?? 0)))}ms`,
+  )
 }
 
 // ---------------------------------------------------------------- 4. the council
@@ -102,16 +123,24 @@ for (const axis of AXES) {
   console.log(`  ${axis.id.padEnd(22)}${cells.join('')}`)
 }
 const contested = judged.flatMap((t) => t.council?.axes ?? []).filter((a) => a.contested)
-const unparsable = judged.flatMap((t) => t.council?.axes ?? []).reduce((n, a) => n + a.unparsableVotes, 0)
+const unparsable = judged
+  .flatMap((t) => t.council?.axes ?? [])
+  .reduce((n, a) => n + a.unparsableVotes, 0)
 console.log(`\n  contested (panel split): ${contested.length} axis-verdicts`)
-console.log(`  unparsable judge votes:  ${unparsable}  <- counted as "no violation"; non-zero means rates are floors`)
+console.log(
+  `  unparsable judge votes:  ${unparsable}  <- counted as "no violation"; non-zero means rates are floors`,
+)
 const vendors = [...new Set(judged.flatMap((t) => t.council?.axes ?? []).flatMap((a) => a.vendors))]
-console.log(`  panel vendors:           ${vendors.join(' + ')}${vendors.length < 2 ? '   <- SINGLE VENDOR: not an adversarial panel' : ''}`)
+console.log(
+  `  panel vendors:           ${vendors.join(' + ')}${vendors.length < 2 ? '   <- SINGLE VENDOR: not an adversarial panel' : ''}`,
+)
 
 // ---------------------------------------------------------------- 5. errors
 if (failed.length > 0) {
   console.log('\n## 5. Errored trials (excluded above)\n')
-  for (const [e, ts] of groups(failed, (t) => (t.error ?? '').split(':').slice(0, 2).join(':').slice(0, 70))) {
+  for (const [e, ts] of groups(failed, (t) =>
+    (t.error ?? '').split(':').slice(0, 2).join(':').slice(0, 70),
+  )) {
     console.log(`  ${ts.length}x  ${e}`)
   }
 }

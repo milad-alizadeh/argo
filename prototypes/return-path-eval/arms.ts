@@ -18,7 +18,13 @@
 
 import { systemPrompt, userPrompt } from '../marker-drop-rate/contract'
 import { type Backend, complete } from './llm'
-import { parseRouterReply, type ReducedPayload, renderForSpeaker, ROUTER_SYSTEM_PROMPT, routerUserPrompt } from './spans'
+import {
+  parseRouterReply,
+  type ReducedPayload,
+  ROUTER_SYSTEM_PROMPT,
+  renderForSpeaker,
+  routerUserPrompt,
+} from './spans'
 
 export type ArmId = 'control-reshaper' | 'spans' | 'spans+clause1'
 
@@ -53,13 +59,18 @@ export type RouterOutput = {
  */
 const CONTROL_CAP = null
 
-export async function runRouter(arm: ArmSpec, backend: Backend, source: string): Promise<RouterOutput> {
+export async function runRouter(
+  arm: ArmSpec,
+  backend: Backend,
+  source: string,
+): Promise<RouterOutput> {
   if (arm.id === 'control-reshaper') {
     const res = await complete(backend, systemPrompt(CONTROL_CAP), userPrompt(source))
     return { payload: res.text, problems: [], ms: res.ms, error: res.error }
   }
   const res = await complete(backend, ROUTER_SYSTEM_PROMPT, routerUserPrompt(source))
-  if (res.error) return { payload: '', problems: ['router call failed'], ms: res.ms, error: res.error }
+  if (res.error)
+    return { payload: '', problems: ['router call failed'], ms: res.ms, error: res.error }
   const { payload, problems } = parseRouterReply(res.text)
   return { payload: renderForSpeaker(payload), reduced: payload, problems, ms: res.ms }
 }

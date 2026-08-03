@@ -15,10 +15,15 @@
  */
 
 import { checkSpan, normalise } from './containment'
-import { parseRouterReply } from './spans'
 import { parseVerdict } from './judges'
+import { parseRouterReply } from './spans'
 
-type Case = { readonly why: string; readonly source: string; readonly span: string; readonly want: boolean }
+type Case = {
+  readonly why: string
+  readonly source: string
+  readonly span: string
+  readonly want: boolean
+}
 
 const CASES: readonly Case[] = [
   // ---------------------------------------------------------------- MUST CONTAIN (formatting)
@@ -34,8 +39,18 @@ const CASES: readonly Case[] = [
     span: 'The parser only handles UTF-8 input.',
     want: true,
   },
-  { why: 'curly quotes folded', source: 'It said “done” and stopped.', span: 'It said "done" and stopped.', want: true },
-  { why: 'em dash folded', source: 'Three fail — all in one file.', span: 'Three fail - all in one file.', want: true },
+  {
+    why: 'curly quotes folded',
+    source: 'It said “done” and stopped.',
+    span: 'It said "done" and stopped.',
+    want: true,
+  },
+  {
+    why: 'em dash folded',
+    source: 'Three fail — all in one file.',
+    span: 'Three fail - all in one file.',
+    want: true,
+  },
   {
     why: 'wrapped source, single-line span',
     source: 'I did not touch\nthe STT adapter in this change.',
@@ -57,7 +72,7 @@ const CASES: readonly Case[] = [
 
   // ------------------------------------------------- MUST NOT CONTAIN (meaning) — the real test
   {
-    why: 'NEGATION DROPPED — #193\'s actual failure',
+    why: "NEGATION DROPPED — #193's actual failure",
     source: 'I did not touch the STT adapter in this change.',
     span: 'I did touch the STT adapter in this change.',
     want: false,
@@ -148,8 +163,11 @@ console.log('\nrouter reply parsing')
   const good = parseRouterReply(
     'TYPE: recommendation\nOPTIONS: 3\nDESTRUCTIVE: no\nSPAN: I recommend option one.\nSPAN: Pin the status in the WHERE clause.',
   )
-  const a = good.payload.spans.length === 2 && good.payload.optionCount === 3 && good.problems.length === 0
-  const stray = parseRouterReply('Sure! Here you go:\nTYPE: result\nOPTIONS: none\nDESTRUCTIVE: no\nSPAN: It passed.')
+  const a =
+    good.payload.spans.length === 2 && good.payload.optionCount === 3 && good.problems.length === 0
+  const stray = parseRouterReply(
+    'Sure! Here you go:\nTYPE: result\nOPTIONS: none\nDESTRUCTIVE: no\nSPAN: It passed.',
+  )
   const b = stray.problems.some((p) => p.includes('stray')) && stray.payload.spans.length === 1
   const empty = parseRouterReply('I cannot do that.')
   const c = empty.problems.some((p) => p.includes('no SPAN'))
@@ -178,5 +196,7 @@ console.log('\nverdict parsing')
   }
 }
 
-console.log(`\n${failures === 0 ? 'instrument OK' : `${failures} FAILURE(S) — do not trust any run`}`)
+console.log(
+  `\n${failures === 0 ? 'instrument OK' : `${failures} FAILURE(S) — do not trust any run`}`,
+)
 process.exit(failures === 0 ? 0 : 1)
