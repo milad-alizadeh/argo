@@ -8,7 +8,8 @@ HTML studies — open any HTML file in a browser.
 > `cockpit-inventory.md`, `foundations.html`) was **wiped** — it described the app being
 > replaced. The cockpit is re-derived first-principles on the new domain model. Phase 2
 > (#262) is **landed**: `foundations.html` below is the rebuilt token contract on Penumbra.
-> The fresh UI inventory is Phase 3 (#263).
+> Phase 3 (#263) is **landed**: `cockpit-ui-inventory.md` is the build contract the room
+> tickets compose from.
 
 ## The contract — [`foundations.html`](foundations.html)
 
@@ -33,7 +34,16 @@ out-of-window attention, and the architecture the domain model forces — and ci
 docs below for the detail rather than restating them. It is the **join** of wayfinder #157's
 Phase 1 (#253 / #254), not a replacement for its artifacts.
 
-Two reasons to read it before anything in the table: the amendments that live only in closed issue
+## Then read the build contract
+
+**[`cockpit-ui-inventory.md`](cockpit-ui-inventory.md) is Phase 3 (#263):** every component the
+shell and the three rooms need, with its states and its module slice. Names are the
+`data-component` names the prototypes already decided, states trace to the surface matrix and the
+status registry, and values come from the token contract rather than prototype inline styling. It
+also states which prototype names must **not** become components, and which domain objects are
+still unhomed. A room ticket composes from it instead of inventing an inventory.
+
+Two reasons to read the assembled spec before anything in the table: the amendments that live only in closed issue
 comments (#201, #202, #178's audit) are applied **inline**, so the assembled read is the current
 read; and it states the **delta** between the running `apps/desktop` and the specified cockpit,
 which no per-surface doc owns.
@@ -65,6 +75,7 @@ under `docs/adr/`.
 | File | Screen | Notes |
 |---|---|---|
 | `foundations.html` | **The token contract, rendered** (wayfinder #157 Phase 2, via #262) | Above. Not disposable, and not drift-able — it reads the contract it documents |
+| `cockpit-ui-inventory.md` | **The build contract** (wayfinder #157 Phase 3, via #263) | Above. Every component of the shell and the three rooms with its states and its slice, re-derived first-principles: the wiped `cockpit-inventory.md` contributed nothing |
 | `cockpit-spec.md` | **The assembled contract** (wayfinder #157 Phase 1, via #253/#254) | The front door above. Every row below is its detail of record; it cites them and restates none of them |
 | `cockpit-prototype-switcher.html` | The review harness — **start here for pixels** (wayfinder #178) | Left rail walking all 22 states across the three rooms + the look anchor; iframes each file untouched. `?surface=&state=` deep-links. Throwaway: expires with the prototypes it wraps. Manifest is an inline array in the file — `file://` blocks `fetch`, so it cannot be external |
 | `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Its values are now **in the contract** (#262) — read `foundations.html` for the settled form; this file stays as the look's provenance |

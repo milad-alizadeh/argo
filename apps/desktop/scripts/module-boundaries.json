@@ -39,47 +39,85 @@
       ]
     },
     {
+      "name": "shell",
+      "comment": "The shell slice (cockpit-spec.md §11.2, inventory in docs/designs/cockpit-ui-inventory.md): the project strip, the one merged floating top bar and its four regions (orb seat, connection chip, room tabs, global git group), the ⌘K palette, the keymap, the empty first-run seam, the connect/Project-Settings panel, spawn and navigation. Chrome renders in all three rooms or it is not chrome. A peer of the room slices, never their parent: the renderer root composes shell + active room, so the shell reaches into no room and no room reaches into it.",
+      "path": "^src/renderer/src/shell/",
+      "publicEntry": ["^src/renderer/src/shell/components/index\\.ts$"]
+    },
+    {
+      "name": "rooms-sessions",
+      "comment": "The Sessions room (⌘1, home): the roster rail and the session interior — header, the two-pane Activity surface, Delivery, and the always-on Dock. On the locked runtime vocabulary (Agent · Subagent · Turn · Tool Call · Plan · Workspace · Compaction · Usage), not the retired Run/Phase/Actor names. Composed by the renderer root through its barrel; its internals are private and it never reaches into another slice.",
+      "path": "^src/renderer/src/rooms/sessions/",
+      "publicEntry": ["^src/renderer/src/rooms/sessions/components/index\\.ts$"]
+    },
+    {
+      "name": "rooms-work",
+      "comment": "The Work room (⌘2): the list rail (Next-up hero over a priority hierarchy), the generic node tree where type is a property rather than a schema, and the two-pane ticket detail. Renders the Work Item provider's own status word verbatim; the canonical bucket is ranking/filtering only. Composed by the renderer root through its barrel; its internals are private and it never reaches into another slice.",
+      "path": "^src/renderer/src/rooms/work/",
+      "publicEntry": ["^src/renderer/src/rooms/work/components/index\\.ts$"]
+    },
+    {
+      "name": "rooms-code",
+      "comment": "The Code room (⌘3), session-independent: the file explorer over the primary checkout, name-or-content search, the lightweight editable editor, the scratch terminal attached to no agent, and the degraded file states. Composed by the renderer root through its barrel; its internals are private and it never reaches into another slice.",
+      "path": "^src/renderer/src/rooms/code/",
+      "publicEntry": ["^src/renderer/src/rooms/code/components/index\\.ts$"]
+    },
+    {
       "name": "roster",
-      "comment": "The Roster Panel (CONTEXT.md region): the session roster column and its rows. A feature slice — owns its `components/` and, as they arrive, its hooks/store/types. Composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "comment": "RETIRED by the #157 redesign (ADR-0009's story/work split is retired; see docs/designs/cockpit-ui-inventory.md). Still mapped because its code is still on disk and the boundary gate must keep guarding it; remove this entry in the change that moves its last file. The Roster Panel (CONTEXT.md region): the session roster column and its rows. A feature slice — owns its `components/` and, as they arrive, its hooks/store/types. Composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/roster/",
       "publicEntry": ["^src/renderer/src/domains/roster/components/index\\.ts$"]
     },
     {
       "name": "activity",
-      "comment": "The Activity Panel (CONTEXT.md region; supersedes ADR-0009's `story/`): the Background Tasks roster — Runs, Agents, phases. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "comment": "RETIRED by the #157 redesign (ADR-0009's story/work split is retired; see docs/designs/cockpit-ui-inventory.md). Still mapped because its code is still on disk and the boundary gate must keep guarding it; remove this entry in the change that moves its last file. The Activity Panel (CONTEXT.md region; supersedes ADR-0009's `story/`): the Background Tasks roster — Runs, Agents, phases. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/activity/",
       "publicEntry": ["^src/renderer/src/domains/activity/components/index\\.ts$"]
     },
     {
       "name": "delivery",
-      "comment": "The Delivery Panel (CONTEXT.md region; supersedes ADR-0009's `work/`): the Delivery lifecycle and node drawers — DeliveryLifecycle + NodeDrawer, the CI card molecules, the LifecycleNode state→icon/tone vocabulary. Pure Views over the pre-derived `LifecycleModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "comment": "RETIRED by the #157 redesign (ADR-0009's story/work split is retired; see docs/designs/cockpit-ui-inventory.md). Still mapped because its code is still on disk and the boundary gate must keep guarding it; remove this entry in the change that moves its last file. The Delivery Panel (CONTEXT.md region; supersedes ADR-0009's `work/`): the Delivery lifecycle and node drawers — DeliveryLifecycle + NodeDrawer, the CI card molecules, the LifecycleNode state→icon/tone vocabulary. Pure Views over the pre-derived `LifecycleModel` from `@shared`. A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/delivery/",
       "publicEntry": ["^src/renderer/src/domains/delivery/components/index\\.ts$"]
     },
     {
       "name": "console",
-      "comment": "The Console Panel (CONTEXT.md region, cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
+      "comment": "RETIRED by the #157 redesign (ADR-0009's story/work split is retired; see docs/designs/cockpit-ui-inventory.md). Still mapped because its code is still on disk and the boundary gate must keep guarding it; remove this entry in the change that moves its last file. The Console Panel (CONTEXT.md region, cockpit-matrix.md R13): the ONE monospace surface, its channel strip and channel body, plus the channel vocabulary and the three derivations over it (`captureLabel`, `resolveActiveChannel`, `feedLines`). A feature slice composed by the screen through its barrel; its internals are private and it never reaches into another domain.",
       "path": "^src/renderer/src/domains/console/",
       "publicEntry": ["^src/renderer/src/domains/console/components/index\\.ts$"]
     },
     {
       "name": "concierge",
-      "comment": "The Concierge (CONTEXT.md: the read-only voice layer) rendered — its eclipse-orb three.js engine (`eclipseOrb/` + `sceneConfig.ts`, framework-free) and the two prop-driven React surfaces that mount it: the full-screen `EclipseScene` stage backdrop and the roster `ConciergeDock` mini orb. A feature slice composed by the screen through its barrel; the engine and tuning config are private internals. IO-free — `orbState` is a pure prop, no audio, no machine bridge (#153).",
+      "comment": "RETIRED by the #157 redesign (ADR-0009's story/work split is retired; see docs/designs/cockpit-ui-inventory.md). Still mapped because its code is still on disk and the boundary gate must keep guarding it; remove this entry in the change that moves its last file. The Concierge (CONTEXT.md: the read-only voice layer) rendered — its eclipse-orb three.js engine (`eclipseOrb/` + `sceneConfig.ts`, framework-free) and the two prop-driven React surfaces that mount it: the full-screen `EclipseScene` stage backdrop and the roster `ConciergeDock` mini orb. A feature slice composed by the screen through its barrel; the engine and tuning config are private internals. IO-free — `orbState` is a pure prop, no audio, no machine bridge (#153).",
       "path": "^src/renderer/src/domains/concierge/",
       "publicEntry": ["^src/renderer/src/domains/concierge/components/index\\.ts$"]
     }
   ],
   "layers": {
-    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation: a domain (Panel) must not reach into another domain's internals (domains ⊥ domains); every domain may import `renderer-shared` (domains → shared); `renderer-shared` is a leaf that imports no domain (shared ⊥ domains).",
+    "_comment": "Two isolations. (1) Electron process isolation: the three processes must never import each other — the only channels are the preload bridge (renderer↔main) and Electron's own preload wiring (main→preload by path). All three may import `shared` (the cross-process type/pure-function contract); `shared` imports none of them. (2) Renderer feature-slice isolation, unchanged in kind by the #157 redesign and now applied to the shell + room slices as well: a slice must not reach into another slice's internals (slices ⊥ slices, so shell ⊥ rooms and room ⊥ room); every slice may import `renderer-shared`; `renderer-shared` is a leaf that imports no slice. The shell is a PEER of the rooms, not their parent — the renderer root composes shell + active room outside every slice, exactly as `SessionScreen` composes the retired panel domains today. The five retired domains keep their rules until their last file moves.",
     "main": ["renderer", "preload"],
     "renderer": ["main", "preload"],
     "preload": ["main", "renderer"],
     "shared": ["main", "renderer", "preload"],
+    "shell": ["rooms-sessions", "rooms-work", "rooms-code"],
+    "rooms-sessions": ["shell", "rooms-work", "rooms-code"],
+    "rooms-work": ["shell", "rooms-sessions", "rooms-code"],
+    "rooms-code": ["shell", "rooms-sessions", "rooms-work"],
     "roster": ["activity", "delivery", "console", "concierge"],
     "activity": ["roster", "delivery", "console", "concierge"],
     "delivery": ["roster", "activity", "console", "concierge"],
     "console": ["roster", "activity", "delivery", "concierge"],
     "concierge": ["roster", "activity", "delivery", "console"],
-    "renderer-shared": ["roster", "activity", "delivery", "console", "concierge"]
+    "renderer-shared": [
+      "shell",
+      "rooms-sessions",
+      "rooms-work",
+      "rooms-code",
+      "roster",
+      "activity",
+      "delivery",
+      "console",
+      "concierge"
+    ]
   }
 }
