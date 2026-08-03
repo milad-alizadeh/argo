@@ -123,13 +123,13 @@ describe('the delivery matrix', () => {
 
   for (const { id, model } of outcomes) {
     it(`grows the lifecycle the matrix records for ${id} — ${labelOf(id)}`, () => {
-      expect(deliveryState(sessionFacts(stateMatrixInput(id))).lifecycle).toEqual(model)
+      expect(deliveryState(sessionFacts(stateMatrixInput(id)), 'managed').lifecycle).toEqual(model)
     })
   }
 
   for (const { id, word } of outcomes) {
     it(`reads "${word}" on ${id} — ${labelOf(id)}`, () => {
-      expect(deliveryState(sessionFacts(stateMatrixInput(id))).rail.word).toBe(word)
+      expect(deliveryState(sessionFacts(stateMatrixInput(id)), 'managed').rail.word).toBe(word)
     })
   }
 })

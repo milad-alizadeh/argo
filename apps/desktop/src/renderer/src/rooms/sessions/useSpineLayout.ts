@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import type { SpineEdge } from './sessionScreenModel'
+
+/** The three resizable edges of the spine — one custom property each. Declared beside the hook
+ * that moves them rather than in a model file: they ARE the layout's vocabulary. */
+export type SpineEdge = 'roster' | 'activity' | 'console'
 
 /** The three resizable panel sizes, in px — the screen holds them and hands them to its
  * splitters and to the custom properties the panels size off. */

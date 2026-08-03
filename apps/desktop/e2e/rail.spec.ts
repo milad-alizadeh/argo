@@ -22,12 +22,16 @@ const here = dirname(fileURLToPath(import.meta.url))
 let app: ElectronApplication
 let window: Page
 let sandbox: string
+// The session's cwd, which an external row spells in place of a branch. Captured from the world
+// this spec builds rather than hardcoded: the sandbox is a fresh temp dir per run.
+let workspacePath: string
 
 const TITLE = 'Refactor auth module'
 
 function buildWorld(): { transcripts: string; userData: string } {
   sandbox = mkdtempSync(join(tmpdir(), 'argo-e2e-'))
   const workspace = join(sandbox, 'argo')
+  workspacePath = workspace
   const transcripts = join(sandbox, 'transcripts')
   const userData = join(sandbox, 'userData')
   for (const path of [workspace, join(transcripts, 'project-argo'), userData]) {
@@ -35,8 +39,9 @@ function buildWorld(): { transcripts: string; userData: string } {
   }
 
   // One session's worth of records: an ai-title (a DIRECT title), a prompt and a reply that
-  // ends its turn. No `claude` process runs against this folder, so the honest reading of it
-  // is `idle` — which is exactly the degradation the rail must show rather than a false live.
+  // ends its turn. No `claude` process runs against this folder and nothing claimed it, so the
+  // honest reading is an external, observation-only session — which is exactly the degradation
+  // the rail must show rather than a false live.
   const stamp = new Date().toISOString()
   const records = [
     { type: 'last-prompt', leafUuid: 'e2e-root', sessionId: 'e2e-session' },
@@ -100,10 +105,15 @@ test.afterAll(async () => {
 test('projects an observed Session into a rail row', async () => {
   const list = window.getByRole('list', { name: 'Sessions' })
   await expect(list.getByText(TITLE)).toBeVisible()
-  await expect(list.getByText('claude')).toBeVisible()
-  // No live process behind the transcript: the row degrades down rather than claiming Running.
-  await expect(list.getByText('Idle')).toBeVisible()
-  await expect(window.getByText('No Sessions observed yet.')).toBeHidden()
+  // Nothing claimed this session, so Argo only observes it: `read-only` is the kind word an
+  // external row earns, and its status degrades away rather than being faked.
+  await expect(list.getByText('read-only')).toBeVisible()
+  // The transcript named no model, and a fact Argo cannot establish reads `unknown`, never a
+  // default. An external row spells the path it is working in rather than a branch.
+  await expect(list.getByText('unknown')).toBeVisible()
+  await expect(list.getByText(workspacePath)).toBeVisible()
+  // The rail's one permanent affordance sits above the rows and is the whole zero-state.
+  await expect(window.getByRole('button', { name: 'New session' })).toBeVisible()
 })
 
 // A registered Project takes a tab in the strip, and the active one stays quiet: its own
