@@ -314,6 +314,43 @@ Workspace · Compaction · Usage`.
 An unparseable transcript renders `unknown` on the affected fact and **leaves the dot alone**.
 Observation failure is not work failure, and red is reserved for the work actually breaking.
 
+#### Reconciled against the prototype (#268, second pass)
+
+The first build of this surface carried the interaction model but not the treatment. What the
+reconciliation settled, so a reader is not left diffing screenshots:
+
+- **State words come from one registry** (`rooms/sessions/activityWords.ts`), never from an enum
+  identifier: `queued · running · done · failed` for a tool call, the same three a subagent row
+  derives, and a turn's own stop reason verbatim. `in_progress` is a type name and never reaches a
+  surface. The prototype spells a live subagent `live`; this is deliberately `running` instead —
+  `cockpit-status-vocabulary.md`'s one rule is that a state has exactly one word everywhere, and
+  two words for "working" is the thing that rule forbids.
+- **A detail section's state word is told once**, in its head, held to the section's own right edge.
+  Event rows carry no word: the gutter label burns `tone-red` for the call that failed, which is one
+  channel for one state.
+- **The event gutter is a column, not a prefix** — `--space-kind-col`, sized to the longest kind at
+  the tag ramp. The first build used the 24px marker column and `COMPLETED` overran its box and
+  painted over the content beside it.
+- **A meta line is mono at its own case**, never the uppercasing `tag` role: a path shouted back as
+  `ROTATION.TS` is not the string that was observed.
+- **A turn is a card** (`TURN_CARD` in `rowRecipes.ts`), flat and inset with a lit lip — never a
+  second glass layer inside the panel. A folded turn reports `N tools` rather than going silent.
+- **The compaction mark renders UNDER the turn it precedes**, because the list runs newest first.
+- **Plan entries carry a mark, not a dot** (`✓ · ▶ · ○`): a dot would put a to-do line in the same
+  channel as a running tool call.
+- **The tab strip uses the `rail` seat** — underlined in the attention ink, not seated on a filled
+  pill, because it lives inside the header band.
+
+Still divergent from `cockpit-session-interior-prototype.html`, and why:
+
+| Prototype has | Why it is absent |
+|---|---|
+| `Turn · "wire verify()"` | `Turn` carries no prompt text. Wiring one is a transcript-parser change, not a rendering one — a label would be invented here. |
+| Coalesce metrics on a plan step (`×4`, `+180`) | nothing in the tree counts repeats or diff lines yet. |
+| `8 tools · 6m` on a folded turn | the tool count ships; the duration needs a turn START, which the tree does not carry (same gap as the header's `elapsed`). |
+| A diff peek under a step's detail | the Diff belongs to Delivery (#269–#271); reaching for it here would cross a seam this ticket does not own. |
+| Left rail listing **plan steps** as the selectable unit | this build keys the feed on **tool calls** — the ACP-native observable. Which unit the two panes address is an interaction decision, not a style one, and is left standing rather than swapped silently. |
+
 ### Delivery
 
 One review surface across the pre-PR / PR-open boundary, reshaping only its rail and its CTA.

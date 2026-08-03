@@ -420,6 +420,12 @@
    * box is what holds a marker in its column as a row nests deeper. One marker box (16) +
    * one row gap (8) = 24 = --space-nest, so each tree level steps by exactly one nest. */
   --space-marker-col: 16px;
+  /* Feed gutter column — the fixed box the kind label sits in on every event row of a detail
+   * feed, so the content beside it starts on ONE axis down the whole feed. Structural like
+   * --space-marker-col: sized to the longest kind word at the tag ramp, never a rhythm step.
+   * Too narrow is not a cosmetic miss — the label overruns the content and the two paint over
+   * each other. */
+  --space-kind-col: 52px;
 
   /* Shell chrome geometry (#264). Structural boxes rather than rhythm steps: they hold
    * the chrome's columns, and the traffic-light reserve is fixed by macOS rather than by

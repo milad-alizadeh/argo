@@ -48,3 +48,9 @@ export const aRoot = (over: Partial<Agent> = {}): Agent => ({
 
 export const planEntries = (...statuses: PlanEntry['status'][]): PlanEntry[] =>
   statuses.map((status, index) => ({ text: `step ${index}`, status }))
+
+/** A plan whose entries carry the prose an agent would actually write. `planEntries` above is for a
+ * test that only cares about the arithmetic; anything a human LOOKS at wants this one, because
+ * `step 0` renders as a surface that has never been judged. */
+export const namedPlan = (entries: readonly [PlanEntry['status'], string][]): PlanEntry[] =>
+  entries.map(([status, text]) => ({ text, status }))

@@ -69,8 +69,13 @@ export function MasterDetail({
       >
         {sections.map((section) => (
           // The section wrapper is the spy's anchor and the jump's target; the caller owns
-          // everything inside it.
-          <section key={section.key} {...{ [SPY_ATTRIBUTE]: section.key }}>
+          // everything inside it. A hairline separates neighbours — one continuous feed still has to
+          // say where one item ends, or a scroll through thirty of them reads as one long list.
+          <section
+            key={section.key}
+            className="border-t border-t-inset-hair pt-region first:border-t-0 first:pt-0"
+            {...{ [SPY_ATTRIBUTE]: section.key }}
+          >
             {section.detail}
           </section>
         ))}

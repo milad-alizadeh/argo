@@ -1,12 +1,20 @@
 import type { PlanEntryStatus } from '@shared'
-import { StatusDot, Text } from '@/shared/components/ui'
+import { CaretRightIcon, CheckIcon, CircleIcon, Text } from '@/shared/components/ui'
 import type { PlanProgressModel } from '../interiorActivity'
-import type { ActivityDot } from '../interiorSubagents'
 
-const ENTRY_DOT: Record<PlanEntryStatus, ActivityDot> = {
-  completed: { tone: 'done', glow: 'quiet', pulse: false },
-  in_progress: { tone: 'run', glow: 'live', pulse: true },
-  pending: { tone: 'gray', glow: 'faint', pulse: false },
+// A plan entry is a step of a plan, not a live process: it carries a MARK — done, here, not yet —
+// rather than a status dot. A dot would put it in the same channel as a running tool call and make
+// the eye read four live things where there is one.
+const ENTRY_MARK: Record<PlanEntryStatus, { Glyph: typeof CheckIcon; tone: string }> = {
+  completed: { Glyph: CheckIcon, tone: 'text-tone-done' },
+  in_progress: { Glyph: CaretRightIcon, tone: 'text-tone-run' },
+  pending: { Glyph: CircleIcon, tone: 'text-foreground-faint' },
+}
+
+const ENTRY_TEXT: Record<PlanEntryStatus, string> = {
+  completed: 'text-foreground-faint',
+  in_progress: 'text-foreground',
+  pending: 'text-foreground-faint',
 }
 
 /**
@@ -18,21 +26,16 @@ const ENTRY_DOT: Record<PlanEntryStatus, ActivityDot> = {
 export function PlanProgress({ plan }: { plan: PlanProgressModel }): React.JSX.Element {
   return (
     <div data-component="PlanProgress" className="flex flex-col gap-hair">
-      <Text variant="tag" className="text-foreground-faint">
+      <Text variant="tag" className="px-gap text-foreground-faint">
         {`Plan · ${plan.done} of ${plan.total}`}
       </Text>
       <ul aria-label="Plan" className="flex flex-col gap-hair">
         {plan.entries.map((entry) => {
-          const dot = ENTRY_DOT[entry.status]
+          const { Glyph, tone } = ENTRY_MARK[entry.status]
           return (
-            <li key={entry.text} className="flex items-center gap-snug">
-              <StatusDot tone={dot.tone} glow={dot.glow} pulse={dot.pulse} />
-              <Text
-                variant="meta"
-                className={
-                  entry.status === 'completed' ? 'text-foreground-faint' : 'text-foreground-soft'
-                }
-              >
+            <li key={entry.text} className="flex items-center gap-snug px-gap">
+              <Glyph aria-hidden className={`icon-sm shrink-0 ${tone}`} />
+              <Text variant="meta" className={`min-w-0 truncate ${ENTRY_TEXT[entry.status]}`}>
                 {entry.text}
               </Text>
             </li>

@@ -1,4 +1,12 @@
-import type { PlanEntry, SessionView, StopReason, ToolCall, ToolCallStatus, Turn } from '@shared'
+import type {
+  PlanEntry,
+  SessionView,
+  StopReason,
+  ToolCall,
+  ToolCallKind,
+  ToolCallStatus,
+  Turn,
+} from '@shared'
 import { rootAgent } from '@shared'
 import {
   type ActivityDot,
@@ -22,6 +30,9 @@ export interface PlanProgressModel {
 export interface ToolStepModel {
   key: string
   name: string
+  /** What the call did, CLI-agnostic — the word the detail feed's gutter reads. The host's own
+   * tool name travels beside it in `name`, so neither one is renamed away. */
+  kind: ToolCallKind
   target: string | null
   status: ToolCallStatus
   dot: ActivityDot
@@ -47,6 +58,9 @@ export type ActivityItem =
       key: string
       kind: 'subagent'
       subagent: ReturnType<typeof subagentRow>
+      /** The phase the CLI reported for it, absent where it reported none — the detail head's
+       * meta line names it rather than inventing one. */
+      group: string | null
       /** The subagent's live feed — its own tool calls, in the order it made them. */
       events: readonly ToolStepModel[]
     }
@@ -74,6 +88,7 @@ function toolStep(call: ToolCall): ToolStepModel {
   return {
     key: `step:${call.id}`,
     name: call.name,
+    kind: call.kind,
     target: call.target,
     status: call.status,
     dot: stepDot(call.status),
@@ -98,6 +113,7 @@ function spawnedItems(session: SessionView): ActivityItem[] {
       key: row.key,
       kind: 'subagent',
       subagent: row,
+      group: agent.group ?? null,
       events: toolCallsOf(agent).map(toolStep),
     }
   })

@@ -1,7 +1,7 @@
 import { type SessionView, sessionFacts, sessionView } from '@shared'
 import { buildSessionInterior, type SessionInteriorModel } from '../interiorModel'
 import type { SubagentGroupModel } from '../interiorSubagents'
-import { aRoot, aSubagent, aToolCall, aTurn, aUsage, planEntries } from './runtimeTree'
+import { aRoot, aSubagent, aToolCall, aTurn, aUsage, namedPlan } from './runtimeTree'
 
 // One populated session the interior's stories all read, so every surface is judged against the
 // same world. Typed off `SessionView`, so a change to the projection is a compile error here rather
@@ -13,7 +13,16 @@ const OPEN_TURN = aTurn({
   id: 'now',
   stopReason: null,
   usage: CONTEXT_USED,
-  plan: { entries: planEntries('completed', 'completed', 'in_progress', 'pending') },
+  // Real plan prose, not `step N`: a placeholder entry hides exactly what these surfaces are for —
+  // whether an agent's own to-do list reads as work at a glance.
+  plan: {
+    entries: namedPlan([
+      ['completed', 'Read the legacy auth module'],
+      ['completed', 'Extract the rotation core'],
+      ['in_progress', 'Wire verify() onto it'],
+      ['pending', 'Add middleware tests'],
+    ]),
+  },
   toolCalls: [
     aToolCall({ id: 'c1', name: 'Read', target: 'src/auth/legacy.ts' }),
     aToolCall({ id: 'c2', name: 'Edit', kind: 'edit', target: 'src/auth/rotation.ts' }),
