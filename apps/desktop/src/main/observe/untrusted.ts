@@ -3,7 +3,7 @@
 // string only when it is one, and anything else reads as absent rather than as a default.
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 export function asString(value: unknown): string | null {

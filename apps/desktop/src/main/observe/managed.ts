@@ -5,37 +5,51 @@ import { type SessionPosture, sessionPosture } from '../../shared'
 // registry is deliberately in-memory — a restart re-observes its own sessions as `external`
 // rather than re-claiming an ownership it no longer has.
 //
-// The key is the spawn CWD, not a session id: the CLI writes its transcript (and picks its id)
-// after the spawn returns, so cwd is the only thing both sides of the spawn know. It is the same
-// coarse key the liveness probe uses, with the same caveat — two agents in one folder are
-// indistinguishable — which is why nothing here claims more than a posture.
+// A claim is keyed by spawn folder AND the window the PTY was alive for, because the CLI picks
+// its own session id after the spawn returns: cwd alone is not a key, and on cwd alone a
+// pre-existing agent in the same folder would read as ours and earn a fact it has not earned.
+// A Session belongs to a claim only if its transcript STARTED inside that claim's window.
+
+interface Claim {
+  fromMs: number
+  /** null while the PTY lives; the moment it exited otherwise. */
+  toMs: number | null
+}
 
 export interface ManagedSessions {
   /** Argo spawned an agent in this folder and holds its PTY. */
   claim(cwd: string): void
   /** The PTY exited: ownership is gone and cannot come back. */
   release(cwd: string): void
-  /** managed while the PTY lives, orphaned once it dies, external if Argo never spawned here. */
-  postureFor(cwd: string | null): SessionPosture
+  /**
+   * managed while the claim's PTY lives, orphaned once it has exited, external for a Session no
+   * claim covers — including one that was already running in a folder Argo later spawned into.
+   */
+  postureFor(cwd: string | null, startedAtMs: number | null): SessionPosture
 }
 
-export function createManagedSessions(): ManagedSessions {
-  const claimed = new Set<string>()
-  const liveByCwd = new Map<string, number>()
+export function createManagedSessions(now: () => number = Date.now): ManagedSessions {
+  const claimsByCwd = new Map<string, Claim[]>()
 
   return {
     claim(cwd) {
-      claimed.add(cwd)
-      liveByCwd.set(cwd, (liveByCwd.get(cwd) ?? 0) + 1)
+      claimsByCwd.set(cwd, [...(claimsByCwd.get(cwd) ?? []), { fromMs: now(), toMs: null }])
     },
     release(cwd) {
-      const remaining = (liveByCwd.get(cwd) ?? 0) - 1
-      if (remaining > 0) liveByCwd.set(cwd, remaining)
-      else liveByCwd.delete(cwd)
+      const claims = claimsByCwd.get(cwd)
+      const open = claims?.findLast((claim) => claim.toMs === null)
+      if (open) open.toMs = now()
     },
-    postureFor(cwd) {
-      if (cwd === null || !claimed.has(cwd)) return 'external'
-      return sessionPosture('managed', liveByCwd.has(cwd))
+    postureFor(cwd, startedAtMs) {
+      if (cwd === null || startedAtMs === null) return 'external'
+      const owning = claimsByCwd
+        .get(cwd)
+        ?.find(
+          (claim) =>
+            startedAtMs >= claim.fromMs && (claim.toMs === null || startedAtMs <= claim.toMs),
+        )
+      if (!owning) return 'external'
+      return sessionPosture('managed', owning.toMs === null)
     },
   }
 }

@@ -121,9 +121,8 @@ function SessionPanel({
         onClose={handlers.onCloseSession}
       />
       <div className="flex min-h-0 flex-1">
-        {/* Empty since the retired Run/Phase/Actor components were deleted (issue 261). The
-            region keeps its label and its resizable width so the spine still holds; issue 268
-            fills it with the Activity surface on the locked runtime tree. */}
+        {/* Deliberately empty: the Activity surface lands here with the Sessions room
+            (issue 268). The region keeps its label and width so the spine still resolves. */}
         <section
           aria-label="Activity"
           className={cn(

@@ -1,27 +1,23 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { ProjectionDelta } from '../../shared'
 import { createHub, type Hub } from '../hub'
 import { createManagedSessions, type ManagedSessions } from './managed'
-import { createObserver } from './observer'
-
-// The process probe is the one piece of real I/O in the pipeline; stubbing it is what makes the
-// rest deterministic. A live process on the fixtures' cwd is the interesting case.
-vi.mock('./liveness', () => ({
-  gatherClaudeProcesses: async () => [{ cwd: '/Users/x/tree' }],
-}))
+import { createObserver, type ObserverOptions } from './observer'
 
 // A real transcript root on disk, because the incremental path IS the file reading: the sweep
-// fills the cache, then one changed file is re-read on its own and nothing else is touched.
+// fills the cache, then one changed file is re-read on its own and nothing else is touched. The
+// process probe is the only collaborator stubbed, through the seam the options already offer.
 const NOW = Date.parse('2026-07-20T14:10:00.000Z')
+const FIXTURE_CWD = '/Users/x/tree'
 
 // One `end_turn` assistant record: enough to close treeFull's open turn, which is the smallest
 // change that must reach the renderer as an update.
 const CLOSING_RECORD = JSON.stringify({
   type: 'assistant',
-  cwd: '/Users/x/tree',
+  cwd: FIXTURE_CWD,
   timestamp: '2026-07-20T14:06:00.000Z',
   uuid: 't-a-4',
   parentUuid: 't-a-3',
@@ -41,9 +37,30 @@ function plant(name: string, contents: string): string {
   return path
 }
 
-function observer(managed?: ManagedSessions) {
-  return createObserver(hub, { root, now: () => NOW, watch: false, managed })
+function observer(over: Partial<ObserverOptions> = {}) {
+  return createObserver(hub, {
+    root,
+    now: () => NOW,
+    watch: false,
+    probeProcesses: async () => [{ cwd: FIXTURE_CWD }],
+    ...over,
+  })
 }
+
+/**
+ * A registry that claimed the fixture's folder BEFORE the fixture's session began, on a clock
+ * that then moves past it — so a later `release` closes the window AROUND the session rather
+ * than in front of it.
+ */
+function claimedManaged(): ManagedSessions {
+  let clock = Date.parse('2026-07-20T13:00:00.000Z')
+  const managed = createManagedSessions(() => clock)
+  managed.claim(FIXTURE_CWD)
+  clock = Date.parse('2026-07-20T15:00:00.000Z')
+  return managed
+}
+
+const grown = () => `${fixture('treeFull').trimEnd()}\n${CLOSING_RECORD}\n`
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'argo-observe-'))
@@ -61,21 +78,42 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true })
 })
 
-describe('the incremental observer', () => {
-  it('sweeps once on start, then updates a changed file WITHOUT re-sweeping', async () => {
+describe('the launch sweep', () => {
+  it('adds every Session it discovers, once', async () => {
+    plant('treeFull', fixture('treeFull'))
+    await observer().start()
+
+    expect(deltas.map((delta) => delta.type)).toEqual(['session-added'])
+    expect(hub.getState().sessions[0]?.facts.status).toBe('asking')
+  })
+
+  it('is a clean no-op on a machine with no transcript root at all', async () => {
+    const observed = observer({ root: join(root, 'nope') })
+
+    await expect(observed.start()).resolves.toBeUndefined()
+    expect(deltas).toEqual([])
+  })
+})
+
+describe('the incremental re-read', () => {
+  it('changes an already-observed Session rather than adding it twice', async () => {
     plant('treeFull', fixture('treeFull'))
     const observed = observer()
     await observed.start()
 
-    expect(deltas.map((delta) => delta.type)).toEqual(['session-added'])
-    expect(hub.getState().sessions[0]?.facts.status).toBe('asking')
-
-    // The same file grows a closing record: the Session must CHANGE, not be added twice.
-    const path = plant('treeFull', `${fixture('treeFull').trimEnd()}\n${CLOSING_RECORD}\n`)
-    await observed.refresh(path)
+    await observed.refresh(plant('treeFull', grown()))
 
     expect(deltas.map((delta) => delta.type)).toEqual(['session-added', 'session-changed'])
     expect(hub.getState().sessions).toHaveLength(1)
+  })
+
+  it('carries the newer reading of the Session onto projected state', async () => {
+    plant('treeFull', fixture('treeFull'))
+    const observed = observer()
+    await observed.start()
+
+    await observed.refresh(plant('treeFull', grown()))
+
     expect(hub.getState().sessions[0]?.facts.status).toBe('idle')
   })
 
@@ -97,8 +135,7 @@ describe('the incremental observer', () => {
     await observed.start()
     deltas.length = 0
 
-    const path = plant('askAnswered', fixture('askAnswered'))
-    await observed.refresh(path)
+    await observed.refresh(plant('askAnswered', fixture('askAnswered')))
 
     expect(deltas.map((delta) => delta.type)).toEqual(['session-added'])
     expect(hub.getState().sessions.map((session) => session.id)).toEqual([
@@ -108,7 +145,7 @@ describe('the incremental observer', () => {
   })
 })
 
-describe('what the incremental observer reports', () => {
+describe('what the observer projects', () => {
   it('projects the whole tree, root plus Subagents, across the seam', async () => {
     plant('treeFull', fixture('treeFull'))
     await observer().start()
@@ -118,31 +155,33 @@ describe('what the incremental observer reports', () => {
     expect(session.agents.filter((agent) => agent.parentId !== null)).toHaveLength(2)
   })
 
-  it('reads a Session Argo spawned as managed, and demotes it to orphaned on PTY exit', async () => {
-    const managed = createManagedSessions()
-    managed.claim('/Users/x/tree')
-    const path = plant('treeFull', fixture('treeFull'))
-    const observed = observer(managed)
-    await observed.start()
+  it('reads a Session that began inside Argo’s own claim as managed', async () => {
+    plant('treeFull', fixture('treeFull'))
+    await observer({ managed: claimedManaged() }).start()
 
     expect(hub.getState().sessions[0]?.posture).toBe('managed')
+  })
+
+  it('leaves a Session that predates the claim external, folder match or not', async () => {
+    // The claim opens AFTER this transcript started, so it cannot be the session Argo spawned.
+    const managed = createManagedSessions(() => Date.parse('2026-07-20T20:00:00.000Z'))
+    managed.claim(FIXTURE_CWD)
+    plant('treeFull', fixture('treeFull'))
+    await observer({ managed }).start()
+
+    expect(hub.getState().sessions[0]?.posture).toBe('external')
+  })
+
+  it('demotes a managed Session to orphaned once its PTY has exited', async () => {
+    const managed = claimedManaged()
+    const path = plant('treeFull', fixture('treeFull'))
+    const observed = observer({ managed })
+    await observed.start()
 
     // Ownership dies with the PTY and cannot be re-adopted: the row survives, observation-only.
-    managed.release('/Users/x/tree')
+    managed.release(FIXTURE_CWD)
     await observed.refresh(path)
 
     expect(hub.getState().sessions[0]?.posture).toBe('orphaned')
-    expect(deltas.at(-1)?.type).toBe('session-changed')
-  })
-
-  it('is a clean no-op on a machine with no transcript root at all', async () => {
-    const observed = createObserver(hub, {
-      root: join(root, 'nope'),
-      now: () => NOW,
-      watch: false,
-    })
-
-    await expect(observed.start()).resolves.toBeUndefined()
-    expect(deltas).toEqual([])
   })
 })

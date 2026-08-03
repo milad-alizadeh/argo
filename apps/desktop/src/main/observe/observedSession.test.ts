@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { derived, rootAgent, subagentsOf } from '../../shared'
+import { derived, rootAgent } from '../../shared'
 import { toObservedSession, toSessionUpdate } from './observedSession'
 import type { LogicalSession, ParsedTranscript } from './types'
 
@@ -10,6 +10,7 @@ const file = (over: Partial<ParsedTranscript>): ParsedTranscript => ({
   cwd: null,
   aiTitle: null,
   firstPrompt: null,
+  firstTimestampMs: null,
   lastTimestampMs: null,
   tree: { turns: [], compactions: [], subagents: [] },
   ...over,
@@ -89,7 +90,7 @@ describe('toObservedSession', () => {
     })
     const observed = toObservedSession(logicalOf(leaf), 'external', running)
 
-    expect(subagentsOf(observed.agents, 'file-1')).toEqual([
+    expect(observed.agents.filter((agent) => agent.parentId === 'file-1')).toEqual([
       { id: 'sub-1', label: 'research: chains', parentId: 'file-1', turns: [], compactions: [] },
       { id: 'sub-2', parentId: 'file-1', turns: [], compactions: [] },
     ])

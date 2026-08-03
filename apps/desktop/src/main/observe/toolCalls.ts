@@ -93,14 +93,17 @@ export function planFrom(input: unknown): Plan | null {
 }
 
 /**
- * A delegating `tool_use` → the Subagent it spawned. `label` and `group` are TIER-GATED: the
- * CLI's own `description` is the label when it reported one, and `group`/`phase` only exists
- * when a phased runner (Workflow) put it there. Both are ABSENT otherwise — the cockpit never
- * invents a phase a CLI did not report, so a bare Task yields a labelled node with no group.
+ * A delegating `tool_use` → the Subagent it spawned. `label` and `group` are TIER-GATED and both
+ * ABSENT unless the CLI reported them: the CLI's own `description` is the label, and `group` is
+ * whatever grouping it named. **No transcript Argo can read carries a group today** — Claude
+ * Code's phased runner does not write one into the record — so every CLI currently lands on the
+ * labelled tier, which is the honest floor. The field is read rather than dropped because the
+ * cockpit's job when a CLI DOES report grouping is to render it, and its job when one does not
+ * is to say nothing: a phase is never invented to fill the gap.
  */
 export function subagentFrom(call: ToolCall, input: unknown): SubagentSeed {
   const label = stringField(input, 'description')
-  const group = stringField(input, 'group') ?? stringField(input, 'phase')
+  const group = stringField(input, 'group')
   return {
     id: call.id,
     ...(label === null ? {} : { label }),

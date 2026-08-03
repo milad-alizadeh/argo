@@ -9,6 +9,7 @@ export interface ParsedTranscript {
   cwd: string | null // DIRECT when present
   aiTitle: string | null // DIRECT title when present
   firstPrompt: string | null // fallback title source (DERIVED)
+  firstTimestampMs: number | null // oldest record timestamp (DERIVED: which claim window it began in)
   lastTimestampMs: number | null // newest record timestamp (DERIVED recency signal)
   tree: ParsedTree // this file's slice of the runtime tree (CONTEXT.md L3)
 }

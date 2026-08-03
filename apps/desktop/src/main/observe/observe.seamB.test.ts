@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import type { ProjectionDelta, ProjectView } from '../../shared'
+import { type ProjectionDelta, type ProjectView, rootAgent } from '../../shared'
 import { createHub } from '../hub'
 import {
   deriveSessionStatus,
@@ -105,21 +105,30 @@ describe('Seam B observes real claude sessions', () => {
 })
 
 describe('Seam B emits the locked runtime tree', () => {
-  it('carries the whole tree across the seam and no retired vocabulary', () => {
+  it('carries the root Agent’s turns, tool calls and plan onto the delta', () => {
     const { deltas } = observe(['treeFull'], true)
-    const emitted = JSON.stringify(deltas)
+    const [added] = deltas
+
+    const session = added.type === 'session-added' ? added.session : null
+    const root = rootAgent(session?.agents ?? [])
+    expect(root?.parentId).toBeNull()
+    expect(root?.compactions).toEqual([{ beforeTurnId: 't-turn-2' }])
+    expect(root?.turns.map((turn) => turn.stopReason)).toEqual(['end_turn', null])
+    expect(root?.turns[0]?.toolCalls.map((call) => call.name)).toEqual([
+      'Read',
+      'TodoWrite',
+      'Task',
+      'Task',
+    ])
+    expect(root?.turns[0]?.plan?.entries).toHaveLength(3)
+  })
+
+  it('grades a pending question as `asking` on the delta the roster reads', () => {
+    const { deltas } = observe(['treeFull'], true)
 
     expect(deltas[0]).toMatchObject({
       session: { posture: 'external', facts: expect.objectContaining({ status: 'asking' }) },
     })
-    for (const key of ['parentId', 'turns', 'compactions', 'toolCalls', 'plan', 'stopReason']) {
-      expect(emitted).toContain(key)
-    }
-    // `Run`, `Phase` and `Actor` are retired vocabulary. `ToolCall.kind` is NOT one of them —
-    // the banned discriminant is a `kind` on the Agent node, asserted in observedSession.test.
-    for (const retired of ['phase', 'actor', '"run"']) {
-      expect(emitted.toLowerCase()).not.toContain(retired)
-    }
   })
 
   it('keeps an unparseable body’s row standing on its direct facts alone', () => {

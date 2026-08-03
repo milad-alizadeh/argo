@@ -99,13 +99,6 @@ export interface Agent {
   group?: string
 }
 
-export const emptyUsage = (): Usage => ({
-  inputTokens: 0,
-  outputTokens: 0,
-  cacheReadTokens: 0,
-  cacheCreationTokens: 0,
-})
-
 export function addUsage(left: Usage, right: Usage): Usage {
   return {
     inputTokens: left.inputTokens + right.inputTokens,
@@ -118,18 +111,6 @@ export function addUsage(left: Usage, right: Usage): Usage {
 /** The root Agent — the Session's own node. `null` for a tree that could not be parsed at all. */
 export function rootAgent(agents: readonly Agent[]): Agent | null {
   return agents.find((agent) => agent.parentId === null) ?? null
-}
-
-/** A Subagent is any non-root Agent; these are the children of one node. */
-export function subagentsOf(agents: readonly Agent[], parentId: string): Agent[] {
-  return agents.filter((agent) => agent.parentId === parentId)
-}
-
-/** Usage rolled up over every Turn of every Agent in the tree (CONTEXT.md L3: Session-level). */
-export function sessionUsage(agents: readonly Agent[]): Usage {
-  return agents
-    .flatMap((agent) => agent.turns)
-    .reduce((total, turn) => (turn.usage ? addUsage(total, turn.usage) : total), emptyUsage())
 }
 
 /** The Turn in progress, if the Agent has one — the signal a Session is `running`. */

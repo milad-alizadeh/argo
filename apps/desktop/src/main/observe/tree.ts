@@ -27,7 +27,7 @@ interface TreeState extends ParsedTree {
 
 // A new prompt means the previous Turn is over. If no stop reason was ever recorded for it the
 // honest reading is `unknown` — the transcript simply stopped speaking for it.
-function openTurn(state: TreeState, id: string): Turn {
+function beginTurn(state: TreeState, id: string): Turn {
   if (state.current !== null && state.current.stopReason === null) {
     state.current.stopReason = 'unknown'
   }
@@ -76,7 +76,7 @@ function absorbAssistant(state: TreeState, record: Record<string, unknown>): voi
   if (uuid === null) return
   // An assistant record with no prompt in front of it (a chain resumed mid-turn) still gets a
   // Turn keyed to itself, so its tool calls are reported rather than dropped.
-  const turn = state.current ?? openTurn(state, uuid)
+  const turn = state.current ?? beginTurn(state, uuid)
   for (const part of contentParts(record)) absorbCall(state, turn, part)
   closeTurn(state, turn, record)
 }
@@ -90,7 +90,7 @@ function absorbUser(state: TreeState, record: Record<string, unknown>): void {
   const resolved = contentParts(record).map((part) => resolveResult(state, part))
   if (resolved.some(Boolean)) return
   const uuid = asString(record.uuid)
-  if (uuid !== null) openTurn(state, uuid)
+  if (uuid !== null) beginTurn(state, uuid)
 }
 
 export interface TreeBuilder {

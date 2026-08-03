@@ -6,7 +6,7 @@ import { discoverWorkingSet } from './discover'
 import { gatherClaudeProcesses } from './liveness'
 import { createManagedSessions, type ManagedSessions } from './managed'
 import { toObservedSession, toSessionEvent, toSessionUpdate } from './observedSession'
-import { latestInChain, stitch } from './resumeChain'
+import { firstInChain, latestInChain, stitch } from './resumeChain'
 import { deriveSessionStatus } from './sessionStatus'
 import type { LogicalSession, ObservedSession, ParsedTranscript } from './types'
 import { type Watcher, watchTranscripts } from './watch'
@@ -26,6 +26,9 @@ export interface ObserverOptions {
   managed?: ManagedSessions
   /** Watch after the sweep. Off for tests that drive `refresh` by hand. */
   watch?: boolean
+  /** The live-process probe. Injected rather than reached for, so a test drives the one piece of
+   * real I/O here through the seam instead of faking a module this repo owns. */
+  probeProcesses?: () => Promise<{ cwd: string }[]>
 }
 
 export interface Observer {
@@ -42,18 +45,19 @@ interface Context {
   hub: Hub
   now: () => number
   managed: ManagedSessions
+  probeProcesses: () => Promise<{ cwd: string }[]>
   byPath: Map<string, ParsedTranscript>
   published: Map<string, string>
-  probe: { atMs: number; cwds: Set<string> }
+  probed: { atMs: number; cwds: Set<string> }
 }
 
 async function liveCwds(context: Context, nowMs: number): Promise<Set<string>> {
-  if (nowMs - context.probe.atMs < PROCESS_PROBE_TTL_MS) return context.probe.cwds
-  context.probe = {
+  if (nowMs - context.probed.atMs < PROCESS_PROBE_TTL_MS) return context.probed.cwds
+  context.probed = {
     atMs: nowMs,
-    cwds: new Set((await gatherClaudeProcesses()).map((process) => process.cwd)),
+    cwds: new Set((await context.probeProcesses()).map((process) => process.cwd)),
   }
-  return context.probe.cwds
+  return context.probed.cwds
 }
 
 async function read(context: Context, path: string): Promise<void> {
@@ -68,7 +72,10 @@ async function read(context: Context, path: string): Promise<void> {
 
 function observe(context: Context, logical: LogicalSession, cwds: Set<string>): ObservedSession {
   const cwd = latestInChain(logical.files, (file) => file.cwd)
-  const posture = context.managed.postureFor(cwd)
+  // Ownership is matched on the folder AND when the Session began, so an agent already running
+  // in a folder Argo later spawned into stays external.
+  const startedAtMs = firstInChain(logical.files, (file) => file.firstTimestampMs)
+  const posture = context.managed.postureFor(cwd, startedAtMs)
   const nowMs = context.now()
   return toObservedSession(logical, posture, (agents) =>
     deriveSessionStatus({
@@ -100,9 +107,10 @@ export function createObserver(hub: Hub, options: ObserverOptions): Observer {
     hub,
     now: options.now ?? Date.now,
     managed: options.managed ?? createManagedSessions(),
+    probeProcesses: options.probeProcesses ?? gatherClaudeProcesses,
     byPath: new Map(),
     published: new Map(),
-    probe: { atMs: Number.NEGATIVE_INFINITY, cwds: new Set() },
+    probed: { atMs: Number.NEGATIVE_INFINITY, cwds: new Set() },
   }
   let watcher: Watcher | null = null
 

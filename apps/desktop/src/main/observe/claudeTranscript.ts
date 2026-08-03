@@ -37,6 +37,7 @@ export function parseTranscript(sessionId: string, lines: string[]): ParsedTrans
     cwd: null,
     aiTitle: null,
     firstPrompt: null,
+    firstTimestampMs: null,
     lastTimestampMs: null,
     tree: { turns: [], compactions: [], subagents: [] },
   }
@@ -93,7 +94,11 @@ function absorbMessage(parsed: ParsedTranscript, record: Record<string, unknown>
   if (cwd !== null && parsed.cwd === null) parsed.cwd = cwd
 
   const ms = timestampMs(record)
-  if (ms !== null && (parsed.lastTimestampMs === null || ms > parsed.lastTimestampMs)) {
+  if (ms === null) return
+  if (parsed.firstTimestampMs === null || ms < parsed.firstTimestampMs) {
+    parsed.firstTimestampMs = ms
+  }
+  if (parsed.lastTimestampMs === null || ms > parsed.lastTimestampMs) {
     parsed.lastTimestampMs = ms
   }
 }
