@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { TooltipProvider } from '@/shared/components/ui'
-import type { RosterTone } from '@/shared/delivery'
+import type { RosterTone } from '@/shared/status'
 import type { ProjectTabView } from '../../shellModel'
 import { ProjectTab } from './ProjectTab'
 

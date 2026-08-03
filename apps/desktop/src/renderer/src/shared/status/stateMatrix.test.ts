@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { deliveryState } from './deliveryState'
 import { stateMatrixInput } from './stateMatrix'
 
-// The state table of `docs/designs/cockpit-matrix.md`, one case per row: given the
+// The state table of `docs/designs/cockpit-surface-matrix.md`, one case per row: given the
 // facts, the lifecycle, its head, and the roster word are fully determined. The inputs now
 // live in `stateMatrix.ts` so the SessionScreen stories replay the same rows; this test still
 // owns the expected outputs, and swapping in `stateMatrixInput(id)` leaves them untouched.

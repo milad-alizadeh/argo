@@ -2,7 +2,7 @@ import { SESSION_STATES, type SessionStatus, sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import type { SessionView } from '@/sessionStore'
-import { SESSION_STATUS } from '@/shared/delivery'
+import { SESSION_STATUS } from '@/shared/status'
 import { SessionRow } from './SessionRow'
 
 // The row renders an `<li>`, and `listitem` is only its role inside a list — without the

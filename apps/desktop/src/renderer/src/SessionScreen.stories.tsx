@@ -2,7 +2,7 @@ import { sessionFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import type { SessionView } from '@/sessionStore'
-import { deliveryState, stateMatrixInput } from '@/shared/delivery'
+import { deliveryState, stateMatrixInput } from '@/shared/status'
 import { SessionScreen, type SessionScreenHandlers } from './SessionScreen'
 import { buildSessionPanel, type PanelUiState } from './sessionScreenModel'
 import { isConsoleExpanded, SPINE, type SpineLayout } from './useSpineLayout'
@@ -69,7 +69,6 @@ const meta = {
     panel: null,
     layout: DEFAULT_LAYOUT,
     handlers: NOOP_HANDLERS,
-    orbState: 'idle',
   },
 } satisfies Meta<typeof SessionScreen>
 
@@ -95,7 +94,6 @@ export const SelectedSession: Story = {
       })}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
-      orbState="idle"
     />
   ),
   play: async ({ args, canvasElement }) => {
@@ -123,7 +121,6 @@ export const NoSelection: Story = {
       panel={null}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
-      orbState="idle"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -146,7 +143,6 @@ export const EmptyRoster: Story = {
       panel={null}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
-      orbState="idle"
     />
   ),
   play: async ({ canvasElement }) => {
@@ -169,7 +165,6 @@ export const SoloWorkHidden: Story = {
       })}
       layout={DEFAULT_LAYOUT}
       handlers={NOOP_HANDLERS}
-      orbState="idle"
     />
   ),
 }
@@ -187,7 +182,6 @@ export const ConsoleExpanded: Story = {
       })}
       layout={EXPANDED_LAYOUT}
       handlers={NOOP_HANDLERS}
-      orbState="idle"
     />
   ),
   play: async ({ canvasElement }) => {

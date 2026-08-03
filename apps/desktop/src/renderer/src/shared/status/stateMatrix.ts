@@ -1,6 +1,6 @@
 import type { SessionFactsInput } from '@shared'
 
-// The S0–S11 delivery state matrix (docs/designs/cockpit-matrix.md), one row per case: the
+// The S0–S11 delivery state matrix (docs/designs/cockpit-surface-matrix.md), one row per case: the
 // facts input that drives a Session through the lifecycle, with a stable id and a human label.
 // The ONE home for these inputs — the derivation test replays them to prove the lifecycle,
 // and the SessionScreen stories replay them to exercise the assembled screen — so the two can

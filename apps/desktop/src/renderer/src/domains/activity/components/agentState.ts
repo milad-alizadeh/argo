@@ -1,4 +1,4 @@
-import type { RosterTone } from '@/shared/delivery'
+import type { RosterTone } from '@/shared/status'
 
 export const AGENT_STATES = ['running', 'done', 'failed', 'queued'] as const
 

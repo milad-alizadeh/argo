@@ -153,7 +153,10 @@ it, then configure:
 - Ignores for generated output, lockfiles, snapshots, and vendored code.
 
 **File length (intent 11).** Most linters cap function length, not file length. If this
-linter has a per-file rule, use it (ESLint's `max-lines`, Ruff's family). Otherwise copy
+linter has a per-file rule, use it (ESLint's `max-lines`, Biome's
+`style/noExcessiveLinesPerFile` from 2.3.12, Ruff's family) — and note what it counts, because
+they differ: Biome's skips comment lines entirely, so its cap is looser than a raw line count on
+a heavily-commented codebase. Otherwise copy
 `templates/file-length-check.mjs` into the repo's scripts folder **verbatim** and run it
 with the source globs and cap as arguments — it counts lines, so it works on any
 language's files, and needs only a Node or Bun runtime available in CI. Exempt what the

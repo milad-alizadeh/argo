@@ -56,9 +56,11 @@ function.
 ## One unit per file, and a line ceiling
 
 A file owns exactly one thing — one component, one class, one state machine, one
-top-level function — named by what it owns. Soft ceiling of **~150 lines** — this file is
-where that number lives; pure-data files and generated output are exempt, and
-`file-structure.md` covers where the pieces go when a file outgrows it.
+top-level function — named by what it owns. Soft ceiling of **~150 lines of code** — this
+file is where that number lives. Blank and comment lines do not count: the ceiling is about
+the code you must hold in your head, so explaining yourself is never what breaks it.
+Pure-data files and declarative catalogs are exempt, and `file-structure.md` covers where
+the pieces go when a file outgrows it.
 
 If you can't say what the file does in one sentence without "and", it's two files.
 

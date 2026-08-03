@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { RosterTone } from '@/shared/delivery'
+import type { RosterTone } from '@/shared/status'
 
 /**
  * Atom: a state as a small coloured dot.

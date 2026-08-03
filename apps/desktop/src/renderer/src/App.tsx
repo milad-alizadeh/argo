@@ -71,7 +71,6 @@ function App(): React.JSX.Element {
               onCloseSession: () => shell.selectSession(null),
               onSpawnSession: commands.spawnSession,
             }}
-            orbState="idle"
           />
         }
       />

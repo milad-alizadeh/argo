@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { RosterIcon, RosterTone } from '@/shared/delivery'
+import type { RosterIcon, RosterTone } from '@/shared/status'
 import { ROSTER_ICON } from './rosterIcon'
 
 // Atom: a status row's leading glyph — the delivery-derived icon, tinted by its tone. The

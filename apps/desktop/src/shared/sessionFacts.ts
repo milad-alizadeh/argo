@@ -1,9 +1,9 @@
-// The delivery facts of one Session, per `docs/designs/cockpit-matrix.md`. Facts
+// The delivery facts of one Session, per `docs/designs/cockpit-surface-matrix.md`. Facts
 // only: every rendered state is derived from these, never stored alongside them.
 // They live in the contract because main is the only process that can observe them
 // (it runs git and gh — ADR-0004) and the renderer is a projection (ADR-0005).
 
-// Every state main can observe, in `cockpit-matrix.md` R16's roster-column order — the
+// Every state main can observe, in `cockpit-surface-matrix.md` R16's roster-column order — the
 // domain's own ordering, which is why the list lives here and not beside a view. The
 // union derives from the tuple so a seventh state cannot reach one without the other.
 export const SESSION_STATES = [

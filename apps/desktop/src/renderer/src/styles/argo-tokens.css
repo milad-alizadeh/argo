@@ -207,11 +207,8 @@
   --signal-warn: var(--status-attention);
   --signal-bad: var(--status-fail);
 
-  /* Shadows (colour steps; offsets live at the use site). `well` is a recessed
-   * fill, not a shadow. */
-  --shadow-1: color-mix(in srgb, black 8%, transparent);
-  --shadow-2: color-mix(in srgb, black 12%, transparent);
-  --shadow-3: color-mix(in srgb, black 18%, transparent);
+  /* `well` is a recessed fill, not a shadow: #262 settled depth as brightness only,
+   * so the plane family carries cast and there is no shadow ladder. */
   --well: color-mix(in srgb, var(--graphite-900) 4%, transparent);
 
   /* Weaker on light, where a halo reads as blur rather than as light. */
@@ -313,9 +310,6 @@
   --signal-warn: var(--status-attention);
   --signal-bad: var(--status-fail);
 
-  --shadow-1: color-mix(in srgb, black 15%, transparent);
-  --shadow-2: color-mix(in srgb, black 25%, transparent);
-  --shadow-3: color-mix(in srgb, black 35%, transparent);
   --well: color-mix(in srgb, black 15%, transparent);
 
   --glow-strength: 60%;

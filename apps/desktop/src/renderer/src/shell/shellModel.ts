@@ -1,5 +1,5 @@
 import type { CockpitState } from '@shared'
-import type { RosterTone } from '@/shared/delivery'
+import type { RosterTone } from '@/shared/status'
 import { worstStateDot } from './worstStateDot'
 
 // What the chrome renders, derived from the projected state. The strip's whole job is the
