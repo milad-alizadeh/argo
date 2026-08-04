@@ -53,26 +53,46 @@ const CHANGE_MARKS: Readonly<Record<FileChange, ChangeMark>> = {
   },
 }
 
-/** What a mutation with no diff to show is: still running, or over and reported nothing. A pending
- * call is NEVER dressed as a finished one — the result may still be coming, and it may never come. */
-const UNRESOLVED_MARKS: Readonly<Record<'pending' | 'failed', ChangeMark>> = {
-  pending: {
-    Icon: PencilSimpleIcon,
-    word: 'editing',
-    tone: 'text-tone-run',
-    rail: 'border-l-tone-run',
-  },
-  failed: {
-    Icon: PencilSimpleIcon,
-    word: 'failed',
-    tone: 'text-tone-red',
-    rail: 'border-l-tone-red',
-  },
+/** A call that has not come back, and one that came back broken. Neither has a change to name yet. */
+const RUNNING_MARK: ChangeMark = {
+  Icon: PencilSimpleIcon,
+  word: 'editing',
+  tone: 'text-tone-run',
+  rail: 'border-l-tone-run',
 }
 
+const FAILED_MARK: ChangeMark = {
+  Icon: PencilSimpleIcon,
+  word: 'failed',
+  tone: 'text-tone-red',
+  rail: 'border-l-tone-red',
+}
+
+/**
+ * The mark a row wears, decided by the call's STATUS first and its patch second.
+ *
+ * Status first because the two are independent: a finished call can report no patch (a binary
+ * file), and reading "no patch" as "still running" would dress a call that is over as one that is
+ * live — the same false-active the honesty tier exists to prevent, in the other direction.
+ */
 function changeMark(status: ToolCallStatus, diff: DiffResult | null): ChangeMark {
-  if (diff !== null) return CHANGE_MARKS[diff.change]
-  return status === 'failed' ? UNRESOLVED_MARKS.failed : UNRESOLVED_MARKS.pending
+  switch (status) {
+    case 'pending':
+    case 'in_progress':
+      return RUNNING_MARK
+    case 'failed':
+      return FAILED_MARK
+    case 'completed':
+      return diff === null ? CHANGE_MARKS.modify : CHANGE_MARKS[diff.change]
+  }
+}
+
+/** Why there is no patch under a row that has one to give. Absent for a call still running, whose
+ * body says so instead. */
+function missingDiffReason(status: ToolCallStatus): string {
+  return status === 'failed'
+    ? 'no diff available: the call failed before it reported one'
+    : 'no diff available: the record carried no patch for this change'
 }
 
 /** The churn, as two counts rather than one total: a change that adds forty lines and one that
@@ -102,6 +122,7 @@ export function MutationRow({
 }): React.JSX.Element {
   const { path, status, diff } = row
   const { Icon, word, tone, rail } = changeMark(status, diff)
+  const running = status === 'pending' || status === 'in_progress'
   return (
     <div className={cn('flex flex-col gap-tight border-l-2 pl-inset', rail)}>
       <div className="flex items-baseline gap-snug">
@@ -116,13 +137,17 @@ export function MutationRow({
         </Text>
         {diff !== null && <Churn diff={diff} />}
       </div>
-      {diff === null ? (
+      {running && (
         <Text variant="code" className="text-foreground-faint">
-          {status === 'failed'
-            ? 'no diff available: the call failed before it reported one'
-            : 'no result yet: this change has not been reported back'}
+          no result yet: this change has not been reported back
         </Text>
-      ) : (
+      )}
+      {!running && diff === null && (
+        <Text variant="code" className="text-foreground-faint">
+          {missingDiffReason(status)}
+        </Text>
+      )}
+      {diff !== null && (
         <>
           <DiffView hunks={diff.hunks} maxHunks={FEED_HUNK_BOUND} />
           <Text variant="meta" className="text-foreground-faint">

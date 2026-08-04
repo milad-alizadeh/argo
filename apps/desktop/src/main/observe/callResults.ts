@@ -2,9 +2,9 @@ import type { ToolCall, Usage } from '../../shared'
 import { diffResultFrom } from './toolResult'
 import { asString, isRecord, timestampMs } from './untrusted'
 
-// What a `tool_result` record says about the call it answers. Its own file because the reading has
-// three sources on ONE record — the timestamp, the spend beside `message`, and the patch under
-// `toolUseResult` — and folding them into the tree builder made that builder about results.
+// What a `tool_result` record says about the call it answers: the timestamp, the spend beside
+// `message`, and the patch under `toolUseResult` — three readings of one record, kept off the tree
+// builder so that builder stays about segmentation.
 
 /** What the record carrying a `tool_result` says about the call, beside the result part itself: when
  * it landed, the host's own report of what the call spent, and the patch it applied. */

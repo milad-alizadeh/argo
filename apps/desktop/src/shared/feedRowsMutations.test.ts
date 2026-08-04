@@ -26,9 +26,21 @@ const MUTATIONS: readonly [string, ToolCall, Record<string, unknown>][] = [
     { kind: 'mutation', status: 'pending', diff: null },
   ],
   [
-    'a failed mutation keeps its failure and shows no diff',
+    'a failed mutation keeps its failure, and no diff where none was reported',
     anEdit({ id: 'c4', status: 'failed', result: null }),
     { kind: 'mutation', status: 'failed', diff: null },
+  ],
+  // A failure that still reported what it changed is a change that happened, and hiding it would
+  // lose an edit to the code — the loss this whole surface exists to prevent.
+  [
+    'a failed mutation that DID report a patch still shows it',
+    anEdit({ id: 'c8', status: 'failed' }),
+    { kind: 'mutation', status: 'failed', diff: { change: 'modify' } },
+  ],
+  [
+    'a mutation still in progress shows no diff either',
+    anEdit({ id: 'c9', status: 'in_progress' }),
+    { kind: 'mutation', status: 'in_progress', diff: null },
   ],
   // A binary or unreadable patch: the change happened, and the row says it has nothing to show
   // rather than disappearing.
@@ -84,6 +96,22 @@ describe('a mutation row', () => {
 
   // Folding, commands and media are the next tickets'. A read rendered at a mutation's weight is
   // the wall of undifferentiated chatter this whole surface exists to correct.
+  // A call whose index ran past the prose it was counted against still gets a row, at the end. A
+  // mutation dropped for sitting at an index nothing reads is the loss this surface exists to stop.
+  it('keeps a mutation whose prose index is past the end of the prose', () => {
+    const rows = feedRows(
+      anAgent([
+        aTurn({
+          id: 't1',
+          prose: [said('one')],
+          toolCalls: [anEdit({ id: 'far', proseIndex: 9 })],
+        }),
+      ]),
+    )
+
+    expect(rows.map((row) => row.key)).toEqual(['prose:t1:0', 'mutation:far'])
+  })
+
   it('renders no row for a call that changed nothing', () => {
     const rows = feedRows(
       anAgent([

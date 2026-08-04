@@ -2,9 +2,13 @@ import type { DiffHunk, DiffLine } from '@shared'
 import { Text } from './Text'
 import { useDisclosure } from './useDisclosure'
 
-// The one diff renderer. Two surfaces show a patch — the Activity feed shows what ONE edit changed,
-// bounded to its first hunk; Delivery Files shows a whole branch against its base — and their data
-// differs while their presentation does not, so there is one of these rather than two that drift.
+// The diff renderer both patch surfaces read: the Activity feed, which shows what ONE edit changed
+// bounded to its first hunk, and Delivery Files, which shows a whole branch against its base. Their
+// data differs and their presentation does not, and this repo fails a build on duplication.
+//
+// Delivery has not moved onto it yet — `domains/delivery/FileDiff` still draws its own hunks, and
+// that domain is retired (issue 157) pending the rebuild in issue 271, which is the ticket that
+// deletes the second renderer rather than migrating a surface being replaced.
 //
 // It renders a patch and NOTHING about where the patch came from. What a diff means — point-in-time
 // for a feed row, current-state for Delivery — is the caller's to say, above this component, which
@@ -64,14 +68,11 @@ function boundLabel(hidden: number, open: boolean): string {
 export function DiffView({
   hunks,
   maxHunks,
-  emptyLabel = 'no diff available',
 }: {
   /** The patch, in file order. */
   hunks: readonly DiffHunk[]
   /** How many hunks show before the rest go behind an affordance. Undefined shows them all. */
   maxHunks?: number
-  /** What to say when there is no patch to draw. */
-  emptyLabel?: string
 }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: false })
   const bound = maxHunks === undefined ? hunks.length : Math.min(maxHunks, hunks.length)
@@ -81,7 +82,7 @@ export function DiffView({
   if (hunks.length === 0) {
     return (
       <Text variant="code" className="text-foreground-faint">
-        {emptyLabel}
+        no diff available
       </Text>
     )
   }

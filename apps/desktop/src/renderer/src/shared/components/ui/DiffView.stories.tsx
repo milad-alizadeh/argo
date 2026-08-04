@@ -40,10 +40,13 @@ const ROTATION_HUNKS: DiffHunk[] = [
 ]
 
 const meta = {
-  title: 'UI/DiffView',
+  title: 'Shared/DiffView',
   component: DiffView,
   args: { hunks: ROTATION_HUNKS },
-  argTypes: { hunks: { control: false, table: { type: { summary: 'DiffHunk[]' } } } },
+  argTypes: {
+    hunks: { control: false, table: { type: { summary: 'DiffHunk[]' } } },
+    maxHunks: { control: { type: 'range', min: 1, max: 5, step: 1 } },
+  },
   decorators: [
     (Story) => (
       <div className="w-lg bg-panel p-region">
@@ -57,48 +60,40 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /** Unbounded — every hunk, which is what a review surface wants. The line number heads each hunk
- * because a patch shown in pieces has to say where its pieces sit. */
+ * because a patch shown in pieces has to say where its pieces sit. Drag `maxHunks` to bound it. */
 export const WholePatch: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/rotation.current/)).toBeInTheDocument()
+    // Nothing is hidden, so no expander is drawn — a control that opens nothing is a control
+    // that lies, and that holds at any bound the patch already fits inside.
     await expect(canvas.queryByRole('button')).not.toBeInTheDocument()
   },
 }
 
-/** Bounded to one hunk, which is what the Activity feed sets — the bound is the caller's, and it is
- * the whole reason there is one renderer here rather than two. */
-export const BoundedToOneHunk: Story = {
+/**
+ * Bounded to one hunk, which is what the Activity feed sets — the bound is the caller's, and it is
+ * the whole reason this renderer takes it rather than deciding it.
+ *
+ * The play walks the whole affordance, because what is behind the bound is BEHAVIOUR rather than
+ * appearance: how many hunks it names, that opening reveals them in place, and that the control
+ * turns back into a way to close.
+ */
+export const Bounded: Story = {
   args: { maxHunks: 1 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('button', { name: /show 2 more hunks/ })).toBeInTheDocument()
     await expect(canvas.queryByText(/export \{ rotate \}/)).not.toBeInTheDocument()
-  },
-}
 
-/** A patch exactly at the bound has nothing hidden, so it shows no affordance at all — an
- * expander that opens nothing is a control that lies. */
-export const AtTheBound: Story = {
-  args: { maxHunks: ROTATION_HUNKS.length },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('button')).not.toBeInTheDocument()
-  },
-}
-
-/** The rest, opened in place. Reading the whole change never costs you your position in the feed. */
-export const Opened: Story = {
-  args: { maxHunks: 1 },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: /show 2 more hunks/ }))
+    await userEvent.click(canvas.getByRole('button'))
     await expect(canvas.getByText(/export \{ rotate \}/)).toBeInTheDocument()
     await expect(canvas.getByRole('button', { name: 'show less' })).toBeInTheDocument()
+
+    await userEvent.click(canvas.getByRole('button'))
+    await expect(canvas.queryByText(/export \{ rotate \}/)).not.toBeInTheDocument()
   },
 }
-
-/** One hunk left to show, said in the singular. */
-export const OneHunkRemaining: Story = { args: { maxHunks: 2 } }
 
 /** A binary file, or a patch this could not read. It says so — an empty block would read as
  * "nothing changed", which is the one thing it does not mean. */

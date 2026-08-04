@@ -1,12 +1,8 @@
 import type { DiffHunk, DiffLine, DiffResult, FileChange } from '../../shared'
 import { asArray, asNumber, asString, isRecord } from './untrusted'
 
-// A mutating call's result → the Diff it produced. Read off `toolUseResult`, which the host writes
-// beside `message` on the record carrying the `tool_result` part.
-//
-// DIRECT: the agent wrote these bytes and the host printed the patch it applied. Nothing here is
-// re-read from disk, which is exactly what makes a feed diff POINT-IN-TIME — it is what that edit
-// changed then, not what the file holds now.
+// A mutating call's result → the Diff it produced, read off `toolUseResult`. DIRECT, and never
+// re-read from disk, which is what makes a feed diff point-in-time.
 
 /** The marker a patch line carries, and the side it means. */
 const SIDE_BY_MARKER: Readonly<Record<string, DiffLine['side']>> = {
@@ -15,9 +11,8 @@ const SIDE_BY_MARKER: Readonly<Record<string, DiffLine['side']>> = {
   ' ': 'context',
 }
 
-/** One patch line, with its marker taken OFF: the side carries it, so a renderer decides once how a
- * side is shown and nothing downstream strips a character back off the text. A line carrying no
- * marker at all keeps every character — it is context, and slicing it would eat a real one. */
+/** One patch line with its marker taken OFF, since the side carries it. A line with no marker keeps
+ * every character: it is context, and slicing it would eat a real one. */
 function diffLine(raw: unknown): DiffLine | null {
   const text = asString(raw)
   if (text === null) return null
@@ -35,9 +30,8 @@ function hunkFrom(raw: unknown): DiffHunk | null {
   return { oldStart: asNumber(raw.oldStart) ?? 0, newStart: asNumber(raw.newStart) ?? 0, lines }
 }
 
-/** The whole content of a file as one all-added hunk. A `Write` that CREATES a file reports an EMPTY
- * patch and the content beside it — the bytes are right there, so rendering nothing would hide a
- * whole new file rather than report an honest gap. */
+/** The whole content of a file as one all-added hunk. A `Write` that creates reports an EMPTY patch
+ * with the content beside it, and rendering nothing would hide a whole new file. */
 function wholeFileHunk(content: string): DiffHunk | null {
   const lines = content.split('\n')
   // A trailing newline splits into a final empty element that is not a line of the file.
@@ -56,17 +50,10 @@ interface FileSnapshot {
   after: string | null
 }
 
-/**
- * What the change did to the file as a whole.
- *
- * The tool's NAME cannot tell these apart — `Write` both creates and updates — so the host's own
- * declared `type` is preferred where it carries one, and the patch answers where it does not. A
- * deletion is claimed only from a patch that removes lines and adds and keeps none, because no CLI
- * Argo reads has a delete tool and that shape is the only evidence one ever leaves.
- *
- * `modify` is the fallback everywhere: it is the quietest honest reading, and neither creation nor
- * deletion is worth claiming from an absence of evidence.
- */
+/** What the change did to the file, where the host declared nothing. A deletion is claimed only from
+ * a patch that removes lines and keeps none: no CLI Argo reads has a delete tool, so that shape is
+ * the only evidence one leaves. `modify` is the fallback — neither creation nor deletion is worth
+ * claiming from an absence of evidence. */
 function fileChange(hunks: readonly DiffHunk[], { before, after }: FileSnapshot): FileChange {
   if (before === '' && countSide(hunks, 'add') > 0) return 'create'
   if (before !== '' && after === '') return 'delete'

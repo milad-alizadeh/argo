@@ -31,22 +31,36 @@ export type FeedRow =
       diff: DiffResult | null
     }
 
+const isRunning = (status: ToolCallStatus): boolean =>
+  status === 'pending' || status === 'in_progress'
+
 const mutationRow = (call: ToolCall): FeedRow => ({
   kind: 'mutation',
   key: `mutation:${call.id}`,
   path: call.target,
   status: call.status,
-  // A result is only ever shown once the call HAS one. A pending call whose record already carried a
-  // patch would be a completed row wearing a running state.
-  diff: call.status === 'completed' && call.result?.kind === 'diff' ? call.result : null,
+  // Shown once the call has come BACK, whether it came back well or badly: a failure that still
+  // reported what it changed is a change that happened. A running call whose record already carried
+  // a patch would be a finished row wearing a live state, which is the one direction to refuse.
+  diff: isRunning(call.status) || call.result?.kind !== 'diff' ? null : call.result,
 })
 
-/** The mutations the agent made at one point in the turn's narrative — after `proseIndex` parts had
- * been said, and before the next one was. */
-const mutationsAt = (turn: Turn, proseIndex: number): FeedRow[] =>
-  turn.toolCalls
-    .filter((call) => call.kind === 'edit' && call.proseIndex === proseIndex)
-    .map(mutationRow)
+/** Every mutation of a turn, grouped by the point in its narrative the call was made — after that
+ * many prose parts had been said, and before the next one was. Grouped in ONE pass rather than
+ * re-filtered per paragraph: a long turn's calls and prose both run to the hundreds. */
+function mutationsByProseIndex(turn: Turn): Map<number, FeedRow[]> {
+  const grouped = new Map<number, FeedRow[]>()
+  for (const call of turn.toolCalls) {
+    if (call.kind !== 'edit') continue
+    // Clamped to the end of the prose so a call that ran past it lands in the trailing bucket. A
+    // mutation dropped for sitting at an index nothing reads is the exact loss this ticket fixes.
+    const index = Math.min(call.proseIndex, turn.prose.length)
+    const at = grouped.get(index) ?? []
+    at.push(mutationRow(call))
+    grouped.set(index, at)
+  }
+  return grouped
+}
 
 const proseRow = (turn: Turn, prose: Prose, index: number): FeedRow => {
   const key = `prose:${turn.id}:${index}`
@@ -78,11 +92,12 @@ export function turnFeedRows(turn: Turn): FeedRow[] {
     turn.prompt === null || turn.prompt.trim() === ''
       ? []
       : [{ kind: 'prompt', key: `prompt:${turn.id}`, text: turn.prompt, turnId: turn.id }]
+  const mutations = mutationsByProseIndex(turn)
   const narrative = turn.prose.flatMap((prose, index) => [
-    ...mutationsAt(turn, index),
+    ...(mutations.get(index) ?? []),
     proseRow(turn, prose, index),
   ])
-  return [...opening, ...narrative, ...mutationsAt(turn, turn.prose.length)]
+  return [...opening, ...narrative, ...(mutations.get(turn.prose.length) ?? [])]
 }
 
 /**

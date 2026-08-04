@@ -113,13 +113,30 @@ export const Pending: Story = {
 }
 
 /** A binary file, or a patch the record did not carry. The change is still reported; only the diff
- * is missing, and the row says which. */
+ * is missing, and the row says which.
+ *
+ * The word stays `edited` and the state stays finished. A completed call reporting no patch is not
+ * a call still running, and reading one as the other would dress work that is over as live. */
 export const NoDiffAvailable: Story = {
   args: {
     row: row({ path: 'resources/icon.png', diff: aDiff({ hunks: [], added: 0, removed: 0 }) }),
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('no diff available')).toBeInTheDocument()
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('no diff available')).toBeInTheDocument()
+    await expect(canvas.getByText('edited')).toBeInTheDocument()
+  },
+}
+
+/** The same gap arriving the other way: the call finished and the record carried no patch at all,
+ * so there is not even a zero-hunk diff to read. Still finished, never re-dressed as running. */
+export const CompletedWithoutAPatch: Story = {
+  args: { row: row({ path: 'resources/icon.png', diff: null }) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('edited')).toBeInTheDocument()
+    await expect(canvas.getByText(/the record carried no patch/)).toBeInTheDocument()
+    await expect(canvas.queryByText('editing')).not.toBeInTheDocument()
   },
 }
 
