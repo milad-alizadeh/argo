@@ -1,5 +1,6 @@
 import type { Plan, PlanEntry } from '@shared'
 import { CheckSquareIcon, Text } from '@/shared/components/ui'
+import { RowGlyph } from './RowGlyph'
 
 // The plan where the agent REVISED it, as one line. The whole list with its marks is the left pane's
 // tracker (`PlanProgress`), which is the session's current one and stays legible while every turn
@@ -29,13 +30,7 @@ export function PlanRow({ plan }: { plan: Plan }): React.JSX.Element {
   const step = currentStep(plan.entries)
   return (
     <div data-component="PlanRow" className="flex items-baseline gap-snug">
-      <Text
-        aria-hidden
-        variant="code"
-        className="grid w-mark-col shrink-0 place-items-center text-foreground-faint"
-      >
-        <CheckSquareIcon className="icon-sm" />
-      </Text>
+      <RowGlyph Icon={CheckSquareIcon} tone="text-foreground-faint" />
       <Text variant="code" className="shrink-0 text-foreground-faint">
         {`plan ${done} of ${plan.entries.length}`}
       </Text>

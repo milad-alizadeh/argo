@@ -15,7 +15,7 @@ const meta = {
       ],
     },
   },
-  argTypes: { row: { control: false, table: { type: { summary: 'QuietRow' } } } },
+  argTypes: { row: { control: false, table: { type: { summary: 'QuietRowModel' } } } },
   decorators: [
     (Story) => (
       <div className="w-lg bg-panel p-region">

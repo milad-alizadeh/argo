@@ -68,8 +68,9 @@ describe('a call that gets its own row', () => {
 
 describe('a mutation that failed', () => {
   // A failed edit reports no patch, and "no diff available" alone hides the one thing worth reading:
-  // WHY the change did not land.
-  it('carries what it printed, so the reason the change failed is on screen', () => {
+  // WHY the change did not land. Open here rather than in the component, so "a failure shows what
+  // went wrong" is one rule decided in one place for every row that can fail.
+  it('opens what it printed, so the reason the change failed is on screen', () => {
     const row = rowOf(anEdit({ id: 'm', status: 'failed', result: anOutput('EACCES: denied') }))
 
     expect(row).toMatchObject({
@@ -77,12 +78,18 @@ describe('a mutation that failed', () => {
       status: 'failed',
       diff: null,
       output: { text: 'EACCES: denied' },
+      open: true,
     })
   })
 
   it('carries no output where the change reported a patch instead', () => {
     const row = rowOf(anEdit({ id: 'm' }))
 
-    expect(row).toMatchObject({ kind: 'mutation', output: null, diff: { change: 'modify' } })
+    expect(row).toMatchObject({
+      kind: 'mutation',
+      output: null,
+      open: false,
+      diff: { change: 'modify' },
+    })
   })
 })

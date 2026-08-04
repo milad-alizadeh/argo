@@ -36,8 +36,12 @@ const proseRow = (turn: Turn, prose: Prose, index: number): FeedRow => {
 }
 
 /** Where the plan row sits: at the point the plan was LAST revised, which is the only moment in the
- * narrative it says anything about. A turn that revised no plan but inherited one gets no row — the
- * left pane's tracker is where the session's current list is read. */
+ * narrative it says anything about.
+ *
+ * A snapshot with no plan call to place it against falls to the END of the turn. That is the honest
+ * position for it rather than a guess at where it changed — but it is also why `turn.plan` is set
+ * from the plan CALL and not carried forward from the turn before: a snapshot merely inherited would
+ * land a row at the bottom of every turn, saying a revision happened where none did. */
 function planIndex(turn: Turn): number {
   const revision = turn.toolCalls.findLast((call) => call.kind === 'plan')
   return Math.min(revision?.proseIndex ?? turn.prose.length, turn.prose.length)

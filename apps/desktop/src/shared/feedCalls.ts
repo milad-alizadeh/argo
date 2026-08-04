@@ -22,7 +22,7 @@ import type {
  * interrupted) and for one whose patch the record did not carry — the row says so rather than
  * standing in for a change it cannot show. `output` is what it printed instead, which for a FAILED
  * change is the only thing that says why it did not land. */
-export interface MutationRow {
+export interface MutationRowModel {
   kind: 'mutation'
   key: string
   /** The file the call named, `null` where it named none. */
@@ -30,13 +30,15 @@ export interface MutationRow {
   status: ToolCallStatus
   diff: DiffResult | null
   output: OutputResult | null
+  /** Whether that output is shown without asking. */
+  open: boolean
 }
 
 /** One call loud enough for a row of its own: a command, always, and a failure of any other kind.
  *
  * A command earns a row because the line it ran is the fact worth reading, and its output is one
  * click away. A failure earns one because the thing that went wrong should be the thing you see. */
-export interface CallRow {
+export interface CallRowModel {
   kind: 'call'
   key: string
   /** What the call did, CLI-agnostic. The host's own tool name travels beside it in `name`, so
@@ -48,8 +50,6 @@ export interface CallRow {
   target: string | null
   status: ToolCallStatus
   output: OutputResult | null
-  /** Whether the output is shown without asking. The DERIVATION's decision, not the component's: a
-   * failure opens, a success stays closed, and both are a test rather than a screenshot. */
   open: boolean
 }
 
@@ -61,31 +61,43 @@ export interface QuietCount {
 }
 
 /** A run of consecutive observation, folded to one line. */
-export interface QuietRow {
+export interface QuietRowModel {
   kind: 'quiet'
   key: string
   counts: readonly QuietCount[]
 }
 
-export type ToolRow = MutationRow | CallRow | QuietRow
+export type ToolRow = MutationRowModel | CallRowModel | QuietRowModel
 
-/** How many rows a run of quiet work is worth. */
+/** What one call is worth: its own loud row, a share of a folded quiet one, or nothing. */
 type CallRole = 'none' | 'mutation' | 'loud' | 'quiet'
 
 /**
- * Which row one call is worth.
+ * Which row one call is worth, decided kind by kind so that a kind added to the union has to be
+ * classified here rather than falling silently into the quiet fold.
  *
  * `none` is not a silent drop: a delegate's work is the child's and the Subagents section owns it,
- * and a plan call's row is the Turn's one plan row. Everything else lands somewhere.
+ * and a plan call's row is the Turn's one plan row. Everything else lands somewhere — and a FAILURE
+ * of either lands loud anyway, because a failure nothing renders is a failure you never see.
  */
-function roleOf(call: ToolCall): CallRole {
-  if (call.kind === 'delegate') return 'none'
-  if (call.kind === 'edit') return 'mutation'
-  // Whatever the call was FOR, a failure is a failure first.
-  if (call.status === 'failed') return 'loud'
-  if (call.kind === 'plan') return 'none'
-  if (call.kind === 'execute') return 'loud'
-  return 'quiet'
+function roleOf({ kind, status }: ToolCall): CallRole {
+  const failed = status === 'failed'
+  switch (kind) {
+    case 'edit':
+      return 'mutation'
+    // A delegate's failure is reported by the subagent row it belongs to, so even that stays out.
+    case 'delegate':
+      return 'none'
+    case 'execute':
+      return 'loud'
+    case 'plan':
+      return failed ? 'loud' : 'none'
+    case 'read':
+    case 'search':
+    case 'fetch':
+    case 'other':
+      return failed ? 'loud' : 'quiet'
+  }
 }
 
 const isRunning = (status: ToolCallStatus): boolean =>
@@ -94,7 +106,7 @@ const isRunning = (status: ToolCallStatus): boolean =>
 const outputOf = (call: ToolCall): OutputResult | null =>
   call.result?.kind === 'output' ? call.result : null
 
-function mutationRow(call: ToolCall): MutationRow {
+function mutationRow(call: ToolCall): MutationRowModel {
   return {
     kind: 'mutation',
     key: `mutation:${call.id}`,
@@ -105,10 +117,11 @@ function mutationRow(call: ToolCall): MutationRow {
     // a patch would be a finished row wearing a live state, which is the one direction to refuse.
     diff: isRunning(call.status) || call.result?.kind !== 'diff' ? null : call.result,
     output: outputOf(call),
+    open: call.status === 'failed',
   }
 }
 
-function callRow(call: ToolCall): CallRow {
+function callRow(call: ToolCall): CallRowModel {
   return {
     kind: 'call',
     key: `call:${call.id}`,
@@ -127,7 +140,7 @@ const QUIET_WORD: Partial<Record<ToolCallKind, string>> = { search: 'searched', 
 
 /** The tallies of one run, in the order the kinds first appeared — which is the order the work
  * happened in, and the only order that does not need explaining. */
-function quietRow(run: readonly ToolCall[]): QuietRow {
+function quietRow(run: readonly ToolCall[]): QuietRowModel {
   const byKind = new Map<ToolCallKind, number>()
   for (const call of run) byKind.set(call.kind, (byKind.get(call.kind) ?? 0) + 1)
   return {

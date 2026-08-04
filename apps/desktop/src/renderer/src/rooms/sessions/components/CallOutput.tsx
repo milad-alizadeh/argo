@@ -1,6 +1,7 @@
 import type { OutputResult } from '@shared'
 import { cn } from '@/lib/utils'
 import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import { RowGlyph } from './RowGlyph'
 import { DISCLOSURE } from './rowRecipes'
 
 // What a call PRINTED, one click away or already open. Shared by the command row and the mutation
@@ -37,13 +38,7 @@ export function CallOutput({
         aria-expanded={open}
         className={cn(DISCLOSURE, 'flex items-baseline gap-snug')}
       >
-        <Text
-          aria-hidden
-          variant="code"
-          className="grid w-mark-col shrink-0 place-items-center text-foreground-faint"
-        >
-          <Caret className="icon-sm" />
-        </Text>
+        <RowGlyph Icon={Caret} tone="text-foreground-faint" />
         <Text variant="code" className="text-foreground-faint">
           output
         </Text>

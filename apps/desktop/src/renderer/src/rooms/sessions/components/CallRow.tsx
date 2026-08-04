@@ -1,28 +1,19 @@
-import type { CallRow as CallRowModel, ToolCallStatus } from '@shared'
-import { cn } from '@/lib/utils'
-import { type IconAtom, TerminalWindowIcon, Text, WarningIcon } from '@/shared/components/ui'
+import type { CallRowModel, ToolCallStatus } from '@shared'
+import { TerminalWindowIcon, Text, WarningIcon } from '@/shared/components/ui'
 import { CallOutput } from './CallOutput'
+import { FAILED_RING, LoudRow, type RowMark } from './LoudRow'
 
 // The row a single call earns: a command, always, and a failure of any other kind. Between them and
 // the mutation row, everything loud on this surface is a row you cannot fold away.
 
-interface CallMark {
-  Icon: IconAtom
-  /** The word the row wears, in the vocabulary of what happened to the CALL. */
-  word: string
-  tone: string
-  /** A ring around the whole card, for the one state worth ringing. */
-  ring: string
-}
-
-const RAN: CallMark = {
+const RAN: RowMark = {
   Icon: TerminalWindowIcon,
   word: 'ran',
   tone: 'text-foreground-soft',
   ring: '',
 }
 
-const RUNNING: CallMark = {
+const RUNNING: RowMark = {
   Icon: TerminalWindowIcon,
   word: 'running',
   tone: 'text-tone-run',
@@ -31,14 +22,14 @@ const RUNNING: CallMark = {
 
 /** A failure wears its own mark whatever the call was for: a failed read is a failure first, and the
  * ring is what stops it reading as one more line of chatter. */
-const FAILED: CallMark = {
+const FAILED: RowMark = {
   Icon: WarningIcon,
   word: 'failed',
   tone: 'text-tone-red',
-  ring: 'ring-1 ring-inset ring-tone-red/25',
+  ring: FAILED_RING,
 }
 
-function callMark(status: ToolCallStatus): CallMark {
+function callMark(status: ToolCallStatus): RowMark {
   switch (status) {
     case 'pending':
     case 'in_progress':
@@ -58,6 +49,14 @@ function subject(row: CallRowModel): string {
   return row.target === null ? row.name : `${row.name} · ${row.target}`
 }
 
+/** Why there is nothing to open. A call that is over printed nothing; one still going has not
+ * printed yet, and the two are different facts about the same absence. */
+function noOutputReason(status: ToolCallStatus): string {
+  return status === 'completed' || status === 'failed'
+    ? 'no output: this call printed nothing'
+    : 'no output yet: this call has not come back'
+}
+
 /**
  * Organism: one call loud enough to stand alone — a command, or a failure.
  *
@@ -67,35 +66,15 @@ function subject(row: CallRowModel): string {
  * and arrives on the row; this component reads it rather than re-deciding it.
  */
 export function CallRow({ row }: { row: CallRowModel }): React.JSX.Element {
-  const { Icon, word, tone, ring } = callMark(row.status)
   return (
-    <div className={cn('flex flex-col gap-tight rounded-md inset-card px-inset py-gap', ring)}>
-      <div className="flex items-baseline gap-snug">
-        {/* The mark column: every row of this feed hangs its glyph in one fixed cell, so a wall of
-            them reads as a column rather than as lines that each start a pixel or two off. */}
-        <Text
-          aria-hidden
-          variant="code"
-          className={cn('grid w-mark-col shrink-0 place-items-center', tone)}
-        >
-          <Icon className="icon-sm" />
-        </Text>
-        <Text variant="code" className={cn('shrink-0 uppercase', tone)}>
-          {word}
-        </Text>
-        <Text variant="code" className="min-w-0 flex-1 truncate text-foreground-soft">
-          {subject(row)}
-        </Text>
-      </div>
+    <LoudRow mark={callMark(row.status)} subject={subject(row)}>
       {row.output === null ? (
         <Text variant="code" className="text-foreground-faint">
-          {row.status === 'completed' || row.status === 'failed'
-            ? 'no output: this call printed nothing'
-            : 'no output yet: this call has not come back'}
+          {noOutputReason(row.status)}
         </Text>
       ) : (
         <CallOutput output={row.output} defaultOpen={row.open} />
       )}
-    </div>
+    </LoudRow>
   )
 }

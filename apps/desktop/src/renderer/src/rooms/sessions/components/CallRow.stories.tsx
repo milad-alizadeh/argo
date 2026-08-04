@@ -1,4 +1,4 @@
-import type { CallRow as CallRowModel } from '@shared'
+import type { CallRowModel } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { CallRow } from './CallRow'
@@ -22,7 +22,7 @@ const meta = {
   title: 'Sessions/Activity/CallRow',
   component: CallRow,
   args: { row: row() },
-  argTypes: { row: { control: false, table: { type: { summary: 'CallRow' } } } },
+  argTypes: { row: { control: false, table: { type: { summary: 'CallRowModel' } } } },
   decorators: [
     (Story) => (
       <div className="w-lg bg-panel p-region">

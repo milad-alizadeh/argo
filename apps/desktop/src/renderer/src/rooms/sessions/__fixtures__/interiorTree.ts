@@ -74,6 +74,16 @@ export const OPEN_TURN = aTurn({
       atMs: NOW_MS - 11 * MINUTE,
       endedAtMs: NOW_MS - 11 * MINUTE + 1_000,
     }),
+    // The call that WROTE the plan above, so the feed's plan row lands where the agent revised it
+    // rather than at the end of the turn. A snapshot with no call to place it against is honest but
+    // positionless, and this fixture is what the assembled surfaces are read from.
+    aToolCall({
+      id: 'c1d',
+      name: 'TodoWrite',
+      kind: 'plan',
+      atMs: NOW_MS - 10 * MINUTE,
+      endedAtMs: NOW_MS - 10 * MINUTE + 500,
+    }),
     // The mutation, sat between the reasoning and the answer where the agent actually made it —
     // and carrying the patch that is the whole reason this feed exists.
     aToolCall({

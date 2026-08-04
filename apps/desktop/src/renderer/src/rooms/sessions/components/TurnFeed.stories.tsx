@@ -1,3 +1,4 @@
+import type { FeedRow } from '@shared'
 import { turnFeedRows } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
@@ -9,11 +10,21 @@ import { TurnFeed } from './TurnFeed'
 // exist to catch. The prose is the interior fixture's, so this surface and the assembled one are
 // demonstrably reading the same exchange.
 const ROWS = turnFeedRows(OPEN_TURN)
-const [PROMPT, QUIET, THOUGHT, MUTATION, MESSAGE] = ROWS
 
-if (!PROMPT || !QUIET || !THOUGHT || !MUTATION || !MESSAGE) {
-  throw new Error('the fixture turn must carry the prompt, the fold, the prose and the mutation')
+/** One row of a kind, found BY kind rather than by position: the fixture's rows move whenever it
+ * gains a call, and a story keyed to an index would then silently frame the wrong row. */
+function rowOfKind<K extends FeedRow['kind']>(kind: K): Extract<FeedRow, { kind: K }> {
+  const row = ROWS.find(
+    (candidate): candidate is Extract<FeedRow, { kind: K }> => candidate.kind === kind,
+  )
+  if (row === undefined) throw new Error(`the fixture turn must carry a ${kind} row`)
+  return row
 }
+
+const PROMPT = rowOfKind('prompt')
+const QUIET = rowOfKind('quiet')
+const MUTATION = rowOfKind('mutation')
+const MESSAGE = rowOfKind('message')
 
 // The thought's own disclosure, named rather than found by role: the mutation row's bound carries a
 // second collapsed control, and a story that clicked "the collapsed button" would open whichever
@@ -21,9 +32,21 @@ if (!PROMPT || !QUIET || !THOUGHT || !MUTATION || !MESSAGE) {
 const thoughtToggle =
   'The legacy module exports verify() and rotate() from one file, and the tests import both from the barrel.'
 
-// The fixture turn's own plan, read off the tree rather than re-typed: the plan row and the left
-// pane's tracker must be demonstrably the same list.
-const PLAN_ENTRIES = OPEN_TURN.plan?.entries ?? []
+// The other two loud rows, for the break frame below. Written out rather than pulled from the
+// fixture because what that frame needs is a SEQUENCE the fixture does not contain — the rows
+// themselves are the child stories' to judge.
+const COMMAND: FeedRow = {
+  kind: 'call',
+  key: 'call:ran',
+  callKind: 'execute',
+  name: 'Bash',
+  target: 'bun run test',
+  status: 'completed',
+  output: null,
+  open: false,
+}
+
+const FAILED_CALL: FeedRow = { ...COMMAND, key: 'call:failed', status: 'failed', open: true }
 
 const meta = {
   title: 'Sessions/Activity/TurnFeed',
@@ -53,8 +76,10 @@ export const Exchange: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/Pull the token rotation/)).toBeInTheDocument()
-    // Four calls, one line, in counts rather than in a sentence.
+    // Three calls, one line, in counts rather than in a sentence.
     await expect(canvas.getByText('read 2 · searched 1')).toBeInTheDocument()
+    // And the plan it wrote in the same breath, stated in a line where the revision happened.
+    await expect(canvas.getByText('plan 2 of 4')).toBeInTheDocument()
     await expect(canvas.getByText(/legacy.ts holds two unrelated jobs/)).toBeInTheDocument()
     // Collapsed: the first line is shown, the second is not — and the reasoning is not mistakable
     // for the answer.
@@ -70,46 +95,23 @@ export const Exchange: Story = {
   },
 }
 
-/** The fold and its break, as short a frame as the rule can be shown in: a run of quiet work, the
- * mutation that ends it, and a second run after — never one label over both. */
-export const FoldBrokenByAMutation: Story = {
-  args: { rows: [QUIET, MUTATION, QUIET] },
-}
-
-/** A command that failed. Its output is already open: the thing that went wrong is the thing you
- * see, and a failure you have to click for is a failure you will miss. */
-export const FailedCommand: Story = {
-  args: {
-    rows: [
-      {
-        kind: 'call',
-        key: 'call:f',
-        callKind: 'execute',
-        name: 'Bash',
-        target: 'bun run typecheck',
-        status: 'failed',
-        output: { kind: 'output', tier: 'direct', text: 'src/x.ts(4,1): error TS2345' },
-        open: true,
-      },
-      MESSAGE,
-    ],
-  },
-  play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/error TS2345/)).toBeInTheDocument()
-  },
-}
-
-/** The agent's own to-do list, in the feed at the point it was last revised — one line, and ONE row
- * however many times the turn revised it. The whole list with its marks is the left pane's tracker;
- * drawing it twice on one screen would make a second copy read as a second fact. */
-export const ThePlanRow: Story = {
-  args: {
-    rows: [PROMPT, { kind: 'plan', key: 'plan:now', plan: { entries: PLAN_ENTRIES } }, MESSAGE],
-  },
+/**
+ * The BREAK, at each of the three loud kinds — a run of quiet work, the loud row that ends it, and a
+ * second run after. What the frame proves is that no label ever spans both: this is the rule that
+ * makes "edited a file, ran a command, read a file" mush structurally impossible.
+ *
+ * A composed frame rather than three of the child's, because the break is not a row's property — it
+ * is what happens BETWEEN rows, and only a sequence can show it.
+ */
+export const FoldsBrokenByEachLoudKind: Story = {
+  args: { rows: [QUIET, MUTATION, QUIET, FAILED_CALL, QUIET, COMMAND, QUIET] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('plan 2 of 4')).toBeInTheDocument()
-    await expect(canvas.getByText('· Wire verify() onto it')).toBeInTheDocument()
+    // Four folds, never merged across the three loud rows between them.
+    await expect(canvas.getAllByText('read 2 · searched 1')).toHaveLength(4)
+    await expect(canvas.getByText('edited')).toBeInTheDocument()
+    await expect(canvas.getByText('failed')).toBeInTheDocument()
+    await expect(canvas.getByText('ran')).toBeInTheDocument()
   },
 }
 

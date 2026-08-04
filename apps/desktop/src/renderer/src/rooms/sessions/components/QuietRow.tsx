@@ -1,5 +1,6 @@
-import type { QuietRow as QuietRowModel } from '@shared'
+import type { QuietRowModel } from '@shared'
 import { BinocularsIcon, Text } from '@/shared/components/ui'
+import { RowGlyph } from './RowGlyph'
 
 /**
  * Molecule: a run of observation, folded to one line — `read 3 · searched 1`.
@@ -16,13 +17,7 @@ import { BinocularsIcon, Text } from '@/shared/components/ui'
 export function QuietRow({ row }: { row: QuietRowModel }): React.JSX.Element {
   return (
     <div data-component="QuietRow" className="flex items-baseline gap-snug">
-      <Text
-        aria-hidden
-        variant="code"
-        className="grid w-mark-col shrink-0 place-items-center text-foreground-faint"
-      >
-        <BinocularsIcon className="icon-sm" />
-      </Text>
+      <RowGlyph Icon={BinocularsIcon} tone="text-foreground-faint" />
       <Text variant="code" className="min-w-0 flex-1 truncate text-foreground-faint">
         {row.counts.map(({ word, count }) => `${word} ${count}`).join(' · ')}
       </Text>
