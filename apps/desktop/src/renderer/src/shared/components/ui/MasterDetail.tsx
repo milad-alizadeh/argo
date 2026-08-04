@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { memo, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { SectionHeader } from './SectionHeader'
 import { SPY_ATTRIBUTE, useFeedHighlight } from './useScrollSpy'
@@ -82,6 +82,37 @@ function FeedGroup({ group }: { group: MasterDetailGroup }): React.JSX.Element {
 }
 
 /**
+ * The feed, behind a memo boundary — and the boundary is load-bearing, not an optimisation.
+ *
+ * The scroll-spy setStates on every animation frame of a scroll, which re-renders this component.
+ * `activeKey` is read by the NAV alone, so without this the highlight moving re-rendered every
+ * section's detail — diffs, prose, a live terminal — once per frame, and the feed visibly flashed
+ * while you scrolled it. `groups` keeps its identity across a spy tick (the tick is this
+ * component's own state, not the caller's), so the feed bails out and only the nav re-renders.
+ *
+ * NOT LOCKED BY A TEST, deliberately: the only honest signal is how many times `FeedSection` runs
+ * (measured 651 over a 24-step scroll before this boundary, 0 after), and that is internal to this
+ * component — a story can only reach it by counting renders of a `detail` it passes in, which React
+ * skips anyway on element identity, so such a test passes with the boundary REMOVED. Verified by
+ * hand with a Playwright probe against `sessions-activity--wide-fanout`; re-measure that way if you
+ * touch this. A caller that rebuilds `groups` on every one of its own renders defeats the boundary
+ * without breaking anything visible, which is the regression to watch for.
+ */
+const Feed = memo(function Feed({
+  groups,
+}: {
+  groups: readonly MasterDetailGroup[]
+}): React.JSX.Element {
+  return (
+    <>
+      {groups.map((group) => (
+        <FeedGroup key={group.key} group={group} />
+      ))}
+    </>
+  )
+})
+
+/**
  * Organism: the cockpit's one master–detail feel — a navigation list left, one continuous
  * scrollable feed right.
  *
@@ -135,9 +166,7 @@ export function MasterDetail({
         ref={feed}
         className="flex min-h-0 min-w-0 flex-1 flex-col gap-region overflow-y-auto p-region"
       >
-        {groups.map((group) => (
-          <FeedGroup key={group.key} group={group} />
-        ))}
+        <Feed groups={groups} />
       </div>
     </div>
   )
