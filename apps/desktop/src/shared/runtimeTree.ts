@@ -1,3 +1,5 @@
+import type { Tier } from './honesty'
+
 // The locked runtime tree (CONTEXT.md L3): Agent · Subagent · Turn · Tool Call · Plan ·
 // Compaction · Usage. Names re-derived from what Claude Code / Codex / ACP literally use —
 // the `Run` / `Phase` / `Actor` coinages are retired, and with them the `kind: session |
@@ -35,6 +37,73 @@ export const TOOL_CALL_STATUSES = ['pending', 'in_progress', 'completed', 'faile
 
 export type ToolCallStatus = (typeof TOOL_CALL_STATUSES)[number]
 
+/** Which side of the change one printed line of a hunk sits on. */
+export type DiffLineSide = 'add' | 'del' | 'context'
+
+/** One printed line, without its `+`/`-`/space marker: the SIDE carries that, so a renderer decides
+ * once how a side is shown and no consumer has to strip a character back off the text. */
+export interface DiffLine {
+  side: DiffLineSide
+  text: string
+}
+
+/** One contiguous run of changed lines with its surrounding context, and where it starts on each
+ * side. The line numbers are the host's own — they are what lets a bounded diff say WHERE in the
+ * file the hunk it is showing sits. */
+export interface DiffHunk {
+  oldStart: number
+  newStart: number
+  lines: DiffLine[]
+}
+
+/** What a mutation did to the file as a whole. Read from the change itself rather than from the
+ * tool's name: `Write` creates and updates, and no CLI has a delete tool at all, so the name cannot
+ * tell these apart and the patch can. */
+export const FILE_CHANGES = ['create', 'modify', 'delete'] as const
+
+export type FileChange = (typeof FILE_CHANGES)[number]
+
+/**
+ * What a mutating call changed, as the record reported it. Zero hunks is the honest reading of a
+ * binary or unreadable patch — a renderer says "no diff available" rather than drawing an empty
+ * block, and never invents lines to fill it.
+ */
+export interface DiffResult {
+  kind: 'diff'
+  tier: Tier
+  change: FileChange
+  added: number
+  removed: number
+  hunks: DiffHunk[]
+}
+
+/** What a call PRINTED. Declared here so the union is closed; nothing populates it yet — the
+ * command rows that will are the next ticket's. */
+export interface OutputResult {
+  kind: 'output'
+  tier: Tier
+  text: string
+}
+
+/** What a call SHOWED — the bytes the agent actually looked at, not whatever is at that path now.
+ * Declared with the union; nothing populates it yet. */
+export interface MediaResult {
+  kind: 'media'
+  tier: Tier
+  mediaType: string
+  dataUri: string
+}
+
+/**
+ * What a Tool Call produced, kinded.
+ *
+ * A named object rather than three loose fields on the call, because the TIER belongs to the
+ * payload and not to the call: the same edit can yield the agent's own bytes (what it wrote) or a
+ * weaker read from disk, and a fact with two possible provenances needs somewhere to carry which
+ * one it was.
+ */
+export type ToolResult = DiffResult | OutputResult | MediaResult
+
 /** The atomic observable action within a Turn — the unit users watch scroll by. */
 export interface ToolCall {
   id: string
@@ -44,6 +113,15 @@ export interface ToolCall {
   status: ToolCallStatus
   /** The file or command the call names, when it names one. */
   target: string | null
+  /** What the call produced, once its result has been read. `null` while it is still pending, and
+   * for a result of a kind nothing reads yet. */
+  result: ToolResult | null
+  /** How many prose parts this Turn had emitted when the call was made.
+   *
+   * Prose and calls arrive in ONE content array and are folded into two lists, so this is the only
+   * record of where a call sits in the narrative — and a mutation drawn out of the order it
+   * happened in is a timeline that never happened. */
+  proseIndex: number
   /** When the agent emitted the call — the timestamp of the record carrying it. */
   atMs: number | null
   /** When its result came back, so a call has a duration and not just a moment. `null` while it is

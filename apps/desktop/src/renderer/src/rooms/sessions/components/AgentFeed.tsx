@@ -1,47 +1,32 @@
 import type { ToolCallKind } from '@shared'
 import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
-import { SUBAGENT_STATES, turnWord } from '../activityStates'
+import { SUBAGENT_STATES } from '../activityStates'
 import type { ActivityItem, ToolStepModel } from '../interiorActivity'
 import { TurnFeed } from './TurnFeed'
 
-/** The head every detail section wears: what the item is, and its one state word held to the right
- * edge of the SECTION — never flung to the far side of the pane, where it would sit a screen away
- * from the thing it describes.
+/** The head a DELEGATE's section wears: what it is, and its one state word held to the right edge of
+ * the SECTION — never flung to the far side of the pane, where it would sit a screen away from the
+ * thing it describes.
  *
- * A PLAIN name — the only mark allowed in front of it is a turn's ordinal. The nav rows beside this
- * feed are the surface's dotted channel; a dot here too would make the head compete with the rows
- * that led you to it, and the word already at its right edge tells the state once. Where nothing
- * observed can name the item, the MARK becomes the heading rather than sitting beside an empty one:
- * a heading with no accessible name is worse than a quiet one. */
-function DetailHead({
-  name,
-  prefix,
-  word,
-}: {
-  /** What the item is. `null` where nothing observed can name it, which leaves the prefix to. */
-  name: string | null
-  /** A quiet mark in front of the name — a turn's ordinal, which locates the section without
-   * claiming to name it. */
-  prefix?: string
-  word: string
-}): React.JSX.Element {
+ * Only a delegate gets one. A subagent's work is another agent's, so its section has to announce
+ * whose it is; this session's own turns do not, and are separated by the prompt that opened them.
+ *
+ * A PLAIN name. The nav rows beside this feed are the surface's dotted channel; a dot here too would
+ * make the head compete with the rows that led you to it, and the word already at its right edge
+ * tells the state once. */
+function DetailHead({ name, word }: { name: string | null; word: string }): React.JSX.Element {
   return (
     <div className="flex items-baseline gap-snug">
-      {name !== null && prefix !== undefined && (
-        <Text variant="title" className="shrink-0 tabular-nums text-foreground-faint">
-          {prefix}
-        </Text>
-      )}
       <Text
         as="h3"
         variant="title"
         className={cn(
           'min-w-0 flex-1 truncate',
-          name === null ? 'tabular-nums text-foreground-faint' : 'text-foreground',
+          name === null ? 'text-foreground-faint' : 'text-foreground',
         )}
       >
-        {name ?? prefix}
+        {name ?? 'a subagent the record did not name'}
       </Text>
       <Text variant="eyebrow" className="shrink-0 text-foreground-faint">
         {word}
@@ -149,40 +134,21 @@ function SubagentDetail({
   )
 }
 
-/** One exchange, read rather than listed: its head, then the prose of the turn beneath it.
- *
- * Headed by the prompt that opened it — the same line its navigation row wears, so a section and
- * the row that jumps to it read as one thing. The ordinal stays in front as the quiet mark that
- * locates it, counted from the oldest turn so a section keeps its number as the agent answers
- * again. A turn the record carried no prompt for is headed by that number alone. */
-function TurnDetail({
-  item,
-}: {
-  item: Extract<ActivityItem, { kind: 'turn' }>
-}): React.JSX.Element {
-  return (
-    <>
-      <DetailHead
-        prefix={String(item.ordinal)}
-        name={item.promptLine}
-        word={turnWord(item.stopReason)}
-      />
-      <TurnFeed rows={item.rows} />
-    </>
-  )
-}
-
 /**
  * Organism: the detail pane's content for one item — a subagent's live feed, or one of this
  * session's own turns read as prose.
  *
  * The pane is always populated: every item in the list has a section here, which is what makes the
  * continuous feed continuous and leaves no empty gutter to look at.
+ *
+ * A turn's section is its rows and nothing else. What the exchange was about is already the first
+ * row of it, quoted, and what state it ended in is the nav row's job — a heading repeating both an
+ * inch above the same sentence was two facts told twice.
  */
 export function AgentFeed({ item }: { item: ActivityItem }): React.JSX.Element {
   return (
     <div data-component="AgentFeed" className="flex flex-col gap-snug">
-      {item.kind === 'subagent' ? <SubagentDetail item={item} /> : <TurnDetail item={item} />}
+      {item.kind === 'subagent' ? <SubagentDetail item={item} /> : <TurnFeed rows={item.rows} />}
     </div>
   )
 }

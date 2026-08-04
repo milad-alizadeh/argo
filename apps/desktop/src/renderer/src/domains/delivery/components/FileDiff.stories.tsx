@@ -1,14 +1,21 @@
+import type { DiffHunk } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import type { DiffFinding, DiffHunkLine, FileChangeKind } from './diffModel'
+import type { DiffFinding, FileChangeKind } from './diffModel'
 import { FileDiff } from './FileDiff'
 
 const KINDS: FileChangeKind[] = ['M', 'A', 'D', 'R']
 
-const HUNK: DiffHunkLine[] = [
-  { side: 'context', text: '  const claim = token.audience' },
-  { side: 'del', text: '- if (legacy) return claim' },
-  { side: 'add', text: '+ if (legacy) return assertAudience(claim)' },
+const HUNKS: DiffHunk[] = [
+  {
+    oldStart: 116,
+    newStart: 116,
+    lines: [
+      { side: 'context', text: ' const claim = token.audience' },
+      { side: 'del', text: ' if (legacy) return claim' },
+      { side: 'add', text: ' if (legacy) return assertAudience(claim)' },
+    ],
+  },
 ]
 
 const FINDINGS: DiffFinding[] = [
@@ -30,7 +37,7 @@ const meta = {
     path: 'src/auth/rotateToken.ts',
     adds: 12,
     dels: 4,
-    hunk: HUNK,
+    hunks: HUNKS,
     findings: [],
     onAdvanceFindingState: fn(),
   },
@@ -42,7 +49,7 @@ const meta = {
     dels: { control: 'number' },
     path: { control: 'text' },
     findings: { control: false },
-    hunk: { control: false },
+    hunks: { control: false },
   },
 } satisfies Meta<typeof FileDiff>
 

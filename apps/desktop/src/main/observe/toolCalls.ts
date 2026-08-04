@@ -63,7 +63,7 @@ export function toolCallTarget(input: unknown): string | null {
  * A `tool_use` part → a pending Tool Call. Pending is the honest opening state: the matching
  * `tool_result` has not been read yet, and it may never arrive (the turn was interrupted).
  */
-export function toolCallFrom(part: unknown, atMs: number | null): ToolCall | null {
+export function toolCallFrom(part: unknown, at: CallOrigin): ToolCall | null {
   if (!isRecord(part) || part.type !== 'tool_use') return null
   const id = asString(part.id)
   const name = asString(part.name)
@@ -74,10 +74,19 @@ export function toolCallFrom(part: unknown, atMs: number | null): ToolCall | nul
     kind: toolCallKind(name),
     status: 'pending',
     target: toolCallTarget(part.input),
-    atMs,
+    atMs: at.atMs,
     endedAtMs: null,
     usage: null,
+    result: null,
+    proseIndex: at.proseIndex,
   }
+}
+
+/** Where a call was made: when the record carrying it landed, and how far into the turn's prose it
+ * sits — the two facts a call cannot be placed in the feed without. */
+export interface CallOrigin {
+  atMs: number | null
+  proseIndex: number
 }
 
 function planEntryStatus(value: unknown): PlanEntryStatus {

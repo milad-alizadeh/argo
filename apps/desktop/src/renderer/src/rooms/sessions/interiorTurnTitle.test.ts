@@ -34,7 +34,7 @@ describe("a turn's title", () => {
   })
 })
 
-describe('the prompt row under that title', () => {
+describe('the prompt row that opens the section', () => {
   const rowsOf = (prompt: string): readonly string[] => {
     const item = buildActivity(
       sessionView({
@@ -47,26 +47,19 @@ describe('the prompt row under that title', () => {
     return item?.kind === 'turn' ? item.rows.map(({ kind }) => kind) : []
   }
 
-  // The section's HEAD is the prompt, so repeating it as the first row under itself prints one fact
-  // twice an inch apart.
-  it('drops out where the head already tells the whole prompt', () => {
-    expect(rowsOf('wire it')).toEqual(['message'])
+  // The section has no head any more: this row IS the seam, and it is the only rendering of the
+  // prompt that is unclipped and verbatim. A short prompt keeps it for the same reason a long one
+  // does — a turn that started on nothing visible has no start.
+  it('stays however short the prompt is', () => {
+    expect(rowsOf('wire it')).toEqual(['prompt', 'message'])
   })
 
-  // The head shows one LINE, so a prompt with more in it than that line is only readable in the
-  // feed. Dropping it there would lose text no other surface carries.
-  it('stays where the prompt runs past the line the head shows', () => {
+  it('stays where the prompt runs past the one line the nav row shows', () => {
     expect(rowsOf('wire it\nand keep the export')).toEqual(['prompt', 'message'])
   })
 
-  // Whitespace has no title in it and nothing to read either, so it leaves no blank row behind.
+  // Whitespace has nothing in it to read, so it leaves no blank rail behind.
   it('drops out where the prompt is whitespace alone', () => {
     expect(rowsOf('  \n\n')).toEqual(['message'])
-  })
-
-  // Both renderings of the title clip in CSS, so dropping the row for a long one-line prompt would
-  // leave its text readable NOWHERE — the failure a verbatim tier exists to prevent.
-  it('stays for a one-line prompt too long for a head to show whole', () => {
-    expect(rowsOf('wire it '.repeat(20))).toEqual(['prompt', 'message'])
   })
 })

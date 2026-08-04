@@ -233,8 +233,16 @@ agent` is dropped (every spec treats a session **as** an agent) — root-vs-chil
   Message rather than in two lists, because the order the two were emitted in is the only thing
   that says which reasoning produced which answer.
 - **Tool Call** — the atomic observable action within a Turn (kind read/edit/execute/search/…,
-  status pending/in_progress/completed/failed, target file, diff). *The* unit users watch
-  scroll by (ACP-native). Carries **when it was emitted and when its result came back** — the grain
+  status pending/in_progress/completed/failed, target file). *The* unit users watch
+  scroll by (ACP-native). What it PRODUCED is a **Result** — a kinded value object
+  (`diff | output | media`) carrying **its own honesty tier**, rather than loose fields beside
+  `target`: the same call can yield the agent's own bytes or a weaker read from disk, and a fact with
+  two possible provenances needs somewhere to carry which one it was. A `diff` result is
+  **point-in-time** — what that ONE edit changed when it was made, never re-read from disk and never
+  updated by a later edit to the same file — which is what separates it from L4's **Diff**
+  (branch-vs-base, git-addressed, current). One renderer draws both; only the feed's is bounded to a
+  first hunk, because prose is the primary row there and a 400-line edit would bury it. Carries
+  **when it was emitted and when its result came back** — the grain
   at which a time is worth rendering, since a Turn is a bookkeeping seam and its calls land seconds
   apart. A **Turn** likewise carries its own start and end, which is what a Session's duration is
   measured from; an agent still working has no end, so its duration runs against the wall clock

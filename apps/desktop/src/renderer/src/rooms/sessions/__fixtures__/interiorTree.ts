@@ -1,3 +1,4 @@
+import { aDiff } from './diff'
 import { aSubagent, aToolCall, aTurn, aUsage, namedPlan } from './runtimeTree'
 
 // The runtime tree the interior's fixtures are built from: one finished exchange, one still open,
@@ -53,6 +54,8 @@ export const OPEN_TURN = aTurn({
       atMs: NOW_MS - 12 * MINUTE,
       endedAtMs: NOW_MS - 12 * MINUTE + 2_000,
     }),
+    // The mutation, sat between the reasoning and the answer where the agent actually made it —
+    // and carrying the patch that is the whole reason this feed exists.
     aToolCall({
       id: 'c2',
       name: 'Edit',
@@ -60,6 +63,8 @@ export const OPEN_TURN = aTurn({
       target: 'src/auth/rotation.ts',
       atMs: NOW_MS - 9 * MINUTE,
       endedAtMs: NOW_MS - 8 * MINUTE,
+      result: aDiff(),
+      proseIndex: 1,
     }),
     aToolCall({
       id: 'c3',

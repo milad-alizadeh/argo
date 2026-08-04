@@ -1,3 +1,4 @@
+import type { DiffHunk } from '@shared'
 import { useId } from 'react'
 import { useDisclosure } from '@/hooks'
 import { cn } from '@/lib/utils'
@@ -5,6 +6,7 @@ import {
   ArrowsLeftRightIcon,
   Badge,
   Checkbox,
+  DiffView,
   FileMinusIcon,
   FilePlusIcon,
   FileTextIcon,
@@ -12,7 +14,7 @@ import {
   type IconAtom,
   Text,
 } from '@/shared/components/ui'
-import type { DiffFinding, DiffHunkLine, FileChangeKind } from './diffModel'
+import type { DiffFinding, FileChangeKind } from './diffModel'
 import { FindingCard } from './FindingCard'
 
 function kindGlyph(kind: FileChangeKind): { Icon: IconAtom; label: string } {
@@ -25,17 +27,6 @@ function kindGlyph(kind: FileChangeKind): { Icon: IconAtom; label: string } {
       return { Icon: FileMinusIcon, label: 'deleted' }
     case 'R':
       return { Icon: ArrowsLeftRightIcon, label: 'renamed' }
-  }
-}
-
-function hunkLineTone(side: DiffHunkLine['side']): string {
-  switch (side) {
-    case 'add':
-      return 'text-signal-ok'
-    case 'del':
-      return 'text-signal-bad'
-    case 'context':
-      return 'text-foreground-faint'
   }
 }
 
@@ -52,7 +43,7 @@ export function FileDiff({
   path,
   adds,
   dels,
-  hunk,
+  hunks,
   findings,
   markUncommitted = false,
   defaultViewed = false,
@@ -66,8 +57,9 @@ export function FileDiff({
   adds: number
   /** Lines removed, same snapshot. */
   dels: number
-  /** The hunk this file's change is rendered as. */
-  hunk: DiffHunkLine[]
+  /** The patch this file's change is rendered as, unbounded — a review surface shows the whole
+   * file, unlike the feed row, which bounds itself to the first hunk. */
+  hunks: readonly DiffHunk[]
   /** Review findings anchored to this file, rendered inline under the hunk. */
   findings: DiffFinding[]
   /** Show the "uncommitted" badge — the caller decides: the All-files view marks a dirty
@@ -140,15 +132,9 @@ export function FileDiff({
       </div>
       {!viewed && (
         <>
-          <Text variant="code" as="div" className="whitespace-pre-wrap px-inset py-snug">
-            {hunk.map((line, index) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: a static ordered snapshot — the array position IS the line's identity.
-              <span key={index} className={hunkLineTone(line.side)}>
-                {line.text}
-                {index < hunk.length - 1 ? '\n' : ''}
-              </span>
-            ))}
-          </Text>
+          <div className="px-inset py-snug">
+            <DiffView hunks={hunks} />
+          </div>
           {findings.length > 0 && (
             <div className="grid gap-gap px-inset pb-inset">
               {findings.map((finding) => (

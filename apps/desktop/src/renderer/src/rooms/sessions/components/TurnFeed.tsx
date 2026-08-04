@@ -1,6 +1,7 @@
 import type { FeedRow } from '@shared'
 import { cn } from '@/lib/utils'
 import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import { MutationRow } from './MutationRow'
 import { Prose } from './Prose'
 import { DISCLOSURE } from './rowRecipes'
 
@@ -85,6 +86,8 @@ function Row({ row }: { row: FeedRow }): React.JSX.Element {
       return <MessageRow markdown={row.markdown} />
     case 'thought':
       return <ThoughtRow markdown={row.markdown} />
+    case 'mutation':
+      return <MutationRow row={row} />
   }
 }
 

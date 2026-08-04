@@ -8,7 +8,9 @@ const FILES: CommitGroupFile[] = [
     path: 'src/auth/rotateToken.ts',
     adds: 12,
     dels: 4,
-    hunk: [{ side: 'add', text: '+ assertAudience(claim)' }],
+    hunks: [
+      { oldStart: 41, newStart: 41, lines: [{ side: 'add', text: ' assertAudience(claim)' }] },
+    ],
     findings: [],
   },
   {
@@ -16,7 +18,13 @@ const FILES: CommitGroupFile[] = [
     path: 'src/auth/assertAudience.ts',
     adds: 8,
     dels: 0,
-    hunk: [{ side: 'add', text: '+ export function assertAudience() {}' }],
+    hunks: [
+      {
+        oldStart: 1,
+        newStart: 1,
+        lines: [{ side: 'add', text: ' export function assertAudience() {}' }],
+      },
+    ],
     findings: [],
   },
 ]

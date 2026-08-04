@@ -1,4 +1,5 @@
-import { addUsage, type Compaction, type ToolCall, type Turn, type Usage } from '../../shared'
+import { addUsage, type Compaction, type ToolCall, type Turn } from '../../shared'
+import { resolveResult, resultContext } from './callResults'
 import {
   DELEGATING_TOOLS,
   PLAN_TOOL,
@@ -80,34 +81,13 @@ function absorbPart(state: TreeState, { turn, atMs }: CallContext, part: unknown
     turn.prose.push(prose)
     return
   }
-  const call = toolCallFrom(part, atMs)
+  const call = toolCallFrom(part, { atMs, proseIndex: turn.prose.length })
   if (call === null) return
   turn.toolCalls.push(call)
   state.callsById.set(call.id, call)
   const input = isRecord(part) ? part.input : null
   if (DELEGATING_TOOLS.includes(call.name)) state.delegations.push({ call, input })
   if (call.name === PLAN_TOOL) turn.plan = planFrom(input) ?? turn.plan
-}
-
-/** What the record carrying a `tool_result` says about the call, beside the result part itself:
- * when it landed, and the host's own report of what the call spent. */
-interface ResultContext {
-  atMs: number | null
-  usage: Usage | null
-}
-
-// A tool_result is the only thing that moves a call off `pending`, and the record carrying it is
-// when the call ended. An unmatched id is ignored: it belongs to a call this file never saw (a
-// resumed chain), not to a call we can invent.
-function resolveResult(state: TreeState, { atMs, usage }: ResultContext, part: unknown): boolean {
-  if (!isRecord(part) || part.type !== 'tool_result') return false
-  const call = state.callsById.get(asString(part.tool_use_id) ?? '')
-  if (call) {
-    call.status = part.is_error === true ? 'failed' : 'completed'
-    call.endedAtMs = atMs
-    call.usage = usage
-  }
-  return true
 }
 
 function closeTurn(state: TreeState, turn: Turn, record: Record<string, unknown>): void {
@@ -140,9 +120,9 @@ function absorbUser(state: TreeState, record: Record<string, unknown>): void {
     return
   }
   // The spend a delegating call reports sits on the RECORD, beside `message` rather than inside the
-  // result part — so it is read here and handed down with the timestamp.
-  const context: ResultContext = { atMs: timestampMs(record), usage: reportedUsage(record) }
-  const resolved = contentParts(record).map((part) => resolveResult(state, context, part))
+  // result part — so it is read here and handed down with the timestamp and the patch.
+  const context = resultContext(record, reportedUsage(record))
+  const resolved = contentParts(record).map((part) => resolveResult(state.callsById, context, part))
   if (resolved.some(Boolean)) return
   const uuid = asString(record.uuid)
   if (uuid === null) return

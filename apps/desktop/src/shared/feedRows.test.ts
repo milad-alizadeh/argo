@@ -1,31 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { anAgent, aTurn, said, thought } from './__fixtures__/tree'
 import { feedRows } from './feedRows'
-import type { Agent, Prose, Turn } from './runtimeTree'
-
-const aTurn = (over: Partial<Turn> & { id: string }): Turn => ({
-  stopReason: 'end_turn',
-  prompt: null,
-  prose: [],
-  toolCalls: [],
-  plan: null,
-  usage: null,
-  startedAtMs: null,
-  endedAtMs: null,
-  ...over,
-})
-
-const anAgent = (turns: Turn[]): Agent => ({
-  id: 'root',
-  parentId: null,
-  turns,
-  compactions: [],
-  startedAtMs: null,
-  endedAtMs: null,
-  usage: null,
-})
-
-const said = (markdown: string): Prose => ({ kind: 'message', markdown })
-const thought = (markdown: string): Prose => ({ kind: 'thought', markdown })
 
 describe('feedRows', () => {
   it('opens each turn with its prompt and follows it with the prose in emission order', () => {

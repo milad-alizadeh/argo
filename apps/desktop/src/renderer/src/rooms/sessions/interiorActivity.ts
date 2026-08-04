@@ -77,13 +77,8 @@ export type ActivityItem =
   | {
       key: string
       kind: 'turn'
-      ordinal: number
-      /** The same title its navigation row wears, derived once — the head of a section and the row
-       * that jumps to it must name one thing, and two derivations of it are two facts to keep true. */
-      promptLine: string | null
-      stopReason: StopReason | null
       /** The exchange as prose, derived once in `@shared` — what the agent was asked, what it
-       * thought, and what it said, in the order it happened. */
+       * thought, what it said and what it changed, in the order it happened. */
       rows: readonly FeedRow[]
     }
 
@@ -191,33 +186,14 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
   }
 }
 
-/** How much prompt a head is trusted to show whole. Deliberately short of what the head can fit: the
- * head truncates in CSS, so its real capacity is a width nothing here can measure, and the cost of
- * the two guesses is not symmetric — under-trusting repeats a short prompt, over-trusting drops the
- * only unclipped rendering of a long one and leaves it readable nowhere. */
-const HEAD_TELLS_IT_WHOLE = 60
-
-/** The rows a turn's section renders UNDER its own head. A short one-line prompt drops out of them,
- * because the head above is already telling it and one fact printed twice an inch apart is noise.
- * Anything longer — more lines, or one line past what a head shows whole — keeps its row, which is
- * the only place that prompt is readable unclipped and verbatim. */
-function sectionRows(turn: Turn, line: string | null): readonly FeedRow[] {
-  const rows = turnFeedRows(turn)
-  const toldByTheHead =
-    line === null || (turn.prompt?.trim() === line && line.length <= HEAD_TELLS_IT_WHOLE)
-  return toldByTheHead ? rows.filter(({ kind }) => kind !== 'prompt') : rows
-}
-
 /** One section per Turn, holding that turn's rows. The section is the turn because the turn is what
  * a prompt opens and a stop reason closes — a feed cut anywhere else would put a paragraph under a
- * heading that did not cause it. */
+ * heading that did not cause it.
+ *
+ * The section has no head. The prompt row IS the seam: it is the one row in the feed that is not the
+ * agent's voice, so it reads as where this exchange began without a heading clipping the same
+ * sentence an inch above it. The turn's number and its state word are the NAV row's to carry — they
+ * are what you scan a list by, and neither is what you read a feed for. */
 function ownItem(model: TimelineTurnModel, turn: Turn): ActivityItem {
-  return {
-    key: model.key,
-    kind: 'turn',
-    ordinal: model.ordinal,
-    promptLine: model.promptLine,
-    stopReason: model.stopReason,
-    rows: sectionRows(turn, model.promptLine),
-  }
+  return { key: model.key, kind: 'turn', rows: turnFeedRows(turn) }
 }

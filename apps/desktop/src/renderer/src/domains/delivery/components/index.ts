@@ -11,7 +11,7 @@ export {
   type DeliveryTab,
   DeliveryTabs,
 } from './DeliveryTabs'
-export type { DiffFinding, DiffHunkLine, FileChangeKind } from './diffModel'
+export type { DiffFinding, FileChangeKind } from './diffModel'
 export { FileDiff } from './FileDiff'
 export { FindingCard } from './FindingCard'
 export {
