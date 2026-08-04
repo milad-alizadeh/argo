@@ -1,5 +1,6 @@
+import type { DiffHunk } from '@shared'
 import { SectionHeader, Text } from '@/shared/components/ui'
-import type { DiffFinding, DiffHunkLine, FileChangeKind } from './diffModel'
+import type { DiffFinding, FileChangeKind } from './diffModel'
 import { FileDiff } from './FileDiff'
 
 /** One file as the flat All-files view renders it — `commit` is the sha it landed in, or
@@ -9,7 +10,7 @@ export interface AllFilesDiffFile {
   path: string
   adds: number
   dels: number
-  hunk: DiffHunkLine[]
+  hunks: readonly DiffHunk[]
   findings: DiffFinding[]
   commit: string | null
   defaultViewed?: boolean

@@ -1,6 +1,7 @@
+import type { DiffHunk } from '@shared'
 import { useDisclosure } from '@/hooks'
 import { Badge, CaretDownIcon, CaretRightIcon, Text } from '@/shared/components/ui'
-import type { DiffFinding, DiffHunkLine, FileChangeKind } from './diffModel'
+import type { DiffFinding, FileChangeKind } from './diffModel'
 import { FileDiff } from './FileDiff'
 
 /** One file as a CommitGroup renders it — the group already knows the commit (or that there
@@ -10,7 +11,7 @@ export interface CommitGroupFile {
   path: string
   adds: number
   dels: number
-  hunk: DiffHunkLine[]
+  hunks: readonly DiffHunk[]
   findings: DiffFinding[]
   defaultViewed?: boolean
 }

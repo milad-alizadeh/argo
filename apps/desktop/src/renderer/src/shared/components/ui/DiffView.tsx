@@ -6,9 +6,9 @@ import { useDisclosure } from './useDisclosure'
 // bounded to its first hunk, and Delivery Files, which shows a whole branch against its base. Their
 // data differs and their presentation does not, and this repo fails a build on duplication.
 //
-// Delivery has not moved onto it yet — `domains/delivery/FileDiff` still draws its own hunks, and
-// that domain is retired (issue 157) pending the rebuild in issue 271, which is the ticket that
-// deletes the second renderer rather than migrating a surface being replaced.
+// Both surfaces are on it: `MutationRow` bounds itself to the first hunk, `domains/delivery/FileDiff`
+// shows the file whole. There is one patch renderer in the app, and adding a third caller means
+// passing a different bound, not writing the lines out again.
 //
 // It renders a patch and NOTHING about where the patch came from. What a diff means — point-in-time
 // for a feed row, current-state for Delivery — is the caller's to say, above this component, which
