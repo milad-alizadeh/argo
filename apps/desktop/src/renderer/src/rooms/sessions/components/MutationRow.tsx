@@ -1,14 +1,14 @@
-import type { DiffResult, FeedRow, FileChange, ToolCallStatus } from '@shared'
-import { cn } from '@/lib/utils'
+import type { DiffResult, FileChange, MutationRowModel, ToolCallStatus } from '@shared'
 import {
   DiffView,
   FileMinusIcon,
   FilePlusIcon,
   FileTextIcon,
-  type IconAtom,
   PencilSimpleIcon,
   Text,
 } from '@/shared/components/ui'
+import { CallOutput } from './CallOutput'
+import { FAILED_RING, LoudRow, type RowMark } from './LoudRow'
 
 // The feed's loud row. Everything else on this surface is something the agent SAID; this is
 // something it DID to your code, so it renders its diff with no click and cannot be folded away.
@@ -21,20 +21,10 @@ import {
  * `DiffView` takes it rather than deciding it. */
 const FEED_HUNK_BOUND = 1
 
-interface ChangeMark {
-  Icon: IconAtom
-  /** The word the row wears, in the vocabulary of what happened to the FILE. */
-  word: string
-  tone: string
-  /** A ring around the whole card, for the one change worth ringing. Empty for the rest: a surface
-   * outlined on every row is a surface with no emphasis left to spend. */
-  ring: string
-}
-
 // A creation and a deletion are as distinct as a modification: icon and word for all three, and a
 // ring for the deletion, because a deleted file scrolled past unnoticed is the most expensive thing
 // this feed can do. Written out literally so Tailwind's scanner still sees each class.
-const CHANGE_MARKS: Readonly<Record<FileChange, ChangeMark>> = {
+const CHANGE_MARKS: Readonly<Record<FileChange, RowMark>> = {
   create: { Icon: FilePlusIcon, word: 'created', tone: 'text-signal-ok', ring: '' },
   modify: { Icon: FileTextIcon, word: 'edited', tone: 'text-foreground-soft', ring: '' },
   delete: {
@@ -45,19 +35,21 @@ const CHANGE_MARKS: Readonly<Record<FileChange, ChangeMark>> = {
   },
 }
 
-/** A call that has not come back, and one that came back broken. Neither has a change to name yet. */
-const RUNNING_MARK: ChangeMark = {
+/** A call that has not come back, and one that came back broken. Neither has a change to name yet.
+ * The pencil survives on the failure because WHAT failed is the fact the row adds — the surface's
+ * other rows fail too, and this one failed at editing. */
+const RUNNING_MARK: RowMark = {
   Icon: PencilSimpleIcon,
   word: 'editing',
   tone: 'text-tone-run',
   ring: '',
 }
 
-const FAILED_MARK: ChangeMark = {
+const FAILED_MARK: RowMark = {
   Icon: PencilSimpleIcon,
   word: 'failed',
   tone: 'text-tone-red',
-  ring: 'ring-1 ring-inset ring-tone-red/25',
+  ring: FAILED_RING,
 }
 
 /**
@@ -67,7 +59,7 @@ const FAILED_MARK: ChangeMark = {
  * file), and reading "no patch" as "still running" would dress a call that is over as one that is
  * live — the same false-active the honesty tier exists to prevent, in the other direction.
  */
-function changeMark(status: ToolCallStatus, diff: DiffResult | null): ChangeMark {
+function changeMark(status: ToolCallStatus, diff: DiffResult | null): RowMark {
   switch (status) {
     case 'pending':
     case 'in_progress':
@@ -80,7 +72,8 @@ function changeMark(status: ToolCallStatus, diff: DiffResult | null): ChangeMark
 }
 
 /** Why there is no patch under a row that has one to give. Absent for a call still running, whose
- * body says so instead. */
+ * body says so instead, and for a failure that printed WHY — that text is the better answer, and it
+ * replaces this line rather than sitting above it. */
 function missingDiffReason(status: ToolCallStatus): string {
   return status === 'failed'
     ? 'no diff available: the call failed before it reported one'
@@ -110,39 +103,29 @@ function Churn({ diff }: { diff: DiffResult }): React.JSX.Element {
  * That distinction still matters: this shares a renderer with Delivery's Files view, whose diff IS
  * the branch against its base and IS current.
  */
-export function MutationRow({
-  row,
-}: {
-  row: Extract<FeedRow, { kind: 'mutation' }>
-}): React.JSX.Element {
-  const { path, status, diff } = row
-  const { Icon, word, tone, ring } = changeMark(status, diff)
+export function MutationRow({ row }: { row: MutationRowModel }): React.JSX.Element {
+  const { path, status, diff, output, open } = row
   const running = status === 'pending' || status === 'in_progress'
   return (
-    <div className={cn('flex flex-col gap-tight rounded-md inset-card px-inset py-gap', ring)}>
-      <div className="flex items-baseline gap-snug">
-        <Text aria-hidden variant="prose" className={cn('shrink-0', tone)}>
-          <Icon className="icon-sm" />
-        </Text>
-        <Text variant="code" className={cn('shrink-0 uppercase', tone)}>
-          {word}
-        </Text>
-        <Text variant="code" className="min-w-0 flex-1 truncate text-foreground-soft">
-          {path ?? 'a file the record did not name'}
-        </Text>
-        {diff !== null && <Churn diff={diff} />}
-      </div>
+    <LoudRow
+      mark={changeMark(status, diff)}
+      subject={path ?? 'a file the record did not name'}
+      trailing={diff !== null && <Churn diff={diff} />}
+    >
       {running && (
         <Text variant="code" className="text-foreground-faint">
           no result yet: this change has not been reported back
         </Text>
       )}
-      {!running && diff === null && (
+      {!running && diff === null && output === null && (
         <Text variant="code" className="text-foreground-faint">
           {missingDiffReason(status)}
         </Text>
       )}
       {diff !== null && <DiffView hunks={diff.hunks} maxHunks={FEED_HUNK_BOUND} />}
-    </div>
+      {/* What the call printed, where it printed anything: for a FAILED change that text is the only
+          thing that says why the edit did not land, so the derivation opens it. */}
+      {output !== null && <CallOutput output={output} defaultOpen={open} />}
+    </LoudRow>
   )
 }

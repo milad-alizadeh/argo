@@ -1,7 +1,8 @@
 import { type SessionView, sessionFacts, sessionView } from '@shared'
 import { buildSessionInterior, type SessionInteriorModel } from '../interiorModel'
 import type { SubagentGroupModel } from '../interiorSubagents'
-import { LENSES, MINUTE, NOW_MS, OPEN_TURN, PAST_TURN } from './interiorTree'
+import { LENSES } from './interiorLenses'
+import { MINUTE, NOW_MS, OPEN_TURN, PAST_TURN } from './interiorTree'
 import { aRoot, aSubagent, aTurn } from './runtimeTree'
 
 // One populated session the interior's stories all read, so every surface is judged against the

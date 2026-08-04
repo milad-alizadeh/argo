@@ -1,4 +1,5 @@
-import type { ToolCall, Usage } from '../../shared'
+import type { ToolCall, ToolResult, Usage } from '../../shared'
+import { outputResultFrom } from './toolOutput'
 import { diffResultFrom } from './toolResult'
 import { asString, isRecord, timestampMs } from './untrusted'
 
@@ -16,6 +17,28 @@ export interface ResultContext {
 
 export function resultContext(record: Record<string, unknown>, usage: Usage | null): ResultContext {
   return { atMs: timestampMs(record), usage, toolUseResult: record.toolUseResult }
+}
+
+/**
+ * What one resolved call produced, kinded — its patch where it mutated, otherwise what it printed.
+ *
+ * The patch is read only for the calls whose kind SAYS they mutate. A record can carry one beside
+ * any call; reading it onto a `read` would put a diff under a row that changed nothing.
+ *
+ * Output is kept only where a ROW reads it: a command shows what it printed, and a failure of any
+ * kind shows what went wrong. A successful read's output is the whole file, and the quiet row it
+ * folds into never shows one — holding every file a session read would be the feed's largest cost
+ * for a payload nothing renders. A `delegate` keeps none either: the work it printed is the
+ * subagent's, and the Subagents section owns it.
+ */
+function callResult(call: ToolCall, context: ResultContext, content: unknown): ToolResult | null {
+  if (call.kind === 'edit') {
+    const diff = diffResultFrom(context.toolUseResult)
+    if (diff !== null) return diff
+  }
+  if (call.kind === 'delegate') return null
+  const read = call.kind === 'execute' || call.status === 'failed'
+  return read ? outputResultFrom(content) : null
 }
 
 /**
@@ -37,9 +60,7 @@ export function resolveResult(
     call.status = part.is_error === true ? 'failed' : 'completed'
     call.endedAtMs = context.atMs
     call.usage = context.usage
-    // The patch is kept only for the calls whose kind SAYS they mutate. A record can carry one
-    // beside any call; reading it onto a `read` would put a diff under a row that changed nothing.
-    if (call.kind === 'edit') call.result = diffResultFrom(context.toolUseResult)
+    call.result = callResult(call, context, part.content)
   }
   return true
 }

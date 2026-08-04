@@ -1,4 +1,4 @@
-import type { PlanEntry, SessionView, Turn } from '@shared'
+import type { Plan, PlanEntry, SessionView, Turn } from '@shared'
 import { rootAgent } from '@shared'
 
 // The Session's live to-do list (ADR-0020). Its own module rather than a corner of the Activity
@@ -11,6 +11,16 @@ export interface PlanProgressModel {
   entries: readonly PlanEntry[]
 }
 
+/** One plan read as progress: the entries as the agent wrote them, and the count as arithmetic over
+ * their statuses rather than as a separate claim. */
+function planProgress({ entries }: Plan): PlanProgressModel {
+  return {
+    done: entries.filter((entry) => entry.status === 'completed').length,
+    total: entries.length,
+    entries,
+  }
+}
+
 /**
  * ONE turn's plan SNAPSHOT — the version in force while it ran.
  *
@@ -19,12 +29,7 @@ export interface PlanProgressModel {
  */
 function planSnapshot(turn: Turn): PlanProgressModel | null {
   if (turn.plan === null || turn.plan.entries.length === 0) return null
-  const { entries } = turn.plan
-  return {
-    done: entries.filter((entry) => entry.status === 'completed').length,
-    total: entries.length,
-    entries,
-  }
+  return planProgress(turn.plan)
 }
 
 /**

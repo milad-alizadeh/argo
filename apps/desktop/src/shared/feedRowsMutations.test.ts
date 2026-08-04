@@ -94,8 +94,6 @@ describe('a mutation row', () => {
     ])
   })
 
-  // Folding, commands and media are the next tickets'. A read rendered at a mutation's weight is
-  // the wall of undifferentiated chatter this whole surface exists to correct.
   // A call whose index ran past the prose it was counted against still gets a row, at the end. A
   // mutation dropped for sitting at an index nothing reads is the loss this surface exists to stop.
   it('keeps a mutation whose prose index is past the end of the prose', () => {
@@ -112,7 +110,9 @@ describe('a mutation row', () => {
     expect(rows.map((row) => row.key)).toEqual(['prose:t1:0', 'mutation:far'])
   })
 
-  it('renders no row for a call that changed nothing', () => {
+  // A read rendered at a mutation's weight is the wall of undifferentiated chatter this whole surface
+  // exists to correct: it changed nothing, so it folds into the quiet line instead.
+  it('renders no mutation row for a call that changed nothing', () => {
     const rows = feedRows(
       anAgent([
         aTurn({
@@ -123,6 +123,6 @@ describe('a mutation row', () => {
       ]),
     )
 
-    expect(rows.map(({ kind }) => kind)).toEqual(['message'])
+    expect(rows.map(({ kind }) => kind)).toEqual(['quiet', 'message'])
   })
 })

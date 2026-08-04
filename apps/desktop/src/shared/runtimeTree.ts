@@ -77,8 +77,9 @@ export interface DiffResult {
   hunks: DiffHunk[]
 }
 
-/** What a call PRINTED. Declared here so the union is closed; nothing populates it yet — the
- * command rows that will are the next ticket's. */
+/** What a call PRINTED, verbatim. Read for a command, which always shows the line it ran, and for a
+ * failure of any kind, which shows what went wrong — and for nothing else, because a successful
+ * read's output is the whole file and the quiet row it folds into never shows one. */
 export interface OutputResult {
   kind: 'output'
   tier: Tier

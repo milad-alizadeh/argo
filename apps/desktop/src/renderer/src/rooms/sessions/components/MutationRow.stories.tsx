@@ -1,15 +1,17 @@
-import type { FeedRow } from '@shared'
+import type { MutationRowModel } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { aDiff, DELETED_HUNKS, ROTATION_HUNKS } from '../__fixtures__/diff'
 import { MutationRow } from './MutationRow'
 
-const row = (over: Partial<Extract<FeedRow, { kind: 'mutation' }>> = {}) => ({
-  kind: 'mutation' as const,
+const row = (over: Partial<MutationRowModel> = {}): MutationRowModel => ({
+  kind: 'mutation',
   key: 'mutation:c2',
   path: 'src/auth/rotation.ts',
-  status: 'completed' as const,
+  status: 'completed',
   diff: aDiff(),
+  output: null,
+  open: false,
   ...over,
 })
 
@@ -17,7 +19,7 @@ const meta = {
   title: 'Sessions/Activity/MutationRow',
   component: MutationRow,
   args: { row: row() },
-  argTypes: { row: { control: false, table: { type: { summary: 'FeedRow' } } } },
+  argTypes: { row: { control: false, table: { type: { summary: 'MutationRowModel' } } } },
   decorators: [
     (Story) => (
       <div className="w-lg bg-panel p-region">
@@ -144,5 +146,25 @@ export const Failed: Story = {
   args: { row: row({ path: 'src/auth/x.ts', status: 'failed', diff: null }) },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('failed')).toBeInTheDocument()
+  },
+}
+
+/** The change did not land AND the record said why. That text is the only thing on the row that
+ * explains it, so it is open already: "no diff available" alone would leave the one useful fact
+ * behind a click. */
+export const FailedWithAReason: Story = {
+  args: {
+    row: row({
+      path: 'src/auth/x.ts',
+      status: 'failed',
+      diff: null,
+      output: { kind: 'output', tier: 'direct', text: "EACCES: permission denied, open 'x.ts'" },
+      open: true,
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/EACCES/)).toBeInTheDocument()
+    await expect(canvas.queryByText(/no diff available/)).not.toBeInTheDocument()
   },
 }
