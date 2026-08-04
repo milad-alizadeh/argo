@@ -3,6 +3,7 @@ import { basename } from 'node:path'
 import type { Hub } from '../hub'
 import { parseTranscript } from './claudeTranscript'
 import { discoverWorkingSet } from './discover'
+import { readImageFile } from './imageFile'
 import { gatherClaudeProcesses } from './liveness'
 import { createManagedSessions, type ManagedSessions } from './managed'
 import { toObservedSession, toSessionEvent, toSessionUpdate } from './observedSession'
@@ -63,7 +64,10 @@ async function liveCwds(context: Context, nowMs: number): Promise<Set<string>> {
 async function read(context: Context, path: string): Promise<void> {
   try {
     const contents = await readFile(path, 'utf8')
-    context.byPath.set(path, parseTranscript(basename(path, '.jsonl'), contents.split('\n')))
+    // The disk reader is supplied HERE and nowhere else: this is the only caller with a real
+    // filesystem under it, and every test's parse therefore reports only what the record carried.
+    const parsed = parseTranscript(basename(path, '.jsonl'), contents.split('\n'), readImageFile)
+    context.byPath.set(path, parsed)
   } catch {
     // A file that vanished between the watch event and the read is simply no longer observed;
     // its last parse stays in the cache rather than blanking a row that was real a moment ago.

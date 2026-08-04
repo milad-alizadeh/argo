@@ -1,5 +1,6 @@
 import { addUsage, type Compaction, type ToolCall, type Turn } from '../../shared'
 import { resolveResult, resultContext } from './callResults'
+import { type ImageReader, NO_IMAGE_READER } from './mediaResult'
 import {
   DELEGATING_TOOLS,
   PLAN_TOOL,
@@ -40,6 +41,9 @@ interface TreeState extends Omit<ParsedTree, 'subagents'> {
   callsById: Map<string, ToolCall>
   current: Turn | null
   compactionPending: boolean
+  /** The fallback for an image the record embedded no bytes for. Held on the state rather than
+   * reached for globally, so a parse with no reader has no fallback instead of a fabricated one. */
+  readImage: ImageReader
 }
 
 /** What opens a Turn: the record's own id, when it landed, and the prompt it carried — `null` for a
@@ -121,7 +125,7 @@ function absorbUser(state: TreeState, record: Record<string, unknown>): void {
   }
   // The spend a delegating call reports sits on the RECORD, beside `message` rather than inside the
   // result part — so it is read here and handed down with the timestamp and the patch.
-  const context = resultContext(record, reportedUsage(record))
+  const context = resultContext(record, reportedUsage(record), state.readImage)
   const resolved = contentParts(record).map((part) => resolveResult(state.callsById, context, part))
   if (resolved.some(Boolean)) return
   const uuid = asString(record.uuid)
@@ -137,7 +141,7 @@ export interface TreeBuilder {
   finish(): ParsedTree
 }
 
-export function createTreeBuilder(): TreeBuilder {
+export function createTreeBuilder(readImage: ImageReader = NO_IMAGE_READER): TreeBuilder {
   const state: TreeState = {
     turns: [],
     compactions: [],
@@ -145,6 +149,7 @@ export function createTreeBuilder(): TreeBuilder {
     callsById: new Map(),
     current: null,
     compactionPending: false,
+    readImage,
   }
 
   return {

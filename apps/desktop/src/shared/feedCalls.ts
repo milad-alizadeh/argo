@@ -1,3 +1,4 @@
+import { type MediaRowModel, mediaRow, openMediaIds } from './feedMedia'
 import type {
   DiffResult,
   OutputResult,
@@ -67,10 +68,10 @@ export interface QuietRowModel {
   counts: readonly QuietCount[]
 }
 
-export type ToolRow = MutationRowModel | CallRowModel | QuietRowModel
+export type ToolRow = MutationRowModel | CallRowModel | QuietRowModel | MediaRowModel
 
 /** What one call is worth: its own loud row, a share of a folded quiet one, or nothing. */
-type CallRole = 'none' | 'mutation' | 'loud' | 'quiet'
+type CallRole = 'none' | 'mutation' | 'media' | 'loud' | 'quiet'
 
 /**
  * Which row one call is worth, decided kind by kind so that a kind added to the union has to be
@@ -80,8 +81,13 @@ type CallRole = 'none' | 'mutation' | 'loud' | 'quiet'
  * and a plan call's row is the Turn's one plan row. Everything else lands somewhere — and a FAILURE
  * of either lands loud anyway, because a failure nothing renders is a failure you never see.
  */
-function roleOf({ kind, status }: ToolCall): CallRole {
+function roleOf({ kind, status, result }: ToolCall): CallRole {
   const failed = status === 'failed'
+  // Pixels are loud whatever kind of call produced them, which is why this sits above the switch: a
+  // screenshot reaches the agent from a `read`, a `fetch`, or an MCP browser tool under `other`, and
+  // none of those kinds is the fact worth reading — the picture is. Ahead of the failure branch too,
+  // because a call that failed and STILL returned an image returned the thing worth looking at.
+  if (result?.kind === 'media') return 'media'
   switch (kind) {
     case 'edit':
       return 'mutation'
@@ -150,9 +156,17 @@ function quietRow(run: readonly ToolCall[]): QuietRowModel {
   }
 }
 
+/** The row a loud call is worth. Split out so `foldRun` stays about the FOLD and adding a fourth loud
+ * kind does not deepen the branch that decides where a run breaks. */
+function loudRow(call: ToolCall, role: CallRole, openMedia: Set<string>): ToolRow | null {
+  if (role === 'mutation') return mutationRow(call)
+  if (role === 'media') return mediaRow(call, openMedia.has(call.id))
+  return role === 'loud' ? callRow(call) : null
+}
+
 /** One stretch of calls, run-length folded. A call worth no row does not break a run either: there
  * is no row for the break to show, and the observation either side of it is still consecutive. */
-function foldRun(calls: readonly ToolCall[]): ToolRow[] {
+function foldRun(calls: readonly ToolCall[], openMedia: Set<string>): ToolRow[] {
   const rows: ToolRow[] = []
   let run: ToolCall[] = []
   const breakRun = (): void => {
@@ -162,9 +176,10 @@ function foldRun(calls: readonly ToolCall[]): ToolRow[] {
   for (const call of calls) {
     const role = roleOf(call)
     if (role === 'quiet') run.push(call)
-    if (role === 'mutation' || role === 'loud') {
+    const loud = loudRow(call, role, openMedia)
+    if (loud !== null) {
       breakRun()
-      rows.push(role === 'mutation' ? mutationRow(call) : callRow(call))
+      rows.push(loud)
     }
   }
   breakRun()
@@ -186,5 +201,8 @@ export function toolRowsByProseIndex(turn: Turn): Map<number, ToolRow[]> {
     const index = Math.min(call.proseIndex, turn.prose.length)
     buckets.set(index, [...(buckets.get(index) ?? []), call])
   }
-  return new Map([...buckets].map(([index, calls]) => [index, foldRun(calls)]))
+  // The media bound spans the whole Turn rather than one bucket: which shots are recent is a fact
+  // about the exchange, and a per-paragraph count would open four more of them at every paragraph.
+  const openMedia = openMediaIds(turn)
+  return new Map([...buckets].map(([index, calls]) => [index, foldRun(calls, openMedia)]))
 }

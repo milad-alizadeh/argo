@@ -241,7 +241,15 @@ agent` is dropped (every spec treats a session **as** an agent) — root-vs-chil
   **point-in-time** — what that ONE edit changed when it was made, never re-read from disk and never
   updated by a later edit to the same file — which is what separates it from L4's **Diff**
   (branch-vs-base, git-addressed, current). One renderer draws both; only the feed's is bounded to a
-  first hunk, because prose is the primary row there and a 400-line edit would bury it. Carries
+  first hunk, because prose is the primary row there and a 400-line edit would bury it. A `media`
+  result is where that two-provenance tier does its sharpest work: the transcript's **embedded bytes**
+  are the primary source at the DIRECT tier because they are what the agent looked at and cannot be
+  invalidated later, and a **re-read of the path** is the fallback only, at the lower tier and
+  labelled as the current file. Agents re-render one screenshot path several times within a turn, so
+  path-first rendering would show the newest picture under the oldest paragraph. Media is gated on the
+  declared image TYPE rather than on the tool's name — a screenshot reaches the agent from a read, a
+  fetch or an MCP browser tool — and a result with no bytes to show renders as an honest absence, never
+  as a broken image. Carries
   **when it was emitted and when its result came back** — the grain
   at which a time is worth rendering, since a Turn is a bookkeeping seam and its calls land seconds
   apart. A **Turn** likewise carries its own start and end, which is what a Session's duration is

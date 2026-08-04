@@ -486,11 +486,13 @@
    * Too narrow is not a cosmetic miss — the label overruns the content and the two paint over
    * each other. */
   --space-kind-col: 52px;
-  /* Plan-mark column — the fixed box a plan entry's glyph sits in, so three different marks
-   * down a list never shift the text beside them. Structural like the two above, and narrower
-   * than --space-marker-col on purpose: this holds a glyph riding the text's baseline, not an
-   * icon box. */
-  --space-mark-col: 12px;
+  /* Mark column — the fixed box a plan entry's or a feed row's glyph sits in, so a dozen
+   * different marks down a list never shift the text beside them. Structural like the two above.
+   * Sized to hold the WIDEST box that lands in it — `--icon-box-mark` on the feed's 11px code rows —
+   * with air: a column measured to the smaller `sm` box left every mark on the surface too small to
+   * read. The nav rail's own marks ride an `sm` box at the larger row role and sit inside the same
+   * width, which is what keeps the two lists on one axis. */
+  --space-mark-col: 16px;
 
   /* Shell chrome geometry (#264). Structural boxes rather than rhythm steps: they hold
    * the chrome's columns, and the traffic-light reserve is fixed by macOS rather than by
@@ -513,6 +515,12 @@
    * prose it sits beside, and cutting it would hide the tail — which for a stack trace is the
    * part that names the cause. Roughly a dozen code lines, the depth of a glance. */
   --output-max-h: 220px;
+
+  /* How tall an inline image stands in the feed (#318). Taller than an output block because a
+   * screenshot IS the fact — a full-window shot squeezed to a dozen code lines is unreadable, which
+   * defeats the point of putting it in the feed. Bounded all the same: a 2100px-tall shot rendered
+   * whole would push the paragraph that explains it off the screen. */
+  --media-max-h: 420px;
 
   /* The one shared strip height: the Delivery panel's tab strip IS its header, sized to
    * match the Delivery lifecycle's own strip so the two stack with no visual seam. Named
@@ -552,7 +560,16 @@
    * 1em). The baseline nudge optically centres a glyph against lowercase text
    * instead of sitting it on the baseline. */
   --icon-box-sm: 0.86em;
+  /* The Activity feed's mark column (`icon-mark`). Its rows are set in the 11px `code` role, where
+   * the em-relative `sm` box lands at nine and a half pixels — legible as a shape but not as a
+   * glyph, and the mark is the one thing on a feed row you read before the text. Stepped UP off the
+   * type rather than pinned in px, so it still tracks the role if that size ever moves. */
+  --icon-box-mark: 1.3em;
   --icon-baseline: -0.14em;
+  /* The mark box's own nudge: an inline box hangs from the baseline, so the taller glyph would
+   * otherwise float above the cap line it marks. Measured against the 11px `code` role rather than
+   * derived from `--icon-baseline`, which is itself an optical value and not a formula. */
+  --icon-baseline-mark: -0.3em;
 
   /* Motion. `pulse` is the period a status dot breathes at — a property of the STATE
    * (live or asking), not a budget handed to one element. The rationed animation is the

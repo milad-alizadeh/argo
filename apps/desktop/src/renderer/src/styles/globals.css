@@ -165,6 +165,8 @@
   --height-row-tight: var(--row-h-tight);
   /* max-h-output: the bound an opened tool output scrolls inside. */
   --height-output: var(--output-max-h);
+  /* max-h-media: the bound an inline image in the feed is drawn within. */
+  --height-media: var(--media-max-h);
 
   /* Motion roles: duration-fast / duration-slow / duration-pulse, ease-standard. */
   --transition-duration-fast: var(--time-fast);
@@ -317,6 +319,18 @@
 @utility icon-sm {
   width: var(--icon-box-sm);
   height: var(--icon-box-sm);
+}
+
+/* The step UP, for a glyph that marks a line of small type rather than sitting inside it — the
+ * Activity feed's mark column. See `--icon-box-mark`.
+ *
+ * It carries its OWN baseline nudge, because the nudge cannot be shared: an inline box hangs from the
+ * baseline, so the taller glyph centres higher against the same text and the `sm` offset would float
+ * it above the cap line it marks. Measured, not derived — see `--icon-baseline-mark`. */
+@utility icon-mark {
+  width: var(--icon-box-mark);
+  height: var(--icon-box-mark);
+  vertical-align: var(--icon-baseline-mark);
 }
 
 /* The lit top edge of a flat inset card — 1px of the foreground, which is what lifts the
