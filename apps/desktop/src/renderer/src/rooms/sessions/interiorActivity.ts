@@ -193,7 +193,12 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
  * The section has no head. The prompt row IS the seam: it is the one row in the feed that is not the
  * agent's voice, so it reads as where this exchange began without a heading clipping the same
  * sentence an inch above it. The turn's number and its state word are the NAV row's to carry — they
- * are what you scan a list by, and neither is what you read a feed for. */
+ * are what you scan a list by, and neither is what you read a feed for.
+ *
+ * The compaction seam is the one thing a section carries that its Turn does not know: history was
+ * condensed in FRONT of this turn, which is a fact about the chain, and the feed draws it as the
+ * divider that says why earlier context is no longer in the agent's head. */
 function ownItem(model: TimelineTurnModel, turn: Turn): ActivityItem {
-  return { key: model.key, kind: 'turn', rows: turnFeedRows(turn) }
+  const rows = turnFeedRows(turn, { compactedBefore: model.compactedBefore })
+  return { key: model.key, kind: 'turn', rows }
 }

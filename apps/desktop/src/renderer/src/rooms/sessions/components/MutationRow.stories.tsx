@@ -10,6 +10,7 @@ const row = (over: Partial<Extract<FeedRow, { kind: 'mutation' }>> = {}) => ({
   path: 'src/auth/rotation.ts',
   status: 'completed' as const,
   diff: aDiff(),
+  output: null,
   ...over,
 })
 

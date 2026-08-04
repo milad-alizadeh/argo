@@ -1,9 +1,9 @@
 import { aDiff } from './diff'
-import { aSubagent, aToolCall, aTurn, aUsage, namedPlan } from './runtimeTree'
+import { aToolCall, aTurn, aUsage, namedPlan } from './runtimeTree'
 
-// The runtime tree the interior's fixtures are built from: one finished exchange, one still open,
-// and the delegates running beside them. Its own module so `interior.ts` reads as the list of
-// SESSIONS it exports rather than as the tree they happen to share.
+// The runtime tree the interior's fixtures are built from: one finished exchange and one still open.
+// Its own module so `interior.ts` reads as the list of SESSIONS it exports rather than as the tree
+// they happen to share; the delegates running beside these turns are `interiorLenses.ts`.
 
 // The wall clock every fixture is read against. Declared here so a time can be written as a
 // distance back from it rather than as a bare number nothing explains.
@@ -46,6 +46,11 @@ export const OPEN_TURN = aTurn({
   // The calls carry real clock times a few minutes apart, and the running one has no end — which is
   // what makes its duration grow against the wall clock rather than sit at a fixed number. The
   // queued call has no time at all: it has not happened yet, and a time on it would be invented.
+  //
+  // The SHAPE of this list is the fixture's point: three quiet calls in front of the reasoning they
+  // are the evidence for, the mutation between the reasoning and the answer, and the commands after
+  // it. A feed built from it demonstrates the fold, its break at every loud row, and the weld
+  // between a run of reads and the paragraph beneath — which is what the surface exists to give.
   toolCalls: [
     aToolCall({
       id: 'c1',
@@ -53,6 +58,21 @@ export const OPEN_TURN = aTurn({
       target: 'src/auth/legacy.ts',
       atMs: NOW_MS - 12 * MINUTE,
       endedAtMs: NOW_MS - 12 * MINUTE + 2_000,
+    }),
+    aToolCall({
+      id: 'c1b',
+      name: 'Read',
+      target: 'src/auth/token.ts',
+      atMs: NOW_MS - 12 * MINUTE + 3_000,
+      endedAtMs: NOW_MS - 12 * MINUTE + 4_000,
+    }),
+    aToolCall({
+      id: 'c1c',
+      name: 'Grep',
+      kind: 'search',
+      target: 'verify(',
+      atMs: NOW_MS - 11 * MINUTE,
+      endedAtMs: NOW_MS - 11 * MINUTE + 1_000,
     }),
     // The mutation, sat between the reasoning and the answer where the agent actually made it —
     // and carrying the patch that is the whole reason this feed exists.
@@ -66,15 +86,31 @@ export const OPEN_TURN = aTurn({
       result: aDiff(),
       proseIndex: 1,
     }),
+    // A command that came back, and one still going. The line each ran is on screen either way; the
+    // output of the finished one is one click behind it.
     aToolCall({
       id: 'c3',
+      name: 'Bash',
+      kind: 'execute',
+      target: 'bun run test',
+      atMs: NOW_MS - 6 * MINUTE,
+      endedAtMs: NOW_MS - 5 * MINUTE,
+      result: {
+        kind: 'output',
+        tier: 'direct',
+        text: '  12 pass\n  0 fail\n\nRan 12 tests across 3 files. [1.38s]',
+      },
+      proseIndex: 2,
+    }),
+    aToolCall({
+      id: 'c4',
       name: 'Bash',
       kind: 'execute',
       status: 'in_progress',
       target: 'bun run typecheck',
       atMs: NOW_MS - 4 * MINUTE,
+      proseIndex: 2,
     }),
-    aToolCall({ id: 'c4', name: 'Grep', kind: 'search', status: 'pending', target: 'verify(' }),
   ],
 })
 
@@ -103,6 +139,9 @@ export const PAST_TURN = aTurn({
       atMs: NOW_MS - 50 * MINUTE,
       endedAtMs: NOW_MS - 49 * MINUTE,
     }),
+    // A change that did NOT land, carrying what it printed instead of a patch — which is the only
+    // thing that says why. Open without being asked, because a failure you have to click for is a
+    // failure you will miss.
     aToolCall({
       id: 'p2',
       name: 'Write',
@@ -111,62 +150,11 @@ export const PAST_TURN = aTurn({
       target: 'src/auth/x.ts',
       atMs: NOW_MS - 45 * MINUTE,
       endedAtMs: NOW_MS - 44 * MINUTE,
+      result: {
+        kind: 'output',
+        tier: 'direct',
+        text: "EACCES: permission denied, open 'src/auth/x.ts'",
+      },
     }),
   ],
 })
-
-// Three delegates spawned a few minutes apart and all still going, so the fanout draws three
-// different durations — which is the whole reading a subagent list is scanned for. A queued one is
-// spawned too: it has been waiting for a slot, and that wait is a real duration.
-export const LENSES = [
-  aSubagent({
-    id: 'correctness',
-    label: 'correctness lens',
-    group: 'Verify',
-    startedAtMs: NOW_MS - 11 * MINUTE,
-    turns: [
-      aTurn({
-        id: 'v1',
-        stopReason: null,
-        toolCalls: [
-          aToolCall({
-            id: 'v1c',
-            name: 'Read',
-            target: 'rotation.ts',
-            atMs: NOW_MS - 10 * MINUTE,
-            endedAtMs: NOW_MS - 10 * MINUTE + 3_000,
-          }),
-        ],
-      }),
-    ],
-  }),
-  aSubagent({
-    id: 'security',
-    label: 'security lens',
-    group: 'Verify',
-    startedAtMs: NOW_MS - 6 * MINUTE,
-    turns: [aTurn({ id: 'v2', stopReason: null, toolCalls: [] })],
-  }),
-  aSubagent({
-    id: 'repro',
-    label: 'repro lens',
-    group: 'Verify',
-    startedAtMs: NOW_MS - 2 * MINUTE,
-  }),
-  // The one that FINISHED, and the only one with a spend: a delegate's tokens arrive with its
-  // result, so a running row honestly shows none.
-  aSubagent({
-    id: 'perf',
-    label: 'perf lens',
-    group: 'Verify',
-    startedAtMs: NOW_MS - 20 * MINUTE,
-    endedAtMs: NOW_MS - 16 * MINUTE,
-    usage: aUsage({
-      inputTokens: 2,
-      outputTokens: 3_610,
-      cacheReadTokens: 82_107,
-      cacheCreationTokens: 549,
-    }),
-    turns: [aTurn({ id: 'v3' })],
-  }),
-]

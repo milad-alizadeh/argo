@@ -1,14 +1,17 @@
-import type { Agent, DiffResult, Prose, ToolCall, ToolCallStatus, Turn } from './runtimeTree'
+import { type ToolRow, toolRowsByProseIndex } from './feedCalls'
+import type { Agent, Plan, Prose, Turn } from './runtimeTree'
 
 // THE feed derivation: one Agent's runtime tree in, one ordered list of rows out. Every reading rule
 // the Activity feed has lives here rather than in a component, so each one is falsifiable without
 // mounting anything — and so the navigation list and the feed cannot disagree about what a row is.
 //
+// This file assembles a TURN; how its tool calls read (the loud/quiet policy and the fold) is
+// `feedCalls.ts`.
+//
 // One AGENT, not one session: a subagent's work is a different agent's, and a feed that concatenates
 // several reads as one timeline that never happened (issue 313).
 
-/** One row of the feed, in the order it is read. Commands, media and folding join this union in
- * later tickets; nothing here decides anything about them yet. */
+/** One row of the feed, in the order it is read. Media joins this union in a later ticket. */
 export type FeedRow =
   | { kind: 'prompt'; key: string; text: string; turnId: string }
   | { kind: 'message'; key: string; markdown: string }
@@ -16,57 +19,47 @@ export type FeedRow =
    * otherwise. `collapsed` is the derivation's decision rather than the component's, which is what
    * keeps "thoughts open closed" a test rather than a screenshot. */
   | { kind: 'thought'; key: string; markdown: string; collapsed: true }
-  /** A change the agent made to a file, carrying its own diff. Loud and un-foldable by
-   * construction: irreversible state change is never something you have to go looking for.
-   *
-   * `diff` is `null` for a mutation whose result never arrived (still running, or a turn that was
-   * interrupted) and for one whose patch the record did not carry — the row says so rather than
-   * standing in for a change it cannot show. */
-  | {
-      kind: 'mutation'
-      key: string
-      /** The file the call named, `null` where it named none. */
-      path: string | null
-      status: ToolCallStatus
-      diff: DiffResult | null
-    }
-
-const isRunning = (status: ToolCallStatus): boolean =>
-  status === 'pending' || status === 'in_progress'
-
-const mutationRow = (call: ToolCall): FeedRow => ({
-  kind: 'mutation',
-  key: `mutation:${call.id}`,
-  path: call.target,
-  status: call.status,
-  // Shown once the call has come BACK, whether it came back well or badly: a failure that still
-  // reported what it changed is a change that happened. A running call whose record already carried
-  // a patch would be a finished row wearing a live state, which is the one direction to refuse.
-  diff: isRunning(call.status) || call.result?.kind !== 'diff' ? null : call.result,
-})
-
-/** Every mutation of a turn, grouped by the point in its narrative the call was made — after that
- * many prose parts had been said, and before the next one was. Grouped in ONE pass rather than
- * re-filtered per paragraph: a long turn's calls and prose both run to the hundreds. */
-function mutationsByProseIndex(turn: Turn): Map<number, FeedRow[]> {
-  const grouped = new Map<number, FeedRow[]>()
-  for (const call of turn.toolCalls) {
-    if (call.kind !== 'edit') continue
-    // Clamped to the end of the prose so a call that ran past it lands in the trailing bucket. A
-    // mutation dropped for sitting at an index nothing reads is the exact loss this ticket fixes.
-    const index = Math.min(call.proseIndex, turn.prose.length)
-    const at = grouped.get(index) ?? []
-    at.push(mutationRow(call))
-    grouped.set(index, at)
-  }
-  return grouped
-}
+  /** The agent's live to-do list as it stood, ONE row per turn however many times that turn revised
+   * it — the Turn carries the snapshot in force while it ran (ADR-0020), so ten ticks update this row
+   * rather than adding ten. */
+  | { kind: 'plan'; key: string; plan: Plan }
+  /** The seam where history was condensed, in front of the Turn it precedes: it is visible why
+   * earlier context is no longer in the agent's head. */
+  | { kind: 'compaction'; key: string }
+  | ToolRow
 
 const proseRow = (turn: Turn, prose: Prose, index: number): FeedRow => {
   const key = `prose:${turn.id}:${index}`
   return prose.kind === 'thought'
     ? { kind: 'thought', key, markdown: prose.markdown, collapsed: true }
     : { kind: 'message', key, markdown: prose.markdown }
+}
+
+/** Where the plan row sits: at the point the plan was LAST revised, which is the only moment in the
+ * narrative it says anything about. A turn that revised no plan but inherited one gets no row — the
+ * left pane's tracker is where the session's current list is read. */
+function planIndex(turn: Turn): number {
+  const revision = turn.toolCalls.findLast((call) => call.kind === 'plan')
+  return Math.min(revision?.proseIndex ?? turn.prose.length, turn.prose.length)
+}
+
+/** Everything that sits BEFORE each prose part: that stretch's folded tool rows, and the plan row
+ * where the plan was last revised. The plan lands last in its bucket — the work of that stretch, then
+ * the list as it stood once that work was done. */
+function rowsByProseIndex(turn: Turn): Map<number, FeedRow[]> {
+  const byIndex = new Map<number, FeedRow[]>(toolRowsByProseIndex(turn))
+  // An emptied list is not a plan: reading it as a snapshot would let a cleared plan stand in for
+  // the last real one the session reported.
+  if (turn.plan === null || turn.plan.entries.length === 0) return byIndex
+  const index = planIndex(turn)
+  const row: FeedRow = { kind: 'plan', key: `plan:${turn.id}`, plan: turn.plan }
+  return byIndex.set(index, [...(byIndex.get(index) ?? []), row])
+}
+
+/** What sits at the seam in front of a Turn, which the Agent knows and the Turn does not. */
+export interface TurnSeam {
+  /** History was condensed in front of this Turn, so the feed draws the seam it was condensed at. */
+  compactedBefore: boolean
 }
 
 /**
@@ -81,23 +74,25 @@ const proseRow = (turn: Turn, prose: Prose, index: number): FeedRow => {
  * agent's voice, so a reader scrolling the feed sees where each exchange began without a heading
  * repeating it an inch above.
  *
- * Mutations are placed IN the prose sequence rather than appended after it, from the count of prose
+ * Tool rows are placed IN the prose sequence rather than appended after it, from the count of prose
  * parts each call was made after. Appending them would put every change the agent made below the
  * paragraph that explains it, and a feed read in an order that never happened explains nothing.
  */
-export function turnFeedRows(turn: Turn): FeedRow[] {
+export function turnFeedRows(turn: Turn, seam: TurnSeam = { compactedBefore: false }): FeedRow[] {
+  const opening: FeedRow[] = seam.compactedBefore
+    ? [{ kind: 'compaction', key: `compaction:${turn.id}` }]
+    : []
   // A prompt of whitespace alone has nothing in it to read, and the seam it would draw is a blank
   // rail. Absent for the same reason an absent prompt is: there is no text to show verbatim.
-  const opening: FeedRow[] =
-    turn.prompt === null || turn.prompt.trim() === ''
-      ? []
-      : [{ kind: 'prompt', key: `prompt:${turn.id}`, text: turn.prompt, turnId: turn.id }]
-  const mutations = mutationsByProseIndex(turn)
+  if (turn.prompt !== null && turn.prompt.trim() !== '') {
+    opening.push({ kind: 'prompt', key: `prompt:${turn.id}`, text: turn.prompt, turnId: turn.id })
+  }
+  const before = rowsByProseIndex(turn)
   const narrative = turn.prose.flatMap((prose, index) => [
-    ...(mutations.get(index) ?? []),
+    ...(before.get(index) ?? []),
     proseRow(turn, prose, index),
   ])
-  return [...opening, ...narrative, ...(mutations.get(turn.prose.length) ?? [])]
+  return [...opening, ...narrative, ...(before.get(turn.prose.length) ?? [])]
 }
 
 /**
@@ -109,5 +104,8 @@ export function turnFeedRows(turn: Turn): FeedRow[] {
  * external record (CONTEXT.md, honesty tier).
  */
 export function feedRows(agent: Agent): FeedRow[] {
-  return agent.turns.flatMap(turnFeedRows)
+  const compacted = new Set(agent.compactions.map((mark) => mark.beforeTurnId))
+  return agent.turns.flatMap((turn) =>
+    turnFeedRows(turn, { compactedBefore: compacted.has(turn.id) }),
+  )
 }

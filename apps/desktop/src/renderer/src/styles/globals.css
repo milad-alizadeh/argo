@@ -163,6 +163,8 @@
   --height-strip: var(--strip-height);
   --height-row: var(--row-h);
   --height-row-tight: var(--row-h-tight);
+  /* max-h-output: the bound an opened tool output scrolls inside. */
+  --height-output: var(--output-max-h);
 
   /* Motion roles: duration-fast / duration-slow / duration-pulse, ease-standard. */
   --transition-duration-fast: var(--time-fast);

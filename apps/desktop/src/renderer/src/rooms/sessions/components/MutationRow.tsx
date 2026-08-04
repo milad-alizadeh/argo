@@ -9,6 +9,7 @@ import {
   PencilSimpleIcon,
   Text,
 } from '@/shared/components/ui'
+import { CallOutput } from './CallOutput'
 
 // The feed's loud row. Everything else on this surface is something the agent SAID; this is
 // something it DID to your code, so it renders its diff with no click and cannot be folded away.
@@ -80,7 +81,8 @@ function changeMark(status: ToolCallStatus, diff: DiffResult | null): ChangeMark
 }
 
 /** Why there is no patch under a row that has one to give. Absent for a call still running, whose
- * body says so instead. */
+ * body says so instead, and for a failure that printed WHY — that text is the better answer, and it
+ * replaces this line rather than sitting above it. */
 function missingDiffReason(status: ToolCallStatus): string {
   return status === 'failed'
     ? 'no diff available: the call failed before it reported one'
@@ -115,13 +117,19 @@ export function MutationRow({
 }: {
   row: Extract<FeedRow, { kind: 'mutation' }>
 }): React.JSX.Element {
-  const { path, status, diff } = row
+  const { path, status, diff, output } = row
   const { Icon, word, tone, ring } = changeMark(status, diff)
   const running = status === 'pending' || status === 'in_progress'
   return (
     <div className={cn('flex flex-col gap-tight rounded-md inset-card px-inset py-gap', ring)}>
       <div className="flex items-baseline gap-snug">
-        <Text aria-hidden variant="prose" className={cn('shrink-0', tone)}>
+        {/* One mark column across the whole feed — the quiet row, the command row and this one all
+            hang their glyph in the same cell, so a turn's rows read as a column. */}
+        <Text
+          aria-hidden
+          variant="code"
+          className={cn('grid w-mark-col shrink-0 place-items-center', tone)}
+        >
           <Icon className="icon-sm" />
         </Text>
         <Text variant="code" className={cn('shrink-0 uppercase', tone)}>
@@ -137,12 +145,15 @@ export function MutationRow({
           no result yet: this change has not been reported back
         </Text>
       )}
-      {!running && diff === null && (
+      {!running && diff === null && output === null && (
         <Text variant="code" className="text-foreground-faint">
           {missingDiffReason(status)}
         </Text>
       )}
       {diff !== null && <DiffView hunks={diff.hunks} maxHunks={FEED_HUNK_BOUND} />}
+      {/* What the call printed, where it printed anything: for a FAILED change that text is the only
+          thing that says why the edit did not land, so it opens without being asked. */}
+      {output !== null && <CallOutput output={output} defaultOpen={status === 'failed'} />}
     </div>
   )
 }

@@ -38,7 +38,9 @@ export const TwoPane: Story = {
     // The nav pane's reading order: delegated work first, then the plan, then this session's own
     // turns — asserted as an ORDER, the one thing three stacked sections can get wrong while every
     // one of them still renders. The trailing `Subagents` is the feed's own heading, further down
-    // the document than the whole nav column.
+    // the document than the whole nav column. `Plan` heads the nav ONCE and only there: the feed's
+    // own plan row states the revision in a line (`plan 2 of 4 · …`) rather than re-drawing the
+    // list, so the tracker stays the one place the whole list with its marks is read.
     const sections = canvas.getAllByText(/^(Subagents|Plan|Timeline)$/)
     await expect(sections.map((node) => node.textContent)).toEqual([
       'Subagents',

@@ -1,8 +1,12 @@
 import type { FeedRow } from '@shared'
 import { cn } from '@/lib/utils'
 import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import { CallRow } from './CallRow'
+import { CompactionMarker } from './CompactionMarker'
 import { MutationRow } from './MutationRow'
+import { PlanRow } from './PlanRow'
 import { Prose } from './Prose'
+import { QuietRow } from './QuietRow'
 import { DISCLOSURE } from './rowRecipes'
 
 // The narrative rows of one Turn. The agent's own rows read as markdown (`Prose`, whose subset is
@@ -88,6 +92,14 @@ function Row({ row }: { row: FeedRow }): React.JSX.Element {
       return <ThoughtRow markdown={row.markdown} />
     case 'mutation':
       return <MutationRow row={row} />
+    case 'call':
+      return <CallRow row={row} />
+    case 'quiet':
+      return <QuietRow row={row} />
+    case 'plan':
+      return <PlanRow plan={row.plan} />
+    case 'compaction':
+      return <CompactionMarker />
   }
 }
 

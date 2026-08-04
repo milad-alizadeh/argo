@@ -508,6 +508,12 @@
   --row-h-tight: 20px; /* a tree row, a chip row */
   --row-h: 22px; /* a roster/list row */
 
+  /* How tall an opened tool output stands before it scrolls inside itself (#317). A bound
+   * rather than a truncation: a thousand-line build log opened in the feed would swallow the
+   * prose it sits beside, and cutting it would hide the tail — which for a stack trace is the
+   * part that names the cause. Roughly a dozen code lines, the depth of a glance. */
+  --output-max-h: 220px;
+
   /* The one shared strip height: the Delivery panel's tab strip IS its header, sized to
    * match the Delivery lifecycle's own strip so the two stack with no visual seam. Named
    * rather than left implicit so a future build reads the same constant instead of
