@@ -8,14 +8,22 @@ import { TurnFeed } from './TurnFeed'
 // can keep passing after the derivation stops producing them, which is the one thing these stories
 // exist to catch. The prose is the interior fixture's, so this surface and the assembled one are
 // demonstrably reading the same exchange.
-const [PROMPT, THOUGHT, MESSAGE] = turnFeedRows(OPEN_TURN)
+const [PROMPT, THOUGHT, MUTATION, MESSAGE] = turnFeedRows(OPEN_TURN)
 
-if (!PROMPT || !THOUGHT || !MESSAGE) throw new Error('the fixture turn must carry all three rows')
+if (!PROMPT || !THOUGHT || !MUTATION || !MESSAGE) {
+  throw new Error('the fixture turn must carry all four rows')
+}
+
+// The thought's own disclosure, named rather than found by role: the mutation row's bound carries a
+// second collapsed control, and a story that clicked "the collapsed button" would open whichever
+// came first.
+const thoughtToggle =
+  'The legacy module exports verify() and rotate() from one file, and the tests import both from the barrel.'
 
 const meta = {
   title: 'Sessions/Activity/TurnFeed',
   component: TurnFeed,
-  args: { rows: [PROMPT, THOUGHT, MESSAGE] },
+  args: { rows: [PROMPT, THOUGHT, MUTATION, MESSAGE] },
   argTypes: { rows: { control: false, table: { type: { summary: 'FeedRow[]' } } } },
   decorators: [
     (Story) => (
@@ -38,8 +46,11 @@ export const Exchange: Story = {
     await expect(canvas.getByText(/legacy.ts holds two unrelated jobs/)).toBeInTheDocument()
     // Collapsed: the first line is shown, the second is not — and the reasoning is not mistakable
     // for the answer.
-    await expect(canvas.getByRole('button', { expanded: false })).toBeInTheDocument()
+    await expect(canvas.getByText(thoughtToggle)).toBeInTheDocument()
     await expect(canvas.queryByText(/every caller breaks at once/)).not.toBeInTheDocument()
+    // And the change it made in the middle of saying it, with its diff already on screen.
+    await expect(canvas.getByText('edited')).toBeInTheDocument()
+    await expect(canvas.getByText(/export class Rotation/)).toBeInTheDocument()
   },
 }
 
@@ -47,7 +58,7 @@ export const Exchange: Story = {
 export const ThoughtOpened: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { expanded: false }))
+    await userEvent.click(canvas.getByText(thoughtToggle))
     await expect(canvas.getByText(/every caller breaks at once/)).toBeInTheDocument()
   },
 }

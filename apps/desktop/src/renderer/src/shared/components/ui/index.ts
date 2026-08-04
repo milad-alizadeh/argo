@@ -2,6 +2,7 @@ export { AccentCard, AccentCardHeader, type AccentCardTone } from './AccentCard'
 export { Badge, type BadgeVariant, badgeVariants } from './badge'
 export { Button, type ButtonVariant, buttonVariants } from './button'
 export { Checkbox } from './checkbox'
+export { DiffView } from './DiffView'
 export {
   DropdownMenu,
   DropdownMenuContent,

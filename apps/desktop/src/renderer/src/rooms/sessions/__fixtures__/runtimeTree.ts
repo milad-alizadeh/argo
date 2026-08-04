@@ -20,6 +20,8 @@ export const aToolCall = (over: Partial<ToolCall> & { id: string }): ToolCall =>
   atMs: null,
   endedAtMs: null,
   usage: null,
+  result: null,
+  proseIndex: 0,
   ...over,
 })
 

@@ -101,7 +101,7 @@ describe('the feed the own items carry', () => {
     expect(turns.map(({ key }) => key)).toEqual(['turn:first', 'turn:second'])
   })
 
-  it('carries each turn its own prose rows, under the ordinal its navigation row wears', () => {
+  it('carries each turn its own prose rows, and no head above them', () => {
     const session = sessionView({
       id: 's',
       agents: [
@@ -122,8 +122,18 @@ describe('the feed the own items carry', () => {
       'thought',
       'message',
     ])
-    // The section and its navigation row wear ONE ordinal and one key, not two derivations of them.
-    expect(item?.kind === 'turn' && item.ordinal).toBe(1)
+  })
+
+  // The head is gone: the prompt row IS the seam between exchanges, so the section keeps the row
+  // rather than dropping it to a heading that clipped the same sentence an inch above.
+  it('opens a turn section with the prompt that caused it, however short', () => {
+    const session = sessionView({
+      id: 's',
+      agents: [rootWith([turn({ id: 't', prompt: 'ship it' })])],
+    })
+    const item = buildActivity(session).own[0]
+
+    expect(item?.kind === 'turn' && item.rows.map(({ kind }) => kind)).toEqual(['prompt'])
   })
 
   it('carries each subagent its own feed, so the detail pane never re-looks-it-up', () => {
