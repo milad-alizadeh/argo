@@ -3,8 +3,10 @@ import { join } from 'node:path'
 
 export { parseTranscript } from './claudeTranscript'
 export { discoverWorkingSet, selectWorkingSet, WORKING_SET_WINDOW_MS } from './discover'
+export { readImageFile } from './imageFile'
 export { gatherClaudeProcesses } from './liveness'
 export { createManagedSessions, type ManagedSessions } from './managed'
+export { type ImageReader, NO_IMAGE_READER } from './mediaResult'
 export {
   type GradeStatus,
   toObservedSession,

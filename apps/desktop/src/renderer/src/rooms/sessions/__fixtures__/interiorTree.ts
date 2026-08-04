@@ -1,4 +1,5 @@
 import { aDiff } from './diff'
+import { theSameShotTwice } from './media'
 import { aToolCall, aTurn, aUsage, namedPlan } from './runtimeTree'
 
 // The runtime tree the interior's fixtures are built from: one finished exchange and one still open.
@@ -96,6 +97,7 @@ export const OPEN_TURN = aTurn({
       result: aDiff(),
       proseIndex: 1,
     }),
+    ...theSameShotTwice(NOW_MS - 9 * MINUTE + 20_000),
     // A command that came back, and one still going. The line each ran is on screen either way; the
     // output of the finished one is one click behind it.
     aToolCall({

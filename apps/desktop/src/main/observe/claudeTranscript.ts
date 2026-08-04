@@ -1,3 +1,4 @@
+import { type ImageReader, NO_IMAGE_READER } from './mediaResult'
 import { createTreeBuilder } from './tree'
 import { promptText } from './turnFacts'
 import type { ParsedTranscript } from './types'
@@ -35,8 +36,19 @@ export function emptyTranscript(sessionId: string): ParsedTranscript {
   }
 }
 
-export function parseTranscript(sessionId: string, lines: string[]): ParsedTranscript {
-  const tree = createTreeBuilder()
+/**
+ * One raw transcript's lines → one tamed ParsedTranscript.
+ *
+ * `readImage` is the disk fallback for an image the record embedded no bytes for, defaulted to none:
+ * a caller that supplies no reader gets only what the record itself carried, which is the honest
+ * floor rather than a silently missing feature.
+ */
+export function parseTranscript(
+  sessionId: string,
+  lines: string[],
+  readImage: ImageReader = NO_IMAGE_READER,
+): ParsedTranscript {
+  const tree = createTreeBuilder(readImage)
   const parsed = emptyTranscript(sessionId)
 
   for (const line of lines) {

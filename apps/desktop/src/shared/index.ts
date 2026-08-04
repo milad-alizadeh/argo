@@ -1,6 +1,7 @@
 export * from './channels'
 export * from './cockpitState'
 export * from './feedCalls'
+export * from './feedMedia'
 export * from './feedRows'
 export * from './git'
 export * from './honesty'

@@ -1,0 +1,11 @@
+# Design-token allowlist — one grep -E pattern per line, matched against the whole
+# "path:line:content" finding. A finding is normally fixed by snapping to a token or
+# promoting one; an entry here is only for something the token contract does not govern.
+# Label every entry KIND (permanent — the rule does not apply to that category) or
+# RATCHET (debt; the list may only shrink).
+
+# KIND — #318. The media fixture draws a mock screenshot as an SVG and base64s it into a
+# data: URI. Those hexes are PIXELS INSIDE AN IMAGE, not UI colour: there is no cascade to
+# reach a token from, and the whole point is that three renders look visibly different.
+# Callers name a stage (`ShotStage`), so no colour crosses out of this file.
+rooms/sessions/__fixtures__/media\.ts:

@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
 import { CallRow } from './CallRow'
 import { CompactionMarker } from './CompactionMarker'
+import { MediaRow } from './MediaRow'
 import { MutationRow } from './MutationRow'
 import { PlanRow } from './PlanRow'
 import { Prose } from './Prose'
@@ -96,6 +97,8 @@ function Row({ row }: { row: FeedRow }): React.JSX.Element {
       return <CallRow row={row} />
     case 'quiet':
       return <QuietRow row={row} />
+    case 'media':
+      return <MediaRow row={row} />
     case 'plan':
       return <PlanRow plan={row.plan} />
     case 'compaction':

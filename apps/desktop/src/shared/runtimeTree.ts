@@ -86,13 +86,25 @@ export interface OutputResult {
   text: string
 }
 
-/** What a call SHOWED — the bytes the agent actually looked at, not whatever is at that path now.
- * Declared with the union; nothing populates it yet. */
+/**
+ * What a call SHOWED — the bytes the agent actually looked at, not whatever is at that path now.
+ *
+ * The `tier` is the whole point of the object rather than a decoration on it. `direct` is the
+ * transcript's OWN embedded block: what the agent was sent, unable to be invalidated later by an
+ * edit to the file. `derived` is a re-read of the path now — the same filename, which after three
+ * renders in one turn is very often not the same picture, and which a row must therefore label as
+ * such rather than pass off as what was seen.
+ */
 export interface MediaResult {
   kind: 'media'
   tier: Tier
+  /** The image's own type as the record declared it, or as its extension implies for a disk read.
+   * What a row names when it has no pixels to show. */
   mediaType: string
-  dataUri: string
+  /** The image, base64, exactly as it was read. `null` where there are none to show — an embedded
+   * block that carried nothing, or a file that is missing, deleted or unreadable. A row with no
+   * bytes says so; it never renders a broken-image glyph. */
+  bytes: string | null
 }
 
 /**

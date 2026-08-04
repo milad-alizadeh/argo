@@ -2,6 +2,7 @@ import type {
   Agent,
   Compaction,
   DiffResult,
+  MediaResult,
   OutputResult,
   Prose,
   ToolCall,
@@ -76,6 +77,36 @@ export const aCall = (over: Partial<ToolCall> & { id: string }): ToolCall => ({
 })
 
 export const anOutput = (text: string): OutputResult => ({ kind: 'output', tier: 'direct', text })
+
+/** A one-pixel PNG, base64. Real bytes rather than a placeholder string, so a story renders a picture
+ * and a `<img>` that will not decode is a failure of the code rather than of the fixture. */
+export const PIXEL_PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=='
+
+/** The embedded tier by default — what the agent actually saw. Pass `tier: 'derived'` for the disk
+ * fallback, and `bytes: null` for the image that cannot be shown at all. */
+export const aMedia = (over: Partial<MediaResult> = {}): MediaResult => ({
+  kind: 'media',
+  tier: 'direct',
+  mediaType: 'image/png',
+  bytes: PIXEL_PNG,
+  ...over,
+})
+
+/** A call that came back with pixels. A `read` by default, which is what a `Read` of a screenshot is;
+ * an MCP browser tool lands on `other` and reads exactly the same. */
+export const aShot = (over: Partial<ToolCall> & { id: string }): ToolCall => ({
+  name: 'Read',
+  kind: 'read',
+  status: 'completed',
+  target: 'tmp/shot.png',
+  atMs: null,
+  endedAtMs: null,
+  usage: null,
+  result: aMedia(),
+  proseIndex: 0,
+  ...over,
+})
 
 export const aUsage = (over: Partial<Usage> = {}): Usage => ({
   inputTokens: 120,
