@@ -34,9 +34,8 @@ type Story = StoryObj<typeof meta>
  * A file the agent edited, with its diff already on screen. Nothing was clicked to get here: the
  * one thing a returning reader must not be able to scroll past is a change to their code.
  *
- * The caption under the patch is load-bearing. This renderer is shared with Delivery's Files view,
- * whose diff IS the current state of a branch, and this one is not — it is what that edit changed
- * at the moment it was made.
+ * What it shows is what that edit changed WHEN it was made, not the file as it stands now. The
+ * past-tense verb and the feed's own chronology carry that; no caption repeats it under every row.
  */
 export const Modified: Story = {
   play: async ({ canvasElement }) => {
@@ -44,7 +43,6 @@ export const Modified: Story = {
     await expect(canvas.getByText('edited')).toBeInTheDocument()
     await expect(canvas.getByText('+6')).toBeInTheDocument()
     await expect(canvas.getByText('-1')).toBeInTheDocument()
-    await expect(canvas.getByText(/not the file as it is now/)).toBeInTheDocument()
   },
 }
 

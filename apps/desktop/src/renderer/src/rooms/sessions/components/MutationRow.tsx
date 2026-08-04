@@ -26,30 +26,22 @@ interface ChangeMark {
   /** The word the row wears, in the vocabulary of what happened to the FILE. */
   word: string
   tone: string
-  rail: string
+  /** A ring around the whole card, for the one change worth ringing. Empty for the rest: a surface
+   * outlined on every row is a surface with no emphasis left to spend. */
+  ring: string
 }
 
-// A creation and a deletion are as distinct as a modification, in three channels at once — icon,
-// word and rail — because a deleted file scrolled past unnoticed is the most expensive thing this
-// feed can do. Written out literally so Tailwind's scanner still sees each class.
+// A creation and a deletion are as distinct as a modification: icon and word for all three, and a
+// ring for the deletion, because a deleted file scrolled past unnoticed is the most expensive thing
+// this feed can do. Written out literally so Tailwind's scanner still sees each class.
 const CHANGE_MARKS: Readonly<Record<FileChange, ChangeMark>> = {
-  create: {
-    Icon: FilePlusIcon,
-    word: 'created',
-    tone: 'text-signal-ok',
-    rail: 'border-l-signal-ok',
-  },
-  modify: {
-    Icon: FileTextIcon,
-    word: 'edited',
-    tone: 'text-foreground-soft',
-    rail: 'border-l-inset-hair',
-  },
+  create: { Icon: FilePlusIcon, word: 'created', tone: 'text-signal-ok', ring: '' },
+  modify: { Icon: FileTextIcon, word: 'edited', tone: 'text-foreground-soft', ring: '' },
   delete: {
     Icon: FileMinusIcon,
     word: 'deleted',
     tone: 'text-signal-bad',
-    rail: 'border-l-signal-bad',
+    ring: 'ring-1 ring-inset ring-signal-bad/25',
   },
 }
 
@@ -58,14 +50,14 @@ const RUNNING_MARK: ChangeMark = {
   Icon: PencilSimpleIcon,
   word: 'editing',
   tone: 'text-tone-run',
-  rail: 'border-l-tone-run',
+  ring: '',
 }
 
 const FAILED_MARK: ChangeMark = {
   Icon: PencilSimpleIcon,
   word: 'failed',
   tone: 'text-tone-red',
-  rail: 'border-l-tone-red',
+  ring: 'ring-1 ring-inset ring-tone-red/25',
 }
 
 /**
@@ -109,11 +101,14 @@ function Churn({ diff }: { diff: DiffResult }): React.JSX.Element {
 /**
  * Organism: one change the agent made to a file, with its diff inline.
  *
- * The caption under the diff is load-bearing rather than decorative. This component and Delivery's
- * Files view share one renderer, and the two show different things: Delivery's diff is the branch
- * against its base and is current, while this is what ONE edit changed at the moment it was made —
- * a later edit to the same file does not update it, and the file on disk may look nothing like it
- * now. Sharing the renderer must not make this row read as the authoritative one.
+ * What this shows is POINT-IN-TIME: what one edit changed at the moment it was made. A later edit to
+ * the same file does not update it, and the file on disk may look nothing like it now. The row says
+ * so through its own grammar rather than through a caption — a past-tense verb on a dated row in a
+ * chronological feed — because a sentence repeated under every diff on the surface stops being read
+ * long before the surface stops needing it understood.
+ *
+ * That distinction still matters: this shares a renderer with Delivery's Files view, whose diff IS
+ * the branch against its base and IS current.
  */
 export function MutationRow({
   row,
@@ -121,10 +116,10 @@ export function MutationRow({
   row: Extract<FeedRow, { kind: 'mutation' }>
 }): React.JSX.Element {
   const { path, status, diff } = row
-  const { Icon, word, tone, rail } = changeMark(status, diff)
+  const { Icon, word, tone, ring } = changeMark(status, diff)
   const running = status === 'pending' || status === 'in_progress'
   return (
-    <div className={cn('flex flex-col gap-tight border-l-2 pl-inset', rail)}>
+    <div className={cn('flex flex-col gap-tight rounded-md inset-card px-inset py-gap', ring)}>
       <div className="flex items-baseline gap-snug">
         <Text aria-hidden variant="prose" className={cn('shrink-0', tone)}>
           <Icon className="icon-sm" />
@@ -147,14 +142,7 @@ export function MutationRow({
           {missingDiffReason(status)}
         </Text>
       )}
-      {diff !== null && (
-        <>
-          <DiffView hunks={diff.hunks} maxHunks={FEED_HUNK_BOUND} />
-          <Text variant="meta" className="text-foreground-faint">
-            what this change did, when it was made · not the file as it is now
-          </Text>
-        </>
-      )}
+      {diff !== null && <DiffView hunks={diff.hunks} maxHunks={FEED_HUNK_BOUND} />}
     </div>
   )
 }
