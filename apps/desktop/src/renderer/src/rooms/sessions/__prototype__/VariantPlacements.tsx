@@ -52,7 +52,11 @@ export function VariantPlacements({
         className="proto-feed-scroller min-h-0 min-w-0 flex-1 overflow-y-auto p-region pt-0"
       >
         {chapters.map((chapter) => (
-          <section key={chapter.key} {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
+          <section
+            key={chapter.key}
+            {...{ [ANCHOR]: chapter.key }}
+            className="mt-plane flex flex-col first:mt-0"
+          >
             {chapter.compactedBefore && (
               <div className="py-region">
                 <CompactionMarker />

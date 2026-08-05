@@ -139,7 +139,11 @@ export function VariantSynthesis({
         {/* Sections run at FULL pane width so the sticky seam spans edge to edge; only the prose
             column inside is held to a measure, because line length is a reading rule, not a layout. */}
         {chapters.map((chapter) => (
-          <section key={chapter.key} {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
+          <section
+            key={chapter.key}
+            {...{ [ANCHOR]: chapter.key }}
+            className="mt-plane flex flex-col first:mt-0"
+          >
             {chapter.compactedBefore && (
               <div className="py-region">
                 <CompactionMarker />
