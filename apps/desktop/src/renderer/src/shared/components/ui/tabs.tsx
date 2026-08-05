@@ -41,12 +41,14 @@ const tabsTriggerVariants = cva(
         changes:
           'text-verdict-changes tabular-nums data-[state=active]:bg-verdict-changes-tint/12 data-[state=active]:text-verdict-changes data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-verdict-changes-tint/40',
       },
-      // How the active tab is marked. `fill` washes the whole seat; `rail` underlines it in the
-      // attention ink and leaves the seat unpainted, for a tab strip that sits INSIDE a band it
-      // must not out-shout.
+      // How the active tab is marked. `fill` washes the whole seat; `glow` seats it on a
+      // washed-gold gradient pill with the cockpit's currentColor halo — a wash, not the screen's
+      // one SOLID primary — for the strip that IS its band's active statement (the session
+      // header). `transition-all` so the wash, the ring and the halo all fade in rather than
+      // snapping.
       seat: {
         fill: 'rounded-lg data-[state=active]:bg-foreground/6',
-        rail: 'rounded-none border-b-2 border-b-transparent data-[state=active]:border-b-primary',
+        glow: 'rounded-lg transition-all duration-fast hover:text-foreground data-[state=active]:bg-linear-to-b data-[state=active]:from-primary/16 data-[state=active]:to-primary/4 data-[state=active]:text-primary data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-primary/25 data-[state=active]:glow data-[state=active]:glow-quiet',
       },
     },
     defaultVariants: { tone: 'neutral', seat: 'fill' },

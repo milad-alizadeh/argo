@@ -17,9 +17,9 @@ export function SessionTabs({ className }: { className?: string }): React.JSX.El
   return (
     <TabsList aria-label="Session panels" className={className}>
       {INTERIOR_TABS.map((tab) => (
-        // `rail`: the strip sits inside the header band, so the active tab is underlined in the
-        // attention ink rather than seated on a filled pill that would read as a control of its own.
-        <TabsTrigger key={tab} value={tab} seat="rail">
+        // `glow`: the strip is the header band's active statement, so the live tab seats on the
+        // washed-gold gradient pill with its halo rather than a bare underline.
+        <TabsTrigger key={tab} value={tab} seat="glow">
           <Text variant="row">{TAB_LABELS[tab]}</Text>
         </TabsTrigger>
       ))}

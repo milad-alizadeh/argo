@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { FRESH, interiorOf, WIDE_FANOUT } from '../__fixtures__/interior'
 import { LONG_INTERIOR } from '../__fixtures__/longSession'
+import { REAL_INTERIOR } from '../__fixtures__/realSession'
 import { ActivityPane } from './ActivityPane'
 
 const meta = {
@@ -49,6 +50,14 @@ export const Surface: Story = {
     )
   },
 }
+
+/**
+ * A REAL session, parsed from an actual Claude Code transcript on disk (the #318 implement run):
+ * twelve root turns, two review delegates, 250+ tool calls, real prompts, thoughts and diffs.
+ * The surface judged against what observation actually yields — command-XML prompts, one giant
+ * turn, failure noise and all — rather than against hand-written miniatures.
+ */
+export const RealSession: Story = { args: { activity: REAL_INTERIOR.activity } }
 
 /** Thirty subagents in the rail beside a live feed — the density the rail must stay scannable at. */
 export const WideFanout: Story = { args: { activity: interiorOf(WIDE_FANOUT).activity } }

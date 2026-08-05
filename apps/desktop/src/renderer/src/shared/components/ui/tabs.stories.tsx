@@ -58,6 +58,35 @@ export const ChangesTone: Story = {
   },
 }
 
+/** The `glow` seat — the session header's strip: the active tab on a washed-gold gradient pill
+ * with the cockpit's currentColor halo, fading between seats rather than snapping. */
+export const GlowSeat: Story = {
+  render: () => (
+    <Tabs defaultValue="activity">
+      <TabsList aria-label="Session panels">
+        <TabsTrigger value="activity" seat="glow">
+          Activity
+        </TabsTrigger>
+        <TabsTrigger value="delivery" seat="glow">
+          Delivery
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('tab', { name: 'Activity' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    await userEvent.click(canvas.getByRole('tab', { name: 'Delivery' }))
+    await expect(canvas.getByRole('tab', { name: 'Delivery' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  },
+}
+
 /** Both tones, active state highlighted — the visual-diff surface for the trigger's cva map. */
 export const AllTones: Story = {
   render: () => (

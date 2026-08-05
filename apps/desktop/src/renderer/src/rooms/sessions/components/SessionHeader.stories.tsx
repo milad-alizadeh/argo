@@ -25,7 +25,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The band as one thing: ring, title over meta, tabs bottom-aligned right. This is the story that
+ * The band as one thing: ring, title with its meta beside it on the right, tabs on the line below. This is the story that
  * proves the composition rather than any child's props — the tabs sit INSIDE the band, there is no
  * strip beneath it, and there is no button or `⋯` anywhere in it.
  */

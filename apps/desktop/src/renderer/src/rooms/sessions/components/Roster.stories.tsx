@@ -100,7 +100,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The populated rail: `+ New session` pinned at the top, then one plane per session in
+ * The populated rail: one plane per session with `+ New session` just below the rows, in
  * most-recent-first order, each reading `dot · name · word` over `model · branch`. This is where the
  * whole read is judged — the two rows asking for you carry the gold sweep (a permission prompt, and
  * a delivery locked by a check that no longer speaks for its commit), the failed check burns red and
