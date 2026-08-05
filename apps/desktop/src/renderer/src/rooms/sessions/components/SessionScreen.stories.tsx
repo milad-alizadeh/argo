@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { EXTERNAL, FRESH, interiorOf, RUNNING, withIntent } from '../__fixtures__/interior'
+import { REAL_INTERIOR, REAL_SESSION } from '../__fixtures__/realSession'
 import { buildSessionsRoomModel } from '../sessionsRoomModel'
 import { SPINE } from '../useSpineLayout'
 import { SessionScreen } from './SessionScreen'
@@ -61,6 +62,28 @@ export const OpenSession: Story = {
     await expect(canvas.getByRole('heading', { name: 'Auth refactor' })).toBeInTheDocument()
     await userEvent.click(within(rail).getByText('~/argo · explore join drift'))
     await expect(args.handlers.onSelectSession).toHaveBeenCalledWith('watched')
+  },
+}
+
+/**
+ * The room over a REAL session — the #318 implement run's own transcript, parsed by the app's
+ * parser: twelve root turns, 250+ tool calls, and the two review subagents in the agents rail
+ * with their real token spend. This is the density the mocked stories can't fake.
+ */
+export const RealSession: Story = {
+  args: {
+    roster: buildSessionsRoomModel({
+      sessions: [REAL_SESSION, ...ROSTER],
+      selectedId: REAL_SESSION.id,
+    }),
+    interior: REAL_INTERIOR,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const agents = canvas.getByRole('list', { name: 'Agents' })
+    await expect(within(agents).getByText('Main session')).toBeInTheDocument()
+    // The run's two real delegates, straight from the sidechain transcripts.
+    await expect(within(agents).getAllByRole('listitem').length).toBeGreaterThanOrEqual(3)
   },
 }
 
