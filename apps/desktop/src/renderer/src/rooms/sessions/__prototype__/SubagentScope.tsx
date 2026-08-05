@@ -52,29 +52,39 @@ function EventRow({ step }: { step: ToolStepModel }): React.JSX.Element {
 export function SubagentScope({
   item,
   onBack,
+  backless,
 }: {
   item: DelegateItem
   onBack: () => void
+  /** When a standing rail is the way back (the F2 placement), the bar drops its back button and
+   * just names whose feed this is — two ways back is one too many. */
+  backless?: boolean
 }): React.JSX.Element {
   const { subagent, group, events } = item
   return (
     <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-region pt-0">
       <div className={STICKY_BAR}>
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex min-w-0 cursor-pointer items-center gap-snug rounded-md text-left outline-none hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring/60"
-        >
-          <Text aria-hidden variant="row" className="shrink-0 text-foreground-faint">
-            <CaretLeftIcon className="icon-sm" />
-          </Text>
-          <Text variant="tag" className="shrink-0 text-foreground-faint">
-            session
-          </Text>
+        {backless === true ? (
           <Text variant="row" className="min-w-0 truncate text-foreground">
             {subagent.name}
           </Text>
-        </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex min-w-0 cursor-pointer items-center gap-snug rounded-md text-left outline-none hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring/60"
+          >
+            <Text aria-hidden variant="row" className="shrink-0 text-foreground-faint">
+              <CaretLeftIcon className="icon-sm" />
+            </Text>
+            <Text variant="tag" className="shrink-0 text-foreground-faint">
+              session
+            </Text>
+            <Text variant="row" className="min-w-0 truncate text-foreground">
+              {subagent.name}
+            </Text>
+          </button>
+        )}
         <div className="flex-1" />
         <Text variant="tag" className="shrink-0 text-foreground-faint">
           {[group, subagent.took, subagent.tokens === null ? null : `${subagent.tokens} tokens`]

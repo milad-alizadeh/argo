@@ -1,5 +1,5 @@
 import type { FeedRow, MediaRowModel } from '@shared'
-import { useRef, useState } from 'react'
+import { Fragment, useRef, useState } from 'react'
 import { StatusDot, Text } from '@/shared/components/ui'
 import { CompactionMarker } from '../components/CompactionMarker'
 import { SubagentRow } from '../components/SubagentRow'
@@ -138,29 +138,30 @@ export function VariantSynthesis({
       >
         {/* Sections run at FULL pane width so the sticky seam spans edge to edge; only the prose
             column inside is held to a measure, because line length is a reading rule, not a layout. */}
-        {chapters.map((chapter) => (
-          <section
-            key={chapter.key}
-            {...{ [ANCHOR]: chapter.key }}
-            className="mt-plane flex flex-col first:mt-0"
-          >
-            {chapter.compactedBefore && (
-              <div className="py-region">
-                <CompactionMarker />
-              </div>
-            )}
-            <StickySeam chapter={chapter} plan={plan} />
-            <div className="flex max-w-[78ch] flex-col gap-region py-region">
-              {segmentsOf(chapter.rows).map((segment) =>
-                segment.kind === 'shots' ? (
-                  <ShotGallery key={segment.key} rows={segment.shots} />
-                ) : (
-                  <TurnFeed key={segment.key} rows={segment.rows} />
-                ),
+        {chapters.map((chapter, index) => (
+          <Fragment key={chapter.key}>
+            {/* Where one turn ends and the next begins, DRAWN: a full-width rule in the middle of
+                the gap, so the boundary is a line you see rather than air you infer. */}
+            {index > 0 && <div aria-hidden className="my-plane h-px shrink-0 bg-foreground/15" />}
+            <section {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
+              {chapter.compactedBefore && (
+                <div className="pb-region">
+                  <CompactionMarker />
+                </div>
               )}
-              <DelegateDoor delegates={chapter.delegates} onOpen={setScope} />
-            </div>
-          </section>
+              <StickySeam chapter={chapter} plan={plan} />
+              <div className="flex max-w-[78ch] flex-col gap-region py-region">
+                {segmentsOf(chapter.rows).map((segment) =>
+                  segment.kind === 'shots' ? (
+                    <ShotGallery key={segment.key} rows={segment.shots} />
+                  ) : (
+                    <TurnFeed key={segment.key} rows={segment.rows} />
+                  ),
+                )}
+                <DelegateDoor delegates={chapter.delegates} onOpen={setScope} />
+              </div>
+            </section>
+          </Fragment>
         ))}
       </div>
       <DensityGutter

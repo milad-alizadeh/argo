@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import {
   CaretDownIcon,
   DropdownMenu,
@@ -7,6 +8,7 @@ import {
   Text,
 } from '@/shared/components/ui'
 import { SUBAGENT_STATES } from '../activityStates'
+import { NAV_ROW, NAV_ROW_SELECTED } from '../components/rowRecipes'
 import { SubagentRow } from '../components/SubagentRow'
 import type { Chapter } from './feedIndex'
 import type { DelegateItem } from './SubagentScope'
@@ -58,29 +60,47 @@ export function SubagentChips({
   )
 }
 
-/** F2 — a RIGHT RAIL between the feed and the minimap: the shipped dense rows, standing, session-
- * wide. The most legible placement and the most expensive one — it is the old nav pane's seat,
- * narrowed to one job. */
+/** F2 — a LEFT RAIL of every agent on the surface: the main session first, then the delegates, the
+ * shipped dense rows. Standing and session-wide — the old nav pane's seat narrowed to one job — but
+ * it EARNS the seat by being the scope switcher itself: whichever agent's feed fills the surface is
+ * the selected row, and the main session is a row like any other, so the way back is one click, not
+ * a back button. A session with no delegates shows no rail at all. */
 export function SubagentRail({
   delegates,
-  onOpen,
+  scope,
+  onSelect,
 }: {
   delegates: readonly DelegateItem[]
-  onOpen: (item: DelegateItem) => void
+  /** Whose feed the surface is showing — `null` is the main session. */
+  scope: DelegateItem | null
+  onSelect: (item: DelegateItem | null) => void
 }): React.JSX.Element | null {
   if (delegates.length === 0) return null
   return (
-    <div className="flex w-[240px] shrink-0 flex-col gap-tight overflow-y-auto border-l border-l-inset-hair p-inset">
+    <div className="flex w-[240px] shrink-0 flex-col gap-tight overflow-y-auto border-r border-r-inset-hair p-inset">
       <Text variant="eyebrow" className="text-foreground-faint">
-        subagents
+        agents
       </Text>
-      <ul aria-label="Subagents" className="flex flex-col">
+      <ul aria-label="Agents" className="flex flex-col">
+        <li>
+          <button
+            type="button"
+            onClick={() => onSelect(null)}
+            aria-current={scope === null ? 'true' : undefined}
+            className={cn(NAV_ROW, scope === null && NAV_ROW_SELECTED)}
+          >
+            <StatusDot tone="run" glow="live" pulse />
+            <Text variant="row" className="min-w-0 flex-1 truncate text-foreground">
+              Main session
+            </Text>
+          </button>
+        </li>
         {delegates.map((item) => (
           <SubagentRow
             key={item.key}
             row={item.subagent}
-            selected={false}
-            onSelect={() => onOpen(item)}
+            selected={scope?.key === item.key}
+            onSelect={() => onSelect(item)}
           />
         ))}
       </ul>

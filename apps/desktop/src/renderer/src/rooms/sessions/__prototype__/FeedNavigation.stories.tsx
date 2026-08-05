@@ -40,7 +40,7 @@ const VARIANTS: Variant[] = [
   },
   {
     key: 'F2',
-    name: 'Subagents: right rail',
+    name: 'Subagents: left agents rail — LOCKED',
     body: <VariantPlacements chapters={CHAPTERS} plan={PLAN} placement="rail" />,
   },
   {
@@ -50,7 +50,7 @@ const VARIANTS: Variant[] = [
   },
 ]
 
-const DEFAULT_AT = VARIANTS.findIndex((variant) => variant.key === 'F1')
+const DEFAULT_AT = VARIANTS.findIndex((variant) => variant.key === 'F2')
 
 function Prototype(): React.JSX.Element {
   const [at, setAt] = useState(DEFAULT_AT)
