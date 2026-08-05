@@ -2,7 +2,7 @@ import type { SessionView } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { activeSection } from '@/shared/components/ui/useScrollSpy'
+import { activeSection } from '@/shared/components/ui'
 import {
   FRESH,
   interiorOf,
