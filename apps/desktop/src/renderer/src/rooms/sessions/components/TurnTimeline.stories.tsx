@@ -6,8 +6,8 @@ import { TurnTimeline } from './TurnTimeline'
 const meta = {
   title: 'Sessions/Activity/TurnTimeline',
   component: TurnTimeline,
-  args: { turns: interiorOf(RUNNING).activity.turns, activeKey: null, onSelect: fn() },
-  argTypes: { turns: { control: false, table: { type: { summary: 'TimelineTurnModel[]' } } } },
+  args: { sections: interiorOf(RUNNING).activity.sections, activeKey: null, onSelect: fn() },
+  argTypes: { sections: { control: false, table: { type: { summary: 'FeedSectionModel[]' } } } },
   decorators: [
     (Story) => (
       <div className="w-md bg-panel p-inset">
@@ -40,7 +40,7 @@ export const Timeline: Story = {
  * a transcript Argo could not read is an observation failure and not a work failure.
  */
 export const NothingObserved: Story = {
-  args: { turns: [] },
+  args: { sections: [] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('nothing observed yet')).toBeInTheDocument()

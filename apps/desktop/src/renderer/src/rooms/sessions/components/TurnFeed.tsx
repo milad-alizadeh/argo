@@ -1,6 +1,12 @@
-import type { FeedRow } from '@shared'
+import { type FeedRow, isStepRow } from '@shared'
 import { cn } from '@/lib/utils'
-import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  FeedAnchor,
+  Text,
+  useDisclosure,
+} from '@/shared/components/ui'
 import { CallRow } from './CallRow'
 import { CompactionMarker } from './CompactionMarker'
 import { MediaRow } from './MediaRow'
@@ -124,9 +130,17 @@ export function TurnFeed({ rows }: { rows: readonly FeedRow[] }): React.JSX.Elem
   }
   return (
     <div data-component="TurnFeed" className="flex flex-col gap-region">
-      {rows.map((row) => (
-        <Row key={row.key} row={row} />
-      ))}
+      {rows.map((row) =>
+        // A tool row wears the anchor its navigation entry points at — one anchor per row, so #317's
+        // folded run of twelve reads is one place to land rather than twelve.
+        isStepRow(row) ? (
+          <FeedAnchor key={row.key} anchor={row.key}>
+            <Row row={row} />
+          </FeedAnchor>
+        ) : (
+          <Row key={row.key} row={row} />
+        ),
+      )}
     </div>
   )
 }

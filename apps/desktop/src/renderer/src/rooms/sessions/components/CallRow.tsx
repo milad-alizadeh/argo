@@ -6,9 +6,11 @@ import { FAILED_RING, LoudRow, type RowMark } from './LoudRow'
 // The row a single call earns: a command, always, and a failure of any other kind. Between them and
 // the mutation row, everything loud on this surface is a row you cannot fold away.
 
+/** A command that came back wears its icon and its line, and no word: `RAN` in front of the command
+ * line says nothing the line and the terminal glyph have not already said. */
 const RAN: RowMark = {
   Icon: TerminalWindowIcon,
-  word: 'ran',
+  word: null,
   tone: 'text-foreground-soft',
   ring: '',
 }

@@ -19,6 +19,7 @@ const meta = {
     layout: LAYOUT,
     handlers: {
       onSelectTab: fn(),
+      onSelectAgent: fn(),
       onResizeDock: fn(),
       onResizeActivity: fn(),
       onToggleDock: fn(),
@@ -53,8 +54,9 @@ export const Activity: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('heading', { name: 'Auth refactor' })).toBeInTheDocument()
-    // Twice: the nav pane's section head and the feed's own head over the delegated run.
-    await expect(canvas.getAllByText('Subagents')).toHaveLength(2)
+    // ONCE: the nav pane's section head. The feed holds one agent's rows, so there is no delegated
+    // run for a second heading to head (issue 319).
+    await expect(canvas.getAllByText('Subagents')).toHaveLength(1)
     await expect(canvas.getByText('Bash bun run typecheck')).toBeInTheDocument()
   },
 }

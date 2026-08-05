@@ -109,8 +109,33 @@ export const MIXED_PHASES: SessionView = sessionView({
   ],
 })
 
+/** Forty exchanges in one chain — half an hour of work to read back through. The fixture the feed's
+ * virtualisation is judged against: every turn carries real prose and real calls, so the sections a
+ * scroll leaves behind are the expensive kind rather than empty frames. */
+export const LONG_SESSION: SessionView = sessionView({
+  ...RUNNING,
+  id: 'long',
+  agents: [
+    aRoot({
+      turns: [
+        ...Array.from({ length: 39 }, (_, index) => ({
+          ...PAST_TURN,
+          id: `past-${index}`,
+          startedAtMs: NOW_MS - (40 - index) * MINUTE,
+        })),
+        OPEN_TURN,
+      ],
+      startedAtMs: NOW_MS - 40 * MINUTE,
+    }),
+  ],
+})
+
 export const interiorOf = (session: SessionView): SessionInteriorModel =>
   buildSessionInterior({ session, nowMs: NOW_MS })
+
+/** The interior with ONE delegate's feed in the detail pane — the pane swap's own state (issue 319). */
+export const interiorOfAgent = (session: SessionView, agentId: string): SessionInteriorModel =>
+  buildSessionInterior({ session, ui: { tab: 'activity', agentId }, nowMs: NOW_MS })
 
 /** The fanout group of a fixture that has one, narrowed here so no story needs an assertion. */
 export function groupOf(session: SessionView): SubagentGroupModel {

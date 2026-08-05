@@ -111,7 +111,10 @@ export const FoldsBrokenByEachLoudKind: Story = {
     await expect(canvas.getAllByText('read 2 · searched 1')).toHaveLength(4)
     await expect(canvas.getByText('edited')).toBeInTheDocument()
     await expect(canvas.getByText('failed')).toBeInTheDocument()
-    await expect(canvas.getByText('ran')).toBeInTheDocument()
+    // Both command rows show their LINE and no word: `RAN` in front of the line it ran said nothing
+    // the line and the terminal glyph had not already said. The failure keeps its word, which is the
+    // one that says something the row cannot.
+    await expect(canvas.getAllByText('bun run test')).toHaveLength(2)
   },
 }
 

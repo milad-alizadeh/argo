@@ -1,4 +1,12 @@
 import { type MediaRowModel, mediaRow, openMediaIds } from './feedMedia'
+import {
+  callStep,
+  isRunning,
+  type QuietRowModel,
+  quietRow,
+  quietStep,
+  type ToolRowStep,
+} from './feedSteps'
 import type {
   DiffResult,
   OutputResult,
@@ -54,21 +62,14 @@ export interface CallRowModel {
   open: boolean
 }
 
-/** One kind's tally inside a folded run, in Argo's own vocabulary. A count rather than a sentence
- * because a sentence degrades into "read a file, read a file, read a file" at thirty calls. */
-export interface QuietCount {
-  word: string
-  count: number
-}
-
-/** A run of consecutive observation, folded to one line. */
-export interface QuietRowModel {
-  kind: 'quiet'
-  key: string
-  counts: readonly QuietCount[]
-}
-
 export type ToolRow = MutationRowModel | CallRowModel | QuietRowModel | MediaRowModel
+
+/** A row and its navigation entry, produced together — which is what keeps the two panes from
+ * disagreeing about what a step is. */
+export interface ToolRowPair {
+  row: ToolRow
+  step: ToolRowStep
+}
 
 /** What one call is worth: its own loud row, a share of a folded quiet one, or nothing. */
 type CallRole = 'none' | 'mutation' | 'media' | 'loud' | 'quiet'
@@ -106,9 +107,6 @@ function roleOf({ kind, status, result }: ToolCall): CallRole {
   }
 }
 
-const isRunning = (status: ToolCallStatus): boolean =>
-  status === 'pending' || status === 'in_progress'
-
 const outputOf = (call: ToolCall): OutputResult | null =>
   call.result?.kind === 'output' ? call.result : null
 
@@ -140,22 +138,6 @@ function callRow(call: ToolCall): CallRowModel {
   }
 }
 
-/** The word a kind wears in a fold. The kind's own word where it already reads as one, so only the
- * two that would read as nouns are spelled out. */
-const QUIET_WORD: Partial<Record<ToolCallKind, string>> = { search: 'searched', fetch: 'fetched' }
-
-/** The tallies of one run, in the order the kinds first appeared — which is the order the work
- * happened in, and the only order that does not need explaining. */
-function quietRow(run: readonly ToolCall[]): QuietRowModel {
-  const byKind = new Map<ToolCallKind, number>()
-  for (const call of run) byKind.set(call.kind, (byKind.get(call.kind) ?? 0) + 1)
-  return {
-    kind: 'quiet',
-    key: `quiet:${run[0]?.id ?? ''}`,
-    counts: [...byKind].map(([kind, count]) => ({ word: QUIET_WORD[kind] ?? kind, count })),
-  }
-}
-
 /** The row a loud call is worth. Split out so `foldRun` stays about the FOLD and adding a fourth loud
  * kind does not deepen the branch that decides where a run breaks. */
 function loudRow(call: ToolCall, role: CallRole, openMedia: Set<string>): ToolRow | null {
@@ -164,13 +146,17 @@ function loudRow(call: ToolCall, role: CallRole, openMedia: Set<string>): ToolRo
   return role === 'loud' ? callRow(call) : null
 }
 
-/** One stretch of calls, run-length folded. A call worth no row does not break a run either: there
- * is no row for the break to show, and the observation either side of it is still consecutive. */
-function foldRun(calls: readonly ToolCall[], openMedia: Set<string>): ToolRow[] {
-  const rows: ToolRow[] = []
+/** One stretch of calls, run-length folded — each row paired with the navigation entry that names it.
+ * A call worth no row does not break a run either: there is no row for the break to show, and the
+ * observation either side of it is still consecutive. */
+function foldRun(calls: readonly ToolCall[], openMedia: Set<string>): ToolRowPair[] {
+  const pairs: ToolRowPair[] = []
   let run: ToolCall[] = []
   const breakRun = (): void => {
-    if (run.length > 0) rows.push(quietRow(run))
+    if (run.length > 0) {
+      const row = quietRow(run)
+      pairs.push({ row, step: quietStep(row, run) })
+    }
     run = []
   }
   for (const call of calls) {
@@ -179,11 +165,11 @@ function foldRun(calls: readonly ToolCall[], openMedia: Set<string>): ToolRow[] 
     const loud = loudRow(call, role, openMedia)
     if (loud !== null) {
       breakRun()
-      rows.push(loud)
+      pairs.push({ row: loud, step: callStep(loud, call) })
     }
   }
   breakRun()
-  return rows
+  return pairs
 }
 
 /**
@@ -193,7 +179,7 @@ function foldRun(calls: readonly ToolCall[], openMedia: Set<string>): ToolRow[] 
  * The grouping is what breaks a fold at a prose row: a run is folded WITHIN one bucket, so the reads
  * that preceded a paragraph stay welded to it and never absorb the work that followed it.
  */
-export function toolRowsByProseIndex(turn: Turn): Map<number, ToolRow[]> {
+export function toolRowsByProseIndex(turn: Turn): Map<number, ToolRowPair[]> {
   const buckets = new Map<number, ToolCall[]>()
   for (const call of turn.toolCalls) {
     // Clamped to the end of the prose so a call that ran past it lands in the trailing bucket. A

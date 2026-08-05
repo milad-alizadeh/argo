@@ -32,10 +32,12 @@ export function TurnRow({
 }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: turn.open })
   const Caret = open ? CaretDownIcon : CaretRightIcon
-  // The TURN is what the feed sections by, so the turn card is what wears the selection — folded or
-  // not. Its own header both folds it and jumps to it: one control, because a card that folds
-  // without taking you to what it folded reads as two different lists of the same thing.
-  const holdsActive = turn.key === activeKey
+  // The turn card wears the selection for its whole section — for its own anchor, and for any row
+  // anchor inside it. A card that went dark while the reader was inside one of its rows would leave the
+  // list with no highlight at all for most of a long turn. Its own header both folds it and jumps to it:
+  // one control, because a card that folds without taking you to what it folded reads as two different
+  // lists of the same thing.
+  const holdsActive = turn.key === activeKey || turn.steps.some((step) => step.key === activeKey)
   return (
     <li data-component="TurnRow" className="flex flex-col gap-tight">
       {/* The mark sits BEFORE this turn in time, and the list runs oldest first — so it renders
@@ -103,9 +105,14 @@ export function TurnRow({
               <div className="flex flex-col gap-tight">
                 <ul aria-label="Tool calls" className="-mx-tight flex flex-col">
                   {turn.steps.map((step) => (
-                    // A step jumps to the turn it belongs to, which is where the feed reads it.
-                    // Its own anchor arrives with the tool rows in issue 317.
-                    <ToolCallRow key={step.key} step={step} onSelect={() => onSelect?.(turn.key)} />
+                    // A step jumps to its OWN row in the feed: it carries that row's key, so a folded
+                    // run of twelve reads is one entry landing on the one line the feed drew for it.
+                    <ToolCallRow
+                      key={step.key}
+                      step={step}
+                      selected={step.key === activeKey}
+                      onSelect={onSelect}
+                    />
                   ))}
                 </ul>
               </div>

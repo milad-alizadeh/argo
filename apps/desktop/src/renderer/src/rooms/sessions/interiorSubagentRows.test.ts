@@ -6,11 +6,14 @@ import {
   aToolCall as call,
   aTurn as turn,
 } from './__fixtures__/runtimeTree'
-import { subagentGroup } from './interiorSubagents'
+import { subagentGroup, subagentsOf } from './interiorSubagents'
 
 // What ONE row in the fanout says about its delegate. Its cost and duration both come from the
 // parent's record of the call that spawned it — a subagent's own turns run in a sidechain the
 // parent transcript does not attribute, so this is the only place either is ever visible.
+
+/** The root's id in the fixtures — whose delegates the group is now built from. */
+const ROOT = 'root'
 
 const NOW = 100 * 24 * 60 * 60_000
 
@@ -37,7 +40,7 @@ describe('what a row says it is', () => {
         agent({ id: 'done', label: 'security lens', turns: [turn({ id: 'u' })] }),
       ],
     })
-    const group = subagentGroup(session, NOW)
+    const group = subagentGroup(subagentsOf(session, ROOT), NOW)
     expect(group?.rows.map((row) => row.status)).toEqual(['running', 'queued', 'done'])
     expect(group?.rows[0]?.target).toBe('rotation.ts')
     // `null`, not an empty string: one encoding of absence, the same one a tool step's target uses.
@@ -60,7 +63,7 @@ describe('what a row says it cost', () => {
         }),
       ],
     })
-    const row = subagentGroup(session, NOW)?.rows[0]
+    const row = subagentGroup(subagentsOf(session, ROOT), NOW)?.rows[0]
     expect(row?.took).toBe('12 minutes')
     expect(row?.tokens).toBeNull()
   })
@@ -84,14 +87,14 @@ describe('what a row says it cost', () => {
         }),
       ],
     })
-    const row = subagentGroup(session, NOW)?.rows[0]
+    const row = subagentGroup(subagentsOf(session, ROOT), NOW)?.rows[0]
     expect(row?.took).toBe('4 minutes')
     expect(row?.tokens).toBe('86.3K')
   })
 
   it('claims neither where the record timed and costed nothing', () => {
     const session = sessionView({ id: 's', agents: [rootWith(), agent({ id: 'a' })] })
-    const row = subagentGroup(session, NOW)?.rows[0]
+    const row = subagentGroup(subagentsOf(session, ROOT), NOW)?.rows[0]
     expect(row?.took).toBeNull()
     expect(row?.tokens).toBeNull()
   })
@@ -101,7 +104,8 @@ describe('what a row says it cost', () => {
       agent({ id: `a${index}`, label: `lens ${index}`, group: 'Verify' }),
     )
     expect(
-      subagentGroup(sessionView({ id: 's', agents: [rootWith(), ...many] }), NOW)?.rows,
+      subagentGroup(subagentsOf(sessionView({ id: 's', agents: [rootWith(), ...many] }), ROOT), NOW)
+        ?.rows,
     ).toHaveLength(30)
   })
 })

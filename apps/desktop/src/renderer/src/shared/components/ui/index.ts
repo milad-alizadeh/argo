@@ -12,12 +12,13 @@ export {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './dropdown-menu'
+export { FeedAnchor } from './FeedAnchor'
 export { IconButton } from './IconButton'
 export * from './icons'
 export { StatusIcon } from './icons/StatusIcon'
 export {
   MasterDetail,
-  type MasterDetailGroup,
+  type MasterDetailFeed,
   type MasterDetailNav,
   type MasterDetailSection,
   type MasterDetailSplitter,
@@ -54,6 +55,8 @@ export {
 } from './toneRecipes'
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 export { type DisclosureProps, useDisclosure } from './useDisclosure'
+// The follow's decisions are exported for their own tests; the hook itself is `MasterDetail`'s.
+export { atEdge, openingAnchor } from './useFeedFollow'
 // `MasterDetail` is the only surface that mounts the spy — the rest of the module (the trip-line
 // measurement, the jump, the attribute) is its internals, and its tests import them directly.
 export { useFeedHighlight } from './useScrollSpy'

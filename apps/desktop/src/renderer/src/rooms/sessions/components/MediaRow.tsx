@@ -9,7 +9,9 @@ import { DISCLOSURE } from './rowRecipes'
 // The one thing a terminal cannot do at all: the screenshots the agent looked at, in the feed, so a
 // visual debugging loop is followed by scrolling rather than by opening files.
 
-const SAW: RowMark = { Icon: ImageIcon, word: 'saw', tone: 'text-foreground-soft', ring: '' }
+/** An image wears its icon and what it was named by, and no word: the picture under the row is the
+ * fact, and `SAW` in front of it is a caption on a caption. */
+const SAW: RowMark = { Icon: ImageIcon, word: null, tone: 'text-foreground-soft', ring: '' }
 
 /** A call that broke and still returned what it had looked at. The picture is the fact worth showing,
  * and the mark is what stops the row reading as an ordinary successful look. */

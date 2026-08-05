@@ -9,7 +9,12 @@ import { RowGlyph } from './RowGlyph'
 /** The mark a loud row wears: what happened, in the vocabulary of the thing it happened to. */
 export interface RowMark {
   Icon: IconAtom
-  word: string
+  /** The state word, or `null` where the icon and the subject already say everything. A command that
+   * finished needs no `RAN` in front of the line it ran, and a screenshot needs no `SAW` in front of
+   * the picture — a word that restates its own row is a column of noise down the feed. The words that
+   * survive are the ones that say something the row cannot: `running`, `failed`, and which KIND of
+   * change a mutation was. */
+  word: string | null
   tone: string
   /** A ring around the whole card, for the states worth ringing. Empty for the rest: a surface
    * outlined on every row is a surface with no emphasis left to spend. */
@@ -48,9 +53,11 @@ export function LoudRow({
     >
       <div className="flex items-baseline gap-snug">
         <RowGlyph Icon={Icon} tone={tone} />
-        <Text variant="code" className={cn('shrink-0 uppercase', tone)}>
-          {word}
-        </Text>
+        {word !== null && (
+          <Text variant="code" className={cn('shrink-0 uppercase', tone)}>
+            {word}
+          </Text>
+        )}
         <Text variant="code" className="min-w-0 flex-1 truncate text-foreground-soft">
           {subject}
         </Text>

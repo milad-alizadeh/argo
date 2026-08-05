@@ -77,12 +77,36 @@ export function useScrollSpy(feed: RefObject<HTMLElement | null>, keys: string):
   return active
 }
 
-/** Smooth-scroll a feed section to the top of its pane — what a click on a nav row does. Keys come
- * from transcript data (a tool call's own id), so the value is escaped: a `"` or `]` in one would
- * otherwise throw a `SyntaxError` out of the click handler rather than simply not matching. */
-export function jumpToSection(feed: HTMLElement | null, key: string): void {
-  const section = feed?.querySelector(`[${SPY_ATTRIBUTE}="${CSS.escape(key)}"]`)
-  section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+/** The element wearing one anchor. Keys come from transcript data (a tool call's own id), so the value
+ * is escaped: a `"` or `]` in one would otherwise throw a `SyntaxError` out of the click handler rather
+ * than simply not matching. */
+const anchor = (feed: HTMLElement | null, key: string): Element | null =>
+  feed?.querySelector(`[${SPY_ATTRIBUTE}="${CSS.escape(key)}"]`) ?? null
+
+const bringIntoView = (element: Element | null): void => {
+  element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+/**
+ * Smooth-scroll to an anchor — what a click on a nav row does — including one inside a section the
+ * feed has not mounted.
+ *
+ * A virtualised feed stands its distant sections as spacers, so a row anchor genuinely is not in the
+ * document until its section is near the viewport — and a jump that silently did nothing would be the
+ * navigation list lying about where its rows lead. Reaching the SECTION mounts the rows, and the second
+ * pass lands on the one that was asked for: the section's real height replaces its estimate as it
+ * mounts, so the first scroll is only ever approximately right.
+ */
+export function jumpToAnchor(feed: HTMLElement | null, key: string, sectionKey: string): void {
+  const target = anchor(feed, key)
+  if (target !== null) {
+    bringIntoView(target)
+    return
+  }
+  bringIntoView(anchor(feed, sectionKey))
+  // Two frames: one for React to mount the section it just scrolled to, one for the browser to lay it
+  // out at its real height.
+  requestAnimationFrame(() => requestAnimationFrame(() => bringIntoView(anchor(feed, key))))
 }
 
 /** Which key the pin names, or `null` once it has been retired.
@@ -111,7 +135,17 @@ const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const
  */
 export function useFeedHighlight(
   feed: RefObject<HTMLElement | null>,
-  keys: string,
+  {
+    keys,
+    sectionOf,
+  }: {
+    /** The anchor list as a signature string, so a caller rebuilding its list every render does not
+     * re-observe on every render. */
+    keys: string
+    /** Which section holds an anchor — the fallback a jump needs when the anchor's section is
+     * currently a spacer. */
+    sectionOf: (key: string) => string
+  },
 ): { activeKey: string | null; jumpTo: (key: string) => void } {
   const spied = useScrollSpy(feed, keys)
   const [pin, setPin] = useState<{ key: string; keys: string } | null>(null)
@@ -132,9 +166,9 @@ export function useFeedHighlight(
   const jumpTo = useCallback(
     (key: string): void => {
       setPin({ key, keys })
-      jumpToSection(feed.current, key)
+      jumpToAnchor(feed.current, key, sectionOf(key))
     },
-    [feed, keys],
+    [feed, keys, sectionOf],
   )
 
   return { activeKey: pinned ?? spied, jumpTo }

@@ -33,10 +33,14 @@ export const Ringed: Story = {
   },
 }
 
-/** No ring, which is the ordinary case: a surface outlined on every row has no emphasis left to
- * spend, so only a deletion and a failure get one. */
+/** No ring and NO WORD, which is the ordinary case: a surface outlined on every row has no emphasis
+ * left to spend, so only a deletion and a failure get one — and a finished command needs no `RAN` in
+ * front of the line it ran. The subject then starts on the axis the mark column sets. */
 export const Plain: Story = {
-  args: { mark: { ...meta.args.mark, word: 'ran', tone: 'text-foreground-soft', ring: '' } },
+  args: { mark: { ...meta.args.mark, word: null, tone: 'text-foreground-soft', ring: '' } },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).queryByText('failed')).not.toBeInTheDocument()
+  },
 }
 
 /** A body and a trailing count — the mutation row's shape, which is what this shell exists to share

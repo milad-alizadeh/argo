@@ -15,7 +15,7 @@ const phased = groupOf(RUNNING)
 const meta = {
   title: 'Sessions/Activity/SubagentGroup',
   component: SubagentGroup,
-  args: { group: phased, activeKey: phased.rows[0]?.key ?? null, onSelect: fn() },
+  args: { group: phased, displayedId: phased.rows[0]?.agentId ?? '', onSelect: fn() },
   argTypes: { group: { control: false, table: { type: { summary: 'SubagentGroupModel' } } } },
   decorators: [
     (Story) => (
@@ -51,7 +51,7 @@ export const Phased: Story = {
  * them instead of inventing a phase name.
  */
 export const Labelled: Story = {
-  args: { group: groupOf(LABELLED_FANOUT), activeKey: null },
+  args: { group: groupOf(LABELLED_FANOUT), displayedId: '' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('4 · 2 running')).toBeInTheDocument()
@@ -67,7 +67,7 @@ export const Labelled: Story = {
  * reaches its detail head instead.
  */
 export const MixedPhases: Story = {
-  args: { group: groupOf(MIXED_PHASES), activeKey: null },
+  args: { group: groupOf(MIXED_PHASES), displayedId: '' },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('5 · 2 running')).toBeInTheDocument()
@@ -80,7 +80,7 @@ export const MixedPhases: Story = {
  * This is the degradation contract — the cockpit never fills a tier in.
  */
 export const Flat: Story = {
-  args: { group: groupOf(FLAT_FANOUT), activeKey: null },
+  args: { group: groupOf(FLAT_FANOUT), displayedId: '' },
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByText('this CLI reported no phases')).toBeInTheDocument()
   },
@@ -91,7 +91,7 @@ export const Flat: Story = {
  * at a fanout a card grid dies at, and the group still collapses to one line.
  */
 export const WideFanout: Story = {
-  args: { group: groupOf(WIDE_FANOUT), activeKey: null },
+  args: { group: groupOf(WIDE_FANOUT), displayedId: '' },
   play: async ({ canvasElement }) => {
     const list = within(canvasElement).getByRole('list')
     await expect(within(list).getAllByRole('listitem')).toHaveLength(30)

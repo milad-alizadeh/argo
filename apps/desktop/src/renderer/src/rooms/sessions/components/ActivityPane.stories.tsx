@@ -1,13 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
-import { FRESH, interiorOf, RUNNING, WIDE_FANOUT } from '../__fixtures__/interior'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import {
+  FRESH,
+  interiorOf,
+  interiorOfAgent,
+  LONG_SESSION,
+  RUNNING,
+  WIDE_FANOUT,
+} from '../__fixtures__/interior'
 import { ActivityPane } from './ActivityPane'
 
 const meta = {
   title: 'Sessions/Activity',
   component: ActivityPane,
   parameters: { layout: 'fullscreen' },
-  args: { activity: interiorOf(RUNNING).activity },
+  args: { activity: interiorOf(RUNNING).activity, onSelectAgent: fn() },
   argTypes: { activity: { control: false, table: { type: { summary: 'ActivityModel' } } } },
   // The nav pane sizes off the screen-local `--c-act` its splitter drives.
   decorators: [
@@ -23,36 +30,100 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The whole surface: Subagents above Timeline on the left, one continuous feed on the right. This is
- * the story that proves the composition — the two sections are never merged, the feed carries a
- * section per item in the same order, and the left highlight follows the feed rather than the click.
+ * The whole surface: Subagents above Timeline on the left, ONE agent's continuous feed on the right.
+ * This is the story that proves the composition — the two sections are never merged, the feed carries a
+ * section per turn in the same order, and the left highlight follows the feed rather than the click.
  */
 export const TwoPane: Story = {
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    // `Subagents` heads the run TWICE on purpose: once in the nav pane, once over the delegated
-    // sections of the feed. That second heading is what stops a delegate's work from reading as a
-    // step of this session's own turn.
-    await expect(canvas.getAllByText('Subagents')).toHaveLength(2)
-    await expect(canvas.getByText('Timeline')).toBeInTheDocument()
-    // The nav pane's reading order: delegated work first, then the plan, then this session's own
-    // turns — asserted as an ORDER, the one thing three stacked sections can get wrong while every
-    // one of them still renders. The trailing `Subagents` is the feed's own heading, further down
-    // the document than the whole nav column. `Plan` heads the nav ONCE and only there: the feed's
-    // own plan row states the revision in a line (`plan 2 of 4 · …`) rather than re-drawing the
-    // list, so the tracker stays the one place the whole list with its marks is read.
+    // ONCE now, in the nav pane alone: the feed holds one agent's rows, so there is no delegated run
+    // for a second heading to head (issue 319).
+    await expect(canvas.getAllByText('Subagents')).toHaveLength(1)
+    // The nav pane's reading order: delegated work first, then the plan, then this agent's own turns —
+    // asserted as an ORDER, the one thing three stacked sections can get wrong while every one of them
+    // still renders. `Plan` heads the nav ONCE and only there: the feed's own plan row states the
+    // revision in a line rather than re-drawing the list.
     const sections = canvas.getAllByText(/^(Subagents|Plan|Timeline)$/)
     await expect(sections.map((node) => node.textContent)).toEqual([
       'Subagents',
       'Plan',
       'Timeline',
-      'Subagents',
     ])
-    // Clicking a nav row jumps the feed rather than swapping the pane's content out — the section was
-    // already there, which is what makes the feed continuous.
+    // A subagent row SWAPS the pane rather than jumping within it: one pane, one agent.
     const nav = canvas.getByRole('list', { name: 'Subagents' })
     await userEvent.click(within(nav).getByText('security lens'))
-    await expect(canvas.getByRole('heading', { name: 'security lens' })).toBeInTheDocument()
+    await expect(args.onSelectAgent).toHaveBeenCalledWith('security')
+  },
+}
+
+/**
+ * The pane after the swap: one delegate's own feed, in the same row vocabulary as the root's, with the
+ * head naming whose work it is and the way back out of it. The head sits outside the scroller, so
+ * neither fact scrolls away from a reader thirty rows down.
+ */
+export const OneSubagentsFeed: Story = {
+  args: { activity: interiorOfAgent(RUNNING, 'correctness').activity },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('heading', { name: 'correctness lens' })).toBeInTheDocument()
+    await userEvent.click(canvas.getByText('back to the session'))
+    await expect(args.onSelectAgent).toHaveBeenCalledWith('root')
+  },
+}
+
+/** The feed's scroller, addressed the way the surface's own code does — by component, not by class. */
+const feedOf = (canvasElement: HTMLElement): HTMLElement => {
+  const feed = canvasElement.querySelector<HTMLElement>('[data-component="Feed"]')
+  if (feed === null) throw new Error('the pane must hold one feed')
+  return feed
+}
+
+/**
+ * Scrolling to a SECTION and to a single tool ROW — the two grains the left list navigates at, and the
+ * reason a folded run is one entry: clicking it lands on the one line the feed drew for it.
+ */
+export const JumpsToSectionAndRow: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const feed = feedOf(canvasElement)
+    // The section: the oldest turn's card, which is at the TOP of a feed that opened at its live edge.
+    const timeline = canvas.getByRole('list', { name: 'Timeline' })
+    const [firstCard] = within(timeline).getAllByRole('button')
+    if (firstCard === undefined) throw new Error('the fixture must carry a turn')
+    await userEvent.click(firstCard)
+    await waitFor(() => expect(feed.scrollTop).toBeLessThan(40), { timeout: 3000 })
+    const atTop = feed.scrollTop
+
+    // The row: one step of the LIVE turn, whose own anchor sits further down the feed than the section
+    // the jump above landed on — so the feed has to move again, and downward.
+    const steps = canvas.getAllByRole('list', { name: 'Tool calls' }).at(-1)
+    if (steps === undefined) throw new Error('the live turn must be unfolded with its steps listed')
+    const [step] = within(steps).getAllByRole('button')
+    if (step === undefined) throw new Error('the live turn must carry a folded row to jump to')
+    await userEvent.click(step)
+    await waitFor(() => expect(feed.scrollTop).toBeGreaterThan(atTop), { timeout: 3000 })
+  },
+}
+
+/**
+ * Forty exchanges — half an hour of work to read back through. Only the sections near the viewport are
+ * MOUNTED; the rest stand as spacers of the height they last measured, so reading back through a long
+ * session does not stall the window. Every section keeps its anchor either way, which is what lets the
+ * window be invisible to the navigation list and the scroll-spy.
+ */
+export const LongSession: Story = {
+  args: { activity: interiorOf(LONG_SESSION).activity },
+  play: async ({ canvasElement }) => {
+    const anchors = canvasElement.querySelectorAll('[data-spy^="turn:"]')
+    await expect(anchors).toHaveLength(40)
+    // The proof: far fewer turns MOUNTED than the feed holds anchors for. `TurnFeed` is what a mounted
+    // section draws, and the observer reports a frame after mount — hence the wait.
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-component="TurnFeed"]').length).toBeLessThan(10),
+    )
+    // And the list still lists all forty: the window is the feed's business alone.
+    await expect(canvasElement.querySelectorAll('[data-component="TurnRow"]')).toHaveLength(40)
   },
 }
 

@@ -69,6 +69,9 @@ export function useSessionInterior(selected: SessionView | null): SessionInterio
       onResizeActivity: (px) => resize('activity', px),
       onToggleDock: () => snapDock(!isDockExpanded(layout.dock)),
       onSelectTab: (tab) => setUi((state) => ({ ...state, tab })),
+      // The id as given, root included: an id that names nothing in the session falls back to the root
+      // in the derivation, so a selection that outlived its agent degrades rather than emptying the pane.
+      onSelectAgent: (agentId) => setUi((state) => ({ ...state, agentId })),
     },
   }
 }

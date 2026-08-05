@@ -26,17 +26,18 @@ export function SubagentRow({
 }: {
   /** The row, already derived — a component grades nothing itself. */
   row: SubagentRowModel
-  /** Whether the detail feed is currently showing this subagent. */
+  /** Whether the detail pane is currently showing this subagent's feed. */
   selected: boolean
-  /** Jump the detail feed to this subagent's live feed. */
-  onSelect?: (key: string) => void
+  /** REPLACE the detail pane with this subagent's own feed. Not a jump: a subagent's work is another
+   * agent's, and one pane holds one agent (issue 319). */
+  onSelect?: (agentId: string) => void
 }): React.JSX.Element {
   return (
     <li>
       <button
         type="button"
         data-component="SubagentRow"
-        onClick={() => onSelect?.(row.key)}
+        onClick={() => onSelect?.(row.agentId)}
         aria-current={selected ? 'true' : undefined}
         className={cn(NAV_ROW, selected && NAV_ROW_SELECTED)}
       >
