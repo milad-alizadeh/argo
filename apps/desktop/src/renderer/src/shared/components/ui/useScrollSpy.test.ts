@@ -65,8 +65,8 @@ describe('activeSection', () => {
   })
 })
 
-// The pin is the other half of the fix: scroll position genuinely cannot say which of the last
-// sections was clicked, so a click holds the highlight until the reader scrolls themselves.
+// The pin: a jump's smooth scroll travels past every anchor between here and there, so a click answers
+// at once and holds the highlight until the reader scrolls themselves.
 describe('pinnedKey', () => {
   const keys = 'a|b|c'
 

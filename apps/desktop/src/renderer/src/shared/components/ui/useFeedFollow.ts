@@ -22,7 +22,11 @@ export const openingAnchor = (live: boolean): FeedOpening => (live ? 'edge' : 's
 export interface ScrollMetrics {
   scrollTop: number
   clientHeight: number
-  scrollHeight: number
+  /** The ROWS' height — deliberately not the scroller's `scrollHeight`, which also counts the screenful
+   * of tail space the feed carries so its last rows can reach the scroll-spy's trip line
+   * (`useTailSpace`). Measured against that total, a feed pinned to its newest row would read as a
+   * screenful short of the edge, forever. */
+  contentHeight: number
 }
 
 /** How far from the bottom still counts as being AT the bottom, in px. It absorbs the sub-pixel
@@ -39,8 +43,19 @@ const EDGE_SLACK = 32
  * listener happened to enumerate. It is also what keeps a feed that RE-MEASURES under the reader (a
  * virtualised section swapping with its spacer) from reading as a scroll the reader never made.
  */
-export const atEdge = ({ scrollTop, clientHeight, scrollHeight }: ScrollMetrics): boolean =>
-  scrollTop + clientHeight >= scrollHeight - EDGE_SLACK
+export const atEdge = ({ scrollTop, clientHeight, contentHeight }: ScrollMetrics): boolean =>
+  scrollTop + clientHeight >= contentHeight - EDGE_SLACK
+
+/** Where the newest row sits flush with the bottom of the pane — the live edge as an offset. Past it lies
+ * the tail space, which is still the edge: there is nothing newer to show there. */
+export const edgeTop = ({ clientHeight, contentHeight }: ScrollMetrics): number =>
+  Math.max(0, contentHeight - clientHeight)
+
+const metricsOf = (root: HTMLElement, rows: HTMLElement): ScrollMetrics => ({
+  scrollTop: root.scrollTop,
+  clientHeight: root.clientHeight,
+  contentHeight: rows.offsetHeight,
+})
 
 /** One agent's reading position, remembered so switching away and back is not a scroll to nowhere. */
 interface Reading {
@@ -63,6 +78,53 @@ export interface FeedFollow {
    * the feed is still, by position, at its edge. Without this the follow would haul the pane back to the
    * bottom mid-jump, which is the follow fighting the one gesture it must never fight. */
   release: () => void
+}
+
+/**
+ * One agent's reading position, stored on the way out and restored on the way in.
+ *
+ * Switching agents is NOT a scroll, which is the whole reason this is separate from the position-derived
+ * follow below: the incoming feed's offset has to be set rather than read, and an agent seen for the first
+ * time opens at its own opening anchor rather than at wherever the last one was being read.
+ *
+ * Layout-timed, so the restored offset is applied against the new agent's rows and never painted at the
+ * old agent's position first.
+ */
+function useAgentMemory({
+  feed,
+  content,
+  agentKey,
+  live,
+  following,
+  jumping,
+  setFollowing,
+}: {
+  feed: RefObject<HTMLElement | null>
+  content: RefObject<HTMLElement | null>
+  agentKey: string
+  live: boolean
+  following: RefObject<boolean>
+  jumping: RefObject<boolean>
+  setFollowing: (next: boolean) => void
+}): void {
+  const reading = useRef(new Map<string, Reading>())
+  const shown = useRef<string | null>(null)
+
+  useLayoutEffect(() => {
+    const root = feed.current
+    const rows = content.current
+    const leaving = shown.current
+    if (!root || !rows || leaving === agentKey) return
+    if (leaving !== null) {
+      reading.current.set(leaving, { top: root.scrollTop, following: following.current })
+    }
+    shown.current = agentKey
+    const remembered = reading.current.get(agentKey)
+    const opensAtEdge = remembered === undefined && openingAnchor(live) === 'edge'
+    jumping.current = false
+    setFollowing(remembered?.following ?? opensAtEdge)
+    root.scrollTop = opensAtEdge ? edgeTop(metricsOf(root, rows)) : (remembered?.top ?? 0)
+  })
 }
 
 /**
@@ -96,47 +158,37 @@ export function useFeedFollow(
   // observer haul the pane back to the bottom, cancelling the jump. Cleared the moment the position has
   // actually left the edge, which is when position is telling the truth again.
   const jumping = useRef(false)
-  const reading = useRef(new Map<string, Reading>())
-  const shown = useRef<string | null>(null)
 
   const toEdge = useCallback((): void => {
     const root = feed.current
-    if (root) root.scrollTop = root.scrollHeight
-  }, [feed])
+    const rows = content.current
+    if (!root || !rows) return
+    const top = edgeTop(metricsOf(root, rows))
+    // Never BACKWARDS: a reader who has scrolled down into the tail space to read the last rows is already
+    // at the live edge, and an append must not haul them back up to sit the newest row on the pane's floor.
+    if (root.scrollTop < top) root.scrollTop = top
+  }, [feed, content])
 
-  // Switching agents. Layout-timed so the restored offset is applied against the new agent's rows and
-  // never painted at the old agent's position first.
-  useLayoutEffect(() => {
-    const root = feed.current
-    const leaving = shown.current
-    if (!root || leaving === agentKey) return
-    if (leaving !== null) {
-      reading.current.set(leaving, { top: root.scrollTop, following: following.current })
-    }
-    shown.current = agentKey
-    const remembered = reading.current.get(agentKey)
-    const opensAtEdge = remembered === undefined && openingAnchor(live) === 'edge'
-    jumping.current = false
-    setFollowing(remembered?.following ?? opensAtEdge)
-    root.scrollTop = opensAtEdge ? root.scrollHeight : (remembered?.top ?? 0)
-  })
+  useAgentMemory({ feed, content, agentKey, live, following, jumping, setFollowing })
 
   // The position IS the state: every scroll re-reads whether the feed is at its edge, so the reader
   // scrolling up lets go and the reader scrolling back down takes it again — which is not the follow
   // reattaching itself, it is the reader doing it by hand.
   useEffect(() => {
     const root = feed.current
-    if (!root) return
+    const rows = content.current
+    if (!root || !rows) return
     const onScroll = (): void => {
+      const here = atEdge(metricsOf(root, rows))
       if (jumping.current) {
-        if (!atEdge(root)) jumping.current = false
+        if (!here) jumping.current = false
         return
       }
-      setFollowing(atEdge(root))
+      setFollowing(here)
     }
     root.addEventListener('scroll', onScroll, { passive: true })
     return () => root.removeEventListener('scroll', onScroll)
-  }, [feed, setFollowing])
+  }, [feed, content, setFollowing])
 
   // The append: a following feed goes to the new bottom whenever the content grows. A feed that is not
   // live has nothing to follow and is left exactly where the reader put it.

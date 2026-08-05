@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { atEdge, openingAnchor } from './useFeedFollow'
+import { atEdge, edgeTop, openingAnchor } from './useFeedFollow'
 
 // The auto-follow's two decisions, asserted without a scroller: whether the feed is at the live edge,
 // and where a feed opens. Both are the reason the hook is honest — a stick that survived manual
 // scrolling would make the feed unusable during exactly the activity it was built for (issue 319).
 
-const pane = (scrollTop: number) => ({ scrollTop, clientHeight: 400, scrollHeight: 2000 })
+const pane = (scrollTop: number) => ({ scrollTop, clientHeight: 400, contentHeight: 2000 })
 
 describe('following the live edge', () => {
   it('follows while the feed is scrolled to its bottom', () => {
@@ -29,7 +29,25 @@ describe('following the live edge', () => {
   // A feed shorter than its pane has no scroll and is therefore always at its own edge — which is what
   // makes a session's first rows follow before there is anything to scroll.
   it('follows a feed with nothing to scroll', () => {
-    expect(atEdge({ scrollTop: 0, clientHeight: 400, scrollHeight: 300 })).toBe(true)
+    expect(atEdge({ scrollTop: 0, clientHeight: 400, contentHeight: 300 })).toBe(true)
+  })
+
+  // Past the last row lies the tail space the spy needs (`useTailSpace`) — and that is still the live
+  // edge: there is nothing newer to show down there. Measured against the scroller's whole
+  // `scrollHeight`, a feed pinned to its newest row would instead read as a screenful adrift, and the
+  // reattach affordance would sit there permanently on every live feed.
+  it('still follows once the reader has scrolled on into the tail space', () => {
+    expect(atEdge(pane(2000))).toBe(true)
+  })
+})
+
+describe('where the live edge is', () => {
+  it('sits the newest row on the floor of the pane', () => {
+    expect(edgeTop(pane(0))).toBe(1600)
+  })
+
+  it('is the top of a feed with nothing to scroll', () => {
+    expect(edgeTop({ scrollTop: 0, clientHeight: 400, contentHeight: 300 })).toBe(0)
   })
 })
 

@@ -5,6 +5,7 @@ import { FeedSection, type MasterDetailSection } from './FeedSection'
 import { ArrowLineDownIcon } from './icons'
 import { openingAnchor, useFeedFollow } from './useFeedFollow'
 import { useFeedHighlight } from './useScrollSpy'
+import { useTailSpace } from './useTailSpace'
 
 export type { MasterDetailSection } from './FeedSection'
 
@@ -159,6 +160,7 @@ export function MasterDetail({
   const owners = useMemo(() => sectionIndex(sections), [anchors])
   const sectionOf = useCallback((key: string): string => owners.get(key) ?? key, [owners])
   const { activeKey, jumpTo } = useFeedHighlight(feed, { keys: anchors, sectionOf })
+  const tail = useTailSpace(feed, content)
   const { detached, reattach, release } = useFeedFollow(feed, content, {
     live: feedState?.live ?? false,
     agentKey: feedState?.key ?? '',
@@ -210,6 +212,10 @@ export function MasterDetail({
               openAt={openingAnchor(feedState?.live ?? false)}
             />
           </div>
+          {/* One screenful of blank after the last row, so the final rows can be scrolled up to the
+              spy's trip line like any others. Sized by measurement rather than by a class, because it
+              is one screenful of THIS pane, which a splitter drag changes. */}
+          <div aria-hidden className="shrink-0" style={{ height: tail }} />
         </div>
         {detached && <LiveEdgeButton onClick={reattach} />}
       </div>

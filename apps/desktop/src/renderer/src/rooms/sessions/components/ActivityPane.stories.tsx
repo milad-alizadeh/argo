@@ -1,4 +1,6 @@
+import type { SessionView } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { activeSection } from '@/shared/components/ui/useScrollSpy'
 import {
@@ -10,6 +12,23 @@ import {
   WIDE_FANOUT,
 } from '../__fixtures__/interior'
 import { ActivityPane } from './ActivityPane'
+
+/**
+ * The pane with the ROOM's state behind it.
+ *
+ * Which agent is displayed lives above the pane — the pane is a View — so a story that handed it only a
+ * mock callback could not show the swap the whole shape exists for: clicking a subagent row genuinely did
+ * nothing on the page, which is how it read to the first person who tried it.
+ */
+function Room({ session }: { session: SessionView }): React.JSX.Element {
+  const [agentId, setAgentId] = useState('root')
+  return (
+    <ActivityPane
+      activity={interiorOfAgent(session, agentId).activity}
+      onSelectAgent={setAgentId}
+    />
+  )
+}
 
 const meta = {
   title: 'Sessions/Activity',
@@ -36,7 +55,10 @@ type Story = StoryObj<typeof meta>
  * section per turn in the same order, and the left highlight follows the feed rather than the click.
  */
 export const TwoPane: Story = {
-  play: async ({ canvasElement, args }) => {
+  // Live rather than mocked: the swap is the interaction, and a page where it did nothing is what got
+  // reported.
+  render: () => <Room session={RUNNING} />,
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // ONCE now, in the nav pane alone: the feed holds one agent's rows, so there is no delegated run
     // for a second heading to head (issue 319).
@@ -51,10 +73,14 @@ export const TwoPane: Story = {
       'Plan',
       'Timeline',
     ])
-    // A subagent row SWAPS the pane rather than jumping within it: one pane, one agent.
+    // A subagent row SWAPS the pane rather than jumping within it: one pane, one agent — and the head
+    // that names whose feed you are now in is the visible proof it happened.
     const nav = canvas.getByRole('list', { name: 'Subagents' })
     await userEvent.click(within(nav).getByText('security lens'))
-    await expect(args.onSelectAgent).toHaveBeenCalledWith('security')
+    await expect(canvas.getByRole('heading', { name: 'security lens' })).toBeInTheDocument()
+    // And back out of it, to the session's own feed.
+    await userEvent.click(canvas.getByText('back to the session'))
+    await expect(canvas.queryByRole('heading', { name: 'security lens' })).not.toBeInTheDocument()
   },
 }
 
@@ -89,11 +115,11 @@ export const JumpsToSectionAndRow: Story = {
     const canvas = within(canvasElement)
     const feed = feedOf(canvasElement)
     // The section: the oldest turn's card, which is at the TOP of a feed that opened at its live edge.
+    // Its LABEL, not its caret — the two are separate controls now, and only the label navigates.
     const timeline = canvas.getByRole('list', { name: 'Timeline' })
-    const [firstCard] = within(timeline).getAllByRole('button')
-    if (firstCard === undefined) throw new Error('the fixture must carry a turn')
+    const firstCard = within(timeline).getByRole('button', { name: /Where does the auth token/ })
     await userEvent.click(firstCard)
-    await waitFor(() => expect(feed.scrollTop).toBeLessThan(40), { timeout: 3000 })
+    await waitFor(() => expect(feed.scrollTop).toBeLessThan(40), { timeout: 8000 })
     const atTop = feed.scrollTop
 
     // The row: one step of the LIVE turn, whose own anchor sits further down the feed than the section
@@ -103,7 +129,51 @@ export const JumpsToSectionAndRow: Story = {
     const [step] = within(steps).getAllByRole('button')
     if (step === undefined) throw new Error('the live turn must carry a folded row to jump to')
     await userEvent.click(step)
-    await waitFor(() => expect(feed.scrollTop).toBeGreaterThan(atTop), { timeout: 3000 })
+    await waitFor(() => expect(feed.scrollTop).toBeGreaterThan(atTop), { timeout: 8000 })
+  },
+}
+
+/**
+ * Folding a turn and going to it are two controls, not one.
+ *
+ * They were one, and it read as a single confused gesture: the click took you to the turn and hid what it
+ * had just taken you to. The caret folds and moves nothing; the label navigates and folds nothing.
+ */
+export const FoldingIsNotSelecting: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const feed = feedOf(canvasElement)
+    const timeline = canvas.getByRole('list', { name: 'Timeline' })
+    const label = within(timeline).getByRole('button', { name: /Where does the auth token/ })
+
+    // The caret unfolds its card — a past turn opens folded — and leaves the feed exactly where the
+    // reader had it, which is at the live edge.
+    const at = feed.scrollTop
+    await userEvent.click(within(timeline).getByRole('button', { name: 'unfold turn 1' }))
+    await expect(within(timeline).getByRole('button', { name: 'fold turn 1' })).toBeInTheDocument()
+    await expect(feed.scrollTop).toBe(at)
+
+    // The label navigates — and leaves the card exactly as folded as it found it, because folding is not
+    // what was asked for.
+    await userEvent.click(label)
+    await waitFor(() => expect(feed.scrollTop).toBeLessThan(40), { timeout: 8000 })
+    await expect(within(timeline).getByRole('button', { name: 'fold turn 1' })).toBeInTheDocument()
+  },
+}
+
+/**
+ * The same turn, counted the same way in both panes. The nav numbers its cards and the feed had numbered
+ * nothing, which read as two surfaces describing two different sessions.
+ */
+export const BothPanesNumberTheTurns: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const timeline = canvas.getByRole('list', { name: 'Timeline' })
+    await expect(within(timeline).getByRole('button', { name: /^1 /u })).toBeInTheDocument()
+    // And the feed says which exchange each of its sections is, in words rather than as a bare digit —
+    // the feed has no column for the number to line up in.
+    await expect(feedOf(canvasElement)).toHaveTextContent('turn 1')
+    await expect(feedOf(canvasElement)).toHaveTextContent('turn 2')
   },
 }
 
@@ -116,30 +186,23 @@ const anchorsOf = (feed: HTMLElement): HTMLElement[] => [
 ]
 
 /**
- * The scroll-spy over REAL geometry: every anchor the feed can lift to the trip line becomes the
- * current one as the reader scrolls past it, the first turn included.
+ * The scroll-spy over REAL geometry: EVERY anchor the feed holds becomes the current one as the reader
+ * scrolls past it — the first turn, the last row, and everything between.
  *
- * Both halves were broken by a trip line halfway down the pane. The first turn could never be current —
- * by the time its rows reached the middle, the next turn's had crossed too — and a bottomed-out feed
- * answered with its LAST anchor whatever the geometry said, which collapsed the final screenful onto one
- * key and skipped the row before it.
+ * Three bugs are locked out here, all of them reported from a real pane. A trip line halfway down could
+ * never name the first turn, because by the time its rows reached the middle the next turn's had crossed
+ * too. A bottomed-out feed used to answer with its LAST anchor whatever the geometry said, which
+ * collapsed the whole final screenful onto one key. And with the line at the top but no tail space, the
+ * highlight simply STUCK partway down the last turn: those rows could not be lifted to the line, because
+ * there was no scroll left to lift them with.
  *
- * The anchors still inside the last screenful at full scroll are excluded, and honestly: there is no
- * scroll left to lift them to the line. Clicking one pins the highlight instead.
+ * Sweeping in 24px steps rather than jumping to the end is the point — a highlight that only lands
+ * correctly at the extremes is what the reader was complaining about.
  */
-export const SpyNamesEveryAnchorItCanReach: Story = {
+export const SpyNamesEveryAnchor: Story = {
   play: async ({ canvasElement }) => {
     const feed = feedOf(canvasElement)
     const key = (node: HTMLElement): string => node.getAttribute('data-spy') ?? ''
-
-    feed.scrollTop = feed.scrollHeight
-    await frame()
-    const line = feed.getBoundingClientRect().top + 24
-    const unreachable = new Set(
-      anchorsOf(feed)
-        .filter((node) => node.getBoundingClientRect().top > line)
-        .map(key),
-    )
 
     const seen = new Set<string>()
     const step = 24
@@ -154,7 +217,7 @@ export const SpyNamesEveryAnchorItCanReach: Story = {
     await expect(seen).toContain('turn:past')
     const missed = anchorsOf(feed)
       .map(key)
-      .filter((anchor) => !seen.has(anchor) && !unreachable.has(anchor))
+      .filter((anchor) => !seen.has(anchor))
     await expect(missed).toEqual([])
   },
 }

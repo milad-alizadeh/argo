@@ -99,5 +99,10 @@ export const FollowingTheLiveEdge: Story = {
     // starts lands over several frames, so the affordance is awaited rather than read immediately.
     await userEvent.click(within(canvas.getByRole('list', { name: 'Sections' })).getByText('first'))
     await waitFor(() => expect(canvas.getByText('follow the live edge')).toBeInTheDocument())
+    // And taking it back works over the real geometry, which is the half a screenful of tail space
+    // could quietly break: the edge is the last ROW's bottom, not the bottom of the scroll range, so a
+    // feed measuring itself against the latter would sit here permanently claiming to be adrift.
+    await userEvent.click(canvas.getByText('follow the live edge'))
+    await waitFor(() => expect(canvas.queryByText('follow the live edge')).not.toBeInTheDocument())
   },
 }

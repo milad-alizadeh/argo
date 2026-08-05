@@ -18,7 +18,9 @@ const feedSections = (activity: ActivityModel): MasterDetailSection[] =>
   activity.sections.map((section) => ({
     key: section.key,
     anchors: section.turn.steps.map((step) => step.key),
-    detail: <TurnFeed rows={section.rows} />,
+    // Numbered here as well as in the nav: the two panes count the same session, and a feed section with
+    // no visible start reads as one more paragraph of the turn above it.
+    detail: <TurnFeed rows={section.rows} ordinal={section.turn.ordinal} />,
   }))
 
 /** What the SESSION's own surface says before its first call. The feed is empty when nothing has been
