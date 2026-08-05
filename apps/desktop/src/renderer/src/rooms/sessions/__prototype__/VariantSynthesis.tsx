@@ -50,7 +50,13 @@ function segmentsOf(rows: readonly FeedRow[]): Segment[] {
 }
 
 /** The seam a turn starts with, STUCK: whichever exchange you are inside, its cause and the plan's
- * count are the top line of the pane. No number — the prompt is the turn's name. */
+ * count are the top line of the pane. No number — the prompt is the turn's name.
+ *
+ * The title is PRIMARY, at the row-strong weight, behind an accent bar: the seam is the one row of
+ * chrome the surface keeps, so it must not be mistakable for a row of the feed — and its gold is the
+ * same gold the minimap's prompt ticks wear, which is what makes the strip readable as a legend.
+ * The ACTIVE seam is the lit one; a seam scrolled past but still stuck goes quiet, so two stacked
+ * bars never read as two copies of the same thing. */
 function StickySeam({
   chapter,
   active,
@@ -61,13 +67,16 @@ function StickySeam({
   plan: PlanProgressModel | null
 }): React.JSX.Element {
   return (
-    <div className={STICKY_BAR}>
-      <Text
-        variant="row"
+    <div className={cn(STICKY_BAR, active && 'border-b-primary/30')}>
+      <span
         className={cn(
-          'min-w-0 flex-1 truncate',
-          active ? 'text-foreground' : 'text-foreground-faint',
+          'h-[1.1em] w-[3px] shrink-0 self-center rounded-full',
+          active ? 'bg-primary' : 'bg-foreground/20',
         )}
+      />
+      <Text
+        variant="row-strong"
+        className={cn('min-w-0 flex-1 truncate', active ? 'text-primary' : 'text-foreground-faint')}
       >
         {chapterTitle(chapter)}
       </Text>

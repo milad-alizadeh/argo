@@ -9,16 +9,18 @@ import { type Chapter, chapterTitle } from './feedIndex'
 // they were. That is also its risk, and the thing to judge — a shape you cannot read is a shape you
 // may not be able to aim with.
 
-// One tone per row kind, so a session's shape is legible before a word of it is: what the agent said,
-// what it changed, what it merely looked at. Three weights and one accent, not eight.
+// One tone per row kind, MATCHED to what that row wears in the feed, so the strip is a legend you
+// never have to learn: gold is a prompt because the sticky seam is gold, teal is an edit because the
+// diff card's added lines are, bright is a screenshot because thumbs are the brightest thing on the
+// surface, red is the failure.
 const ROW_TONE: Record<FeedRow['kind'], string> = {
-  prompt: 'bg-primary/70',
-  message: 'bg-foreground/40',
+  prompt: 'bg-primary',
+  message: 'bg-foreground/45',
   thought: 'bg-foreground/12',
   mutation: 'bg-tone-run',
   call: 'bg-foreground/25',
   quiet: 'bg-foreground/10',
-  media: 'bg-foreground/25',
+  media: 'bg-foreground/70',
   plan: 'bg-tone-amber/60',
   compaction: 'bg-foreground/8',
 }
@@ -62,11 +64,13 @@ function ChapterTicks({
       onClick={() => onJump(chapter.key)}
       style={{ flexGrow: weightOfAll(chapter.rows) }}
       className={cn(
-        'group relative flex w-full shrink cursor-pointer basis-0 flex-col gap-hair rounded-sm py-hair',
-        'border-t border-t-inset-hair first:border-t-0',
+        // Each chapter is its OWN BLOCK — rounded, inset from the track, air above and below — so
+        // where one turn ends and the next begins is visible in the map itself, not inferred from a
+        // hairline. The gap between blocks is the turn seam, drawn spatially.
+        'group relative flex w-full shrink cursor-pointer basis-0 flex-col gap-hair rounded-md bg-foreground/4 p-hair',
         // The SNAP: the chapter under the trip line wears the same lit selection D's strip segments
-        // do, so scrolling the feed visibly walks the strip chapter by chapter.
-        active && 'border-t-transparent bg-primary/12 ring-1 ring-primary/40',
+        // do, so scrolling the feed visibly walks the strip block by block.
+        active && 'bg-primary/12 ring-1 ring-primary/50',
       )}
     >
       {chapter.rows.map((row) => (
@@ -119,9 +123,9 @@ export function DensityGutter({
       onPointerMove={(event) => {
         if (event.currentTarget.hasPointerCapture(event.pointerId)) scrubFrom(event.clientY)
       }}
-      className="relative w-nest shrink-0 overflow-hidden border-l border-l-inset-hair px-hair"
+      className="relative w-[34px] shrink-0 overflow-hidden border-l border-l-inset-hair px-hair py-tight"
     >
-      <div className="flex h-full flex-col">
+      <div className="flex h-full flex-col gap-tight">
         {chapters.map((chapter) => (
           <ChapterTicks
             key={chapter.key}
