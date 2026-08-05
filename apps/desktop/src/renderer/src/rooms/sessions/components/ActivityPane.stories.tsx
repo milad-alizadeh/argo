@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { activeSection } from '@/shared/components/ui/useScrollSpy'
 import {
   FRESH,
   interiorOf,
@@ -103,6 +104,58 @@ export const JumpsToSectionAndRow: Story = {
     if (step === undefined) throw new Error('the live turn must carry a folded row to jump to')
     await userEvent.click(step)
     await waitFor(() => expect(feed.scrollTop).toBeGreaterThan(atTop), { timeout: 3000 })
+  },
+}
+
+/** One frame, so a scroll the test performed has been laid out before it is measured. */
+const frame = (): Promise<void> => new Promise((resolve) => requestAnimationFrame(() => resolve()))
+
+/** Every anchor the feed currently holds, in document order. */
+const anchorsOf = (feed: HTMLElement): HTMLElement[] => [
+  ...feed.querySelectorAll<HTMLElement>('[data-spy]'),
+]
+
+/**
+ * The scroll-spy over REAL geometry: every anchor the feed can lift to the trip line becomes the
+ * current one as the reader scrolls past it, the first turn included.
+ *
+ * Both halves were broken by a trip line halfway down the pane. The first turn could never be current —
+ * by the time its rows reached the middle, the next turn's had crossed too — and a bottomed-out feed
+ * answered with its LAST anchor whatever the geometry said, which collapsed the final screenful onto one
+ * key and skipped the row before it.
+ *
+ * The anchors still inside the last screenful at full scroll are excluded, and honestly: there is no
+ * scroll left to lift them to the line. Clicking one pins the highlight instead.
+ */
+export const SpyNamesEveryAnchorItCanReach: Story = {
+  play: async ({ canvasElement }) => {
+    const feed = feedOf(canvasElement)
+    const key = (node: HTMLElement): string => node.getAttribute('data-spy') ?? ''
+
+    feed.scrollTop = feed.scrollHeight
+    await frame()
+    const line = feed.getBoundingClientRect().top + 24
+    const unreachable = new Set(
+      anchorsOf(feed)
+        .filter((node) => node.getBoundingClientRect().top > line)
+        .map(key),
+    )
+
+    const seen = new Set<string>()
+    const step = 24
+    for (let top = 0; top <= feed.scrollHeight; top += step) {
+      feed.scrollTop = top
+      await frame()
+      const named = activeSection(feed, anchorsOf(feed))
+      if (named !== null) seen.add(named)
+    }
+
+    // The first turn's own section, named while the feed is at its top.
+    await expect(seen).toContain('turn:past')
+    const missed = anchorsOf(feed)
+      .map(key)
+      .filter((anchor) => !seen.has(anchor) && !unreachable.has(anchor))
+    await expect(missed).toEqual([])
   },
 }
 

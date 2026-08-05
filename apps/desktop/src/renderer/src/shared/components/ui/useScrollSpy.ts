@@ -4,26 +4,33 @@ import { type RefObject, useCallback, useEffect, useState } from 'react'
  * the markup cannot drift. */
 export const SPY_ATTRIBUTE = 'data-spy'
 
-// Where the trip line sits: a section counts as current once its top reaches the top band of the
-// feed, not when it first peeks in from below.
-const BAND_RATIO = 0.45
+// Where the trip line sits: a hair below the pane's top edge, so the current anchor is the one that has
+// just passed out of view — the row you are reading down from.
+//
+// A FIXED offset near the top rather than a fraction of the pane, because the anchors are feed ROWS as
+// well as sections (issue 319) and rows are dense. Any line further down spans several of them, and
+// "the last anchor above the line" then skips every anchor sharing the band with a later one — which is
+// why a line halfway down could never name the first turn, or any of its first rows.
+const LINE_PX = 24
 
-/** Which section has most recently crossed the trip line — the one you are looking at.
+/**
+ * Which anchor has most recently crossed the trip line — the one you are reading.
  *
- * A BOTTOMED-OUT feed answers with its last section, unconditionally. This is not a nicety: the
- * sections inside the final viewport-height can never reach a trip line that sits 45% down the pane,
- * because there is no scroll left to lift them there. An earlier implementation observed
- * intersections against that band and so could never name the tail at all — clicking the last row
- * scrolled to it and then highlighted the first row still crossing the line, several items above.
+ * The FIRST anchor is the answer while nothing has crossed yet, which is what makes the top of the feed
+ * name the turn at the top of the feed.
+ *
+ * The last screenful is a known limit rather than a special case: the anchors below the line when the
+ * feed is bottomed out cannot be lifted to it, because there is no scroll left. They stay reachable by
+ * CLICK, which pins the highlight (`pinnedKey`) until the reader scrolls themselves — and an earlier
+ * "bottomed out answers with its last anchor" rule is what made the second-to-last row unreachable,
+ * since the last screenful collapsed onto one key.
  */
 export function activeSection(root: HTMLElement, sections: readonly HTMLElement[]): string | null {
   const keyOf = (section: HTMLElement | undefined): string | null =>
     section?.getAttribute(SPY_ATTRIBUTE) ?? null
   if (sections.length === 0) return null
-  // `- 1` absorbs the sub-pixel remainder a fractional device pixel ratio leaves behind.
-  if (root.scrollTop + root.clientHeight >= root.scrollHeight - 1) return keyOf(sections.at(-1))
 
-  const line = root.getBoundingClientRect().top + root.clientHeight * BAND_RATIO
+  const line = root.getBoundingClientRect().top + LINE_PX
   let current = sections[0]
   // Viewport-relative rects rather than `offsetTop`: sections sit inside group wrappers now, so
   // they no longer share an offset parent with the feed and the two are not comparable.

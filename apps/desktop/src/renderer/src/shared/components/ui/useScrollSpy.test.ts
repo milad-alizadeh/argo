@@ -29,32 +29,35 @@ function section(key: string, top: number): HTMLElement {
 }
 
 describe('activeSection', () => {
-  // The trip line sits 45% down a 400px pane, so at 180px.
+  // The trip line sits 24px below the pane's top edge.
   const pane = { scrollTop: 0, clientHeight: 400, scrollHeight: 2000 }
 
   it('names the first section while the feed is at its top', () => {
-    const sections = [section('a', 0), section('b', 300), section('c', 600)]
+    const sections = [section('a', 24), section('b', 300), section('c', 600)]
+    expect(activeSection(feed(pane), sections)).toBe('a')
+  })
+
+  // The FIRST anchor answers even before anything has crossed — the top of the feed names the turn at
+  // the top of the feed, which is what a line halfway down the pane could never do.
+  it('names the first section while nothing has crossed the line yet', () => {
+    const sections = [section('a', 60), section('b', 400)]
     expect(activeSection(feed(pane), sections)).toBe('a')
   })
 
   it('names the last section that has crossed the trip line', () => {
-    // `b` sits above the 180px line, `c` still below it.
-    const sections = [section('a', -400), section('b', 100), section('c', 500)]
+    // `b` sits above the 24px line, `c` still below it.
+    const sections = [section('a', -400), section('b', 10), section('c', 500)]
     expect(activeSection(feed(pane), sections)).toBe('b')
   })
 
-  // The bug this guard exists for: the sections inside the final viewport-height cannot be lifted to
-  // the trip line, so measuring against it alone named a section several rows above the one clicked.
-  it('names the LAST section once the feed is scrolled to its end', () => {
+  // The regression this replaced: a bottomed-out feed used to answer with its LAST anchor whatever the
+  // geometry said, which collapsed the whole final screenful onto one key — so the second-to-last row
+  // could never be current, however slowly you scrolled. The line answers here like anywhere else, and
+  // the rows below it stay reachable by click, which pins.
+  it('keeps answering from the line once the feed is scrolled to its end', () => {
     const bottomed = feed({ scrollTop: 1600, clientHeight: 400, scrollHeight: 2000 })
-    // Every rect still sits below the line — which is exactly why the line cannot answer here.
-    const sections = [section('a', 200), section('b', 300), section('c', 380)]
-    expect(activeSection(bottomed, sections)).toBe('c')
-  })
-
-  it('tolerates the sub-pixel remainder a fractional device pixel ratio leaves', () => {
-    const bottomed = feed({ scrollTop: 1599.6, clientHeight: 400, scrollHeight: 2000 })
-    expect(activeSection(bottomed, [section('a', 0), section('z', 900)])).toBe('z')
+    const sections = [section('a', -20), section('b', 10), section('c', 380)]
+    expect(activeSection(bottomed, sections)).toBe('b')
   })
 
   it('names nothing when the feed holds no sections', () => {
