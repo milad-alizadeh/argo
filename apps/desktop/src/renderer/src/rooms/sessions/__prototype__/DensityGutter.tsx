@@ -62,9 +62,11 @@ function ChapterTicks({
       onClick={() => onJump(chapter.key)}
       style={{ flexGrow: weightOfAll(chapter.rows) }}
       className={cn(
-        'group relative flex w-full shrink cursor-pointer basis-0 flex-col gap-hair py-hair',
+        'group relative flex w-full shrink cursor-pointer basis-0 flex-col gap-hair rounded-sm py-hair',
         'border-t border-t-inset-hair first:border-t-0',
-        active && 'bg-primary/8',
+        // The SNAP: the chapter under the trip line wears the same lit selection D's strip segments
+        // do, so scrolling the feed visibly walks the strip chapter by chapter.
+        active && 'border-t-transparent bg-primary/12 ring-1 ring-primary/40',
       )}
     >
       {chapter.rows.map((row) => (
@@ -74,7 +76,7 @@ function ChapterTicks({
         variant="tag"
         className="pointer-events-none absolute top-0 right-full mr-snug hidden whitespace-nowrap rounded-md bg-popover px-snug py-hair text-foreground group-hover:block"
       >
-        {chapter.ordinal} · {chapterTitle(chapter)}
+        {chapterTitle(chapter)}
       </Text>
     </button>
   )

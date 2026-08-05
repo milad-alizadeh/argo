@@ -16,7 +16,7 @@ import type { PlanProgressModel } from '../sessionPlan'
 
 /** The plan, behind the count that is the only part of it worth standing space. Closed, it is six
  * characters; open, it is the shipped tracker, over the feed rather than beside it. */
-function PlanPull({ plan }: { plan: PlanProgressModel }): React.JSX.Element {
+export function PlanPull({ plan }: { plan: PlanProgressModel }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: false })
   return (
     <div className="relative">

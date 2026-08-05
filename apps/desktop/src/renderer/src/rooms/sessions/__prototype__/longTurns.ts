@@ -2,6 +2,7 @@ import type { ToolCall, ToolCallKind, ToolCallStatus, Turn } from '@shared'
 import { aDiff } from '../__fixtures__/diff'
 import { MINUTE, NOW_MS, OPEN_TURN } from '../__fixtures__/interiorTree'
 import { aToolCall, aTurn, aUsage } from '../__fixtures__/runtimeTree'
+import { SHOTS_TURN } from './shotsTurn'
 
 // PROTOTYPE FIXTURE. Eight turns over ninety minutes — the shipped `RUNNING` session has two, and two
 // is exactly the length at which every navigation idea looks fine.
@@ -139,7 +140,7 @@ const SPEC: readonly Exchange[] = [
   },
 ]
 
-/** The eight turns, oldest first. The last is the shipped OPEN turn verbatim — it is the one that
+/** The nine turns, oldest first. The last is the shipped OPEN turn verbatim — it is the one that
  * carries a plan, media, a live command and a running duration, and a second copy of it here would be
  * a second thing to keep true. */
-export const LONG_TURNS: readonly Turn[] = [...SPEC.map(turnOf), OPEN_TURN]
+export const LONG_TURNS: readonly Turn[] = [...SPEC.map(turnOf), SHOTS_TURN, OPEN_TURN]

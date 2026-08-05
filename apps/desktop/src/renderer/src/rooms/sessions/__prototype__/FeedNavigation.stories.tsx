@@ -9,6 +9,7 @@ import { VariantChapters } from './VariantChapters'
 import { VariantGutter } from './VariantGutter'
 import { VariantLens } from './VariantLens'
 import { VariantStrip } from './VariantStrip'
+import { VariantSynthesis } from './VariantSynthesis'
 
 // PROTOTYPE — throwaway. See ./README.md for the question and the four answers.
 
@@ -26,10 +27,15 @@ const VARIANTS: Variant[] = [
   { key: 'B', name: 'Chapters', body: <VariantChapters chapters={CHAPTERS} plan={PLAN} /> },
   { key: 'C', name: 'Lens + ⌘K', body: <VariantLens chapters={CHAPTERS} /> },
   { key: 'D', name: 'Strip', body: <VariantStrip chapters={CHAPTERS} plan={PLAN} /> },
+  {
+    key: 'E',
+    name: 'Synthesis — gutter snap · sticky seams · scoped subagents · thumbs',
+    body: <VariantSynthesis chapters={CHAPTERS} plan={PLAN} />,
+  },
 ]
 
 function Prototype(): React.JSX.Element {
-  const [at, setAt] = useState(1)
+  const [at, setAt] = useState(VARIANTS.length - 1)
   return (
     <>
       <PrototypeShell>{VARIANTS[at]?.body}</PrototypeShell>
