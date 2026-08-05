@@ -49,7 +49,9 @@ export function SubagentRow({
             {SUBAGENT_STATES[row.status].word}
           </Text>
         ) : (
-          <Text variant="code-inline" className="min-w-0 truncate text-foreground-faint">
+          // `flex-1` alongside the name's: the two columns split the row instead of the target's
+          // content width starving the name to nothing on a narrow rail.
+          <Text variant="code-inline" className="min-w-0 flex-1 truncate text-foreground-faint">
             {row.target}
           </Text>
         )}

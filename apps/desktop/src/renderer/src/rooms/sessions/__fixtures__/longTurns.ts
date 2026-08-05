@@ -1,10 +1,10 @@
 import type { ToolCall, ToolCallKind, ToolCallStatus, Turn } from '@shared'
-import { aDiff } from '../__fixtures__/diff'
-import { MINUTE, NOW_MS, OPEN_TURN } from '../__fixtures__/interiorTree'
-import { aToolCall, aTurn, aUsage } from '../__fixtures__/runtimeTree'
+import { aDiff } from './diff'
+import { MINUTE, NOW_MS, OPEN_TURN } from './interiorTree'
+import { aToolCall, aTurn, aUsage } from './runtimeTree'
 import { SHOTS_TURN } from './shotsTurn'
 
-// PROTOTYPE FIXTURE. Eight turns over ninety minutes — the shipped `RUNNING` session has two, and two
+// FIXTURE. Eight turns over ninety minutes — the shipped `RUNNING` session has two, and two
 // is exactly the length at which every navigation idea looks fine.
 //
 // Written as a SPEC the expanders below inflate, rather than as eight hand-spelled `aTurn` calls: the

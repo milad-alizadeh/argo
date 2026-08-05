@@ -1,14 +1,10 @@
-import { sessionFacts, sessionView } from '@shared'
-import { NOW_MS } from '../__fixtures__/interiorTree'
-import { aRoot, aToolCall, aTurn, aUsage } from '../__fixtures__/runtimeTree'
-import { buildSessionInterior } from '../interiorModel'
-import { type Chapter, chapters } from './feedIndex'
+import type { Turn } from '@shared'
 import { ago } from './longTurns'
-import type { DelegateItem } from './SubagentScope'
+import { aToolCall, aTurn, aUsage } from './runtimeTree'
 
-// PROTOTYPE FIXTURE. Each lens delegate gets a real two-turn feed of its own, built through the
-// SAME interior pipeline as the main session — because the locked rail renders a delegate's scope
-// through the same FeedSurface, and a surface can only be judged on real chapters.
+// FIXTURE. Each lens delegate's own two-turn feed: the delegate scope renders through the same
+// FeedSurface as the session, and a surface can only be judged on real chapters — prompts, prose
+// and calls, not bare tool lists.
 
 interface LensTurn {
   id: string
@@ -18,7 +14,7 @@ interface LensTurn {
   calls: readonly [string, 'read' | 'search' | 'execute', string | null, string?][]
 }
 
-const turnOf = (spec: LensTurn) =>
+const turnOf = (spec: LensTurn): Turn =>
   aTurn({
     id: spec.id,
     startedAtMs: ago(spec.at),
@@ -39,8 +35,8 @@ const turnOf = (spec: LensTurn) =>
     usage: aUsage({ inputTokens: 12_000, outputTokens: 900 }),
   })
 
-const LENS_FEEDS: Record<string, readonly LensTurn[]> = {
-  'perf lens': [
+const FEEDS: Record<string, readonly LensTurn[]> = {
+  perf: [
     {
       id: 'perf-t1',
       at: 40,
@@ -59,7 +55,7 @@ const LENS_FEEDS: Record<string, readonly LensTurn[]> = {
       calls: [['Bash', 'execute', 'bun run bench --alloc', '1 alloc/op, unchanged']],
     },
   ],
-  'correctness lens': [
+  correctness: [
     {
       id: 'correctness-t1',
       at: 40,
@@ -78,7 +74,7 @@ const LENS_FEEDS: Record<string, readonly LensTurn[]> = {
       calls: [['Grep', 'search', 'from ./rotation']],
     },
   ],
-  'security lens': [
+  security: [
     {
       id: 'security-t1',
       at: 40,
@@ -99,27 +95,5 @@ const LENS_FEEDS: Record<string, readonly LensTurn[]> = {
   ],
 }
 
-const feedOf = (name: string, turns: readonly LensTurn[]): Chapter[] =>
-  chapters(
-    buildSessionInterior({
-      session: sessionView({
-        id: `lens-${name.replaceAll(' ', '-')}`,
-        title: name,
-        model: 'claude-opus-5',
-        branch: 'feat/auth-rotation',
-        lastActivityAt: ago(31),
-        agents: [aRoot({ turns: turns.map(turnOf), startedAtMs: ago(40), endedAtMs: ago(31) })],
-        facts: sessionFacts({}),
-      }),
-      nowMs: NOW_MS,
-      link: { titleSource: 'derived', intent: { number: 42, title: 'Auth flow' }, mode: 'Code' },
-    }).activity,
-  )
-
-const DELEGATE_CHAPTERS = new Map(
-  Object.entries(LENS_FEEDS).map(([name, turns]) => [name, feedOf(name, turns)]),
-)
-
-/** A delegate's own chapters, by its name — empty for a delegate the fixture never scripted. */
-export const delegateChapters = (item: DelegateItem): readonly Chapter[] =>
-  DELEGATE_CHAPTERS.get(item.subagent.name) ?? []
+/** The lens's turns by its id, or an empty feed for a lens the fixture never scripted. */
+export const lensTurns = (id: string): Turn[] => (FEEDS[id] ?? []).map(turnOf)

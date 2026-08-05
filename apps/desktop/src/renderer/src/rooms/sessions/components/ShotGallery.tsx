@@ -2,10 +2,9 @@ import type { MediaRowModel } from '@shared'
 import { useEffect, useState } from 'react'
 import { Text } from '@/shared/components/ui'
 
-// PROTOTYPE. Screenshots as a THUMBNAIL STRIP rather than full-width rows: a visual-debugging turn
-// takes four shots, and four 560px images in a column push the prose they explain two screens away.
-// A row of thumbs keeps the pictures adjacent to the paragraph; the pixels at size are one click
-// away in a lightbox.
+// Screenshots as a THUMBNAIL STRIP rather than full-width rows: a visual-debugging turn takes four
+// shots, and four 560px images in a column push the prose they explain two screens away. A row of
+// thumbs keeps the pictures adjacent to the paragraph; the pixels at size are one click away.
 
 const srcOf = (row: MediaRowModel): string =>
   `data:${row.media.mediaType};base64,${row.media.bytes ?? ''}`
@@ -13,9 +12,9 @@ const srcOf = (row: MediaRowModel): string =>
 const nameOf = (row: MediaRowModel): string =>
   row.subject?.split('/').at(-1) ?? 'an image the record did not name'
 
-/** The clicked shot at size, over a scrim. Click anywhere, or `esc`, to put it away. `esc` hangs off
- * the window because focus is still on the thumbnail that opened this — a key handler on the scrim
- * would only fire once you had clicked the thing you are trying to dismiss. */
+/** The clicked shot at size, over a scrim. Click anywhere, or `esc`, to put it away. `esc` hangs
+ * off the window because focus is still on the thumbnail that opened this — a key handler on the
+ * scrim would only fire once you had clicked the thing you are trying to dismiss. */
 function Lightbox({
   row,
   onClose,
@@ -59,13 +58,13 @@ function Lightbox({
 }
 
 /**
- * A run of consecutive shots as one row of thumbnails. One picture still gets a thumb, not a
- * full-width row — the strip is the media treatment of this variant, not a fallback for crowds.
+ * Organism: a run of consecutive shots as one row of thumbnails. One picture still gets a thumb,
+ * not a full-width row — the strip is the feed's media treatment, not a fallback for crowds.
  */
 export function ShotGallery({ rows }: { rows: readonly MediaRowModel[] }): React.JSX.Element {
   const [open, setOpen] = useState<MediaRowModel | null>(null)
   return (
-    <div className="flex flex-wrap gap-gap">
+    <div data-component="ShotGallery" className="flex flex-wrap gap-gap">
       {rows.map((row) => (
         <button
           key={row.key}

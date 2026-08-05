@@ -136,7 +136,7 @@ describe('the feed the own items carry', () => {
     expect(item?.kind === 'turn' && item.rows.map(({ kind }) => kind)).toEqual(['prompt'])
   })
 
-  it('carries each subagent its own feed, so the detail pane never re-looks-it-up', () => {
+  it('carries each subagent its own chapter feed, so its scope never re-looks-it-up', () => {
     const session = sessionView({
       id: 's',
       agents: [
@@ -144,11 +144,15 @@ describe('the feed the own items carry', () => {
         agent({
           id: 'a',
           label: 'lens',
-          turns: [turn({ id: 't', toolCalls: [call({ id: 'c', name: 'Grep' })] })],
+          turns: [turn({ id: 't', prompt: 'audit it', toolCalls: [call({ id: 'c' })] })],
         }),
       ],
     })
     const item = buildActivity(session).delegated[0]
-    expect(item?.kind === 'subagent' && item.events.map(({ name }) => name)).toEqual(['Grep'])
+    expect(item?.kind === 'subagent' && item.chapters.map((c) => c.promptLine)).toEqual([
+      'audit it',
+    ])
+    // The chapter's rows are the same derivation the session's own turns get — the prompt leads.
+    expect(item?.kind === 'subagent' && item.chapters[0]?.rows[0]?.kind).toBe('prompt')
   })
 })

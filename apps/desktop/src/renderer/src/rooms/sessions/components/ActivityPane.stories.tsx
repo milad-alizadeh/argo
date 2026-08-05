@@ -1,18 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
-import { FRESH, interiorOf, RUNNING, WIDE_FANOUT } from '../__fixtures__/interior'
+import { FRESH, interiorOf, WIDE_FANOUT } from '../__fixtures__/interior'
+import { LONG_INTERIOR } from '../__fixtures__/longSession'
 import { ActivityPane } from './ActivityPane'
 
 const meta = {
   title: 'Sessions/Activity',
   component: ActivityPane,
   parameters: { layout: 'fullscreen' },
-  args: { activity: interiorOf(RUNNING).activity },
+  args: { activity: LONG_INTERIOR.activity },
   argTypes: { activity: { control: false, table: { type: { summary: 'ActivityModel' } } } },
-  // The nav pane sizes off the screen-local `--c-act` its splitter drives.
   decorators: [
     (Story) => (
-      <div className="flex h-screen bg-panel" style={{ '--c-act': '420px' }}>
+      <div className="flex h-screen bg-panel">
         <Story />
       </div>
     ),
@@ -23,48 +23,39 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The whole surface: Subagents above Timeline on the left, one continuous feed on the right. This is
- * the story that proves the composition — the two sections are never merged, the feed carries a
- * section per item in the same order, and the left highlight follows the feed rather than the click.
+ * The whole surface: the agents rail on the left, one full-width chapter feed under sticky gold
+ * seams, the density gutter as the whole of navigation on the right edge.
  */
-export const TwoPane: Story = {
+export const Surface: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    // `Subagents` heads the run TWICE on purpose: once in the nav pane, once over the delegated
-    // sections of the feed. That second heading is what stops a delegate's work from reading as a
-    // step of this session's own turn.
-    await expect(canvas.getAllByText('Subagents')).toHaveLength(2)
-    await expect(canvas.getByText('Timeline')).toBeInTheDocument()
-    // The nav pane's reading order: delegated work first, then the plan, then this session's own
-    // turns — asserted as an ORDER, the one thing three stacked sections can get wrong while every
-    // one of them still renders. The trailing `Subagents` is the feed's own heading, further down
-    // the document than the whole nav column. `Plan` heads the nav ONCE and only there: the feed's
-    // own plan row states the revision in a line (`plan 2 of 4 · …`) rather than re-drawing the
-    // list, so the tracker stays the one place the whole list with its marks is read.
-    const sections = canvas.getAllByText(/^(Subagents|Plan|Timeline)$/)
-    await expect(sections.map((node) => node.textContent)).toEqual([
-      'Subagents',
-      'Plan',
-      'Timeline',
-      'Subagents',
-    ])
-    // Clicking a nav row jumps the feed rather than swapping the pane's content out — the section was
-    // already there, which is what makes the feed continuous.
-    const nav = canvas.getByRole('list', { name: 'Subagents' })
-    await userEvent.click(within(nav).getByText('security lens'))
-    await expect(canvas.getByRole('heading', { name: 'security lens' })).toBeInTheDocument()
+    // The rail lists every agent, the session first — and IS the scope switcher.
+    const rail = canvas.getByRole('list', { name: 'Agents' })
+    await expect(within(rail).getByText('Main session')).toBeInTheDocument()
+    // A turn is titled by the prompt that opened it — on the seam, and again as the minimap
+    // block's hover label, which is why these are getAll.
+    await expect(canvas.getAllByText('Where does the auth token get refreshed?')).not.toHaveLength(
+      0,
+    )
+    // Opening a delegate switches the WHOLE surface to its feed — same seams, its own prompts.
+    await userEvent.click(within(rail).getByText('security lens'))
+    await expect(
+      canvas.getAllByText('Audit the new public surface of rotation.ts.'),
+    ).not.toHaveLength(0)
+    // The main-session row is the way back.
+    await userEvent.click(within(rail).getByText('Main session'))
+    await expect(canvas.getAllByText('Where does the auth token get refreshed?')).not.toHaveLength(
+      0,
+    )
   },
 }
 
-/**
- * Thirty subagents beside a live turn — the density the two-pane shape exists for. The list stays
- * narrow and scannable while the detail pane fills the rest with one agent's real feed.
- */
+/** Thirty subagents in the rail beside a live feed — the density the rail must stay scannable at. */
 export const WideFanout: Story = { args: { activity: interiorOf(WIDE_FANOUT).activity } }
 
 /**
- * A freshly spawned session has nothing to show, so the surface points at the Dock instead of drawing
- * an empty two-pane with a bare gutter.
+ * A freshly spawned session has nothing to show, so the surface points at the Dock instead of
+ * drawing an empty feed with a bare gutter.
  */
 export const NothingObserved: Story = {
   args: { activity: interiorOf(FRESH).activity },

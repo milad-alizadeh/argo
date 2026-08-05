@@ -20,7 +20,6 @@ const meta = {
     handlers: {
       onSelectTab: fn(),
       onResizeDock: fn(),
-      onResizeActivity: fn(),
       onToggleDock: fn(),
       onOpenIntent: fn(),
     },
@@ -33,7 +32,7 @@ const meta = {
     (Story) => (
       <div
         className="flex h-screen w-screen bg-background p-inset"
-        style={{ '--c-act': `${LAYOUT.activity}px`, '--r-dock': `${LAYOUT.dock}px` }}
+        style={{ '--r-dock': `${LAYOUT.dock}px` }}
       >
         <Story />
       </div>
@@ -53,8 +52,8 @@ export const Activity: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByRole('heading', { name: 'Auth refactor' })).toBeInTheDocument()
-    // Twice: the nav pane's section head and the feed's own head over the delegated run.
-    await expect(canvas.getAllByText('Subagents')).toHaveLength(2)
+    // The agents rail lists the session's delegates beside the full-width feed.
+    await expect(canvas.getByRole('list', { name: 'Agents' })).toBeInTheDocument()
     await expect(canvas.getByText('Bash bun run typecheck')).toBeInTheDocument()
   },
 }

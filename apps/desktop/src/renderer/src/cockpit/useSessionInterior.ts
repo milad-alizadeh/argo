@@ -66,7 +66,6 @@ export function useSessionInterior(selected: SessionView | null): SessionInterio
     handlers: {
       onResize: resize,
       onResizeDock: (px) => resize('dock', px),
-      onResizeActivity: (px) => resize('activity', px),
       onToggleDock: () => snapDock(!isDockExpanded(layout.dock)),
       onSelectTab: (tab) => setUi((state) => ({ ...state, tab })),
     },

@@ -9,7 +9,6 @@ import { SessionHeader } from './SessionHeader'
 export interface SessionPlaneHandlers {
   onSelectTab: (tab: InteriorTab) => void
   onResizeDock: (px: number) => void
-  onResizeActivity: (px: number) => void
   onToggleDock: () => void
   onOpenIntent?: (number: number) => void
 }
@@ -58,20 +57,7 @@ export function SessionPlane({
     >
       <SessionHeader header={interior.header} onOpenIntent={handlers.onOpenIntent} />
       <TabsContent value="activity" className="flex min-h-0 min-w-0 flex-1">
-        <ActivityPane
-          activity={interior.activity}
-          splitter={({ measure }) => (
-            <PanelSplitter
-              orientation="v"
-              label="Activity width"
-              size={layout.activity}
-              measure={measure}
-              min={SPINE.activity.min}
-              max={SPINE.activity.max}
-              onResize={handlers.onResizeActivity}
-            />
-          )}
-        />
+        <ActivityPane activity={interior.activity} />
       </TabsContent>
       <TabsContent
         value="delivery"

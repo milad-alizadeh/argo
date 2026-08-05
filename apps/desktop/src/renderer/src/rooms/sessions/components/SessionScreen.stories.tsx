@@ -27,7 +27,6 @@ const meta = {
       onResize: fn(),
       onSelectTab: fn(),
       onResizeDock: fn(),
-      onResizeActivity: fn(),
       onToggleDock: fn(),
       onOpenIntent: fn(),
     },

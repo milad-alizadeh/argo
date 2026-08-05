@@ -1,9 +1,9 @@
 import type { Turn } from '@shared'
-import { MINUTE, NOW_MS } from '../__fixtures__/interiorTree'
-import { aMediaResult, aShotOf, SHOT_STAGES } from '../__fixtures__/media'
-import { aToolCall, aTurn, aUsage } from '../__fixtures__/runtimeTree'
+import { MINUTE, NOW_MS } from './interiorTree'
+import { aMediaResult, aShotOf, SHOT_STAGES } from './media'
+import { aToolCall, aTurn, aUsage } from './runtimeTree'
 
-// PROTOTYPE FIXTURE. A turn that came back with FOUR screenshots in a row — the case a full-width
+// FIXTURE. A turn that came back with FOUR screenshots in a row — the case a full-width
 // image row buries and a thumbnail strip is for. Its own module because `longTurns.ts` is at the
 // file ceiling and media calls do not fit its `CallSpec` shape anyway.
 
