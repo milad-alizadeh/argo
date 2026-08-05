@@ -8,6 +8,7 @@ import { PrototypeSwitcher, type Variant } from './PrototypeSwitcher'
 import { VariantChapters } from './VariantChapters'
 import { VariantGutter } from './VariantGutter'
 import { VariantLens } from './VariantLens'
+import { VariantPlacements } from './VariantPlacements'
 import { VariantStrip } from './VariantStrip'
 import { VariantSynthesis } from './VariantSynthesis'
 
@@ -32,10 +33,27 @@ const VARIANTS: Variant[] = [
     name: 'Synthesis — gutter snap · sticky seams · scoped subagents · thumbs',
     body: <VariantSynthesis chapters={CHAPTERS} plan={PLAN} />,
   },
+  {
+    key: 'F1',
+    name: 'Subagents: chips bar',
+    body: <VariantPlacements chapters={CHAPTERS} plan={PLAN} placement="chips" />,
+  },
+  {
+    key: 'F2',
+    name: 'Subagents: right rail',
+    body: <VariantPlacements chapters={CHAPTERS} plan={PLAN} placement="rail" />,
+  },
+  {
+    key: 'F3',
+    name: 'Subagents: seam chip',
+    body: <VariantPlacements chapters={CHAPTERS} plan={PLAN} placement="seam" />,
+  },
 ]
 
+const DEFAULT_AT = VARIANTS.findIndex((variant) => variant.key === 'F1')
+
 function Prototype(): React.JSX.Element {
-  const [at, setAt] = useState(VARIANTS.length - 1)
+  const [at, setAt] = useState(DEFAULT_AT)
   return (
     <>
       <PrototypeShell>{VARIANTS[at]?.body}</PrototypeShell>
