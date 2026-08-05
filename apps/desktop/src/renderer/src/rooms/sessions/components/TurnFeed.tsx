@@ -125,7 +125,11 @@ export function TurnFeed({ rows }: { rows: readonly FeedRow[] }): React.JSX.Elem
   return (
     <div data-component="TurnFeed" className="flex flex-col gap-region">
       {rows.map((row) => (
-        <Row key={row.key} row={row} />
+        // The kind travels on the element so the minimap can measure WHERE each row actually
+        // landed and paint its tick at that exact fraction of the scroll — see feedScroll.ts.
+        <div key={row.key} data-feedrow={row.kind}>
+          <Row row={row} />
+        </div>
       ))}
     </div>
   )

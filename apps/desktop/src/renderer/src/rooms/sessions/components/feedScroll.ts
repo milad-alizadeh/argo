@@ -1,4 +1,4 @@
-import { type RefObject, useEffect } from 'react'
+import { useEffect } from 'react'
 
 // The feed's scroll machinery, with ZERO JavaScript on the scroll path: the seams stick by CSS,
 // the minimap window rides a CSS scroll-timeline (see DensityGutter's stylesheet), and stepping
@@ -41,32 +41,6 @@ export function stepFeed(root: HTMLElement | null, delta: number): void {
   const next = anchors[Math.min(anchors.length - 1, Math.max(0, at + delta))]
   const key = next?.getAttribute(ANCHOR)
   if (key !== null && key !== undefined) jumpFeedTo(root, key)
-}
-
-/**
- * Sizes the minimap's viewport window. Its MOTION is pure CSS — a scroll-driven animation on the
- * feed's own scroll-timeline — so nothing here listens to scroll. The one thing CSS cannot read is
- * the visible FRACTION of the feed (`clientHeight / scrollHeight`), so that ratio is measured here,
- * once per content change (`key`) and viewport resize.
- */
-export function useMinimapWindow(
-  feed: RefObject<HTMLElement | null>,
-  overlay: RefObject<HTMLElement | null>,
-  key: string,
-): void {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `key` says the feed's content changed; re-measuring on it is the point.
-  useEffect(() => {
-    const root = feed.current
-    const win = overlay.current
-    if (!root || !win) return
-    const size = (): void => {
-      win.style.height = `${Math.min(1, root.clientHeight / root.scrollHeight) * 100}%`
-    }
-    size()
-    const observer = new ResizeObserver(size)
-    observer.observe(root)
-    return () => observer.disconnect()
-  }, [feed, overlay, key])
 }
 
 /** `⌥↑`/`⌥↓` stepping, hung off the window so it works wherever focus is. */

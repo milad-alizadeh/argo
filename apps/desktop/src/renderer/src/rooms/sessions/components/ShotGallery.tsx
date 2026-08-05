@@ -64,7 +64,7 @@ function Lightbox({
 export function ShotGallery({ rows }: { rows: readonly MediaRowModel[] }): React.JSX.Element {
   const [open, setOpen] = useState<MediaRowModel | null>(null)
   return (
-    <div data-component="ShotGallery" className="flex flex-wrap gap-gap">
+    <div data-component="ShotGallery" data-feedrow="media" className="flex flex-wrap gap-gap">
       {rows.map((row) => (
         <button
           key={row.key}
