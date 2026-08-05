@@ -25,11 +25,11 @@ const FEED_HUNK_BOUND = 1
 // ring for the deletion, because a deleted file scrolled past unnoticed is the most expensive thing
 // this feed can do. Written out literally so Tailwind's scanner still sees each class.
 const CHANGE_MARKS: Readonly<Record<FileChange, RowMark>> = {
-  create: { Icon: FilePlusIcon, word: 'created', tone: 'text-signal-ok', ring: '' },
-  modify: { Icon: FileTextIcon, word: 'edited', tone: 'text-foreground-soft', ring: '' },
+  create: { Icon: FilePlusIcon, word: 'Create', tone: 'text-signal-ok', ring: '' },
+  modify: { Icon: FileTextIcon, word: 'Edit', tone: 'text-foreground-soft', ring: '' },
   delete: {
     Icon: FileMinusIcon,
-    word: 'deleted',
+    word: 'Delete',
     tone: 'text-signal-bad',
     ring: 'ring-1 ring-inset ring-signal-bad/25',
   },
@@ -40,14 +40,15 @@ const CHANGE_MARKS: Readonly<Record<FileChange, RowMark>> = {
  * other rows fail too, and this one failed at editing. */
 const RUNNING_MARK: RowMark = {
   Icon: PencilSimpleIcon,
-  word: 'editing',
+  word: 'Edit',
   tone: 'text-tone-run',
   ring: '',
+  live: true,
 }
 
 const FAILED_MARK: RowMark = {
   Icon: PencilSimpleIcon,
-  word: 'failed',
+  word: 'Failed',
   tone: 'text-tone-red',
   ring: FAILED_RING,
 }

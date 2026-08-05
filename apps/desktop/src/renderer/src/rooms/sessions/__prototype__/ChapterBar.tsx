@@ -3,9 +3,11 @@ import {
   CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
   IconButton,
   Text,
-  useDisclosure,
 } from '@/shared/components/ui'
 import { PlanProgress } from '../components/PlanProgress'
 import { DISCLOSURE } from '../components/rowRecipes'
@@ -15,30 +17,23 @@ import type { PlanProgressModel } from '../sessionPlan'
 // session you are, steps you through it, and hangs the plan off a pull-down instead of a seat.
 
 /** The plan, behind the count that is the only part of it worth standing space. Closed, it is six
- * characters; open, it is the shipped tracker, over the feed rather than beside it. */
+ * characters; open, it is the shipped tracker in the kit's own dropdown — portalled, so it can never
+ * land under the feed's content. */
 export function PlanPull({ plan }: { plan: PlanProgressModel }): React.JSX.Element {
-  const [open, toggle] = useDisclosure({ defaultOpen: false })
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={toggle}
-        aria-expanded={open}
-        className={cn(DISCLOSURE, 'flex items-center gap-hair')}
-      >
-        <Text variant="tag" className={open ? 'text-primary' : 'text-foreground-faint'}>
+    <DropdownMenu>
+      <DropdownMenuTrigger className={cn(DISCLOSURE, 'flex items-center gap-hair')}>
+        <Text variant="tag" className="text-foreground-faint">
           plan {plan.done}/{plan.total}
         </Text>
         <Text aria-hidden variant="tag" className="text-foreground-faint">
           <CaretDownIcon className="icon-sm" />
         </Text>
-      </button>
-      {open && (
-        <div className="absolute top-full right-0 z-10 mt-snug w-[36ch] rounded-lg bg-popover p-inset shadow-lg ring-1 ring-inset-hair">
-          <PlanProgress plan={plan} />
-        </div>
-      )}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[36ch] p-inset">
+        <PlanProgress plan={plan} />
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

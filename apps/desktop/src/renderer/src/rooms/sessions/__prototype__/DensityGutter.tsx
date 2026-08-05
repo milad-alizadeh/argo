@@ -50,11 +50,9 @@ function Tick({ row }: { row: FeedRow }): React.JSX.Element {
  * you aim at it, which is what keeps it from being a second list of turn titles. */
 function ChapterTicks({
   chapter,
-  active,
   onJump,
 }: {
   chapter: Chapter
-  active: boolean
   onJump: (key: string) => void
 }): React.JSX.Element {
   return (
@@ -63,15 +61,11 @@ function ChapterTicks({
       title={chapterTitle(chapter)}
       onClick={() => onJump(chapter.key)}
       style={{ flexGrow: weightOfAll(chapter.rows) }}
-      className={cn(
-        // Each chapter is its OWN BLOCK — rounded, inset from the track, air above and below — so
-        // where one turn ends and the next begins is visible in the map itself, not inferred from a
-        // hairline. The gap between blocks is the turn seam, drawn spatially.
-        'group relative flex w-full shrink cursor-pointer basis-0 flex-col gap-hair rounded-md bg-foreground/4 p-hair',
-        // The SNAP: the chapter under the trip line wears the same lit selection D's strip segments
-        // do, so scrolling the feed visibly walks the strip block by block.
-        active && 'bg-primary/12 ring-1 ring-primary/50',
-      )}
+      // Each chapter is its OWN BLOCK — rounded, inset from the track, air above and below — so
+      // where one turn ends and the next begins is visible in the map itself, not inferred from a
+      // hairline. NO highlight on the active block: where you are is the viewport window's one job,
+      // and a second lit thing in a 34px strip is noise.
+      className="group relative flex w-full shrink cursor-pointer basis-0 flex-col gap-hair rounded-md bg-foreground/4 p-hair"
     >
       {chapter.rows.map((row) => (
         <Tick key={row.key} row={row} />
@@ -95,13 +89,11 @@ function ChapterTicks({
  */
 export function DensityGutter({
   chapters,
-  activeKey,
   window: viewport,
   onJump,
   onScrub,
 }: {
   chapters: readonly Chapter[]
-  activeKey: string | null
   /** Where the reader is: `top` and `height` as fractions of the whole feed. */
   window: { top: number; height: number }
   onJump: (key: string) => void
@@ -127,12 +119,7 @@ export function DensityGutter({
     >
       <div className="flex h-full flex-col gap-tight">
         {chapters.map((chapter) => (
-          <ChapterTicks
-            key={chapter.key}
-            chapter={chapter}
-            active={chapter.key === activeKey}
-            onJump={onJump}
-          />
+          <ChapterTicks key={chapter.key} chapter={chapter} onJump={onJump} />
         ))}
       </div>
       {/* Where you are, as a window over the strip rather than a thumb beside it: the ticks under it

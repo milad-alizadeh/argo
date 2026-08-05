@@ -1,14 +1,13 @@
 import type { FeedRow, MediaRowModel } from '@shared'
 import { useRef, useState } from 'react'
-import { cn } from '@/lib/utils'
-import { Text } from '@/shared/components/ui'
+import { StatusDot, Text } from '@/shared/components/ui'
 import { CompactionMarker } from '../components/CompactionMarker'
 import { SubagentRow } from '../components/SubagentRow'
 import { TurnFeed } from '../components/TurnFeed'
 import type { PlanProgressModel } from '../sessionPlan'
 import { PlanPull } from './ChapterBar'
 import { DensityGutter } from './DensityGutter'
-import { type Chapter, chapterTitle, chapterWord } from './feedIndex'
+import { type Chapter, chapterTitle } from './feedIndex'
 import { ShotGallery } from './ShotGallery'
 import { type DelegateItem, SubagentScope } from './SubagentScope'
 import { STICKY_BAR } from './stickyBar'
@@ -52,37 +51,28 @@ function segmentsOf(rows: readonly FeedRow[]): Segment[] {
 /** The seam a turn starts with, STUCK: whichever exchange you are inside, its cause and the plan's
  * count are the top line of the pane. No number — the prompt is the turn's name.
  *
- * The title is PRIMARY, at the row-strong weight, behind an accent bar: the seam is the one row of
- * chrome the surface keeps, so it must not be mistakable for a row of the feed — and its gold is the
- * same gold the minimap's prompt ticks wear, which is what makes the strip readable as a legend.
- * The ACTIVE seam is the lit one; a seam scrolled past but still stuck goes quiet, so two stacked
- * bars never read as two copies of the same thing. */
+ * ALWAYS gold, no active state: the gold is the same gold the minimap's prompt ticks wear, which is
+ * what makes the strip readable as a legend — and being STUCK is already what says "this is the one
+ * you are inside". No stop-reason word either — a finished turn needs no label, and a live one says
+ * so with the session's own pulsing run dot. */
 function StickySeam({
   chapter,
-  active,
   plan,
 }: {
   chapter: Chapter
-  active: boolean
   plan: PlanProgressModel | null
 }): React.JSX.Element {
   return (
-    <div className={cn(STICKY_BAR, active && 'border-b-primary/30')}>
-      <span
-        className={cn(
-          'h-[1.1em] w-[3px] shrink-0 self-center rounded-full',
-          active ? 'bg-primary' : 'bg-foreground/20',
-        )}
-      />
-      <Text
-        variant="row-strong"
-        className={cn('min-w-0 flex-1 truncate', active ? 'text-primary' : 'text-foreground-faint')}
-      >
+    <div className={STICKY_BAR}>
+      <span className="h-[1.1em] w-[3px] shrink-0 self-center rounded-full bg-primary" />
+      <Text variant="row-strong" className="min-w-0 flex-1 truncate text-primary">
         {chapterTitle(chapter)}
       </Text>
-      <Text variant="tag" className="shrink-0 text-foreground-faint">
-        {chapterWord(chapter)}
-      </Text>
+      {chapter.open && (
+        <span className="self-center">
+          <StatusDot tone="run" glow="live" pulse label="running" />
+        </span>
+      )}
       {plan && <PlanPull plan={plan} />}
     </div>
   )
@@ -123,7 +113,7 @@ export function VariantSynthesis({
 }): React.JSX.Element {
   const feed = useRef<HTMLDivElement>(null)
   const [scope, setScope] = useState<DelegateItem | null>(null)
-  const { activeKey, progress, visible, jumpTo, step } = useFeedScroll(
+  const { progress, visible, jumpTo, step } = useFeedScroll(
     feed,
     `${scope === null}:${chapters.map((chapter) => chapter.key).join('|')}`,
   )
@@ -141,32 +131,31 @@ export function VariantSynthesis({
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
       <div ref={feed} className="min-h-0 min-w-0 flex-1 overflow-y-auto p-region pt-0">
-        <div className="flex max-w-[78ch] flex-col">
-          {chapters.map((chapter) => (
-            <section key={chapter.key} {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
-              {chapter.compactedBefore && (
-                <div className="py-region">
-                  <CompactionMarker />
-                </div>
-              )}
-              <StickySeam chapter={chapter} active={chapter.key === activeKey} plan={plan} />
-              <div className="flex flex-col gap-region py-region">
-                {segmentsOf(chapter.rows).map((segment) =>
-                  segment.kind === 'shots' ? (
-                    <ShotGallery key={segment.key} rows={segment.shots} />
-                  ) : (
-                    <TurnFeed key={segment.key} rows={segment.rows} />
-                  ),
-                )}
-                <DelegateDoor delegates={chapter.delegates} onOpen={setScope} />
+        {/* Sections run at FULL pane width so the sticky seam spans edge to edge; only the prose
+            column inside is held to a measure, because line length is a reading rule, not a layout. */}
+        {chapters.map((chapter) => (
+          <section key={chapter.key} {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
+            {chapter.compactedBefore && (
+              <div className="py-region">
+                <CompactionMarker />
               </div>
-            </section>
-          ))}
-        </div>
+            )}
+            <StickySeam chapter={chapter} plan={plan} />
+            <div className="flex max-w-[78ch] flex-col gap-region py-region">
+              {segmentsOf(chapter.rows).map((segment) =>
+                segment.kind === 'shots' ? (
+                  <ShotGallery key={segment.key} rows={segment.shots} />
+                ) : (
+                  <TurnFeed key={segment.key} rows={segment.rows} />
+                ),
+              )}
+              <DelegateDoor delegates={chapter.delegates} onOpen={setScope} />
+            </div>
+          </section>
+        ))}
       </div>
       <DensityGutter
         chapters={chapters}
-        activeKey={activeKey}
         window={{ top: progress * (1 - visible), height: visible }}
         onJump={jumpTo}
         onScrub={scrub}

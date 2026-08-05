@@ -9,13 +9,13 @@ import { DISCLOSURE } from './rowRecipes'
 // The one thing a terminal cannot do at all: the screenshots the agent looked at, in the feed, so a
 // visual debugging loop is followed by scrolling rather than by opening files.
 
-const SAW: RowMark = { Icon: ImageIcon, word: 'saw', tone: 'text-foreground-soft', ring: '' }
+const SAW: RowMark = { Icon: ImageIcon, word: 'Saw', tone: 'text-foreground-soft', ring: '' }
 
 /** A call that broke and still returned what it had looked at. The picture is the fact worth showing,
  * and the mark is what stops the row reading as an ordinary successful look. */
 const FAILED: RowMark = {
   Icon: ImageIcon,
-  word: 'failed',
+  word: 'Failed',
   tone: 'text-tone-red',
   ring: FAILED_RING,
 }

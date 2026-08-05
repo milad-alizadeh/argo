@@ -71,7 +71,6 @@ export function VariantGutter({ chapters }: { chapters: readonly Chapter[] }): R
       </div>
       <DensityGutter
         chapters={chapters}
-        activeKey={activeKey}
         window={{ top: progress * (1 - visible), height: visible }}
         onJump={jumpTo}
         onScrub={scrub}

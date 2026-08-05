@@ -6,25 +6,28 @@ import { FAILED_RING, LoudRow, type RowMark } from './LoudRow'
 // The row a single call earns: a command, always, and a failure of any other kind. Between them and
 // the mutation row, everything loud on this surface is a row you cannot fold away.
 
+// ONE verb whatever the state: "Run", sentence case. A call that is still going says so with the
+// session's pulsing run dot beside the verb, never by changing the verb's tense.
 const RAN: RowMark = {
   Icon: TerminalWindowIcon,
-  word: 'ran',
+  word: 'Run',
   tone: 'text-foreground-soft',
   ring: '',
 }
 
 const RUNNING: RowMark = {
   Icon: TerminalWindowIcon,
-  word: 'running',
+  word: 'Run',
   tone: 'text-tone-run',
   ring: '',
+  live: true,
 }
 
 /** A failure wears its own mark whatever the call was for: a failed read is a failure first, and the
  * ring is what stops it reading as one more line of chatter. */
 const FAILED: RowMark = {
   Icon: WarningIcon,
-  word: 'failed',
+  word: 'Failed',
   tone: 'text-tone-red',
   ring: FAILED_RING,
 }
