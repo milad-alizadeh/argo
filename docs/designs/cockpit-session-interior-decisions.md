@@ -186,6 +186,28 @@ The Delivery pipeline ribbon, the sub-tab strip, and the primary action collapse
 - **Open (deferred):** whether the fleet keeps running visibly when you switch to Delivery/Outcomes tabs (agents don't stop) — a possible always-docked live indicator; left for the dock/cross-tab pass.
 - **HTML change (pending — applied once the concurrent header agent releases the file):** `activityBody()` → two-pane grid (`.acol` = list col + detail col); left = timeline rows with a collapsible `.fanout` grouped node expanding to a dense `.salist` (rows, not cards); right = `.tldetail` showing the selected step's events; now-head strip spans both.
 
+### C3a.1a — AMENDMENT (#319): both panes read oldest → newest, and the detail pane holds ONE Agent
+Amends C3a.1 on two points; everything else in it stands.
+
+- **`newest first` becomes `oldest first`, in both panes.** C3a.1's header sketch reads
+  `TIMELINE · newest first · past folded`, which is right for a step list you scan and wrong for the
+  narrative feed the left list now navigates: prose only reads downward — a paragraph answers the
+  tool run above it — so a navigation list ordered against its own feed would make the highlight
+  travel backwards as the reader scrolls. Both panes run oldest → newest, the live turn last. The
+  **`past folded` half of that header survives untouched**: old runs fold *in place*, which is a
+  fold, not a reordering, and is what keeps the history above the live turn scannable.
+- **The detail pane shows one Agent's feed at a time** (per #313's amendment): the root by default,
+  and selecting a Subagents row *replaces* the pane with that subagent's feed, with an explicit way
+  back. C3a.1's "subagent row click → that agent's live feed on the right" is honoured literally
+  rather than as a section of a shared feed — the concatenation of delegated sections ahead of the
+  session's own is **removed**. Chronology, a single live edge and one virtualised container are only
+  definable within one agent, so follow, scroll-spy and virtualisation are all scoped to the
+  displayed agent, and each agent remembers where you were reading it.
+- **Why the left list's step entries change with it:** an entry is now derived from the same folded
+  row the feed draws (#317's quiet fold included), so a folded run is exactly **one** left-list entry
+  and **one** scroll-spy anchor. Both panes read one derivation, which makes the parity an assertion
+  rather than a comparison of two components.
+
 ### C1.3 — Header has NO actions at all
 - **Decision:** The header carries no action buttons and no `⋯` menu. It is glance-only: title · spec line · ctx arc, plus the inline `intent ↗` / branch links. Every action that a menu might have held is either not a header concern or not a thing:
   - **Rename** → done in the terminal (or by editing the linked ticket); not a header control.

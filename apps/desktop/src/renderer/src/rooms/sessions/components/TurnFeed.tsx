@@ -1,6 +1,12 @@
-import type { FeedRow } from '@shared'
+import { type FeedRow, isStepRow } from '@shared'
 import { cn } from '@/lib/utils'
-import { CaretDownIcon, CaretRightIcon, Text, useDisclosure } from '@/shared/components/ui'
+import {
+  CaretDownIcon,
+  CaretRightIcon,
+  FeedAnchor,
+  Text,
+  useDisclosure,
+} from '@/shared/components/ui'
 import { CallRow } from './CallRow'
 import { CompactionMarker } from './CompactionMarker'
 import { MediaRow } from './MediaRow'
@@ -83,6 +89,25 @@ function ThoughtRow({ markdown }: { markdown: string }): React.JSX.Element {
   )
 }
 
+/**
+ * Where one exchange begins, numbered.
+ *
+ * The ordinal is the SAME number the navigation list gives the turn — the two panes describe the same
+ * session and must count it the same way. And a continuous feed needs the seam marked at all: without it
+ * a new prompt reads as one more paragraph of the last one, which is the one boundary a reader scrolling
+ * back through an hour of work is actually looking for.
+ */
+function TurnStart({ ordinal }: { ordinal: number }): React.JSX.Element {
+  return (
+    <div className="flex items-center gap-gap">
+      <Text variant="eyebrow" className="shrink-0 text-foreground-faint">
+        turn {ordinal}
+      </Text>
+      <span aria-hidden className="h-px flex-1 bg-border" />
+    </div>
+  )
+}
+
 function Row({ row }: { row: FeedRow }): React.JSX.Element {
   switch (row.kind) {
     case 'prompt':
@@ -114,7 +139,15 @@ function Row({ row }: { row: FeedRow }): React.JSX.Element {
  * work joins the sequence in later tickets, which is why the row list is a union rather than three
  * lists rendered in three fixed places.
  */
-export function TurnFeed({ rows }: { rows: readonly FeedRow[] }): React.JSX.Element {
+export function TurnFeed({
+  rows,
+  ordinal,
+}: {
+  rows: readonly FeedRow[]
+  /** Which exchange this is, counted as the navigation list counts it. Absent where the feed is not one
+   * of a sequence — a single turn shown on its own has no seam to mark. */
+  ordinal?: number
+}): React.JSX.Element {
   if (rows.length === 0) {
     return (
       <Text variant="prose" className="text-foreground-faint">
@@ -124,9 +157,18 @@ export function TurnFeed({ rows }: { rows: readonly FeedRow[] }): React.JSX.Elem
   }
   return (
     <div data-component="TurnFeed" className="flex flex-col gap-region">
-      {rows.map((row) => (
-        <Row key={row.key} row={row} />
-      ))}
+      {ordinal !== undefined && <TurnStart ordinal={ordinal} />}
+      {rows.map((row) =>
+        // A tool row wears the anchor its navigation entry points at — one anchor per row, so #317's
+        // folded run of twelve reads is one place to land rather than twelve.
+        isStepRow(row) ? (
+          <FeedAnchor key={row.key} anchor={row.key}>
+            <Row row={row} />
+          </FeedAnchor>
+        ) : (
+          <Row key={row.key} row={row} />
+        ),
+      )}
     </div>
   )
 }

@@ -21,9 +21,8 @@ export function ToolCallRow({
 }: {
   /** The step, already derived. */
   step: ToolStepModel
-  /** Whether the detail feed is currently showing this step. Absent while the feed's sections are
-   * TURNS rather than steps: a step earns its own anchor back when tool rows join the feed (issue 317),
-   * and until then a highlight here would name a section that does not exist. */
+  /** Whether the detail feed is currently at this step's own row. The step carries that row's key, so
+   * the highlight and the jump name one anchor (issue 319). */
   selected?: boolean
   /** Jump the detail feed to where this step is read. */
   onSelect?: (key: string) => void

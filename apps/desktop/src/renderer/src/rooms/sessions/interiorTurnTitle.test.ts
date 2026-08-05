@@ -11,8 +11,8 @@ import { buildActivity } from './interiorActivity'
 const rootWith = (turns: Turn[]): Agent => aRoot({ turns })
 
 const titleOf = (prompt: string | null): string | null =>
-  buildActivity(sessionView({ id: 's', agents: [rootWith([turn({ id: 't', prompt })])] })).turns[0]
-    ?.promptLine ?? null
+  buildActivity(sessionView({ id: 's', agents: [rootWith([turn({ id: 't', prompt })])] }))
+    .sections[0]?.turn.promptLine ?? null
 
 describe("a turn's title", () => {
   it('is the opening line of the prompt that caused it, verbatim', () => {
@@ -35,17 +35,15 @@ describe("a turn's title", () => {
 })
 
 describe('the prompt row that opens the section', () => {
-  const rowsOf = (prompt: string): readonly string[] => {
-    const item = buildActivity(
+  const rowsOf = (prompt: string): readonly string[] =>
+    buildActivity(
       sessionView({
         id: 's',
         agents: [
           rootWith([turn({ id: 't', prompt, prose: [{ kind: 'message', markdown: 'wired' }] })]),
         ],
       }),
-    ).own[0]
-    return item?.kind === 'turn' ? item.rows.map(({ kind }) => kind) : []
-  }
+    ).sections[0]?.rows.map(({ kind }) => kind) ?? []
 
   // The section has no head any more: this row IS the seam, and it is the only rendering of the
   // prompt that is unclipped and verbatim. A short prompt keeps it for the same reason a long one

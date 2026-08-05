@@ -21,12 +21,13 @@ export type InteriorTab = (typeof INTERIOR_TABS)[number]
  * Which session is open is the shell's business, not the room's. */
 export interface InteriorUiState {
   tab: InteriorTab
-  /** Which item of the Activity surface the user last clicked. Scroll-spy owns the highlight after
-   * that, so this is the jump target rather than a stored selection. */
-  jumpKey: string | null
+  /** Whose feed the detail pane is showing: `null` is the root Agent, which is what it opens on. One
+   * feed per Agent (issue 319), so this is a SWITCH between agents rather than a selection within one
+   * feed — the scroll-spy owns the highlight inside whichever agent is displayed. */
+  agentId: string | null
 }
 
-export const DEFAULT_INTERIOR_UI: InteriorUiState = { tab: 'activity', jumpKey: null }
+export const DEFAULT_INTERIOR_UI: InteriorUiState = { tab: 'activity', agentId: null }
 
 export interface SessionInteriorModel {
   header: SessionHeaderModel
@@ -51,12 +52,12 @@ export function buildSessionInterior({
   /** Wall clock, injected so the derivation stays pure. */
   nowMs?: number | null
 }): SessionInteriorModel {
-  const activity = buildActivity(session, nowMs)
+  const activity = buildActivity(session, { nowMs, agentId: ui.agentId })
   return {
     header: buildInteriorHeader({ session, link, nowMs }),
     tab: ui.tab,
     activity,
     dock: buildDock(session),
-    fresh: activity.turns.length === 0 && activity.subagents === null,
+    fresh: activity.sections.length === 0 && activity.subagents === null,
   }
 }

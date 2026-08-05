@@ -4,26 +4,33 @@ import { type RefObject, useCallback, useEffect, useState } from 'react'
  * the markup cannot drift. */
 export const SPY_ATTRIBUTE = 'data-spy'
 
-// Where the trip line sits: a section counts as current once its top reaches the top band of the
-// feed, not when it first peeks in from below.
-const BAND_RATIO = 0.45
+// Where the trip line sits: a hair below the pane's top edge, so the current anchor is the one that has
+// just passed out of view — the row you are reading down from. Exported because the feed's tail space is
+// sized from it (`useTailSpace`): the tail exists to bring the last anchor up to THIS line.
+//
+// A FIXED offset near the top rather than a fraction of the pane, because the anchors are feed ROWS as
+// well as sections (issue 319) and rows are dense. Any line further down spans several of them, and
+// "the last anchor above the line" then skips every anchor sharing the band with a later one — which is
+// why a line halfway down could never name the first turn, or any of its first rows.
+export const SPY_LINE_PX = 24
 
-/** Which section has most recently crossed the trip line — the one you are looking at.
+/**
+ * Which anchor has most recently crossed the trip line — the one you are reading.
  *
- * A BOTTOMED-OUT feed answers with its last section, unconditionally. This is not a nicety: the
- * sections inside the final viewport-height can never reach a trip line that sits 45% down the pane,
- * because there is no scroll left to lift them there. An earlier implementation observed
- * intersections against that band and so could never name the tail at all — clicking the last row
- * scrolled to it and then highlighted the first row still crossing the line, several items above.
+ * The FIRST anchor is the answer while nothing has crossed yet, which is what makes the top of the feed
+ * name the turn at the top of the feed.
+ *
+ * The last screenful needs no special case, and must not have one: the feed carries a screenful of tail
+ * space (`useTailSpace`) precisely so its final rows can be lifted to the line like any others. An
+ * earlier "bottomed out answers with its LAST anchor" rule is what made the second-to-last row
+ * unreachable, since it collapsed the whole final screenful onto one key.
  */
 export function activeSection(root: HTMLElement, sections: readonly HTMLElement[]): string | null {
   const keyOf = (section: HTMLElement | undefined): string | null =>
     section?.getAttribute(SPY_ATTRIBUTE) ?? null
   if (sections.length === 0) return null
-  // `- 1` absorbs the sub-pixel remainder a fractional device pixel ratio leaves behind.
-  if (root.scrollTop + root.clientHeight >= root.scrollHeight - 1) return keyOf(sections.at(-1))
 
-  const line = root.getBoundingClientRect().top + root.clientHeight * BAND_RATIO
+  const line = root.getBoundingClientRect().top + SPY_LINE_PX
   let current = sections[0]
   // Viewport-relative rects rather than `offsetTop`: sections sit inside group wrappers now, so
   // they no longer share an offset parent with the feed and the two are not comparable.
@@ -77,12 +84,36 @@ export function useScrollSpy(feed: RefObject<HTMLElement | null>, keys: string):
   return active
 }
 
-/** Smooth-scroll a feed section to the top of its pane — what a click on a nav row does. Keys come
- * from transcript data (a tool call's own id), so the value is escaped: a `"` or `]` in one would
- * otherwise throw a `SyntaxError` out of the click handler rather than simply not matching. */
-export function jumpToSection(feed: HTMLElement | null, key: string): void {
-  const section = feed?.querySelector(`[${SPY_ATTRIBUTE}="${CSS.escape(key)}"]`)
-  section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+/** The element wearing one anchor. Keys come from transcript data (a tool call's own id), so the value
+ * is escaped: a `"` or `]` in one would otherwise throw a `SyntaxError` out of the click handler rather
+ * than simply not matching. */
+const anchor = (feed: HTMLElement | null, key: string): Element | null =>
+  feed?.querySelector(`[${SPY_ATTRIBUTE}="${CSS.escape(key)}"]`) ?? null
+
+const bringIntoView = (element: Element | null): void => {
+  element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+/**
+ * Smooth-scroll to an anchor — what a click on a nav row does — including one inside a section the
+ * feed has not mounted.
+ *
+ * A virtualised feed stands its distant sections as spacers, so a row anchor genuinely is not in the
+ * document until its section is near the viewport — and a jump that silently did nothing would be the
+ * navigation list lying about where its rows lead. Reaching the SECTION mounts the rows, and the second
+ * pass lands on the one that was asked for: the section's real height replaces its estimate as it
+ * mounts, so the first scroll is only ever approximately right.
+ */
+export function jumpToAnchor(feed: HTMLElement | null, key: string, sectionKey: string): void {
+  const target = anchor(feed, key)
+  if (target !== null) {
+    bringIntoView(target)
+    return
+  }
+  bringIntoView(anchor(feed, sectionKey))
+  // Two frames: one for React to mount the section it just scrolled to, one for the browser to lay it
+  // out at its real height.
+  requestAnimationFrame(() => requestAnimationFrame(() => bringIntoView(anchor(feed, key))))
 }
 
 /** Which key the pin names, or `null` once it has been retired.
@@ -103,15 +134,25 @@ const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'keydown'] as const
  *
  * The highlight follows the SCROLL, except that a click PINS it until the reader scrolls themselves.
  * Both halves are load-bearing. Scroll-following is the interaction model (`cockpit-spec.md` §4.3):
- * the highlight should track what you are looking at, not what you last pressed. But the last screen
- * of a feed cannot be scrolled to the top of its pane — there is no scroll left — so for those
- * sections scroll position alone genuinely cannot say which one you asked for, and a click on the
- * last row would light up a row several above it. The pin makes the click honest without taking the
- * scroll's authority away for the rest of the feed.
+ * the highlight should track what you are looking at, not what you last pressed. But a jump's smooth
+ * scroll takes many frames to arrive, and the anchors it travels past would each light up on the way —
+ * the row you asked for lighting up LAST, after a flicker through everything between. The pin answers
+ * immediately and holds until the reader scrolls themselves, without taking the scroll's authority
+ * away for the rest of the feed.
  */
 export function useFeedHighlight(
   feed: RefObject<HTMLElement | null>,
-  keys: string,
+  {
+    keys,
+    sectionOf,
+  }: {
+    /** The anchor list as a signature string, so a caller rebuilding its list every render does not
+     * re-observe on every render. */
+    keys: string
+    /** Which section holds an anchor — the fallback a jump needs when the anchor's section is
+     * currently a spacer. */
+    sectionOf: (key: string) => string
+  },
 ): { activeKey: string | null; jumpTo: (key: string) => void } {
   const spied = useScrollSpy(feed, keys)
   const [pin, setPin] = useState<{ key: string; keys: string } | null>(null)
@@ -132,9 +173,9 @@ export function useFeedHighlight(
   const jumpTo = useCallback(
     (key: string): void => {
       setPin({ key, keys })
-      jumpToSection(feed.current, key)
+      jumpToAnchor(feed.current, key, sectionOf(key))
     },
-    [feed, keys],
+    [feed, keys, sectionOf],
   )
 
   return { activeKey: pinned ?? spied, jumpTo }

@@ -11,23 +11,26 @@ import { SubagentRow } from './SubagentRow'
  * Timeline's header treatment so the two read as two sections of one list. The group name appears
  * only where the CLI reported one: the blueprint degrades from phased (Claude Code) to a labelled
  * tree (Codex) to a flat count, and nothing here fills a tier in.
+ *
+ * A row here is a SWITCH, not a jump: selecting one replaces the detail pane with that agent's own feed
+ * (issue 319), so the rows are these delegates and the highlight is which of them you are reading.
  */
 export function SubagentGroup({
   group,
-  activeKey,
+  displayedId,
   onSelect,
 }: {
-  /** The group's derived view-model. */
+  /** The group's derived view-model — the DISPLAYED agent's delegates. */
   group: SubagentGroupModel
-  /** Which item the detail feed is showing, tracked by scroll-spy. */
-  activeKey: string | null
-  /** Jump the detail feed to a subagent's live feed. */
-  onSelect?: (key: string) => void
+  /** Which agent's feed the detail pane holds, so the row for it reads as the one you are in. */
+  displayedId: string
+  /** Replace the detail pane with a delegate's feed. */
+  onSelect?: (agentId: string) => void
 }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: true })
-  // Collapsed, the header wears the selection for the row it is hiding: the scroll-spy can name a
+  // Collapsed, the header wears the selection for the row it is hiding: the pane can be showing a
   // subagent whose own row is not rendered, and a highlight on nothing visible tracks nothing.
-  const holdsActive = !open && group.rows.some((row) => row.key === activeKey)
+  const holdsActive = !open && group.rows.some((row) => row.agentId === displayedId)
   return (
     <section data-component="SubagentGroup" className="flex flex-col gap-tight">
       <button
@@ -48,7 +51,7 @@ export function SubagentGroup({
             <SubagentRow
               key={row.key}
               row={row}
-              selected={row.key === activeKey}
+              selected={row.agentId === displayedId}
               onSelect={onSelect}
             />
           ))}

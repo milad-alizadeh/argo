@@ -15,7 +15,7 @@ describe('buildSessionInterior', () => {
   it('threads the room UI state onto the tab', () => {
     const interior = buildSessionInterior({
       session: sessionView({ id: 's' }),
-      ui: { tab: 'delivery', jumpKey: null },
+      ui: { tab: 'delivery', agentId: null },
     })
     expect(interior.tab).toBe('delivery')
   })
@@ -37,7 +37,6 @@ describe('buildSessionInterior', () => {
     expect(interior.header.title).toBe('Auth refactor')
     expect(interior.header.external).toBe(true)
     expect(interior.dock.kind).toBe('transcript')
-    expect(interior.activity.delegated).toEqual([])
-    expect(interior.activity.own).toEqual([])
+    expect(interior.activity.sections).toEqual([])
   })
 })

@@ -1,4 +1,5 @@
 import { type ToolRow, toolRowsByProseIndex } from './feedCalls'
+import type { ToolRowStep } from './feedSteps'
 import type { Agent, Plan, Prose, Turn } from './runtimeTree'
 
 // THE feed derivation: one Agent's runtime tree in, one ordered list of rows out. Every reading rule
@@ -28,6 +29,12 @@ export type FeedRow =
   | { kind: 'compaction'; key: string }
   | ToolRow
 
+/** Which rows the navigation list has an entry for: the tool rows, and only them. Prose, plan and
+ * compaction rows are what you read the feed FOR, not places you navigate to — so they wear no anchor,
+ * and a row's anchor and its entry are one decision rather than two that must agree. */
+export const isStepRow = (row: FeedRow): row is ToolRow =>
+  row.kind === 'mutation' || row.kind === 'call' || row.kind === 'quiet' || row.kind === 'media'
+
 const proseRow = (turn: Turn, prose: Prose, index: number): FeedRow => {
   const key = `prose:${turn.id}:${index}`
   return prose.kind === 'thought'
@@ -50,14 +57,40 @@ function planIndex(turn: Turn): number {
 /** Everything that sits BEFORE each prose part: that stretch's folded tool rows, and the plan row
  * where the plan was last revised. The plan lands last in its bucket — the work of that stretch, then
  * the list as it stood once that work was done. */
-function rowsByProseIndex(turn: Turn): Map<number, FeedRow[]> {
-  const byIndex = new Map<number, FeedRow[]>(toolRowsByProseIndex(turn))
+function rowsByProseIndex(turn: Turn, steps: ToolRowStep[]): Map<number, FeedRow[]> {
+  // Walked in INDEX order rather than the map's insertion order, because that is the order the feed
+  // reads the buckets in — and the navigation entries are collected in this one walk, so a step's
+  // position in the list is the position of its row in the feed by construction.
+  const pairs = [...toolRowsByProseIndex(turn)].sort(([a], [b]) => a - b)
+  const byIndex = new Map<number, FeedRow[]>()
+  for (const [index, bucket] of pairs) {
+    steps.push(...bucket.map((pair) => pair.step))
+    byIndex.set(
+      index,
+      bucket.map((pair) => pair.row),
+    )
+  }
   // An emptied list is not a plan: reading it as a snapshot would let a cleared plan stand in for
   // the last real one the session reported.
   if (turn.plan === null || turn.plan.entries.length === 0) return byIndex
   const index = planIndex(turn)
   const row: FeedRow = { kind: 'plan', key: `plan:${turn.id}`, plan: turn.plan }
   return byIndex.set(index, [...(byIndex.get(index) ?? []), row])
+}
+
+/**
+ * One turn's feed and the navigation entries for it — ONE derivation, read twice.
+ *
+ * The left pane lists the steps and the right pane draws the rows, and they are the same fold seen
+ * from two sides: every entry in `steps` carries the key of the row it names, so a run of twelve reads
+ * folded to one line is one entry pointing at one anchor. Deriving the navigation from the turn's raw
+ * `toolCalls` instead is what let the two panes disagree about what a step is (issue 319).
+ */
+export interface TurnFeedModel {
+  rows: FeedRow[]
+  /** In feed order, one per tool row. Prose, plan and compaction rows earn no entry: they are what you
+   * read the feed FOR, not places you navigate to. */
+  steps: ToolRowStep[]
 }
 
 /** What sits at the seam in front of a Turn, which the Agent knows and the Turn does not. */
@@ -82,7 +115,8 @@ export interface TurnSeam {
  * parts each call was made after. Appending them would put every change the agent made below the
  * paragraph that explains it, and a feed read in an order that never happened explains nothing.
  */
-export function turnFeedRows(turn: Turn, seam: TurnSeam = { compactedBefore: false }): FeedRow[] {
+export function turnFeed(turn: Turn, seam: TurnSeam = { compactedBefore: false }): TurnFeedModel {
+  const steps: ToolRowStep[] = []
   const opening: FeedRow[] = seam.compactedBefore
     ? [{ kind: 'compaction', key: `compaction:${turn.id}` }]
     : []
@@ -91,13 +125,19 @@ export function turnFeedRows(turn: Turn, seam: TurnSeam = { compactedBefore: fal
   if (turn.prompt !== null && turn.prompt.trim() !== '') {
     opening.push({ kind: 'prompt', key: `prompt:${turn.id}`, text: turn.prompt, turnId: turn.id })
   }
-  const before = rowsByProseIndex(turn)
+  const before = rowsByProseIndex(turn, steps)
   const narrative = turn.prose.flatMap((prose, index) => [
     ...(before.get(index) ?? []),
     proseRow(turn, prose, index),
   ])
-  return [...opening, ...narrative, ...(before.get(turn.prose.length) ?? [])]
+  return {
+    rows: [...opening, ...narrative, ...(before.get(turn.prose.length) ?? [])],
+    steps,
+  }
 }
+
+/** One turn's rows alone, for the callers that read the feed and never its navigation. */
+export const turnFeedRows = (turn: Turn, seam?: TurnSeam): FeedRow[] => turnFeed(turn, seam).rows
 
 /**
  * The rows for one Agent, chronological and oldest first.

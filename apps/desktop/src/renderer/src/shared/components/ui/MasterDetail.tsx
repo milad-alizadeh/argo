@@ -1,33 +1,13 @@
-import { memo, useRef } from 'react'
+import { memo, useCallback, useMemo, useRef } from 'react'
 import { cn } from '@/lib/utils'
-import { SectionHeader } from './SectionHeader'
-import { SPY_ATTRIBUTE, useFeedHighlight } from './useScrollSpy'
+import { Button } from './button'
+import { FeedSection, type MasterDetailSection } from './FeedSection'
+import { ArrowLineDownIcon } from './icons'
+import { openingAnchor, useFeedFollow } from './useFeedFollow'
+import { useFeedHighlight } from './useScrollSpy'
+import { useTailSpace } from './useTailSpace'
 
-/** One item of the surface: the key that ties its nav row to its section of the feed, and the
- * detail the feed renders for it. */
-export interface MasterDetailSection {
-  key: string
-  detail: React.ReactNode
-}
-
-/** A run of sections that belong to ONE owner.
- *
- * The feed is a concatenation, so without this every section reads as a sibling of every other —
- * which is exactly how a delegate's work gets mistaken for the surface's own. A group heads its run
- * and, where the work is somebody else's, indents it onto its own spine: the root axis is the
- * subject's work, an indented spine is a delegate's. That is ownership carried structurally, rather
- * than by a heading the reader scrolled past.
- */
-export interface MasterDetailGroup {
-  key: string
-  /** The heading over the run. `null` is the root group — the subject's own work, headed by
-   * nothing, because a surface does not announce itself inside itself. */
-  label: string | null
-  count?: string
-  /** Indent onto a spine of its own. Set where the run is somebody else's work. */
-  nested?: boolean
-  sections: readonly MasterDetailSection[]
-}
+export type { MasterDetailSection } from './FeedSection'
 
 /** The splitter slot: handed the one thing only this component can supply, the nav pane's live
  * width, so a pane that opens at a fraction still resizes from where it actually is. */
@@ -36,50 +16,41 @@ export type MasterDetailSplitter = (api: { measure: () => number }) => React.Rea
 /** What the nav pane is handed so its rows can highlight and jump. The list is navigation only —
  * it never renders detail of its own. */
 export interface MasterDetailNav {
-  /** The section currently in view, tracked by scroll-spy rather than by the last click. */
+  /** The anchor currently in view, tracked by scroll-spy rather than by the last click. */
   activeKey: string | null
-  /** Smooth-jump the feed to a section. Click still works — it just is not the only way there. */
+  /** Smooth-jump the feed to an anchor. Click still works — it just is not the only way there. */
   jumpTo: (key: string) => void
 }
 
-/** The spy's order and its cache key: every section of every group, in feed order. */
-const feedKeys = (groups: readonly MasterDetailGroup[]): string[] =>
-  groups.flatMap((group) => group.sections.map((section) => section.key))
-
-/** One section: the spy's anchor and the jump's target. The caller owns everything inside it. A
- * hairline separates neighbours — one continuous feed still has to say where an item ends, or a
- * scroll through thirty of them reads as one long list. */
-function FeedSection({ section }: { section: MasterDetailSection }): React.JSX.Element {
-  return (
-    <section
-      className="border-t border-t-inset-hair pt-region first:border-t-0 first:pt-0"
-      {...{ [SPY_ATTRIBUTE]: section.key }}
-    >
-      {section.detail}
-    </section>
-  )
+/** Which feed the surface is showing and whether it is still growing — the pair auto-follow needs.
+ * `key` is what says "this is a different feed now": switching it stores where the last one was being
+ * read and opens the new one at its own edge, because switching feeds is not a scroll. */
+export interface MasterDetailFeed {
+  key: string
+  live: boolean
 }
 
-/** One owner's run: its heading, then its sections on the axis its ownership earns. */
-function FeedGroup({ group }: { group: MasterDetailGroup }): React.JSX.Element {
-  return (
-    <div className="flex flex-col gap-region">
-      {group.label !== null && <SectionHeader label={group.label} count={group.count} />}
-      <div
-        className={cn(
-          'flex flex-col gap-region',
-          // The spine, not a box: a delegate's work hangs off a rule the way a quote hangs off a
-          // margin. Indented by one nest so the depth is the same step the runtime tree uses.
-          group.nested === true && 'ml-tight border-l border-l-inset-hair pl-nest',
-        )}
-      >
-        {group.sections.map((section) => (
-          <FeedSection key={section.key} section={section} />
-        ))}
-      </div>
-    </div>
-  )
+/** Every anchor, in feed order: each section, then the anchors its detail holds. The spy's order and
+ * its cache key. */
+const anchorList = (sections: readonly MasterDetailSection[]): string[] =>
+  sections.flatMap((section) => [section.key, ...(section.anchors ?? [])])
+
+/** Which section holds each anchor, so a jump into an unmounted section can reach the section first. */
+function sectionIndex(sections: readonly MasterDetailSection[]): Map<string, string> {
+  const owners = new Map<string, string>()
+  for (const section of sections) {
+    owners.set(section.key, section.key)
+    for (const key of section.anchors ?? []) owners.set(key, section.key)
+  }
+  return owners
 }
+
+/** How many sections mount before the intersection observer has reported. A handful, at the end the
+ * feed opens on: the observer answers a frame late, so a feed that waited for it would open blank. */
+const EAGER_SECTIONS = 3
+
+const isEager = (index: number, count: number, openAt: 'edge' | 'start'): boolean =>
+  openAt === 'edge' ? index >= count - EAGER_SECTIONS : index < EAGER_SECTIONS
 
 /**
  * The feed, behind a memo boundary — and the boundary is load-bearing, not an optimisation.
@@ -87,52 +58,86 @@ function FeedGroup({ group }: { group: MasterDetailGroup }): React.JSX.Element {
  * The scroll-spy setStates on every animation frame of a scroll, which re-renders this component.
  * `activeKey` is read by the NAV alone, so without this the highlight moving re-rendered every
  * section's detail — diffs, prose, a live terminal — once per frame, and the feed visibly flashed
- * while you scrolled it. `groups` keeps its identity across a spy tick (the tick is this
- * component's own state, not the caller's), so the feed bails out and only the nav re-renders.
+ * while you scrolled it. `sections` keeps its identity across a spy tick (the tick is this component's
+ * own state, not the caller's), so the feed bails out and only the nav re-renders.
  *
  * NOT LOCKED BY A TEST, deliberately: the only honest signal is how many times `FeedSection` runs
  * (measured 651 over a 24-step scroll before this boundary, 0 after), and that is internal to this
  * component — a story can only reach it by counting renders of a `detail` it passes in, which React
  * skips anyway on element identity, so such a test passes with the boundary REMOVED. Verified by
  * hand with a Playwright probe against `sessions-activity--wide-fanout`; re-measure that way if you
- * touch this. A caller that rebuilds `groups` on every one of its own renders defeats the boundary
+ * touch this. A caller that rebuilds `sections` on every one of its own renders defeats the boundary
  * without breaking anything visible, which is the regression to watch for.
  */
 const Feed = memo(function Feed({
-  groups,
+  sections,
+  root,
+  openAt,
 }: {
-  groups: readonly MasterDetailGroup[]
+  sections: readonly MasterDetailSection[]
+  root: React.RefObject<HTMLElement | null>
+  /** Which end the feed opens on — the sections mounted before the observer has said anything. */
+  openAt: 'edge' | 'start'
 }): React.JSX.Element {
   return (
     <>
-      {groups.map((group) => (
-        <FeedGroup key={group.key} group={group} />
+      {sections.map((section, index) => (
+        <FeedSection
+          key={section.key}
+          section={section}
+          root={root}
+          eager={isEager(index, sections.length, openAt)}
+        />
       ))}
     </>
   )
 })
+
+/** The way back to the live edge, shown only while the feed has let go of it. Nothing takes the edge
+ * back on the reader's behalf, so this is the whole of how they get there — which is why it floats over
+ * the feed rather than living in a header they have scrolled away from. */
+function LiveEdgeButton({ onClick }: { onClick: () => void }): React.JSX.Element {
+  return (
+    <Button
+      variant="review-secondary"
+      size="sm"
+      onClick={onClick}
+      className="absolute right-region bottom-region"
+    >
+      <ArrowLineDownIcon aria-hidden className="icon-sm text-primary" />
+      follow the live edge
+    </Button>
+  )
+}
 
 /**
  * Organism: the cockpit's one master–detail feel — a navigation list left, one continuous
  * scrollable feed right.
  *
  * Every list/detail surface in the app shares it (`cockpit-spec.md` §4.3): scrolling the detail
- * flows item to item, a scroll-spy moves the left highlight to whatever section is in view, and
- * clicking a row smooth-jumps to its section. The nav pane is a render prop because its shape is
- * the caller's — sections, groups, whatever the surface holds — while the highlight and the jump
- * are this component's.
+ * flows item to item, a scroll-spy moves the left highlight to whatever anchor is in view, clicking a
+ * row smooth-jumps to it, distant sections are virtualised, and a live feed follows its own bottom edge
+ * until the reader scrolls up. The nav pane is a render prop because its shape is the caller's —
+ * sections, groups, whatever the surface holds — while the highlight, the jump and the follow are this
+ * component's.
  */
 export function MasterDetail({
   nav,
-  groups,
+  sections,
+  head,
+  feed: feedState,
   splitter,
   navClassName,
   className,
 }: {
   /** The navigation pane, handed the active key and the jump so its rows can wire both. */
   nav: (api: MasterDetailNav) => React.ReactNode
-  /** The feed, in list order, grouped by whose work each run is. */
-  groups: readonly MasterDetailGroup[]
+  /** The feed, in reading order. */
+  sections: readonly MasterDetailSection[]
+  /** Pinned above the feed and outside its scroll — whose feed this is, and the way back out of it. */
+  head?: React.ReactNode
+  /** Which feed this is and whether it is still growing. Omitted where nothing appends. */
+  feed?: MasterDetailFeed
   /** The drag handle between the panes. The surface owns which edge it moves, so it passes one in
    * rather than this primitive inventing a layout state of its own — but only this component holds
    * the nav pane, so it hands back the one thing the splitter cannot get for itself: the pane's
@@ -143,8 +148,33 @@ export function MasterDetail({
   className?: string
 }): React.JSX.Element {
   const feed = useRef<HTMLDivElement>(null)
+  const content = useRef<HTMLDivElement>(null)
   const navPane = useRef<HTMLDivElement>(null)
-  const { activeKey, jumpTo } = useFeedHighlight(feed, feedKeys(groups).join('|'))
+  const anchors = anchorList(sections).join('|')
+  // Memoised on the anchor signature rather than on the array: `sectionOf` is a dependency of the jump,
+  // and a new Map every render would give the jump a new identity every render — the same thing the
+  // feed's memo boundary above exists to prevent, one level up. The signature IS the section list for
+  // this purpose (it is every key, in order), which is why `sections` itself is not a dependency: a
+  // caller that rebuilds an identical list must not invalidate the map.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on `anchors`, the signature of `sections` — see above.
+  const owners = useMemo(() => sectionIndex(sections), [anchors])
+  const sectionOf = useCallback((key: string): string => owners.get(key) ?? key, [owners])
+  const { activeKey, jumpTo } = useFeedHighlight(feed, { keys: anchors, sectionOf })
+  const tail = useTailSpace(feed, content)
+  const { detached, reattach, release } = useFeedFollow(feed, content, {
+    live: feedState?.live ?? false,
+    agentKey: feedState?.key ?? '',
+  })
+  // A jump lets go of the live edge FIRST: it is the reader asking to be somewhere else, and a follow
+  // still holding the edge would haul the pane back to the bottom while the smooth scroll was still on
+  // its way there. Landing on the last row takes the edge back by itself, from the position.
+  const jump = useCallback(
+    (key: string): void => {
+      release()
+      jumpTo(key)
+    },
+    [jumpTo, release],
+  )
 
   return (
     <div className={cn('flex min-h-0 min-w-0 flex-1', className)}>
@@ -157,16 +187,37 @@ export function MasterDetail({
           navClassName ?? 'w-[var(--c-act)] shrink-0',
         )}
       >
-        {nav({ activeKey, jumpTo })}
+        {nav({ activeKey, jumpTo: jump })}
       </div>
       {splitter?.({
         measure: () => navPane.current?.getBoundingClientRect().width ?? 0,
       })}
-      <div
-        ref={feed}
-        className="flex min-h-0 min-w-0 flex-1 flex-col gap-region overflow-y-auto p-region"
-      >
-        <Feed groups={groups} />
+      {/* The head sits OUTSIDE the scroller, so whose feed you are reading and the way back out of it
+          do not scroll away from you. */}
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        {head}
+        <div
+          ref={feed}
+          data-component="Feed"
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto"
+        >
+          {/* The content sits in a wrapper of its own so the follow can WATCH its height: rows do not
+              only arrive, they grow, and a scroller's own box never changes when they do. Sized by its
+              rows — never `flex-1`, which would stretch it to the pane and report one unchanging height
+              however much the feed grew. */}
+          <div ref={content} className="flex min-w-0 flex-col gap-region p-region">
+            <Feed
+              sections={sections}
+              root={feed}
+              openAt={openingAnchor(feedState?.live ?? false)}
+            />
+          </div>
+          {/* One screenful of blank after the last row, so the final rows can be scrolled up to the
+              spy's trip line like any others. Sized by measurement rather than by a class, because it
+              is one screenful of THIS pane, which a splitter drag changes. */}
+          <div aria-hidden className="shrink-0" style={{ height: tail }} />
+        </div>
+        {detached && <LiveEdgeButton onClick={reattach} />}
       </div>
     </div>
   )

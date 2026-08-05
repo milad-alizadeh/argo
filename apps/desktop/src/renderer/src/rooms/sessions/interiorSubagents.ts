@@ -13,6 +13,9 @@ export type BlueprintTier = 'phased' | 'labelled' | 'flat'
 
 export interface SubagentRowModel {
   key: string
+  /** The agent this row names. Selecting the row REPLACES the detail pane with this agent's feed, so
+   * the id travels on the row rather than being parsed back out of its key. */
+  agentId: string
   /** The subagent's own label, or its id where the CLI reported none. */
   name: string
   /** What it is working on — the newest tool call's target. `null` where it has touched nothing. */
@@ -50,13 +53,17 @@ function subagentStatus(agent: Agent): SubagentStatus {
 export const toolCallsOf = (agent: Agent): ToolCall[] =>
   agent.turns.flatMap((turn) => turn.toolCalls)
 
-export const subagentsOf = (session: SessionView): Agent[] =>
-  session.agents.filter((agent) => agent.parentId !== null)
+/** The delegates of ONE agent — the children of whichever agent's feed the pane is showing, so a
+ * subagent that delegated further lists its own (issue 319). Not "every non-root agent": that reading
+ * put a grandchild in its grandparent's group, one level away from the work that spawned it. */
+export const subagentsOf = (session: SessionView, parentId: string | null): Agent[] =>
+  parentId === null ? [] : session.agents.filter((agent) => agent.parentId === parentId)
 
 export function subagentRow(agent: Agent, nowMs: number | null): SubagentRowModel {
   const status = subagentStatus(agent)
   return {
     key: `subagent:${agent.id}`,
+    agentId: agent.id,
     name: agent.label ?? agent.id,
     target: toolCallsOf(agent).at(-1)?.target ?? null,
     status,
@@ -82,13 +89,13 @@ function sharedPhase(agents: readonly Agent[]): string | null {
   return phases.size === 1 && only !== undefined ? only : null
 }
 
-/** The Subagents group, or `null` when the session spawned none. Never interleaved into the
- * timeline: two sections, one header style (`cockpit-spec.md` §4.2). */
+/** The Subagents group, or `null` when the displayed agent spawned none. Never interleaved into the
+ * timeline: two sections, one header style (`cockpit-spec.md` §4.2). Takes the children rather than
+ * the session, because whose delegates these are is the caller's question, not this table's. */
 export function subagentGroup(
-  session: SessionView,
+  children: readonly Agent[],
   nowMs: number | null,
 ): SubagentGroupModel | null {
-  const children = subagentsOf(session)
   if (children.length === 0) return null
   const rows = children.map((agent) => subagentRow(agent, nowMs))
   const group = sharedPhase(children)

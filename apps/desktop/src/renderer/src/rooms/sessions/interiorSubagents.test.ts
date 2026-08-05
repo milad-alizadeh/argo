@@ -2,7 +2,10 @@ import type { Agent, Turn } from '@shared'
 import { sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
 import { aSubagent as agent, aRoot, aTurn as turn } from './__fixtures__/runtimeTree'
-import { subagentGroup } from './interiorSubagents'
+import { subagentGroup, subagentsOf } from './interiorSubagents'
+
+/** The root's id in the fixtures — whose delegates the group is now built from. */
+const ROOT = 'root'
 
 const NOW = 100 * 24 * 60 * 60_000
 
@@ -11,7 +14,9 @@ const rootWith = (turns: Turn[], compactions: Agent['compactions'] = []): Agent 
 
 describe('subagentGroup', () => {
   it('draws no group at all for a session that spawned none', () => {
-    expect(subagentGroup(sessionView({ id: 's', agents: [rootWith([])] }), NOW)).toBeNull()
+    expect(
+      subagentGroup(subagentsOf(sessionView({ id: 's', agents: [rootWith([])] }), ROOT), NOW),
+    ).toBeNull()
   })
 
   it('reads a phased blueprint only where the CLI reported a group', () => {
@@ -23,7 +28,7 @@ describe('subagentGroup', () => {
         agent({ id: 'b', label: 'security lens', group: 'Verify' }),
       ],
     })
-    const group = subagentGroup(session, NOW)
+    const group = subagentGroup(subagentsOf(session, ROOT), NOW)
     expect(group?.tier).toBe('phased')
     expect(group?.group).toBe('Verify')
   })
@@ -33,14 +38,14 @@ describe('subagentGroup', () => {
       id: 's',
       agents: [rootWith([]), agent({ id: 'a', label: 'correctness lens' })],
     })
-    const group = subagentGroup(session, NOW)
+    const group = subagentGroup(subagentsOf(session, ROOT), NOW)
     expect(group?.tier).toBe('labelled')
     expect(group?.group).toBeNull()
   })
 
   it('degrades to flat where the CLI reported neither, and never invents a phase', () => {
     const session = sessionView({ id: 's', agents: [rootWith([]), agent({ id: 'a' })] })
-    const group = subagentGroup(session, NOW)
+    const group = subagentGroup(subagentsOf(session, ROOT), NOW)
     expect(group?.tier).toBe('flat')
     expect(group?.rows[0]?.name).toBe('a')
   })
@@ -59,7 +64,7 @@ describe('the phase a group claims', () => {
         agent({ id: 'c', label: 'verify two', group: 'Verify' }),
       ],
     })
-    const group = subagentGroup(session, NOW)
+    const group = subagentGroup(subagentsOf(session, ROOT), NOW)
     expect(group?.tier).toBe('phased')
     expect(group?.group).toBeNull()
     expect(group?.summary).toBe('3 · 0 running')
@@ -70,7 +75,7 @@ describe('the phase a group claims', () => {
       id: 's',
       agents: [rootWith([]), agent({ id: 'a', group: 'Find' }), agent({ id: 'b' })],
     })
-    expect(subagentGroup(session, NOW)?.group).toBeNull()
+    expect(subagentGroup(subagentsOf(session, ROOT), NOW)?.group).toBeNull()
   })
 
   it('spells the summary once, phase-first where they share one', () => {
@@ -82,6 +87,6 @@ describe('the phase a group claims', () => {
         agent({ id: 'b', group: 'Verify' }),
       ],
     })
-    expect(subagentGroup(session, NOW)?.summary).toBe('Verify · 1 running')
+    expect(subagentGroup(subagentsOf(session, ROOT), NOW)?.summary).toBe('Verify · 1 running')
   })
 })

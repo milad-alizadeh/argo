@@ -26,6 +26,7 @@ const meta = {
       onSpawnSession: fn(),
       onResize: fn(),
       onSelectTab: fn(),
+      onSelectAgent: fn(),
       onResizeDock: fn(),
       onResizeActivity: fn(),
       onToggleDock: fn(),

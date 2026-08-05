@@ -8,6 +8,8 @@ import { SessionHeader } from './SessionHeader'
 /** Every callback the plane's regions raise, gathered so the room wires them once. */
 export interface SessionPlaneHandlers {
   onSelectTab: (tab: InteriorTab) => void
+  /** Show one Agent's feed in the detail pane — a subagent, or the parent on the way back. */
+  onSelectAgent: (agentId: string) => void
   onResizeDock: (px: number) => void
   onResizeActivity: (px: number) => void
   onToggleDock: () => void
@@ -60,6 +62,7 @@ export function SessionPlane({
       <TabsContent value="activity" className="flex min-h-0 min-w-0 flex-1">
         <ActivityPane
           activity={interior.activity}
+          onSelectAgent={handlers.onSelectAgent}
           splitter={({ measure }) => (
             <PanelSplitter
               orientation="v"

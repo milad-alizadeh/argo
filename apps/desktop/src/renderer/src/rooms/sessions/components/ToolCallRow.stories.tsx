@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { interiorOf, RUNNING } from '../__fixtures__/interior'
 import { ToolCallRow } from './ToolCallRow'
 
-const steps = interiorOf(RUNNING).activity.turns.flatMap((turn) => turn.steps)
+const steps = interiorOf(RUNNING).activity.sections.flatMap(({ turn }) => turn.steps)
 
 const meta = {
   title: 'Sessions/Activity/TurnTimeline/TurnRow/ToolCallRow',

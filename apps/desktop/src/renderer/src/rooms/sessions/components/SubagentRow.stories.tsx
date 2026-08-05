@@ -22,14 +22,14 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** One row: `dot · name · target · status`. Clicking it jumps the detail feed to its live feed. */
+/** One row: `dot · name · target · status`. Clicking it REPLACES the detail pane with this agent's own feed. */
 export const Row: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('correctness lens')).toBeInTheDocument()
     await expect(canvas.getByText('rotation.ts')).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button'))
-    await expect(args.onSelect).toHaveBeenCalledWith('subagent:correctness')
+    await expect(args.onSelect).toHaveBeenCalledWith('correctness')
   },
 }
 

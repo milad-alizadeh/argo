@@ -4,7 +4,7 @@ import { interiorOf, RUNNING } from '../__fixtures__/interior'
 import { TurnRow } from './TurnRow'
 
 // The timeline runs oldest-first, so the live turn is the LAST one and the finished one leads.
-const turns = interiorOf(RUNNING).activity.turns
+const turns = interiorOf(RUNNING).activity.sections.map(({ turn }) => turn)
 const open = turns.at(-1)
 const past = turns[0]
 

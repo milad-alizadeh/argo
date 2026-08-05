@@ -12,12 +12,13 @@ export {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './dropdown-menu'
+export { FeedAnchor } from './FeedAnchor'
 export { IconButton } from './IconButton'
 export * from './icons'
 export { StatusIcon } from './icons/StatusIcon'
 export {
   MasterDetail,
-  type MasterDetailGroup,
+  type MasterDetailFeed,
   type MasterDetailNav,
   type MasterDetailSection,
   type MasterDetailSplitter,
@@ -54,6 +55,15 @@ export {
 } from './toneRecipes'
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip'
 export { type DisclosureProps, useDisclosure } from './useDisclosure'
-// `MasterDetail` is the only surface that mounts the spy — the rest of the module (the trip-line
-// measurement, the jump, the attribute) is its internals, and its tests import them directly.
-export { useFeedHighlight } from './useScrollSpy'
+// The follow's decisions are exported for their own tests; the hook itself is `MasterDetail`'s.
+export { atEdge, openingAnchor } from './useFeedFollow'
+// `MasterDetail` is the only surface that mounts the spy — the jump and the attribute are its
+// internals, and its own tests import them directly.
+//
+// `activeSection` is public for the same reason `atEdge` above is: it is asserted from OUTSIDE this
+// module, by the Activity pane's story, and a story is not inside the kit. It has to be a story
+// rather than a unit test because the thing under test is the resolver against REAL laid-out
+// geometry — dense rows, group wrappers, tail space — and jsdom lays nothing out, so the three
+// reported bugs it locks (an unnameable first turn, a collapsed final screenful, a stuck highlight)
+// are all invisible without a browser. Reaching past the entry to get at it was the boundary breach.
+export { activeSection, useFeedHighlight } from './useScrollSpy'

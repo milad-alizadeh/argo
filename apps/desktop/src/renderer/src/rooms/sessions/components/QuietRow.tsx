@@ -1,4 +1,4 @@
-import type { QuietRowModel } from '@shared'
+import { type QuietRowModel, quietLabel } from '@shared'
 import { BinocularsIcon, Text } from '@/shared/components/ui'
 import { RowGlyph } from './RowGlyph'
 
@@ -19,7 +19,8 @@ export function QuietRow({ row }: { row: QuietRowModel }): React.JSX.Element {
     <div data-component="QuietRow" className="flex items-baseline gap-snug">
       <RowGlyph Icon={BinocularsIcon} tone="text-foreground-faint" />
       <Text variant="code" className="min-w-0 flex-1 truncate text-foreground-faint">
-        {row.counts.map(({ word, count }) => `${word} ${count}`).join(' · ')}
+        {/* The same tally the navigation entry for this row reads, spelled once in the derivation. */}
+        {quietLabel(row.counts)}
       </Text>
     </div>
   )

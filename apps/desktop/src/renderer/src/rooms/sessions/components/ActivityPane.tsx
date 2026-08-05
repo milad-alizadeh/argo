@@ -1,92 +1,111 @@
 import {
   MasterDetail,
-  type MasterDetailGroup,
+  type MasterDetailSection,
   type MasterDetailSplitter,
   Text,
 } from '@/shared/components/ui'
-import type { ActivityItem, ActivityModel } from '../interiorActivity'
-import { AgentFeed } from './AgentFeed'
+import type { ActivityModel } from '../interiorActivity'
+import { AgentHead } from './AgentHead'
 import { PlanProgress } from './PlanProgress'
 import { SubagentGroup } from './SubagentGroup'
+import { TurnFeed } from './TurnFeed'
 import { TurnTimeline } from './TurnTimeline'
 
-const sectionsOf = (items: readonly ActivityItem[]): { key: string; detail: React.ReactNode }[] =>
-  items.map((item) => ({ key: item.key, detail: <AgentFeed item={item} /> }))
+/** The feed: one section per turn of the DISPLAYED agent, in the order the nav lists them. Each section
+ * declares the row anchors inside it, so a jump into a section the window has not mounted can reach the
+ * section first and the row after. */
+const feedSections = (activity: ActivityModel): MasterDetailSection[] =>
+  activity.sections.map((section) => ({
+    key: section.key,
+    anchors: section.turn.steps.map((step) => step.key),
+    // Numbered here as well as in the nav: the two panes count the same session, and a feed section with
+    // no visible start reads as one more paragraph of the turn above it.
+    detail: <TurnFeed rows={section.rows} ordinal={section.turn.ordinal} />,
+  }))
 
-/** The feed's two runs, in the order the nav pane lists them: every delegate's work under its own
- * heading and on its own spine, then this session's own steps back on the root axis. A run with
- * nothing in it is dropped rather than left as an empty heading. */
-function feedGroups(activity: ActivityModel): MasterDetailGroup[] {
-  const groups: MasterDetailGroup[] = []
-  if (activity.delegated.length > 0) {
-    groups.push({
-      key: 'delegated',
-      label: 'Subagents',
-      // The SAME summary the navigation pane's header wears, derived once — the two headings name
-      // one group, and a second spelling of it is a second fact to keep true.
-      count: activity.subagents?.summary,
-      nested: true,
-      sections: sectionsOf(activity.delegated),
-    })
-  }
-  if (activity.own.length > 0) {
-    // The root group is headed by nothing: this IS the session whose plane you are inside, and a
-    // surface that announces itself inside itself only adds a line to read.
-    groups.push({ key: 'own', label: null, sections: sectionsOf(activity.own) })
-  }
-  return groups
+/** What the SESSION's own surface says before its first call. The feed is empty when nothing has been
+ * called yet — but an agent that wrote its plan first has something to show, and the Dock's now-head is
+ * already reporting its `N/M`, so drawing a bare zero-state over a plan we hold would make the two
+ * surfaces disagree in exactly the state the tracker is most worth reading. */
+function FreshSurface({ plan }: { plan: ActivityModel['plan'] }): React.JSX.Element {
+  return (
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-region p-region">
+      {plan && <PlanProgress plan={plan} />}
+      <Text variant="meta" className="text-foreground-faint">
+        {plan === null
+          ? 'nothing observed yet — the Dock below is where this session starts'
+          : 'no calls yet — this is the plan it opened with'}
+      </Text>
+    </div>
+  )
+}
+
+/** A delegate with no turns yet keeps the two panes — losing them would strand the reader inside an
+ * agent with no way back — and says what is absent in the feed's own space. */
+const NOTHING_OBSERVED: MasterDetailSection = {
+  key: 'nothing-observed',
+  detail: (
+    <Text variant="prose" className="text-foreground-faint">
+      no feed yet — nothing observed from this subagent
+    </Text>
+  ),
 }
 
 /**
- * Organism: the Activity surface — two panes, master left and one continuous detail feed right.
+ * Organism: the Activity surface — two panes, master left and ONE agent's continuous feed right.
+ *
+ * One agent at a time (issue 319): the root by default, and selecting a Subagents row replaces the feed
+ * with that delegate's own, with an explicit way back in the head. A concatenation of several agents'
+ * work reads as one timeline that never happened — and chronology, a single live edge and one
+ * virtualised container are only definable within one agent anyway.
  *
  * The left pane holds two navigable sections that are never merged — a Subagents group above the
  * Timeline — with the plan BETWEEN them and outside the navigation, because it is neither: a plan
- * belongs to the SESSION, not to a turn, so there is one of it, it is not a list of places to jump
- * to, and it stays legible while every turn below it is folded. Delegated work leads because it is
- * the only work here that is running somewhere else: the plan and the timeline are still there when
- * you look down, and a fanout you have to scroll past a tracker to find reads as a footnote to it.
+ * belongs to the SESSION, not to a turn, so there is one of it, it is not a list of places to jump to,
+ * and it stays legible while every turn below it is folded. Delegated work leads because it is the only
+ * work here that is running somewhere else.
  *
- * The right pane concatenates every item's detail in the same order, so scrolling flows item to item
- * and the highlight follows the scroll rather than the last click — but it concatenates in the same
- * two runs, headed and indented, so a delegate's feed is never read as a step of this session's turn.
+ * Both panes run OLDEST FIRST and are drawn from the same `sections`, so the highlight travels the way
+ * the reader scrolls and the two panes cannot disagree about what a step is.
  */
 export function ActivityPane({
   activity,
   splitter,
+  onSelectAgent,
 }: {
-  /** The Activity surface's derived view-model. */
+  /** The Activity surface's derived view-model, for the agent being displayed. */
   activity: ActivityModel
   /** The drag handle between the two panes, wired by the room to the `activity` spine edge. */
   splitter?: MasterDetailSplitter
+  /** Show another agent's feed. The room holds which one, so the pane stays a View. */
+  onSelectAgent?: (agentId: string) => void
 }): React.JSX.Element {
-  const groups = feedGroups(activity)
+  const sections = feedSections(activity)
+  const select = onSelectAgent ?? ((): void => {})
+  const fresh = sections.length === 0 && activity.agent.head === null
   return (
     <div data-component="ActivityPane" className="flex min-h-0 min-w-0 flex-1">
-      {groups.length === 0 ? (
-        // The feed is empty when nothing has been CALLED yet — but an agent that wrote its plan
-        // before its first tool call has something to show, and the Dock's now-head is already
-        // reporting its `N/M`. Drawing the zero-state over a plan we hold would make the two
-        // surfaces disagree in exactly the state the tracker is most worth reading.
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-region p-region">
-          {activity.plan && <PlanProgress plan={activity.plan} />}
-          <Text variant="meta" className="text-foreground-faint">
-            {activity.plan === null
-              ? 'nothing observed yet — the Dock below is where this session starts'
-              : 'no calls yet — this is the plan it opened with'}
-          </Text>
-        </div>
+      {fresh ? (
+        <FreshSurface plan={activity.plan} />
       ) : (
         <MasterDetail
           splitter={splitter}
-          groups={groups}
+          sections={sections.length === 0 ? [NOTHING_OBSERVED] : sections}
+          // Keyed by the displayed agent: switching agents is not a scroll, so the follow and the
+          // reading position are that agent's, and its feed opens at its own edge.
+          feed={{ key: activity.agent.id, live: activity.agent.live }}
+          head={<AgentHead agent={activity.agent} onSelectAgent={select} />}
           nav={({ activeKey, jumpTo }) => (
             <>
               {activity.subagents && (
-                <SubagentGroup group={activity.subagents} activeKey={activeKey} onSelect={jumpTo} />
+                <SubagentGroup
+                  group={activity.subagents}
+                  displayedId={activity.agent.id}
+                  onSelect={select}
+                />
               )}
               {activity.plan && <PlanProgress plan={activity.plan} />}
-              <TurnTimeline turns={activity.turns} activeKey={activeKey} onSelect={jumpTo} />
+              <TurnTimeline sections={activity.sections} activeKey={activeKey} onSelect={jumpTo} />
             </>
           )}
         />
