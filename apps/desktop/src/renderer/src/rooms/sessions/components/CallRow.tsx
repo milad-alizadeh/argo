@@ -1,6 +1,7 @@
 import type { CallRowModel, ToolCallStatus } from '@shared'
 import { TerminalWindowIcon, Text, WarningIcon } from '@/shared/components/ui'
 import { CallOutput } from './CallOutput'
+import { relativeTo } from './feedPath'
 import { inkFor } from './minimapMatrix'
 import { PathSubject } from './PathSubject'
 import { type RowMark, ToolRow } from './ToolRow'
@@ -47,7 +48,7 @@ function callMark(status: ToolCallStatus): RowMark {
 /** What the row names. A command shows its command LINE alone — the tool's name (`Bash`) adds nothing
  * a reader wants and the line is the whole fact. Every other kind shows the host's own tool name
  * beside its target, because `Read` is what says what `src/x.ts` was being done to. */
-function Subject({ row }: { row: CallRowModel }): React.JSX.Element {
+function Subject({ row, root }: { row: CallRowModel; root: string | null }): React.JSX.Element {
   // A command line is not a path — it has slashes in it and no filename to lead with, so it reads
   // whole and unsplit. Everything else here names a FILE, and gets the filename-first reading.
   if (row.callKind === 'execute') {
@@ -56,9 +57,18 @@ function Subject({ row }: { row: CallRowModel }): React.JSX.Element {
   return (
     <span className="inline-flex min-w-0 max-w-full items-baseline gap-snug">
       <span className="shrink-0 text-foreground-faint">{row.name}</span>
-      <PathSubject path={row.target} absent="nothing the record named" />
+      <PathSubject path={row.target} root={root} absent="nothing the record named" />
     </span>
   )
+}
+
+/** The path the opened box spells out, relative to the session's own tree — the same root the row's
+ * line is shortened against, so the box answers "where in THIS project" rather than restating a home
+ * directory that is identical on every row. A command line is already shown whole on the row, so it
+ * has no origin to repeat. */
+function originOf(row: CallRowModel, root: string | null): string | null {
+  if (row.callKind === 'execute' || row.target === null) return null
+  return relativeTo(row.target, root)
 }
 
 /** Why there is nothing to open. A call that is over printed nothing; one still going has not
@@ -76,9 +86,21 @@ function noOutputReason(status: ToolCallStatus): string {
  * scanned without wading through build logs — a failure included: its mark and its ring say what
  * happened on the closed row, and only the text behind them is a click away.
  */
-export function CallRow({ row }: { row: CallRowModel }): React.JSX.Element {
+export function CallRow({
+  row,
+  root,
+}: {
+  row: CallRowModel
+  root: string | null
+}): React.JSX.Element {
   return (
-    <ToolRow mark={callMark(row.status)} subject={<Subject row={row} />}>
+    <ToolRow
+      mark={callMark(row.status)}
+      subject={<Subject row={row} root={root} />}
+      // Only a call that NAMES A FILE has a path to spell out. A command line is already shown
+      // whole on the row, so repeating it as an origin would print the same string twice.
+      origin={originOf(row, root)}
+    >
       {row.output === null ? (
         // The ABSENCE is a body like any other: it sits behind the caret rather than on the line,
         // so a row that printed nothing is the same one line tall as a row that printed a log.

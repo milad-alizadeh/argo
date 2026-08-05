@@ -67,6 +67,8 @@ interface RawFixture {
     title: string
     model: string | null
     branch: string | null
+    /** The session's own working directory. Every path in the feed is shown relative to it. */
+    cwd: string | null
     lastActivityAt: number | null
   }
   agents: RawAgent[]
@@ -147,6 +149,7 @@ export const REAL_SESSION: SessionView = sessionView({
   title: DATA.session.title,
   model: DATA.session.model,
   branch: DATA.session.branch,
+  cwd: DATA.session.cwd,
   lastActivityAt: DATA.session.lastActivityAt,
   agents: DATA.agents.map(agentOf),
   facts: sessionFacts(),

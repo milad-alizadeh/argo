@@ -31,7 +31,13 @@ const TIMELINE_CSS = `
  * back — and its seam still stands to say so. What it must not do is stand a region of empty
  * padding under that seam: an empty band between two rules reads as content that failed to load,
  * which is the one thing it does not mean. */
-function ChapterBody({ rows }: { rows: readonly FeedRow[] }): React.JSX.Element | null {
+function ChapterBody({
+  rows,
+  root,
+}: {
+  rows: readonly FeedRow[]
+  root: string | null
+}): React.JSX.Element | null {
   const segments = segmentsOf(rows)
   if (segments.length === 0) return null
   return (
@@ -40,7 +46,7 @@ function ChapterBody({ rows }: { rows: readonly FeedRow[] }): React.JSX.Element 
         segment.kind === 'shots' ? (
           <ShotGallery key={segment.key} rows={segment.shots} />
         ) : (
-          <TurnFeed key={segment.key} rows={segment.rows} />
+          <TurnFeed key={segment.key} rows={segment.rows} root={root} />
         ),
       )}
     </div>
@@ -59,9 +65,12 @@ function ChapterBody({ rows }: { rows: readonly FeedRow[] }): React.JSX.Element 
 export function FeedSurface({
   chapters,
   plan,
+  root,
 }: {
   chapters: readonly ChapterModel[]
   plan: PlanProgressModel | null
+  /** The session's working directory — what every path in these chapters is shown relative to. */
+  root: string | null
 }): React.JSX.Element {
   const feed = useRef<HTMLDivElement>(null)
   const minimapWindow = useRef<HTMLDivElement>(null)
@@ -93,7 +102,7 @@ export function FeedSurface({
             {index > 0 && <div aria-hidden className="my-plane h-px shrink-0 bg-foreground/15" />}
             <section {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
               <FeedSeam chapter={chapter} plan={plan} />
-              <ChapterBody rows={chapter.rows} />
+              <ChapterBody rows={chapter.rows} root={root} />
             </section>
           </Fragment>
         ))}

@@ -421,7 +421,7 @@
   --sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 
-  /* Typography roles — ONE sans ladder at 11/13/15/17 (+19 display, +23 hero), every
+  /* Typography roles — ONE sans ladder at 10/12/14/16 (+19 display, +23 hero), every
    * step 2px. This ladder IS the cockpit's density: it is the Penumbra prototypes' own
    * measure, decided here rather than deferred per surface. All further hierarchy
    * is carried inside a size by weight, case+tracking, or line-height, never by a
@@ -431,17 +431,20 @@
    * tabular-nums / mono facets where a role demands them). A new size snaps to a
    * role or gets promoted here, never inlined.
    *
-   * THE LADDER MOVED UP ONE RUNG (was 9/11/13/15). The prototypes' measure was simply too
+   * THE LADDER MOVED UP ONE STEP (was 9/11/13/15). The prototypes' measure was simply too
    * small to read: 11px reading text sits below every desktop tool the cockpit sits beside,
    * and the feed — a wall of dense mono, which is the surface people actually stare at —
    * was the place it stopped being a density choice and started being a squint.
    *
-   * Every rung shifted TOGETHER, which is the only way to move it. Raising the dense roles
-   * alone would have put `row` at 13px, the exact size of `title` — the rung above it —
-   * so a list row and the panel heading over it would have become the same size and the
-   * hierarchy between them would have gone. `meta` at 10px would have been a 1px step,
-   * which this contract bans by name. Relative distances are unchanged; `display` and
-   * `hero` stay where they are because the gap below them absorbs the shift.
+   * Every rung shifted TOGETHER, which is the only way to move it: relative distance is what
+   * carries the hierarchy, so raising the dense roles alone would have collided `row` with
+   * `title`, the rung directly above it. `display` and `hero` stay where they are because the
+   * gap below them absorbs the shift.
+   *
+   * ONE step, not two. 13px reading text was legible and too loose for a cockpit — a surface
+   * whose whole job is holding a session's worth of rows in one screenful — so the ladder sits
+   * at 12px, one step up from the prototypes' 11 rather than two. The 2px cadence is unchanged
+   * above the dense rungs (10/12/14/16); `hero` and `display` keep their own wider gap.
    *
    * Weights run LIGHT: 400 is the ladder's baseline and only `row-strong` reaches past
    * it. Hierarchy at these sizes is carried by size, case and colour — a dense 11px row
@@ -466,59 +469,65 @@
   --type-display-weight: 200;
   --type-display-tracking: 0.01em;
 
-  --type-headline: 17px; /* verdict hero, session-level headings */
-  --type-headline-leading: 22px;
+  --type-headline: 16px; /* verdict hero, session-level headings */
+  --type-headline-leading: 21px;
   --type-headline-weight: 400;
   --type-headline-tracking: -0.01em;
 
-  --type-title: 15px; /* now-line, a panel's or plane's single hero row */
-  --type-title-leading: 20px;
+  --type-title: 14px; /* now-line, a panel's or plane's single hero row */
+  --type-title-leading: 19px;
   --type-title-weight: 400;
   --type-title-tracking: -0.005em;
 
-  --type-row: 13px; /* list primary text */
-  --type-row-leading: 18px;
+  --type-row: 12px; /* list primary text */
+  --type-row-leading: 17px;
   --type-row-weight: 400;
   --type-row-tracking: 0em;
 
-  --type-row-strong: 13px; /* same size — weight differentiates: row titles, buttons */
-  --type-row-strong-leading: 18px;
+  --type-row-strong: 12px; /* same size — weight differentiates: row titles, buttons */
+  --type-row-strong-leading: 17px;
   --type-row-strong-weight: 500;
   --type-row-strong-tracking: 0em;
 
-  --type-prose: 13px; /* same size — leading differentiates: multi-line reading */
-  --type-prose-leading: 20px;
+  --type-prose: 12px; /* same size — leading differentiates: multi-line reading */
+  --type-prose-leading: 19px;
   --type-prose-weight: 400;
   --type-prose-tracking: 0em;
 
-  --type-meta: 11px; /* timestamps, counts, k/v keys (+ tabular-nums) */
+  --type-meta: 10px; /* timestamps, counts, k/v keys (+ tabular-nums) */
   /* 14, not 13: it matches the observed 1.5–1.6 leading cluster, and an even leading is
    * what keeps a meta-only chip an even number of pixels tall against the 4px rhythm
    * (ConsoleChannelTab's height canary counts this box). */
-  --type-meta-leading: 16px;
+  --type-meta-leading: 15px;
   --type-meta-weight: 400;
   --type-meta-tracking: 0.02em;
 
-  --type-tag: 11px; /* state chips, severity words (+ uppercase) */
-  --type-tag-leading: 14px;
+  /* Same SIZE as `meta`, and that pairing is the reason. A status word and the model/branch line
+   * under it are the two things a roster row says besides its title, and they read as one tier —
+   * so a tag set a step below made the state look like a footnote to the metadata rather than its
+   * equal. The uppercase-reads-larger correction that briefly lived here is real, but it was
+   * solving for the wrong neighbour: what this sits beside is `meta`, not the title. Case and
+   * tracking are what separate the two roles; size is not. */
+  --type-tag: 10px; /* state chips, severity words (+ uppercase) */
+  --type-tag-leading: 15px;
   --type-tag-weight: 500;
   --type-tag-tracking: 0.14em;
 
-  --type-eyebrow: 11px; /* section headers (+ uppercase, wider tracking, lighter) */
-  --type-eyebrow-leading: 14px;
+  --type-eyebrow: 10px; /* section headers (+ uppercase, wider tracking, lighter) */
+  --type-eyebrow-leading: 13px;
   --type-eyebrow-weight: 400;
   --type-eyebrow-tracking: 0.22em;
 
-  --type-code: 13px; /* terminal, diff hunks, code blocks (+ mono) */
-  --type-code-leading: 20px;
+  --type-code: 12px; /* terminal, diff hunks, code blocks (+ mono) */
+  --type-code-leading: 19px;
   --type-code-weight: 400;
   --type-code-tracking: 0em;
 
   /* The one deliberately off-ladder size: mono renders ~1px larger than sans at the
    * same value, so an inline path or SHA inside an 11px row is set at 10px to match
    * it optically. Never a starting point for a new size. */
-  --type-code-inline: 12px;
-  --type-code-inline-leading: 18px;
+  --type-code-inline: 11px;
+  --type-code-inline-leading: 17px;
   --type-code-inline-weight: 400;
   --type-code-inline-tracking: 0em;
 

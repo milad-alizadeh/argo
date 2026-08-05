@@ -4,6 +4,8 @@ import { expect, userEvent, within } from 'storybook/test'
 import { aDiff, DELETED_HUNKS, ROTATION_HUNKS } from '../__fixtures__/diff'
 import { MutationRow } from './MutationRow'
 
+const ROOT = '/Users/me/argo/.claude/worktrees/ticket-318'
+
 const row = (over: Partial<MutationRowModel> = {}): MutationRowModel => ({
   kind: 'mutation',
   key: 'mutation:c2',
@@ -17,7 +19,9 @@ const row = (over: Partial<MutationRowModel> = {}): MutationRowModel => ({
 const meta = {
   title: 'Sessions/Activity/MutationRow',
   component: MutationRow,
-  args: { row: row() },
+  // The session's own working directory. Every path on the feed is shown relative to it, so a story
+  // without one would render the absolute paths the surface exists to stop repeating.
+  args: { row: row(), root: ROOT },
   argTypes: { row: { control: false, table: { type: { summary: 'MutationRowModel' } } } },
   decorators: [
     (Story) => (

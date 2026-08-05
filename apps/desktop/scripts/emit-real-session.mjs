@@ -133,6 +133,10 @@ const fixture = {
     title: root.aiTitle ?? root.firstPrompt ?? 'Untitled session',
     model: root.model,
     branch: root.gitBranch,
+    // The session's own working directory. Every path in the feed is SHOWN relative to it, so a
+    // fixture without one renders the absolute paths the surface exists to stop repeating — which
+    // is exactly the state the real feed is never in.
+    cwd: root.cwd,
     lastActivityAt: root.lastTimestampMs,
   },
   agents,

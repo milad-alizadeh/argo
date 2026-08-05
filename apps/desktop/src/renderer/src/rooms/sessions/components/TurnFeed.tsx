@@ -140,7 +140,7 @@ const gapAbove = (row: FeedRow, previous: FeedRow | undefined): string => {
   return WORK.has(row.kind) && WORK.has(previous.kind) ? 'pt-hair' : 'pt-region'
 }
 
-function Row({ row }: { row: FeedRow }): React.JSX.Element {
+function Row({ row, root }: { row: FeedRow; root: string | null }): React.JSX.Element {
   switch (row.kind) {
     case 'prompt':
       return <PromptRow text={row.text} />
@@ -149,13 +149,13 @@ function Row({ row }: { row: FeedRow }): React.JSX.Element {
     case 'thought':
       return <ThoughtRow markdown={row.markdown} />
     case 'mutation':
-      return <MutationRow row={row} />
+      return <MutationRow row={row} root={root} />
     case 'call':
-      return <CallRow row={row} />
+      return <CallRow row={row} root={root} />
     case 'quiet':
-      return <QuietRow row={row} />
+      return <QuietRow row={row} root={root} />
     case 'media':
-      return <MediaRow row={row} />
+      return <MediaRow row={row} root={root} />
     case 'plan':
       return <PlanRow plan={row.plan} />
     case 'compaction':
@@ -171,7 +171,14 @@ function Row({ row }: { row: FeedRow }): React.JSX.Element {
  * work joins the sequence in later tickets, which is why the row list is a union rather than three
  * lists rendered in three fixed places.
  */
-export function TurnFeed({ rows }: { rows: readonly FeedRow[] }): React.JSX.Element {
+export function TurnFeed({
+  rows,
+  root,
+}: {
+  rows: readonly FeedRow[]
+  /** The session's working directory — what every path on these rows is shown relative to. */
+  root: string | null
+}): React.JSX.Element {
   if (rows.length === 0) {
     return (
       <Text variant="prose" className="text-foreground-faint">
@@ -195,7 +202,7 @@ export function TurnFeed({ rows }: { rows: readonly FeedRow[] }): React.JSX.Elem
           data-feedfailed={isFailed(row) || undefined}
           className={gapAbove(row, rows[index - 1])}
         >
-          <Row row={row} />
+          <Row row={row} root={root} />
         </div>
       ))}
     </div>

@@ -83,7 +83,16 @@ describe("buildActivity's item list", () => {
 
   it('renders an unparseable transcript as an empty surface, not an error', () => {
     const empty = buildActivity(sessionView({ id: 's' }))
-    expect(empty).toEqual({ plan: null, subagents: null, turns: [], delegated: [], own: [] })
+    // `root: null` and not a guess: a session Argo could read no cwd for has no tree to shorten
+    // paths against, so they render whole.
+    expect(empty).toEqual({
+      plan: null,
+      subagents: null,
+      turns: [],
+      delegated: [],
+      own: [],
+      root: null,
+    })
   })
 })
 

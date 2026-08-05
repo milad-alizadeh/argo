@@ -87,6 +87,9 @@ export function ActivityPane({ activity }: { activity: ActivityModel }): React.J
         key={scope?.key ?? 'main'}
         chapters={chapters}
         plan={scope === null ? activity.plan : null}
+        // The SESSION's root, delegate feeds included: a subagent runs in its parent's tree unless
+        // it owns a worktree, and the tree is what the paths are relative to either way.
+        root={activity.root}
       />
     </div>
   )

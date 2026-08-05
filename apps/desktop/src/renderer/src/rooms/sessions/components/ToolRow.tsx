@@ -52,7 +52,8 @@ export function ToolRow({
   subject,
   trailing,
   defaultOpen = false,
-  bleed = false,
+  body = 'card',
+  origin,
   children,
 }: {
   mark: RowMark
@@ -66,17 +67,25 @@ export function ToolRow({
    * asked for; an image is the fact itself, and the one thing a terminal cannot show at all. Same
    * component, same caret, same body slot — this is a starting position, not a second mechanism. */
   defaultOpen?: boolean
-  /** Whether the body reaches the box's edges instead of sitting inside its inset.
+  /** WHAT KIND OF THING the body is, which is the only thing an opened row varies by.
    *
-   * For CONTENT THAT BRINGS ITS OWN COLUMNS — a diff (a line-number gutter, and +/- bands that are
-   * only legible as bands if they span the full width) and a picture (whose edge IS its edge). An
-   * inset there is padding fighting structure the content already has: it stripes the bands short
-   * of the border and leaves the gutter aligned to nothing.
+   * `card` — prose. A bordered block, inset so its first character lands under the row's verb.
+   * `flush` — content that brings its own columns: a diff (a line-number gutter, and +/- bands only
+   *   legible as bands if they span the full width) or a picture (whose edge IS its edge). Same
+   *   border; no horizontal inset, because padding there fights structure the content already has.
+   * `bare` — a list of ROWS, which each carry whatever box their own body needs. No border at all:
+   *   a card drawn around a column of cards is the same boundary drawn twice, and the second one
+   *   buys nothing but an indent. */
+  body?: 'card' | 'flush' | 'bare'
+  /** The full, unshortened path the row's line names — printed as the box's first line when it
+   * opens.
    *
-   * Prose has no columns of its own, so it takes the inset and reads down from the row's verb. Same
-   * box, same caret, same border either way — this states which kind of thing is inside it, and is
-   * the only thing the body slot varies by. */
-  bleed?: boolean
+   * This is what makes the line above it affordable. The row shows a filename and a root-relative
+   * directory, which is what the eye needs and is NOT enough to act on: it does not say which
+   * checkout, and this repo is routinely open in four worktrees at once. Rather than hedge the row
+   * itself, the whole answer is one caret away — and a reader who opened the box is already asking
+   * about this one file rather than skimming the column. */
+  origin?: string | null
   /** Everything the row has to SHOW — a diff, an output block, a picture, a line saying there is
    * none of those. All of it behind the one caret, so a column of fifty calls is fifty lines. A row
    * handed nothing renders inert rather than as a control that opens onto nothing. */
@@ -120,7 +129,7 @@ export function ToolRow({
         // `my-gap` on both sides, because a run of tool calls is spaced at ZERO so it reads as one
         // block (`TurnFeed`'s gap rule) — right for a column of closed lines, wrong the moment one
         // opens, when the box would butt against its own row above and the next row below.
-        // ONE box, and its horizontal inset is the CONTENT's to state — see `bleed`.
+        // ONE box, and what it is made of is the CONTENT's to state — see `body`.
         //
         // Inset, `pl-body-inset` is not the `p-gap` the other sides take. The box's own EDGE is at
         // the glyph column, so a uniform 8px inset started the text between the glyph and the verb —
@@ -129,10 +138,23 @@ export function ToolRow({
         // exactly under the row's verb and an open row adds no new left edge to the feed.
         <div
           className={cn(
-            'my-gap ml-body-inset flex flex-col gap-gap overflow-hidden rounded-md inset-card py-gap',
-            bleed ? '' : BODY_INSET,
+            'my-gap ml-body-inset flex flex-col gap-gap overflow-hidden',
+            body !== 'bare' && 'rounded-md inset-card py-gap',
+            body === 'card' && BODY_INSET,
           )}
         >
+          {/* Always on the prose column, even in a flush box: it is a line of text, not a thing
+              with columns of its own. `break-all` because a path has no spaces to wrap at and this
+              is the one place it must be shown WHOLE — truncating the answer to "which checkout"
+              would leave the row with no way to say it at all. */}
+          {origin !== undefined && origin !== null && (
+            <Text
+              variant="code"
+              className={cn(body === 'flush' && BODY_INSET, 'break-all text-foreground-faint')}
+            >
+              {origin}
+            </Text>
+          )}
           {children}
         </div>
       )}
@@ -169,9 +191,12 @@ function RowLine({
           six characters, so a shrink-wrapped cell started every row's subject at a different x and
           the feed had no left edge to read down — which is the whole point of a fixed mark column
           two cells to the left of it. `6ch` is the longest verb (`Failed`, `Create`, `Delete`) in
-          the row's own font, and it is a MINIMUM so the quiet fold's counts — which live in this
-          slot and are as long as they need to be — run past it rather than being clipped. */}
-      <Text variant="code" className={cn('min-w-[6ch] shrink-0', tone)}>
+          the row's own font at `6ch`, widened to `8ch` for the air: at the exact measure the
+          longest verb ran flush into its subject while the short ones had room, which reads as an
+          uneven column rather than a tight one. It is a MINIMUM either way, so the quiet fold's
+          count line — which lives in this slot and is as long as it needs to be — runs past it
+          rather than being clipped. */}
+      <Text variant="code" className={cn('min-w-[8ch] shrink-0', tone)}>
         {word}
       </Text>
       {live === true && (

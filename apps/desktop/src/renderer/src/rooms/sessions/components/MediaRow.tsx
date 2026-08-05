@@ -2,6 +2,7 @@ import type { MediaResult, MediaRowModel } from '@shared'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { ImageIcon, Text } from '@/shared/components/ui'
+import { relativeTo } from './feedPath'
 import { inkFor } from './minimapMatrix'
 import { PathSubject } from './PathSubject'
 import { BODY_INSET } from './rowRecipes'
@@ -118,7 +119,13 @@ function MediaBody({
  * mounts no `<img>` at all, and a turn that took many is grouped into `ShotGallery` as thumbnails
  * long before this row would be drawn thirty times.
  */
-export function MediaRow({ row }: { row: MediaRowModel }): React.JSX.Element {
+export function MediaRow({
+  row,
+  root,
+}: {
+  row: MediaRowModel
+  root: string | null
+}): React.JSX.Element {
   const { subject, status, media } = row
   const named = subject ?? 'an image the record did not name'
   return (
@@ -128,11 +135,12 @@ export function MediaRow({ row }: { row: MediaRowModel }): React.JSX.Element {
       // is cut from the head like every other path on the surface. As a bare string it fell to the
       // row's own LTR truncate and lost the timestamped filename, which is the only part that says
       // which of a turn's six shots this one is.
-      subject={<PathSubject path={subject} absent="an image the record did not name" />}
+      subject={<PathSubject path={subject} root={root} absent="an image the record did not name" />}
       defaultOpen
       // A picture reaches the box's edges: its own edge IS an edge, and a border-plus-gap around one
       // is two frames around the same rectangle. Its absence LINE is prose, and takes the column.
-      bleed
+      body="flush"
+      origin={subject === null ? null : relativeTo(subject, root)}
     >
       {media.bytes === null ? (
         <Absent text={absentReason(media.tier)} />

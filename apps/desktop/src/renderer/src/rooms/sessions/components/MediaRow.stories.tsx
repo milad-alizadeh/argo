@@ -4,6 +4,8 @@ import { expect, userEvent, within } from 'storybook/test'
 import { aMediaResult as media, type ShotStage, aShotOf as shot } from '../__fixtures__/media'
 import { MediaRow } from './MediaRow'
 
+const ROOT = '/Users/me/argo/.claude/worktrees/ticket-318'
+
 const row = (over: Partial<MediaRowModel> = {}): MediaRowModel => ({
   kind: 'media',
   key: 'media:shot-1',
@@ -16,7 +18,9 @@ const row = (over: Partial<MediaRowModel> = {}): MediaRowModel => ({
 const meta = {
   title: 'Sessions/Activity/MediaRow',
   component: MediaRow,
-  args: { row: row() },
+  // The session's own working directory. Every path on the feed is shown relative to it, so a story
+  // without one would render the absolute paths the surface exists to stop repeating.
+  args: { row: row(), root: ROOT },
   argTypes: { row: { control: false, table: { type: { summary: 'MediaRowModel' } } } },
   decorators: [
     (Story) => (
@@ -115,6 +119,7 @@ export const SamePathThrice: Story = {
       {STAGES.map(([label, stage], index) => (
         <MediaRow
           key={stage}
+          root={ROOT}
           row={row({ key: `media:shot-${index}`, media: media({ bytes: shot(label, stage) }) })}
         />
       ))}

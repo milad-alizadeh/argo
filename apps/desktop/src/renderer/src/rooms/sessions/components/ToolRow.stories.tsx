@@ -5,6 +5,8 @@ import { inkFor } from './minimapMatrix'
 import { PathSubject } from './PathSubject'
 import { ToolRow } from './ToolRow'
 
+const ROOT = '/Users/me/argo/.claude/worktrees/ticket-318'
+
 const meta = {
   title: 'Sessions/Activity/ToolRow',
   component: ToolRow,
@@ -48,7 +50,9 @@ export const Plain: Story = {
 export const WithBodyAndCount: Story = {
   args: {
     mark: { ...meta.args.mark, word: 'edited', tone: inkFor('mutation') },
-    subject: <PathSubject path="src/auth/rotation.ts" absent="nothing the record named" />,
+    subject: (
+      <PathSubject root={ROOT} path="src/auth/rotation.ts" absent="nothing the record named" />
+    ),
     trailing: (
       <Text variant="meta" className="shrink-0 tabular-nums text-signal-ok">
         +6
@@ -62,22 +66,27 @@ export const WithBodyAndCount: Story = {
   },
 }
 
-/** A PATH longer than the row, cut where a path has to be cut: from the HEAD, so the ellipsis leads
- * and the filename survives. Every path on this surface goes through `PathSubject` for exactly this
- * — a column of edits under one worktree shares fifty characters of prefix, and end-truncation
- * renders them as the same string with the one differing word dropped. */
+/** A PATH longer than the row: its NAME first, at a fixed x, never truncated — then the directory,
+ * dimmed, cut from ITS head. Every path on this surface goes through `PathSubject` for exactly this.
+ * Head-truncating the whole string kept the filename alive but left it at the row's ragged right
+ * edge, so a column of edits had to be read line by line rather than straight down. */
 export const LongPath: Story = {
   args: {
     subject: (
       <PathSubject
+        root={ROOT}
         path="apps/desktop/src/renderer/src/rooms/sessions/components/interiorActivity.stories.tsx"
         absent="nothing the record named"
       />
     ),
   },
   play: async ({ canvasElement }) => {
-    const path = within(canvasElement).getByText(/interiorActivity\.stories\.tsx$/)
-    await expect(path).toHaveAttribute('dir', 'rtl')
+    const canvas = within(canvasElement)
+    // The name stands alone and whole — no ellipsis reaches it, whatever the row's width.
+    await expect(canvas.getByText('interiorActivity.stories.tsx')).toBeInTheDocument()
+    // Its directory is the part that gives way, and it gives way from the HEAD: what identifies a
+    // directory is its deepest part, so `rtl` is what puts the ellipsis on the left.
+    await expect(canvas.getByText(/rooms\/sessions\/components$/)).toHaveAttribute('dir', 'rtl')
   },
 }
 
@@ -93,7 +102,13 @@ export const LongCommand: Story = {
 export const OpenByDefault: Story = {
   args: {
     mark: { ...meta.args.mark, word: 'saw', tone: inkFor('media') },
-    subject: <PathSubject path="/tmp/argo-shots/cockpit.png" absent="nothing the record named" />,
+    subject: (
+      <PathSubject
+        root={ROOT}
+        path="/tmp/argo-shots/cockpit.png"
+        absent="nothing the record named"
+      />
+    ),
     defaultOpen: true,
     children: (
       <Text variant="code" className="text-foreground-faint">

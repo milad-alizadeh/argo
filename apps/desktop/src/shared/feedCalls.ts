@@ -1,3 +1,4 @@
+import { type CallRole, roleOf } from './feedCallRole'
 import { type MediaRowModel, mediaRow } from './feedMedia'
 import type {
   DiffResult,
@@ -71,6 +72,19 @@ export interface QuietCallModel {
   word: string
   /** The file or pattern the call named, `null` where it named none. */
   target: string | null
+  /** Whether `target` is a PATH. `false` for a command line, which has slashes in it and no filename
+   * to lift out — read as a path it would be split at its last separator and rendered as
+   * `head -50` sitting beside `git log --oneline -3 && find apps/desktop/src -path '*console*' |`,
+   * which is nonsense assembled out of a real command. */
+  isPath: boolean
+  /** What the kind of call this is, for the glyph it wears once the fold is opened. */
+  callKind: ToolCallKind
+  status: ToolCallStatus
+  /** What it printed. Carried rather than dropped, because a FOLD IS A COLLAPSE AND NOT A DISCARD:
+   * folding commands is what made the feed readable, and a folded command whose output had been
+   * thrown away would have made it readable by deleting the answer. Opened, each call is a row like
+   * any other, and its output is behind its own caret exactly where it would have been. */
+  output: OutputResult | null
 }
 
 /** A run of consecutive observation, folded to one line — and the calls behind it.
@@ -95,68 +109,6 @@ export interface QuietRowModel {
 }
 
 export type ToolRow = MutationRowModel | CallRowModel | QuietRowModel | MediaRowModel
-
-/** What one call is worth: its own loud row, a share of a folded quiet one, or nothing. */
-type CallRole = 'none' | 'mutation' | 'media' | 'loud' | 'quiet'
-
-/** THE MATRIX'S FIRST AXIS: what a call did to the world, which is the only thing its kind decides.
- *
- * `runs` sits between `mutates` and `observes` on purpose and is grouped with neither: a shell
- * command's effect is genuinely UNKNOWN to a reader of the transcript — `ls` and `rm -rf` are one
- * kind — and unknown-effect belongs on the loud side, because a fold is a claim that nothing
- * important happened and that claim cannot be made about a command line nobody read. */
-type Effect = 'mutates' | 'runs' | 'observes' | 'delegates' | 'plans'
-
-const EFFECT: Readonly<Record<ToolCallKind, Effect>> = {
-  edit: 'mutates',
-  execute: 'runs',
-  read: 'observes',
-  search: 'observes',
-  fetch: 'observes',
-  // `other` is an unrecognised tool NAME, not an unrecognised effect: the parser reaches it only
-  // when its table did not know the name, and the overwhelming majority of those are lookups.
-  // Observation is the quieter reading, which is the direction ambiguity resolves in.
-  other: 'observes',
-  delegate: 'delegates',
-  plan: 'plans',
-}
-
-/** THE MATRIX'S SECOND AXIS: what came back. Status and result read as one fact because they answer
- * one question — a call with no result yet and a call that failed are different rows, and a call
- * that failed while still producing a picture is a third. */
-type Yield = 'failed' | 'picture' | 'patch' | 'text' | 'nothing'
-
-function yieldOf({ status, result }: ToolCall): Yield {
-  // Pixels first, ahead of failure: a call that failed and STILL returned an image returned the
-  // thing worth looking at, and a screenshot reaches the agent from a read, a fetch, or an MCP
-  // browser tool under `other` — so no kind is the fact worth reading here. The picture is.
-  if (result?.kind === 'media') return 'picture'
-  if (status === 'failed') return 'failed'
-  if (result === null) return 'nothing'
-  return result.kind === 'diff' ? 'patch' : 'text'
-}
-
-/**
- * THE MATRIX. Every cell is an answer rather than a default, so a kind or a result shape added to
- * either union fails to compile until someone decides what it is worth — which is the whole reason
- * this is a table and not a chain of `if`s with a fallthrough at the bottom.
- *
- * `none` is never a silent drop: a delegate's work is the CHILD's and the Subagents section owns it,
- * and a plan call's row is the Turn's one plan row. But a FAILED plan write lands loud, because
- * nothing else on the surface would say the list did not update; a failed delegate does not, because
- * the subagent row it belongs to already reports it.
- */
-const M = 'mutation'
-const ROLE: Readonly<Record<Effect, Readonly<Record<Yield, CallRole>>>> = {
-  mutates: { failed: M, picture: 'media', patch: M, text: M, nothing: M },
-  runs: { failed: 'loud', picture: 'media', patch: 'loud', text: 'loud', nothing: 'loud' },
-  observes: { failed: 'loud', picture: 'media', patch: 'quiet', text: 'quiet', nothing: 'quiet' },
-  delegates: { failed: 'none', picture: 'media', patch: 'none', text: 'none', nothing: 'none' },
-  plans: { failed: 'loud', picture: 'media', patch: 'none', text: 'none', nothing: 'none' },
-}
-
-/** Which row one call is worth: one lookup through the matrix, and nowhere else to hide a rule. */
-const roleOf = (call: ToolCall): CallRole => ROLE[EFFECT[call.kind]][yieldOf(call)]
 
 const isRunning = (status: ToolCallStatus): boolean =>
   status === 'pending' || status === 'in_progress'
@@ -201,7 +153,11 @@ function callRow(call: ToolCall): CallRowModel {
 
 /** The word a kind wears in a fold. The kind's own word where it already reads as one, so only the
  * two that would read as nouns are spelled out. */
-const QUIET_WORD: Partial<Record<ToolCallKind, string>> = { search: 'searched', fetch: 'fetched' }
+const QUIET_WORD: Partial<Record<ToolCallKind, string>> = {
+  search: 'searched',
+  fetch: 'fetched',
+  execute: 'ran',
+}
 
 /** What one folded call is CALLED. The kind's word normally — but the host's own tool name where
  * the kind is `other`, because `other` is the parser saying it did not recognise the name, and a
@@ -218,7 +174,10 @@ function quietRow(run: readonly ToolCall[]): QuietRowModel {
   return {
     kind: 'quiet',
     key: `quiet:${run[0]?.id ?? ''}`,
-    observed: run.every((call) => call.kind !== 'other'),
+    // `execute` counts against it for the same reason `other` does: running a command is not
+    // looking at something, and a fold holding one must not render under a glyph that says the
+    // agent observed. The run still folds — it is the GLYPH that has to stay honest, not the fold.
+    observed: run.every((call) => call.kind !== 'other' && call.kind !== 'execute'),
     counts: [...byWord].map(([word, count]) => ({ word, count })),
     // In the order they happened, not grouped like the counts: opened, this is a sequence of what
     // the agent looked at, and the counts above it are already the by-kind reading.
@@ -226,6 +185,10 @@ function quietRow(run: readonly ToolCall[]): QuietRowModel {
       key: `quiet-call:${call.id}`,
       word: quietWord(call),
       target: call.target,
+      isPath: call.kind !== 'execute',
+      callKind: call.kind,
+      status: call.status,
+      output: call.result?.kind === 'output' ? call.result : null,
     })),
   }
 }

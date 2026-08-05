@@ -9,6 +9,7 @@ import {
   Text,
 } from '@/shared/components/ui'
 import { CallOutput } from './CallOutput'
+import { relativeTo } from './feedPath'
 import { inkFor } from './minimapMatrix'
 import { PathSubject } from './PathSubject'
 import { BODY_INSET } from './rowRecipes'
@@ -100,11 +101,13 @@ function missingDiffReason(status: ToolCallStatus): string {
  * A COLUMN before the path, not a count held to the row's right edge. On the edge it was ragged —
  * its position was set by the length of the path beside it, so a run of edits scattered the one
  * number you scan a wall of them by across the width of the pane. Here it is a fixed cell like the
- * verb, right-aligned inside it so the digits stack and `-0` always meets the path at the same x.
- * `8ch` fits four digits a side; a bigger patch pushes the paths out together rather than clipping. */
+ * verb, LEFT-aligned like every other cell on the row: right-aligned, the `+` moved with the width
+ * of the number beside it, so the one character that says "added" sat at a different x on every row
+ * while the paths stayed put. `8ch` fits four digits a side; a bigger patch pushes the paths out
+ * together rather than clipping. */
 function Churn({ diff }: { diff: DiffResult }): React.JSX.Element {
   return (
-    <Text variant="meta" className="min-w-[8ch] shrink-0 text-right tabular-nums">
+    <Text variant="meta" className="min-w-[8ch] shrink-0 tabular-nums">
       <span className="text-signal-ok">{`+${diff.added}`}</span>{' '}
       <span className="text-signal-bad">{`-${diff.removed}`}</span>
     </Text>
@@ -123,7 +126,13 @@ function Churn({ diff }: { diff: DiffResult }): React.JSX.Element {
  * That distinction still matters: this shares a renderer with Delivery's Files view, whose diff IS
  * the branch against its base and IS current.
  */
-export function MutationRow({ row }: { row: MutationRowModel }): React.JSX.Element {
+export function MutationRow({
+  row,
+  root,
+}: {
+  row: MutationRowModel
+  root: string | null
+}): React.JSX.Element {
   const { path, status, diff } = row
   return (
     <ToolRow
@@ -131,14 +140,15 @@ export function MutationRow({ row }: { row: MutationRowModel }): React.JSX.Eleme
       subject={
         <span className="flex min-w-0 items-baseline gap-snug">
           {diff !== null && <Churn diff={diff} />}
-          <PathSubject path={path} absent="a file the record did not name" />
+          <PathSubject path={path} root={root} absent="a file the record did not name" />
         </span>
       }
       // A patch reaches the box's edges. It has a line-number gutter of its own to align, and its
       // +/- bands only read as bands when they span the full width — inset, they stripe short of the
       // border and the gutter answers to nothing. The prose that can accompany one comes back to the
       // column itself, below.
-      bleed
+      body="flush"
+      origin={path === null ? null : relativeTo(path, root)}
     >
       {mutationBody(row)}
     </ToolRow>

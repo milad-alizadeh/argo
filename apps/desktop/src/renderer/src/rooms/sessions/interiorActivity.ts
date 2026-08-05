@@ -56,6 +56,15 @@ export interface ActivityModel {
   delegated: readonly DelegateItem[]
   /** The session's own turns as feed sections, aligned index-for-index with `turns`. */
   own: readonly ActivityItem[]
+  /** The session's working directory — the root every path on this feed is SHOWN relative to.
+   *
+   * Presentation only. The rows keep the absolute path the record carried, because that is the fact
+   * and because a path outside this tree must stay absolute to remain true. This is the one prefix
+   * the surface is allowed to stop repeating, and it is already stated in the session's header.
+   *
+   * `null` for an external session Argo could not read a cwd for, in which case paths render whole:
+   * an unknown root is not a reason to guess at a shorter one. */
+  root: string | null
 }
 
 function spawnedItems(session: SessionView, nowMs: number | null): DelegateItem[] {
@@ -92,6 +101,7 @@ export function buildActivity(session: SessionView, nowMs: number | null = null)
     turns: chronological.map(({ model }) => model),
     delegated: spawnedItems(session, nowMs),
     own: chronological.map(({ item }) => item),
+    root: session.cwd,
   }
 }
 

@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { QuietRow } from './QuietRow'
 
+const ROOT = '/Users/me/argo/.claude/worktrees/ticket-318'
+
 const FILES = [
   'apps/desktop/src/shared/feedRows.ts',
   'apps/desktop/src/shared/feedCalls.ts',
@@ -13,15 +15,31 @@ const reads: QuietCallModel[] = FILES.map((target, index) => ({
   key: `quiet-call:r${index}`,
   word: 'read',
   target,
+  isPath: true,
+  callKind: 'read',
+  status: 'completed',
+  output: null,
 }))
 
-const searched: QuietCallModel = { key: 'quiet-call:s1', word: 'searched', target: 'turnFeedRows' }
+const searched: QuietCallModel = {
+  key: 'quiet-call:s1',
+  word: 'searched',
+  target: 'turnFeedRows',
+  isPath: false,
+  callKind: 'search',
+  status: 'completed',
+  output: null,
+}
 
 const many = (word: string, count: number, from: number): QuietCallModel[] =>
   Array.from({ length: count }, (_, index) => ({
     key: `quiet-call:${from + index}`,
     word,
     target: `${FILES[index % FILES.length]}`,
+    isPath: true,
+    callKind: 'read',
+    status: 'completed',
+    output: null,
   }))
 
 const meta = {
@@ -38,6 +56,9 @@ const meta = {
       ],
       calls: [...reads, searched],
     },
+    // The session's own working directory. Every path on the feed is shown relative to it, so a
+    // story without one would render the absolute paths the surface exists to stop repeating.
+    root: ROOT,
   },
   argTypes: { row: { control: false, table: { type: { summary: 'QuietRowModel' } } } },
   decorators: [
@@ -57,7 +78,9 @@ type Story = StoryObj<typeof meta>
  * file" long before then. */
 export const Folded: Story = {
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Read 3 · Searched 1')).toBeInTheDocument()
+    await expect(
+      within(canvasElement).getByText(/Read 3 files, searched 1 pattern/),
+    ).toBeInTheDocument()
   },
 }
 
@@ -70,7 +93,7 @@ export const Opened: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.queryByText(/feedRows\.ts/)).not.toBeInTheDocument()
-    await userEvent.click(canvas.getByText('Read 3 · Searched 1'))
+    await userEvent.click(canvas.getByText(/Read 3 files, searched 1 pattern/))
     await expect(canvas.getByText(/feedRows\.ts/)).toBeInTheDocument()
     await expect(canvas.getByText(/turnFeedRows/)).toBeInTheDocument()
   },
@@ -128,11 +151,21 @@ export const Unrecognised: Story = {
       ],
       calls: [
         reads[0] as QuietCallModel,
-        { key: 'quiet-call:w1', word: 'EnterWorktree', target: null },
+        {
+          key: 'quiet-call:w1',
+          word: 'EnterWorktree',
+          target: null,
+          isPath: false,
+          callKind: 'other',
+          status: 'completed',
+          output: null,
+        },
       ],
     },
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Read 1 · EnterWorktree 1')).toBeInTheDocument()
+    await expect(
+      within(canvasElement).getByText(/Read 1 file, EnterWorktree 1/),
+    ).toBeInTheDocument()
   },
 }

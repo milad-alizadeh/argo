@@ -87,12 +87,15 @@ describe('a folded run of quiet work', () => {
   })
 })
 
-// Every loud kind, one row each: the break is what makes "edited a file, ran a command, read a file"
-// structurally impossible rather than merely discouraged.
+// Every loud kind, one row each: the break is what makes "edited a file, FAILED at something, read
+// a file" structurally impossible rather than merely discouraged — a fold can never span a row that
+// stands on its own.
 const BREAKS: readonly [string, ToolCall, string][] = [
   ['a mutation', anEdit({ id: 'loud' }), 'mutation'],
   ['a failed call', aCall({ id: 'loud', status: 'failed' }), 'call'],
-  ['a command', aCall({ id: 'loud', name: 'Bash', kind: 'execute', target: 'bun test' }), 'call'],
+  // NOT a command. Commands fold now, which is the point — a run of them is a block you scan or
+  // skip, and a successful one no longer interrupts the reads around it. A FAILED command still
+  // breaks the run, and that is the case above.
 ]
 
 describe('what breaks a fold', () => {

@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { CallRow } from './CallRow'
 
+const ROOT = '/Users/me/argo/.claude/worktrees/ticket-318'
+
 const TYPECHECK_ERROR = `src/renderer/src/rooms/sessions/interiorActivity.ts(198,44): error TS2554
   Expected 1 arguments, but got 2.`
 
@@ -20,7 +22,9 @@ const row = (over: Partial<CallRowModel> = {}): CallRowModel => ({
 const meta = {
   title: 'Sessions/Activity/CallRow',
   component: CallRow,
-  args: { row: row() },
+  // The session's own working directory. Every path on the feed is shown relative to it, so a story
+  // without one would render the absolute paths the surface exists to stop repeating.
+  args: { row: row(), root: ROOT },
   argTypes: { row: { control: false, table: { type: { summary: 'CallRowModel' } } } },
   decorators: [
     (Story) => (
@@ -80,11 +84,12 @@ export const FailedRead: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    // The path is ONE run, cut from the START — so a row narrower than the path keeps its TAIL, and
-    // a column of reads under one worktree no longer renders as the same shared prefix on every
-    // line. The whole string is in the DOM; the ellipsis is the browser's, not ours.
+    // NAME first, directory after it — the two are separate cells, so the filename sits at a fixed
+    // x down the column and never truncates. Both are present; neither is the whole path, which is
+    // the point, and the whole path is on the row's `title` and inside the box it opens.
     await expect(canvas.getByText('Read')).toBeInTheDocument()
-    await expect(canvasElement.textContent).toContain('src/auth/gone.ts')
+    await expect(canvas.getByText('gone.ts')).toBeInTheDocument()
+    await expect(canvasElement.textContent).toContain('src/auth')
   },
 }
 

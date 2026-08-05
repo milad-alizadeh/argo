@@ -1,24 +1,29 @@
-// A file path in a row narrower than the path. It is cut from the START, so the ellipsis leads and
-// what survives is the end: `…cket-318/apps/desktop/src/shared/feedRows.ts`.
+import { splitPath } from './feedPath'
+
+// A file path in a feed row: its NAME first, then the directory holding it, dimmed.
 //
-// Cutting from the END is the browser's default and the worst possible cut here. Every path in one
-// worktree shares fifty-odd characters of prefix, so a column of edits renders the SAME string on
-// every row — `/Users/me/Developer/argo/.claude/worktrees/ticket-318-inl…` — with the one word that
-// identifies each of them dropped. Cutting the middle keeps that worthless prefix; cutting the head
-// spends the whole width on the part that differs.
+// Name-first is the whole point. Head-truncation kept the filename alive but left it at the row's
+// ragged RIGHT edge — a different x on every row, because paths are different lengths — so a column
+// of edits had to be read line by line. The one token that differs now sits in a fixed position at
+// the head of the cell, left-aligned and bright, and the column reads straight down. That is the
+// same reason VS Code's quick-open and GitHub's search put the filename first.
 //
-// THE MECHANISM, and both halves are load-bearing:
+// The directory is kept rather than dropped, because a filename ALONE is not an identifier: this
+// repo has some twenty `index.ts`, and two rows both reading `index.ts` say strictly less than two
+// paths did. It is what remains after the session's own root is stripped, so it is short enough to
+// stand beside the name — which is what makes name-first affordable at all.
+//
+// THE DIRECTORY STILL CUTS FROM ITS HEAD, and that mechanism is unchanged, because what identifies
+// a directory is its deepest part. Both halves are load-bearing:
 //
 //   `dir="rtl"`        moves the overflow — and so the ellipsis — to the visual LEFT.
-//   `text-align: left` puts a path SHORTER than the row back on the left edge, where rtl alignment
-//                      would otherwise strand it against the right.
+//   `text-align: left` puts a directory SHORTER than its cell back on the left edge, where rtl
+//                      alignment would otherwise strand it against the right.
 //
 // And the leading LRM. Under `rtl`, a neutral character at either edge of the string takes the
 // paragraph's direction rather than the text's, so a leading `/` jumps to the far end and
-// `/Users/me/x.ts` renders as `Users/me/x.ts/` — a path that is quietly, unreadably wrong. Prefixing
-// an invisible strong-LTR mark means the `/` is no longer at an edge and stays where it was written.
-// It costs one clipped character on a path long enough to truncate, where it is inside the ellipsis
-// anyway. All four cases (absolute, relative, bare name, very long) are verified in the stories.
+// `/tmp/shots` renders as `tmp/shots/` — quietly, unreadably wrong. Prefixing an invisible
+// strong-LTR mark means the `/` is no longer at an edge and stays where it was written.
 
 /** U+200E LEFT-TO-RIGHT MARK. Invisible, zero-width, and strong — see the note above. */
 const LRM = '‎'
@@ -26,9 +31,8 @@ const LRM = '‎'
 /**
  * Atom: the subject cell of a row that names a file.
  *
- * ONE tone, not a dirname/filename split. The tail is the part that identifies the file and the
- * tail is what always survives the cut, so a second colour would be emphasis spent on a distinction
- * the truncation already makes.
+ * `root` is the session's own working directory, and the path is shown relative to it. Absent
+ * (`null`) the path renders whole — an unknown root is not a reason to guess at a shorter one.
  *
  * `absent` is the caller's words for a record that named no path — the row still renders, because a
  * change Argo cannot name is still a change that happened, and dropping it would be the one thing
@@ -36,21 +40,27 @@ const LRM = '‎'
  */
 export function PathSubject({
   path,
+  root,
   absent,
 }: {
   path: string | null
+  root: string | null
   absent: string
 }): React.JSX.Element {
   if (path === null) return <span className="text-foreground-faint">{absent}</span>
+  const { name, dir } = splitPath(path, root)
   return (
-    // `block` is not cosmetic. This lands in two kinds of parent — a flex row (a folded call, a
-    // command's name-plus-target) and a plain block cell (a mutation's subject, which is a path and
-    // nothing else). As an INLINE span it shrank to its text in the block case, so the cell's own
-    // LTR `truncate` cut the tail off and the leading ellipsis never appeared: an edit rendered the
-    // fifty shared characters of worktree prefix and dropped the filename. Block, it fills the cell
-    // and does its own cutting in either parent — and `flex-1` still governs it as a flex item.
-    <span dir="rtl" className="block min-w-0 flex-1 truncate text-left text-foreground">
-      {`${LRM}${path}`}
+    // `title` carries the path the record actually gave, absolute and unshortened — the answer to
+    // "which of the two checkouts is this", which the row itself deliberately stops saying.
+    <span className="flex min-w-0 items-baseline gap-snug" title={path}>
+      {/* Never truncated. It is the reason the row exists, it is short, and a `…tsx` would defeat
+          the entire arrangement. */}
+      <span className="shrink-0 text-foreground">{name}</span>
+      {dir !== null && (
+        <span dir="rtl" className="block min-w-0 flex-1 truncate text-left text-foreground-faint">
+          {`${LRM}${dir}`}
+        </span>
+      )}
     </span>
   )
 }
