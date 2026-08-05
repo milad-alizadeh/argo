@@ -1,5 +1,6 @@
 import { addUsage, type Compaction, type ToolCall, type Turn } from '../../shared'
 import { resolveResult, resultContext } from './callResults'
+import { isHarnessMeta, localCommandCall, localCommandOutput, userPrompt } from './harnessRecord'
 import { type ImageReader, NO_IMAGE_READER } from './mediaResult'
 import {
   DELEGATING_TOOLS,
@@ -13,7 +14,6 @@ import {
   contentParts,
   emptyTurn,
   mapStopReason,
-  promptText,
   proseFrom,
   reportedUsage,
   usageFrom,
@@ -128,12 +128,31 @@ function absorbUser(state: TreeState, record: Record<string, unknown>): void {
   const context = resultContext(record, reportedUsage(record), state.readImage)
   const resolved = contentParts(record).map((part) => resolveResult(state.callsById, context, part))
   if (resolved.some(Boolean)) return
+  // Not every user record is a prompt, and reading one that is not opens a Turn nobody asked for.
+  // The harness writes several per exchange — the local-command caveat, a skill's expanded body,
+  // the `[Image: …]` preamble in front of a paste — and a real `/implement` run splits into twelve
+  // turns instead of two, ten of them empty and each titled with the CLI's own plumbing.
+  if (isHarnessMeta(record)) return
   const uuid = asString(record.uuid)
   if (uuid === null) return
+  const content = isRecord(record.message) ? record.message.content : null
+  // A local command's stdout is not a prompt — it is the ANSWER to the one in front of it, so it
+  // joins that turn as what the command produced rather than opening a turn of its own. Dropped
+  // where there is no open turn: output with no invocation above it belongs to nothing, and a turn
+  // synthesized to hold it would be a turn nobody opened.
+  const printed = localCommandOutput(content)
+  if (printed !== null) {
+    const turn = state.current
+    if (turn !== null) {
+      turn.toolCalls.push(localCommandCall(turn, { id: uuid, atMs: context.atMs, printed }))
+    }
+    return
+  }
   // The prompt is read from the same record that opens the turn, so a Turn's cause and its id come
   // from one reading rather than being matched up afterwards.
-  const content = isRecord(record.message) ? record.message.content : null
-  beginTurn(state, { id: uuid, atMs: context.atMs, prompt: promptText(content) })
+  const prompt = userPrompt(content)
+  if (prompt === null) return
+  beginTurn(state, { id: uuid, atMs: context.atMs, prompt })
 }
 
 export interface TreeBuilder {
@@ -141,7 +160,12 @@ export interface TreeBuilder {
   finish(): ParsedTree
 }
 
-export function createTreeBuilder(readImage: ImageReader = NO_IMAGE_READER): TreeBuilder {
+export function createTreeBuilder(
+  readImage: ImageReader = NO_IMAGE_READER,
+  /** This file is a delegate's OWN transcript, so its sidechain records are its content rather
+   * than another agent's work spliced into it. Off by default — the common read is a parent. */
+  sidechain = false,
+): TreeBuilder {
   const state: TreeState = {
     turns: [],
     compactions: [],
@@ -154,10 +178,14 @@ export function createTreeBuilder(readImage: ImageReader = NO_IMAGE_READER): Tre
 
   return {
     absorb(record) {
-      // A sidechain record is a Subagent's own transcript. The parent's delegating Tool Call is
-      // what makes the Subagent node; its interior turns are not attributable to the root, so
-      // they are left out rather than folded into the parent's sequence.
-      if (record.isSidechain === true) return
+      // A sidechain record is a Subagent's own transcript. Folding those into the file being read
+      // would splice a second agent's work into this one's sequence — so they are skipped HERE,
+      // where the file is the parent's.
+      //
+      // `sidechain: true` is how a caller says "this file IS the delegate's". Without it the
+      // builder could never read one at all: a subagent's file is sidechain records end to end, so
+      // the same guard that protects the parent silently returned an empty tree for the child.
+      if (record.isSidechain === true && !sidechain) return
       if (record.type === 'user') absorbUser(state, record)
       if (record.type === 'assistant') absorbAssistant(state, record)
     },

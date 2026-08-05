@@ -17,9 +17,10 @@ export function SessionTabs({ className }: { className?: string }): React.JSX.El
   return (
     <TabsList aria-label="Session panels" className={className}>
       {INTERIOR_TABS.map((tab) => (
-        // `glow`: the strip is the header band's active statement, so the live tab seats on the
-        // washed-gold gradient pill with its halo rather than a bare underline.
-        <TabsTrigger key={tab} value={tab} seat="glow">
+        // `penumbra`: the study's own tab. These sit ON the seam of the band they head, so the
+        // live one is marked by the gold filament under it rather than by a pill around it — a
+        // pill reads as a control you could press, and this is the panel you are already in.
+        <TabsTrigger key={tab} value={tab} seat="penumbra">
           <Text variant="row">{TAB_LABELS[tab]}</Text>
         </TabsTrigger>
       ))}

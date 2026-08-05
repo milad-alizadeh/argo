@@ -42,9 +42,28 @@ export interface SubagentGroupModel {
   runningCount: number
 }
 
+/**
+ * Where a delegate is up to: from its own turns where those are visible, and otherwise from the
+ * span of the DELEGATING CALL.
+ *
+ * The turns come first because a delegate's own record is the better evidence — an open turn means
+ * it is working, and closed ones mean it is done, both first-hand.
+ *
+ * The fallback is what this reading was missing. A subagent's turns live in a sidechain the
+ * parent's transcript does not attribute, so for a session read the ordinary way there are none —
+ * and grading `turns.length === 0` as `queued` graded on whether Argo had managed to look rather
+ * than on anything the delegate did. Every subagent in the app rendered `queued`, including ones
+ * that had finished an hour earlier. A state that is always the same state is not a reading.
+ *
+ * The span answers it honestly from the parent's own record: the delegating call ends when its
+ * `tool_result` arrives, which is exactly when the delegate finished.
+ *
+ * `queued` survives for the case it was named for — spawned, and not yet started.
+ */
 function subagentStatus(agent: Agent): SubagentStatus {
   if (openTurn(agent) !== null) return 'running'
-  return agent.turns.length === 0 ? 'queued' : 'done'
+  if (agent.turns.length > 0 || agent.endedAtMs !== null) return 'done'
+  return agent.startedAtMs === null ? 'queued' : 'running'
 }
 
 export const toolCallsOf = (agent: Agent): ToolCall[] =>

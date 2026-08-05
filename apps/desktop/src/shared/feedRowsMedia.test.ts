@@ -100,41 +100,41 @@ describe('a media row', () => {
   })
 })
 
-// Decoded pixels are the cost, so only the most recent few of a turn are shown without asking. The
-// bound is the derivation's decision, which is what keeps it a test rather than a screenshot.
-describe('the media decode bound', () => {
+// There is no decode bound any more, and no `open` on the row to carry one. It existed so a turn of
+// thirty screenshots would not hold thirty decoded bitmaps, and it kept the four most recent shown.
+// Closed-by-default at the COMPONENT does the same job better — a closed row mounts no `<img>` at
+// all, so the cap is zero rather than four — and it does it without the derivation deciding, per
+// row, how much of the surface a reader is allowed to see.
+//
+// What remains here is the claim that survived: every shot gets its OWN row, however many there are.
+describe('a turn that took many screenshots', () => {
   const shots = (count: number): ToolCall[] =>
     Array.from({ length: count }, (_unused, index) => aShot({ id: `s${index}` }))
 
-  it('opens every image of a turn that took only a few', () => {
-    const rows = rowsOf(shots(3))
+  it('gives every shot its own row rather than folding the older ones away', () => {
+    const rows = rowsOf(shots(7)).filter((row) => row.kind === 'media')
 
-    expect(rows.filter((row) => row.kind === 'media').map((row) => row.open)).toEqual([
-      true,
-      true,
-      true,
-    ])
+    expect(rows).toHaveLength(7)
   })
 
-  it('opens the most recent and leaves the older ones to decode on demand', () => {
-    const open = rowsOf(shots(7))
+  it('keeps each row keyed to its own call, so three reads of one path stay three pictures', () => {
+    const keys = rowsOf(shots(3))
       .filter((row) => row.kind === 'media')
-      .map((row) => row.open)
+      .map((row) => row.key)
 
-    expect(open).toEqual([false, false, false, true, true, true, true])
+    expect(new Set(keys).size).toBe(3)
   })
 
-  // The bound is the TURN's, so a shot that landed after a paragraph is still counted against the
-  // ones before it: a per-paragraph count would re-open four more at every paragraph.
-  it('counts the bound across the whole turn, not per paragraph', () => {
+  // Shots either side of a paragraph stay either side of it: the row is placed by where the call was
+  // made in the narrative, and nothing about media overrides that.
+  it('leaves shots in the narrative positions their calls were made at', () => {
     const spread = Array.from({ length: 6 }, (_unused, index) =>
       aShot({ id: `s${index}`, proseIndex: index % 2 }),
     )
 
-    const open = rowsOf(spread, [said('one'), said('two')])
-      .filter((row) => row.kind === 'media')
-      .map((row) => row.open)
+    const kinds = rowsOf(spread, [said('one'), said('two')]).map((row) => row.kind)
 
-    expect(open.filter(Boolean)).toHaveLength(4)
+    expect(kinds.filter((kind) => kind === 'media')).toHaveLength(6)
+    expect(kinds.indexOf('message')).toBeGreaterThan(0)
   })
 })

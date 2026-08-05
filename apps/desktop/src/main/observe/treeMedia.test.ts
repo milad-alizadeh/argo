@@ -13,7 +13,7 @@ const transcript = (): string[] =>
   readFileSync(join(__dirname, '__fixtures__', 'media.jsonl'), 'utf8').split('\n')
 
 const parse = (readImage: ImageReader = NO_IMAGE_READER) =>
-  parseTranscript('media', transcript(), readImage)
+  parseTranscript('media', transcript(), { readImage })
 
 const agentOf = (parsed: ReturnType<typeof parse>) => ({
   id: 'root',

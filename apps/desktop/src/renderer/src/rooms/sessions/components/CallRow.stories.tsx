@@ -14,7 +14,6 @@ const row = (over: Partial<CallRowModel> = {}): CallRowModel => ({
   target: 'bun run typecheck',
   status: 'completed',
   output: { kind: 'output', tier: 'direct', text: '$ tsc --noEmit -p tsconfig.web.json' },
-  open: false,
   ...over,
 })
 
@@ -47,19 +46,22 @@ export const Ran: Story = {
   },
 }
 
-/** The command failed, and its output is already open. The thing that went wrong is the thing you
- * see — no click, and the ring means it cannot be scrolled past as one more line of chatter. */
+/** The command failed. The ring and the mark say so on the closed line — which is what stops it
+ * being scrolled past as one more piece of chatter — and the reason is behind the same caret every
+ * other row uses, because a column where failures are tall and successes are short cannot be
+ * skimmed at all. */
 export const Failed: Story = {
   args: {
     row: row({
       status: 'failed',
-      open: true,
       output: { kind: 'output', tier: 'direct', text: TYPECHECK_ERROR },
     }),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('failed')).toBeInTheDocument()
+    await expect(canvas.getByText('Failed')).toBeInTheDocument()
+    await expect(canvas.queryByText(/Expected 1 arguments/)).not.toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button'))
     await expect(canvas.getByText(/Expected 1 arguments/)).toBeInTheDocument()
   },
 }
@@ -73,23 +75,28 @@ export const FailedRead: Story = {
       name: 'Read',
       target: 'src/auth/gone.ts',
       status: 'failed',
-      open: true,
       output: { kind: 'output', tier: 'direct', text: 'File does not exist.' },
     }),
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Read · src/auth/gone.ts')).toBeInTheDocument()
+    const canvas = within(canvasElement)
+    // The path is ONE run, cut from the START — so a row narrower than the path keeps its TAIL, and
+    // a column of reads under one worktree no longer renders as the same shared prefix on every
+    // line. The whole string is in the DOM; the ellipsis is the browser's, not ours.
+    await expect(canvas.getByText('Read')).toBeInTheDocument()
+    await expect(canvasElement.textContent).toContain('src/auth/gone.ts')
   },
 }
 
-/** Still running: no output has been printed yet, and the row says so rather than offering an
- * expander that opens onto nothing. */
+/** Still running: nothing has been printed yet, and what the row opens onto says exactly that
+ * rather than being an expander onto an empty box. */
 export const Running: Story = {
   args: { row: row({ status: 'in_progress', output: null }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('running')).toBeInTheDocument()
-    await expect(canvas.queryByRole('button')).not.toBeInTheDocument()
+    await expect(canvas.getByText('Run')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button'))
+    await expect(canvas.getByText(/has not come back/)).toBeInTheDocument()
   },
 }
 
@@ -98,6 +105,8 @@ export const Running: Story = {
 export const NoOutput: Story = {
   args: { row: row({ target: 'mkdir -p out', output: null }) },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText(/printed nothing/)).toBeInTheDocument()
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button'))
+    await expect(canvas.getByText(/printed nothing/)).toBeInTheDocument()
   },
 }

@@ -69,10 +69,12 @@ export const Default: Story = {
     await expect(checkbox).not.toBeChecked()
     await userEvent.click(canvas.getByText('src/auth/rotateToken.ts'))
     await expect(checkbox).toBeChecked()
-    await expect(canvas.queryByText(/const claim/)).not.toBeInTheDocument()
+    // Read off the rendered TEXT rather than with `getByText`: a highlighted line is one span per
+    // token, so no single element holds the whole declaration.
+    await expect(canvasElement.textContent).not.toContain('const claim')
     await userEvent.click(checkbox)
     await expect(checkbox).not.toBeChecked()
-    await expect(canvas.getByText(/const claim/)).toBeInTheDocument()
+    await expect(canvasElement.textContent).toContain('const claim')
   },
 }
 

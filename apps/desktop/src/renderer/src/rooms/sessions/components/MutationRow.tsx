@@ -1,4 +1,5 @@
 import type { DiffResult, FileChange, MutationRowModel, ToolCallStatus } from '@shared'
+import { cn } from '@/lib/utils'
 import {
   DiffView,
   FileMinusIcon,
@@ -8,10 +9,16 @@ import {
   Text,
 } from '@/shared/components/ui'
 import { CallOutput } from './CallOutput'
-import { FAILED_RING, LoudRow, type RowMark } from './LoudRow'
+import { inkFor } from './minimapMatrix'
+import { PathSubject } from './PathSubject'
+import { BODY_INSET } from './rowRecipes'
+import { type RowMark, ToolRow } from './ToolRow'
 
 // The feed's loud row. Everything else on this surface is something the agent SAID; this is
-// something it DID to your code, so it renders its diff with no click and cannot be folded away.
+// something it DID to your code — so it cannot be folded away, and it wears a stub in the margin
+// that survives a scroll at speed. Its DIFF is behind the row's caret like every other row's body:
+// open-by-default put fifty patches in one column, which made the feed a wall of code with the
+// prose that explains it lost between the walls, and painted the minimap teal end to end.
 
 /** How many hunks a feed row shows before the rest go behind an affordance.
  *
@@ -21,17 +28,25 @@ import { FAILED_RING, LoudRow, type RowMark } from './LoudRow'
  * `DiffView` takes it rather than deciding it. */
 const FEED_HUNK_BOUND = 1
 
-// A creation and a deletion are as distinct as a modification: icon and word for all three, and a
-// ring for the deletion, because a deleted file scrolled past unnoticed is the most expensive thing
-// this feed can do. Written out literally so Tailwind's scanner still sees each class.
+// A creation and a deletion are as distinct as a modification: icon and word for all three, and all
+// three wear the MUTATION ink — the same teal the strip paints and a diff's added lines wear. What
+// earns that colour is that your code changed, which is equally true of all three. A deletion keeps
+// its own red word, because gone is a different fact from changed.
 const CHANGE_MARKS: Readonly<Record<FileChange, RowMark>> = {
-  create: { Icon: FilePlusIcon, word: 'Create', tone: 'text-signal-ok', ring: '' },
-  modify: { Icon: FileTextIcon, word: 'Edit', tone: 'text-foreground-soft', ring: '' },
+  create: {
+    Icon: FilePlusIcon,
+    word: 'Create',
+    tone: inkFor('mutation'),
+  },
+  modify: {
+    Icon: FileTextIcon,
+    word: 'Edit',
+    tone: inkFor('mutation'),
+  },
   delete: {
     Icon: FileMinusIcon,
     word: 'Delete',
     tone: 'text-signal-bad',
-    ring: 'ring-1 ring-inset ring-signal-bad/25',
   },
 }
 
@@ -41,16 +56,14 @@ const CHANGE_MARKS: Readonly<Record<FileChange, RowMark>> = {
 const RUNNING_MARK: RowMark = {
   Icon: PencilSimpleIcon,
   word: 'Edit',
-  tone: 'text-tone-run',
-  ring: '',
+  tone: inkFor('mutation'),
   live: true,
 }
 
 const FAILED_MARK: RowMark = {
   Icon: PencilSimpleIcon,
   word: 'Failed',
-  tone: 'text-tone-red',
-  ring: FAILED_RING,
+  tone: inkFor('mutation', true),
 }
 
 /**
@@ -82,10 +95,16 @@ function missingDiffReason(status: ToolCallStatus): string {
 }
 
 /** The churn, as two counts rather than one total: a change that adds forty lines and one that
- * replaces forty are different changes, and a single number cannot tell them apart. */
+ * replaces forty are different changes, and a single number cannot tell them apart.
+ *
+ * A COLUMN before the path, not a count held to the row's right edge. On the edge it was ragged —
+ * its position was set by the length of the path beside it, so a run of edits scattered the one
+ * number you scan a wall of them by across the width of the pane. Here it is a fixed cell like the
+ * verb, right-aligned inside it so the digits stack and `-0` always meets the path at the same x.
+ * `8ch` fits four digits a side; a bigger patch pushes the paths out together rather than clipping. */
 function Churn({ diff }: { diff: DiffResult }): React.JSX.Element {
   return (
-    <Text variant="meta" className="shrink-0 tabular-nums">
+    <Text variant="meta" className="min-w-[8ch] shrink-0 text-right tabular-nums">
       <span className="text-signal-ok">{`+${diff.added}`}</span>{' '}
       <span className="text-signal-bad">{`-${diff.removed}`}</span>
     </Text>
@@ -105,28 +124,60 @@ function Churn({ diff }: { diff: DiffResult }): React.JSX.Element {
  * the branch against its base and IS current.
  */
 export function MutationRow({ row }: { row: MutationRowModel }): React.JSX.Element {
-  const { path, status, diff, output, open } = row
-  const running = status === 'pending' || status === 'in_progress'
+  const { path, status, diff } = row
   return (
-    <LoudRow
+    <ToolRow
       mark={changeMark(status, diff)}
-      subject={path ?? 'a file the record did not name'}
-      trailing={diff !== null && <Churn diff={diff} />}
+      subject={
+        <span className="flex min-w-0 items-baseline gap-snug">
+          {diff !== null && <Churn diff={diff} />}
+          <PathSubject path={path} absent="a file the record did not name" />
+        </span>
+      }
+      // A patch reaches the box's edges. It has a line-number gutter of its own to align, and its
+      // +/- bands only read as bands when they span the full width — inset, they stripe short of the
+      // border and the gutter answers to nothing. The prose that can accompany one comes back to the
+      // column itself, below.
+      bleed
     >
-      {running && (
-        <Text variant="code" className="text-foreground-faint">
-          no result yet: this change has not been reported back
-        </Text>
+      {mutationBody(row)}
+    </ToolRow>
+  )
+}
+
+/** Everything the row opens onto, in one place so `ToolRow` can ask whether there IS anything —
+ * a row with no patch, no output and nothing to explain must render inert rather than as a caret
+ * onto an empty box. `null`, not an empty fragment, because a fragment is truthy. */
+function mutationBody({ path, status, diff, output }: MutationRowModel): React.ReactNode {
+  if (status === 'pending' || status === 'in_progress') {
+    return (
+      <Text variant="code" className={cn(BODY_INSET, 'text-foreground-faint')}>
+        no result yet: this change has not been reported back
+      </Text>
+    )
+  }
+  if (diff === null && output === null) {
+    return (
+      <Text variant="code" className={cn(BODY_INSET, 'text-foreground-faint')}>
+        {missingDiffReason(status)}
+      </Text>
+    )
+  }
+  return (
+    <>
+      {/* Unframed: the row's opened box is the boundary, and a patch bringing its own would nest a
+          border inside a border. */}
+      {diff !== null && (
+        <DiffView hunks={diff.hunks} maxHunks={FEED_HUNK_BOUND} path={path} framed={false} />
       )}
-      {!running && diff === null && output === null && (
-        <Text variant="code" className="text-foreground-faint">
-          {missingDiffReason(status)}
-        </Text>
+      {/* What the call printed — for a FAILED change, the only thing that says why it did not land.
+          Back on the prose column the patch above it gave up: it has no gutter of its own to line
+          up, so at the box's edge it would be the one block on the surface starting nowhere. */}
+      {output !== null && (
+        <div className={BODY_INSET}>
+          <CallOutput output={output} />
+        </div>
       )}
-      {diff !== null && <DiffView hunks={diff.hunks} maxHunks={FEED_HUNK_BOUND} />}
-      {/* What the call printed, where it printed anything: for a FAILED change that text is the only
-          thing that says why the edit did not land, so the derivation opens it. */}
-      {output !== null && <CallOutput output={output} defaultOpen={open} />}
-    </LoudRow>
+    </>
   )
 }

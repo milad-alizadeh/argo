@@ -11,6 +11,9 @@ import { ANCHOR } from './feedScroll'
 export interface MinimapTick {
   key: string
   kind: string
+  /** The row broke. Read off the rendered element rather than re-derived, so the strip and the
+   * feed can never disagree about which calls failed. */
+  failed: boolean
   top: number
   height: number
 }
@@ -31,12 +34,21 @@ type Measure = (element: HTMLElement) => Extent
 function ticksOf(section: HTMLElement, extentOf: Measure): MinimapTick[] {
   const seam = section.querySelector<HTMLElement>('[data-component="FeedSeam"]')
   const head: MinimapTick[] = seam
-    ? [{ key: 'seam', kind: 'prompt', top: extentOf(section).top, height: extentOf(seam).height }]
+    ? [
+        {
+          key: 'seam',
+          kind: 'prompt',
+          failed: false,
+          top: extentOf(section).top,
+          height: extentOf(seam).height,
+        },
+      ]
     : []
   return head.concat(
     [...section.querySelectorAll<HTMLElement>('[data-feedrow]')].map((row, index) => ({
       key: `row-${index}`,
       kind: row.getAttribute('data-feedrow') ?? 'call',
+      failed: row.hasAttribute('data-feedfailed'),
       ...extentOf(row),
     })),
   )

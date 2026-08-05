@@ -133,7 +133,7 @@ export function FileDiff({
       {!viewed && (
         <>
           <div className="px-inset py-snug">
-            <DiffView hunks={hunks} />
+            <DiffView hunks={hunks} path={path} />
           </div>
           {findings.length > 0 && (
             <div className="grid gap-gap px-inset pb-inset">

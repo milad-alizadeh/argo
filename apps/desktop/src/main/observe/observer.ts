@@ -66,7 +66,9 @@ async function read(context: Context, path: string): Promise<void> {
     const contents = await readFile(path, 'utf8')
     // The disk reader is supplied HERE and nowhere else: this is the only caller with a real
     // filesystem under it, and every test's parse therefore reports only what the record carried.
-    const parsed = parseTranscript(basename(path, '.jsonl'), contents.split('\n'), readImageFile)
+    const parsed = parseTranscript(basename(path, '.jsonl'), contents.split('\n'), {
+      readImage: readImageFile,
+    })
     context.byPath.set(path, parsed)
   } catch {
     // A file that vanished between the watch event and the read is simply no longer observed;

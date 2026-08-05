@@ -225,6 +225,32 @@
   --signal-warn: var(--status-attention);
   --signal-bad: var(--status-fail);
 
+  /* Syntax palette — the names shiki's css-variables theme resolves against, so a highlighted
+   * patch is on the cockpit's own palette and follows the light/dark switch. Every value comes
+   * from an anchor already in this file; a highlighter is not a licence for a second palette,
+   * and a vendored VS Code theme would put one on screen beside ours.
+   *
+   * Six roles, not sixty: a diff is read to see WHAT changed, and the distinctions worth an ink
+   * are structure (keyword), data (string, number), and the parts that are only ever noise
+   * (comment, punctuation). Everything else falls to the body ink, which is what makes the
+   * coloured pieces legible as the exceptions they are.
+   *
+   * The `token-` infix is shiki's own, not ours — these names are what its css-variables theme
+   * emits, so they are spelled its way rather than the way this file would have named them.
+   *
+   * Light theme. The DARK end of each ramp, for the same reason the dark theme takes the light
+   * end: contrast against the surface the code sits on, read line by line rather than glanced at. */
+  --shiki-foreground: var(--graphite-700);
+  --shiki-token-comment: var(--bone-700);
+  --shiki-token-keyword: var(--terracotta-700);
+  --shiki-token-string: var(--moss-700);
+  --shiki-token-string-expression: var(--moss-700);
+  --shiki-token-constant: var(--teal-700);
+  --shiki-token-function: var(--gold-700);
+  --shiki-token-parameter: var(--graphite-700);
+  --shiki-token-punctuation: var(--slate-600);
+  --shiki-token-link: var(--gold-700);
+
   /* `well` is a recessed fill, not a shadow: #262 settled depth as brightness only,
    * so the plane family carries cast and there is no shadow ladder. Pair it with
    * `inset-lip` for a track pressed INTO its bar — that is the house segmented-control
@@ -350,6 +376,28 @@
   --signal-warn: var(--status-attention);
   --signal-bad: var(--status-fail);
 
+  /* Syntax palette, dark. The 300 rung throughout — the ramp's LIGHTEST chromatic step.
+   *
+   * This is deliberately brighter than anywhere else in the cockpit spends these hues, and the
+   * reason is that a diff is the one surface here read line by line rather than glanced at. The
+   * mid-ramp steps that make a roster chip sit back make code illegible: 500-on-graphite is a
+   * three-to-one contrast at 12px, so a highlighted patch reads as grey with a faint tint and the
+   * highlighting costs more than it gives. Code is also the only text that sits on a TINTED row
+   * (the add/del bands), which takes another step of contrast out of it.
+   *
+   * `foreground` is the body ink rather than the soft one for the same reason: most of a patch is
+   * unhighlighted, so the base rung is what legibility actually rests on. */
+  --shiki-foreground: var(--bone-200);
+  --shiki-token-comment: var(--bone-500);
+  --shiki-token-keyword: var(--terracotta-300);
+  --shiki-token-string: var(--moss-300);
+  --shiki-token-string-expression: var(--moss-300);
+  --shiki-token-constant: var(--teal-300);
+  --shiki-token-function: var(--gold-300);
+  --shiki-token-parameter: var(--bone-200);
+  --shiki-token-punctuation: var(--slate-300);
+  --shiki-token-link: var(--gold-300);
+
   --well: color-mix(in srgb, black 15%, transparent);
 
   /* On dark the raised face lifts toward the graphite mids and its lip is bone, which is the
@@ -373,7 +421,7 @@
   --sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
 
-  /* Typography roles — ONE sans ladder at 9/11/13/15 (+19 display, +23 hero), every
+  /* Typography roles — ONE sans ladder at 11/13/15/17 (+19 display, +23 hero), every
    * step 2px. This ladder IS the cockpit's density: it is the Penumbra prototypes' own
    * measure, decided here rather than deferred per surface. All further hierarchy
    * is carried inside a size by weight, case+tracking, or line-height, never by a
@@ -382,6 +430,18 @@
    * to text-* utilities in globals.css (which also adds the uppercase /
    * tabular-nums / mono facets where a role demands them). A new size snaps to a
    * role or gets promoted here, never inlined.
+   *
+   * THE LADDER MOVED UP ONE RUNG (was 9/11/13/15). The prototypes' measure was simply too
+   * small to read: 11px reading text sits below every desktop tool the cockpit sits beside,
+   * and the feed — a wall of dense mono, which is the surface people actually stare at —
+   * was the place it stopped being a density choice and started being a squint.
+   *
+   * Every rung shifted TOGETHER, which is the only way to move it. Raising the dense roles
+   * alone would have put `row` at 13px, the exact size of `title` — the rung above it —
+   * so a list row and the panel heading over it would have become the same size and the
+   * hierarchy between them would have gone. `meta` at 10px would have been a 1px step,
+   * which this contract bans by name. Relative distances are unchanged; `display` and
+   * `hero` stay where they are because the gap below them absorbs the shift.
    *
    * Weights run LIGHT: 400 is the ladder's baseline and only `row-strong` reaches past
    * it. Hierarchy at these sizes is carried by size, case and colour — a dense 11px row
@@ -406,59 +466,59 @@
   --type-display-weight: 200;
   --type-display-tracking: 0.01em;
 
-  --type-headline: 15px; /* verdict hero, session-level headings */
-  --type-headline-leading: 20px;
+  --type-headline: 17px; /* verdict hero, session-level headings */
+  --type-headline-leading: 22px;
   --type-headline-weight: 400;
   --type-headline-tracking: -0.01em;
 
-  --type-title: 13px; /* now-line, a panel's or plane's single hero row */
-  --type-title-leading: 18px;
+  --type-title: 15px; /* now-line, a panel's or plane's single hero row */
+  --type-title-leading: 20px;
   --type-title-weight: 400;
   --type-title-tracking: -0.005em;
 
-  --type-row: 11px; /* list primary text */
-  --type-row-leading: 16px;
+  --type-row: 13px; /* list primary text */
+  --type-row-leading: 18px;
   --type-row-weight: 400;
   --type-row-tracking: 0em;
 
-  --type-row-strong: 11px; /* same size — weight differentiates: row titles, buttons */
-  --type-row-strong-leading: 16px;
+  --type-row-strong: 13px; /* same size — weight differentiates: row titles, buttons */
+  --type-row-strong-leading: 18px;
   --type-row-strong-weight: 500;
   --type-row-strong-tracking: 0em;
 
-  --type-prose: 11px; /* same size — leading differentiates: multi-line reading */
-  --type-prose-leading: 18px;
+  --type-prose: 13px; /* same size — leading differentiates: multi-line reading */
+  --type-prose-leading: 20px;
   --type-prose-weight: 400;
   --type-prose-tracking: 0em;
 
-  --type-meta: 9px; /* timestamps, counts, k/v keys (+ tabular-nums) */
+  --type-meta: 11px; /* timestamps, counts, k/v keys (+ tabular-nums) */
   /* 14, not 13: it matches the observed 1.5–1.6 leading cluster, and an even leading is
    * what keeps a meta-only chip an even number of pixels tall against the 4px rhythm
    * (ConsoleChannelTab's height canary counts this box). */
-  --type-meta-leading: 14px;
+  --type-meta-leading: 16px;
   --type-meta-weight: 400;
   --type-meta-tracking: 0.02em;
 
-  --type-tag: 9px; /* state chips, severity words (+ uppercase) */
-  --type-tag-leading: 12px;
+  --type-tag: 11px; /* state chips, severity words (+ uppercase) */
+  --type-tag-leading: 14px;
   --type-tag-weight: 500;
   --type-tag-tracking: 0.14em;
 
-  --type-eyebrow: 9px; /* section headers (+ uppercase, wider tracking, lighter) */
-  --type-eyebrow-leading: 12px;
+  --type-eyebrow: 11px; /* section headers (+ uppercase, wider tracking, lighter) */
+  --type-eyebrow-leading: 14px;
   --type-eyebrow-weight: 400;
   --type-eyebrow-tracking: 0.22em;
 
-  --type-code: 11px; /* terminal, diff hunks, code blocks (+ mono) */
-  --type-code-leading: 18px;
+  --type-code: 13px; /* terminal, diff hunks, code blocks (+ mono) */
+  --type-code-leading: 20px;
   --type-code-weight: 400;
   --type-code-tracking: 0em;
 
   /* The one deliberately off-ladder size: mono renders ~1px larger than sans at the
    * same value, so an inline path or SHA inside an 11px row is set at 10px to match
    * it optically. Never a starting point for a new size. */
-  --type-code-inline: 10px;
-  --type-code-inline-leading: 15px;
+  --type-code-inline: 12px;
+  --type-code-inline-leading: 18px;
   --type-code-inline-weight: 400;
   --type-code-inline-tracking: 0em;
 
@@ -493,6 +553,10 @@
    * read. The nav rail's own marks ride an `sm` box at the larger row role and sit inside the same
    * width, which is what keeps the two lists on one axis. */
   --space-mark-col: 16px;
+  /* The left padding of a feed row's opened BOX, so its first character sits under the row's GLYPH
+   * rather than under the caret that opened it. Derived from the two things it depends on — the
+   * caret's cell and the gap after it — so it cannot drift out of alignment when either changes. */
+  --space-body-inset: calc(var(--space-mark-col) + var(--space-snug));
 
   /* Shell chrome geometry (#264). Structural boxes rather than rhythm steps: they hold
    * the chrome's columns, and the traffic-light reserve is fixed by macOS rather than by
@@ -527,6 +591,14 @@
    * rather than left implicit so a future build reads the same constant instead of
    * re-measuring a prototype. */
   --strip-height: 38px;
+
+  /* The pane header band (h-band): the chapter seam and the agents rail's header are meant to read
+   * as ONE rule across the surface, so their height is a stated constant rather than whatever each
+   * one's contents happen to measure. Shrink-wrapped they came out 29px and 30.75px — a 9px eyebrow
+   * beside an icon button does not measure the same as an 11px title beside a dropdown — and the two
+   * hairlines then missed each other by not quite two pixels, which reads as a join that broke
+   * rather than as a rule that continues. Sized to the taller of the two so nothing was clipped. */
+  --band-height: 31px;
 
   /* Radius ladder — a doubling from the hair to the plane. `--radius` is the shadcn
    * base and stays bound to the md step. */

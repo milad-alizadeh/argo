@@ -26,7 +26,7 @@ describe('a folded run of quiet work', () => {
       ]),
     )
 
-    expect(rows).toEqual([
+    expect(rows).toMatchObject([
       {
         kind: 'quiet',
         key: 'quiet:r0',
@@ -36,6 +36,28 @@ describe('a folded run of quiet work', () => {
         ],
       },
     ])
+    expect(rows).toHaveLength(1)
+  })
+
+  // Folding is not discarding. The counts are the row; the calls are what it opens onto, and
+  // without them "read 3" is a claim with no way to check it anywhere in the app.
+  it('keeps the calls it folded, in the order they happened', () => {
+    const rows = feedRows(
+      anAgent([
+        aTurn({
+          id: 't1',
+          toolCalls: [...reads(2), aCall({ id: 's1', name: 'Grep', kind: 'search' })],
+        }),
+      ]),
+    )
+
+    expect(rows[0]).toMatchObject({
+      calls: [
+        { key: 'quiet-call:r0', word: 'read' },
+        { key: 'quiet-call:r1', word: 'read' },
+        { key: 'quiet-call:s1', word: 'searched' },
+      ],
+    })
   })
 
   // A count is not a sentence: "read a file, read a file, read a file" is what a host-style summary
@@ -43,7 +65,7 @@ describe('a folded run of quiet work', () => {
   it('counts a run of thirty as one row rather than thirty labels', () => {
     const rows = feedRows(anAgent([aTurn({ id: 't1', toolCalls: reads(30) })]))
 
-    expect(rows).toEqual([
+    expect(rows).toMatchObject([
       { kind: 'quiet', key: 'quiet:r0', counts: [{ word: 'read', count: 30 }] },
     ])
   })
@@ -59,7 +81,7 @@ describe('a folded run of quiet work', () => {
       ]),
     )
 
-    expect(rows).toEqual([
+    expect(rows).toMatchObject([
       { kind: 'quiet', key: 'quiet:f', counts: [{ word: 'fetched', count: 1 }] },
     ])
   })

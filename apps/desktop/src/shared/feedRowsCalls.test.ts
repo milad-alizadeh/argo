@@ -11,34 +11,44 @@ const rowOf = (call: ToolCall) => feedRows(anAgent([aTurn({ id: 't1', toolCalls:
 const aCommand = (over: Partial<ToolCall> = {}): ToolCall =>
   aCall({ id: 'x', name: 'Bash', kind: 'execute', target: 'bun run test', ...over })
 
-// `open` is the DERIVATION's decision, not the component's — which is what keeps "a failure shows
-// what went wrong" a test rather than a screenshot.
+// A build log: long enough to be worth a click rather than the column it would cost.
+const A_LOG = Array.from({ length: 40 }, (_, line) => `[${line}] compiled module`).join('\n')
+
+// No row carries an `open`: every body on this surface is closed until asked for, which is a
+// structural fact (there is no field to set) rather than a default somebody could flip per row.
 const CALLS: readonly [string, ToolCall, Record<string, unknown>][] = [
   [
-    'a command shows the line it ran and keeps its output closed',
-    aCommand({ result: anOutput('12 pass') }),
-    { kind: 'call', callKind: 'execute', target: 'bun run test', status: 'completed', open: false },
+    'a command shows the line it ran and holds its log behind a click',
+    aCommand({ result: anOutput(A_LOG) }),
+    { kind: 'call', callKind: 'execute', target: 'bun run test', status: 'completed' },
+  ],
+  // Length decides nothing. A column where a row's height depends on how much it happened to print
+  // is a column you cannot skim, and skimming is the whole job of the feed.
+  [
+    'a short result is carried like any other, not shown by virtue of being short',
+    aCommand({ result: anOutput('Set effort level to medium') }),
+    { kind: 'call', status: 'completed', output: { text: 'Set effort level to medium' } },
   ],
   [
-    'a failed command opens its output, because the thing that went wrong is the thing you see',
+    'a failed command carries its output, which its mark and ring say is worth opening',
     aCommand({ status: 'failed', result: anOutput('error TS2345') }),
-    { kind: 'call', status: 'failed', output: { text: 'error TS2345' }, open: true },
+    { kind: 'call', status: 'failed', output: { text: 'error TS2345' } },
   ],
   [
-    'a failed read is loud too, and opens what it printed',
+    'a failed read is loud too, and carries what it printed',
     aCall({ id: 'x', status: 'failed', result: anOutput('File does not exist.') }),
-    { kind: 'call', callKind: 'read', status: 'failed', open: true },
+    { kind: 'call', callKind: 'read', status: 'failed' },
   ],
   // An expandable that opens onto nothing is a row that lied about having something behind it.
   [
     'a call that printed nothing carries no output rather than an empty one',
     aCommand({ result: null }),
-    { kind: 'call', output: null, open: false },
+    { kind: 'call', output: null },
   ],
   [
     'a failed call that printed nothing still says it failed, with nothing to open',
     aCommand({ status: 'failed', result: null }),
-    { kind: 'call', status: 'failed', output: null, open: true },
+    { kind: 'call', status: 'failed', output: null },
   ],
   // A command still running has printed nothing yet, and the row must not read as finished.
   [
@@ -78,7 +88,6 @@ describe('a mutation that failed', () => {
       status: 'failed',
       diff: null,
       output: { text: 'EACCES: denied' },
-      open: true,
     })
   })
 
@@ -88,7 +97,6 @@ describe('a mutation that failed', () => {
     expect(row).toMatchObject({
       kind: 'mutation',
       output: null,
-      open: false,
       diff: { change: 'modify' },
     })
   })

@@ -1,3 +1,4 @@
+import type { FeedRow } from '@shared'
 import { Fragment, useRef } from 'react'
 import type { ChapterModel } from '../interiorTimeline'
 import type { PlanProgressModel } from '../sessionPlan'
@@ -23,6 +24,28 @@ const TIMELINE_CSS = `
   to { top: 100%; transform: translateY(-100%); }
 }
 `
+
+/** One chapter's rows under its seam, or NOTHING where the turn produced none.
+ *
+ * An exchange that produced nothing is a real fact — you ran `/effort` and the agent said nothing
+ * back — and its seam still stands to say so. What it must not do is stand a region of empty
+ * padding under that seam: an empty band between two rules reads as content that failed to load,
+ * which is the one thing it does not mean. */
+function ChapterBody({ rows }: { rows: readonly FeedRow[] }): React.JSX.Element | null {
+  const segments = segmentsOf(rows)
+  if (segments.length === 0) return null
+  return (
+    <div className="flex max-w-[78ch] flex-col gap-region pt-region">
+      {segments.map((segment) =>
+        segment.kind === 'shots' ? (
+          <ShotGallery key={segment.key} rows={segment.shots} />
+        ) : (
+          <TurnFeed key={segment.key} rows={segment.rows} />
+        ),
+      )}
+    </div>
+  )
+}
 
 /**
  * Organism: one agent's feed — full-width chapters under sticky gold seams, the density gutter as
@@ -62,19 +85,15 @@ export function FeedSurface({
         {chapters.map((chapter, index) => (
           <Fragment key={chapter.key}>
             {/* Where one turn ends and the next begins, DRAWN: a full-width rule in the middle of
-                the gap, so the boundary is a line you see rather than air you infer. */}
+                the gap, so the boundary is a line you see rather than air you infer.
+                `my-plane` is the WHOLE of the space around it — the body above carries no bottom
+                padding of its own, so the rule sits the same distance from the last row above it
+                as from the seam below. Padding on both would put a region-plus-plane above the
+                line and a plane below, which reads as a rule belonging to the turn beneath. */}
             {index > 0 && <div aria-hidden className="my-plane h-px shrink-0 bg-foreground/15" />}
             <section {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
               <FeedSeam chapter={chapter} plan={plan} />
-              <div className="flex max-w-[78ch] flex-col gap-region py-region">
-                {segmentsOf(chapter.rows).map((segment) =>
-                  segment.kind === 'shots' ? (
-                    <ShotGallery key={segment.key} rows={segment.shots} />
-                  ) : (
-                    <TurnFeed key={segment.key} rows={segment.rows} />
-                  ),
-                )}
-              </div>
+              <ChapterBody rows={chapter.rows} />
             </section>
           </Fragment>
         ))}

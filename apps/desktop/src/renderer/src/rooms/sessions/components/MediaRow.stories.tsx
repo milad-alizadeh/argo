@@ -10,7 +10,6 @@ const row = (over: Partial<MediaRowModel> = {}): MediaRowModel => ({
   subject: '/tmp/argo-shots/cockpit-after.png',
   status: 'completed',
   media: media(),
-  open: true,
   ...over,
 })
 
@@ -79,25 +78,25 @@ export const FileGone: Story = {
   },
 }
 
-/** Past the decode bound. Older shots keep their frame, their path and their affordance and decode
- * when asked — a turn that took thirty full-window screenshots must not hold thirty bitmaps. */
-export const DecodeOnDemand: Story = {
-  args: { row: row({ open: false }) },
+/** The picture can be put away, on the SAME caret every other row on the surface uses. It is the one
+ * row that starts open — a picture is the fact rather than evidence for it — but closing it is the
+ * ordinary row behaviour and not a second mechanism of its own, and a closed row holds no bitmap. */
+export const Closable: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.queryByRole('img')).not.toBeInTheDocument()
-    await userEvent.click(canvas.getByRole('button', { name: /show image/ }))
     await expect(canvas.getByRole('img')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button'))
+    await expect(canvas.queryByRole('img')).not.toBeInTheDocument()
   },
 }
 
 /** The call broke and still returned what it had looked at. The picture is the fact worth showing, so
- * it stays — and the ring is what stops the row reading as an ordinary successful look. */
+ * it stays — and the red mark is what stops the row reading as an ordinary successful look. */
 export const Failed: Story = {
   args: { row: row({ status: 'failed' }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('failed')).toBeInTheDocument()
+    await expect(canvas.getByText('Failed')).toBeInTheDocument()
     await expect(canvas.getByRole('img')).toBeInTheDocument()
   },
 }

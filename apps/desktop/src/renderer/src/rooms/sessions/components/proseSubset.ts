@@ -4,6 +4,7 @@ import type { Nodes, Root } from 'mdast'
 import type {} from 'remark-parse'
 import type { Plugin } from 'unified'
 import { visit } from 'unist-util-visit'
+import { linkifyBareUrls } from './linkify'
 
 /** micromark construct names the parser is told to forget. Disabling a construct is what makes the
  * exclusion hold BY CONSTRUCTION: its source is never tokenized, so it survives as ordinary text
@@ -65,4 +66,11 @@ const literaliseWhatDisablingCannot: Plugin<[], Root> = () => (tree, file) => {
 }
 
 /** The parse policy, in the order it applies. */
-export const PROSE_SUBSET = [forgetConstructs, literaliseWhatDisablingCannot]
+// ORDER IS LOAD-BEARING: `linkifyBareUrls` runs BEFORE the literalising pass, not after.
+//
+// Literalising hands a refused construct back as the characters that wrote it — `![alt](https://…)`
+// for an image, a whole unclosed fence for a fence. Those are TEXT nodes, so a linkifier running
+// afterwards finds the URLs inside them and makes them anchors, resurrecting as a link exactly what
+// the subset had just refused. Running first, it sees only genuine prose: an image is still an
+// `image` node and a fence still a `code` node, and neither is a text node for it to touch.
+export const PROSE_SUBSET = [forgetConstructs, linkifyBareUrls, literaliseWhatDisablingCannot]

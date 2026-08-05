@@ -11,7 +11,6 @@ const row = (over: Partial<MutationRowModel> = {}): MutationRowModel => ({
   status: 'completed',
   diff: aDiff(),
   output: null,
-  open: false,
   ...over,
 })
 
@@ -42,7 +41,7 @@ type Story = StoryObj<typeof meta>
 export const Modified: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('edited')).toBeInTheDocument()
+    await expect(canvas.getByText('Edit')).toBeInTheDocument()
     await expect(canvas.getByText('+6')).toBeInTheDocument()
     await expect(canvas.getByText('-1')).toBeInTheDocument()
   },
@@ -58,7 +57,7 @@ export const Created: Story = {
     }),
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('created')).toBeInTheDocument()
+    await expect(within(canvasElement).getByText('Create')).toBeInTheDocument()
   },
 }
 
@@ -73,7 +72,7 @@ export const Deleted: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('deleted')).toBeInTheDocument()
+    await expect(canvas.getByText('Delete')).toBeInTheDocument()
     await expect(canvas.getByText('-4')).toBeInTheDocument()
   },
 }
@@ -83,13 +82,20 @@ export const Deleted: Story = {
 export const OverTheBound: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByRole('button', { name: /show 1 more hunk$/ })).toBeInTheDocument()
+    // The row's own caret first — the diff is behind it like every other row's body — then the
+    // hunk bound's, which is a second affordance INSIDE the patch.
     await userEvent.click(canvas.getByRole('button'))
-    await expect(canvas.getByText(/this\.#keys\.unshift/)).toBeInTheDocument()
+    await expect(canvas.getByRole('button', { name: /show 1 more hunk$/ })).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button', { name: /show 1 more hunk$/ }))
+    // Read off the rendered TEXT rather than with `getByText`: a highlighted line is one span per
+    // token, so no single element holds the whole expression and an element-scoped matcher would
+    // fail on code that is on screen and correct.
+    await expect(canvasElement.textContent).toContain('this.#keys.unshift')
   },
 }
 
-/** A patch that fits inside the bound shows no expander — there is nothing behind it to open. */
+/** A patch that fits inside the bound adds no SECOND expander once open — the row's own caret is
+ * the only one, because there are no further hunks behind it. */
 export const AtTheBound: Story = {
   args: {
     row: row({
@@ -97,7 +103,9 @@ export const AtTheBound: Story = {
     }),
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).queryByRole('button')).not.toBeInTheDocument()
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button'))
+    await expect(canvas.queryByRole('button', { name: /more hunk/ })).not.toBeInTheDocument()
   },
 }
 
@@ -107,7 +115,8 @@ export const Pending: Story = {
   args: { row: row({ status: 'pending', diff: null }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('editing')).toBeInTheDocument()
+    await expect(canvas.getByText('Edit')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button'))
     await expect(canvas.getByText(/no result yet/)).toBeInTheDocument()
   },
 }
@@ -123,8 +132,9 @@ export const NoDiffAvailable: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await expect(canvas.getByText('Edit')).toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button'))
     await expect(canvas.getByText('no diff available')).toBeInTheDocument()
-    await expect(canvas.getByText('edited')).toBeInTheDocument()
   },
 }
 
@@ -134,9 +144,10 @@ export const CompletedWithoutAPatch: Story = {
   args: { row: row({ path: 'resources/icon.png', diff: null }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('edited')).toBeInTheDocument()
-    await expect(canvas.getByText(/the record carried no patch/)).toBeInTheDocument()
+    await expect(canvas.getByText('Edit')).toBeInTheDocument()
     await expect(canvas.queryByText('editing')).not.toBeInTheDocument()
+    await userEvent.click(canvas.getByRole('button'))
+    await expect(canvas.getByText(/the record carried no patch/)).toBeInTheDocument()
   },
 }
 
@@ -145,13 +156,13 @@ export const CompletedWithoutAPatch: Story = {
 export const Failed: Story = {
   args: { row: row({ path: 'src/auth/x.ts', status: 'failed', diff: null }) },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('failed')).toBeInTheDocument()
+    await expect(within(canvasElement).getByText('Failed')).toBeInTheDocument()
   },
 }
 
-/** The change did not land AND the record said why. That text is the only thing on the row that
- * explains it, so it is open already: "no diff available" alone would leave the one useful fact
- * behind a click. */
+/** The change did not land AND the record said why. That text REPLACES "no diff available" behind
+ * the caret — the reason is the better answer, and printing both would spend two lines saying one
+ * thing. The row itself still reads as failed without opening anything. */
 export const FailedWithAReason: Story = {
   args: {
     row: row({
@@ -159,11 +170,11 @@ export const FailedWithAReason: Story = {
       status: 'failed',
       diff: null,
       output: { kind: 'output', tier: 'direct', text: "EACCES: permission denied, open 'x.ts'" },
-      open: true,
     }),
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button'))
     await expect(canvas.getByText(/EACCES/)).toBeInTheDocument()
     await expect(canvas.queryByText(/no diff available/)).not.toBeInTheDocument()
   },

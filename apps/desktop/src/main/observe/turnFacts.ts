@@ -47,44 +47,26 @@ export function contentParts(record: Record<string, unknown>): unknown[] {
   return isRecord(record.message) ? asArray(record.message.content) : []
 }
 
-/** One content part as prose, or `null` for a part that is neither — a tool call, or a `text` block
- * whose text is not a string. Absent rather than defaulted: an empty paragraph would render as a
- * blank row claiming the agent said nothing, which is not what an unreadable part means. */
+/**
+ * One content part as prose, or `null` for a part that is neither — a tool call, or a `text` block
+ * whose text is not a string.
+ *
+ * Absent rather than defaulted, and WHITESPACE counts as absent: a part with nothing in it is a
+ * part with nothing to read, and a row rendered for one is a row claiming the agent said something
+ * it did not. That case is not hypothetical — a model whose reasoning is encrypted writes its
+ * `thinking` blocks out empty, so a real session carries seventy of them, and each one drew a
+ * collapsed row whose one line was blank.
+ */
 export function proseFrom(part: unknown): Prose | null {
   if (!isRecord(part)) return null
-  if (part.type === 'text') {
-    const markdown = asString(part.text)
-    return markdown === null ? null : { kind: 'message', markdown }
-  }
+  if (part.type === 'text') return message(asString(part.text))
   if (part.type !== 'thinking') return null
   const markdown = asString(part.thinking)
-  return markdown === null ? null : { kind: 'thought', markdown }
+  return markdown === null || markdown.trim() === '' ? null : { kind: 'thought', markdown }
 }
 
-/**
- * The prompt that opened a Turn, verbatim: a user message's content is either a raw string or an
- * array of parts, and the first textual part is the prompt.
- *
- * Unclamped and untrimmed, unlike the session title's reading of the same field — the feed renders
- * the prompt as the agent received it, and trimming a prompt is already a rewording. Whitespace
- * alone is `null`, since there is no prompt in it to keep.
- */
-export function promptText(content: unknown): string | null {
-  const parts = typeof content === 'string' ? [content] : asArray(content)
-  for (const part of parts) {
-    const text = spokenText(part)
-    if (text !== null && text.trim() !== '') return text
-  }
-  return null
-}
-
-// A `text` part or a bare string, and nothing else: `thinking` inside a user record would be the
-// agent's reasoning rather than anything the user asked for.
-function spokenText(part: unknown): string | null {
-  if (typeof part === 'string') return part
-  const prose = proseFrom(part)
-  return prose !== null && prose.kind === 'message' ? prose.markdown : null
-}
+const message = (markdown: string | null): Prose | null =>
+  markdown === null || markdown.trim() === '' ? null : { kind: 'message', markdown }
 
 export function emptyTurn(id: string, startedAtMs: number | null): Turn {
   return {

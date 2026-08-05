@@ -33,6 +33,7 @@
     "node-pty": "^1.1.0",
     "radix-ui": "^1.6.2",
     "react-markdown": "^10.1.0",
+    "shiki": "^4.4.2",
     "tailwind-merge": "^3.6.0",
     "unist-util-visit": "^5.1.0",
     "zustand": "^5.0.14"

@@ -41,6 +41,10 @@ describe('the constructs the feed refuses', () => {
       syntax: 'a remote image',
       markdown: '![alt](https://elsewhere.test/x.png)',
       literal: '![alt](https',
+      // `<a` as well as `<img`: a refused image is handed back as the characters that wrote it, and
+      // the linkifier must not then find the URL inside those characters and make an anchor of it —
+      // which would resurrect as a link precisely what this subset had just refused. The guard is
+      // plugin ORDER (see `proseSubset.ts`), and this is what holds it.
       element: '<img',
     },
     {
@@ -108,5 +112,20 @@ describe('markup the agent left half-finished', () => {
     const html = render('```ts\nclosed\n```\n\n```ts\nopen\n\nthe row continues')
     expect(html.match(/<pre/g)).toHaveLength(1)
     expect(html).toContain('```ts\nopen')
+  })
+})
+
+describe('links', () => {
+  // Bare URLs are what agents actually write and what people paste. Neither markdown's `autolink`
+  // (forgotten by this subset) nor GFM's literal-autolink (never added) covers them.
+  it('makes a bare URL clickable, and opens it outside the cockpit', () => {
+    const html = render('see https://example.test/x for more')
+    expect(html).toContain('href="https://example.test/x"')
+    expect(html).toContain('target="_blank"')
+  })
+
+  it('leaves a refused construct literal rather than linking the URL inside it', () => {
+    const html = render('![alt](https://elsewhere.test/x.png)')
+    expect(html).not.toContain('<a ')
   })
 })

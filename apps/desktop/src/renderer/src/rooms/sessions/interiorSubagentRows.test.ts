@@ -61,7 +61,7 @@ describe('what a row says it cost', () => {
       ],
     })
     const row = subagentGroup(session, NOW)?.rows[0]
-    expect(row?.took).toBe('12 minutes')
+    expect(row?.took).toBe('12min')
     expect(row?.tokens).toBeNull()
   })
 
@@ -85,7 +85,7 @@ describe('what a row says it cost', () => {
       ],
     })
     const row = subagentGroup(session, NOW)?.rows[0]
-    expect(row?.took).toBe('4 minutes')
+    expect(row?.took).toBe('4min')
     expect(row?.tokens).toBe('86.3K')
   })
 

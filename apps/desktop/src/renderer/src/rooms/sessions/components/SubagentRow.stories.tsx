@@ -22,12 +22,17 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** One row: `dot · name · target · status`. Clicking it jumps the detail feed to its live feed. */
+/** One row: `dot · name · spend · duration`. Clicking it jumps the detail feed to its live feed.
+ *
+ * NO target column. It held the last file the delegate touched, and in a rail this width that came
+ * to about six characters — `grep -r…` — bought at the cost of the NAME, which is the one field
+ * that says which delegate you are looking at. A truncated fact is worth less than the field it
+ * displaced. */
 export const Row: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('correctness lens')).toBeInTheDocument()
-    await expect(canvas.getByText('rotation.ts')).toBeInTheDocument()
+    await expect(canvas.queryByText('rotation.ts')).not.toBeInTheDocument()
     await userEvent.click(canvas.getByRole('button'))
     await expect(args.onSelect).toHaveBeenCalledWith('subagent:correctness')
   },

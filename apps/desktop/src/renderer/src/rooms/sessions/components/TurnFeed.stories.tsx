@@ -43,10 +43,9 @@ const COMMAND: FeedRow = {
   target: 'bun run test',
   status: 'completed',
   output: null,
-  open: false,
 }
 
-const FAILED_CALL: FeedRow = { ...COMMAND, key: 'call:failed', status: 'failed', open: true }
+const FAILED_CALL: FeedRow = { ...COMMAND, key: 'call:failed', status: 'failed' }
 
 const meta = {
   title: 'Sessions/Activity/TurnFeed',
@@ -77,7 +76,7 @@ export const Exchange: Story = {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/Pull the token rotation/)).toBeInTheDocument()
     // Three calls, one line, in counts rather than in a sentence.
-    await expect(canvas.getByText('read 2 · searched 1')).toBeInTheDocument()
+    await expect(canvas.getByText('Read 2 · Searched 1')).toBeInTheDocument()
     // And the plan it wrote in the same breath, stated in a line where the revision happened.
     await expect(canvas.getByText('plan 2 of 4')).toBeInTheDocument()
     await expect(canvas.getByText(/legacy.ts holds two unrelated jobs/)).toBeInTheDocument()
@@ -85,10 +84,14 @@ export const Exchange: Story = {
     // for the answer.
     await expect(canvas.getByText(thoughtToggle)).toBeInTheDocument()
     await expect(canvas.queryByText(/every caller breaks at once/)).not.toBeInTheDocument()
-    // And the change it made in the middle of saying it, with its diff already on screen.
-    await expect(canvas.getByText('edited')).toBeInTheDocument()
-    await expect(canvas.getByText(/export class Rotation/)).toBeInTheDocument()
-    // The commands: each line shown, the finished one's output behind a click.
+    // And the change it made in the middle of saying it — the row on screen, its patch behind the
+    // same caret every other row's body sits behind, because a column of open diffs is a wall of
+    // code with the prose that explains it lost between the walls.
+    await expect(canvas.getByText('Edit')).toBeInTheDocument()
+    await expect(canvasElement.textContent).not.toContain('export class Rotation')
+    // The commands: each line on screen, and every result behind its own caret whatever its length.
+    // A column whose row heights depend on how much each call happened to print is one you cannot
+    // skim, and skimming is the whole job of this surface.
     await expect(canvas.getByText('bun run test')).toBeInTheDocument()
     await expect(canvas.getByText('bun run typecheck')).toBeInTheDocument()
     await expect(canvas.queryByText(/Ran 12 tests/)).not.toBeInTheDocument()
@@ -108,10 +111,10 @@ export const FoldsBrokenByEachLoudKind: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     // Four folds, never merged across the three loud rows between them.
-    await expect(canvas.getAllByText('read 2 · searched 1')).toHaveLength(4)
-    await expect(canvas.getByText('edited')).toBeInTheDocument()
-    await expect(canvas.getByText('failed')).toBeInTheDocument()
-    await expect(canvas.getByText('ran')).toBeInTheDocument()
+    await expect(canvas.getAllByText('Read 2 · Searched 1')).toHaveLength(4)
+    await expect(canvas.getByText('Edit')).toBeInTheDocument()
+    await expect(canvas.getByText('Failed')).toBeInTheDocument()
+    await expect(canvas.getByText('Run')).toBeInTheDocument()
   },
 }
 

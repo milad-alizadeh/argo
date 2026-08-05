@@ -20,10 +20,16 @@ import { buildSessionInterior, type SessionInteriorModel } from '../interiorMode
 import raw from './realSession.json'
 
 // FIXTURE, derived from a REAL Claude Code session on this machine (the #318 inline-media
-// implement run): twelve root turns, two review subagents, 250+ tool calls, real prompts and
-// real diffs. The JSON beside this file was emitted by the app's own transcript parser
-// (`main/observe/claudeTranscript.ts`) with long prose capped, so the surface is judged against
-// what observation actually yields rather than against hand-written miniatures.
+// implement run): two root turns, two review subagents, 226 tool calls, real prompts, real diffs
+// and the screenshots the agent actually looked at. The JSON beside this file is emitted by
+// `scripts/emit-real-session.mjs`, which runs the raw transcript through the app's OWN parser
+// (`main/observe/claudeTranscript.ts`) with tool output capped and the images downscaled — so the
+// surface is judged against what observation actually yields rather than against a miniature
+// somebody wrote to look like it.
+//
+// RE-EMIT IT WHEN THE PARSER CHANGES. A stale fixture pins the old reading and makes a fixed bug
+// look unfixed: this file carried twelve turns titled `<command-message>implement</command-message>`
+// for exactly as long as it went un-regenerated after the segmentation was corrected.
 //
 // The decoding below only NARROWS: a JSON import widens every enum to `string`, and these maps
 // walk each value back to its union via the shared const arrays — no field is invented.
@@ -75,7 +81,15 @@ function resultOf(result: RawResult | null): ToolResult | null {
   if (result === null) return null
   const tier: Tier = oneOf(TIERS, result.tier) ?? 'derived'
   if (result.kind === 'media') {
-    return { kind: 'media', tier, mediaType: result.mediaType ?? 'image/png', bytes: null }
+    return {
+      kind: 'media',
+      tier,
+      mediaType: result.mediaType ?? 'image/png',
+      // The pictures the agent actually looked at, downscaled by the emitter. `null` survives as
+      // `null` — one path in the source run genuinely could not be read, and keeping that row
+      // absent is what puts the honest-absence case on screen beside the ones that render.
+      bytes: result.bytes ?? null,
+    }
   }
   if (result.kind === 'diff') {
     return {
@@ -145,7 +159,12 @@ export const REAL_INTERIOR: SessionInteriorModel = buildSessionInterior({
   // fixture NOW.
   nowMs: (DATA.session.lastActivityAt ?? 0) + 60_000,
   link: {
-    titleSource: 'ticket',
+    // `derived`, not `ticket`: this run's transcript carries no `ai-title`, so the session's name
+    // falls back to its first prompt — `/effort` — and claiming the title came from the ticket
+    // would be a false provenance on the one segment whose whole job is to say where it came from.
+    // The chip then spells the intent out (`intent #318 Feed: inline media`), which is also the
+    // only place the ticket's own title reaches the screen.
+    titleSource: 'derived',
     intent: { number: 318, title: 'Feed: inline media' },
     mode: 'Code',
   },

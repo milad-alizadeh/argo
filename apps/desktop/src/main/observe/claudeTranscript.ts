@@ -1,6 +1,6 @@
+import { isHarnessMeta, userPrompt } from './harnessRecord'
 import { type ImageReader, NO_IMAGE_READER } from './mediaResult'
 import { createTreeBuilder } from './tree'
-import { promptText } from './turnFacts'
 import type { ParsedTranscript } from './types'
 import { asString, isRecord, parseLine, stringField, timestampMs } from './untrusted'
 
@@ -15,7 +15,7 @@ const PROMPT_CLAMP = 120
 // clamped, because a rail row has one line to spend. The two readings share one parse so a prompt
 // can never be found for the tree and missed for the title.
 function coercePromptText(content: unknown): string | null {
-  const text = promptText(content)
+  const text = userPrompt(content)
   return text === null ? null : text.trim().slice(0, PROMPT_CLAMP)
 }
 
@@ -36,19 +36,25 @@ export function emptyTranscript(sessionId: string): ParsedTranscript {
   }
 }
 
-/**
- * One raw transcript's lines → one tamed ParsedTranscript.
- *
- * `readImage` is the disk fallback for an image the record embedded no bytes for, defaulted to none:
- * a caller that supplies no reader gets only what the record itself carried, which is the honest
- * floor rather than a silently missing feature.
- */
+/** How to read one file, beyond its lines. An object rather than trailing positionals: both of
+ * these say something about the FILE rather than about the parse, and `parse(id, lines, reader,
+ * true)` at a call site says nothing about what `true` means. */
+export interface ParseOptions {
+  /** The disk fallback for an image the record embedded no bytes for. Defaulted to none: a caller
+   * that supplies no reader gets only what the record itself carried, which is the honest floor
+   * rather than a silently missing feature. */
+  readImage?: ImageReader
+  /** This file is a delegate's OWN transcript — see `createTreeBuilder`. */
+  sidechain?: boolean
+}
+
+/** One raw transcript's lines → one tamed ParsedTranscript. */
 export function parseTranscript(
   sessionId: string,
   lines: string[],
-  readImage: ImageReader = NO_IMAGE_READER,
+  { readImage = NO_IMAGE_READER, sidechain = false }: ParseOptions = {},
 ): ParsedTranscript {
-  const tree = createTreeBuilder(readImage)
+  const tree = createTreeBuilder(readImage, sidechain)
   const parsed = emptyTranscript(sessionId)
 
   for (const line of lines) {
@@ -60,6 +66,18 @@ export function parseTranscript(
 
   parsed.tree = tree.finish()
   return parsed
+}
+
+/** The session's name, from the first thing anyone actually asked for.
+ *
+ * The harness's own records are skipped here for the same reason the tree skips them: the FIRST
+ * user record of a `/implement` run is the local-command caveat, and a rail row titled
+ * `<local-command-caveat>Caveat: The messages below…` names no session. */
+function absorbFirstPrompt(parsed: ParsedTranscript, record: Record<string, unknown>): void {
+  if (isHarnessMeta(record) || parsed.firstPrompt !== null) return
+  const content = isRecord(record.message) ? record.message.content : null
+  const prompt = coercePromptText(content)
+  if (prompt !== null) parsed.firstPrompt = prompt
 }
 
 // Fold one record into the accumulator. Only the transcript types that carry chain or
@@ -78,9 +96,7 @@ function absorb(parsed: ParsedTranscript, record: Record<string, unknown>): void
     }
     case 'user': {
       absorbMessage(parsed, record)
-      const content = isRecord(record.message) ? record.message.content : null
-      const prompt = coercePromptText(content)
-      if (prompt !== null && parsed.firstPrompt === null) parsed.firstPrompt = prompt
+      absorbFirstPrompt(parsed, record)
       return
     }
     case 'assistant': {

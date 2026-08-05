@@ -57,6 +57,11 @@ export function SessionScreen({
       />
       {interior && (
         <>
+          {/* Held off the plane's corners. This splitter runs alongside a 16px-rounded card, and a
+              full-height hairline kept going straight past both corners while the plane's own edge
+              had already curved away — a line sticking out of the card at each end. Inset by the
+              radius it spans exactly the plane's straight edge. The 32px it gives up is hit target
+              on an ~875px column, and the arrow keys resize it regardless. */}
           <PanelSplitter
             orientation="v"
             label="Roster width"
@@ -64,6 +69,7 @@ export function SessionScreen({
             min={SPINE.roster.min}
             max={SPINE.roster.max}
             onResize={(px) => handlers.onResize('roster', px)}
+            className="my-plane-corner"
           />
           <SessionPlane interior={interior} layout={layout} attach={attach} handlers={handlers} />
         </>

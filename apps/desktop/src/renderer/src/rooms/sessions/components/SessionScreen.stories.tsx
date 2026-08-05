@@ -1,12 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { EXTERNAL, FRESH, interiorOf, RUNNING, withIntent } from '../__fixtures__/interior'
+import { EXTERNAL, FRESH, interiorOf, RUNNING } from '../__fixtures__/interior'
 import { REAL_INTERIOR, REAL_SESSION } from '../__fixtures__/realSession'
 import { buildSessionsRoomModel } from '../sessionsRoomModel'
 import { SPINE } from '../useSpineLayout'
 import { SessionScreen } from './SessionScreen'
 
-const ROSTER = [RUNNING, FRESH, EXTERNAL]
+// The REAL session leads the roster, and it is what the room opens on. The three hand-written
+// sessions stay only as the rail's other rows and as the two zero-states below — a roster of one is
+// not a roster, and neither an empty cockpit nor a read-only external session exists in this
+// transcript to be read from it.
+//
+// There is deliberately no second "here it is with real data" story. The default view of the room
+// IS the real one: a mocked session as the default is a surface tuned against prose somebody wrote
+// to make the layout look good, and every problem this fixture exposed — turn titles of harness
+// XML, seventy blank thought rows, a diff of one flat green — was invisible for exactly as long as
+// that was what the story showed.
+const ROSTER = [REAL_SESSION, RUNNING, FRESH, EXTERNAL]
 
 const LAYOUT = {
   roster: SPINE.roster.initial,
@@ -19,8 +29,8 @@ const meta = {
   component: SessionScreen,
   parameters: { layout: 'fullscreen' },
   args: {
-    roster: buildSessionsRoomModel({ sessions: ROSTER, selectedId: RUNNING.id }),
-    interior: withIntent(RUNNING),
+    roster: buildSessionsRoomModel({ sessions: ROSTER, selectedId: REAL_SESSION.id }),
+    interior: REAL_INTERIOR,
     layout: LAYOUT,
     handlers: {
       onSelectSession: fn(),
@@ -50,40 +60,28 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The room composed: the rail on the room's lit scene, the plane's one glass beside it. The rail row
- * and the header agree on the title because both read the same resolved name — that agreement is the
- * thing this story exists to prove, and no child can show it.
+ * The room composed, over a REAL session: the #318 implement run's own transcript, read by the
+ * app's own parser — two root turns, 226 tool calls, the screenshots the agent looked at, and its
+ * two review delegates in the agents rail with the token spend they actually reported.
+ *
+ * The rail row and the header agree on the title because both read the same resolved name — that
+ * agreement is the thing this story exists to prove, and no child can show it.
  */
 export const OpenSession: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const rail = canvas.getByRole('list', { name: 'Sessions' })
-    await expect(within(rail).getByText('Auth refactor')).toBeInTheDocument()
-    await expect(canvas.getByRole('heading', { name: 'Auth refactor' })).toBeInTheDocument()
-    await userEvent.click(within(rail).getByText('~/argo · explore join drift'))
-    await expect(args.handlers.onSelectSession).toHaveBeenCalledWith('watched')
-  },
-}
+    const title = REAL_SESSION.title
+    await expect(within(rail).getByText(title)).toBeInTheDocument()
+    await expect(canvas.getByRole('heading', { name: title })).toBeInTheDocument()
 
-/**
- * The room over a REAL session — the #318 implement run's own transcript, parsed by the app's
- * parser: twelve root turns, 250+ tool calls, and the two review subagents in the agents rail
- * with their real token spend. This is the density the mocked stories can't fake.
- */
-export const RealSession: Story = {
-  args: {
-    roster: buildSessionsRoomModel({
-      sessions: [REAL_SESSION, ...ROSTER],
-      selectedId: REAL_SESSION.id,
-    }),
-    interior: REAL_INTERIOR,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
+    // The run's two real delegates, from their own sidechain transcripts beside the root file.
     const agents = canvas.getByRole('list', { name: 'Agents' })
     await expect(within(agents).getByText('Main session')).toBeInTheDocument()
-    // The run's two real delegates, straight from the sidechain transcripts.
     await expect(within(agents).getAllByRole('listitem').length).toBeGreaterThanOrEqual(3)
+
+    await userEvent.click(within(rail).getByText('~/argo · explore join drift'))
+    await expect(args.handlers.onSelectSession).toHaveBeenCalledWith('watched')
   },
 }
 

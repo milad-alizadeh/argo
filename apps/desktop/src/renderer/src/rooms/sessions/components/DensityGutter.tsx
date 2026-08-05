@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
 import { type ChapterModel, chapterTitle } from '../interiorTimeline'
 import type { MinimapBlock, MinimapTick } from './minimapGeometry'
+import { markFor } from './minimapMatrix'
 
 // The feed's navigation: a SPATIAL index on its right edge rather than a textual one. It carries no
 // words — only where things are and what kind they were — so it cannot repeat the feed it maps.
@@ -12,31 +13,48 @@ import type { MinimapBlock, MinimapTick } from './minimapGeometry'
 // therefore the feed at 1:1 scale — the viewport window falls over precisely the events the pane is
 // showing, which is the whole claim a minimap makes.
 
-// One tone per row kind, MATCHED to what that row wears in the feed, so the strip is a legend you
-// never have to learn: gold is a prompt because the sticky seam is gold, teal is an edit because
-// the diff card's added lines are, bright is a screenshot.
-const ROW_TONE: Record<string, string> = {
-  prompt: 'bg-primary',
-  message: 'bg-foreground/45',
-  thought: 'bg-foreground/12',
-  mutation: 'bg-tone-run',
-  call: 'bg-foreground/25',
-  quiet: 'bg-foreground/10',
-  media: 'bg-foreground/70',
-  plan: 'bg-tone-amber/60',
-  compaction: 'bg-foreground/8',
-}
+// What each mark MEANS is one table, in `minimapMatrix.ts`: hue for the kind, width for how much
+// it is worth your attention, red and full width for anything that broke.
 
 const pct = (fraction: number): string => `${fraction * 100}%`
 
-/** A row at the exact fraction of the track its element occupies of the scroll. `min-h-px` so a
- * one-line row in a very long feed is faint rather than absent. */
+/** How tall one MARK may get, as a fraction of the whole track.
+ *
+ * A tick is an EVENT, and one event is worth one mark however much column it happened to occupy: an
+ * open diff is a thousand pixels of feed and still one edit. Uncapped, a handful of tall rows paint
+ * whole regions of the strip in their own tone — a session of fifty edits went solid teal and said
+ * nothing about where anything was. */
+const TICK_CAP = 0.012
+
+/**
+ * A row on the strip: a solid MARK at the top of where it sits, and — when the row runs longer than
+ * the mark — a faint EXTENT under it for the rest of its height.
+ *
+ * Both, because either alone lies. Height straight from the row paints a wall. Capping alone leaves
+ * a void: open one diff and the strip grows a blank region exactly where the most content is, which
+ * reads as "nothing happened here" — the same failure the cap was introduced to fix, arriving from
+ * the other side. So the mark says WHERE the event is and the extent says HOW MUCH SCROLL it costs,
+ * and they are told apart by weight rather than conflated into one bar.
+ */
 function Tick({ tick }: { tick: MinimapTick }): React.JSX.Element {
+  const mark = markFor(tick.kind, tick.failed)
+  const capped = Math.min(tick.height, TICK_CAP)
   return (
-    <div
-      style={{ top: pct(tick.top), height: pct(tick.height) }}
-      className={cn('absolute inset-x-0 min-h-px', ROW_TONE[tick.kind] ?? 'bg-foreground/25')}
-    />
+    <>
+      {tick.height > TICK_CAP && (
+        <div
+          style={{ top: pct(tick.top), height: pct(tick.height) }}
+          className={cn('absolute right-0 left-0 rounded-[1px] opacity-20', mark.tone, mark.inset)}
+        />
+      )}
+      {/* `min-h-px` so a one-line row in a very long feed is faint rather than absent. `left-0`
+          always; `mark.inset` is a RIGHT inset, so a short mark stops early instead of hanging off
+          the far edge — the strip then reads the same direction as the column it maps. */}
+      <div
+        style={{ top: pct(tick.top), height: pct(capped) }}
+        className={cn('absolute right-0 left-0 min-h-px rounded-[1px]', mark.tone, mark.inset)}
+      />
+    </>
   )
 }
 
@@ -60,7 +78,12 @@ function ChapterBlock({
       // Each turn is its OWN BLOCK — a washed ground behind its ticks — so where one ends and the
       // next begins is visible in the map itself. NO highlight on an active block: where you are is
       // the viewport window's one job.
-      className="group absolute inset-x-0 cursor-pointer rounded-sm bg-foreground/4"
+      //
+      // The ground has to out-read the faintest tick standing on it or the block boundary is the
+      // one thing in the strip you cannot see, which is why it sits above the fringe tones rather
+      // than under them, and why the seam between two blocks is DRAWN as a hairline rather than
+      // left to the gap between two washes of nearly the same value.
+      className="group absolute inset-x-0 cursor-pointer overflow-hidden rounded-sm border-t border-t-foreground/20 bg-foreground/8"
     >
       {block.ticks.map((tick) => (
         <Tick key={tick.key} tick={tick} />
@@ -122,11 +145,24 @@ export function DensityGutter({
         {blocks.map((block) => (
           <ChapterBlock key={block.key} block={block} title={titleOf(block.key)} onJump={onJump} />
         ))}
-        {/* Where you are, as a window over the strip rather than a thumb beside it: the ticks under
-            it stay visible, so the window says "you are looking at these events". */}
+        {/* WHERE YOU ARE — the loudest object in the gutter, and deliberately so: it is the only
+            thing here you look for rather than at, and a strip you cannot find yourself on is a
+            strip you stop using.
+            It BRIGHTENS what it covers rather than tinting over it. A wash of a hue disappears the
+            moment it sits on a dense stretch — exactly where you go looking for it — and raising
+            the wash buries the ticks it exists to point at. Backdrop brightness lifts the marks
+            themselves, so the window is most legible where the strip is busiest.
+            The frame is a full gold border rather than a hairline ring, overhanging the track on
+            both sides so it reads as a BRACKET around the events rather than as one more band among
+            them.
+            And the enormous outer shadow is a SPOTLIGHT: a 9999px spread of near-black, clipped by
+            the track's `overflow-hidden`, so everything outside the window is dimmed rather than
+            the window being brightened against equals. That is the only treatment that scales — a
+            window made louder still competes with two hundred marks, while a window that is the
+            one thing NOT dimmed cannot be lost however dense the strip gets. */}
         <div
           ref={windowRef}
-          className="feed-minimap-window pointer-events-none absolute inset-x-0 h-full rounded-sm bg-primary/10 ring-1 ring-primary/40"
+          className="feed-minimap-window pointer-events-none absolute -inset-x-hair h-full rounded-sm border-2 border-primary bg-primary/10 shadow-[0_0_0_9999px_rgba(0,0,0,0.66),0_0_10px_2px_var(--color-primary)] backdrop-brightness-[1.75]"
         />
       </div>
     </div>

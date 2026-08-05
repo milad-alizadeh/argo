@@ -1,4 +1,6 @@
-import type { DiffHunk, DiffLine } from '@shared'
+import type { DiffHunk } from '@shared'
+import { languageOf } from './codeHighlight'
+import { DiffLines } from './DiffLines'
 import { Text } from './Text'
 import { useDisclosure } from './useDisclosure'
 
@@ -14,39 +16,11 @@ import { useDisclosure } from './useDisclosure'
 // for a feed row, current-state for Delivery — is the caller's to say, above this component, which
 // is what keeps the sharing from making a feed diff read as an authoritative current-state view.
 
-// The marker each side prints. Colour alone cannot carry meaning, and a diff already has its own
-// notation for this — so the character is rendered rather than replaced by an icon.
-const SIDE_MARKER: Readonly<Record<DiffLine['side'], string>> = { add: '+', del: '-', context: ' ' }
-
-const SIDE_TONE: Readonly<Record<DiffLine['side'], string>> = {
-  add: 'text-signal-ok',
-  del: 'text-signal-bad',
-  context: 'text-foreground-faint',
-}
-
-/** Where in the file a hunk picks up, so a bounded diff says WHERE it is showing and not just what.
- * Drawn only when a patch has more than one hunk — on a single-hunk diff it is a line of chrome
- * over the only thing there is to read. */
-function HunkHead({ hunk }: { hunk: DiffHunk }): React.JSX.Element {
-  return (
-    <Text as="div" variant="code" className="text-foreground-faint">
-      {`line ${hunk.newStart}`}
-    </Text>
-  )
-}
-
-function HunkLines({ hunk }: { hunk: DiffHunk }): React.JSX.Element {
-  return (
-    <Text as="div" variant="code" className="whitespace-pre-wrap break-words">
-      {hunk.lines.map((line, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: a static ordered patch — the position IS the line's identity.
-        <span key={index} className={SIDE_TONE[line.side]}>
-          {`${SIDE_MARKER[line.side]}${line.text}`}
-          {index < hunk.lines.length - 1 ? '\n' : ''}
-        </span>
-      ))}
-    </Text>
-  )
+/** Where in the file a hunk picks up. Now that every line carries its own number this is the
+ * SEPARATOR between hunks rather than a signpost — drawn only between them, because the first
+ * hunk's start is already the first number in its own gutter. */
+function HunkGap(): React.JSX.Element {
+  return <div aria-hidden className="my-tight h-px bg-foreground/10" />
 }
 
 function boundLabel(hidden: number, open: boolean): string {
@@ -68,11 +42,23 @@ function boundLabel(hidden: number, open: boolean): string {
 export function DiffView({
   hunks,
   maxHunks,
+  path,
+  framed = true,
 }: {
   /** The patch, in file order. */
   hunks: readonly DiffHunk[]
   /** How many hunks show before the rest go behind an affordance. Undefined shows them all. */
   maxHunks?: number
+  /** The file the patch is against — read for its grammar and nothing else. A patch whose file
+   * this app carries no grammar for renders as plain text rather than as a guess. */
+  path?: string | null
+  /** Whether the patch draws its own border.
+   *
+   * `false` where the CALLER already provides one — the Activity feed, where every opened row shares
+   * one box so that a diff and a command's output look like the same thing opened. Framed by default
+   * because Delivery drops a patch straight onto a pane with nothing around it. Two boxes nested one
+   * inside the other is the double-border this exists to prevent. */
+  framed?: boolean
 }): React.JSX.Element {
   const [open, toggle] = useDisclosure({ defaultOpen: false })
   const bound = maxHunks === undefined ? hunks.length : Math.min(maxHunks, hunks.length)
@@ -87,12 +73,16 @@ export function DiffView({
     )
   }
 
+  const language = languageOf(path ?? null)
   return (
-    <div data-component="DiffView" className="flex flex-col gap-tight">
-      {shown.map((hunk) => (
+    <div
+      data-component="DiffView"
+      className={framed ? 'flex flex-col overflow-hidden rounded-md inset-card' : 'flex flex-col'}
+    >
+      {shown.map((hunk, index) => (
         <div key={`${hunk.oldStart}:${hunk.newStart}`} className="flex flex-col">
-          {hunks.length > 1 && <HunkHead hunk={hunk} />}
-          <HunkLines hunk={hunk} />
+          {index > 0 && <HunkGap />}
+          <DiffLines hunk={hunk} language={language} />
         </div>
       ))}
       {hidden > 0 && (

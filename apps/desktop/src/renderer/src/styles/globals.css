@@ -150,6 +150,7 @@
   --spacing-marker-col: var(--space-marker-col);
   --spacing-kind-col: var(--space-kind-col);
   --spacing-mark-col: var(--space-mark-col);
+  --spacing-body-inset: var(--space-body-inset);
 
   /* Shell chrome boxes reach the screen as spacing utilities (w-project-strip,
    * size-project-tab, pt-traffic-lights) because each one sizes a box, not a gap. */
@@ -157,10 +158,18 @@
   --spacing-project-tab: var(--project-tab-size);
   --spacing-traffic-lights: var(--traffic-lights-clearance);
   --spacing-context-ring: var(--context-ring-size);
+  /* my-plane-corner: the plane's own corner radius, as a spacing utility. What runs ALONGSIDE a
+   * rounded plane — the spine's splitter — has to stop where the plane's straight edge does, or it
+   * carries on past a corner that has already curved away and reads as a line poking out of the
+   * card. Bound to the radius rather than to the rhythm step that currently equals it, so a change
+   * to the radius moves the splitter with it instead of silently un-fixing this. */
+  --spacing-plane-corner: var(--radius-plane);
 
   /* The one shared strip height (min-h-strip): every tab strip and header bar stands this
    * tall, so columns line up. Row heights are the density's vertical half. */
   --height-strip: var(--strip-height);
+  /* h-band: the one pane header height the seam and the rail's header both stand at. */
+  --height-band: var(--band-height);
   --height-row: var(--row-h);
   --height-row-tight: var(--row-h-tight);
   /* max-h-output: the bound an opened tool output scrolls inside. */
@@ -485,5 +494,49 @@
   .text-code,
   .text-code-inline {
     font-family: var(--mono);
+  }
+
+  /* SCROLLBARS. There were none styled at all before this, which is why they looked like they
+   * "sometimes reverted": nothing was ever applied, and what you saw was macOS deciding. An overlay
+   * scrollbar is a thin ghost that fades out, but the SAME element draws a wide opaque always-on bar
+   * the moment a mouse is connected or "Show scroll bars: Always" is set in System Settings — and
+   * that one takes real layout width, so a pane reflows under it. Two very different-looking results
+   * from one unstyled element, switching on a system preference no page can see.
+   *
+   * `::-webkit-scrollbar` and NOT `scrollbar-width`/`scrollbar-color`: in Chromium 121+ setting
+   * either standard property makes the whole element ignore the webkit pseudo-elements, so mixing
+   * the two silently disables the detailed styling. The renderer is Chromium in both Electron and
+   * Storybook, so the pseudo-element route is available and is the one with the control. Do not add
+   * `scrollbar-width` anywhere without deleting this block. */
+  ::-webkit-scrollbar {
+    width: var(--space-gap);
+    height: var(--space-gap);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    /* Ink rather than a colour: the thumb is chrome and must not read as content in either theme.
+     * The transparent border plus `background-clip` is what makes it a slim pill inside a wider
+     * hit target — the bar you grab is 8px, the bar you see is 4px. */
+    background-color: --alpha(var(--color-foreground) / 20%);
+    border: 2px solid transparent;
+    background-clip: content-box;
+    border-radius: var(--radius-md);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: --alpha(var(--color-foreground) / 35%);
+  }
+  /* The corner where two bars meet, which defaults to an opaque light square. */
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* The feed draws NO scrollbar: the density gutter on its right edge is a scrollbar already, and a
+   * better one — it says where you are AND what is there. A native bar beside it is the same fact
+   * twice, and on macOS's always-on setting it is drawn over the gutter it duplicates. */
+  .feed-scroller::-webkit-scrollbar {
+    width: 0;
+    height: 0;
   }
 }

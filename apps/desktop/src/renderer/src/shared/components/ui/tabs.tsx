@@ -49,6 +49,26 @@ const tabsTriggerVariants = cva(
       seat: {
         fill: 'rounded-lg data-[state=active]:bg-foreground/6',
         glow: 'rounded-lg transition-all duration-fast hover:text-foreground data-[state=active]:bg-linear-to-b data-[state=active]:from-primary/16 data-[state=active]:to-primary/4 data-[state=active]:text-primary data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-primary/25 data-[state=active]:glow data-[state=active]:glow-quiet',
+        // `penumbra`: the study's own tab (`cockpit-session-interior-prototype.html` `.tab`) —
+        // NO seat at all. A tab attached to the band below it is marked by a filament under it,
+        // not by a pill around it: a pill is a button's shape, and a pill on a tab reads as a
+        // control that could be pressed rather than as the panel you are already in.
+        //
+        // The filament is INSET from the tab's own edges and fades out at both ends, so it reads
+        // as light falling under the word rather than as a border. That fade is the whole reason
+        // it is a gradient: a flat 2px bar of the same gold is a rule, and a rule butts into its
+        // neighbours. Top-rounded only, because the bottom edge is the seam it sits on.
+        penumbra: [
+          'relative rounded-t-lg px-region pt-gap pb-row transition-colors duration-fast',
+          'hover:text-foreground data-[state=active]:text-foreground-bright',
+          'after:pointer-events-none after:absolute after:inset-x-region after:bottom-0 after:h-[2px] after:rounded-full',
+          'after:bg-linear-to-r after:from-transparent after:via-primary after:to-transparent',
+          'after:opacity-0 after:transition-opacity after:duration-fast data-[state=active]:after:opacity-100',
+          // The halo is the filament's OWN colour, set on the pseudo-element: `glow` spends
+          // `currentColor`, and colouring the tab's text gold instead would gild every inactive
+          // label to light one filament.
+          'after:text-primary after:glow after:glow-quiet',
+        ].join(' '),
       },
     },
     defaultVariants: { tone: 'neutral', seat: 'fill' },

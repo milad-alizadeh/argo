@@ -32,6 +32,15 @@ const KIND_BY_NAME: Readonly<Record<string, ToolCallKind>> = {
   Workflow: 'delegate',
   TodoWrite: 'plan',
   ExitPlanMode: 'plan',
+  // Tools that CHANGE something outside the agent, which the feed must not fold away as a look.
+  // `execute` rather than `edit`: none of them produces a patch, and `execute` is precisely the
+  // kind whose effect the record does not describe — the reading that keeps a row loud without
+  // claiming to know what it did. Unlisted, they fell to `other` and were folded into the quiet
+  // run, so entering a worktree rendered under a "looked at" glyph.
+  EnterWorktree: 'execute',
+  ExitWorktree: 'execute',
+  ToolSearch: 'search',
+  Skill: 'execute',
 }
 
 /** The tool names that delegate work to a Subagent — the one place a child Agent is born. */

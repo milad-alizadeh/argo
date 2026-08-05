@@ -29,14 +29,26 @@ describe('relativeAge', () => {
   })
 })
 
+// COMPACT, unlike `relativeAge` above: a duration only ever lands in a dense row — a subagent
+// beside its name and its spend — where `12 minutes` costs three times the width of the fact and
+// pushes the name it sits next to into an ellipsis.
 describe('duration', () => {
   it('measures a finished span end to end, ignoring the wall clock', () => {
-    expect(duration(NOW - 3 * HOUR, NOW - 2 * HOUR, NOW)).toBe('1 hour')
+    expect(duration(NOW - 3 * HOUR, NOW - 2 * HOUR, NOW)).toBe('1h')
   })
 
   // The whole reason this takes a clock: a running agent HAS a duration, and it grows.
   it('measures a still-running span against the wall clock', () => {
-    expect(duration(NOW - 12 * MINUTE, null, NOW)).toBe('12 minutes')
+    expect(duration(NOW - 12 * MINUTE, null, NOW)).toBe('12min')
+  })
+
+  // `min`, never `m`: `m` reads as minutes on a clock and as months in a formatter, and a subagent
+  // row beside a token count is exactly where that ambiguity would land.
+  it('spells minutes unambiguously and every other unit as one letter', () => {
+    expect(duration(NOW - 45 * 1000, NOW, NOW)).toBe('45s')
+    expect(duration(NOW - 5 * MINUTE, NOW, NOW)).toBe('5min')
+    expect(duration(NOW - 2 * HOUR, NOW, NOW)).toBe('2h')
+    expect(duration(NOW - 3 * 24 * HOUR, NOW, NOW)).toBe('3d')
   })
 
   it('claims no duration where the span never started', () => {

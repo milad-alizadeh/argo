@@ -92,9 +92,14 @@ export function turnFeedRows(turn: Turn, seam: TurnSeam = { compactedBefore: fal
     opening.push({ kind: 'prompt', key: `prompt:${turn.id}`, text: turn.prompt, turnId: turn.id })
   }
   const before = rowsByProseIndex(turn)
+  // A prose part with nothing in it is not a row. The parser already drops these, so this is the
+  // second line rather than the first — but the rule belongs here too, because the row list is
+  // what the surface renders and a blank row is a surface fact: a message with no words renders
+  // as a gap, and a thought with none renders as a disclosure caret opening onto nothing. The
+  // tool rows placed at that index still stand; only the empty prose goes.
   const narrative = turn.prose.flatMap((prose, index) => [
     ...(before.get(index) ?? []),
-    proseRow(turn, prose, index),
+    ...(prose.markdown.trim() === '' ? [] : [proseRow(turn, prose, index)]),
   ])
   return [...opening, ...narrative, ...(before.get(turn.prose.length) ?? [])]
 }
