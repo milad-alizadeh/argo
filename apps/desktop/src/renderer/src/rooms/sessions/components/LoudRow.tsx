@@ -57,9 +57,7 @@ export function LoudRow({
           {word}
         </Text>
         {live === true && (
-          <span className="self-center">
-            <StatusDot tone="run" glow="live" pulse label="running" />
-          </span>
+          <StatusDot tone="run" glow="live" pulse label="running" className="self-center" />
         )}
         <Text variant="code" className="min-w-0 flex-1 truncate text-foreground-soft">
           {subject}

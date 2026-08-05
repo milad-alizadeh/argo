@@ -6,7 +6,7 @@ import { TurnFeed } from '../components/TurnFeed'
 import { DensityGutter } from './DensityGutter'
 import { type Chapter, chapterWord } from './feedIndex'
 import { InlineDelegates } from './InlineDelegates'
-import { ANCHOR, useFeedScroll, useStepKeys } from './useFeedScroll'
+import { ANCHOR, useFeedScroll, useMinimapWindow, useStepKeys } from './useFeedScroll'
 
 // PROTOTYPE — VARIANT A · Density gutter.
 //
@@ -38,10 +38,10 @@ function Seam({ chapter, active }: { chapter: Chapter; active: boolean }): React
 
 export function VariantGutter({ chapters }: { chapters: readonly Chapter[] }): React.JSX.Element {
   const feed = useRef<HTMLDivElement>(null)
-  const { activeKey, progress, visible, jumpTo, step } = useFeedScroll(
-    feed,
-    chapters.map((chapter) => chapter.key).join('|'),
-  )
+  const minimapWindow = useRef<HTMLDivElement>(null)
+  const keys = chapters.map((chapter) => chapter.key).join('|')
+  const { activeKey, jumpTo, step } = useFeedScroll(feed, keys)
+  useMinimapWindow(feed, minimapWindow, keys)
   useStepKeys(step)
 
   const scrub = (ratio: number): void => {
@@ -71,7 +71,7 @@ export function VariantGutter({ chapters }: { chapters: readonly Chapter[] }): R
       </div>
       <DensityGutter
         chapters={chapters}
-        window={{ top: progress * (1 - visible), height: visible }}
+        windowRef={minimapWindow}
         onJump={jumpTo}
         onScrub={scrub}
       />

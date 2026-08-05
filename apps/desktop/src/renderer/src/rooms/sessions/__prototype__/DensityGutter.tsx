@@ -89,13 +89,14 @@ function ChapterTicks({
  */
 export function DensityGutter({
   chapters,
-  window: viewport,
+  windowRef,
   onJump,
   onScrub,
 }: {
   chapters: readonly Chapter[]
-  /** Where the reader is: `top` and `height` as fractions of the whole feed. */
-  window: { top: number; height: number }
+  /** The viewport-window overlay, positioned by the caller's scroll handler DIRECTLY — style
+   * writes, not props — so a scroll never re-renders this component. */
+  windowRef: React.RefObject<HTMLDivElement | null>
   onJump: (key: string) => void
   onScrub: (ratio: number) => void
 }): React.JSX.Element {
@@ -125,8 +126,8 @@ export function DensityGutter({
       {/* Where you are, as a window over the strip rather than a thumb beside it: the ticks under it
           stay visible, so the window says "you are looking at these events". */}
       <div
-        style={{ top: `${viewport.top * 100}%`, height: `${viewport.height * 100}%` }}
-        className="pointer-events-none absolute inset-x-0 rounded-sm bg-primary/10 ring-1 ring-primary/40"
+        ref={windowRef}
+        className="pointer-events-none absolute inset-x-0 top-0 h-full rounded-sm bg-primary/10 ring-1 ring-primary/40"
       />
     </div>
   )

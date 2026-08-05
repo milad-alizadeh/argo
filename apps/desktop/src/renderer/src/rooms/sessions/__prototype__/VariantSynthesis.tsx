@@ -11,7 +11,7 @@ import { type Chapter, chapterTitle } from './feedIndex'
 import { ShotGallery } from './ShotGallery'
 import { type DelegateItem, SubagentScope } from './SubagentScope'
 import { STICKY_BAR } from './stickyBar'
-import { ANCHOR, useFeedScroll, useStepKeys } from './useFeedScroll'
+import { ANCHOR, jumpFeedTo, stepFeed, useMinimapWindow, useStepKeys } from './useFeedScroll'
 
 // PROTOTYPE — VARIANT E · Synthesis (the direction picked out of A–D).
 //
@@ -69,9 +69,7 @@ function StickySeam({
         {chapterTitle(chapter)}
       </Text>
       {chapter.open && (
-        <span className="self-center">
-          <StatusDot tone="run" glow="live" pulse label="running" />
-        </span>
+        <StatusDot tone="run" glow="live" pulse label="running" className="self-center" />
       )}
       {plan && <PlanPull plan={plan} />}
     </div>
@@ -112,12 +110,16 @@ export function VariantSynthesis({
   plan: PlanProgressModel | null
 }): React.JSX.Element {
   const feed = useRef<HTMLDivElement>(null)
+  const minimapWindow = useRef<HTMLDivElement>(null)
   const [scope, setScope] = useState<DelegateItem | null>(null)
-  const { progress, visible, jumpTo, step } = useFeedScroll(
+  // No scroll STATE anywhere: the seams stick by CSS, the minimap window is positioned by direct
+  // style writes, and stepping reads the DOM when asked. Scrolling re-renders nothing.
+  useMinimapWindow(
     feed,
+    minimapWindow,
     `${scope === null}:${chapters.map((chapter) => chapter.key).join('|')}`,
   )
-  useStepKeys(step)
+  useStepKeys((delta) => stepFeed(feed.current, delta))
 
   if (scope !== null) {
     return <SubagentScope item={scope} onBack={() => setScope(null)} />
@@ -156,8 +158,8 @@ export function VariantSynthesis({
       </div>
       <DensityGutter
         chapters={chapters}
-        window={{ top: progress * (1 - visible), height: visible }}
-        onJump={jumpTo}
+        windowRef={minimapWindow}
+        onJump={(key) => jumpFeedTo(feed.current, key)}
         onScrub={scrub}
       />
     </div>
