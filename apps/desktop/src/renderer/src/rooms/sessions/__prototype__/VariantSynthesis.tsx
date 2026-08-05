@@ -131,8 +131,11 @@ export function VariantSynthesis({
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1">
-      <div ref={feed} className="min-h-0 min-w-0 flex-1 overflow-y-auto p-region pt-0">
+    <div className="proto-feed-frame flex min-h-0 min-w-0 flex-1">
+      <div
+        ref={feed}
+        className="proto-feed-scroller min-h-0 min-w-0 flex-1 overflow-y-auto p-region pt-0"
+      >
         {/* Sections run at FULL pane width so the sticky seam spans edge to edge; only the prose
             column inside is held to a measure, because line length is a reading rule, not a layout. */}
         {chapters.map((chapter) => (

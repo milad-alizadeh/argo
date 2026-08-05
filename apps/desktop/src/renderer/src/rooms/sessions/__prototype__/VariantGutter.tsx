@@ -50,8 +50,11 @@ export function VariantGutter({ chapters }: { chapters: readonly Chapter[] }): R
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1">
-      <div ref={feed} className="min-h-0 min-w-0 flex-1 overflow-y-auto p-region">
+    <div className="proto-feed-frame flex min-h-0 min-w-0 flex-1">
+      <div
+        ref={feed}
+        className="proto-feed-scroller min-h-0 min-w-0 flex-1 overflow-y-auto p-region"
+      >
         {/* A measure, at full width: prose set across 1100px is prose nobody finishes, so the column
             that got its width back spends it on air rather than on line length. */}
         <div className="flex max-w-[78ch] flex-col gap-region">

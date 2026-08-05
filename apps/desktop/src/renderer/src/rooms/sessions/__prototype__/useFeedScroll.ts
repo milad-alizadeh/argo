@@ -107,10 +107,10 @@ export function stepFeed(root: HTMLElement | null, delta: number): void {
 }
 
 /**
- * The minimap's viewport window WITHOUT React: the scroll handler writes `top`/`height` straight
- * onto the overlay element, one write per animation frame, so a scroll re-renders nothing at all.
- * The seams' stickiness is pure CSS already — this removes the last per-frame setState, which is
- * what made scrolling stutter: every frame re-rendered the whole feed to move a 24px overlay.
+ * The minimap window's MOTION is pure CSS — a scroll-driven animation on the feed's own
+ * scroll-timeline (see DensityGutter's stylesheet) — so NOTHING runs on scroll, same as the seams'
+ * `position: sticky`. The only JS left is sizing: the window's height is the visible fraction of
+ * the feed, a ratio CSS cannot read, measured once per content change and viewport resize.
  */
 export function useMinimapWindow(
   feed: RefObject<HTMLElement | null>,
@@ -122,23 +122,13 @@ export function useMinimapWindow(
     const root = feed.current
     const win = overlay.current
     if (!root || !win) return
-    let frame = 0
-    const paint = (): void => {
-      frame = 0
-      const visible = Math.min(1, root.clientHeight / root.scrollHeight)
-      const scrollable = Math.max(1, root.scrollHeight - root.clientHeight)
-      win.style.top = `${(root.scrollTop / scrollable) * (1 - visible) * 100}%`
-      win.style.height = `${visible * 100}%`
+    const size = (): void => {
+      win.style.height = `${Math.min(1, root.clientHeight / root.scrollHeight) * 100}%`
     }
-    const onScroll = (): void => {
-      if (frame === 0) frame = requestAnimationFrame(paint)
-    }
-    paint()
-    root.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      root.removeEventListener('scroll', onScroll)
-      if (frame !== 0) cancelAnimationFrame(frame)
-    }
+    size()
+    const observer = new ResizeObserver(size)
+    observer.observe(root)
+    return () => observer.disconnect()
   }, [feed, overlay, key])
 }
 

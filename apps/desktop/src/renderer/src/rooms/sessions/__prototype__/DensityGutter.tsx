@@ -80,6 +80,21 @@ function ChapterTicks({
   )
 }
 
+// The window's motion, in the stylesheet rather than a scroll listener: the feed publishes its
+// scroll position as a named timeline (`.proto-feed-scroller`, scoped by `.proto-feed-frame`), and
+// the window is an animation over it — `top: 0 → 100%` with `translateY(0 → -100%)` so its bottom
+// meets the track's bottom exactly at full scroll, whatever its height. Compositor-driven, zero JS,
+// the minimap's spelling of what `position: sticky` is for the seams.
+const TIMELINE_CSS = `
+.proto-feed-frame { timeline-scope: --proto-feed; }
+.proto-feed-scroller { scroll-timeline: --proto-feed block; }
+.proto-minimap-window { animation: proto-minimap-window linear both; animation-timeline: --proto-feed; }
+@keyframes proto-minimap-window {
+  from { top: 0; transform: translateY(0); }
+  to { top: 100%; transform: translateY(-100%); }
+}
+`
+
 /**
  * The whole navigation surface of variant A: a scrubbable density strip on the feed's right edge.
  *
@@ -118,6 +133,7 @@ export function DensityGutter({
       }}
       className="relative w-[34px] shrink-0 overflow-hidden border-l border-l-inset-hair px-hair py-tight"
     >
+      <style>{TIMELINE_CSS}</style>
       <div className="flex h-full flex-col gap-tight">
         {chapters.map((chapter) => (
           <ChapterTicks key={chapter.key} chapter={chapter} onJump={onJump} />
@@ -127,7 +143,7 @@ export function DensityGutter({
           stay visible, so the window says "you are looking at these events". */}
       <div
         ref={windowRef}
-        className="pointer-events-none absolute inset-x-0 top-0 h-full rounded-sm bg-primary/10 ring-1 ring-primary/40"
+        className="proto-minimap-window pointer-events-none absolute inset-x-0 h-full rounded-sm bg-primary/10 ring-1 ring-primary/40"
       />
     </div>
   )
