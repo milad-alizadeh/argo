@@ -1,6 +1,14 @@
 # 0018 · Provider access is OAuth + HTTP API, not the `gh` CLI
 
-Status: accepted (#182) · 2026-07-22
+Status: accepted (#182) · 2026-07-22 · GitHub's grant settled (#367) · 2026-08-06
+
+> **GitHub's grant is an OAuth App + device flow, scope `repo`** — the first of the two options
+> the Decision below left to verify, settled in #367 and shipped by #256. It is the grant that
+> feeds both ports from one consent, and its non-expiring user token is why no refresh path
+> exists for GitHub. A GitHub App would narrow the scope per repository at the cost of that
+> refresh path and a not-installed-here state; the trigger to revisit is **distributing to users
+> inside orgs**, which is where `repo` asks too much and org OAuth-App policy bites.
+> The client id is public by construction and ships in the binary.
 
 ## Context
 
@@ -19,9 +27,10 @@ must have `gh` installed and authed) that the app can't own.
 - **The cockpit connects to providers via OAuth + the provider's HTTP API** (REST/GraphQL) —
   one uniform mechanism behind the port interface, per-provider adapters underneath.
 - **Onboarding owns provider connection** — "Connect GitHub" / "Connect Linear" run the OAuth
-  grant. **The exact grant is per-provider, not one shared flow** (verify before building): a
-  distributed desktop binary can't hold a `client_secret`, so GitHub likely needs the **Device
-  Flow** (or a GitHub App user-to-server token), *not* loopback-PKCE — and token **lifecycle
+  grant. **The exact grant is per-provider, not one shared flow** (verify before building; for
+  GitHub, see the amendment above): a distributed desktop binary can't hold a `client_secret`,
+  so GitHub needs the **Device Flow** (or a GitHub App user-to-server token), *not*
+  loopback-PKCE — and token **lifecycle
   differs** (GitHub OAuth-App user tokens historically don't expire / have no refresh token
   unless expiring-tokens is enabled; Linear issues expiring tokens *with* refresh). So token
   refresh is a **per-adapter** concern, not a shared assumption. Tokens are stored
