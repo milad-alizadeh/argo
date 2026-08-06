@@ -1,8 +1,8 @@
 // The shell slice's ONE public entry (apps/desktop/scripts/module-boundaries.json). The renderer
 // root composes the chrome plus the active room from here; everything else in `shell/` is private.
-export * from '../branchMenuModel'
-export * from '../projectUi'
-export * from '../shellCommand'
+export * from '../git/branchMenuModel'
+export * from '../palette/shellCommand'
+export * from '../project-strip/projectUi'
 export * from '../shellModel'
 export { EmptyShell } from './EmptyShell'
 export * from './git'

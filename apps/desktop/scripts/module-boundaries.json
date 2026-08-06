@@ -168,20 +168,12 @@
           }
         },
         "shell": {
-          "comment": "This module's public entry is `components/index.ts`, so its root holds no entry file — every file here is a model or a test that should be inside a sub-domain.",
-          "allow": {},
-          "ratchet": {
-            "branchMenuModel.ts": "RATCHET — the branch-menu model; belongs in `git/` beside components/git/, whose BranchMenu it is the model for.",
-            "branchMenuModel.test.ts": "RATCHET — moves with branchMenuModel.ts.",
-            "worstStateDot.ts": "RATCHET — the git group's worst-state roll-up; belongs in `git/`.",
-            "worstStateDot.test.ts": "RATCHET — moves with worstStateDot.ts.",
-            "projectUi.ts": "RATCHET — the project-strip presentation; belongs in `project-strip/` beside components/project-strip/.",
-            "projectUi.test.ts": "RATCHET — moves with projectUi.ts.",
-            "shellCommand.ts": "RATCHET — the ⌘K palette's command list; belongs in `palette/` with the keymap it is bound through.",
-            "shellCommand.test.ts": "RATCHET — moves with shellCommand.ts.",
-            "shellModel.ts": "RATCHET — the top-bar region model; belongs in `top-bar/` beside components/top-bar/.",
-            "shellModel.test.ts": "RATCHET — moves with shellModel.ts."
-          }
+          "comment": "The shell slice. Its public entry is components/index.ts; the sub-domains hold the models beside the views that read them (git/, project-strip/, palette/), mirroring components/ one level up.",
+          "allow": {
+            "shellModel.ts": "KIND — the shell's own model: the room vocabulary (ROOMS/Room), the project tab view, and the assembly over CockpitState. Read by top-bar, project-strip and palette alike, so it belongs to no ONE of them — the same case as cockpit/RoomStage.tsx. The ratchet entry this replaces claimed top-bar/, which was read off the filename rather than the 48 lines.",
+            "shellModel.test.ts": "KIND — its suite, beside it."
+          },
+          "ratchet": {}
         },
         "rooms-sessions": {
           "comment": "Its public entry is components/index.ts, so nothing sits at this root and nothing may. The room is its two surfaces plus their leaves: roster/ (the rail derivation), interior/ (header, activity, dock, subagents, timeline), and the plan/ and usage/ vocabularies both read.",

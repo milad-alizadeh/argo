@@ -2,7 +2,7 @@ import type { BranchRef, GitFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { DropdownMenu, DropdownMenuTrigger } from '@/shared/components/ui'
-import { branchMenuRows } from '../../branchMenuModel'
+import { branchMenuRows } from '../../git/branchMenuModel'
 import { BranchMenu } from './BranchMenu'
 import { BranchSelector } from './BranchSelector'
 

@@ -1,7 +1,7 @@
 import type { GitFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { manageMenu } from '../../branchMenuModel'
+import { manageMenu } from '../../git/branchMenuModel'
 import { BranchManage } from './BranchManage'
 
 function facts(over: Partial<GitFacts> = {}): GitFacts {

@@ -1,4 +1,4 @@
-import type { Room } from './shellModel'
+import type { Room } from '../shellModel'
 
 // The canonical keymap as ONE table, so the shortcut a room tab advertises and the shortcut
 // that fires can never disagree. It reads `metaKey` alone: macOS is the target platform, and

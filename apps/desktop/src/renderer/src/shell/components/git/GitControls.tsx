@@ -1,6 +1,6 @@
 import type { BranchRef, GitFacts, GitOperation } from '@shared'
 import { DropdownMenu, DropdownMenuTrigger } from '@/shared/components/ui'
-import { type BranchRow, manageMenu } from '../../branchMenuModel'
+import { type BranchRow, manageMenu } from '../../git/branchMenuModel'
 import { BranchManage } from './BranchManage'
 import { BranchMenu } from './BranchMenu'
 import { BranchSelector } from './BranchSelector'

@@ -9,7 +9,7 @@ import {
   Text,
   TrashIcon,
 } from '@/shared/components/ui'
-import { type BranchRow, isDeletable } from '../../branchMenuModel'
+import { type BranchRow, isDeletable } from '../../git/branchMenuModel'
 import { TrackingCounts } from './TrackingCounts'
 
 export interface BranchRowHandlers {

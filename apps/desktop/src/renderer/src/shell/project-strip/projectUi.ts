@@ -1,4 +1,4 @@
-import type { Room } from './shellModel'
+import type { Room } from '../shellModel'
 
 // A project swap is a VIEW CHANGE, not a teardown: sessions keep running in main, and the
 // UI state you left a project in is handed back on return. That is what this file holds —

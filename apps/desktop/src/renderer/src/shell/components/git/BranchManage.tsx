@@ -11,7 +11,7 @@ import {
   IconButton,
   Text,
 } from '@/shared/components/ui'
-import type { ManageMenu } from '../../branchMenuModel'
+import type { ManageMenu } from '../../git/branchMenuModel'
 import { BranchNameField } from './BranchNameField'
 import { OperationRow } from './BranchOperationRow'
 import { ConflictHatch } from './ConflictHatch'

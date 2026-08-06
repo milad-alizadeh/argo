@@ -4,7 +4,7 @@ import {
   DropdownMenuLabel,
   Text,
 } from '@/shared/components/ui'
-import type { BranchRow } from '../../branchMenuModel'
+import type { BranchRow } from '../../git/branchMenuModel'
 import { BranchMenuRow, type BranchRowHandlers } from './BranchMenuRow'
 
 interface BranchMenuProps extends BranchRowHandlers {

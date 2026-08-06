@@ -1,6 +1,6 @@
 import type { CockpitState } from '@shared'
 import type { RosterTone } from '@/shared/status'
-import { worstStateDot } from './worstStateDot'
+import { worstStateDot } from './git/worstStateDot'
 
 // What the chrome renders, derived from the projected state. The strip's whole job is the
 // projects you are NOT looking at, which is why the active tab is deliberately quiet: its

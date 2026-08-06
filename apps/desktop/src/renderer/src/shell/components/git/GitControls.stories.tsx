@@ -1,7 +1,7 @@
 import type { BranchRef, GitFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { branchMenuRows } from '../../branchMenuModel'
+import { branchMenuRows } from '../../git/branchMenuModel'
 import { GitControls } from './GitControls'
 
 function ref(name: string, over: Partial<BranchRef> = {}): BranchRef {
