@@ -23,17 +23,18 @@ describe('buildInteriorHeader', () => {
     expect(header.title).toBe('Auth refactor')
   })
 
-  it('orders the meta line mode · branch · elapsed', () => {
+  it('orders the meta line mode · branch · duration', () => {
     const session = sessionView({
       id: 's',
       model: 'claude-opus-5',
       branch: 'feat/auth',
       lastActivityAt: NOW - 8 * MINUTE,
       facts: sessionFacts({ status: 'idle', dirty: 3, unpushed: 2 }),
+      agents: [aRoot({ startedAtMs: NOW - 30 * MINUTE, endedAtMs: NOW })],
     })
     const header = buildInteriorHeader({ session, link: link({ mode: 'Plan' }), nowMs: NOW })
-    expect(header.meta.map(({ id }) => id)).toEqual(['mode', 'branch', 'elapsed'])
-    expect(textOf(header.meta)).toEqual(['Plan', 'feat/auth', 'idle 8 minutes'])
+    expect(header.meta.map(({ id }) => id)).toEqual(['mode', 'branch', 'duration'])
+    expect(textOf(header.meta)).toEqual(['Plan', 'feat/auth', '30min'])
   })
 
   // What the session has COST, which is every token it was observed to spend — not the ring's
@@ -111,22 +112,21 @@ describe("the header's other meta segments", () => {
     expect(spoken.get('mode')).toBe('unknown')
   })
 
-  it('drops elapsed for a running session, whose turn start is not observable', () => {
+  it('drops the duration for a session whose turns carry no times to measure', () => {
     const session = sessionView({ id: 's', lastActivityAt: NOW - 8 * MINUTE })
     const header = buildInteriorHeader({ session, nowMs: NOW })
-    expect(header.meta.some(({ id }) => id === 'elapsed')).toBe(false)
+    expect(header.meta.some(({ id }) => id === 'duration')).toBe(false)
   })
 
-  // date-fns picks the unit and ROUNDS to it (150 minutes is nearer 3 hours than 2), where the old
-  // hand-rolled formatter floored. Rounding is the better reading of a rest.
-  it('spells a long rest in hours', () => {
+  // The SPAN alone, with no verb in front of it and no second reading of how long it has been at
+  // rest beside it: the dot already says whether the session is still going.
+  it('measures a still-running session against the wall clock', () => {
     const session = sessionView({
       id: 's',
-      lastActivityAt: NOW - 150 * MINUTE,
-      facts: sessionFacts({ status: 'idle' }),
+      agents: [aRoot({ startedAtMs: NOW - 150 * MINUTE, endedAtMs: null })],
     })
     const header = buildInteriorHeader({ session, nowMs: NOW })
-    expect(header.meta.find(({ id }) => id === 'elapsed')?.text).toBe('idle 3 hours')
+    expect(header.meta.find(({ id }) => id === 'duration')?.text).toBe('3h')
   })
 })
 

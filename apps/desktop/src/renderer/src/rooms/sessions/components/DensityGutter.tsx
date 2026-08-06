@@ -137,7 +137,9 @@ export function DensityGutter({
       onPointerMove={(event) => {
         if (event.currentTarget.hasPointerCapture(event.pointerId)) scrubFrom(event.clientY)
       }}
-      className="relative w-[34px] shrink-0 border-l border-l-inset-hair px-hair py-tight"
+      // No rule down its left edge: the strip is already its own object — a column of marks on the
+      // plane — and a border beside it read as the feed's boundary rather than as the map's.
+      className="relative w-[48px] shrink-0 px-hair py-tight"
     >
       {/* The track IS the scroll: its full height maps the feed's scrollHeight, and every block is
           positioned as a fraction of it — no flex weighting between the two. */}

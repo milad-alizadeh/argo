@@ -70,9 +70,17 @@ function toAgents(logical: LogicalSession): Agent[] {
     // whole-agent report for it, and inventing one by summing here would state the same tokens twice.
     usage: null,
   }
+  // A delegate's turns come from its OWN transcript, joined to the seed by the id of the call that
+  // spawned it. Empty where that file was not read (or the CLI wrote none), which renders as a rail
+  // row with nothing under it rather than as a fabricated feed.
   const subagents = logical.files.flatMap((file) =>
     file.tree.subagents.map(
-      (seed): Agent => ({ ...seed, parentId: root.id, turns: [], compactions: [] }),
+      (seed): Agent => ({
+        ...seed,
+        parentId: root.id,
+        turns: file.delegateTurns[seed.id] ?? [],
+        compactions: [],
+      }),
     ),
   )
   return [root, ...subagents]

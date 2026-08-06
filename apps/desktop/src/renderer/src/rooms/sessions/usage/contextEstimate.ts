@@ -26,17 +26,14 @@ export function contextWindow(model: string | null): number | null {
   return model.includes(LONG_CONTEXT_MARKER) ? LONG_CONTEXT_TOKENS : match[1]
 }
 
-// Context in use is the newest turn's input side — the prompt plus everything the cache replayed
-// into it — which is what the model actually re-reads each turn. Output tokens leave the window,
-// so they are deliberately absent from the sum.
-function contextTokens(usage: Usage): number {
-  return usage.inputTokens + usage.cacheReadTokens + usage.cacheCreationTokens
-}
-
-function newestUsage(session: SessionView): Usage | null {
+// Context in use is the newest turn's own reading of the window — the prompt plus everything the
+// cache replayed into it. Read off `contextTokens` rather than off `usage`, because `usage` is the
+// turn's whole SPEND: a turn that made ten requests summed ten window-reads into it, and dividing
+// that by one window is what put a fresh session at `~100%`.
+function newestContext(session: SessionView): number | null {
   const root = rootAgent(session.agents)
   if (root === null) return null
-  return root.turns.map((turn) => turn.usage).findLast((usage) => usage !== null) ?? null
+  return root.turns.map((turn) => turn.contextTokens).findLast((tokens) => tokens !== null) ?? null
 }
 
 /**
@@ -48,9 +45,9 @@ function newestUsage(session: SessionView): Usage | null {
 export function contextPercent(session: SessionView): number | null {
   if (!isSteerable(session.posture)) return null
   const window = contextWindow(session.model)
-  const usage = newestUsage(session)
-  if (window === null || usage === null) return null
-  return (contextTokens(usage) / window) * 100
+  const tokens = newestContext(session)
+  if (window === null || tokens === null) return null
+  return (tokens / window) * 100
 }
 
 /**

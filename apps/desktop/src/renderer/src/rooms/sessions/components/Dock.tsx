@@ -7,7 +7,6 @@ import {
   Text,
 } from '@/shared/components/ui'
 import type { DockModel } from '../interior/dock'
-import { NowHead } from './NowHead'
 
 const KIND_LABEL: Record<DockModel['kind'], string> = {
   pty: 'Terminal',
@@ -21,8 +20,7 @@ const KIND_LABEL: Record<DockModel['kind'], string> = {
 const RESTING_PROMPT = '> type to steer · ask a question · ⌘↵ send'
 
 /**
- * Organism: the always-on Dock beneath both tabs — the live PTY, with the now-head in its header
- * row.
+ * Organism: the always-on Dock beneath both tabs — the live PTY, under a header row that names it.
  *
  * **You steer by typing at the prompt and stop with Ctrl-C**, so there is no steer widget and no
  * Stop button: the pane below is a real terminal and takes the keystrokes itself. Expanding grows
@@ -60,22 +58,28 @@ export function Dock({
         className="flex shrink-0 cursor-pointer items-center gap-snug px-plane py-gap text-left outline-none focus-visible:ring-1 focus-visible:ring-ring/60"
       >
         <TerminalWindowIcon aria-hidden className="icon-sm shrink-0 text-foreground-faint" />
-        <Text variant="meta" className="shrink-0 text-foreground-soft">
+        {/* The NAME and nothing else. What stood here was the now-head — the session's state and
+            its newest command, which ran to a full line of shell and read as debris on the one row
+            whose whole job is to say what this pane is. */}
+        <Text variant="meta" className="flex-1 shrink-0 text-foreground-soft">
           {KIND_LABEL[dock.kind]}
         </Text>
-        <Text aria-hidden variant="meta" className="shrink-0 text-foreground-faint">
-          ·
-        </Text>
-        <NowHead now={dock.now} />
         <Caret aria-hidden className="icon-sm shrink-0 text-foreground-faint" />
       </button>
       {dock.kind === 'pty' ? (
-        <TerminalPane
-          label="Session terminal"
-          attach={attach}
-          resting={RESTING_PROMPT}
-          className="flex-1"
-        />
+        // The pane keeps ONE height whatever the Dock's is, and hangs from the bottom of a box that
+        // clips it. Dragging the splitter then reveals more scrollback rather than reflowing the
+        // shell: a terminal that resizes rewraps every line it holds, and the prompt you were
+        // typing at walks up and down the screen under your cursor. What the drag changes is how
+        // much of a fixed-height terminal you can see; where you type never moves.
+        <div className="flex min-h-0 flex-1 flex-col justify-end overflow-hidden">
+          <TerminalPane
+            label="Session terminal"
+            attach={attach}
+            resting={RESTING_PROMPT}
+            className="h-[70vh] shrink-0"
+          />
+        </div>
       ) : (
         <div className="flex min-h-0 flex-1 items-start px-plane pb-inset">
           <Text variant="code" className="text-foreground-faint">

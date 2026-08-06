@@ -33,6 +33,7 @@ export function emptyTranscript(sessionId: string): ParsedTranscript {
     firstTimestampMs: null,
     lastTimestampMs: null,
     tree: { turns: [], compactions: [], subagents: [] },
+    delegateTurns: {},
   }
 }
 

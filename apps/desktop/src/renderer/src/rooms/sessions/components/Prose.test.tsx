@@ -30,7 +30,6 @@ describe('the constructs the feed reads', () => {
 
 describe('the constructs the feed refuses', () => {
   it.each([
-    { syntax: 'a heading', markdown: '## Rotation', literal: '## Rotation', element: '<h' },
     {
       syntax: 'a table',
       markdown: '| a | b |\n| - | - |\n| 1 | 2 |',
@@ -58,6 +57,13 @@ describe('the constructs the feed refuses', () => {
     const html = render(markdown)
     expect(html).toContain(literal)
     expect(html).not.toContain(element)
+  })
+
+  it('renders a heading as a heading, at the level the agent wrote', () => {
+    const html = render('## Rotation')
+    expect(html).toContain('<h2')
+    expect(html).toContain('Rotation')
+    expect(html).not.toContain('## Rotation')
   })
 
   it('renders a written-out tag as characters rather than as an element', () => {

@@ -21,6 +21,7 @@ export const aTurn = (over: Partial<Turn> & { id: string }): Turn => ({
   toolCalls: [],
   plan: null,
   usage: null,
+  contextTokens: null,
   startedAtMs: null,
   endedAtMs: null,
   ...over,

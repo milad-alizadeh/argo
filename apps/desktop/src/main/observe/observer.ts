@@ -3,6 +3,7 @@ import { basename } from 'node:path'
 import type { HubEvent } from '../../shared'
 import type { Hub } from '../hub'
 import { parseTranscript } from './claudeTranscript'
+import { owningTranscript, readDelegateTurns } from './delegateTranscripts'
 import { discoverWorkingSet } from './discover'
 import { readImageFile } from './imageFile'
 import { gatherClaudeProcesses } from './liveness'
@@ -75,6 +76,9 @@ async function read(context: Context, path: string): Promise<void> {
     const parsed = parseTranscript(basename(path, '.jsonl'), contents.split('\n'), {
       readImage: readImageFile,
     })
+    // The delegates' own transcripts sit beside this file, and this is the only layer that may go
+    // looking for them — the parse stays one file in, one reading out.
+    parsed.delegateTurns = await readDelegateTurns(path, readImageFile)
     context.byPath.set(path, parsed)
   } catch {
     // A file that vanished between the watch event and the read is simply no longer observed;
@@ -161,7 +165,12 @@ export function createObserver(hub: Hub, options: ObserverOptions): Observer {
         // A machine that never ran claude (no transcript root) is a clean no-op, not a crash.
       }
       if (options.watch !== false) {
-        watcher = watchTranscripts(options.root, (path) => void refresh(path))
+        watcher = watchTranscripts(options.root, (path) => {
+          // A nested file (a delegate's transcript) is re-read THROUGH its session, which is the
+          // only file that has a Session to publish.
+          const owner = owningTranscript(options.root, path)
+          if (owner !== null) void refresh(owner)
+        })
       }
     },
     stop() {

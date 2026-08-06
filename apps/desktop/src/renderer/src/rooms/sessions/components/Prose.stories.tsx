@@ -60,7 +60,9 @@ export const Lists: Story = {
 }
 
 /** Everything the subset refuses, shown as the characters the agent wrote. Nothing is dropped and
- * nothing leaks as markup: a heading stays `##`, a table stays pipes, an image stays its source. */
+ * nothing leaks as markup: a table stays pipes, an image stays its source. A HEADING is not among
+ * them — agents structure an answer with `##`, and those characters shown raw were the feed's most
+ * common prose reading as its own syntax. */
 export const ExcludedSyntax: Story = {
   args: {
     markdown:
@@ -68,12 +70,12 @@ export const ExcludedSyntax: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText(/## Rotation plan/)).toBeInTheDocument()
+    await expect(canvas.getByRole('heading', { name: 'Rotation plan' })).toBeInTheDocument()
     await expect(canvas.getByText(/\| step \| owner \|/)).toBeInTheDocument()
     await expect(canvas.getByText(/!\[diagram\]/)).toBeInTheDocument()
     await expect(canvas.getByText(/<b>tag<\/b>/)).toBeInTheDocument()
     // The excluded elements are never built, so there is nothing to have filtered.
-    await expect(canvasElement.querySelector('h2, table, img, blockquote, b')).toBeNull()
+    await expect(canvasElement.querySelector('table, img, blockquote, b')).toBeNull()
   },
 }
 

@@ -207,6 +207,14 @@ export interface Turn {
   toolCalls: ToolCall[]
   plan: Plan | null
   usage: Usage | null
+  /** What the model was holding in its window on this Turn's LAST reading — the newest record's
+   * input side, never a sum.
+   *
+   * Separate from `usage` because the two answer different questions from the same numbers. Spend
+   * accumulates: a turn with ten tool calls made ten requests, and every one of them cost what it
+   * cost. Context does not — each request re-read one window, so summing the reads reports a window
+   * ten times its real size, which is how a fresh session came to read `~100%`. */
+  contextTokens: number | null
   /** When the prompt that opened this Turn landed. */
   startedAtMs: number | null
   endedAtMs: number | null

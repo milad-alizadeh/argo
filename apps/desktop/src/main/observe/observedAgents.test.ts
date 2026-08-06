@@ -92,4 +92,20 @@ describe('the Subagents parented to it', () => {
       },
     ])
   })
+
+  // A delegate's interior lives in its OWN transcript, joined to the seed by the id of the call
+  // that spawned it. Without the join the rail row opens onto nothing.
+  it("carries a delegate's own turns, joined by the call that spawned it", () => {
+    const leaf = file({
+      tree: {
+        turns: [],
+        compactions: [],
+        subagents: [{ id: 'toolu_1', startedAtMs: null, endedAtMs: null, usage: null }],
+      },
+      delegateTurns: { toolu_1: [turn('d1')] },
+    })
+    const observed = toObservedSession(logicalOf(leaf), 'external', running)
+
+    expect(observed.agents.at(-1)?.turns.map((entry) => entry.id)).toEqual(['d1'])
+  })
 })

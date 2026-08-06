@@ -52,7 +52,7 @@ type RawCall = Omit<ToolCall, 'kind' | 'status' | 'result'> & {
   result: RawResult | null
 }
 
-type RawTurn = Omit<Turn, 'stopReason' | 'prose' | 'toolCalls' | 'plan'> & {
+type RawTurn = Omit<Turn, 'stopReason' | 'prose' | 'toolCalls' | 'plan' | 'contextTokens'> & {
   stopReason: string | null
   prose: { kind: string; markdown: string }[]
   toolCalls: RawCall[]
@@ -126,6 +126,8 @@ const proseOf = (part: { kind: string; markdown: string }): Prose =>
 
 const turnOf = (turn: RawTurn): Turn => ({
   ...turn,
+  // The capture predates the field, and a window reading is not something a fixture may invent.
+  contextTokens: null,
   stopReason: turn.stopReason === null ? null : (oneOf(STOP_REASONS, turn.stopReason) ?? 'unknown'),
   prose: turn.prose.map(proseOf),
   toolCalls: turn.toolCalls.map(callOf),

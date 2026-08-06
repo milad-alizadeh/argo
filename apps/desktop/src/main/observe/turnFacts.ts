@@ -77,6 +77,7 @@ export function emptyTurn(id: string, startedAtMs: number | null): Turn {
     toolCalls: [],
     plan: null,
     usage: null,
+    contextTokens: null,
     startedAtMs,
     endedAtMs: null,
   }

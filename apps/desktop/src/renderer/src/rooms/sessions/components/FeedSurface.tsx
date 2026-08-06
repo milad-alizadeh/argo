@@ -41,7 +41,7 @@ function ChapterBody({
   const segments = segmentsOf(rows)
   if (segments.length === 0) return null
   return (
-    <div className="flex max-w-[78ch] flex-col gap-region pt-region">
+    <div className="flex flex-col gap-region pt-region">
       {segments.map((segment) =>
         segment.kind === 'shots' ? (
           <ShotGallery key={segment.key} rows={segment.shots} />
@@ -91,21 +91,28 @@ export function FeedSurface({
         ref={feed}
         className="feed-scroller min-h-0 min-w-0 flex-1 overflow-y-auto p-region pt-0"
       >
-        {chapters.map((chapter, index) => (
-          <Fragment key={chapter.key}>
-            {/* Where one turn ends and the next begins, DRAWN: a full-width rule in the middle of
+        {/* The reading column, CENTRED in whatever room the pane has rather than pinned to its
+            left edge: a session with no agents rail beside it hands this surface the whole plane,
+            and a measure held against one edge of it leaves the text stranded in a corner. The
+            seams span this column rather than the pane, so a rule and the prose under it start at
+            the same place. */}
+        <div className="mx-auto flex w-full max-w-[78ch] flex-col">
+          {chapters.map((chapter, index) => (
+            <Fragment key={chapter.key}>
+              {/* Where one turn ends and the next begins, DRAWN: a full-width rule in the middle of
                 the gap, so the boundary is a line you see rather than air you infer.
                 `my-plane` is the WHOLE of the space around it — the body above carries no bottom
                 padding of its own, so the rule sits the same distance from the last row above it
                 as from the seam below. Padding on both would put a region-plus-plane above the
                 line and a plane below, which reads as a rule belonging to the turn beneath. */}
-            {index > 0 && <div aria-hidden className="my-plane h-px shrink-0 bg-foreground/15" />}
-            <section {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
-              <FeedSeam chapter={chapter} plan={plan} />
-              <ChapterBody rows={chapter.rows} root={root} />
-            </section>
-          </Fragment>
-        ))}
+              {index > 0 && <div aria-hidden className="my-plane h-px shrink-0 bg-foreground/15" />}
+              <section {...{ [ANCHOR]: chapter.key }} className="flex flex-col">
+                <FeedSeam chapter={chapter} plan={plan} />
+                <ChapterBody rows={chapter.rows} root={root} />
+              </section>
+            </Fragment>
+          ))}
+        </div>
       </div>
       <DensityGutter
         chapters={chapters}

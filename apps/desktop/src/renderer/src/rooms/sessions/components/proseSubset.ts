@@ -8,10 +8,12 @@ import { linkifyBareUrls } from './linkify'
 
 /** micromark construct names the parser is told to forget. Disabling a construct is what makes the
  * exclusion hold BY CONSTRUCTION: its source is never tokenized, so it survives as ordinary text
- * and there is no filter that could be forgotten. Tables need no entry — GFM is never added. */
+ * and there is no filter that could be forgotten. Tables need no entry — GFM is never added.
+ *
+ * HEADINGS are no longer among them. Agents write `##` to structure an answer, and the characters
+ * shown raw were a heading rendered as its own syntax — the feed's most common prose reading as the
+ * one thing markdown exists to stop showing. */
 const FORGOTTEN = [
-  'headingAtx',
-  'setextUnderline',
   'codeIndented',
   'htmlFlow',
   'htmlText',

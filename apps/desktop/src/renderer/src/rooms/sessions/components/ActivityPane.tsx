@@ -54,20 +54,25 @@ export function ActivityPane({ activity }: { activity: ActivityModel }): React.J
   const hasRail = activity.delegated.length > 0
   return (
     <div data-component="ActivityPane" className="flex min-h-0 min-w-0 flex-1">
-      <div
-        ref={rail}
-        className="flex min-h-0 shrink-0"
-        style={railCollapsed ? undefined : { width: railWidth }}
-      >
-        <AgentsRail
-          delegates={activity.delegated}
-          scopeKey={scope?.key ?? null}
-          live={activity.turns.at(-1)?.open === true}
-          collapsed={railCollapsed}
-          onSelect={setScopeKey}
-          onToggle={() => setRailCollapsed(!railCollapsed)}
-        />
-      </div>
+      {/* The rail's BOX is conditional too, not just its contents: a session with no delegates has
+          no rail, and a wrapper still holding its width would stand an empty 240px column beside
+          the feed — the one thing "no rail at all" is supposed to mean. */}
+      {hasRail && (
+        <div
+          ref={rail}
+          className="flex min-h-0 shrink-0"
+          style={railCollapsed ? undefined : { width: railWidth }}
+        >
+          <AgentsRail
+            delegates={activity.delegated}
+            scopeKey={scope?.key ?? null}
+            live={activity.turns.at(-1)?.open === true}
+            collapsed={railCollapsed}
+            onSelect={setScopeKey}
+            onToggle={() => setRailCollapsed(!railCollapsed)}
+          />
+        </div>
+      )}
       {/* No splitter on a collapsed rail: there is nothing to size, and a drag handle on a strip
           you closed would resize a panel you cannot see. */}
       {hasRail && !railCollapsed && (
