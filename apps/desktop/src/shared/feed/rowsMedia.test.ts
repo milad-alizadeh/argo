@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { aCall, aMedia, anAgent, anEdit, aShot, aTurn, said } from './__fixtures__/tree'
-import { feedRows } from './feedRows'
-import type { ToolCall } from './runtimeTree'
+import { aCall, aMedia, anAgent, anEdit, aShot, aTurn, said } from '../__fixtures__/tree'
+import type { ToolCall } from '../runtimeTree'
+import { feedRows } from './rows'
 
 // The MEDIA rows of the feed: what an image the agent looked at reads as, and what happens where
 // there are no pixels to show. Split from the mutation and folding suites for the line ceiling.

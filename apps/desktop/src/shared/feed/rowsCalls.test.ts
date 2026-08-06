@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { aCall, anAgent, anEdit, anOutput, aTurn } from './__fixtures__/tree'
-import { feedRows } from './feedRows'
-import type { ToolCall } from './runtimeTree'
+import { aCall, anAgent, anEdit, anOutput, aTurn } from '../__fixtures__/tree'
+import type { ToolCall } from '../runtimeTree'
+import { feedRows } from './rows'
 
 // The rows a single call gets: a command, which always shows the line it ran, and a failure of any
 // kind, which shows what went wrong without a click.

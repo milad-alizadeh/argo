@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { aDiff, anAgent, anEdit, aTurn, said } from './__fixtures__/tree'
-import { feedRows } from './feedRows'
-import type { ToolCall } from './runtimeTree'
+import { aDiff, anAgent, anEdit, aTurn, said } from '../__fixtures__/tree'
+import type { ToolCall } from '../runtimeTree'
+import { feedRows } from './rows'
 
 // The MUTATION rows of the feed, split from `feedRows.test.ts` for the line ceiling: that file
 // judges the prose rows and their order, this one judges what a change to a file reads as.

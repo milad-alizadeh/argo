@@ -1,5 +1,5 @@
-import { type ToolRow, toolRowsByProseIndex } from './feedCalls'
-import type { Agent, Plan, Prose, Turn } from './runtimeTree'
+import type { Agent, Plan, Prose, Turn } from '../runtimeTree'
+import { type ToolRow, toolRowsByProseIndex } from './calls'
 
 // THE feed derivation: one Agent's runtime tree in, one ordered list of rows out. Every reading rule
 // the Activity feed has lives here rather than in a component, so each one is falsifiable without

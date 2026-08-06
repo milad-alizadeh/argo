@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { anAgent, aTurn, said, thought } from './__fixtures__/tree'
-import { feedRows } from './feedRows'
+import { anAgent, aTurn, said, thought } from '../__fixtures__/tree'
+import { feedRows } from './rows'
 
 describe('feedRows', () => {
   it('opens each turn with its prompt and follows it with the prose in emission order', () => {

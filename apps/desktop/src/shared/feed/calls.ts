@@ -1,5 +1,3 @@
-import { type CallRole, roleOf } from './feedCallRole'
-import { type MediaRowModel, mediaRow } from './feedMedia'
 import type {
   DiffResult,
   OutputResult,
@@ -7,7 +5,9 @@ import type {
   ToolCallKind,
   ToolCallStatus,
   Turn,
-} from './runtimeTree'
+} from '../runtimeTree'
+import { type CallRole, roleOf } from './callRole'
+import { type MediaRowModel, mediaRow } from './media'
 
 // How one Turn's tool calls read: the loud/quiet policy of the Activity feed, decided here so that
 // every part of it is falsifiable without mounting anything.

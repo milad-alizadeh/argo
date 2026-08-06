@@ -1,4 +1,4 @@
-import type { MediaResult, ToolCall, ToolCallStatus } from './runtimeTree'
+import type { MediaResult, ToolCall, ToolCallStatus } from '../runtimeTree'
 
 // How an image the agent looked at reads in the feed. Split from `feedCalls.ts`'s loud/quiet policy
 // because what makes a picture worth a row is a different question from what makes a call worth one.

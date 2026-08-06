@@ -1,4 +1,4 @@
-import type { ToolCall, ToolCallKind } from './runtimeTree'
+import type { ToolCall, ToolCallKind } from '../runtimeTree'
 
 // WHAT ONE TOOL CALL IS WORTH — the Activity feed's loud/quiet policy, as a table.
 //

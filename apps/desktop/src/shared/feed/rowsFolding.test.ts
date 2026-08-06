@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { aCall, anAgent, anEdit, aTurn, said } from './__fixtures__/tree'
-import { feedRows } from './feedRows'
-import type { ToolCall } from './runtimeTree'
+import { aCall, anAgent, anEdit, aTurn, said } from '../__fixtures__/tree'
+import type { ToolCall } from '../runtimeTree'
+import { feedRows } from './rows'
 
 // The QUIET half of the feed: observation folded to one counted row, and the loud rows that break the
 // run. Split from `feedRows.test.ts` for the line ceiling — that file judges prose and its order.
