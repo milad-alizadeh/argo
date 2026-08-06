@@ -131,10 +131,32 @@ working tree clean, nothing unpushed, and untouched for 30 minutes so a live ses
 pulled out from under it. Everything else is reported and left alone; `--dry-run` reports
 without removing.
 
+## Landing work — pull requests only
+
+**Agents never push to `main`.** Work lands on a branch, through a PR the human reviews and
+merges:
+
+```bash
+git push -u origin <your-branch>
+gh pr create --fill
+```
+
+`main` requires a pull request and three green checks (`lint · typecheck · unit`, `story tests`,
+`electron e2e`). The repo owner keeps `enforce_admins: false` so they can still hotfix directly —
+which means **GitHub cannot tell the human from the agent**: an agent pushes with the owner's
+credentials, so server-side the two are one identity with the bypass. The distinction is drawn
+locally instead, by `scripts/push-guard.mjs` (below), and that is the only place it can be drawn.
+
+The guard fails **closed**: a bare `git push` is denied along with an explicit one, because an
+unnamed destination may resolve to `main` through the branch's upstream and the two errors are
+not symmetric — a wrong allow is an unreviewed commit already public, a wrong deny is one more
+word to type.
+
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the four guardrail hooks (graphify-before-grep,
+`hooks.json` (repo root) is the neutral SSOT for the five guardrail hooks (graphify-before-grep,
 placement write guard — a new file may not be created loose at a module root,
+push guard — an agent may not push to the default branch,
 worktree edit guard, worktree-gc), projected per-harness into each agent its own `agents` key
 names. **Edit `hooks.json`, then run `bun run hooks:sync`** — it regenerates
 `.claude/settings.json` (claude-code) and `.codex/hooks.json` (codex); never hand-edit those

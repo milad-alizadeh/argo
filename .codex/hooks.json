@@ -2,11 +2,29 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/scripts/placement-guard.mjs\""
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "graphify hook-guard search"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ARGO_HOOK_AGENT=1 node \"$(git rev-parse --show-toplevel)/scripts/push-guard.mjs\""
           }
         ]
       },

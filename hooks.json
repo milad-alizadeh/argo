@@ -8,6 +8,13 @@
       "command": "graphify hook-guard search"
     },
     {
+      "$comment": "Agent changes land through a PR, never a push to the default branch. GitHub cannot enforce this: an agent pushes with the owner's credentials and the owner keeps `enforce_admins: false` for their own hotfixes, so server-side the human and the agent are one identity. Fails CLOSED — an unnamed destination is denied rather than guessed at.",
+      "event": "pre-tool",
+      "matcher": "Bash",
+      "command": "node \"$(git rev-parse --show-toplevel)/scripts/push-guard.mjs\"",
+      "agentGated": true
+    },
+    {
       "event": "pre-tool",
       "matcher": "Read|Glob",
       "command": "graphify hook-guard read"
