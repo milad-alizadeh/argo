@@ -74,6 +74,7 @@ function App(): React.JSX.Element {
             interior={session.interior}
             layout={session.layout}
             attach={session.attach}
+            spawnRefusal={commands.spawnRefusal}
             handlers={{
               ...session.handlers,
               onSelectSession: shell.selectSession,

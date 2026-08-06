@@ -3,9 +3,10 @@ import type { Cli } from '../shared'
 import type { AgentTerminals } from './agentTerminals'
 import type { ClaimId, ManagedSessions } from './observe'
 
-// ⌘N is zero-config (spec §"Canonical keymap"), so there is no CLI to pick and this is the one
-// place the choice is made.
-const SPAWN_CLI: Cli = 'claude'
+/** ⌘N is zero-config (spec §"Canonical keymap"), so there is no CLI to pick and this is the one
+ * place the choice is made — the roster's own row for a spawn reads it from here rather than
+ * naming a second `claude`. */
+export const SPAWN_CLI: Cli = 'claude'
 
 /** Started, or the reason it was not — node-pty throws synchronously when the CLI is not on main's
  * PATH, which is the common failure and the one worth saying out loud. */

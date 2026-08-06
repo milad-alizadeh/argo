@@ -8,7 +8,7 @@ import {
   recallProjectUi,
   rememberProjectUi,
 } from '@/shell/components'
-import { useSessionStore } from './sessionStore'
+import { currentSessionId, useSessionStore } from './sessionStore'
 
 // The shell's own UI state, which is what makes a project swap a VIEW CHANGE: the room and
 // selection you left a project in are filed under its id and handed back on return. Nothing is
@@ -25,6 +25,7 @@ export interface ShellState extends ProjectUi {
 export function useShellState(): ShellState {
   const projects = useSessionStore((state) => state.projects)
   const activeId = useSessionStore((state) => state.activeProjectId)
+  const successors = useSessionStore((state) => state.successors)
   const [ui, setUi] = useState<ProjectUi>(DEFAULT_PROJECT_UI)
   const [memory, setMemory] = useState<ProjectUiMemory>({})
 
@@ -53,6 +54,10 @@ export function useShellState(): ShellState {
 
   return {
     ...ui,
+    // A Dock you are already typing at stays open when the CLI finally names its Session: the row
+    // it was drawn for is replaced by one with a different id, and the selection follows the agent
+    // rather than the id it was made under (#361).
+    selectedSessionId: currentSessionId(successors, ui.selectedSessionId),
     selectRoom: (room) => setUi((state) => ({ ...state, room })),
     selectSession: (selectedSessionId) => setUi((state) => ({ ...state, selectedSessionId })),
     swapProject,

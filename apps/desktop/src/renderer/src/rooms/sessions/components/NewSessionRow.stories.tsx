@@ -29,3 +29,15 @@ export const Default: Story = {
     await expect(args.onSpawn).toHaveBeenCalledOnce()
   },
 }
+
+/**
+ * A spawn that did not happen says so where you pressed for it, in the words the tool used — a
+ * packaged app launched from Finder gets a minimal PATH, so `claude` not being on it is the common
+ * failure rather than an exotic one.
+ */
+export const Refused: Story = {
+  args: { refusal: 'spawn claude ENOENT' },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole('status')).toHaveTextContent('spawn claude ENOENT')
+  },
+}

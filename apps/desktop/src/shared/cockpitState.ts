@@ -98,6 +98,22 @@ export function updateSession(state: CockpitState, session: SessionView): Cockpi
   return { ...state, sessions }
 }
 
+// Argo publishes a row for a Session it SPAWNED before any transcript exists — it owns the claim
+// and the pty, both DIRECT — and the CLI picks the id only once it writes its first record. This is
+// where the two meet: the provisional row stands down and the observed Session takes its place, IN
+// ITS POSITION, so the roster never shows the same agent twice and the row never jumps.
+export function replaceSession(
+  state: CockpitState,
+  provisionalId: string,
+  session: SessionView,
+): CockpitState {
+  const index = state.sessions.findIndex((existing) => existing.id === provisionalId)
+  if (index === -1) return addSession(state, session)
+  const sessions = [...state.sessions]
+  sessions[index] = session
+  return { ...state, sessions }
+}
+
 export function addProject(state: CockpitState, project: ProjectView): CockpitState {
   if (state.projects.some((existing) => existing.id === project.id)) return state
   return withProjects(state, [...state.projects, project])
