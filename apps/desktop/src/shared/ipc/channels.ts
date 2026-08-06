@@ -52,6 +52,22 @@ export const PROJECT_REGISTER_CHANNEL = 'cockpit:project-register'
 export const PROJECT_ACTIVATE_CHANNEL = 'cockpit:project-activate'
 export const SESSION_SPAWN_CHANNEL = 'cockpit:session-spawn'
 
+// Connecting the Work Item provider (ADR-0018). Two channels rather than one because the
+// device flow has something to SAY mid-flight: the invoke settles only when the user has
+// finished at GitHub, and the code they must type is pushed the moment GitHub issues it, so
+// the connect panel shows it rather than spinning blind.
+export const WORK_ITEMS_CONNECT_CHANNEL = 'cockpit:work-items-connect'
+export const WORK_ITEMS_DEVICE_CODE_CHANNEL = 'cockpit:work-items-device-code'
+
+/** What the user must act on to complete a device-flow sign-in: the code to type and where to
+ * type it, plus how long the code stays good for. */
+export interface DeviceCodePrompt {
+  userCode: string
+  verificationUri: string
+  /** Seconds the provider will honour this code for. */
+  expiresIn: number
+}
+
 /** What an act reports back: it happened, or the reason it did not — in the underlying tool's
  * own words where the tool refused, so the shell never invents an explanation. */
 export interface CommandResult {
@@ -83,4 +99,8 @@ export interface CockpitBridge {
   activateProject(projectId: string): Promise<CommandResult>
   /** Spawn a session in the ACTIVE project's root folder — zero-config, no arguments to pick. */
   spawnSession(): Promise<CommandResult>
+  /** Run the Work Item provider's device-flow sign-in. `onCode` fires once, as soon as the
+   * provider issues the code, and the promise settles only when the grant completes, expires
+   * or is refused — so the panel waits visibly rather than blind. */
+  connectWorkItems(onCode: (prompt: DeviceCodePrompt) => void): Promise<CommandResult>
 }

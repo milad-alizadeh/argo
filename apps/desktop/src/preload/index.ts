@@ -2,6 +2,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
 import {
   type CockpitBridge,
+  type DeviceCodePrompt,
   GIT_FACTS_CHANNEL,
   GIT_OPERATION_CHANNEL,
   PROJECT_ACTIVATE_CHANNEL,
@@ -14,6 +15,8 @@ import {
   TERMINAL_DATA_CHANNEL,
   TERMINAL_INPUT_CHANNEL,
   TERMINAL_RESIZE_CHANNEL,
+  WORK_ITEMS_CONNECT_CHANNEL,
+  WORK_ITEMS_DEVICE_CODE_CHANNEL,
 } from '../shared'
 
 // The Cockpit's IPC surface: the renderer subscribes to main's state projection (ADR-0005)
@@ -58,6 +61,15 @@ const cockpit: CockpitBridge = {
   },
   spawnSession() {
     return ipcRenderer.invoke(SESSION_SPAWN_CHANNEL)
+  },
+  connectWorkItems(onCode) {
+    // The code arrives mid-flight, so the listener is attached BEFORE the invoke and removed
+    // once it settles — a device flow that never reaches the user must not leave one behind.
+    const handler = (_event: IpcRendererEvent, prompt: DeviceCodePrompt): void => onCode(prompt)
+    ipcRenderer.on(WORK_ITEMS_DEVICE_CODE_CHANNEL, handler)
+    return ipcRenderer.invoke(WORK_ITEMS_CONNECT_CHANNEL).finally(() => {
+      ipcRenderer.removeListener(WORK_ITEMS_DEVICE_CODE_CHANNEL, handler)
+    })
   },
 }
 
