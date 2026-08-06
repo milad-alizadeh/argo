@@ -27,9 +27,12 @@ export function SessionScreen({
   layout,
   attach,
   handlers,
+  spawnRefusal = null,
 }: {
   /** The roster rail's derived view-model — the room's left column. */
   roster: SessionsRoomModel
+  /** Why the last spawn did not happen, verbatim; `null` when none refused. */
+  spawnRefusal?: string | null
   /** The open session's interior, or `null` when nothing is selected. */
   interior: SessionInteriorModel | null
   /** The three splitter-driven px sizes the custom properties carry. */
@@ -54,6 +57,7 @@ export function SessionScreen({
         model={roster}
         onSelectSession={handlers.onSelectSession}
         onSpawnSession={handlers.onSpawnSession}
+        spawnRefusal={spawnRefusal}
       />
       {interior && (
         <>

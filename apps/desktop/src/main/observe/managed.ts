@@ -23,6 +23,8 @@ interface Claim {
   fromMs: number
   /** null while the PTY lives; the moment it exited otherwise. */
   toMs: number | null
+  /** The Session the CLI turned out to be running under, once its record named one. */
+  sessionId: string | null
 }
 
 export interface ManagedSessions {
@@ -39,8 +41,12 @@ export interface ManagedSessions {
    * Record which claim owns an observed Session, now that it HAS an id. Only the observer can do
    * this — the spawn knew a folder, the transcript knows the id, and this is where the two meet.
    * A Session no claim covers binds to nothing rather than to the nearest claim.
+   *
+   * Returns the claim this Session JOINED, once and only on the observation that joined it, so the
+   * caller can stand down whatever it published under that claim's own id (#361). `null` otherwise
+   * — an unowned Session, or a re-observation of one already bound.
    */
-  bind(sessionId: string, cwd: string | null, startedAtMs: number | null): void
+  bind(sessionId: string, cwd: string | null, startedAtMs: number | null): ClaimId | null
   /**
    * Argo started an agent FOR an already-observed Session, because its Dock had no PTY to attach
    * to. The Session's POSTURE does not change — this claim's agent is a new one, not the agent
@@ -57,26 +63,31 @@ export function createManagedSessions(now: () => number = Date.now): ManagedSess
   const boundSessions = new Map<string, ClaimId>()
   let issued = 0
 
-  // The NEWEST claim whose window contains the start, not the first: ⌘N twice in one project opens
-  // two claims on the same folder with overlapping windows, and the older one's window never
-  // closes while its agent lives — so first-match would bind both Sessions to the first agent and
-  // both Docks would steer it.
-  const owningClaim = (cwd: string | null, startedAtMs: number | null): Claim | undefined => {
-    if (cwd === null || startedAtMs === null) return undefined
-    return claimsByCwd
-      .get(cwd)
-      ?.findLast(
-        (claim) =>
-          startedAtMs >= claim.fromMs && (claim.toMs === null || startedAtMs <= claim.toMs),
-      )
+  const covering = (cwd: string | null, startedAtMs: number | null): Claim[] => {
+    if (cwd === null || startedAtMs === null) return []
+    return (claimsByCwd.get(cwd) ?? []).filter(
+      (claim) => startedAtMs >= claim.fromMs && (claim.toMs === null || startedAtMs <= claim.toMs),
+    )
+  }
+
+  // The claim still WAITING for a Session wins, and the newest of those: ⌘N twice in one project
+  // opens two claims on the same folder with overlapping windows, and the older one's window never
+  // closes while its agent lives — so matching on the window alone would hand both Sessions the
+  // same agent, whichever end of the list it picked from.
+  const claimFor = (cwd: string | null, startedAtMs: number | null): Claim | undefined => {
+    const claims = covering(cwd, startedAtMs)
+    return claims.findLast((claim) => claim.sessionId === null) ?? claims.at(-1)
   }
 
   return {
     claim(cwd) {
       issued += 1
-      const claim: Claim = { id: `claim-${issued}`, fromMs: now(), toMs: null }
+      const claim: Claim = { id: `claim-${issued}`, fromMs: now(), toMs: null, sessionId: null }
       claimsByCwd.set(cwd, [...(claimsByCwd.get(cwd) ?? []), claim])
       claimsById.set(claim.id, claim)
+      // Reachable under its own id from birth: the roster carries a row for this agent before the
+      // CLI has picked a Session id (#361), and that row's Dock steers through the same lookup.
+      boundSessions.set(claim.id, claim.id)
       return claim.id
     },
     release(id) {
@@ -84,15 +95,20 @@ export function createManagedSessions(now: () => number = Date.now): ManagedSess
       if (claim && claim.toMs === null) claim.toMs = now()
     },
     postureFor(cwd, startedAtMs) {
-      const owning = owningClaim(cwd, startedAtMs)
+      const owning = claimFor(cwd, startedAtMs)
       if (owning === undefined) return 'external'
       return sessionPosture('managed', owning.toMs === null)
     },
     bind(sessionId, cwd, startedAtMs) {
-      // Only ever ADDS: a Session no claim covers keeps whatever `adopt` gave it, so the observer's
-      // next publish does not tear the agent out from under an open Dock.
-      const owning = owningClaim(cwd, startedAtMs)
-      if (owning !== undefined) boundSessions.set(sessionId, owning.id)
+      // A Session keeps the first agent it was given — the claim that covers it, or the one `adopt`
+      // started for it — so the observer's next publish does not tear the agent out from under an
+      // open Dock, and a claim is never reported as joined twice.
+      if (boundSessions.has(sessionId)) return null
+      const owning = claimFor(cwd, startedAtMs)
+      if (owning === undefined) return null
+      owning.sessionId = sessionId
+      boundSessions.set(sessionId, owning.id)
+      return owning.id
     },
     adopt(sessionId, claim) {
       boundSessions.set(sessionId, claim)

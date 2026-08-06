@@ -1,12 +1,18 @@
 import { readFile } from 'node:fs/promises'
 import { basename } from 'node:path'
+import type { HubEvent } from '../../shared'
 import type { Hub } from '../hub'
 import { parseTranscript } from './claudeTranscript'
 import { discoverWorkingSet } from './discover'
 import { readImageFile } from './imageFile'
 import { gatherClaudeProcesses } from './liveness'
-import { createManagedSessions, type ManagedSessions } from './managed'
-import { toObservedSession, toSessionEvent, toSessionUpdate } from './observedSession'
+import { type ClaimId, createManagedSessions, type ManagedSessions } from './managed'
+import {
+  toObservedSession,
+  toSessionEvent,
+  toSessionUpdate,
+  toSupersedeEvent,
+} from './observedSession'
 import { firstInChain, latestInChain, stitch } from './resumeChain'
 import { deriveSessionStatus } from './sessionStatus'
 import type { LogicalSession, ObservedSession, ParsedTranscript } from './types'
@@ -76,7 +82,13 @@ async function read(context: Context, path: string): Promise<void> {
   }
 }
 
-function observe(context: Context, logical: LogicalSession, cwds: Set<string>): ObservedSession {
+interface Reading {
+  observed: ObservedSession
+  /** The claim this Session just joined, whose provisional row it therefore stands in for (#361). */
+  joined: ClaimId | null
+}
+
+function observe(context: Context, logical: LogicalSession, cwds: Set<string>): Reading {
   const cwd = latestInChain(logical.files, (file) => file.cwd)
   // Ownership is matched on the folder AND when the Session began, so an agent already running
   // in a folder Argo later spawned into stays external.
@@ -84,9 +96,9 @@ function observe(context: Context, logical: LogicalSession, cwds: Set<string>): 
   const posture = context.managed.postureFor(cwd, startedAtMs)
   // The Session now HAS an id, which the spawn could not know — binding it to its claim is what
   // lets its Dock find the agent's own PTY later (#323).
-  context.managed.bind(logical.id, cwd, startedAtMs)
+  const joined = context.managed.bind(logical.id, cwd, startedAtMs)
   const nowMs = context.now()
-  return toObservedSession(logical, posture, (agents) =>
+  const observed = toObservedSession(logical, posture, (agents) =>
     deriveSessionStatus({
       posture,
       processMatch: cwd !== null && cwds.has(cwd),
@@ -95,6 +107,14 @@ function observe(context: Context, logical: LogicalSession, cwds: Set<string>): 
       agents,
     }),
   )
+  return { observed, joined }
+}
+
+// A Session arriving for the first time takes the place of the row ⌘N published under its claim,
+// rather than standing beside it: one agent, one row (#361). Nothing was published for a claim the
+// Dock started on demand, and the projection lands that Session as a plain arrival.
+function arrival({ observed, joined }: Reading): HubEvent {
+  return joined === null ? toSessionEvent(observed) : toSupersedeEvent(observed, joined)
 }
 
 // The observer is the change detector, which is what lets the reducer replace unconditionally:
@@ -102,12 +122,13 @@ function observe(context: Context, logical: LogicalSession, cwds: Set<string>): 
 async function publish(context: Context): Promise<void> {
   const cwds = await liveCwds(context, context.now())
   for (const logical of stitch([...context.byPath.values()])) {
-    const observed = observe(context, logical, cwds)
+    const observation = observe(context, logical, cwds)
+    const { observed } = observation
     const reading = JSON.stringify(observed)
     if (context.published.get(observed.id) === reading) continue
     const created = !context.published.has(observed.id)
     context.published.set(observed.id, reading)
-    context.hub.apply(created ? toSessionEvent(observed) : toSessionUpdate(observed))
+    context.hub.apply(created ? arrival(observation) : toSessionUpdate(observed))
   }
 }
 

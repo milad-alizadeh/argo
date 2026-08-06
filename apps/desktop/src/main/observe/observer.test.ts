@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { ProjectionDelta } from '../../shared'
 import { createHub, type Hub } from '../hub'
+import { provisionalSession } from '../provisionalSession'
 import { type ClaimId, createManagedSessions, type ManagedSessions } from './managed'
 import { createObserver, type ObserverOptions } from './observer'
 
@@ -170,6 +171,17 @@ describe('what the observer projects', () => {
     await observer({ managed }).start()
 
     expect(hub.getState().sessions[0]?.posture).toBe('external')
+  })
+
+  it('replaces the row ⌘N published with the Session the CLI named, not a second row', async () => {
+    const { managed, claim } = claimedManaged()
+    hub.apply({ type: 'session-created', session: provisionalSession(claim, FIXTURE_CWD, NOW) })
+    plant('treeFull', fixture('treeFull'))
+
+    await observer({ managed }).start()
+
+    expect(hub.getState().sessions.map((session) => session.id)).toEqual(['treeFull'])
+    expect(deltas.map((delta) => delta.type)).toEqual(['session-added', 'session-replaced'])
   })
 
   it('demotes a managed Session to orphaned once its PTY has exited', async () => {

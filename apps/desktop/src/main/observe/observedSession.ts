@@ -6,6 +6,7 @@ import {
   type SessionIntake,
   type SessionPosture,
   type SessionStatus,
+  type SessionSuperseded,
   type SessionUpdated,
   sessionFacts,
   type Tiered,
@@ -107,4 +108,13 @@ export function toSessionEvent(observed: ObservedSession): SessionCreated {
 /** The incremental event: a later reading of a Session the roster already holds. */
 export function toSessionUpdate(observed: ObservedSession): SessionUpdated {
   return { type: 'session-updated', session: toIntake(observed) }
+}
+
+/** The arrival of a Session that ⌘N already published a row for, under the claim's own id: the CLI
+ * has now named it, so the row it stood in for is replaced rather than joined (#361). */
+export function toSupersedeEvent(
+  observed: ObservedSession,
+  provisionalId: string,
+): SessionSuperseded {
+  return { type: 'session-superseded', session: toIntake(observed), provisionalId }
 }

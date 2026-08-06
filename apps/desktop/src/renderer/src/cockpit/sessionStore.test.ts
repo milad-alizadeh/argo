@@ -1,9 +1,9 @@
 import { emptyState, type SessionView, sessionFacts } from '@shared'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useSessionStore } from './sessionStore'
+import { currentSessionId, useSessionStore } from './sessionStore'
 
 beforeEach(() => {
-  useSessionStore.setState(emptyState())
+  useSessionStore.setState({ ...emptyState(), successors: {} })
 })
 
 const row = (id: string, over: Partial<SessionView> = {}): SessionView => ({
@@ -34,6 +34,30 @@ describe('useSessionStore', () => {
       state: { ...emptyState(), sessions: [row('fresh', { cli: 'codex' })] },
     })
     expect(useSessionStore.getState().sessions.map((s) => s.id)).toEqual(['fresh'])
+  })
+
+  it('puts the Session the CLI named where the row Argo spawned stood', () => {
+    useSessionStore.getState().applyDelta({ type: 'session-added', session: row('claim-1') })
+    useSessionStore
+      .getState()
+      .applyDelta({ type: 'session-replaced', provisionalId: 'claim-1', session: row('s1') })
+
+    expect(useSessionStore.getState().sessions.map((s) => s.id)).toEqual(['s1'])
+  })
+
+  it('follows a selection made before the CLI named the Session', () => {
+    useSessionStore
+      .getState()
+      .applyDelta({ type: 'session-replaced', provisionalId: 'claim-1', session: row('s1') })
+
+    expect(currentSessionId(useSessionStore.getState().successors, 'claim-1')).toBe('s1')
+  })
+
+  it.each<[string, string | null]>([
+    ['a row nothing replaced', 'other'],
+    ['no selection at all', null],
+  ])('leaves %s alone', (_, selected) => {
+    expect(currentSessionId({ 'claim-1': 's1' }, selected)).toBe(selected)
   })
 
   it('holds the registered Projects a snapshot hydrates it with', () => {

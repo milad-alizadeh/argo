@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import type { ShellCommand } from '@/shell/components'
 import { useShellKeymap } from './useShellKeymap'
 import type { ShellState } from './useShellState'
@@ -16,14 +16,21 @@ export interface ShellCommands {
   openScratchTerminal: () => void
   /** The diverged branch's other hatch: an agent in the project root, which is what ⌘N spawns. */
   resolveWithAgent: () => void
+  /** Why the last spawn did not happen, in the tool's own words; `null` when none refused. */
+  spawnRefusal: string | null
 }
 
 export function useShellCommands(shell: ShellState): ShellCommands {
-  // Spawn lands you where the session will appear: main starts the agent and the observation
-  // re-sweep puts it in the roster, so the Sessions room is the only honest destination.
-  const spawn = useCallback(() => {
+  const [spawnRefusal, setSpawnRefusal] = useState<string | null>(null)
+
+  // Spawn lands you where the session will appear: main starts the agent and puts its row in the
+  // roster at once, so the Sessions room is the only honest destination. A refusal — no active
+  // project, or `claude` missing from a packaged app's minimal PATH — is otherwise indistinguishable
+  // from a spawn that worked, since both do nothing visible to the shell (#361).
+  const spawn = useCallback(async () => {
     shell.selectRoom('sessions')
-    void window.cockpit?.spawnSession()
+    const result = await window.cockpit?.spawnSession()
+    setSpawnRefusal(result === undefined || result.ok ? null : result.detail)
   }, [shell])
 
   const run = useCallback(
@@ -34,7 +41,7 @@ export function useShellCommands(shell: ShellState): ShellCommands {
         case 'project':
           return shell.stepProject(command.step)
         case 'spawn':
-          return spawn()
+          return void spawn()
         case 'dismiss':
           return shell.selectSession(null)
         case 'palette':
@@ -52,10 +59,13 @@ export function useShellCommands(shell: ShellState): ShellCommands {
 
   useShellKeymap(run)
 
+  const startSession = useCallback(() => void spawn(), [spawn])
+
   return {
     addProject: useCallback(() => void window.cockpit?.registerProject(), []),
-    spawnSession: spawn,
+    spawnSession: startSession,
     openScratchTerminal: useCallback(() => shell.selectRoom('code'), [shell]),
-    resolveWithAgent: spawn,
+    resolveWithAgent: startSession,
+    spawnRefusal,
   }
 }

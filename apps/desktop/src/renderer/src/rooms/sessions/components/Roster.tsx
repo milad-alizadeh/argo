@@ -18,6 +18,7 @@ export function Roster({
   model,
   onSelectSession,
   onSpawnSession,
+  spawnRefusal = null,
 }: {
   /** The rail's whole view-model. An empty one is the zero-state, not an error. */
   model: SessionsRoomModel
@@ -25,6 +26,8 @@ export function Roster({
   onSelectSession?: (id: string) => void
   /** Spawn a session in the active project — the visible half of `⌘N`. */
   onSpawnSession?: () => void
+  /** Why the last spawn did not happen, verbatim; `null` when none refused. */
+  spawnRefusal?: string | null
 }): React.JSX.Element {
   const [archivedOpen, toggleArchived] = useDisclosure({})
   const archivedId = useId()
@@ -48,7 +51,7 @@ export function Roster({
       )}
       {/* Below the live rows, not above: the top card then lines up with the header across the
           split, and a spawn affordance is reached for far less often than the sessions are read. */}
-      <NewSessionRow onSpawn={onSpawnSession} />
+      <NewSessionRow onSpawn={onSpawnSession} refusal={spawnRefusal} />
       {model.archivedCount > 0 && (
         // `mt-auto` is what "at the foot" means when the rows do not fill the rail.
         <div className="mt-auto flex flex-col gap-gap">

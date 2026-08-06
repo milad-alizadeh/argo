@@ -1,3 +1,4 @@
+import type { CommandResult } from '../../shared'
 import type { DockWindow } from '../terminalBridge'
 
 /** The channel registry a test's `vi.mock('electron', …)` writes into, standing in for `ipcMain`.
@@ -9,3 +10,8 @@ import type { DockWindow } from '../terminalBridge'
 export type IpcListener = (event: { sender: DockWindow }, message: unknown) => void
 
 export const channels = new Map<string, IpcListener>()
+
+/** The same registry for the invoke channels (`ipcMain.handle`), where an act reports back whether
+ * it happened. Kept apart from `channels` because the two halves are different shapes, not because
+ * a name collides. */
+export const handlers = new Map<string, () => CommandResult>()

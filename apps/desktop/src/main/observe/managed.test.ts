@@ -94,3 +94,52 @@ describe('managed sessions — which agent a Session steers', () => {
     expect(managed.ownerOf('session-a')).toBeNull()
   })
 })
+
+// ⌘N puts a row in the roster at spawn, keyed by the claim because the CLI has not picked a Session
+// id yet (#361). The registry is the only party that sees both, so it says when the two have met.
+describe('managed sessions — the row a spawn stands up', () => {
+  it('steers the agent under the claim’s own id, before any Session has been observed', () => {
+    const managed = createManagedSessions(() => BEFORE)
+    const claim = managed.claim(CWD)
+
+    expect(managed.ownerOf(claim)).toBe(claim)
+  })
+
+  it('reports the claim a Session joined, so the row spawned under it can stand down', () => {
+    const managed = createManagedSessions(() => BEFORE)
+    const claim = managed.claim(CWD)
+
+    expect(managed.bind('session-a', CWD, DURING)).toBe(claim)
+  })
+
+  it('reports nothing on a re-observation of a Session already bound', () => {
+    const managed = createManagedSessions(() => BEFORE)
+    managed.claim(CWD)
+    managed.bind('session-a', CWD, DURING)
+
+    expect(managed.bind('session-a', CWD, DURING)).toBeNull()
+  })
+
+  it('reports nothing for a Session no claim covers', () => {
+    const managed = createManagedSessions(() => BEFORE)
+    managed.claim(CWD)
+
+    expect(managed.bind('external-one', '/elsewhere', DURING)).toBeNull()
+  })
+
+  it('gives each of two agents spawned in one folder its own Session, observed in either order', () => {
+    // Two ⌘N in one project overlap on one cwd, and nothing says the newer agent writes second —
+    // so the claims are handed out by which is still waiting for a Session, not by start time.
+    let clock = BEFORE
+    const managed = createManagedSessions(() => clock)
+    const first = managed.claim(CWD)
+    const second = managed.claim(CWD)
+    clock = DURING
+
+    managed.bind('session-b', CWD, DURING)
+    managed.bind('session-a', CWD, DURING)
+
+    expect(managed.ownerOf('session-a')).not.toBe(managed.ownerOf('session-b'))
+    expect([first, second]).toContain(managed.ownerOf('session-a'))
+  })
+})
