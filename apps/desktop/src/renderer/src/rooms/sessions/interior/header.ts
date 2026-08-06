@@ -1,8 +1,8 @@
 import { isSteerable, rootAgent, type SessionView } from '@shared'
 import { deliveryState } from '@/shared/status'
+import { contextPercent, sessionUsage, tokenSpend } from '../contextEstimate'
+import { duration, relativeAge } from '../sessionClock'
 import type { ActivityDot } from './activityStates'
-import { contextPercent, sessionUsage, tokenSpend } from './contextEstimate'
-import { duration, relativeAge } from './sessionClock'
 
 // The session header's derivation: the one band's title, its context ring, its meta line and its
 // intent chip. Pure and React-free — the header is glance-only, so every judgement it makes (which

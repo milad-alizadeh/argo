@@ -1,24 +1,14 @@
 import type { FeedRow, SessionView, Turn } from '@shared'
 import { rootAgent, turnFeedRows } from '@shared'
-import {
-  type SubagentGroupModel,
-  subagentGroup,
-  subagentRow,
-  subagentsOf,
-} from './interiorSubagents'
-import {
-  agentChapters,
-  type ChapterModel,
-  type TimelineTurnModel,
-  timelineTurn,
-} from './interiorTimeline'
-import { type PlanProgressModel, sessionPlan } from './sessionPlan'
+import { type PlanProgressModel, sessionPlan } from '../sessionPlan'
+import { type SubagentGroupModel, subagentGroup, subagentRow, subagentsOf } from './subagents'
+import { agentChapters, type ChapterModel, type TimelineTurnModel, timelineTurn } from './timeline'
 
 // The Activity surface's derivation: the session's own turns as chapters, and every delegate with
 // a chapter feed of its own — built in one pass so the rail, the seams and the prose they head
 // cannot fall out of step.
 
-export type { ChapterModel, TimelineTurnModel, ToolStepModel } from './interiorTimeline'
+export type { ChapterModel, TimelineTurnModel, ToolStepModel } from './timeline'
 
 /** One agent on the surface: a delegate carrying its own chapter feed, or one of this session's own
  * turns carrying its rows. The subagent's `chapters` are what its scope renders — the same feed

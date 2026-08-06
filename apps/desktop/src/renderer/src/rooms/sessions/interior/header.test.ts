@@ -1,7 +1,7 @@
 import { sessionFacts, sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { aRoot, aTurn, aUsage } from './__fixtures__/runtimeTree'
-import { buildInteriorHeader, type SessionLink } from './interiorHeader'
+import { aRoot, aTurn, aUsage } from '../__fixtures__/runtimeTree'
+import { buildInteriorHeader, type SessionLink } from './header'
 
 const MINUTE = 60_000
 const NOW = 100 * MINUTE

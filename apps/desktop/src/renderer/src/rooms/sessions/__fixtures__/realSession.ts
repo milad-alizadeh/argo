@@ -16,7 +16,7 @@ import {
   type ToolResult,
   type Turn,
 } from '@shared'
-import { buildSessionInterior, type SessionInteriorModel } from '../interiorModel'
+import { buildSessionInterior, type SessionInteriorModel } from '../interior/model'
 import raw from './realSession.json'
 
 // FIXTURE, derived from a REAL Claude Code session on this machine (the #318 inline-media

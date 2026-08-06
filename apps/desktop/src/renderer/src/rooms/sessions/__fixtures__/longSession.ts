@@ -1,5 +1,5 @@
 import { type SessionView, sessionFacts, sessionView } from '@shared'
-import { buildSessionInterior, type SessionInteriorModel } from '../interiorModel'
+import { buildSessionInterior, type SessionInteriorModel } from '../interior/model'
 import { NOW_MS } from './interiorTree'
 import { lensTurns } from './lensTurns'
 import { ago, LONG_TURNS } from './longTurns'

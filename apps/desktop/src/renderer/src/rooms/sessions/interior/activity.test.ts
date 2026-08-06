@@ -6,8 +6,8 @@ import {
   aRoot,
   aToolCall as call,
   aTurn as turn,
-} from './__fixtures__/runtimeTree'
-import { buildActivity } from './interiorActivity'
+} from '../__fixtures__/runtimeTree'
+import { buildActivity } from './activity'
 
 const rootWith = (turns: Turn[], compactions: Agent['compactions'] = []): Agent =>
   aRoot({ turns, compactions })

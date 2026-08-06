@@ -6,8 +6,8 @@ import {
   StatusDot,
   Text,
 } from '@/shared/components/ui'
-import type { ActivityDot } from '../activityStates'
-import type { IntentChip, MetaSegment } from '../interiorHeader'
+import type { ActivityDot } from '../interior/activityStates'
+import type { IntentChip, MetaSegment } from '../interior/header'
 
 /** One count of what has changed against the branch — an ICON and a number, never a typed-in mark.
  * Nested in a `Text` so the em-relative icon box tracks the line it sits on. */

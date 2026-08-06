@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { CaretLeftIcon, CaretRightIcon, IconButton, StatusDot, Text } from '@/shared/components/ui'
-import { SUBAGENT_STATES } from '../activityStates'
-import type { DelegateItem } from '../interiorActivity'
+import type { DelegateItem } from '../interior/activity'
+import { SUBAGENT_STATES } from '../interior/activityStates'
 import { NAV_ROW, NAV_ROW_SELECTED, PANE_BAND } from './rowRecipes'
 import { SubagentRow } from './SubagentRow'
 

@@ -1,8 +1,8 @@
 import type { Agent, SessionView, ToolCall } from '@shared'
 import { openTurn } from '@shared'
+import { tokenSpend } from '../contextEstimate'
+import { duration } from '../sessionClock'
 import { type ActivityDot, SUBAGENT_STATES, type SubagentStatus } from './activityStates'
-import { tokenSpend } from './contextEstimate'
-import { duration } from './sessionClock'
 
 // The Subagents group's derivation. The one judgement here worth reading on its own is the
 // blueprint's per-CLI degradation: the cockpit never invents a phase a CLI did not report.

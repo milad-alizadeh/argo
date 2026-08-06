@@ -1,12 +1,12 @@
 import type { SessionView } from '@shared'
-import { type ActivityModel, buildActivity } from './interiorActivity'
-import { buildDock, type DockModel } from './interiorDock'
+import { type ActivityModel, buildActivity } from './activity'
+import { buildDock, type DockModel } from './dock'
 import {
   buildInteriorHeader,
   noSessionLink,
   type SessionHeaderModel,
   type SessionLink,
-} from './interiorHeader'
+} from './header'
 
 // The session interior's one derivation: header, the selected tab's surface, and the Dock. The
 // screen composes Views over it and derives nothing itself, which is what lets the interior's

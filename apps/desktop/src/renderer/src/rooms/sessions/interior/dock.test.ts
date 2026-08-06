@@ -1,8 +1,8 @@
 import type { Agent, Turn } from '@shared'
 import { sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { aRoot, aToolCall as call, aTurn as turn } from './__fixtures__/runtimeTree'
-import { buildDock, nowHead } from './interiorDock'
+import { aRoot, aToolCall as call, aTurn as turn } from '../__fixtures__/runtimeTree'
+import { buildDock, nowHead } from './dock'
 
 const root = (turns: Turn[]): Agent => aRoot({ turns })
 

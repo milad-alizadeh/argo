@@ -1,7 +1,7 @@
 import { sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { aRoot, aTurn } from './__fixtures__/runtimeTree'
-import { buildSessionInterior, DEFAULT_INTERIOR_UI } from './interiorModel'
+import { aRoot, aTurn } from '../__fixtures__/runtimeTree'
+import { buildSessionInterior, DEFAULT_INTERIOR_UI } from './model'
 
 const worked = aRoot({ turns: [aTurn({ id: 't' })] })
 

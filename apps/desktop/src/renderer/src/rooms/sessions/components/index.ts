@@ -13,7 +13,7 @@ export {
   type SessionLink,
   type SessionMode,
   type TitleSource,
-} from '../interiorHeader'
+} from '../interior/header'
 export {
   buildSessionInterior,
   DEFAULT_INTERIOR_UI,
@@ -21,7 +21,7 @@ export {
   type InteriorTab,
   type InteriorUiState,
   type SessionInteriorModel,
-} from '../interiorModel'
+} from '../interior/model'
 export {
   buildSessionsRoomModel,
   type RosterRow,

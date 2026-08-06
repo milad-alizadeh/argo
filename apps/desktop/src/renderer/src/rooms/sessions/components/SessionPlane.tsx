@@ -1,5 +1,5 @@
 import { PanelSplitter, Tabs, TabsContent, type TerminalAttach, Text } from '@/shared/components/ui'
-import { INTERIOR_TABS, type InteriorTab, type SessionInteriorModel } from '../interiorModel'
+import { INTERIOR_TABS, type InteriorTab, type SessionInteriorModel } from '../interior/model'
 import { isDockExpanded, SPINE, type SpineLayout } from '../useSpineLayout'
 import { ActivityPane } from './ActivityPane'
 import { Dock } from './Dock'

@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import { StatusDot, Text } from '@/shared/components/ui'
-import { SUBAGENT_STATES } from '../activityStates'
-import type { SubagentRowModel } from '../interiorSubagents'
+import { SUBAGENT_STATES } from '../interior/activityStates'
+import type { SubagentRowModel } from '../interior/subagents'
 import { NAV_ROW, NAV_ROW_SELECTED } from './rowRecipes'
 
 /**

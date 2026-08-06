@@ -1,5 +1,5 @@
 import { Text } from '@/shared/components/ui'
-import type { SessionHeaderModel } from '../interiorHeader'
+import type { SessionHeaderModel } from '../interior/header'
 import { ContextRing } from './ContextRing'
 import { SessionMeta } from './SessionMeta'
 import { SessionTabs } from './SessionTabs'

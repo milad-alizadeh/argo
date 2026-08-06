@@ -6,7 +6,7 @@ import {
   TerminalWindowIcon,
   Text,
 } from '@/shared/components/ui'
-import type { DockModel } from '../interiorDock'
+import type { DockModel } from '../interior/dock'
 import { NowHead } from './NowHead'
 
 const KIND_LABEL: Record<DockModel['kind'], string> = {

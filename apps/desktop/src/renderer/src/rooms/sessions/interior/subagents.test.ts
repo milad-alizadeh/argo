@@ -1,8 +1,8 @@
 import type { Agent, Turn } from '@shared'
 import { sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { aSubagent as agent, aRoot, aTurn as turn } from './__fixtures__/runtimeTree'
-import { subagentGroup } from './interiorSubagents'
+import { aSubagent as agent, aRoot, aTurn as turn } from '../__fixtures__/runtimeTree'
+import { subagentGroup } from './subagents'
 
 const NOW = 100 * 24 * 60 * 60_000
 

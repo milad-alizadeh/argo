@@ -1,6 +1,6 @@
 import { type SessionView, sessionFacts, sessionView } from '@shared'
-import { buildSessionInterior, type SessionInteriorModel } from '../interiorModel'
-import type { SubagentGroupModel } from '../interiorSubagents'
+import { buildSessionInterior, type SessionInteriorModel } from '../interior/model'
+import type { SubagentGroupModel } from '../interior/subagents'
 import { LENSES } from './interiorLenses'
 import { MINUTE, NOW_MS, OPEN_TURN, PAST_TURN } from './interiorTree'
 import { aRoot, aSubagent, aTurn } from './runtimeTree'

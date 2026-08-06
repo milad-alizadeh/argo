@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { Text } from '@/shared/components/ui'
-import { type ChapterModel, chapterTitle } from '../interiorTimeline'
+import { type ChapterModel, chapterTitle } from '../interior/timeline'
 import type { MinimapBlock, MinimapTick } from './minimapGeometry'
 import { markFor } from './minimapMatrix'
 

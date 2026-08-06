@@ -1,5 +1,5 @@
 import { PanelSplitter, type TerminalAttach } from '@/shared/components/ui'
-import type { SessionInteriorModel } from '../interiorModel'
+import type { SessionInteriorModel } from '../interior/model'
 import type { SessionsRoomModel } from '../sessionsRoomModel'
 import { SPINE, type SpineEdge, type SpineLayout } from '../useSpineLayout'
 import { Roster } from './Roster'

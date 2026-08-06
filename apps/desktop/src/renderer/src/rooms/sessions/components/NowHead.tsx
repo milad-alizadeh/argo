@@ -1,5 +1,5 @@
 import { Text } from '@/shared/components/ui'
-import type { NowHeadModel } from '../interiorDock'
+import type { NowHeadModel } from '../interior/dock'
 
 function headline(now: NowHeadModel): string {
   if (now.task !== null) return now.task

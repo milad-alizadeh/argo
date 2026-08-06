@@ -1,8 +1,8 @@
 import type { Agent, Turn } from '@shared'
 import { sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { aRoot, aTurn as turn } from './__fixtures__/runtimeTree'
-import { buildActivity } from './interiorActivity'
+import { aRoot, aTurn as turn } from '../__fixtures__/runtimeTree'
+import { buildActivity } from './activity'
 
 // What NAMES an exchange: the prompt that opened it. `Turn 7` says where you are, not what happened
 // there. Its own file because the title is one rule read by two surfaces — the timeline row and the

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { PanelSplitter, Text } from '@/shared/components/ui'
-import { type ActivityModel, sessionChapters } from '../interiorActivity'
+import { type ActivityModel, sessionChapters } from '../interior/activity'
 import { AgentsRail } from './AgentsRail'
 import { FeedSurface } from './FeedSurface'
 import { PlanProgress } from './PlanProgress'

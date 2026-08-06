@@ -5,8 +5,8 @@ import {
   aRoot,
   aToolCall as call,
   aTurn as turn,
-} from './__fixtures__/runtimeTree'
-import { subagentGroup } from './interiorSubagents'
+} from '../__fixtures__/runtimeTree'
+import { subagentGroup } from './subagents'
 
 // What ONE row in the fanout says about its delegate. Its cost and duration both come from the
 // parent's record of the call that spawned it — a subagent's own turns run in a sidechain the

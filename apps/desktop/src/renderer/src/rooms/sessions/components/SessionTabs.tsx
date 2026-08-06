@@ -1,5 +1,5 @@
 import { TabsList, TabsTrigger, Text } from '@/shared/components/ui'
-import { INTERIOR_TABS, type InteriorTab } from '../interiorModel'
+import { INTERIOR_TABS, type InteriorTab } from '../interior/model'
 
 const TAB_LABELS: Record<InteriorTab, string> = {
   activity: 'Activity',

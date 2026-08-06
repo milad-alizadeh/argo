@@ -1,7 +1,7 @@
 import type { FeedRow, StopReason, ToolCall, ToolCallKind, ToolCallStatus, Turn } from '@shared'
 import { turnFeedRows } from '@shared'
+import { clockTime, duration } from '../sessionClock'
 import { type ActivityDot, STEP_STATES } from './activityStates'
-import { clockTime, duration } from './sessionClock'
 
 // The timeline grain of the Activity derivation: one turn as a scannable model, and one turn as a
 // CHAPTER — the same model joined to its prose rows. Chapters are the feed's unit: the sticky seam
