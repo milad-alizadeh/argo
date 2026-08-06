@@ -17,8 +17,8 @@ import {
 } from '../shared'
 
 // The Cockpit's IPC surface: the renderer subscribes to main's state projection (ADR-0005)
-// and opens the live shell. Announcing readiness triggers main to send a hydrating snapshot,
-// then stream live deltas; attaching triggers main to spawn the PTY, then stream its output.
+// and opens the session's terminal. Announcing readiness triggers main to send a hydrating
+// snapshot, then stream live deltas; attaching joins the agent's own PTY and streams its output.
 const cockpit: CockpitBridge = {
   subscribeProjection(listener) {
     const handler = (_event: IpcRendererEvent, delta: ProjectionDelta): void => listener(delta)
@@ -29,7 +29,7 @@ const cockpit: CockpitBridge = {
     }
   },
   openTerminal(sessionId, size, onData) {
-    // Output is filtered by session on the way in: one window holds many Docks, and every shell
+    // Output is filtered by session on the way in: one window holds many Docks, and every agent
     // streams down the same channel.
     const handler = (_event: IpcRendererEvent, chunk: string, from: string): void => {
       if (from === sessionId) onData(chunk)

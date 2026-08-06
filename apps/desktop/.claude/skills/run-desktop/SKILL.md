@@ -29,17 +29,21 @@ bun run build          # electron-vite build → out/{main,preload,renderer}
 ## Agent path — the driver
 
 ```bash
-node .claude/skills/run-desktop/driver.mjs --seed --out /tmp/cockpit.png \
+node .claude/skills/run-desktop/driver.mjs --out /tmp/cockpit.png \
   --eval "document.querySelector('[data-testid=cockpit-root] a')?.innerText"
 ```
 
 It launches the built app, waits for `[data-testid="cockpit-root"]`, writes the screenshot, and
-prints the window title. With `--seed` the eval above returns the demo row's text
-(`"Refactor auth module\nRunning\nclaude"`). Options:
+prints the window title. Options:
 
 - `--out <path>` — screenshot destination, resolved against the current directory
   (default `run-desktop.png` in cwd).
-- `--seed` — sets `ARGO_SEED_DEMO=1` so the rail shows a demo Session instead of the empty state.
+- `--transcripts <dir>` — sets `ARGO_TRANSCRIPT_ROOT`, so the observer reads a fixture world
+  (`<dir>/<project>/<session>.jsonl`) instead of your own `~/.claude/projects`. Without it a
+  clean machine lands on onboarding with an empty rail.
+- `--user-data <dir>` — Electron's `--user-data-dir`. Argo's Project registry lives there, so
+  writing a `projects.json` into it is what lands the app past onboarding with a Project
+  already registered. `e2e/rail.spec.ts`'s `buildWorld()` is the worked example of both flags.
 - `--testid <id>` — print the inner text of `[data-testid="<id>"]`. `cockpit-root` is the
   renderer root, so it returns the whole tree's text; point this at a leaf testid to read one
   element as more get added.
@@ -47,8 +51,8 @@ prints the window title. With `--seed` the eval above returns the demo row's tex
 - `--wait <testid>` — element to wait for before shooting (default `cockpit-root`).
 
 **Read the PNG back and confirm it shows the app** — a green exit is not proof the window
-rendered. A seeded run shows a `SESSIONS` rail with a `Refactor auth module` / `Running` /
-`claude` row.
+rendered. With no `--transcripts`/`--user-data` the honest result is the onboarding empty state:
+nothing is registered and nothing is observed.
 
 ## Human path — dev server
 
@@ -58,7 +62,9 @@ For interactive work with hot reload (not for headless agents):
 bun run dev            # electron-vite dev; renderer on http://localhost:5173, opens a window
 ```
 
-`ARGO_SEED_DEMO=1 bun run dev` seeds the same demo Session.
+The same two environment seams work here: `ARGO_TRANSCRIPT_ROOT=<dir> bun run dev` points the
+observer at a fixture world. There is no demo-seed switch — the rail shows what is actually
+observed.
 
 ## Gotchas
 

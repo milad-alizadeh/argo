@@ -82,6 +82,9 @@ function observe(context: Context, logical: LogicalSession, cwds: Set<string>): 
   // in a folder Argo later spawned into stays external.
   const startedAtMs = firstInChain(logical.files, (file) => file.firstTimestampMs)
   const posture = context.managed.postureFor(cwd, startedAtMs)
+  // The Session now HAS an id, which the spawn could not know — binding it to its claim is what
+  // lets its Dock find the agent's own PTY later (#323).
+  context.managed.bind(logical.id, cwd, startedAtMs)
   const nowMs = context.now()
   return toObservedSession(logical, posture, (agents) =>
     deriveSessionStatus({
