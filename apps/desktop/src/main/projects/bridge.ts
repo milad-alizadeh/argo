@@ -4,9 +4,9 @@ import {
   normalizeProjectPath,
   PROJECT_ACTIVATE_CHANNEL,
   PROJECT_REGISTER_CHANNEL,
-} from '../shared'
-import type { Hub } from './hub'
-import { registerProject, setActiveProject, toProjectView } from './projectRegistry'
+} from '../../shared'
+import type { Hub } from '../hub'
+import { registerProject, setActiveProject, toProjectView } from './registry'
 
 // Registration and activation — the only two acts Argo owns above the Session (ADR-0017). Both
 // persist to the registry BEFORE applying the hub event, so a relaunch opens into the world the

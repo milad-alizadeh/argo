@@ -1,5 +1,5 @@
-import type { CommandResult } from '../../shared'
-import type { DockWindow } from '../terminalBridge'
+import type { CommandResult } from '../../../shared'
+import type { DockWindow } from '../bridge'
 
 /** The channel registry a test's `vi.mock('electron', …)` writes into, standing in for `ipcMain`.
  *

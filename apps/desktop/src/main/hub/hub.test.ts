@@ -6,7 +6,7 @@ import {
   type SessionIntake,
   type SessionView,
   sessionFacts,
-} from '../shared'
+} from '../../shared'
 import { createHub } from './hub'
 
 const intake = (id: string): SessionIntake => ({

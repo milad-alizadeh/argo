@@ -1,8 +1,8 @@
 import { ipcMain } from 'electron'
-import { type CommandResult, SESSION_SPAWN_CHANNEL } from '../shared'
+import { type CommandResult, SESSION_SPAWN_CHANNEL } from '../../shared'
+import type { Hub } from '../hub'
+import { projectFolder } from '../projects'
 import type { AgentLauncher } from './agentLauncher'
-import type { Hub } from './hub'
-import { projectFolder } from './projectFolder'
 import { endedSession, provisionalSession } from './provisionalSession'
 
 // ⌘N: start the project's agent CLI in the ACTIVE project's root folder. The cwd is the only

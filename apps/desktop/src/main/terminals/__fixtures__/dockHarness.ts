@@ -4,12 +4,12 @@ import {
   TERMINAL_INPUT_CHANNEL,
   TERMINAL_RESIZE_CHANNEL,
   type TerminalSize,
-} from '../../shared'
+} from '../../../shared'
+import { createHub, type Hub } from '../../hub'
+import { createManagedSessions } from '../../observe'
 import type { AgentLauncher } from '../agentLauncher'
 import { createAgentTerminals } from '../agentTerminals'
-import { createHub, type Hub } from '../hub'
-import { createManagedSessions } from '../observe'
-import { type DockWindow, wireTerminal } from '../terminalBridge'
+import { type DockWindow, wireTerminal } from '../bridge'
 import { fakePty } from './fakePty'
 import { channels } from './ipcChannels'
 

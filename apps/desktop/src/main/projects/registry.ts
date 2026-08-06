@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import { type HubEvent, normalizeProjectPath, type ProjectView, projectName } from '../shared'
+import { type HubEvent, normalizeProjectPath, type ProjectView, projectName } from '../../shared'
 
 // The one piece of glue Argo owns rather than observes (ADR-0017): the set of known
 // Projects and which one is active, as a plain JSON file in per-machine `userData`. Never

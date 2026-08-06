@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { ProjectionDelta } from '../../shared'
 import { createHub, type Hub } from '../hub'
-import { provisionalSession } from '../provisionalSession'
+import { provisionalSession } from '../terminals/provisionalSession'
 import { type ClaimId, createManagedSessions, type ManagedSessions } from './managed'
 import { createObserver, type ObserverOptions } from './observer'
 

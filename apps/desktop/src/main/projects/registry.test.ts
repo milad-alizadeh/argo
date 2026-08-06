@@ -8,7 +8,7 @@ import {
   registerProject,
   relocateProject,
   toProjectEvents,
-} from './projectRegistry'
+} from './registry'
 
 let userData: string
 

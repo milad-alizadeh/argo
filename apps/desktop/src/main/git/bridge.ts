@@ -7,10 +7,11 @@ import {
   type GitFacts,
   type GitOperation,
   type GitRequest,
-} from '../shared'
-import { readGitFacts, runGitOperation } from './git'
-import type { Hub } from './hub'
-import { projectFolder } from './projectFolder'
+} from '../../shared'
+import type { Hub } from '../hub'
+import { projectFolder } from '../projects'
+import { readGitFacts } from './gitFacts'
+import { runGitOperation } from './operations'
 
 // The Electron-coupled seam over the git module (ADR-0004: main runs git). Both handlers only
 // dispatch: validate the payload, resolve the Project's folder, call one unit. Which rows the

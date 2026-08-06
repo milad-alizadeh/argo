@@ -1,7 +1,7 @@
 import { spawn } from 'node-pty'
-import type { Cli } from '../shared'
+import type { Cli } from '../../shared'
+import type { ClaimId, ManagedSessions } from '../observe'
 import type { AgentTerminals } from './agentTerminals'
-import type { ClaimId, ManagedSessions } from './observe'
 
 /** ⌘N is zero-config (spec §"Canonical keymap"), so there is no CLI to pick and this is the one
  * place the choice is made — the roster's own row for a spawn reads it from here rather than

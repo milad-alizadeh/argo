@@ -1,5 +1,5 @@
 import { ipcMain, type WebContents } from 'electron'
-import { PROJECTION_CHANNEL, PROJECTION_READY_CHANNEL } from '../shared'
+import { PROJECTION_CHANNEL, PROJECTION_READY_CHANNEL } from '../../shared'
 import type { Hub } from './hub'
 
 // The Electron-coupled transport: forwards hub deltas to a window's renderer over

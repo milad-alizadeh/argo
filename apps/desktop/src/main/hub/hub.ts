@@ -4,7 +4,7 @@ import {
   emptyState,
   type HubEvent,
   type ProjectionDelta,
-} from '../shared'
+} from '../../shared'
 
 // The main-process hub (ADR-0005): the single source of truth as a plain observable
 // store. Events enter through one intake (`apply`); subscribers receive the deltas to

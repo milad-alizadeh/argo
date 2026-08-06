@@ -6,11 +6,11 @@ import {
   TERMINAL_RESIZE_CHANNEL,
   type TerminalAttachRequest,
   type TerminalSize,
-} from '../shared'
+} from '../../shared'
+import type { Hub } from '../hub'
+import type { ClaimId, ManagedSessions } from '../observe'
 import type { AgentLauncher } from './agentLauncher'
 import type { AgentTerminals, AttachedTerminal } from './agentTerminals'
-import type { Hub } from './hub'
-import type { ClaimId, ManagedSessions } from './observe'
 
 /** The slice of a renderer's `WebContents` the bridge uses. Narrow so a test drives the routing
  * without an Electron window; `WebContents` satisfies it structurally. */

@@ -109,6 +109,7 @@
             "cockpitState.ts": "RATCHET — the projected-state shape; belongs in `projection/` with projection.ts and its test, which are the only things that build and read it.",
             "projection.ts": "RATCHET — the pure projection reducer; head of the `projection/` folder it should name.",
             "projection.test.ts": "RATCHET — moves with projection.ts.",
+            "projectionSupersede.test.ts": "RATCHET — a second suite over the same reducer (#362); belongs in `projection/` with it.",
             "feedCallRole.ts": "RATCHET — one of eight `feed*` files at this root, the loudest prefix-instead-of-a-folder in the repo. All eight belong in `feed/`.",
             "feedCalls.ts": "RATCHET — belongs in `feed/`.",
             "feedMedia.ts": "RATCHET — belongs in `feed/`.",
