@@ -18,6 +18,11 @@ When a file nears the line ceiling (`code-style.md` owns that number) or a folde
 accumulates 5+ peer files doing related things, extract into a subfolder. Do this proactively while authoring a
 feature, not as a follow-up cleanup task.
 
+**At a MODULE root this is arithmetic, not advice.** Each module declares what may sit loose
+at its root in the map's `placement.rootFiles` block, and `root-files-check.mjs` fails the
+build on anything else — including a module with no entry at all (ADR-0021). The reasoning
+lives in that gate's failure message, where it is read at the moment it applies.
+
 ### The split pattern
 
 One file becomes a folder of focused units behind one entry:
@@ -110,21 +115,20 @@ scoped to its own folder's domain is fine.
 One level of nesting covers almost every case. Never go deeper than two levels below
 the module root without a documented reason.
 
-### The composition root is not a folder for leftovers
+### No module root is a folder for leftovers
 
-Every app has one place that wires the modules together and belongs to none of them. It holds
-the bootstrap, the container, and the container's own View — and nothing else. The pull towards
-it is strong and specific: a feature's hook that reads the store or the network can't sit inside
-the feature when features are pure Views, so it gets dropped at the root "for now". Do that five
-times and the root is the junk drawer the kind-folder ban exists to prevent, except no folder
-name gives it away.
+Wiring is the file with no obvious home — the hook that reads the store, the `ipcMain.handle`
+that fronts a domain — and "for now" at the root is how a module flattens. It still needs a
+**named home**: a domain-named folder behind its own entry. Where wiring lives is a judgement
+call worth making per module, and one answer does not transfer:
 
-The wiring is real and it does belong outside the feature. It still needs a **named home** —
-one domain-named folder behind its own entry, which the container is the only caller of, and
-which no feature may import back. `composition-root-check.mjs` fails the build on anything else
-loose at the root, because placement is invisible to an import linter: a feature's hook parked
-at the root imports its feature through the feature's declared public entry, so every edge is
-legal while the file is in the wrong place.
+- The renderer's slices are pure Views, so a store read genuinely cannot live inside one — its
+  wiring is hoisted into `cockpit/`, which the container alone calls and no slice imports back.
+- Main has no such constraint, so the opposite holds: each domain owns its own bridge
+  (`git/bridge.ts`, `hub/bridge.ts`), and its root is the entry alone.
+
+Copying the renderer's shape into main without its reason is exactly how main flattened
+(ADR-0021). `root-files-check.mjs` counts the result either way.
 
 ### Public entry per module
 
@@ -166,8 +170,10 @@ Know what that linter cannot see: it judges **edges**, never **placement**. Ever
 about where a file lives is invisible to it, and the failure mode is not a loud one — the
 misplaced file's imports are all legal, so the gate goes green and the structure drifts anyway.
 Placement is a glob predicate, so it can have gates of its own; this repo runs three
-(`composition-root-check.mjs`, `kind-folder-check.mjs`, `earned-shared-check.mjs`), all
-compiled from the same module map the boundary linter reads. Justified
+(`root-files-check.mjs`, `kind-folder-check.mjs`, `earned-shared-check.mjs`), all
+compiled from the same module map the boundary linter reads, on pre-commit as well as in CI —
+a misplaced file caught in CI is a follow-up ticket, caught pre-commit it is fixed by whoever
+still has the context that produced it. Justified
 violations (vendored code, a migration in flight) go in a small explicit ignorelist
 next to the lint config — each entry scoped to one rule + one path glob, with a
 one-line reason. Never loosen the rule globally, never scatter inline disable comments.
@@ -176,3 +182,8 @@ one-line reason. Never loosen the rule globally, never scatter inline disable co
 
 This applies to every module in the codebase. When you add files to any folder,
 check whether the folder now needs splitting.
+
+That sentence was already here, and `main/` still reached 16 files at its root while the one
+path a gate covered stayed clean. Uniformity is a property of the ENFORCEMENT, not of the
+prose: a new module is guarded from its first file because an undeclared module fails
+(ADR-0021), not because this paragraph says every module counts.

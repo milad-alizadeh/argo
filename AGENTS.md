@@ -42,12 +42,14 @@ never by loosening a regex. `apps/desktop` locks Electron main ⊥ preload ⊥ r
 
 That linter sees **edges only**, so the same map carries a `placement` block for the rules about
 where a file may *live* — which no import linter can see, because a misplaced file's imports are
-all legal. Three gates compile from it (`bun run quality:placement`): the composition root holds
-only the bootstrap, the container and its View; kind-folders (`utils/`, `types/`, `hooks/`, …)
-are banned outright; and a symbol in the domain-aware shared tier needs more than one module to
-want it. Feature-serving wiring that can't live in the feature — store and bridge reads, when
-slices are pure Views — goes in one named folder no slice may import back, never loose at the
-root.
+all legal. Three gates compile from it (`bun run quality:placement`): **every** module declares
+what may sit loose at its root and a module with no entry FAILS (ADR-0021 — the predecessor
+guarded one hardcoded path, so every module added after it was silently exempt and flattened);
+kind-folders (`utils/`, `types/`, `hooks/`, …) are banned outright; and a symbol in the
+domain-aware shared tier needs more than one module to want it. Where wiring lives is decided
+per module and one answer does not transfer — renderer slices are pure Views, so their store and
+bridge reads hoist into `cockpit/`; main has no such constraint, so each of its domains owns its
+own bridge and its root is the entry alone.
 
 ### Quality gates
 
@@ -56,7 +58,9 @@ The arithmetic half of those rules is a build failure, not a review note — `bu
 carries every per-file cap (50 lines per function, cognitive complexity 15, 3 parameters, a
 150-line file ceiling counting code lines only) and the escape-hatch bans (`any`, `@ts-ignore`,
 `!`, nested ternaries); `jscpd` gates whole-tree duplication at 1%; the three placement gates
-above hold `file-structure.md`'s folder rules. CI runs all of them, pre-commit runs biome.
+above hold `file-structure.md`'s folder rules. CI runs all of them; pre-commit runs biome **and
+placement** — a misplaced file caught in CI is a follow-up ticket written after the session that
+produced it has ended, caught pre-commit it is fixed by whoever still has the context.
 
 Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
 assertions (Biome 2.5.4 has no such rule) and exhaustive `switch` over a union
