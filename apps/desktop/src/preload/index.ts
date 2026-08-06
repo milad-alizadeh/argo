@@ -6,7 +6,9 @@ import {
   GIT_FACTS_CHANNEL,
   GIT_OPERATION_CHANNEL,
   PROJECT_ACTIVATE_CHANNEL,
-  PROJECT_REGISTER_CHANNEL,
+  PROJECT_CHOOSE_FOLDER_CHANNEL,
+  PROJECT_CREATE_CHANNEL,
+  PROJECT_SET_CLI_CHANNEL,
   PROJECTION_CHANNEL,
   PROJECTION_READY_CHANNEL,
   type ProjectionDelta,
@@ -53,11 +55,17 @@ const cockpit: CockpitBridge = {
   runGitOperation(request) {
     return ipcRenderer.invoke(GIT_OPERATION_CHANNEL, request)
   },
-  registerProject() {
-    return ipcRenderer.invoke(PROJECT_REGISTER_CHANNEL)
+  chooseProjectFolder() {
+    return ipcRenderer.invoke(PROJECT_CHOOSE_FOLDER_CHANNEL)
+  },
+  createProject(path) {
+    return ipcRenderer.invoke(PROJECT_CREATE_CHANNEL, path)
   },
   activateProject(projectId) {
     return ipcRenderer.invoke(PROJECT_ACTIVATE_CHANNEL, projectId)
+  },
+  setProjectCli(projectId, cli) {
+    return ipcRenderer.invoke(PROJECT_SET_CLI_CHANNEL, projectId, cli)
   },
   spawnSession() {
     return ipcRenderer.invoke(SESSION_SPAWN_CHANNEL)

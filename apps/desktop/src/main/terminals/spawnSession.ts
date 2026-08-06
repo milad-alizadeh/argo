@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import { type CommandResult, SESSION_SPAWN_CHANNEL } from '../../shared'
 import type { Hub } from '../hub'
-import { projectFolder } from '../projects'
+import { projectCli, projectFolder } from '../projects'
 import type { AgentLauncher } from './agentLauncher'
 import { endedSession, provisionalSession } from './provisionalSession'
 
@@ -28,20 +28,21 @@ export function wireSpawn(hub: Hub, launcher: AgentLauncher, now: () => number =
 function spawnIntoRoster({ hub, launcher, now }: Spawn): CommandResult {
   const state = hub.getState()
   const folder = projectFolder(state, state.activeProjectId)
-  if (folder === null) return { ok: false, detail: 'no active project' }
+  const cli = projectCli(state, state.activeProjectId)
+  if (folder === null || cli === null) return { ok: false, detail: 'no active project' }
   // An agent that exits before it has written anything leaves the one row no observation can
   // correct, so the same act that published it says when its pty is gone. Once the CLI HAS named a
   // Session the row is no longer there to end, and the observer grades that Session's own posture.
-  const launched = launcher.start(folder, (claim, exitCode) =>
+  const launched = launcher.start({ cwd: folder, cli }, (claim, exitCode) =>
     hub.apply({
       type: 'session-updated',
-      session: endedSession({ claim, cwd: folder, endedAtMs: now(), exitCode }),
+      session: endedSession({ claim, cwd: folder, cli, endedAtMs: now(), exitCode }),
     }),
   )
   if (!launched.ok) return launched
   hub.apply({
     type: 'session-created',
-    session: provisionalSession(launched.claim, folder, now()),
+    session: provisionalSession({ claim: launched.claim, cwd: folder, cli, spawnedAtMs: now() }),
   })
   return { ok: true, detail: folder }
 }

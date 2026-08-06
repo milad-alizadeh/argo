@@ -84,6 +84,20 @@ export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
   }
 }
 
+/**
+ * Whether a thrown read means the GRANT was refused, or merely that the provider would not
+ * answer right now.
+ *
+ * Only `401` counts as a refused grant: that is the status GitHub returns for a token it will
+ * not accept at all. A `403` is left as `unavailable` on purpose even though a revoked org
+ * grant can produce one, because so do a rate limit and a repository the account simply cannot
+ * see — and degrade-down says an ambiguous signal resolves to the quieter state rather than
+ * sending the user to sign in again over a spent rate limit.
+ */
+export function refusalReason(error: unknown): 'rejected' | 'unavailable' {
+  return error instanceof GitHubRefusal && error.status === 401 ? 'rejected' : 'unavailable'
+}
+
 /** A refusal that remembers its status, so a caller can tell "this repository has no such
  * feature" from "the provider would not answer right now" — two facts that must never be
  * rendered as the same absence. */

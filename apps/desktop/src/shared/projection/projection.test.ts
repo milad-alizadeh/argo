@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { projectView } from '../projects/model'
 import { argo, created, registered, replay, session, shop } from './__fixtures__/projection'
 import { applyDelta, type HubEvent } from './projection'
 
@@ -88,7 +89,7 @@ describe('the Project registry in projected state', () => {
       { type: 'project-relocated', id: 'p-argo', path: '/Volumes/ssd/argo-moved' },
     ])
     expect(projected.projects).toEqual([
-      { id: 'p-argo', name: 'argo-moved', path: '/Volumes/ssd/argo-moved' },
+      projectView({ id: 'p-argo', path: '/Volumes/ssd/argo-moved' }),
     ])
   })
 })

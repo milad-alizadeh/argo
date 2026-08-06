@@ -61,6 +61,10 @@ function claimedManaged(): { managed: ManagedSessions; claim: ClaimId } {
   return { managed, claim }
 }
 
+/** The roster row ⌘N publishes for an agent it has just started, before any transcript exists. */
+const spawnedRow = (claim: ClaimId) =>
+  provisionalSession({ claim, cwd: FIXTURE_CWD, cli: 'claude', spawnedAtMs: NOW })
+
 const grown = () => `${fixture('treeFull').trimEnd()}\n${CLOSING_RECORD}\n`
 
 beforeEach(() => {
@@ -175,7 +179,7 @@ describe('what the observer projects', () => {
 
   it('replaces the row ⌘N published with the Session the CLI named, not a second row', async () => {
     const { managed, claim } = claimedManaged()
-    hub.apply({ type: 'session-created', session: provisionalSession(claim, FIXTURE_CWD, NOW) })
+    hub.apply({ type: 'session-created', session: spawnedRow(claim) })
     plant('treeFull', fixture('treeFull'))
 
     await observer({ managed }).start()

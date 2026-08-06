@@ -21,7 +21,7 @@ const inactive = (dot: RosterTone | null): ProjectTabView => ({
 const meta = {
   title: 'Shell/ProjectStrip/ProjectTab',
   component: ProjectTab,
-  args: { onSelect: fn() },
+  args: { onSelect: fn(), onOpenSettings: fn() },
   argTypes: {
     tab: { control: 'object', table: { type: { summary: 'ProjectTabView' } } },
   },

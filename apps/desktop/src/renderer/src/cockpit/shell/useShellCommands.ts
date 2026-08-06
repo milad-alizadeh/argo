@@ -8,8 +8,6 @@ import type { ShellState } from './useShellState'
 // that says what an act actually does.
 
 export interface ShellCommands {
-  /** Main owns the folder picker, so the renderer names the act and never a path. */
-  addProject: () => void
   /** ⌘N's other half: the roster's visible spawn affordance. Nothing here is keyboard-only. */
   spawnSession: () => void
   /** The diverged branch's first escape hatch. The terminal itself lives in the Code room. */
@@ -62,7 +60,6 @@ export function useShellCommands(shell: ShellState): ShellCommands {
   const startSession = useCallback(() => void spawn(), [spawn])
 
   return {
-    addProject: useCallback(() => void window.cockpit?.registerProject(), []),
     spawnSession: startSession,
     openScratchTerminal: useCallback(() => shell.selectRoom('code'), [shell]),
     resolveWithAgent: startSession,

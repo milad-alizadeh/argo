@@ -142,10 +142,10 @@
             "RoomStage.tsx": "KIND — the stage that picks the active room's component. The module's comment names it as half of what this module IS, and it composes the rooms from outside all of them, so it belongs to no sub-domain within it."
           },
           "ratchet": {},
-          "comment": "The composition root's wiring, grouped by the surface each hook serves — git/, shell/, sessions/ mirror the slices they assemble props for, and projection/ holds the store the rest read. Grouping by \"they are all hooks\" would be the banned kind-folder with a different name."
+          "comment": "The composition root's wiring, grouped by the surface each hook serves — connect/, git/, shell/, sessions/ mirror the slices they assemble props for, and projection/ holds the store the rest read. Grouping by \"they are all hooks\" would be the banned kind-folder with a different name."
         },
         "shell": {
-          "comment": "The shell slice. Its public entry is components/index.ts; the sub-domains hold the models beside the views that read them (git/, project-strip/, palette/), mirroring components/ one level up.",
+          "comment": "The shell slice. Its public entry is components/index.ts; the sub-domains hold the models beside the views that read them (connect/, git/, project-strip/, palette/), mirroring components/ one level up.",
           "allow": {
             "shellModel.ts": "KIND — the shell's own model: the room vocabulary (ROOMS/Room), the project tab view, and the assembly over CockpitState. Read by top-bar, project-strip and palette alike, so it belongs to no ONE of them — the same case as cockpit/RoomStage.tsx. The ratchet entry this replaces claimed top-bar/, which was read off the filename rather than the 48 lines.",
             "shellModel.test.ts": "KIND — its suite, beside it."

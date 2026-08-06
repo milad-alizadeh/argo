@@ -2,13 +2,13 @@
 // It is project-keyed (ADR-0015): every fact the cockpit renders is scoped to one Project,
 // and a Session belongs to the Project its cwd sits in.
 
+import type { GrantState } from '../connect/grant'
 import { type ProjectView, projectForCwd, projectName } from '../projects/model'
+import type { Cli } from '../session/cli'
 import { type SessionFacts, sessionFacts } from '../session/facts'
 import type { SessionPosture } from '../session/posture'
 import type { Agent } from '../session/runtimeTree'
 import type { WorkItemView } from '../workItems/model'
-
-export type Cli = 'claude' | 'codex'
 
 // What Seam B observed about one Session. `projectId` is absent by construction: the
 // observer knows a cwd, only the reducer knows the registered Projects.
@@ -71,6 +71,8 @@ export interface CockpitState {
   // Project, each item carrying its own `projectId`, so a poll for one Project can replace its
   // slice without disturbing another's.
   workItems: WorkItemView[]
+  // Account-level, not per-Project: one grant feeds both ports and fails as one (ADR-0014).
+  grant: GrantState
 }
 
 export const emptyState = (): CockpitState => ({
@@ -78,6 +80,7 @@ export const emptyState = (): CockpitState => ({
   activeProjectId: null,
   sessions: [],
   workItems: [],
+  grant: 'none',
 })
 
 export function attribute(projects: ProjectView[], session: SessionIntake): SessionView {
@@ -133,6 +136,24 @@ export function repointProject(state: CockpitState, id: string, path: string): C
     project.id === id ? { ...project, path, name: projectName(path) } : project,
   )
   return withProjects(state, projects)
+}
+
+// Which agent CLI this Project spawns (#186). Unknown Projects are left alone rather than
+// created here: settings edits a Project that exists, and inventing one would put a row in the
+// strip that the registry never recorded.
+export function setProjectCli(state: CockpitState, id: string, cli: Cli): CockpitState {
+  if (!state.projects.some((project) => project.id === id)) return state
+  const projects = state.projects.map((project) =>
+    project.id === id ? { ...project, cli } : project,
+  )
+  return { ...state, projects }
+}
+
+// The one grant, moved by a completed sign-in or by a provider that refused the token. An
+// unchanged state returns the SAME reference, so the poll that re-confirms a healthy grant
+// every minute costs no re-render.
+export function setGrant(state: CockpitState, grant: GrantState): CockpitState {
+  return grant === state.grant ? state : { ...state, grant }
 }
 
 export function activateProject(state: CockpitState, id: string): CockpitState {

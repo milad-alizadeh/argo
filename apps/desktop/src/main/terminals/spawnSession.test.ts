@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { type CommandResult, SESSION_SPAWN_CHANNEL } from '../../shared'
+import { type CommandResult, projectView, SESSION_SPAWN_CHANNEL } from '../../shared'
 import { createHub, type Hub } from '../hub'
 import { handlers } from './__fixtures__/ipcChannels'
 import type { AgentLauncher, Launched } from './agentLauncher'
@@ -32,7 +32,7 @@ function cockpit(launched: Launched): { hub: Hub; agent: { exit: (code: number) 
   const hub = createHub()
   hub.apply({
     type: 'project-registered',
-    project: { id: 'p-argo', name: 'argo', path: FOLDER },
+    project: projectView({ id: 'p-argo', path: FOLDER }),
   })
   const agent = launcherThat(launched)
   wireSpawn(hub, agent, () => SPAWNED_AT)

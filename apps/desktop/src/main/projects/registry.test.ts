@@ -7,6 +7,7 @@ import {
   readRegistry,
   registerProject,
   relocateProject,
+  setProjectCli,
   toProjectEvents,
 } from './registry'
 
@@ -69,7 +70,7 @@ describe('relocating a Project', () => {
 
     const after = await relocateProject(registryFile(), id, moved)
 
-    expect(after.projects).toEqual([{ id, path: moved }])
+    expect(after.projects).toEqual([{ id, path: moved, cli: 'claude' }])
   })
 
   it('re-points a relocated Project rather than registering a second one', async () => {
@@ -121,6 +122,43 @@ describe('reading a registry Argo did not write', () => {
   })
 })
 
+describe("a Project's agent CLI", () => {
+  it('spawns claude until Project Settings chooses otherwise', async () => {
+    const folder = await mkdtemp(join(tmpdir(), 'argo-default-cli-'))
+    const registry = await registerProject(registryFile(), folder)
+
+    expect(registry.projects[0]?.cli).toBe('claude')
+  })
+
+  it('keeps the chosen CLI across a restart', async () => {
+    const folder = await mkdtemp(join(tmpdir(), 'argo-chosen-cli-'))
+    const id = (await registerProject(registryFile(), folder)).projects[0]?.id ?? ''
+
+    await setProjectCli(registryFile(), id, 'codex')
+
+    expect((await readRegistry(registryFile())).projects[0]?.cli).toBe('codex')
+  })
+
+  it('leaves the registry alone for a Project it does not know', async () => {
+    const folder = await mkdtemp(join(tmpdir(), 'argo-unknown-cli-'))
+    await registerProject(registryFile(), folder)
+
+    await setProjectCli(registryFile(), 'never-registered', 'codex')
+
+    expect((await readRegistry(registryFile())).projects[0]?.cli).toBe('claude')
+  })
+
+  it('falls back to claude when the stored CLI names no program Argo can launch', async () => {
+    await writeFile(
+      registryFile(),
+      JSON.stringify({ activeProjectId: null, projects: [{ id: 'p', path: '/x', cli: 'emacs' }] }),
+      'utf8',
+    )
+
+    expect((await readRegistry(registryFile())).projects[0]?.cli).toBe('claude')
+  })
+})
+
 describe('replaying the registry into the hub', () => {
   it('registers every known Project and activates the stored one', async () => {
     const folder = await mkdtemp(join(tmpdir(), 'argo-events-'))
@@ -128,7 +166,10 @@ describe('replaying the registry into the hub', () => {
     const id = registry.projects[0]?.id ?? ''
 
     expect(toProjectEvents(registry)).toEqual([
-      { type: 'project-registered', project: { id, name: basename(folder), path: folder } },
+      {
+        type: 'project-registered',
+        project: { id, name: basename(folder), path: folder, cli: 'claude' },
+      },
       { type: 'project-activated', id },
     ])
   })

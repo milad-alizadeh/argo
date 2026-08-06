@@ -1,6 +1,11 @@
 import { cn } from '@/lib/utils'
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
   FOCUS_RING,
+  GearIcon,
   StatusDot,
   Text,
   Tooltip,
@@ -22,6 +27,9 @@ type ProjectTabProps = {
   tab: ProjectTabView
   /** Make this project the active one. Swapping is a view change, not a teardown. */
   onSelect: () => void
+  /** Open Project Settings on this project — the panel that created it, re-entered (#265).
+   * One of its two entry points; the other is the ⌘K palette. */
+  onOpenSettings: () => void
 }
 
 /**
@@ -32,7 +40,7 @@ type ProjectTabProps = {
  * The active tab is the only place the project's name and `last synced` appear at all, and they
  * appear on hover.
  */
-export function ProjectTab({ tab, onSelect }: ProjectTabProps): React.JSX.Element {
+export function ProjectTab({ tab, onSelect, onOpenSettings }: ProjectTabProps): React.JSX.Element {
   const trigger = (
     <button
       type="button"
@@ -51,20 +59,47 @@ export function ProjectTab({ tab, onSelect }: ProjectTabProps): React.JSX.Elemen
       )}
     </button>
   )
-  if (!tab.active) return trigger
+  // Both triggers collapse onto the one button through `asChild`, so right-click opens the
+  // menu and hover still names the project — rather than the menu wrapping the tooltip's own
+  // root, which forwards nothing to the DOM.
+  const named = (
+    <ContextMenuTrigger asChild>
+      {tab.active ? <TooltipTrigger asChild>{trigger}</TooltipTrigger> : trigger}
+    </ContextMenuTrigger>
+  )
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-      <TooltipContent side="right">
-        <Text variant="row" as="div">
-          {tab.name}
+    <ContextMenu>
+      {tab.active ? (
+        <Tooltip>
+          {named}
+          <NameTip tab={tab} />
+        </Tooltip>
+      ) : (
+        named
+      )}
+      <ContextMenuContent>
+        <ContextMenuItem onSelect={onOpenSettings}>
+          <GearIcon className="icon-sm text-foreground-faint" />
+          <Text variant="row">Project settings</Text>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}
+
+// The active tab is the only place the project's name and `last synced` appear at all, and
+// they appear on hover — the strip is 60px wide and holds no room for either.
+function NameTip({ tab }: { tab: ProjectTabView }): React.JSX.Element {
+  return (
+    <TooltipContent side="right">
+      <Text variant="row" as="div">
+        {tab.name}
+      </Text>
+      {tab.lastSynced === null ? null : (
+        <Text variant="meta" as="div" className="text-foreground-faint">
+          last synced {tab.lastSynced}
         </Text>
-        {tab.lastSynced === null ? null : (
-          <Text variant="meta" as="div" className="text-foreground-faint">
-            last synced {tab.lastSynced}
-          </Text>
-        )}
-      </TooltipContent>
-    </Tooltip>
+      )}
+    </TooltipContent>
   )
 }

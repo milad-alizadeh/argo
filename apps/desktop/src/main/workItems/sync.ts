@@ -17,6 +17,8 @@ export interface WorkItemSyncOptions {
 }
 
 export interface WorkItemSync {
+  /** Read the keychain and report what it says about the grant, then follow the active
+   * Project. Called once at launch, before any Project may exist. */
   start(): void
   /** Re-target now rather than on the next projection delta — what a completed sign-in needs,
    * since connecting changes nothing about which Project is active. */
@@ -55,6 +57,9 @@ export function createWorkItemSync(options: WorkItemSyncOptions): WorkItemSync {
       // Every delta is a chance the active Project moved; `retarget` decides in one comparison
       // whether it actually did, which is cheaper than a second subscription of its own.
       unsubscribe = options.hub.subscribe(() => void retarget())
+      // A first launch with nothing registered produces no delta at all, and the grant would
+      // then go unread until something else moved — so the first pass is taken here.
+      void retarget()
     },
     refresh() {
       targeted = undefined
@@ -78,10 +83,15 @@ async function pollerFor(
   options: WorkItemSyncOptions,
   projectId: string | null,
 ): Promise<WorkItemPoller | null> {
-  if (projectId === null) return null
-  const folder = projectFolder(options.hub.getState(), projectId)
+  // The keychain is read even with no Project to poll, because the connect panel's rows
+  // complete in any order (#165): signing in before choosing a folder must still light the
+  // Connections row.
   const token = await options.tokenStore.read()
-  if (folder === null || token === null) return null
+  reportGrant(options.hub, token)
+  if (projectId === null || token === null) return null
+
+  const folder = projectFolder(options.hub.getState(), projectId)
+  if (folder === null) return null
 
   const repository = await readRemoteRepository(folder)
   if (repository === null) return null
@@ -92,4 +102,13 @@ async function pollerFor(
     emit: (event) => options.hub.apply(event),
     wait: sleep,
   })
+}
+
+// What the keychain alone can say about the grant, which is whether a token is HELD — the
+// launch answer, before any poll has happened. It never overwrites `needs-reconnect`: the
+// provider has already refused that exact token, and holding it is not evidence against a
+// refusal Argo watched arrive.
+function reportGrant(hub: Hub, token: string | null): void {
+  if (hub.getState().grant === 'needs-reconnect') return
+  hub.apply({ type: 'grant-changed', grant: token === null ? 'none' : 'connected' })
 }

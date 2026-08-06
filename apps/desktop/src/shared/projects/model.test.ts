@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { type ProjectView, projectForCwd, projectName } from './model'
+import { type ProjectView, projectForCwd, projectName, projectView } from './model'
 
-const project = (id: string, path: string): ProjectView => ({ id, name: projectName(path), path })
+const project = (id: string, path: string): ProjectView => projectView({ id, path })
 
 describe('projectName', () => {
   it.each([

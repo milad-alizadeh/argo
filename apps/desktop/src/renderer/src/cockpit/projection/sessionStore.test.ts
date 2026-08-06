@@ -1,4 +1,4 @@
-import { emptyState, type SessionView, sessionFacts } from '@shared'
+import { emptyState, projectView, type SessionView, sessionFacts } from '@shared'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { currentSessionId, useSessionStore } from './sessionStore'
 
@@ -64,10 +64,11 @@ describe('useSessionStore', () => {
     useSessionStore.getState().applyDelta({
       type: 'snapshot',
       state: {
-        projects: [{ id: 'p-argo', name: 'argo', path: '/Users/dev/code/argo' }],
+        projects: [projectView({ id: 'p-argo', path: '/Users/dev/code/argo' })],
         activeProjectId: 'p-argo',
         sessions: [],
         workItems: [],
+        grant: 'none',
       },
     })
     expect(useSessionStore.getState().activeProjectId).toBe('p-argo')

@@ -3,7 +3,7 @@ import type { Http } from '../http'
 import type { WorkItemCapabilities, WorkItemProvider, WorkItemRead } from '../port'
 import { seedStateMap } from '../stateMap'
 import { readBlockers } from './blockers'
-import { createGitHubClient, type GitHubClient } from './client'
+import { createGitHubClient, type GitHubClient, refusalReason } from './client'
 import { type Hierarchy, inTreeOrder, readHierarchy } from './hierarchy'
 import { parseIssue, type RawIssue, toWorkItem } from './issues'
 
@@ -50,7 +50,11 @@ export function createGitHubWorkItems(options: GitHubWorkItemsOptions): WorkItem
       } catch (error) {
         // A failed poll is never an empty backlog: the caller keeps what it last fetched at
         // full fidelity, so this reports the refusal and changes nothing.
-        return { ok: false, detail: error instanceof Error ? error.message : String(error) }
+        return {
+          ok: false,
+          detail: error instanceof Error ? error.message : String(error),
+          reason: refusalReason(error),
+        }
       }
     },
   }

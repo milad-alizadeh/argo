@@ -1,7 +1,14 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import { type HubEvent, normalizeProjectPath, type ProjectView, projectName } from '../../shared'
+import {
+  type Cli,
+  type HubEvent,
+  isCli,
+  normalizeProjectPath,
+  type ProjectView,
+  projectName,
+} from '../../shared'
 
 // The one piece of glue Argo owns rather than observes (ADR-0017): the set of known
 // Projects and which one is active, as a plain JSON file in per-machine `userData`. Never
@@ -13,7 +20,13 @@ export const REGISTRY_FILENAME = 'projects.json'
 export interface ProjectRecord {
   id: string
   path: string
+  /** Which agent CLI ⌘N spawns here (#186). Absent in a registry written before the choice
+   * existed, and absent is not a third CLI — it reads as the default. */
+  cli?: Cli
 }
+
+/** What a Project spawns until Project Settings says otherwise. */
+const DEFAULT_CLI: Cli = 'claude'
 
 export interface ProjectRegistry {
   activeProjectId: string | null
@@ -41,7 +54,7 @@ export async function registerProject(file: string, path: string): Promise<Proje
   const root = normalizeProjectPath(path)
   if (registry.projects.some((project) => project.path === root)) return registry
 
-  const projects = [...registry.projects, { id: randomUUID(), path: root }]
+  const projects = [...registry.projects, { id: randomUUID(), path: root, cli: DEFAULT_CLI }]
   return persist(file, {
     activeProjectId: registry.activeProjectId ?? projects[0]?.id ?? null,
     projects,
@@ -67,6 +80,20 @@ export async function relocateProject(
   })
 }
 
+// The one thing Project Settings holds that onboarding does not (#186 / app shell spec). A
+// Project no record carries is left alone, so a stale window cannot write a CLI for a Project
+// that has since been removed.
+export async function setProjectCli(file: string, id: string, cli: Cli): Promise<ProjectRegistry> {
+  const registry = await readRegistry(file)
+  if (!registry.projects.some((project) => project.id === id)) return registry
+  return persist(file, {
+    ...registry,
+    projects: registry.projects.map((project) =>
+      project.id === id ? { ...project, cli } : project,
+    ),
+  })
+}
+
 // Which Project the shell opens into. An id no record carries is left alone: an unknown active
 // Project is the same nothing as an unreadable registry, and the caller reads the result back to
 // learn whether the switch took.
@@ -79,7 +106,12 @@ export async function setActiveProject(file: string, id: string): Promise<Projec
 // One spelling of a record as the view the hub carries, so a Project registered now and the same
 // Project replayed on the next launch can never disagree about its name.
 export function toProjectView(record: ProjectRecord): ProjectView {
-  return { id: record.id, name: projectName(record.path), path: record.path }
+  return {
+    id: record.id,
+    name: projectName(record.path),
+    path: record.path,
+    cli: record.cli ?? DEFAULT_CLI,
+  }
 }
 
 // What the hub replays on launch to learn the world it can open.
@@ -101,7 +133,7 @@ async function persist(file: string, registry: ProjectRegistry): Promise<Project
 
 function parseRegistry(raw: unknown): ProjectRegistry {
   if (!isRecord(raw)) return emptyRegistry()
-  const projects = Array.isArray(raw.projects) ? raw.projects.filter(isProjectRecord) : []
+  const projects = Array.isArray(raw.projects) ? raw.projects.flatMap(toProjectRecord) : []
   return { activeProjectId: knownProjectId(raw.activeProjectId, projects), projects }
 }
 
@@ -114,6 +146,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-function isProjectRecord(value: unknown): value is ProjectRecord {
-  return isRecord(value) && typeof value.id === 'string' && typeof value.path === 'string'
+// Parsed at the edge, once: a record without an id and a path is not a Project and is dropped,
+// and a `cli` this build cannot launch falls back to the default rather than reaching the
+// spawner — the record still names a real folder, and a defaulted CLI is recoverable where
+// launching an unknown program is not.
+function toProjectRecord(value: unknown): ProjectRecord[] {
+  if (!isRecord(value)) return []
+  if (typeof value.id !== 'string' || typeof value.path !== 'string') return []
+  return [{ id: value.id, path: value.path, cli: isCli(value.cli) ? value.cli : DEFAULT_CLI }]
 }
