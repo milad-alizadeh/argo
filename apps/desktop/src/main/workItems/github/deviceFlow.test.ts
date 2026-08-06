@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Http, HttpResponse } from '../http'
 import type { DeviceCode } from './deviceFlow'
-import { signInWithDeviceFlow } from './deviceFlow'
+import { githubClientId, signInWithDeviceFlow } from './deviceFlow'
 
 // The device flow, run for real against a scripted provider. What matters here is not the
 // wire format but the two promises the panel depends on: the code appears BEFORE the wait,
@@ -52,6 +52,20 @@ function run(script: Scripted): ReturnType<typeof signInWithDeviceFlow> {
     },
   })
 }
+
+describe('which app a sign-in authorizes against', () => {
+  it('ships Argo own app, so a user sets nothing to connect', () => {
+    expect(githubClientId({})).toMatch(/^Ov23li/)
+  })
+
+  it('lets a fork point at its own app', () => {
+    expect(githubClientId({ ARGO_GITHUB_CLIENT_ID: 'Ov23liOther' })).toBe('Ov23liOther')
+  })
+
+  it('reads a blank override as no override, not as a build with no app', () => {
+    expect(githubClientId({ ARGO_GITHUB_CLIENT_ID: '  ' })).toMatch(/^Ov23li/)
+  })
+})
 
 describe('surfacing the code', () => {
   it('hands the user code and verification URL to the caller', async () => {

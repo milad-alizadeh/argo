@@ -5,7 +5,7 @@ import {
   WORK_ITEMS_CONNECT_CHANNEL,
   WORK_ITEMS_DEVICE_CODE_CHANNEL,
 } from '../../shared'
-import { signInWithDeviceFlow } from './github/deviceFlow'
+import { githubClientId, signInWithDeviceFlow } from './github/deviceFlow'
 import { type Http, sleep } from './http'
 import type { WorkItemSync } from './sync'
 import type { TokenStore } from './tokenStore'
@@ -19,31 +19,23 @@ export interface WorkItemsBridgeOptions {
   sync: WorkItemSync
   tokenStore: TokenStore
   http: Http
-  /** The OAuth app the device flow authorizes against. Absent means the build was never given
-   * one, which refuses the connect instead of opening a flow that cannot complete. */
-  clientId: string | undefined
 }
 
 export function wireWorkItems(options: WorkItemsBridgeOptions): void {
-  ipcMain.handle(WORK_ITEMS_CONNECT_CHANNEL, (event): Promise<CommandResult> => {
-    const { clientId } = options
-    if (clientId === undefined || clientId === '') {
-      return Promise.resolve({ ok: false, detail: 'no GitHub app is configured for this build' })
-    }
-    return connect(options, clientId, (prompt) =>
-      event.sender.send(WORK_ITEMS_DEVICE_CODE_CHANNEL, prompt),
-    )
-  })
+  ipcMain.handle(
+    WORK_ITEMS_CONNECT_CHANNEL,
+    (event): Promise<CommandResult> =>
+      connect(options, (prompt) => event.sender.send(WORK_ITEMS_DEVICE_CODE_CHANNEL, prompt)),
+  )
 }
 
 async function connect(
   options: WorkItemsBridgeOptions,
-  clientId: string,
   onPrompt: (prompt: DeviceCodePrompt) => void,
 ): Promise<CommandResult> {
   const result = await signInWithDeviceFlow({
     http: options.http,
-    clientId,
+    clientId: githubClientId(process.env),
     onCode: (code) =>
       onPrompt({
         userCode: code.userCode,

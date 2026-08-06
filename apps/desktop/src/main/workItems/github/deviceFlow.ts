@@ -12,6 +12,18 @@ const GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:device_code'
  * feeds both ports (ADR-0018), which is why it is not narrowed to issues alone. */
 const SCOPE = 'repo'
 
+/** Argo's own OAuth App. A device-flow client id is PUBLIC by construction — no secret sits
+ * beside it, which is the whole reason ADR-0018 chose this grant — so it ships in the binary
+ * rather than in an environment every user would otherwise have to set. */
+const ARGO_CLIENT_ID = 'Ov23liBYrFhonKdB16Co'
+
+/** The app a sign-in authorizes against, overridable so a fork points at its own without a
+ * source edit. An empty override is no override, not a build with no app. */
+export function githubClientId(env: Record<string, string | undefined>): string {
+  const override = env.ARGO_GITHUB_CLIENT_ID
+  return override === undefined || override.trim() === '' ? ARGO_CLIENT_ID : override
+}
+
 /** What the user must act on, surfaced as soon as GitHub issues it. */
 export interface DeviceCode {
   userCode: string
