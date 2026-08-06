@@ -1,12 +1,8 @@
 import type { Http } from '../http'
 
-// GitHub's OAuth **device flow** (ADR-0018). Loopback-PKCE is not an option here: a distributed
-// desktop binary cannot hold a `client_secret`, and the device flow is the grant GitHub offers
-// that does not need one. The exact grant is per-provider by design — Linear's differs, and so
-// does its token lifecycle — so this file is GitHub's, not a shared flow.
-//
-// The user code and verification URL are handed to the CALLER the moment GitHub issues them,
-// before the wait begins, so the panel shows what to type rather than spinning blind.
+// GitHub's OAuth device flow (ADR-0018) — the grant that needs no `client_secret`, which a
+// distributed desktop binary cannot hold. Per-provider by design, so this file is GitHub's.
+// The user code reaches the caller BEFORE the wait, so the panel shows what to type.
 
 const DEVICE_CODE_URL = 'https://github.com/login/device/code'
 const TOKEN_URL = 'https://github.com/login/oauth/access_token'

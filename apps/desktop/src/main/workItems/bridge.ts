@@ -6,7 +6,7 @@ import {
   WORK_ITEMS_DEVICE_CODE_CHANNEL,
 } from '../../shared'
 import { signInWithDeviceFlow } from './github/deviceFlow'
-import type { Http } from './http'
+import { type Http, sleep } from './http'
 import type { WorkItemSync } from './sync'
 import type { TokenStore } from './tokenStore'
 
@@ -50,7 +50,7 @@ async function connect(
         verificationUri: code.verificationUri,
         expiresIn: code.expiresIn,
       }),
-    wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    wait: sleep,
   })
   if (!result.ok) return { ok: false, detail: result.detail }
 

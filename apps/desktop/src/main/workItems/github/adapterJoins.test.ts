@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { FakeRepository } from '../__fixtures__/fakeGitHub'
-import { OPEN_ISSUE as open, readItems } from '../__fixtures__/gitHubPort'
+import { OPEN_ISSUE as open, readItems, readPort } from '../__fixtures__/gitHubPort'
 
 // The two joins the port derives rather than stores: which node a Work Item plays in the
 // hierarchy, and what each `blockedBy` edge is actually doing. Asserted through `read()` for
@@ -81,5 +81,29 @@ describe('blockedBy, verified directly', () => {
       refuse: { fragment: 'blocked_by', status: 404, message: 'Not Found' },
     })
     expect(backlog[0]?.blockedBy).toEqual([])
+  })
+
+  it('fails the read rather than rendering a rate-limited poll as nothing blocking', async () => {
+    // The one failure mode this must never have: a refusal that is not "no such feature"
+    // coming back as an unblocked backlog, which Next-up would then recommend work out of.
+    const result = await readPort({
+      issues: [open],
+      refuse: { fragment: 'blocked_by', status: 403, message: 'API rate limit exceeded' },
+    })
+    expect(result).toEqual({ ok: false, detail: 'API rate limit exceeded' })
+  })
+})
+
+describe('the facts a provider may not carry', () => {
+  it('reads the assignee the provider named', async () => {
+    const [item] = await readItems({ issues: [{ ...open, assignee: { login: 'milad-alizadeh' } }] })
+    expect(item?.assignee).toBe('milad-alizadeh')
+  })
+
+  it('leaves priority unknown, because GitHub Issues carries no such field', async () => {
+    // Never a lowest-priority default: the Work room would then rank on a number Argo invented.
+    const [item] = await readItems({ issues: [open] })
+    expect(item?.priority).toBeNull()
+    expect(item?.assignee).toBeNull()
   })
 })

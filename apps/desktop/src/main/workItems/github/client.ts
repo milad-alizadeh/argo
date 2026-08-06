@@ -1,11 +1,9 @@
 import type { Http } from '../http'
 
-// The authenticated read side of the GitHub API. Two things live here rather than in the
-// adapter, because both are transport concerns the adapter should not have to spell: following
-// GitHub's own `link` header to the end of a list, and CONDITIONAL requests. A desktop app is
-// polled rather than pushed (ADR-0018), so every poll re-asks a question whose answer usually
-// has not changed; sending the previous `etag` back turns that into a 304 that costs no rate
-// limit and returns the body we already hold.
+// The authenticated read side of the GitHub API: paging to the end of the provider's own `link`
+// header, and CONDITIONAL requests. Polling re-asks a question whose answer usually has not
+// changed, so returning the previous `etag` turns each poll into a 304 that costs no rate limit
+// (ADR-0018: adapters use conditional requests and backoff).
 
 const API_BASE = 'https://api.github.com'
 const API_VERSION = '2022-11-28'
@@ -21,6 +19,10 @@ export interface GitHubClient {
   /** Every page of a list endpoint. Throws with the provider's own words where it refused —
    * one throw the adapter catches once, rather than a result threaded through every read. */
   list(path: string): Promise<unknown[]>
+  /** The same, but `null` where the provider says the endpoint is not there — a repository
+   * whose plan does not carry a feature. Every OTHER refusal still throws, so a rate limit
+   * can never be mistaken for an absent feature. */
+  listOptional(path: string): Promise<unknown[] | null>
 }
 
 interface Page {
@@ -46,7 +48,9 @@ export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
     })
     const next = nextLink(response.headers.link)
     if (response.status === 304 && cached !== undefined) return { items: cached.items, next }
-    if (response.status < 200 || response.status >= 300) throw new Error(refusal(response.body))
+    if (response.status < 200 || response.status >= 300) {
+      throw new GitHubRefusal(response.status, refusal(response.body))
+    }
 
     const items = Array.isArray(response.body) ? response.body : []
     const etag = response.headers.etag
@@ -54,19 +58,41 @@ export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
     return { items, next }
   }
 
+  async function list(path: string): Promise<unknown[]> {
+    const items: unknown[] = []
+    let url: string | null = `${base}${path}`
+    // Bounded by the provider's own paging rather than by a page count of ours: a truncated
+    // backlog would read as a shorter one, which is a fabricated answer.
+    while (url !== null) {
+      const result: Page = await page(url)
+      items.push(...result.items)
+      url = result.next
+    }
+    return items
+  }
+
   return {
-    async list(path) {
-      const items: unknown[] = []
-      let url: string | null = `${base}${path}`
-      // Bounded by the provider's own paging rather than by a page count of ours: a truncated
-      // backlog would read as a shorter one, which is a fabricated answer.
-      while (url !== null) {
-        const result: Page = await page(url)
-        items.push(...result.items)
-        url = result.next
+    list,
+    async listOptional(path) {
+      try {
+        return await list(path)
+      } catch (error) {
+        if (error instanceof GitHubRefusal && error.status === 404) return null
+        throw error
       }
-      return items
     },
+  }
+}
+
+/** A refusal that remembers its status, so a caller can tell "this repository has no such
+ * feature" from "the provider would not answer right now" — two facts that must never be
+ * rendered as the same absence. */
+class GitHubRefusal extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
   }
 }
 

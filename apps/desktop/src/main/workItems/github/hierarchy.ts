@@ -2,15 +2,11 @@ import type { WorkItemView } from '../../../shared'
 import type { GitHubClient } from './client'
 import { issueId, parseIssue, type RawIssue } from './issues'
 
-// Hierarchy, read from GitHub's sub-issues rather than inferred. Two things come out of the
-// same read and neither is available any other way: which item each child hangs off, and the
-// AUTHOR ORDER of a parent's children — the provider's own sub-issue position, which is what
-// "next in <PRD>" ranks on and what no sort of Argo's could reconstruct.
-//
-// Only issues whose own summary says they have children are asked about, so a flat backlog
-// costs one request and a deep one costs a request per parent. The summary is trusted for
-// "does this have children at all" and for nothing else — unlike a blocker's state, a
-// false zero here loses a subtree rather than misreporting a fact.
+// Hierarchy, read from GitHub's sub-issues rather than inferred: which item each child hangs
+// off, and the AUTHOR ORDER of a parent's children — the provider's own sub-issue position,
+// which "next in <PRD>" ranks on and which no sort of Argo's could reconstruct.
+// Only issues whose summary claims children are asked about, so a flat backlog costs one
+// request. That summary decides whether to ask and nothing else.
 
 export interface Hierarchy {
   /** Child id → parent id. */
@@ -21,14 +17,16 @@ export interface Hierarchy {
 
 export async function readHierarchy(
   client: GitHubClient,
-  repoPath: string,
+  repositoryPath: string,
   issues: RawIssue[],
 ): Promise<Hierarchy> {
   const parents = new Map<string, string>()
   const children = new Map<string, string[]>()
 
   for (const issue of issues.filter((candidate) => candidate.childCount > 0)) {
-    const raw = await client.list(`${repoPath}/issues/${issue.number}/sub_issues?per_page=100`)
+    const raw = await client.list(
+      `${repositoryPath}/issues/${issue.number}/sub_issues?per_page=100`,
+    )
     const ids = raw.flatMap(readChildId)
     children.set(issueId(issue), ids)
     for (const id of ids) parents.set(id, issueId(issue))

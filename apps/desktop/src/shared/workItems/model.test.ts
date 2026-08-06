@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { isStranded, workItemKind, workItemView } from './model'
+import { workItemKind, workItemView } from './model'
 
-// The two derivations the Work Item model owns outright: which role a node plays, and whether
-// its blockers have left it somewhere no provider will ever move it out of.
+// The one derivation the Work Item model owns outright: which role a node plays in the
+// hierarchy, from the provider's declared type where it has one and from children otherwise.
 
 describe('the hierarchy role', () => {
   it('takes a declared parent word as a PRD even with no children', () => {
@@ -31,38 +31,17 @@ describe('the hierarchy role', () => {
   })
 })
 
-describe('stranded work', () => {
-  const blocker = (state: 'blocking' | 'satisfied' | 'ruled-out' | 'unknown') => ({
-    id: `github:${state}`,
-    reference: '#1',
-    state,
-  })
-
-  it('is stranded when every edge resolved but one of them was ruled out', () => {
-    expect(isStranded([blocker('satisfied'), blocker('ruled-out')])).toBe(true)
-  })
-
-  it('is not stranded while something is still genuinely blocking', () => {
-    expect(isStranded([blocker('ruled-out'), blocker('blocking')])).toBe(false)
-  })
-
-  it('is not stranded when an edge cannot be read', () => {
-    // An unresolvable blocker blocks and reads `unknown`; calling that stranded would claim a
-    // dead end Argo never established.
-    expect(isStranded([blocker('ruled-out'), blocker('unknown')])).toBe(false)
-  })
-
-  it('is not stranded with nothing blocking it', () => {
-    expect(isStranded([])).toBe(false)
-    expect(isStranded([blocker('satisfied')])).toBe(false)
-  })
-})
-
 describe('the view fixture', () => {
   it('defaults to the honest floor of a bare tracker', () => {
     const item = workItemView({ id: 'github:1' })
     expect(item.status).toEqual({ word: 'open', bucket: 'todo' })
     expect(item.kind).toBe('task')
     expect(item.declaredType).toBeNull()
+  })
+
+  it('defaults every fact the provider may not carry to unknown, not to a value', () => {
+    const item = workItemView({ id: 'github:1' })
+    expect(item.assignee).toBeNull()
+    expect(item.priority).toBeNull()
   })
 })

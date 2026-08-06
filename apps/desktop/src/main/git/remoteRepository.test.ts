@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseRemoteUrl } from './remoteRepo'
+import { parseRemoteUrl } from './remoteRepository'
 
 // Which repository the Work Item provider port reads. `origin` is the only DIRECT answer —
 // asking the user to type what git already knows would be a second answer that can disagree.
@@ -8,28 +8,28 @@ describe('the two spellings git writes', () => {
   it('reads an https remote', () => {
     expect(parseRemoteUrl('https://github.com/milad-alizadeh/argo.git')).toEqual({
       owner: 'milad-alizadeh',
-      repo: 'argo',
+      repository: 'argo',
     })
   })
 
   it('reads an scp-like ssh remote', () => {
     expect(parseRemoteUrl('git@github.com:milad-alizadeh/argo.git')).toEqual({
       owner: 'milad-alizadeh',
-      repo: 'argo',
+      repository: 'argo',
     })
   })
 
   it('reads a remote written without the .git suffix', () => {
     expect(parseRemoteUrl('https://github.com/milad-alizadeh/argo')).toEqual({
       owner: 'milad-alizadeh',
-      repo: 'argo',
+      repository: 'argo',
     })
   })
 
   it('reads an ssh:// remote', () => {
     expect(parseRemoteUrl('ssh://git@github.com/milad-alizadeh/argo.git')).toEqual({
       owner: 'milad-alizadeh',
-      repo: 'argo',
+      repository: 'argo',
     })
   })
 })

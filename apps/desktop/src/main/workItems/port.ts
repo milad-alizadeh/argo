@@ -1,14 +1,9 @@
 import type { WorkflowTier, WorkItemView } from '../../shared'
 
-// The Work Item provider port (ADR-0014, amended by ADR-0018): ONE interface, per-provider
-// adapters underneath, every one of them reached over OAuth + the provider's HTTP API. `gh`
-// is how AGENTS operate the repo — a different layer that this port deliberately does not use,
-// because there is no `gh` for Linear and leaning on it would make GitHub the special case the
-// port exists to avoid.
-//
-// This is the READ half. The canonical write intents (`transitionTo`, `addBlockedBy`, …) land
-// with the write path; declaring them here unimplemented would put a capability on the
-// interface that no adapter answers.
+// The Work Item provider port (ADR-0014 / ADR-0018): ONE interface, per-provider adapters
+// underneath, every one reached over OAuth + the provider's HTTP API rather than `gh`.
+// The READ half only — declaring the write intents here unimplemented would put a capability
+// on the interface that no adapter answers.
 
 /**
  * What an adapter can do, stated STATICALLY — before any read, because an affordance must know

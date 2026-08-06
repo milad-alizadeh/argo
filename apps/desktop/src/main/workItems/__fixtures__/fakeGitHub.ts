@@ -7,7 +7,7 @@ import type { Http, HttpRequest, HttpResponse } from '../http'
 
 export const API_BASE = 'https://api.test'
 export const OWNER = 'milad-alizadeh'
-export const REPO = 'argo'
+export const REPOSITORY = 'argo'
 
 export interface FakeIssue {
   id: number
@@ -16,6 +16,7 @@ export interface FakeIssue {
   state: 'open' | 'closed'
   state_reason?: string | null
   type?: { name: string } | null
+  assignee?: { login: string } | null
   labels?: string[]
   updated_at?: string
   pull_request?: Record<string, never>
@@ -88,10 +89,11 @@ function toPayload(issue: FakeIssue, repository: FakeRepository): Record<string,
     id: issue.id,
     number: issue.number,
     title: issue.title,
-    html_url: `https://github.com/${OWNER}/${REPO}/issues/${issue.number}`,
+    html_url: `https://github.com/${OWNER}/${REPOSITORY}/issues/${issue.number}`,
     state: issue.state,
     state_reason: issue.state_reason ?? null,
     type: issue.type ?? null,
+    assignee: issue.assignee ?? null,
     labels: (issue.labels ?? []).map((name) => ({ name })),
     updated_at: issue.updated_at ?? '2026-08-01T10:00:00Z',
     ...(issue.pull_request === undefined ? {} : { pull_request: issue.pull_request }),

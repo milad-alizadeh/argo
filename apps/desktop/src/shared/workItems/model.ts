@@ -53,6 +53,12 @@ export interface WorkItemView {
   declaredType: string | null
   parentId: string | null
   blockedBy: WorkItemBlocker[]
+  /** Who the provider says holds it, verbatim, and `null` for nobody. Never the claim lease —
+   * the assignee is a visible echo for teammates (CONTEXT.md L1), written by the agent. */
+  assignee: string | null
+  /** The provider's own priority word, verbatim. `null` where the provider carries no priority
+   * at all — a fact it cannot establish, not a lowest-priority item. */
+  priority: string | null
   labels: string[]
   /** Epoch ms of the provider's own last-updated stamp, `null` when it carried none. */
   updatedAt: number | null
@@ -71,16 +77,6 @@ export function workItemKind(declaredType: string | null, hasChildren: boolean):
   return PARENT_TYPE_WORDS.includes(declaredType.trim().toLowerCase()) ? 'prd' : 'task'
 }
 
-/** Whether a `blockedBy` set leaves the item stranded: every edge resolved, but at least one of
- * them by a ruling-out rather than by completion. Nothing downstream can proceed and no provider
- * will ever clear it, so it is a distinct answer from "blocked". */
-export function isStranded(blockedBy: WorkItemBlocker[]): boolean {
-  if (blockedBy.some((blocker) => blocker.state !== 'satisfied' && blocker.state !== 'ruled-out')) {
-    return false
-  }
-  return blockedBy.some((blocker) => blocker.state === 'ruled-out')
-}
-
 /**
  * A `WorkItemView` from just the identity a case is about — the Work-room counterpart to
  * `sessionView`, and the one home for that shape. Defaults are the honest floor of a bare
@@ -97,6 +93,8 @@ export function workItemView(over: Partial<WorkItemView> & { id: string }): Work
     declaredType: null,
     parentId: null,
     blockedBy: [],
+    assignee: null,
+    priority: null,
     labels: [],
     updatedAt: null,
     ...over,

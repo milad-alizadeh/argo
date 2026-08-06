@@ -7,7 +7,7 @@ import {
   type FakeRepository,
   fakeGitHub,
   OWNER,
-  REPO,
+  REPOSITORY,
 } from './fakeGitHub'
 
 // The port's suite reaches the adapter only through this: a repository stated as data, a
@@ -25,7 +25,7 @@ export function gitHubPort(repository: FakeRepository): {
   const provider = createGitHubWorkItems({
     projectId: 'p-argo',
     owner: OWNER,
-    repo: REPO,
+    repository: REPOSITORY,
     http: github.http,
     token: 'gho_test',
     apiBase: API_BASE,

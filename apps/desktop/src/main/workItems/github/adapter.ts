@@ -31,7 +31,7 @@ export interface GitHubWorkItemsOptions {
   /** The Project whose backlog this reads. Every item it returns carries it. */
   projectId: string
   owner: string
-  repo: string
+  repository: string
   http: Http
   token: string
   apiBase?: string
@@ -39,14 +39,14 @@ export interface GitHubWorkItemsOptions {
 
 export function createGitHubWorkItems(options: GitHubWorkItemsOptions): WorkItemProvider {
   const client = createGitHubClient(options)
-  const repoPath = `/repos/${options.owner}/${options.repo}`
+  const repositoryPath = `/repos/${options.owner}/${options.repository}`
 
   return {
     id: 'github',
     capabilities: () => CAPABILITIES,
     async read(): Promise<WorkItemRead> {
       try {
-        return { ok: true, items: await readBacklog(client, repoPath, options.projectId) }
+        return { ok: true, items: await readBacklog(client, repositoryPath, options.projectId) }
       } catch (error) {
         // A failed poll is never an empty backlog: the caller keeps what it last fetched at
         // full fidelity, so this reports the refusal and changes nothing.
@@ -58,16 +58,16 @@ export function createGitHubWorkItems(options: GitHubWorkItemsOptions): WorkItem
 
 async function readBacklog(
   client: GitHubClient,
-  repoPath: string,
+  repositoryPath: string,
   projectId: string,
 ): Promise<WorkItemView[]> {
   // `state=all`, because a done or ruled-out item is still a Work Item — a blocker's own
   // closure is the fact `blockedBy` is verified against.
-  const raw = await client.list(`${repoPath}/issues?state=all&per_page=100`)
+  const raw = await client.list(`${repositoryPath}/issues?state=all&per_page=100`)
   const issues = raw.flatMap(readIssue)
 
-  const hierarchy = await readHierarchy(client, repoPath, issues)
-  const blockers = await readBlockers(client, repoPath, { issues, map: GITHUB_STATES })
+  const hierarchy = await readHierarchy(client, repositoryPath, issues)
+  const blockers = await readBlockers(client, repositoryPath, { issues, map: GITHUB_STATES })
 
   const items = issues.map((issue) => join(issue, { projectId, hierarchy, blockers }))
   return inTreeOrder(items, hierarchy)

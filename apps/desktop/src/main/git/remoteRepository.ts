@@ -6,9 +6,9 @@ import { runGit } from './runGit'
 // disagree with the first.
 
 /** A repository on GitHub, as `origin` names it. */
-export interface RemoteRepo {
+export interface RemoteRepository {
   owner: string
-  repo: string
+  repository: string
 }
 
 const GITHUB_HOSTS = ['github.com', 'www.github.com']
@@ -18,17 +18,19 @@ const GITHUB_HOSTS = ['github.com', 'www.github.com']
  * or points somewhere that is not GitHub — all three of which mean the same thing to the
  * caller: no Work Item provider to connect, rendered as not-connected rather than guessed at.
  */
-export async function readRemoteRepo(repositoryPath: string): Promise<RemoteRepo | null> {
+export async function readRemoteRepository(
+  repositoryPath: string,
+): Promise<RemoteRepository | null> {
   const output = await runGit(repositoryPath, ['remote', 'get-url', 'origin'])
   return output.ok ? parseRemoteUrl(output.stdout.trim()) : null
 }
 
 /**
- * Both spellings git writes: `https://github.com/owner/repo.git` and the scp-like
- * `git@github.com:owner/repo.git`. Parsed rather than pattern-matched loosely, so a host that
+ * Both spellings git writes: `https://github.com/owner/repository.git` and the scp-like
+ * `git@github.com:owner/repository.git`. Parsed rather than pattern-matched loosely, so a host that
  * merely CONTAINS `github.com` in a path never reads as GitHub.
  */
-export function parseRemoteUrl(url: string): RemoteRepo | null {
+export function parseRemoteUrl(url: string): RemoteRepository | null {
   const scp = /^[^@/]+@([^:]+):(.+)$/.exec(url)
   if (scp?.[1] !== undefined && scp[2] !== undefined) return onGitHub(scp[1], scp[2])
 
@@ -40,14 +42,14 @@ export function parseRemoteUrl(url: string): RemoteRepo | null {
   }
 }
 
-function onGitHub(host: string, path: string): RemoteRepo | null {
+function onGitHub(host: string, path: string): RemoteRepository | null {
   if (!GITHUB_HOSTS.includes(host.toLowerCase())) return null
 
   const segments = path
     .replace(/\.git$/, '')
     .split('/')
     .filter(Boolean)
-  const [owner, repo] = segments
-  if (owner === undefined || repo === undefined || segments.length !== 2) return null
-  return { owner, repo }
+  const [owner, repository] = segments
+  if (owner === undefined || repository === undefined || segments.length !== 2) return null
+  return { owner, repository }
 }

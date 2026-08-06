@@ -22,6 +22,7 @@ export interface RawIssue {
   closureReason: string | null
   declaredType: string | null
   childCount: number
+  assignee: string | null
   labels: string[]
   updatedAt: number | null
 }
@@ -42,6 +43,7 @@ export function parseIssue(value: unknown): RawIssue | null {
     closureReason: typeof value.state_reason === 'string' ? value.state_reason : null,
     declaredType: readTypeName(value.type),
     childCount: readChildCount(value.sub_issues_summary),
+    assignee: readLogin(value.assignee),
     labels: readLabels(value.labels),
     updatedAt: readTimestamp(value.updated_at),
   }
@@ -65,6 +67,10 @@ export function toWorkItem(issue: RawIssue, projectId: string, map: StateMap): W
     declaredType: issue.declaredType,
     parentId: null,
     blockedBy: [],
+    assignee: issue.assignee,
+    // GitHub Issues carries no priority field at all, so the honest answer is that Argo could
+    // not establish one — never a lowest-priority default the Work room would then rank on.
+    priority: null,
     labels: issue.labels,
     updatedAt: issue.updatedAt,
   }
@@ -91,6 +97,11 @@ export function blockerState(issue: RawIssue, map: StateMap): BlockerState {
 function readTypeName(value: unknown): string | null {
   if (!isRecord(value) || typeof value.name !== 'string') return null
   return value.name.trim() === '' ? null : value.name
+}
+
+function readLogin(value: unknown): string | null {
+  if (!isRecord(value) || typeof value.login !== 'string') return null
+  return value.login
 }
 
 function readChildCount(value: unknown): number {

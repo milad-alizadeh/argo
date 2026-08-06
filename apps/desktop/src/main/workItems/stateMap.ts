@@ -1,13 +1,9 @@
 import type { WorkflowTier, WorkItemBucket } from '../../shared'
 
-// The per-workspace state-map (#167): the translation between the provider's own status words
-// and Argo's canonical five. It ships HEURISTIC-SEEDED with no editor, so the heuristic below is
-// the whole of the contract — an editor earns a ticket only if this proves wrong often enough.
-//
-// Seeding reads the provider's status CATEGORY first, because that is the one field a provider
-// declares rather than a user types. Two things the category cannot answer are answered by name:
-// `in-review` (which shares the started category with `in-progress` everywhere it exists), and a
-// custom state carrying no category at all.
+// The state-map (#167): provider status words → Argo's canonical five. It ships
+// HEURISTIC-SEEDED with no editor, so the heuristic below is the whole of the contract.
+// Seeding reads the CATEGORY first (the one field a provider declares rather than a user
+// types); name-match answers only what the category cannot.
 
 /** The provider-declared grouping behind a status word, normalized. `null` where the provider
  * declares none — a custom state a user typed, which only its name can place. */

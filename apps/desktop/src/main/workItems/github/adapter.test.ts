@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { API_BASE, OWNER, REPO } from '../__fixtures__/fakeGitHub'
+import { API_BASE, OWNER, REPOSITORY } from '../__fixtures__/fakeGitHub'
 import { gitHubPort, OPEN_ISSUE as open, readItems, readPort } from '../__fixtures__/gitHubPort'
 
 // The Work Item provider port, exercised THROUGH the canonical interface against a fake HTTP
@@ -98,7 +98,7 @@ describe('what a read is and is not', () => {
     const { provider, github } = gitHubPort({ issues: [open] })
     await provider.read()
     expect(github.requests[0]?.url).toBe(
-      `${API_BASE}/repos/${OWNER}/${REPO}/issues?state=all&per_page=100`,
+      `${API_BASE}/repos/${OWNER}/${REPOSITORY}/issues?state=all&per_page=100`,
     )
     expect(github.requests[0]?.headers.authorization).toBe('Bearer gho_test')
   })

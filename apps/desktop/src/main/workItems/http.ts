@@ -20,6 +20,11 @@ export interface HttpResponse {
 
 export type Http = (request: HttpRequest) => Promise<HttpResponse>
 
+/** The real clock, injected everywhere something waits so a suite can run the same loop without
+ * spending its interval. */
+export const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms))
+
 /** The real transport. `fetch` is node's own since 18, so this adds no dependency. */
 export const nodeHttp: Http = async (request) => {
   const response = await fetch(request.url, {
