@@ -76,8 +76,9 @@ function explain(rel, moduleName, entry) {
     `placement.rootFiles.modules.${moduleName}.allow (KIND — the rule does not apply to that ` +
     `category) or .ratchet (RATCHET — debt, a list that may only shrink) in the workspace's ` +
     `scripts/module-boundaries.json, with the reason as its value. Both are read by ` +
-    `root-files-check.mjs, which fails the build on this same file otherwise. ` +
-    `Rationale: docs/adr/0021-placement-is-declared-per-module.md.`
+    `root-files-check.mjs, which fails the build on this same file otherwise. The reasoning ` +
+    `lives in that block's own comment and in rules/file-structure.md — this hook ships into ` +
+    `other repos, so it cites what travels with it rather than an ADR number that may not.`
   )
 }
 

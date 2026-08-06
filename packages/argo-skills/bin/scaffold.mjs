@@ -28,13 +28,18 @@ const SOURCE_ROOT = resolve(STARTER_DIR, '..', '..')
 // the CLI calls universal, so only Claude Code needs naming — the other two are kept
 // explicit because they document the intended audience.
 const SKILL_AGENTS = ['claude-code', 'cursor', 'codex']
-// The full guardrail set copied into every target: the neutral descriptor, the two
-// scripts its projected commands invoke, and the worktree contract the edit-guard's
-// deny message cites (so the rules land with the enforcement). Lockstep with hooks.json.
+// The full guardrail set copied into every target: the neutral descriptor, every script its
+// projected commands invoke (plus module-map.mjs, which placement-guard imports rather than
+// being named by a command — a hook that copies its entry point and not its imports is a hook
+// that throws on first use), and the worktree contract the edit-guard's deny message cites (so
+// the rules land with the enforcement). Lockstep with hooks.json: a command added there whose
+// script is missing here projects a hook pointing at nothing.
 const HOOK_ASSETS = [
   'hooks.json',
   'scripts/worktree-guard.mjs',
   'scripts/worktree-gc.sh',
+  'scripts/placement-guard.mjs',
+  'scripts/module-map.mjs',
   'docs/agents/worktrees.md',
 ]
 // A lock has no scope field: `skills add --global` writes a different lock format in a

@@ -25,6 +25,30 @@ function check(name, fn) {
 const guardCmd = (block) =>
   block.PreToolUse.find((g) => g.matcher === 'Edit|Write').hooks[0].command
 
+// A consumer installs the hooks with `scaffold.mjs --hooks`, which copies HOOK_ASSETS and then
+// projects hooks.json. The two are separate lists, so adding a hook whose script is not an asset
+// ships a projected command pointing at a file that was never copied — it throws on first use, in
+// the consumer's repo rather than here. Derive the requirement instead of trusting the lockstep
+// comment: every repo script a command names must be an asset.
+//
+// Read as TEXT, never imported: scaffold.mjs is a CLI whose body runs at module scope, so
+// importing it to read one constant installs 59 skills as a side effect of running the tests.
+const assets = readFileSync(path.join(HERE, '..', 'packages/argo-skills/bin/scaffold.mjs'), 'utf8')
+check('every script hooks.json invokes is copied by scaffold', () => {
+  const block = assets.match(/const HOOK_ASSETS = \[(.*?)\]/s)
+  assert.ok(block, 'HOOK_ASSETS not found in scaffold.mjs — this check has gone blind')
+  const copied = [...block[1].matchAll(/'([^']+)'/g)].map(([, rel]) => rel)
+
+  const named = new Set()
+  for (const hook of descriptor.hooks) {
+    for (const [, rel] of hook.command.matchAll(/\/(scripts\/[\w.-]+\.(?:mjs|sh))/g)) named.add(rel)
+  }
+  assert.ok(named.size > 0, 'no scripts/ commands found — this check has gone blind')
+
+  const missing = [...named].filter((rel) => !copied.includes(rel))
+  assert.deepEqual(missing, [], `hooks.json invokes scripts scaffold never copies: ${missing}`)
+})
+
 check('claude-code: known, targets .claude/settings.json', () => {
   const r = project(descriptor, 'claude-code')
   assert.equal(r.known, true)

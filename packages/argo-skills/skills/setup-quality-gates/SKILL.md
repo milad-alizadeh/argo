@@ -60,10 +60,12 @@ defaults — a repo may land looser ones (§5), never at the cost of dropping th
 | 13 | Imports that bypass a module's public entry, or cross a layer boundary | error |
 | 14 | Circular dependencies between modules | error |
 | 15 | Focused or skipped tests, committed | error |
+| 16 | A file loose at a module root, a kind-folder, an unearned shared symbol | error |
 
 Intents 1–9 are ordinary lint rules in most ecosystems. 10–14 usually are not — they get
 their own tools in §4. 15 is an ordinary rule but lives in a test plugin most repos haven't
-installed.
+installed. 16 belongs to `setup-module-boundaries` (§4, *The import graph*) because it compiles
+from that skill's map — wire its scripts into `quality` here, but do not reimplement them.
 
 **9 and 12 are two intents, not one, and conflating them is the most common overclaim in
 this skill's history.** A linter's unused-variable rule reads one file: an exported symbol
@@ -207,6 +209,18 @@ on the JVM. Two things to get right:
 Land 13 as a ratchet on any existing repo. Deep imports are the single most common thing a
 codebase has hundreds of, and a gate that lands red teaches the team the gate is advisory
 (§5, *Violations the install itself introduced*).
+
+**Placement (intent 16) is the half even the import graph cannot see.** A cruiser judges edges,
+so a module's own file parked at that module's root imports its module through the module's
+declared public entry — every edge legal, exit 0, structure rotting anyway. There is no loud
+failure, which is why `file-structure.md`'s folder rules stay prose in almost every install and
+are ignored in almost every repo that has them. `setup-module-boundaries` §5 owns this: three
+scripts compiling from the same map, gating root files, kind-folders and the shared tier. Wire
+them into `quality` alongside the gates above and count their first-run breaches like any other
+ratchet. Two things not to get wrong when you do: **a module absent from the placement config
+must FAIL, not pass** (an unlisted-means-unchecked default is how every module added after the
+install inherits an exemption nobody chose), and a **stale** exemption — one naming no file —
+must fail too, or the list stops shrinking the moment someone fixes something.
 
 **Test hygiene (intent 15).** A committed `.only` silently disables the rest of the suite,
 and a committed `.skip` is a test that reads as passing. Both are ordinary lint rules living
