@@ -22,6 +22,7 @@ function App(): React.JSX.Element {
   const sessions = useSessionStore((store) => store.sessions)
   const projects = useSessionStore((store) => store.projects)
   const activeProjectId = useSessionStore((store) => store.activeProjectId)
+  const grant = useSessionStore((store) => store.grant)
   const applyDelta = useSessionStore((store) => store.applyDelta)
   const shell = useShellState()
   // Onboarding IS creating a Project (ADR-0015), so the panel that adds one and the panel
@@ -55,12 +56,14 @@ function App(): React.JSX.Element {
       git={git}
       connect={connect.panel}
       connectHandlers={connect.handlers}
+      grant={grant}
       handlers={{
         onSelectProject: shell.swapProject,
         onAddProject: connect.startOnboarding,
         onSelectRoom: shell.selectRoom,
         onConnect: connect.startOnboarding,
         onOpenSettings: connect.openSettings,
+        onReconnectGrant: connect.reconnect,
       }}
     >
       <RoomStage room={shell.room} sessions={<SessionScreen {...sessionsRoom} />} />

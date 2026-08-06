@@ -1,4 +1,4 @@
-import type { DeviceCodePrompt } from '@shared'
+import type { DeviceCodePrompt, GrantState, ProjectView } from '@shared'
 import { useCallback, useState } from 'react'
 import {
   buildConnectPanelModel,
@@ -21,6 +21,10 @@ export interface ConnectPanel {
   startOnboarding: () => void
   /** Open Project Settings on a project that already exists. */
   openSettings: (projectId: string) => void
+  /** Where the top bar's `needs reconnect` chip lands. It opens the panel on the active project
+   * when there is one, so the rows show what that project already has, and falls back to
+   * onboarding on a machine whose grant died before any project was registered. */
+  reconnect: () => void
 }
 
 interface Opened {
@@ -33,6 +37,7 @@ interface Opened {
 
 export function useConnectPanel(): ConnectPanel {
   const projects = useSessionStore((state) => state.projects)
+  const activeProjectId = useSessionStore((state) => state.activeProjectId)
   const grant = useSessionStore((state) => state.grant)
   const [opened, setOpened] = useState<Opened | null>(null)
   const [device, setDevice] = useState<DeviceCodePrompt | null>(null)
@@ -47,27 +52,36 @@ export function useConnectPanel(): ConnectPanel {
     setDevice(null)
   }, [])
 
+  const openSettings = useCallback(
+    (projectId: string) =>
+      setOpened({ mode: 'settings', welcoming: false, projectId, folder: null }),
+    [],
+  )
+  const startOnboarding = useCallback(
+    () => setOpened({ mode: 'onboarding', welcoming: true, projectId: null, folder: null }),
+    [],
+  )
+
   const project = projects.find((candidate) => candidate.id === opened?.projectId) ?? null
   return {
     panel: opened === null ? null : model(opened, { project, grant, device }),
     handlers: connectActs({
-      opened: opened ?? { mode: 'onboarding', projectId: null, folder: null },
+      opened,
       setFolder: (folder) => amend({ folder }),
       setWelcoming: (welcoming) => amend({ welcoming }),
       setDevice,
       close,
     }),
-    startOnboarding: () =>
-      setOpened({ mode: 'onboarding', welcoming: true, projectId: null, folder: null }),
-    openSettings: (projectId) =>
-      setOpened({ mode: 'settings', welcoming: false, projectId, folder: null }),
+    startOnboarding,
+    openSettings,
+    reconnect: () => (activeProjectId === null ? startOnboarding() : openSettings(activeProjectId)),
   }
 }
 
 /** What the panel reads off the projection, beside the folder the user just picked. */
 interface PanelContext {
-  project: { path: string; cli: ConnectPanelModel['cli'] } | null
-  grant: Parameters<typeof buildConnectPanelModel>[0]['grant']
+  project: ProjectView | null
+  grant: GrantState
   device: DeviceCodePrompt | null
 }
 

@@ -2,7 +2,7 @@ import type { GitFacts } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { CockpitScreenView } from '@/CockpitScreenView'
-import { branchMenuRows, type ShellModel } from '@/shell/components'
+import { branchMenuRows, buildConnectPanelModel, type ShellModel } from '@/shell/components'
 
 const FACTS: GitFacts = {
   branch: 'main',
@@ -57,7 +57,9 @@ const meta = {
       onSelectRoom: fn(),
       onConnect: fn(),
       onOpenSettings: fn(),
+      onReconnectGrant: fn(),
     },
+    grant: 'none',
     children: null,
   },
   argTypes: { room: { control: 'select', options: ['sessions', 'work', 'code'] } },
@@ -86,7 +88,7 @@ export const NothingConnected: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.queryByRole('button', { name: 'argo' })).not.toBeInTheDocument()
-    await userEvent.click(canvas.getByRole('button', { name: 'Connect a provider' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Add your first project' }))
     await expect(args.handlers.onConnect).toHaveBeenCalled()
   },
 }
@@ -99,5 +101,51 @@ export const NotAGitRepository: Story = {
     await expect(
       within(canvasElement).queryByRole('button', { name: 'Manage this branch' }),
     ).not.toBeInTheDocument()
+  },
+}
+
+/**
+ * The connect panel open, which is the one branch of the stage no child can show.
+ *
+ * It outranks BOTH the room and the empty seam: onboarding IS creating a Project (ADR-0015), so
+ * while the panel is up there is no project world behind it worth keeping on screen.
+ */
+export const Onboarding: Story = {
+  args: {
+    shell: { connected: false, tabs: [] },
+    connect: buildConnectPanelModel({
+      mode: 'onboarding',
+      welcoming: false,
+      folder: '/Users/dev/code/argo',
+      grant: 'none',
+      plugin: 'unavailable',
+      device: null,
+      cli: null,
+    }),
+    children: <div className="flex-1" />,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('heading', { name: 'Set up your project' })).toBeVisible()
+    // The seam it replaced, gone: the stage shows one thing at a time.
+    await expect(
+      canvas.queryByRole('button', { name: 'Add your first project' }),
+    ).not.toBeInTheDocument()
+  },
+}
+
+/**
+ * A grant GitHub has refused, on a project that is otherwise working.
+ *
+ * The chip is the only permanent chrome that ever mentions a connection, and it is silent
+ * until there is something to act on. Pressing it lands in the panel that owns both ways out,
+ * which is why no separate connections screen exists.
+ */
+export const GrantRefused: Story = {
+  args: { grant: 'needs-reconnect', children: <div className="flex-1" /> },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: /needs reconnect/ }))
+    await expect(args.handlers.onReconnectGrant).toHaveBeenCalled()
   },
 }

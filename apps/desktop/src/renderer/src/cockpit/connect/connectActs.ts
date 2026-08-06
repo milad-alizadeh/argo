@@ -4,9 +4,15 @@ import type { ConnectPanelHandlers, ConnectRowView } from '@/shell/components'
 // The acts the connect panel cannot perform for itself: main owns the folder picker, the
 // device-flow sign-in and the registry. The panel names each act and never its mechanism.
 
-/** What is open, and the two setters the acts move it with. */
+/** What is open, and the setters the acts move it with. `opened` is `null` when the panel is
+ * closed — every act then does nothing rather than running against a fabricated state, which
+ * would leave a closed panel able to sign in or register a folder it never showed. */
 export interface ConnectSession {
-  opened: { mode: 'onboarding' | 'settings'; projectId: string | null; folder: string | null }
+  opened: {
+    mode: 'onboarding' | 'settings'
+    projectId: string | null
+    folder: string | null
+  } | null
   setFolder: (folder: string) => void
   setWelcoming: (welcoming: boolean) => void
   setDevice: (device: DeviceCodePrompt | null) => void
@@ -16,7 +22,9 @@ export interface ConnectSession {
 export function connectActs(session: ConnectSession): ConnectPanelHandlers {
   return {
     onContinue: () => session.setWelcoming(false),
-    onRowAct: (key) => runRow(session, key),
+    onRowAct: (key) => {
+      if (session.opened !== null) runRow(session, key)
+    },
     onChooseCli: (cli) => chooseCli(session, cli),
     onCommit: () => void commit(session),
     onContinueOffline: session.close,
@@ -33,6 +41,12 @@ function runRow(session: ConnectSession, key: ConnectRowView['key']): void {
     // panel renders no button that would reach here.
     case 'plugin':
       return
+    // A row key with no act is a bug upstream rather than a silent no-op, so it fails the
+    // build through the `never` and says which key it was if one ever reaches here.
+    default: {
+      const unreachable: never = key
+      throw new Error(`Unhandled connect row: ${JSON.stringify(unreachable)}`)
+    }
   }
 }
 
@@ -53,16 +67,18 @@ async function signIn(session: ConnectSession): Promise<void> {
 }
 
 function chooseCli(session: ConnectSession, cli: Cli): void {
-  const { projectId } = session.opened
-  if (projectId !== null) void window.cockpit?.setProjectCli(projectId, cli)
+  const projectId = session.opened?.projectId
+  if (projectId !== undefined && projectId !== null) {
+    void window.cockpit?.setProjectCli(projectId, cli)
+  }
 }
 
 // `Done` on an existing project is just leaving; `Create project` is the one act onboarding
 // exists for. A creation that main refused leaves the panel open with its folder still set,
 // because closing over a failure would lose the only thing the user had chosen.
 async function commit(session: ConnectSession): Promise<void> {
-  const { mode, folder } = session.opened
-  if (mode === 'settings' || folder === null) return session.close()
+  const folder = session.opened?.folder ?? null
+  if (session.opened?.mode !== 'onboarding' || folder === null) return session.close()
   const created = await window.cockpit?.createProject(folder)
   if (created?.ok === true) session.close()
 }

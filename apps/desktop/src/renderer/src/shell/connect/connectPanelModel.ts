@@ -136,13 +136,18 @@ function folderRow(input: ConnectPanelInput): ConnectRowView {
 const chooseFolderLabel = (folder: string | null): string =>
   folder === null ? 'Choose folder' : 'Choose a different folder'
 
+// Named for the CONCERN, not for GitHub: one sign-in feeds both ports today, and Linear is a
+// second path this row will grow rather than a second row (#165 — GitHub-first in v1, the
+// Linear-specific pixels deferred). Titling the row `GitHub` would close a door the spec left
+// open, so the provider is named in the copy where it can be joined instead.
 function connectionsRow(input: ConnectPanelInput): ConnectRowView {
   const connected = input.grant === 'connected'
   return {
     key: 'connections',
-    title: 'GitHub',
-    benefit: 'See your backlog, your pull requests and their checks next to the work.',
-    value: connected ? 'Signed in' : null,
+    title: 'Connections',
+    benefit:
+      'See your backlog, your pull requests and their checks next to the work. GitHub covers both today; Linear for issues comes later.',
+    value: connected ? 'Signed in to GitHub' : null,
     done: connected,
     action: signInLabel(input.grant),
   }

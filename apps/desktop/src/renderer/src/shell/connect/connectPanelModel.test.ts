@@ -1,35 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildConnectPanelModel,
-  type ConnectPanelInput,
-  type ConnectState,
-} from './connectPanelModel'
+  FIXTURE_DEVICE as DEVICE,
+  FIXTURE_FOLDER as FOLDER,
+  connectPanel as panel,
+} from './__fixtures__/connectPanel'
+import type { ConnectPanelInput, ConnectState } from './connectPanelModel'
 
 // The connect panel's whole derivation (#265): which of the seven states the panel is in, and
 // which rows read as done. Onboarding IS creating a Project (ADR-0015), so the same model
 // answers for a Project being created and for Project Settings re-opened on one that exists.
 
-const FOLDER = '/Users/dev/code/argo'
-
-const panel = (over: Partial<ConnectPanelInput> = {}) =>
-  buildConnectPanelModel({
-    mode: 'onboarding',
-    welcoming: false,
-    folder: null,
-    grant: 'none',
-    plugin: 'unavailable',
-    device: null,
-    cli: null,
-    ...over,
-  })
-
 const state = (over: Partial<ConnectPanelInput> = {}): ConnectState => panel(over).state
-
-const DEVICE = {
-  userCode: 'WDJB-MJHT',
-  verificationUri: 'https://github.com/login/device',
-  expiresIn: 900,
-}
 
 describe('which state the panel is in', () => {
   it.each([

@@ -6,6 +6,10 @@ export const CLIS = ['claude', 'codex'] as const
 
 export type Cli = (typeof CLIS)[number]
 
+/** What a Project spawns until Project Settings says otherwise, and what an unreadable stored
+ * choice falls back to. One spelling, so the registry's default and a fixture's cannot drift. */
+export const DEFAULT_CLI: Cli = 'claude'
+
 /** Whether a value read from outside — a hand-edited registry, an IPC payload — names a CLI
  * Argo can launch. An unknown word is not a CLI, so the caller falls back rather than
  * spawning a program nobody chose. */

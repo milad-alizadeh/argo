@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import {
   type Cli,
+  DEFAULT_CLI,
   type HubEvent,
   isCli,
   normalizeProjectPath,
@@ -24,9 +25,6 @@ export interface ProjectRecord {
    * existed, and absent is not a third CLI — it reads as the default. */
   cli?: Cli
 }
-
-/** What a Project spawns until Project Settings says otherwise. */
-const DEFAULT_CLI: Cli = 'claude'
 
 export interface ProjectRegistry {
   activeProjectId: string | null

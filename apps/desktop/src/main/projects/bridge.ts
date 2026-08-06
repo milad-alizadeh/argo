@@ -67,7 +67,10 @@ async function chooseCli(
 ): Promise<CommandResult> {
   const registry = await setProjectCli(registryFile, choice.projectId, choice.cli)
   const record = registry.projects.find((project) => project.id === choice.projectId)
-  if (record?.cli !== choice.cli) return { ok: false, detail: 'unknown project' }
+  // Read back rather than trusted: the choice is reported as taken only when the registry now
+  // carries it, so an unknown project and a write that did not land are both refusals.
+  if (record === undefined) return { ok: false, detail: 'unknown project' }
+  if (record.cli !== choice.cli) return { ok: false, detail: 'the agent choice was not saved' }
 
   hub.apply({ type: 'project-cli-changed', id: choice.projectId, cli: choice.cli })
   return { ok: true, detail: choice.cli }

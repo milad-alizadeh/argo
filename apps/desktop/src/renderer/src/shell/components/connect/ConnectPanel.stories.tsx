@@ -1,42 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import {
-  buildConnectPanelModel,
-  CONNECT_STATES,
-  type ConnectPanelInput,
-} from '../../connect/connectPanelModel'
+  CONNECT_INPUT_BY_STATE as BY_STATE,
+  FIXTURE_FOLDER as FOLDER,
+  connectPanel as panel,
+} from '../../connect/__fixtures__/connectPanel'
+import { CONNECT_STATES } from '../../connect/connectPanelModel'
 import { ConnectPanel } from './ConnectPanel'
-
-const FOLDER = '/Users/dev/code/argo'
-const DEVICE = {
-  userCode: 'WDJB-MJHT',
-  verificationUri: 'https://github.com/login/device',
-  expiresIn: 900,
-}
-
-const panel = (over: Partial<ConnectPanelInput>) =>
-  buildConnectPanelModel({
-    mode: 'onboarding',
-    welcoming: false,
-    folder: null,
-    grant: 'none',
-    plugin: 'unavailable',
-    device: null,
-    cli: null,
-    ...over,
-  })
-
-/** The input that puts the panel in each of its seven states, so the gallery is the state list
- * rather than a hand-kept parallel one. */
-const BY_STATE: Record<(typeof CONNECT_STATES)[number], Partial<ConnectPanelInput>> = {
-  welcome: { welcoming: true },
-  fresh: {},
-  direct: { folder: FOLDER },
-  connecting: { folder: FOLDER, device: DEVICE },
-  partial: { folder: FOLDER, grant: 'connected' },
-  wired: { folder: FOLDER, grant: 'connected', plugin: 'installed' },
-  error: { folder: FOLDER, grant: 'needs-reconnect' },
-}
 
 const meta = {
   title: 'Shell/ConnectPanel',

@@ -1,5 +1,7 @@
+import type { GrantState } from '@shared'
 import type { ReactNode } from 'react'
 import {
+  ConnectionChip,
   ConnectPanel,
   type ConnectPanelHandlers,
   type ConnectPanelModel,
@@ -26,6 +28,8 @@ export interface CockpitHandlers {
   onConnect: () => void
   /** Open Project Settings on one project, from its tab's context menu. */
   onOpenSettings: (projectId: string) => void
+  /** Open the connect panel on the active project, from the chip reporting a refused grant. */
+  onReconnectGrant: () => void
 }
 
 export interface CockpitScreenProps {
@@ -38,6 +42,9 @@ export interface CockpitScreenProps {
    * open, which is every moment the user is actually working. */
   connect: ConnectPanelModel | null
   connectHandlers: ConnectPanelHandlers
+  /** The account-level GitHub grant, which the top bar's chip reports only when it has been
+   * refused. Its chip is the pointer; the connect panel above is the destination. */
+  grant: GrantState
   handlers: CockpitHandlers
   /** The active room's stage. Replaced by the connect seam while nothing is connected. */
   children: ReactNode
@@ -50,6 +57,7 @@ export function CockpitScreenView({
   git,
   connect,
   connectHandlers,
+  grant,
   handlers,
   children,
 }: CockpitScreenProps): React.JSX.Element {
@@ -74,6 +82,9 @@ export function CockpitScreenView({
           <TopBar
             room={room}
             caption={caption}
+            connectionChip={
+              <ConnectionChip grant={grant} onReconnect={handlers.onReconnectGrant} />
+            }
             gitControls={<GitControls {...git} />}
             onSelectRoom={handlers.onSelectRoom}
           />

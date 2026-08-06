@@ -28,7 +28,7 @@ type ProjectTabProps = {
   /** Make this project the active one. Swapping is a view change, not a teardown. */
   onSelect: () => void
   /** Open Project Settings on this project — the panel that created it, re-entered (#265).
-   * One of its two entry points; the other is the ⌘K palette. */
+   * The reachable entry point today; ⌘K's is the palette's to add when #266 builds one. */
   onOpenSettings: () => void
 }
 

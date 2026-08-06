@@ -3,7 +3,7 @@
 // than observes. Path handling is hand-rolled rather than `node:path` because the renderer
 // imports this module in a browser context, where `node:path` does not resolve.
 
-import type { Cli } from '../session/cli'
+import { type Cli, DEFAULT_CLI } from '../session/cli'
 
 const SEPARATORS = ['/', '\\']
 
@@ -20,7 +20,7 @@ export interface ProjectView {
  * its case is actually about and a new attribute never rewrites every fixture. */
 export function projectView(over: Partial<ProjectView> & { id: string }): ProjectView {
   const path = over.path ?? `/code/${over.id}`
-  return { name: projectName(path), path, cli: 'claude', ...over }
+  return { name: projectName(path), path, cli: DEFAULT_CLI, ...over }
 }
 
 // One spelling per folder, so `/code/argo` and `/code/argo/` are never two Projects.
