@@ -5,6 +5,7 @@ import {
   WORK_ITEMS_CONNECT_CHANNEL,
   WORK_ITEMS_DEVICE_CODE_CHANNEL,
 } from '../../shared'
+import type { Hub } from '../hub'
 import { githubClientId, signInWithDeviceFlow } from './github/deviceFlow'
 import { type Http, sleep } from './http'
 import type { WorkItemSync } from './sync'
@@ -16,6 +17,7 @@ import type { TokenStore } from './tokenStore'
 // it, because the invoke does not settle until they have finished with it.
 
 export interface WorkItemsBridgeOptions {
+  hub: Hub
   sync: WorkItemSync
   tokenStore: TokenStore
   http: Http
@@ -51,6 +53,10 @@ async function connect(
   if (!(await options.tokenStore.write(result.token))) {
     return { ok: false, detail: 'this machine has no keychain to store the token in' }
   }
+  // DIRECT: Argo ran this grant and stored its token, so the panel does not wait a poll
+  // interval to learn what just happened — and a `needs-reconnect` this sign-in was the answer
+  // to stands down here rather than on the next successful read.
+  options.hub.apply({ type: 'grant-changed', grant: 'connected' })
   options.sync.refresh()
   return { ok: true, detail: 'connected' }
 }

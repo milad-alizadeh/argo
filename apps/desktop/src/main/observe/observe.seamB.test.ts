@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { type ProjectionDelta, type ProjectView, rootAgent } from '../../shared'
+import { type ProjectionDelta, type ProjectView, projectView, rootAgent } from '../../shared'
 import { createHub } from '../hub'
 import {
   deriveSessionStatus,
@@ -73,7 +73,7 @@ describe('Seam B observes real claude sessions', () => {
 
   it('attributes an observed session to the registered Project its cwd sits in', () => {
     const { deltas } = observe(['externalBasic'], true, [
-      { id: 'p-proj', name: 'proj', path: '/Users/x/proj' },
+      projectView({ id: 'p-proj', path: '/Users/x/proj' }),
     ])
 
     expect(deltas[0]).toMatchObject({ session: { projectId: 'p-proj' } })

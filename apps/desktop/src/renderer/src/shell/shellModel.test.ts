@@ -1,4 +1,10 @@
-import { type CockpitState, type SessionStatus, type SessionView, sessionFacts } from '@shared'
+import {
+  type CockpitState,
+  projectView,
+  type SessionStatus,
+  type SessionView,
+  sessionFacts,
+} from '@shared'
 import { describe, expect, it } from 'vitest'
 import { buildShellModel } from './shellModel'
 
@@ -21,12 +27,13 @@ function session(id: string, projectId: string, status: SessionStatus): SessionV
 function state(over: Partial<CockpitState> = {}): CockpitState {
   return {
     projects: [
-      { id: 'p1', name: 'argo', path: '/code/argo' },
-      { id: 'p2', name: 'deckhand', path: '/code/deckhand' },
+      projectView({ id: 'p1', path: '/code/argo' }),
+      projectView({ id: 'p2', path: '/code/deckhand' }),
     ],
     activeProjectId: 'p1',
     sessions: [],
     workItems: [],
+    grant: 'none',
     ...over,
   }
 }

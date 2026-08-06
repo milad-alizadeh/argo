@@ -101,7 +101,7 @@ app.whenReady().then(() => {
   // one act the renderer cannot perform, which is the device-flow sign-in.
   const tokenStore = createTokenStore(join(app.getPath('userData'), TOKEN_FILENAME))
   const workItems = createWorkItemSync({ hub, tokenStore, http: nodeHttp })
-  wireWorkItems({ sync: workItems, tokenStore, http: nodeHttp })
+  wireWorkItems({ hub, sync: workItems, tokenStore, http: nodeHttp })
   workItems.start()
   app.on('will-quit', () => workItems.stop())
 

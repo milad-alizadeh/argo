@@ -2,13 +2,14 @@ import { useCallback, useEffect } from 'react'
 import { CockpitScreenView } from '@/CockpitScreenView'
 import {
   RoomStage,
+  useConnectPanel,
   useGitGroup,
-  useSessionInterior,
   useSessionStore,
+  useSessionsRoom,
   useShellCommands,
   useShellState,
 } from '@/cockpit'
-import { buildSessionsRoomModel, SessionScreen } from '@/rooms/sessions/components'
+import { SessionScreen } from '@/rooms/sessions/components'
 import { buildShellModel } from '@/shell/components'
 
 // Container: wires the projection bridge into the store, then renders the chrome and the active
@@ -21,8 +22,12 @@ function App(): React.JSX.Element {
   const sessions = useSessionStore((store) => store.sessions)
   const projects = useSessionStore((store) => store.projects)
   const activeProjectId = useSessionStore((store) => store.activeProjectId)
+  const grant = useSessionStore((store) => store.grant)
   const applyDelta = useSessionStore((store) => store.applyDelta)
   const shell = useShellState()
+  // Onboarding IS creating a Project (ADR-0015), so the panel that adds one and the panel
+  // Project Settings opens are the same surface, wired once here.
+  const connect = useConnectPanel()
   const commands = useShellCommands(shell)
 
   useEffect(() => window.cockpit?.subscribeProjection(applyDelta), [applyDelta])
@@ -39,14 +44,7 @@ function App(): React.JSX.Element {
     onOpenScratchTerminal: commands.openScratchTerminal,
     onResolveWithAgent: commands.resolveWithAgent,
   })
-
-  // The roster is the ACTIVE project's. A Session belongs to the Project its cwd sits in
-  // (ADR-0015), so showing every project's sessions beside a per-project strip dot would be two
-  // surfaces disagreeing about the same world. A Session inside no Project is nobody's.
-  const roster = sessions.filter((session) => session.projectId === activeProjectId)
-  const session = useSessionInterior(
-    roster.find((candidate) => candidate.id === shell.selectedSessionId) ?? null,
-  )
+  const sessionsRoom = useSessionsRoom(shell, commands)
 
   return (
     <CockpitScreenView
@@ -56,33 +54,19 @@ function App(): React.JSX.Element {
       // fabricated caption would be the shell claiming to have heard something.
       caption={null}
       git={git}
+      connect={connect.panel}
+      connectHandlers={connect.handlers}
+      grant={grant}
       handlers={{
         onSelectProject: shell.swapProject,
-        onAddProject: commands.addProject,
+        onAddProject: connect.startOnboarding,
         onSelectRoom: shell.selectRoom,
-        onConnect: commands.addProject,
+        onConnect: connect.startOnboarding,
+        onOpenSettings: connect.openSettings,
+        onReconnectGrant: connect.reconnect,
       }}
     >
-      <RoomStage
-        room={shell.room}
-        sessions={
-          <SessionScreen
-            roster={buildSessionsRoomModel({
-              sessions: roster,
-              selectedId: shell.selectedSessionId,
-            })}
-            interior={session.interior}
-            layout={session.layout}
-            attach={session.attach}
-            spawnRefusal={commands.spawnRefusal}
-            handlers={{
-              ...session.handlers,
-              onSelectSession: shell.selectSession,
-              onSpawnSession: commands.spawnSession,
-            }}
-          />
-        }
-      />
+      <RoomStage room={shell.room} sessions={<SessionScreen {...sessionsRoom} />} />
     </CockpitScreenView>
   )
 }

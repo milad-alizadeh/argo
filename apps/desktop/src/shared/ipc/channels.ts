@@ -1,5 +1,6 @@
 import type { GitFacts, GitRequest } from '../git/facts'
 import type { ProjectionDelta } from '../projection/projection'
+import type { Cli } from '../session/cli'
 
 // IPC channel names for the main → renderer projection (ADR-0005). Shared so the
 // send side (main) and the receive side (preload) can never disagree on the string.
@@ -46,10 +47,17 @@ export interface TerminalSession {
 export const GIT_FACTS_CHANNEL = 'cockpit:git-facts'
 export const GIT_OPERATION_CHANNEL = 'cockpit:git-operation'
 
-// The two acts Argo owns above the Session (ADR-0017), plus ⌘N's spawn. Main owns the folder
+// The acts Argo owns above the Session (ADR-0017), plus ⌘N's spawn. Main owns the folder
 // dialog and the registry file, so the renderer names the act and never the mechanism.
-export const PROJECT_REGISTER_CHANNEL = 'cockpit:project-register'
+//
+// Choosing and creating are TWO channels, not one, because the connect panel puts a decision
+// between them: a folder is all a Project takes, so `Create project` lights up the moment one
+// is chosen and the user may connect a provider first (#165). One combined act would register
+// on the picker's OK and leave the panel with nothing left to enable.
+export const PROJECT_CHOOSE_FOLDER_CHANNEL = 'cockpit:project-choose-folder'
+export const PROJECT_CREATE_CHANNEL = 'cockpit:project-create'
 export const PROJECT_ACTIVATE_CHANNEL = 'cockpit:project-activate'
+export const PROJECT_SET_CLI_CHANNEL = 'cockpit:project-set-cli'
 export const SESSION_SPAWN_CHANNEL = 'cockpit:session-spawn'
 
 // Connecting the Work Item provider (ADR-0018). Two channels rather than one because the
@@ -93,10 +101,16 @@ export interface CockpitBridge {
    * the shell renders by hiding the whole git group. */
   readGitFacts(projectId: string): Promise<GitFacts | null>
   runGitOperation(request: GitRequest): Promise<CommandResult>
-  /** Register a folder as a Project. Main opens the folder picker, so the renderer has no
-   * path to supply and nothing to validate. */
-  registerProject(): Promise<CommandResult>
+  /** Open main's folder picker. `detail` is the chosen folder; `ok: false` means the user
+   * cancelled, which leaves whatever folder the panel already had rather than clearing it. */
+  chooseProjectFolder(): Promise<CommandResult>
+  /** Register a chosen folder as a Project. A folder is all it takes and git is not required
+   * (#165): an empty greenfield directory creates a Project at the observation floor. */
+  createProject(path: string): Promise<CommandResult>
   activateProject(projectId: string): Promise<CommandResult>
+  /** Which agent CLI ⌘N spawns in this Project (#186). Per Project, because nobody runs two
+   * editors at once, and kept out of spawn so ⌘N stays zero-config. */
+  setProjectCli(projectId: string, cli: Cli): Promise<CommandResult>
   /** Spawn a session in the ACTIVE project's root folder — zero-config, no arguments to pick. */
   spawnSession(): Promise<CommandResult>
   /** Run the Work Item provider's device-flow sign-in. `onCode` fires once, as soon as the

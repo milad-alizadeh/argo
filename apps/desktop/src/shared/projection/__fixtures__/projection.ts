@@ -1,4 +1,4 @@
-import type { ProjectView } from '../../projects/model'
+import { type ProjectView, projectView } from '../../projects/model'
 import { sessionFacts } from '../../session/facts'
 import { type CockpitState, emptyState, type SessionIntake } from '../cockpitState'
 import { applyDelta, applyEvent, type HubEvent } from '../projection'
@@ -32,8 +32,8 @@ export const session = (over: Partial<SessionIntake> = {}): SessionIntake => ({
   ...over,
 })
 
-export const argo: ProjectView = { id: 'p-argo', name: 'argo', path: '/Users/dev/code/argo' }
-export const shop: ProjectView = { id: 'p-shop', name: 'shop', path: '/Users/dev/code/shop' }
+export const argo: ProjectView = projectView({ id: 'p-argo', path: '/Users/dev/code/argo' })
+export const shop: ProjectView = projectView({ id: 'p-shop', path: '/Users/dev/code/shop' })
 
 export const registered = (project: ProjectView): HubEvent => ({
   type: 'project-registered',

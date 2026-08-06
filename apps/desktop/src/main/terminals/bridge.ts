@@ -47,9 +47,12 @@ function claimFor(docks: Docks, sessionId: string): ClaimId | null {
   const bound = docks.managed.ownerOf(sessionId)
   if (bound !== null) return bound
 
-  const cwd = docks.hub.getState().sessions.find((session) => session.id === sessionId)?.cwd
-  if (cwd === undefined || cwd === null) return null
-  const launched = docks.launcher.start(cwd)
+  // The Session's OWN cli, not the Project's: relaunching a Dock re-runs the program that
+  // session was already running, which a later Project Settings change must not rewrite.
+  const session = docks.hub.getState().sessions.find((candidate) => candidate.id === sessionId)
+  const cwd = session?.cwd
+  if (session === undefined || cwd === undefined || cwd === null) return null
+  const launched = docks.launcher.start({ cwd, cli: session.cli })
   if (!launched.ok) return null
   docks.managed.adopt(sessionId, launched.claim)
   return launched.claim

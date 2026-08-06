@@ -28,6 +28,7 @@ const meta = {
   title: 'Shell/ProjectStrip',
   component: ProjectStrip,
   args: {
+    onOpenSettings: fn(),
     tabs: TABS,
     onSelectProject: fn(),
     onAddProject: fn(),

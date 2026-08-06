@@ -4,7 +4,9 @@
 // with zero interpretation. Both sides run the SAME pure code here so the two
 // copies can never drift.
 
+import type { GrantState } from '../connect/grant'
 import type { ProjectView } from '../projects/model'
+import type { Cli } from '../session/cli'
 import type { WorkItemView } from '../workItems/model'
 import {
   activateProject,
@@ -16,6 +18,8 @@ import {
   repointProject,
   type SessionIntake,
   type SessionView,
+  setGrant,
+  setProjectCli,
   syncWorkItems,
   updateSession,
 } from './cockpitState'
@@ -36,6 +40,11 @@ export type HubEvent =
   // receives no webhooks, so a poll re-reads the Project's backlog and hands over the list it
   // found (ADR-0018). Nothing incremental, because read-through data has no patch vocabulary.
   | { type: 'work-items-synced'; projectId: string; items: WorkItemView[] }
+  // The connect panel's two owned facts. The grant is account-level — one sign-in feeds both
+  // ports — while the Agent/CLI is per Project, which is why they travel as two events rather
+  // than one "settings changed".
+  | { type: 'grant-changed'; grant: GrantState }
+  | { type: 'project-cli-changed'; id: string; cli: Cli }
 
 export type SessionCreated = Extract<HubEvent, { type: 'session-created' }>
 export type SessionUpdated = Extract<HubEvent, { type: 'session-updated' }>
@@ -52,6 +61,8 @@ export type ProjectionDelta =
   | { type: 'project-path-changed'; id: string; path: string }
   | { type: 'active-project-changed'; id: string }
   | { type: 'work-items-synced'; projectId: string; items: WorkItemView[] }
+  | { type: 'grant-changed'; grant: GrantState }
+  | { type: 'project-cli-changed'; id: string; cli: Cli }
 
 function assertNever(value: never): never {
   throw new Error(`Unhandled discriminant: ${JSON.stringify(value)}`)
@@ -92,6 +103,10 @@ function toDelta(state: CockpitState, event: HubEvent): ProjectionDelta {
       return { type: 'active-project-changed', id: event.id }
     case 'work-items-synced':
       return { type: 'work-items-synced', projectId: event.projectId, items: event.items }
+    case 'grant-changed':
+      return { type: 'grant-changed', grant: event.grant }
+    case 'project-cli-changed':
+      return { type: 'project-cli-changed', id: event.id, cli: event.cli }
     default:
       return assertNever(event)
   }
@@ -117,6 +132,10 @@ export function applyDelta(state: CockpitState, delta: ProjectionDelta): Cockpit
       return activateProject(state, delta.id)
     case 'work-items-synced':
       return syncWorkItems(state, delta.projectId, delta.items)
+    case 'grant-changed':
+      return setGrant(state, delta.grant)
+    case 'project-cli-changed':
+      return setProjectCli(state, delta.id, delta.cli)
     default:
       return assertNever(delta)
   }

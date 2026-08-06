@@ -86,7 +86,7 @@ describe('what a read is and is not', () => {
       issues: [open],
       refuse: { fragment: '/issues?', status: 401, message: 'Bad credentials' },
     })
-    expect(result).toEqual({ ok: false, detail: 'Bad credentials' })
+    expect(result).toEqual({ ok: false, detail: 'Bad credentials', reason: 'rejected' })
   })
 
   it('stamps every item with the Project whose backlog it is', async () => {

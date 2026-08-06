@@ -65,7 +65,7 @@ export function twoAgents() {
 
   const onDemand = fakePty()
   const launcher: AgentLauncher = {
-    start(cwd) {
+    start({ cwd }) {
       agents.started.push(cwd)
       const claim = managed.claim(cwd)
       terminals.adopt(claim, onDemand)

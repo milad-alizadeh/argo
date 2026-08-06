@@ -10,6 +10,8 @@ type ProjectStripProps = {
   onSelectProject: (projectId: string) => void
   /** Start connecting a new project. */
   onAddProject: () => void
+  /** Open Project Settings on one project, from its tab's context menu. */
+  onOpenSettings: (projectId: string) => void
 }
 
 /**
@@ -23,6 +25,7 @@ export function ProjectStrip({
   tabs,
   onSelectProject,
   onAddProject,
+  onOpenSettings,
 }: ProjectStripProps): React.JSX.Element {
   return (
     <TooltipProvider>
@@ -32,7 +35,12 @@ export function ProjectStrip({
         className="flex h-full w-project-strip shrink-0 flex-col items-center gap-inset pt-traffic-lights pb-plane"
       >
         {tabs.map((tab) => (
-          <ProjectTab key={tab.id} tab={tab} onSelect={() => onSelectProject(tab.id)} />
+          <ProjectTab
+            key={tab.id}
+            tab={tab}
+            onSelect={() => onSelectProject(tab.id)}
+            onOpenSettings={() => onOpenSettings(tab.id)}
+          />
         ))}
         <IconButton label="Add a project" onClick={onAddProject} className="mt-auto">
           <PlusIcon className="size-4" />

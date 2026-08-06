@@ -90,7 +90,11 @@ describe('blockedBy, verified directly', () => {
       issues: [open],
       refuse: { fragment: 'blocked_by', status: 403, message: 'API rate limit exceeded' },
     })
-    expect(result).toEqual({ ok: false, detail: 'API rate limit exceeded' })
+    expect(result).toEqual({
+      ok: false,
+      detail: 'API rate limit exceeded',
+      reason: 'unavailable',
+    })
   })
 })
 

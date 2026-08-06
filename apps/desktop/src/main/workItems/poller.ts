@@ -37,9 +37,16 @@ export function createWorkItemPoller(options: WorkItemPollerOptions): WorkItemPo
         options.emit({ type: 'work-items-synced', projectId: options.projectId, items: read.items })
         delay = base
       } else {
-        // A failed poll emits NOTHING: whatever the projection already holds stays rendered at
-        // full fidelity, because a dropped packet must not erase a backlog. Staleness is the
-        // connection's to report, not this loop's to encode by blanking the data.
+        // A failed poll emits NO BACKLOG: whatever the projection already holds stays rendered
+        // at full fidelity, because a dropped packet must not erase a backlog. It does emit the
+        // one failure a user can act on — a grant the provider refused — which re-enters the
+        // connect panel (#165). Everything else is waiting, and says nothing.
+        //
+        // Only the refusal travels, never a recovery: a token GitHub has rejected does not heal
+        // itself, so standing the grant back up belongs to the sign-in that replaced it.
+        if (read.reason === 'rejected') {
+          options.emit({ type: 'grant-changed', grant: 'needs-reconnect' })
+        }
         delay = Math.min(delay * 2, MAX_INTERVAL_MS)
       }
       await options.wait(delay)

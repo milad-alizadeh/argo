@@ -1,6 +1,5 @@
-import { type SessionIntake, sessionFacts } from '../../shared'
+import { type Cli, type SessionIntake, sessionFacts } from '../../shared'
 import type { ClaimId } from '../observe'
-import { SPAWN_CLI } from './agentLauncher'
 
 // The row Argo publishes for an agent it has just STARTED, before the CLI has written a record.
 // Waiting for the transcript would render a DIRECT fact — Argo owns this claim and its pty — at the
@@ -8,18 +7,23 @@ import { SPAWN_CLI } from './agentLauncher'
 // (#361). Everything the record has not said yet is absent rather than defaulted: no model, no
 // branch, no runtime tree.
 
+/** What Argo just started: the claim it holds, where it runs, which program it is, and when.
+ * One structure rather than four positionals, so no call site encodes the order. */
+export interface AgentSpawn {
+  claim: ClaimId
+  cwd: string
+  cli: Cli
+  spawnedAtMs: number
+}
+
 /** Its id IS the claim's, because that is the only handle both halves share until the CLI picks
  * one: the Dock resolves attach → claim → pty through the same lookup, and the observation that
  * finally names the Session reports this claim so the row can stand down (`ManagedSessions.bind`). */
-export function provisionalSession(
-  claim: ClaimId,
-  cwd: string,
-  spawnedAtMs: number,
-): SessionIntake {
+export function provisionalSession({ claim, cwd, cli, spawnedAtMs }: AgentSpawn): SessionIntake {
   return {
     id: claim,
     title: 'New session',
-    cli: SPAWN_CLI,
+    cli,
     cwd,
     model: null,
     branch: null,
@@ -37,6 +41,7 @@ export function provisionalSession(
 export interface AgentExit {
   claim: ClaimId
   cwd: string
+  cli: Cli
   endedAtMs: number
   exitCode: number
 }
@@ -51,10 +56,10 @@ export interface AgentExit {
  * The row says WHICH way it went, because a spawn that dies at startup would otherwise appear and
  * archive itself without a word — the same silence #361 set out to end.
  */
-export function endedSession({ claim, cwd, endedAtMs, exitCode }: AgentExit): SessionIntake {
+export function endedSession({ claim, cwd, cli, endedAtMs, exitCode }: AgentExit): SessionIntake {
   return {
-    ...provisionalSession(claim, cwd, endedAtMs),
-    title: exitCode === 0 ? `${SPAWN_CLI} exited` : `${SPAWN_CLI} exited (code ${exitCode})`,
+    ...provisionalSession({ claim, cwd, cli, spawnedAtMs: endedAtMs }),
+    title: exitCode === 0 ? `${cli} exited` : `${cli} exited (code ${exitCode})`,
     posture: 'orphaned',
     facts: sessionFacts({ status: 'ended', agent: 'idle' }),
   }

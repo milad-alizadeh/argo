@@ -28,6 +28,16 @@ export interface WorkItemCapabilities {
 export interface WorkItemReadFailure {
   ok: false
   detail: string
+  /**
+   * `rejected` — the provider refused the GRANT itself: expired, revoked, or scope-stripped.
+   * The only failure a user can act on, and the one that re-enters the connect panel.
+   * `unavailable` — everything else: offline, rate limited, a repository that moved. The grant
+   * is still good and waiting is the whole remedy.
+   *
+   * Kept apart because collapsing them would either nag a user to re-sign-in over a dropped
+   * packet, or leave a revoked token looking like a slow network forever.
+   */
+  reason: 'rejected' | 'unavailable'
 }
 
 export type WorkItemRead = { ok: true; items: WorkItemView[] } | WorkItemReadFailure

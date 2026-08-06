@@ -44,7 +44,7 @@ test('boots to a window titled Argo Cockpit', async () => {
 test('renders an honestly empty shell with nothing connected', async () => {
   await expect(window.getByRole('navigation', { name: 'Projects' })).toBeVisible()
   await expect(window.getByRole('button', { name: 'Add a project' })).toBeVisible()
-  await expect(window.getByRole('button', { name: 'Connect a provider' })).toBeVisible()
+  await expect(window.getByRole('button', { name: 'Add your first project' })).toBeVisible()
   await expect(window.getByTestId('cockpit-root')).toBeHidden()
 })
 
@@ -59,4 +59,18 @@ test('renders the merged top bar without a wordmark or a branch', async () => {
   await expect(rooms.getByRole('button', { name: /Work/ })).toBeVisible()
   await expect(rooms.getByRole('button', { name: /Code/ })).toBeVisible()
   await expect(window.getByRole('button', { name: 'Manage this branch' })).toBeHidden()
+})
+
+// The empty shell's seam hands off to onboarding (#165/#265), and onboarding IS creating a
+// Project — so what it opens is the project-setup panel, reached through Welcome. This is the
+// wiring a story cannot prove: the seam, the panel and the real preload bridge in one window.
+test('hands the empty shell off to onboarding', async () => {
+  await window.getByRole('button', { name: 'Add your first project' }).click()
+  await expect(window.getByRole('heading', { name: 'Welcome to Argo' })).toBeVisible()
+
+  await window.getByRole('button', { name: 'Get started' }).click()
+  await expect(window.getByRole('heading', { name: 'Set up your project' })).toBeVisible()
+  // A folder is the only thing a Project requires, and none has been chosen yet.
+  await expect(window.getByRole('button', { name: 'Create project' })).toBeDisabled()
+  await expect(window.getByRole('button', { name: 'Sign in to GitHub' })).toBeVisible()
 })

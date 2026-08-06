@@ -3,12 +3,24 @@
 // than observes. Path handling is hand-rolled rather than `node:path` because the renderer
 // imports this module in a browser context, where `node:path` does not resolve.
 
+import { type Cli, DEFAULT_CLI } from '../session/cli'
+
 const SEPARATORS = ['/', '\\']
 
 export interface ProjectView {
   id: string
   name: string
   path: string
+  /** The agent CLI ⌘N spawns here (#186 — per Project, because nobody runs two at once). Set
+   * from Project Settings; `claude` until someone changes it. */
+  cli: Cli
+}
+
+/** A `ProjectView` from just the identity a case is about, so a caller states only the fields
+ * its case is actually about and a new attribute never rewrites every fixture. */
+export function projectView(over: Partial<ProjectView> & { id: string }): ProjectView {
+  const path = over.path ?? `/code/${over.id}`
+  return { name: projectName(path), path, cli: DEFAULT_CLI, ...over }
 }
 
 // One spelling per folder, so `/code/argo` and `/code/argo/` are never two Projects.
