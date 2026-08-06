@@ -18,7 +18,7 @@
     "format-and-lint:fix": "biome check . --write",
     "quality": "bun run format-and-lint && bun run quality:duplication && bun run quality:placement",
     "quality:placement": "bun run quality:placement:root && bun run quality:placement:kind && bun run quality:placement:shared",
-    "quality:placement:root": "node scripts/composition-root-check.mjs --map apps/desktop/scripts/module-boundaries.json",
+    "quality:placement:root": "node scripts/root-files-check.mjs --map apps/desktop/scripts/module-boundaries.json",
     "quality:placement:kind": "node scripts/kind-folder-check.mjs --map apps/desktop/scripts/module-boundaries.json",
     "quality:placement:shared": "node scripts/earned-shared-check.mjs --map apps/desktop/scripts/module-boundaries.json",
     "quality:duplication": "jscpd --config .jscpd.json apps packages scripts",

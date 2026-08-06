@@ -96,18 +96,148 @@
     ]
   },
   "placement": {
-    "_comment": "WHERE FILES MAY LIVE, as opposed to what they may import. dependency-cruiser only sees edges, so a feature's own file parked at the app root — or a one-caller helper parked in the shared tier — passes every boundary rule while sitting in the wrong folder. These two blocks compile into the gates `scripts/composition-root-check.mjs` and `scripts/earned-shared-check.mjs` (run by `bun run quality`), which is what turns the prose in rules/file-structure.md into arithmetic. Each exemption is labelled KIND (the rule does not apply to that category) or RATCHET (debt; the list may only shrink), the same convention as biome.jsonc and scripts/jscpd-ignore-reasons.txt.",
-    "compositionRoot": {
-      "comment": "The renderer root holds only what belongs to no module: the bootstrap, the container that wires the slices, and its View. Slice-owned files and slice-serving wiring both have homes — `<slice>/` and `cockpit/` — so a file loose here is a file that skipped the decision.",
-      "path": "^src/renderer/src/[^/]+$",
-      "allow": {
-        "main.tsx": "KIND — the bootstrap: mounts App into the DOM. Belongs to no module by definition.",
-        "env.d.ts": "KIND — ambient renderer types (the preload bridge shape, the csstype augmentation). Not a module's code.",
-        "App.tsx": "KIND — the container (rules/ui-components.md): reads the store through `cockpit/` and renders the root View. The one file allowed to know both.",
-        "CockpitScreenView.tsx": "KIND — the root View: props in, JSX out, composing shell + active room. Its whole job is to sit outside every slice.",
-        "CockpitScreenView.stories.tsx": "KIND — the root View's story, which ui-components.md makes mandatory. Lives beside its View."
-      },
-      "ratchet": {}
+    "_comment": "WHERE FILES MAY LIVE, as opposed to what they may import. dependency-cruiser only sees edges, so a module's own file parked at that module's root — or a one-caller helper parked in the shared tier — passes every boundary rule while sitting in the wrong folder. These three blocks compile into the gates `scripts/root-files-check.mjs`, `scripts/earned-shared-check.mjs` and `scripts/kind-folder-check.mjs` (run by `bun run quality` and by pre-commit), which is what turns the prose in rules/file-structure.md into arithmetic. Each exemption is labelled KIND (the rule does not apply to that category) or RATCHET (debt; the list may only shrink), the same convention as biome.jsonc and scripts/jscpd-ignore-reasons.txt.",
+    "rootFiles": {
+      "comment": "What may sit LOOSE at each module's root — one entry per module, and a module with no entry FAILS (ADR-0021). The predecessor gate guarded one hardcoded path, so an unlisted module was silently exempt; every module added after it inherited that exemption and flattened, which is the whole ratchet below. `path` overrides the root pattern derived from the module's own `path` — only the renderer needs it, because its module path is `src/renderer/` while its root is `src/renderer/src/`. Keys are basenames.",
+      "modules": {
+        "shared": {
+          "allow": {
+            "index.ts": "KIND — the module's declared public entry. Every module's root holds exactly this by definition."
+          },
+          "ratchet": {
+            "channels.ts": "RATCHET — the IPC channel-name constants; belongs beside the bridge vocabulary in an `ipc/` (name-for-purpose) folder with the request/result types each channel carries.",
+            "cockpitState.ts": "RATCHET — the projected-state shape; belongs in `projection/` with projection.ts and its test, which are the only things that build and read it.",
+            "projection.ts": "RATCHET — the pure projection reducer; head of the `projection/` folder it should name.",
+            "projection.test.ts": "RATCHET — moves with projection.ts.",
+            "feedCallRole.ts": "RATCHET — one of eight `feed*` files at this root, the loudest prefix-instead-of-a-folder in the repo. All eight belong in `feed/`.",
+            "feedCalls.ts": "RATCHET — belongs in `feed/`.",
+            "feedMedia.ts": "RATCHET — belongs in `feed/`.",
+            "feedRows.ts": "RATCHET — belongs in `feed/` as its entry; the five feedRows*.test.ts files are its suite.",
+            "feedRows.test.ts": "RATCHET — belongs in `feed/`.",
+            "feedRowsCalls.test.ts": "RATCHET — belongs in `feed/`.",
+            "feedRowsFolding.test.ts": "RATCHET — belongs in `feed/`.",
+            "feedRowsMedia.test.ts": "RATCHET — belongs in `feed/`.",
+            "feedRowsMutations.test.ts": "RATCHET — belongs in `feed/`.",
+            "feedRowsStructural.test.ts": "RATCHET — belongs in `feed/`.",
+            "git.ts": "RATCHET — the GitFacts/GitOperation cross-process contract; belongs in `git/`, the mirror of main's own git module.",
+            "lifecycleModel.ts": "RATCHET — the session-facts → delivery-render-state derivation; belongs in `delivery/` with its test, the CONTEXT.md L4 vocabulary it speaks.",
+            "lifecycleModel.test.ts": "RATCHET — moves with lifecycleModel.ts.",
+            "honesty.ts": "RATCHET — the DIRECT/DERIVED/CONVENTION tier; a Session-observation concept, belongs in `session/` with the runtime tree it annotates.",
+            "runtimeTree.ts": "RATCHET — the locked Agent · Subagent · Turn · Tool Call tree; head of the `session/` folder it should name.",
+            "sessionFacts.ts": "RATCHET — belongs in `session/`.",
+            "sessionPosture.ts": "RATCHET — the managed/external/orphaned axis; belongs in `session/`.",
+            "projects.ts": "RATCHET — the Project shape and name derivation; belongs in `projects/` with its test, mirroring main's own projects module.",
+            "projects.test.ts": "RATCHET — moves with projects.ts."
+          }
+        },
+        "main": {
+          "allow": {
+            "index.ts": "KIND — the Electron main entry: creates the window and calls each domain's `wire*`. Belongs to no domain by definition."
+          },
+          "ratchet": {}
+        },
+        "preload": {
+          "allow": {
+            "index.ts": "KIND — the module's declared public entry, and the file Electron loads by path.",
+            "index.d.ts": "KIND — the ambient shape of the bridge that entry exposes. Its whole job is to sit beside it."
+          },
+          "ratchet": {}
+        },
+        "renderer": {
+          "path": "^src/renderer/src/[^/]+$",
+          "comment": "The composition root: it holds only what belongs to no module — the bootstrap, the container that wires the slices, and its View. Slice-owned files and slice-serving wiring both have homes (`<slice>/` and `cockpit/`), so a file loose here is a file that skipped the decision.",
+          "allow": {
+            "main.tsx": "KIND — the bootstrap: mounts App into the DOM. Belongs to no module by definition.",
+            "env.d.ts": "KIND — ambient renderer types (the preload bridge shape, the csstype augmentation). Not a module's code.",
+            "App.tsx": "KIND — the container (rules/ui-components.md): reads the store through `cockpit/` and renders the root View. The one file allowed to know both.",
+            "CockpitScreenView.tsx": "KIND — the root View: props in, JSX out, composing shell + active room. Its whole job is to sit outside every slice.",
+            "CockpitScreenView.stories.tsx": "KIND — the root View's story, which ui-components.md makes mandatory. Lives beside its View."
+          },
+          "ratchet": {}
+        },
+        "renderer-shared": {
+          "comment": "Nothing may sit loose here at all: the tier's whole contract is that external code reaches it through the three declared barrels, so a file at its root would be reachable by no legal import.",
+          "allow": {},
+          "ratchet": {}
+        },
+        "cockpit": {
+          "allow": {
+            "index.ts": "KIND — the module's declared public entry, which App.tsx is the only caller of.",
+            "RoomStage.tsx": "KIND — the stage that picks the active room's component. The module's comment names it as half of what this module IS, and it composes the rooms from outside all of them, so it belongs to no sub-domain within it."
+          },
+          "ratchet": {
+            "sessionStore.ts": "RATCHET — the Zustand store; belongs in a `projection/` folder holding the store and the delta application that feeds it, since reading the projection is what this module does.",
+            "sessionStore.test.ts": "RATCHET — moves with sessionStore.ts.",
+            "useGitFacts.ts": "RATCHET — one of six `use*` hooks loose at this root. Group by the surface each serves, not by the fact they are hooks (`hooks/` is banned): this and useGitGroup belong in `git/`.",
+            "useGitGroup.ts": "RATCHET — belongs in `git/` with useGitFacts.",
+            "useShellCommands.ts": "RATCHET — belongs in a `shell/` wiring folder with useShellKeymap and useShellState, the three that assemble the shell slice's props.",
+            "useShellKeymap.ts": "RATCHET — belongs in the `shell/` wiring folder.",
+            "useShellState.ts": "RATCHET — belongs in the `shell/` wiring folder.",
+            "useSessionInterior.ts": "RATCHET — the Sessions room's wiring; belongs in a `sessions/` folder here, the mirror of the room it serves."
+          }
+        },
+        "shell": {
+          "comment": "This module's public entry is `components/index.ts`, so its root holds no entry file — every file here is a model or a test that should be inside a sub-domain.",
+          "allow": {},
+          "ratchet": {
+            "branchMenuModel.ts": "RATCHET — the branch-menu model; belongs in `git/` beside components/git/, whose BranchMenu it is the model for.",
+            "branchMenuModel.test.ts": "RATCHET — moves with branchMenuModel.ts.",
+            "worstStateDot.ts": "RATCHET — the git group's worst-state roll-up; belongs in `git/`.",
+            "worstStateDot.test.ts": "RATCHET — moves with worstStateDot.ts.",
+            "projectUi.ts": "RATCHET — the project-strip presentation; belongs in `project-strip/` beside components/project-strip/.",
+            "projectUi.test.ts": "RATCHET — moves with projectUi.ts.",
+            "shellCommand.ts": "RATCHET — the ⌘K palette's command list; belongs in `palette/` with the keymap it is bound through.",
+            "shellCommand.test.ts": "RATCHET — moves with shellCommand.ts.",
+            "shellModel.ts": "RATCHET — the top-bar region model; belongs in `top-bar/` beside components/top-bar/.",
+            "shellModel.test.ts": "RATCHET — moves with shellModel.ts."
+          }
+        },
+        "rooms-sessions": {
+          "comment": "The worst of the four: seven `interior*` files are a folder wearing a prefix as a disguise. Its public entry is `components/index.ts`, so nothing legitimately sits at this root.",
+          "allow": {},
+          "ratchet": {
+            "interiorModel.ts": "RATCHET — head of the `interior/` folder the seven interior* files should be; the prefix is already the folder name.",
+            "interiorModel.test.ts": "RATCHET — belongs in `interior/`.",
+            "interiorActivity.ts": "RATCHET — belongs in `interior/`.",
+            "interiorActivity.test.ts": "RATCHET — belongs in `interior/`.",
+            "interiorDock.ts": "RATCHET — belongs in `interior/`.",
+            "interiorDock.test.ts": "RATCHET — belongs in `interior/`.",
+            "interiorHeader.ts": "RATCHET — belongs in `interior/`.",
+            "interiorHeader.test.ts": "RATCHET — belongs in `interior/`.",
+            "interiorSubagents.ts": "RATCHET — belongs in `interior/`.",
+            "interiorSubagents.test.ts": "RATCHET — belongs in `interior/`.",
+            "interiorSubagentRows.test.ts": "RATCHET — belongs in `interior/`.",
+            "interiorTimeline.ts": "RATCHET — belongs in `interior/`.",
+            "interiorTurnTitle.test.ts": "RATCHET — belongs in `interior/`.",
+            "activityStates.ts": "RATCHET — the Activity surface's state vocabulary; belongs in `interior/` with the activity model that reads it.",
+            "contextEstimate.ts": "RATCHET — the `~n%` DERIVED context estimate; belongs in a `usage/` folder with its test — a Usage concept, not a room-level one.",
+            "contextEstimate.test.ts": "RATCHET — moves with contextEstimate.ts.",
+            "sessionClock.ts": "RATCHET — turn/session duration; belongs in `usage/` beside contextEstimate, the other per-session telemetry derivation.",
+            "sessionClock.test.ts": "RATCHET — moves with sessionClock.ts.",
+            "sessionPlan.ts": "RATCHET — the Session-scoped Plan (ADR-0020); belongs in `plan/` with its test.",
+            "sessionPlan.test.ts": "RATCHET — moves with sessionPlan.ts.",
+            "sessionsRoomModel.ts": "RATCHET — the room's own model; belongs in `roster/` with the rail it feeds, or is the one file that earns an allow here once the rest have moved and the decision can be made on a root of one.",
+            "sessionsRoomModel.test.ts": "RATCHET — moves with sessionsRoomModel.ts.",
+            "useSpineLayout.ts": "RATCHET — the feed spine's layout measurement; belongs in `components/` beside the FeedSurface that is its only caller.",
+            "useSpineLayout.test.ts": "RATCHET — moves with useSpineLayout.ts."
+          }
+        },
+        "rooms-work": {
+          "comment": "Unbuilt (#157 inventory). The entry exists so the module is guarded from its first file rather than after it has flattened — which is the whole point of ADR-0021.",
+          "allow": {},
+          "ratchet": {}
+        },
+        "rooms-code": {
+          "comment": "Unbuilt (#157 inventory). Guarded from its first file, as above.",
+          "allow": {},
+          "ratchet": {}
+        },
+        "delivery": {
+          "comment": "RETIRED (#157). Its surviving files are all under components/; nothing sits at its root and nothing new may.",
+          "allow": {},
+          "ratchet": {}
+        }
+      }
     },
     "earnedShared": {
       "comment": "A symbol earns the shared tier on its THIRD caller (rules/file-structure.md), but the gate enforces the FLOOR at two: the rule calls two callers 'either — copy it, or hoist', so only a single-caller symbol is unambiguously misplaced and arithmetic must not adjudicate a judgement call. Counted per symbol across modules, because everything leaves the tier through a barrel and a file-level graph would show every module depending on every leaf behind it.",
