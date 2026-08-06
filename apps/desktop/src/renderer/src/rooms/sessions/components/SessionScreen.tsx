@@ -1,9 +1,9 @@
 import { PanelSplitter, type TerminalAttach } from '@/shared/components/ui'
 import type { SessionInteriorModel } from '../interior/model'
-import type { SessionsRoomModel } from '../sessionsRoomModel'
-import { SPINE, type SpineEdge, type SpineLayout } from '../useSpineLayout'
+import type { SessionsRoomModel } from '../roster/model'
 import { Roster } from './Roster'
 import { SessionPlane, type SessionPlaneHandlers } from './SessionPlane'
+import { SPINE, type SpineEdge, type SpineLayout } from './useSpineLayout'
 
 /** Every callback the room's regions raise, gathered so the container wires them once. */
 export interface SessionScreenHandlers extends SessionPlaneHandlers {

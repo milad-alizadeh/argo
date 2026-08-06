@@ -184,20 +184,9 @@
           }
         },
         "rooms-sessions": {
-          "comment": "The worst of the four: seven `interior*` files are a folder wearing a prefix as a disguise. Its public entry is `components/index.ts`, so nothing legitimately sits at this root.",
+          "comment": "Its public entry is components/index.ts, so nothing sits at this root and nothing may. The room is its two surfaces plus their leaves: roster/ (the rail derivation), interior/ (header, activity, dock, subagents, timeline), and the plan/ and usage/ vocabularies both read.",
           "allow": {},
-          "ratchet": {
-            "contextEstimate.ts": "RATCHET — the `~n%` DERIVED context estimate; belongs in a `usage/` folder with its test — a Usage concept, not a room-level one.",
-            "contextEstimate.test.ts": "RATCHET — moves with contextEstimate.ts.",
-            "sessionClock.ts": "RATCHET — turn/session duration; belongs in `usage/` beside contextEstimate, the other per-session telemetry derivation.",
-            "sessionClock.test.ts": "RATCHET — moves with sessionClock.ts.",
-            "sessionPlan.ts": "RATCHET — the Session-scoped Plan (ADR-0020); belongs in `plan/` with its test.",
-            "sessionPlan.test.ts": "RATCHET — moves with sessionPlan.ts.",
-            "sessionsRoomModel.ts": "RATCHET — the room's own model; belongs in `roster/` with the rail it feeds, or is the one file that earns an allow here once the rest have moved and the decision can be made on a root of one.",
-            "sessionsRoomModel.test.ts": "RATCHET — moves with sessionsRoomModel.ts.",
-            "useSpineLayout.ts": "RATCHET — the feed spine's layout measurement; belongs in `components/` beside the FeedSurface that is its only caller.",
-            "useSpineLayout.test.ts": "RATCHET — moves with useSpineLayout.ts."
-          }
+          "ratchet": {}
         },
         "rooms-work": {
           "comment": "Unbuilt (#157 inventory). The entry exists so the module is guarded from its first file rather than after it has flattened — which is the whole point of ADR-0021.",

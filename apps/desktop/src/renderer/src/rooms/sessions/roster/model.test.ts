@@ -1,6 +1,6 @@
 import { type SessionFactsInput, type SessionView, sessionFacts, sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { buildSessionsRoomModel } from './sessionsRoomModel'
+import { buildSessionsRoomModel } from './model'
 
 // The rail's contract as arithmetic (`cockpit-spec.md` §4.1): what order the rows come in, which
 // sessions have already left for Archived, and what each row spells. None of it needs a browser.

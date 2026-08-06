@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { EXTERNAL, FRESH, interiorOf, RUNNING, withIntent } from '../__fixtures__/interior'
-import { SPINE } from '../useSpineLayout'
 import { SessionPlane } from './SessionPlane'
+import { SPINE } from './useSpineLayout'
 
 const LAYOUT = {
   roster: SPINE.roster.initial,

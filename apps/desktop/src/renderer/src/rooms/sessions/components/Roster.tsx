@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { useDisclosure } from '@/shared/components/ui'
-import type { RosterRow, SessionsRoomModel } from '../sessionsRoomModel'
+import type { RosterRow, SessionsRoomModel } from '../roster/model'
 import { ArchivedFooter } from './ArchivedFooter'
 import { NewSessionRow } from './NewSessionRow'
 import { SessionRow } from './SessionRow'

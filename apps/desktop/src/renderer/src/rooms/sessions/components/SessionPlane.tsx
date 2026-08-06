@@ -1,9 +1,9 @@
 import { PanelSplitter, Tabs, TabsContent, type TerminalAttach, Text } from '@/shared/components/ui'
 import { INTERIOR_TABS, type InteriorTab, type SessionInteriorModel } from '../interior/model'
-import { isDockExpanded, SPINE, type SpineLayout } from '../useSpineLayout'
 import { ActivityPane } from './ActivityPane'
 import { Dock } from './Dock'
 import { SessionHeader } from './SessionHeader'
+import { isDockExpanded, SPINE, type SpineLayout } from './useSpineLayout'
 
 /** Every callback the plane's regions raise, gathered so the room wires them once. */
 export interface SessionPlaneHandlers {

@@ -1,7 +1,7 @@
 import { type SessionView, sessionFacts, sessionView } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { buildSessionsRoomModel } from '../sessionsRoomModel'
+import { buildSessionsRoomModel } from '../roster/model'
 import { Roster } from './Roster'
 
 const HEAD = 'a1b2c3d'

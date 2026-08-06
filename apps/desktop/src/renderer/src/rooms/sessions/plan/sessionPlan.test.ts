@@ -1,7 +1,7 @@
 import type { Agent, Turn } from '@shared'
 import { rootAgent, sessionView } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { aRoot, planEntries as entries, aTurn as turn } from './__fixtures__/runtimeTree'
+import { aRoot, planEntries as entries, aTurn as turn } from '../__fixtures__/runtimeTree'
 
 import { sessionPlan } from './sessionPlan'
 

@@ -1,7 +1,7 @@
 import type { Agent, SessionView, ToolCall } from '@shared'
 import { openTurn } from '@shared'
-import { tokenSpend } from '../contextEstimate'
-import { duration } from '../sessionClock'
+import { tokenSpend } from '../usage/contextEstimate'
+import { duration } from '../usage/sessionClock'
 import { type ActivityDot, SUBAGENT_STATES, type SubagentStatus } from './activityStates'
 
 // The Subagents group's derivation. The one judgement here worth reading on its own is the

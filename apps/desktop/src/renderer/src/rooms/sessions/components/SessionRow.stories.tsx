@@ -1,7 +1,7 @@
 import { type SessionView, sessionFacts, sessionView } from '@shared'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { buildSessionsRoomModel, type RosterRow } from '../sessionsRoomModel'
+import { buildSessionsRoomModel, type RosterRow } from '../roster/model'
 import { SessionRow } from './SessionRow'
 
 // The row renders an `<li>`, and `listitem` is only its role inside a list — without the parent the

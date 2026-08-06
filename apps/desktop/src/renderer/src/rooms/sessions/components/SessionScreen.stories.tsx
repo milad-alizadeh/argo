@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { EXTERNAL, FRESH, interiorOf, RUNNING } from '../__fixtures__/interior'
 import { REAL_INTERIOR, REAL_SESSION } from '../__fixtures__/realSession'
-import { buildSessionsRoomModel } from '../sessionsRoomModel'
-import { SPINE } from '../useSpineLayout'
+import { buildSessionsRoomModel } from '../roster/model'
 import { SessionScreen } from './SessionScreen'
+import { SPINE } from './useSpineLayout'
 
 // The REAL session leads the roster, and it is what the room opens on. The three hand-written
 // sessions stay only as the rail's other rows and as the two zero-states below — a roster of one is

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { StatusDot, Text } from '@/shared/components/ui'
-import type { RosterRow } from '../sessionsRoomModel'
+import type { RosterRow } from '../roster/model'
 
 // A plane, not a flat inset card: the rail's rows float in the lit scene on their own depth
 // (`cockpit-penumbra-reference.html`, `#rail > .plane`). Selection is the ONE thing that brightens

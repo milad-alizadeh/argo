@@ -1,6 +1,6 @@
 import { type Agent, sessionView, type Usage } from '@shared'
 import { describe, expect, it } from 'vitest'
-import { aRoot, aTurn, aUsage as usage } from './__fixtures__/runtimeTree'
+import { aRoot, aTurn, aUsage as usage } from '../__fixtures__/runtimeTree'
 import { contextPercent, contextWindow, sessionUsage } from './contextEstimate'
 
 const root = (usages: (Usage | null)[]): Agent =>

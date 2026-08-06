@@ -1,7 +1,7 @@
 import type { FeedRow } from '@shared'
 import { Fragment, useRef } from 'react'
 import type { ChapterModel } from '../interior/timeline'
-import type { PlanProgressModel } from '../sessionPlan'
+import type { PlanProgressModel } from '../plan/sessionPlan'
 import { DensityGutter } from './DensityGutter'
 import { FeedSeam } from './FeedSeam'
 import { ANCHOR, jumpFeedTo, stepFeed, useStepKeys } from './feedScroll'

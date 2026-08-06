@@ -1,6 +1,6 @@
 import type { FeedRow, SessionView, Turn } from '@shared'
 import { rootAgent, turnFeedRows } from '@shared'
-import { type PlanProgressModel, sessionPlan } from '../sessionPlan'
+import { type PlanProgressModel, sessionPlan } from '../plan/sessionPlan'
 import { type SubagentGroupModel, subagentGroup, subagentRow, subagentsOf } from './subagents'
 import { agentChapters, type ChapterModel, type TimelineTurnModel, timelineTurn } from './timeline'
 

@@ -26,13 +26,13 @@ export {
   buildSessionsRoomModel,
   type RosterRow,
   type SessionsRoomModel,
-} from '../sessionsRoomModel'
+} from '../roster/model'
+export { Roster } from './Roster'
+export { SessionScreen, type SessionScreenHandlers } from './SessionScreen'
 export {
   isDockExpanded,
   SPINE,
   type SpineEdge,
   type SpineLayout,
   useSpineLayout,
-} from '../useSpineLayout'
-export { Roster } from './Roster'
-export { SessionScreen, type SessionScreenHandlers } from './SessionScreen'
+} from './useSpineLayout'

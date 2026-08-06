@@ -1,6 +1,6 @@
 import type { PlanEntryStatus } from '@shared'
 import { CaretRightIcon, CheckIcon, CircleIcon, SectionHeader, Text } from '@/shared/components/ui'
-import type { PlanProgressModel } from '../sessionPlan'
+import type { PlanProgressModel } from '../plan/sessionPlan'
 
 // A plan entry carries a MARK, not a status dot: a dot would read as a fourth live thing beside the
 // running tool calls. Icons rather than typed-in glyphs, sized by where they sit (the mark column).

@@ -8,7 +8,7 @@ import {
   Text,
 } from '@/shared/components/ui'
 import { type ChapterModel, chapterTitle } from '../interior/timeline'
-import type { PlanProgressModel } from '../sessionPlan'
+import type { PlanProgressModel } from '../plan/sessionPlan'
 import { PlanProgress } from './PlanProgress'
 import { DISCLOSURE, PANE_BAND } from './rowRecipes'
 

@@ -1,5 +1,5 @@
 import { isSteerable, openTurn, rootAgent, type SessionView } from '@shared'
-import { type PlanProgressModel, sessionPlan } from '../sessionPlan'
+import { type PlanProgressModel, sessionPlan } from '../plan/sessionPlan'
 import { toolCallsOf } from './subagents'
 
 // The Dock's derivation: what the session is doing right now, and whether there is a PTY to steer.
