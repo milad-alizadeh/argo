@@ -8,7 +8,7 @@ import type {
   ToolCall,
   Turn,
   Usage,
-} from '../runtimeTree'
+} from '../session/runtimeTree'
 
 // Builders for the locked runtime tree, shared by the feed derivation's tests. One home for the
 // shape, so a field added to `ToolCall` is a compile error in one place rather than in every test

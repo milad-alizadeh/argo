@@ -8,7 +8,7 @@ import {
   recallProjectUi,
   rememberProjectUi,
 } from '@/shell/components'
-import { currentSessionId, useSessionStore } from './sessionStore'
+import { currentSessionId, useSessionStore } from '../projection/sessionStore'
 
 // The shell's own UI state, which is what makes a project swap a VIEW CHANGE: the room and
 // selection you left a project in are filed under its id and handed back on return. Nothing is

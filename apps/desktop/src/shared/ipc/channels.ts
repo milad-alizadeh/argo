@@ -1,5 +1,5 @@
-import type { GitFacts, GitRequest } from './git'
-import type { ProjectionDelta } from './projection'
+import type { GitFacts, GitRequest } from '../git/facts'
+import type { ProjectionDelta } from '../projection/projection'
 
 // IPC channel names for the main → renderer projection (ADR-0005). Shared so the
 // send side (main) and the receive side (preload) can never disagree on the string.

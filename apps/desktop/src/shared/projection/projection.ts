@@ -4,6 +4,7 @@
 // with zero interpretation. Both sides run the SAME pure code here so the two
 // copies can never drift.
 
+import type { ProjectView } from '../projects/model'
 import {
   activateProject,
   addProject,
@@ -16,7 +17,6 @@ import {
   type SessionView,
   updateSession,
 } from './cockpitState'
-import type { ProjectView } from './projects'
 
 // The event vocabulary the hub consumes (the Seam B → Seam A contract). Sessions are
 // observed; Projects are registered — the one entity above the Session that Argo owns.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import type { HubEvent, SessionIntake } from '../index'
 import { created, replay, session } from './__fixtures__/projection'
-import type { HubEvent, SessionIntake } from './index'
 
 // The row ⌘N publishes for an agent Argo has just started stands under the claim's own id, because
 // the CLI picks a Session id only when it writes its first record (#361). This is the moment the

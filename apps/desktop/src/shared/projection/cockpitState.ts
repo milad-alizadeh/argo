@@ -2,10 +2,10 @@
 // It is project-keyed (ADR-0015): every fact the cockpit renders is scoped to one Project,
 // and a Session belongs to the Project its cwd sits in.
 
-import { type ProjectView, projectForCwd, projectName } from './projects'
-import type { Agent } from './runtimeTree'
-import { type SessionFacts, sessionFacts } from './sessionFacts'
-import type { SessionPosture } from './sessionPosture'
+import { type ProjectView, projectForCwd, projectName } from '../projects/model'
+import { type SessionFacts, sessionFacts } from '../session/facts'
+import type { SessionPosture } from '../session/posture'
+import type { Agent } from '../session/runtimeTree'
 
 export type Cli = 'claude' | 'codex'
 

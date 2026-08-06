@@ -1,7 +1,7 @@
+import type { ProjectView } from '../../projects/model'
+import { sessionFacts } from '../../session/facts'
 import { type CockpitState, emptyState, type SessionIntake } from '../cockpitState'
 import { applyDelta, applyEvent, type HubEvent } from '../projection'
-import type { ProjectView } from '../projects'
-import { sessionFacts } from '../sessionFacts'
 
 // The whole projection contract driven end to end: main-side `applyEvent` turns events into
 // deltas, renderer-side `applyDelta` replays those deltas, and both copies are handed back so a

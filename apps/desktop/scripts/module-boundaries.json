@@ -104,22 +104,7 @@
           "allow": {
             "index.ts": "KIND — the module's declared public entry. Every module's root holds exactly this by definition."
           },
-          "ratchet": {
-            "channels.ts": "RATCHET — the IPC channel-name constants; belongs beside the bridge vocabulary in an `ipc/` (name-for-purpose) folder with the request/result types each channel carries.",
-            "cockpitState.ts": "RATCHET — the projected-state shape; belongs in `projection/` with projection.ts and its test, which are the only things that build and read it.",
-            "projection.ts": "RATCHET — the pure projection reducer; head of the `projection/` folder it should name.",
-            "projection.test.ts": "RATCHET — moves with projection.ts.",
-            "projectionSupersede.test.ts": "RATCHET — a second suite over the same reducer (#362); belongs in `projection/` with it.",
-            "git.ts": "RATCHET — the GitFacts/GitOperation cross-process contract; belongs in `git/`, the mirror of main's own git module.",
-            "lifecycleModel.ts": "RATCHET — the session-facts → delivery-render-state derivation; belongs in `delivery/` with its test, the CONTEXT.md L4 vocabulary it speaks.",
-            "lifecycleModel.test.ts": "RATCHET — moves with lifecycleModel.ts.",
-            "honesty.ts": "RATCHET — the DIRECT/DERIVED/CONVENTION tier; a Session-observation concept, belongs in `session/` with the runtime tree it annotates.",
-            "runtimeTree.ts": "RATCHET — the locked Agent · Subagent · Turn · Tool Call tree; head of the `session/` folder it should name.",
-            "sessionFacts.ts": "RATCHET — belongs in `session/`.",
-            "sessionPosture.ts": "RATCHET — the managed/external/orphaned axis; belongs in `session/`.",
-            "projects.ts": "RATCHET — the Project shape and name derivation; belongs in `projects/` with its test, mirroring main's own projects module.",
-            "projects.test.ts": "RATCHET — moves with projects.ts."
-          }
+          "ratchet": {}
         },
         "main": {
           "allow": {
@@ -156,16 +141,8 @@
             "index.ts": "KIND — the module's declared public entry, which App.tsx is the only caller of.",
             "RoomStage.tsx": "KIND — the stage that picks the active room's component. The module's comment names it as half of what this module IS, and it composes the rooms from outside all of them, so it belongs to no sub-domain within it."
           },
-          "ratchet": {
-            "sessionStore.ts": "RATCHET — the Zustand store; belongs in a `projection/` folder holding the store and the delta application that feeds it, since reading the projection is what this module does.",
-            "sessionStore.test.ts": "RATCHET — moves with sessionStore.ts.",
-            "useGitFacts.ts": "RATCHET — one of six `use*` hooks loose at this root. Group by the surface each serves, not by the fact they are hooks (`hooks/` is banned): this and useGitGroup belong in `git/`.",
-            "useGitGroup.ts": "RATCHET — belongs in `git/` with useGitFacts.",
-            "useShellCommands.ts": "RATCHET — belongs in a `shell/` wiring folder with useShellKeymap and useShellState, the three that assemble the shell slice's props.",
-            "useShellKeymap.ts": "RATCHET — belongs in the `shell/` wiring folder.",
-            "useShellState.ts": "RATCHET — belongs in the `shell/` wiring folder.",
-            "useSessionInterior.ts": "RATCHET — the Sessions room's wiring; belongs in a `sessions/` folder here, the mirror of the room it serves."
-          }
+          "ratchet": {},
+          "comment": "The composition root's wiring, grouped by the surface each hook serves — git/, shell/, sessions/ mirror the slices they assemble props for, and projection/ holds the store the rest read. Grouping by \"they are all hooks\" would be the banned kind-folder with a different name."
         },
         "shell": {
           "comment": "The shell slice. Its public entry is components/index.ts; the sub-domains hold the models beside the views that read them (git/, project-strip/, palette/), mirroring components/ one level up.",

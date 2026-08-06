@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { aCall, aMedia, anAgent, anEdit, aShot, aTurn, said } from '../__fixtures__/tree'
-import type { ToolCall } from '../runtimeTree'
+import type { ToolCall } from '../session/runtimeTree'
 import { feedRows } from './rows'
 
 // The MEDIA rows of the feed: what an image the agent looked at reads as, and what happens where

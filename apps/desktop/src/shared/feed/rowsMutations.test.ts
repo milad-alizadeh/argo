@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { aDiff, anAgent, anEdit, aTurn, said } from '../__fixtures__/tree'
-import type { ToolCall } from '../runtimeTree'
+import type { ToolCall } from '../session/runtimeTree'
 import { feedRows } from './rows'
 
 // The MUTATION rows of the feed, split from `feedRows.test.ts` for the line ceiling: that file

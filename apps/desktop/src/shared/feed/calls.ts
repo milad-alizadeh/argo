@@ -5,7 +5,7 @@ import type {
   ToolCallKind,
   ToolCallStatus,
   Turn,
-} from '../runtimeTree'
+} from '../session/runtimeTree'
 import { type CallRole, roleOf } from './callRole'
 import { type MediaRowModel, mediaRow } from './media'
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { aCall, anAgent, anEdit, aTurn, said } from '../__fixtures__/tree'
-import type { ToolCall } from '../runtimeTree'
+import type { ToolCall } from '../session/runtimeTree'
 import { feedRows } from './rows'
 
 // The QUIET half of the feed: observation folded to one counted row, and the loud rows that break the

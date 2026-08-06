@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type ProjectView, projectForCwd, projectName } from './projects'
+import { type ProjectView, projectForCwd, projectName } from './model'
 
 const project = (id: string, path: string): ProjectView => ({ id, name: projectName(path), path })
 

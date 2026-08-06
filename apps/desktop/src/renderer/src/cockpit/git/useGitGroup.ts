@@ -1,5 +1,5 @@
 import { branchMenuRows, type GitControlsProps, liveWorktreeSessions } from '@/shell/components'
-import { useSessionStore } from './sessionStore'
+import { useSessionStore } from '../projection/sessionStore'
 import { useGitFacts } from './useGitFacts'
 
 // The git group's props, assembled where the facts and the roster are both in reach: the menu's

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { aCall, anAgent, anEdit, aTurn, aUsage, said } from '../__fixtures__/tree'
-import type { Plan } from '../runtimeTree'
+import type { Plan } from '../session/runtimeTree'
 import { feedRows } from './rows'
 
 // The two STRUCTURAL rows — the plan and the compaction seam — and the two things that deliberately
