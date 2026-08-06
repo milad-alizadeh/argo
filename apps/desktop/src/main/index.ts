@@ -7,6 +7,11 @@ import { createHub, type Hub, wireProjection } from './hub'
 import { createObserver, transcriptRoot } from './observe'
 import { REGISTRY_FILENAME, readRegistry, toProjectEvents, wireProjects } from './projects'
 import { createAgentLauncher, createAgentTerminals, wireSpawn, wireTerminal } from './terminals'
+import { createTokenStore, createWorkItemSync, nodeHttp, wireWorkItems } from './workItems'
+
+/** Where the encrypted provider token sits — per-machine `userData`, beside the registry and
+ * as uncommitted as it is (ADR-0018). */
+const TOKEN_FILENAME = 'work-item-token.bin'
 
 // The Project registry is the one thing Argo owns rather than observes (ADR-0017). Replaying
 // it before the launch sweep means observed Sessions attribute to their Project as they
@@ -91,6 +96,14 @@ app.whenReady().then(() => {
   wireGit(hub)
   wireProjects(hub, registryFile)
   wireSpawn(hub, launcher)
+  // The Work Item provider port (ADR-0018): a poll per active Project over the provider's HTTP
+  // API, never `gh`. Sync follows the active Project off the projection; the bridge owns the
+  // one act the renderer cannot perform, which is the device-flow sign-in.
+  const tokenStore = createTokenStore(join(app.getPath('userData'), TOKEN_FILENAME))
+  const workItems = createWorkItemSync({ hub, tokenStore, http: nodeHttp })
+  wireWorkItems({ sync: workItems, tokenStore, http: nodeHttp })
+  workItems.start()
+  app.on('will-quit', () => workItems.stop())
 
   createWindow()
 

@@ -4,3 +4,4 @@
 export { wireGit } from './bridge'
 export { readGitFacts } from './gitFacts'
 export { runGitOperation } from './operations'
+export { type RemoteRepository, readRemoteRepository } from './remoteRepository'

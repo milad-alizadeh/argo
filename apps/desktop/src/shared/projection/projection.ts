@@ -5,6 +5,7 @@
 // copies can never drift.
 
 import type { ProjectView } from '../projects/model'
+import type { WorkItemView } from '../workItems/model'
 import {
   activateProject,
   addProject,
@@ -15,6 +16,7 @@ import {
   repointProject,
   type SessionIntake,
   type SessionView,
+  syncWorkItems,
   updateSession,
 } from './cockpitState'
 
@@ -30,6 +32,10 @@ export type HubEvent =
   | { type: 'project-registered'; project: ProjectView }
   | { type: 'project-relocated'; id: string; path: string }
   | { type: 'project-activated'; id: string }
+  // The Work Item provider port's whole read path arrives as this one event: a desktop app
+  // receives no webhooks, so a poll re-reads the Project's backlog and hands over the list it
+  // found (ADR-0018). Nothing incremental, because read-through data has no patch vocabulary.
+  | { type: 'work-items-synced'; projectId: string; items: WorkItemView[] }
 
 export type SessionCreated = Extract<HubEvent, { type: 'session-created' }>
 export type SessionUpdated = Extract<HubEvent, { type: 'session-updated' }>
@@ -45,6 +51,7 @@ export type ProjectionDelta =
   | { type: 'project-added'; project: ProjectView }
   | { type: 'project-path-changed'; id: string; path: string }
   | { type: 'active-project-changed'; id: string }
+  | { type: 'work-items-synced'; projectId: string; items: WorkItemView[] }
 
 function assertNever(value: never): never {
   throw new Error(`Unhandled discriminant: ${JSON.stringify(value)}`)
@@ -83,6 +90,8 @@ function toDelta(state: CockpitState, event: HubEvent): ProjectionDelta {
       return { type: 'project-path-changed', id: event.id, path: event.path }
     case 'project-activated':
       return { type: 'active-project-changed', id: event.id }
+    case 'work-items-synced':
+      return { type: 'work-items-synced', projectId: event.projectId, items: event.items }
     default:
       return assertNever(event)
   }
@@ -106,6 +115,8 @@ export function applyDelta(state: CockpitState, delta: ProjectionDelta): Cockpit
       return repointProject(state, delta.id, delta.path)
     case 'active-project-changed':
       return activateProject(state, delta.id)
+    case 'work-items-synced':
+      return syncWorkItems(state, delta.projectId, delta.items)
     default:
       return assertNever(delta)
   }

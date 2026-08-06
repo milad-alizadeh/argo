@@ -67,6 +67,7 @@ describe('useSessionStore', () => {
         projects: [{ id: 'p-argo', name: 'argo', path: '/Users/dev/code/argo' }],
         activeProjectId: 'p-argo',
         sessions: [],
+        workItems: [],
       },
     })
     expect(useSessionStore.getState().activeProjectId).toBe('p-argo')

@@ -32,7 +32,12 @@ export interface ShellModel {
   connected: boolean
 }
 
-export function buildShellModel(state: CockpitState): ShellModel {
+/** The three slices of projected state the strip reads, rather than the whole `CockpitState`:
+ * the shell renders no Work Item, and demanding the field would make every caller assemble one
+ * it does not have. */
+type ShellState = Pick<CockpitState, 'projects' | 'activeProjectId' | 'sessions'>
+
+export function buildShellModel(state: ShellState): ShellModel {
   const tabs = state.projects.map((project) => {
     const active = project.id === state.activeProjectId
     return {

@@ -1,0 +1,119 @@
+import type { Http } from '../http'
+
+// The authenticated read side of the GitHub API: paging to the end of the provider's own `link`
+// header, and CONDITIONAL requests. Polling re-asks a question whose answer usually has not
+// changed, so returning the previous `etag` turns each poll into a 304 that costs no rate limit
+// (ADR-0018: adapters use conditional requests and backoff).
+
+const API_BASE = 'https://api.github.com'
+const API_VERSION = '2022-11-28'
+
+export interface GitHubClientOptions {
+  http: Http
+  token: string
+  /** Overridable so a suite can assert the URLs a read produced without a network. */
+  apiBase?: string
+}
+
+export interface GitHubClient {
+  /** Every page of a list endpoint. Throws with the provider's own words where it refused —
+   * one throw the adapter catches once, rather than a result threaded through every read. */
+  list(path: string): Promise<unknown[]>
+  /** The same, but `null` where the provider says the endpoint is not there — a repository
+   * whose plan does not carry a feature. Every OTHER refusal still throws, so a rate limit
+   * can never be mistaken for an absent feature. */
+  listOptional(path: string): Promise<unknown[] | null>
+}
+
+interface Page {
+  items: unknown[]
+  next: string | null
+}
+
+export function createGitHubClient(options: GitHubClientOptions): GitHubClient {
+  const base = options.apiBase ?? API_BASE
+  const cache = new Map<string, { etag: string; items: unknown[] }>()
+
+  async function page(url: string): Promise<Page> {
+    const cached = cache.get(url)
+    const response = await options.http({
+      method: 'GET',
+      url,
+      headers: {
+        accept: 'application/vnd.github+json',
+        authorization: `Bearer ${options.token}`,
+        'x-github-api-version': API_VERSION,
+        ...(cached === undefined ? {} : { 'if-none-match': cached.etag }),
+      },
+    })
+    const next = nextLink(response.headers.link)
+    if (response.status === 304 && cached !== undefined) return { items: cached.items, next }
+    if (response.status < 200 || response.status >= 300) {
+      throw new GitHubRefusal(response.status, refusal(response.body))
+    }
+
+    const items = Array.isArray(response.body) ? response.body : []
+    const etag = response.headers.etag
+    if (etag !== undefined) cache.set(url, { etag, items })
+    return { items, next }
+  }
+
+  async function list(path: string): Promise<unknown[]> {
+    const items: unknown[] = []
+    let url: string | null = `${base}${path}`
+    // Bounded by the provider's own paging rather than by a page count of ours: a truncated
+    // backlog would read as a shorter one, which is a fabricated answer.
+    while (url !== null) {
+      const result: Page = await page(url)
+      items.push(...result.items)
+      url = result.next
+    }
+    return items
+  }
+
+  return {
+    list,
+    async listOptional(path) {
+      try {
+        return await list(path)
+      } catch (error) {
+        if (error instanceof GitHubRefusal && error.status === 404) return null
+        throw error
+      }
+    },
+  }
+}
+
+/** A refusal that remembers its status, so a caller can tell "this repository has no such
+ * feature" from "the provider would not answer right now" — two facts that must never be
+ * rendered as the same absence. */
+class GitHubRefusal extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
+// GitHub states why it refused in the body's `message`. Reporting it verbatim is the only
+// honest answer — a rate limit, a revoked grant and a missing repo want different actions from
+// the user, and one invented sentence would hide which it was.
+function refusal(body: unknown): string {
+  if (typeof body === 'object' && body !== null && 'message' in body) {
+    const { message } = body
+    if (typeof message === 'string' && message.trim() !== '') return message
+  }
+  return 'the provider refused the read'
+}
+
+// `<https://…?page=2>; rel="next", <https://…?page=9>; rel="last"` — the provider's own
+// paging, followed rather than reconstructed, so a URL shape change never silently truncates.
+function nextLink(header: string | undefined): string | null {
+  if (header === undefined) return null
+  for (const part of header.split(',')) {
+    const match = /<([^>]+)>\s*;\s*rel="next"/.exec(part)
+    if (match?.[1] !== undefined) return match[1]
+  }
+  return null
+}

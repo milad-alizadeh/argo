@@ -26,6 +26,7 @@ function state(over: Partial<CockpitState> = {}): CockpitState {
     ],
     activeProjectId: 'p1',
     sessions: [],
+    workItems: [],
     ...over,
   }
 }

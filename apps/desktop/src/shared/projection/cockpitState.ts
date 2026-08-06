@@ -6,6 +6,7 @@ import { type ProjectView, projectForCwd, projectName } from '../projects/model'
 import { type SessionFacts, sessionFacts } from '../session/facts'
 import type { SessionPosture } from '../session/posture'
 import type { Agent } from '../session/runtimeTree'
+import type { WorkItemView } from '../workItems/model'
 
 export type Cli = 'claude' | 'codex'
 
@@ -66,12 +67,17 @@ export interface CockpitState {
   projects: ProjectView[]
   activeProjectId: string | null
   sessions: SessionView[]
+  // Read-through, never authoritative (CONTEXT.md L1): one flat list across every connected
+  // Project, each item carrying its own `projectId`, so a poll for one Project can replace its
+  // slice without disturbing another's.
+  workItems: WorkItemView[]
 }
 
 export const emptyState = (): CockpitState => ({
   projects: [],
   activeProjectId: null,
   sessions: [],
+  workItems: [],
 })
 
 export function attribute(projects: ProjectView[], session: SessionIntake): SessionView {
@@ -135,11 +141,29 @@ export function activateProject(state: CockpitState, id: string): CockpitState {
   return { ...state, activeProjectId: id }
 }
 
+// One Project's whole backlog, replaced wholesale by a poll — read-through data has no
+// incremental vocabulary to patch with, and the provider's list IS the answer. A poll that
+// found nothing new returns the SAME state reference, so a quiet backlog costs no re-render:
+// the poller re-reads the identical list every interval and only the reducer can tell.
+// Other Projects' items are carried across untouched; the flat list's order across Projects
+// is not a fact anything reads, since every surface filters by `projectId` first.
+export function syncWorkItems(
+  state: CockpitState,
+  projectId: string,
+  items: WorkItemView[],
+): CockpitState {
+  const mine = state.workItems.filter((item) => item.projectId === projectId)
+  if (JSON.stringify(mine) === JSON.stringify(items)) return state
+  const others = state.workItems.filter((item) => item.projectId !== projectId)
+  return { ...state, workItems: [...others, ...items] }
+}
+
 // Attribution is recomputed for the whole roster because registering or relocating a
 // Project changes which Sessions fall inside it — Sessions the launch sweep observed
 // before a Project existed must join it rather than stay stranded.
 function withProjects(state: CockpitState, projects: ProjectView[]): CockpitState {
   return {
+    ...state,
     projects,
     activeProjectId: state.activeProjectId ?? projects[0]?.id ?? null,
     sessions: state.sessions.map((session) => attribute(projects, session)),
