@@ -64,7 +64,7 @@ check('graphify command is byte-identical across harnesses', () => {
 // matcher / timeout / statusMessage; session-end carries no matcher.
 check('projects PascalCase event keys with the right group shapes', () => {
   const b = project(descriptor, 'codex').hooksBlock
-  assert.equal(b.PreToolUse.length, 3)
+  assert.equal(b.PreToolUse.length, 4)
   assert.equal(b.SessionEnd.length, 1)
   const end = b.SessionEnd[0]
   assert.equal(end.matcher, undefined)

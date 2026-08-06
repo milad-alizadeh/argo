@@ -28,6 +28,15 @@
             "command": "node \"$(git rev-parse --show-toplevel)/scripts/worktree-guard.mjs\""
           }
         ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/placement-guard.mjs\""
+          }
+        ]
       }
     ],
     "SessionEnd": [

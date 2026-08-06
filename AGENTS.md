@@ -62,6 +62,13 @@ above hold `file-structure.md`'s folder rules. CI runs all of them; pre-commit r
 placement** — a misplaced file caught in CI is a follow-up ticket written after the session that
 produced it has ended, caught pre-commit it is fixed by whoever still has the context.
 
+The root rule is enforced one step earlier still: `scripts/placement-guard.mjs` is a
+`PreToolUse(Write)` hook that DENIES an agent creating a new file loose at a module root, before
+it exists and before anything imports it. It shares its root-pattern derivation with the gate, so
+the two cannot drift, and fails open on any error — the gate remains the backstop. It guards the
+way IN only (`Write`, new files, module roots), which is why a refactor moving files OUT of a
+root never trips it.
+
 Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
 assertions (Biome 2.5.4 has no such rule) and exhaustive `switch` over a union
 (`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo).
@@ -126,7 +133,8 @@ without removing.
 
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the three guardrail hooks (graphify-before-grep,
+`hooks.json` (repo root) is the neutral SSOT for the four guardrail hooks (graphify-before-grep,
+placement write guard — a new file may not be created loose at a module root,
 worktree edit guard, worktree-gc), projected per-harness into each agent its own `agents` key
 names. **Edit `hooks.json`, then run `bun run hooks:sync`** — it regenerates
 `.claude/settings.json` (claude-code) and `.codex/hooks.json` (codex); never hand-edit those

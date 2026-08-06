@@ -45,3 +45,17 @@ export function placementBlock(map, gate, key) {
   if (block === undefined) fail(gate, `no "placement.${key}" block in the module map`)
   return block
 }
+
+/** A module's `placement.rootFiles` entry, or undefined when it has none declared. */
+export function rootFilesEntry(map, moduleName) {
+  return map.placement?.rootFiles?.modules?.[moduleName]
+}
+
+/**
+ * Which paths count as AT a module's root: the entry's `path` when it overrides, else derived
+ * from the module's own path. Shared by the CI gate and the write-time hook deliberately — two
+ * copies of this derivation would let a file the hook permits fail the build minutes later.
+ */
+export function rootPattern(module, entry) {
+  return new RegExp(entry?.path ?? `${module.path}[^/]+$`)
+}

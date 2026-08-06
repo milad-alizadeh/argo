@@ -29,7 +29,7 @@
 
 import { glob } from 'node:fs/promises'
 import { basename } from 'node:path'
-import { fail, moduleOf, placementBlock, readModuleMap } from './module-map.mjs'
+import { fail, moduleOf, placementBlock, readModuleMap, rootPattern } from './module-map.mjs'
 
 const GATE = 'root-files-check'
 
@@ -57,10 +57,9 @@ function roots(modules) {
   return new Map(
     modules.map((module) => {
       const entry = declared[module.name]
-      const pattern = entry.path ?? `${module.path}[^/]+$`
       return [
         module.name,
-        { at: new RegExp(pattern), allow: entry.allow ?? {}, ratchet: entry.ratchet ?? {} },
+        { at: rootPattern(module, entry), allow: entry.allow ?? {}, ratchet: entry.ratchet ?? {} },
       ]
     }),
   )
