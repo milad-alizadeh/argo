@@ -54,7 +54,7 @@ export const Activity: Story = {
     await expect(canvas.getByRole('heading', { name: 'Auth refactor' })).toBeInTheDocument()
     // The agents rail lists the session's delegates beside the full-width feed.
     await expect(canvas.getByRole('list', { name: 'Agents' })).toBeInTheDocument()
-    await expect(canvas.getByText('Bash bun run typecheck')).toBeInTheDocument()
+    await expect(canvas.getByRole('region', { name: 'Terminal' })).toBeInTheDocument()
   },
 }
 
@@ -68,7 +68,8 @@ export const DeliveryTab: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText(/the review surface lands/)).toBeInTheDocument()
-    await expect(canvas.getByText('Bash bun run typecheck')).toBeInTheDocument()
+    // The Dock is docked under BOTH tabs — the assertion is that it is still THERE.
+    await expect(canvas.getByRole('region', { name: 'Terminal' })).toBeInTheDocument()
     await userEvent.click(canvas.getByRole('tab', { name: 'Activity' }))
     await expect(args.handlers.onSelectTab).toHaveBeenCalledWith('activity')
   },

@@ -29,14 +29,15 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * The Dock as it always is: present, with the now-head in its own header row and a real terminal
- * beneath. There is no Stop button and no steer widget anywhere in it — you type at the prompt and
- * stop with Ctrl-C, which is why the header row's only control is the expand caret.
+ * The Dock as it always is: present, named by its header row and a real terminal beneath. There is
+ * no Stop button and no steer widget anywhere in it — you type at the prompt and stop with Ctrl-C,
+ * which is why the header row's only control is the expand caret.
  */
 export const Docked: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(canvas.getByText('Bash bun run typecheck')).toBeInTheDocument()
+    // The NAME and nothing else: the header row says what the pane is, not what it last ran.
+    await expect(canvas.getByText('Terminal')).toBeInTheDocument()
     await expect(canvas.getByRole('region', { name: 'Session terminal' })).toBeInTheDocument()
     await expect(canvas.queryByRole('button', { name: /stop/i })).not.toBeInTheDocument()
     const [caret] = canvas.getAllByRole('button')
