@@ -13,8 +13,14 @@ export const SPAWN_CLI: Cli = 'claude'
 export type Launched = { ok: true; claim: ClaimId } | { ok: false; detail: string }
 
 export interface AgentLauncher {
-  /** Run the agent CLI in `cwd`, claim the folder, and hand the pty to the terminal registry. */
-  start(cwd: string): Launched
+  /**
+   * Run the agent CLI in `cwd`, claim the folder, and hand the pty to the terminal registry.
+   *
+   * `onExit` fires when that pty is gone, carrying node-pty's own exit code, for the caller that
+   * published something under the claim and now has to say so — ownership cannot come back
+   * (CONTEXT.md L2).
+   */
+  start(cwd: string, onExit?: (claim: ClaimId, exitCode: number) => void): Launched
 }
 
 export function createAgentLauncher(
@@ -22,7 +28,7 @@ export function createAgentLauncher(
   terminals: AgentTerminals,
 ): AgentLauncher {
   return {
-    start(cwd) {
+    start(cwd, onExit) {
       try {
         const agent = spawn(SPAWN_CLI, [], { name: 'xterm-color', cols: 80, rows: 24, cwd })
         const claim = managed.claim(cwd)
@@ -30,9 +36,10 @@ export function createAgentLauncher(
         // (a pty nobody reads back-pressures until the child stalls) and hands it to the Dock, which
         // is what makes the pane you type at the agent's own terminal (#323).
         terminals.adopt(claim, agent)
-        agent.onExit(() => {
+        agent.onExit(({ exitCode }) => {
           managed.release(claim)
           terminals.drop(claim)
+          onExit?.(claim, exitCode)
         })
         return { ok: true, claim }
       } catch (error) {

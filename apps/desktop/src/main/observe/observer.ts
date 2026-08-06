@@ -122,13 +122,13 @@ function arrival({ observed, joined }: Reading): HubEvent {
 async function publish(context: Context): Promise<void> {
   const cwds = await liveCwds(context, context.now())
   for (const logical of stitch([...context.byPath.values()])) {
-    const read = observe(context, logical, cwds)
-    const { observed } = read
+    const observation = observe(context, logical, cwds)
+    const { observed } = observation
     const reading = JSON.stringify(observed)
     if (context.published.get(observed.id) === reading) continue
     const created = !context.published.has(observed.id)
     context.published.set(observed.id, reading)
-    context.hub.apply(created ? arrival(read) : toSessionUpdate(observed))
+    context.hub.apply(created ? arrival(observation) : toSessionUpdate(observed))
   }
 }
 

@@ -31,3 +31,31 @@ export function provisionalSession(
     agents: [],
   }
 }
+
+/** How the pty went away, as node-pty reports it. A CLI that is not on the PATH does NOT throw on
+ * macOS — the child is forked and dies, so this exit is the only account there is of it. */
+export interface AgentExit {
+  claim: ClaimId
+  cwd: string
+  endedAtMs: number
+  exitCode: number
+}
+
+/**
+ * That same row once its pty has exited without the CLI ever writing a record — a spawn quit, or an
+ * agent that died at startup. It is the ONE row no observation can reach: there is no transcript,
+ * so the sweep will never correct it. Ownership dies with the pty and cannot be re-adopted
+ * (CONTEXT.md L2), so it demotes to orphaned and ends, rather than standing managed-and-idle over a
+ * pty that is gone — a false DIRECT the roster would keep forever.
+ *
+ * The row says WHICH way it went, because a spawn that dies at startup would otherwise appear and
+ * archive itself without a word — the same silence #361 set out to end.
+ */
+export function endedSession({ claim, cwd, endedAtMs, exitCode }: AgentExit): SessionIntake {
+  return {
+    ...provisionalSession(claim, cwd, endedAtMs),
+    title: exitCode === 0 ? `${SPAWN_CLI} exited` : `${SPAWN_CLI} exited (code ${exitCode})`,
+    posture: 'orphaned',
+    facts: sessionFacts({ status: 'ended', agent: 'idle' }),
+  }
+}

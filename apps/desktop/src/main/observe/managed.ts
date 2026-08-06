@@ -100,8 +100,9 @@ export function createManagedSessions(now: () => number = Date.now): ManagedSess
       return sessionPosture('managed', owning.toMs === null)
     },
     bind(sessionId, cwd, startedAtMs) {
-      // Only ever ADDS: a Session no claim covers keeps whatever `adopt` gave it, so the observer's
-      // next publish does not tear the agent out from under an open Dock.
+      // A Session keeps the first agent it was given — the claim that covers it, or the one `adopt`
+      // started for it — so the observer's next publish does not tear the agent out from under an
+      // open Dock, and a claim is never reported as joined twice.
       if (boundSessions.has(sessionId)) return null
       const owning = claimFor(cwd, startedAtMs)
       if (owning === undefined) return null
