@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type CommandResult, SESSION_SPAWN_CHANNEL } from '../../shared'
+import { createHub, type Hub } from '../hub'
 import { handlers } from './__fixtures__/ipcChannels'
 import type { AgentLauncher, Launched } from './agentLauncher'
-import { createHub, type Hub } from '../hub'
 import { wireSpawn } from './spawnSession'
 
 vi.mock('electron', async () => {

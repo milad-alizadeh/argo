@@ -1,6 +1,6 @@
 import { type SessionIntake, sessionFacts } from '../../shared'
-import { SPAWN_CLI } from './agentLauncher'
 import type { ClaimId } from '../observe'
+import { SPAWN_CLI } from './agentLauncher'
 
 // The row Argo publishes for an agent it has just STARTED, before the CLI has written a record.
 // Waiting for the transcript would render a DIRECT fact — Argo owns this claim and its pty — at the
