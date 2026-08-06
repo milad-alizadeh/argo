@@ -30,21 +30,38 @@ export function stitch(parsed: ParsedTranscript[]): LogicalSession[] {
     childrenByParentId.set(parent.sessionId, siblings)
   }
 
-  return roots.map((root) => walkChain(root, childrenByParentId))
+  // Roots first, then anything no chain reached. A file can have a parent and still never be
+  // walked — two files naming each other's uuids give a component with no root at all — and dropping
+  // those is a session that exists on disk and nowhere in the rail.
+  const claimed = new Set<string>()
+  const sessions: LogicalSession[] = []
+  for (const file of [...roots, ...parsed]) {
+    if (claimed.has(file.sessionId)) continue
+    sessions.push(walkChain(file, childrenByParentId, claimed))
+  }
+  return sessions
 }
 
 // Assemble one root's linear resume chain root → leaf. A fork (more than one child of a
 // parent) keeps the first and ignores the rest, so the result is always deterministic.
+//
+// A file ALREADY CLAIMED by a chain ends this one. The pointers come from files a model wrote, so
+// nothing guarantees they form a tree: two files can name each other's uuids, and the unguarded walk
+// then pushed the same pair forever until the array itself overflowed (`RangeError: Invalid array
+// length`, thrown inside the observer's publish and taking every later reading with it).
 function walkChain(
   root: ParsedTranscript,
   childrenByParentId: Map<string, ParsedTranscript[]>,
+  claimed: Set<string>,
 ): LogicalSession {
   const files: ParsedTranscript[] = [root]
+  claimed.add(root.sessionId)
   let current = root
   for (;;) {
     const next = childrenByParentId.get(current.sessionId)?.[0]
-    if (next === undefined) break
+    if (next === undefined || claimed.has(next.sessionId)) break
     files.push(next)
+    claimed.add(next.sessionId)
     current = next
   }
   return { id: root.sessionId, fileIds: files.map((file) => file.sessionId), files }

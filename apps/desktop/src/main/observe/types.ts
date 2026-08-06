@@ -1,4 +1,4 @@
-import type { Agent, SessionPosture, SessionStatus, Tiered } from '../../shared'
+import type { Agent, SessionPosture, SessionStatus, Tiered, Turn } from '../../shared'
 import type { ParsedTree } from './tree'
 
 /** One parsed transcript file — the pure product of reading one .jsonl, untrusted input already tamed. */
@@ -14,6 +14,10 @@ export interface ParsedTranscript {
   firstTimestampMs: number | null // oldest record timestamp (DERIVED: which claim window it began in)
   lastTimestampMs: number | null // newest record timestamp (DERIVED recency signal)
   tree: ParsedTree // this file's slice of the runtime tree (CONTEXT.md L3)
+  /** Each delegate's own turns, keyed by the id of the call that spawned it. Filled by the reader
+   * that has a filesystem under it (`readDelegateTurns`) rather than by the parse, because these
+   * turns live in FILES BESIDE this one — empty for every parse that read only the one file. */
+  delegateTurns: Record<string, Turn[]>
 }
 
 /** A resume-chain stitched into one logical rail Session. Nothing is re-keyed: each file keeps its own sessionId. */

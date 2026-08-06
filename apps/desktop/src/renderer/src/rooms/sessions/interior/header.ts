@@ -1,7 +1,7 @@
 import { isSteerable, rootAgent, type SessionView } from '@shared'
 import { deliveryState } from '@/shared/status'
 import { contextPercent, sessionUsage, tokenSpend } from '../usage/contextEstimate'
-import { duration, relativeAge } from '../usage/sessionClock'
+import { duration } from '../usage/sessionClock'
 import type { ActivityDot } from './activityStates'
 
 // The session header's derivation: the one band's title, its context ring, its meta line and its
@@ -53,7 +53,7 @@ export const noSessionLink = (): SessionLink => ({
  * (an icon and a number) is the View's business, and a derivation that formats one is presentation
  * living in a model. */
 export type MetaSegment =
-  | { id: 'mode' | 'duration' | 'elapsed' | 'tokens'; text: string }
+  | { id: 'mode' | 'duration' | 'tokens'; text: string }
   | { id: 'branch'; text: string; dirty: number; unpushed: number }
 
 /** The navigable ticket link. `text` never echoes the title: a ticket-titled session collapses to
@@ -78,14 +78,6 @@ export interface SessionHeaderModel {
   external: boolean
 }
 
-// How long the session has been at REST, which only a session at rest has — a running one is not
-// idle at all, and reporting the age of its last record would read as its turn's duration.
-function elapsed(session: SessionView, nowMs: number | null): string | null {
-  if (session.facts.status === 'running') return null
-  const age = relativeAge(session.lastActivityAt, nowMs)
-  return age === null ? null : `idle ${age}`
-}
-
 // Everything the session has been observed to spend, its delegates' share included — the header has
 // the width to name the unit, which is why the bare count arrives without one.
 function tokens(session: SessionView): string | null {
@@ -94,14 +86,13 @@ function tokens(session: SessionView): string | null {
 }
 
 // The session's whole working span — its first prompt to its last stop, or to the wall clock while
-// it is still going. The verb carries which of those it is: a `running` reading grows as you watch
-// it, and a session that has stopped `ran` for a fixed length.
+// it is still going. The SPAN and nothing else: the dot beside it already says whether the session
+// is still going, so a verb in front of the number is a second copy of the status, and the second
+// reading beside it (how long it had been idle) was a different clock wearing the same units.
 function ran(session: SessionView, nowMs: number | null): string | null {
   const root = rootAgent(session.agents)
   if (root === null) return null
-  const span = duration(root.startedAtMs, root.endedAtMs, nowMs)
-  if (span === null) return null
-  return root.endedAtMs === null ? `running ${span}` : `ran ${span}`
+  return duration(root.startedAtMs, root.endedAtMs, nowMs)
 }
 
 // The branch and what has changed against it, together: the deltas are what is worth the width here,
@@ -113,19 +104,13 @@ function branchSegment(session: SessionView): MetaSegment[] {
   return [{ id: 'branch', text: session.branch, dirty, unpushed }]
 }
 
-function segment(
-  id: 'mode' | 'duration' | 'elapsed' | 'tokens',
-  text: string | null,
-): MetaSegment[] {
+function segment(id: 'mode' | 'duration' | 'tokens', text: string | null): MetaSegment[] {
   return text === null ? [] : [{ id, text }]
 }
 
-/** The meta line, in the ONE fixed order `mode · branch(+counts) · duration · elapsed · tokens`, led
- * by the dot the model carries separately. A segment Argo cannot establish is absent rather than
- * filled in, except the mode, whose absence is itself worth saying out loud.
- *
- * `duration` and `elapsed` never both appear: one is how long the session worked, the other how long
- * it has been at rest since, and only a stopped session has the second. */
+/** The meta line, in the ONE fixed order `mode · branch(+counts) · duration · tokens`, led by the
+ * dot the model carries separately. A segment Argo cannot establish is absent rather than filled
+ * in, except the mode, whose absence is itself worth saying out loud. */
 export function metaSegments(
   session: SessionView,
   link: SessionLink,
@@ -135,7 +120,6 @@ export function metaSegments(
     ...segment('mode', link.mode ?? UNKNOWN),
     ...branchSegment(session),
     ...segment('duration', ran(session, nowMs)),
-    ...segment('elapsed', elapsed(session, nowMs)),
     ...segment('tokens', tokens(session)),
   ]
 }
@@ -162,7 +146,8 @@ export function buildInteriorHeader({
 }: {
   session: SessionView
   link?: SessionLink
-  /** Wall clock, injected so the derivation stays pure. `null` drops the elapsed segment. */
+  /** Wall clock, injected so the derivation stays pure. `null` drops the duration of a session
+   * still running, which has no end to measure against. */
   nowMs?: number | null
 }): SessionHeaderModel {
   return {

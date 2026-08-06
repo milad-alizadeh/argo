@@ -46,4 +46,14 @@ describe('the runtime tree folded out of one transcript', () => {
     })
     expect(tree.turns[1].usage).toBeNull()
   })
+
+  // The same numbers, read the other way: spend accumulates over a turn's requests, the WINDOW does
+  // not. Summing the window reads is what put a fresh session's ring at `~100%`.
+  it("keeps the newest record's window reading rather than summing them", () => {
+    const { tree } = parseFixture('treeFull')
+
+    // Two assistant records in the turn: 120+900+30, then 10 — the last one, not the total.
+    expect(tree.turns[0].contextTokens).toBe(10)
+    expect(tree.turns[1].contextTokens).toBeNull()
+  })
 })

@@ -97,7 +97,13 @@ function absorbPart(state: TreeState, { turn, atMs }: CallContext, part: unknown
 function closeTurn(state: TreeState, turn: Turn, record: Record<string, unknown>): void {
   if (!isRecord(record.message)) return
   const usage = usageFrom(record.message)
-  if (usage) turn.usage = turn.usage ? addUsage(turn.usage, usage) : usage
+  if (usage) {
+    turn.usage = turn.usage ? addUsage(turn.usage, usage) : usage
+    // The window this record re-read, REPLACING the last reading rather than adding to it: every
+    // request in a turn re-reads one window, so the newest record is what is in the model's head
+    // now and the sum of them is a number that never existed.
+    turn.contextTokens = usage.inputTokens + usage.cacheReadTokens + usage.cacheCreationTokens
+  }
   const stop = mapStopReason(record.message.stop_reason)
   if (stop === null) return
   turn.stopReason = stop

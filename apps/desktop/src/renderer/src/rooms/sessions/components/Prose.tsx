@@ -1,5 +1,5 @@
 import Markdown, { type Components, type ExtraProps } from 'react-markdown'
-import { Text } from '@/shared/components/ui'
+import { Text, type TextElement, type TextVariant } from '@/shared/components/ui'
 import { PROSE_SUBSET } from './proseSubset'
 
 // Line breaks are kept: markdown reads a lone newline as a space, but the line an agent broke is
@@ -63,10 +63,28 @@ function ProseCodeBlock({ node }: { node: ExtraProps['node'] }): React.JSX.Eleme
   )
 }
 
-// Every element the subset can produce, all on the ONE `prose` rung. Code is mono at the same size
+/** One heading level. The ELEMENT is the level the agent wrote (the outline is its claim, not
+ * ours); the type role is the rung that level reads at, which stops at three because a feed row is
+ * not a document and an `h6` set smaller than its own body text reads as a caption. */
+function heading(as: TextElement, variant: TextVariant): Components['h1'] {
+  return ({ children }) => (
+    <Text as={as} variant={variant} className={`${WRAP} font-semibold text-foreground`}>
+      {children}
+    </Text>
+  )
+}
+
+// Every element the subset can produce, all on the ONE `prose` rung — headings excepted, which are
+// the one thing in a run of prose whose whole job is to be a different size from it. Code is mono at the same size
 // rather than at the `code` roles' — those are sized for a terminal and a diff, and spending one
 // mid-sentence steps the body type mid-line. What quiets a row is its colour, never its size.
 const ELEMENTS: Components = {
+  h1: heading('h1', 'title'),
+  h2: heading('h2', 'title'),
+  h3: heading('h3', 'row-strong'),
+  h4: heading('h3', 'row-strong'),
+  h5: heading('h3', 'row-strong'),
+  h6: heading('h3', 'row-strong'),
   p: ({ children }) => (
     <Text as="p" variant="prose" className={WRAP}>
       {children}
@@ -107,10 +125,10 @@ const ELEMENTS: Components = {
 /**
  * Molecule: one run of agent prose, read as markdown rather than as characters.
  *
- * An identifier lands as code and a list lands as a list, so a sentence about `#list` and
- * `.railrest` is legible as the names it is about. Syntax the subset excludes — a heading, a table,
- * a remote image — shows the characters the agent wrote instead, which is the honest reading of a
- * verbatim tier: never dropped, never guessed at, never markup.
+ * An identifier lands as code, a list lands as a list and a heading lands as a heading, so a
+ * sentence about `#list` and `.railrest` is legible as the names it is about. Syntax the subset
+ * excludes — a table, a remote image — shows the characters the agent wrote instead, which is the
+ * honest reading of a verbatim tier: never dropped, never guessed at, never markup.
  */
 export function Prose({
   markdown,
