@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { ProjectionDelta } from '../../shared'
 import { createHub, type Hub } from '../hub'
-import { createManagedSessions, type ManagedSessions } from './managed'
+import { type ClaimId, createManagedSessions, type ManagedSessions } from './managed'
 import { createObserver, type ObserverOptions } from './observer'
 
 // A real transcript root on disk, because the incremental path IS the file reading: the sweep
@@ -52,12 +52,12 @@ function observer(over: Partial<ObserverOptions> = {}) {
  * that then moves past it — so a later `release` closes the window AROUND the session rather
  * than in front of it.
  */
-function claimedManaged(): ManagedSessions {
+function claimedManaged(): { managed: ManagedSessions; claim: ClaimId } {
   let clock = Date.parse('2026-07-20T13:00:00.000Z')
   const managed = createManagedSessions(() => clock)
-  managed.claim(FIXTURE_CWD)
+  const claim = managed.claim(FIXTURE_CWD)
   clock = Date.parse('2026-07-20T15:00:00.000Z')
-  return managed
+  return { managed, claim }
 }
 
 const grown = () => `${fixture('treeFull').trimEnd()}\n${CLOSING_RECORD}\n`
@@ -157,7 +157,7 @@ describe('what the observer projects', () => {
 
   it('reads a Session that began inside Argo’s own claim as managed', async () => {
     plant('treeFull', fixture('treeFull'))
-    await observer({ managed: claimedManaged() }).start()
+    await observer({ managed: claimedManaged().managed }).start()
 
     expect(hub.getState().sessions[0]?.posture).toBe('managed')
   })
@@ -173,13 +173,13 @@ describe('what the observer projects', () => {
   })
 
   it('demotes a managed Session to orphaned once its PTY has exited', async () => {
-    const managed = claimedManaged()
+    const { managed, claim } = claimedManaged()
     const path = plant('treeFull', fixture('treeFull'))
     const observed = observer({ managed })
     await observed.start()
 
     // Ownership dies with the PTY and cannot be re-adopted: the row survives, observation-only.
-    managed.release(FIXTURE_CWD)
+    managed.release(claim)
     await observed.refresh(path)
 
     expect(hub.getState().sessions[0]?.posture).toBe('orphaned')

@@ -1,6 +1,4 @@
-import os from 'node:os'
-import { ipcMain, type WebContents } from 'electron'
-import { type IPty, spawn } from 'node-pty'
+import { ipcMain } from 'electron'
 import {
   TERMINAL_ATTACH_CHANNEL,
   TERMINAL_DATA_CHANNEL,
@@ -9,94 +7,111 @@ import {
   type TerminalAttachRequest,
   type TerminalSize,
 } from '../shared'
+import type { AgentLauncher } from './agentLauncher'
+import type { AgentTerminals, AttachedTerminal } from './agentTerminals'
 import type { Hub } from './hub'
+import type { ClaimId, ManagedSessions } from './observe'
 
-// The login shell to steer. The user's own `$SHELL` on macOS/Linux; COMSPEC (or PowerShell)
-// on Windows — the PTY is the session's real terminal, not a canned one.
-function shellCommand(): string {
-  if (process.platform === 'win32') return process.env.COMSPEC ?? 'powershell.exe'
-  return process.env.SHELL ?? '/bin/bash'
+/** The slice of a renderer's `WebContents` the bridge uses. Narrow so a test drives the routing
+ * without an Electron window; `WebContents` satisfies it structurally. */
+export interface DockWindow {
+  id: number
+  isDestroyed(): boolean
+  send(channel: string, chunk: string, sessionId: string): void
+  once(event: 'destroyed', listener: () => void): void
 }
 
-// One shell PER SESSION per window. Keyed by WebContents alone, every session in a window shared one
-// shell, so opening a second session's Dock showed the first's — the session id is part of the key
-// because that is the granularity the Dock renders at.
-const shellKey = (target: WebContents, sessionId: string): string => `${target.id}:${sessionId}`
+// One attachment PER SESSION per window: a window holds several Docks, each watching its own agent.
+const viewKey = (target: DockWindow, sessionId: string): string => `${target.id}:${sessionId}`
 
-// The session's own working directory, so its shell opens where its work is. Falls back to the home
-// directory for a session whose cwd Argo never observed.
-function sessionCwd(hub: Hub, sessionId: string): string {
-  const session = hub.getState().sessions.find((candidate) => candidate.id === sessionId)
-  return session?.cwd ?? os.homedir()
+// A viewport that has not laid out yet reports 0 cells, which is not a size a pty may be told.
+const cols = (size: TerminalSize): number => size.cols || 80
+const rows = (size: TerminalSize): number => size.rows || 24
+
+interface Docks {
+  hub: Hub
+  managed: ManagedSessions
+  terminals: AgentTerminals
+  launcher: AgentLauncher
+  views: Map<string, { view: AttachedTerminal; target: DockWindow }>
+  watched: Set<DockWindow>
+}
+
+/**
+ * The claim whose agent this Dock steers. Normally the one the Session was bound to; when Argo
+ * holds no PTY for it, the agent CLI is STARTED in the Session's own working directory rather than
+ * leaving the pane inert — a Dock is a terminal you type at, so it runs an agent by default.
+ * `null` only when there is no cwd to run in, or the CLI would not start.
+ */
+function claimFor(docks: Docks, sessionId: string): ClaimId | null {
+  const bound = docks.managed.ownerOf(sessionId)
+  if (bound !== null) return bound
+
+  const cwd = docks.hub.getState().sessions.find((session) => session.id === sessionId)?.cwd
+  if (cwd === undefined || cwd === null) return null
+  const launched = docks.launcher.start(cwd)
+  if (!launched.ok) return null
+  docks.managed.adopt(sessionId, launched.claim)
+  return launched.claim
+}
+
+function detach(docks: Docks, key: string): void {
+  docks.views.get(key)?.view.detach()
+  docks.views.delete(key)
+}
+
+/** Join one Dock to its session's agent PTY. */
+function attachDock(docks: Docks, target: DockWindow, { sessionId, size }: TerminalAttachRequest) {
+  const key = viewKey(target, sessionId)
+  // A reload re-attaches the same session; drop the stale viewer so its output is not delivered
+  // twice and nothing is sent to a WebContents on its way out.
+  detach(docks, key)
+
+  const claim = claimFor(docks, sessionId)
+  if (claim === null) return
+  const view = docks.terminals.attach(claim, (chunk) => {
+    if (!target.isDestroyed()) target.send(TERMINAL_DATA_CHANNEL, chunk, sessionId)
+  })
+  if (view === null) return
+
+  docks.views.set(key, { view, target })
+  view.resize(cols(size), rows(size))
+  watchWindow(docks, target)
+}
+
+// Once per window, not once per attach: a Dock re-attaches on every reload, and a listener per
+// attach would pile up on the same WebContents.
+function watchWindow(docks: Docks, target: DockWindow): void {
+  if (docks.watched.has(target)) return
+  docks.watched.add(target)
+  target.once('destroyed', () => {
+    for (const [key, entry] of [...docks.views]) if (entry.target === target) detach(docks, key)
+    docks.watched.delete(target)
+  })
 }
 
 /**
  * The steering PTY transport — ADR-0005's companion to the projection bridge.
  *
- * A renderer attaches with the session it is attaching for; main spawns that session's shell and
- * pipes its output back tagged with the same id, and keystrokes and resizes flow the other way. A
- * shell is killed when its window goes away, when it exits on its own, or when the same session
- * re-attaches (dev HMR reload).
+ * The Dock steers the agent's OWN terminal (#323), never a sibling shell in the same folder, and
+ * detaching never kills it: the agent outlives the pane, still drained by the registry. A Dock
+ * with no agent to attach to starts one rather than resting inert.
  */
-export function wireTerminal(hub: Hub): void {
-  const shells = new Map<string, { shell: IPty; target: WebContents }>()
+export function wireTerminal(seams: Omit<Docks, 'views' | 'watched'>): void {
+  const docks: Docks = { ...seams, views: new Map(), watched: new Set() }
 
-  const dispose = (key: string): void => {
-    const entry = shells.get(key)
-    if (entry === undefined) return
-    entry.shell.kill()
-    shells.delete(key)
-  }
-
-  ipcMain.on(TERMINAL_ATTACH_CHANNEL, (event, { sessionId, size }: TerminalAttachRequest) => {
-    const target = event.sender
-    const key = shellKey(target, sessionId)
-
-    // A reload re-attaches the same session; kill the stale shell first so a detached PTY isn't
-    // left running.
-    dispose(key)
-
-    const shell = spawn(shellCommand(), [], {
-      name: 'xterm-color',
-      // A viewport that has not laid out yet reports 0 cells; fall back so the PTY never spawns
-      // at an invalid size (it is resized the moment the fit runs).
-      cols: size.cols || 80,
-      rows: size.rows || 24,
-      cwd: sessionCwd(hub, sessionId),
-      env: process.env as Record<string, string>,
-    })
-    shells.set(key, { shell, target })
-
-    // Tagged with the session, so a window holding several Docks routes each shell to its own pane.
-    shell.onData((chunk) => {
-      if (!target.isDestroyed()) target.send(TERMINAL_DATA_CHANNEL, chunk, sessionId)
-    })
-
-    // Only clear the entry if it still points at THIS shell: on a re-attach the old shell's `onExit`
-    // fires after the new one is `set()`, and an unguarded delete would drop the new shell's entry —
-    // silently breaking its input/resize and leaking the PTY.
-    shell.onExit(() => {
-      if (shells.get(key)?.shell === shell) dispose(key)
-    })
-    target.once('destroyed', () => {
-      for (const [live, entry] of [...shells]) if (entry.target === target) dispose(live)
-    })
-  })
+  ipcMain.on(TERMINAL_ATTACH_CHANNEL, (event, request: TerminalAttachRequest) =>
+    attachDock(docks, event.sender, request),
+  )
 
   ipcMain.on(TERMINAL_INPUT_CHANNEL, (event, message: { sessionId: string; data: string }) => {
-    shells.get(shellKey(event.sender, message.sessionId))?.shell.write(message.data)
+    docks.views.get(viewKey(event.sender, message.sessionId))?.view.write(message.data)
   })
 
   ipcMain.on(
     TERMINAL_RESIZE_CHANNEL,
     (event, { sessionId, size }: { sessionId: string; size: TerminalSize }) => {
-      // resize throws if the shell exited between the renderer's observe and this message; the
-      // next attach makes a fresh one, so there is nothing to do here.
-      try {
-        shells.get(shellKey(event.sender, sessionId))?.shell.resize(size.cols, size.rows)
-      } catch {
-        // shell is gone
-      }
+      docks.views.get(viewKey(event.sender, sessionId))?.view.resize(cols(size), rows(size))
     },
   )
 }

@@ -6,16 +6,18 @@ import type { ProjectionDelta } from './projection'
 export const PROJECTION_CHANNEL = 'cockpit:projection'
 export const PROJECTION_READY_CHANNEL = 'cockpit:projection-ready'
 
-// The steering PTY (ADR-0005's companion to the projection): a session's Dock is a real shell. A
-// renderer attaches with the SESSION it is attaching for plus its viewport size; main keys the PTY
-// by that session, so two open sessions never share one shell and switching between them cannot show
-// the other's. Names are shared so all three processes agree on the string.
+// The steering PTY (ADR-0005's companion to the projection): a session's Dock is THE AGENT'S OWN
+// terminal (#323), not a sibling shell in the same folder. A renderer attaches with the SESSION it
+// is attaching for plus its viewport size; main resolves that session to the agent PTY it spawned,
+// so two open sessions steer their own agents and never each other's. A session whose agent Argo
+// does not own — external, or orphaned after a restart — has no PTY, and the attach is a no-op.
+// Names are shared so all three processes agree on the string.
 export const TERMINAL_ATTACH_CHANNEL = 'cockpit:terminal-attach'
 export const TERMINAL_DATA_CHANNEL = 'cockpit:terminal-data'
 export const TERMINAL_INPUT_CHANNEL = 'cockpit:terminal-input'
 export const TERMINAL_RESIZE_CHANNEL = 'cockpit:terminal-resize'
 
-/** Which session's shell an attach/input/resize is for, plus the size where one is carried. The id
+/** Which session's terminal an attach/input/resize is for, plus the size where one is carried. The id
  * travels on every message because one window holds many sessions and each keeps its own PTY. */
 export interface TerminalAttachRequest {
   sessionId: string
@@ -28,13 +30,13 @@ export interface TerminalSize {
   rows: number
 }
 
-/** The renderer's handle on the session's live shell PTY, returned by `openTerminal`. */
+/** The renderer's handle on the session's agent PTY, returned by `openTerminal`. */
 export interface TerminalSession {
-  /** Send keystrokes to the shell. */
+  /** Send keystrokes to the agent. */
   write(data: string): void
   /** Match the PTY to the viewport after a fit. */
   resize(size: TerminalSize): void
-  /** Detach this view: stop delivery and drop the listener. */
+  /** Detach this view: stop delivery and drop the listener. The agent keeps running. */
   dispose(): void
 }
 
@@ -59,12 +61,13 @@ export interface CommandResult {
 
 // The preload bridge the renderer sees as `window.cockpit`. The renderer subscribes to the
 // projection and opens the live terminal; main streams deltas (a snapshot first, then live
-// patches) and pipes the shell.
+// patches) and pipes the agent's PTY.
 export interface CockpitBridge {
   subscribeProjection(listener: (delta: ProjectionDelta) => void): () => void
-  /** Attach to ONE session's live shell PTY (ADR-0005), spawned in that session's own cwd. Main
-   * spawns it on first attach and streams its output to `onData` — a live shell, so there is no
-   * snapshot to replay. The returned handle writes keystrokes back and resizes the PTY. */
+  /** Attach to ONE session's agent PTY (ADR-0005) — the terminal the CLI itself is running on.
+   * Main streams its output to `onData`, replaying the recent tail first so a Dock opened
+   * mid-flight is not blank, and the returned handle types keystrokes back and resizes it.
+   * Detaching leaves the agent running. A session Argo does not own delivers nothing. */
   openTerminal(
     sessionId: string,
     size: TerminalSize,

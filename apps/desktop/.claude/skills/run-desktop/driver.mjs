@@ -17,20 +17,23 @@ function flag(name) {
   const i = process.argv.indexOf(`--${name}`)
   return i === -1 ? undefined : process.argv[i + 1]
 }
-function has(name) {
-  return process.argv.includes(`--${name}`)
-}
-
 const outPath = resolve(process.cwd(), flag('out') ?? 'run-desktop.png')
 const waitFor = flag('wait') ?? 'cockpit-root'
 const testid = flag('testid')
 const evalExpr = flag('eval')
-const seed = has('seed')
+// A deterministic world instead of whatever this machine has been doing: the observer reads the
+// transcripts it is pointed at, and the registry lives in the user-data dir. Same two seams
+// e2e/rail.spec.ts builds its world from — there is no demo-seed switch in the app to flip.
+const transcripts = flag('transcripts')
+const userData = flag('user-data')
 
 const env = { ...process.env, ELECTRON_DISABLE_SANDBOX: '1' }
-if (seed) env.ARGO_SEED_DEMO = '1'
+if (transcripts) env.ARGO_TRANSCRIPT_ROOT = resolve(process.cwd(), transcripts)
 
-const app = await electron.launch({ args: [mainEntry], env })
+const args = [mainEntry]
+if (userData) args.push(`--user-data-dir=${resolve(process.cwd(), userData)}`)
+
+const app = await electron.launch({ args, env })
 try {
   const window = await app.firstWindow()
   await window.getByTestId(waitFor).waitFor({ state: 'visible', timeout: 15_000 })

@@ -2,6 +2,8 @@ import { join } from 'node:path'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import { app, BrowserWindow, shell } from 'electron'
 import icon from '../../resources/icon.png?asset'
+import { createAgentLauncher } from './agentLauncher'
+import { createAgentTerminals } from './agentTerminals'
 import { wireGit } from './gitBridge'
 import { createHub, type Hub } from './hub'
 import { createObserver, transcriptRoot } from './observe'
@@ -82,15 +84,18 @@ app.whenReady().then(() => {
   const observer = createObserver(hub, { root: transcriptRoot(process.env) })
   void restoreProjects(hub, registryFile).then(() => observer.start())
   app.on('will-quit', () => observer.stop())
-  // Seam B: the steering PTY behind a session's Dock — a renderer attaches for one session and main
-  // spawns that session's own shell, in its own cwd (which is why it takes the hub).
-  wireTerminal(hub)
+  // Seam B: the steering PTY behind a session's Dock. The Dock steers the AGENT's own terminal
+  // (#323), so the ptys ⌘N spawns are kept here and the bridge routes a renderer's attach to the
+  // one owned by the session it named — via the ownership registry both sides share.
+  const terminals = createAgentTerminals()
+  const launcher = createAgentLauncher(observer.managed, terminals)
+  wireTerminal({ hub, managed: observer.managed, terminals, launcher })
   // The app shell's own seams (#264): the global git group over the active project's primary
   // checkout, the project strip's register/activate, and ⌘N's spawn. Spawn claims the folder in
   // the observer's ownership registry, which is what makes a spawned Session `managed`.
   wireGit(hub)
   wireProjects(hub, registryFile)
-  wireSpawn(hub, observer.managed)
+  wireSpawn(hub, launcher)
 
   createWindow()
 
