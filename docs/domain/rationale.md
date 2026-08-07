@@ -1,0 +1,132 @@
+# Domain model — why the terms are what they are
+
+Companion to `CONTEXT.md`. That file is normative and injected into every agent session, so it
+carries **only** what an agent needs to *apply* the model. This file carries what was needed to
+*settle* it — prior-art derivation, rejected alternatives, and the reasoning behind bans.
+
+**Read this when changing a term.** Never to apply one — if a rule isn't in `CONTEXT.md`, it
+isn't binding.
+
+## Provenance
+
+The model was rebuilt from scratch under #182 ("Domain model — the locked source of truth"),
+ACP-aligned, grilled layer by layer. Every term survived re-justification against ACP / Claude
+Code / Codex / Cursor + observability prior art (OTel, LangSmith, Langfuse). The prior model is
+retired: see git history for `docs/designs/cockpit-domain-model.md`.
+
+## Storage & ownership
+
+Persisting a derived join is the drift bug **ADR-0008 killed the SQLite mirror to avoid** —
+hence the Hub holds the join as a throwaway in-memory projection rather than writing it down.
+
+## L1
+
+**Work Item — provider-declared type over hierarchy.** The fallback to hierarchy (has children /
+is a leaf) exists so a *childless PRD* isn't miscast as a Task. Providers that declare a type
+(GitHub issue types, Linear's project/milestone/issue distinction) are believed first.
+
+**`blockedBy` verified per-blocker.** The provider's summary count is stale. See also the
+`ruled_out` rule below.
+
+**`ruled_out` satisfies no edge.** Argo deliberately disagrees with the GitHub and Linear UIs
+here, which both count a cancelled blocker as satisfied. The dependent renders *stranded* until
+a human re-scopes one of the two — surfacing the ambiguity rather than silently unblocking work
+whose premise was cancelled. The degradation is asymmetric on purpose: a blocker closed with an
+*unreadable* kind satisfies, so a port that can't read closure kinds produces a chrome notice,
+not a stranded map.
+
+**Comment markers on a plain-text projection.** Provider bodies are not uniformly markdown —
+Linear threads replies, Jira Cloud stores ADF — so the Port supplies the projection rather than
+each consumer re-parsing a format it can't know.
+
+**Local-file/vault Work Item provider** was considered and **descoped**. Every provider is
+remote.
+
+**The L1 triangle supersedes ADR-0013's "join only through Delivery."** Three independent edges,
+not a chain — because a planning session pinned to a ticket has no branch to derive through, and
+a teammate's PR has no session.
+
+**Branch→ticket manual assertion (ADR-0017).** Without this escape hatch the whole triangle
+silently empties for ordinary hand-named branches with no PR — the common case outside
+`/implement`.
+
+## L2
+
+**`managed` is not extra spec over `external`.** External is the baseline: transcript-tailing is
+the floor for every session, and its DERIVED-liveness machinery is mandatory anyway for Argo's
+own sessions across a restart. Managed = external + PTY steering + CONVENTION channel.
+
+**Orphaned is a posture, not a kind.** Adding a fourth stored classification would imply Argo
+could restore steering by writing a value down; it can't — the channel died with the process.
+
+**`SessionFacts` dissolved.** Naming it as an entity would duplicate the homes its members
+already have (Workspace / Delivery / Session status) and invite drift. What is real is the
+honesty tier on each fact, not the bundle.
+
+## L3 — the naming rebuild
+
+Names were re-derived from what Claude Code / Codex / Cursor / ACP + observability tools
+literally use, replacing the old `Actor` / `Run` / `Phase` coinages.
+
+| Dropped | Why |
+|---|---|
+| `Actor` | Zero prior art; misleading Actor-model and GitHub-`actor` baggage. |
+| `kind: session \| agent` | Every spec treats a session **as** an agent. Neither OTel spans nor LangSmith runs distinguish a *session* node type from an *agent* one — the root is structural (position), not a type tag. Both *do* carry a per-node operation/`run_type` kind, which Argo re-expresses as the separate **Tool Call** entity, not on the node. |
+| `Run` / `Dispatch` | `Run` collides with LangSmith's single-unit `Run`. |
+| `Phase` | None of the CLIs have a runtime "Phase" — it lives as derived rendering over the tree. |
+
+**Subagent** is the unanimous term across CC / Codex / Cursor; reserving `Agent` for the node and
+`Subagent` for the child is how those tools disambiguate.
+
+**Turn** is first-class in ACP ("prompt turn"); an internal per-turn context in Codex
+(`TurnContext`, an implementation struct, not a protocol surface); synthesized from the DAG for
+CC — which is why the stop reason needs an `unknown` member ACP doesn't have.
+
+**Message vs Thought kept in one ordered sequence.** Two lists would lose emission order, and
+emission order is the only thing that says which reasoning produced which answer.
+
+**Tool Call — why Result is a kinded value object.** The same call can yield the agent's own
+bytes or a weaker read from disk; a fact with two possible provenances needs somewhere to carry
+which one it was, so the tier rides on the Result rather than on loose fields beside `target`.
+
+**Why media prefers embedded bytes.** Agents re-render one screenshot path several times within
+a turn, so path-first rendering would show the newest picture under the oldest paragraph. Gating
+on the declared image *type* rather than the tool's name is because a screenshot reaches the
+agent from a read, a fetch, or an MCP browser tool.
+
+**Why the feed's diff is bounded to a first hunk** but L4's isn't: prose is the primary row in
+the feed, and a 400-line edit would bury it.
+
+**Why times sit on the Tool Call.** A Turn is a bookkeeping seam and its calls land seconds
+apart, so the call is the grain at which a time is worth rendering.
+
+**Plan is Session-scoped (ADR-0020).** ACP delivers it as a session-level update carrying the
+**complete** entry list each time, and CC's TodoWrite outlives the turn that wrote it.
+
+**Workspace is node-scoped (ADR-0010).** The case the ADR exists for: a Subagent without its own
+worktree must render no second chip.
+
+**Usage is partially ACP-informed, not one ACP object.** Context `used`/`size` + `cost` map to
+ACP's session-level `UsageUpdate`; per-turn in/out tokens map to ACP's `PromptResponse.usage`
+(RFD-stage, unpopulated in real agents today); **cache tokens are not in any ACP shape** — a
+Claude-specific extra.
+
+## L4
+
+**Keep the host's vocabulary verbatim.** Renaming a Check or a PR state would misrepresent what
+we observed. This is the same rule the DERIVED tier generalizes.
+
+**No Job/Step tree under Check** — a deferred drill, not an omission.
+
+**Local lint/test deliberately unmodeled.** CI is the authoritative pass/fail; local enforcement
+lives in pre-commit hooks + prose. Reimplementing a local runner would create a second, weaker
+source of truth for the same question.
+
+**Outcome persists while Delivery doesn't** because a CONVENTION-tier outcome may never have
+existed in a transcript (ADR-0008) — there is nothing to re-derive it from.
+
+## Autonomy
+
+**`Ask | Plan | Code` is Argo's own triplet** — informed by ACP's illustrative example
+(`ask/architect/code`) and CC's `plan` mode, but **not an ACP term**; ACP is sunsetting dedicated
+mode methods.
