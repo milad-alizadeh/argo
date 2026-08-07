@@ -13,6 +13,11 @@ public enum ArgoLayout {
     public static let connectionSlotWidth: CGFloat = 180
     public static let gitVesselMaximumWidth: CGFloat = 280
 
+    // The toolbar's scope cluster: the Project and its checkout in one capsule. The Project half
+    // is the wider of the two because it carries a full name rather than a branch.
+    public static let projectVesselMaximumWidth: CGFloat = 220
+    public static let scopeDividerHeight: CGFloat = 16
+
     // The Instrument Deck's zones, measured off the approved study
     // (`docs/designs/cockpit-sessions-liquid-glass.png`) — the decision log carries no
     // measurements, so the pixels are the only source for these.
