@@ -9,16 +9,40 @@ struct ArgoGlyph: View {
     private let symbol: String
     private let style: ArgoTextStyle
 
+    private let height: CGFloat?
+
     init(_ symbol: String, _ style: ArgoTextStyle) {
         self.symbol = symbol
         self.style = style
+        self.height = nil
     }
 
+    /// An indicator, not a label glyph. A disclosure carries no meaning of its own — it says the
+    /// control opens — so matching it to the line height of the words beside it makes a chevron
+    /// wider than the Project mark it points at. It takes its own measure.
+    init(indicator symbol: String, height: CGFloat) {
+        self.symbol = symbol
+        self.style = ArgoTypography.machineCaption
+        self.height = height
+    }
+
+    /// HEIGHT only, never a square. A square frame plus `scaledToFit` pins whichever dimension
+    /// runs out first, which is the WIDTH for a wide mark like `folder` and the height for a tall
+    /// narrow one like the branch — so one frame produced two ink heights, and the branch mark
+    /// stood half again as tall as the folder beside it. Constraining height alone is what "sized
+    /// off the label's line height" means: every mark's ink measures the same, width follows.
+    /// `fixedSize` is load-bearing too: a height-only frame leaves the WIDTH unbounded, and
+    /// `scaledToFit` then grows the mark into whatever room the stack has going spare — which blew
+    /// the disclosure chevron up to twice the folder beside it. Fixed, it takes the intrinsic
+    /// width for that height, which is the whole point.
     var body: some View {
         Image(systemName: symbol)
             .resizable()
             .scaledToFit()
-            .frame(width: style.glyphSize, height: style.glyphSize)
+            .frame(height: height ?? style.glyphSize)
+            // Horizontal ONLY. Fixing both axes fights the explicit height above it, and the
+            // unsatisfiable pair took the row's body down rather than laying anything out.
+            .fixedSize(horizontal: true, vertical: false)
     }
 }
 

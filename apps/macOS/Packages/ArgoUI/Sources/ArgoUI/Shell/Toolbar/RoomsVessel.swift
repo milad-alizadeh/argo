@@ -15,6 +15,10 @@ struct RoomsVessel: View {
                 RoomTab(room: room, isSelected: room == selection) { selection = room }
             }
         }
+        // The selected tab's wash ran flush to the capsule's leading rim — welded to the glass
+        // rather than inset within it. This is the clearance that makes it a segment INSIDE a
+        // vessel, and it matches the scope capsule's on the other end of the bar.
+        .padding(.horizontal, ArgoSpacing.snug)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Rooms")
     }
@@ -38,30 +42,12 @@ private struct RoomTab: View {
             }
             .labelStyle(.argo(ArgoTypography.control))
             .foregroundStyle(isSelected ? argo.color.text.primary : argo.color.text.tertiary)
-            .padding(.horizontal, ArgoSpacing.base)
-            // Hair, not tight: the toolbar sets the capsule's height, and a selected tab
-            // taller than its own line breaks out through the glass rather than sitting in it.
-            .padding(.vertical, ArgoSpacing.hair)
-            // After the padding, never before it: a background applied to the label alone
-            // sizes to the glyphs and leaves the wash hugging the text.
-            .background(selectionWash)
-            .contentShape(.capsule)
+            .toolbarSegment(isSelected: isSelected)
         }
         .buttonStyle(.plain)
         .help("\(room.title) — \(room.shortcutDescription)")
         .accessibilityLabel("\(room.title), \(room.shortcutDescription)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    /// A capsule, like the vessel it sits in: the selected room is a segment of a rounded control,
-    /// and a rounded rectangle inside a capsule reads as a second, squarer control.
-    private var selectionWash: some View {
-        Capsule()
-            .fill(argo.color.surface.selected)
-            .overlay {
-                Capsule().strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
-            }
-            .opacity(isSelected ? 1 : 0)
     }
 }
 

@@ -12,11 +12,6 @@ struct ProjectDrawerRow: View {
     /// to a question already asked. Every verb that changes what the window is on closes it.
     @Environment(\.dismiss) private var dismiss
 
-    /// The row draws its own focus, so the ring is the contract's and lands on the whole row. The
-    /// system effect boxes the button it is on, which here is the identity alone — a rectangle
-    /// around two thirds of a row, in a fill that says the same thing as the active wash.
-    @FocusState private var isFocused: Bool
-
     let row: ProjectDrawerProjection.Row
     let actions: CockpitActions
 
@@ -26,8 +21,6 @@ struct ProjectDrawerRow: View {
                 identity
             }
             .buttonStyle(.plain)
-            .focused($isFocused)
-            .focusEffectDisabled()
             .frame(maxWidth: .infinity, alignment: .leading)
             trailing
         }
@@ -121,10 +114,8 @@ struct ProjectDrawerRow: View {
     /// folder is there. They compose because they are not alternatives — the active Project's
     /// folder can be the one that moved, and that row has to say both at once.
     ///
-    /// The wash is neutral and the Ion Blue is the indicator edge, per the contract. The indicator
-    /// is drawn LAST, above the focus ring: focus and active are both blue and both live on this
-    /// edge, so a ring painted over the bar would leave the focused row unable to say whether it
-    /// is also the one on screen.
+    /// The wash is neutral and the Ion Blue is the indicator edge, per the contract, and the
+    /// indicator is drawn last so it survives whatever the system paints for focus.
     private var rowSurface: some View {
         let shape = RoundedRectangle(cornerRadius: ArgoRadius.control)
         return shape
@@ -135,20 +126,11 @@ struct ProjectDrawerRow: View {
                     dashedEdge(shape)
                 }
             }
-            .overlay {
-                if isFocused {
-                    focusRing(shape)
-                }
-            }
             .overlay(alignment: .leading) {
                 if row.isActive {
                     selectionIndicator
                 }
             }
-    }
-
-    private func focusRing(_ shape: RoundedRectangle) -> some View {
-        shape.strokeBorder(argo.color.interaction.focusRing, lineWidth: ArgoStroke.focus)
     }
 
     private func dashedEdge(_ shape: RoundedRectangle) -> some View {

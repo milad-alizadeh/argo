@@ -32,16 +32,20 @@ struct ProjectVessel: View {
 
     private var label: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            ArgoGlyph(symbol, ArgoTypography.control)
+            // The drawer rows' role, not a control role. The Project name is the subject of this
+            // vessel and its own row in the drawer — one size for it in both places — and setting
+            // it above the branch is what makes the merged capsule read "this Project, on this
+            // checkout" rather than two equal facts glued together.
+            ArgoGlyph(symbol, ArgoTypography.rowTitle)
             Text(project?.name ?? "No Project")
-                .argoText(ArgoTypography.control)
+                .argoText(ArgoTypography.rowTitle)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            ArgoGlyph(ArgoSymbol.disclosure, ArgoTypography.machineCaption)
+            ArgoGlyph(indicator: ArgoSymbol.disclosure, height: ArgoLayout.disclosureHeight)
         }
         .foregroundStyle(argo.color.text.primary)
         .frame(maxWidth: ArgoLayout.projectVesselMaximumWidth)
-        .contentShape(.rect)
+        .toolbarSegment()
     }
 
     /// A Project reads as a Project rather than as a bare word beside a state ring — and a Project

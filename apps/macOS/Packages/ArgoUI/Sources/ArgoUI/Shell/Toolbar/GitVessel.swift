@@ -5,26 +5,39 @@ import SwiftUI
 /// It applies no glass of its own: the toolbar supplies Liquid Glass, and a hand-rolled capsule
 /// here would defeat the group that merges this half with the Project into one vessel.
 struct GitVessel: View {
+    @Environment(\.argo) private var argo
+
     let checkout: CockpitPresentation.Checkout
     let refresh: () -> Void
 
     var body: some View {
-        Menu {
-            Button("Refresh checkout", action: refresh)
-                .keyboardShortcut("r", modifiers: [.command, .shift])
-        } label: {
-            // `ArgoGlyph`, not a bare `Image`: the branch mark fills its em box, so at SF Symbols'
-            // own sizing it stood a head taller than every other glyph in the bar.
-            Label {
-                Text(label)
-            } icon: {
-                ArgoGlyph(ArgoSymbol.branch, ArgoTypography.machineEmphasis)
+        HStack(spacing: ArgoSpacing.snug) {
+            Menu {
+                Button("Refresh checkout", action: refresh)
+                    .keyboardShortcut("r", modifiers: [.command, .shift])
+            } label: {
+                Label {
+                    Text(label)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                } icon: {
+                    // The rooms' role, so the branch mark measures the same as the marks in the
+                    // vessel at the other end of the bar. `ArgoGlyph` frames it by HEIGHT, which
+                    // is what stops a mark that fills its em box standing over one that does not.
+                    ArgoGlyph(ArgoSymbol.branch, ArgoTypography.control)
+                }
+                .labelStyle(.argo(ArgoTypography.machineEmphasis))
             }
-            .labelStyle(.argo(ArgoTypography.machineEmphasis))
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .frame(maxWidth: ArgoLayout.gitVesselMaximumWidth)
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            // BESIDE the menu, not inside it. A menu re-synthesises its label from the icon and
+            // title alone, so a chevron in there never drew at all — and the system's own comes
+            // out a different mark from the Project half's, on what is meant to be one vessel.
+            ArgoGlyph(indicator: ArgoSymbol.disclosure, height: ArgoLayout.disclosureHeight)
         }
+        .foregroundStyle(argo.color.text.secondary)
+        .toolbarSegment()
         .help("Global checkout — \(label)")
         .accessibilityLabel("Global checkout, \(accessibilityValue)")
     }
