@@ -69,14 +69,18 @@ private func declaredChange(_ raw: JSONValue?) -> FileChange? {
     }
 }
 
-/// A record's `toolUseResult` → the Diff a mutating call produced, or `nil` where it carried no
-/// patch at all.
+/// The Diff a call produced, read off its `toolUseResult`, or `nil` where it produced none.
+///
+/// The patch is read only for the calls whose kind SAYS they mutate: a record can carry one beside
+/// any call, and reading it onto a `read` would put a diff under a row that changed nothing.
 ///
 /// A result that IS a mutation but whose patch cannot be read — a binary file, a shape this cannot
 /// parse — comes back with zero hunks and zero churn rather than as `nil`: the mutation happened,
 /// and a row that says "no diff available" is honest where a missing row is not.
-func diffEvidence(from raw: JSONValue?) -> DiffEvidence? {
-    guard let raw, let fields = raw.object, fields.keys.contains("structuredPatch") else {
+func diffEvidence(of call: ResolvedCall) -> DiffEvidence? {
+    guard call.kind == .edit, let raw = call.toolUseResult, let fields = raw.object,
+          fields.keys.contains("structuredPatch")
+    else {
         return nil
     }
     let patch = raw["structuredPatch"]?.array.compactMap(hunk) ?? []

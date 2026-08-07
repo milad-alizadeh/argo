@@ -31,23 +31,33 @@ struct HubConnectionTests {
     /// The window inside `connect`: the previous Project is already dropped and the new one has
     /// nothing standing. `connect` suspends on the checkout read, so a view does render here — and
     /// "No live sessions" would be an answer about a Project that has not been read yet.
+    ///
+    /// The window is HELD open rather than polled for. A test that spun waiting to catch it would
+    /// be asserting on how fast a checkout read happens to return, and the claim is that the state
+    /// exists at all — so the read parks inside it and the assertion is made standing there.
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a connect in flight reads as connecting, never as no sources`() async throws {
-        let hub = testHub(projectURL: Self.projectURL)
+        let reading = TestGate()
+        let release = TestGate()
+        let hub = testHub(projectURL: Self.projectURL, checkout: { url in
+            await reading.open()
+            await release.opened()
+            return CheckoutProjection(repositoryURL: url, head: .unavailable)
+        })
         let named = try hubFixtureURL("prose")
 
-        // The watcher goes first and is given its turn, so what is being tested is whether the
-        // window exists — not whether a poll started after `connect` happens to catch it.
-        let watcher = Task { await settle { hub.connection == .connecting } }
-        await Task.yield()
+        let connecting = Task {
+            await hub.connect(to: LaunchConfiguration(
+                projectURL: Self.projectURL,
+                transcriptURLs: [named],
+            ))
+        }
+        await reading.opened()
+        #expect(hub.connection == .connecting)
 
-        await hub.connect(to: LaunchConfiguration(
-            projectURL: Self.projectURL,
-            transcriptURLs: [named],
-        ))
-
-        #expect(await watcher.value)
+        await release.open()
+        await connecting.value
         #expect(hub.connection == .connected)
         await hub.disconnect()
     }

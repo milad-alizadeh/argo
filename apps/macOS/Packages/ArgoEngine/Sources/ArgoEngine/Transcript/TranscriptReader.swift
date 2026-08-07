@@ -193,13 +193,8 @@ public actor TranscriptReader {
     /// What one resolved call produced, kinded — its patch where it mutated, its image where it
     /// showed one, otherwise what it printed.
     ///
-    /// The patch is read only for the calls whose kind SAYS they mutate: a record can carry one
-    /// beside any call, and reading it onto a `read` would put a diff under a row that changed
-    /// nothing. An `edit` conversely never reads media, because a `Write` to an `.svg` is a change
-    /// to a file and answering it with a picture would replace the diff of what changed with a
-    /// render of what it became.
-    ///
-    /// Media outranks output for everything else, because the two readings compete: an image result
+    /// One fixed order over three readings, each of which decides for itself whether the call it is
+    /// handed is one it answers. Media outranks output because the two compete: an image result
     /// carries a base64 blob that the output reading would happily print to the screen as text.
     private func evidence(
         for result: ToolResultBlock,
@@ -211,48 +206,17 @@ public actor TranscriptReader {
         // resumed chain), not to a call that can be invented.
         guard let call = openCalls[result.toolUseId] else { return nil }
         // A delegate's printed work is the subagent's, and the Subagents section owns it.
-        if call.kind == .delegate {
-            return nil
-        }
+        guard call.kind != .delegate else { return nil }
 
-        if call.kind == .edit {
-            if let diff = diffEvidence(from: reported) {
-                return .diff(diff)
-            }
-        } else if let media = mediaEvidence(
-            from: MediaRead(
-                toolUseResult: reported,
-                content: result.content,
-                path: diskFallbackPath(call, status: status, content: result.content),
-            ),
-            readImage: readImage,
-        ) {
-            return .media(media)
-        }
-        // Output is kept only where a row reads it: a command shows what it printed, and a failure
-        // of any kind shows what went wrong. A successful read's output is the whole file, and
-        // holding every file a session read would be the engine's largest cost for a payload
-        // nothing renders.
-        guard call.kind == .execute || status == .failed else { return nil }
-        return outputEvidence(from: result.content).map(ToolResult.output)
-    }
-
-    /// The path worth RE-READING, which is much narrower than the path the call named.
-    ///
-    /// Three gates, each closing a case where a disk read answers the wrong question. Only a read,
-    /// because a search's pattern, a command line and a subagent's description all land in the same
-    /// field and none names a file. Only a call that COMPLETED, because a failed read of a `.png`
-    /// has an error message worth showing and a picture of the file as it stands now does not
-    /// explain the failure. And only where the result carried no text of its own: Claude Code hands
-    /// an `.svg` back as SOURCE, and rendering that read as a picture would pull a real text row
-    /// out of the quiet fold.
-    private func diskFallbackPath(
-        _ call: OpenCall,
-        status: ToolCallStatus,
-        content: JSONValue,
-    )
-        -> String? {
-        guard call.kind == .read, status == .completed else { return nil }
-        return outputEvidence(from: content) == nil ? call.target : nil
+        let resolved = ResolvedCall(
+            kind: call.kind,
+            status: status,
+            target: call.target,
+            content: result.content,
+            toolUseResult: reported,
+        )
+        return diffEvidence(of: resolved).map(ToolResult.diff)
+            ?? mediaEvidence(of: resolved, readImage: readImage).map(ToolResult.media)
+            ?? outputEvidence(of: resolved).map(ToolResult.output)
     }
 }
