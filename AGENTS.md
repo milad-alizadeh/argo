@@ -111,6 +111,10 @@ placement write guard, worktree edit guard, worktree-gc), projected per-harness.
 
 ## Skill bundle
 
+A `/command` the user typed is **already loaded** — its instructions are in the turn. Follow them
+directly; never call the `Skill` tool for it. Some skills (`implement`) refuse a model-issued
+invocation outright, so the extra call is a rejected no-op rather than a second run.
+
 The repo-root `skills-lock.json` is the bundle manifest **and** this repo's own install record.
 `bun run scaffold` (= `npx github:milad-alizadeh/argo`) installs from it with one
 `npx skills add` per source; `--skill a,b` installs a subset.
