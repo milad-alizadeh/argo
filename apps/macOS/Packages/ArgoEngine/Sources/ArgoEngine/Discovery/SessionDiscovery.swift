@@ -1,0 +1,45 @@
+import Foundation
+
+/// Finds a Project's Sessions in a CLI's on-disk record, so nothing has to be handed a transcript
+/// path.
+///
+/// Two filters, in cost order. The mtime window decides what is opened AT ALL — a Project can hold
+/// thousands of historical transcripts, and reading them at launch is the one thing a cockpit must
+/// not do. Only what survives the window is opened, and then only its head, to read the `cwd` that
+/// says which Project it belongs to.
+public struct SessionDiscovery: Sendable {
+    /// Running + recently active. A Session quiet for longer than this is history: still on disk to
+    /// be opened deliberately, but not what the cockpit is watching.
+    public static let workingSetWindow: TimeInterval = 24 * 60 * 60
+
+    private let store: TranscriptRecordStore
+
+    public init(store: TranscriptRecordStore = .claudeCode) {
+        self.store = store
+    }
+
+    /// The transcripts to tail for one Project, newest first.
+    ///
+    /// A transcript whose working directory cannot be read belongs to no Project here. That is the
+    /// degrade-down rule rather than a dropped file: attributing it to whichever Project was
+    /// asking would be a fact Argo does not have.
+    public func workingSet(for projectURL: URL) -> [URL] {
+        let oldest = Date().addingTimeInterval(-Self.workingSetWindow)
+        return store.transcripts()
+            .filter { $0.modifiedAt >= oldest }
+            .sorted { $0.modifiedAt > $1.modifiedAt }
+            .map(\.url)
+            .filter { belongs($0, to: projectURL) }
+    }
+
+    /// One element per burst of writes under the record directory, so a Session started while Argo
+    /// is running joins the roster without a relaunch.
+    func changes() -> AsyncStream<Void> {
+        RecordDirectoryWatcher(rootURL: store.rootURL).changes()
+    }
+
+    private func belongs(_ transcriptURL: URL, to projectURL: URL) -> Bool {
+        guard let cwd = TranscriptOrigin.cwd(of: transcriptURL) else { return false }
+        return ProjectScope.contains(cwd: cwd, projectURL: projectURL)
+    }
+}

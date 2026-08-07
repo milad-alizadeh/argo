@@ -67,6 +67,19 @@ public extension TranscriptRecord {
     }
 }
 
+extension TranscriptRecord {
+    /// The working directory this record reports, for the kinds that carry one. Read by discovery
+    /// off a transcript's opening lines, which is the cheapest place the fact exists.
+    var cwd: String? {
+        switch self {
+        case let .user(record), let .assistant(record), let .attachment(record):
+            record.cwd
+        case .aiTitle, .lastPrompt, .unknown:
+            nil
+        }
+    }
+}
+
 extension MessageRecord {
     init(record: JSONValue) {
         let message = record["message"]
