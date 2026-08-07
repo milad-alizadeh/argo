@@ -10,9 +10,11 @@ extension Hub {
     /// Any sweep already running is ended first. `connect` suspends twice before reaching here, so
     /// two of them can interleave; overwriting the task rather than ending it would leave the first
     /// loop sweeping for the process's lifetime, against a Project nobody is looking at.
-    func beginDiscovery(for projectURL: URL, using engine: Engine) async {
+    func beginDiscovery() async {
         await stopSweeping()
-        sweep = HubSweep(engine: engine, projectURL: projectURL)
+        // Captured rather than re-read on every sweep: `project` follows the checkout, and a sweep
+        // is for the Project it was begun for until it is ended.
+        sweepProjectURL = project.url
         await refreshWorkingSet()
         sweeping = Task { [weak self] in
             guard let changes = self?.discovery.changes() else { return }
@@ -26,11 +28,11 @@ extension Hub {
     /// one starts being tailed, and one that has aged out of the window stops — keeping its row,
     /// because it is the descriptors that are bounded and not the roster.
     func refreshWorkingSet() async {
-        guard let sweep else { return }
-        let wanted = await discovery.workingSet(for: sweep.projectURL)
+        guard let sweepProjectURL else { return }
+        let wanted = await discovery.workingSet(for: sweepProjectURL)
         // Re-read after the await: the sweep runs off the main actor, and a `disconnect` in the
         // meantime means these tails belong to a Project nobody is pointed at any more.
-        guard let sweep = self.sweep else { return }
+        guard self.sweepProjectURL != nil else { return }
         let wantedIDs = Set(wanted.map(\.path))
         for transcriptID in observedTranscriptIDs where !wantedIDs.contains(transcriptID) {
             await pauseObserving(transcriptID: transcriptID)
@@ -39,7 +41,7 @@ extension Hub {
             // A file the sweep saw a moment ago can be gone by the time it is opened. Skipping it
             // is the honest answer: nobody named this file, and the next sweep sees it again if it
             // comes back — where a named transcript that cannot be read is a failed connection.
-            guard let observation = try? sweep.engine.observeTranscript(at: url) else { continue }
+            guard let observation = try? engine.observeTranscript(at: url) else { continue }
             await startTailing(observation)
         }
     }
@@ -47,7 +49,7 @@ extension Hub {
     /// End the sweep before the tails it feeds are torn down, and await it: a sweep still running
     /// would otherwise re-register a transcript of the Project being dropped.
     func stopSweeping() async {
-        sweep = nil
+        sweepProjectURL = nil
         sweeping?.cancel()
         await sweeping?.value
         sweeping = nil

@@ -29,7 +29,19 @@ func hubTestObservation(
 @MainActor
 func hubObserveToEnd(_ hub: Hub, _ observation: TranscriptObservation) async {
     await hub.startObserving(observation)
-    await hub.waitForObservation(transcriptID: observation.id)
+    await hubTailEnded(hub, transcriptID: observation.id)
+}
+
+/// Wait until a transcript's tail is over, read off the Hub's own projection rather than a handle
+/// into its task table: the projection is what a caller can see, so it is what a test asserts on.
+@MainActor
+func hubTailEnded(_ hub: Hub, transcriptID: String) async {
+    let ended = await settle {
+        hub.observations.contains { $0.id == transcriptID && $0.state == .stopped }
+    }
+    // A tail that never ends is its own failure, rather than the assertions after it quietly
+    // reading a roster that is only half-applied.
+    #expect(ended, "the tail on \(transcriptID) never ended")
 }
 
 /// An observation whose stream stays open until the test closes it, which is the shape a live
@@ -91,14 +103,25 @@ private func openDescriptors() -> [Int32] {
     return entries.prefix(Int(read / stride)).map(\.proc_fd)
 }
 
-/// Yield until a condition holds, up to a bound. Some teardown is detached and cannot be awaited
-/// from the call that triggered it; this waits for it without sleeping on a guessed duration, and
-/// gives up rather than hanging so the failure is the caller's assertion.
-func settle(until condition: @Sendable () -> Bool) async {
-    for _ in 0 ..< 200 {
+/// Yield until a condition holds, up to a bound, and answer whether it did. Some work is detached
+/// and cannot be awaited from the call that triggered it; this waits for it without sleeping on a
+/// guessed duration, and gives up rather than hanging.
+///
+/// The bound is wall-clock rather than a count of turns, because the whole suite shares one main
+/// actor: a fixed number of yields is spent by whatever else is running, and the wait ends before
+/// the thing being waited for has had a turn at all.
+///
+/// The answer is returned rather than swallowed so that giving up is a caller's failed expectation
+/// — a silent `return` after the bound reads as a settled condition.
+@MainActor
+@discardableResult
+func settle(until condition: () -> Bool) async -> Bool {
+    let deadline = ContinuousClock.now + .seconds(5)
+    while ContinuousClock.now < deadline {
         if condition() {
-            return
+            return true
         }
         await Task.yield()
     }
+    return condition()
 }

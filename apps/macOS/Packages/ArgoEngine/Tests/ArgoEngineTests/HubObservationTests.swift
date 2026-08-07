@@ -3,7 +3,8 @@ import Foundation
 import Testing
 
 /// Starting and stopping observation: one tail at a time for discovery, all of them at once for a
-/// Project switch.
+/// Project switch. Asserted through `hub.observations` — the projection the cockpit reads — rather
+/// than through a count kept for the tests.
 @Suite("Hub observation")
 struct HubObservationTests {
     private static let firstProjectURL = URL(fileURLWithPath: "/tmp/argo-first")
@@ -24,9 +25,9 @@ struct HubObservationTests {
         await hub.stopObserving(transcriptID: "dropped")
         keptEvents.yield(.title("Still tailing"))
         keptEvents.finish()
-        await hub.waitForObservation(transcriptID: "kept")
+        await hubTailEnded(hub, transcriptID: "kept")
 
-        #expect(hub.liveObservationCount == 1)
+        #expect(hub.observations.map(\.id) == ["kept"])
         #expect(hub.sessions.map(\.id) == ["kept"])
         #expect(hub.sessions[0].title == "Still tailing")
         await hub.disconnect()
@@ -52,7 +53,7 @@ struct HubObservationTests {
         await hub.startObserving(second)
         secondEvents.yield(.title("Fresh"))
         secondEvents.finish()
-        await hub.waitForObservation(transcriptID: "session")
+        await hubTailEnded(hub, transcriptID: "session")
 
         #expect(hub.sessions.count == 1)
         #expect(hub.sessions[0].title == "Fresh")
@@ -64,27 +65,26 @@ struct HubObservationTests {
     @MainActor
     func `re-pointing at another Project drops the previous one entirely`() async throws {
         let hub = Hub(projectURL: Self.firstProjectURL)
-        let engine = Engine()
         let second = try hubFixtureURL("prose")
 
-        await hub.connect(using: engine, configuration: LaunchConfiguration(
+        await hub.connect(to: LaunchConfiguration(
             projectURL: Self.firstProjectURL,
             transcriptURLs: [FileManager.default.temporaryDirectory.appending(path: "absent")],
         ))
         #expect(hub.connection == .failed(message: "Transcript unavailable"))
 
-        await hub.connect(using: engine, configuration: LaunchConfiguration(
+        await hub.connect(to: LaunchConfiguration(
             projectURL: Self.secondProjectURL,
             transcriptURLs: [second],
         ))
 
         #expect(hub.project.url == Self.secondProjectURL)
         #expect(hub.sessions.map(\.sourceURL) == [second.standardizedFileURL])
-        #expect(hub.connection == .healthy)
-        #expect(hub.liveObservationCount == 1)
+        #expect(hub.connection == .connected)
+        #expect(hub.observations.map(\.state) == [.live])
         await hub.disconnect()
         #expect(hub.sessions.isEmpty)
-        #expect(hub.liveObservationCount == 0)
+        #expect(hub.observations.isEmpty)
         #expect(hub.checkout == .unavailable)
     }
 
@@ -92,23 +92,22 @@ struct HubObservationTests {
     @MainActor
     func `re-pointing repeatedly leaves no growing set of tasks`() async throws {
         let hub = Hub(projectURL: Self.firstProjectURL)
-        let engine = Engine()
         let configuration = try LaunchConfiguration(
             projectURL: Self.firstProjectURL,
             transcriptURLs: [hubFixtureURL("externalBasic"), hubFixtureURL("prose")],
         )
 
         for _ in 0 ..< 5 {
-            await hub.connect(using: engine, configuration: configuration)
-            #expect(hub.liveObservationCount == 2)
+            await hub.connect(to: configuration)
+            #expect(hub.observations.map(\.state) == [.live, .live])
         }
 
         await hub.disconnect()
-        #expect(hub.liveObservationCount == 0)
+        #expect(hub.observations.isEmpty)
     }
 
     /// The other half of that: a tail holds the cursor's handle and the watcher's descriptor, and
-    /// neither is visible in the task count. Five re-points that leaked would leave eight open.
+    /// neither is visible in the projection. Five re-points that leaked would leave eight open.
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `re-pointing repeatedly leaves no open descriptor on the transcript`() async throws {
@@ -123,11 +122,15 @@ struct HubObservationTests {
         )
 
         for _ in 0 ..< 5 {
-            await hub.connect(using: Engine(), configuration: configuration)
+            await hub.connect(to: configuration)
             // Asserted every round, so a count that reads zero because the probe is blind fails
-            // here rather than passing the teardown assertion for the wrong reason.
-            await settle { openDescriptorCount(for: transcriptURL) > 0 }
-            #expect(openDescriptorCount(for: transcriptURL) == Self.descriptorsPerTail)
+            // here rather than passing the teardown assertion for the wrong reason. Waited for on
+            // the exact count: the two descriptors are opened a hop apart, and settling on "any"
+            // catches the tail half-open.
+            let tailing = await settle {
+                openDescriptorCount(for: transcriptURL) == Self.descriptorsPerTail
+            }
+            #expect(tailing, "saw \(openDescriptorCount(for: transcriptURL)) descriptors open")
         }
         await hub.disconnect()
 
@@ -148,7 +151,7 @@ struct HubObservationTests {
         await hub.startObserving(previous)
         previousEvents.yield(.title("Previous Project"))
         previousEvents.yield(.cwd("/tmp/argo-first"))
-        try await hub.connect(using: Engine(), configuration: LaunchConfiguration(
+        try await hub.connect(to: LaunchConfiguration(
             projectURL: Self.secondProjectURL,
             transcriptURLs: [hubFixtureURL("prose")],
         ))
@@ -158,7 +161,7 @@ struct HubObservationTests {
 
         #expect(hub.sessions.allSatisfy { $0.id != "previous" })
         #expect(hub.sessions.allSatisfy { $0.title != "Straggler" })
-        #expect(hub.liveObservationCount == 1)
+        #expect(hub.observations.map(\.state) == [.live])
         await hub.disconnect()
     }
 
@@ -169,13 +172,13 @@ struct HubObservationTests {
     func `connect returns while its tails are still running`() async throws {
         let hub = Hub(projectURL: Self.firstProjectURL)
 
-        try await hub.connect(using: Engine(), configuration: LaunchConfiguration(
+        try await hub.connect(to: LaunchConfiguration(
             projectURL: Self.firstProjectURL,
             transcriptURLs: [hubFixtureURL("externalBasic")],
         ))
 
-        #expect(hub.liveObservationCount == 1)
-        #expect(hub.connection == .healthy)
+        #expect(hub.observations.map(\.state) == [.live])
+        #expect(hub.connection == .connected)
         await hub.disconnect()
     }
 }

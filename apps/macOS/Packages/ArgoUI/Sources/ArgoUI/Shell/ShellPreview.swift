@@ -67,7 +67,7 @@ public extension CockpitPresentation {
             ),
         ],
         checkout: .branch("main"),
-        connection: .healthy,
+        connection: .connected,
     )
 
     /// A machine that has registered nothing: no Project to name, and the checkout unavailable
@@ -95,6 +95,6 @@ public extension CockpitPresentation {
         activeProjectID: "argo",
         sessions: [],
         checkout: .detached(shortSHA: "9011669"),
-        connection: .healthy,
+        connection: .idle,
     )
 }

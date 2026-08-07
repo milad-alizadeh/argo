@@ -23,7 +23,7 @@ struct HubTests {
         continuation.yield(.model("claude-opus-5"))
         continuation.yield(.branch("argo/#376-native-shell"))
         continuation.finish()
-        await hub.waitForObservation(transcriptID: "session")
+        await hubTailEnded(hub, transcriptID: "session")
 
         #expect(hub.sessions.count == 1)
         #expect(hub.sessions[0].title == "Build the native shell")
@@ -50,7 +50,7 @@ struct HubTests {
         continuation.yield(.title("Host-authored title"))
         continuation.yield(.prompt(text: "Later prompt", atMs: nil))
         continuation.finish()
-        await hub.waitForObservation(transcriptID: "session")
+        await hubTailEnded(hub, transcriptID: "session")
 
         #expect(hub.sessions[0].title == "Host-authored title")
     }
@@ -67,7 +67,7 @@ struct HubTests {
         )
         let hub = Hub(projectURL: projectURL)
 
-        await hub.connect(using: Engine(), configuration: configuration)
+        await hub.connect(to: configuration)
 
         #expect(hub.connection == .failed(message: "Transcript unavailable"))
         #expect(hub.sessions.isEmpty)
@@ -112,6 +112,36 @@ struct HubTests {
 
         #expect(hub.sessions[0].cwd == "/tmp/new-worktree")
         #expect(hub.sessions[0].branch == "feature")
+    }
+
+    /// A refresh is a refresh OF something, and the Hub is the only thing that knows what: it was
+    /// made pointed at one folder, pointed at another, and the checkout read then resolved that one
+    /// to its repository root. All three used to be supplyable, and the caller picked.
+    @Test
+    @MainActor
+    func `a refresh follows the Project the Hub is on`() async throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        let elsewhere = try fixture.folder("elsewhere", git: true)
+        let repositoryURL = try fixture.folder("repository", git: true)
+        let packageURL = try fixture.folder("repository/apps/macOS")
+        let hub = Hub(projectURL: elsewhere)
+
+        try await hub.connect(to: LaunchConfiguration(
+            projectURL: packageURL,
+            transcriptURLs: [hubFixtureURL("prose")],
+        ))
+        #expect(hub.project.url == repositoryURL)
+
+        // The folder the Hub was POINTED with goes away; the repository it resolved to stays. A
+        // refresh reading the configuration back would answer with a path that is no longer there.
+        try fixture.remove(packageURL)
+        await hub.refreshCheckout()
+
+        // Not `elsewhere`, which is what it was made with, and not `packageURL`, which is what it
+        // was pointed with — the refresh reads the one repository the Hub settled on.
+        #expect(hub.project.url == repositoryURL)
+        await hub.disconnect()
     }
 
     @Test

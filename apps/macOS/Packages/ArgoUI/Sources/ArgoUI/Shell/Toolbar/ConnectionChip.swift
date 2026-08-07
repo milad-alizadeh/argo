@@ -1,6 +1,9 @@
 import SwiftUI
 
-/// A factual exception chip; healthy connectivity renders nothing at all.
+/// A factual exception chip; a connection with something live on it renders nothing at all.
+///
+/// "No live sessions" is drawn rather than left blank because it is a different fact from being
+/// connected, and the blank would be read as the connected one.
 struct ConnectionChip: View {
     @Environment(\.argo) private var argo
     @Environment(\.colorSchemeContrast) private var contrast
@@ -40,16 +43,17 @@ struct ConnectionChip: View {
 
     private var label: String {
         switch connection {
-        case .healthy: "Connected"
-        case .reconnecting: "Reconnecting"
+        case .connected: "Connected"
+        case .connecting: "Connecting"
+        case .idle: "No live sessions"
         case let .failed(message): message
         }
     }
 
     private var state: ArgoOperationalState {
         switch connection {
-        case .healthy: .idle
-        case .reconnecting: .attention
+        case .connected, .idle: .idle
+        case .connecting: .attention
         case .failed: .failure
         }
     }
@@ -66,9 +70,13 @@ struct ConnectionChip: View {
     }
 }
 
-#Preview("Connection exceptions") {
+#Preview("Connection states") {
     VStack(spacing: ArgoSpacing.comfortable) {
-        ConnectionChip(connection: .reconnecting, retry: {})
+        // `.connected` never reaches the shell, which draws nothing for it — previewed anyway, so
+        // the one state the chip can render and the cockpit hides is still looked at.
+        ConnectionChip(connection: .connected, retry: {})
+        ConnectionChip(connection: .connecting, retry: {})
+        ConnectionChip(connection: .idle, retry: {})
         ConnectionChip(connection: .failed(message: "Transcript unavailable"), retry: {})
     }
     .padding(ArgoSpacing.region)
