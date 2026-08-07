@@ -17,6 +17,8 @@ public enum Specimen: String, CaseIterable, Sendable {
     case roster
     case projectStrip
     case emptyProjectStrip
+    case toolbarScope
+    case emptyToolbarScope
     case deck
     case sessionsDeck
 }
@@ -52,6 +54,10 @@ public struct SpecimenScreen: View {
             // A machine that has registered nothing: the `+` is the only thing on screen, and it
             // has to be findable without a Project beside it to point at.
             ProjectStripSpecimen(projects: [])
+        case .toolbarScope:
+            ToolbarSpecimen(presentation: .preview)
+        case .emptyToolbarScope:
+            ToolbarSpecimen(presentation: .unregisteredPreview)
         case .deck:
             DeckSpecimen()
         case .sessionsDeck:
@@ -111,6 +117,23 @@ private struct ProjectStripSpecimen: View {
         )
         .frame(maxHeight: .infinity)
         .background(.bar)
+    }
+}
+
+/// The window chrome alone, against an empty plane. One merged capsule at the leading edge and one
+/// pinned to the trailing edge is a claim about the toolbar, which the shell specimens bury under
+/// everything else in the frame.
+private struct ToolbarSpecimen: View {
+    let presentation: CockpitPresentation
+
+    @State private var room = CockpitRoom.sessions
+
+    var body: some View {
+        Color.clear
+            .toolbar {
+                ShellToolbar(room: $room, presentation: presentation, actions: .inert)
+            }
+            .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
     }
 }
 
