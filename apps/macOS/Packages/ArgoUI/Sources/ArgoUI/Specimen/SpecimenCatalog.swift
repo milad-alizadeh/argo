@@ -181,10 +181,11 @@ private struct DrawerSpecimen: View {
     let presentation: CockpitPresentation
 
     var body: some View {
-        // No clip or rim here any more: the drawer carries its own glass, shape included, so a
-        // second rounded rectangle drawn around it would be the specimen inventing chrome the
-        // popover does not have.
+        // The glass belongs HERE, not in the drawer. In a popover the panel is the system's own
+        // material and the drawer must add nothing; this specimen has no popover to sit in, so it
+        // stands in for one.
         ProjectDrawer(presentation: presentation, actions: .inert)
+            .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
             .padding(ArgoSpacing.region)
     }
 }

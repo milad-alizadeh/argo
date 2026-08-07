@@ -24,10 +24,11 @@ struct ProjectDrawer: View {
         .padding(.horizontal, ArgoSpacing.snug)
         .padding(.bottom, ArgoSpacing.snug)
         .frame(width: ArgoLayout.projectDrawerWidth)
-        // NO ground of its own. A popover already supplies the system's glass, and an opaque fill
-        // painted over it is simply a second, flatter colour inside the same panel — which is what
-        // made the drawer's body read cooler than the arrow and rim above it.
-        .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
+        // NO ground of its own, of any kind. A popover IS the system's glass, and anything drawn
+        // behind this content is a second material inside the same panel: an opaque fill read as
+        // a flat slab, and a `glassEffect` was no better — the popover window is wider than this
+        // content, so its own material showed as a rim around a second sheet of glass. Two tones
+        // either way. The one that carries the panel has to be the only one.
     }
 
     private var rows: [ProjectDrawerProjection.Row] {
