@@ -6,9 +6,16 @@
 #   sh scripts/screenshot.sh out/cockpit.png [transcript.jsonl]
 #   ARGO_SPECIMEN=feedEveryEventClass sh scripts/screenshot.sh out/feed.png
 #   ARGO_KEEP_RUNNING=1 sh scripts/screenshot.sh …  # leave the app up to drive it by hand
+#   ARGO_WINDOW_SIZE=680x600 sh scripts/screenshot.sh out/narrow.png
 #
 # `ARGO_SPECIMEN` names a `Specimen` case and renders that state instead of the cockpit — the
 # per-state harness AGENTS.md records as the gap. `sh scripts/specimens.sh <dir>` renders them all.
+#
+# `ARGO_WINDOW_SIZE` is `<width>x<height>` in points. A layout claim is usually a claim about what
+# happens at a particular width, and the default window is only ever one of them — without this,
+# the narrow case can be reached only by dragging the window by hand, which is not a render anyone
+# can repeat. It resizes through System Events, so it needs Accessibility permission the same way
+# the capture below needs Screen Recording.
 #
 # It captures the WINDOW, not the screen: a full-screen grab carries the desktop and whatever
 # else is open into the evidence, and a judge asked whether the pixels match a spec should not
@@ -77,6 +84,19 @@ done
 if [ -z "$window_id" ]; then
   echo "screenshot: Argo put up no window within 10s" >&2
   exit 1
+fi
+
+# After the id, so the window exists to be resized; before the settle beat, so what is captured is
+# the laid-out result rather than the resize mid-flight.
+if [ -n "${ARGO_WINDOW_SIZE:-}" ]; then
+  case $ARGO_WINDOW_SIZE in
+    *x*) ;;
+    *) echo "screenshot: ARGO_WINDOW_SIZE must read <width>x<height>, got $ARGO_WINDOW_SIZE" >&2; exit 1 ;;
+  esac
+  width=${ARGO_WINDOW_SIZE%x*}
+  height=${ARGO_WINDOW_SIZE#*x}
+  osascript -e "tell application \"System Events\" to tell process \"Argo\" \
+    to set size of front window to {$width, $height}"
 fi
 
 sleep 0.5

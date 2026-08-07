@@ -218,3 +218,22 @@ Amends C3a.1 on two points; everything else in it stands.
 - **Steering clarification (drives C4):** there is **no separate steer widget**. The dock is a live claude-code / codex **PTY**; you steer by typing at its prompt like any terminal. "Stop" = Ctrl-C into the PTY. The header owns none of this.
 - **Why:** Frequent interaction is terminal typing; the "rare actions" either live on their proper surface or don't exist. A menu was speculative chrome.
 - **HTML change:** Removed the `.hmenu` element and CSS (reverted to `ctxArc` only).
+
+## Section C4 — Terminal dock
+
+### C4.1 — The dock is bounded to the feed's column, not a band across the deck (#436)
+- **Decision:** The dock is pinned to the bottom of the **feed** column. Its left edge meets the
+  Agents rail's separator and its right edge meets the Minimap lane's separator; the rail and the
+  lane run uninterrupted to the deck's bottom edge, and the hairline above the dock spans the feed
+  column only. C2.1's "docked beneath all of them" is unchanged — it is about the *tabs*, and the
+  dock still sits under every one of them.
+- **Supersedes the approved study on this one point.** `cockpit-sessions-liquid-glass.png` draws
+  the dock as a full-width band across the whole Instrument Deck. That render stays the authority
+  for the dock's rhythm, height and treatment; only its horizontal extent is overruled here, so a
+  later surface built off the PNG does not restore the band.
+- **Why:** the dock steers the agent whose feed is above it. Spanning the deck makes it read as a
+  window-level strip belonging to the room rather than to the feed, and it holds the rail and the
+  lane off the bottom edge they should meet — the minimap in particular is a lane *on* the deck,
+  not a gutter on the dock.
+- **Everything else about the seam stands:** flush shared boundary, no rounded container, no
+  shadow, no glass (D34), and no disclosure control while there is nothing to reveal (D36).

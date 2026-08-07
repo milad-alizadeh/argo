@@ -15,26 +15,37 @@ struct SessionsDeck: View {
                 .frame(height: ArgoLayout.deckTabSlotHeight)
             DeckSeparator()
             DeckContentRow()
-            DeckSeparator()
-            DeckSlot(zone: .dock)
-                .frame(height: ArgoLayout.deckDockHeight)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-/// The rail and the lane are fixed measures; the feed takes everything left, because the deck
-/// is as wide as the window is and the feed is what it exists for.
+/// The rail and the lane are fixed measures and run the whole height of the row; the feed column
+/// takes everything left, because the deck is as wide as the window is and the feed is what it
+/// exists for.
 private struct DeckContentRow: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.flush) {
             DeckSlot(zone: .rail)
                 .frame(width: ArgoLayout.agentsRailWidth)
             DeckSeparator()
-            DeckSlot(zone: .feed)
+            FeedColumn()
             DeckSeparator()
             DeckSlot(zone: .minimap)
                 .frame(width: ArgoLayout.minimapLaneWidth)
+        }
+    }
+}
+
+/// The feed and the dock that steers it, bounded to their own column rather than run across the
+/// deck (C4.1).
+private struct FeedColumn: View {
+    var body: some View {
+        VStack(spacing: ArgoSpacing.flush) {
+            DeckSlot(zone: .feed)
+            DeckSeparator()
+            DeckSlot(zone: .dock)
+                .frame(height: ArgoLayout.deckDockHeight)
         }
     }
 }

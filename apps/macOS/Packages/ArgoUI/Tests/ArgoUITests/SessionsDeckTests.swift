@@ -15,6 +15,11 @@ struct SessionsDeckTests {
         ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth
     }
 
+    /// What the header and the tabs leave the row below them, at the shortest window.
+    private var contentRowHeight: CGFloat {
+        ArgoLayout.windowMinimumHeight - ArgoLayout.deckHeaderHeight - ArgoLayout.deckTabSlotHeight
+    }
+
     @Test
     func `no two zones read the same on the deck`() {
         let titles = DeckZone.allCases.map(\.title)
@@ -46,9 +51,11 @@ struct SessionsDeckTests {
 
     @Test
     func `the deck's chrome leaves the content row most of its height`() {
-        let chrome = ArgoLayout.deckHeaderHeight
-            + ArgoLayout.deckTabSlotHeight
-            + ArgoLayout.deckDockHeight
-        #expect(ArgoLayout.windowMinimumHeight - chrome > ArgoLayout.windowMinimumHeight / 2)
+        #expect(contentRowHeight > ArgoLayout.windowMinimumHeight / 2)
+    }
+
+    @Test
+    func `the dock leaves the feed most of its column`() {
+        #expect(contentRowHeight - ArgoLayout.deckDockHeight > contentRowHeight / 2)
     }
 }

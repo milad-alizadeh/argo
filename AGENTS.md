@@ -173,7 +173,9 @@ That renders whole app states. For **one state in isolation**, the harness is
 `ArgoUI/Specimen/SpecimenCatalog.swift`: a `Specimen` case per renderable state, launched by name
 (`--specimen <case>`, or `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`), with
 `sh scripts/specimens.sh <dir> [name …]` rendering the set. Adding a case is all it takes to add a
-state; the script reads the names out of the catalog rather than repeating them.
+state; the script reads the names out of the catalog rather than repeating them. A width is part of
+the state for anything laid out in columns, so `ARGO_WINDOW_SIZE=<w>x<h>` renders the same case at
+a chosen size — the narrow case is a render somebody else can repeat, not a window dragged by hand.
 
 **Use it before claiming a visual change is done.** The app launched against an ordinary checkout
 shows no Sessions, so without a specimen the surface being built is never actually looked at — and
