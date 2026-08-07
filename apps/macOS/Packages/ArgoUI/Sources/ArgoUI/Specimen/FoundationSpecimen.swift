@@ -8,7 +8,8 @@ import SwiftUI
 /// vessels. Nothing here re-implements a native control, and nothing holds a value of its
 /// own — every colour, size and duration comes from the contract.
 public struct FoundationSpecimen: View {
-    @State private var selection: SpecimenFixtures.Session.ID? = SpecimenFixtures.roster.first?.id
+    @State private var selection: CockpitPresentation.Session.ID? = CockpitPresentation.preview
+        .sessions.first?.id
     @State private var room = SpecimenFixtures.Room.sessions
     @State private var tab = SpecimenFixtures.DeckTab.activity
 
@@ -18,8 +19,8 @@ public struct FoundationSpecimen: View {
         NavigationSplitView {
             List(selection: $selection) {
                 Section("Sessions") {
-                    ForEach(SpecimenFixtures.roster) { session in
-                        SpecimenSessionRow(session: session).previewSafeListRow()
+                    ForEach(SessionRosterProjection.previewRows) { row in
+                        SessionRow(row: row).previewSafeListRow().tag(row.id)
                     }
                 }
             }
@@ -58,14 +59,18 @@ public struct FoundationSpecimen: View {
                 Button("Checkout…") {}
                 Button("Fetch") {}
             } label: {
-                Label(selected.branch, systemImage: "arrow.trianglehead.branch")
-                    .labelStyle(.titleAndIcon)
+                Label(
+                    selected.branch ?? SessionRosterProjection.unknown,
+                    systemImage: "arrow.trianglehead.branch",
+                )
+                .labelStyle(.titleAndIcon)
             }
         }
     }
 
-    private var selected: SpecimenFixtures.Session {
-        SpecimenFixtures.roster.first { $0.id == selection } ?? SpecimenFixtures.roster[0]
+    private var selected: CockpitPresentation.Session {
+        CockpitPresentation.preview.sessions.first { $0.id == selection }
+            ?? .preview
     }
 }
 

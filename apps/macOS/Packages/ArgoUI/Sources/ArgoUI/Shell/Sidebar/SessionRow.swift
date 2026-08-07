@@ -92,7 +92,7 @@ struct SessionRow: View {
 
 #Preview("Session row — every rendering") {
     List {
-        ForEach(SessionRowPreview.every) { row in
+        ForEach(SessionRosterProjection.previewRows) { row in
             SessionRow(row: row).previewSafeListRow()
         }
     }
@@ -101,55 +101,13 @@ struct SessionRow: View {
     .argoAppearance()
 }
 
-#Preview("Session row — a title with nowhere to go") {
+#Preview("Session row — at the narrowest sidebar width") {
     List {
-        ForEach(SessionRowPreview.crowded) { row in
+        ForEach(SessionRosterProjection.previewRows) { row in
             SessionRow(row: row).previewSafeListRow()
         }
     }
     .listStyle(.sidebar)
-    .frame(width: 220, height: 200)
+    .frame(width: 220, height: 340)
     .argoAppearance()
-}
-
-/// Rows built directly rather than projected, so each rendering can be pinned on its own —
-/// the projection deliberately suppresses the lock unless a roster mixes access, which would
-/// otherwise make the locked row impossible to look at here.
-private enum SessionRowPreview {
-    static let every: [SessionRosterProjection.Row] = [
-        row(id: "running", title: "Ship the native shell", state: .running),
-        row(id: "attention", title: "Port the engine core", state: .attention),
-        row(id: "failure", title: "Repair the failed build", state: .failure),
-        row(id: "idle", title: "Wait for the next instruction", state: .idle),
-        row(id: "unknown", title: "Review an external Session", state: nil, showsLock: true),
-    ]
-
-    static let crowded: [SessionRosterProjection.Row] = [
-        row(
-            id: "long",
-            title: "Reskin the Sessions roster inside the native sidebar, at length",
-            state: .attention,
-        ),
-        row(id: "long-locked", title: "An observed Session with a long title", showsLock: true),
-    ]
-
-    private static func row(
-        id: String,
-        title: String,
-        state: ArgoOperationalState? = .idle,
-        showsLock: Bool = false,
-    )
-        -> SessionRosterProjection.Row {
-        SessionRosterProjection.Row(
-            id: id,
-            title: title,
-            model: "claude-opus-5",
-            workspaceIdentity: "Developer/argo",
-            location: "/Users/milad/Developer/argo",
-            branch: "main",
-            isReadOnly: showsLock,
-            showsLock: showsLock,
-            state: state,
-        )
-    }
 }

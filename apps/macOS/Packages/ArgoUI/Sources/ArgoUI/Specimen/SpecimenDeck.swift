@@ -5,7 +5,7 @@ import SwiftUI
 struct SpecimenDeck: View {
     @Environment(\.argo) private var argo
 
-    let session: SpecimenFixtures.Session
+    let session: CockpitPresentation.Session
     @Binding var tab: SpecimenFixtures.DeckTab
 
     var body: some View {
@@ -34,12 +34,11 @@ struct SpecimenDeck: View {
                 Text(session.title)
                     .argoText(ArgoTypography.sessionTitle)
                 Spacer(minLength: ArgoSpacing.loose)
-                HStack(spacing: ArgoSpacing.comfortable) {
-                    Label(session.branch, systemImage: "arrow.trianglehead.branch")
+                if let branch = session.branch {
+                    Label(branch, systemImage: "arrow.trianglehead.branch")
                         .argoText(ArgoTypography.machine)
-                    Text(session.elapsed).argoText(ArgoTypography.machine)
+                        .foregroundStyle(argo.color.text.tertiary)
                 }
-                .foregroundStyle(argo.color.text.tertiary)
             }
             SpecimenDeckTabs(selection: $tab)
         }
@@ -129,7 +128,7 @@ struct SpecimenFeedEntry: View {
 #Preview("Instrument Deck") {
     @Previewable @State var tab = SpecimenFixtures.DeckTab.activity
 
-    SpecimenDeck(session: SpecimenFixtures.roster[0], tab: $tab)
+    SpecimenDeck(session: .preview, tab: $tab)
         .frame(width: 860, height: 620)
         .argoAppearance()
 }

@@ -40,7 +40,9 @@ public extension CockpitPresentation {
             ),
             Session(
                 id: "observed",
-                title: "Review an externally launched Session",
+                // Long AND read-only, deliberately: the lock holding its own x while the title
+                // truncates into it is the one roster rendering only a screenshot can settle.
+                title: "Review an externally launched Session nobody here started",
                 model: nil,
                 workspaceLocation: "/Users/milad/Developer/cockpit",
                 branch: nil,
@@ -97,4 +99,12 @@ public extension CockpitPresentation {
         checkout: .detached(shortSHA: "9011669"),
         connection: .idle,
     )
+}
+
+public extension CockpitPresentation.Session {
+    /// The Session a detail surface previews against, so no specimen reaches for a subscript on
+    /// a roster whose order is the roster's own business.
+    static var preview: Self {
+        CockpitPresentation.preview.sessions[0]
+    }
 }
