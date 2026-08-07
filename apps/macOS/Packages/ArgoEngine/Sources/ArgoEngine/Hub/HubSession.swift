@@ -4,6 +4,9 @@ import Foundation
 public struct HubSession: Equatable, Identifiable, Sendable {
     public let id: String
     public let sourceURL: URL
+    /// A Session read off a transcript is `external` by construction: the file is all Argo has of
+    /// it, and there is no PTY behind a file. `managed` arrives with the spawner that owns one.
+    public let provenance: SessionProvenance
     public private(set) var title: String
     public private(set) var cwd: String?
     public private(set) var model: String?
@@ -11,17 +14,23 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var headLeafUUID: String?
     private var hasPromptTitle = false
     private var hasExplicitTitle = false
+    private var turnOpen = false
+    private var lastStop: StopReason?
 
-    public init(observation: TranscriptObservation) {
-        self.id = observation.id
-        self.sourceURL = observation.sourceURL
-        self.title = observation.sourceURL.deletingPathExtension().lastPathComponent
+    /// The rollup, derived on read: the Turn boundaries are what the transcript says, and the
+    /// status is only ever a reading of them.
+    public var status: SessionStatus {
+        SessionStatus.observed(turnOpen: turnOpen, lastStop: lastStop)
     }
 
-    init(id: String, sourceURL: URL) {
-        self.id = id
-        self.sourceURL = sourceURL
-        self.title = sourceURL.deletingPathExtension().lastPathComponent
+    public init(
+        observation: TranscriptObservation,
+        provenance: SessionProvenance = .external,
+    ) {
+        self.id = observation.id
+        self.sourceURL = observation.sourceURL
+        self.provenance = provenance
+        self.title = observation.sourceURL.deletingPathExtension().lastPathComponent
     }
 
     mutating func apply(_ event: TranscriptEvent) {
@@ -41,6 +50,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             branch = observedBranch
         case let .prompt(text, _):
             applyPromptTitle(text)
+            turnOpen = true
+        case let .turnEnded(reason):
+            turnOpen = false
+            lastStop = reason
         case .message, .thought, .toolCall, .toolCallOutcome, .plan, .compaction,
              .unreadableLine:
             break
@@ -59,6 +72,13 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         model = continuation.model ?? model
         branch = continuation.branch ?? branch
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
+        // The continuation is where the chain is NOW, so its Turn boundaries are the ones the
+        // status reads — but only once it HAS one. A resume file with nothing in it yet says
+        // nothing about the chain, and taking its silence would close the root's open Turn.
+        if continuation.turnOpen || continuation.lastStop != nil {
+            turnOpen = continuation.turnOpen
+            lastStop = continuation.lastStop
+        }
     }
 
     private mutating func applyPromptTitle(_ text: String) {

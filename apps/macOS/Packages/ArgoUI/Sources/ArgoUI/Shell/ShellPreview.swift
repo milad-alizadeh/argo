@@ -13,7 +13,7 @@ public extension CockpitPresentation {
                 workspaceLocation: "/Users/milad/Developer/argo",
                 branch: "argo/#376-native-shell",
                 access: .managed,
-                operationalState: .running,
+                status: .running,
             ),
             Session(
                 id: "engine",
@@ -22,7 +22,7 @@ public extension CockpitPresentation {
                 workspaceLocation: "/Users/milad/Experiments/argo",
                 branch: "main",
                 access: .managed,
-                operationalState: .attention,
+                status: .asking,
             ),
             Session(
                 id: "observed",
@@ -31,7 +31,7 @@ public extension CockpitPresentation {
                 workspaceLocation: "/Users/milad/Developer/cockpit",
                 branch: nil,
                 access: .readOnly,
-                operationalState: nil,
+                status: .unknown,
             ),
             Session(
                 id: "idle",
@@ -40,7 +40,7 @@ public extension CockpitPresentation {
                 workspaceLocation: "/Users/milad/Developer/cockpit",
                 branch: "main",
                 access: .managed,
-                operationalState: .idle,
+                status: .idle,
             ),
             Session(
                 id: "failed",
@@ -49,7 +49,7 @@ public extension CockpitPresentation {
                 workspaceLocation: "/Users/milad/Developer/native-shell",
                 branch: "argo/#377-session-roster",
                 access: .managed,
-                operationalState: .failure,
+                status: .stopped,
             ),
         ],
         checkout: .branch("main"),

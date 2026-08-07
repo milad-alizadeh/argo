@@ -138,7 +138,9 @@ public final class Hub {
         checkout = projection.head
     }
 
-    func waitForObservation(transcriptID: String) async {
+    /// Wait for one tail to finish. Public for a consumer's tests: a finite stream is the only
+    /// shape a test can drive to its end, and a live transcript never has one.
+    public func waitForObservation(transcriptID: String) async {
         await observations[transcriptID]?.value
     }
 

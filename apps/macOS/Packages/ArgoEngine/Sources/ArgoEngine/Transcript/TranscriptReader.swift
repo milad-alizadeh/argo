@@ -1,5 +1,8 @@
 import Foundation
 
+/// The host's word for "I stopped to call a tool" — a pause inside a Turn, not its end.
+private let continuingStopReason = "tool_use"
+
 /// One transcript's lines → the events they mean.
 ///
 /// Stateful, and only just: a `tool_result` is read against the call it answers, which was declared
@@ -18,9 +21,7 @@ public actor TranscriptReader {
     }
 
     private var openCalls: [String: OpenCall] = [:]
-    private var lastCwd: String?
-    private var lastModel: String?
-    private var lastBranch: String?
+    private var context = TranscriptContextCursor()
     private let readImage: ImageReader
 
     public init(readImage: @escaping ImageReader = noImageReader) {
@@ -40,11 +41,11 @@ public actor TranscriptReader {
         }
         switch record {
         case let .user(message):
-            return identity(of: message) + context(of: message) + userEvents(message)
+            return identity(of: message) + context.events(for: message) + userEvents(message)
         case let .assistant(message):
-            return identity(of: message) + context(of: message) + assistantEvents(message)
+            return identity(of: message) + context.events(for: message) + assistantEvents(message)
         case let .attachment(message):
-            return identity(of: message) + context(of: message)
+            return identity(of: message) + context.events(for: message)
         case let .aiTitle(title):
             return [.title(title)]
         case let .lastPrompt(leafUuid):
@@ -62,28 +63,6 @@ public actor TranscriptReader {
     /// fixture and a live file are read by one code path.
     public func read(lines: [String]) -> [TranscriptEvent] {
         lines.flatMap { read(line: $0) }
-    }
-
-    /// The session facts a record carries beside its content, emitted only when they CHANGE.
-    ///
-    /// Every record repeats them, and a stream that re-announced the cwd two hundred times would
-    /// bury the events anyone is watching for. The cwd keeps its first reading and the branch its
-    /// latest, because a run can switch branch mid-session but never switches its root.
-    private func context(of message: MessageRecord) -> [TranscriptEvent] {
-        var events: [TranscriptEvent] = []
-        if let cwd = message.cwd, lastCwd == nil {
-            lastCwd = cwd
-            events.append(.cwd(cwd))
-        }
-        if let branch = message.gitBranch, branch != lastBranch {
-            lastBranch = branch
-            events.append(.branch(branch))
-        }
-        if let model = message.model, model != lastModel {
-            lastModel = model
-            events.append(.model(model))
-        }
-        return events
     }
 
     private func userEvents(_ message: MessageRecord) -> [TranscriptEvent] {
@@ -138,6 +117,20 @@ public actor TranscriptReader {
     }
 
     private func assistantEvents(_ message: MessageRecord) -> [TranscriptEvent] {
+        contentEvents(message) + turnEnd(of: message)
+    }
+
+    /// The Turn boundary a record reports, or nothing.
+    ///
+    /// `tool_use` is the reason a working agent stops to call something, and every call carries it
+    /// — so it is the one word that must NOT be read as an end. A reason outside the vocabulary is
+    /// `unknown` rather than the nearest guess: the turn is over, and why is not ours to invent.
+    private func turnEnd(of message: MessageRecord) -> [TranscriptEvent] {
+        guard let reported = message.stopReason, reported != continuingStopReason else { return [] }
+        return [.turnEnded(StopReason(reported: reported))]
+    }
+
+    private func contentEvents(_ message: MessageRecord) -> [TranscriptEvent] {
         message.content.flatMap { block -> [TranscriptEvent] in
             switch block {
             case let .text(text):
