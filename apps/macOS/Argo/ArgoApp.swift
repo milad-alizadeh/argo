@@ -27,10 +27,14 @@ struct ArgoApp: App {
 
     var body: some Scene {
         Window("Argo", id: "cockpit") {
-            CockpitView(presentation: presentation, room: $room, actions: actions)
-                .task {
-                    await hub.connect(using: engine, configuration: configuration)
-                }
+            if let specimen {
+                SpecimenScreen(specimen: specimen)
+            } else {
+                CockpitView(presentation: presentation, room: $room, actions: actions)
+                    .task {
+                        await hub.connect(using: engine, configuration: configuration)
+                    }
+            }
         }
         .defaultSize(width: 1280, height: 800)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -42,6 +46,12 @@ struct ArgoApp: App {
                 }
             }
         }
+    }
+
+    /// An unknown name renders the cockpit rather than failing: the harness names the state, and a
+    /// typo there should not look like a launch worth screenshotting.
+    private var specimen: Specimen? {
+        configuration.specimenName.flatMap(Specimen.init(rawValue:))
     }
 
     private var actions: CockpitActions {

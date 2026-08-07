@@ -4,7 +4,11 @@
 #
 # Usage, from apps/macOS:
 #   sh scripts/screenshot.sh out/cockpit.png [transcript.jsonl]
+#   ARGO_SPECIMEN=feedEveryEventClass sh scripts/screenshot.sh out/feed.png
 #   ARGO_KEEP_RUNNING=1 sh scripts/screenshot.sh …  # leave the app up to drive it by hand
+#
+# `ARGO_SPECIMEN` names a `Specimen` case and renders that state instead of the cockpit — the
+# per-state harness AGENTS.md records as the gap. `sh scripts/specimens.sh <dir>` renders them all.
 #
 # It captures the WINDOW, not the screen: a full-screen grab carries the desktop and whatever
 # else is open into the evidence, and a judge asked whether the pixels match a spec should not
@@ -20,6 +24,15 @@ TRANSCRIPT=${2:-${ARGO_TRANSCRIPT_PATH:-}}
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 APP="$APP_DIR/build/Build/Products/Debug/Argo.app"
 PROJECT_ROOT=$(git -C "$APP_DIR" rev-parse --show-toplevel)
+
+# `open --args` hands the app its own working directory, not this shell's, so a relative transcript
+# path resolves somewhere else and the deck renders "Transcript unavailable" with no hint why.
+if [ -n "$TRANSCRIPT" ]; then
+  case $TRANSCRIPT in
+    /*) ;;
+    *) TRANSCRIPT=$(cd "$(dirname "$TRANSCRIPT")" && pwd)/$(basename "$TRANSCRIPT") ;;
+  esac
+fi
 
 cd "$APP_DIR"
 
@@ -44,11 +57,10 @@ if pgrep -x Argo >/dev/null 2>&1; then
   done
 fi
 
-if [ -n "$TRANSCRIPT" ]; then
-  open "$APP" --args --project "$PROJECT_ROOT" --transcript "$TRANSCRIPT"
-else
-  open "$APP" --args --project "$PROJECT_ROOT"
-fi
+set -- --project "$PROJECT_ROOT"
+[ -n "$TRANSCRIPT" ] && set -- "$@" --transcript "$TRANSCRIPT"
+[ -n "${ARGO_SPECIMEN:-}" ] && set -- "$@" --specimen "$ARGO_SPECIMEN"
+open "$APP" --args "$@"
 
 # The window is not on screen the instant `open` returns, and the first frame it does put up
 # is unpainted. Poll for the id, then let one more beat pass so the capture is of a settled

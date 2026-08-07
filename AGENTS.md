@@ -209,10 +209,17 @@ activates THAT instance, so a copy left up by another worktree yields a screensh
 else's tree that looks entirely plausible. Screen Recording permission is required the first time
 a terminal captures another process's window; without it the PNG comes out blank.
 
-This renders whole app states, not components in isolation. There is no per-state harness yet —
-SwiftUI's `#Preview` is the story equivalent but cannot be screenshotted headlessly. `ArgoUI`'s
-`Specimen/` views are the nearest thing; a target that renders one named specimen and exits is
-what closes the gap.
+That renders whole app states. For **one state in isolation**, the harness is
+`ArgoUI/Specimen/SpecimenCatalog.swift`: a `Specimen` case per renderable state, launched by name
+(`--specimen <case>`, or `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`), with
+`sh scripts/specimens.sh <dir> [name …]` rendering the set. Adding a case is all it takes to add a
+state; the script reads the names out of the catalog rather than repeating them.
+
+**Use it before claiming a visual change is done.** The app launched against an ordinary checkout
+shows no Sessions, so without a specimen the surface being built is never actually looked at — and
+the design decisions carry no measurements, so `docs/designs/`'s approved study is the only source
+for rhythm, density and type size. Prose in the decision log can be satisfied while the approved
+pixels are not.
 
 ## Tooling (RTK)
 
