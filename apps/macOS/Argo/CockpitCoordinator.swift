@@ -86,8 +86,6 @@ final class CockpitCoordinator {
         await point(at: .registered(record))
     }
 
-    /// Forget a Project. Argo's registration only — nothing here touches the folder on disk.
-    ///
     /// Removing the Project on screen has to land the window somewhere, so the registry's new
     /// active record is where it goes. Removing the LAST one leaves the cockpit empty and pointed
     /// at nothing registered: an unregistered pointer at the folder it was on, with the Hub let go,

@@ -4,6 +4,7 @@ import SwiftUI
 /// pane. Every registered Project is one row; adding one is the footer.
 struct ProjectDrawer: View {
     @Environment(\.argo) private var argo
+    @Environment(\.dismiss) private var dismiss
 
     let presentation: CockpitPresentation
     let actions: CockpitActions
@@ -20,6 +21,13 @@ struct ProjectDrawer: View {
 
     private var rows: [ProjectDrawerProjection.Row] {
         ProjectDrawerProjection.rows(from: presentation)
+    }
+
+    /// The picker is the app's, and it opens over the window — a drawer left hanging in front of
+    /// it is a second surface between the user and the folder they are choosing.
+    private func addProject() {
+        actions.addProject()
+        dismiss()
     }
 
     /// The registry is per machine and never travels — said here rather than left to be discovered
@@ -56,7 +64,7 @@ struct ProjectDrawer: View {
     private var footer: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             DeckSeparator()
-            Button(action: actions.addProject) {
+            Button(action: addProject) {
                 Label {
                     Text("Add Project…")
                 } icon: {

@@ -116,14 +116,21 @@ struct VisualContractTests {
         }
     }
 
-    /// A symbol beside a label is drawn off the label's own line, from one contract value — the
+    /// A symbol beside a label is drawn off the label's own line, from ONE contract value — the
     /// gap this closes is glyphs sitting proud of the type they belong to.
     @Test
-    func `a glyph is smaller than its label and no smaller than its x-height`() {
-        for role in ArgoTypography.all {
-            #expect(role.style.glyphSize < role.style.size)
-            #expect(role.style.glyphSize >= role.style.size * 0.7)
-        }
+    func `a glyph is drawn under its label's own size, never over it`() {
+        // The scale is the contract and the roles only obey it. A mark at or above its label
+        // stands proud of the line; one far under it reads as a speck beside the word.
+        #expect(ArgoTypography.glyphScale < 1)
+        #expect(ArgoTypography.glyphScale > 0.7)
+
+        // No role gets to opt out — a glyph is always under the line it sits on, and the ladder
+        // is preserved, so a bigger role never draws a smaller mark.
+        let sizes = ArgoTypography.all.map(\.style)
+        #expect(sizes.allSatisfy { $0.glyphSize < $0.size })
+        #expect(sizes.sorted { $0.size < $1.size }.map(\.glyphSize) == sizes.map(\.glyphSize)
+            .sorted())
     }
 
     // MARK: - Depth

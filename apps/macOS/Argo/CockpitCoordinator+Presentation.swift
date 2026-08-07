@@ -31,6 +31,7 @@ extension CockpitCoordinator {
             id: url.path,
             name: HubProject(url: url).name,
             location: url.path,
+            isRegistered: false,
         )] + registered
     }
 }

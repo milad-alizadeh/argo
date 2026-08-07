@@ -100,6 +100,30 @@ struct ProjectDrawerProjectionTests {
         #expect(rows.map(\.accessibilityLabel) == ["Project, argo, 1 live Session"])
     }
 
+    /// A `--project` launch draws where the window points, but there is no record behind that row
+    /// — so the verbs that read or write one do not apply to it.
+    @Test
+    func `a Project nobody registered is drawn, and carries no management verbs`() {
+        let pointed = CockpitPresentation.Project(
+            id: "/tmp/pointed",
+            name: "pointed",
+            location: "/tmp/pointed",
+            isRegistered: false,
+        )
+
+        let rows = ProjectDrawerProjection.rows(from: presentation(projects: [pointed]))
+
+        #expect(rows.map(\.name) == ["pointed"])
+        #expect(rows.map(\.isRegistered) == [false])
+    }
+
+    @Test
+    func `a registered Project carries them`() {
+        let rows = ProjectDrawerProjection.rows(from: presentation())
+
+        #expect(rows.map(\.isRegistered) == [true, true, true])
+    }
+
     @Test
     func `a machine that has registered nothing draws no rows`() {
         #expect(ProjectDrawerProjection.rows(from: .unregisteredPreview).isEmpty)

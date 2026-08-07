@@ -12,7 +12,7 @@ public struct CockpitActions {
     public let locateProject: (String) -> Void
     /// Show a Project's folder in Finder.
     public let revealProject: (String) -> Void
-    /// Forget a Project. Argo's registration only — the folder on disk is never touched.
+    /// Forget a Project — `ProjectRegistry.removing(id:)` is what that means.
     public let removeProject: (String) -> Void
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for

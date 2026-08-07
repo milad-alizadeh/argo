@@ -8,13 +8,16 @@ import SwiftUI
 /// inside the menu, because on this row it is the primary action.
 struct ProjectDrawerRow: View {
     @Environment(\.argo) private var argo
+    /// A drawer that stayed open over the cockpit it just re-pointed would be showing the answer
+    /// to a question already asked. Every verb that changes what the window is on closes it.
+    @Environment(\.dismiss) private var dismiss
 
     let row: ProjectDrawerProjection.Row
     let actions: CockpitActions
 
     var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            Button { actions.selectProject(row.id) } label: {
+            Button { select() } label: {
                 identity
             }
             .buttonStyle(.plain)
@@ -30,6 +33,16 @@ struct ProjectDrawerRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(row.accessibilityLabel)
         .accessibilityAddTraits(row.isActive ? .isSelected : [])
+    }
+
+    private func select() {
+        actions.selectProject(row.id)
+        dismiss()
+    }
+
+    private func locate() {
+        actions.locateProject(row.id)
+        dismiss()
     }
 
     private var identity: some View {
@@ -63,10 +76,14 @@ struct ProjectDrawerRow: View {
                     .foregroundStyle(argo.color.text.tertiary)
             }
         } else {
-            Button("Locate…") { actions.locateProject(row.id) }
+            Button("Locate…", action: locate)
                 .argoText(ArgoTypography.control)
         }
-        ProjectRowMenu(projectID: row.id, actions: actions)
+        // Nobody registered this row, so there is no record to reveal, re-point or forget. The
+        // menu is absent rather than present-and-inert.
+        if row.isRegistered {
+            ProjectRowMenu(row: row, actions: actions, dismiss: dismiss)
+        }
     }
 
     /// The active row is the only one that takes a surface at all. The wash is neutral and the Ion
@@ -101,20 +118,26 @@ struct ProjectDrawerRow: View {
 private struct ProjectRowMenu: View {
     @Environment(\.argo) private var argo
 
-    let projectID: String
+    let row: ProjectDrawerProjection.Row
     let actions: CockpitActions
+    let dismiss: DismissAction
 
     var body: some View {
         Menu {
+            // Disabled, not hidden, on a folder that is not there: Finder has nothing to open,
+            // and the verb going quiet would read as the click having missed.
             Button("Reveal in Finder", systemImage: ArgoSymbol.revealInFinder) {
-                actions.revealProject(projectID)
+                actions.revealProject(row.id)
             }
+            .disabled(!row.isReachable)
             Button("Locate…", systemImage: ArgoSymbol.locateProject) {
-                actions.locateProject(projectID)
+                actions.locateProject(row.id)
+                dismiss()
             }
             Divider()
             Button("Remove from Argo", systemImage: ArgoSymbol.removeProject) {
-                actions.removeProject(projectID)
+                actions.removeProject(row.id)
+                dismiss()
             }
             .help("Removes Argo's registration only. The folder on disk is not touched.")
         } label: {
@@ -133,6 +156,18 @@ private struct ProjectRowMenu: View {
 #Preview("Drawer row — active") {
     ProjectDrawerRow(
         row: ProjectDrawerProjection.rows(from: .preview)[0],
+        actions: .inert,
+    )
+    .frame(width: ArgoLayout.projectDrawerWidth)
+    .padding(ArgoSpacing.region)
+    .argoAppearance()
+}
+
+// The commonest row of all: registered, reachable, not the Project on screen, and — because the
+// Hub observes one Project at a time — carrying no count.
+#Preview("Drawer row — a Project nothing is observing") {
+    ProjectDrawerRow(
+        row: ProjectDrawerProjection.rows(from: .preview)[1],
         actions: .inert,
     )
     .frame(width: ArgoLayout.projectDrawerWidth)

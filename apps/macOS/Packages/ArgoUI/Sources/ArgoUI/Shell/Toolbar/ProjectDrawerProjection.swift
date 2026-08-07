@@ -16,6 +16,9 @@ enum ProjectDrawerProjection {
         /// The folder, or `unreachable` in its place.
         let detail: String
         let isReachable: Bool
+        /// A row nobody registered carries no management verbs — there is no record to reveal,
+        /// re-point or forget, and a menu whose items did nothing would say there was.
+        let isRegistered: Bool
         let isActive: Bool
         /// The compact count the row draws, absent where nothing has observed this Project.
         let liveSessions: String?
@@ -30,6 +33,7 @@ enum ProjectDrawerProjection {
                 name: project.name,
                 detail: project.isReachable ? project.location : unreachable,
                 isReachable: project.isReachable,
+                isRegistered: project.isRegistered,
                 isActive: project.id == presentation.activeProjectID,
                 liveSessions: project.liveSessionCount.map { "\($0) live" },
                 accessibilityLabel: label(for: project),
