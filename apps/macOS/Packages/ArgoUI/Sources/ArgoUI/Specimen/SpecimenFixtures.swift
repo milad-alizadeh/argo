@@ -1,19 +1,9 @@
 import Foundation
 
-/// Placeholder content for the specimen. Real Session data arrives with the Hub (#376);
-/// none of this survives that ticket.
+/// Placeholder content for the specimen surfaces the Hub does not yet feed. Sessions are NOT
+/// among them: they come from `CockpitPresentation.preview` through the shell's own projection,
+/// because a fixture shaped like a row is a second way to build one.
 enum SpecimenFixtures {
-    struct Session: Identifiable, Hashable {
-        let id = UUID()
-        let title: String
-        let meta: String
-        let state: ArgoOperationalState
-        let word: String
-        let branch: String
-        let elapsed: String
-        var isExternal = false
-    }
-
     enum Room: String, CaseIterable, Identifiable {
         case sessions, work, code
 
@@ -60,50 +50,6 @@ enum SpecimenFixtures {
         let at: String
         var evidence: String?
     }
-
-    static let roster: [Session] = [
-        Session(
-            title: "Establish the visual foundation",
-            meta: "Opus 5 · argo",
-            state: .running,
-            word: "running",
-            branch: "ticket-375-graphite-ion-blue",
-            elapsed: "12m",
-        ),
-        Session(
-            title: "Port the session engine core to Swift",
-            meta: "Opus 5 · argo",
-            state: .attention,
-            word: "needs you",
-            branch: "ticket-386-swift-engine-core",
-            elapsed: "3m idle",
-        ),
-        Session(
-            title: "Native Dock terminal with SwiftTerm",
-            meta: "Codex · argo",
-            state: .failure,
-            word: "failed",
-            branch: "ticket-387-dock-terminal",
-            elapsed: "1h idle",
-        ),
-        Session(
-            title: "Delete apps/desktop and verify the cockpit",
-            meta: "Opus 5 · argo",
-            state: .idle,
-            word: "idle",
-            branch: "main",
-            elapsed: "4h idle",
-        ),
-        Session(
-            title: "A session Argo only watches",
-            meta: "Claude · dotfiles",
-            state: .idle,
-            word: "idle",
-            branch: "main",
-            elapsed: "2d idle",
-            isExternal: true,
-        ),
-    ]
 
     static let feed: [FeedEntry] = [
         FeedEntry(

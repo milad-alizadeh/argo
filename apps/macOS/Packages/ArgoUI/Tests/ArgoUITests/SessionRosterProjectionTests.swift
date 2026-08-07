@@ -128,6 +128,20 @@ struct SessionRosterProjectionTests {
         #expect(row.metadata == "unknown · argo")
     }
 
+    @Test
+    func `the roster the specimen renders reaches every row rendering`() {
+        // The `sessionRows` PNG is the only evidence roster states have, and it draws exactly
+        // these rows. A preview presentation that stopped mixing access, or lost a status,
+        // would silently narrow that evidence rather than fail anything.
+        let rows = SessionRosterProjection.previewRows
+
+        #expect(Set(rows.map(\.state)) == [.running, .attention, .idle, .failure, nil])
+        // The locked row is also the long one: whether the lock holds its x while a title
+        // truncates into it is the render question the PNG exists to settle, and a short
+        // locked title would leave it unrendered without failing anything.
+        #expect(rows.contains { $0.showsLock && $0.title.count > 40 })
+    }
+
     private func session(
         id: String,
         workspaceLocation: String = "/Users/milad/Developer/argo",

@@ -20,6 +20,30 @@ enum SessionRosterProjection {
         let showsLock: Bool
         let state: ArgoOperationalState?
 
+        /// `fileprivate`, so `rows(from:)` is the only way a row comes into being and a
+        /// `showsLock` that disagrees with `isReadOnly` stops being representable.
+        fileprivate init(
+            id: String,
+            title: String,
+            model: String,
+            workspaceIdentity: String,
+            location: String?,
+            branch: String?,
+            isReadOnly: Bool,
+            showsLock: Bool,
+            state: ArgoOperationalState?,
+        ) {
+            self.id = id
+            self.title = title
+            self.model = model
+            self.workspaceIdentity = workspaceIdentity
+            self.location = location
+            self.branch = branch
+            self.isReadOnly = isReadOnly
+            self.showsLock = showsLock
+            self.state = state
+        }
+
         var metadata: String {
             "\(model) · \(workspaceIdentity)"
         }

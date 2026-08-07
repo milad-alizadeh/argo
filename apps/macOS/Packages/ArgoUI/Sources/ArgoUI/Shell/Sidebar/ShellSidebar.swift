@@ -16,7 +16,10 @@ struct ShellSidebar: View {
                 activeProjectID: presentation.activeProjectID,
                 actions: actions,
             )
-            SessionNavigator(sessions: presentation.sessions, selection: $selection)
+            SessionNavigator(
+                rows: SessionRosterProjection.rows(from: presentation.sessions),
+                selection: $selection,
+            )
         }
     }
 }
