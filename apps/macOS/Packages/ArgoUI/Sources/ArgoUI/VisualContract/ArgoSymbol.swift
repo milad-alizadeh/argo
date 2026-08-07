@@ -16,6 +16,10 @@ public enum ArgoSymbol {
     public static let revealInFinder = "arrow.up.forward.app"
     public static let locateProject = "questionmark.folder"
     public static let removeProject = "minus.circle"
+    /// The checkout a Project is on. `arrow.triangle.branch` rather than the trianglehead variant:
+    /// the latter is drawn to the full em box, so at one glyph size it stands a head taller than
+    /// every other mark in the toolbar.
+    public static let branch = "arrow.triangle.branch"
     /// The disclosure on a control that opens something.
     public static let disclosure = "chevron.down"
 }

@@ -31,17 +31,21 @@ private struct RoomTab: View {
 
     var body: some View {
         Button(action: select) {
-            Label(room.title, systemImage: room.symbol)
-                .labelStyle(.argo(ArgoTypography.control))
-                .foregroundStyle(isSelected ? argo.color.text.primary : argo.color.text.tertiary)
-                .padding(.horizontal, ArgoSpacing.base)
-                // Hair, not tight: the toolbar sets the capsule's height, and a selected tab
-                // taller than its own line breaks out through the glass rather than sitting in it.
-                .padding(.vertical, ArgoSpacing.hair)
-                // After the padding, never before it: a background applied to the label alone
-                // sizes to the glyphs and leaves the wash hugging the text.
-                .background(selectionWash)
-                .contentShape(.rect(cornerRadius: ArgoRadius.control))
+            Label {
+                Text(room.title)
+            } icon: {
+                ArgoGlyph(room.symbol, ArgoTypography.control)
+            }
+            .labelStyle(.argo(ArgoTypography.control))
+            .foregroundStyle(isSelected ? argo.color.text.primary : argo.color.text.tertiary)
+            .padding(.horizontal, ArgoSpacing.base)
+            // Hair, not tight: the toolbar sets the capsule's height, and a selected tab
+            // taller than its own line breaks out through the glass rather than sitting in it.
+            .padding(.vertical, ArgoSpacing.hair)
+            // After the padding, never before it: a background applied to the label alone
+            // sizes to the glyphs and leaves the wash hugging the text.
+            .background(selectionWash)
+            .contentShape(.capsule)
         }
         .buttonStyle(.plain)
         .help("\(room.title) — \(room.shortcutDescription)")
@@ -49,12 +53,13 @@ private struct RoomTab: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
+    /// A capsule, like the vessel it sits in: the selected room is a segment of a rounded control,
+    /// and a rounded rectangle inside a capsule reads as a second, squarer control.
     private var selectionWash: some View {
-        RoundedRectangle(cornerRadius: ArgoRadius.control)
+        Capsule()
             .fill(argo.color.surface.selected)
             .overlay {
-                RoundedRectangle(cornerRadius: ArgoRadius.control)
-                    .strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
+                Capsule().strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
             }
             .opacity(isSelected ? 1 : 0)
     }

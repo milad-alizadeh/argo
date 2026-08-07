@@ -34,9 +34,11 @@ struct ProjectDrawerRow: View {
 
     private var identity: some View {
         HStack(spacing: ArgoSpacing.base) {
-            Image(systemName: row.isReachable ? ArgoSymbol.project : ArgoSymbol.unreachableProject)
-                .argoGlyph(ArgoTypography.rowTitle)
-                .foregroundStyle(argo.color.text.tertiary)
+            ArgoGlyph(
+                row.isReachable ? ArgoSymbol.project : ArgoSymbol.unreachableProject,
+                ArgoTypography.rowTitle,
+            )
+            .foregroundStyle(argo.color.text.tertiary)
             VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
                 Text(row.name)
                     .argoText(ArgoTypography.rowTitle)
@@ -67,18 +69,29 @@ struct ProjectDrawerRow: View {
         ProjectRowMenu(projectID: row.id, actions: actions)
     }
 
-    /// The active row is the only one that takes a surface at all — the same tonal separation the
-    /// rest of the shell reads selection from.
+    /// The active row is the only one that takes a surface at all. The wash is neutral and the Ion
+    /// Blue is the indicator edge, per the contract — which also keeps the active row readable
+    /// beside the system's own focus effect, a fill that would otherwise say the same thing.
     @ViewBuilder private var rowSurface: some View {
         let shape = RoundedRectangle(cornerRadius: ArgoRadius.control)
         if row.isReachable {
-            shape.fill(argo.color.surface.selected).opacity(row.isActive ? 1 : 0)
+            shape
+                .fill(argo.color.surface.selected)
+                .overlay(alignment: .leading) { selectionIndicator }
+                .opacity(row.isActive ? 1 : 0)
         } else {
             shape.strokeBorder(
                 argo.color.edge.strong,
                 style: StrokeStyle(lineWidth: ArgoStroke.border, dash: [ArgoStroke.dash]),
             )
         }
+    }
+
+    private var selectionIndicator: some View {
+        RoundedRectangle(cornerRadius: ArgoRadius.marker)
+            .fill(argo.color.interaction.selectionIndicator)
+            .frame(width: ArgoStroke.indicator)
+            .padding(.vertical, ArgoSpacing.tight)
     }
 }
 
@@ -105,12 +118,11 @@ private struct ProjectRowMenu: View {
             }
             .help("Removes Argo's registration only. The folder on disk is not touched.")
         } label: {
-            Image(systemName: ArgoSymbol.projectMenu)
-                .argoGlyph(ArgoTypography.rowTitle)
-                // The contract reserves the brand hue for selection and focus; a menu label takes
-                // the control's accent unless it is told otherwise.
-                .foregroundStyle(argo.color.text.tertiary)
+            ArgoGlyph(ArgoSymbol.projectMenu, ArgoTypography.rowTitle)
         }
+        // The contract reserves the brand hue for selection and focus, and a menu label takes the
+        // control's accent — through the TINT, which a `foregroundStyle` on the label cannot reach.
+        .tint(argo.color.text.tertiary)
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()

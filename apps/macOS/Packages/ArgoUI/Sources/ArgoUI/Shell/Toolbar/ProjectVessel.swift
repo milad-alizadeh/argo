@@ -32,14 +32,12 @@ struct ProjectVessel: View {
 
     private var label: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            Image(systemName: symbol)
-                .argoGlyph(ArgoTypography.control)
+            ArgoGlyph(symbol, ArgoTypography.control)
             Text(project?.name ?? "No Project")
                 .argoText(ArgoTypography.control)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            Image(systemName: ArgoSymbol.disclosure)
-                .argoGlyph(ArgoTypography.machineCaption)
+            ArgoGlyph(ArgoSymbol.disclosure, ArgoTypography.machineCaption)
         }
         .foregroundStyle(argo.color.text.primary)
         .frame(maxWidth: ArgoLayout.projectVesselMaximumWidth)

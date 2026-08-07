@@ -130,11 +130,36 @@ public extension View {
     }
 }
 
-/// A label whose symbol is sized off its own line rather than off SF Symbols' default.
+/// A symbol drawn exactly one label-line high, whatever box the symbol itself is drawn to.
+///
+/// Point size alone cannot settle this: `folder` is drawn to cap height while
+/// `arrow.triangle.branch` fills its em box, so at one font size they stand a head apart in the
+/// same bar. The frame is the contract's glyph size, so every mark in a line measures the same.
+public struct ArgoGlyph: View {
+    private let symbol: String
+    private let style: ArgoTextStyle
+
+    public init(_ symbol: String, _ style: ArgoTextStyle) {
+        self.symbol = symbol
+        self.style = style
+    }
+
+    public var body: some View {
+        Image(systemName: symbol)
+            .resizable()
+            .scaledToFit()
+            .frame(width: style.glyphSize, height: style.glyphSize)
+    }
+}
+
+/// A label that draws its symbol beside its title, at the contract's rhythm.
 ///
 /// It draws BOTH halves, deliberately: `.labelStyle(.titleAndIcon)` says what should be drawn and
 /// leaves the decision to whatever control is hosting the label — and a segmented `Picker` answers
 /// by dropping the image, so an icon declared in the model never reaches the screen.
+///
+/// The icon is laid out, not sized: a label built with `ArgoGlyph` already measures one line, and
+/// one built with a bare `Image` takes the role's glyph font.
 public struct ArgoLabelStyle: LabelStyle {
     let style: ArgoTextStyle
 

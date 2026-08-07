@@ -57,13 +57,17 @@ struct ProjectDrawer: View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             DeckSeparator()
             Button(action: actions.addProject) {
-                Label("Add Project…", systemImage: ArgoSymbol.addProject)
-                    .labelStyle(.argo(ArgoTypography.control))
-                    .foregroundStyle(argo.color.text.primary)
-                    .padding(.horizontal, ArgoSpacing.comfortable)
-                    .padding(.vertical, ArgoSpacing.base)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(.rect)
+                Label {
+                    Text("Add Project…")
+                } icon: {
+                    ArgoGlyph(ArgoSymbol.addProject, ArgoTypography.control)
+                }
+                .labelStyle(.argo(ArgoTypography.control))
+                .foregroundStyle(argo.color.text.primary)
+                .padding(.horizontal, ArgoSpacing.comfortable)
+                .padding(.vertical, ArgoSpacing.base)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
             }
             .buttonStyle(.plain)
         }

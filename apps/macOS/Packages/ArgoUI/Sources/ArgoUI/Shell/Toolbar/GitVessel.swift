@@ -13,15 +13,16 @@ struct GitVessel: View {
             Button("Refresh checkout", action: refresh)
                 .keyboardShortcut("r", modifiers: [.command, .shift])
         } label: {
+            // `ArgoGlyph`, not a bare `Image`: the branch mark fills its em box, so at SF Symbols'
+            // own sizing it stood a head taller than every other glyph in the bar.
             Label {
                 Text(label)
-                    .argoText(ArgoTypography.machineEmphasis)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
             } icon: {
-                Image(systemName: "arrow.trianglehead.branch")
+                ArgoGlyph(ArgoSymbol.branch, ArgoTypography.machineEmphasis)
             }
-            .labelStyle(.titleAndIcon)
+            .labelStyle(.argo(ArgoTypography.machineEmphasis))
+            .lineLimit(1)
+            .truncationMode(.middle)
             .frame(maxWidth: ArgoLayout.gitVesselMaximumWidth)
         }
         .help("Global checkout — \(label)")

@@ -95,10 +95,13 @@ struct ProjectProjectionTests {
     /// Drive one finite transcript into the Hub and yield until its row is there.
     @MainActor
     private func observe(_ hub: Hub, id: String) async {
-        let stream = AsyncStream<TranscriptEvent> { continuation in
-            continuation.yield(.cwd("/tmp/argo"))
-            continuation.yield(.prompt(text: "Work on it", atMs: nil))
-            continuation.yield(.turnEnded(.endTurn))
+        // One batch, which is how a tail hands over a file it has finished reading.
+        let stream = AsyncStream<[TranscriptEvent]> { continuation in
+            continuation.yield([
+                .cwd("/tmp/argo"),
+                .prompt(text: "Work on it", atMs: nil),
+                .turnEnded(.endTurn),
+            ])
             continuation.finish()
         }
         await hub.startObserving(TranscriptObservation(
