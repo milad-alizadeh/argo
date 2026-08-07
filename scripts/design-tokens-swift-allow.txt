@@ -1,0 +1,11 @@
+# Allowlist for the SWIFT design-token guardrail (scripts/check-design-tokens-swift.sh).
+# One grep -E pattern per line, matched against the whole "path:line:content" finding.
+#
+# An entry here is DEBT, not an exemption: it is a design constant that escaped the
+# contract and has not been snapped or promoted yet. Each one names the ticket that
+# removes it. The list may only shrink — the fix is Palette/TypeRole/Space, never a
+# pattern added here to keep a commit moving.
+#
+# Empty on purpose. VisualContract/ and Specimen/ are already exempt in the script itself —
+# the first because it IS the contract, the second because a specimen's whole job is to show
+# what a role is worth.

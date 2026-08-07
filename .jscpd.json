@@ -2,7 +2,7 @@
   "threshold": 1,
   "minTokens": 50,
   "minLines": 5,
-  "format": ["typescript", "tsx", "javascript"],
+  "format": ["typescript", "tsx", "javascript", "swift"],
   "reporters": ["console"],
   "absolute": true,
   "gitignore": true,
@@ -13,6 +13,8 @@
     "**/graphify-out/**",
     "**/*.stories.tsx",
     "prototypes/**",
-    "**/skills/**/templates/**"
+    "**/skills/**/templates/**",
+    "**/build/**",
+    "**/Fixtures/**"
   ]
 }

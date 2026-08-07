@@ -16,7 +16,7 @@ public struct ArgoPalette: Sendable {
         text: TextRoles,
         edge: EdgeRoles,
         interaction: InteractionRoles,
-        state: StateRoles
+        state: StateRoles,
     ) {
         self.surface = surface
         self.text = text
@@ -54,7 +54,7 @@ public extension ArgoPalette {
             overlay: ArgoColor,
             glassTint: ArgoColor,
             hover: ArgoColor,
-            selected: ArgoColor
+            selected: ArgoColor,
         ) {
             self.sunken = sunken
             self.base = base
@@ -66,7 +66,9 @@ public extension ArgoPalette {
         }
 
         /// The ramp in depth order, for contract assertions and the specimen.
-        public var ramp: [ArgoColor] { [sunken, base, raised, overlay] }
+        public var ramp: [ArgoColor] {
+            [sunken, base, raised, overlay]
+        }
     }
 
     struct TextRoles: Sendable {
@@ -85,7 +87,7 @@ public extension ArgoPalette {
             secondary: ArgoColor,
             tertiary: ArgoColor,
             disabled: ArgoColor,
-            onAccent: ArgoColor
+            onAccent: ArgoColor,
         ) {
             self.primary = primary
             self.secondary = secondary
@@ -111,7 +113,7 @@ public extension ArgoPalette {
             hairline: ArgoColor,
             subtle: ArgoColor,
             strong: ArgoColor,
-            glassRim: ArgoColor
+            glassRim: ArgoColor,
         ) {
             self.hairline = hairline
             self.subtle = subtle
@@ -138,7 +140,7 @@ public extension ArgoPalette {
             accentBright: ArgoColor,
             accentDeep: ArgoColor,
             selectionIndicator: ArgoColor,
-            focusRing: ArgoColor
+            focusRing: ArgoColor,
         ) {
             self.accent = accent
             self.accentBright = accentBright
@@ -165,7 +167,7 @@ public extension ArgoPalette {
             running: ArgoColor,
             idle: ArgoColor,
             attention: ArgoColor,
-            failure: ArgoColor
+            failure: ArgoColor,
         ) {
             self.running = running
             self.idle = idle
@@ -173,9 +175,13 @@ public extension ArgoPalette {
             self.failure = failure
         }
 
-        public var all: [ArgoColor] { [running, idle, attention, failure] }
+        public var all: [ArgoColor] {
+            [running, idle, attention, failure]
+        }
 
         /// The same role at chip strength: a tinted ground rather than an ink.
-        public func muted(_ role: ArgoColor) -> ArgoColor { role.opacity(0.16) }
+        public func muted(_ role: ArgoColor) -> ArgoColor {
+            role.opacity(0.16)
+        }
     }
 }

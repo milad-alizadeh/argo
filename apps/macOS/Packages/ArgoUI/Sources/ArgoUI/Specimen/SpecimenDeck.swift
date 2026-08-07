@@ -66,7 +66,7 @@ struct SpecimenDeckTabs: View {
                     Text(tab.title)
                         .argoText(ArgoTypography.control)
                         .foregroundStyle(
-                            selection == tab ? argo.color.text.primary : argo.color.text.tertiary
+                            selection == tab ? argo.color.text.primary : argo.color.text.tertiary,
                         )
                         .padding(.bottom, ArgoSpacing.base)
                         .overlay(alignment: .bottom) { indicator(for: tab) }

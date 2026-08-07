@@ -6,8 +6,13 @@
       "cache": false,
       "outputs": []
     },
-    "test:swift": {
+    "test": {
       "cache": false,
+      "outputs": []
+    },
+    "screenshot": {
+      "cache": false,
+      "persistent": false,
       "outputs": []
     }
   }

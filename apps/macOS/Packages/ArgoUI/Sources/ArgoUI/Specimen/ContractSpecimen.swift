@@ -12,63 +12,11 @@ struct ContractSpecimen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: ArgoSpacing.section) {
-                section("Surfaces — near-black graphite, depth from tone and edge") {
-                    HStack(spacing: 0) {
-                        ForEach(Array(argo.color.surface.ramp.enumerated()), id: \.offset) { _, tone in
-                            Rectangle().fill(tone).frame(height: 56)
-                        }
-                    }
-                    .overlay {
-                        Rectangle()
-                            .strokeBorder(argo.color.edge.hairline, lineWidth: ArgoStroke.hairline)
-                    }
-                }
-
-                section("Operational states — none of them the brand") {
-                    HStack(spacing: ArgoSpacing.comfortable) {
-                        ForEach(Array(zip(ArgoOperationalState.allCases, stateWords)), id: \.1) {
-                            SpecimenStatusChip(state: $0, label: $1)
-                        }
-                    }
-                }
-
-                section("Ion Blue — brand, selection, focus, and nothing else") {
-                    HStack(spacing: ArgoSpacing.comfortable) {
-                        Button("Primary") {}.buttonStyle(.borderedProminent)
-                        Button("Secondary") {}.buttonStyle(.bordered)
-                        Toggle("Auto-follow", isOn: .constant(true)).toggleStyle(.switch)
-                    }
-                    .argoText(ArgoTypography.control)
-                }
-
-                section("Type — SF Pro, New York for identity, SF Mono for machine facts") {
-                    VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-                        ForEach(ArgoTypography.all, id: \.name) { role in
-                            HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.loose) {
-                                Text(role.name)
-                                    .argoText(ArgoTypography.machineCaption)
-                                    .foregroundStyle(argo.color.text.tertiary)
-                                    .frame(width: 132, alignment: .leading)
-                                Text(sample(for: role.style.typeface)).argoText(role.style)
-                            }
-                        }
-                    }
-                }
-
-                section("Motion — every role, its duration, and its Reduce Motion answer") {
-                    VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
-                        ForEach(ArgoMotion.all, id: \.name) { role in
-                            HStack(spacing: ArgoSpacing.loose) {
-                                Text(role.name)
-                                    .argoText(ArgoTypography.machineCaption)
-                                    .frame(width: 132, alignment: .leading)
-                                Text(duration(role.motion))
-                                    .argoText(ArgoTypography.machineCaption)
-                            }
-                            .foregroundStyle(argo.color.text.secondary)
-                        }
-                    }
-                }
+                surfaces
+                states
+                brand
+                type
+                motion
             }
             .padding(ArgoSpacing.section)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -76,10 +24,82 @@ struct ContractSpecimen: View {
         .argoDeckSurface()
     }
 
+    private var surfaces: some View {
+        section("Surfaces — near-black graphite, depth from tone and edge") {
+            HStack(spacing: 0) {
+                ForEach(
+                    Array(argo.color.surface.ramp.enumerated()),
+                    id: \.offset,
+                ) { _, tone in
+                    Rectangle().fill(tone).frame(height: 56)
+                }
+            }
+            .overlay {
+                Rectangle()
+                    .strokeBorder(argo.color.edge.hairline, lineWidth: ArgoStroke.hairline)
+            }
+        }
+    }
+
+    private var states: some View {
+        section("Operational states — none of them the brand") {
+            HStack(spacing: ArgoSpacing.comfortable) {
+                ForEach(Array(zip(ArgoOperationalState.allCases, stateWords)), id: \.1) {
+                    SpecimenStatusChip(state: $0, label: $1)
+                }
+            }
+        }
+    }
+
+    private var brand: some View {
+        section("Ion Blue — brand, selection, focus, and nothing else") {
+            HStack(spacing: ArgoSpacing.comfortable) {
+                Button("Primary") {}.buttonStyle(.borderedProminent)
+                Button("Secondary") {}.buttonStyle(.bordered)
+                Toggle("Auto-follow", isOn: .constant(true)).toggleStyle(.switch)
+            }
+            .argoText(ArgoTypography.control)
+        }
+    }
+
+    private var type: some View {
+        section("Type — SF Pro, New York for identity, SF Mono for machine facts") {
+            VStack(alignment: .leading, spacing: ArgoSpacing.base) {
+                ForEach(ArgoTypography.all, id: \.name) { role in
+                    HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.loose) {
+                        Text(role.name)
+                            .argoText(ArgoTypography.machineCaption)
+                            .foregroundStyle(argo.color.text.tertiary)
+                            .frame(width: 132, alignment: .leading)
+                        Text(sample(for: role.style.typeface)).argoText(role.style)
+                    }
+                }
+            }
+        }
+    }
+
+    private var motion: some View {
+        section("Motion — every role, its duration, and its Reduce Motion answer") {
+            VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
+                ForEach(ArgoMotion.all, id: \.name) { role in
+                    HStack(spacing: ArgoSpacing.loose) {
+                        Text(role.name)
+                            .argoText(ArgoTypography.machineCaption)
+                            .frame(width: 132, alignment: .leading)
+                        Text(duration(role.motion))
+                            .argoText(ArgoTypography.machineCaption)
+                    }
+                    .foregroundStyle(argo.color.text.secondary)
+                }
+            }
+        }
+    }
+
     private func section(
         _ title: String,
-        @ViewBuilder content: () -> some View
-    ) -> some View {
+        @ViewBuilder content: () -> some View,
+    )
+        -> some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
             Text(title)
                 .argoText(ArgoTypography.sectionLabel)

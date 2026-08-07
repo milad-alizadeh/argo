@@ -24,7 +24,7 @@ public struct ArgoColor: Sendable, Hashable {
             red: Double((hex >> 16) & 0xFF) / 255,
             green: Double((hex >> 8) & 0xFF) / 255,
             blue: Double(hex & 0xFF) / 255,
-            opacity: opacity
+            opacity: opacity,
         )
     }
 
@@ -37,8 +37,8 @@ public struct ArgoColor: Sendable, Hashable {
     }
 }
 
-// Lets a role be spelled straight into `.fill`, `.background` and `.foregroundStyle`
-// without a `.color` at every call site.
+/// Lets a role be spelled straight into `.fill`, `.background` and `.foregroundStyle`
+/// without a `.color` at every call site.
 extension ArgoColor: ShapeStyle {
     public func resolve(in _: EnvironmentValues) -> Color.Resolved {
         Color.Resolved(
@@ -46,7 +46,7 @@ extension ArgoColor: ShapeStyle {
             red: Float(red),
             green: Float(green),
             blue: Float(blue),
-            opacity: Float(opacity)
+            opacity: Float(opacity),
         )
     }
 }
@@ -67,7 +67,7 @@ public extension ArgoColor {
             red: red * opacity + backdrop.red * (1 - opacity),
             green: green * opacity + backdrop.green * (1 - opacity),
             blue: blue * opacity + backdrop.blue * (1 - opacity),
-            opacity: 1
+            opacity: 1,
         )
     }
 
@@ -89,9 +89,9 @@ public extension ArgoColor {
     /// Euclidean distance in sRGB. Crude as colour science, sufficient as a guard that two
     /// operational states never resolve to near-neighbours a glance would fuse.
     func distance(to other: ArgoColor) -> Double {
-        let dr = red - other.red
-        let dg = green - other.green
-        let db = blue - other.blue
-        return (dr * dr + dg * dg + db * db).squareRoot()
+        let deltaRed = red - other.red
+        let deltaGreen = green - other.green
+        let deltaBlue = blue - other.blue
+        return (deltaRed * deltaRed + deltaGreen * deltaGreen + deltaBlue * deltaBlue).squareRoot()
     }
 }

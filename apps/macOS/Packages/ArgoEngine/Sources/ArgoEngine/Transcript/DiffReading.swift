@@ -19,7 +19,7 @@ private func hunk(_ raw: JSONValue) -> DiffHunk? {
     return DiffHunk(
         oldStart: raw["oldStart"]?.int ?? 0,
         newStart: raw["newStart"]?.int ?? 0,
-        lines: lines
+        lines: lines,
     )
 }
 
@@ -28,12 +28,14 @@ private func hunk(_ raw: JSONValue) -> DiffHunk? {
 private func wholeFileHunk(_ content: String) -> DiffHunk? {
     var lines = content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
     // A trailing newline splits into a final empty element that is not a line of the file.
-    if lines.last == "" { lines.removeLast() }
+    if lines.last?.isEmpty == true {
+        lines.removeLast()
+    }
     guard !lines.isEmpty else { return nil }
     return DiffHunk(
         oldStart: 0,
         newStart: 1,
-        lines: lines.map { DiffLine(side: .add, text: $0) }
+        lines: lines.map { DiffLine(side: .add, text: $0) },
     )
 }
 
@@ -47,8 +49,12 @@ private func count(_ hunks: [DiffHunk], _ side: DiffLineSide) -> Int {
 /// a delete tool, so that shape is the only evidence one leaves. `modify` is the fallback — neither
 /// creation nor deletion is worth claiming from an absence of evidence.
 private func fileChange(_ hunks: [DiffHunk], before: String, after: String?) -> FileChange {
-    if before.isEmpty, count(hunks, .add) > 0 { return .create }
-    if !before.isEmpty, after == "" { return .delete }
+    if before.isEmpty, count(hunks, .add) > 0 {
+        return .create
+    }
+    if !before.isEmpty, after?.isEmpty == true {
+        return .delete
+    }
     let removesOnly = !hunks.isEmpty && count(hunks, .add) + count(hunks, .context) == 0
     return removesOnly ? .delete : .modify
 }
@@ -83,6 +89,6 @@ func diffEvidence(from raw: JSONValue?) -> DiffEvidence? {
             ?? fileChange(hunks, before: raw.stringField("originalFile") ?? "", after: after),
         added: count(hunks, .add),
         removed: count(hunks, .del),
-        hunks: hunks
+        hunks: hunks,
     )
 }

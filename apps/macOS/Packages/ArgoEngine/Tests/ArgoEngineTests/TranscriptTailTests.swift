@@ -1,6 +1,6 @@
+@testable import ArgoEngine
 import Foundation
 import Testing
-@testable import ArgoEngine
 
 // Following a file that is still being written. These exercise the two hazards a whole-file re-read
 // never had: a record can be half-written when the watcher fires, and a file can be replaced under
@@ -13,7 +13,7 @@ struct TranscriptTailTests {
         let url: URL
 
         init(_ contents: String = "") throws {
-            url = URL(fileURLWithPath: NSTemporaryDirectory())
+            self.url = URL(fileURLWithPath: NSTemporaryDirectory())
                 .appendingPathComponent("argo-tail-\(UUID().uuidString).jsonl")
             try contents.write(to: url, atomically: true, encoding: .utf8)
         }
@@ -29,13 +29,20 @@ struct TranscriptTailTests {
     }
 
     /// The first `count` lines the tail yields, or whatever arrived before the deadline.
-    private func firstLines(_ count: Int, of url: URL, timeout: Duration = .seconds(5)) async -> [String] {
+    private func firstLines(
+        _ count: Int,
+        of url: URL,
+        timeout: Duration = .seconds(5),
+    ) async
+        -> [String] {
         await withTaskGroup(of: [String]?.self) { group in
             group.addTask {
                 var lines: [String] = []
                 for await line in transcriptLines(at: url) {
                     lines.append(line)
-                    if lines.count == count { return lines }
+                    if lines.count == count {
+                        return lines
+                    }
                 }
                 return lines
             }
@@ -43,14 +50,14 @@ struct TranscriptTailTests {
                 try? await Task.sleep(for: timeout)
                 return nil
             }
-            let first = await group.next() ?? nil
+            let first = await group.next().flatMap(\.self)
             group.cancelAll()
             return first ?? []
         }
     }
 
-    @Test("Lines already in the file are read without waiting for a write")
-    func existingLinesAreRead() async throws {
+    @Test
+    func `Lines already in the file are read without waiting for a write`() async throws {
         let file = try ScratchFile("{\"type\": \"ai-title\", \"aiTitle\": \"first\"}\n")
 
         let lines = await firstLines(1, of: file.url)
@@ -60,8 +67,8 @@ struct TranscriptTailTests {
         #expect(lines == ["{\"type\": \"ai-title\", \"aiTitle\": \"first\"}"])
     }
 
-    @Test("A line appended after the tail started arrives")
-    func appendedLinesArrive() async throws {
+    @Test
+    func `A line appended after the tail started arrives`() async throws {
         let file = try ScratchFile("{\"type\": \"ai-title\", \"aiTitle\": \"first\"}\n")
 
         async let tailed = firstLines(2, of: file.url)
@@ -72,8 +79,8 @@ struct TranscriptTailTests {
         #expect(await tailed.last == "{\"type\": \"ai-title\", \"aiTitle\": \"second\"}")
     }
 
-    @Test("A half-written record is carried, not parsed")
-    func partialLinesAreHeldBack() async throws {
+    @Test
+    func `A half-written record is carried, not parsed`() async throws {
         let file = try ScratchFile()
 
         async let tailed = firstLines(1, of: file.url)

@@ -61,7 +61,11 @@ public extension ArgoMotion {
     /// A popover, a disclosure, an expanding piece of evidence.
     static let reveal = ArgoMotion(duration: 0.22, curve: .easeOut, reducedDuration: 0.10)
     /// The Dock latching open or closed.
-    static let latch = ArgoMotion(duration: 0.32, curve: .spring(damping: 0.86), reducedDuration: nil)
+    static let latch = ArgoMotion(
+        duration: 0.32,
+        curve: .spring(damping: 0.86),
+        reducedDuration: nil,
+    )
     /// Attention arriving: a brightness bloom, once, then still.
     static let bloom = ArgoMotion(duration: 0.42, curve: .easeInOut, reducedDuration: 0.14)
 

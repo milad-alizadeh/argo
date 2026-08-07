@@ -45,7 +45,9 @@ extension ContentBlock {
     /// prompt and an array only when there is more than prose to carry.
     static func blocks(from content: JSONValue?) -> [ContentBlock] {
         guard let content else { return [] }
-        if let text = content.string { return [.text(text)] }
+        if let text = content.string {
+            return [.text(text)]
+        }
         return content.array.map(ContentBlock.init(part:))
     }
 
@@ -73,7 +75,7 @@ extension ContentBlock {
             return .unreadable
         }
         return .toolUse(
-            ToolUseBlock(id: id, name: name, input: part["input"] ?? .null)
+            ToolUseBlock(id: id, name: name, input: part["input"] ?? .null),
         )
     }
 
@@ -85,8 +87,8 @@ extension ContentBlock {
                 content: part["content"] ?? .null,
                 // Only an explicit `true` is a failure. A missing flag is a call that did not say
                 // it failed, which is not the same as one that said it succeeded.
-                isError: part["is_error"]?.bool == true
-            )
+                isError: part["is_error"]?.bool == true,
+            ),
         )
     }
 
@@ -96,7 +98,10 @@ extension ContentBlock {
         guard let source = part["source"],
               let mediaType = imageMediaType(source.stringField("media_type"))
         else { return .unreadable }
-        return .image(ImageBlock(mediaType: mediaType, base64: presentBytes(source.stringField("data"))))
+        return .image(ImageBlock(
+            mediaType: mediaType,
+            base64: presentBytes(source.stringField("data")),
+        ))
     }
 }
 

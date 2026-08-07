@@ -1,6 +1,5 @@
-import Testing
-
 @testable import ArgoUI
+import Testing
 
 /// The claims the contract makes about itself. They exist because every one of them is a
 /// rule a future view or a future colour tweak could break silently: nothing about a hex
@@ -11,22 +10,22 @@ struct VisualContractTests {
 
     // MARK: - The graphite ramp
 
-    @Test("the neutral ramp is grey, not navy")
-    func neutralRampIsGrey() {
+    @Test
+    func `the neutral ramp is grey, not navy`() {
         for surface in palette.surface.ramp {
             #expect(surface.chromaticSpread <= 0.05)
             #expect(surface.blue - surface.red <= 0.05)
         }
     }
 
-    @Test("the neutral ramp is near-black at its base")
-    func neutralRampIsNearBlack() {
+    @Test
+    func `the neutral ramp is near-black at its base`() {
         #expect(palette.surface.base.relativeLuminance < 0.02)
         #expect(palette.surface.sunken.relativeLuminance < palette.surface.base.relativeLuminance)
     }
 
-    @Test("the ramp rises step by step, so depth can be read off tone alone")
-    func rampIsMonotonic() {
+    @Test
+    func `the ramp rises step by step, so depth can be read off tone alone`() {
         let luminances = palette.surface.ramp.map(\.relativeLuminance)
         #expect(luminances == luminances.sorted())
         #expect(Set(luminances).count == luminances.count)
@@ -34,27 +33,27 @@ struct VisualContractTests {
 
     // MARK: - Ion Blue is brand, never status
 
-    @Test("no operational state resolves anywhere near the brand hue")
-    func statesAreNotBrand() {
+    @Test
+    func `no operational state resolves anywhere near the brand hue`() {
         for state in palette.state.all {
             #expect(state.distance(to: palette.interaction.accent) > 0.25)
         }
     }
 
-    @Test("selection and focus are the brand hue")
-    func selectionAndFocusAreBrand() {
+    @Test
+    func `selection and focus are the brand hue`() {
         #expect(palette.interaction.selectionIndicator == palette.interaction.accent)
         #expect(palette.interaction.focusRing == palette.interaction.accentBright)
     }
 
-    @Test("the selected row's wash is neutral — the brand is the indicator, not the fill")
-    func selectionWashIsNeutral() {
+    @Test
+    func `the selected row's wash is neutral — the brand is the indicator, not the fill`() {
         let wash = palette.surface.selected.composited(over: palette.surface.base)
         #expect(wash.chromaticSpread <= 0.05)
     }
 
-    @Test("no two operational states are near-neighbours")
-    func statesAreMutuallyDistinct() {
+    @Test
+    func `no two operational states are near-neighbours`() {
         let states = palette.state.all
         for (index, state) in states.enumerated() {
             for other in states[(index + 1)...] {
@@ -63,54 +62,54 @@ struct VisualContractTests {
         }
     }
 
-    @Test("idle is a neutral slate — finished work recedes, it does not celebrate")
-    func idleIsNeutral() {
+    @Test
+    func `idle is a neutral slate — finished work recedes, it does not celebrate`() {
         #expect(palette.state.idle.chromaticSpread <= 0.08)
     }
 
     // MARK: - Legibility
 
-    @Test("text roles clear their contrast floor on the deck")
-    func textIsLegible() {
+    @Test
+    func `text roles clear their contrast floor on the deck`() {
         let base = palette.surface.base
         #expect(palette.text.primary.contrastRatio(on: base) >= 7)
         #expect(palette.text.secondary.contrastRatio(on: base) >= 4.5)
         #expect(palette.text.tertiary.contrastRatio(on: base) >= 4.5)
     }
 
-    @Test("every state ink and the accent stay legible as a word, not just as a dot")
-    func stateInksAreLegible() {
+    @Test
+    func `every state ink and the accent stay legible as a word, not just as a dot`() {
         let base = palette.surface.base
         for ink in palette.state.all + [palette.interaction.accent] {
             #expect(ink.contrastRatio(on: base) >= 4.5)
         }
     }
 
-    @Test("text on an accent fill is legible")
-    func textOnAccentIsLegible() {
+    @Test
+    func `text on an accent fill is legible`() {
         #expect(palette.text.onAccent.contrastRatio(on: palette.interaction.accent) >= 4.5)
     }
 
     // MARK: - Typography
 
-    @Test("the serif is confined to identity")
-    func serifIsConfinedToIdentity() {
+    @Test
+    func `the serif is confined to identity`() {
         let identityRoles = ArgoTypography.all
             .filter { $0.style.typeface == .identity }
             .map(\.name)
         #expect(identityRoles == ["sessionTitle", "identityHeading"])
     }
 
-    @Test("the mono is confined to machine facts")
-    func monoIsConfinedToMachineFacts() {
+    @Test
+    func `the mono is confined to machine facts`() {
         let machineRoles = ArgoTypography.all
             .filter { $0.style.typeface == .machine }
             .map(\.name)
         #expect(machineRoles == ["machine", "machineEmphasis", "machineCaption"])
     }
 
-    @Test("every role sits on the dense ladder the cockpit is built at")
-    func sizesStayDense() {
+    @Test
+    func `every role sits on the dense ladder the cockpit is built at`() {
         for role in ArgoTypography.all {
             #expect(role.style.size >= 10 && role.style.size <= 20)
         }
@@ -118,14 +117,14 @@ struct VisualContractTests {
 
     // MARK: - Depth
 
-    @Test("only genuinely floating surfaces cast a shadow")
-    func shadowIsRationed() {
+    @Test
+    func `only genuinely floating surfaces cast a shadow`() {
         let shadowed = ArgoElevation.all.filter(\.elevation.castsShadow).map(\.name)
         #expect(shadowed == ["popover", "dragged"])
     }
 
-    @Test("the shadows that exist stay soft")
-    func shadowsStaySoft() {
+    @Test
+    func `the shadows that exist stay soft`() {
         for rung in ArgoElevation.all {
             #expect(rung.elevation.opacity <= 0.45)
             #expect(rung.elevation.blur <= 28)
@@ -134,28 +133,29 @@ struct VisualContractTests {
 
     // MARK: - Motion
 
-    @Test("no motion role outlasts feedback")
-    func motionIsBrief() {
+    @Test
+    func `no motion role outlasts feedback`() {
         for role in ArgoMotion.all {
             #expect(role.motion.duration <= ArgoMotion.durationCeiling)
         }
     }
 
-    @Test("the Reduce Motion variant never takes longer than the full one")
-    func reducedMotionIsNeverSlower() {
+    @Test
+    func `the Reduce Motion variant never takes longer than the full one`() {
         for role in ArgoMotion.all {
             guard let reduced = role.motion.reducedDuration else { continue }
             #expect(reduced <= role.motion.duration)
         }
     }
 
-    @Test("Reduce Motion resolves for every role without a call site deciding")
-    func reducedMotionIsDefinedForEveryRole() {
+    @Test
+    func `Reduce Motion resolves for every role without a call site deciding`() {
         for role in ArgoMotion.all {
             let full = role.motion.resolved(reduceMotion: false)
             #expect(full != nil)
             // A nil reduced animation is a decision, not a gap: the change lands instantly.
-            #expect(role.motion.resolved(reduceMotion: true) == nil || role.motion.reducedDuration != nil)
+            #expect(role.motion.resolved(reduceMotion: true) == nil || role.motion
+                .reducedDuration != nil)
         }
     }
 }

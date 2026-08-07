@@ -16,7 +16,9 @@ public struct ArgoElevation: Sendable {
         self.opacity = opacity
     }
 
-    public var castsShadow: Bool { opacity > 0 }
+    public var castsShadow: Bool {
+        opacity > 0
+    }
 }
 
 public extension ArgoElevation {
@@ -42,7 +44,7 @@ public extension View {
         shadow(
             color: .black.opacity(elevation.opacity),
             radius: elevation.blur,
-            y: elevation.yOffset
+            y: elevation.yOffset,
         )
     }
 }

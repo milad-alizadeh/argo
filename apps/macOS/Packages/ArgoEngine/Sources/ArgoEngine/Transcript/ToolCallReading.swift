@@ -43,7 +43,9 @@ private let targetKeys = ["file_path", "path", "command", "pattern", "url", "des
 
 func toolCallTarget(_ input: JSONValue) -> String? {
     for key in targetKeys {
-        if let value = input.stringField(key) { return value }
+        if let value = input.stringField(key) {
+            return value
+        }
     }
     return nil
 }

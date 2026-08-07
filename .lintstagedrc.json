@@ -1,4 +1,10 @@
 {
   "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}": "biome check --write --no-errors-on-unmatched",
-  "apps/desktop/src/renderer/src/**/*.{ts,tsx,css}": "sh scripts/check-design-tokens.sh"
+  "apps/desktop/src/renderer/src/**/*.{ts,tsx,css}": "sh scripts/check-design-tokens.sh",
+  "apps/macOS/**/*.swift": [
+    "sh scripts/swift-format.sh",
+    "sh scripts/swift-lint.sh",
+    "sh scripts/swift-boundaries.sh"
+  ],
+  "apps/macOS/{Argo,Packages/ArgoUI/Sources}/**/*.swift": "sh scripts/check-design-tokens-swift.sh"
 }

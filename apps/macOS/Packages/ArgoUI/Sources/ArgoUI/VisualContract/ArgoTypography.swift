@@ -30,7 +30,7 @@ public struct ArgoTextStyle: Sendable {
         typeface: ArgoTypeface,
         size: CGFloat,
         weight: Font.Weight,
-        tracking: CGFloat = 0
+        tracking: CGFloat = 0,
     ) {
         self.typeface = typeface
         self.size = size
@@ -50,11 +50,15 @@ public enum ArgoTypography {
     /// The one place the serif carries a whole line.
     public static let sessionTitle = ArgoTextStyle(typeface: .identity, size: 20, weight: .semibold)
     /// A rare identity heading — a Project name, an empty-state title.
-    public static let identityHeading = ArgoTextStyle(typeface: .identity, size: 15, weight: .semibold)
+    public static let identityHeading = ArgoTextStyle(
+        typeface: .identity,
+        size: 15,
+        weight: .semibold,
+    )
 
     /// Sidebar and rail group labels.
     public static let sectionLabel = ArgoTextStyle(
-        typeface: .interface, size: 11, weight: .semibold, tracking: 0.6
+        typeface: .interface, size: 11, weight: .semibold, tracking: 0.6,
     )
     /// A Session row's primary line.
     public static let rowTitle = ArgoTextStyle(typeface: .interface, size: 13, weight: .medium)
@@ -67,8 +71,16 @@ public enum ArgoTypography {
 
     /// Branch, HEAD, elapsed, token counts.
     public static let machine = ArgoTextStyle(typeface: .machine, size: 11.5, weight: .regular)
-    public static let machineEmphasis = ArgoTextStyle(typeface: .machine, size: 11.5, weight: .medium)
-    public static let machineCaption = ArgoTextStyle(typeface: .machine, size: 10.5, weight: .regular)
+    public static let machineEmphasis = ArgoTextStyle(
+        typeface: .machine,
+        size: 11.5,
+        weight: .medium,
+    )
+    public static let machineCaption = ArgoTextStyle(
+        typeface: .machine,
+        size: 10.5,
+        weight: .regular,
+    )
 
     /// Every role, for contract assertions and the specimen.
     public static let all: [(name: String, style: ArgoTextStyle)] = [
