@@ -1,45 +1,68 @@
 import SwiftUI
 
-/// The active Project at the leading edge of the continuous native sidebar.
+/// The registered set at the leading edge of the continuous native sidebar, one mark per Project.
 struct ProjectStrip: View {
     @Environment(\.argo) private var argo
-    @Environment(\.controlActiveState) private var activeState
 
-    let project: CockpitPresentation.Project
+    let projects: [CockpitPresentation.Project]
+    let activeProjectID: CockpitPresentation.Project.ID?
+    let selectProject: (CockpitPresentation.Project.ID) -> Void
+    let addProject: () -> Void
+    let locateProject: (CockpitPresentation.Project.ID) -> Void
 
     var body: some View {
         VStack(spacing: ArgoSpacing.base) {
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: ArgoRadius.control)
-                    .fill(argo.color.surface.selected)
-                Rectangle()
-                    .fill(selectionInk)
-                    .frame(width: ArgoStroke.indicator)
-                Text(String(project.name.prefix(1)).uppercased())
-                    .argoText(ArgoTypography.identityHeading)
-                    .frame(maxWidth: .infinity)
+            ForEach(projects) { project in
+                ProjectMark(
+                    project: project,
+                    isActive: project.id == activeProjectID,
+                    select: { selectProject(project.id) },
+                    locate: { locateProject(project.id) },
+                )
             }
-            .frame(width: ArgoLayout.projectMarkSize, height: ArgoLayout.projectMarkSize)
-            .help(project.location)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Selected Project, \(project.name)")
+            addButton
             Spacer()
         }
         .padding(.top, ArgoSpacing.loose)
         .frame(width: ArgoLayout.projectStripWidth)
     }
 
-    private var selectionInk: ArgoColor {
-        switch activeState {
-        case .key, .active: argo.color.interaction.selectionIndicator
-        case .inactive: argo.color.text.tertiary
-        @unknown default: argo.color.text.tertiary
+    /// Registration is the act that creates a Project, so it needs an affordance — and on a machine
+    /// that has registered nothing this is the only one on screen.
+    private var addButton: some View {
+        Button(action: addProject) {
+            Image(systemName: "plus")
+                .argoText(ArgoTypography.control)
+                .foregroundStyle(argo.color.text.tertiary)
+                .frame(width: ArgoLayout.projectMarkSize, height: ArgoLayout.projectMarkSize)
+                .contentShape(RoundedRectangle(cornerRadius: ArgoRadius.control))
         }
+        .buttonStyle(.plain)
+        .help("Register a Project")
+        .accessibilityLabel("Register a Project")
     }
 }
 
 #Preview("Project strip") {
-    ProjectStrip(project: CockpitPresentation.preview.project)
-        .frame(height: 480)
-        .argoAppearance()
+    ProjectStrip(
+        projects: CockpitPresentation.preview.projects,
+        activeProjectID: CockpitPresentation.preview.activeProjectID,
+        selectProject: { _ in },
+        addProject: {},
+        locateProject: { _ in },
+    )
+    .frame(height: 480)
+    .argoAppearance()
+}
+
+#Preview("Project strip — nothing registered") {
+    ProjectStrip(
+        projects: [],
+        activeProjectID: nil,
+        selectProject: { _ in },
+        addProject: {},
+        locateProject: { _ in },
+    )
+    .frame(height: 480)
+    .argoAppearance()
 }

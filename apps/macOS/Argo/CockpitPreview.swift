@@ -9,7 +9,7 @@ import SwiftUI
 
     CockpitView(
         presentation: .preview,
-        actions: CockpitActions(refreshCheckout: {}, retryConnection: {}),
+        actions: .inert,
     )
     .environment(navigation)
     .frame(width: 1280, height: 800)

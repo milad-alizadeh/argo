@@ -1,20 +1,17 @@
 import SwiftUI
 
-/// Which of the three system families a role is set in. Named rather than inlined as a
+/// Which of the two system families a role is set in. Named rather than inlined as a
 /// `Font.Design` so the contract can assert where each family is allowed to appear — the
-/// serif is the rule most easily broken by a hurried view.
+/// sans/mono split is the rule most easily broken by a hurried view.
 public enum ArgoTypeface: Sendable, CaseIterable {
-    /// SF Pro. Everything the interface says in its own voice.
+    /// SF Pro. Everything the interface says in its own voice, identity lines included.
     case interface
-    /// New York. The Session title and the rare identity heading, nowhere else.
-    case identity
     /// SF Mono. Machine facts: branches, SHAs, paths, counts, command text.
     case machine
 
     var design: Font.Design {
         switch self {
         case .interface: .default
-        case .identity: .serif
         case .machine: .monospaced
         }
     }
@@ -47,11 +44,15 @@ public struct ArgoTextStyle: Sendable {
 /// dense observation surface where a Session row, a machine fact and a feed line have to
 /// stay in a shared rhythm.
 public enum ArgoTypography {
-    /// The one place the serif carries a whole line.
-    public static let sessionTitle = ArgoTextStyle(typeface: .identity, size: 20, weight: .semibold)
+    /// The largest line in the cockpit: a Session's own title.
+    public static let sessionTitle = ArgoTextStyle(
+        typeface: .interface,
+        size: 20,
+        weight: .semibold,
+    )
     /// A rare identity heading — a Project name, an empty-state title.
     public static let identityHeading = ArgoTextStyle(
-        typeface: .identity,
+        typeface: .interface,
         size: 15,
         weight: .semibold,
     )

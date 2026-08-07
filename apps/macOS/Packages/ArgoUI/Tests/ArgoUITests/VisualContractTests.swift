@@ -92,12 +92,17 @@ struct VisualContractTests {
 
     // MARK: - Typography
 
+    /// One sans for everything the interface says, one mono for machine facts. A third family
+    /// would be a voice the cockpit has no third job for.
     @Test
-    func `the serif is confined to identity`() {
-        let identityRoles = ArgoTypography.all
-            .filter { $0.style.typeface == .identity }
+    func `the interface speaks in one sans, machine facts aside`() {
+        let interfaceRoles = ArgoTypography.all
+            .filter { $0.style.typeface == .interface }
             .map(\.name)
-        #expect(identityRoles == ["sessionTitle", "identityHeading"])
+        #expect(interfaceRoles == [
+            "sessionTitle", "identityHeading", "sectionLabel", "rowTitle", "rowMeta", "body",
+            "control", "caption",
+        ])
     }
 
     @Test
@@ -149,7 +154,7 @@ struct VisualContractTests {
     }
 
     @Test
-    func `Reduce Motion resolves for every role without a call site deciding`() {
+    func `every role resolves under Reduce Motion without a call site deciding`() {
         for role in ArgoMotion.all {
             let full = role.motion.resolved(reduceMotion: false)
             #expect(full != nil)

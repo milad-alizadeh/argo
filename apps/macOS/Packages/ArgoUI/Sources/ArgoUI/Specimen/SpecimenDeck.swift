@@ -26,8 +26,8 @@ struct SpecimenDeck: View {
         .argoDeckSurface()
     }
 
-    /// The one place the serif carries a whole line, with the machine facts in mono beside
-    /// it — the two families doing the two jobs the contract gives them.
+    /// The largest interface line in the cockpit, with the machine facts in mono beside it —
+    /// the two families doing the two jobs the contract gives them.
     private var header: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
             HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.comfortable) {

@@ -21,12 +21,16 @@ public struct CockpitView: View {
         @Bindable var navigation = navigation
 
         NavigationSplitView {
-            ShellSidebar(presentation: presentation, selection: $navigation.session)
-                .navigationSplitViewColumnWidth(
-                    min: ArgoLayout.sidebarMinimumWidth,
-                    ideal: ArgoLayout.sidebarIdealWidth,
-                    max: ArgoLayout.sidebarMaximumWidth,
-                )
+            ShellSidebar(
+                presentation: presentation,
+                actions: actions,
+                selection: $navigation.session,
+            )
+            .navigationSplitViewColumnWidth(
+                min: ArgoLayout.sidebarMinimumWidth,
+                ideal: ArgoLayout.sidebarIdealWidth,
+                max: ArgoLayout.sidebarMaximumWidth,
+            )
         } detail: {
             InstrumentDeckShell(room: navigation.room)
                 .overlay(alignment: .topLeading) {
@@ -39,7 +43,7 @@ public struct CockpitView: View {
                     }
                 }
         }
-        .navigationTitle(presentation.project.name)
+        .navigationTitle(presentation.activeProject?.name ?? "Argo")
         .toolbar {
             ShellToolbar(room: $navigation.room, presentation: presentation, actions: actions)
         }
@@ -60,7 +64,7 @@ public struct CockpitView: View {
 
     CockpitView(
         presentation: .preview,
-        actions: CockpitActions(refreshCheckout: {}, retryConnection: {}),
+        actions: .inert,
     )
     .environment(navigation)
     .frame(width: 1280, height: 800)
@@ -71,7 +75,7 @@ public struct CockpitView: View {
 
     CockpitView(
         presentation: .emptyPreview,
-        actions: CockpitActions(refreshCheckout: {}, retryConnection: {}),
+        actions: .inert,
     )
     .environment(navigation)
     .frame(width: 1080, height: 680)
