@@ -18,3 +18,7 @@ docs/
 # repo tooling and agent-facing skill definitions
 scripts/
 packages/argo-skills/
+
+# Xcode project metadata and asset catalogues — build config, not application code
+*.xcodeproj/
+*.xcassets/

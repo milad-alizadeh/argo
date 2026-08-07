@@ -7,7 +7,9 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!graphify-out", "!docs"]
+    // Xcode owns the JSON inside `.xcodeproj` and `.xcassets` and rewrites it on every
+    // edit — formatting it here would just trade one churn for another.
+    "includes": ["**", "!graphify-out", "!docs", "!**/*.xcodeproj", "!**/*.xcassets"]
   },
   "formatter": {
     "enabled": true,

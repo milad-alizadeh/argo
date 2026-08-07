@@ -4,6 +4,14 @@ dist/
 *.log
 .DS_Store
 
+# Xcode / SwiftPM build products and per-user editor state (apps/macOS).
+# The shared scheme under xcshareddata IS committed — xcodebuild needs it.
+DerivedData/
+apps/macOS/build/
+.build/
+.swiftpm/
+xcuserdata/
+
 # Installed skill copies are throwaway outputs of `npx skills add` —
 # skills-lock.json is committed and restores them via `npx skills experimental_install`.
 # Shared project config (settings.json, output-styles) is real source — allowlisted;
