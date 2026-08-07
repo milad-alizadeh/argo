@@ -55,7 +55,9 @@ struct ConnectionChip: View {
     }
 
     private var canRetry: Bool {
-        if case .failed = connection { return true }
+        if case .failed = connection {
+            return true
+        }
         return false
     }
 

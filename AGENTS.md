@@ -53,8 +53,10 @@ The arithmetic half of those rules is a build failure, not a review note — `bu
 carries every per-file cap (50 lines per function, cognitive complexity 15, 3 parameters, a
 150-line file ceiling counting code lines only) and the escape-hatch bans (`any`, `@ts-ignore`,
 `!`, nested ternaries); `jscpd` gates whole-tree duplication at 1%; the three placement gates
-above hold `file-structure.md`'s folder rules. CI runs all of them; pre-commit runs biome **and
-placement**.
+above hold `file-structure.md`'s folder rules. Swift has its own half — `bun run quality:swift`
+(SwiftFormat in check mode, SwiftLint, package boundaries), which needs a macOS runner and so
+lives on the `macos` CI job rather than the default Linux ones. CI runs all of them; pre-commit
+runs biome **and** placement.
 
 `scripts/placement-guard.mjs` is a `PreToolUse(Write)` hook that DENIES an agent creating a new
 file loose at a module root, before it exists. It guards the way IN only (`Write`, new files,

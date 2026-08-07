@@ -18,7 +18,7 @@ public final class Hub {
     private var recordOwners: [String: RecordOwner] = [:]
 
     public init(projectURL: URL) {
-        project = HubProject(url: projectURL)
+        self.project = HubProject(url: projectURL)
     }
 
     public func connect(using engine: Engine, configuration: LaunchConfiguration) async {
@@ -76,7 +76,9 @@ public final class Hub {
     }
 
     private func rememberOwner(of uuid: String, transcriptID: String, transcriptIndex: Int) {
-        if let existing = recordOwners[uuid], existing.transcriptIndex <= transcriptIndex { return }
+        if let existing = recordOwners[uuid], existing.transcriptIndex <= transcriptIndex {
+            return
+        }
         recordOwners[uuid] = RecordOwner(
             transcriptIndex: transcriptIndex,
             transcriptID: transcriptID,

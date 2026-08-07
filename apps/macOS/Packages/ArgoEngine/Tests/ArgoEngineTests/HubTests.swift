@@ -139,5 +139,4 @@ struct HubTests {
 
         #expect(normalized == [sourceURL.standardizedFileURL])
     }
-
 }

@@ -18,8 +18,8 @@ struct GitVessel: View {
             } icon: {
                 Image(systemName: "arrow.trianglehead.branch")
             }
-                .labelStyle(.titleAndIcon)
-                .frame(maxWidth: ArgoLayout.gitVesselMaximumWidth)
+            .labelStyle(.titleAndIcon)
+            .frame(maxWidth: ArgoLayout.gitVesselMaximumWidth)
         }
         .help("Global checkout — \(label)")
         .accessibilityLabel("Global checkout, \(accessibilityValue)")

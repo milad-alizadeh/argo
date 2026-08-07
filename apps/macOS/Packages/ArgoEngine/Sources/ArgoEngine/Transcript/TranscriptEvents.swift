@@ -4,7 +4,8 @@ import Foundation
 public func transcriptEvents(
     at url: URL,
     readImage: @escaping ImageReader = noImageReader,
-) -> AsyncStream<TranscriptEvent> {
+)
+    -> AsyncStream<TranscriptEvent> {
     let reader = TranscriptReader(readImage: readImage)
     return AsyncStream { continuation in
         let observation = Task {
