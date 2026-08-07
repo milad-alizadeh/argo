@@ -28,7 +28,8 @@ struct CockpitPresentationTests {
 
         #expect(presentation.activeProject == registered)
         #expect(presentation.checkout == CheckoutProjection.Head.unavailable)
-        #expect(presentation.connection == HubConnection.healthy)
+        // A Hub with nothing to read is not a connected one, and the shell is told which.
+        #expect(presentation.connection == HubConnection.idle)
         #expect(presentation.sessions.isEmpty)
     }
 

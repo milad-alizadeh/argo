@@ -10,7 +10,9 @@ struct HubJoin {
     /// written once per transcript event, and only the write side knows when it changed.
     private(set) var sessions: [HubSession] = []
 
-    private var transcripts: [HubTranscript] = []
+    /// In the order they joined the set, which is the order the observation projection renders and
+    /// the one record ownership is resolved by.
+    private(set) var transcripts: [HubTranscript] = []
     /// Record uuid → the id of the transcript that owns it. Keyed by id rather than by position,
     /// because dropping one transcript renumbers every position after it and would silently
     /// re-point owners at a neighbour.

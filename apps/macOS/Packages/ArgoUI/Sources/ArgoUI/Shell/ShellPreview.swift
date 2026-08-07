@@ -67,7 +67,27 @@ public extension CockpitPresentation {
             ),
         ],
         checkout: .branch("main"),
-        connection: .healthy,
+        connection: .connected,
+    )
+
+    /// A machine that has registered nothing: no Project to name, and the checkout unavailable
+    /// with it. The state first launch is in, which the chrome has to render honestly.
+    static let unregisteredPreview = CockpitPresentation(
+        projects: [],
+        activeProjectID: nil,
+        sessions: [],
+        checkout: .unavailable,
+        connection: .idle,
+    )
+
+    /// The active Project's folder has moved or gone. Still a Project, and the chrome says so in
+    /// words rather than dropping the name it is scoped to.
+    static let unreachablePreview = CockpitPresentation(
+        projects: previewProjects,
+        activeProjectID: "moved",
+        sessions: [],
+        checkout: .unavailable,
+        connection: .idle,
     )
 
     static let emptyPreview = CockpitPresentation(
@@ -75,6 +95,6 @@ public extension CockpitPresentation {
         activeProjectID: "argo",
         sessions: [],
         checkout: .detached(shortSHA: "9011669"),
-        connection: .healthy,
+        connection: .idle,
     )
 }

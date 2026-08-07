@@ -21,7 +21,7 @@ struct HubRosterTests {
 
         continuation.yield([.title("Read whole"), .model("claude-opus-5")])
         continuation.finish()
-        await hub.waitForObservation(transcriptID: "session")
+        await hubTailEnded(hub, transcriptID: "session")
 
         #expect(hub.sessions.map(\.title) == ["Read whole"])
         #expect(hub.sessions.map(\.model) == ["claude-opus-5"])
@@ -40,12 +40,12 @@ struct HubRosterTests {
 
         childEvents.yield([.headLeaf(uuid: "root-leaf"), .cwd("/tmp/worktree")])
         childEvents.finish()
-        await hub.waitForObservation(transcriptID: "child")
+        await hubTailEnded(hub, transcriptID: "child")
         #expect(hub.sessions.isEmpty)
 
         rootEvents.yield([.recordIdentity(uuid: "root-leaf"), .title("The whole session")])
         rootEvents.finish()
-        await hub.waitForObservation(transcriptID: "root")
+        await hubTailEnded(hub, transcriptID: "root")
 
         #expect(hub.sessions.map(\.id) == ["root"])
         #expect(hub.sessions[0].cwd == "/tmp/worktree")
@@ -62,7 +62,7 @@ struct HubRosterTests {
 
         await hub.startObserving(silent)
         silentEvents.finish()
-        await hub.waitForObservation(transcriptID: "silent")
+        await hubTailEnded(hub, transcriptID: "silent")
         await hubObserveToEnd(hub, spoken)
 
         #expect(hub.sessions.count == 2)
@@ -111,7 +111,6 @@ struct HubRosterTests {
     func `returning to a Project draws its roster before anything is re-read`() async throws {
         let fixture = try RecordDirectoryFixture()
         defer { fixture.remove() }
-        let engine = Engine()
         let mine = URL(fileURLWithPath: fixture.path("mine"))
         let theirs = URL(fileURLWithPath: fixture.path("theirs"))
         try fixture.write(FixtureTranscript(name: "mine", cwd: mine.path))
@@ -122,11 +121,11 @@ struct HubRosterTests {
         ))
         let hub = Hub(projectURL: mine, discovery: SessionDiscovery(store: fixture.store))
 
-        await hub.connect(using: engine, configuration: Self.pointing(at: mine))
+        await hub.connect(to: Self.pointing(at: mine))
         await hubSettle { !hub.sessions.isEmpty }
         let built = hub.sessions
-        await hub.connect(using: engine, configuration: Self.pointing(at: theirs))
-        await hub.connect(using: engine, configuration: Self.pointing(at: mine))
+        await hub.connect(to: Self.pointing(at: theirs))
+        await hub.connect(to: Self.pointing(at: mine))
 
         // Asserted with no settling at all: the roster is standing when `connect` returns.
         #expect(hub.sessions == built)

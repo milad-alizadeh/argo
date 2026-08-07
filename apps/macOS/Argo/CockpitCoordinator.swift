@@ -22,7 +22,6 @@ final class CockpitCoordinator {
     private(set) var launchOrigin: LaunchProject?
 
     let hub: Hub
-    private let engine: Engine
     private let store: ProjectRegistryStore
     private let configuration: LaunchConfiguration
 
@@ -32,10 +31,9 @@ final class CockpitCoordinator {
         store: ProjectRegistryStore = ProjectRegistryStore(),
     ) {
         self.configuration = configuration
-        self.engine = engine
         self.store = store
         self.launch = .unregistered(configuration.projectURL)
-        self.hub = Hub(projectURL: configuration.projectURL)
+        self.hub = Hub(projectURL: configuration.projectURL, engine: engine)
     }
 
     /// Read the registry, then point the Hub at whatever the launch resolves to. The read comes
@@ -88,15 +86,19 @@ final class CockpitCoordinator {
         await point(at: .registered(record))
     }
 
+    /// The Hub is asked to refresh itself rather than told where to look: it is the one that knows
+    /// which Project it is on, and `launch.url` is the folder the strip names, not the repo the
+    /// checkout was read from.
     func refreshCheckout() async {
-        await hub.refreshCheckout(using: engine, at: launch.url)
+        await hub.refreshCheckout()
     }
 
     /// Retrying re-points at the Project already on screen, rather than re-running the launch: what
     /// failed is this Project's connection, and a retry that quietly moved you would be a worse
-    /// answer than the failure.
+    /// answer than the failure. The Hub holds what it was pointed with, so nothing is rebuilt here
+    /// that could come out different.
     func retryConnection() async {
-        await point(at: launch)
+        await hub.reconnect()
     }
 
     /// A launch may name, or start in, any folder inside a repository, while the registry holds
@@ -121,7 +123,7 @@ final class CockpitCoordinator {
     private func point(at project: LaunchProject) async {
         launch = project
         let isLaunchTarget = project.url == launchOrigin?.url
-        await hub.connect(using: engine, configuration: LaunchConfiguration(
+        await hub.connect(to: LaunchConfiguration(
             projectURL: project.url,
             transcriptURLs: isLaunchTarget ? configuration.transcriptURLs : [],
         ))

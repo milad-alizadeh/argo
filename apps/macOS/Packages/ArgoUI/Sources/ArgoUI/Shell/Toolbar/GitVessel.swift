@@ -1,6 +1,9 @@
 import SwiftUI
 
 /// The global primary checkout, kept separate from the selected Session's branch fact.
+///
+/// It applies no glass of its own: the toolbar supplies Liquid Glass, and a hand-rolled capsule
+/// here would defeat the group that merges this half with the Project into one vessel.
 struct GitVessel: View {
     let checkout: CockpitPresentation.Checkout
     let refresh: () -> Void
@@ -23,7 +26,6 @@ struct GitVessel: View {
         }
         .help("Global checkout — \(label)")
         .accessibilityLabel("Global checkout, \(accessibilityValue)")
-        .glassEffect(.regular.interactive(), in: Capsule())
     }
 
     private var label: String {

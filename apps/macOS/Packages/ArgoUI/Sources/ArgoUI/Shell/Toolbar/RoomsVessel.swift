@@ -1,6 +1,8 @@
 import SwiftUI
 
-/// The room switcher as one interactive native Liquid Glass vessel.
+/// The room switcher as one interactive native Liquid Glass vessel, pinned to the toolbar's
+/// trailing edge. The glass is the toolbar's — applying it here would merge nothing and would make
+/// a merged scope cluster indistinguishable from two adjacent capsules.
 struct RoomsVessel: View {
     @Binding var selection: CockpitRoom
 
@@ -17,7 +19,6 @@ struct RoomsVessel: View {
         .labelStyle(.titleAndIcon)
         .argoText(ArgoTypography.control)
         .accessibilityLabel("Rooms")
-        .glassEffect(.regular.interactive(), in: Capsule())
     }
 }
 
