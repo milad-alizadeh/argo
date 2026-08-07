@@ -210,9 +210,9 @@ else's tree that looks entirely plausible. Screen Recording permission is requir
 a terminal captures another process's window; without it the PNG comes out blank.
 
 This renders whole app states, not components in isolation. There is no per-state harness yet —
-SwiftUI's `#Preview` is the story equivalent but cannot be screenshotted headlessly, so a gallery
-target that renders one named state and exits is what closes that gap when ArgoUI has components
-with states worth isolating.
+SwiftUI's `#Preview` is the story equivalent but cannot be screenshotted headlessly. `ArgoUI`'s
+`Specimen/` views are the nearest thing; a target that renders one named specimen and exits is
+what closes the gap.
 
 ## Tooling (RTK)
 

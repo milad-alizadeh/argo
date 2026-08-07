@@ -8,14 +8,20 @@
 set -eu
 
 if [ "$(uname -s)" != "Darwin" ]; then
-  echo "swift-test: not macOS — skipping ArgoEngine (CI is Linux; the suite runs locally)"
+  echo "swift-test: not macOS — skipping the Swift suites (CI is Linux; they run locally)"
   exit 0
 fi
 
 if ! command -v swift >/dev/null 2>&1; then
-  echo "swift-test: no Swift toolchain — skipping ArgoEngine (install Xcode to run it)"
+  echo "swift-test: no Swift toolchain — skipping the Swift suites (install Xcode to run them)"
   exit 0
 fi
 
-cd "$(dirname "$0")/../Packages/ArgoEngine"
-exec swift test
+APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
+
+# Both packages, not just the engine: ArgoUI carries the visual contract's tests (#375), and
+# a `test` script that silently covered one of the two would be worse than none.
+for package in ArgoEngine ArgoUI; do
+  echo "swift-test: $package"
+  (cd "$APP_DIR/Packages/$package" && swift test)
+done

@@ -14,6 +14,8 @@ Packages/
     Transcript/     the untrusted-input boundary: one .jsonl becomes typed events
     argo-observe/   the CLI that tails a transcript and prints what it reads
   ArgoUI/           shared visual components. No engine dependency
+    VisualContract/ the palette, type, geometry, elevation and motion roles (#375)
+    Specimen/       throwaway views that show the contract on real surfaces
 ```
 
 `Argo/` is a **file-system-synchronized group**: the project file does not enumerate its
@@ -67,7 +69,7 @@ pre-commit on staged `.swift` files, and `bun run quality` runs the lot over the
 | Formatting | SwiftFormat | `.swiftformat` |
 | The caps and the escape-hatch bans | SwiftLint, every rule an error | `.swiftlint.yml` (+ a nested one under `Packages/ArgoEngine/Tests`) |
 | Package layering | `scripts/swift-boundaries.sh` | the three edges below |
-| Design tokens | `scripts/check-design-tokens-swift.sh` | `Packages/ArgoUI/Sources/ArgoUI/Tokens/` |
+| Design tokens | `scripts/check-design-tokens-swift.sh` | `Packages/ArgoUI/Sources/ArgoUI/VisualContract/` |
 | Duplication | `jscpd`, Swift included | `.jscpd.json` |
 
 The numbers are `biome.jsonc`'s numbers: a 200-line function is as unreadable in Swift as in
@@ -79,11 +81,10 @@ than review notes: **ArgoUI** never imports ArgoEngine, **ArgoEngine** never imp
 framework, and the **app target** declares no `View` — everything with logic in it belongs in a
 package, where a test can reach it.
 
-Colours, type, spacing, radii and motion come from `ArgoUI/Tokens/` — the same contract
-`apps/desktop/src/renderer/src/styles/argo-tokens.css` carries, so the two renderings of Argo
-cannot drift into two palettes. It is bound for **dark only**: Penumbra is drawn in the dark and
-this app has no light surfaces yet. The typeface is provisional — the contract's sizes, weights,
-leading and tracking are exact, but Inter is not in the bundle yet, so the system face stands in.
+Colours, type, geometry, elevation and motion come from `ArgoUI/VisualContract/` (#375), and the
+guard's only job is to keep every other file naming a role instead of writing a value down.
+`VisualContract/` is exempt because it IS the contract; `Specimen/` is exempt for the opposite
+reason — a specimen exists to show what a role is worth, and it ships in no screen.
 
 ## Screenshots
 

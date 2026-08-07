@@ -6,5 +6,6 @@
 # removes it. The list may only shrink — the fix is Palette/TypeRole/Space, never a
 # pattern added here to keep a commit moving.
 #
-# Empty on purpose. Tokens/ is already exempt in the script itself, because it IS the
-# contract.
+# Empty on purpose. VisualContract/ and Specimen/ are already exempt in the script itself —
+# the first because it IS the contract, the second because a specimen's whole job is to show
+# what a role is worth.

@@ -9,8 +9,10 @@
 # usually a content measure rather than a design constant, and not at computed expressions.
 # The rest is the design-system rule's job, and review's.
 #
-# Tokens/ is exempt because it IS the contract: the ramps are the one place a literal colour
-# is allowed to be written down.
+# VisualContract/ is exempt because it IS the contract (#375): the ramps and roles are the one
+# place a literal colour, size or step is allowed to be written down. Specimen/ is exempt for
+# the opposite reason — a specimen exists to SHOW the contract on a real surface, so it reaches
+# for a raw value to demonstrate what a role is worth, and it ships in no screen.
 #
 # Allowlist: scripts/design-tokens-swift-allow.txt, one grep -E pattern per line
 # (matched against the full "path:line:content" finding). Comments with #.
@@ -35,7 +37,7 @@ if [ $# -gt 0 ]; then
   targets=""
   for f in "$@"; do
     case "$f" in
-      */Tokens/*) continue ;;
+      */VisualContract/* | */Specimen/*) continue ;;
       *.swift) targets="$targets $f" ;;
     esac
   done
@@ -57,10 +59,11 @@ else
     # shellcheck disable=SC2086
     {
       # --exclude-dir must come AFTER --include: BSD grep gives the later option precedence
-      grep -rEn --include='*.swift' --exclude-dir=Tokens -- "$COLOR_RE" $SRC_DIRS 2>/dev/null
-      grep -rEn --include='*.swift' --exclude-dir=Tokens -- "$APPLE_INK_RE" $SRC_DIRS 2>/dev/null
-      grep -rEn --include='*.swift' --exclude-dir=Tokens -- "$FONT_RE" $SRC_DIRS 2>/dev/null
-      grep -rEn --include='*.swift' --exclude-dir=Tokens -- "$RHYTHM_RE" $SRC_DIRS 2>/dev/null
+      for pattern in "$COLOR_RE" "$APPLE_INK_RE" "$FONT_RE" "$RHYTHM_RE"; do
+        grep -rEn --include='*.swift' \
+          --exclude-dir=VisualContract --exclude-dir=Specimen \
+          -- "$pattern" $SRC_DIRS 2>/dev/null
+      done
     } | sort -u
   )
 fi
@@ -82,7 +85,7 @@ if [ -n "$findings" ]; then
   count=$(printf '%s\n' "$findings" | wc -l | tr -d ' ')
   echo "check:design-tokens-swift — $count design constant(s) outside the token contract."
   echo "Fix: snap to an existing token or promote a named one (rules/design-system.md)."
-  echo "Colours come from Palette, sizes from TypeRole, spacing from Space/Radius/Motion."
+  echo "Colours come from ArgoColor, type from ArgoTypography, the rest from ArgoGeometry/Motion."
   exit 1
 fi
 

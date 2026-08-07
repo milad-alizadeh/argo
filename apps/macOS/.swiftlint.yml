@@ -43,8 +43,12 @@ function_body_length:
   warning: 50
 
 closure_body_length:
-  error: 30
-  warning: 30
+  # The same 50 as a function body, deliberately. A SwiftUI `body` IS a closure, so a tighter
+  # cap here would hold view code to a stricter ceiling than the JSX it is the counterpart of
+  # — and biome gates that at 50. The fix when it fires is the same either way: the nested
+  # layers are subviews (rules/swift-style.md, "a body is a composition").
+  error: 50
+  warning: 50
 
 function_parameter_count:
   # The fourth positional parameter is forbidden; pass a struct.
