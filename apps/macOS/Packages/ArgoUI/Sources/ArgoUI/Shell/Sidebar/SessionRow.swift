@@ -52,10 +52,13 @@ struct SessionRow: View {
                     .foregroundStyle(argo.color.text.tertiary)
                     .accessibilityHidden(true)
             }
-            if let word = row.stateWord {
+            // The word takes the dot's own ink, so the two never read as separate claims.
+            // The contract already carries this: every state ink is asserted legible as a
+            // word and not only as a dot.
+            if let state = row.state, let word = row.stateWord {
                 Text(word)
                     .argoText(ArgoTypography.caption)
-                    .foregroundStyle(argo.color.text.secondary)
+                    .foregroundStyle(state.tint(in: argo.color))
             }
         }
     }
