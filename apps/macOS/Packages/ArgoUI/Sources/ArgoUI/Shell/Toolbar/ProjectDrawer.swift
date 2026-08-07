@@ -20,13 +20,14 @@ struct ProjectDrawer: View {
             footer
         }
         // One gutter for the whole drawer, so the header, the row washes, the rule and the footer
-        // all start at the same edge — and a clip, because a row's own fill runs to that gutter
-        // and would otherwise paint square corners over the panel's rounded ones.
+        // all start at the same edge.
         .padding(.horizontal, ArgoSpacing.snug)
         .padding(.bottom, ArgoSpacing.snug)
         .frame(width: ArgoLayout.projectDrawerWidth)
-        .background(argo.color.surface.overlay)
-        .clipShape(RoundedRectangle(cornerRadius: ArgoRadius.popover))
+        // NO ground of its own. A popover already supplies the system's glass, and an opaque fill
+        // painted over it is simply a second, flatter colour inside the same panel — which is what
+        // made the drawer's body read cooler than the arrow and rim above it.
+        .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
     }
 
     private var rows: [ProjectDrawerProjection.Row] {

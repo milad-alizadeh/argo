@@ -181,12 +181,10 @@ private struct DrawerSpecimen: View {
     let presentation: CockpitPresentation
 
     var body: some View {
+        // No clip or rim here any more: the drawer carries its own glass, shape included, so a
+        // second rounded rectangle drawn around it would be the specimen inventing chrome the
+        // popover does not have.
         ProjectDrawer(presentation: presentation, actions: .inert)
-            .clipShape(RoundedRectangle(cornerRadius: ArgoRadius.popover))
-            .overlay {
-                RoundedRectangle(cornerRadius: ArgoRadius.popover)
-                    .strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.hairline)
-            }
             .padding(ArgoSpacing.region)
     }
 }
