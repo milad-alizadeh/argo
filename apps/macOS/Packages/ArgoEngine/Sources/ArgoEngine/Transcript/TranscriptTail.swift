@@ -63,7 +63,8 @@ private actor FileCursor {
     }
 }
 
-/// Every line already in the file, then every line appended to it, until the caller stops listening.
+/// Every line already in the file, then every line appended to it, until the caller stops
+/// listening.
 ///
 /// The stream does not finish on its own: a live transcript has no end, and an agent that has been
 /// quiet for an hour is idle rather than over. Cancelling the consuming task closes the file.
@@ -74,7 +75,9 @@ public func transcriptLines(at url: URL) -> AsyncStream<String> {
             return
         }
         let watcher = FileWatcher(url: url) {
-            for line in await cursor.drain() { continuation.yield(line) }
+            for line in await cursor.drain() {
+                continuation.yield(line)
+            }
         }
         continuation.onTermination = { _ in
             watcher.cancel()
@@ -96,10 +99,10 @@ private final class FileWatcher: Sendable {
     init(url: URL, onChange: @escaping @Sendable () async -> Void) {
         let descriptor = open(url.path, O_EVTONLY)
         self.onChange = onChange
-        source = DispatchSource.makeFileSystemObjectSource(
+        self.source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: descriptor,
             eventMask: [.extend, .write, .delete, .rename],
-            queue: DispatchQueue(label: "dev.milad.argo.transcript-tail")
+            queue: DispatchQueue(label: "dev.milad.argo.transcript-tail"),
         )
         source.setEventHandler { Task { await onChange() } }
         source.setCancelHandler { close(descriptor) }

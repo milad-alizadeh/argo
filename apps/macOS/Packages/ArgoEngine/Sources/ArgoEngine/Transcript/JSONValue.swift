@@ -33,7 +33,7 @@ extension JSONValue: Decodable {
         } else if let array = try? container.decode([JSONValue].self) {
             self = .array(array)
         } else {
-            self = .object(try container.decode([String: JSONValue].self))
+            self = try .object(container.decode([String: JSONValue].self))
         }
     }
 }
@@ -52,9 +52,21 @@ public extension JSONValue {
         return value
     }
 
-    var string: String? { if case let .string(value) = self { value } else { nil } }
+    var string: String? {
+        if case let .string(value) = self {
+            value
+        } else {
+            nil
+        }
+    }
 
-    var bool: Bool? { if case let .bool(value) = self { value } else { nil } }
+    var bool: Bool? {
+        if case let .bool(value) = self {
+            value
+        } else {
+            nil
+        }
+    }
 
     /// Finite numbers only: a JSON `NaN` cannot be written, but a value read as a number and used
     /// as a length or an offset must be one.
@@ -63,16 +75,34 @@ public extension JSONValue {
         return value
     }
 
-    var int: Int? { number.map { Int($0) } }
+    var int: Int? {
+        number.map { Int($0) }
+    }
 
     /// Absent and present-but-not-an-array read alike: both are "no elements to walk".
-    var array: [JSONValue] { if case let .array(value) = self { value } else { [] } }
+    var array: [JSONValue] {
+        if case let .array(value) = self {
+            value
+        } else {
+            []
+        }
+    }
 
-    var object: [String: JSONValue]? { if case let .object(value) = self { value } else { nil } }
+    var object: [String: JSONValue]? {
+        if case let .object(value) = self {
+            value
+        } else {
+            nil
+        }
+    }
 
     /// Read one field, absent unless this is an object that has it.
-    subscript(key: String) -> JSONValue? { object?[key] }
+    subscript(key: String) -> JSONValue? {
+        object?[key]
+    }
 
     /// Read one field as a string, absent unless it is one.
-    func stringField(_ key: String) -> String? { self[key]?.string }
+    func stringField(_ key: String) -> String? {
+        self[key]?.string
+    }
 }

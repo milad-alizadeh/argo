@@ -1,0 +1,33 @@
+# SwiftFormat — the Swift half of what biome does for TypeScript: formatting only, no
+# opinions the linter should own. Pinned so a newer SwiftFormat cannot silently reformat
+# the tree; raise it deliberately, in its own commit.
+--swiftversion 6.2
+--minversion 0.62.0
+
+# 4-space indent and Swift's own brace style: the ecosystem's convention, not TypeScript's.
+# Line width matches biome's 100 so a file reads the same width in either language.
+--indent 4
+--maxwidth 100
+
+# Wrapping. Arguments/collections stay on one line until they exceed the width, then every
+# element goes to its own line — never a half-wrapped call where the first argument hides
+# on the signature line.
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--closingparen balanced
+--wrapconditions after-first
+--wrapreturntype if-multiline
+
+# `self` only where the compiler needs it (escaping closures, shadowed names). An explicit
+# `self` everywhere is noise; removing it entirely breaks initialisers.
+--self init-only
+
+# Access control and ordering are the linter's business, not the formatter's.
+--enable isEmpty, redundantParens, redundantReturn, redundantType, sortImports, blankLinesAtStartOfScope, trailingCommas
+--disable wrapMultilineStatementBraces, organizeDeclarations, blankLinesAroundMark
+
+# Header comments are written by hand or not at all — see rules/comments.md.
+--header ignore
+
+--exclude build,.build,Argo.xcodeproj

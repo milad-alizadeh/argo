@@ -85,14 +85,18 @@ public actor TranscriptReader {
     private func userEvents(_ message: MessageRecord) -> [TranscriptEvent] {
         // A compact summary is the condensed history itself. Read as a prompt it would open a turn
         // titled with the summary of everything before it.
-        if message.isCompactSummary { return [.compaction(atMs: message.timestampMs)] }
+        if message.isCompactSummary {
+            return [.compaction(atMs: message.timestampMs)]
+        }
 
         let results = message.content.compactMap { block -> TranscriptEvent? in
             guard case let .toolResult(result) = block else { return nil }
             return .toolCallOutcome(outcome(of: result, in: message))
         }
         // A record carrying results is the tool answering, never the user asking.
-        if !results.isEmpty { return results }
+        if !results.isEmpty {
+            return results
+        }
 
         return message.isMeta ? [] : promptEvents(message)
     }
@@ -111,7 +115,7 @@ public actor TranscriptReader {
                     name: "local command",
                     kind: .execute,
                     target: nil,
-                    atMs: message.timestampMs
+                    atMs: message.timestampMs,
                 )),
                 .toolCallOutcome(ToolCallOutcome(
                     id: id,
@@ -121,7 +125,7 @@ public actor TranscriptReader {
                     // A local command prints and is over. There is no second record to learn its
                     // end from, and the moment it printed is the moment it finished.
                     endedAtMs: message.timestampMs,
-                    usage: nil
+                    usage: nil,
                 )),
             ]
         }
@@ -161,7 +165,7 @@ public actor TranscriptReader {
             name: use.name,
             kind: kind,
             target: toolCallTarget(use.input),
-            atMs: atMs
+            atMs: atMs,
         )
         // The plan tool's input IS the plan, so the call and the list it wrote are one record's
         // worth of news. Both are emitted: the call is what happened, the plan is what it said.
@@ -181,7 +185,7 @@ public actor TranscriptReader {
             status: status,
             result: evidence(for: result, status: status, reported: message.toolUseResult),
             endedAtMs: message.timestampMs,
-            usage: message.usage
+            usage: message.usage,
         )
     }
 
@@ -199,23 +203,28 @@ public actor TranscriptReader {
     private func evidence(
         for result: ToolResultBlock,
         status: ToolCallStatus,
-        reported: JSONValue?
-    ) -> ToolResult? {
+        reported: JSONValue?,
+    )
+        -> ToolResult? {
         // A result quoting an id this file never opened belongs to a call in another file (a
         // resumed chain), not to a call that can be invented.
         guard let call = openCalls[result.toolUseId] else { return nil }
         // A delegate's printed work is the subagent's, and the Subagents section owns it.
-        if call.kind == .delegate { return nil }
+        if call.kind == .delegate {
+            return nil
+        }
 
         if call.kind == .edit {
-            if let diff = diffEvidence(from: reported) { return .diff(diff) }
+            if let diff = diffEvidence(from: reported) {
+                return .diff(diff)
+            }
         } else if let media = mediaEvidence(
             from: MediaRead(
                 toolUseResult: reported,
                 content: result.content,
-                path: diskFallbackPath(call, status: status, content: result.content)
+                path: diskFallbackPath(call, status: status, content: result.content),
             ),
-            readImage: readImage
+            readImage: readImage,
         ) {
             return .media(media)
         }
@@ -239,8 +248,9 @@ public actor TranscriptReader {
     private func diskFallbackPath(
         _ call: OpenCall,
         status: ToolCallStatus,
-        content: JSONValue
-    ) -> String? {
+        content: JSONValue,
+    )
+        -> String? {
         guard call.kind == .read, status == .completed else { return nil }
         return outputEvidence(from: content) == nil ? call.target : nil
     }

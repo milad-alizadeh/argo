@@ -1,13 +1,13 @@
-import Testing
 @testable import ArgoEngine
+import Testing
 
 // The boundary's own claim: a model wrote the file, so nothing in it is trusted to have the shape
 // it should — and the reader answers every shape rather than throwing on the ones it dislikes.
 
 @Suite("Untrusted input")
 struct UntrustedInputTests {
-    @Test("A line that is not a JSON object reads as unreadable, keeping its bytes")
-    func unreadableLinesSurvive() async throws {
+    @Test
+    func `A line that is not a JSON object reads as unreadable, keeping its bytes`() async throws {
         let events = try await Fixture.events("unparseableBody")
         let unreadable = events.compactMap { event -> String? in
             guard case let .unreadableLine(raw) = event else { return nil }
@@ -19,8 +19,8 @@ struct UntrustedInputTests {
         #expect(unreadable == ["{not json", "[]", "\"a string\"", "null", "{\"type\":\"user\""])
     }
 
-    @Test("A malformed line never stops the ones after it")
-    func parsingContinuesPastGarbage() async throws {
+    @Test
+    func `A malformed line never stops the ones after it`() async throws {
         let events = try await Fixture.events("unparseableBody")
         // The fixture's first two lines are a readable head-leaf and an attachment; the garbage
         // follows. Both survive alongside it.
@@ -28,8 +28,9 @@ struct UntrustedInputTests {
         #expect(events.contains(.cwd("/Users/x/tree")))
     }
 
-    @Test("A content part whose own field is the wrong type is dropped, not the record")
-    func malformedPartsAreSteppedOver() async throws {
+    @Test
+    func `A content part whose own field is the wrong type is dropped, not the record`(
+    ) async throws {
         let events = try await Fixture.events("prose")
         let messages = events.compactMap { event -> String? in
             guard case let .message(markdown) = event else { return nil }
@@ -42,8 +43,8 @@ struct UntrustedInputTests {
         #expect(!messages.contains(""))
     }
 
-    @Test("Blank prose is nothing said, not an empty thing said")
-    func blankProseIsDropped() async throws {
+    @Test
+    func `Blank prose is nothing said, not an empty thing said`() async throws {
         let events = try await Fixture.events("harnessNoise")
 
         // Not a rare edge: a real Claude Code record carries every REDACTED thought as
@@ -58,14 +59,14 @@ struct UntrustedInputTests {
         #expect(events.contains(.thought(markdown: "The gap is asymmetric.")))
     }
 
-    @Test("An unknown record type is not an error and produces no events")
-    func unknownRecordTypesAreQuiet() {
+    @Test
+    func `An unknown record type is not an error and produces no events`() {
         let record = TranscriptRecord.parse(line: #"{"type": "bridge-session", "id": "x"}"#)
         #expect(record == .unknown(raw: #"{"type": "bridge-session", "id": "x"}"#))
     }
 
-    @Test("A blank line is punctuation, not an unreadable record")
-    func blankLinesAreSilent() async {
+    @Test
+    func `A blank line is punctuation, not an unreadable record`() async {
         let events = await TranscriptReader().read(lines: ["", "   "])
         #expect(events.isEmpty)
     }

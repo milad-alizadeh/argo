@@ -29,7 +29,7 @@ private func tag(_ text: String, _ name: String) -> String? {
     // `[\s\S]` rather than `.`, which stops at a newline: a command's body routinely spans lines.
     guard let match = text.range(
         of: "<\(name)>[\\s\\S]*?</\(name)>",
-        options: [.regularExpression]
+        options: [.regularExpression],
     ) else { return nil }
     let inner = text[match].dropFirst(name.count + 2).dropLast(name.count + 3)
     return inner.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -47,7 +47,8 @@ func localCommandOutput(_ content: [ContentBlock]) -> String? {
 /// A slash command as the user typed it — `/implement 318 open storybook while you do it`.
 ///
 /// The CLI stores the invocation as three sibling tags in one record. Rendering that record's raw
-/// text titles the exchange `<command-message>implement</command-message>`, which is markup the user
+/// text titles the exchange `<command-message>implement</command-message>`, which is markup the
+/// user
 /// never saw; joining the two fields that hold their own words is the same verbatim reading, taken
 /// one level in.
 func commandPrompt(_ text: String) -> String? {

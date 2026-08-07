@@ -9,7 +9,7 @@ public struct Usage: Sendable, Equatable {
         inputTokens: Int,
         outputTokens: Int,
         cacheReadTokens: Int,
-        cacheCreationTokens: Int
+        cacheCreationTokens: Int,
     ) {
         self.inputTokens = inputTokens
         self.outputTokens = outputTokens
@@ -22,7 +22,7 @@ public struct Usage: Sendable, Equatable {
             inputTokens: left.inputTokens + right.inputTokens,
             outputTokens: left.outputTokens + right.outputTokens,
             cacheReadTokens: left.cacheReadTokens + right.cacheReadTokens,
-            cacheCreationTokens: left.cacheCreationTokens + right.cacheCreationTokens
+            cacheCreationTokens: left.cacheCreationTokens + right.cacheCreationTokens,
         )
     }
 }

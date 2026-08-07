@@ -26,6 +26,7 @@ touch (each rule's `paths:` frontmatter states its scope):
 - **All code, any language** — `engineering-principles.md`, `code-style.md`,
   `comments.md`, `file-structure.md`, `dependencies.md`
 - **TypeScript** — also `typescript-style.md` (how TS spells `code-style.md`)
+- **Swift** (`apps/macOS`) — also `swift-style.md` (how Swift spells it, SwiftUI included)
 - **Tests** — also `testing.md`
 - **UI work** — also `ui-components.md`, `design-system.md`, `design-studies.md`
 - **Skill authoring** — also `skill-authoring.md` (any `SKILL.md`)
@@ -199,6 +200,19 @@ a smoke test — it mounts each story in a real Chromium and fails on anything t
 broken story, a barrel sweep, or an MDX error reds the gate. There is no pixel-baseline diffing.
 For a pixel- or spec-level visual check, run `/visual-verify` on demand: it renders the affected
 states and has a fresh agent judge them against the spec.
+
+**Rendering `apps/macOS`.** Swift has no Storybook, so the render method is the app itself:
+`bun run screenshot --filter=@argo/macos -- <out.png>` builds it, launches it, and captures the
+WINDOW — not the screen, so the evidence is app pixels and nothing else. It quits any running
+Argo first, and that is load-bearing rather than tidy: `open` on an already-running bundle id
+activates THAT instance, so a copy left up by another worktree yields a screenshot of somebody
+else's tree that looks entirely plausible. Screen Recording permission is required the first time
+a terminal captures another process's window; without it the PNG comes out blank.
+
+This renders whole app states, not components in isolation. There is no per-state harness yet —
+SwiftUI's `#Preview` is the story equivalent but cannot be screenshotted headlessly, so a gallery
+target that renders one named state and exits is what closes that gap when ArgoUI has components
+with states worth isolating.
 
 ## Tooling (RTK)
 

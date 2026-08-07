@@ -8,6 +8,8 @@ dist/
 # The shared scheme under xcshareddata IS committed — xcodebuild needs it.
 DerivedData/
 apps/macOS/build/
+# screenshot output (scripts/screenshot.sh) — evidence for a PR, never committed to a branch
+apps/macOS/out/
 .build/
 .swiftpm/
 xcuserdata/

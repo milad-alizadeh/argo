@@ -1,0 +1,16 @@
+# Nested config for the test target. Everything from apps/macOS/.swiftlint.yml still applies;
+# these two rules are relaxed because the suite names a test with the sentence it proves —
+# `@Test func \`A malformed line never stops the ones after it\`()`. That name IS the
+# assertion's documentation, so it starts with a capital and runs past the code width.
+identifier_name:
+  validates_start_with_lowercase: off
+  max_length:
+    error: 120
+
+line_length:
+  # Test declarations only; the bodies still read at 100.
+  error: 130
+  warning: 130
+  ignores_urls: true
+  ignores_comments: true
+  ignores_interpolated_strings: true

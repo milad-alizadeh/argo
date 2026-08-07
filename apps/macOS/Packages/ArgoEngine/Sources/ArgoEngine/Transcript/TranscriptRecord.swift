@@ -56,7 +56,8 @@ public extension TranscriptRecord {
         case "attachment":
             return .attachment(MessageRecord(record: record))
         case "ai-title":
-            return record.stringField("aiTitle").map(TranscriptRecord.aiTitle) ?? .unknown(raw: line)
+            return record.stringField("aiTitle")
+                .map(TranscriptRecord.aiTitle) ?? .unknown(raw: line)
         case "last-prompt":
             return record.stringField("leafUuid")
                 .map { TranscriptRecord.lastPrompt(leafUuid: $0) } ?? .unknown(raw: line)
@@ -69,18 +70,18 @@ public extension TranscriptRecord {
 extension MessageRecord {
     init(record: JSONValue) {
         let message = record["message"]
-        uuid = record.stringField("uuid")
-        parentUuid = record.stringField("parentUuid")
-        cwd = record.stringField("cwd")
-        gitBranch = record.stringField("gitBranch")
-        timestampMs = ArgoEngine.timestampMs(record)
-        isMeta = record["isMeta"]?.bool == true
-        isCompactSummary = record["isCompactSummary"]?.bool == true
-        model = message?.stringField("model")
-        stopReason = message?.stringField("stop_reason")
-        usage = Usage(reported: message?["usage"])
-        content = ContentBlock.blocks(from: message?["content"])
-        toolUseResult = record["toolUseResult"]
+        self.uuid = record.stringField("uuid")
+        self.parentUuid = record.stringField("parentUuid")
+        self.cwd = record.stringField("cwd")
+        self.gitBranch = record.stringField("gitBranch")
+        self.timestampMs = ArgoEngine.timestampMs(record)
+        self.isMeta = record["isMeta"]?.bool == true
+        self.isCompactSummary = record["isCompactSummary"]?.bool == true
+        self.model = message?.stringField("model")
+        self.stopReason = message?.stringField("stop_reason")
+        self.usage = Usage(reported: message?["usage"])
+        self.content = ContentBlock.blocks(from: message?["content"])
+        self.toolUseResult = record["toolUseResult"]
     }
 }
 
@@ -93,7 +94,7 @@ extension Usage {
             inputTokens: reported["input_tokens"]?.int ?? 0,
             outputTokens: reported["output_tokens"]?.int ?? 0,
             cacheReadTokens: reported["cache_read_input_tokens"]?.int ?? 0,
-            cacheCreationTokens: reported["cache_creation_input_tokens"]?.int ?? 0
+            cacheCreationTokens: reported["cache_creation_input_tokens"]?.int ?? 0,
         )
     }
 }

@@ -55,7 +55,11 @@ private func fromToolUseResult(_ raw: JSONValue?) -> MediaEvidence? {
     guard let raw, raw.stringField("type") == "image", let file = raw["file"],
           let mediaType = imageMediaType(file.stringField("type"))
     else { return nil }
-    return MediaEvidence(tier: .direct, mediaType: mediaType, bytes: presentBytes(file.stringField("base64")))
+    return MediaEvidence(
+        tier: .direct,
+        mediaType: mediaType,
+        bytes: presentBytes(file.stringField("base64")),
+    )
 }
 
 /// One content block as the agent was sent it.

@@ -1,0 +1,149 @@
+# SwiftLint — the arithmetic half of rules/swift-style.md and rules/code-style.md, as a
+# build failure. Every rule here is an ERROR: a warning is a note nobody reads, and the
+# caps are the rules. Exemptions are ratchets, listed at the bottom with a reason.
+#
+# The numbers are biome.jsonc's numbers. A 200-line function is as unreadable in Swift as
+# in TypeScript, so the ceilings do not get to differ by language.
+
+included:
+  - Argo
+  - Packages/ArgoUI/Sources
+  - Packages/ArgoEngine/Sources
+  - Packages/ArgoEngine/Tests
+
+excluded:
+  - build
+  - .build
+  - Argo.xcodeproj
+  - Packages/ArgoEngine/Tests/ArgoEngineTests/Fixtures
+
+analyzer_rules:
+  - unused_import
+
+# --- the caps (code-style.md) ---
+
+file_length:
+  # 150 code lines is the house ceiling. SwiftLint can skip comment-only lines but has no
+  # option to skip BLANK ones, which biome's noExcessiveLinesPerFile does — so the raw
+  # number is raised by roughly the blank-line share of a formatted Swift file to enforce
+  # the same intent. Raise this only by fixing the tool, never to fit a file.
+  error: 175
+  warning: 175
+  ignore_comment_only_lines: true
+
+type_body_length:
+  # RATCHET: 150 is the number. It is 170 because TranscriptReader's actor body spans 165
+  # and splitting it is its own change, not this gate's. Lower it the commit that splits it.
+  error: 170
+  warning: 170
+
+function_body_length:
+  # Counts neither comments nor blank lines, so this is biome's 50 exactly.
+  error: 50
+  warning: 50
+
+closure_body_length:
+  error: 30
+  warning: 30
+
+function_parameter_count:
+  # The fourth positional parameter is forbidden; pass a struct.
+  error: 4
+  warning: 4
+
+cyclomatic_complexity:
+  # biome gates cognitive complexity at 15; SwiftLint measures cyclomatic. Same ceiling,
+  # slightly stricter metric — a flat switch inflates it, which is what the `ignores_case_
+  # statements` option is for.
+  error: 15
+  warning: 15
+  ignores_case_statements: true
+
+line_length:
+  # Matches biome's lineWidth and .swiftformat's --maxwidth, and applies to CODE only —
+  # neither formatter reflows a comment, so gating prose here would be stricter than the
+  # TypeScript side for no reading benefit. URLs and interpolated strings cannot be wrapped.
+  error: 100
+  warning: 100
+  ignores_urls: true
+  ignores_comments: true
+  ignores_interpolated_strings: true
+
+nesting:
+  type_level: 2
+  function_level: 3
+
+identifier_name:
+  # "Names are words, not abbreviations". The default min of 3 already blocks `ctx`-shaped
+  # names; the allowed shorts are the loop/coordinate idioms the rule exempts everywhere.
+  min_length:
+    error: 3
+  max_length:
+    error: 50
+  allowed_symbols: ["_"]
+  excluded: [id, x, y, to, at, on, up]
+
+type_name:
+  min_length:
+    error: 3
+  max_length:
+    error: 50
+
+# --- the escape hatches (swift-style.md "No escape hatches") ---
+
+opt_in_rules:
+  - force_unwrapping
+  - implicitly_unwrapped_optional
+  - fatal_error_message
+  - unavailable_function
+  - explicit_init
+  - prefer_self_type_over_type_of_self
+  - redundant_nil_coalescing
+  - toggle_bool
+  - unowned_variable_capture
+  - empty_count
+  - empty_string
+  - first_where
+  - last_where
+  - contains_over_first_not_nil
+  - contains_over_filter_count
+  - sorted_first_last
+  - joined_default_parameter
+  - legacy_multiple
+  - static_operator
+  - closure_body_length
+  - overridden_super_call
+  - prohibited_super_call
+  - private_action
+  - private_outlet
+  - modifier_order
+  - multiline_parameters
+  - operator_usage_whitespace
+  - vertical_parameter_alignment_on_call
+  - yoda_condition
+
+# `Bool?` and `[T]?` are the right shape at the JSON boundary — absent is not false and not
+# empty — so discouraged_optional_boolean / _collection are deliberately NOT enabled.
+
+disabled_rules:
+  # SwiftFormat owns wrapping and blank lines; two formatters disagreeing is a loop.
+  - opening_brace
+  - trailing_comma
+  # `todo` is a warning-shaped rule in an errors-only config, and rules/comments.md already
+  # says where a TODO may live.
+  - todo
+
+custom_rules:
+  unchecked_sendable:
+    name: "@unchecked Sendable"
+    regex: '@unchecked\s+Sendable'
+    message: "A promise to the concurrency checker that nothing verifies — make the type a value type, or put it behind an actor (rules/swift-style.md)."
+    severity: error
+
+  swiftlint_disable:
+    name: "swiftlint:disable"
+    regex: 'swiftlint:disable(?!:this-file-is-the-config)'
+    message: "The caps are the rules. Fix the code, or add a ratchet to .swiftlint.yml where it is visible."
+    severity: error
+
+reporter: "xcode"

@@ -54,7 +54,45 @@ The tests run against the Electron reader's own fixtures, copied unchanged into
 suit Swift would retire the only evidence that they agree.
 
 Neither test suite runs in CI: CI is Linux, where there is no Swift toolchain and no
-`xcodebuild`.
+`xcodebuild`. `bun run test` at the repo root still calls it and skips with a printed reason
+there, so a missing toolchain never reads as a passing suite.
+
+## Gates
+
+The same bargain the TypeScript side has, in Swift's spelling. Everything below runs
+pre-commit on staged `.swift` files, and `bun run quality` runs the lot over the whole tree.
+
+| Gate | What holds it | Config |
+|---|---|---|
+| Formatting | SwiftFormat | `.swiftformat` |
+| The caps and the escape-hatch bans | SwiftLint, every rule an error | `.swiftlint.yml` (+ a nested one under `Packages/ArgoEngine/Tests`) |
+| Package layering | `scripts/swift-boundaries.sh` | the three edges below |
+| Design tokens | `scripts/check-design-tokens-swift.sh` | `Packages/ArgoUI/Sources/ArgoUI/Tokens/` |
+| Duplication | `jscpd`, Swift included | `.jscpd.json` |
+
+The numbers are `biome.jsonc`'s numbers: a 200-line function is as unreadable in Swift as in
+TypeScript. `rules/swift-style.md` is the prose half — how Swift spells `rules/code-style.md`,
+plus the SwiftUI section that extends `rules/ui-components.md`.
+
+Boundaries are checkable by imports and declarations alone, which is why they are gates rather
+than review notes: **ArgoUI** never imports ArgoEngine, **ArgoEngine** never imports a UI
+framework, and the **app target** declares no `View` — everything with logic in it belongs in a
+package, where a test can reach it.
+
+Colours, type, spacing, radii and motion come from `ArgoUI/Tokens/` — the same contract
+`apps/desktop/src/renderer/src/styles/argo-tokens.css` carries, so the two renderings of Argo
+cannot drift into two palettes. It is bound for **dark only**: Penumbra is drawn in the dark and
+this app has no light surfaces yet. The typeface is provisional — the contract's sizes, weights,
+leading and tracking are exact, but Inter is not in the bundle yet, so the system face stands in.
+
+## Screenshots
+
+```bash
+bun run screenshot --filter=@argo/macos -- out/cockpit.png
+```
+
+Builds, launches, and captures the window. See AGENTS.md ("Visual verification") for what it
+does about an already-running instance, and why that matters.
 
 ## Deployment target
 

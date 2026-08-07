@@ -34,11 +34,15 @@ let follow = !arguments.contains("--once")
 
 if follow {
     for await line in transcriptLines(at: url) {
-        for event in await reader.read(line: line) { print(describe(event)) }
+        for event in await reader.read(line: line) {
+            print(describe(event))
+        }
     }
 } else {
     let lines = (try? String(contentsOf: url, encoding: .utf8))?
         .split(separator: "\n", omittingEmptySubsequences: false)
         .map(String.init) ?? []
-    for event in await reader.read(lines: lines) { print(describe(event)) }
+    for event in await reader.read(lines: lines) {
+        print(describe(event))
+    }
 }

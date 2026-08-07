@@ -24,3 +24,9 @@
   **/skills/**/templates/**
     KIND: a skill payload template and the copy it installs are the same file
     by design. Deduplicating them would break the payload.
+  **/build/**
+    KIND: Xcode DerivedData under apps/macOS/build — build products, not source.
+  **/Fixtures/**
+    KIND: the transcript fixtures ArgoEngine's tests read. They are copied from
+    the Electron reader unchanged BECAUSE both readers must answer the same
+    bytes; deduplicating them would retire the evidence that they agree.

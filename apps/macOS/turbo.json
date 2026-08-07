@@ -5,6 +5,15 @@
     "build": {
       "cache": false,
       "outputs": []
+    },
+    "test": {
+      "cache": false,
+      "outputs": []
+    },
+    "screenshot": {
+      "cache": false,
+      "persistent": false,
+      "outputs": []
     }
   }
 }
