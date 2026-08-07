@@ -15,8 +15,6 @@ public enum Specimen: String, CaseIterable, Sendable {
     case contract
     case sessionRows
     case roster
-    case projectStrip
-    case emptyProjectStrip
     case toolbarScope
     case emptyToolbarScope
     case projectDrawer
@@ -52,12 +50,6 @@ public struct SpecimenScreen: View {
             SessionRowsSpecimen()
         case .roster:
             RosterSpecimen()
-        case .projectStrip:
-            ProjectStripSpecimen(projects: CockpitPresentation.previewProjects)
-        case .emptyProjectStrip:
-            // A machine that has registered nothing: the `+` is the only thing on screen, and it
-            // has to be findable without a Project beside it to point at.
-            ProjectStripSpecimen(projects: [])
         case .toolbarScope:
             ToolbarSpecimen(presentation: .preview)
         case .emptyToolbarScope:
@@ -102,37 +94,6 @@ private struct RosterSpecimen: View {
     var body: some View {
         CockpitView(presentation: .preview, actions: .inert)
             .environment(navigation)
-    }
-}
-
-/// The strip against the sidebar material it actually sits on, holding its own selection so the
-/// switch can be driven in the rendered state rather than only described.
-private struct ProjectStripSpecimen: View {
-    let projects: [CockpitPresentation.Project]
-
-    @State private var activeProjectID: CockpitPresentation.Project.ID?
-
-    init(projects: [CockpitPresentation.Project]) {
-        self.projects = projects
-        _activeProjectID = State(initialValue: projects.first?.id)
-    }
-
-    var body: some View {
-        ProjectStrip(
-            projects: projects,
-            activeProjectID: activeProjectID,
-            actions: CockpitActions(
-                refreshCheckout: {},
-                retryConnection: {},
-                selectProject: { activeProjectID = $0 },
-                addProject: {},
-                locateProject: { _ in },
-                revealProject: { _ in },
-                removeProject: { _ in },
-            ),
-        )
-        .frame(maxHeight: .infinity)
-        .background(.bar)
     }
 }
 

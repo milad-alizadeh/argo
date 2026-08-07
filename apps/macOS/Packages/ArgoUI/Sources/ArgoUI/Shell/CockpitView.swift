@@ -21,16 +21,12 @@ public struct CockpitView: View {
         @Bindable var navigation = navigation
 
         NavigationSplitView {
-            ShellSidebar(
-                presentation: presentation,
-                actions: actions,
-                selection: $navigation.session,
-            )
-            .navigationSplitViewColumnWidth(
-                min: ArgoLayout.sidebarMinimumWidth,
-                ideal: ArgoLayout.sidebarIdealWidth,
-                max: ArgoLayout.sidebarMaximumWidth,
-            )
+            ShellSidebar(presentation: presentation, selection: $navigation.session)
+                .navigationSplitViewColumnWidth(
+                    min: ArgoLayout.sidebarMinimumWidth,
+                    ideal: ArgoLayout.sidebarIdealWidth,
+                    max: ArgoLayout.sidebarMaximumWidth,
+                )
         } detail: {
             InstrumentDeckShell(room: navigation.room)
                 .overlay(alignment: .topLeading) {

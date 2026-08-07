@@ -12,6 +12,12 @@ struct ProjectDrawerRow: View {
     /// to a question already asked. Every verb that changes what the window is on closes it.
     @Environment(\.dismiss) private var dismiss
 
+    /// The row draws its own focus. The system's effect boxes the button it is on — here the
+    /// identity alone — so a rectangle wrapped two thirds of a row in a fill saying the same thing
+    /// as the active wash. This was pulled once on suspicion of causing a crash on open; the E2E
+    /// test now walks that path, and the crash was the accessibility tree, not this.
+    @FocusState private var isFocused: Bool
+
     let row: ProjectDrawerProjection.Row
     let actions: CockpitActions
 
@@ -21,6 +27,8 @@ struct ProjectDrawerRow: View {
                 identity
             }
             .buttonStyle(.plain)
+            .focused($isFocused)
+            .focusEffectDisabled()
             .frame(maxWidth: .infinity, alignment: .leading)
             // The label sits on the button that DOES the switching, not on the row around it.
             .accessibilityLabel(row.accessibilityLabel)
@@ -129,6 +137,14 @@ struct ProjectDrawerRow: View {
             .overlay {
                 if !row.isReachable {
                     dashedEdge(shape)
+                }
+            }
+            .overlay {
+                if isFocused {
+                    shape.strokeBorder(
+                        argo.color.interaction.focusRing,
+                        lineWidth: ArgoStroke.focus,
+                    )
                 }
             }
     }

@@ -36,7 +36,8 @@ struct ProjectRowMenu: View {
         .tint(argo.color.text.tertiary)
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
-        .fixedSize()
+        // A slot rather than the menu's intrinsic size — see `rowMenuWidth`.
+        .frame(width: ArgoLayout.rowMenuWidth, alignment: .leading)
         .accessibilityLabel("Manage this Project")
     }
 }
