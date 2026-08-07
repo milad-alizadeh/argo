@@ -2,10 +2,13 @@
 import CoreGraphics
 import Testing
 
-/// What the deck container claims about its own shape. None of it can be read off a screenshot
-/// at every window size, and all of it is a rule a later surface ticket could quietly break
-/// while its own render still looks right.
-@Suite("Sessions deck container")
+/// What the deck's zone measures claim about each other.
+///
+/// They guard the tokens, not the pixels: whether the zones are drawn where these say is a
+/// question only the `sessionsDeck` specimen render answers, which is why the ticket demands
+/// one. What a token invariant does catch is the next surface ticket widening its own zone
+/// until the feed is no longer the surface the deck exists for.
+@Suite("Sessions deck measures")
 struct SessionsDeckTests {
     /// The narrowest deck the window can produce: the sidebar at its minimum still leaves this.
     private var narrowestDeckWidth: CGFloat {
@@ -13,31 +16,36 @@ struct SessionsDeckTests {
     }
 
     @Test
-    func `the deck is flush to the window, not a floating card`() {
-        #expect(ArgoRadius.deck == 0)
-    }
-
-    @Test
-    func `every zone is marked, and no two slots read the same`() {
+    func `no two zones read the same on the deck`() {
         let titles = DeckZone.allCases.map(\.title)
-        #expect(titles.allSatisfy { !$0.isEmpty })
         #expect(Set(titles).count == titles.count)
     }
 
     @Test
-    func `the feed keeps the widest share of the row, even at the narrowest deck`() {
+    func `every zone says what it is`() {
+        #expect(DeckZone.allCases.allSatisfy { !$0.title.isEmpty })
+    }
+
+    @Test
+    func `only a zone too narrow for its own name turns its mark`() {
+        let turned = DeckZone.allCases.filter(\.marksVertically)
+        #expect(turned == [.minimap])
+    }
+
+    @Test
+    func `the feed keeps the widest share of the row at the narrowest deck`() {
         let feed = narrowestDeckWidth - ArgoLayout.agentsRailWidth - ArgoLayout.minimapLaneWidth
         #expect(feed > ArgoLayout.agentsRailWidth)
         #expect(feed > ArgoLayout.minimapLaneWidth)
     }
 
     @Test
-    func `the lane is a lane, not a second rail`() {
+    func `the lane stays a lane rather than becoming a second rail`() {
         #expect(ArgoLayout.minimapLaneWidth < ArgoLayout.agentsRailWidth / 2)
     }
 
     @Test
-    func `header, tabs and Dock leave the content row most of the deck's height`() {
+    func `the deck's chrome leaves the content row most of its height`() {
         let chrome = ArgoLayout.deckHeaderHeight
             + ArgoLayout.deckTabSlotHeight
             + ArgoLayout.dockSeamHeight

@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// The opaque plane filling the detail side of the split view, flush to the window.
-///
-/// Radius 0 and no glass by contract (D10, D40): it is the ground the glass canopy is read
-/// against, so it is the one surface that must not borrow the canopy's material.
+/// The opaque plane filling the detail side of the split view, flush to the window. It is the
+/// ground the glass canopy is read against, so it is the one surface that must not borrow the
+/// canopy's material (D10, D40).
 struct InstrumentDeckShell: View {
     let room: CockpitRoom
 
@@ -15,9 +14,8 @@ struct InstrumentDeckShell: View {
             .accessibilityLabel("\(room.title) Instrument Deck")
     }
 
-    /// Only Sessions has a zone layout so far. The other rooms are bare ground rather than a
-    /// borrowed one — they get their own tickets, and a placeholder deck in Work would claim a
-    /// structure nobody has decided.
+    /// The other rooms are bare ground rather than a borrowed layout: a placeholder deck in
+    /// Work would claim a structure nobody has decided.
     @ViewBuilder private var content: some View {
         switch room {
         case .sessions:

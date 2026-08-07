@@ -2,28 +2,26 @@ import SwiftUI
 
 /// A zone that is laid out but not yet built.
 ///
-/// It says so in words rather than standing empty: an unmarked blank region is
-/// indistinguishable from a real surface that rendered nothing, and telling those two apart in
-/// a screenshot is the whole reason the container ships before the surfaces do.
-///
-/// It draws no fill and no frame of its own — the deck is one plane, and a slot that tinted
-/// itself would read as the card D10 rules out.
+/// It says so in words because an unmarked blank region is indistinguishable from a real
+/// surface that rendered nothing. It draws no fill of its own — the deck is one plane.
 struct DeckSlot: View {
     @Environment(\.argo) private var argo
 
     let zone: DeckZone
-    /// Set for a zone narrower than its own name. The mark is laid out at its natural width and
-    /// then turned, so a lane reads down its length instead of spilling across its neighbour.
-    var verticalMark = false
 
     var body: some View {
         mark
-            .rotationEffect(.degrees(verticalMark ? -90 : 0))
+            .rotationEffect(.degrees(zone.marksVertically ? -90 : 0))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // A rotation reserves no layout space, so a mark longer than its slot is short
+            // would otherwise overdraw the zone next door.
+            .clipped()
             .accessibilityElement()
             .accessibilityLabel("\(zone.title), placeholder")
     }
 
+    /// Laid out at its natural width and then turned, so a narrow lane reads down its length
+    /// instead of wrapping across its neighbour.
     private var mark: some View {
         Text("\(zone.title) · placeholder")
             .argoText(ArgoTypography.machineCaption)
@@ -35,7 +33,7 @@ struct DeckSlot: View {
 
 #Preview("Deck slots") {
     VStack(spacing: ArgoSpacing.flush) {
-        ForEach(Array(DeckZone.allCases.enumerated()), id: \.offset) { _, zone in
+        ForEach(DeckZone.allCases) { zone in
             DeckSlot(zone: zone)
             DeckSeam()
         }
@@ -46,7 +44,7 @@ struct DeckSlot: View {
 }
 
 #Preview("Deck slot — a lane too narrow for its own name") {
-    DeckSlot(zone: .minimap, verticalMark: true)
+    DeckSlot(zone: .minimap)
         .frame(width: ArgoLayout.minimapLaneWidth, height: 320)
         .argoDeckSurface()
         .argoAppearance()

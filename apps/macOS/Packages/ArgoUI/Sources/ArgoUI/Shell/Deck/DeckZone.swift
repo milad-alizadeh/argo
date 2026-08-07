@@ -1,16 +1,15 @@
-/// The zones the Sessions deck is laid out from.
-///
-/// Held as a catalogue rather than spelled at each call site so the container cannot lay out a
-/// zone nothing names, and so every slot's placeholder mark is written once. Each is filled by
-/// its own ticket: the header and its tabs by #400, the rail by #401, the feed by #399, the
-/// lane by #402, the Dock by #403.
-enum DeckZone: CaseIterable {
+/// The zones the Sessions deck is laid out from, each filled by its own ticket.
+enum DeckZone: CaseIterable, Identifiable {
     case header
     case tabs
     case rail
     case feed
     case minimap
     case dock
+
+    var id: Self {
+        self
+    }
 
     var title: String {
         switch self {
@@ -19,7 +18,16 @@ enum DeckZone: CaseIterable {
         case .rail: "Agents rail"
         case .feed: "Feed"
         case .minimap: "Minimap lane"
-        case .dock: "Dock seam"
+        case .dock: "Dock"
+        }
+    }
+
+    /// Whether the zone is narrower than its own name, so its mark has to be turned to fit.
+    /// A property of the zone rather than an argument, so no call site can get it wrong.
+    var marksVertically: Bool {
+        switch self {
+        case .minimap: true
+        case .header, .tabs, .rail, .feed, .dock: false
         }
     }
 }

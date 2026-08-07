@@ -13,9 +13,9 @@ public enum ArgoLayout {
     public static let connectionSlotWidth: CGFloat = 180
     public static let gitVesselMaximumWidth: CGFloat = 280
 
-    // The Instrument Deck's zones. Measured off the approved study
-    // (`docs/designs/cockpit-sessions-liquid-glass.png`), because the decision log carries
-    // hex values and no measurements — the rhythm exists only as pixels.
+    // The Instrument Deck's zones, measured off the approved study
+    // (`docs/designs/cockpit-sessions-liquid-glass.png`) — the decision log carries no
+    // measurements, so the pixels are the only source for these.
     public static let deckHeaderHeight: CGFloat = 56
     public static let deckTabSlotHeight: CGFloat = 40
     public static let agentsRailWidth: CGFloat = 256
