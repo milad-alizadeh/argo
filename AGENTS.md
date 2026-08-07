@@ -4,19 +4,14 @@ Monorepo for the Argo skills/plugin **and** the Argo cockpit app. Read by both C
 
 ## Agent skills
 
-### Issue tracker
-
-Issues and PRDs live in GitHub Issues on `milad-alizadeh/argo`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five canonical triage roles, each label string equal to its name. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
-The domain model is imported below, so it is injected rather than left to a pointer a session
-may not follow.
+- **Issue tracker** — Issues and PRDs live in GitHub Issues on `milad-alizadeh/argo`, via the
+  `gh` CLI. See `docs/agents/issue-tracker.md`.
+- **Triage labels** — five canonical triage roles, each label string equal to its name. See
+  `docs/agents/triage-labels.md`.
+- **Domain docs** — single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See
+  `docs/agents/domain.md`. `CONTEXT.md` is imported below so the model is injected rather than
+  left to a pointer a session may not follow; the reasoning *behind* each term lives in
+  `docs/domain/rationale.md` — read that only when changing a term.
 
 ## Rules
 
@@ -39,18 +34,17 @@ public entry) which `dependency-cruiser.cjs` compiles into public-entry-only lin
 **edit the map, never the generated `.cjs`**. Run `bun run boundaries` in the workspace (CI
 gates it on every PR). When you add, split, or rename a module, update the map's `path` +
 `publicEntry` in the **same change**; a new module missing from the map is fixed by adding it,
-never by loosening a regex. `apps/desktop` locks Electron main ⊥ preload ⊥ renderer isolation.
+**never by loosening a regex**. `apps/desktop` locks Electron main ⊥ preload ⊥ renderer isolation.
 
 That linter sees **edges only**, so the same map carries a `placement` block for the rules about
-where a file may *live* — which no import linter can see, because a misplaced file's imports are
-all legal. Three gates compile from it (`bun run quality:placement`): **every** module declares
-what may sit loose at its root and a module with no entry FAILS (ADR-0021 — the predecessor
-guarded one hardcoded path, so every module added after it was silently exempt and flattened);
+where a file may *live*. Three gates compile from it (`bun run quality:placement`): **every**
+module declares what may sit loose at its root and a module with no entry FAILS (ADR-0021);
 kind-folders (`utils/`, `types/`, `hooks/`, …) are banned outright; and a symbol in the
-domain-aware shared tier needs more than one module to want it. Where wiring lives is decided
-per module and one answer does not transfer — renderer slices are pure Views, so their store and
-bridge reads hoist into `cockpit/`; main has no such constraint, so each of its domains owns its
-own bridge and its root is the entry alone.
+domain-aware shared tier needs more than one module to want it.
+
+Where wiring lives is decided **per module and does not transfer**: renderer slices are pure
+Views, so their store and bridge reads hoist into `cockpit/`; main has no such constraint, so
+each of its domains owns its own bridge and its root is the entry alone.
 
 ### Quality gates
 
@@ -60,52 +54,33 @@ carries every per-file cap (50 lines per function, cognitive complexity 15, 3 pa
 150-line file ceiling counting code lines only) and the escape-hatch bans (`any`, `@ts-ignore`,
 `!`, nested ternaries); `jscpd` gates whole-tree duplication at 1%; the three placement gates
 above hold `file-structure.md`'s folder rules. CI runs all of them; pre-commit runs biome **and
-placement** — a misplaced file caught in CI is a follow-up ticket written after the session that
-produced it has ended, caught pre-commit it is fixed by whoever still has the context.
+placement**.
 
-The root rule is enforced one step earlier still: `scripts/placement-guard.mjs` is a
-`PreToolUse(Write)` hook that DENIES an agent creating a new file loose at a module root, before
-it exists and before anything imports it. It shares its root-pattern derivation with the gate, so
-the two cannot drift, and fails open on any error — the gate remains the backstop. It guards the
-way IN only (`Write`, new files, module roots), which is why a refactor moving files OUT of a
-root never trips it.
+`scripts/placement-guard.mjs` is a `PreToolUse(Write)` hook that DENIES an agent creating a new
+file loose at a module root, before it exists. It guards the way IN only (`Write`, new files,
+module roots) — a refactor moving files OUT of a root never trips it — and fails open on error,
+with the gate as backstop.
 
 Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
-assertions (Biome 2.5.4 has no such rule) and exhaustive `switch` over a union
-(`nursery/useExhaustiveSwitchCases` panics Biome's module graph on this repo).
+assertions and exhaustive `switch` over a union.
 
-When a gate fires, fix it or ratchet it — never suppress it inline and never raise a global
-cap. Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule
+When a gate fires, fix it or ratchet it — **never suppress it inline and never raise a global
+cap.** Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule
 doesn't apply to that category) or **RATCHET** (debt; the list may only shrink):
 
 | File | Covers |
 |---|---|
-| `biome.jsonc` `overrides` | every lint cap, the line ceiling included — annotated, which is why it's `.jsonc` |
-| `.jscpd.json` `ignore` | duplication — its reasons live in `scripts/jscpd-ignore-reasons.txt`, one per ignore glob |
-| the map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude` keyed by file, folder or symbol, each value its own reason |
+| `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
+| `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
+| the map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude`, each value its own reason |
 
 The placement gates fail on a **stale** exemption too: an entry naming no file is deleted, not
-left to re-authorise a future breach. That's what makes "the list may only shrink" arithmetic
-rather than an intention.
+left to re-authorise a future breach.
 
-**Two of these configs fail open when you comment them**, which is why the reasons sit where
-they do. Biome silently checks **zero files** if `biome.json` holds a comment — hence
-`biome.jsonc`. jscpd's **auto-discovery** silently skips the entire `.jscpd.json` if that holds
-one (no threshold, a larger file count), and JSON is its only format — hence the sidecar
-`scripts/jscpd-ignore-reasons.txt`.
-
-jscpd's half is now closed at the source rather than by a documented check: `quality:duplication`
-passes **`--config .jscpd.json` explicitly**, and an explicitly-named config is parsed rather
-than discovered, so a malformed one prints `config file .jscpd.json line 1: expected value` and
-exits non-zero instead of quietly running unconfigured. Keep that flag on the command — dropping
-it restores the fail-open.
-
-Do not re-prove either by exit code alone. `jscpd … -t 0` exits **1 in both states** here —
-healthy it finds 1 clone in 211 files, silently-unconfigured it finds 16 in 312 — so the exit
-code cannot tell them apart and the file count is the only signal. Prove a config change by
-effect: check that the **analysed file count** still excludes the ignored paths, or plant a
-throwaway clone pair inside an ignored path and one outside and confirm only the outside pair
-is reported.
+Two of these configs **fail open when commented**, which is why the reasons sit in sidecars and
+why `quality:duplication` passes `--config .jscpd.json` explicitly — **keep that flag on the
+command.** Never prove a change to either config by exit code alone. Details and the
+verification recipe: `docs/agents/quality-gates.md`.
 
 ## Session isolation
 
@@ -113,101 +88,80 @@ Multiple agent sessions run against this repo concurrently. Implementation work 
 builds, any multi-file change) must **never** run in the shared main checkout: if your cwd is
 the repo root rather than a path under `.claude/worktrees/`, enter a worktree first (Claude
 Code: the `EnterWorktree` tool — this section is your standing instruction to use it,
-unprompted; other harnesses: `git worktree add`) and commit to a ticket branch there.
-Read-only work (review, triage, Q&A) may stay in the main checkout. This is enforced
-mechanically: a `CLAUDECODE`-gated `PreToolUse` hook (`scripts/worktree-guard.mjs`) blocks agent
-`Edit`/`Write` to `apps/**` or `packages/**` from outside a worktree — doc, memory, and config
-edits stay free, and the human workflow is never touched.
+**unprompted**; other harnesses: `git worktree add`) and commit to a ticket branch there.
+Read-only work (review, triage, Q&A) may stay in the main checkout. Enforced mechanically: a
+`CLAUDECODE`-gated `PreToolUse` hook (`scripts/worktree-guard.mjs`) blocks agent `Edit`/`Write`
+to `apps/**` or `packages/**` from outside a worktree — doc, memory, and config edits stay free,
+and the human workflow is never touched.
 
-Everything else about worktrees — the deterministic naming format, resuming an interrupted
-worktree, recovering a deleted one, and the sub-agent-in-parent-worktree rule — lives in
-`docs/agents/worktrees.md`, and applies to **all** implementation work, not just `/implement`
-runs. That doc is self-contained and ships with the guardrail hooks, so a consumer
-that installs `--hooks` gets the rules alongside the enforcement.
+Everything else about worktrees — naming format, resuming an interrupted worktree, recovering a
+deleted one, and the sub-agent-in-parent-worktree rule — lives in `docs/agents/worktrees.md` and
+applies to **all** implementation work, not just `/implement` runs.
 
-Landed worktrees are reaped by `bun run worktrees:gc` (`scripts/worktree-gc.sh`) — PRs merge
-on GitHub, so nothing local fires when work lands and worktrees otherwise accumulate. It
-removes only what is provably safe: PR merged (or branch merged into the default branch),
-working tree clean, nothing unpushed, and untouched for 30 minutes so a live session isn't
-pulled out from under it. Everything else is reported and left alone; `--dry-run` reports
-without removing.
+Landed worktrees are reaped by `bun run worktrees:gc` (`scripts/worktree-gc.sh`). It removes
+only what is provably safe (PR merged, tree clean, nothing unpushed, untouched for 30 minutes);
+everything else is reported and left alone. `--dry-run` reports without removing.
 
 ## Cross-CLI guardrail hooks
 
 `hooks.json` (repo root) is the neutral SSOT for the four guardrail hooks (graphify-before-grep,
-placement write guard — a new file may not be created loose at a module root,
-worktree edit guard, worktree-gc), projected per-harness into each agent its own `agents` key
-names. **Edit `hooks.json`, then run `bun run hooks:sync`** — it regenerates
-`.claude/settings.json` (claude-code) and `.codex/hooks.json` (codex); never hand-edit those
-blocks. Consumers get the hooks opt-in via `scaffold.mjs --hooks`. Details in `hooks.json` and
-the code comments.
+placement write guard, worktree edit guard, worktree-gc), projected per-harness. **Edit
+`hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json` and
+`.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`.
 
 ## Skill bundle
 
-The repo-root `skills-lock.json` is the bundle manifest **and** this repo's own install record
-— a standard vercel `skills` lock, enumerating every bundled skill by name. `bun run scaffold`
-(= `npx github:milad-alizadeh/argo`) installs from it with one `npx skills add` per source;
-`--skill a,b` installs a subset. `skills experimental_install` reads the same lock in one call
-but reaches only agents whose skills dir is `.agents/skills`, which excludes Claude Code — the
-reason the per-source fan-out survives; see `packages/argo-skills/README.md`.
+The repo-root `skills-lock.json` is the bundle manifest **and** this repo's own install record.
+`bun run scaffold` (= `npx github:milad-alizadeh/argo`) installs from it with one
+`npx skills add` per source; `--skill a,b` installs a subset.
 
-Because a lock has no `"*"` wildcard, the set is **deliberate**: add a skill with
-`npx skills add <source> --skill <name>` and commit the lock; sweep a source for
-newly-published ones with `--skill '*'` and review the diff. Nothing appears on its own. The
-weekly `skills-drift` workflow reports what showed up upstream. Editing one of Argo's own
-skills still needs a push to `main` before a reinstall sees it — the manifest installs
-`milad-alizadeh/argo` from GitHub, not from your checkout. Full workflow in
+The set is **deliberate** — a lock has no `"*"` wildcard. Add a skill with
+`npx skills add <source> --skill <name>` and commit the lock; sweep a source with `--skill '*'`
+and review the diff. Nothing appears on its own; the weekly `skills-drift` workflow reports what
+showed up upstream. Editing one of Argo's own skills needs a push to `main` before a reinstall
+sees it — the manifest installs from GitHub, not your checkout. Full workflow in
 `packages/argo-skills/README.md`.
 
 ## Code review
 
-An implement run reviews its diff before the PR opens (upstream `implement` calls the
-`code-review` skill). The review only works in a **fresh context that never saw the author's
-reasoning** — an author reviewing their own diff knows what the code *meant* to do, which is
-exactly the knowledge that hides the defect. Claude Code: `code-review` fans out parallel axis
-sub-agents via the `Agent` tool. Other harnesses without sub-agent spawning: run the review from
-a separate fresh session over the diff (a new Codex/Cursor conversation).
+An implement run reviews its diff before the PR opens. The review only works in a **fresh
+context that never saw the author's reasoning**. Claude Code: `code-review` fans out parallel
+axis sub-agents via the `Agent` tool. Other harnesses: run the review from a separate fresh
+session over the diff.
 
 If no independent fresh context is reachable, **stop and report that** — do not run the axes
-yourself and present it as a review. One Claude Code trap: agents spawned inside a `Workflow`
-have no `Agent` tool, so an implement run nested in a Workflow can't spawn its own review — run
-implement directly (not inside a Workflow) so the review stage can fan out its sub-agents.
+yourself and present it as a review. Claude Code trap: agents spawned inside a `Workflow` have
+no `Agent` tool, so run implement directly, not nested in a Workflow.
 
 ## graphify
 
-This project has a knowledge graph at `graphify-out/` with god nodes, community
-structure, and cross-file relationships.
+Knowledge graph at `graphify-out/` with god nodes, community structure, and cross-file
+relationships.
 
-- For codebase questions, first run `graphify query "<question>"` when
-  `graphify-out/graph.json` exists. Use `graphify path "<A>" "<B>"` for
-  relationships and `graphify explain "<concept>"` for focused concepts. These
-  return a scoped subgraph, usually much smaller than `GRAPH_REPORT.md` or raw grep.
-- If `graphify-out/wiki/index.md` exists, use it for broad navigation instead of
-  raw source browsing.
-- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or when
-  query/path/explain do not surface enough context.
+- For codebase questions, first run `graphify query "<question>"` when `graphify-out/graph.json`
+  exists. `graphify path "<A>" "<B>"` for relationships, `graphify explain "<concept>"` for
+  focused concepts. These return a scoped subgraph, far smaller than `GRAPH_REPORT.md` or grep.
+- If `graphify-out/wiki/index.md` exists, use it for broad navigation over raw source browsing.
+- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review.
 
-The graph is **code-only** (markdown — plans, ADRs, skills, docs — is excluded via
-`.graphifyignore`), committed, and refreshed automatically by the pre-commit hook — you never
-run `graphify update` by hand. Communities are named deterministically from their dominant
-node; never run `graphify label` for upkeep (it re-clusters and drops dated backups). How it's
-wired (worktree guard, merge driver) lives in the `setup-graphify` skill, not here.
+The graph is **code-only** (markdown excluded via `.graphifyignore`), committed, and refreshed
+by the pre-commit hook — **never run `graphify update` by hand**, and **never run
+`graphify label`** for upkeep (it re-clusters and drops dated backups). Wiring lives in the
+`setup-graphify` skill.
 
 ## Visual verification
 
-Every Storybook story is rendered in CI (the `stories` job / the `story tests` required check) as
-a smoke test — it mounts each story in a real Chromium and fails on anything that throws, so a
-broken story, a barrel sweep, or an MDX error reds the gate. There is no pixel-baseline diffing.
-For a pixel- or spec-level visual check, run `/visual-verify` on demand: it renders the affected
-states and has a fresh agent judge them against the spec.
+Every Storybook story is rendered in CI (the `stories` job / `story tests` required check) as a
+smoke test — it mounts each story in real Chromium and fails on anything that throws. There is
+no pixel-baseline diffing. For a pixel- or spec-level check, run `/visual-verify` on demand.
 
 **Rendering `apps/macOS`.** Swift has no Storybook, so the render method is the app itself:
 `bun run screenshot --filter=@argo/macos -- <out.png>` builds it, launches it, and captures the
-WINDOW — not the screen, so the evidence is app pixels and nothing else. It quits any running
-Argo first, and that is load-bearing rather than tidy: `open` on an already-running bundle id
-activates THAT instance, so a copy left up by another worktree yields a screenshot of somebody
-else's tree that looks entirely plausible. Screen Recording permission is required the first time
-a terminal captures another process's window; without it the PNG comes out blank.
+WINDOW, not the screen. It quits any running Argo first, and that is **load-bearing**: `open` on
+an already-running bundle id activates THAT instance, so a copy left up by another worktree
+yields a plausible-looking screenshot of somebody else's tree. Screen Recording permission is
+required the first time a terminal captures another process's window; without it the PNG is
+blank.
 
 That renders whole app states. For **one state in isolation**, the harness is
 `ArgoUI/Specimen/SpecimenCatalog.swift`: a `Specimen` case per renderable state, launched by name
@@ -223,17 +177,15 @@ pixels are not.
 
 ## Tooling (RTK)
 
-Run commands through `rtk` so output is filtered before it reaches context. The
-global Bash hook already auto-wraps `git`, `grep`, `gh`, `vitest`, `tsc`, `ls`,
-`find`, and similar — but it has **no `bun` or `turbo` proxy**, so this repo's
-canonical entrypoints leak full output unless wrapped explicitly:
+**Always prefix shell commands with `rtk`** so output is filtered before it reaches context. The
+global Bash hook auto-wraps `git`, `grep`, `gh`, `vitest`, `tsc`, `ls`, `find` and similar — but
+there is **no `bun` or `turbo` proxy**, so this repo's canonical entrypoints leak full output
+unless wrapped explicitly:
 
 ```bash
 rtk test bun run test               # turbo → vitest, failures only
 rtk err  bun run format-and-lint    # biome at repo root (whole monorepo), errors only
 rtk err  bun run typecheck
 ```
-
-@RTK.md
 
 @CONTEXT.md
