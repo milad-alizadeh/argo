@@ -10,12 +10,16 @@ Argo/               app-target sources — the @main App and its scene
 Argo.entitlements   signing entitlements (sandbox off, see below)
 Packages/
   ArgoEngine/       domain + engine. No UI, no AppKit — runs under `swift test`
+    Hub/            the process-lifetime in-memory join consumed by the app
+    Launch/         launch arguments resolved into external source locations
+    Repository/     the global primary-checkout projection
     Session/        the domain: the event model, evidence, tiers, usage
     Transcript/     the untrusted-input boundary: one .jsonl becomes typed events
     argo-observe/   the CLI that tails a transcript and prints what it reads
   ArgoUI/           shared visual components. No engine dependency
+    Shell/          production NavigationSplitView, sidebar, deck ground and toolbar vessels
     VisualContract/ the palette, type, geometry, elevation and motion roles (#375)
-    Specimen/       throwaway views that show the contract on real surfaces
+    Specimen/       preview-only views that show the contract's roles together
 ```
 
 `Argo/` is a **file-system-synchronized group**: the project file does not enumerate its
@@ -32,6 +36,10 @@ open build/Build/Products/Debug/Argo.app
 
 Or open `Argo.xcodeproj` and press ⌘R. The `Argo` scheme is shared and committed —
 `xcodebuild -scheme Argo` depends on it.
+
+The shell accepts repeatable `--transcript <file.jsonl>` arguments and an optional
+`--project <directory>`. With no transcript it renders the production zero-Session state; a
+configured transcript is consumed through the same typed stream as `argo-observe`.
 
 Turbo does not cache the build: `xcodebuild` keeps its own incremental state in
 `build/` (DerivedData), and handing hundreds of megabytes to a second cache buys nothing.

@@ -30,6 +30,7 @@ public enum ArgoStroke {
 
 /// The spacing rhythm. Dense by design: the cockpit shows many Sessions at once.
 public enum ArgoSpacing {
+    public static let flush: CGFloat = 0
     public static let hair: CGFloat = 2
     public static let tight: CGFloat = 4
     public static let snug: CGFloat = 6
@@ -40,7 +41,7 @@ public enum ArgoSpacing {
     public static let region: CGFloat = 32
 
     public static let all: [(name: String, value: CGFloat)] = [
-        ("hair", hair), ("tight", tight), ("snug", snug), ("base", base),
+        ("flush", flush), ("hair", hair), ("tight", tight), ("snug", snug), ("base", base),
         ("comfortable", comfortable), ("loose", loose), ("section", section), ("region", region),
     ]
 }

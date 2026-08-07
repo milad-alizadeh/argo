@@ -40,11 +40,11 @@ public actor TranscriptReader {
         }
         switch record {
         case let .user(message):
-            return context(of: message) + userEvents(message)
+            return identity(of: message) + context(of: message) + userEvents(message)
         case let .assistant(message):
-            return context(of: message) + assistantEvents(message)
+            return identity(of: message) + context(of: message) + assistantEvents(message)
         case let .attachment(message):
-            return context(of: message)
+            return identity(of: message) + context(of: message)
         case let .aiTitle(title):
             return [.title(title)]
         case let .lastPrompt(leafUuid):
@@ -52,6 +52,10 @@ public actor TranscriptReader {
         case .unknown:
             return []
         }
+    }
+
+    private func identity(of message: MessageRecord) -> [TranscriptEvent] {
+        message.uuid.map { [.recordIdentity(uuid: $0)] } ?? []
     }
 
     /// Every line of a whole file, in order. The batch face of the same reader the tail uses, so a
