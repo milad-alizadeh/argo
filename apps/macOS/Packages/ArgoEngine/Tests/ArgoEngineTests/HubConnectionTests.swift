@@ -85,6 +85,7 @@ struct HubConnectionTests {
         await hub.reconnect()
 
         #expect(hub.project.url == Self.projectURL)
+        await hubSettle { !hub.sessions.isEmpty }
         #expect(hub.sessions.map(\.sourceURL) == [named.standardizedFileURL])
         #expect(hub.connection == .connected)
         await hub.disconnect()

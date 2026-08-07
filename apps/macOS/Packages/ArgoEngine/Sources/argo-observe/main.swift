@@ -30,8 +30,10 @@ guard FileManager.default.fileExists(atPath: url.path) else {
 let follow = !arguments.contains("--once")
 
 if follow {
-    for await event in transcriptEvents(at: url, readImage: diskImageReader) {
-        print(describe(event))
+    for await events in transcriptEvents(at: url, readImage: diskImageReader) {
+        for event in events {
+            print(describe(event))
+        }
     }
 } else {
     let reader = TranscriptReader(readImage: diskImageReader)

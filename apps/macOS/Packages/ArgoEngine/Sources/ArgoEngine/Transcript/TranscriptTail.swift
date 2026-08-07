@@ -63,21 +63,26 @@ private actor FileCursor {
     }
 }
 
-/// Every line already in the file, then every line appended to it, until the caller stops
-/// listening.
+/// Every line already in the file, then every line appended to it, in the batches the reads came
+/// back in — until the caller stops listening.
+///
+/// Batched rather than yielded one line at a time, because the batch boundary is itself a fact: the
+/// FIRST element is everything the file already held, so a consumer can tell a reconstruction from
+/// the news that follows it. Every read is yielded, empty ones included — an empty transcript has
+/// a backfill too, and a consumer waiting to be told the file has been read would otherwise wait
+/// forever.
 ///
 /// The stream does not finish on its own: a live transcript has no end, and an agent that has been
 /// quiet for an hour is idle rather than over. Cancelling the consuming task closes the file.
-public func transcriptLines(at url: URL) -> AsyncStream<String> {
+public func transcriptLines(at url: URL) -> AsyncStream<[String]> {
     AsyncStream { continuation in
         guard let cursor = FileCursor(url: url) else {
             continuation.finish()
             return
         }
         let watcher = FileWatcher(url: url) {
-            for line in await cursor.drain() {
-                continuation.yield(line)
-            }
+            let lines = await cursor.drain()
+            continuation.yield(lines)
         }
         continuation.onTermination = { _ in
             watcher.cancel()
