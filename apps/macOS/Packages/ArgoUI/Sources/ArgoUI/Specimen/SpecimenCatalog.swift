@@ -15,6 +15,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case contract
     case sessionRows
     case deck
+    case sessionsDeck
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -42,6 +43,10 @@ public struct SpecimenScreen: View {
             SessionRowsSpecimen()
         case .deck:
             DeckSpecimen()
+        case .sessionsDeck:
+            // The shell, not `SessionsDeck` — the assembled container is the plane plus its
+            // zones, and "one opaque plane" is a claim about the plane.
+            InstrumentDeckShell(room: .sessions)
         }
     }
 }
@@ -69,5 +74,10 @@ private struct DeckSpecimen: View {
 
 #Preview("Specimen — the deck") {
     SpecimenScreen(specimen: .deck)
+        .frame(width: 1000, height: 620)
+}
+
+#Preview("Specimen — the Sessions deck container") {
+    SpecimenScreen(specimen: .sessionsDeck)
         .frame(width: 1000, height: 620)
 }
