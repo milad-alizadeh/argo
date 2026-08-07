@@ -27,6 +27,13 @@ final class ProjectDrawerE2ETests: XCTestCase {
         // has to come from the test.
         app.launchArguments += ["--specimen", "toolbarScope"]
         app.launch()
+        // Launch failures report as launch failures. Without this, an app that never came up
+        // addressable fails later as "the scope vessel never appeared", which reads as a missing
+        // view rather than a missing app.
+        XCTAssertTrue(
+            app.wait(for: .runningForeground, timeout: 30),
+            "Argo did not reach the foreground.",
+        )
     }
 
     override func tearDown() async throws {
@@ -34,36 +41,33 @@ final class ProjectDrawerE2ETests: XCTestCase {
         try await super.tearDown()
     }
 
-    /// The regression this target exists for. Opening the drawer took the app down while every
-    /// package test and every specimen render stayed green.
-    func testOpeningTheProjectDrawerDoesNotCrash() throws {
-        let vessel = try scopeVessel()
-        vessel.click()
+    /// ONE test walking the whole flow, rather than one per assertion.
+    ///
+    /// Each test case here costs a launch, and a terminate-then-relaunch of the same bundle id is
+    /// the flakiest moment in the run: on a CI runner the second app came up without an
+    /// addressable accessibility tree, so a suite that was really testing one flow failed on the
+    /// cost of splitting it. A UI test is a walk through the app, and this is the walk.
+    func testTheDrawerOpensAndCarriesItsVerbs() throws {
+        try scopeVessel().click()
 
         XCTAssertTrue(
-            app.staticTexts["Projects · registered on this Mac"].waitForExistence(timeout: 5),
+            app.staticTexts["Projects · registered on this Mac"].waitForExistence(timeout: 10),
             "The drawer did not appear — the popover is empty, or the app went down opening it.",
         )
         // Liveness after the fact, not just at launch: a crash on click leaves the assertion above
         // passing against a window that is already gone.
         XCTAssertEqual(app.state, .runningForeground)
-    }
 
-    /// The per-Project menu is a `Menu` inside a popover — two presentations deep, which is where
-    /// AppKit and SwiftUI disagree most often.
-    func testTheRowMenuOffersExactlyTheThreeVerbs() throws {
-        try scopeVessel().click()
-        XCTAssertTrue(
-            app.staticTexts["Projects · registered on this Mac"].waitForExistence(timeout: 5),
-        )
-
+        // The per-Project menu is a `Menu` inside a popover — two presentations deep, which is
+        // where AppKit and SwiftUI disagree most often, and where a row that combined its own
+        // accessibility children swallowed this outright.
         let menu = app.descendants(matching: .any)["Manage this Project"].firstMatch
-        XCTAssertTrue(menu.waitForExistence(timeout: 5), "No row carried its management menu.")
+        XCTAssertTrue(menu.waitForExistence(timeout: 10), "No row carried its management menu.")
         menu.click()
 
         for verb in ["Reveal in Finder", "Locate…", "Remove from Argo"] {
             XCTAssertTrue(
-                app.menuItems[verb].waitForExistence(timeout: 5),
+                app.menuItems[verb].waitForExistence(timeout: 10),
                 "The row menu is missing \(verb).",
             )
         }
