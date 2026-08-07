@@ -4,7 +4,7 @@
 /// by construction: a view asks for a state's tint and gets a status colour, and there is no
 /// path from here to Ion Blue. The words each state is announced with are the roster's
 /// business (#377), not the palette's.
-public enum ArgoOperationalState: Sendable, CaseIterable {
+public enum ArgoOperationalState: Sendable, CaseIterable, Equatable {
     /// A turn is in progress.
     case running
     /// Idle, or complete. The quiet end of the vocabulary.

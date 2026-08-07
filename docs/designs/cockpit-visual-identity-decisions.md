@@ -74,6 +74,18 @@ its approved study are authoritative for the replacement look and feel.
 - **Boundary:** Sidebar rows stay flat and crisp over the material, with a restrained selection wash.
   The native material carries no Ion Blue tint. Project navigation, roster behaviour, chrome
   contents, and workspace responsibilities retain their existing UX.
+- **Native implementation (binding):** The sidebar **is** system Liquid Glass, drawn by macOS 26 —
+  it is never an approximated dark fill. Concretely: the sidebar column of `NavigationSplitView`
+  paints **no** background of its own, and neither does the window or any ancestor of it; the
+  Sessions roster uses `.listStyle(.sidebar)` so `List` inherits the system material; the project
+  strip shares that same column so the material runs uninterrupted behind both. Nothing in the
+  sidebar subtree may call `argoDeckSurface` or set an opaque `background` — that modifier belongs
+  to the Instrument Deck, which is opaque by contract. A single flat graphite plane behind the
+  roster is a **defect**, not a neutral substitute.
+- **How to verify:** Glass is only visible against something. Screenshot the running window over a
+  non-uniform desktop wallpaper and move the window; the sidebar must pick up the backdrop and
+  respond to focus (key vs inactive). A screenshot taken against a black or solid desktop proves
+  nothing and does not close a roster or shell ticket.
 
 ## D4 — Dark-first, not dark-locked
 
@@ -260,6 +272,18 @@ its approved study are authoritative for the replacement look and feel.
 - **Consequence:** Environmental colour belongs primarily to the native canopy. The opaque Deck
   remains predictable across wallpapers and preserves stable contrast for long-form reading, diffs,
   and terminal content.
+- **The ramp, measured — 2026-08-07:** "near-black" was first read as *black*, and the ramp landed a
+  rung and a half below the study, which made the shell read as a void beside it. The values are not
+  a matter of taste: sampled off `cockpit-sessions-liquid-glass.png`, the Deck is **`#1E2024`** (the
+  tone the whole study is built on — 77k sampled pixels, deck and rails alike), the chrome band is
+  **`#191A1D`**, and a selected roster row is **`#2B2D31`**. A future ramp change re-samples the
+  study; it does not re-guess — and it samples a **region**, taking the dominant tone of the whole
+  band. A single pixel read `#313438` off the selected row here, eight points bright, because it
+  landed on the row's top highlight; the histogram over the row is what is trustworthy.
+- **Text follows the ramp:** lifting the Deck lowers every contrast ratio measured against it. The
+  tertiary ink and the `idle` state both fell to 4.36:1 against the corrected Deck and were raised to
+  clear the contract's 4.5 floor. Any future ramp move re-runs those assertions rather than assuming
+  the ink still holds.
 
 ## D18 — Edges and tone establish depth
 
@@ -479,7 +503,32 @@ its approved study are authoritative for the replacement look and feel.
   facts, with direct copy where appropriate. Truncation never changes the stored title, workspace,
   or path.
 - **Composition:** Rows remain flat over the continuous native sidebar. Selection uses a restrained
-  neutral wash and precise Ion Blue indicator rather than a bordered or elevated card.
+  neutral wash rather than a bordered or elevated card.
+- **Selection amendment — 2026-08-07:** On macOS 26 the sidebar's own rounded, inset capsule **is**
+  that wash, and the roster does not draw a second one. The study's full-bleed wash and leading Ion
+  Blue rail were drawn in Electron, where no system selection existed; reproducing them natively
+  means leaving `.listStyle(.sidebar)`, and that is where the sidebar's Liquid Glass comes from
+  (D3) — so the study loses this one and the platform keeps it. The capsule is tinted onto the
+  neutral ramp rather than taking the accent, so selection stays an ink wash and Ion Blue is not
+  spent on it. Ruled out, and not to be reopened by a fidelity pass: a custom wash painted over the
+  system capsule (two stacked highlights) and a rail pinned inside the capsule's inset edge.
+- **The Ion Blue indicator is dropped, by decision and not by necessity.** #377's criterion read
+  "a neutral native wash **plus a thin Ion Blue indicator**", and that half is retired here. Only
+  the two placements above were shown to be unworkable; a rail in the leading gutter, outside the
+  capsule entirely, was never tried and is not claimed to be impossible. It was dropped because the
+  capsule alone is what macOS selection looks like, and a brand rail beside it re-states selection a
+  second time. Reopening this needs nothing more than someone deciding the rail earns its keep.
+- **Where the capsule's colour lives:** the **`AccentColor` asset**, and nowhere else. SwiftUI's
+  `.tint` does not reach a macOS sidebar's selection; the asset shipped as an empty stub, so
+  selection was the OS default rather than anything Argo chose. It now carries `#2B2D31`, the
+  study's selected row. The cost is accepted knowingly and is not a bug to file later: that asset is
+  app-wide, so every focus ring and accented control is graphite too, and D6's Ion Blue reaches them
+  only through an explicit `.tint`, which does still work everywhere except here.
+- **How to judge it:** on an **active** window only, and in a preview that belongs to the **app**
+  target. An inactive window draws selection in the system's neutral grey whatever the accent says,
+  so a wrong accent looks exactly like a correct neutral wash — that artefact cost two rounds here.
+  A preview of an `ArgoUI` view builds the package alone and cannot see the asset, so it shows the
+  OS accent and is worthless for this one check.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

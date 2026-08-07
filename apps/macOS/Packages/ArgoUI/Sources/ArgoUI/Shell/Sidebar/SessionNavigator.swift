@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Native Sessions navigation; #377 owns the richer production row content.
+/// Native Sessions navigation with stable, information-dense rows.
 struct SessionNavigator: View {
     @Environment(\.argo) private var argo
 
@@ -9,33 +9,30 @@ struct SessionNavigator: View {
 
     var body: some View {
         List(selection: $selection) {
-            Section {
-                if sessions.isEmpty {
-                    VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-                        Text("No sessions yet")
-                            .argoText(ArgoTypography.rowTitle)
-                        Text("Observed Sessions appear here.")
-                            .argoText(ArgoTypography.rowMeta)
-                            .foregroundStyle(argo.color.text.tertiary)
-                    }
-                    .padding(.vertical, ArgoSpacing.tight)
-                } else {
-                    ForEach(sessions) { session in
-                        Text(session.title)
-                            .argoText(ArgoTypography.rowTitle)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .help(session.title)
-                            .tag(session.id)
-                    }
+            if sessions.isEmpty {
+                emptyState.previewSafeListRow()
+            } else {
+                ForEach(SessionRosterProjection.rows(from: sessions)) { row in
+                    SessionRow(row: row).previewSafeListRow().tag(row.id)
                 }
-            } header: {
-                Text("Sessions")
-                    .argoText(ArgoTypography.sectionLabel)
-                    .foregroundStyle(argo.color.text.tertiary)
             }
         }
+        // `.sidebar` carries the window's system material (D3), so the roster may not trade
+        // it for a styled list. Selection is that style's own capsule, coloured from the
+        // `AccentColor` asset — SwiftUI's `.tint` does not reach it (D30).
         .listStyle(.sidebar)
+    }
+
+    private var emptyState: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+            Text("No Sessions yet")
+                .argoText(ArgoTypography.rowTitle)
+            Text("Observed Sessions appear here.")
+                .argoText(ArgoTypography.rowMeta)
+                .foregroundStyle(argo.color.text.tertiary)
+        }
+        .padding(.vertical, ArgoSpacing.tight)
+        .listRowSeparator(.hidden)
     }
 }
 
@@ -44,5 +41,17 @@ struct SessionNavigator: View {
 
     SessionNavigator(sessions: CockpitPresentation.preview.sessions, selection: $selection)
         .frame(width: 280, height: 480)
+        .argoAppearance()
+}
+
+#Preview("Sessions navigation — no selection") {
+    SessionNavigator(sessions: CockpitPresentation.preview.sessions, selection: .constant(nil))
+        .frame(width: 320, height: 480)
+        .argoAppearance()
+}
+
+#Preview("Sessions navigation — empty") {
+    SessionNavigator(sessions: [], selection: .constant(nil))
+        .frame(width: 320, height: 480)
         .argoAppearance()
 }

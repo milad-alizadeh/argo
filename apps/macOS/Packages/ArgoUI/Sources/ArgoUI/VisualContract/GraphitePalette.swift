@@ -6,18 +6,26 @@
 public extension ArgoPalette {
     static let graphite = ArgoPalette(
         surface: SurfaceRoles(
-            sunken: ArgoColor(hex: 0x08090B),
-            base: ArgoColor(hex: 0x0E0F11),
-            raised: ArgoColor(hex: 0x16181B),
-            overlay: ArgoColor(hex: 0x1F2124),
+            // Sampled from the approved study, not chosen — see D17. Re-sample before moving
+            // any of them, and re-run the contrast assertions after: every text and state
+            // ink is measured against `base`.
+            sunken: ArgoColor(hex: 0x191A1D),
+            base: ArgoColor(hex: 0x1E2024),
+            raised: ArgoColor(hex: 0x252729),
+            overlay: ArgoColor(hex: 0x2E3136),
             glassTint: ArgoColor(hex: 0xFFFFFF, opacity: 0.06),
             hover: ArgoColor(hex: 0xFFFFFF, opacity: 0.045),
-            selected: ArgoColor(hex: 0xFFFFFF, opacity: 0.085),
+            // Resolves to #2B2D31 over `base` — the study's selected row. The app's
+            // `AccentColor` asset must carry the same value: the native sidebar capsule
+            // reads that, never this.
+            selected: ArgoColor(hex: 0xFFFFFF, opacity: 0.058),
         ),
         text: TextRoles(
             primary: ArgoColor(hex: 0xF2F4F6),
             secondary: ArgoColor(hex: 0xA8AEB5),
-            tertiary: ArgoColor(hex: 0x7E858C),
+            // Lifted with the ramp: on the study's lighter deck the old value fell to
+            // 4.36:1, under the 4.5 floor the contract asserts.
+            tertiary: ArgoColor(hex: 0x868D94),
             disabled: ArgoColor(hex: 0x4E545A),
             onAccent: ArgoColor(hex: 0x05070A),
         ),
@@ -36,7 +44,7 @@ public extension ArgoPalette {
         ),
         state: StateRoles(
             running: ArgoColor(hex: 0x46D3A8),
-            idle: ArgoColor(hex: 0x7E868E),
+            idle: ArgoColor(hex: 0x868E96),
             attention: ArgoColor(hex: 0xE8B24A),
             failure: ArgoColor(hex: 0xF2555C),
         ),

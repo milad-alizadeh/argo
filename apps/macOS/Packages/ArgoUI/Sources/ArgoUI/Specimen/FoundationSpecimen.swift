@@ -19,7 +19,7 @@ public struct FoundationSpecimen: View {
             List(selection: $selection) {
                 Section("Sessions") {
                     ForEach(SpecimenFixtures.roster) { session in
-                        SpecimenSessionRow(session: session)
+                        SpecimenSessionRow(session: session).previewSafeListRow()
                     }
                 }
             }

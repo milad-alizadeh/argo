@@ -44,8 +44,11 @@ struct SpecimenSessionRow: View {
 }
 
 #Preview("Session rows — every operational state") {
-    List(SpecimenFixtures.roster, selection: .constant(SpecimenFixtures.roster.first?.id)) {
-        SpecimenSessionRow(session: $0)
+    List(
+        SpecimenFixtures.roster,
+        selection: .constant(SpecimenFixtures.roster.first?.id),
+    ) { session in
+        SpecimenSessionRow(session: session).previewSafeListRow()
     }
     .listStyle(.sidebar)
     .frame(width: 300, height: 260)
