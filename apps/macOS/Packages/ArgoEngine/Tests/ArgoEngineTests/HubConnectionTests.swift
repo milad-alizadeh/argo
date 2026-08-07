@@ -13,7 +13,7 @@ struct HubConnectionTests {
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a Project with no live tail does not read as connected`() async throws {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
 
         try await hub.connect(to: LaunchConfiguration(
             projectURL: Self.projectURL,
@@ -34,7 +34,7 @@ struct HubConnectionTests {
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a connect in flight reads as connecting, never as no sources`() async throws {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
         let named = try hubFixtureURL("prose")
 
         // The watcher goes first and is given its turn, so what is being tested is whether the
@@ -57,7 +57,7 @@ struct HubConnectionTests {
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a tail that starts after a failure clears it`() async {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
         await hub.connect(to: LaunchConfiguration(
             projectURL: Self.projectURL,
             transcriptURLs: [FileManager.default.temporaryDirectory.appending(path: "absent")],
@@ -75,7 +75,7 @@ struct HubConnectionTests {
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a retry re-points at the configuration the Hub is already on`() async throws {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
         let named = try hubFixtureURL("prose")
         await hub.connect(to: LaunchConfiguration(
             projectURL: Self.projectURL,

@@ -20,7 +20,7 @@ struct HubDiscoveryTests {
             name: "theirs",
             cwd: fixture.path("other-checkout"),
         ))
-        let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+        let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
 
         await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
@@ -39,7 +39,7 @@ struct HubDiscoveryTests {
         let fixture = try RecordDirectoryFixture()
         defer { fixture.remove() }
         let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
-        let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+        let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
         await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
             transcriptURLs: [],
@@ -64,7 +64,7 @@ struct HubDiscoveryTests {
         defer { fixture.remove() }
         let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
         let quiet = try fixture.write(FixtureTranscript(name: "quiet", cwd: projectURL.path))
-        let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+        let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
         await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
             transcriptURLs: [],
@@ -92,7 +92,7 @@ struct HubDiscoveryTests {
         try fixture.write(
             FixtureTranscript(name: "second", cwd: projectURL.path, modifiedAgo: 600),
         )
-        let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+        let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
         await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
             transcriptURLs: [],
@@ -121,7 +121,7 @@ struct HubDiscoveryTests {
         let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
         try fixture.write(FixtureTranscript(name: "discoverable", cwd: projectURL.path))
         let named = try hubFixtureURL("prose")
-        let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+        let hub = testHub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
 
         await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,

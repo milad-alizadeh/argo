@@ -8,7 +8,7 @@ struct HubTests {
     @MainActor
     func `transcript facts become one Session projection`() async {
         let (observation, continuation) = hubLiveObservation(id: "session")
-        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
         await hub.startObserving(observation)
 
         continuation.yield([
@@ -33,7 +33,7 @@ struct HubTests {
     @MainActor
     func `the host title replaces the prompt fallback`() async {
         let (observation, continuation) = hubLiveObservation(id: "session")
-        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
         await hub.startObserving(observation)
 
         continuation.yield([.prompt(text: "Fallback title", atMs: nil)])
@@ -55,7 +55,7 @@ struct HubTests {
             projectURL: projectURL,
             transcriptURLs: [transcriptURL],
         )
-        let hub = Hub(projectURL: projectURL)
+        let hub = testHub(projectURL: projectURL)
 
         await hub.connect(to: configuration)
 
@@ -66,7 +66,7 @@ struct HubTests {
     @Test
     @MainActor
     func `resume files become one root-keyed Session`() async throws {
-        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
         let child = try await hubFixtureObservation("resumeChild")
         let parent = try await hubFixtureObservation("resumeParent")
 
@@ -82,7 +82,7 @@ struct HubTests {
     @Test
     @MainActor
     func `resume continuation owns the latest workspace facts`() async {
-        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
         let child = hubTestObservation(id: "child", events: [
             .headLeaf(uuid: "parent-leaf"),
             .recordIdentity(uuid: "child-record"),
@@ -110,12 +110,13 @@ struct HubTests {
     @Test
     @MainActor
     func `a refresh follows the Project the Hub is on`() async throws {
-        let fixture = try ProjectFixture()
-        defer { fixture.remove() }
-        let elsewhere = try fixture.folder("elsewhere", git: true)
-        let repositoryURL = try fixture.folder("repository", git: true)
-        let packageURL = try fixture.folder("repository/apps/macOS")
-        let hub = Hub(projectURL: elsewhere)
+        let elsewhere = URL(fileURLWithPath: "/tmp/argo-elsewhere")
+        let repositoryURL = URL(fileURLWithPath: "/tmp/argo-repository")
+        let packageURL = repositoryURL.appending(path: "apps/macOS", directoryHint: .isDirectory)
+        let checkout = CheckoutFixture()
+        await checkout.repository(at: elsewhere)
+        await checkout.repository(at: repositoryURL, head: .branch("main"), folders: [packageURL])
+        let hub = testHub(projectURL: elsewhere, checkout: checkout.read)
 
         try await hub.connect(to: LaunchConfiguration(
             projectURL: packageURL,
@@ -125,12 +126,34 @@ struct HubTests {
 
         // The folder the Hub was POINTED with goes away; the repository it resolved to stays. A
         // refresh reading the configuration back would answer with a path that is no longer there.
-        try fixture.remove(packageURL)
+        await checkout.forget(packageURL)
         await hub.refreshCheckout()
 
         // Not `elsewhere`, which is what it was made with, and not `packageURL`, which is what it
         // was pointed with — the refresh reads the one repository the Hub settled on.
         #expect(hub.project.url == repositoryURL)
+        await hub.disconnect()
+    }
+
+    /// Every head a repository can be on reaches the projection the shell renders. Only the
+    /// unreadable one used to: the read was a subprocess against a folder that never existed, so
+    /// failure was the only answer a test could get.
+    @Test(arguments: [CheckoutProjection.Head.branch("main"), .detached(shortSHA: "95a8d79")])
+    @MainActor
+    func `the head the checkout read answers with is the head of the Project`(
+        head: CheckoutProjection.Head,
+    ) async throws {
+        let repositoryURL = URL(fileURLWithPath: "/tmp/argo-repository")
+        let checkout = CheckoutFixture()
+        await checkout.repository(at: repositoryURL, head: head)
+        let hub = testHub(projectURL: repositoryURL, checkout: checkout.read)
+
+        try await hub.connect(to: LaunchConfiguration(
+            projectURL: repositoryURL,
+            transcriptURLs: [hubFixtureURL("prose")],
+        ))
+
+        #expect(hub.checkout == head)
         await hub.disconnect()
     }
 
