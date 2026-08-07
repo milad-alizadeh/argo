@@ -67,7 +67,7 @@ public extension CockpitPresentation {
             ),
         ],
         checkout: .branch("main"),
-        connection: .healthy,
+        connection: .connected,
     )
 
     static let emptyPreview = CockpitPresentation(
@@ -75,6 +75,6 @@ public extension CockpitPresentation {
         activeProjectID: "argo",
         sessions: [],
         checkout: .detached(shortSHA: "9011669"),
-        connection: .healthy,
+        connection: .idle,
     )
 }

@@ -34,7 +34,7 @@ public struct CockpitView: View {
         } detail: {
             InstrumentDeckShell(room: navigation.room)
                 .overlay(alignment: .topLeading) {
-                    if presentation.connection != .healthy {
+                    if presentation.connection != .connected {
                         ConnectionChip(
                             connection: presentation.connection,
                             retry: actions.retryConnection,

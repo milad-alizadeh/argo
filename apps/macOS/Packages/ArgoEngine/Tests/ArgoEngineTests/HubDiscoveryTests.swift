@@ -22,13 +22,13 @@ struct HubDiscoveryTests {
         ))
         let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
 
-        await hub.connect(using: Engine(), configuration: LaunchConfiguration(
+        await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
             transcriptURLs: [],
         ))
 
         #expect(hub.sessions.map(\.sourceURL) == [mine.standardizedFileURL])
-        #expect(hub.connection == .healthy)
+        #expect(hub.connection == .connected)
         await hub.disconnect()
     }
 
@@ -39,7 +39,7 @@ struct HubDiscoveryTests {
         defer { fixture.remove() }
         let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
         let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
-        await hub.connect(using: Engine(), configuration: LaunchConfiguration(
+        await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
             transcriptURLs: [],
         ))
@@ -49,7 +49,7 @@ struct HubDiscoveryTests {
         await hub.refreshWorkingSet()
 
         #expect(hub.sessions.map(\.sourceURL) == [started.standardizedFileURL])
-        #expect(hub.liveObservationCount == 1)
+        #expect(hub.observations.map(\.state) == [.live])
         await hub.disconnect()
     }
 
@@ -63,16 +63,16 @@ struct HubDiscoveryTests {
         let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
         let quiet = try fixture.write(FixtureTranscript(name: "quiet", cwd: projectURL.path))
         let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
-        await hub.connect(using: Engine(), configuration: LaunchConfiguration(
+        await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
             transcriptURLs: [],
         ))
-        #expect(hub.liveObservationCount == 1)
+        #expect(hub.observations.map(\.state) == [.live])
 
         try fixture.age(quiet, by: Self.wellOutsideTheWindow)
         await hub.refreshWorkingSet()
 
-        #expect(hub.liveObservationCount == 0)
+        #expect(hub.observations.map(\.state) == [.stopped])
         #expect(hub.sessions.map(\.sourceURL) == [quiet.standardizedFileURL])
         await hub.disconnect()
     }
@@ -91,7 +91,7 @@ struct HubDiscoveryTests {
             FixtureTranscript(name: "second", cwd: projectURL.path, modifiedAgo: 600),
         )
         let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
-        await hub.connect(using: Engine(), configuration: LaunchConfiguration(
+        await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
             transcriptURLs: [],
         ))
@@ -104,7 +104,7 @@ struct HubDiscoveryTests {
         await hub.refreshWorkingSet()
 
         #expect(hub.sessions.map(\.sourceURL) == order)
-        #expect(hub.liveObservationCount == 2)
+        #expect(hub.observations.map(\.state) == [.live, .live])
         await hub.disconnect()
     }
 
@@ -120,7 +120,7 @@ struct HubDiscoveryTests {
         let named = try hubFixtureURL("prose")
         let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
 
-        await hub.connect(using: Engine(), configuration: LaunchConfiguration(
+        await hub.connect(to: LaunchConfiguration(
             projectURL: projectURL,
             transcriptURLs: [named],
         ))

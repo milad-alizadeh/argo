@@ -29,7 +29,16 @@ func hubTestObservation(
 @MainActor
 func hubObserveToEnd(_ hub: Hub, _ observation: TranscriptObservation) async {
     await hub.startObserving(observation)
-    await hub.waitForObservation(transcriptID: observation.id)
+    await hubTailEnded(hub, transcriptID: observation.id)
+}
+
+/// Wait until a transcript's tail is over, read off the Hub's own projection rather than a handle
+/// into its task table: the projection is what a caller can see, so it is what a test asserts on.
+@MainActor
+func hubTailEnded(_ hub: Hub, transcriptID: String) async {
+    await settle {
+        hub.observations.contains { $0.id == transcriptID && $0.state == .stopped }
+    }
 }
 
 /// An observation whose stream stays open until the test closes it, which is the shape a live
@@ -94,7 +103,8 @@ private func openDescriptors() -> [Int32] {
 /// Yield until a condition holds, up to a bound. Some teardown is detached and cannot be awaited
 /// from the call that triggered it; this waits for it without sleeping on a guessed duration, and
 /// gives up rather than hanging so the failure is the caller's assertion.
-func settle(until condition: @Sendable () -> Bool) async {
+@MainActor
+func settle(until condition: () -> Bool) async {
     for _ in 0 ..< 200 {
         if condition() {
             return
