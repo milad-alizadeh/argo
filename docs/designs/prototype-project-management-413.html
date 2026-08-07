@@ -1,0 +1,1011 @@
+<!doctype html>
+<!--
+  THROWAWAY UI PROTOTYPE — issue #413 (Project registry and project switching).
+
+  QUESTION: where does Project switching live, and where do you MANAGE the registered set?
+
+  THE FRAME IS THE POINT. An earlier cut of this file drew a unified full-width titlebar —
+  wrong, and it invented placements the shell cannot offer. The real shell is a
+  NavigationSplitView whose SIDEBAR IS A FULL-HEIGHT INSET PANEL: it starts at y=0, owns the
+  traffic lights and the sidebar toggle, and runs to the window's bottom edge. ShellToolbar
+  places every item at `.principal` (ShellToolbar.swift:10-16), so toolbar content exists ONLY
+  over the detail region, starting right of the panel. There is no band spanning both.
+
+  So the shell offers exactly FOUR seats, and each variant takes one:
+    A — sidebar top bar, beside the sidebar toggle
+    B — sidebar leading rail (where the build puts it today), execution fixed
+    C — sidebar header row, above the Sessions it scopes
+    D — the `.principal` toolbar, over the detail region
+    E — D's seat, with Project + branch merged into ONE glass vessel
+
+  Each variant must answer all four of #413's affordances, not just switching:
+    1. switch active Project          2. add a new one
+    3. re-point a MOVED folder        4. remove / reveal
+
+  SETTLED: E. Scope reads left (Project → its checkout, one vessel), navigation pinned right.
+  Rename is NOT in the set — ProjectRecord derives `name` from the path on purpose.
+
+  Switch with ?variant=A|B|C|D|E, the floating bar, or ← / →.
+
+  Rules (rules/design-studies.md): tokens.css only, data-component on every meaningful
+  region. Values the contract lacks are marked PROPOSAL — snap or promote, never keep.
+
+  LIFETIME: dies when #413 settles. Fold the winner into ProjectStrip/ProjectMark, push the
+  rest to a throwaway branch, drop this file from main.
+-->
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Prototype — Project management (#413)</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      body {
+        overflow: hidden;
+      }
+
+      /* ================================================================
+         THE REAL FRAME. Two columns, floor to ceiling. No band across the
+         top: the sidebar panel and the detail region each own their own
+         top edge, which is what makes this shell different from the
+         floating-bar prototypes in cockpit-code-room-prototype.html.
+         ================================================================ */
+      .window {
+        position: fixed;
+        inset: var(--space-region);
+        bottom: calc(var(--space-region) * 4);
+        border-radius: var(--radius-plane);
+        overflow: hidden;
+        background: var(--background);
+        border: 1px solid var(--accent-strong);
+        display: grid;
+        grid-template-columns: auto 1fr;
+        min-height: 0;
+      }
+
+      /* The inset sidebar panel — full height, its own rounded material. */
+      .sidebar {
+        width: var(--sidebar-w);
+        margin: var(--space-gap);
+        margin-right: 0;
+        border-radius: var(--radius-step-lg);
+        background: var(--accent);
+        border: 1px solid var(--accent-strong);
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        min-height: 0;
+        /* Visible, not hidden: a menu opened from a seat inside the panel escapes it, the
+           way an AppKit menu does. The list does its own clipping. */
+        overflow: visible;
+        position: relative;
+      }
+      /* A variant that puts a rail INSIDE the panel splits it into two columns. */
+      .sidebar.has-rail {
+        display: grid;
+        grid-template-columns: var(--project-strip-width) 1fr;
+        grid-template-rows: 1fr;
+      }
+
+      /* The sidebar's own top bar: traffic lights left, sidebar toggle right.
+         This is the seat variant A takes. */
+      .sidebar-top {
+        display: flex;
+        align-items: center;
+        gap: var(--space-gap);
+        padding: var(--space-inset) var(--space-inset) var(--space-gap);
+        min-height: var(--traffic-lights-clearance);
+        box-sizing: border-box;
+        position: relative;
+      }
+      .lights {
+        display: flex;
+        gap: var(--space-gap);
+        flex: none;
+      }
+      .lights i {
+        width: var(--space-inset);
+        height: var(--space-inset);
+        border-radius: var(--radius-full);
+        display: block;
+      }
+      .lights i:nth-child(1) {
+        background: var(--status-fail);
+      }
+      .lights i:nth-child(2) {
+        background: var(--status-attention);
+      }
+      .lights i:nth-child(3) {
+        background: var(--status-ok);
+      }
+      .toggle {
+        margin-left: auto;
+        border: 0;
+        background: transparent;
+        color: var(--muted-foreground);
+        cursor: pointer;
+        padding: var(--space-hair) var(--space-tight);
+      }
+
+      .sessions {
+        overflow: auto;
+        padding: var(--space-gap);
+        display: grid;
+        gap: var(--space-hair);
+        align-content: start;
+      }
+      .session {
+        display: grid;
+        grid-template-columns: var(--space-mark-col) 1fr;
+        align-items: start;
+        gap: var(--space-gap);
+        padding: var(--space-snug) var(--space-gap);
+        border-radius: var(--radius-step-sm);
+        color: var(--foreground);
+      }
+      .session[aria-selected="true"] {
+        background: var(--accent-strong);
+      }
+      .session .stack {
+        display: grid;
+        gap: var(--space-hair);
+        min-width: 0;
+      }
+      .session .sub {
+        color: var(--muted-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .section-label {
+        padding: var(--space-gap) var(--space-inset) var(--space-tight);
+        color: var(--muted-foreground);
+      }
+
+      /* The detail region. Its toolbar starts right of the panel — never full width. */
+      .detail {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 0;
+      }
+      .detail-toolbar {
+        display: flex;
+        align-items: center;
+        gap: var(--space-inset);
+        padding: var(--space-inset) var(--space-region);
+        min-height: var(--traffic-lights-clearance);
+        box-sizing: border-box;
+        position: relative;
+      }
+      .rooms {
+        display: flex;
+        gap: var(--space-hair);
+        padding: var(--space-hair);
+        border-radius: var(--radius-full);
+        background: var(--accent);
+      }
+      .rooms button {
+        border: 0;
+        background: transparent;
+        color: var(--muted-foreground);
+        padding: var(--space-snug) var(--space-inset);
+        border-radius: var(--radius-full);
+        cursor: pointer;
+      }
+      .rooms button[aria-current="true"] {
+        background: var(--accent-strong);
+        color: var(--foreground);
+      }
+      .spacer {
+        flex: 1;
+      }
+      /* Liquid Glass, approximated. The app gets the real thing from
+         `.glassEffect(.regular.interactive(), in: Capsule())`; here it is the frost tokens
+         so the study reads at the right weight rather than as flat chrome. */
+      .glass {
+        backdrop-filter: blur(var(--frost)) saturate(var(--frost-saturate));
+        background: var(--accent);
+        border: 1px solid var(--accent-strong);
+      }
+      /* The left cluster: scope reads left, navigation is pinned right. */
+      .cluster {
+        display: flex;
+        align-items: center;
+        gap: var(--space-gap);
+      }
+      /* Merged (variant E): one capsule, a hairline instead of a gap. */
+      .cluster.merged {
+        gap: 0;
+        border-radius: var(--radius-full);
+        padding: var(--space-hair);
+      }
+      .cluster.merged .seg {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-snug);
+        border: 0;
+        background: transparent;
+        color: var(--foreground);
+        padding: var(--space-snug) var(--space-inset);
+        border-radius: var(--radius-full);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .cluster.merged .seg:hover {
+        background: var(--accent-strong);
+      }
+      .cluster.merged .seg .dot {
+        width: var(--space-snug);
+        height: var(--space-snug);
+        border-radius: var(--radius-full);
+        background: currentColor;
+        flex: none;
+      }
+      .cluster.merged .seg .sub {
+        color: var(--muted-foreground);
+      }
+      .cluster.merged .hair {
+        width: 1px;
+        align-self: stretch;
+        margin-block: var(--space-tight);
+        background: var(--accent-strong);
+        flex: none;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-snug);
+        padding: var(--space-snug) var(--space-inset);
+        border-radius: var(--radius-full);
+        border: 1px solid var(--accent-strong);
+        color: var(--foreground);
+        background: transparent;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .chip .dot {
+        width: var(--space-snug);
+        height: var(--space-snug);
+        border-radius: var(--radius-full);
+        background: currentColor;
+        flex: none;
+      }
+      .chip .sub {
+        color: var(--muted-foreground);
+      }
+      .deck {
+        display: grid;
+        place-items: center;
+        color: var(--muted-foreground);
+        min-height: 0;
+      }
+
+      /* ---- The leading rail, INSIDE the panel (variant B) ---- */
+      .rail {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        justify-items: center;
+        gap: var(--space-gap);
+        padding-block: var(--space-gap);
+        border-right: 1px solid var(--accent-strong);
+        min-height: 0;
+      }
+      .rail-marks {
+        display: grid;
+        gap: var(--space-gap);
+        align-content: start;
+        justify-items: center;
+      }
+      .rail-foot {
+        display: grid;
+        gap: var(--space-tight);
+        justify-items: center;
+      }
+      .mark {
+        width: var(--project-tab-size);
+        height: var(--project-tab-size);
+        border-radius: var(--radius-step-lg);
+        display: grid;
+        place-items: center;
+        position: relative;
+        border: 1px solid transparent;
+        background: var(--accent-strong);
+        color: var(--muted-foreground);
+        cursor: pointer;
+        flex: none;
+      }
+      /* The WHOLE box takes the surface — not the glyph. This is the bug in the build:
+         `.background` is applied before the fixed frame, so the rim hugs the letter. */
+      .mark[aria-current="true"] {
+        background: var(--secondary);
+        border-color: var(--primary-soft);
+        color: var(--foreground);
+      }
+      .mark.unreachable {
+        border-style: dashed;
+        border-color: var(--status-attention);
+        background: transparent;
+      }
+      .mark .badge {
+        position: absolute;
+        right: calc(var(--space-tight) * -1);
+        bottom: calc(var(--space-tight) * -1);
+        width: var(--space-gap);
+        height: var(--space-gap);
+        border-radius: var(--radius-full);
+        border: 1px solid var(--background);
+      }
+      .badge.run {
+        background: var(--tone-run);
+      }
+      .badge.warn {
+        background: var(--status-attention);
+      }
+      .badge.bad {
+        background: var(--status-fail);
+      }
+      .mark-ghost {
+        border-style: dashed;
+        border-color: var(--accent-strong);
+        background: transparent;
+      }
+
+      /* ---- Menus ---- */
+      .menu {
+        position: absolute;
+        z-index: 20;
+        min-width: 300px;
+        padding: var(--space-snug);
+        border-radius: var(--radius-step-lg);
+        background: var(--popover);
+        border: 1px solid var(--accent-strong);
+        box-shadow: 0 20px 34px -22px var(--graphite-950);
+        display: grid;
+        gap: var(--space-hair);
+      }
+      .menu .sep {
+        height: 1px;
+        background: var(--accent-strong);
+        margin-block: var(--space-tight);
+      }
+      .menu-row {
+        display: grid;
+        grid-template-columns: var(--space-marker-col) 1fr auto;
+        align-items: center;
+        gap: var(--space-gap);
+        padding: var(--space-snug) var(--space-gap);
+        border-radius: var(--radius-step-sm);
+        color: var(--foreground);
+        cursor: pointer;
+        text-align: left;
+        border: 0;
+        background: transparent;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .menu-row:hover {
+        background: var(--accent-strong);
+      }
+      .menu-row .stack {
+        display: grid;
+        gap: var(--space-hair);
+        min-width: 0;
+      }
+      .menu-row .stack span:last-child {
+        color: var(--muted-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .menu-row .kbd {
+        color: var(--muted-foreground);
+      }
+      .warn {
+        color: var(--status-attention);
+      }
+
+      /* ---- Variant C: the sidebar's header row ---- */
+      .project-head {
+        display: grid;
+        gap: var(--space-tight);
+        margin: 0 var(--space-gap) var(--space-gap);
+        padding: var(--space-gap) var(--space-inset);
+        border-radius: var(--radius-step-md);
+        background: var(--accent-strong);
+        cursor: pointer;
+      }
+      .project-head .line {
+        display: flex;
+        align-items: center;
+        gap: var(--space-snug);
+      }
+      .project-head .caret {
+        margin-left: auto;
+        color: var(--muted-foreground);
+      }
+      .project-head .path {
+        color: var(--muted-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .sidebar-foot {
+        border-top: 1px solid var(--accent-strong);
+        padding: var(--space-gap);
+      }
+      .foot-row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-snug);
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: var(--muted-foreground);
+        padding: var(--space-snug) var(--space-gap);
+        border-radius: var(--radius-step-sm);
+        cursor: pointer;
+        text-align: left;
+      }
+      .foot-row:hover {
+        background: var(--accent-strong);
+        color: var(--foreground);
+      }
+
+      /* ---- The Manage Projects sheet ---- */
+      .scrim {
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        display: grid;
+        place-items: start center;
+        padding-top: calc(var(--space-region) * 3);
+        background: color-mix(in srgb, var(--graphite-950) 55%, transparent);
+      }
+      .sheet {
+        /* PROPOSAL: sheet width — snap to a promoted token when this settles. */
+        width: 560px;
+        max-width: 90%;
+        border-radius: var(--radius-plane);
+        background: var(--card);
+        border: 1px solid var(--accent-strong);
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+      .sheet header,
+      .sheet footer {
+        padding: var(--space-region) var(--space-plane);
+        display: flex;
+        align-items: center;
+        gap: var(--space-gap);
+      }
+      .sheet header {
+        border-bottom: 1px solid var(--accent-strong);
+      }
+      .sheet footer {
+        border-top: 1px solid var(--accent-strong);
+        justify-content: flex-end;
+      }
+      .sheet .rows {
+        padding: var(--space-gap);
+        display: grid;
+        gap: var(--space-hair);
+        max-height: 320px;
+        overflow: auto;
+      }
+      .sheet-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        align-items: center;
+        gap: var(--space-inset);
+        padding: var(--space-inset);
+        border-radius: var(--radius-step-md);
+      }
+      .sheet-row:hover {
+        background: var(--accent);
+      }
+      .sheet-row .stack {
+        display: grid;
+        gap: var(--space-hair);
+        min-width: 0;
+      }
+      .sheet-row .stack .path {
+        color: var(--muted-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .btn {
+        border: 1px solid var(--accent-strong);
+        background: transparent;
+        color: var(--foreground);
+        border-radius: var(--radius-step-sm);
+        padding: var(--space-snug) var(--space-inset);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: var(--accent-strong);
+      }
+      .btn.primary {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: var(--primary-foreground);
+      }
+      .more {
+        border: 0;
+        background: transparent;
+        color: var(--muted-foreground);
+        cursor: pointer;
+        padding: var(--space-hair) var(--space-tight);
+        border-radius: var(--radius-step-sm);
+      }
+      .more:hover {
+        background: var(--accent-strong);
+        color: var(--foreground);
+      }
+
+      /* ---- Variant D: the detail-side drawer under the toolbar seat ---- */
+      .drawer {
+        position: absolute;
+        z-index: 20;
+        top: var(--traffic-lights-clearance);
+        left: var(--space-region);
+        /* PROPOSAL: drawer width — snap or promote when this settles. */
+        width: 340px;
+        border-radius: var(--radius-step-lg);
+        background: var(--popover);
+        border: 1px solid var(--accent-strong);
+        box-shadow: 0 20px 34px -22px var(--graphite-950);
+        overflow: hidden;
+      }
+      .drawer-head {
+        padding: var(--space-inset) var(--space-region) var(--space-gap);
+        color: var(--muted-foreground);
+      }
+      .drawer-list {
+        padding: var(--space-snug);
+        display: grid;
+        gap: var(--space-hair);
+      }
+      .drawer-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: var(--space-gap);
+        padding: var(--space-gap);
+        border-radius: var(--radius-step-md);
+        cursor: pointer;
+        color: var(--foreground);
+      }
+      .drawer-row:hover {
+        background: var(--accent-strong);
+      }
+      .drawer-row[aria-current="true"] {
+        background: var(--accent-strong);
+      }
+      .drawer-row .tile {
+        width: var(--space-nest);
+        height: var(--space-nest);
+        border-radius: var(--radius-step-md);
+        display: grid;
+        place-items: center;
+        background: var(--secondary);
+        color: var(--muted-foreground);
+        flex: none;
+      }
+      .drawer-row .stack {
+        display: grid;
+        gap: var(--space-hair);
+        min-width: 0;
+      }
+      .drawer-row .stack .path {
+        color: var(--muted-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .drawer-foot {
+        border-top: 1px solid var(--accent-strong);
+        padding: var(--space-snug);
+      }
+
+      /* ---- Floating switcher — deliberately unlike the design under test ---- */
+      .switcher {
+        position: fixed;
+        left: 50%;
+        bottom: var(--space-region);
+        transform: translateX(-50%);
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: var(--space-inset);
+        padding: var(--space-gap) var(--space-inset);
+        border-radius: var(--radius-full);
+        background: var(--bone-100);
+        color: var(--graphite-900);
+        box-shadow: 0 20px 34px -22px var(--graphite-950);
+      }
+      .switcher button {
+        border: 0;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-size: var(--type-title);
+        line-height: 1;
+        padding: 0 var(--space-tight);
+      }
+      .switcher .label {
+        min-width: 300px;
+        text-align: center;
+      }
+      .note {
+        position: fixed;
+        left: var(--space-region);
+        bottom: var(--space-region);
+        z-index: 90;
+        color: var(--muted-foreground);
+        max-width: 32%;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <div class="switcher" data-component="PrototypeSwitcher">
+      <button id="prev" aria-label="Previous variant">‹</button>
+      <span class="label text-row-strong" id="variant-label"></span>
+      <button id="next" aria-label="Next variant">›</button>
+    </div>
+    <p class="note text-meta" id="variant-note"></p>
+
+    <script src="kit.js"></script>
+    <script>
+      /* Fixture, deliberately awkward: a numeric-leading folder name (the one that renders
+         as "4" today), a monorepo, and a Project whose folder has MOVED — #413's required
+         honest state. */
+      const PROJECTS = [
+        { id: "p1", name: "argo", path: "~/Developer/argo", initial: "A", state: "run", sessions: 3, reachable: true },
+        { id: "p2", name: "413-project-registry", path: "~/Developer/argo/.claude/worktrees/413-project-registry", initial: "4", state: "warn", sessions: 1, reachable: true },
+        { id: "p3", name: "penumbra", path: "~/Code/penumbra", initial: "P", state: null, sessions: 0, reachable: false },
+        { id: "p4", name: "clientwork-monorepo", path: "~/Work/clientwork-monorepo", initial: "C", state: "bad", sessions: 2, reachable: true },
+      ];
+      const ACTIVE = "p1";
+      const active = () => PROJECTS.find((p) => p.id === ACTIVE);
+      const SESSIONS = [
+        { name: "Project registry", sub: "413-project-registry · claude", tone: "run" },
+        { name: "Hub projection", sub: "441-hub-projection · claude", tone: "gray" },
+        { name: "Dock feed placement", sub: "436-dock-feed · codex", tone: "amber" },
+      ];
+      const TONE = { run: "var(--tone-run)", warn: "var(--status-attention)", bad: "var(--status-fail)" };
+      const toneOf = (p) => (p.reachable ? TONE[p.state] || "var(--muted-foreground)" : "var(--status-attention)");
+
+      /* Shared chrome. A shared header is fine; a shared layout is not — every variant is
+         free to restructure the panel, and B and C do. */
+      const lights = () => `<span class="lights"><i></i><i></i><i></i></span>`;
+      const toggle = () => `<button class="toggle" title="Hide sidebar">◧</button>`;
+
+      const sessionList = () => `
+        <div class="sessions" data-component="SessionNavigator">
+          ${SESSIONS.map(
+            (s, i) => `
+            <div class="session text-row" aria-selected="${i === 0}">
+              <span class="status" style="color:var(--tone-${s.tone}); margin-top:var(--space-tight)"><span class="dot"></span></span>
+              <span class="stack"><span>${esc(s.name)}</span><span class="sub text-meta">${esc(s.sub)}</span></span>
+            </div>`,
+          ).join("")}
+        </div>`;
+
+      /* The detail region and its `.principal` toolbar — the ONLY toolbar seat the shell has
+         (ShellToolbar.swift:10-16). `lead` is the left cluster, RoomsVessel is pinned right.
+         In Swift this ordering is ToolbarItem(s) → ToolbarSpacer(.flexible) → ToolbarItem;
+         the spacer is what decides which items share a glass capsule. */
+      const detail = (lead = "", overlay = "") => `
+        <section class="detail" data-component="DetailRegion">
+          <div class="detail-toolbar" data-component="ShellToolbar">
+            ${lead}
+            <span class="spacer"></span>
+            <nav class="rooms glass text-row" data-component="RoomsVessel">
+              <button aria-current="true">Sessions</button><button>Work</button><button>Code</button>
+            </nav>
+            ${overlay}
+          </div>
+          <div class="deck text-row" data-component="InstrumentDeck">Deck · placeholder</div>
+        </section>`;
+
+      const gitVessel = () => `
+        <button class="chip glass text-row" data-component="GitVessel">
+          <span class="mono text-code-inline">⎇ main</span><span class="sub text-meta">↑2 ↓1</span>
+        </button>`;
+
+      const projectVessel = () => `
+        <button class="chip glass text-row" data-component="ProjectVessel">
+          <span class="dot" style="color:${TONE.run}"></span><span>${esc(active().name)}</span><span class="sub text-meta">▾</span>
+        </button>`;
+
+      const projectDrawer = () => `
+        <div class="drawer" data-component="ProjectDrawer">
+          <div class="drawer-head text-eyebrow">Projects · per-machine</div>
+          <div class="drawer-list">
+            ${PROJECTS.map(
+              (p) => `
+              <div class="drawer-row" aria-current="${p.id === ACTIVE}">
+                <span class="tile text-row-strong" style="${p.reachable ? "" : "border:1px dashed var(--status-attention); background:transparent"}">${p.reachable ? esc(p.initial) : "⚠"}</span>
+                <span class="stack">
+                  <span class="text-row">${esc(p.name)}</span>
+                  <span class="path text-meta mono ${p.reachable ? "" : "warn"}">${p.reachable ? esc(p.path) : "folder not found"}</span>
+                </span>
+                <span style="display:flex; align-items:center; gap:var(--space-snug)">
+                  ${p.state ? `<span class="status" style="color:${TONE[p.state]}"><span class="dot"></span><span class="text-meta">${p.sessions}</span></span>` : ""}
+                  <button class="more">⋯</button>
+                </span>
+              </div>`,
+            ).join("")}
+          </div>
+          <div class="drawer-foot">
+            <button class="foot-row text-row"><span>＋</span><span>Add Project…</span></button>
+          </div>
+        </div>`;
+
+      const projectMenu = (style) => `
+        <div class="menu" style="${style}" data-component="ProjectMenu">
+          ${PROJECTS.map(
+            (p) => `
+            <button class="menu-row text-row" role="menuitemradio" aria-checked="${p.id === ACTIVE}">
+              <span class="status" style="color:${toneOf(p)}"><span class="dot"></span></span>
+              <span class="stack">
+                <span>${esc(p.name)}${p.id === ACTIVE ? " ✓" : ""}</span>
+                <span class="text-meta mono ${p.reachable ? "" : "warn"}">${p.reachable ? esc(p.path) : "folder not found — click to locate"}</span>
+              </span>
+              <span class="kbd text-meta">${p.sessions ? p.sessions + " live" : ""}</span>
+            </button>`,
+          ).join("")}
+          <div class="sep"></div>
+          <button class="menu-row text-row"><span>＋</span><span class="stack"><span>Add Project…</span></span><span class="kbd text-meta">⇧⌘O</span></button>
+          <button class="menu-row text-row"><span>⚙</span><span class="stack"><span>Manage Projects…</span></span><span class="kbd text-meta">⌘,</span></button>
+        </div>`;
+
+      const manageSheet = () => `
+        <div class="scrim" data-component="ManageProjectsSheet">
+          <div class="sheet">
+            <header>
+              <span class="text-title">Projects</span>
+              <span class="text-meta" style="color:var(--muted-foreground); margin-left:auto">${PROJECTS.length} registered · per-machine (userData)</span>
+            </header>
+            <div class="rows">
+              ${PROJECTS.map(
+                (p) => `
+                <div class="sheet-row text-row">
+                  <span class="status" style="color:${toneOf(p)}"><span class="dot"></span></span>
+                  <span class="stack">
+                    <span>${esc(p.name)}</span>
+                    <span class="path text-meta mono ${p.reachable ? "" : "warn"}">${esc(p.path)}${p.reachable ? "" : " — not found"}</span>
+                  </span>
+                  <span class="text-meta" style="color:var(--muted-foreground)">${p.sessions ? p.sessions + " live" : "—"}</span>
+                  <span style="display:flex; gap:var(--space-snug)">
+                    ${p.reachable ? "" : `<button class="btn">Locate…</button>`}<button class="more">⋯</button>
+                  </span>
+                </div>`,
+              ).join("")}
+            </div>
+            <footer>
+              <button class="btn" style="margin-right:auto">＋ Add Project…</button>
+              <button class="btn primary">Done</button>
+            </footer>
+          </div>
+        </div>`;
+
+      /* ==================================================================
+         SEAT A — the sidebar's own top bar, beside the sidebar toggle.
+
+         Thesis: the panel top is the only chrome that is ABOUT the sidebar's
+         scope, and it already has spare width between the traffic lights and
+         the toggle. The Project's name is on screen permanently (nothing in
+         the build shows it at all), switching is a menu, management a sheet.
+         The whole 60px rail goes back to the session list.
+         Cost: no ambient per-project state — you open the menu to see it.
+         ================================================================== */
+      const variantA = () => `
+        <div class="window" data-component="CockpitWindow" style="--sidebar-w: 260px">
+          <aside class="sidebar" data-component="ShellSidebar">
+            <div class="sidebar-top">
+              ${lights()}
+              <button class="chip text-row" data-component="ProjectMenuButton" style="margin-left:var(--space-gap); border:0; padding-inline:var(--space-snug)">
+                <span class="dot" style="color:${TONE.run}"></span><span>${esc(active().name)}</span><span class="sub text-meta">▾</span>
+              </button>
+              ${toggle()}
+            </div>
+            <div class="section-label text-eyebrow">Sessions</div>
+            ${sessionList()}
+            <div></div>
+            ${projectMenu("top: var(--traffic-lights-clearance); left: var(--space-gap);")}
+          </aside>
+          ${detail()}
+        </div>`;
+
+      /* ==================================================================
+         SEAT B — the leading rail inside the panel (today's placement),
+         execution fixed.
+
+         Thesis: the placement is not the bug — inside the inset panel is the
+         only place a rail CAN go, since hoisting it out would break the
+         panel's inset. What is broken is the execution: a selection surface
+         that hugs the glyph instead of the box, a meaningless first-letter
+         initial ("4"), a ＋ floating mid-column, and no management verbs.
+         Here the box takes the surface, the footer anchors ＋ and ⚙, and
+         right-click carries locate / reveal / rename / remove.
+         Cost: still dies with the sidebar on collapse. Still no name on screen.
+         ================================================================== */
+      const variantB = () => `
+        <div class="window" data-component="CockpitWindow" style="--sidebar-w: 300px">
+          <aside class="sidebar has-rail" data-component="ShellSidebar">
+            <div class="rail" data-component="ProjectStrip">
+              <div class="rail-marks" style="margin-top: var(--traffic-lights-clearance)">
+                ${PROJECTS.map(
+                  (p) => `
+                  <button class="mark text-row-strong ${p.reachable ? "" : "unreachable"}" aria-current="${p.id === ACTIVE}" title="${esc(p.name)} — ${p.reachable ? esc(p.path) : "folder not found"}">
+                    ${p.reachable ? esc(p.initial) : "⚠"}
+                    ${p.state ? `<span class="badge ${p.state === "run" ? "run" : p.state === "warn" ? "warn" : "bad"}"></span>` : ""}
+                  </button>`,
+                ).join("")}
+              </div>
+              <span></span>
+              <div class="rail-foot">
+                <button class="mark mark-ghost text-row" title="Add Project">＋</button>
+                <button class="mark mark-ghost text-row" title="Manage Projects…">⚙</button>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-rows:auto auto 1fr; min-height:0">
+              <div class="sidebar-top" style="justify-content:flex-end">${toggle()}</div>
+              <div class="section-label text-eyebrow">Sessions</div>
+              ${sessionList()}
+            </div>
+            <div class="menu" style="left: calc(var(--project-strip-width) + var(--space-snug)); top: calc(var(--traffic-lights-clearance) * 2 + var(--space-gap)); min-width: 230px" data-component="ProjectMarkMenu">
+              <div class="menu-row text-meta" style="cursor:default"><span></span><span class="stack"><span class="warn">penumbra — folder not found</span><span class="mono">~/Code/penumbra</span></span><span></span></div>
+              <div class="sep"></div>
+              <button class="menu-row text-row"><span>⤺</span><span class="stack"><span>Locate folder…</span></span><span></span></button>
+              <button class="menu-row text-row"><span>◱</span><span class="stack"><span>Reveal in Finder</span></span><span></span></button>
+              <button class="menu-row text-row"><span>✎</span><span class="stack"><span>Rename…</span></span><span></span></button>
+              <div class="sep"></div>
+              <button class="menu-row text-row"><span>⌫</span><span class="stack"><span>Remove from Argo</span></span><span></span></button>
+            </div>
+          </aside>
+          ${detail()}
+        </div>`;
+
+      /* ==================================================================
+         SEAT C — the sidebar header row, above the Sessions it scopes.
+
+         Thesis: no rail, no toolbar seat. The Project is a row at the top of
+         the panel carrying name, path and worst-state — the thing everything
+         below it is scoped BY sits above it, the way a source list works.
+         Registration is a persistent footer, not a floating ＋, and
+         `Manage Projects…` opens the sheet (shown open here).
+         Cost: dies with the sidebar, same as today. Costs a row of list height.
+         ================================================================== */
+      const variantC = () => `
+        <div class="window" data-component="CockpitWindow" style="--sidebar-w: 290px">
+          <aside class="sidebar" data-component="ShellSidebar">
+            <div class="sidebar-top">${lights()}${toggle()}</div>
+            <div class="project-head" data-component="ProjectHeader">
+              <div class="line text-row-strong">
+                <span class="status" style="color:${TONE.run}"><span class="dot"></span></span>
+                <span>${esc(active().name)}</span>
+                <span class="caret text-meta">⌄</span>
+              </div>
+              <div class="path text-meta mono">${esc(active().path)}</div>
+            </div>
+            ${sessionList()}
+            <div class="sidebar-foot" data-component="ProjectFooter">
+              <button class="foot-row text-row"><span>＋</span><span>Add Project…</span></button>
+              <button class="foot-row text-row"><span>⚙</span><span>Manage Projects…</span></button>
+            </div>
+          </aside>
+          ${detail()}
+          ${manageSheet()}
+        </div>`;
+
+      /* ==================================================================
+         SEAT D — the `.principal` toolbar, aligned as decided.
+
+         Thesis: the Project scopes the WHOLE window, not just the sidebar —
+         so it sits in the toolbar and survives a sidebar collapse, the one
+         thing no panel-hosted seat can claim. Opens a drawer, not a bare
+         menu: each row carries name, path, live count and a ⋯, so management
+         happens where switching does, with no modal.
+
+         ALIGNMENT (this is the settled part): scope reads LEFT — Project then
+         its checkout, the branch qualifying the project it belongs to — and
+         NAVIGATION is pinned RIGHT. Two clusters, one flexible spacer, which
+         is exactly what a `.principal` group + ToolbarSpacer(.flexible)
+         produces in Swift.
+
+         D vs E is the remaining question: whether Project and branch are two
+         glass capsules (here) or one merged group (E).
+         ================================================================== */
+      const variantD = () => `
+        <div class="window" data-component="CockpitWindow" style="--sidebar-w: 260px">
+          <aside class="sidebar" data-component="ShellSidebar">
+            <div class="sidebar-top">${lights()}${toggle()}</div>
+            <div class="section-label text-eyebrow">Sessions</div>
+            ${sessionList()}
+            <div></div>
+          </aside>
+          ${detail(
+            `<div class="cluster" data-component="ScopeCluster">${projectVessel()}${gitVessel()}</div>`,
+            projectDrawer(),
+          )}
+        </div>`;
+
+      /* ==================================================================
+         SEAT E — D's alignment, but Project + branch merged into ONE glass
+         capsule with a hairline between them.
+
+         Thesis: they are not two peer controls. The branch is the Project's
+         checkout — it has no meaning without it, and it re-reads whenever the
+         Project switches. One capsule says that; two say they are siblings
+         that happen to be adjacent. In Swift this is a single
+         ToolbarItemGroup (shared capsule) rather than two ToolbarItems
+         separated by a spacer.
+         Cost: a merged capsule is a wider single target, and the branch label
+         truncating inside it is less obviously its own control.
+         ================================================================== */
+      const variantE = () => `
+        <div class="window" data-component="CockpitWindow" style="--sidebar-w: 260px">
+          <aside class="sidebar" data-component="ShellSidebar">
+            <div class="sidebar-top">${lights()}${toggle()}</div>
+            <div class="section-label text-eyebrow">Sessions</div>
+            ${sessionList()}
+            <div></div>
+          </aside>
+          ${detail(
+            `<div class="cluster merged glass" data-component="ScopeVessel">
+               <button class="seg text-row"><span class="dot" style="color:${TONE.run}"></span><span>${esc(active().name)}</span><span class="sub text-meta">▾</span></button>
+               <span class="hair"></span>
+               <button class="seg text-row"><span class="mono text-code-inline">⎇ main</span><span class="sub text-meta">↑2 ↓1</span></button>
+             </div>`,
+            projectDrawer(),
+          )}
+        </div>`;
+
+      const VARIANTS = [
+        ["A", "Seat: sidebar top bar", "The panel's own top bar, beside the sidebar toggle — the only chrome that is about the sidebar's scope. Name always visible; menu switches; sheet manages. The 60px rail goes back to the session list. Cost: no ambient per-project state."],
+        ["B", "Seat: leading rail (today, fixed)", "The placement is not the bug — inside the inset panel is the only place a rail can go. Fixed: the box takes the selection surface (not the glyph), ＋ and ⚙ anchor to a footer, right-click carries locate / reveal / rename / remove. Cost: still no name, still dies on sidebar collapse."],
+        ["C", "Seat: sidebar header row", "The Project sits above the Sessions it scopes, carrying name + path + worst-state, like a source-list header. Registration is a persistent footer; Manage Projects sheet shown open. Cost: dies with the sidebar; costs a row of list height."],
+        ["D", "Toolbar · scope left, rooms right", "The settled alignment: Project then its branch on the left, RoomsVessel pinned right, one flexible spacer between. Project and branch are two separate glass capsules — two ToolbarItems split by a ToolbarSpacer."],
+        ["E", "Toolbar · scope merged into one vessel", "Same alignment as D, but Project + branch share ONE glass capsule with a hairline — the branch is the Project's checkout, not its peer. One ToolbarItemGroup instead of two items. Cost: wider single target; the branch reads less like its own control."],
+      ];
+      const RENDER = { A: variantA, B: variantB, C: variantC, D: variantD, E: variantE };
+
+      function current() {
+        const v = new URLSearchParams(location.search).get("variant");
+        return RENDER[v] ? v : "A";
+      }
+      function go(key) {
+        const url = new URL(location.href);
+        url.searchParams.set("variant", key);
+        history.replaceState(null, "", url);
+        render();
+      }
+      function render() {
+        const key = current();
+        const [, name, note] = VARIANTS.find(([k]) => k === key);
+        document.getElementById("root").innerHTML = RENDER[key]();
+        document.getElementById("variant-label").textContent = `${key} — ${name}`;
+        document.getElementById("variant-note").textContent = note;
+      }
+      function cycle(step) {
+        const i = VARIANTS.findIndex(([k]) => k === current());
+        go(VARIANTS[(i + step + VARIANTS.length) % VARIANTS.length][0]);
+      }
+      document.getElementById("prev").onclick = () => cycle(-1);
+      document.getElementById("next").onclick = () => cycle(1);
+      addEventListener("keydown", (e) => {
+        const t = e.target;
+        if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+        if (e.key === "ArrowLeft") cycle(-1);
+        if (e.key === "ArrowRight") cycle(1);
+      });
+      render();
+    </script>
+  </body>
+</html>
