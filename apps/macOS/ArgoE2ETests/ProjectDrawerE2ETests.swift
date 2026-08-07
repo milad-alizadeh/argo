@@ -20,6 +20,12 @@ final class ProjectDrawerE2ETests: XCTestCase {
         try await super.setUp()
         // A crashed app fails the test it crashed in, rather than every one after it.
         continueAfterFailure = false
+        // Launch onto the specimen's fixtures, NOT the machine's registry. Against a real
+        // registry these tests assert whatever that Mac happens to have registered: they passed
+        // locally, where three Projects exist, and failed on a fresh CI runner where the drawer
+        // correctly showed its empty state and no row had a menu to find. The state under test
+        // has to come from the test.
+        app.launchArguments += ["--specimen", "toolbarScope"]
         app.launch()
     }
 
