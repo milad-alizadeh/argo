@@ -15,7 +15,7 @@ struct HubObservationTests {
     @Test
     @MainActor
     func `stopping one observation leaves the others tailing`() async {
-        let hub = Hub(projectURL: Self.firstProjectURL)
+        let hub = testHub(projectURL: Self.firstProjectURL)
         let (dropped, droppedEvents) = hubLiveObservation(id: "dropped")
         let (kept, keptEvents) = hubLiveObservation(id: "kept")
 
@@ -40,7 +40,7 @@ struct HubObservationTests {
     @Test
     @MainActor
     func `a stopped observation applies no further event`() async {
-        let hub = Hub(projectURL: Self.firstProjectURL)
+        let hub = testHub(projectURL: Self.firstProjectURL)
         let (first, firstEvents) = hubLiveObservation(id: "session")
 
         await hub.startObserving(first)
@@ -64,7 +64,7 @@ struct HubObservationTests {
     @Test
     @MainActor
     func `re-pointing at another Project drops the previous one entirely`() async throws {
-        let hub = Hub(projectURL: Self.firstProjectURL)
+        let hub = testHub(projectURL: Self.firstProjectURL)
         let second = try hubFixtureURL("prose")
 
         await hub.connect(to: LaunchConfiguration(
@@ -92,7 +92,7 @@ struct HubObservationTests {
     @Test
     @MainActor
     func `re-pointing repeatedly leaves no growing set of tasks`() async throws {
-        let hub = Hub(projectURL: Self.firstProjectURL)
+        let hub = testHub(projectURL: Self.firstProjectURL)
         let configuration = try LaunchConfiguration(
             projectURL: Self.firstProjectURL,
             transcriptURLs: [hubFixtureURL("externalBasic"), hubFixtureURL("prose")],
@@ -116,7 +116,7 @@ struct HubObservationTests {
             .appending(path: "\(UUID().uuidString).jsonl")
         try Data("{}\n".utf8).write(to: transcriptURL)
         defer { try? FileManager.default.removeItem(at: transcriptURL) }
-        let hub = Hub(projectURL: Self.firstProjectURL)
+        let hub = testHub(projectURL: Self.firstProjectURL)
         let configuration = LaunchConfiguration(
             projectURL: Self.firstProjectURL,
             transcriptURLs: [transcriptURL],
@@ -146,7 +146,7 @@ struct HubObservationTests {
     @Test
     @MainActor
     func `an event in flight at re-point never reaches the rebuilt join`() async throws {
-        let hub = Hub(projectURL: Self.firstProjectURL)
+        let hub = testHub(projectURL: Self.firstProjectURL)
         let (previous, previousEvents) = hubLiveObservation(id: "previous")
 
         await hub.startObserving(previous)
@@ -170,7 +170,7 @@ struct HubObservationTests {
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `connect returns while its tails are still running`() async throws {
-        let hub = Hub(projectURL: Self.firstProjectURL)
+        let hub = testHub(projectURL: Self.firstProjectURL)
 
         try await hub.connect(to: LaunchConfiguration(
             projectURL: Self.firstProjectURL,

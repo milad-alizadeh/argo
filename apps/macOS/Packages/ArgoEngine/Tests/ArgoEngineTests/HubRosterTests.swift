@@ -11,7 +11,7 @@ struct HubRosterTests {
     @Test
     @MainActor
     func `a transcript stays out of the roster until its file has been read`() async {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
         let (observation, continuation) = hubLiveObservation(id: "session")
 
         await hub.startObserving(observation)
@@ -32,7 +32,7 @@ struct HubRosterTests {
     @Test
     @MainActor
     func `a continuation read first never stands as a Session of its own`() async {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
         let (root, rootEvents) = hubLiveObservation(id: "root")
         let (child, childEvents) = hubLiveObservation(id: "child")
         await hub.startObserving(root)
@@ -56,7 +56,7 @@ struct HubRosterTests {
     @Test
     @MainActor
     func `a tail that ends without reading does not hold the roster back`() async {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
         let (silent, silentEvents) = hubLiveObservation(id: "silent")
         let spoken = hubTestObservation(id: "spoken", events: [.title("Spoken")])
 
@@ -72,7 +72,7 @@ struct HubRosterTests {
     @Test
     @MainActor
     func `the roster is ordered by last activity, newest first`() async {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
         let older = hubTestObservation(id: "older", events: [.prompt(text: "Older", atMs: 1000)])
         let newer = hubTestObservation(id: "newer", events: [.prompt(text: "Newer", atMs: 9000)])
 
@@ -86,7 +86,7 @@ struct HubRosterTests {
     @Test
     @MainActor
     func `a Session whose records carry no time is ordered by the file's last write`() async {
-        let hub = Hub(projectURL: Self.projectURL)
+        let hub = testHub(projectURL: Self.projectURL)
         let stale = hubTestObservation(
             id: "stale",
             events: [.title("Stale")],
@@ -115,7 +115,7 @@ struct HubRosterTests {
         let theirs = URL(fileURLWithPath: fixture.path("theirs"))
         try fixture.write(FixtureTranscript(name: "mine", cwd: mine.path))
         try fixture.write(FixtureTranscript(directory: "other", name: "theirs", cwd: theirs.path))
-        let hub = Hub(projectURL: mine, discovery: SessionDiscovery(store: fixture.store))
+        let hub = testHub(projectURL: mine, discovery: SessionDiscovery(store: fixture.store))
 
         let built = try await Self.rosterOf(hub, at: mine)
         await hub.connect(to: Self.pointing(at: theirs))
@@ -135,7 +135,7 @@ struct HubRosterTests {
         defer { fixture.remove() }
         let mine = URL(fileURLWithPath: fixture.path("mine"))
         try fixture.write(FixtureTranscript(name: "mine", cwd: mine.path))
-        let hub = Hub(projectURL: mine, discovery: SessionDiscovery(store: fixture.store))
+        let hub = testHub(projectURL: mine, discovery: SessionDiscovery(store: fixture.store))
 
         let built = try await Self.rosterOf(hub, at: mine)
         await hub.disconnect()
