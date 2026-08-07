@@ -10,6 +10,9 @@ Argo/               app-target sources — the @main App and its scene
 Argo.entitlements   signing entitlements (sandbox off, see below)
 Packages/
   ArgoEngine/       domain + engine. No UI, no AppKit — runs under `swift test`
+    Session/        the domain: the event model, evidence, tiers, usage
+    Transcript/     the untrusted-input boundary: one .jsonl becomes typed events
+    argo-observe/   the CLI that tails a transcript and prints what it reads
   ArgoUI/           shared visual components. No engine dependency
 ```
 
@@ -31,9 +34,26 @@ Or open `Argo.xcodeproj` and press ⌘R. The `Argo` scheme is shared and committ
 Turbo does not cache the build: `xcodebuild` keeps its own incremental state in
 `build/` (DerivedData), and handing hundreds of megabytes to a second cache buys nothing.
 
-Neither package has a test target yet — there is no behaviour here to make a claim about.
-The first one arrives with the engine in Phase 1, along with the task that runs them.
-They will not run in CI: CI is Linux, where there is no Swift toolchain and no
+## The engine, without a window
+
+`ArgoEngine` builds and tests on its own, with no Xcode and no app:
+
+```bash
+cd Packages/ArgoEngine
+swift test
+swift run argo-observe ~/.claude/projects/<project>/<session>.jsonl        # follows
+swift run argo-observe <transcript.jsonl> --once                          # reads and exits
+```
+
+`argo-observe` prints one line per event as the file grows. It is a debugging surface, not a
+rendering: it names the honesty tier on every fact that carries one and clamps prose to a
+terminal width, so the SHAPE of a session is readable in a scroll.
+
+The tests run against the Electron reader's own fixtures, copied unchanged into
+`Tests/ArgoEngineTests/Fixtures/`. Both readers answer the same bytes; editing a fixture to
+suit Swift would retire the only evidence that they agree.
+
+Neither test suite runs in CI: CI is Linux, where there is no Swift toolchain and no
 `xcodebuild`.
 
 ## Deployment target

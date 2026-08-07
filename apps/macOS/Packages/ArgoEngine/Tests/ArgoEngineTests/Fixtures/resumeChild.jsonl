@@ -1,0 +1,3 @@
+{"type":"last-prompt","leafUuid":"p-asst-1","sessionId":"resumeChild"}
+{"type":"user","sessionId":"resumeChild","cwd":"/Users/x/proj","gitBranch":"main","timestamp":"2026-07-20T11:00:01.000Z","uuid":"c-user-1","parentUuid":"p-asst-1","message":{"role":"user","content":"Continue the work"}}
+{"type":"assistant","sessionId":"resumeChild","timestamp":"2026-07-20T11:00:05.000Z","uuid":"c-asst-1","parentUuid":"c-user-1","message":{"role":"assistant","content":[{"type":"text","text":"Continuing"}],"stop_reason":"end_turn"}}
