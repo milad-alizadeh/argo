@@ -12,6 +12,11 @@ struct ProjectDrawerRow: View {
     /// to a question already asked. Every verb that changes what the window is on closes it.
     @Environment(\.dismiss) private var dismiss
 
+    /// The row draws its own focus, so the ring is the contract's and lands on the whole row. The
+    /// system effect boxes the button it is on, which here is the identity alone — a rectangle
+    /// around two thirds of a row, in a fill that says the same thing as the active wash.
+    @FocusState private var isFocused: Bool
+
     let row: ProjectDrawerProjection.Row
     let actions: CockpitActions
 
@@ -21,7 +26,8 @@ struct ProjectDrawerRow: View {
                 identity
             }
             .buttonStyle(.plain)
-            .disabled(!row.isReachable)
+            .focused($isFocused)
+            .focusEffectDisabled()
             .frame(maxWidth: .infinity, alignment: .leading)
             trailing
         }
@@ -35,7 +41,11 @@ struct ProjectDrawerRow: View {
         .accessibilityAddTraits(row.isActive ? .isSelected : [])
     }
 
+    /// Clicking a row whose folder is gone points at the folder picker, not at a Project that
+    /// cannot be opened. A disabled row would grey out its own name, which is the one thing on it
+    /// that is still true.
     private func select() {
+        guard row.isReachable else { return locate() }
         actions.selectProject(row.id)
         dismiss()
     }
@@ -46,7 +56,7 @@ struct ProjectDrawerRow: View {
     }
 
     private var identity: some View {
-        HStack(spacing: ArgoSpacing.base) {
+        HStack(spacing: ArgoSpacing.snug) {
             ArgoGlyph(
                 row.isReachable ? ArgoSymbol.project : ArgoSymbol.unreachableProject,
                 ArgoTypography.rowTitle,
@@ -56,10 +66,13 @@ struct ProjectDrawerRow: View {
                 Text(row.name)
                     .argoText(ArgoTypography.rowTitle)
                     .foregroundStyle(argo.color.text.primary)
+                // "folder not found" takes no hue of its own. The words and the dashed edge carry
+                // it, and the attention amber is spoken for by the state rollup (#164) — one
+                // colour meaning two things is what the merged vessel exists to end.
                 Text(row.detail)
                     .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(row.isReachable ? argo.color.text.tertiary : argo.color.state
-                        .attention)
+                    .foregroundStyle(row.isReachable ? argo.color.text.tertiary : argo.color.text
+                        .secondary)
             }
             .lineLimit(1)
             .truncationMode(.middle)
@@ -76,8 +89,7 @@ struct ProjectDrawerRow: View {
                     .foregroundStyle(argo.color.text.tertiary)
             }
         } else {
-            Button("Locate…", action: locate)
-                .argoText(ArgoTypography.control)
+            locateButton
         }
         // Nobody registered this row, so there is no record to reveal, re-point or forget. The
         // menu is absent rather than present-and-inert.
@@ -86,22 +98,64 @@ struct ProjectDrawerRow: View {
         }
     }
 
-    /// The active row is the only one that takes a surface at all. The wash is neutral and the Ion
-    /// Blue is the indicator edge, per the contract — which also keeps the active row readable
-    /// beside the system's own focus effect, a fill that would otherwise say the same thing.
-    @ViewBuilder private var rowSurface: some View {
-        let shape = RoundedRectangle(cornerRadius: ArgoRadius.control)
-        if row.isReachable {
-            shape
-                .fill(argo.color.surface.selected)
-                .overlay(alignment: .leading) { selectionIndicator }
-                .opacity(row.isActive ? 1 : 0)
-        } else {
-            shape.strokeBorder(
-                argo.color.edge.strong,
-                style: StrokeStyle(lineWidth: ArgoStroke.border, dash: [ArgoStroke.dash]),
-            )
+    /// Prominent by placement and weight, not by hue: a stock tinted button would put the only
+    /// accent-coloured control in the shell on the one row that must not read as selected, and the
+    /// contract reserves that hue for selection and focus.
+    private var locateButton: some View {
+        Button(action: locate) {
+            Text("Locate…")
+                .argoText(ArgoTypography.control)
+                .foregroundStyle(argo.color.text.primary)
+                .padding(.horizontal, ArgoSpacing.base)
+                .padding(.vertical, ArgoSpacing.tight)
+                .background(
+                    RoundedRectangle(cornerRadius: ArgoRadius.control)
+                        .fill(argo.color.surface.raised),
+                )
+                .contentShape(.rect)
         }
+        .buttonStyle(.plain)
+    }
+
+    /// Two independent readings on one shape: which Project the window is on, and whether its
+    /// folder is there. They compose because they are not alternatives — the active Project's
+    /// folder can be the one that moved, and that row has to say both at once.
+    ///
+    /// The wash is neutral and the Ion Blue is the indicator edge, per the contract. The indicator
+    /// is drawn LAST, above the focus ring: focus and active are both blue and both live on this
+    /// edge, so a ring painted over the bar would leave the focused row unable to say whether it
+    /// is also the one on screen.
+    private var rowSurface: some View {
+        let shape = RoundedRectangle(cornerRadius: ArgoRadius.control)
+        return shape
+            .fill(argo.color.surface.selected)
+            .opacity(row.isActive ? 1 : 0)
+            .overlay {
+                if !row.isReachable {
+                    dashedEdge(shape)
+                }
+            }
+            .overlay {
+                if isFocused {
+                    focusRing(shape)
+                }
+            }
+            .overlay(alignment: .leading) {
+                if row.isActive {
+                    selectionIndicator
+                }
+            }
+    }
+
+    private func focusRing(_ shape: RoundedRectangle) -> some View {
+        shape.strokeBorder(argo.color.interaction.focusRing, lineWidth: ArgoStroke.focus)
+    }
+
+    private func dashedEdge(_ shape: RoundedRectangle) -> some View {
+        shape.strokeBorder(
+            argo.color.edge.strong,
+            style: StrokeStyle(lineWidth: ArgoStroke.border, dash: [ArgoStroke.dash]),
+        )
     }
 
     private var selectionIndicator: some View {
@@ -109,47 +163,6 @@ struct ProjectDrawerRow: View {
             .fill(argo.color.interaction.selectionIndicator)
             .frame(width: ArgoStroke.indicator)
             .padding(.vertical, ArgoSpacing.tight)
-    }
-}
-
-/// A Project's management verbs. Rename is deliberately absent: a Project's name IS its folder's,
-/// so renaming one means renaming the folder — which makes it unreachable, and `Locate…` already
-/// covers that.
-private struct ProjectRowMenu: View {
-    @Environment(\.argo) private var argo
-
-    let row: ProjectDrawerProjection.Row
-    let actions: CockpitActions
-    let dismiss: DismissAction
-
-    var body: some View {
-        Menu {
-            // Disabled, not hidden, on a folder that is not there: Finder has nothing to open,
-            // and the verb going quiet would read as the click having missed.
-            Button("Reveal in Finder", systemImage: ArgoSymbol.revealInFinder) {
-                actions.revealProject(row.id)
-            }
-            .disabled(!row.isReachable)
-            Button("Locate…", systemImage: ArgoSymbol.locateProject) {
-                actions.locateProject(row.id)
-                dismiss()
-            }
-            Divider()
-            Button("Remove from Argo", systemImage: ArgoSymbol.removeProject) {
-                actions.removeProject(row.id)
-                dismiss()
-            }
-            .help("Removes Argo's registration only. The folder on disk is not touched.")
-        } label: {
-            ArgoGlyph(ArgoSymbol.projectMenu, ArgoTypography.rowTitle)
-        }
-        // The contract reserves the brand hue for selection and focus, and a menu label takes the
-        // control's accent — through the TINT, which a `foregroundStyle` on the label cannot reach.
-        .tint(argo.color.text.tertiary)
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .accessibilityLabel("Manage this Project")
     }
 }
 

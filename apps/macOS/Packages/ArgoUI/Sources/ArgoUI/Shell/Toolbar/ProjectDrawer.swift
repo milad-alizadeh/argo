@@ -5,6 +5,10 @@ import SwiftUI
 struct ProjectDrawer: View {
     @Environment(\.argo) private var argo
     @Environment(\.dismiss) private var dismiss
+    /// Drawn here rather than left to the system, for the reason the rows draw their own: the
+    /// default effect is a square-cornered box on the button's own bounds, which cuts across the
+    /// rule above it and the panel's rounded corners below.
+    @FocusState private var isFooterFocused: Bool
 
     let presentation: CockpitPresentation
     let actions: CockpitActions
@@ -15,8 +19,14 @@ struct ProjectDrawer: View {
             content
             footer
         }
+        // One gutter for the whole drawer, so the header, the row washes, the rule and the footer
+        // all start at the same edge — and a clip, because a row's own fill runs to that gutter
+        // and would otherwise paint square corners over the panel's rounded ones.
+        .padding(.horizontal, ArgoSpacing.snug)
+        .padding(.bottom, ArgoSpacing.snug)
         .frame(width: ArgoLayout.projectDrawerWidth)
         .background(argo.color.surface.overlay)
+        .clipShape(RoundedRectangle(cornerRadius: ArgoRadius.popover))
     }
 
     private var rows: [ProjectDrawerProjection.Row] {
@@ -36,7 +46,7 @@ struct ProjectDrawer: View {
         Text("Projects · registered on this Mac")
             .argoText(ArgoTypography.sectionLabel)
             .foregroundStyle(argo.color.text.tertiary)
-            .padding(.horizontal, ArgoSpacing.comfortable)
+            .padding(.horizontal, ArgoSpacing.base)
             .padding(.top, ArgoSpacing.comfortable)
             .padding(.bottom, ArgoSpacing.base)
     }
@@ -46,7 +56,7 @@ struct ProjectDrawer: View {
             Text("No Projects yet. Add one to scope this window.")
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.secondary)
-                .padding(.horizontal, ArgoSpacing.comfortable)
+                .padding(.horizontal, ArgoSpacing.base)
                 .padding(.bottom, ArgoSpacing.base)
         } else {
             VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
@@ -54,7 +64,6 @@ struct ProjectDrawer: View {
                     ProjectDrawerRow(row: row, actions: actions)
                 }
             }
-            .padding(.horizontal, ArgoSpacing.snug)
             .padding(.bottom, ArgoSpacing.snug)
         }
     }
@@ -68,16 +77,31 @@ struct ProjectDrawer: View {
                 Label {
                     Text("Add Project…")
                 } icon: {
-                    ArgoGlyph(ArgoSymbol.addProject, ArgoTypography.control)
+                    ArgoGlyph(ArgoSymbol.addProject, ArgoTypography.rowTitle)
                 }
-                .labelStyle(.argo(ArgoTypography.control))
+                // The rows' own role, not a control role: the footer is the last item in the
+                // list's icon column, and a size of its own would break that column.
+                .labelStyle(.argo(ArgoTypography.rowTitle))
                 .foregroundStyle(argo.color.text.primary)
-                .padding(.horizontal, ArgoSpacing.comfortable)
+                // The same inner gutter a row uses, so the "+" lands in the rows' icon column
+                // rather than 4pt to its left.
+                .padding(.horizontal, ArgoSpacing.base)
                 .padding(.vertical, ArgoSpacing.base)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(.rect)
+                .overlay {
+                    if isFooterFocused {
+                        RoundedRectangle(cornerRadius: ArgoRadius.control)
+                            .strokeBorder(
+                                argo.color.interaction.focusRing,
+                                lineWidth: ArgoStroke.focus,
+                            )
+                    }
+                }
             }
             .buttonStyle(.plain)
+            .focused($isFooterFocused)
+            .focusEffectDisabled()
         }
     }
 }

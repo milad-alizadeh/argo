@@ -12,7 +12,7 @@ struct ArgoLabelStyle: LabelStyle {
     let style: ArgoTextStyle
 
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: ArgoSpacing.tight) {
+        HStack(spacing: ArgoSpacing.snug) {
             configuration.icon.argoGlyph(style)
             configuration.title.argoText(style)
         }

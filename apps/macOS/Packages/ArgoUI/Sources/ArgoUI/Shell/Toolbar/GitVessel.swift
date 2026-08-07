@@ -33,7 +33,9 @@ struct GitVessel: View {
         switch checkout {
         case let .branch(branch): branch
         case let .detached(shortSHA): "HEAD · \(shortSHA)"
-        case .unavailable: "HEAD"
+        // Not "HEAD": with nothing registered there is no checkout to name, and a git internal
+        // standing in for a branch is the nearest guess the degrade-down rule forbids.
+        case .unavailable: "unknown"
         }
     }
 

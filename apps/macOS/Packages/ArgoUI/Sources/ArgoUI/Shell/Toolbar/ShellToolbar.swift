@@ -6,9 +6,11 @@ import SwiftUI
 /// around — a `ToolbarItemGroup` gives each control in it a capsule of its own, which is the split
 /// layout under another name.
 ///
-/// The flexible spacer takes NO placement. Placed in `.navigation` it expanded inside the leading
-/// group and pushed nothing across the bar, which is what left Rooms adrift beside the scope
-/// vessel instead of at the trailing edge.
+/// The flexible spacer is placed with Rooms, not between the two items. A spacer takes the bar
+/// region its placement names, and an unplaced one resolves to the window's own — which in a
+/// split view is not the region the detail pane draws, so it expanded where nothing was and left
+/// Rooms adrift beside the scope vessel. Sharing `.primaryAction` puts it in front of Rooms
+/// inside the region Rooms is in, which is the only place it can push from.
 struct ShellToolbar: ToolbarContent {
     @Binding var room: CockpitRoom
     let presentation: CockpitPresentation

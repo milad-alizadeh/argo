@@ -42,11 +42,19 @@ public struct CockpitView: View {
                         .padding(ArgoSpacing.section)
                     }
                 }
+                // On the DETAIL pane, not on the split view. A split view divides the bar into a
+                // region per column, and a flexible spacer only expands inside its own — declared
+                // on the split view it landed in a region that spans nothing, which left Rooms
+                // parked beside the scope vessel instead of at the trailing edge.
+                .toolbar {
+                    ShellToolbar(
+                        room: $navigation.room,
+                        presentation: presentation,
+                        actions: actions,
+                    )
+                }
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
-        .toolbar {
-            ShellToolbar(room: $navigation.room, presentation: presentation, actions: actions)
-        }
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .frame(
             minWidth: ArgoLayout.windowMinimumWidth,
