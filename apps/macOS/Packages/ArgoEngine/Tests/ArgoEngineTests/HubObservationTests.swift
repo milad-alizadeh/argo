@@ -20,9 +20,9 @@ struct HubObservationTests {
 
         await hub.startObserving(dropped)
         await hub.startObserving(kept)
-        droppedEvents.yield(.title("Dropped"))
+        droppedEvents.yield([.title("Dropped")])
         await hub.stopObserving(transcriptID: "dropped")
-        keptEvents.yield(.title("Still tailing"))
+        keptEvents.yield([.title("Still tailing")])
         keptEvents.finish()
         await hub.waitForObservation(transcriptID: "kept")
 
@@ -44,13 +44,13 @@ struct HubObservationTests {
 
         await hub.startObserving(first)
         await hub.stopObserving(transcriptID: "session")
-        firstEvents.yield(.title("After the stop"))
-        firstEvents.yield(.cwd("/tmp/after-the-stop"))
+        firstEvents.yield([.title("After the stop")])
+        firstEvents.yield([.cwd("/tmp/after-the-stop")])
         firstEvents.finish()
 
         let (second, secondEvents) = hubLiveObservation(id: "session")
         await hub.startObserving(second)
-        secondEvents.yield(.title("Fresh"))
+        secondEvents.yield([.title("Fresh")])
         secondEvents.finish()
         await hub.waitForObservation(transcriptID: "session")
 
@@ -79,6 +79,7 @@ struct HubObservationTests {
         ))
 
         #expect(hub.project.url == Self.secondProjectURL)
+        await hubSettle { !hub.sessions.isEmpty }
         #expect(hub.sessions.map(\.sourceURL) == [second.standardizedFileURL])
         #expect(hub.connection == .healthy)
         #expect(hub.liveObservationCount == 1)
@@ -146,13 +147,12 @@ struct HubObservationTests {
         let (previous, previousEvents) = hubLiveObservation(id: "previous")
 
         await hub.startObserving(previous)
-        previousEvents.yield(.title("Previous Project"))
-        previousEvents.yield(.cwd("/tmp/argo-first"))
+        previousEvents.yield([.title("Previous Project"), .cwd("/tmp/argo-first")])
         try await hub.connect(using: Engine(), configuration: LaunchConfiguration(
             projectURL: Self.secondProjectURL,
             transcriptURLs: [hubFixtureURL("prose")],
         ))
-        previousEvents.yield(.title("Straggler"))
+        previousEvents.yield([.title("Straggler")])
         previousEvents.finish()
         await Task.yield()
 

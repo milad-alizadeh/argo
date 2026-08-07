@@ -38,9 +38,9 @@ struct TranscriptTailTests {
         await withTaskGroup(of: [String]?.self) { group in
             group.addTask {
                 var lines: [String] = []
-                for await line in transcriptLines(at: url) {
-                    lines.append(line)
-                    if lines.count == count {
+                for await batch in transcriptLines(at: url) {
+                    lines.append(contentsOf: batch)
+                    if lines.count >= count {
                         return lines
                     }
                 }
@@ -65,6 +65,22 @@ struct TranscriptTailTests {
         // The watcher only reports what happens NEXT, so a transcript that is never appended to
         // again would otherwise never be read at all.
         #expect(lines == ["{\"type\": \"ai-title\", \"aiTitle\": \"first\"}"])
+    }
+
+    /// The backfill batch is what tells a consumer the file has been READ, so a file with
+    /// nothing in it has to deliver one too — otherwise a Session whose transcript is a moment
+    /// old is a roster row nobody is ever allowed to draw.
+    @Test(.timeLimit(.minutes(1)))
+    func `An empty transcript still reports that it has been read`() async throws {
+        let file = try ScratchFile()
+
+        var batches: [[String]] = []
+        for await batch in transcriptLines(at: file.url) {
+            batches.append(batch)
+            break
+        }
+
+        #expect(batches == [[]])
     }
 
     @Test

@@ -7,21 +7,17 @@ struct HubTests {
     @Test
     @MainActor
     func `transcript facts become one Session projection`() async {
-        let (events, continuation) = AsyncStream<TranscriptEvent>.makeStream()
-        let sourceURL = URL(fileURLWithPath: "/tmp/session.jsonl")
+        let (observation, continuation) = hubLiveObservation(id: "session")
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
-        let observation = TranscriptObservation(
-            id: "session",
-            sourceURL: sourceURL,
-            events: events,
-        )
         await hub.startObserving(observation)
 
-        continuation.yield(.headLeaf(uuid: "leaf"))
-        continuation.yield(.prompt(text: "Build the native shell\nwith context", atMs: nil))
-        continuation.yield(.cwd("/tmp/argo"))
-        continuation.yield(.model("claude-opus-5"))
-        continuation.yield(.branch("argo/#376-native-shell"))
+        continuation.yield([
+            .headLeaf(uuid: "leaf"),
+            .prompt(text: "Build the native shell\nwith context", atMs: nil),
+            .cwd("/tmp/argo"),
+            .model("claude-opus-5"),
+            .branch("argo/#376-native-shell"),
+        ])
         continuation.finish()
         await hub.waitForObservation(transcriptID: "session")
 
@@ -36,19 +32,13 @@ struct HubTests {
     @Test
     @MainActor
     func `the host title replaces the prompt fallback`() async {
-        let (events, continuation) = AsyncStream<TranscriptEvent>.makeStream()
-        let sourceURL = URL(fileURLWithPath: "/tmp/session.jsonl")
+        let (observation, continuation) = hubLiveObservation(id: "session")
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
-        let observation = TranscriptObservation(
-            id: "session",
-            sourceURL: sourceURL,
-            events: events,
-        )
         await hub.startObserving(observation)
 
-        continuation.yield(.prompt(text: "Fallback title", atMs: nil))
-        continuation.yield(.title("Host-authored title"))
-        continuation.yield(.prompt(text: "Later prompt", atMs: nil))
+        continuation.yield([.prompt(text: "Fallback title", atMs: nil)])
+        continuation.yield([.title("Host-authored title")])
+        continuation.yield([.prompt(text: "Later prompt", atMs: nil)])
         continuation.finish()
         await hub.waitForObservation(transcriptID: "session")
 

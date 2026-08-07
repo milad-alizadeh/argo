@@ -14,9 +14,17 @@ import Foundation
 /// An actor because the drain is called from a file-system event handler and from the initial read,
 /// and both mutate the same carry buffer. Two drains overlapping still produce lines in order: the
 /// offset only ever advances inside the actor, so whichever runs second reads what the first left.
+/// One pass of the cursor: the complete lines it found, and whether it is the pass that exhausted
+/// what the file already held.
+private struct CursorPass {
+    let lines: [String]
+    let isBackfill: Bool
+}
+
 private actor FileCursor {
     private let handle: FileHandle
     private var carry = Data()
+    private var hasDrained = false
 
     init?(url: URL) {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
@@ -24,11 +32,19 @@ private actor FileCursor {
     }
 
     /// Every complete line appended since the last drain.
-    func drain() -> [String] {
+    ///
+    /// Whether the pass is the backfill is decided INSIDE the actor rather than counted by the
+    /// caller: two drains can be in flight, and only the one that ran first read a file nobody had
+    /// read yet.
+    func drain() -> CursorPass {
+        let isBackfill = !hasDrained
+        hasDrained = true
         rewindIfTruncated()
-        guard let chunk = try? handle.readToEnd(), !chunk.isEmpty else { return [] }
+        guard let chunk = try? handle.readToEnd(), !chunk.isEmpty else {
+            return CursorPass(lines: [], isBackfill: isBackfill)
+        }
         carry.append(chunk)
-        return takeCompleteLines()
+        return CursorPass(lines: takeCompleteLines(), isBackfill: isBackfill)
     }
 
     func close() {
@@ -63,21 +79,28 @@ private actor FileCursor {
     }
 }
 
-/// Every line already in the file, then every line appended to it, until the caller stops
-/// listening.
+/// Every line already in the file, then every line appended to it, in the batches the reads came
+/// back in — until the caller stops listening.
+///
+/// Batched rather than yielded one line at a time, because the batch boundary is itself a fact: the
+/// FIRST element is everything the file already held, so a consumer can tell a reconstruction from
+/// the news that follows it. That element is yielded even when it is empty — an empty transcript
+/// has a backfill too, and a consumer waiting to be told the file has been read would otherwise
+/// wait forever. Later empty passes are not yielded: a watcher firing on a half-written record is
+/// not news.
 ///
 /// The stream does not finish on its own: a live transcript has no end, and an agent that has been
 /// quiet for an hour is idle rather than over. Cancelling the consuming task closes the file.
-public func transcriptLines(at url: URL) -> AsyncStream<String> {
+public func transcriptLines(at url: URL) -> AsyncStream<[String]> {
     AsyncStream { continuation in
         guard let cursor = FileCursor(url: url) else {
             continuation.finish()
             return
         }
         let watcher = FileWatcher(url: url) {
-            for line in await cursor.drain() {
-                continuation.yield(line)
-            }
+            let pass = await cursor.drain()
+            guard pass.isBackfill || !pass.lines.isEmpty else { return }
+            continuation.yield(pass.lines)
         }
         continuation.onTermination = { _ in
             watcher.cancel()

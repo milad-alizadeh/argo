@@ -3,6 +3,10 @@ import Foundation
 struct HubTranscript {
     let id: String
     var session: HubSession
+    /// Whether the tail has delivered what the file already held. Until it has, this transcript is
+    /// in the join — so the records it claims are attributed in tail-start order — but the roster
+    /// it belongs to is not published.
+    var isSettled = false
 
     init(observation: TranscriptObservation) {
         self.id = observation.id
@@ -46,7 +50,22 @@ enum HubSessionChain {
             }
             sessions.append(session)
         }
-        return sessions
+        return ordered(sessions)
+    }
+
+    /// Newest activity first, with the id breaking a tie.
+    ///
+    /// A sort key rather than the order the tails happened to start in: the working set is
+    /// swept again on every burst of writes, and a row that moved because one file was opened
+    /// a moment sooner is a reshuffle the reader has to re-read. A Session that can say nothing
+    /// about when it ran sorts behind every one that can, never in front on a guessed zero.
+    private static func ordered(_ sessions: [HubSession]) -> [HubSession] {
+        sessions.sorted { first, second in
+            guard first.orderingKeyMs != second.orderingKeyMs else { return first.id < second.id }
+            guard let firstKey = first.orderingKeyMs else { return false }
+            guard let secondKey = second.orderingKeyMs else { return true }
+            return firstKey > secondKey
+        }
     }
 
     private static func parentID(

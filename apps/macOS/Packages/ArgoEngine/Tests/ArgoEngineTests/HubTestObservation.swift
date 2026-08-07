@@ -6,20 +6,22 @@ func hubFixtureObservation(_ fixture: String) async throws -> TranscriptObservat
     try await hubTestObservation(id: fixture, events: Fixture.events(fixture))
 }
 
+/// A transcript already fully written: one batch carrying the whole file, which is the shape a tail
+/// hands the Hub when it drains a file nobody is appending to.
 func hubTestObservation(
     id: String,
     events: [TranscriptEvent],
+    modifiedAt: Date? = nil,
 )
     -> TranscriptObservation {
-    let stream = AsyncStream<TranscriptEvent> { continuation in
-        for event in events {
-            continuation.yield(event)
-        }
+    let stream = AsyncStream<[TranscriptEvent]> { continuation in
+        continuation.yield(events)
         continuation.finish()
     }
     return TranscriptObservation(
         id: id,
         sourceURL: URL(fileURLWithPath: "/tmp/\(id).jsonl"),
+        modifiedAt: modifiedAt,
         events: stream,
     )
 }
@@ -34,17 +36,33 @@ func hubObserveToEnd(_ hub: Hub, _ observation: TranscriptObservation) async {
 
 /// An observation whose stream stays open until the test closes it, which is the shape a live
 /// transcript has: the finite helper above can only ever test a session that is already over.
+///
+/// The continuation carries BATCHES, and the first one is the backfill — a test that yields nothing
+/// is a transcript that has not been read yet, which is exactly the state the roster holds back.
 func hubLiveObservation(
     id: String,
 )
-    -> (TranscriptObservation, AsyncStream<TranscriptEvent>.Continuation) {
-    let (events, continuation) = AsyncStream<TranscriptEvent>.makeStream()
+    -> (TranscriptObservation, AsyncStream<[TranscriptEvent]>.Continuation) {
+    let (events, continuation) = AsyncStream<[TranscriptEvent]>.makeStream()
     let observation = TranscriptObservation(
         id: id,
         sourceURL: URL(fileURLWithPath: "/tmp/\(id).jsonl"),
         events: events,
     )
     return (observation, continuation)
+}
+
+/// Yield until the Hub's roster is standing. A `connect` returns before its file-backed tails have
+/// read anything, and the roster is deliberately held back until they have — so a test that asserts
+/// on `sessions` straight after one is asserting on the emptiness it was given, not on the answer.
+@MainActor
+func hubSettle(until condition: @MainActor () -> Bool) async {
+    for _ in 0 ..< 400 {
+        if condition() {
+            return
+        }
+        try? await Task.sleep(for: .milliseconds(5))
+    }
 }
 
 /// A real transcript on disk, so the tail under test is the file-backed one rather than a stream

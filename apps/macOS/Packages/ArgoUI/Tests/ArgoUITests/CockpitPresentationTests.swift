@@ -93,10 +93,9 @@ struct CockpitPresentationTests {
         events: [TranscriptEvent],
         until applied: (CockpitPresentation.Session) -> Bool,
     ) async {
-        let stream = AsyncStream<TranscriptEvent> { continuation in
-            for event in events {
-                continuation.yield(event)
-            }
+        // One batch, which is how a tail hands over a file it has finished reading.
+        let stream = AsyncStream<[TranscriptEvent]> { continuation in
+            continuation.yield(events)
             continuation.finish()
         }
         await hub.startObserving(TranscriptObservation(
