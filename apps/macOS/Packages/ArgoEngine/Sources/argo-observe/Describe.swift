@@ -34,6 +34,8 @@ private func describe(_ result: ToolResult) -> String {
 
 func describe(_ event: TranscriptEvent) -> String {
     switch event {
+    case let .recordIdentity(uuid):
+        "record      \(uuid)"
     case let .headLeaf(uuid):
         "head-leaf   \(uuid)"
     case let .title(title):

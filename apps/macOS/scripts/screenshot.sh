@@ -3,7 +3,7 @@
 # skill resolves to for this app (see AGENTS.md, "Visual verification").
 #
 # Usage, from apps/macOS:
-#   sh scripts/screenshot.sh out/cockpit.png        # build if needed, launch, capture, quit
+#   sh scripts/screenshot.sh out/cockpit.png [transcript.jsonl]
 #   ARGO_KEEP_RUNNING=1 sh scripts/screenshot.sh …  # leave the app up to drive it by hand
 #
 # It captures the WINDOW, not the screen: a full-screen grab carries the desktop and whatever
@@ -16,16 +16,17 @@
 set -eu
 
 OUT=${1:-out/argo.png}
+TRANSCRIPT=${2:-${ARGO_TRANSCRIPT_PATH:-}}
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 APP="$APP_DIR/build/Build/Products/Debug/Argo.app"
+PROJECT_ROOT=$(git -C "$APP_DIR" rev-parse --show-toplevel)
 
 cd "$APP_DIR"
 
-if [ ! -d "$APP" ]; then
-  echo "screenshot: no build at $APP — building"
-  xcodebuild -project Argo.xcodeproj -scheme Argo -configuration Debug \
-    -derivedDataPath build build >/dev/null
-fi
+# Always build this worktree before launching it. A valid app bundle can be stale, and opening that
+# bundle produces a plausible screenshot of yesterday's source with no indication it is stale.
+xcodebuild -project Argo.xcodeproj -scheme Argo -configuration Debug \
+  -derivedDataPath build build >/dev/null
 
 mkdir -p "$(dirname "$OUT")"
 
@@ -43,7 +44,11 @@ if pgrep -x Argo >/dev/null 2>&1; then
   done
 fi
 
-open "$APP"
+if [ -n "$TRANSCRIPT" ]; then
+  open "$APP" --args --project "$PROJECT_ROOT" --transcript "$TRANSCRIPT"
+else
+  open "$APP" --args --project "$PROJECT_ROOT"
+fi
 
 # The window is not on screen the instant `open` returns, and the first frame it does put up
 # is unpainted. Poll for the id, then let one more beat pass so the capture is of a settled

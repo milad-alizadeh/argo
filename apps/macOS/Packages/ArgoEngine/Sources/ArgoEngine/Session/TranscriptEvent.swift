@@ -5,6 +5,9 @@
 /// file has no end, so the reader's job is to say what each record MEANS; folding those meanings
 /// into Turns and Agents is the Hub's job, and it needs the whole session in memory to do it.
 public enum TranscriptEvent: Sendable, Equatable {
+    /// A message-bearing record's stable identity. The Hub uses these identities to resolve a
+    /// resumed file's `headLeaf` back to the physical transcript that owns it.
+    case recordIdentity(uuid: String)
     /// The head of the resume chain, off the line-0 `last-prompt` record. Read here so the shape
     /// is not lost; the chain that stitches files by it is the Hub's.
     case headLeaf(uuid: String)

@@ -27,18 +27,14 @@ guard FileManager.default.fileExists(atPath: url.path) else {
     exit(1)
 }
 
-// The disk reader, because this is the one caller that HAS a disk: an image the record embedded no
-// bytes for is re-read from the path, at the lower tier, and labelled as such by `describe`.
-let reader = TranscriptReader(readImage: diskImageReader)
 let follow = !arguments.contains("--once")
 
 if follow {
-    for await line in transcriptLines(at: url) {
-        for event in await reader.read(line: line) {
-            print(describe(event))
-        }
+    for await event in transcriptEvents(at: url, readImage: diskImageReader) {
+        print(describe(event))
     }
 } else {
+    let reader = TranscriptReader(readImage: diskImageReader)
     let lines = (try? String(contentsOf: url, encoding: .utf8))?
         .split(separator: "\n", omittingEmptySubsequences: false)
         .map(String.init) ?? []
