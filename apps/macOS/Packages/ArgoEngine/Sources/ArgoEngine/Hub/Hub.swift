@@ -9,18 +9,6 @@ import Observation
 @MainActor
 @Observable
 public final class Hub {
-    /// One live tail.
-    ///
-    /// The token, rather than the task's own cancellation, is what gates an event, so that "this
-    /// tail is over" is a fact about the registry and not about how promptly a cancelled
-    /// `for await` notices. It also separates two tails over the same transcript id: a stopped one
-    /// and its restart are the same task identity to a cancellation check, and different tokens
-    /// here.
-    private struct Tail {
-        let token: Int
-        let task: Task<Void, Never>
-    }
-
     public private(set) var project: HubProject
     public private(set) var checkout = CheckoutProjection.Head.unavailable
     public private(set) var connection = HubConnection.healthy
@@ -29,13 +17,12 @@ public final class Hub {
     }
 
     private var join = HubJoin()
-    @ObservationIgnored private var tails: [String: Tail] = [:]
-    @ObservationIgnored private var lastTailToken = 0
+    @ObservationIgnored private var observations: [String: Task<Void, Never>] = [:]
 
-    /// The tails currently live. The test that re-points repeatedly asserts on this rather than on
-    /// the roster: a leaked tail is invisible in a roster it no longer feeds.
-    var liveTailCount: Int {
-        tails.count
+    /// The observations registered right now. Asserted on by the test that re-points repeatedly: a
+    /// leaked tail is invisible in the roster it no longer feeds.
+    var liveObservationCount: Int {
+        observations.count
     }
 
     public init(projectURL: URL) {
@@ -65,7 +52,8 @@ public final class Hub {
     }
 
     /// Drop the whole Project: every tail, the join it fed, and the checkout and connection state
-    /// read alongside it.
+    /// read alongside it. The checkout goes too, rather than being left to be overwritten — a
+    /// branch belonging to the repo we are no longer pointed at is a fact we do not have.
     public func disconnect() async {
         await stopObservingAll()
         checkout = .unavailable
@@ -76,24 +64,20 @@ public final class Hub {
     /// leaves every other tail running.
     public func startObserving(_ observation: TranscriptObservation) async {
         await stopObserving(transcriptID: observation.id)
-        lastTailToken += 1
-        let token = lastTailToken
         join.add(observation)
-        tails[observation.id] = Tail(
-            token: token,
-            task: Task { [weak self] in await self?.drain(observation, token: token) },
-        )
+        observations[observation.id] = Task { [weak self] in await self?.drain(observation) }
     }
 
     /// Stop one tail and drop its transcript from the join, leaving the rest tailing.
     ///
-    /// Awaits the cancelled task, so when this returns the stream is torn down and the file it was
-    /// holding open is closed — a caller re-pointing in a loop accumulates neither.
+    /// Awaits the cancelled task, so a stopped tail is provably over before this returns. That is
+    /// what keeps a straggling event from landing under an id re-registered in the meantime — the
+    /// dead tail cannot still be running when the live one takes the id.
     public func stopObserving(transcriptID: String) async {
-        guard let tail = tails.removeValue(forKey: transcriptID) else { return }
+        guard let task = observations.removeValue(forKey: transcriptID) else { return }
         join.remove(transcriptID: transcriptID)
-        tail.task.cancel()
-        await tail.task.value
+        task.cancel()
+        await task.value
     }
 
     public func refreshCheckout(using engine: Engine, at projectURL: URL) async {
@@ -102,22 +86,16 @@ public final class Hub {
         checkout = projection.head
     }
 
-    /// Start tailing and wait for the stream to end. Only a finite stream ever ends, so this is a
-    /// test's seam onto `startObserving`, not a shape the app uses.
-    func observe(_ observation: TranscriptObservation) async {
-        await startObserving(observation)
-        await waitForObservation(transcriptID: observation.id)
-    }
-
     func waitForObservation(transcriptID: String) async {
-        await tails[transcriptID]?.task.value
+        await observations[transcriptID]?.value
     }
 
-    /// Deregistered and emptied before anything is cancelled, so a tail that runs once more during
-    /// the teardown finds neither its token nor its transcript and applies nothing.
+    /// The join is emptied before anything is cancelled, so a tail that gets one more turn while
+    /// tearing down finds no transcript to apply against. Cancelling the whole set before awaiting
+    /// any of it keeps a slow teardown from serialising behind the one in front of it.
     private func stopObservingAll() async {
-        let stopped = tails.values.map(\.task)
-        tails = [:]
+        let stopped = Array(observations.values)
+        observations = [:]
         join = HubJoin()
         for task in stopped {
             task.cancel()
@@ -127,9 +105,8 @@ public final class Hub {
         }
     }
 
-    private func drain(_ observation: TranscriptObservation, token: Int) async {
+    private func drain(_ observation: TranscriptObservation) async {
         for await event in observation.events {
-            guard tails[observation.id]?.token == token else { return }
             join.apply(event, to: observation.id)
         }
     }

@@ -8,6 +8,8 @@ import Testing
 struct HubObservationTests {
     private static let firstProjectURL = URL(fileURLWithPath: "/tmp/argo-first")
     private static let secondProjectURL = URL(fileURLWithPath: "/tmp/argo-second")
+    /// One tail opens the cursor's read handle and the watcher's `O_EVTONLY` descriptor.
+    private static let descriptorsPerTail = 2
 
     @Test
     @MainActor
@@ -24,12 +26,16 @@ struct HubObservationTests {
         keptEvents.finish()
         await hub.waitForObservation(transcriptID: "kept")
 
-        #expect(hub.liveTailCount == 1)
+        #expect(hub.liveObservationCount == 1)
         #expect(hub.sessions.map(\.id) == ["kept"])
         #expect(hub.sessions[0].title == "Still tailing")
         await hub.disconnect()
     }
 
+    /// The event yielded after the stop is buffered against a stream nobody is reading, and the id
+    /// it was read under is then handed to a different transcript. Applying it would be
+    /// indistinguishable from applying the live one's, which is why the stop has to have finished
+    /// the old tail rather than only asked it to end.
     @Test
     @MainActor
     func `a stopped observation applies no further event`() async {
@@ -42,9 +48,6 @@ struct HubObservationTests {
         firstEvents.yield(.cwd("/tmp/after-the-stop"))
         firstEvents.finish()
 
-        // Restarted under the SAME id, which is the case a token guards and a cancellation check
-        // does not: an event of the dead tail applying here would be indistinguishable from one of
-        // the live one.
         let (second, secondEvents) = hubLiveObservation(id: "session")
         await hub.startObserving(second)
         secondEvents.yield(.title("Fresh"))
@@ -64,10 +67,12 @@ struct HubObservationTests {
         let engine = Engine()
         let second = try hubFixtureURL("prose")
 
-        try await hub.connect(using: engine, configuration: LaunchConfiguration(
+        await hub.connect(using: engine, configuration: LaunchConfiguration(
             projectURL: Self.firstProjectURL,
-            transcriptURLs: [hubFixtureURL("externalBasic")],
+            transcriptURLs: [FileManager.default.temporaryDirectory.appending(path: "absent")],
         ))
+        #expect(hub.connection == .failed(message: "Transcript unavailable"))
+
         await hub.connect(using: engine, configuration: LaunchConfiguration(
             projectURL: Self.secondProjectURL,
             transcriptURLs: [second],
@@ -75,16 +80,17 @@ struct HubObservationTests {
 
         #expect(hub.project.url == Self.secondProjectURL)
         #expect(hub.sessions.map(\.sourceURL) == [second.standardizedFileURL])
-        #expect(hub.liveTailCount == 1)
+        #expect(hub.connection == .healthy)
+        #expect(hub.liveObservationCount == 1)
         await hub.disconnect()
         #expect(hub.sessions.isEmpty)
-        #expect(hub.liveTailCount == 0)
+        #expect(hub.liveObservationCount == 0)
         #expect(hub.checkout == .unavailable)
     }
 
     @Test
     @MainActor
-    func `re-pointing repeatedly leaves no growing set of tails`() async throws {
+    func `re-pointing repeatedly leaves no growing set of tasks`() async throws {
         let hub = Hub(projectURL: Self.firstProjectURL)
         let engine = Engine()
         let configuration = try LaunchConfiguration(
@@ -94,15 +100,45 @@ struct HubObservationTests {
 
         for _ in 0 ..< 5 {
             await hub.connect(using: engine, configuration: configuration)
-            #expect(hub.liveTailCount == 2)
+            #expect(hub.liveObservationCount == 2)
         }
 
         await hub.disconnect()
-        #expect(hub.liveTailCount == 0)
+        #expect(hub.liveObservationCount == 0)
     }
 
-    /// The interleaved case: events of the previous Project are already buffered and unread at the
-    /// moment it is dropped.
+    /// The other half of that: a tail holds the cursor's handle and the watcher's descriptor, and
+    /// neither is visible in the task count. Five re-points that leaked would leave eight open.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `re-pointing repeatedly leaves no open descriptor on the transcript`() async throws {
+        let transcriptURL = FileManager.default.temporaryDirectory
+            .appending(path: "\(UUID().uuidString).jsonl")
+        try Data("{}\n".utf8).write(to: transcriptURL)
+        defer { try? FileManager.default.removeItem(at: transcriptURL) }
+        let hub = Hub(projectURL: Self.firstProjectURL)
+        let configuration = LaunchConfiguration(
+            projectURL: Self.firstProjectURL,
+            transcriptURLs: [transcriptURL],
+        )
+
+        for _ in 0 ..< 5 {
+            await hub.connect(using: Engine(), configuration: configuration)
+            // Asserted every round, so a count that reads zero because the probe is blind fails
+            // here rather than passing the teardown assertion for the wrong reason.
+            await settle { openDescriptorCount(for: transcriptURL) > 0 }
+            #expect(openDescriptorCount(for: transcriptURL) == Self.descriptorsPerTail)
+        }
+        await hub.disconnect()
+
+        // The cursor closes itself from the stream's termination handler, which cannot await, so
+        // the last close lands a hop after `disconnect` returns rather than inside it.
+        await settle { openDescriptorCount(for: transcriptURL) == 0 }
+        #expect(openDescriptorCount(for: transcriptURL) == 0)
+    }
+
+    /// The interleaved case: events of the previous Project are buffered and unread at the moment
+    /// it is dropped, and one more arrives after the new Project's roster is already standing.
     @Test
     @MainActor
     func `an event in flight at re-point never reaches the rebuilt join`() async throws {
@@ -122,7 +158,7 @@ struct HubObservationTests {
 
         #expect(hub.sessions.allSatisfy { $0.id != "previous" })
         #expect(hub.sessions.allSatisfy { $0.title != "Straggler" })
-        #expect(hub.liveTailCount == 1)
+        #expect(hub.liveObservationCount == 1)
         await hub.disconnect()
     }
 
@@ -138,25 +174,8 @@ struct HubObservationTests {
             transcriptURLs: [hubFixtureURL("externalBasic")],
         ))
 
-        #expect(hub.liveTailCount == 1)
+        #expect(hub.liveObservationCount == 1)
         #expect(hub.connection == .healthy)
         await hub.disconnect()
-    }
-
-    /// The file handle a real tail holds is closed on the stream's termination callback, so a
-    /// stream that terminates on stop is the assertion that no handle is left open.
-    @Test(.timeLimit(.minutes(1)))
-    @MainActor
-    func `stopping an observation tears its stream down`() async {
-        let hub = Hub(projectURL: Self.firstProjectURL)
-        let (observation, events) = hubLiveObservation(id: "session")
-        let (terminations, terminated) = AsyncStream<Void>.makeStream()
-        events.onTermination = { _ in terminated.finish() }
-
-        await hub.startObserving(observation)
-        await hub.stopObserving(transcriptID: "session")
-
-        for await _ in terminations {}
-        #expect(hub.liveTailCount == 0)
     }
 }

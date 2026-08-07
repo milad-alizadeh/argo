@@ -15,7 +15,7 @@ struct HubTests {
             sourceURL: sourceURL,
             events: events,
         )
-        let task = Task { await hub.observe(observation) }
+        await hub.startObserving(observation)
 
         continuation.yield(.headLeaf(uuid: "leaf"))
         continuation.yield(.prompt(text: "Build the native shell\nwith context", atMs: nil))
@@ -23,7 +23,7 @@ struct HubTests {
         continuation.yield(.model("claude-opus-5"))
         continuation.yield(.branch("argo/#376-native-shell"))
         continuation.finish()
-        await task.value
+        await hub.waitForObservation(transcriptID: "session")
 
         #expect(hub.sessions.count == 1)
         #expect(hub.sessions[0].title == "Build the native shell")
@@ -44,13 +44,13 @@ struct HubTests {
             sourceURL: sourceURL,
             events: events,
         )
-        let task = Task { await hub.observe(observation) }
+        await hub.startObserving(observation)
 
         continuation.yield(.prompt(text: "Fallback title", atMs: nil))
         continuation.yield(.title("Host-authored title"))
         continuation.yield(.prompt(text: "Later prompt", atMs: nil))
         continuation.finish()
-        await task.value
+        await hub.waitForObservation(transcriptID: "session")
 
         #expect(hub.sessions[0].title == "Host-authored title")
     }
@@ -80,8 +80,8 @@ struct HubTests {
         let child = try await hubFixtureObservation("resumeChild")
         let parent = try await hubFixtureObservation("resumeParent")
 
-        await hub.observe(child)
-        await hub.observe(parent)
+        await hubObserveToEnd(hub, child)
+        await hubObserveToEnd(hub, parent)
 
         #expect(hub.sessions.count == 1)
         #expect(hub.sessions[0].id == "resumeParent")
@@ -107,8 +107,8 @@ struct HubTests {
             .branch("main"),
         ])
 
-        await hub.observe(child)
-        await hub.observe(parent)
+        await hubObserveToEnd(hub, child)
+        await hubObserveToEnd(hub, parent)
 
         #expect(hub.sessions[0].cwd == "/tmp/new-worktree")
         #expect(hub.sessions[0].branch == "feature")
@@ -139,5 +139,4 @@ struct HubTests {
 
         #expect(normalized == [sourceURL.standardizedFileURL])
     }
-
 }
