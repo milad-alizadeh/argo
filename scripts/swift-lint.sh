@@ -16,8 +16,14 @@ if [ ! -d "$APP_DIR" ]; then
 fi
 
 # Not every checkout builds the macOS app (CI is Linux, and a TypeScript-only contributor
-# has no Swift toolchain). Absent tooling is a skip with a pointer, not a failure.
+# has no Swift toolchain). Absent tooling is a skip with a pointer, not a failure —
+# except under ARGO_REQUIRE_SWIFT_TOOLS, set by the macOS CI job, where a skip would be a
+# green check over an unlinted tree.
 if ! command -v swiftlint >/dev/null 2>&1; then
+  if [ -n "${ARGO_REQUIRE_SWIFT_TOOLS:-}" ]; then
+    echo "swift-lint: swiftlint not installed, and ARGO_REQUIRE_SWIFT_TOOLS is set" >&2
+    exit 1
+  fi
   echo "swift-lint: swiftlint not installed — skipping (brew install swiftlint)" >&2
   exit 0
 fi

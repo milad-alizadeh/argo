@@ -2,19 +2,30 @@
 # `swift test` for ArgoEngine, wired into `bun run test` through turbo.
 #
 # It skips rather than fails where Swift cannot run, because that is the normal case for
-# this repo's CI: CI is Linux, where there is no Swift toolchain and no xcodebuild, and a
-# root `bun run test` must stay green there. A skip prints why, so a missing toolchain
-# never reads as a passing suite.
+# this repo's CI: the default jobs are Linux, where there is no Swift toolchain and no
+# xcodebuild, and a root `bun run test` must stay green there. A skip prints why, so a
+# missing toolchain never reads as a passing suite.
+#
+# The macOS CI job is the one place where a skip WOULD read as a passing suite, since the
+# job exists to run these tests and reports Success either way. It sets
+# ARGO_REQUIRE_SWIFT_TOOLS, which turns both skips below into failures.
 set -eu
 
-if [ "$(uname -s)" != "Darwin" ]; then
-  echo "swift-test: not macOS — skipping the Swift suites (CI is Linux; they run locally)"
+skip_or_fail() {
+  if [ -n "${ARGO_REQUIRE_SWIFT_TOOLS:-}" ]; then
+    echo "swift-test: $1, and ARGO_REQUIRE_SWIFT_TOOLS is set" >&2
+    exit 1
+  fi
+  echo "swift-test: $1 — skipping the Swift suites ($2)"
   exit 0
+}
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  skip_or_fail "not macOS" "the default CI jobs are Linux; they run locally"
 fi
 
 if ! command -v swift >/dev/null 2>&1; then
-  echo "swift-test: no Swift toolchain — skipping the Swift suites (install Xcode to run them)"
-  exit 0
+  skip_or_fail "no Swift toolchain" "install Xcode to run them"
 fi
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)

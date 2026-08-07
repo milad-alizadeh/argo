@@ -1,6 +1,7 @@
-# The default gate for every PR: biome, typecheck, unit, story and Electron e2e (#34).
+# The default gate for every PR: biome, typecheck, unit, story tests, Electron e2e (#34) and
+# the native macOS app — build, swift-testing, SwiftLint (#415).
 # Unfiltered on purpose — a workflow skipped by path filtering stays Pending forever when
-# required, so the two expensive jobs opt out per-job instead (a skipped job reports Success).
+# required, so the expensive jobs opt out per-job instead (a skipped job reports Success).
 name: ci
 
 on:
@@ -24,6 +25,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       non_docs: ${{ steps.filter.outputs.non_docs }}
+      swift: ${{ steps.filter.outputs.swift }}
     steps:
       - uses: actions/checkout@v5
         # fetch-depth: 0 is what makes origin/$BASE_REF resolvable below.
@@ -37,13 +39,24 @@ jobs:
         run: |
           if [ "$EVENT_NAME" != 'pull_request' ]; then
             echo 'non_docs=true' >> "$GITHUB_OUTPUT"
+            echo 'swift=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          changed() { [ -n "$(git diff --name-only "origin/$BASE_REF...HEAD" -- "$@")" ]; }
+
           # A git pathspec glob spans '/', so ':(exclude)*.md' drops nested markdown too.
-          if [ -n "$(git diff --name-only "origin/$BASE_REF...HEAD" -- . ':(exclude)*.md')" ]; then
+          if changed . ':(exclude)*.md'; then
             echo 'non_docs=true' >> "$GITHUB_OUTPUT"
           else
             echo 'non_docs=false' >> "$GITHUB_OUTPUT"
+          fi
+
+          # The macOS job's own scope: the app (sources, Xcode project, its scripts), the
+          # shared Swift shell entrypoints it runs, and the workflow that defines it.
+          if changed apps/macOS 'scripts/swift-*.sh' .github/workflows/ci.yml ':(exclude)*.md'; then
+            echo 'swift=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'swift=false' >> "$GITHUB_OUTPUT"
           fi
 
   check:
@@ -124,6 +137,82 @@ jobs:
 
       - name: Story tests
         run: bun run test:stories
+
+  macos:
+    name: macos build · swift tests · lint
+    # Pinned image, no OS matrix: apps/macOS declares `platforms: [.macOS("26.0")]` and
+    # ships to exactly that. macos-latest would move under us on GitHub's own schedule.
+    runs-on: macos-26
+    needs: changes
+    if: needs.changes.outputs.swift == 'true'
+    timeout-minutes: 30
+    env:
+      # Every skip in the three Swift shell scripts becomes a failure here. Without it a
+      # runner missing a binary reports Success having checked nothing — the exact way a
+      # gate rots (scripts/swift-tooling.test.mjs is the proof it holds).
+      ARGO_REQUIRE_SWIFT_TOOLS: "1"
+      # The image's default today, named anyway: a default is not a pin.
+      XCODE_APP: /Applications/Xcode_26.6.app
+      # SwiftLint is not on the image. Pinned because a new SwiftLint means new rules, and a
+      # gate that changes its mind on a schedule fails PRs that changed nothing.
+      SWIFTLINT_VERSION: 0.65.0
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+
+      - name: Select the pinned Xcode
+        run: |
+          sudo xcode-select -s "$XCODE_APP"
+          xcodebuild -version
+          swift --version
+
+      # No SwiftFormat step: it ships on the image, and .swiftformat's own --minversion
+      # rejects one too old — a stale formatter fails the check rather than passing it.
+      - name: Cache the pinned SwiftLint
+        id: swiftlint-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.swiftlint/bin
+          key: swiftlint-${{ runner.os }}-${{ runner.arch }}-${{ env.SWIFTLINT_VERSION }}
+
+      - name: Install the pinned SwiftLint
+        if: steps.swiftlint-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/.swiftlint/bin
+          curl -fsSL -o /tmp/swiftlint.zip \
+            "https://github.com/realm/SwiftLint/releases/download/$SWIFTLINT_VERSION/portable_swiftlint.zip"
+          unzip -oq /tmp/swiftlint.zip -d /tmp/swiftlint
+          mv /tmp/swiftlint/swiftlint ~/.swiftlint/bin/swiftlint
+          chmod +x ~/.swiftlint/bin/swiftlint
+
+      - name: Put SwiftLint on PATH
+        run: echo "$HOME/.swiftlint/bin" >> "$GITHUB_PATH"
+
+      # Keyed on the sources themselves, with a prefix fallback so a one-file change restores
+      # the previous run's products and rebuilds incrementally instead of from scratch.
+      - name: Cache Swift build products
+        uses: actions/cache@v5
+        with:
+          path: |
+            apps/macOS/build
+            apps/macOS/Packages/ArgoEngine/.build
+            apps/macOS/Packages/ArgoUI/.build
+            ~/Library/Caches/org.swift.swiftpm
+          key: swift-build-${{ runner.os }}-${{ hashFiles('apps/macOS/**/*.swift', 'apps/macOS/**/project.pbxproj') }}
+          restore-keys: swift-build-${{ runner.os }}-
+
+      # Same gates, same order, same scripts a commit runs locally — the formatter first,
+      # since a reformat would change what the linter reads.
+      - name: SwiftFormat · SwiftLint · module boundaries
+        run: bun run quality:swift
+
+      - name: Build the app
+        if: ${{ !cancelled() }}
+        run: bun run build --filter=@argo/macos
+
+      - name: Swift tests
+        if: ${{ !cancelled() }}
+        run: bun run test --filter=@argo/macos
 
   e2e:
     name: electron e2e
