@@ -2,8 +2,22 @@ public extension CockpitPresentation {
     /// Public so the app target can preview against it. Anything the system accent drives —
     /// the sidebar's selection capsule most of all — renders wrong in a package preview,
     /// because the `AccentColor` asset lives in the app and a package preview never sees it.
+    /// Three registered Projects, the third of them somewhere it no longer is: the state the strip
+    /// has to draw honestly rather than by dropping a row.
+    static let previewProjects = [
+        Project(id: "argo", name: "argo", location: "/Users/milad/Developer/argo"),
+        Project(id: "cockpit", name: "cockpit", location: "/Users/milad/Developer/cockpit"),
+        Project(
+            id: "moved",
+            name: "penumbra",
+            location: "/Users/milad/Developer/penumbra",
+            isReachable: false,
+        ),
+    ]
+
     static let preview = CockpitPresentation(
-        project: Project(name: "argo", location: "/Users/milad/Developer/argo"),
+        projects: previewProjects,
+        activeProjectID: "argo",
         sessions: [
             Session(
                 id: "shell",
@@ -57,7 +71,8 @@ public extension CockpitPresentation {
     )
 
     static let emptyPreview = CockpitPresentation(
-        project: Project(name: "argo", location: "/Users/milad/Developer/argo"),
+        projects: previewProjects,
+        activeProjectID: "argo",
         sessions: [],
         checkout: .detached(shortSHA: "9011669"),
         connection: .healthy,

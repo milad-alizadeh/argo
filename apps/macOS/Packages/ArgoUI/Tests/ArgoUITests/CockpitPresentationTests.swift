@@ -18,10 +18,15 @@ struct CockpitPresentationTests {
     @MainActor
     func `the Hub's own checkout and connection reach the shell unrenamed`() {
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
+        let registered = CockpitPresentation.Project(
+            id: "argo",
+            name: "argo",
+            location: "/tmp/project",
+        )
 
-        let presentation = CockpitPresentation(hub: hub)
+        let presentation = projection(of: hub, projects: [registered])
 
-        #expect(presentation.project.location == "/tmp/project")
+        #expect(presentation.activeProject == registered)
         #expect(presentation.checkout == CheckoutProjection.Head.unavailable)
         #expect(presentation.connection == HubConnection.healthy)
         #expect(presentation.sessions.isEmpty)
@@ -41,7 +46,7 @@ struct CockpitPresentationTests {
             .turnEnded(.endTurn),
         ], until: { $0.status == .idle })
 
-        let session = try #require(CockpitPresentation(hub: hub).sessions.first)
+        let session = try #require(projection(of: hub).sessions.first)
 
         #expect(session.title == "Refactor the auth module")
         #expect(session.model == "claude-opus-5")
@@ -61,9 +66,20 @@ struct CockpitPresentationTests {
             until: { $0.workspaceLocation != nil },
         )
 
-        let session = try #require(CockpitPresentation(hub: hub).sessions.first)
+        let session = try #require(projection(of: hub).sessions.first)
 
         #expect(session.status == .unknown)
+    }
+
+    /// The Hub half of the projection, which is the half with a derivation in it. The Projects are
+    /// the app's own state and are passed straight through.
+    @MainActor
+    private func projection(
+        of hub: Hub,
+        projects: [CockpitPresentation.Project] = [],
+    )
+        -> CockpitPresentation {
+        CockpitPresentation(projects: projects, activeProjectID: projects.first?.id, hub: hub)
     }
 
     /// Drive a finite stream into the Hub and yield until the roster has read all of it.
@@ -89,7 +105,7 @@ struct CockpitPresentationTests {
             events: stream,
         ))
         for _ in 0 ..< 200 {
-            if let session = CockpitPresentation(hub: hub).sessions.first, applied(session) {
+            if let session = projection(of: hub).sessions.first, applied(session) {
                 return
             }
             await Task.yield()

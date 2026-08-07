@@ -92,12 +92,13 @@ struct VisualContractTests {
 
     // MARK: - Typography
 
+    /// The identity roles are the two that used to carry a face of their own. They speak in the
+    /// interface sans now: one sans for everything the interface says, one mono for machine facts.
     @Test
-    func `the serif is confined to identity`() {
-        let identityRoles = ArgoTypography.all
-            .filter { $0.style.typeface == .identity }
-            .map(\.name)
-        #expect(identityRoles == ["sessionTitle", "identityHeading"])
+    func `identity lines are set in the interface sans, not a face of their own`() {
+        let identityRoles = [ArgoTypography.sessionTitle, ArgoTypography.identityHeading]
+
+        #expect(identityRoles.allSatisfy { $0.typeface == .interface })
     }
 
     @Test
@@ -149,7 +150,7 @@ struct VisualContractTests {
     }
 
     @Test
-    func `Reduce Motion resolves for every role without a call site deciding`() {
+    func `every role resolves under Reduce Motion without a call site deciding`() {
         for role in ArgoMotion.all {
             let full = role.motion.resolved(reduceMotion: false)
             #expect(full != nil)

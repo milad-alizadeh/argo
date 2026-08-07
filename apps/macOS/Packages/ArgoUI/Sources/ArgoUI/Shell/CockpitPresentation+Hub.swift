@@ -8,10 +8,13 @@ import ArgoEngine
 /// Session grants, what its status can be said to be), and those are exactly the claims that have
 /// to be provable in a test rather than asserted in `@main`.
 public extension CockpitPresentation {
+    /// The Projects are passed in rather than read here: the registered set is the app's own state,
+    /// while everything below is the Hub's reading of the one it is pointed at.
     @MainActor
-    init(hub: Hub) {
+    init(projects: [Project], activeProjectID: Project.ID?, hub: Hub) {
         self.init(
-            project: Project(name: hub.project.name, location: hub.project.url.path),
+            projects: projects,
+            activeProjectID: activeProjectID,
             sessions: hub.sessions.map(Session.init(observed:)),
             checkout: hub.checkout,
             connection: hub.connection,

@@ -28,7 +28,7 @@ public struct FoundationSpecimen: View {
         } detail: {
             SpecimenDeck(session: selected, tab: $tab)
         }
-        // The window title is the Project. The Session's title is the deck's serif line —
+        // The window title is the Project. The Session's title is the deck's headline —
         // saying it twice is what makes a top bar read as a band.
         .navigationTitle("argo")
         .toolbar { toolbar }

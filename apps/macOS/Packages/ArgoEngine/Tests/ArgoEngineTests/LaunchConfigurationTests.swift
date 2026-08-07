@@ -36,4 +36,17 @@ struct LaunchConfigurationTests {
         #expect(configuration.projectURL.path == currentDirectoryURL.path)
         #expect(configuration.transcriptURLs.isEmpty)
     }
+
+    /// The override has to be told apart from the default, because it points the Hub without
+    /// registering anything and the registry only gets a say when nobody named a Project.
+    @Test
+    func `a launch that named no Project carries no override`() {
+        let configuration = LaunchConfiguration(
+            arguments: ["Argo"],
+            currentDirectoryURL: URL(fileURLWithPath: "/tmp/argo"),
+        )
+
+        #expect(configuration.projectOverrideURL == nil)
+        #expect(configuration.launchDirectoryURL.path == "/tmp/argo")
+    }
 }
