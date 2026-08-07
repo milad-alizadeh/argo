@@ -11,13 +11,33 @@
 		A1B2C3D4E5F6000000000002 /* ArgoUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A1 /* ArgoUI */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		A1B2C3D4E5F60000000000B0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1B2C3D4E5F6000000000050 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1B2C3D4E5F6000000000040;
+			remoteInfo = Argo;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		A1B2C3D4E5F6000000000010 /* Argo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Argo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D4E5F6000000000011 /* Argo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Argo.entitlements; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000012 /* ArgoE2ETests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ArgoE2ETests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A1B2C3D4E5F6000000000020 /* Argo */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Argo; sourceTree = "<group>"; };
+		A1B2C3D4E5F6000000000020 /* Argo */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Argo;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F6000000000021 /* ArgoE2ETests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ArgoE2ETests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +57,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F6000000000020 /* Argo */,
+				A1B2C3D4E5F6000000000021 /* ArgoE2ETests */,
 				A1B2C3D4E5F6000000000011 /* Argo.entitlements */,
 				A1B2C3D4E5F6000000000031 /* Products */,
 			);
@@ -46,6 +67,7 @@
 			isa = PBXGroup;
 			children = (
 				A1B2C3D4E5F6000000000010 /* Argo.app */,
+				A1B2C3D4E5F6000000000012 /* ArgoE2ETests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,6 +99,27 @@
 			productReference = A1B2C3D4E5F6000000000010 /* Argo.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A1B2C3D4E5F6000000000041 /* ArgoE2ETests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B2C3D4E5F6000000000082 /* Build configuration list for PBXNativeTarget "ArgoE2ETests" */;
+			buildPhases = (
+				A1B2C3D4E5F6000000000063 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A1B2C3D4E5F60000000000B1 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A1B2C3D4E5F6000000000021 /* ArgoE2ETests */,
+			);
+			name = ArgoE2ETests;
+			packageProductDependencies = (
+			);
+			productName = ArgoE2ETests;
+			productReference = A1B2C3D4E5F6000000000012 /* ArgoE2ETests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -89,6 +132,10 @@
 				TargetAttributes = {
 					A1B2C3D4E5F6000000000040 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					A1B2C3D4E5F6000000000041 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = A1B2C3D4E5F6000000000040;
 					};
 				};
 			};
@@ -111,6 +158,7 @@
 			projectRoot = "";
 			targets = (
 				A1B2C3D4E5F6000000000040 /* Argo */,
+				A1B2C3D4E5F6000000000041 /* ArgoE2ETests */,
 			);
 		};
 /* End PBXProject section */
@@ -133,7 +181,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1B2C3D4E5F6000000000063 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A1B2C3D4E5F60000000000B1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1B2C3D4E5F6000000000040 /* Argo */;
+			targetProxy = A1B2C3D4E5F60000000000B0 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A1B2C3D4E5F6000000000070 /* Debug */ = {
@@ -241,6 +304,38 @@
 			};
 			name = Release;
 		};
+		A1B2C3D4E5F6000000000074 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.milad.argo.e2e;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = Argo;
+			};
+			name = Debug;
+		};
+		A1B2C3D4E5F6000000000075 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.milad.argo.e2e;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_TARGET_NAME = Argo;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -258,6 +353,15 @@
 			buildConfigurations = (
 				A1B2C3D4E5F6000000000072 /* Debug */,
 				A1B2C3D4E5F6000000000073 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C3D4E5F6000000000082 /* Build configuration list for PBXNativeTarget "ArgoE2ETests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D4E5F6000000000074 /* Debug */,
+				A1B2C3D4E5F6000000000075 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
