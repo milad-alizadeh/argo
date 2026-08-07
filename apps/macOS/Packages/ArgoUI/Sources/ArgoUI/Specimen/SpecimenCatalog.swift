@@ -22,6 +22,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case projectDrawer
     case unreachableProjectDrawer
     case emptyProjectDrawer
+    case openProjectDrawer
     case deck
     case sessionsDeck
 }
@@ -69,6 +70,8 @@ public struct SpecimenScreen: View {
             // A machine that has registered nothing: Add Project… is the only thing on screen,
             // and it has to be findable without a row beside it to point at.
             DrawerSpecimen(presentation: .unregisteredPreview)
+        case .openProjectDrawer:
+            OpenDrawerSpecimen()
         case .deck:
             DeckSpecimen()
         case .sessionsDeck:
@@ -147,6 +150,25 @@ private struct ToolbarSpecimen: View {
                 ShellToolbar(room: $room, presentation: presentation, actions: .inert)
             }
             .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+    }
+}
+
+/// The drawer in a REAL popover, opened on appear.
+///
+/// `DrawerSpecimen` draws the content directly, which renders it but never puts it in the context
+/// it actually lives in — and that context is where it failed: a popover is its own window with
+/// its own environment, and the row's body came apart inside one while rendering fine outside it.
+/// This case is how that is caught by rendering rather than by a person clicking.
+private struct OpenDrawerSpecimen: View {
+    @State private var isOpen = false
+
+    var body: some View {
+        ProjectVessel(presentation: .preview, actions: .inert)
+            .padding(ArgoSpacing.region)
+            .onAppear { isOpen = true }
+            .popover(isPresented: $isOpen, arrowEdge: .bottom) {
+                ProjectDrawer(presentation: .preview, actions: .inert)
+            }
     }
 }
 
