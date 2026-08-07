@@ -5,8 +5,8 @@ struct HubTranscript {
     var session: HubSession
 
     init(observation: TranscriptObservation) {
-        id = observation.id
-        session = HubSession(observation: observation)
+        self.id = observation.id
+        self.session = HubSession(observation: observation)
     }
 }
 
@@ -14,7 +14,8 @@ enum HubSessionChain {
     static func sessions(
         from transcripts: [HubTranscript],
         owners: [String: String],
-    ) -> [HubSession] {
+    )
+        -> [HubSession] {
         var byID: [String: HubSession] = [:]
         for transcript in transcripts where byID[transcript.id] == nil {
             byID[transcript.id] = transcript.session
@@ -51,7 +52,8 @@ enum HubSessionChain {
     private static func parentID(
         of transcript: HubTranscript,
         owners: [String: String],
-    ) -> String? {
+    )
+        -> String? {
         guard let headLeafUUID = transcript.session.headLeafUUID else { return nil }
         return owners[headLeafUUID]
     }

@@ -13,15 +13,15 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     private var hasExplicitTitle = false
 
     public init(observation: TranscriptObservation) {
-        id = observation.id
-        sourceURL = observation.sourceURL
-        title = observation.sourceURL.deletingPathExtension().lastPathComponent
+        self.id = observation.id
+        self.sourceURL = observation.sourceURL
+        self.title = observation.sourceURL.deletingPathExtension().lastPathComponent
     }
 
     init(id: String, sourceURL: URL) {
         self.id = id
         self.sourceURL = sourceURL
-        title = sourceURL.deletingPathExtension().lastPathComponent
+        self.title = sourceURL.deletingPathExtension().lastPathComponent
     }
 
     mutating func apply(_ event: TranscriptEvent) {

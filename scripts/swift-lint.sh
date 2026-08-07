@@ -15,11 +15,11 @@ if [ ! -d "$APP_DIR" ]; then
   exit 1
 fi
 
-# Not every checkout builds the macOS app (CI is Linux, and a TypeScript-only contributor
-# has no Swift toolchain). Absent tooling is a skip with a pointer, not a failure.
+# shellcheck source=scripts/swift-tool-guard.sh
+. "$(dirname "$0")/swift-tool-guard.sh"
+
 if ! command -v swiftlint >/dev/null 2>&1; then
-  echo "swift-lint: swiftlint not installed — skipping (brew install swiftlint)" >&2
-  exit 0
+  swift_unavailable "swiftlint not installed" "brew install swiftlint"
 fi
 
 # Paths arrive relative to the repo root; SwiftLint must see them relative to APP_DIR.

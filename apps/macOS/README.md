@@ -63,14 +63,23 @@ The tests run against the Electron reader's own fixtures, copied unchanged into
 `Tests/ArgoEngineTests/Fixtures/`. Both readers answer the same bytes; editing a fixture to
 suit Swift would retire the only evidence that they agree.
 
-Neither test suite runs in CI: CI is Linux, where there is no Swift toolchain and no
-`xcodebuild`. `bun run test` at the repo root still calls it and skips with a printed reason
-there, so a missing toolchain never reads as a passing suite.
+Both suites run in CI on the `macos build · swift tests · lint` job (#415) — a pinned
+`macos-26` runner on Xcode 26.6, with SwiftLint and SwiftFormat downloaded at pinned versions
+and asserted rather than taken from whatever the image ships, and the whole job skipped when a
+PR touches no Swift. The default jobs are still Linux, where there is no Swift toolchain and no
+`xcodebuild`; `bun run test` at the repo root calls the suites there too and skips with a
+printed reason, so a missing toolchain never reads as a passing suite.
+
+That skip is exactly what would make the macOS job green over nothing, so the job sets
+`ARGO_REQUIRE_SWIFT_TOOLS=1`, which turns every skip in `swift-test.sh`, `swift-lint.sh` and
+`swift-format.sh` into a failure — one definition, in `scripts/swift-tool-guard.sh`, that all
+three source. `scripts/swift-tooling.test.mjs` holds it.
 
 ## Gates
 
 The same bargain the TypeScript side has, in Swift's spelling. Everything below runs
-pre-commit on staged `.swift` files, and `bun run quality` runs the lot over the whole tree.
+pre-commit on staged `.swift` files; `bun run quality` runs the lot over the whole tree, and
+so does CI, with SwiftFormat in `--check` mode rather than rewriting.
 
 | Gate | What holds it | Config |
 |---|---|---|
