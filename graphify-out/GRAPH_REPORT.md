@@ -6,48 +6,48 @@
 ## Summary
 - 720 nodes · 1311 edges · 34 communities (28 shown, 6 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 56 edges (avg confidence: 0.8)
-- Token cost: 0 input · 0 output
+- Token cost: 39,741 input · 478 output
 
 ## Graph Freshness
-- Built from commit: `67976d31`
+- Built from commit: `3dd49b5e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- Hub
-- JSONValue
-- TranscriptReader
-- scripts
-- Foundation
-- Equatable
-- TranscriptEvent
-- Sendable
-- String
-- CockpitRoom
-- tasks
-- transcriptLines
-- ArgoMotion
-- SessionRosterProjection
-- .callEvents
-- Head
-- SwiftUI
-- tasks
-- ArgoTypeface
-- CockpitActions
-- View
-- SpecimenFixtures
-- Specimen
-- scripts
-- ArgoElevation
-- ConnectionChip
-- ContractSpecimen
-- ArgoGeometry.swift
-- GitVessel
-- PackageDescription
-- ProjectStrip
-- SessionNavigator
-- ShellSidebar
-- ArgoLayout.swift
+- App Startup & Transcript Engine
+- Transcript Content Blocks
+- Transcript Record Parsing
+- Monorepo Root Tooling Config
+- Transcript Event Description & Errors
+- Hub Connection & Usage State
+- Tool Call Events
+- Color System & Palette
+- Diff Evidence Model
+- Cockpit Rooms & Deck Zones
+- Turbo Build Pipeline Config
+- File Tailing & Watching
+- Motion & Animation Tokens
+- Session Roster Projection
+- Agent Plan & Tool Reading
+- Git Checkout Projection
+- Cockpit Shell View Scaffolding
+- Turbo Task Config
+- Typography Tokens
+- Cockpit View & Actions
+- Sessions Deck UI
+- Specimen Deck Fixtures
+- Specimen Catalog
+- macOS Package Scripts
+- Elevation & Shadow Tokens
+- Connection Status Chip
+- Contract Specimen
+- Geometry & Spacing Tokens
+- Git Status Vessel
+- Swift Package Manifest
+- Project Strip UI
+- Session Navigator UI
+- Shell Sidebar UI
+- Layout Constants
 
 ## God Nodes (most connected - your core abstractions)
 1. `JSONValue` - 42 edges
@@ -78,115 +78,115 @@
 
 ## Communities (34 total, 6 thin omitted)
 
-### Community 0 - "Hub"
+### Community 0 - "App Startup & Transcript Engine"
 Cohesion: 0.06
 Nodes (33): App, ArgoApp, CockpitPresentation, Engine, URL, Hub, RecordOwner, Int (+25 more)
 
-### Community 1 - "JSONValue"
+### Community 1 - "Transcript Content Blocks"
 Cohesion: 0.08
 Nodes (38): MediaEvidence, message, ContentBlock, image, thinking, toolResult, toolUse, unreadable (+30 more)
 
-### Community 2 - "TranscriptReader"
+### Community 2 - "Transcript Record Parsing"
 Cohesion: 0.08
 Nodes (32): text, commandPrompt(), firstText(), localCommandOutput(), String, tag(), userPrompt(), outputEvidence() (+24 more)
 
-### Community 3 - "scripts"
+### Community 3 - "Monorepo Root Tooling Config"
 Cohesion: 0.04
 Nodes (46): @biomejs/biome, husky, jscpd, lint-staged, bin, argo, devDependencies, @biomejs/biome (+38 more)
 
-### Community 4 - "Foundation"
+### Community 4 - "Transcript Event Description & Errors"
 Cohesion: 0.07
 Nodes (26): describe(), oneLine(), Int, String, TranscriptEvent, URL, TranscriptObservationError, unreadable (+18 more)
 
-### Community 5 - "Equatable"
+### Community 5 - "Hub Connection & Usage State"
 Cohesion: 0.08
 Nodes (30): HubConnection, failed, healthy, reconnecting, String, Int, Usage, Access (+22 more)
 
-### Community 6 - "TranscriptEvent"
+### Community 6 - "Tool Call Events"
 Cohesion: 0.06
 Nodes (36): Int, Usage, ToolCall, ToolCallKind, delegate, edit, execute, fetch (+28 more)
 
-### Community 7 - "Sendable"
+### Community 7 - "Color System & Palette"
 Cohesion: 0.12
 Nodes (17): ArgoColor, Double, ArgoPalette, EdgeRoles, InteractionRoles, StateRoles, SurfaceRoles, TextRoles (+9 more)
 
-### Community 8 - "String"
+### Community 8 - "Diff Evidence Model"
 Cohesion: 0.10
 Nodes (31): DiffEvidence, DiffHunk, DiffLine, DiffLineSide, add, context, del, FileChange (+23 more)
 
-### Community 9 - "CockpitRoom"
+### Community 9 - "Cockpit Rooms & Deck Zones"
 Cohesion: 0.08
 Nodes (30): CockpitRoom, code, sessions, work, Self, DeckZone, dock, feed (+22 more)
 
-### Community 10 - "tasks"
+### Community 10 - "Turbo Build Pipeline Config"
 Cohesion: 0.07
 Nodes (31): ^build, dist/**, OPENAI_API_KEY, out/**, REALTIME_MODEL, storybook-static/**, dependsOn, outputs (+23 more)
 
-### Community 11 - "transcriptLines"
+### Community 11 - "File Tailing & Watching"
 Cohesion: 0.13
 Nodes (15): FileCursor, FileWatcher, AsyncStream, String, URL, Void, transcriptLines(), firstLines() (+7 more)
 
-### Community 12 - "ArgoMotion"
+### Community 12 - "Motion & Animation Tokens"
 Cohesion: 0.14
 Nodes (16): Animation, ArgoAnimationModifier, ArgoMotion, Curve, easeInOut, easeOut, spring, Bool (+8 more)
 
-### Community 13 - "SessionRosterProjection"
+### Community 13 - "Session Roster Projection"
 Cohesion: 0.16
 Nodes (11): AppKit, Row, SessionRosterProjection, Bool, CockpitPresentation, Int, String, SessionRow (+3 more)
 
-### Community 14 - ".callEvents"
+### Community 14 - "Agent Plan & Tool Reading"
 Cohesion: 0.19
 Nodes (12): Plan, PlanEntry, PlanEntryStatus, completed, inProgress, pending, plan(), planEntryStatus() (+4 more)
 
-### Community 15 - "Head"
+### Community 15 - "Git Checkout Projection"
 Cohesion: 0.17
 Nodes (10): CheckoutProjection, Head, branch, detached, unavailable, String, URL, CheckoutReader (+2 more)
 
-### Community 16 - "SwiftUI"
+### Community 16 - "Cockpit Shell View Scaffolding"
 Cohesion: 0.14
 Nodes (6): View, DeckSeparator, DeckSlot, RoomsVessel, ArgoUI, SwiftUI
 
-### Community 17 - "tasks"
+### Community 17 - "Turbo Task Config"
 Cohesion: 0.13
 Nodes (14): cache, outputs, extends, $schema, cache, outputs, persistent, tasks (+6 more)
 
-### Community 18 - "ArgoTypeface"
+### Community 18 - "Typography Tokens"
 Cohesion: 0.24
 Nodes (10): ArgoTextStyle, ArgoTypeface, identity, interface, machine, ArgoTypography, CGFloat, String (+2 more)
 
-### Community 19 - "CockpitActions"
+### Community 19 - "Cockpit View & Actions"
 Cohesion: 0.21
 Nodes (7): CockpitActions, Void, CockpitView, CockpitPresentation, ShellToolbar, CockpitPresentation, ToolbarContent
 
-### Community 20 - "View"
+### Community 20 - "Sessions Deck UI"
 Cohesion: 0.20
 Nodes (8): InstrumentDeckShell, DeckContentRow, SessionsDeck, SessionStateIndicator, SpecimenStateDot, SpecimenStatusChip, String, View
 
-### Community 21 - "SpecimenFixtures"
+### Community 21 - "Specimen Deck Fixtures"
 Cohesion: 0.21
 Nodes (7): FoundationSpecimen, ToolbarContent, SpecimenDeck, SpecimenDeckTabs, SpecimenFeedEntry, SpecimenFixtures, SpecimenSessionRow
 
-### Community 22 - "Specimen"
+### Community 22 - "Specimen Catalog"
 Cohesion: 0.22
 Nodes (9): DeckSpecimen, SessionRowsSpecimen, Specimen, contract, deck, foundations, sessionRows, sessionsDeck (+1 more)
 
-### Community 23 - "scripts"
+### Community 23 - "macOS Package Scripts"
 Cohesion: 0.22
 Nodes (8): description, name, private, scripts, build, lint, screenshot, test
 
-### Community 24 - "ArgoElevation"
+### Community 24 - "Elevation & Shadow Tokens"
 Cohesion: 0.31
 Nodes (6): ArgoElevation, Bool, CGFloat, Double, String, View
 
-### Community 25 - "ConnectionChip"
+### Community 25 - "Connection Status Chip"
 Cohesion: 0.33
 Nodes (5): ConnectionChip, Bool, CockpitPresentation, String, Void
 
-### Community 27 - "ArgoGeometry.swift"
+### Community 27 - "Geometry & Spacing Tokens"
 Cohesion: 0.47
 Nodes (5): ArgoRadius, ArgoSpacing, ArgoStroke, CGFloat, String
 
-### Community 28 - "GitVessel"
+### Community 28 - "Git Status Vessel"
 Cohesion: 0.40
 Nodes (4): GitVessel, CockpitPresentation, String, Void
 
@@ -198,17 +198,17 @@ Nodes (4): GitVessel, CockpitPresentation, String, Void
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SwiftUI` connect `SwiftUI` to `ShellSidebar`, `ArgoLayout.swift`, `Sendable`, `CockpitRoom`, `ArgoMotion`, `SessionRosterProjection`, `ArgoTypeface`, `CockpitActions`, `View`, `SpecimenFixtures`, `Specimen`, `ArgoElevation`, `ConnectionChip`, `ContractSpecimen`, `ArgoGeometry.swift`, `GitVessel`, `ProjectStrip`, `SessionNavigator`?**
+- **Why does `SwiftUI` connect `Cockpit Shell View Scaffolding` to `Shell Sidebar UI`, `Layout Constants`, `Color System & Palette`, `Cockpit Rooms & Deck Zones`, `Motion & Animation Tokens`, `Session Roster Projection`, `Typography Tokens`, `Cockpit View & Actions`, `Sessions Deck UI`, `Specimen Deck Fixtures`, `Specimen Catalog`, `Elevation & Shadow Tokens`, `Connection Status Chip`, `Contract Specimen`, `Geometry & Spacing Tokens`, `Git Status Vessel`, `Project Strip UI`, `Session Navigator UI`?**
   _High betweenness centrality (0.084) - this node is a cross-community bridge._
-- **Why does `JSONValue` connect `JSONValue` to `TranscriptReader`, `Equatable`, `Sendable`, `String`, `.callEvents`?**
+- **Why does `JSONValue` connect `Transcript Content Blocks` to `Transcript Record Parsing`, `Hub Connection & Usage State`, `Color System & Palette`, `Diff Evidence Model`, `Agent Plan & Tool Reading`?**
   _High betweenness centrality (0.077) - this node is a cross-community bridge._
-- **Why does `ArgoOperationalState` connect `Equatable` to `Foundation`, `Sendable`, `CockpitRoom`, `SessionRosterProjection`, `View`, `ConnectionChip`?**
+- **Why does `ArgoOperationalState` connect `Hub Connection & Usage State` to `Transcript Event Description & Errors`, `Color System & Palette`, `Cockpit Rooms & Deck Zones`, `Session Roster Projection`, `Sessions Deck UI`, `Connection Status Chip`?**
   _High betweenness centrality (0.075) - this node is a cross-community bridge._
 - **What connects `healthy`, `reconnecting`, `failed` to the rest of the system?**
   _165 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Hub` be split into smaller, more focused modules?**
+- **Should `App Startup & Transcript Engine` be split into smaller, more focused modules?**
   _Cohesion score 0.05794556628621598 - nodes in this community are weakly interconnected._
-- **Should `JSONValue` be split into smaller, more focused modules?**
+- **Should `Transcript Content Blocks` be split into smaller, more focused modules?**
   _Cohesion score 0.07686274509803921 - nodes in this community are weakly interconnected._
-- **Should `TranscriptReader` be split into smaller, more focused modules?**
+- **Should `Transcript Record Parsing` be split into smaller, more focused modules?**
   _Cohesion score 0.07890070921985816 - nodes in this community are weakly interconnected._
