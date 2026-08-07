@@ -44,11 +44,19 @@ struct SessionsDeckTests {
         #expect(ArgoLayout.minimapLaneWidth < ArgoLayout.agentsRailWidth / 2)
     }
 
+    /// The dock is no longer part of this: it sits inside the feed column, so the row — rail,
+    /// feed and lane alike — runs from the tabs to the deck's bottom edge.
     @Test
     func `the deck's chrome leaves the content row most of its height`() {
-        let chrome = ArgoLayout.deckHeaderHeight
-            + ArgoLayout.deckTabSlotHeight
-            + ArgoLayout.deckDockHeight
+        let chrome = ArgoLayout.deckHeaderHeight + ArgoLayout.deckTabSlotHeight
         #expect(ArgoLayout.windowMinimumHeight - chrome > ArgoLayout.windowMinimumHeight / 2)
+    }
+
+    @Test
+    func `the dock takes its height from the feed's column and no other zone's`() {
+        let column = ArgoLayout.windowMinimumHeight
+            - ArgoLayout.deckHeaderHeight
+            - ArgoLayout.deckTabSlotHeight
+        #expect(column - ArgoLayout.deckDockHeight > column / 2)
     }
 }
