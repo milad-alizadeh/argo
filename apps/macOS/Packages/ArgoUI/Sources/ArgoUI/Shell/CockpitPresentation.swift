@@ -8,14 +8,35 @@ public struct CockpitPresentation: Equatable, Sendable {
         public let name: String
         public let location: String
         /// A registered folder that has moved or been deleted is still a Project. Drawn as such and
-        /// re-pointable, rather than quietly missing from the strip.
+        /// re-pointable, rather than quietly missing from the drawer.
         public let isReachable: Bool
+        /// How many Sessions the cockpit is watching here. Absent — never zero — for a Project
+        /// nothing has observed: the Hub is pointed at one Project at a time, so a count for any
+        /// other is a fact Argo does not have.
+        public let liveSessionCount: Int?
 
-        public init(id: String, name: String, location: String, isReachable: Bool = true) {
+        public init(
+            id: String,
+            name: String,
+            location: String,
+            isReachable: Bool = true,
+            liveSessionCount: Int? = nil,
+        ) {
             self.id = id
             self.name = name
             self.location = location
             self.isReachable = isReachable
+            self.liveSessionCount = liveSessionCount
+        }
+
+        func counting(liveSessions: Int?) -> Project {
+            Project(
+                id: id,
+                name: name,
+                location: location,
+                isReachable: isReachable,
+                liveSessionCount: liveSessions,
+            )
         }
     }
 

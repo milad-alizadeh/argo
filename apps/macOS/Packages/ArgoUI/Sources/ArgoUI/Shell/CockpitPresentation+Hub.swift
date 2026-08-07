@@ -12,13 +12,40 @@ public extension CockpitPresentation {
     /// while everything below is the Hub's reading of the one it is pointed at.
     @MainActor
     init(projects: [Project], activeProjectID: Project.ID?, hub: Hub) {
+        let sessions = hub.sessions.map(Session.init(observed:))
         self.init(
-            projects: projects,
+            projects: Self.counted(projects, activeProjectID: activeProjectID, in: sessions),
             activeProjectID: activeProjectID,
-            sessions: hub.sessions.map(Session.init(observed:)),
+            sessions: sessions,
             checkout: hub.checkout,
             connection: hub.connection,
         )
+    }
+
+    /// The live-session count is the Hub's roster, and the Hub observes ONE Project. Every other
+    /// Project keeps the absent count it arrived with rather than a zero: nothing has looked there,
+    /// and "no Sessions" is a different claim from "not observed".
+    private static func counted(
+        _ projects: [Project],
+        activeProjectID: Project.ID?,
+        in sessions: [Session],
+    )
+        -> [Project] {
+        let live = sessions.count(where: \.isLive)
+        return projects.map {
+            $0.id == activeProjectID ? $0.counting(liveSessions: live) : $0
+        }
+    }
+}
+
+extension CockpitPresentation.Session {
+    /// A Session there is still something to go and look at. `ended` is the one status that is
+    /// over; `unknown` is not — nothing observed is not observed to have finished.
+    var isLive: Bool {
+        switch status {
+        case .running, .permission, .asking, .idle, .stopped, .unknown: true
+        case .ended: false
+        }
     }
 }
 

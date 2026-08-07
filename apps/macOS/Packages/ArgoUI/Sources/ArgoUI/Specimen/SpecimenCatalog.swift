@@ -19,6 +19,9 @@ public enum Specimen: String, CaseIterable, Sendable {
     case emptyProjectStrip
     case toolbarScope
     case emptyToolbarScope
+    case projectDrawer
+    case unreachableProjectDrawer
+    case emptyProjectDrawer
     case deck
     case sessionsDeck
 }
@@ -58,6 +61,14 @@ public struct SpecimenScreen: View {
             ToolbarSpecimen(presentation: .preview)
         case .emptyToolbarScope:
             ToolbarSpecimen(presentation: .unregisteredPreview)
+        case .projectDrawer:
+            DrawerSpecimen(presentation: .preview)
+        case .unreachableProjectDrawer:
+            DrawerSpecimen(presentation: .unreachablePreview)
+        case .emptyProjectDrawer:
+            // A machine that has registered nothing: Add Project… is the only thing on screen,
+            // and it has to be findable without a row beside it to point at.
+            DrawerSpecimen(presentation: .unregisteredPreview)
         case .deck:
             DeckSpecimen()
         case .sessionsDeck:
@@ -113,6 +124,8 @@ private struct ProjectStripSpecimen: View {
                 selectProject: { activeProjectID = $0 },
                 addProject: {},
                 locateProject: { _ in },
+                revealProject: { _ in },
+                removeProject: { _ in },
             ),
         )
         .frame(maxHeight: .infinity)
@@ -134,6 +147,25 @@ private struct ToolbarSpecimen: View {
                 ShellToolbar(room: $room, presentation: presentation, actions: .inert)
             }
             .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+    }
+}
+
+/// The drawer as it hangs off the vessel: over the window's own ground, at its own width, rather
+/// than filling the frame. A popover is a window of its own and never lands in a screenshot of
+/// this one, so the harness draws the content directly.
+private struct DrawerSpecimen: View {
+    @Environment(\.argo) private var argo
+
+    let presentation: CockpitPresentation
+
+    var body: some View {
+        ProjectDrawer(presentation: presentation, actions: .inert)
+            .clipShape(RoundedRectangle(cornerRadius: ArgoRadius.popover))
+            .overlay {
+                RoundedRectangle(cornerRadius: ArgoRadius.popover)
+                    .strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.hairline)
+            }
+            .padding(ArgoSpacing.region)
     }
 }
 

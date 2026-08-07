@@ -46,6 +46,15 @@ public actor ProjectRegistryStore {
         return change(persist(load().relocating(id: id, path: path)), atPath: path)
     }
 
+    /// Forget a Project. `project` answers where the cockpit lands afterwards — the active Project
+    /// once the record is gone — and is absent when the set has emptied, which is the one case the
+    /// caller has to render rather than switch to.
+    @discardableResult
+    public func remove(id: String) -> ProjectChange {
+        let registry = persist(load().removing(id: id))
+        return ProjectChange(registry: registry, project: registry.active)
+    }
+
     @discardableResult
     public func activate(id: String) -> ProjectChange {
         let registry = persist(load().activating(id: id))

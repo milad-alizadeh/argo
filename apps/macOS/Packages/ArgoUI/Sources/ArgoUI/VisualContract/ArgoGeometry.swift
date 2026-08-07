@@ -26,6 +26,9 @@ public enum ArgoStroke {
     public static let indicator: CGFloat = 2
     /// The keyboard focus ring.
     public static let focus: CGFloat = 2
+    /// The dash a broken edge is drawn with: a Project whose folder is not there. Shape carries
+    /// what the row also says in words, so neither reading stands alone.
+    public static let dash: CGFloat = 3
 }
 
 /// The spacing rhythm. Dense by design: the cockpit shows many Sessions at once.

@@ -58,6 +58,8 @@ struct ArgoApp: App {
             selectProject: { id in Task { await cockpit.select(projectID: id) } },
             addProject: { Task { await cockpit.addProject() } },
             locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
+            revealProject: { id in cockpit.revealProject(projectID: id) },
+            removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
         )
     }
 }

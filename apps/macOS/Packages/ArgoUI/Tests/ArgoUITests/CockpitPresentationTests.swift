@@ -26,7 +26,7 @@ struct CockpitPresentationTests {
 
         let presentation = projection(of: hub, projects: [registered])
 
-        #expect(presentation.activeProject == registered)
+        #expect(presentation.activeProject?.id == registered.id)
         #expect(presentation.checkout == CheckoutProjection.Head.unavailable)
         // A Hub with nothing to read is not a connected one, and the shell is told which.
         #expect(presentation.connection == HubConnection.idle)

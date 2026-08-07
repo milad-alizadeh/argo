@@ -17,6 +17,9 @@ public enum ArgoLayout {
     // is the wider of the two because it carries a full name rather than a branch.
     public static let projectVesselMaximumWidth: CGFloat = 220
     public static let scopeDividerHeight: CGFloat = 16
+    /// The Project drawer. Wide enough for a full name over a home-relative path, and no wider —
+    /// it hangs off a toolbar control, not over the window.
+    public static let projectDrawerWidth: CGFloat = 340
 
     // The Instrument Deck's zones, measured off the approved study
     // (`docs/designs/cockpit-sessions-liquid-glass.png`) — the decision log carries no

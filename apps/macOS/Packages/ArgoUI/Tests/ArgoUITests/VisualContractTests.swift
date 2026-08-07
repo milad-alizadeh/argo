@@ -116,6 +116,16 @@ struct VisualContractTests {
         }
     }
 
+    /// A symbol beside a label is drawn off the label's own line, from one contract value — the
+    /// gap this closes is glyphs sitting proud of the type they belong to.
+    @Test
+    func `a glyph is smaller than its label and no smaller than its x-height`() {
+        for role in ArgoTypography.all {
+            #expect(role.style.glyphSize < role.style.size)
+            #expect(role.style.glyphSize >= role.style.size * 0.7)
+        }
+    }
+
     // MARK: - Depth
 
     @Test
