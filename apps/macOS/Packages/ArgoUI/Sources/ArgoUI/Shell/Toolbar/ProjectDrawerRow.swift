@@ -22,6 +22,9 @@ struct ProjectDrawerRow: View {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
+            // The label sits on the button that DOES the switching, not on the row around it.
+            .accessibilityLabel(row.accessibilityLabel)
+            .accessibilityAddTraits(row.isActive ? .isSelected : [])
             trailing
         }
         .padding(.horizontal, ArgoSpacing.base)
@@ -29,9 +32,10 @@ struct ProjectDrawerRow: View {
         // The whole row, after its padding: the wash marks which Project is on screen, and one
         // sized to the name alone would mark the name instead.
         .background(rowSurface)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(row.accessibilityLabel)
-        .accessibilityAddTraits(row.isActive ? .isSelected : [])
+        // `contain`, NOT `combine`. Combining flattens the row into a single element and swallows
+        // the ⋯ menu with it — so Reveal, Locate and Remove were unreachable to anything driving
+        // by accessibility, which is every screen reader as well as the E2E test that caught it.
+        .accessibilityElement(children: .contain)
     }
 
     /// Clicking a row whose folder is gone points at the folder picker, not at a Project that

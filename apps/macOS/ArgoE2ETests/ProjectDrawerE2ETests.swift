@@ -6,21 +6,26 @@ import XCTest
 /// but it cannot launch the app, and it cannot click. So a view that renders correctly in a
 /// specimen and comes apart inside a popover passes all of them — which is exactly what happened.
 /// A click is the only thing that catches that, and this is the only target that can click.
+/// `@MainActor` on the whole case: driving a UI is main-actor work under Swift 6, and
+/// `XCUIApplication()` is isolated to it — a stored default in a nonisolated class does not
+/// compile. The async `setUp`/`tearDown` overrides are what let an isolated case override
+/// XCTest's own nonisolated ones.
+@MainActor
 final class ProjectDrawerE2ETests: XCTestCase {
     /// Built at init rather than in `setUp`, so it needs no implicit unwrap. `XCUIApplication()`
     /// only describes the app — nothing launches until `launch()`.
     private let app = XCUIApplication()
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         // A crashed app fails the test it crashed in, rather than every one after it.
         continueAfterFailure = false
         app.launch()
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         app.terminate()
-        super.tearDown()
+        try await super.tearDown()
     }
 
     /// The regression this target exists for. Opening the drawer took the app down while every
