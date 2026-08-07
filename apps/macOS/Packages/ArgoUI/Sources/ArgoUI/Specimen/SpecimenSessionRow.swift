@@ -44,8 +44,11 @@ struct SpecimenSessionRow: View {
 }
 
 #Preview("Session rows — every operational state") {
-    List(SpecimenFixtures.roster, selection: .constant(SpecimenFixtures.roster.first?.id)) {
-        SpecimenSessionRow(session: $0)
+    List(SpecimenFixtures.roster, selection: .constant(SpecimenFixtures.roster.first?.id)) { session in
+        // The ZStack is Apple's own workaround for a known Xcode bug: a custom row directly
+        // inside a List's ForEach kills the macOS preview in TableViewListCore_Mac2. Preview
+        // only — it never crashes at runtime.
+        ZStack { SpecimenSessionRow(session: session) }
     }
     .listStyle(.sidebar)
     .frame(width: 300, height: 260)
