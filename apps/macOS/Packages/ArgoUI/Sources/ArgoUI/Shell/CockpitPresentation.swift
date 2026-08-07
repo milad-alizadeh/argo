@@ -1,11 +1,17 @@
 public struct CockpitPresentation: Equatable, Sendable {
-    public struct Project: Equatable, Sendable {
+    public struct Project: Equatable, Identifiable, Sendable {
+        public let id: String
         public let name: String
         public let location: String
+        /// A registered folder that has moved or been deleted is still a Project. Drawn as such and
+        /// re-pointable, rather than quietly missing from the strip.
+        public let isReachable: Bool
 
-        public init(name: String, location: String) {
+        public init(id: String, name: String, location: String, isReachable: Bool = true) {
+            self.id = id
             self.name = name
             self.location = location
+            self.isReachable = isReachable
         }
     }
 
@@ -54,18 +60,27 @@ public struct CockpitPresentation: Equatable, Sendable {
         case failed(message: String)
     }
 
-    public let project: Project
+    /// The registered set, plus — on a launch that named a folder nobody registered — the one it
+    /// was pointed at. Pointing the Hub is not registration, and the strip draws where it points.
+    public let projects: [Project]
+    public let activeProjectID: Project.ID?
     public let sessions: [Session]
     public let checkout: Checkout
     public let connection: Connection
 
+    public var activeProject: Project? {
+        projects.first { $0.id == activeProjectID }
+    }
+
     public init(
-        project: Project,
+        projects: [Project],
+        activeProjectID: Project.ID?,
         sessions: [Session],
         checkout: Checkout,
         connection: Connection,
     ) {
-        self.project = project
+        self.projects = projects
+        self.activeProjectID = activeProjectID
         self.sessions = sessions
         self.checkout = checkout
         self.connection = connection

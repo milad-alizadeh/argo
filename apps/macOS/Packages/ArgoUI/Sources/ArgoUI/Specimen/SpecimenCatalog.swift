@@ -14,6 +14,8 @@ public enum Specimen: String, CaseIterable, Sendable {
     case foundations
     case contract
     case sessionRows
+    case projectStrip
+    case emptyProjectStrip
     case deck
     case sessionsDeck
 }
@@ -41,6 +43,12 @@ public struct SpecimenScreen: View {
             ContractSpecimen()
         case .sessionRows:
             SessionRowsSpecimen()
+        case .projectStrip:
+            ProjectStripSpecimen(projects: CockpitPresentation.previewProjects)
+        case .emptyProjectStrip:
+            // A machine that has registered nothing: the `+` is the only thing on screen, and it
+            // has to be findable without a Project beside it to point at.
+            ProjectStripSpecimen(projects: [])
         case .deck:
             DeckSpecimen()
         case .sessionsDeck:
@@ -60,6 +68,35 @@ private struct SessionRowsSpecimen: View {
             }
         }
         .padding(ArgoSpacing.section)
+    }
+}
+
+/// The strip against the sidebar material it actually sits on, holding its own selection so the
+/// switch can be driven in the rendered state rather than only described.
+private struct ProjectStripSpecimen: View {
+    let projects: [CockpitPresentation.Project]
+
+    @State private var activeProjectID: CockpitPresentation.Project.ID?
+
+    init(projects: [CockpitPresentation.Project]) {
+        self.projects = projects
+        _activeProjectID = State(initialValue: projects.first?.id)
+    }
+
+    var body: some View {
+        ProjectStrip(
+            projects: projects,
+            activeProjectID: activeProjectID,
+            actions: CockpitActions(
+                refreshCheckout: {},
+                retryConnection: {},
+                selectProject: { activeProjectID = $0 },
+                addProject: {},
+                locateProject: { _ in },
+            ),
+        )
+        .frame(maxHeight: .infinity)
+        .background(.bar)
     }
 }
 

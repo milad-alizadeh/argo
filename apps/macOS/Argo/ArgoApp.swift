@@ -6,10 +6,9 @@ import SwiftUI
 /// The whole app: one window, SwiftUI lifecycle, no AppDelegate.
 @main
 struct ArgoApp: App {
-    @State private var hub: Hub
+    @State private var cockpit: CockpitCoordinator
     @State private var navigation = CockpitNavigationModel()
-    private let engine: Engine
-    private let configuration: LaunchConfiguration
+    private let specimenName: String?
 
     init() {
         let currentDirectoryURL = URL(
@@ -20,9 +19,8 @@ struct ArgoApp: App {
             arguments: CommandLine.arguments,
             currentDirectoryURL: currentDirectoryURL,
         )
-        self.configuration = configuration
-        self.engine = Engine()
-        _hub = State(initialValue: Hub(projectURL: configuration.projectURL))
+        self.specimenName = configuration.specimenName
+        _cockpit = State(initialValue: CockpitCoordinator(configuration: configuration))
     }
 
     var body: some Scene {
@@ -30,11 +28,9 @@ struct ArgoApp: App {
             if let specimen {
                 SpecimenScreen(specimen: specimen)
             } else {
-                CockpitView(presentation: presentation, actions: actions)
+                CockpitView(presentation: cockpit.presentation, actions: actions)
                     .environment(navigation)
-                    .task {
-                        await hub.connect(using: engine, configuration: configuration)
-                    }
+                    .task { await cockpit.start() }
             }
         }
         .defaultSize(width: 1280, height: 800)
@@ -52,55 +48,16 @@ struct ArgoApp: App {
     /// An unknown name renders the cockpit rather than failing: the harness names the state, and a
     /// typo there should not look like a launch worth screenshotting.
     private var specimen: Specimen? {
-        configuration.specimenName.flatMap(Specimen.init(rawValue:))
+        specimenName.flatMap(Specimen.init(rawValue:))
     }
 
     private var actions: CockpitActions {
         CockpitActions(
-            refreshCheckout: {
-                Task { await hub.refreshCheckout(using: engine, at: configuration.projectURL) }
-            },
-            retryConnection: {
-                Task { await hub.connect(using: engine, configuration: configuration) }
-            },
+            refreshCheckout: { Task { await cockpit.refreshCheckout() } },
+            retryConnection: { Task { await cockpit.retryConnection() } },
+            selectProject: { id in Task { await cockpit.select(projectID: id) } },
+            addProject: { Task { await cockpit.addProject() } },
+            locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
         )
-    }
-
-    private var presentation: CockpitPresentation {
-        CockpitPresentation(
-            project: CockpitPresentation.Project(
-                name: hub.project.name,
-                location: hub.project.url.path,
-            ),
-            sessions: hub.sessions.map {
-                CockpitPresentation.Session(
-                    id: $0.id,
-                    title: $0.title,
-                    model: $0.model,
-                    workspaceLocation: $0.cwd,
-                    branch: $0.branch,
-                    access: .readOnly,
-                    operationalState: nil,
-                )
-            },
-            checkout: checkout,
-            connection: connection,
-        )
-    }
-
-    private var checkout: CockpitPresentation.Checkout {
-        switch hub.checkout {
-        case let .branch(branch): .branch(branch)
-        case let .detached(shortSHA): .detached(shortSHA: shortSHA)
-        case .unavailable: .unavailable
-        }
-    }
-
-    private var connection: CockpitPresentation.Connection {
-        switch hub.connection {
-        case .healthy: .healthy
-        case .reconnecting: .reconnecting
-        case let .failed(message): .failed(message: message)
-        }
     }
 }

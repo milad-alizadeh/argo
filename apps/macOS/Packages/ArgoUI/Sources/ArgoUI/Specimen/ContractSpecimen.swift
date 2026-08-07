@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The contract's roles laid out side by side, for the one judgement the assembled cockpit
 /// cannot give you: whether two states are still telling apart at a glance, and whether the
-/// serif, the sans and the mono are still doing three different jobs.
+/// sans and the mono are still doing two different jobs.
 ///
 /// It exists for the preview canvas and nothing else. The app window shows the cockpit — a
 /// specimen sheet in a shipping surface is how a palette stops being judged in context.
@@ -63,7 +63,7 @@ struct ContractSpecimen: View {
     }
 
     private var type: some View {
-        section("Type — SF Pro, New York for identity, SF Mono for machine facts") {
+        section("Type — SF Pro for everything the interface says, SF Mono for machine facts") {
             VStack(alignment: .leading, spacing: ArgoSpacing.base) {
                 ForEach(ArgoTypography.all, id: \.name) { role in
                     HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.loose) {
@@ -113,7 +113,6 @@ struct ContractSpecimen: View {
     private func sample(for typeface: ArgoTypeface) -> String {
         switch typeface {
         case .interface: "The cockpit observes what the agents are doing"
-        case .identity: "Establish the visual foundation"
         case .machine: "git rev-parse HEAD → cb63695"
         }
     }
