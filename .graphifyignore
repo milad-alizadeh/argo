@@ -23,6 +23,9 @@ packages/argo-skills/
 # Left in, its ~2.5k TS nodes swamped the Swift tree to 27 nodes of noise.
 apps/desktop/
 
+# throwaway spike code — answers a question once, then stops being true
+prototypes/
+
 # Xcode project metadata and asset catalogues — build config, not application code
 *.xcodeproj/
 *.xcassets/
