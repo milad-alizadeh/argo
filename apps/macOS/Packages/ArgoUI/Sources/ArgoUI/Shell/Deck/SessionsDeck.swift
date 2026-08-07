@@ -3,9 +3,9 @@ import SwiftUI
 /// The Sessions room's zone layout, stacked flush.
 ///
 /// It paints no background: `InstrumentDeckShell` is the opaque plane, and a second fill here
-/// would be a second surface where the contract allows one. The seams sit where the approved
-/// study puts them and nowhere else — the header and its tabs read as one region, so nothing
-/// is drawn between them.
+/// would be a second surface where the contract allows one. The separators sit where the
+/// approved study puts them and nowhere else — the header and its tabs read as one region, so
+/// nothing is drawn between them.
 struct SessionsDeck: View {
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
@@ -13,11 +13,11 @@ struct SessionsDeck: View {
                 .frame(height: ArgoLayout.deckHeaderHeight)
             DeckSlot(zone: .tabs)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
-            DeckSeam()
+            DeckSeparator()
             DeckContentRow()
-            DeckSeam()
+            DeckSeparator()
             DeckSlot(zone: .dock)
-                .frame(height: ArgoLayout.dockSeamHeight)
+                .frame(height: ArgoLayout.deckDockHeight)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -30,9 +30,9 @@ private struct DeckContentRow: View {
         HStack(spacing: ArgoSpacing.flush) {
             DeckSlot(zone: .rail)
                 .frame(width: ArgoLayout.agentsRailWidth)
-            DeckSeam()
+            DeckSeparator()
             DeckSlot(zone: .feed)
-            DeckSeam()
+            DeckSeparator()
             DeckSlot(zone: .minimap)
                 .frame(width: ArgoLayout.minimapLaneWidth)
         }

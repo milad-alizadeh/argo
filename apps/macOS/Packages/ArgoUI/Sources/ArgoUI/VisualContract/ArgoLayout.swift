@@ -20,5 +20,5 @@ public enum ArgoLayout {
     public static let deckTabSlotHeight: CGFloat = 40
     public static let agentsRailWidth: CGFloat = 256
     public static let minimapLaneWidth: CGFloat = 56
-    public static let dockSeamHeight: CGFloat = 40
+    public static let deckDockHeight: CGFloat = 40
 }

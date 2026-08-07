@@ -35,7 +35,7 @@ struct DeckSlot: View {
     VStack(spacing: ArgoSpacing.flush) {
         ForEach(DeckZone.allCases) { zone in
             DeckSlot(zone: zone)
-            DeckSeam()
+            DeckSeparator()
         }
     }
     .frame(width: 420, height: 360)

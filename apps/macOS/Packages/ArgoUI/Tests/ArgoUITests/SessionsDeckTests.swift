@@ -48,7 +48,7 @@ struct SessionsDeckTests {
     func `the deck's chrome leaves the content row most of its height`() {
         let chrome = ArgoLayout.deckHeaderHeight
             + ArgoLayout.deckTabSlotHeight
-            + ArgoLayout.dockSeamHeight
+            + ArgoLayout.deckDockHeight
         #expect(ArgoLayout.windowMinimumHeight - chrome > ArgoLayout.windowMinimumHeight / 2)
     }
 }
