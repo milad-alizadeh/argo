@@ -5,6 +5,10 @@
     "build": {
       "cache": false,
       "outputs": []
+    },
+    "test:swift": {
+      "cache": false,
+      "outputs": []
     }
   }
 }

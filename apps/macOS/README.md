@@ -14,6 +14,8 @@ Packages/
     Transcript/     the untrusted-input boundary: one .jsonl becomes typed events
     argo-observe/   the CLI that tails a transcript and prints what it reads
   ArgoUI/           shared visual components. No engine dependency
+    VisualContract/ the palette, type, geometry, elevation and motion roles (#375)
+    Specimen/       throwaway views that show the contract on real surfaces
 ```
 
 `Argo/` is a **file-system-synchronized group**: the project file does not enumerate its
