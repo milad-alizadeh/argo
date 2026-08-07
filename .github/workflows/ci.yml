@@ -51,9 +51,11 @@ jobs:
             echo 'non_docs=false' >> "$GITHUB_OUTPUT"
           fi
 
-          # The macOS job's own scope: the app (sources, Xcode project, its scripts), the
-          # shared Swift shell entrypoints it runs, and the workflow that defines it.
-          if changed apps/macOS 'scripts/swift-*.sh' .github/workflows/ci.yml ':(exclude)*.md'; then
+          # The macOS job's own scope — everything that can change what it does: the app, the
+          # shared Swift shell scripts, the manifests that define the commands it runs
+          # (`quality:swift`, the turbo task graph), and the workflow and setup action.
+          if changed apps/macOS 'scripts/swift-*.sh' package.json turbo.json \
+               .github/workflows/ci.yml .github/actions/setup ':(exclude)*.md'; then
             echo 'swift=true' >> "$GITHUB_OUTPUT"
           else
             echo 'swift=false' >> "$GITHUB_OUTPUT"
@@ -153,9 +155,12 @@ jobs:
       ARGO_REQUIRE_SWIFT_TOOLS: "1"
       # The image's default today, named anyway: a default is not a pin.
       XCODE_APP: /Applications/Xcode_26.6.app
-      # SwiftLint is not on the image. Pinned because a new SwiftLint means new rules, and a
-      # gate that changes its mind on a schedule fails PRs that changed nothing.
+      # Both linters are pinned and downloaded rather than taken from the image, and for the
+      # same reason in both directions: a new version means new rules, and a gate that
+      # changes its mind on somebody else's release schedule fails PRs that changed nothing.
+      # (The image ships SwiftFormat and not SwiftLint today — neither fact is a contract.)
       SWIFTLINT_VERSION: 0.65.0
+      SWIFTFORMAT_VERSION: 0.62.1
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/setup
@@ -166,30 +171,42 @@ jobs:
           xcodebuild -version
           swift --version
 
-      # No SwiftFormat step: it ships on the image, and .swiftformat's own --minversion
-      # rejects one too old — a stale formatter fails the check rather than passing it.
-      - name: Cache the pinned SwiftLint
-        id: swiftlint-cache
+      # No restore-keys: a partial hit would put an unpinned version on PATH, which is the one
+      # outcome a pin exists to prevent.
+      - name: Cache the pinned SwiftLint and SwiftFormat
+        id: swift-tools-cache
         uses: actions/cache@v5
         with:
-          path: ~/.swiftlint/bin
-          key: swiftlint-${{ runner.os }}-${{ runner.arch }}-${{ env.SWIFTLINT_VERSION }}
+          path: ~/.cache/argo-swift-tools
+          key: swift-tools-${{ runner.os }}-${{ runner.arch }}-${{ env.SWIFTLINT_VERSION }}-${{ env.SWIFTFORMAT_VERSION }}
 
-      - name: Install the pinned SwiftLint
-        if: steps.swiftlint-cache.outputs.cache-hit != 'true'
+      # Both releases ship the same shape — one universal binary at the root of a zip.
+      - name: Install the pinned SwiftLint and SwiftFormat
+        if: steps.swift-tools-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir -p ~/.swiftlint/bin
-          curl -fsSL -o /tmp/swiftlint.zip \
+          mkdir -p "$HOME/.cache/argo-swift-tools"
+          install_tool() {
+            curl -fsSL -o "$RUNNER_TEMP/$1.zip" "$2"
+            unzip -oq "$RUNNER_TEMP/$1.zip" -d "$RUNNER_TEMP/$1"
+            install -m 755 "$RUNNER_TEMP/$1/$1" "$HOME/.cache/argo-swift-tools/$1"
+          }
+          install_tool swiftlint \
             "https://github.com/realm/SwiftLint/releases/download/$SWIFTLINT_VERSION/portable_swiftlint.zip"
-          unzip -oq /tmp/swiftlint.zip -d /tmp/swiftlint
-          mv /tmp/swiftlint/swiftlint ~/.swiftlint/bin/swiftlint
-          chmod +x ~/.swiftlint/bin/swiftlint
+          install_tool swiftformat \
+            "https://github.com/nicklockwood/SwiftFormat/releases/download/$SWIFTFORMAT_VERSION/swiftformat.zip"
 
-      - name: Put SwiftLint on PATH
-        run: echo "$HOME/.swiftlint/bin" >> "$GITHUB_PATH"
+      # The versions are asserted, not assumed: a cache restored from a key that ever meant
+      # something else would otherwise lint the tree with a version nobody chose.
+      - name: Put them on PATH at the pinned versions
+        run: |
+          echo "$HOME/.cache/argo-swift-tools" >> "$GITHUB_PATH"
+          [ "$("$HOME/.cache/argo-swift-tools/swiftlint" version)" = "$SWIFTLINT_VERSION" ]
+          [ "$("$HOME/.cache/argo-swift-tools/swiftformat" --version)" = "$SWIFTFORMAT_VERSION" ]
 
       # Keyed on the sources themselves, with a prefix fallback so a one-file change restores
-      # the previous run's products and rebuilds incrementally instead of from scratch.
+      # the previous run's products and rebuilds incrementally instead of from scratch. The
+      # arch and Xcode app are IN the prefix, not just the key: derived data from a different
+      # compiler is what the fallback would otherwise happily restore.
       - name: Cache Swift build products
         uses: actions/cache@v5
         with:
@@ -198,8 +215,8 @@ jobs:
             apps/macOS/Packages/ArgoEngine/.build
             apps/macOS/Packages/ArgoUI/.build
             ~/Library/Caches/org.swift.swiftpm
-          key: swift-build-${{ runner.os }}-${{ hashFiles('apps/macOS/**/*.swift', 'apps/macOS/**/project.pbxproj') }}
-          restore-keys: swift-build-${{ runner.os }}-
+          key: swift-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XCODE_APP }}-${{ hashFiles('apps/macOS/**/*.swift', 'apps/macOS/**/project.pbxproj') }}
+          restore-keys: swift-build-${{ runner.os }}-${{ runner.arch }}-${{ env.XCODE_APP }}-
 
       # Same gates, same order, same scripts a commit runs locally — the formatter first,
       # since a reformat would change what the linter reads.

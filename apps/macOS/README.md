@@ -64,14 +64,16 @@ The tests run against the Electron reader's own fixtures, copied unchanged into
 suit Swift would retire the only evidence that they agree.
 
 Both suites run in CI on the `macos build · swift tests · lint` job (#415) — a pinned
-`macos-26` runner on the image's Xcode 26.6, skipped when a PR touches no Swift. The default
-jobs are still Linux, where there is no Swift toolchain and no `xcodebuild`; `bun run test` at
-the repo root calls the suites there too and skips with a printed reason, so a missing
-toolchain never reads as a passing suite.
+`macos-26` runner on Xcode 26.6, with SwiftLint and SwiftFormat downloaded at pinned versions
+and asserted rather than taken from whatever the image ships, and the whole job skipped when a
+PR touches no Swift. The default jobs are still Linux, where there is no Swift toolchain and no
+`xcodebuild`; `bun run test` at the repo root calls the suites there too and skips with a
+printed reason, so a missing toolchain never reads as a passing suite.
 
 That skip is exactly what would make the macOS job green over nothing, so the job sets
 `ARGO_REQUIRE_SWIFT_TOOLS=1`, which turns every skip in `swift-test.sh`, `swift-lint.sh` and
-`swift-format.sh` into a failure. `scripts/swift-tooling.test.mjs` holds that.
+`swift-format.sh` into a failure — one definition, in `scripts/swift-tool-guard.sh`, that all
+three source. `scripts/swift-tooling.test.mjs` holds it.
 
 ## Gates
 

@@ -7,7 +7,16 @@
 // is what turns each skip into a failure; these tests are the proof it does.
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -32,7 +41,7 @@ const scratch = mkdtempSync(path.join(tmpdir(), 'argo-swift-tooling-'))
 const bareBin = path.join(scratch, 'bare-bin')
 const stubBin = path.join(scratch, 'stub-bin')
 for (const dir of [bareBin, stubBin]) {
-  spawnSync('mkdir', ['-p', dir])
+  mkdirSync(dir, { recursive: true })
 }
 for (const tool of ['uname', 'dirname']) {
   // Resolved rather than hardcoded: /usr/bin on macOS, /bin on some Linux images.
@@ -45,7 +54,7 @@ for (const tool of ['uname', 'dirname']) {
 const ARGV_LOG = path.join(scratch, 'argv.log')
 function stub(name) {
   const file = path.join(stubBin, name)
-  writeFileSync(file, `#!/bin/sh\nprintf '%s\\n' "$@" >> ${ARGV_LOG}\n`)
+  writeFileSync(file, `#!/bin/sh\nprintf '%s\\n' "$@" >> '${ARGV_LOG}'\n`)
   chmodSync(file, 0o755)
 }
 for (const tool of ['swiftformat', 'swiftlint', 'swift']) {
@@ -60,17 +69,8 @@ function run(script, { args = [], env = {}, pathValue }) {
     encoding: 'utf8',
     env: { PATH: pathValue, HOME: process.env.HOME, ...env },
   })
-  const argv = existsArgvLog() ? readFileSync(ARGV_LOG, 'utf8').trim().split('\n') : []
+  const argv = existsSync(ARGV_LOG) ? readFileSync(ARGV_LOG, 'utf8').trim().split('\n') : []
   return { ...result, argv, output: `${result.stdout}${result.stderr}` }
-}
-
-function existsArgvLog() {
-  try {
-    readFileSync(ARGV_LOG)
-    return true
-  } catch {
-    return false
-  }
 }
 
 const MISSING = { pathValue: '/usr/bin:/bin' }
@@ -93,21 +93,29 @@ for (const [script, tool] of [
 
   check(`${script} fails when ${tool} is absent under ARGO_REQUIRE_SWIFT_TOOLS`, () => {
     const result = run(script, { ...MISSING, args: ['apps/macOS'], env: STRICT })
-    assert.notEqual(result.status, 0)
-    assert.match(result.output, new RegExp(tool))
+    // Status 1 exactly, and the flag named: any non-zero would also satisfy `notEqual(0)`,
+    // including the script erroring for an unrelated reason.
+    assert.equal(result.status, 1, result.output)
+    assert.match(result.output, new RegExp(`${tool}.*ARGO_REQUIRE_SWIFT_TOOLS is set`))
     assert.doesNotMatch(result.output, /skipping/)
   })
 }
 
-check('swift-test.sh skips without a Swift toolchain, and fails under the strict flag', () => {
-  const bare = { pathValue: bareBin }
-  const lenient = run(TEST, bare)
-  assert.equal(lenient.status, 0, `expected a skip, got: ${lenient.output}`)
-  assert.match(lenient.output, /skipping/)
+// The bare PATH trips whichever of the script's two guards comes first: on Linux that is the
+// `uname` check, on macOS the missing `swift`. Either way the posture under test is the same.
+const BARE = { pathValue: bareBin }
 
-  const strict = run(TEST, { ...bare, env: STRICT })
-  assert.notEqual(strict.status, 0)
-  assert.doesNotMatch(strict.output, /skipping/)
+check('swift-test.sh skips where Swift cannot run', () => {
+  const result = run(TEST, BARE)
+  assert.equal(result.status, 0, `expected a skip, got: ${result.output}`)
+  assert.match(result.output, /skipping/)
+})
+
+check('swift-test.sh fails there instead under ARGO_REQUIRE_SWIFT_TOOLS', () => {
+  const result = run(TEST, { ...BARE, env: STRICT })
+  assert.equal(result.status, 1, result.output)
+  assert.match(result.output, /ARGO_REQUIRE_SWIFT_TOOLS is set/)
+  assert.doesNotMatch(result.output, /skipping/)
 })
 
 check('swift-format.sh rewrites in place by default', () => {
