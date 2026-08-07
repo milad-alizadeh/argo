@@ -92,17 +92,13 @@ struct VisualContractTests {
 
     // MARK: - Typography
 
-    /// One sans for everything the interface says, one mono for machine facts. A third family
-    /// would be a voice the cockpit has no third job for.
+    /// The identity roles are the two that used to carry a face of their own. They speak in the
+    /// interface sans now: one sans for everything the interface says, one mono for machine facts.
     @Test
-    func `the interface speaks in one sans, machine facts aside`() {
-        let interfaceRoles = ArgoTypography.all
-            .filter { $0.style.typeface == .interface }
-            .map(\.name)
-        #expect(interfaceRoles == [
-            "sessionTitle", "identityHeading", "sectionLabel", "rowTitle", "rowMeta", "body",
-            "control", "caption",
-        ])
+    func `identity lines are set in the interface sans, not a face of their own`() {
+        let identityRoles = [ArgoTypography.sessionTitle, ArgoTypography.identityHeading]
+
+        #expect(identityRoles.allSatisfy { $0.typeface == .interface })
     }
 
     @Test

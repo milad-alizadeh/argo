@@ -11,11 +11,10 @@ struct ProjectMark: View {
 
     let project: CockpitPresentation.Project
     let isActive: Bool
-    let select: () -> Void
-    let locate: () -> Void
+    let actions: CockpitActions
 
     var body: some View {
-        Button(action: project.isReachable ? select : locate) {
+        Button(action: act) {
             Text(String(project.name.prefix(1)).uppercased())
                 .argoText(ArgoTypography.identityHeading)
                 .foregroundStyle(ink)
@@ -52,6 +51,14 @@ struct ProjectMark: View {
         .accessibilityAddTraits(isActive ? .isSelected : [])
     }
 
+    private func act() {
+        guard project.isReachable else {
+            actions.locateProject(project.id)
+            return
+        }
+        actions.selectProject(project.id)
+    }
+
     /// The strip carries no project label, so the tooltip is the only place the path appears.
     private var helpText: String {
         project.isReachable
@@ -78,8 +85,7 @@ struct ProjectMark: View {
     ProjectMark(
         project: CockpitPresentation.preview.projects[0],
         isActive: true,
-        select: {},
-        locate: {},
+        actions: .inert,
     )
     .padding()
     .argoAppearance()
@@ -89,8 +95,7 @@ struct ProjectMark: View {
     ProjectMark(
         project: CockpitPresentation.preview.projects[1],
         isActive: false,
-        select: {},
-        locate: {},
+        actions: .inert,
     )
     .padding()
     .argoAppearance()
@@ -100,8 +105,7 @@ struct ProjectMark: View {
     ProjectMark(
         project: CockpitPresentation.preview.projects[2],
         isActive: false,
-        select: {},
-        locate: {},
+        actions: .inert,
     )
     .padding()
     .argoAppearance()

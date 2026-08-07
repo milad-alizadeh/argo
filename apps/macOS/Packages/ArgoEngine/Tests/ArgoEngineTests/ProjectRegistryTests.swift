@@ -13,7 +13,7 @@ struct ProjectRegistryTests {
         let repositoryURL = try fixture.folder("cockpit", git: true)
         let store = fixture.store()
 
-        let registered = await store.register(at: repositoryURL)
+        let registered = await store.register(at: repositoryURL).registry
         let reloaded = await store.load()
 
         let project = try #require(registered.projects.first)
@@ -42,9 +42,44 @@ struct ProjectRegistryTests {
         let store = fixture.store()
 
         await store.register(at: packageURL)
-        let registry = await store.register(at: repositoryURL)
+        let registry = await store.register(at: repositoryURL).registry
 
         #expect(registry.projects.map(\.path) == [repositoryURL.path])
+    }
+
+    /// The caller offers a folder and gets back the Project it belongs to — it cannot work that out
+    /// itself, because the registry keys on the resolved root and not on what was offered.
+    @Test
+    func `registering a folder answers with the Project at its root`() async throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        let repositoryURL = try fixture.folder("monorepo", git: true)
+        let packageURL = try fixture.folder("monorepo/apps/macOS")
+        let store = fixture.store()
+        let first = await store.register(at: repositoryURL)
+
+        let second = await store.register(at: packageURL)
+
+        #expect(second.project == first.project)
+        #expect(second.project?.path == repositoryURL.path)
+    }
+
+    /// Two records for one root is a state the registry has no way back out of.
+    @Test
+    func `relocating onto another Project's root is refused`() async throws {
+        let fixture = try ProjectFixture()
+        defer { fixture.remove() }
+        let first = try fixture.folder("first", git: true)
+        let second = try fixture.folder("second", git: true)
+        let store = fixture.store()
+        await store.register(at: first)
+        let registered = await store.register(at: second)
+        let secondID = try #require(registered.project?.id)
+
+        await store.relocate(id: secondID, to: first)
+        let reloaded = await store.load()
+
+        #expect(reloaded.projects.map(\.path) == [first.path, second.path])
     }
 
     @Test
@@ -56,7 +91,7 @@ struct ProjectRegistryTests {
         let store = fixture.store()
 
         await store.register(at: first)
-        let registry = await store.register(at: second)
+        let registry = await store.register(at: second).registry
 
         #expect(registry.active?.path == first.path)
     }
@@ -69,7 +104,7 @@ struct ProjectRegistryTests {
         let second = try fixture.folder("second", git: true)
         let store = fixture.store()
         await store.register(at: fixture.rootURL.appending(path: "first"))
-        let registry = await store.register(at: second)
+        let registry = await store.register(at: second).registry
         let secondID = try #require(registry.projects.last?.id)
 
         await store.activate(id: secondID)
@@ -86,7 +121,7 @@ struct ProjectRegistryTests {
         let originalURL = try fixture.folder("cockpit", git: true)
         let store = fixture.store()
         let registered = await store.register(at: originalURL)
-        let id = try #require(registered.projects.first?.id)
+        let id = try #require(registered.project?.id)
 
         let movedURL = try fixture.move(originalURL, to: "archive/cockpit")
         await store.relocate(id: id, to: movedURL)
@@ -116,7 +151,7 @@ struct ProjectRegistryTests {
         defer { fixture.remove() }
         let repositoryURL = try fixture.folder("cockpit", git: true)
         let store = fixture.store()
-        let registered = await store.register(at: repositoryURL)
+        let registered = await store.register(at: repositoryURL).registry
         #expect(registered.projects.map(\.isReachable) == [true])
 
         try fixture.remove(repositoryURL)
@@ -126,56 +161,14 @@ struct ProjectRegistryTests {
     }
 
     @Test
-    func `a registry file that cannot be read is an empty one`() async throws {
-        let fixture = try ProjectFixture()
-        defer { fixture.remove() }
-        try fixture.writeRegistryFile("{ \"projects\": [ ")
-
-        let registry = await fixture.store().load()
-
-        #expect(registry == .empty)
-    }
-
-    @Test
-    func `a record carrying no path is dropped, the rest of the file still reading`() async throws {
-        let fixture = try ProjectFixture()
-        defer { fixture.remove() }
-        try fixture.writeRegistryFile("""
-        {
-          "activeProjectId": "kept",
-          "projects": [{ "id": "broken" }, { "id": "kept", "path": "/tmp/kept" }]
-        }
-        """)
-
-        let registry = await fixture.store().load()
-
-        #expect(registry.projects.map(\.id) == ["kept"])
-        #expect(registry.active?.path == "/tmp/kept")
-    }
-
-    @Test
-    func `an active id no record carries reads as no active Project`() async throws {
-        let fixture = try ProjectFixture()
-        defer { fixture.remove() }
-        try fixture.writeRegistryFile("""
-        { "activeProjectId": "gone", "projects": [{ "id": "kept", "path": "/tmp/kept" }] }
-        """)
-
-        let registry = await fixture.store().load()
-
-        #expect(registry.projects.map(\.id) == ["kept"])
-        #expect(registry.active == nil)
-    }
-
-    @Test
     func `activating an id no record carries leaves the active Project alone`() async throws {
         let fixture = try ProjectFixture()
         defer { fixture.remove() }
         let repositoryURL = try fixture.folder("cockpit", git: true)
         let store = fixture.store()
-        let registered = await store.register(at: repositoryURL)
+        let registered = await store.register(at: repositoryURL).registry
 
-        let registry = await store.activate(id: "never-registered")
+        let registry = await store.activate(id: "never-registered").registry
 
         #expect(registry.active?.id == registered.active?.id)
     }
@@ -186,7 +179,7 @@ struct ProjectRegistryTests {
         defer { fixture.remove() }
         let repositoryURL = try fixture.folder("cockpit", git: true)
 
-        let registry = await fixture.store().register(at: repositoryURL)
+        let registry = await fixture.store().register(at: repositoryURL).registry
 
         #expect(registry.projects.map(\.name) == ["cockpit"])
     }

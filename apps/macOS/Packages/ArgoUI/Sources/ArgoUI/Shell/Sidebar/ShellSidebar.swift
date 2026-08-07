@@ -14,9 +14,7 @@ struct ShellSidebar: View {
             ProjectStrip(
                 projects: presentation.projects,
                 activeProjectID: presentation.activeProjectID,
-                selectProject: actions.selectProject,
-                addProject: actions.addProject,
-                locateProject: actions.locateProject,
+                actions: actions,
             )
             SessionNavigator(sessions: presentation.sessions, selection: $selection)
         }

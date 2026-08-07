@@ -20,14 +20,22 @@ public struct ProjectRegistry: Equatable, Sendable {
     }
 
     public var active: ProjectRecord? {
-        projects.first { $0.id == activeProjectID }
+        project(id: activeProjectID)
+    }
+
+    public func project(id: String?) -> ProjectRecord? {
+        projects.first { $0.id == id }
+    }
+
+    public func project(atPath path: String) -> ProjectRecord? {
+        projects.first { $0.path == path }
     }
 
     /// Registration is the act that creates a Project, keyed on the resolved root: offering the
     /// same root again is a no-op rather than a second Project. The first one registered becomes
     /// active, so a first launch lands somewhere rather than nowhere.
     func registering(path: String) -> ProjectRegistry {
-        guard !projects.contains(where: { $0.path == path }) else { return self }
+        guard project(atPath: path) == nil else { return self }
         let appended = projects + [ProjectRecord(id: UUID().uuidString, path: path)]
         return ProjectRegistry(
             projects: appended,
@@ -37,8 +45,12 @@ public struct ProjectRegistry: Equatable, Sendable {
 
     /// Re-point a Project at where its folder now is. Keyed on the id, so the Project is the same
     /// one it was and nothing linked to it has to be rewritten.
+    ///
+    /// A root another Project already holds is refused rather than merged: one git root is one
+    /// Project, and two records for it is the state the registry has no way back out of.
     func relocating(id: String, path: String) -> ProjectRegistry {
-        ProjectRegistry(
+        guard project(atPath: path).map({ $0.id == id }) ?? true else { return self }
+        return ProjectRegistry(
             projects: projects.map { $0.id == id ? ProjectRecord(id: id, path: path) : $0 },
             activeProjectID: activeProjectID,
         )

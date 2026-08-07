@@ -18,6 +18,9 @@ extension CockpitCoordinator {
     /// The registered set, and — on a launch pointed at a folder nobody registered — that folder
     /// at the head of it. `--project` and a bare launch both land there, and a strip that drew
     /// only the registry would leave the roster on screen belonging to no mark at all.
+    ///
+    /// The unregistered mark stays for the window's life, not only while it is active: it is the
+    /// only way back to where the process was pointed.
     private var projects: [CockpitPresentation.Project] {
         let registered = registry.projects.map {
             CockpitPresentation.Project(
@@ -27,16 +30,12 @@ extension CockpitCoordinator {
                 isReachable: $0.isReachable,
             )
         }
-        switch launch {
-        case .registered:
-            return registered
-        case let .unregistered(url):
-            return [CockpitPresentation.Project(
-                id: url.path,
-                name: hub.project.name,
-                location: hub.project.url.path,
-            )] + registered
-        }
+        guard case let .unregistered(url)? = launchOrigin else { return registered }
+        return [CockpitPresentation.Project(
+            id: url.path,
+            name: HubProject(url: url).name,
+            location: url.path,
+        )] + registered
     }
 
     private func session(_ session: HubSession) -> CockpitPresentation.Session {

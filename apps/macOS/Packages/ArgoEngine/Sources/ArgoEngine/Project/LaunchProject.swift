@@ -13,14 +13,16 @@ public enum LaunchProject: Equatable, Sendable {
     ///
     /// An override naming a folder the registry already knows resolves to that record rather
     /// than to a second, unregistered spelling of it — otherwise the strip would draw the same
-    /// repository twice, once selected and once not.
+    /// repository twice, once selected and once not. The match is on the path, so the caller
+    /// passes an override already resolved to its git root: the registry holds roots, and
+    /// `--project` may name any folder inside one.
     public static func resolve(
         configuration: LaunchConfiguration,
         registry: ProjectRegistry,
     )
         -> LaunchProject {
         if let overrideURL = configuration.projectOverrideURL {
-            let known = registry.projects.first { $0.path == overrideURL.path }
+            let known = registry.project(atPath: overrideURL.path)
             return known.map(LaunchProject.registered) ?? .unregistered(overrideURL)
         }
         if let active = registry.active {
@@ -42,13 +44,6 @@ public enum LaunchProject: Equatable, Sendable {
         switch self {
         case let .registered(record): record.id
         case let .unregistered(url): url.path
-        }
-    }
-
-    public var isRegistered: Bool {
-        switch self {
-        case .registered: true
-        case .unregistered: false
         }
     }
 }

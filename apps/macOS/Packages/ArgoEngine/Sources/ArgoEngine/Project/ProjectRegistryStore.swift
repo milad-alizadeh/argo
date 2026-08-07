@@ -30,28 +30,36 @@ public actor ProjectRegistryStore {
     }
 
     /// One git root is one Project: the folder offered is resolved to its repository root first, so
-    /// registering a package inside a monorepo registers the monorepo.
+    /// registering a package inside a monorepo registers the monorepo — and the Project returned is
+    /// the one at that root, whether this call created it or it was already known.
     @discardableResult
-    public func register(at url: URL) async -> ProjectRegistry {
-        let path = await root(of: url).path
-        return persist(load().registering(path: path))
+    public func register(at url: URL) async -> ProjectChange {
+        let path = await projectRoot(of: url).path
+        return change(persist(load().registering(path: path)), atPath: path)
     }
 
     /// Re-point a Project that has moved. Resolved the same way registration is, so a folder
     /// dragged inside its own repository re-points to the repository, not to the folder.
     @discardableResult
-    public func relocate(id: String, to url: URL) async -> ProjectRegistry {
-        let path = await root(of: url).path
-        return persist(load().relocating(id: id, path: path))
+    public func relocate(id: String, to url: URL) async -> ProjectChange {
+        let path = await projectRoot(of: url).path
+        return change(persist(load().relocating(id: id, path: path)), atPath: path)
     }
 
     @discardableResult
-    public func activate(id: String) -> ProjectRegistry {
-        persist(load().activating(id: id))
+    public func activate(id: String) -> ProjectChange {
+        let registry = persist(load().activating(id: id))
+        return ProjectChange(registry: registry, project: registry.project(id: id))
     }
 
-    private func root(of url: URL) async -> URL {
+    /// Which Project a folder belongs to, before anything is written. What a caller that has to
+    /// compare a path against the registry needs, since the registry holds roots and not folders.
+    public func projectRoot(of url: URL) async -> URL {
         await engine.checkout(at: url).repositoryURL.standardizedFileURL
+    }
+
+    private func change(_ registry: ProjectRegistry, atPath path: String) -> ProjectChange {
+        ProjectChange(registry: registry, project: registry.project(atPath: path))
     }
 
     /// A registry that cannot be written is still the registry this process will use: the switch
@@ -67,7 +75,7 @@ public actor ProjectRegistryStore {
             )
             try encoder.encode(registry).write(to: fileURL, options: .atomic)
         } catch {
-            return registry
+            // Nothing to recover: the registry below is the answer either way.
         }
         return registry
     }

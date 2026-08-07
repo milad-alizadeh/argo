@@ -15,7 +15,6 @@ struct LaunchProjectTests {
         )
 
         #expect(launch == .unregistered(launchDirectoryURL))
-        #expect(launch.isRegistered == false)
     }
 
     @Test

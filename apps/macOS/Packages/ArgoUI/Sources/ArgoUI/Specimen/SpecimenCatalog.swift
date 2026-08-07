@@ -87,9 +87,13 @@ private struct ProjectStripSpecimen: View {
         ProjectStrip(
             projects: projects,
             activeProjectID: activeProjectID,
-            selectProject: { activeProjectID = $0 },
-            addProject: {},
-            locateProject: { _ in },
+            actions: CockpitActions(
+                refreshCheckout: {},
+                retryConnection: {},
+                selectProject: { activeProjectID = $0 },
+                addProject: {},
+                locateProject: { _ in },
+            ),
         )
         .frame(maxHeight: .infinity)
         .background(.bar)

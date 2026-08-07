@@ -6,9 +6,7 @@ struct ProjectStrip: View {
 
     let projects: [CockpitPresentation.Project]
     let activeProjectID: CockpitPresentation.Project.ID?
-    let selectProject: (CockpitPresentation.Project.ID) -> Void
-    let addProject: () -> Void
-    let locateProject: (CockpitPresentation.Project.ID) -> Void
+    let actions: CockpitActions
 
     var body: some View {
         VStack(spacing: ArgoSpacing.base) {
@@ -16,8 +14,7 @@ struct ProjectStrip: View {
                 ProjectMark(
                     project: project,
                     isActive: project.id == activeProjectID,
-                    select: { selectProject(project.id) },
-                    locate: { locateProject(project.id) },
+                    actions: actions,
                 )
             }
             addButton
@@ -30,7 +27,7 @@ struct ProjectStrip: View {
     /// Registration is the act that creates a Project, so it needs an affordance — and on a machine
     /// that has registered nothing this is the only one on screen.
     private var addButton: some View {
-        Button(action: addProject) {
+        Button(action: actions.addProject) {
             Image(systemName: "plus")
                 .argoText(ArgoTypography.control)
                 .foregroundStyle(argo.color.text.tertiary)
@@ -47,22 +44,14 @@ struct ProjectStrip: View {
     ProjectStrip(
         projects: CockpitPresentation.preview.projects,
         activeProjectID: CockpitPresentation.preview.activeProjectID,
-        selectProject: { _ in },
-        addProject: {},
-        locateProject: { _ in },
+        actions: .inert,
     )
     .frame(height: 480)
     .argoAppearance()
 }
 
 #Preview("Project strip — nothing registered") {
-    ProjectStrip(
-        projects: [],
-        activeProjectID: nil,
-        selectProject: { _ in },
-        addProject: {},
-        locateProject: { _ in },
-    )
-    .frame(height: 480)
-    .argoAppearance()
+    ProjectStrip(projects: [], activeProjectID: nil, actions: .inert)
+        .frame(height: 480)
+        .argoAppearance()
 }

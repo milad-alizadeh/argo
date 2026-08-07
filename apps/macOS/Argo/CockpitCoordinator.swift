@@ -16,6 +16,11 @@ final class CockpitCoordinator {
     private(set) var registry = ProjectRegistry.empty
     private(set) var launch: LaunchProject
 
+    /// What the launch resolved to, kept for the window's life rather than only while it is on
+    /// screen. An unregistered launch target has a mark in the strip, so switching away from it has
+    /// to be reversible without a relaunch — and a named transcript belongs to this target alone.
+    private(set) var launchOrigin: LaunchProject?
+
     let hub: Hub
     private let engine: Engine
     private let store: ProjectRegistryStore
@@ -38,17 +43,25 @@ final class CockpitCoordinator {
     /// once the file has been read.
     func start() async {
         registry = await store.load()
-        await point(at: LaunchProject.resolve(configuration: configuration, registry: registry))
+        let resolved = await launchConfiguration()
+        let origin = LaunchProject.resolve(configuration: resolved, registry: registry)
+        launchOrigin = origin
+        await point(at: origin)
     }
 
     /// Switching re-points the Hub, which drops the previous Project's tails, roster, checkout and
     /// connection before the new one establishes anything (#418). Nothing of the old one survives.
+    ///
+    /// The unregistered launch target is switchable too — its mark is in the strip, and a mark that
+    /// did nothing when clicked would be the only dead one there.
     func select(projectID: String) async {
-        guard let record = registry.projects.first(where: { $0.id == projectID }),
-              record.id != launch.id
-        else { return }
-        registry = await store.activate(id: record.id)
-        await point(at: .registered(record))
+        guard projectID != launch.id else { return }
+        if let record = registry.project(id: projectID) {
+            registry = await store.activate(id: record.id).registry
+            await point(at: .registered(record))
+        } else if let origin = launchOrigin, origin.id == projectID {
+            await point(at: origin)
+        }
     }
 
     /// Registration is the act that creates a Project, so it is a folder the user chooses and
@@ -56,22 +69,22 @@ final class CockpitCoordinator {
     /// folder and staying where you were would read as the registration not having taken.
     func addProject() async {
         guard let folderURL = chooseFolder(prompt: "Register") else { return }
-        registry = await store.register(at: folderURL)
-        guard let record = registry.projects.first(where: { $0.path == folderURL.path })
-            ?? registry.projects.last
-        else { return }
-        registry = await store.activate(id: record.id)
+        let registered = await store.register(at: folderURL)
+        registry = registered.registry
+        guard let record = registered.project else { return }
+        registry = await store.activate(id: record.id).registry
         await point(at: .registered(record))
     }
 
     /// Re-point a Project whose folder has moved. Keyed on the id, so this is the same Project it
     /// was — everything linked to it survives the move.
     func locateProject(projectID: String) async {
-        guard registry.projects.contains(where: { $0.id == projectID }),
+        guard registry.project(id: projectID) != nil,
               let folderURL = chooseFolder(prompt: "Locate")
         else { return }
-        registry = await store.relocate(id: projectID, to: folderURL)
-        guard let record = registry.projects.first(where: { $0.id == projectID }) else { return }
+        let relocated = await store.relocate(id: projectID, to: folderURL)
+        registry = relocated.registry
+        guard let record = registry.project(id: projectID) else { return }
         await point(at: .registered(record))
     }
 
@@ -86,19 +99,35 @@ final class CockpitCoordinator {
         await point(at: launch)
     }
 
+    /// A launch may name, or start in, any folder inside a repository, while the registry holds
+    /// roots — so both are resolved before `LaunchProject` matches them. Without it a launch
+    /// pointed inside a registered repo draws that repo twice, and a bare launch inside one names
+    /// its mark after a subdirectory the Hub is not scoped to.
+    private func launchConfiguration() async -> LaunchConfiguration {
+        var projectOverrideURL: URL?
+        if let overrideURL = configuration.projectOverrideURL {
+            projectOverrideURL = await store.projectRoot(of: overrideURL)
+        }
+        return await LaunchConfiguration(
+            launchDirectoryURL: store.projectRoot(of: configuration.launchDirectoryURL),
+            projectOverrideURL: projectOverrideURL,
+            transcriptURLs: configuration.transcriptURLs,
+            specimenName: configuration.specimenName,
+        )
+    }
+
     /// A named transcript is an override for the launch target it was named with, so it is not
     /// carried onto a Project the user switched to afterwards.
     private func point(at project: LaunchProject) async {
         launch = project
-        let isLaunchTarget = project.url == configuration.projectURL
+        let isLaunchTarget = project.url == launchOrigin?.url
         await hub.connect(using: engine, configuration: LaunchConfiguration(
             projectURL: project.url,
             transcriptURLs: isLaunchTarget ? configuration.transcriptURLs : [],
         ))
     }
 
-    /// The system panel is the only folder chooser a Mac user should have to learn. Registering a
-    /// folder that is not there is not a case to handle — the panel cannot return one.
+    /// The system panel is the only folder chooser a Mac user should have to learn.
     private func chooseFolder(prompt: String) -> URL? {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
