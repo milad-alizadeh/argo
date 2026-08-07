@@ -2,17 +2,13 @@ import ArgoEngine
 import ArgoUI
 import Foundation
 
-/// The engine's state as the values the views render. The one place the two vocabularies meet.
+/// The registered set, as the marks the strip draws. Everything the HUB knows is projected by
+/// `CockpitPresentation(projects:activeProjectID:hub:)`, which is testable; what is left here is
+/// the app's own state, which is the registry and where this launch pointed.
 @MainActor
 extension CockpitCoordinator {
     var presentation: CockpitPresentation {
-        CockpitPresentation(
-            projects: projects,
-            activeProjectID: launch.id,
-            sessions: hub.sessions.map(session),
-            checkout: checkout,
-            connection: connection,
-        )
+        CockpitPresentation(projects: projects, activeProjectID: launch.id, hub: hub)
     }
 
     /// The registered set, and — on a launch pointed at a folder nobody registered — that folder
@@ -36,33 +32,5 @@ extension CockpitCoordinator {
             name: HubProject(url: url).name,
             location: url.path,
         )] + registered
-    }
-
-    private func session(_ session: HubSession) -> CockpitPresentation.Session {
-        CockpitPresentation.Session(
-            id: session.id,
-            title: session.title,
-            model: session.model,
-            workspaceLocation: session.cwd,
-            branch: session.branch,
-            access: .readOnly,
-            operationalState: nil,
-        )
-    }
-
-    private var checkout: CockpitPresentation.Checkout {
-        switch hub.checkout {
-        case let .branch(branch): .branch(branch)
-        case let .detached(shortSHA): .detached(shortSHA: shortSHA)
-        case .unavailable: .unavailable
-        }
-    }
-
-    private var connection: CockpitPresentation.Connection {
-        switch hub.connection {
-        case .healthy: .healthy
-        case .reconnecting: .reconnecting
-        case let .failed(message): .failed(message: message)
-        }
     }
 }

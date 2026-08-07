@@ -134,8 +134,14 @@ Three independent, optional, many-to-many edges:
   Honesty-gated: `permission` is DIRECT, **managed-only**. `asking` is **CONVENTION for managed,
   DERIVED for external** — but only when "pending" is **confirmable** from the record (a
   resolved question reads as `idle`). `stopped` needs a stop-reason an external transcript may
-  not carry. **External floors at `running · asking? · idle · ended`**; managed
-  `permission`/`stopped` collapse to `idle`/`ended` when observed externally.
+  not carry — where the record **does** carry one it is read DERIVED and rendered; where it
+  carries none, or one outside the vocabulary, the status is **`unknown`**, never the nearest
+  guess. **External floors at `running · asking? · idle · ended`**; managed `permission` collapses
+  to `idle` when observed externally.
+
+  A **seventh value, `unknown`**, is the degrade-down rule made reachable: a Session whose record
+  carries no Turn boundary at all is `unknown`, not `idle` — nothing observed is a different claim
+  from observed to be quiet.
 
 - **Session Mode** — the Session's *standing autonomy stance*; defined once in the Autonomy
   cluster below. A Session (root-Agent) fact, not per-Subagent. DIRECT for managed, tier-gated

@@ -12,6 +12,8 @@ APP_DIR="apps/macOS"
 UI_SOURCES="$APP_DIR/Packages/ArgoUI/Sources"
 ENGINE_SOURCES="$APP_DIR/Packages/ArgoEngine/Sources/ArgoEngine"
 APP_TARGET="$APP_DIR/Argo"
+# The one file in ArgoUI allowed to read live Hub state: the Hub → cockpit projection.
+PROJECTION_FILE="CockpitPresentation+Hub.swift"
 
 if [ ! -d "$APP_DIR" ]; then
   echo "swift-boundaries: $APP_DIR not found — run from the repo root" >&2
@@ -28,12 +30,16 @@ report() {
   printf '%s\n' "$@" >&2
 }
 
-# 1. ArgoUI ⊥ ArgoEngine. Views take the data they render as arguments (Package.swift says
-#    so, but SwiftPM only enforces it for targets that DECLARE the dependency — nothing
-#    stops a future `import ArgoEngine` from being added alongside a Package.swift edit).
-hits=$(grep -rn '^ *import  *ArgoEngine' "$UI_SOURCES" 2>/dev/null || true)
+# 1. No view reaches the Hub. ArgoUI may NAME the engine's value types — the presentation
+#    IS them, and a second copy of `Head`/`HubConnection` would be two vocabularies for one
+#    fact kept in step by hand (#441). What stays banned is live state: the projection that
+#    reads a Hub is one file, and a view importing it would be a view taking a store.
+# Comment lines are skipped: prose may say what the seam IS, and only code can cross it.
+hits=$(grep -rn '\bHub\b' "$UI_SOURCES" --include='*.swift' 2>/dev/null \
+  | grep -v "/$PROJECTION_FILE:" \
+  | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true)
 if [ -n "$hits" ]; then
-  report "ArgoUI imports ArgoEngine — views take the data they render as arguments (ADR-0022)" "$hits"
+  report "a view names the Hub — only $PROJECTION_FILE may read live state (ADR-0005)" "$hits"
 fi
 
 # 2. ArgoEngine ⊥ UI frameworks. The engine stays testable from the command line, which it

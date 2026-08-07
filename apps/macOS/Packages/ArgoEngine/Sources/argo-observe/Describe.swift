@@ -56,6 +56,8 @@ func describe(_ event: TranscriptEvent) -> String {
         "call        \(call.name) (\(call.kind.rawValue))\(call.target.map { " → \($0)" } ?? "")"
     case let .toolCallOutcome(outcome):
         "  ↳ \(outcome.status.rawValue)  \(outcome.result.map(describe) ?? "")"
+    case let .turnEnded(reason):
+        "turn ended  \(reason.rawValue)"
     case let .plan(plan):
         "plan        \(plan.entries.count) entries, "
             + plan.entries.filter { $0.status == .completed }.count.description + " done"

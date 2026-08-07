@@ -14,6 +14,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case foundations
     case contract
     case sessionRows
+    case roster
     case projectStrip
     case emptyProjectStrip
     case deck
@@ -43,6 +44,8 @@ public struct SpecimenScreen: View {
             ContractSpecimen()
         case .sessionRows:
             SessionRowsSpecimen()
+        case .roster:
+            RosterSpecimen()
         case .projectStrip:
             ProjectStripSpecimen(projects: CockpitPresentation.previewProjects)
         case .emptyProjectStrip:
@@ -68,6 +71,17 @@ private struct SessionRowsSpecimen: View {
             }
         }
         .padding(ArgoSpacing.section)
+    }
+}
+
+/// The shell against a roster that MIXES access. The lock is drawn only where read-only tells
+/// rows apart, so a uniform roster suppresses it by design and this is the only way to look at it.
+private struct RosterSpecimen: View {
+    @State private var navigation = CockpitNavigationModel()
+
+    var body: some View {
+        CockpitView(presentation: .preview, actions: .inert)
+            .environment(navigation)
     }
 }
 

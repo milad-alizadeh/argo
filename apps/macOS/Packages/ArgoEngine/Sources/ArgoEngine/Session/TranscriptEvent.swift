@@ -33,6 +33,10 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// A call's result came back. Carries the call's id rather than the call, because the two are
     /// read from two different records.
     case toolCallOutcome(ToolCallOutcome)
+    /// A Turn ended, and why. Emitted only where the record's reason SAYS the turn is over: one
+    /// that continues into a tool call closes nothing, and reading it as an end would report a
+    /// working agent as finished once per call.
+    case turnEnded(StopReason)
     /// The agent replaced its to-do list.
     case plan(Plan)
     /// History was condensed here. The resume chain stitches across it.

@@ -1,3 +1,7 @@
+import ArgoEngine
+
+/// Everything one cockpit window renders, as values. The shell's whole input: no view reaches
+/// past it to the Hub, and `CockpitPresentation(hub:)` is the only thing that reads one.
 public struct CockpitPresentation: Equatable, Sendable {
     public struct Project: Equatable, Identifiable, Sendable {
         public let id: String
@@ -16,6 +20,8 @@ public struct CockpitPresentation: Equatable, Sendable {
     }
 
     public struct Session: Equatable, Identifiable, Sendable {
+        /// What the user can DO with a Session, which is the shell's question. Derived from
+        /// provenance — see `Access(provenance:)` — and never asserted beside it.
         public enum Access: Equatable, Sendable {
             case managed
             case readOnly
@@ -27,7 +33,7 @@ public struct CockpitPresentation: Equatable, Sendable {
         public let workspaceLocation: String?
         public let branch: String?
         public let access: Access
-        public let operationalState: ArgoOperationalState?
+        public let status: SessionStatus
 
         public init(
             id: String,
@@ -36,7 +42,7 @@ public struct CockpitPresentation: Equatable, Sendable {
             workspaceLocation: String?,
             branch: String?,
             access: Access,
-            operationalState: ArgoOperationalState?,
+            status: SessionStatus,
         ) {
             self.id = id
             self.title = title
@@ -44,21 +50,14 @@ public struct CockpitPresentation: Equatable, Sendable {
             self.workspaceLocation = workspaceLocation
             self.branch = branch
             self.access = access
-            self.operationalState = operationalState
+            self.status = status
         }
     }
 
-    public enum Checkout: Equatable, Sendable {
-        case branch(String)
-        case detached(shortSHA: String)
-        case unavailable
-    }
-
-    public enum Connection: Equatable, Sendable {
-        case healthy
-        case reconnecting
-        case failed(message: String)
-    }
+    /// The engine's own enums, named for the shell rather than restated as it. A second copy would
+    /// be two vocabularies for one fact, kept in step by hand.
+    public typealias Checkout = CheckoutProjection.Head
+    public typealias Connection = HubConnection
 
     /// The registered set, plus — on a launch that named a folder nobody registered — the one it
     /// was pointed at. Pointing the Hub is not registration, and the strip draws where it points.

@@ -1,3 +1,4 @@
+import ArgoEngine
 @testable import ArgoUI
 import Testing
 
@@ -6,9 +7,9 @@ struct SessionRosterProjectionTests {
     @Test
     func `input order survives operational state changes`() {
         let sessions = [
-            session(id: "older", state: .idle),
-            session(id: "attention", state: .attention),
-            session(id: "newer", state: .running),
+            session(id: "older", status: .idle),
+            session(id: "attention", status: .asking),
+            session(id: "newer", status: .running),
         ]
 
         let rows = SessionRosterProjection.rows(from: sessions)
@@ -20,16 +21,31 @@ struct SessionRosterProjectionTests {
     @Test
     func `a word is spent only where the roster wants the scan to stop`() {
         let sessions = [
-            session(id: "idle", state: .idle),
-            session(id: "running", state: .running),
-            session(id: "attention", state: .attention),
-            session(id: "failure", state: .failure),
-            session(id: "unknown", state: nil),
+            session(id: "idle", status: .idle),
+            session(id: "running", status: .running),
+            session(id: "attention", status: .asking),
+            session(id: "failure", status: .stopped),
+            session(id: "unknown", status: .unknown),
         ]
 
         let rows = SessionRosterProjection.rows(from: sessions)
 
         #expect(rows.map(\.stateWord) == [nil, nil, "Needs you", "Failed", nil])
+    }
+
+    @Test
+    func `every Session status has one colour role, and unknown has none`() {
+        // `allCases`, so a status added to the domain fails here rather than quietly taking
+        // whichever colour the mapping's last branch happens to be.
+        let rows = SessionRosterProjection.rows(
+            from: SessionStatus.allCases.enumerated()
+                .map { session(id: "\($0.offset)", status: $0.element) },
+        )
+
+        // A dot is a claim about what the Session is doing; `unknown` makes none.
+        #expect(rows.map(\.state) == [
+            .running, .attention, .attention, .idle, .failure, .idle, nil,
+        ])
     }
 
     @Test
@@ -96,7 +112,7 @@ struct SessionRosterProjectionTests {
     @Test
     func `read-only Sessions carry no invented operational word`() throws {
         let row = try #require(SessionRosterProjection.rows(from: [
-            session(id: "external", access: .readOnly, state: nil),
+            session(id: "external", access: .readOnly, status: .unknown),
         ]).first)
 
         #expect(row.stateWord == nil)
@@ -116,7 +132,7 @@ struct SessionRosterProjectionTests {
         id: String,
         workspaceLocation: String = "/Users/milad/Developer/argo",
         access: CockpitPresentation.Session.Access = .managed,
-        state: ArgoOperationalState? = .idle,
+        status: SessionStatus = .idle,
         model: String? = "claude-opus-5",
     )
         -> CockpitPresentation.Session {
@@ -127,7 +143,7 @@ struct SessionRosterProjectionTests {
             workspaceLocation: workspaceLocation,
             branch: "main",
             access: access,
-            operationalState: state,
+            status: status,
         )
     }
 }

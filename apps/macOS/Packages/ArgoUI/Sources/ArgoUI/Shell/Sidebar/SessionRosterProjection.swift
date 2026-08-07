@@ -1,3 +1,4 @@
+import ArgoEngine
 import Foundation
 
 enum SessionRosterProjection {
@@ -48,8 +49,23 @@ enum SessionRosterProjection {
                 branch: session.branch,
                 isReadOnly: session.access == .readOnly,
                 showsLock: locksDistinguish && session.access == .readOnly,
-                state: session.operationalState,
+                state: state(for: session.status),
             )
+        }
+    }
+
+    /// Session status → the four colour roles the visual contract carries.
+    ///
+    /// `unknown` takes no dot at all: a tint is a claim about what the Session is doing, and the
+    /// contract has no colour for "we cannot say". The absence is the honest rendering, and the
+    /// row already announces everything it does know.
+    private static func state(for status: SessionStatus) -> ArgoOperationalState? {
+        switch status {
+        case .running: .running
+        case .permission, .asking: .attention
+        case .idle, .ended: .idle
+        case .stopped: .failure
+        case .unknown: nil
         }
     }
 
