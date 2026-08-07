@@ -1,7 +1,7 @@
 {
   ".lintstagedrc.json": {
-    "mtime": 1784503231.0867653,
-    "ast_hash": "4e6f5270fb6111009a3e3900bf0c1c58",
+    "mtime": 1786108351.079734,
+    "ast_hash": "daf501b3518475c3d8c1765f0104f4c3",
     "semantic_hash": ""
   },
   "apps/desktop/.storybook/env.d.ts": {
@@ -125,8 +125,8 @@
     "semantic_hash": "651a08814b4b81cb8496b175118545fb"
   },
   "package.json": {
-    "mtime": 1786099254.7965677,
-    "ast_hash": "a7c7c3031c6d4798406e2c03a042e065",
+    "mtime": 1786108351.0911539,
+    "ast_hash": "a4db90e4dbf6c80c39c9af6c7c44952b",
     "semantic_hash": ""
   },
   "turbo.json": {
@@ -820,8 +820,8 @@
     "semantic_hash": ""
   },
   ".jscpd.json": {
-    "mtime": 1785743198.225757,
-    "ast_hash": "acf4f23b262a41f05e75e6a48320ff3b",
+    "mtime": 1786108351.0794837,
+    "ast_hash": "2bb589d88ef47e2c514a76f485c22f37",
     "semantic_hash": ""
   },
   "apps/desktop/src/main/observe/claudeTranscript.test.ts": {
@@ -2715,38 +2715,443 @@
     "semantic_hash": ""
   },
   "apps/macOS/Argo/ArgoApp.swift": {
-    "mtime": 1786102849.8590076,
-    "ast_hash": "52e3d7d881d5356111bf78d765a9db32",
+    "mtime": 1786122629.0970418,
+    "ast_hash": "76c4c3081e7e43aeb6ebd7135a9393d3",
     "semantic_hash": ""
   },
   "apps/macOS/Packages/ArgoEngine/Package.swift": {
-    "mtime": 1786102849.860752,
-    "ast_hash": "74e1dfe251b9faf94eda731e30e776a4",
+    "mtime": 1786108351.0809498,
+    "ast_hash": "3f3058ea031300b5286264a84f0802cf",
     "semantic_hash": ""
   },
   "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Engine.swift": {
-    "mtime": 1786102849.861166,
-    "ast_hash": "6284b3761dc362569e36a0e70a917345",
+    "mtime": 1786114037.4728506,
+    "ast_hash": "b964c613272c8e1898d3d0c73e70f4ba",
     "semantic_hash": ""
   },
   "apps/macOS/Packages/ArgoUI/Package.swift": {
-    "mtime": 1786102849.8615124,
-    "ast_hash": "c9df18eeee80bc0263d38cc6ec52efa1",
-    "semantic_hash": ""
-  },
-  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/CockpitView.swift": {
-    "mtime": 1786103575.3260076,
-    "ast_hash": "7b6bb02ffb4ebdc4687c4c723c39822f",
+    "mtime": 1786108351.086377,
+    "ast_hash": "f2218bc37622ce4d727c347abee3d943",
     "semantic_hash": ""
   },
   "apps/macOS/package.json": {
-    "mtime": 1786102849.86255,
-    "ast_hash": "8c1e64699dc2f6b640adca44024233f7",
+    "mtime": 1786108351.0899806,
+    "ast_hash": "9044d428d9283b4db2b2073d44433dc0",
     "semantic_hash": ""
   },
   "apps/macOS/turbo.json": {
-    "mtime": 1786102849.8628314,
-    "ast_hash": "876c5a073dd51310913b2f06d9c87886",
+    "mtime": 1786108351.090918,
+    "ast_hash": "bd749489540ceb84776db9255dc3c544",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Argo/CockpitPreview.swift": {
+    "mtime": 1786118338.1872087,
+    "ast_hash": "faa4b48f4adf76a79bf3d2e9dcbfe3d2",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/Hub.swift": {
+    "mtime": 1786114037.473006,
+    "ast_hash": "863a0c9668a292358295661300dd966f",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubConnection.swift": {
+    "mtime": 1786114037.4731543,
+    "ast_hash": "e5dae9e39439b449fa9ccb90ca8188aa",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubProject.swift": {
+    "mtime": 1786114037.4732804,
+    "ast_hash": "19668999babc12f69ee8ec13f5ed7658",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSession.swift": {
+    "mtime": 1786114037.473415,
+    "ast_hash": "4d83ec394f7ccc68468fe53c93b49732",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Hub/HubSessionChain.swift": {
+    "mtime": 1786114037.4735603,
+    "ast_hash": "9c4e66d4228b25bc7a90c29d1513de3c",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Launch/LaunchConfiguration.swift": {
+    "mtime": 1786122629.0972035,
+    "ast_hash": "2c2d3efd8a31e5d84994d807d4ca1892",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/CheckoutProjection.swift": {
+    "mtime": 1786114037.4740436,
+    "ast_hash": "2e0646f755bed440ec0732d06b194602",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Repository/CheckoutReader.swift": {
+    "mtime": 1786114037.4741988,
+    "ast_hash": "0d70ad0f931f84032b8daaa557053090",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Evidence.swift": {
+    "mtime": 1786105215.0381958,
+    "ast_hash": "ed90a748905a42725bca2899b972741e",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Honesty.swift": {
+    "mtime": 1786105215.0386207,
+    "ast_hash": "7614d4bd5e91f7a556c970af82050666",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Plan.swift": {
+    "mtime": 1786105215.038725,
+    "ast_hash": "8c1832d162c7e6201c5ab11c6b4e9fa4",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/ToolCall.swift": {
+    "mtime": 1786105215.0388887,
+    "ast_hash": "1732ae5581a79d779653c1f12c4d6755",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/TranscriptEvent.swift": {
+    "mtime": 1786114037.4761207,
+    "ast_hash": "36bab3440112f19e5d91872e6f168400",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Session/Usage.swift": {
+    "mtime": 1786108351.0811732,
+    "ast_hash": "7b0f74dc0f8a9815cab4d066697a37f4",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/ContentBlock.swift": {
+    "mtime": 1786108351.0815911,
+    "ast_hash": "34e0cd725acd20e831d49885e2192adb",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/DiffReading.swift": {
+    "mtime": 1786108351.0822184,
+    "ast_hash": "100a5bbeca73045f8068a107ba48de52",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/HarnessRecord.swift": {
+    "mtime": 1786108351.082511,
+    "ast_hash": "e55c367fffe961de5fd1c43b9652a008",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/JSONValue.swift": {
+    "mtime": 1786108351.082777,
+    "ast_hash": "96b74ef23d0ca955e7c756372e3d5776",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/MediaReading.swift": {
+    "mtime": 1786108351.0830305,
+    "ast_hash": "bb3ff26c8221eac7ac5086f11af09d0f",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/OutputReading.swift": {
+    "mtime": 1786105215.0401716,
+    "ast_hash": "a627e0fbf265992df36eb9e63cbb86d2",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/Timestamp.swift": {
+    "mtime": 1786105215.0402963,
+    "ast_hash": "41c8f19573b1c03c6a9a9499b52c4c5f",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/ToolCallReading.swift": {
+    "mtime": 1786108351.083306,
+    "ast_hash": "91c0b607cf0505630244ebcf64e93db7",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptEvents.swift": {
+    "mtime": 1786114037.4764678,
+    "ast_hash": "d7139a606a9f3bffb77c6c4afd7987b8",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptObservation.swift": {
+    "mtime": 1786114037.4768429,
+    "ast_hash": "81f1030e639d3343d023e3d46e935b1a",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptObservationError.swift": {
+    "mtime": 1786114037.4770293,
+    "ast_hash": "0b98311b4556e806150d1bc2ad8edf7a",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptReader.swift": {
+    "mtime": 1786114037.4775631,
+    "ast_hash": "1b10d6fefffb3908b39d9edd1b140ec2",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptRecord.swift": {
+    "mtime": 1786108351.0841727,
+    "ast_hash": "e0939ab37ead71a7ada320c68517a67d",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Transcript/TranscriptTail.swift": {
+    "mtime": 1786108351.0844216,
+    "ast_hash": "46cf74504c849180fd6b584c203b2740",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/argo-observe/Describe.swift": {
+    "mtime": 1786114037.4780905,
+    "ast_hash": "1bdf260019d33c82fd60507e36115afd",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/argo-observe/main.swift": {
+    "mtime": 1786114037.47849,
+    "ast_hash": "a356cd86b984bddec8f49b447d6db5e1",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/EvidenceTests.swift": {
+    "mtime": 1786108351.085267,
+    "ast_hash": "eaec31904c9e918bb23874646bf6f0c9",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/Fixture.swift": {
+    "mtime": 1786108351.0854378,
+    "ast_hash": "3464d954a82071cb460fe4b4fc99ef06",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/HubTestObservation.swift": {
+    "mtime": 1786114037.4786553,
+    "ast_hash": "383ffacc5d911483c632db7de397c9f1",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/HubTests.swift": {
+    "mtime": 1786114037.478784,
+    "ast_hash": "0d611790e29065c93f97b86cf7630a25",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/LaunchConfigurationTests.swift": {
+    "mtime": 1786114037.478903,
+    "ast_hash": "edaf65fa40be600cbff633b44897d470",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/PromptReadingTests.swift": {
+    "mtime": 1786108351.0856903,
+    "ast_hash": "e5d7679292613336cd5edcb4d331c97c",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/TranscriptTailTests.swift": {
+    "mtime": 1786108351.0860014,
+    "ast_hash": "57a37e2d814e153b59e91e375bb3a18b",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/ArgoEngineTests/UntrustedInputTests.swift": {
+    "mtime": 1786108351.0861444,
+    "ast_hash": "6c8029ec529b4b8beeff60c98b3b56e7",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/PreviewSafeListRow.swift": {
+    "mtime": 1786118338.1874423,
+    "ast_hash": "c366baed7d1a75300c99f3b3d01e607b",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitActions.swift": {
+    "mtime": 1786114037.4790905,
+    "ast_hash": "da97d1d05d180adfd3037c9030b74c58",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitPresentation.swift": {
+    "mtime": 1786118338.1877153,
+    "ast_hash": "9bf72820589e080267fdc059fdee69e8",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitRoom.swift": {
+    "mtime": 1786114037.4794238,
+    "ast_hash": "5533f50603d9b64fc7c844778af66369",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/CockpitView.swift": {
+    "mtime": 1786114037.4796233,
+    "ast_hash": "8e0dcf10352be3141ebc4ea499ec2957",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckSeparator.swift": {
+    "mtime": 1786122629.0973318,
+    "ast_hash": "0e5e4c97af3eb6e5cfa01d75f382b11e",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckSlot.swift": {
+    "mtime": 1786122629.0974424,
+    "ast_hash": "b5d04375687c9fe407234932ec8f645f",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/DeckZone.swift": {
+    "mtime": 1786122629.097781,
+    "ast_hash": "71ce6c3b357b13680a18ee58f2e83301",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/InstrumentDeckShell.swift": {
+    "mtime": 1786122629.0982435,
+    "ast_hash": "b3cfe10d02a4085a4da461df8f6c9c5c",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/SessionsDeck.swift": {
+    "mtime": 1786122629.098384,
+    "ast_hash": "0abdb19cab1b11da6365dfd5691d23fa",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/ShellPreview.swift": {
+    "mtime": 1786118338.187994,
+    "ast_hash": "5deccaec94afbf156e18db33f4cbf672",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/ProjectStrip.swift": {
+    "mtime": 1786114037.480239,
+    "ast_hash": "1996b719ad35b2040a4bd9a045bdb3dc",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionNavigator.swift": {
+    "mtime": 1786118338.1883144,
+    "ast_hash": "7d5ed77abde069b9204c2a5b81b80ab6",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionRosterProjection.swift": {
+    "mtime": 1786118338.1885304,
+    "ast_hash": "7d2c151e23d1dd3cf3ac619582c05798",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionRow.swift": {
+    "mtime": 1786118338.1886759,
+    "ast_hash": "ed7943ec492d706ab27e6b88c5ff7eb8",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/SessionStateIndicator.swift": {
+    "mtime": 1786118338.1888173,
+    "ast_hash": "86225238550a5e95267e5da23e8a5f91",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/ShellSidebar.swift": {
+    "mtime": 1786118338.1891243,
+    "ast_hash": "b85ea40231c356d6dc304e970db9883f",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ConnectionChip.swift": {
+    "mtime": 1786114037.4806833,
+    "ast_hash": "dfcfa4192771a76b833a8f41d9bbe104",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/GitVessel.swift": {
+    "mtime": 1786114037.480816,
+    "ast_hash": "323a6341be7824c89505506c5ecfb94a",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/RoomsVessel.swift": {
+    "mtime": 1786114037.4809406,
+    "ast_hash": "12d0566bd4fb64d2698a3865ebc3a66a",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Toolbar/ShellToolbar.swift": {
+    "mtime": 1786114037.4810638,
+    "ast_hash": "80ecccd4baa9df9c3e9fe23ad33ed215",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/ContractSpecimen.swift": {
+    "mtime": 1786108351.0868027,
+    "ast_hash": "6c6d21df0d042bde63d14b71637892a4",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/FoundationSpecimen.swift": {
+    "mtime": 1786118338.189598,
+    "ast_hash": "c1848cd8d92a25f7bf12fed19c8a10f9",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenCatalog.swift": {
+    "mtime": 1786122629.0986512,
+    "ast_hash": "c42d711cf2405c0434a40d036933c92d",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenDeck.swift": {
+    "mtime": 1786108351.0871568,
+    "ast_hash": "086af93b13406eef1038e0b28f6310f5",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenFixtures.swift": {
+    "mtime": 1786108351.087388,
+    "ast_hash": "46e3624c26221ff78af928a395c96d52",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenSessionRow.swift": {
+    "mtime": 1786118338.1901376,
+    "ast_hash": "02511b82ccf64da9f83152360b43b6d9",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Specimen/SpecimenVessel.swift": {
+    "mtime": 1786108132.6042516,
+    "ast_hash": "d37d017ff4c1d496a47c064a9cd9f8b5",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoColor.swift": {
+    "mtime": 1786108351.0876918,
+    "ast_hash": "a0c894a05e7608492f57b48717e16ec1",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoElevation.swift": {
+    "mtime": 1786108351.0879076,
+    "ast_hash": "2d7703df90e23f57a09fc711085d270a",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoGeometry.swift": {
+    "mtime": 1786114037.481759,
+    "ast_hash": "552917c3032a85429db6f503ab7e02f6",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoLayout.swift": {
+    "mtime": 1786122629.0988731,
+    "ast_hash": "094a1694300f890452d5ccb7753eae00",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoMotion.swift": {
+    "mtime": 1786108351.0881422,
+    "ast_hash": "6ef8b9b5527d6f5de0ae1824c7dacae1",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoOperationalState.swift": {
+    "mtime": 1786118338.1905658,
+    "ast_hash": "24db93584451b5a1097ea80ce7bb7853",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoPalette.swift": {
+    "mtime": 1786108351.0883906,
+    "ast_hash": "2fe42c2344a9abd93c193d1d305db691",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTheme.swift": {
+    "mtime": 1786108132.6065648,
+    "ast_hash": "28affeb990d598f620664d53fabffe1e",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ArgoTypography.swift": {
+    "mtime": 1786108351.0886557,
+    "ast_hash": "a058adf8ae143a95283a46ba305b9f06",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/GraphitePalette.swift": {
+    "mtime": 1786118338.1911187,
+    "ast_hash": "803680ab8719df6533ddb4abcd5dcc9d",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Tests/ArgoUITests/SessionRosterProjectionTests.swift": {
+    "mtime": 1786118338.1914172,
+    "ast_hash": "7f2e7fde65357c63598d21691ffdbeb9",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Tests/ArgoUITests/SessionsDeckTests.swift": {
+    "mtime": 1786122629.099014,
+    "ast_hash": "c212875a2e5d4eb88eb09976fdf3a5e8",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Tests/ArgoUITests/VisualContractTests.swift": {
+    "mtime": 1786108351.0893192,
+    "ast_hash": "949d33d415e1bd3c9226d47b87879f10",
+    "semantic_hash": ""
+  },
+  "apps/macOS/.swiftlint.yml": {
+    "mtime": 1786108351.0805614,
+    "ast_hash": "21b20b0aa7407e600a3dfd5f7111c861",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Tests/.swiftlint.yml": {
+    "mtime": 1786108351.0850987,
+    "ast_hash": "1a1f9d6ed7a2d77e4f394a6941913821",
     "semantic_hash": ""
   }
 }
