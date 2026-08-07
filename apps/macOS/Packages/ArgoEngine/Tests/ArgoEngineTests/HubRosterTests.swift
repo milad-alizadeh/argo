@@ -114,22 +114,45 @@ struct HubRosterTests {
         let mine = URL(fileURLWithPath: fixture.path("mine"))
         let theirs = URL(fileURLWithPath: fixture.path("theirs"))
         try fixture.write(FixtureTranscript(name: "mine", cwd: mine.path))
-        try fixture.write(FixtureTranscript(
-            directory: "other",
-            name: "theirs",
-            cwd: theirs.path,
-        ))
+        try fixture.write(FixtureTranscript(directory: "other", name: "theirs", cwd: theirs.path))
         let hub = Hub(projectURL: mine, discovery: SessionDiscovery(store: fixture.store))
 
-        await hub.connect(to: Self.pointing(at: mine))
-        await hubSettle { !hub.sessions.isEmpty }
-        let built = hub.sessions
+        let built = try await Self.rosterOf(hub, at: mine)
         await hub.connect(to: Self.pointing(at: theirs))
         await hub.connect(to: Self.pointing(at: mine))
 
         // Asserted with no settling at all: the roster is standing when `connect` returns.
         #expect(hub.sessions == built)
         await hub.disconnect()
+    }
+
+    /// `connect` opens with a `disconnect`, so a Project's roster is handed back for keeping more
+    /// than once — and the second time by a Hub whose join the first teardown already emptied.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a second teardown does not overwrite the roster the first kept`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let mine = URL(fileURLWithPath: fixture.path("mine"))
+        try fixture.write(FixtureTranscript(name: "mine", cwd: mine.path))
+        let hub = Hub(projectURL: mine, discovery: SessionDiscovery(store: fixture.store))
+
+        let built = try await Self.rosterOf(hub, at: mine)
+        await hub.disconnect()
+        await hub.disconnect()
+        await hub.connect(to: Self.pointing(at: mine))
+
+        #expect(hub.sessions == built)
+        await hub.disconnect()
+    }
+
+    /// Point the Hub at a Project and wait for the roster it builds — which is the only moment a
+    /// test can read one, because a `connect` returns before its tails have read anything.
+    @MainActor
+    private static func rosterOf(_ hub: Hub, at projectURL: URL) async throws -> [HubSession] {
+        await hub.connect(to: pointing(at: projectURL))
+        await hubSettle { !hub.sessions.isEmpty }
+        return hub.sessions
     }
 
     private static func pointing(at projectURL: URL) -> LaunchConfiguration {

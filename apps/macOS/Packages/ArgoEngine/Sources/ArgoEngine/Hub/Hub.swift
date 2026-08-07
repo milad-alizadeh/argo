@@ -49,12 +49,10 @@ public final class Hub {
     }
 
     private var join = HubJoin()
-    /// The joins built for the Projects this Hub has been pointed at, keyed by resolved
-    /// Project path. Kept rather than dropped on a switch: the Project the user was looking at
-    /// a second ago has already been reconstructed once, and re-deriving it is what made a
-    /// switch cost a re-parse the user sat through. The sweep still re-runs and the tails
-    /// still re-read — what the retained join removes is the empty roster in front of that.
-    @ObservationIgnored private var joinsByProject: [String: HubJoin] = [:]
+    /// The rosters of the Projects this Hub has been pointed at, kept across a switch. The
+    /// sweep still re-runs and the tails still re-read on re-entry — what the retained join
+    /// removes is the empty roster the reader used to sit in front of while they did.
+    @ObservationIgnored private var retainedJoins = HubJoinCache()
     /// The running tail per transcript id. Observed rather than ignored, because `observations`
     /// and `connection` are read off it — a tail starting or ending has to reach the view.
     private var tails: [String: Task<Void, Never>] = [:]
@@ -105,8 +103,8 @@ public final class Hub {
         self.configuration = configuration
         project = HubProject(url: configuration.projectURL)
         await refreshCheckout()
-        // Restored against the RESOLVED Project, which is the key it was stashed under.
-        join = joinsByProject[project.url.path] ?? HubJoin()
+        // Taken against the RESOLVED Project, which is the key it was retained under.
+        join = retainedJoins.take(for: project.url.path) ?? HubJoin()
         guard !configuration.transcriptURLs.isEmpty else {
             // The sweep runs against the RESOLVED Project, which `refreshCheckout` has just read:
             // launched inside a subdirectory of a repo, the Project is the repo, and scoping to the
@@ -129,9 +127,8 @@ public final class Hub {
     /// have.
     public func disconnect() async {
         await stopSweeping()
-        // Stashed before the tails are torn down, and only here: the roster this Project built is
-        // worth keeping, and the half-built one a failed `connect` throws away is not.
-        joinsByProject[project.url.path] = join
+        // Retained before the tails are torn down, which is what empties the join.
+        retainedJoins.retain(join, for: project.url.path)
         await stopObservingAll()
         checkout = .unavailable
         failureMessage = nil

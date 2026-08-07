@@ -28,7 +28,8 @@ struct TranscriptTailTests {
         deinit { try? FileManager.default.removeItem(at: url) }
     }
 
-    /// The first `count` lines the tail yields, or whatever arrived before the deadline.
+    /// The lines the tail yields up to the first read that reaches `count`, or whatever arrived
+    /// before the deadline. A read is a batch, so the answer can overshoot `count`.
     private func firstLines(
         _ count: Int,
         of url: URL,
