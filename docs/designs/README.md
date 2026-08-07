@@ -3,8 +3,35 @@
 The committed design set for the Argo cockpit: written specs (`.md`) and high-fidelity static
 HTML studies — open any HTML file in a browser.
 
-> **Wayfinder [#157](https://github.com/milad-alizadeh/argo/issues/157) is the source of truth
-> for the redesigned cockpit.** The old design set (`cockpit.html`, `cockpit-matrix.md`,
+> **Visual direction locked 2026-08-06:** Start with
+> [`cockpit-sessions-liquid-glass.png`](cockpit-sessions-liquid-glass.png) and
+> [`cockpit-visual-identity-decisions.md`](cockpit-visual-identity-decisions.md). Together they are
+> the approved visual target for the app-wide reskin, proved on the current single-feed Sessions
+> screen. Penumbra and the old Session master–detail prototype remain lineage/current-code context,
+> not the target design.
+>
+> **Runtime correction locked 2026-08-07:** ADR-0022 moves the implementation to pure Swift 6 and
+> SwiftUI on macOS 26. Earlier Electron bridge and older-macOS fallback notes are superseded. The
+> decision log below contains the reconciled native implementation contract.
+
+## Native visual implementation handoff
+
+Every visual implementation session must read, in order:
+
+1. parent migration issue [#373](https://github.com/milad-alizadeh/argo/issues/373);
+2. its assigned child ticket;
+3. [`cockpit-visual-identity-decisions.md`](cockpit-visual-identity-decisions.md);
+4. [`cockpit-sessions-liquid-glass.png`](cockpit-sessions-liquid-glass.png); and
+5. for the minimap, [`cockpit-xcode-minimap-reference.png`](cockpit-xcode-minimap-reference.png).
+
+The repository copies on `main` are canonical. Chat history, generated-image messages, local
+attachments, issue edit history, and files outside the repository are not implementation sources.
+When a later explicit decision changes the direction, update this bundle and the affected child
+ticket in the same change so a fresh session never needs the original conversation.
+
+> **Wayfinder [#157](https://github.com/milad-alizadeh/argo/issues/157) remains the source of truth
+> for cockpit UX and information architecture.** The native visual handoff above supersedes its
+> Penumbra look and Electron implementation posture. The old design set (`cockpit.html`, `cockpit-matrix.md`,
 > `cockpit-inventory.md`, `foundations.html`) was **wiped** — it described the app being
 > replaced. The cockpit is re-derived first-principles on the new domain model. Phase 2
 > (#262) is **landed**: `foundations.html` below is the rebuilt token contract on Penumbra.
@@ -77,9 +104,12 @@ under `docs/adr/`.
 | `foundations.html` | **The token contract, rendered** (wayfinder #157 Phase 2, via #262) | Above. Not disposable, and not drift-able — it reads the contract it documents |
 | `cockpit-ui-inventory.md` | **The build contract** (wayfinder #157 Phase 3, via #263) | Above. Every component of the shell and the three rooms with its states and its slice, re-derived first-principles: the wiped `cockpit-inventory.md` contributed nothing |
 | `cockpit-spec.md` | **The assembled contract** (wayfinder #157 Phase 1, via #253/#254) | The front door above. Every row below is its detail of record; it cites them and restates none of them |
-| `cockpit-prototype-switcher.html` | The review harness — **start here for pixels** (wayfinder #178) | Left rail walking all 22 states across the three rooms + the look anchor; iframes each file untouched. `?surface=&state=` deep-links. Throwaway: expires with the prototypes it wraps. Manifest is an inline array in the file — `file://` blocks `fetch`, so it cannot be external |
-| `cockpit-penumbra-reference.html` | The locked look-and-feel reference (wayfinder #158) | Penumbra: warm graphite `#0A0B0D` + Eclipse gold `#C8A968`, orb-as-key-light, cove lighting, dust, card planes. Its values are now **in the contract** (#262) — read `foundations.html` for the settled form; this file stays as the look's provenance |
-| `cockpit-session-interior-prototype.html` | Session interior (wayfinder #161 / #186) | The settled session card: master–detail Activity and Delivery, folded turn spine, expandable Dock. Absorbs the delivery-review and fresh-session studies |
+| `cockpit-sessions-liquid-glass.png` | **Approved Sessions visual target** | The locked replacement identity on the current single-feed screen: native sidebar, graphite Instrument Deck, two bounded Liquid Glass control vessels, cleaned feed, refined minimap, and attached Dock. Start here for replacement pixels |
+| `cockpit-visual-identity-decisions.md` | **Approved replacement-identity brief** | Decisions D1–D46 behind the locked study, reconciled with the pure SwiftUI/macOS 26 runtime. Covers material hierarchy, typography, status colour, motion, feed disclosure, native-glass boundaries, delight, migration, and deletion gates |
+| `cockpit-xcode-minimap-reference.png` | **Minimap visual grammar reference** | Xcode's clear micro-line silhouettes, indentation, restrained semantic colour, and viewport wash. Reference for #382's proportions and legibility—not its light theme or literal source-code content |
+| `cockpit-prototype-switcher.html` | Legacy review harness (wayfinder #178) | Left rail walking 22 pre-reskin states across the three rooms + the old look anchor. Useful for UX lineage, not the replacement visual identity. Throwaway: expires with the prototypes it wraps |
+| `cockpit-penumbra-reference.html` | Historical look-and-feel reference (wayfinder #158) | Superseded as the target by the Liquid Glass study. Retained temporarily as provenance for the Penumbra values still present in the current token contract and legacy harness |
+| `cockpit-session-interior-prototype.html` | Historical Session interior (wayfinder #161 / #186) | Retired master–detail Session-card interpretation. Useful only for behaviour lineage that still agrees with current specs; it is not the current single-feed layout or visual target |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | The grill behind the prototype above — roster rows, dot-carries-state, zero-state, panel natures |
 | `cockpit-work-room-prototype.html` | Work room interior (wayfinder #185, from #160) | List rail (Next-up hero over a hierarchy) + two-pane ticket detail. Generic node tree — any node opens in detail identically |
 | `cockpit-decision-map-shapes.html` | Decision map — the planning surface's settled shape (wayfinder #298, map #290) | **"The Route" is the settled presentation** — a **second presentation inside the Work room** (⌘2), not a fourth room. The axis is progress: resolved work stacked behind a gold NOW line, everything ON the line takeable or claimed today, blocked work pushed right by how many decisions must close first, then fog, then the destination — the line's position **is** the progress bar. The map is a **lens, not a model**: placement uses the derived bucket, every word is the tracker's verbatim (state words + `wayfinder:<type>` tags on a decision map; triage labels on a spec's sub-tickets — the invented `#900` state proves the same geometry serves both). Labels are left-aligned blocks beside their dots; spacing derives from label widths and edges route around type, so nothing overlaps by construction. `?shape=route&map=m290\|m157d0\|m157\|m157s\|m190\|mspec` deep-links six real states, day one to fully resolved. The other shape tabs (constellation, dandelion, wheel, spine, flow…) are the **rejected candidates**, kept for provenance |
