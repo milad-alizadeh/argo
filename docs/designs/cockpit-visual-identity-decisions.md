@@ -512,15 +512,23 @@ its approved study are authoritative for the replacement look and feel.
   neutral ramp rather than taking the accent, so selection stays an ink wash and Ion Blue is not
   spent on it. Ruled out, and not to be reopened by a fidelity pass: a custom wash painted over the
   system capsule (two stacked highlights) and a rail pinned inside the capsule's inset edge.
-- **Where the capsule's colour lives:** `.tint` on the roster's `List`. Left unset, the capsule takes
-  the system accent and selection arrives as a saturated blue fill — the `AccentColor` asset is an
-  empty stub, so the fallback is the OS default, not anything Argo chose. The tint is therefore load
-  bearing, not decoration.
-- **How to judge it:** on an **active** window only. An inactive window draws selection in the
-  system's neutral grey no matter what the tint says, so a missing tint looks exactly like a correct
-  neutral wash. A screenshot taken while the terminal or Xcode holds focus will show grey and prove
-  nothing — this cost one wrong conclusion already. SwiftUI previews render active, so the canvas is
-  the faster check.
+- **The Ion Blue indicator is dropped, by decision and not by necessity.** #377's criterion read
+  "a neutral native wash **plus a thin Ion Blue indicator**", and that half is retired here. Only
+  the two placements above were shown to be unworkable; a rail in the leading gutter, outside the
+  capsule entirely, was never tried and is not claimed to be impossible. It was dropped because the
+  capsule alone is what macOS selection looks like, and a brand rail beside it re-states selection a
+  second time. Reopening this needs nothing more than someone deciding the rail earns its keep.
+- **Where the capsule's colour lives:** the **`AccentColor` asset**, and nowhere else. SwiftUI's
+  `.tint` does not reach a macOS sidebar's selection; the asset shipped as an empty stub, so
+  selection was the OS default rather than anything Argo chose. It now carries `#2B2D31`, the
+  study's selected row. The cost is accepted knowingly and is not a bug to file later: that asset is
+  app-wide, so every focus ring and accented control is graphite too, and D6's Ion Blue reaches them
+  only through an explicit `.tint`, which does still work everywhere except here.
+- **How to judge it:** on an **active** window only, and in a preview that belongs to the **app**
+  target. An inactive window draws selection in the system's neutral grey whatever the accent says,
+  so a wrong accent looks exactly like a correct neutral wash — that artefact cost two rounds here.
+  A preview of an `ArgoUI` view builds the package alone and cannot see the asset, so it shows the
+  OS accent and is worthless for this one check.
 - **Why:** Repeated paths and all-caps state labels make the roster read like a diagnostic table.
   Progressive disclosure preserves the same Session controls and evidence while restoring a clear
   title-and-context scan pattern.

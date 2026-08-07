@@ -1,6 +1,10 @@
 import Foundation
 
 enum SessionRosterProjection {
+    /// The word every tier-gated fact degrades to. One spelling, because a roster that says
+    /// "unknown" in one column and something else in the next reads as two different claims.
+    static let unknown = "unknown"
+
     struct Row: Identifiable, Sendable {
         let id: String
         let title: String
@@ -38,7 +42,7 @@ enum SessionRosterProjection {
             Row(
                 id: session.id,
                 title: session.title,
-                model: session.model ?? "unknown",
+                model: session.model ?? unknown,
                 workspaceIdentity: identity,
                 location: session.workspaceLocation,
                 branch: session.branch,
@@ -52,7 +56,7 @@ enum SessionRosterProjection {
     private static func workspaceIdentities(for locations: [String?]) -> [String] {
         let components = locations.map(pathComponents)
         return components.enumerated().map { index, path in
-            guard let name = path.last else { return "unknown" }
+            guard let name = path.last else { return unknown }
             let matches = components.indices.filter { components[$0].last == name }
             guard matches.count > 1 else { return name }
             return shortestUniqueSuffix(at: index, among: matches, paths: components)
@@ -65,6 +69,12 @@ enum SessionRosterProjection {
             .filter { $0 != "/" }
     }
 
+    /// The parent qualifier is capped at one, so the label can never grow into the path it
+    /// is standing in for — "absolute paths never appear in the default presentation" (#377).
+    /// Where that leaves two Sessions reading alike, they read alike: hover and the copy
+    /// actions carry the full location, which is the disclosure D30 asks for.
+    private static let identityDepth = 2
+
     private static func shortestUniqueSuffix(
         at index: Int,
         among matches: [Int],
@@ -72,16 +82,17 @@ enum SessionRosterProjection {
     )
         -> String {
         let path = paths[index]
-        guard path.count > 1 else { return path.last ?? "unknown" }
-        if matches.allSatisfy({ paths[$0] == path }) {
-            return path.last ?? "unknown"
-        }
-        for count in 2 ... path.count {
+        guard let name = path.last else { return unknown }
+        // An exact twin is not a rival: no label separates two Sessions on one location, and
+        // treating it as one is what used to push the qualifier out to the whole path.
+        let rivals = matches.filter { $0 != index && paths[$0] != path }
+        guard !rivals.isEmpty, path.count > 1 else { return name }
+        for count in 2 ... min(path.count, identityDepth) {
             let candidate = path.suffix(count)
-            if matches.allSatisfy({ $0 == index || paths[$0].suffix(count) != candidate }) {
+            if rivals.allSatisfy({ paths[$0].suffix(count) != candidate }) {
                 return candidate.joined(separator: "/")
             }
         }
-        return path.joined(separator: "/")
+        return path.suffix(identityDepth).joined(separator: "/")
     }
 }

@@ -6,20 +6,18 @@
 public extension ArgoPalette {
     static let graphite = ArgoPalette(
         surface: SurfaceRoles(
-            // Measured off the approved study rather than chosen: `#1E2024` is the tone the
-            // whole image is built on (77k sampled pixels — deck, sidebar and rails all sit
-            // on it), and `#191A1D` is its chrome band. The first pass set these a rung and
-            // a half darker, which is what made the shell read as black next to the study.
+            // Sampled from the approved study, not chosen — see D17. Re-sample before moving
+            // any of them, and re-run the contrast assertions after: every text and state
+            // ink is measured against `base`.
             sunken: ArgoColor(hex: 0x191A1D),
             base: ArgoColor(hex: 0x1E2024),
             raised: ArgoColor(hex: 0x252729),
             overlay: ArgoColor(hex: 0x2E3136),
             glassTint: ArgoColor(hex: 0xFFFFFF, opacity: 0.06),
             hover: ArgoColor(hex: 0xFFFFFF, opacity: 0.045),
-            // 0.058 over the corrected base resolves to #2B2D31 — the study's selected
-            // roster row, taken as the dominant tone of the whole row band rather than off
-            // one pixel. The app's `AccentColor` asset carries the same value, because the
-            // native sidebar capsule reads that and not this.
+            // Resolves to #2B2D31 over `base` — the study's selected row. The app's
+            // `AccentColor` asset must carry the same value: the native sidebar capsule
+            // reads that, never this.
             selected: ArgoColor(hex: 0xFFFFFF, opacity: 0.058),
         ),
         text: TextRoles(

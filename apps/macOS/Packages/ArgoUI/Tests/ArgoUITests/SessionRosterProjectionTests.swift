@@ -69,15 +69,47 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
+    func `a duplicated location never pushes a label out into the path it stands for`() {
+        // The twin can never be told apart, and the third row wants the same leaf — the case
+        // that used to fall through to the whole path in the visible metadata line.
+        let rows = SessionRosterProjection.rows(from: [
+            session(id: "twin-a", workspaceLocation: "/Users/milad/Labs/argo"),
+            session(id: "twin-b", workspaceLocation: "/Users/milad/Labs/argo"),
+            session(id: "other", workspaceLocation: "/Users/milad/Client/argo"),
+        ])
+
+        #expect(rows.map(\.workspaceIdentity) == ["Labs/argo", "Labs/argo", "Client/argo"])
+        #expect(rows.allSatisfy { !$0.metadata.contains("/Users") })
+        #expect(rows.allSatisfy { $0.workspaceIdentity.split(separator: "/").count <= 2 })
+    }
+
+    @Test
+    func `a deep location is qualified by one parent, never by its whole path`() {
+        let rows = SessionRosterProjection.rows(from: [
+            session(id: "deep", workspaceLocation: "/Users/milad/a/b/c/d/argo"),
+            session(id: "shallow", workspaceLocation: "/Users/milad/z/argo"),
+        ])
+
+        #expect(rows.map(\.workspaceIdentity) == ["d/argo", "z/argo"])
+    }
+
+    @Test
     func `read-only Sessions carry no invented operational word`() throws {
         let row = try #require(SessionRosterProjection.rows(from: [
             session(id: "external", access: .readOnly, state: nil),
         ]).first)
 
-        #expect(row.isReadOnly)
         #expect(row.stateWord == nil)
         #expect(row.state == nil)
-        #expect(row.metadata == "claude-opus-5 · argo")
+    }
+
+    @Test
+    func `a Session with no model reads as unknown rather than as a blank`() throws {
+        let row = try #require(SessionRosterProjection.rows(from: [
+            session(id: "external", model: nil),
+        ]).first)
+
+        #expect(row.metadata == "unknown · argo")
     }
 
     private func session(
@@ -85,12 +117,13 @@ struct SessionRosterProjectionTests {
         workspaceLocation: String = "/Users/milad/Developer/argo",
         access: CockpitPresentation.Session.Access = .managed,
         state: ArgoOperationalState? = .idle,
+        model: String? = "claude-opus-5",
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: id,
             title: "Session \(id)",
-            model: "claude-opus-5",
+            model: model,
             workspaceLocation: workspaceLocation,
             branch: "main",
             access: access,

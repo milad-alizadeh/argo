@@ -20,3 +20,13 @@ struct SessionStateIndicator: View {
         .accessibilityHidden(true)
     }
 }
+
+#Preview("State dot — the four states and the honest unknown") {
+    HStack(spacing: ArgoSpacing.comfortable) {
+        ForEach(ArgoOperationalState.allCases, id: \.self) { SessionStateIndicator(state: $0) }
+        SessionStateIndicator(state: nil)
+    }
+    .padding(ArgoSpacing.loose)
+    .argoDeckSurface()
+    .argoAppearance()
+}

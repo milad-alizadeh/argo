@@ -19,11 +19,7 @@ public struct FoundationSpecimen: View {
             List(selection: $selection) {
                 Section("Sessions") {
                     ForEach(SpecimenFixtures.roster) { session in
-                        // Apple's own workaround for a known Xcode bug: a custom row
-                        // directly inside a List's ForEach kills the macOS preview in
-                        // TableViewListCore_Mac2. Costs nothing at runtime, where it has
-                        // never crashed.
-                        ZStack { SpecimenSessionRow(session: session) }
+                        SpecimenSessionRow(session: session).previewSafeListRow()
                     }
                 }
             }

@@ -10,26 +10,16 @@ struct SessionNavigator: View {
     var body: some View {
         List(selection: $selection) {
             if sessions.isEmpty {
-                ZStack { emptyState }
+                emptyState.previewSafeListRow()
             } else {
                 ForEach(SessionRosterProjection.rows(from: sessions)) { row in
-                    // Apple's own workaround for a known Xcode bug: a custom row directly
-                    // inside a List's ForEach kills the macOS preview in
-                    // TableViewListCore_Mac2. Costs nothing at runtime, where it has never
-                    // crashed — the app has been launching fine throughout.
-                    ZStack { SessionRow(row: row) }.tag(row.id)
+                    SessionRow(row: row).previewSafeListRow().tag(row.id)
                 }
             }
         }
-        // `.sidebar` is what makes `List` inherit the window's system material (D3) — the
-        // roster must never opt out of it for a styled list, and the system's own rounded
-        // capsule is therefore the selection wash (D30, amended).
-        //
-        // Its colour is NOT settable here. SwiftUI ignores `.tint` for a macOS sidebar's
-        // selection and takes it from the `AccentColor` asset instead, so Ion Blue is
-        // declared in `Argo/Assets.xcassets` and this call site stays out of it. Judge the
-        // result on an ACTIVE window: an inactive one draws selection in the system's grey
-        // whatever the accent says, which is why this looked neutral for two rounds.
+        // `.sidebar` carries the window's system material (D3), so the roster may not trade
+        // it for a styled list. Selection is that style's own capsule, coloured from the
+        // `AccentColor` asset — SwiftUI's `.tint` does not reach it (D30).
         .listStyle(.sidebar)
     }
 
