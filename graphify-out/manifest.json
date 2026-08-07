@@ -2713,5 +2713,40 @@
     "mtime": 1786099254.7770557,
     "ast_hash": "3516fab51abcf1ccd8f75fba79ab3584",
     "semantic_hash": ""
+  },
+  "apps/macOS/Argo/ArgoApp.swift": {
+    "mtime": 1786102849.8590076,
+    "ast_hash": "52e3d7d881d5356111bf78d765a9db32",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Package.swift": {
+    "mtime": 1786102849.860752,
+    "ast_hash": "74e1dfe251b9faf94eda731e30e776a4",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoEngine/Sources/ArgoEngine/Engine.swift": {
+    "mtime": 1786102849.861166,
+    "ast_hash": "6284b3761dc362569e36a0e70a917345",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Package.swift": {
+    "mtime": 1786102849.8615124,
+    "ast_hash": "c9df18eeee80bc0263d38cc6ec52efa1",
+    "semantic_hash": ""
+  },
+  "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/CockpitView.swift": {
+    "mtime": 1786103575.3260076,
+    "ast_hash": "7b6bb02ffb4ebdc4687c4c723c39822f",
+    "semantic_hash": ""
+  },
+  "apps/macOS/package.json": {
+    "mtime": 1786102849.86255,
+    "ast_hash": "8c1e64699dc2f6b640adca44024233f7",
+    "semantic_hash": ""
+  },
+  "apps/macOS/turbo.json": {
+    "mtime": 1786102849.8628314,
+    "ast_hash": "876c5a073dd51310913b2f06d9c87886",
+    "semantic_hash": ""
   }
 }
