@@ -1,4 +1,7 @@
-extension CockpitPresentation {
+public extension CockpitPresentation {
+    /// Public so the app target can preview against it. Anything the system accent drives —
+    /// the sidebar's selection capsule most of all — renders wrong in a package preview,
+    /// because the `AccentColor` asset lives in the app and a package preview never sees it.
     static let preview = CockpitPresentation(
         project: Project(name: "argo", location: "/Users/milad/Developer/argo"),
         sessions: [

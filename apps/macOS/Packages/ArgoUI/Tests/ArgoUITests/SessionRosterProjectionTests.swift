@@ -14,7 +14,40 @@ struct SessionRosterProjectionTests {
         let rows = SessionRosterProjection.rows(from: sessions)
 
         #expect(rows.map(\.id) == ["older", "attention", "newer"])
-        #expect(rows.map(\.stateWord) == ["idle", "needs you", "running"])
+        #expect(rows.map(\.state) == [.idle, .attention, .running])
+    }
+
+    @Test
+    func `a word is spent only where the roster wants the scan to stop`() {
+        let sessions = [
+            session(id: "idle", state: .idle),
+            session(id: "running", state: .running),
+            session(id: "attention", state: .attention),
+            session(id: "failure", state: .failure),
+            session(id: "unknown", state: nil),
+        ]
+
+        let rows = SessionRosterProjection.rows(from: sessions)
+
+        #expect(rows.map(\.stateWord) == [nil, nil, "Needs you", "Failed", nil])
+    }
+
+    @Test
+    func `the lock is drawn only when read-only tells the rows apart`() {
+        let mixed = SessionRosterProjection.rows(from: [
+            session(id: "managed", access: .managed),
+            session(id: "external", access: .readOnly),
+        ])
+        let uniform = SessionRosterProjection.rows(from: [
+            session(id: "one", access: .readOnly),
+            session(id: "two", access: .readOnly),
+        ])
+
+        #expect(mixed.map(\.showsLock) == [false, true])
+        // Every Session read-only: the glyph distinguishes nothing, so it is the repeated
+        // badge D30 deleted. The fact itself survives on every row.
+        #expect(uniform.map(\.showsLock) == [false, false])
+        #expect(uniform.map(\.isReadOnly) == [true, true])
     }
 
     @Test

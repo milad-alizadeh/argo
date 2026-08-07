@@ -8,27 +8,32 @@ enum SessionRosterProjection {
         let workspaceIdentity: String
         let location: String?
         let branch: String?
+        /// Always true of an observed Session, and always announced. Only the *glyph* is
+        /// conditional, so hiding it never hides the fact.
         let isReadOnly: Bool
+        /// The lock is drawn only when read-only tells the rows apart.
+        let showsLock: Bool
         let state: ArgoOperationalState?
 
         var metadata: String {
             "\(model) · \(workspaceIdentity)"
         }
 
+        /// The dot carries `running` and `idle`; a word is spent only where the roster needs
+        /// the user to stop scanning. D30 keeps counts and words to what helps the scan.
         var stateWord: String? {
-            guard !isReadOnly else { return nil }
-            return switch state {
-            case .running: "running"
-            case .idle: "idle"
-            case .attention: "needs you"
-            case .failure: "failed"
-            case nil: nil
+            switch state {
+            case .attention: "Needs you"
+            case .failure: "Failed"
+            case .running, .idle, nil: nil
             }
         }
     }
 
     static func rows(from sessions: [CockpitPresentation.Session]) -> [Row] {
         let identities = workspaceIdentities(for: sessions.map(\.workspaceLocation))
+        let access = sessions.map(\.access)
+        let locksDistinguish = access.contains(.readOnly) && access.contains(.managed)
         return zip(sessions, identities).map { session, identity in
             Row(
                 id: session.id,
@@ -38,6 +43,7 @@ enum SessionRosterProjection {
                 location: session.workspaceLocation,
                 branch: session.branch,
                 isReadOnly: session.access == .readOnly,
+                showsLock: locksDistinguish && session.access == .readOnly,
                 state: session.operationalState,
             )
         }

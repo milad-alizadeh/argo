@@ -24,6 +24,12 @@ Every visual implementation session must read, in order:
 4. [`cockpit-sessions-liquid-glass.png`](cockpit-sessions-liquid-glass.png); and
 5. for the minimap, [`cockpit-xcode-minimap-reference.png`](cockpit-xcode-minimap-reference.png).
 
+**The sidebar is native Liquid Glass, not a dark fill.** The project strip and the Sessions roster
+share one continuous system-material column that paints no background of its own (D2, D3, D14). If a
+shell or roster screenshot shows a flat graphite plane behind the rows, the material is missing —
+that is a defect to fix, not the look. Verify it over a non-uniform wallpaper with the window moving;
+a shot against a solid desktop proves nothing.
+
 The repository copies on `main` are canonical. Chat history, generated-image messages, local
 attachments, issue edit history, and files outside the repository are not implementation sources.
 When a later explicit decision changes the direction, update this bundle and the affected child
