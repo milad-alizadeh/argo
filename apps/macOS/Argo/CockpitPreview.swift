@@ -5,12 +5,12 @@ import SwiftUI
 // in this target, and a preview of an `ArgoUI` view builds the package alone, so it falls back
 // to the OS accent there.
 #Preview("Cockpit — selection colour (accent-accurate)") {
-    @Previewable @State var room = CockpitRoom.sessions
+    @Previewable @State var navigation = CockpitNavigationModel()
 
     CockpitView(
         presentation: .preview,
-        room: $room,
         actions: CockpitActions(refreshCheckout: {}, retryConnection: {}),
     )
+    .environment(navigation)
     .frame(width: 1280, height: 800)
 }

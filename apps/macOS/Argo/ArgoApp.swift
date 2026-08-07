@@ -7,7 +7,7 @@ import SwiftUI
 @main
 struct ArgoApp: App {
     @State private var hub: Hub
-    @State private var room = CockpitRoom.sessions
+    @State private var navigation = CockpitNavigationModel()
     private let engine: Engine
     private let configuration: LaunchConfiguration
 
@@ -30,7 +30,8 @@ struct ArgoApp: App {
             if let specimen {
                 SpecimenScreen(specimen: specimen)
             } else {
-                CockpitView(presentation: presentation, room: $room, actions: actions)
+                CockpitView(presentation: presentation, actions: actions)
+                    .environment(navigation)
                     .task {
                         await hub.connect(using: engine, configuration: configuration)
                     }
@@ -41,7 +42,7 @@ struct ArgoApp: App {
         .commands {
             CommandMenu("Navigate") {
                 ForEach(CockpitRoom.allCases) { candidate in
-                    Button(candidate.title) { room = candidate }
+                    Button(candidate.title) { navigation.room = candidate }
                         .keyboardShortcut(candidate.shortcut, modifiers: .command)
                 }
             }
