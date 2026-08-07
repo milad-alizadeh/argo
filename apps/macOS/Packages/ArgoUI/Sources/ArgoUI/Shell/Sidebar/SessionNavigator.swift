@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Native Sessions navigation; #377 owns the richer production row content.
+/// Native Sessions navigation with stable, information-dense rows.
 struct SessionNavigator: View {
     @Environment(\.argo) private var argo
 
@@ -12,7 +12,7 @@ struct SessionNavigator: View {
             Section {
                 if sessions.isEmpty {
                     VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-                        Text("No sessions yet")
+                        Text("No Sessions yet")
                             .argoText(ArgoTypography.rowTitle)
                         Text("Observed Sessions appear here.")
                             .argoText(ArgoTypography.rowMeta)
@@ -20,13 +20,9 @@ struct SessionNavigator: View {
                     }
                     .padding(.vertical, ArgoSpacing.tight)
                 } else {
-                    ForEach(sessions) { session in
-                        Text(session.title)
-                            .argoText(ArgoTypography.rowTitle)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .help(session.title)
-                            .tag(session.id)
+                    ForEach(SessionRosterProjection.rows(from: sessions)) { row in
+                        SessionRow(row: row, isSelected: row.id == selection)
+                            .tag(row.id)
                     }
                 }
             } header: {
@@ -36,6 +32,7 @@ struct SessionNavigator: View {
             }
         }
         .listStyle(.sidebar)
+        .tint(argo.color.surface.selected)
     }
 }
 
@@ -44,5 +41,17 @@ struct SessionNavigator: View {
 
     SessionNavigator(sessions: CockpitPresentation.preview.sessions, selection: $selection)
         .frame(width: 280, height: 480)
+        .argoAppearance()
+}
+
+#Preview("Sessions navigation — no selection") {
+    SessionNavigator(sessions: CockpitPresentation.preview.sessions, selection: .constant(nil))
+        .frame(width: 320, height: 480)
+        .argoAppearance()
+}
+
+#Preview("Sessions navigation — empty") {
+    SessionNavigator(sessions: [], selection: .constant(nil))
+        .frame(width: 320, height: 480)
         .argoAppearance()
 }

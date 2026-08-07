@@ -21,7 +21,7 @@ struct ArgoApp: App {
             currentDirectoryURL: currentDirectoryURL,
         )
         self.configuration = configuration
-        engine = Engine()
+        self.engine = Engine()
         _hub = State(initialValue: Hub(projectURL: configuration.projectURL))
     }
 
@@ -62,7 +62,15 @@ struct ArgoApp: App {
                 location: hub.project.url.path,
             ),
             sessions: hub.sessions.map {
-                CockpitPresentation.Session(id: $0.id, title: $0.title, branch: $0.branch)
+                CockpitPresentation.Session(
+                    id: $0.id,
+                    title: $0.title,
+                    model: $0.model,
+                    workspaceLocation: $0.cwd,
+                    branch: $0.branch,
+                    access: .readOnly,
+                    operationalState: nil,
+                )
             },
             checkout: checkout,
             connection: connection,
