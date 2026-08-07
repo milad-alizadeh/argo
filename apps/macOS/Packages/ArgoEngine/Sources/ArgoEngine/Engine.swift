@@ -41,8 +41,16 @@ public struct Engine: Sendable {
         TranscriptObservation(
             id: url.path,
             sourceURL: url,
+            modifiedAt: modifiedAt(of: url),
             events: transcriptEvents(at: url, readImage: diskImageReader),
         )
+    }
+
+    /// The file's own last-write time, or nothing. Read once at observation rather than re-statted,
+    /// because what it stands in for is when the Session last ran — and a transcript that is still
+    /// being written reports that through its records instead.
+    private func modifiedAt(of url: URL) -> Date? {
+        try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 
     public func checkout(at url: URL) async -> CheckoutProjection {

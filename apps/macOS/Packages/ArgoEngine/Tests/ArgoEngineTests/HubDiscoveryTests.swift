@@ -27,6 +27,7 @@ struct HubDiscoveryTests {
             transcriptURLs: [],
         ))
 
+        await hubSettle { !hub.sessions.isEmpty }
         #expect(hub.sessions.map(\.sourceURL) == [mine.standardizedFileURL])
         #expect(hub.connection == .connected)
         await hub.disconnect()
@@ -48,6 +49,7 @@ struct HubDiscoveryTests {
         let started = try fixture.write(FixtureTranscript(name: "started", cwd: projectURL.path))
         await hub.refreshWorkingSet()
 
+        await hubSettle { !hub.sessions.isEmpty }
         #expect(hub.sessions.map(\.sourceURL) == [started.standardizedFileURL])
         #expect(hub.observations.map(\.state) == [.live])
         await hub.disconnect()
@@ -95,6 +97,7 @@ struct HubDiscoveryTests {
             projectURL: projectURL,
             transcriptURLs: [],
         ))
+        await hubSettle { hub.sessions.count == 2 }
         let order = hub.sessions.map(\.sourceURL)
         #expect(order.first == first.standardizedFileURL)
 
@@ -125,6 +128,7 @@ struct HubDiscoveryTests {
             transcriptURLs: [named],
         ))
 
+        await hubSettle { !hub.sessions.isEmpty }
         #expect(hub.sessions.map(\.sourceURL) == [named.standardizedFileURL])
         await hub.disconnect()
     }

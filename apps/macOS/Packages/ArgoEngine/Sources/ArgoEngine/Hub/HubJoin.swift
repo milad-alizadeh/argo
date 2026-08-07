@@ -18,10 +18,16 @@ struct HubJoin {
     /// re-point owners at a neighbour.
     private var recordOwners: [String: String] = [:]
 
+    var isEmpty: Bool {
+        transcripts.isEmpty
+    }
+
+    /// Admit a transcript to the working set, unsettled — present for the records it is about to
+    /// claim, absent from the roster until its file has actually been read. Re-adding one already
+    /// here changes nothing, which is what lets a re-entered Project keep the roster it built.
     mutating func add(_ observation: TranscriptObservation) {
         guard !transcripts.contains(where: { $0.id == observation.id }) else { return }
         transcripts.append(HubTranscript(observation: observation))
-        rebuild()
     }
 
     mutating func remove(transcriptID: String) {
@@ -30,16 +36,31 @@ struct HubJoin {
         rebuild()
     }
 
-    /// An event for a transcript no longer in the set applies nothing, which is what makes dropping
-    /// a Project safe against a tail still tearing down: the join it would write into is gone
-    /// before its cancellation is even asked for.
-    mutating func apply(_ event: TranscriptEvent, to transcriptID: String) {
+    /// Apply one read's worth of events, rebuilding once for the batch rather than once per event.
+    ///
+    /// Applying is also what SETTLES the transcript, because the first batch a tail delivers is
+    /// the backfill of what its file already held: before it, the row is half-read.
+    ///
+    /// A batch for a transcript no longer in the set applies nothing, which is what makes
+    /// dropping a Project safe against a tail still tearing down.
+    mutating func apply(_ events: [TranscriptEvent], to transcriptID: String) {
         guard let index = position(of: transcriptID) else { return }
-        transcripts[index].session.apply(event)
-        if case let .recordIdentity(uuid) = event {
-            rememberOwner(of: uuid, transcriptID: transcriptID)
+        for event in events {
+            transcripts[index].session.apply(event)
+            if case let .recordIdentity(uuid) = event {
+                rememberOwner(of: uuid, transcriptID: transcriptID)
+            }
         }
+        transcripts[index].isSettled = true
         rebuild()
+    }
+
+    /// Settle a transcript whose tail ended without ever delivering a backfill — a file that
+    /// could not be opened, or a tail stopped mid-read. An empty read IS what happened, and
+    /// without it the roster would wait on a transcript that is never going to speak.
+    mutating func settle(transcriptID: String) {
+        guard let index = position(of: transcriptID), !transcripts[index].isSettled else { return }
+        apply([], to: transcriptID)
     }
 
     /// The earliest transcript to claim a record keeps it: a resume chain is walked from its root,
@@ -56,7 +77,12 @@ struct HubJoin {
         transcripts.firstIndex { $0.id == transcriptID }
     }
 
+    /// Published only once every transcript in the set has settled, so the roster shows the
+    /// finished stitch rather than the reconstruction that produced it. While a sweep admits a
+    /// new transcript the last published roster stands: briefly missing a row, never rewriting
+    /// itself under the reader, and never showing what was not read.
     private mutating func rebuild() {
+        guard transcripts.allSatisfy(\.isSettled) else { return }
         sessions = HubSessionChain.sessions(from: transcripts, owners: recordOwners)
     }
 }

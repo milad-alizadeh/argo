@@ -77,7 +77,7 @@ public extension CockpitPresentation {
         activeProjectID: nil,
         sessions: [],
         checkout: .unavailable,
-        connection: .healthy,
+        connection: .idle,
     )
 
     /// The active Project's folder has moved or gone. Still a Project, and the chrome says so in
@@ -87,7 +87,7 @@ public extension CockpitPresentation {
         activeProjectID: "moved",
         sessions: [],
         checkout: .unavailable,
-        connection: .healthy,
+        connection: .idle,
     )
 
     static let emptyPreview = CockpitPresentation(

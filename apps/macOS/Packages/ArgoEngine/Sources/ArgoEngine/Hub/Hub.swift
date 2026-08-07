@@ -49,6 +49,10 @@ public final class Hub {
     }
 
     private var join = HubJoin()
+    /// The rosters of the Projects this Hub has been pointed at, kept across a switch. The
+    /// sweep still re-runs and the tails still re-read on re-entry — what the retained join
+    /// removes is the empty roster the reader used to sit in front of while they did.
+    @ObservationIgnored private var retainedJoins = HubJoinCache()
     /// The running tail per transcript id. Observed rather than ignored, because `observations`
     /// and `connection` are read off it — a tail starting or ending has to reach the view.
     private var tails: [String: Task<Void, Never>] = [:]
@@ -99,6 +103,8 @@ public final class Hub {
         self.configuration = configuration
         project = HubProject(url: configuration.projectURL)
         await refreshCheckout()
+        // Taken against the RESOLVED Project, which is the key it was retained under.
+        join = retainedJoins.take(for: project.url.path) ?? HubJoin()
         guard !configuration.transcriptURLs.isEmpty else {
             // The sweep runs against the RESOLVED Project, which `refreshCheckout` has just read:
             // launched inside a subdirectory of a repo, the Project is the repo, and scoping to the
@@ -121,6 +127,8 @@ public final class Hub {
     /// have.
     public func disconnect() async {
         await stopSweeping()
+        // Retained before the tails are torn down, which is what empties the join.
+        retainedJoins.retain(join, for: project.url.path)
         await stopObservingAll()
         checkout = .unavailable
         failureMessage = nil
@@ -141,7 +149,8 @@ public final class Hub {
     }
 
     /// Start tailing one transcript, as a Session the roster has not seen before. It joins the
-    /// working set immediately, and stopping it later leaves every other tail running.
+    /// working set immediately — the ROSTER once the file has been read — and stopping it later
+    /// leaves every other tail running.
     public func startObserving(_ observation: TranscriptObservation) async {
         await stopObserving(transcriptID: observation.id)
         await startTailing(observation)
@@ -206,9 +215,12 @@ public final class Hub {
     }
 
     private func drain(_ observation: TranscriptObservation) async {
-        for await event in observation.events {
-            join.apply(event, to: observation.id)
+        for await events in observation.events {
+            join.apply(events, to: observation.id)
         }
+        // A tail that ended without delivering a backfill — an unopenable file, or one stopped
+        // mid-read — still has to settle, or the roster waits on a transcript that never speaks.
+        join.settle(transcriptID: observation.id)
         // The record ended, so the projection has to stop calling this transcript live. Clearing by
         // id is safe: every path that re-registers an id awaits the previous tail to completion
         // first, so no later tail can be holding the key by the time this runs.
