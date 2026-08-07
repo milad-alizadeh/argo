@@ -37,9 +37,8 @@ private struct DeckContentRow: View {
     }
 }
 
-/// The dock steers the agent whose feed is above it, so it is bounded to the feed's own column
-/// rather than run across the deck: a band spanning the rail and the lane too would read as a
-/// window-level strip belonging to the room, and would hold both of them off the bottom edge.
+/// The feed and the dock that steers it, bounded to their own column rather than run across the
+/// deck (C4.1).
 private struct FeedColumn: View {
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
