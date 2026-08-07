@@ -44,6 +44,7 @@ struct ConnectionChip: View {
     private var label: String {
         switch connection {
         case .connected: "Connected"
+        case .connecting: "Connecting"
         case .idle: "No live sessions"
         case let .failed(message): message
         }
@@ -52,6 +53,7 @@ struct ConnectionChip: View {
     private var state: ArgoOperationalState {
         switch connection {
         case .connected, .idle: .idle
+        case .connecting: .attention
         case .failed: .failure
         }
     }
@@ -68,8 +70,12 @@ struct ConnectionChip: View {
     }
 }
 
-#Preview("Connection exceptions") {
+#Preview("Connection states") {
     VStack(spacing: ArgoSpacing.comfortable) {
+        // `.connected` never reaches the shell, which draws nothing for it — previewed anyway, so
+        // the one state the chip can render and the cockpit hides is still looked at.
+        ConnectionChip(connection: .connected, retry: {})
+        ConnectionChip(connection: .connecting, retry: {})
         ConnectionChip(connection: .idle, retry: {})
         ConnectionChip(connection: .failed(message: "Transcript unavailable"), retry: {})
     }

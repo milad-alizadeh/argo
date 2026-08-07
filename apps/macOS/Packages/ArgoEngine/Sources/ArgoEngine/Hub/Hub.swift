@@ -38,6 +38,9 @@ public final class Hub {
         if let failureMessage {
             return .failed(message: failureMessage)
         }
+        if isConnecting {
+            return .connecting
+        }
         return tails.isEmpty ? .idle : .connected
     }
 
@@ -50,11 +53,12 @@ public final class Hub {
     /// and `connection` are read off it — a tail starting or ending has to reach the view.
     private var tails: [String: Task<Void, Never>] = [:]
     private var failureMessage: String?
+    private var isConnecting = false
     @ObservationIgnored let discovery: SessionDiscovery
     @ObservationIgnored let engine: Engine
-    /// What the Hub was last pointed with, held because discovery outlives `connect`: a transcript
-    /// written an hour later is opened by the same engine against the same Project.
-    @ObservationIgnored public private(set) var configuration: LaunchConfiguration
+    /// What the Hub was last pointed with, held so a retry needs nothing re-supplied — a caller
+    /// rebuilding the configuration to retry can rebuild a different one.
+    @ObservationIgnored private var configuration: LaunchConfiguration
     /// The Project the sweep is running against, absent while the Hub is disconnected or reading a
     /// named transcript.
     @ObservationIgnored var sweepProjectURL: URL?
@@ -89,6 +93,8 @@ public final class Hub {
     /// Returns once the tails have started, not once they end — a live transcript has no end, so a
     /// `connect` that awaited them would never return.
     public func connect(to configuration: LaunchConfiguration) async {
+        isConnecting = true
+        defer { isConnecting = false }
         await disconnect()
         self.configuration = configuration
         project = HubProject(url: configuration.projectURL)
@@ -101,6 +107,12 @@ public final class Hub {
             return
         }
         await observeNamed(configuration.transcriptURLs)
+    }
+
+    /// Point again at the configuration the Hub is already on — what a retry after a failed
+    /// connection IS. Rebuilding the configuration to retry is how a retry quietly moves you.
+    public func reconnect() async {
+        await connect(to: configuration)
     }
 
     /// Drop the whole Project: the sweep, every tail, the join they fed, and the checkout and
@@ -144,6 +156,9 @@ public final class Hub {
     func startTailing(_ observation: TranscriptObservation) async {
         await pauseObserving(transcriptID: observation.id)
         join.add(observation)
+        // A tail running is the answer to any previous failure: whatever could not be read, this
+        // one can, and a connection reading `failed` over a live source is a stale claim.
+        failureMessage = nil
         tails[observation.id] = Task { [weak self] in await self?.drain(observation) }
     }
 

@@ -133,6 +133,9 @@ struct HubTests {
         ))
         #expect(hub.project.url == repositoryURL)
 
+        // The folder the Hub was POINTED with goes away; the repository it resolved to stays. A
+        // refresh reading the configuration back would answer with a path that is no longer there.
+        try fixture.remove(packageURL)
         await hub.refreshCheckout()
 
         // Not `elsewhere`, which is what it was made with, and not `packageURL`, which is what it

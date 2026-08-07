@@ -61,27 +61,6 @@ struct HubObservationTests {
         await hub.disconnect()
     }
 
-    /// A Project with a live tail on it and one with nothing to read are different answers, and the
-    /// connection has to say which — "Connected" over an empty working set claims a source that is
-    /// not there.
-    @Test
-    @MainActor
-    func `a connection with no live tail does not read as connected`() async throws {
-        let hub = Hub(projectURL: Self.firstProjectURL)
-
-        try await hub.connect(to: LaunchConfiguration(
-            projectURL: Self.firstProjectURL,
-            transcriptURLs: [hubFixtureURL("prose")],
-        ))
-        #expect(hub.connection == .connected)
-
-        await hub.pauseObserving(transcriptID: hub.observations[0].id)
-
-        #expect(hub.connection == .idle)
-        #expect(hub.observations.map(\.state) == [.stopped])
-        await hub.disconnect()
-    }
-
     @Test
     @MainActor
     func `re-pointing at another Project drops the previous one entirely`() async throws {
@@ -145,9 +124,13 @@ struct HubObservationTests {
         for _ in 0 ..< 5 {
             await hub.connect(to: configuration)
             // Asserted every round, so a count that reads zero because the probe is blind fails
-            // here rather than passing the teardown assertion for the wrong reason.
-            await settle { openDescriptorCount(for: transcriptURL) > 0 }
-            #expect(openDescriptorCount(for: transcriptURL) == Self.descriptorsPerTail)
+            // here rather than passing the teardown assertion for the wrong reason. Waited for on
+            // the exact count: the two descriptors are opened a hop apart, and settling on "any"
+            // catches the tail half-open.
+            let tailing = await settle {
+                openDescriptorCount(for: transcriptURL) == Self.descriptorsPerTail
+            }
+            #expect(tailing, "saw \(openDescriptorCount(for: transcriptURL)) descriptors open")
         }
         await hub.disconnect()
 

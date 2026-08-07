@@ -95,9 +95,10 @@ final class CockpitCoordinator {
 
     /// Retrying re-points at the Project already on screen, rather than re-running the launch: what
     /// failed is this Project's connection, and a retry that quietly moved you would be a worse
-    /// answer than the failure.
+    /// answer than the failure. The Hub holds what it was pointed with, so nothing is rebuilt here
+    /// that could come out different.
     func retryConnection() async {
-        await point(at: launch)
+        await hub.reconnect()
     }
 
     /// A launch may name, or start in, any folder inside a repository, while the registry holds
