@@ -1,33 +1,34 @@
 import SwiftUI
 
 /// The production application shell: native navigation, one opaque deck, and two glass vessels.
+///
+/// The one place in the shell that reads the navigation model. Everything below it takes values
+/// and bindings, so each piece still renders from a `#Preview` or a specimen without one.
 public struct CockpitView: View {
     private let presentation: CockpitPresentation
-    @Binding private var room: CockpitRoom
     private let actions: CockpitActions
-    @State private var selection: CockpitPresentation.Session.ID?
+    @Environment(CockpitNavigationModel.self) private var navigation
 
     public init(
         presentation: CockpitPresentation,
-        room: Binding<CockpitRoom>,
         actions: CockpitActions,
     ) {
         self.presentation = presentation
-        _room = room
         self.actions = actions
-        _selection = State(initialValue: presentation.sessions.first?.id)
     }
 
     public var body: some View {
+        @Bindable var navigation = navigation
+
         NavigationSplitView {
-            ShellSidebar(presentation: presentation, selection: $selection)
+            ShellSidebar(presentation: presentation, selection: $navigation.session)
                 .navigationSplitViewColumnWidth(
                     min: ArgoLayout.sidebarMinimumWidth,
                     ideal: ArgoLayout.sidebarIdealWidth,
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            InstrumentDeckShell(room: room)
+            InstrumentDeckShell(room: navigation.room)
                 .overlay(alignment: .topLeading) {
                     if presentation.connection != .healthy {
                         ConnectionChip(
@@ -40,7 +41,7 @@ public struct CockpitView: View {
         }
         .navigationTitle(presentation.project.name)
         .toolbar {
-            ShellToolbar(room: $room, presentation: presentation, actions: actions)
+            ShellToolbar(room: $navigation.room, presentation: presentation, actions: actions)
         }
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .frame(
@@ -49,31 +50,29 @@ public struct CockpitView: View {
         )
         .argoAppearance()
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in
-            if let selection, sessionIDs.contains(selection) { return }
-            selection = sessionIDs.first
+            navigation.reconcile(against: sessionIDs)
         }
     }
-
 }
 
 #Preview("Production shell — Session selected") {
-    @Previewable @State var room = CockpitRoom.sessions
+    @Previewable @State var navigation = CockpitNavigationModel()
 
     CockpitView(
         presentation: .preview,
-        room: $room,
         actions: CockpitActions(refreshCheckout: {}, retryConnection: {}),
     )
+    .environment(navigation)
     .frame(width: 1280, height: 800)
 }
 
 #Preview("Production shell — no Sessions") {
-    @Previewable @State var room = CockpitRoom.sessions
+    @Previewable @State var navigation = CockpitNavigationModel()
 
     CockpitView(
         presentation: .emptyPreview,
-        room: $room,
         actions: CockpitActions(refreshCheckout: {}, retryConnection: {}),
     )
+    .environment(navigation)
     .frame(width: 1080, height: 680)
 }
