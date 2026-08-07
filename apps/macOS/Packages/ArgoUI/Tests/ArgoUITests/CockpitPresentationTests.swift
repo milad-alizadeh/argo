@@ -7,10 +7,11 @@ import Testing
 struct CockpitPresentationTests {
     @Test
     func `access is what provenance IS, never a literal beside it`() {
-        #expect(CockpitPresentation.Session.Access(provenance: .managed) == .managed)
-        #expect(CockpitPresentation.Session.Access(provenance: .external) == .readOnly)
-        // The PTY died with the Argo that owned it; there is nothing left to steer.
-        #expect(CockpitPresentation.Session.Access(provenance: .orphaned) == .readOnly)
+        // `allCases`, so a provenance added to the domain has to decide its access here.
+        let access = SessionProvenance.allCases.map(CockpitPresentation.Session.Access.init)
+
+        // Orphaned reads read-only too: the PTY died with the Argo that owned it.
+        #expect(access == [.managed, .readOnly, .readOnly])
     }
 
     @Test
@@ -38,7 +39,7 @@ struct CockpitPresentationTests {
             .branch("main"),
             .prompt(text: "Refactor it", atMs: nil),
             .turnEnded(.endTurn),
-        ])
+        ], until: { $0.status == .idle })
 
         let session = try #require(CockpitPresentation(hub: hub).sessions.first)
 
@@ -53,17 +54,29 @@ struct CockpitPresentationTests {
     @MainActor
     func `a Session with no turn boundary reads unknown, never idle`() async throws {
         let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
-        await observe(hub, id: "silent", events: [.cwd("/Users/milad/Developer/argo")])
+        await observe(
+            hub,
+            id: "silent",
+            events: [.cwd("/Users/milad/Developer/argo")],
+            until: { $0.workspaceLocation != nil },
+        )
 
         let session = try #require(CockpitPresentation(hub: hub).sessions.first)
 
         #expect(session.status == .unknown)
     }
 
-    /// Drive a finite stream into the Hub and wait for the roster it feeds, which is the shape a
-    /// test has and a live transcript never does.
+    /// Drive a finite stream into the Hub and yield until the roster has read all of it.
+    ///
+    /// Yielding rather than awaiting the tail: the tail is the Hub's own task and nothing public
+    /// hands it back, so the observable end is the roster the events land in.
     @MainActor
-    private func observe(_ hub: Hub, id: String, events: [TranscriptEvent]) async {
+    private func observe(
+        _ hub: Hub,
+        id: String,
+        events: [TranscriptEvent],
+        until applied: (CockpitPresentation.Session) -> Bool,
+    ) async {
         let stream = AsyncStream<TranscriptEvent> { continuation in
             for event in events {
                 continuation.yield(event)
@@ -75,6 +88,11 @@ struct CockpitPresentationTests {
             sourceURL: URL(fileURLWithPath: "/tmp/\(id).jsonl"),
             events: stream,
         ))
-        await hub.waitForObservation(transcriptID: id)
+        for _ in 0 ..< 200 {
+            if let session = CockpitPresentation(hub: hub).sessions.first, applied(session) {
+                return
+            }
+            await Task.yield()
+        }
     }
 }

@@ -19,7 +19,7 @@ public extension CockpitPresentation {
     }
 }
 
-public extension CockpitPresentation.Session {
+extension CockpitPresentation.Session {
     init(observed session: HubSession) {
         self.init(
             id: session.id,
@@ -33,10 +33,9 @@ public extension CockpitPresentation.Session {
     }
 }
 
-public extension CockpitPresentation.Session.Access {
+extension CockpitPresentation.Session.Access {
     /// Read-only is what everything but `managed` IS, rather than a policy applied to it: Argo
-    /// owns no PTY for a Session it did not spawn, and an orphaned one lost the PTY it had, so
-    /// there is nothing to steer either of them down.
+    /// owns no PTY for a Session it did not spawn, and an orphaned one lost the PTY it had.
     init(provenance: SessionProvenance) {
         self = switch provenance {
         case .managed: .managed

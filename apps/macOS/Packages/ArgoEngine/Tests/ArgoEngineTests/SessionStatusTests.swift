@@ -16,7 +16,21 @@ struct SessionStatusTests {
         #expect(SessionStatus.observed(turnOpen: false, lastStop: .maxTokens) == .stopped)
         #expect(SessionStatus.observed(turnOpen: false, lastStop: .maxTurnRequests) == .stopped)
         #expect(SessionStatus.observed(turnOpen: false, lastStop: .refusal) == .stopped)
-        #expect(SessionStatus.observed(turnOpen: false, lastStop: .cancelled) == .ended)
+    }
+
+    @Test
+    func `interrupting a turn leaves the Session idle, not ended`() {
+        // The run stopped; the Session is sitting there waiting for the next prompt. `ended` is
+        // the process going away, which no Turn's reason can report.
+        #expect(SessionStatus.observed(turnOpen: false, lastStop: .cancelled) == .idle)
+    }
+
+    @Test
+    func `a subagent's turn never closes the Session's own`() async throws {
+        let events = try await Fixture.events("sidechain")
+
+        // Two assistant records end `end_turn` in that file; only the root's is the Session's.
+        #expect(events.count(where: { $0 == .turnEnded(.endTurn) }) == 1)
     }
 
     @Test

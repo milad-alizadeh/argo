@@ -123,9 +123,13 @@ public actor TranscriptReader {
     /// The Turn boundary a record reports, or nothing.
     ///
     /// `tool_use` is the reason a working agent stops to call something, and every call carries it
-    /// — so it is the one word that must NOT be read as an end. A reason outside the vocabulary is
-    /// `unknown` rather than the nearest guess: the turn is over, and why is not ours to invent.
+    /// — so it is the one word that must NOT be read as an end. A subagent's record is skipped for
+    /// the same reason one level up: its turn is the child's, and closing the root's on it would
+    /// report a Session as quiet while its delegate is still working. A reason outside the
+    /// vocabulary is `unknown` rather than the nearest guess: the turn is over, and why is not
+    /// ours to invent.
     private func turnEnd(of message: MessageRecord) -> [TranscriptEvent] {
+        guard !message.isSidechain else { return [] }
         guard let reported = message.stopReason, reported != continuingStopReason else { return [] }
         return [.turnEnded(StopReason(reported: reported))]
     }

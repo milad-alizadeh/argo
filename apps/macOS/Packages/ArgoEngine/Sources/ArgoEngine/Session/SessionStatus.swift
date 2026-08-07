@@ -31,12 +31,15 @@ public extension SessionStatus {
     /// `running` means the last Turn observed was never closed. Liveness (process match + mtime)
     /// is not observed yet, so a transcript whose writer died mid-Turn reads as running until it
     /// is: CONTEXT.md's "no live signal → idle" needs that signal to exist before it can fire.
+    ///
+    /// A cancelled TURN reads `idle`, not `ended`: interrupting a run leaves the Session sitting
+    /// there waiting for the next prompt. `ended` is the Session terminating, which is a fact
+    /// about the process rather than about any Turn in it.
     static func observed(turnOpen: Bool, lastStop: StopReason?) -> SessionStatus {
         guard !turnOpen else { return .running }
         return switch lastStop {
-        case .endTurn: .idle
+        case .endTurn, .cancelled: .idle
         case .maxTokens, .maxTurnRequests, .refusal: .stopped
-        case .cancelled: .ended
         case .unknown, .none: .unknown
         }
     }

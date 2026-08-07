@@ -72,9 +72,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         model = continuation.model ?? model
         branch = continuation.branch ?? branch
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
-        // The continuation is where the chain is NOW, so its Turn boundaries are the ones the
-        // status reads — but only once it HAS one. A resume file with nothing in it yet says
-        // nothing about the chain, and taking its silence would close the root's open Turn.
+        // A resume file with no Turn in it yet says nothing about the chain, and taking its
+        // silence would close the root's open Turn.
         if continuation.turnOpen || continuation.lastStop != nil {
             turnOpen = continuation.turnOpen
             lastStop = continuation.lastStop

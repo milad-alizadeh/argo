@@ -2,7 +2,7 @@
 ///
 /// The raw values are the hosts' own words, so parsing and printing are one table. `unknown` is the
 /// honest reading of a word this vocabulary does not carry — never a guess at the nearest case.
-public enum StopReason: String, Sendable, Equatable, CaseIterable {
+public enum StopReason: String, Sendable, Equatable {
     case endTurn = "end_turn"
     case maxTokens = "max_tokens"
     case maxTurnRequests = "max_turn_requests"

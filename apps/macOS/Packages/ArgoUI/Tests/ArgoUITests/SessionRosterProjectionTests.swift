@@ -35,12 +35,11 @@ struct SessionRosterProjectionTests {
 
     @Test
     func `every Session status has one colour role, and unknown has none`() {
-        let statuses: [SessionStatus] = [
-            .running, .permission, .asking, .idle, .stopped, .ended, .unknown,
-        ]
-
+        // `allCases`, so a status added to the domain fails here rather than quietly taking
+        // whichever colour the mapping's last branch happens to be.
         let rows = SessionRosterProjection.rows(
-            from: statuses.enumerated().map { session(id: "\($0.offset)", status: $0.element) },
+            from: SessionStatus.allCases.enumerated()
+                .map { session(id: "\($0.offset)", status: $0.element) },
         )
 
         // A dot is a claim about what the Session is doing; `unknown` makes none.

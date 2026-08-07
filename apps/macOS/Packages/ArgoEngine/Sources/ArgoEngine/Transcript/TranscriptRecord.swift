@@ -12,6 +12,9 @@ public struct MessageRecord: Sendable, Equatable {
     public let isMeta: Bool
     /// This record IS the condensed history, not a prompt in front of it.
     public let isCompactSummary: Bool
+    /// A delegated subagent's record, written into the parent's own file. Its Turns are the
+    /// child's, so the root Session's Turn is neither opened nor closed by one.
+    public let isSidechain: Bool
     /// Only an assistant record names one.
     public let model: String?
     public let stopReason: String?
@@ -90,6 +93,7 @@ extension MessageRecord {
         self.timestampMs = ArgoEngine.timestampMs(record)
         self.isMeta = record["isMeta"]?.bool == true
         self.isCompactSummary = record["isCompactSummary"]?.bool == true
+        self.isSidechain = record["isSidechain"]?.bool == true
         self.model = message?.stringField("model")
         self.stopReason = message?.stringField("stop_reason")
         self.usage = Usage(reported: message?["usage"])

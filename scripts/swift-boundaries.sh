@@ -36,7 +36,7 @@ report() {
 #    reads a Hub is one file, and a view importing it would be a view taking a store.
 # Comment lines are skipped: prose may say what the seam IS, and only code can cross it.
 hits=$(grep -rn '\bHub\b' "$UI_SOURCES" --include='*.swift' 2>/dev/null \
-  | grep -v "$PROJECTION_FILE" \
+  | grep -v "/$PROJECTION_FILE:" \
   | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true)
 if [ -n "$hits" ]; then
   report "a view names the Hub — only $PROJECTION_FILE may read live state (ADR-0005)" "$hits"
