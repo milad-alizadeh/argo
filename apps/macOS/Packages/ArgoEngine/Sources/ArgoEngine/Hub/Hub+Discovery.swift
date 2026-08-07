@@ -6,7 +6,12 @@ import Foundation
 extension Hub {
     /// Sweep once, then keep sweeping as the record directory changes — which is what makes a
     /// Session started after launch appear without a relaunch.
+    ///
+    /// Any sweep already running is ended first. `connect` suspends twice before reaching here, so
+    /// two of them can interleave; overwriting the task rather than ending it would leave the first
+    /// loop sweeping for the process's lifetime, against a Project nobody is looking at.
     func beginDiscovery(for projectURL: URL, using engine: Engine) async {
+        await stopSweeping()
         sweep = HubSweep(engine: engine, projectURL: projectURL)
         await refreshWorkingSet()
         sweeping = Task { [weak self] in
@@ -22,7 +27,10 @@ extension Hub {
     /// because it is the descriptors that are bounded and not the roster.
     func refreshWorkingSet() async {
         guard let sweep else { return }
-        let wanted = discovery.workingSet(for: sweep.projectURL)
+        let wanted = await discovery.workingSet(for: sweep.projectURL)
+        // Re-read after the await: the sweep runs off the main actor, and a `disconnect` in the
+        // meantime means these tails belong to a Project nobody is pointed at any more.
+        guard let sweep = self.sweep else { return }
         let wantedIDs = Set(wanted.map(\.path))
         for transcriptID in observedTranscriptIDs where !wantedIDs.contains(transcriptID) {
             await pauseObserving(transcriptID: transcriptID)
@@ -32,7 +40,7 @@ extension Hub {
             // is the honest answer: nobody named this file, and the next sweep sees it again if it
             // comes back — where a named transcript that cannot be read is a failed connection.
             guard let observation = try? sweep.engine.observeTranscript(at: url) else { continue }
-            await startObserving(observation)
+            await startTailing(observation)
         }
     }
 

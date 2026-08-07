@@ -77,6 +77,37 @@ struct HubDiscoveryTests {
         await hub.disconnect()
     }
 
+    /// The join resolves a record's owner by which transcript claimed it first, so a transcript's
+    /// PLACE in it is part of its identity. A pause that re-appended on resume would put a
+    /// resume-chain root behind its own continuation and re-attribute the records it authored.
+    @Test(.timeLimit(.minutes(1)))
+    @MainActor
+    func `a paused transcript keeps its place when it is tailed again`() async throws {
+        let fixture = try RecordDirectoryFixture()
+        defer { fixture.remove() }
+        let projectURL = URL(fileURLWithPath: fixture.path("checkout"))
+        let first = try fixture.write(FixtureTranscript(name: "first", cwd: projectURL.path))
+        try fixture.write(
+            FixtureTranscript(name: "second", cwd: projectURL.path, modifiedAgo: 600),
+        )
+        let hub = Hub(projectURL: projectURL, discovery: SessionDiscovery(store: fixture.store))
+        await hub.connect(using: Engine(), configuration: LaunchConfiguration(
+            projectURL: projectURL,
+            transcriptURLs: [],
+        ))
+        let order = hub.sessions.map(\.sourceURL)
+        #expect(order.first == first.standardizedFileURL)
+
+        try fixture.age(first, by: Self.wellOutsideTheWindow)
+        await hub.refreshWorkingSet()
+        try fixture.age(first, by: 0)
+        await hub.refreshWorkingSet()
+
+        #expect(hub.sessions.map(\.sourceURL) == order)
+        #expect(hub.liveObservationCount == 2)
+        await hub.disconnect()
+    }
+
     /// `--transcript` is the render harness's explicit override. A named transcript means the
     /// caller has said what to read, so nothing is swept for and nothing else appears.
     @Test(.timeLimit(.minutes(1)))

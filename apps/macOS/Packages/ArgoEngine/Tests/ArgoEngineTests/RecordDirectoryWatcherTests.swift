@@ -25,21 +25,25 @@ struct RecordDirectoryWatcherTests {
         #expect(await woke.value)
     }
 
-    /// A machine that has never run the CLI has no record directory to watch. That is a quiet
-    /// stream that tears down on cancellation, not a crash on a null handle.
+    /// A machine that has never run the CLI has no record directory yet, and `FSEventStreamCreate`
+    /// accepts a path that is not there without ever reporting it appearing. The watch falls back
+    /// to the nearest ancestor that exists, so the directory being CREATED is itself a change —
+    /// otherwise the first Session ever recorded would need a relaunch to be seen.
     @Test(.timeLimit(.minutes(1)))
-    func `a missing record directory watches quietly`() async {
-        let absent = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
-        let changes = RecordDirectoryWatcher(rootURL: absent).changes()
-
+    func `a record directory created after the watch starts wakes it`() async throws {
+        let parent = try RecordDirectoryFixture()
+        defer { parent.remove() }
+        let absentRoot = parent.rootURL.appending(path: "projects", directoryHint: .isDirectory)
+        let changes = RecordDirectoryWatcher(rootURL: absentRoot).changes()
         let woke = Task {
             for await _ in changes {
                 return true
             }
             return false
         }
-        woke.cancel()
 
-        #expect(await woke.value == false)
+        try FileManager.default.createDirectory(at: absentRoot, withIntermediateDirectories: true)
+
+        #expect(await woke.value)
     }
 }

@@ -94,10 +94,21 @@ public final class Hub {
         }
     }
 
-    /// Start tailing one transcript. It joins the working set immediately, and stopping it later
-    /// leaves every other tail running.
+    /// Start tailing one transcript, as a Session the roster has not seen before. It joins the
+    /// working set immediately, and stopping it later leaves every other tail running.
     public func startObserving(_ observation: TranscriptObservation) async {
         await stopObserving(transcriptID: observation.id)
+        await startTailing(observation)
+    }
+
+    /// Start tailing one transcript, keeping whatever row the roster already holds for it.
+    ///
+    /// What discovery calls, and the distinction is not cosmetic: the join resolves a record's
+    /// owner by which transcript claimed it FIRST, so re-adding a paused resume-chain root would
+    /// put it behind its own continuation and re-attribute the records it authored. A tail re-reads
+    /// from the start of the file, so the row it rejoins is rebuilt rather than left stale.
+    func startTailing(_ observation: TranscriptObservation) async {
+        await pauseObserving(transcriptID: observation.id)
         join.add(observation)
         observations[observation.id] = Task { [weak self] in await self?.drain(observation) }
     }

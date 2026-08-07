@@ -16,17 +16,34 @@ struct RecordDirectoryWatcher: Sendable {
 
     /// One element per burst of changes, until the caller stops listening. Never finishes on its
     /// own: a record directory has no end, the same way a live transcript has none.
+    ///
+    /// Buffered at one, because the element is `Void`. Every yield means the same thing — sweep
+    /// again — and a sweep that runs longer than the coalesce interval would otherwise queue a
+    /// backlog of identical, already-stale wake-ups it could never catch up on.
     func changes() -> AsyncStream<Void> {
-        AsyncStream { continuation in
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let sink = ChangeSink { continuation.yield(()) }
-            guard sink.start(watching: rootURL) else {
+            guard sink.start(watching: Self.watchable(from: rootURL)) else {
                 continuation.finish()
                 return
             }
-            // Capturing the sink is what keeps it alive: the C callback holds an UNRETAINED
-            // pointer to it, so the last strong reference has to outlive the stream it feeds.
             continuation.onTermination = { _ in sink.stop() }
         }
+    }
+
+    /// The nearest ancestor that exists.
+    ///
+    /// `FSEventStreamCreate` accepts a path that is not there and then never reports it appearing,
+    /// so a machine that has never run the CLI would watch nothing and stay that way until Argo was
+    /// relaunched. Watching the nearest real ancestor sees the record directory being created.
+    /// Every event still costs only a sweep, and the sweep is bounded by the real root.
+    private static func watchable(from url: URL) -> URL {
+        var candidate = url.standardizedFileURL
+        while !FileManager.default.fileExists(atPath: candidate.path),
+              candidate.pathComponents.count > 1 {
+            candidate = candidate.deletingLastPathComponent()
+        }
+        return candidate
     }
 }
 
@@ -52,13 +69,18 @@ private final class ChangeSink: Sendable {
     /// The handle is created INSIDE the lock and never leaves it. A stream made outside and then
     /// stored would be a raw pointer crossing an isolation boundary, which is the thing the mutex
     /// exists to avoid rather than to annotate away.
+    ///
+    /// The sink is handed over RETAINED, with the matching release given to FSEvents as the
+    /// context's own callback. That is what makes the unretained read in the C callback safe: the
+    /// stream holds a reference for exactly as long as it can still deliver, and drops it after
+    /// invalidation rather than at whatever moment the consumer stopped listening.
     func start(watching rootURL: URL) -> Bool {
         stream.withLock { handle in
             var context = FSEventStreamContext(
                 version: 0,
-                info: Unmanaged.passUnretained(self).toOpaque(),
+                info: Unmanaged.passRetained(self).toOpaque(),
                 retain: nil,
-                release: nil,
+                release: releaseChangeSink,
                 copyDescription: nil,
             )
             guard let created = FSEventStreamCreate(
@@ -71,14 +93,18 @@ private final class ChangeSink: Sendable {
                 UInt32(kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer),
             ) else { return false }
             FSEventStreamSetDispatchQueue(created, DispatchQueue(label: Self.queueLabel))
-            FSEventStreamStart(created)
+            // A start that fails is a watch that would report nothing forever while claiming to be
+            // live. Releasing here says so, and the caller finishes the stream instead.
+            guard FSEventStreamStart(created) else {
+                FSEventStreamInvalidate(created)
+                FSEventStreamRelease(created)
+                return false
+            }
             handle = created
             return true
         }
     }
 
-    /// Stopping before invalidating is what makes the unretained pointer safe: no further callback
-    /// can be delivered once this returns, so the sink may be released after it.
     func stop() {
         stream.withLock { handle in
             guard let live = handle else { return }
@@ -98,4 +124,11 @@ private final class ChangeSink: Sendable {
 private let onRecordDirectoryChange: FSEventStreamCallback = { _, info, _, _, _, _ in
     guard let info else { return }
     Unmanaged<ChangeSink>.fromOpaque(info).takeUnretainedValue().changed()
+}
+
+/// FSEvents' own release of the context, called after the stream is invalidated and no further
+/// callback can be delivered.
+private let releaseChangeSink: CFAllocatorReleaseCallBack = { info in
+    guard let info else { return }
+    Unmanaged<ChangeSink>.fromOpaque(info).release()
 }
