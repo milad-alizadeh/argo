@@ -30,7 +30,7 @@ actor CheckoutReader {
         process.waitUntilExit()
         guard process.terminationStatus == 0,
               let value = String(data: data, encoding: .utf8)?
-                  .trimmingCharacters(in: .whitespacesAndNewlines),
+              .trimmingCharacters(in: .whitespacesAndNewlines),
               !value.isEmpty
         else { return nil }
         return value

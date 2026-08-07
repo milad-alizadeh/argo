@@ -5,7 +5,7 @@ public struct Engine: Sendable {
     private let checkoutReader: CheckoutReader
 
     public init() {
-        checkoutReader = CheckoutReader()
+        self.checkoutReader = CheckoutReader()
     }
 
     public func observeTranscript(at url: URL) throws -> TranscriptObservation {
@@ -38,7 +38,7 @@ public struct Engine: Sendable {
     }
 
     private func observation(at url: URL) -> TranscriptObservation {
-        return TranscriptObservation(
+        TranscriptObservation(
             id: url.path,
             sourceURL: url,
             events: transcriptEvents(at: url, readImage: diskImageReader),

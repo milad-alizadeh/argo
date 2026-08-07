@@ -6,6 +6,6 @@ public struct HubProject: Equatable, Sendable {
 
     public init(url: URL) {
         self.url = url
-        name = url.lastPathComponent.isEmpty ? "Argo" : url.lastPathComponent
+        self.name = url.lastPathComponent.isEmpty ? "Argo" : url.lastPathComponent
     }
 }
