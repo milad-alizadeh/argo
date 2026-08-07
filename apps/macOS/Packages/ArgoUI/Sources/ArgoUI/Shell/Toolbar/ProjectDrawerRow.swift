@@ -114,8 +114,9 @@ struct ProjectDrawerRow: View {
     /// folder is there. They compose because they are not alternatives — the active Project's
     /// folder can be the one that moved, and that row has to say both at once.
     ///
-    /// The wash is neutral and the Ion Blue is the indicator edge, per the contract, and the
-    /// indicator is drawn last so it survives whatever the system paints for focus.
+    /// The wash alone marks the active row. There is no Ion Blue edge beside it: on glass the
+    /// wash already separates that row from every other, and a second mark saying the same thing
+    /// only competes with what the system paints for focus.
     private var rowSurface: some View {
         let shape = RoundedRectangle(cornerRadius: ArgoRadius.control)
         return shape
@@ -126,11 +127,6 @@ struct ProjectDrawerRow: View {
                     dashedEdge(shape)
                 }
             }
-            .overlay(alignment: .leading) {
-                if row.isActive {
-                    selectionIndicator
-                }
-            }
     }
 
     private func dashedEdge(_ shape: RoundedRectangle) -> some View {
@@ -138,13 +134,6 @@ struct ProjectDrawerRow: View {
             argo.color.edge.strong,
             style: StrokeStyle(lineWidth: ArgoStroke.border, dash: [ArgoStroke.dash]),
         )
-    }
-
-    private var selectionIndicator: some View {
-        RoundedRectangle(cornerRadius: ArgoRadius.marker)
-            .fill(argo.color.interaction.selectionIndicator)
-            .frame(width: ArgoStroke.indicator)
-            .padding(.vertical, ArgoSpacing.tight)
     }
 }
 
