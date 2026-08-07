@@ -1,0 +1,65 @@
+import ArgoEngine
+
+// One event → one terminal line. A debugging surface, not a rendering: it names the tier on every
+// fact that has one and clamps prose to a width, so the SHAPE of a session is readable in a scroll
+// without any of it claiming to be the cockpit's own reading.
+
+private let proseWidth = 100
+
+/// Prose on one line, so an event is one row. Clamped rather than wrapped, and marked where it was
+/// cut: this is the one place in the engine that shortens anything a host wrote, and it exists for
+/// a terminal rather than for a consumer.
+private func oneLine(_ text: String, width: Int = proseWidth) -> String {
+    let flat = text
+        .replacingOccurrences(of: "\n", with: "⏎ ")
+        .trimmingCharacters(in: .whitespaces)
+    return flat.count <= width ? flat : "\(flat.prefix(width))…"
+}
+
+private func describe(_ result: ToolResult) -> String {
+    switch result {
+    case let .diff(diff):
+        let churn = "+\(diff.added)/-\(diff.removed)"
+        return "[\(diff.tier.rawValue)] \(diff.change.rawValue) \(churn), \(diff.hunks.count) hunk(s)"
+    case let .output(output):
+        return "[\(output.tier.rawValue)] \(oneLine(output.text, width: 60))"
+    case let .media(media):
+        // The bytes are never printed. What matters at this grain is that there ARE some, and
+        // which tier they came from: embedded is what the agent saw, a disk read is only what is
+        // at that path now.
+        let bytes = media.bytes.map { "\($0.count) base64 chars" } ?? "no bytes"
+        return "[\(media.tier.rawValue)] \(media.mediaType), \(bytes)"
+    }
+}
+
+func describe(_ event: TranscriptEvent) -> String {
+    switch event {
+    case let .headLeaf(uuid):
+        "head-leaf   \(uuid)"
+    case let .title(title):
+        "title       \(title)"
+    case let .cwd(cwd):
+        "cwd         \(cwd)"
+    case let .model(model):
+        "model       \(model)"
+    case let .branch(branch):
+        "branch      \(branch)"
+    case let .prompt(text, _):
+        "prompt      \(oneLine(text))"
+    case let .message(markdown):
+        "message     \(oneLine(markdown))"
+    case let .thought(markdown):
+        "thought     \(oneLine(markdown))"
+    case let .toolCall(call):
+        "call        \(call.name) (\(call.kind.rawValue))\(call.target.map { " → \($0)" } ?? "")"
+    case let .toolCallOutcome(outcome):
+        "  ↳ \(outcome.status.rawValue)  \(outcome.result.map(describe) ?? "")"
+    case let .plan(plan):
+        "plan        \(plan.entries.count) entries, "
+            + plan.entries.filter { $0.status == .completed }.count.description + " done"
+    case .compaction:
+        "compaction  history condensed here"
+    case let .unreadableLine(raw):
+        "unreadable  \(oneLine(raw, width: 60))"
+    }
+}
