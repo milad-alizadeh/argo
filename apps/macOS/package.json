@@ -3,6 +3,7 @@
   "description": "Argo cockpit — the native Swift macOS app (ADR-0022). Xcode owns the build; this manifest only wires it into the monorepo's task runner.",
   "private": true,
   "scripts": {
-    "build": "xcodebuild -project Argo.xcodeproj -scheme Argo -configuration Debug -derivedDataPath build build"
+    "build": "xcodebuild -project Argo.xcodeproj -scheme Argo -configuration Debug -derivedDataPath build build",
+    "test:swift": "swift test --package-path Packages/ArgoUI"
   }
 }

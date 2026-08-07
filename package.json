@@ -23,6 +23,7 @@
     "quality:placement:shared": "node scripts/earned-shared-check.mjs --map apps/desktop/scripts/module-boundaries.json",
     "quality:duplication": "jscpd --config .jscpd.json apps packages scripts",
     "test": "turbo run test",
+    "test:swift": "turbo run test:swift",
     "test:hooks": "node scripts/worktree-guard.test.mjs && node scripts/placement-guard.test.mjs && node scripts/hooks-sync.test.mjs && node scripts/protect-owned-skills.test.mjs",
     "test:stories": "turbo run test:stories",
     "test:e2e": "turbo run test:e2e",

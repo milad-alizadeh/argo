@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "ArgoUI", targets: ["ArgoUI"])
     ],
     targets: [
-        .target(name: "ArgoUI")
+        .target(name: "ArgoUI"),
+        .testTarget(name: "ArgoUITests", dependencies: ["ArgoUI"]),
     ]
 )
