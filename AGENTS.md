@@ -13,6 +13,19 @@ Monorepo for the Argo skills/plugin **and** the Argo cockpit app. Read by both C
   left to a pointer a session may not follow; the reasoning *behind* each term lives in
   `docs/domain/rationale.md` — read that only when changing a term.
 
+## Task tracking
+
+Maintain a live to-do list for any task with **three or more distinct steps**, edits across
+**multiple files**, or **a plan the user approved**. Claude Code: `TodoWrite`. Codex:
+`update_plan`.
+
+- Write the list **before the first edit**, not as a retrospective summary.
+- Exactly **one** item `in_progress` at a time; mark it `completed` the moment it is done, not
+  in a batch at the end.
+- One item = one verifiable outcome. "Fix the bug" is a task; "read the file" is not.
+- **Skip it** for single-step edits, lookups, and conversational turns — a one-item list is
+  noise, and a list nobody needed teaches the next session to ignore lists.
+
 ## Rules
 
 House engineering rules live in `rules/`. Load the ones matching the files you
