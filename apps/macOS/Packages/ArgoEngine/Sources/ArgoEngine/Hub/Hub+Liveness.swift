@@ -66,6 +66,11 @@ extension Hub {
             cwd: session.cwd,
             startedAtMs: session.startedAtMs,
         )
+        // The CONVENTION tier, reached through the claim rather than the Session id: the claim is
+        // what the channel is keyed by, exists before the CLI has picked an id, and outlives the
+        // reconciliation that gave the Session one.
+        published.convention = ownership.boundClaim(ofSessionID: session.id)
+            .flatMap { companionReports[$0] }
         return published
     }
 }

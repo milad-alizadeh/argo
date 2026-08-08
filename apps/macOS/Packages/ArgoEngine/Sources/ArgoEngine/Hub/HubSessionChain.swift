@@ -2,6 +2,10 @@ import Foundation
 
 struct HubTranscript {
     let id: String
+    /// The file, held here rather than read back off the Session: a Session Argo spawned has no
+    /// transcript yet, so its own answer is absent — and a transcript in the working set always
+    /// has one.
+    let sourceURL: URL
     var session: HubSession
     /// Whether the tail has delivered what the file already held. Until it has, this transcript is
     /// in the join — so the records it claims are attributed in tail-start order — but the roster
@@ -10,6 +14,7 @@ struct HubTranscript {
 
     init(observation: TranscriptObservation) {
         self.id = observation.id
+        self.sourceURL = observation.sourceURL
         self.session = HubSession(observation: observation)
     }
 }
@@ -59,7 +64,7 @@ enum HubSessionChain {
     /// swept again on every burst of writes, and a row that moved because one file was opened
     /// a moment sooner is a reshuffle the reader has to re-read. A Session that can say nothing
     /// about when it ran sorts behind every one that can, never in front on a guessed zero.
-    private static func ordered(_ sessions: [HubSession]) -> [HubSession] {
+    static func ordered(_ sessions: [HubSession]) -> [HubSession] {
         sessions.sorted { first, second in
             guard first.lastSeenAtMs != second.lastSeenAtMs else { return first.id < second.id }
             guard let firstKey = first.lastSeenAtMs else { return false }
