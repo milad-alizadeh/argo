@@ -2,10 +2,11 @@
 import Foundation
 import Testing
 
-/// The Electron reader's own fixtures, read from the test bundle.
+/// Transcript fixtures, read from the test bundle.
 ///
-/// Carried over unchanged: the point of porting them is that both readers answer the same bytes, so
-/// editing one to suit Swift would retire the only evidence that they agree.
+/// The ones ported from the Electron reader are carried over UNCHANGED: the point of porting them
+/// is that both readers answer the same bytes, so editing one to suit Swift would retire the only
+/// evidence that they agree. New shapes go in new files rather than into a ported one.
 enum Fixture {
     static func lines(_ name: String) throws -> [String] {
         let url = try #require(

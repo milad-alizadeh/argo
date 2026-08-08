@@ -66,7 +66,7 @@ struct SessionStatusTests {
     @Test
     @MainActor
     func `a halted turn is stopped and a session with no boundary is unknown`() async throws {
-        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp"))
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp"))
         try await hubObserveToEnd(hub, hubFixtureObservation("haltedTurn"))
         await hubObserveToEnd(hub, hubTestObservation(id: "silent", events: [.cwd("/tmp")]))
 
@@ -80,7 +80,7 @@ struct SessionStatusTests {
     @Test
     @MainActor
     func `an unclosed prompt leaves the session running`() async {
-        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp"))
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp"))
         await hubObserveToEnd(hub, hubTestObservation(
             id: "working",
             events: [.prompt(text: "Refactor it", atMs: nil)],
@@ -92,7 +92,7 @@ struct SessionStatusTests {
     @Test
     @MainActor
     func `a session read off a transcript is external, and so read-only`() async throws {
-        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp"))
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp"))
         try await hubObserveToEnd(hub, hubFixtureObservation("externalBasic"))
 
         #expect(hub.sessions.first?.provenance == .external)

@@ -74,15 +74,18 @@ public struct SpecimenScreen: View {
     }
 }
 
-/// Every operational state a roster row can be in, in one column.
+/// Every operational state a roster row can be in, in one column — the SHIPPING row, over the
+/// sidebar list it ships inside, projected from the same presentation the shell is handed. A
+/// specimen drawing a second row is evidence about a row nobody sees.
 private struct SessionRowsSpecimen: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
-            ForEach(SpecimenFixtures.roster) { session in
-                SpecimenSessionRow(session: session)
+        List {
+            ForEach(SessionRosterProjection.previewRows) { row in
+                SessionRow(row: row).previewSafeListRow()
             }
         }
-        .padding(ArgoSpacing.section)
+        .listStyle(.sidebar)
+        .frame(width: ArgoLayout.sidebarIdealWidth)
     }
 }
 
@@ -156,7 +159,7 @@ private struct DeckSpecimen: View {
     @State private var tab = SpecimenFixtures.DeckTab.activity
 
     var body: some View {
-        SpecimenDeck(session: SpecimenFixtures.roster[0], tab: $tab)
+        SpecimenDeck(session: .preview, tab: $tab)
     }
 }
 

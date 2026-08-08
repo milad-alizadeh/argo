@@ -11,7 +11,10 @@ struct ShellSidebar: View {
     @Binding var selection: CockpitPresentation.Session.ID?
 
     var body: some View {
-        SessionNavigator(sessions: presentation.sessions, selection: $selection)
+        SessionNavigator(
+            rows: SessionRosterProjection.rows(from: presentation.sessions),
+            selection: $selection,
+        )
     }
 }
 

@@ -39,17 +39,6 @@ private let typeByExtension: [String: String] = [
     "svg": "image/svg+xml",
 ]
 
-/// What the record itself says about the call, in the two places an image can land.
-struct MediaRead {
-    /// The host's own result object.
-    let toolUseResult: JSONValue?
-    /// The `tool_result` part's content — the API-shaped blocks the agent was actually sent.
-    let content: JSONValue
-    /// The file the call named, where re-reading it would MEAN anything. `nil` for a call whose
-    /// target is not a path, which is what keeps the fallback from trying to open a regex.
-    let path: String?
-}
-
 /// The host's own result object: `{"type": "image", "file": {"base64": …, "type": …}}`.
 private func fromToolUseResult(_ raw: JSONValue?) -> MediaEvidence? {
     guard let raw, raw.stringField("type") == "image", let file = raw["file"],
@@ -86,8 +75,26 @@ private func fromDisk(_ path: String?, _ readImage: ImageReader) -> MediaEvidenc
 
 /// The image a call showed, or `nil` where it showed none — which is every call that is not an
 /// image read, and is what keeps a non-image binary out of the feed's media rows.
-func mediaEvidence(from read: MediaRead, readImage: ImageReader) -> MediaEvidence? {
-    fromToolUseResult(read.toolUseResult)
-        ?? fromContent(read.content)
-        ?? fromDisk(read.path, readImage)
+///
+/// An `edit` never shows one, whatever its result carried: a `Write` to an `.svg` is a change to a
+/// file, and answering it with a picture would replace the diff of what changed with a render of
+/// what it became.
+func mediaEvidence(of call: ResolvedCall, readImage: ImageReader) -> MediaEvidence? {
+    guard call.kind != .edit else { return nil }
+    return fromToolUseResult(call.toolUseResult)
+        ?? fromContent(call.content)
+        ?? fromDisk(diskFallbackPath(call), readImage)
+}
+
+/// The path worth RE-READING, which is much narrower than the path the call named.
+///
+/// Three gates, each closing a case where a disk read answers the wrong question. Only a read,
+/// because a search's pattern, a command line and a subagent's description all land in the same
+/// field and none names a file. Only a call that COMPLETED, because a failed read of a `.png` has
+/// an error message worth showing and a picture of the file as it stands now does not explain the
+/// failure. And only where the result carried no text of its own: Claude Code hands an `.svg` back
+/// as SOURCE, and rendering that as a picture would pull a real text row out of the quiet fold.
+private func diskFallbackPath(_ call: ResolvedCall) -> String? {
+    guard call.kind == .read, call.status == .completed else { return nil }
+    return printedOutput(of: call.content) == nil ? call.target : nil
 }

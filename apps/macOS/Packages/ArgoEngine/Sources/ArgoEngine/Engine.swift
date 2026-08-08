@@ -2,10 +2,12 @@ import Foundation
 
 /// The engine ports the app composes: transcript observation and repository checkout reads.
 public struct Engine: Sendable {
-    private let checkoutReader: CheckoutReader
+    private let readCheckout: CheckoutRead
 
-    public init() {
-        self.checkoutReader = CheckoutReader()
+    /// The `git`-backed read is the app's adapter; a caller with no repository to read supplies its
+    /// own.
+    public init(readCheckout: @escaping CheckoutRead = gitCheckoutRead) {
+        self.readCheckout = readCheckout
     }
 
     public func observeTranscript(at url: URL) throws -> TranscriptObservation {
@@ -54,6 +56,6 @@ public struct Engine: Sendable {
     }
 
     public func checkout(at url: URL) async -> CheckoutProjection {
-        await checkoutReader.read(at: url)
+        await readCheckout(url)
     }
 }

@@ -4,15 +4,15 @@ import SwiftUI
 struct SessionNavigator: View {
     @Environment(\.argo) private var argo
 
-    let sessions: [CockpitPresentation.Session]
+    let rows: [SessionRosterProjection.Row]
     @Binding var selection: CockpitPresentation.Session.ID?
 
     var body: some View {
         List(selection: $selection) {
-            if sessions.isEmpty {
+            if rows.isEmpty {
                 emptyState.previewSafeListRow()
             } else {
-                ForEach(SessionRosterProjection.rows(from: sessions)) { row in
+                ForEach(rows) { row in
                     SessionRow(row: row).previewSafeListRow().tag(row.id)
                 }
             }
@@ -39,19 +39,19 @@ struct SessionNavigator: View {
 #Preview("Sessions navigation") {
     @Previewable @State var selection = CockpitPresentation.preview.sessions.first?.id
 
-    SessionNavigator(sessions: CockpitPresentation.preview.sessions, selection: $selection)
+    SessionNavigator(rows: SessionRosterProjection.previewRows, selection: $selection)
         .frame(width: 280, height: 480)
         .argoAppearance()
 }
 
 #Preview("Sessions navigation — no selection") {
-    SessionNavigator(sessions: CockpitPresentation.preview.sessions, selection: .constant(nil))
+    SessionNavigator(rows: SessionRosterProjection.previewRows, selection: .constant(nil))
         .frame(width: 320, height: 480)
         .argoAppearance()
 }
 
 #Preview("Sessions navigation — empty") {
-    SessionNavigator(sessions: [], selection: .constant(nil))
+    SessionNavigator(rows: [], selection: .constant(nil))
         .frame(width: 320, height: 480)
         .argoAppearance()
 }
