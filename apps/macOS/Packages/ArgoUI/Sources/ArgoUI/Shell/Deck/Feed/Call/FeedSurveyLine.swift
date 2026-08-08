@@ -81,7 +81,9 @@ struct FeedSurveyLine: View {
     }
 
     private var spoken: String {
-        ["Looked at", survey.label, survey.ending.spoken].compactMap(\.self).joined(separator: " ")
+        [FeedSurvey.verb, survey.label, survey.ending.spoken]
+            .compactMap(\.self)
+            .joined(separator: " ")
     }
 }
 

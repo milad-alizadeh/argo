@@ -48,6 +48,8 @@ private struct FeedMarkdownBlock: View {
             item(marker: marker, text: text)
         case let .fenced(code, info):
             FeedMarkdownFence(code: code, info: info)
+        case let .table(table):
+            FeedMarkdownTable(table: table)
         }
     }
 
@@ -72,36 +74,6 @@ private struct FeedMarkdownBlock: View {
             FeedProseText(text: text, rung: ArgoFeedRow.proseRung)
                 .fixedSize(horizontal: false, vertical: true)
         }
-    }
-}
-
-/// A fenced block: the agent's characters, on a ground, at the machine role.
-///
-/// The language it declared is drawn as a label rather than used to colour anything. Syntax
-/// highlighting would be Argo reading the code; the label is the agent saying what it wrote.
-private struct FeedMarkdownFence: View {
-    @Environment(\.argo) private var argo
-
-    let code: String
-    let info: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            if let info {
-                Text(info)
-                    .argoText(ArgoTypography.sectionLabel)
-                    .foregroundStyle(argo.color.text.tertiary)
-            }
-            Text(code)
-                .argoMono(.body)
-                .foregroundStyle(argo.color.text.secondary)
-                .textSelection(.enabled)
-                .lineSpacing(ArgoFeedRow.machineLineSpacing)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(ArgoSpacing.base)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.control))
     }
 }
 

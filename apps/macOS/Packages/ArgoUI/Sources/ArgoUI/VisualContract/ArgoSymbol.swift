@@ -53,20 +53,25 @@ public enum ArgoSymbol {
     /// Closing the evidence panel.
     public static let dismiss = "xmark"
 
-    /// Switching the panel between the patch the record carries and the document that patch made.
-    /// One control, carrying the mark of where it goes — so the two are never on screen together.
-    public static let readAsSource = "chevron.left.forwardslash.chevron.right"
-    public static let readAsProse = "doc.richtext"
-
     /// What a file the panel is open on is written in — one mark per language FAMILY. The
     /// extension is in the path beside it and is what actually names the language; these say only
     /// which KIND of file you are looking at, which is what a glance at a header wants.
+    ///
+    /// Markup has no mark of its own on purpose. The nearest glyph to the chevrons is the SAME
+    /// chevrons with one word different in the name, which in a column is not a second mark — it
+    /// is the first one drawn twice.
     public static let swiftSource = "swift"
     public static let programSource = "chevron.left.forwardslash.chevron.right"
     public static let dataSource = "curlybraces"
     public static let proseSource = "text.alignleft"
-    public static let markupSource = "chevron.left.slash.chevron.right"
     /// A file whose extension Argo does not recognise, and anything the panel opens on that is not
     /// a file at all.
     public static let plainSource = "doc"
+
+    /// Switching the panel between the patch the record carries and the document that patch made.
+    /// One control, carrying the mark of where it goes — so the two are never on screen together.
+    /// Going back to the patch is going back to source, and it takes the source mark rather than a
+    /// second glyph meaning the same thing.
+    public static let readAsSource = programSource
+    public static let readAsProse = "doc.richtext"
 }

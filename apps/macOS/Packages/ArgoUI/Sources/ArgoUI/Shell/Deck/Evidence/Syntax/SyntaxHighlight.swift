@@ -18,6 +18,24 @@ enum SyntaxHighlight {
     /// not work to repeat per hunk on a panel the reader is scrolling.
     private static let engine = Highlight()
 
+    /// A whole block, coloured — the shape a fenced block is read in, where there is no gutter to
+    /// line anything up against and the block is one run of text on the screen.
+    static func block(
+        _ code: String,
+        in language: EvidenceLanguage,
+        colors: HighlightColors,
+    ) async
+        -> AttributedString? {
+        guard let lines = await lines(
+            of: code.components(separatedBy: "\n"),
+            in: language,
+            colors: colors,
+        ) else { return nil }
+        return lines.dropFirst().reduce(into: lines[0]) { block, line in
+            block += AttributedString("\n") + line
+        }
+    }
+
     static func lines(
         of code: [String],
         in language: EvidenceLanguage,

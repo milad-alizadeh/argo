@@ -35,6 +35,18 @@ enum EvidenceLanguage: String, CaseIterable, Sendable {
         self = language
     }
 
+    /// The language an agent DECLARED, from the info string on a fenced block.
+    ///
+    /// A different source from the path above and a better one: the agent wrote the word, so
+    /// colouring by it is reading the record rather than sniffing it. Both the language's own
+    /// name and the extension people write instead (```` ```ts ````, ```` ```bash ````) resolve;
+    /// a word Argo does not know is `nil` and the block is drawn as it arrived.
+    init?(declared: String) {
+        let word = declared.trimmingCharacters(in: .whitespaces).lowercased()
+        guard let language = Self(rawValue: word) ?? Self.byExtension[word] else { return nil }
+        self = language
+    }
+
     /// highlight.js's own alias for the grammar.
     var alias: String {
         self == .golang ? "go" : rawValue
@@ -47,12 +59,11 @@ enum EvidenceLanguage: String, CaseIterable, Sendable {
     var symbol: String {
         switch self {
         case .swift: ArgoSymbol.swiftSource
-        case .typescript, .javascript, .golang, .python, .ruby, .rust, .sql:
+        case .typescript, .javascript, .golang, .python, .ruby, .rust, .sql, .html, .css:
             ArgoSymbol.programSource
         case .json, .yaml: ArgoSymbol.dataSource
         case .markdown: ArgoSymbol.proseSource
         case .shell: ArgoSymbol.ran
-        case .html, .css: ArgoSymbol.markupSource
         }
     }
 

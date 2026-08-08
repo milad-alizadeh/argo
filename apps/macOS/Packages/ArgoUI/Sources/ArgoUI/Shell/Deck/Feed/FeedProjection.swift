@@ -135,8 +135,6 @@ extension FeedProjection {
         return false
     }?.id
 
-    /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
-    /// specimen and a `#Preview` cannot be looking at two different failures.
     /// The markdown document in that feed — the one row whose panel opens as prose rather than as
     /// a patch, because the agent wrote the whole file and there is no change in it to read.
     static let previewDocumentCallID = previewRows.first { row in
@@ -146,6 +144,8 @@ extension FeedProjection {
         return EvidenceLanguage(path: file.path) == .markdown && call.kind == .create
     }?.id
 
+    /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
+    /// specimen and a `#Preview` cannot be looking at two different failures.
     static let previewFailedCallID = previewRows.first { row in
         guard case let .call(call) = row.content else { return false }
         return call.ending.hasFailed

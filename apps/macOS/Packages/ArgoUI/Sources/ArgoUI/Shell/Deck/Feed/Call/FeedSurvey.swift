@@ -58,9 +58,13 @@ struct FeedSurvey: Equatable, Sendable {
     /// No language on the header and one per step. A run of looking has no ONE language: the
     /// header stands for a count across several files, and picking the first file's would colour
     /// every patch under it after whichever read happened to come first.
+    /// The word the counts stand for. Never drawn on the line — `Searched 1 · Read 5` already says
+    /// it — but spoken by both the row and the panel it opens, which is why it is written once.
+    static let verb = "Looked at"
+
     var opened: FeedEvidence {
         FeedEvidence(
-            verb: "Looked at",
+            verb: Self.verb,
             symbol: ArgoSymbol.looked,
             address: label,
             language: nil,
