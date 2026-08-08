@@ -61,6 +61,13 @@ public struct CockpitPresentation: Equatable, Sendable {
         public let branch: String?
         public let access: Access
         public let status: SessionStatus
+        /// Everything the Session's transcript said, in order — the feed's whole input.
+        ///
+        /// The engine's own events rather than a second shape named for the shell: the surface
+        /// that draws them is `FeedProjection`, and a presentation that pre-digested the stream
+        /// would put the reading decisions somewhere no test can reach them. Empty by default, so
+        /// a Session named for a fact about the roster does not have to invent a transcript.
+        public let events: [TranscriptEvent]
 
         public init(
             id: String,
@@ -70,6 +77,7 @@ public struct CockpitPresentation: Equatable, Sendable {
             branch: String?,
             access: Access,
             status: SessionStatus,
+            events: [TranscriptEvent] = [],
         ) {
             self.id = id
             self.title = title
@@ -78,6 +86,7 @@ public struct CockpitPresentation: Equatable, Sendable {
             self.branch = branch
             self.access = access
             self.status = status
+            self.events = events
         }
     }
 
@@ -96,6 +105,14 @@ public struct CockpitPresentation: Equatable, Sendable {
 
     public var activeProject: Project? {
         projects.first { $0.id == activeProjectID }
+    }
+
+    /// The Session a selection names, if the roster still holds it. A selection is an id and the
+    /// roster moves under it, so every surface drawing the selected Session asks this rather than
+    /// carrying its own lookup — and gets the same `nil` when the id has aged out.
+    public func session(_ id: Session.ID?) -> Session? {
+        guard let id else { return nil }
+        return sessions.first { $0.id == id }
     }
 
     public init(

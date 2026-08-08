@@ -59,6 +59,7 @@ extension CockpitPresentation.Session {
             branch: session.branch,
             access: Access(provenance: session.provenance),
             status: session.status,
+            events: session.events,
         )
     }
 }

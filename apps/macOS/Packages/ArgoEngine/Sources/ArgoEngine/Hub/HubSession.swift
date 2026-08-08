@@ -12,6 +12,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var model: String?
     public private(set) var branch: String?
     public private(set) var headLeafUUID: String?
+    /// Everything the transcript said, in the order it said it — kept rather than folded away.
+    ///
+    /// The facts above are a fold over this stream, and a fold is lossy by construction: a roster
+    /// row can be derived from the prose, and the prose can never be derived back. Every surface
+    /// that reads a Session rather than counting one — the feed first — reads from here, so the
+    /// stream is retained whole and nothing decides on the Hub's side which kinds are worth
+    /// keeping. What a reader does not handle it ignores; what it was never given it cannot draw.
+    public private(set) var events: [TranscriptEvent] = []
     /// The newest moment the records report, where they report one.
     public private(set) var lastActivityAtMs: Int?
     /// The file's own last write, behind it — what a transcript whose records carry no time still
@@ -46,6 +54,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     }
 
     mutating func apply(_ event: TranscriptEvent) {
+        events.append(event)
         switch event {
         case .recordIdentity:
             break
@@ -93,6 +102,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             title = continuation.title
             hasPromptTitle = true
         }
+        // Appended, not merged: a resume chain is walked root-first, so the continuation's stream
+        // is the later half of one reading and belongs behind what came before it.
+        events += continuation.events
         cwd = continuation.cwd ?? cwd
         model = continuation.model ?? model
         branch = continuation.branch ?? branch

@@ -31,6 +31,16 @@ struct SessionsDeckTests {
         #expect(DeckZone.allCases.allSatisfy { !$0.title.isEmpty })
     }
 
+    /// The list is what is still UNBUILT, so a surface shipping means a case leaves it. Asserted
+    /// rather than left to review: a placeholder standing behind a real view is a second reading
+    /// of the same zone, and the one a screen reader would find first.
+    @Test
+    func `the feed is no longer a placeholder`() {
+        #expect(DeckZone.allCases.map(\.title) == [
+            "Session header", "Deck tabs", "Agents rail", "Minimap lane", "Dock",
+        ])
+    }
+
     @Test
     func `only a zone too narrow for its own name turns its mark`() {
         let turned = DeckZone.allCases.filter(\.marksVertically)

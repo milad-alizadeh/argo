@@ -23,6 +23,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case openProjectDrawer
     case deck
     case sessionsDeck
+    case feed
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -70,6 +71,14 @@ public struct SpecimenScreen: View {
             // The shell, not `SessionsDeck` — the assembled container is the plane plus its
             // zones, and "one opaque plane" is a claim about the plane.
             InstrumentDeckShell(room: .sessions)
+        case .feed:
+            // The deck at rest with a Session read into it, drawn through the same projection the
+            // shell uses. A specimen holding rows of its own would be evidence about a feed
+            // nobody is shown.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.rows(from: CockpitPresentation.Session.preview.events),
+            )
         }
     }
 }
@@ -170,5 +179,10 @@ private struct DeckSpecimen: View {
 
 #Preview("Specimen — the Sessions deck container") {
     SpecimenScreen(specimen: .sessionsDeck)
+        .frame(width: 1000, height: 620)
+}
+
+#Preview("Specimen — the feed at rest") {
+    SpecimenScreen(specimen: .feed)
         .frame(width: 1000, height: 620)
 }
