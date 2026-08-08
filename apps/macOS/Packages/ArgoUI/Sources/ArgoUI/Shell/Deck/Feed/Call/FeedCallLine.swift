@@ -50,10 +50,10 @@ struct FeedCallLine: View {
     /// every verb starts on the same vertical.
     private var mark: some View {
         Color.clear
-            .frame(width: ArgoFeedRow.callSymbolWidth, height: ArgoTypography.body.glyphSize)
+            .frame(width: ArgoFeedRow.callSymbolWidth, height: ArgoIconSize.inline.rawValue)
             .overlay {
                 if let symbol = markSymbol {
-                    ArgoGlyph(symbol, ArgoTypography.body)
+                    ArgoGlyph(symbol, .inline)
                 }
             }
             .foregroundStyle(
@@ -98,7 +98,7 @@ struct FeedCallLine: View {
 
     @ViewBuilder private var disclosure: some View {
         if call.disclosure == .available {
-            ArgoGlyph(indicator: ArgoSymbol.disclosureTrailing, height: ArgoLayout.disclosureHeight)
+            ArgoGlyph(ArgoSymbol.disclosureTrailing, .indicator)
                 .foregroundStyle(isOpen ? argo.color.interaction.accent : argo.color.text.disabled)
         }
     }

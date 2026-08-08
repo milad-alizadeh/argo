@@ -64,7 +64,7 @@ struct ProjectDrawerRow: View {
         HStack(spacing: ArgoSpacing.snug) {
             ArgoGlyph(
                 row.isReachable ? ArgoSymbol.project : ArgoSymbol.unreachableProject,
-                ArgoTypography.rowTitle,
+                .inline,
             )
             .foregroundStyle(argo.color.text.tertiary)
             VStack(alignment: .leading, spacing: ArgoSpacing.hair) {

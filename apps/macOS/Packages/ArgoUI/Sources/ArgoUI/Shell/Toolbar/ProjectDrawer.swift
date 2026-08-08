@@ -79,7 +79,7 @@ struct ProjectDrawer: View {
                 Label {
                     Text("Add Project…")
                 } icon: {
-                    ArgoGlyph(ArgoSymbol.addProject, ArgoTypography.rowTitle)
+                    ArgoGlyph(ArgoSymbol.addProject, .inline)
                 }
                 // The rows' own role, not a control role: the footer is the last item in the
                 // list's icon column, and a size of its own would break that column.

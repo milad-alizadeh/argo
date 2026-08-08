@@ -62,7 +62,7 @@ private struct EvidenceHeader: View {
             }
             Spacer(minLength: ArgoSpacing.snug)
             Button(action: dismiss) {
-                ArgoGlyph(ArgoSymbol.dismiss, ArgoTypography.control)
+                ArgoGlyph(ArgoSymbol.dismiss, .inline)
             }
             .buttonStyle(.plain)
             .foregroundStyle(argo.color.text.tertiary)

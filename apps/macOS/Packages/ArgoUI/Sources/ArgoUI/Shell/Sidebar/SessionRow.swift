@@ -48,7 +48,7 @@ struct SessionRow: View {
     private var trailingMarks: some View {
         HStack(spacing: ArgoSpacing.snug) {
             if row.showsLock {
-                Image(systemName: "lock")
+                ArgoGlyph("lock", .inline)
                     .foregroundStyle(argo.color.text.tertiary)
                     .accessibilityHidden(true)
             }

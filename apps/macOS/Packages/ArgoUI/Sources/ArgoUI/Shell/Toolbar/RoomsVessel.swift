@@ -38,7 +38,7 @@ private struct RoomTab: View {
             Label {
                 Text(room.title)
             } icon: {
-                ArgoGlyph(room.symbol, ArgoTypography.control)
+                ArgoGlyph(room.symbol, .control)
             }
             .labelStyle(.argo(ArgoTypography.control))
             .foregroundStyle(isSelected ? argo.color.text.primary : argo.color.text.tertiary)

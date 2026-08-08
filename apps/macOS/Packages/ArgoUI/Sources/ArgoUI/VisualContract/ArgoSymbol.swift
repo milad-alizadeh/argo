@@ -1,8 +1,8 @@
 /// The SF Symbols the shell draws, named for what they mean rather than for what they look like.
 ///
 /// A symbol is a token like a colour is: one place decides which mark stands for a Project, so the
-/// vessel and the drawer cannot drift into two marks for one thing. Size is not decided here — see
-/// `ArgoTextStyle.glyphSize`, which scales a mark to the label it sits on.
+/// vessel and the drawer cannot drift into two marks for one thing. Size is not decided here — a
+/// call site picks a rung of `ArgoIconSize`.
 public enum ArgoSymbol {
     /// A Project: a registered folder, which is what the drawer's path line says it is.
     public static let project = "folder"

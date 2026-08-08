@@ -29,7 +29,7 @@ struct ProjectRowMenu: View {
             }
             .help("Removes Argo's registration only. The folder on disk is not touched.")
         } label: {
-            ArgoGlyph(ArgoSymbol.projectMenu, ArgoTypography.rowTitle)
+            ArgoGlyph(ArgoSymbol.projectMenu, .inline)
         }
         // The contract reserves the brand hue for selection and focus, and a menu label takes the
         // control's accent — through the TINT, which a `foregroundStyle` on the label cannot reach.

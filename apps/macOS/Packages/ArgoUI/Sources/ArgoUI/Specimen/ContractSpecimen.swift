@@ -16,6 +16,7 @@ struct ContractSpecimen: View {
                 states
                 brand
                 type
+                icons
                 motion
             }
             .padding(ArgoSpacing.section)
@@ -46,6 +47,25 @@ struct ContractSpecimen: View {
             HStack(spacing: ArgoSpacing.comfortable) {
                 ForEach(Array(zip(ArgoOperationalState.allCases, stateWords)), id: \.1) {
                     SpecimenStatusChip(state: $0, label: $1)
+                }
+            }
+        }
+    }
+
+    /// Three rungs, each against the line it belongs on. The judgement this exists for is whether
+    /// a rung reads as a mark ON the line or as an object beside it — which no assertion can make.
+    private var icons: some View {
+        section("Icon scale — three rungs, picked by meaning") {
+            VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
+                ForEach(ArgoIconSize.ladder, id: \.name) { rung in
+                    HStack(spacing: ArgoSpacing.snug) {
+                        ArgoGlyph(ArgoSymbol.project, rung.size)
+                        ArgoGlyph(ArgoSymbol.branch, rung.size)
+                        ArgoGlyph(ArgoSymbol.disclosure, rung.size)
+                        Text("\(rung.name) · \(Int(rung.size.rawValue))pt")
+                            .argoText(ArgoTypography.machineCaption)
+                            .foregroundStyle(argo.color.text.tertiary)
+                    }
                 }
             }
         }
