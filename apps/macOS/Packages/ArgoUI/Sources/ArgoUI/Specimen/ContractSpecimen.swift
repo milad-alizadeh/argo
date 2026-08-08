@@ -15,6 +15,7 @@ struct ContractSpecimen: View {
                 surfaces
                 states
                 brand
+                scale
                 type
                 icons
                 motion
@@ -52,10 +53,10 @@ struct ContractSpecimen: View {
         }
     }
 
-    /// Three rungs, each against the line it belongs on. The judgement this exists for is whether
+    /// Two rungs, each against the line it belongs on. The judgement this exists for is whether
     /// a rung reads as a mark ON the line or as an object beside it — which no assertion can make.
     private var icons: some View {
-        section("Icon scale — three rungs, picked by meaning") {
+        section("Icon scale — two rungs, picked by meaning") {
             VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
                 ForEach(ArgoIconSize.ladder, id: \.name) { rung in
                     HStack(spacing: ArgoSpacing.snug) {
@@ -82,8 +83,26 @@ struct ContractSpecimen: View {
         }
     }
 
+    /// The scale itself, every rung at its own size. Named as the HIG names them, because it IS the
+    /// HIG's scale — this is where a rung is judged against the one above it rather than asserted.
+    private var scale: some View {
+        section("Type scale — the platform's own, from largeTitle to caption2") {
+            VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
+                ForEach(ArgoTypeScale.ladder, id: \.name) { rung in
+                    HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.loose) {
+                        Text("\(rung.name) · \(Int(rung.rung.size))pt")
+                            .argoText(ArgoTypography.machineCaption)
+                            .foregroundStyle(argo.color.text.tertiary)
+                            .frame(width: 132, alignment: .leading)
+                        Text("The record of a Session").argoText(rung.rung)
+                    }
+                }
+            }
+        }
+    }
+
     private var type: some View {
-        section("Type — SF Pro for everything the interface says, SF Mono for machine facts") {
+        section("Type roles — SF Pro for what the interface says, SF Mono for machine facts") {
             VStack(alignment: .leading, spacing: ArgoSpacing.base) {
                 ForEach(ArgoTypography.all, id: \.name) { role in
                     HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.loose) {

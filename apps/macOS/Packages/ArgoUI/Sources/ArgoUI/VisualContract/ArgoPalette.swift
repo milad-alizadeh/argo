@@ -158,12 +158,14 @@ public extension ArgoPalette {
     struct StateRoles: Sendable {
         /// A turn is in progress.
         public let running: ArgoColor
-        /// Idle, and the completed/quiet end of the vocabulary. Deliberately not green:
-        /// finished work should recede, not celebrate.
+        /// Idle, and the completed/quiet end of the vocabulary. Deliberately not green: finished
+        /// work should recede, not celebrate. That holds for a single call as much as for a
+        /// Session — a feed of green ticks is a feed with nothing standing out in it.
         public let idle: ArgoColor
         /// Needs you — a permission prompt, a question, a reconnecting chip.
         public let attention: ArgoColor
-        /// Failed, refused, errored.
+        /// Failed, refused, errored. The one outcome that gets a colour, because it is the one
+        /// worth finding down a long feed.
         public let failure: ArgoColor
 
         public init(

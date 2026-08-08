@@ -38,36 +38,33 @@ struct CallVocabularyTests {
         #expect(diff.destination == "Sources/ArgoUI/VisualContract/Tint.swift")
     }
 
-    /// The status alone. What went wrong is the whole output's to say, and the surface that shows
-    /// it shows all of it — so nothing here picks a line to stand for the failure.
+    /// A failure is carried WHOLE. Nothing picks a line out of it any more: the surface that shows
+    /// a failure shows all of it, and every rule for choosing one line was a rule about which part
+    /// of a stack trace explains it — a reading Argo is not entitled to make.
     @Test
-    func `a failed command's exit line is read, and the rest is left whole`() async throws {
+    func `a failed command's output is kept whole, with nothing lifted out of it`() async throws {
         let outcomes = try await Fixture.events("callVocabulary").outcomes()
         guard case let .output(output) = try #require(outcomes["call-build"]?.result) else {
             Issue.record("a failed command carries what it printed")
             return
         }
 
-        #expect(commandExitStatus(in: output.text) == "Exit code 65")
+        #expect(output.text.hasPrefix("Exit code 65"))
         #expect(output.text.contains("cannot find type 'ArgoColour' in scope"))
     }
 
+    /// A read's payload is the file as the agent saw it, and it is held for the same reason media
+    /// bytes are: re-reading the path later shows what the file says NOW, which after three edits
+    /// in one turn is a different file.
     @Test
-    func `a failure the host opened with no exit line claims no status`() {
-        #expect(commandExitStatus(in: "File does not exist.") == nil)
-        #expect(commandExitStatus(in: "   \n\n") == nil)
-    }
+    func `a successful read keeps what the agent was looking at`() async throws {
+        let outcomes = try await Fixture.events("callVocabulary").outcomes()
+        guard case let .output(output) = try #require(outcomes["call-read"]?.result) else {
+            Issue.record("a read carries the content it returned")
+            return
+        }
 
-    /// Anchored at both ends: a line that merely mentions an exit code is not the exit line.
-    @Test
-    func `only a line that IS the exit line is read as one`() {
-        #expect(commandExitStatus(in: "Exit code 1\n") == "Exit code 1")
-        #expect(commandExitStatus(in: "make: Exit code 1 was returned") == nil)
-    }
-
-    @Test
-    func `a command's outcome is the last line it actually printed`() {
-        #expect(commandOutcome(in: "one\ntwo\n\n  \n") == "two")
-        #expect(commandOutcome(in: "  \n") == nil)
+        #expect(output.tier == .direct)
+        #expect(output.text.contains("public enum ArgoSymbol"))
     }
 }

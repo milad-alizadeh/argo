@@ -41,7 +41,7 @@ struct ProjectVessel: View {
                 .argoText(ArgoTypography.rowTitle)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            ArgoGlyph(ArgoSymbol.disclosure, .indicator)
+            ArgoGlyph(ArgoSymbol.disclosure, .inline)
         }
         .foregroundStyle(argo.color.text.primary)
         .frame(maxWidth: ArgoLayout.projectVesselMaximumWidth)

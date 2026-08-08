@@ -28,15 +28,29 @@ public enum ArgoLayout {
     // measurements, so the pixels are the only source for these.
     public static let deckHeaderHeight: CGFloat = 56
     public static let deckTabSlotHeight: CGFloat = 40
+    /// Where the rail opens. It is a starting width now rather than a fixed one — the seam beside
+    /// it moves.
     public static let agentsRailWidth: CGFloat = 256
-    public static let minimapLaneWidth: CGFloat = 56
+    /// Xcode's measure, near enough. The lane was 56 while it held a placeholder, which is wide
+    /// enough for a label turned on its side and not for a map of a file.
+    public static let minimapLaneWidth: CGFloat = 112
     public static let deckDockHeight: CGFloat = 40
+
+    /// How far the rail may be dragged. It stops well before nothing: a zone dragged shut is a
+    /// surface with no way back except guessing where its seam went.
+    public static let railWidths: ClosedRange<CGFloat> = 180 ... 400
+    /// The narrowest the feed is allowed to be squeezed to by its neighbours. Under this a line of
+    /// prose stops being a line and the column stops being worth reading.
+    public static let feedMinimumWidth: CGFloat = 320
+    /// A draggable seam's hit area. The line stays a hairline; this is the width of the invisible
+    /// strip over it, which is what a pointer actually has to find.
+    public static let seamGrabWidth: CGFloat = 9
 
     /// The evidence panel, opened by a call in the feed.
     ///
-    /// It takes the Agents rail's width AND whatever the feed has over its reading measure, which
-    /// is the one arrangement that costs the feed nothing it was using: prose is capped at the
-    /// measure, so every point past it was already empty column. The rail goes because a panel
-    /// narrower than this stops being able to show a line of output without wrapping it.
+    /// It opens at HALF of the rail-and-feed span — everything the deck has that is not the minimap
+    /// — and is dragged from there. Narrower than this floor it stops being able to show a line of
+    /// output without wrapping it, which is the one thing it exists to do.
     public static let evidencePanelMinimumWidth: CGFloat = 320
+    public static let evidencePanelShare: CGFloat = 0.5
 }

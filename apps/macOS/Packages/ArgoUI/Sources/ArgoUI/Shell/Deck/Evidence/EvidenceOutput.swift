@@ -12,21 +12,14 @@ struct EvidenceOutput: View {
     let output: OutputEvidence
 
     var body: some View {
-        ScrollView([.vertical, .horizontal]) {
-            Text(output.text)
-                .argoText(ArgoTypography.machine)
-                .foregroundStyle(argo.color.text.secondary)
-                .textSelection(.enabled)
-                .lineSpacing(ArgoFeedRow.machineLineSpacing)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(ArgoSpacing.comfortable)
-        }
-        // Output shorter than the panel sits at the TOP of it. A scroll view centres content it
-        // does not have to scroll, which put a four-line build failure in the middle of an empty
-        // pane — reading as a caption rather than as the beginning of a stream.
-        .defaultScrollAnchor(.topLeading)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .accessibilityLabel("Output")
+        Text(output.text)
+            .argoMono(.body)
+            .foregroundStyle(argo.color.text.secondary)
+            .textSelection(.enabled)
+            .lineSpacing(ArgoFeedRow.machineLineSpacing)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(.horizontal, ArgoSpacing.comfortable)
+            .accessibilityLabel("Output")
     }
 }
 

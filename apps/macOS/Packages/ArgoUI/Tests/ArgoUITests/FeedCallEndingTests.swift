@@ -2,14 +2,16 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// How a call ended, and what the row is entitled to say about it — which is one line, whatever
-/// happened. The rest is the evidence panel's, and these are the claims that keep the two apart.
+/// How a call ended, and what the row is entitled to say about it — which is nothing, in words. The
+/// ending is drawn as the ink of the line and a mark after it; everything the record actually said
+/// is the panel's. These are the claims that keep the two apart.
 @Suite("Feed call ending")
 struct FeedCallEndingTests {
-    /// The row keeps its ONE line whatever went wrong. What the command printed does not appear
-    /// there at any length — the exit status is the whole of what the sentence says about it.
+    /// Not one line of the output reaches the row any more, the exit line included. Every rule for
+    /// choosing which line stands for a failure was Argo deciding which part of a stack trace
+    /// explains it — and the panel shows all of it, so there was never a reader for the extract.
     @Test
-    func `a failed command carries its exit status and none of its output`() throws {
+    func `a failed command says so, and none of its output appears on the row`() throws {
         let printed = "Exit code 65\n\nChip.swift:88:7: error: cannot convert value\n"
             + "    to expected argument type\n** BUILD FAILED **"
         let call = try #require(FeedFixture.calls(in: [
@@ -22,16 +24,16 @@ struct FeedCallEndingTests {
             .toolCallOutcome(FeedFixture.failed("build", printing: printed)),
         ]).first)
 
-        #expect(call.ending == .failed(status: "Exit code 65"))
-        #expect(call.ending.outcome == "Exit code 65")
+        #expect(call.ending == .failed)
         // Whole and unabridged, and only behind the disclosure.
-        #expect(call.evidence == .output(OutputEvidence(tier: .direct, text: printed)))
+        #expect(call.evidence == [.output(OutputEvidence(tier: .direct, text: printed))])
     }
 
-    /// Something has to say the call went wrong where the host wrote no status, and a red mark
-    /// alone is a difference a reader who cannot see it loses entirely.
+    /// A failure that printed nothing is still a failure, and it is now the ROW that says so: the
+    /// line takes the failure ink and a cross. There is no word for Argo to put there instead,
+    /// which is the point — "Error" was Argo talking over a record that said nothing.
     @Test
-    func `a failure the host gave no exit line still reads as an error`() {
+    func `a failure the host printed nothing for reads as failed and opens onto nothing`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call(
                 "build",
@@ -42,15 +44,12 @@ struct FeedCallEndingTests {
             .toolCallOutcome(FeedFixture.failed("build", printing: nil)),
         ])
 
-        #expect(calls.first?.ending == .failed(status: nil))
-        #expect(calls.first?.ending.outcome == "Error")
-        #expect(calls.first?.ending.hasFailed == true)
+        #expect(calls.first?.ending == .failed)
+        #expect(calls.first?.disclosure == FeedCall.Disclosure.none)
     }
 
-    /// One line, and it is the command's OWN last one — not a count of what came before it, which
-    /// is the moment the feed would start writing its own summary of a record it can only read.
     @Test
-    func `a call that succeeded reduces to the last line it printed`() {
+    func `a command that came back good is a success, and keeps what it printed`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call("run", tool: "Bash", kind: .execute, naming: "swift test")),
             .toolCallOutcome(FeedFixture.answered(
@@ -63,20 +62,9 @@ struct FeedCallEndingTests {
             )),
         ])
 
-        #expect(calls.first?.ending == .succeeded(outcome: "Executed 151 tests, with 0 failures"))
+        #expect(calls.first?.ending == .succeeded)
         #expect(calls.first?.ending.hasFailed == false)
-    }
-
-    /// A successful read's payload is the whole file, so the engine keeps none of it. The row says
-    /// the read happened and claims nothing about what came back.
-    @Test
-    func `a call whose result the engine kept nothing of claims no outcome`() {
-        let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("read", tool: "Read", kind: .read, naming: "Token.swift")),
-            .toolCallOutcome(FeedFixture.answered("read", nil)),
-        ])
-
-        #expect(calls.first?.ending == .succeeded(outcome: nil))
+        #expect(calls.first?.disclosure == .available)
     }
 
     /// A call the record has not answered yet HAPPENED, and it is a row. Reading it as a success
@@ -86,7 +74,7 @@ struct FeedCallEndingTests {
         let calls = FeedFixture.read("Token.swift")
 
         #expect(calls.first?.ending == .pending)
-        #expect(calls.first?.ending.outcome == nil)
+        #expect(calls.first?.ending.spoken == "still running")
     }
 
     // MARK: - What opens
@@ -115,7 +103,25 @@ struct FeedCallEndingTests {
         ])
 
         #expect(calls.map(\.disclosure) == [.available, .none, .none])
-        #expect(calls.map { $0.evidence != nil } == [true, false, false])
+        #expect(calls.map { !$0.evidence.isEmpty } == [true, false, false])
+    }
+
+    /// A panel that opens onto "nothing was kept of this call" is a click the feed asked for and
+    /// then wasted. A result with nothing in it is no result: the row stays, unopenable.
+    @Test
+    func `a result with nothing in it is not something to open`() {
+        let calls = FeedFixture.calls(in: [
+            .toolCall(FeedFixture.call("edit", tool: "Edit", kind: .edit, naming: "Feed.swift")),
+            // A mutation whose patch nothing could read — a binary file, an unparsed shape.
+            .toolCallOutcome(FeedFixture.answered("edit", FeedFixture.patch(
+                .modify,
+                added: 0,
+                removed: 0,
+                hunks: [],
+            ))),
+        ])
+
+        #expect(calls.first?.disclosure == FeedCall.Disclosure.none)
     }
 
     /// The panel is where a mutation's patch is read, so a projection that kept only what the ROW
@@ -129,6 +135,6 @@ struct FeedCallEndingTests {
         ]).first)
 
         #expect(call.churn == FeedCall.Churn(added: 1, removed: 1))
-        #expect(call.evidence == patch)
+        #expect(call.evidence == [patch])
     }
 }

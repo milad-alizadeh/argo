@@ -3,9 +3,14 @@ import SwiftUI
 
 /// A call, drawn as one line of type with a mark on it.
 ///
-/// One line at any window width, and one line WHATEVER happened: a failure is marked rather than
-/// explained here, because a feed that prints what went wrong stops being a feed the moment a
-/// stack trace lands in it. What went wrong is the panel's, whole and verbatim.
+/// One line at any window width, and one line WHATEVER happened. How it went is said in the ink of
+/// the whole line and a mark after it — never in words: a feed that prints what a command said
+/// stops being a feed the moment a stack trace lands in it, and "Error" is Argo talking over a
+/// record that already has its own account of the failure. That account is the panel's, whole.
+///
+/// Every part of the sentence is set on ONE rung, interface and mono alike. It was assembled from
+/// four — a 13pt verb, an 11pt qualifier, an 11.5pt command and a 10.5pt outcome — which is a line
+/// that looks made out of leftovers however carefully each piece was chosen.
 struct FeedCallLine: View {
     @Environment(\.argo) private var argo
 
@@ -31,41 +36,43 @@ struct FeedCallLine: View {
             mark
             Text(call.kind.verb)
                 .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(verdict ?? argo.color.text.tertiary)
             FeedCallSubject(
                 subject: call.subject,
                 destination: call.kind.destination,
+                tint: verdict,
                 isOpen: isOpen,
             )
+            repeats
             churn
-            outcome
             disclosure
         }
         .lineLimit(1)
     }
 
-    /// The mark takes the failure ink, which is how a failed call announces itself: the words stay
-    /// the words, and a red verb would read as a different verb. The column is drawn as an empty
-    /// one where there is no mark, not skipped — a run of calls reads as one piece of work because
-    /// every verb starts on the same vertical.
+    /// The kind's own mark, always — a failure recolours the line rather than replacing what it
+    /// says happened. The column is drawn as an empty one where there is no mark, not skipped: a
+    /// run of calls reads as one piece of work because every verb starts on the same vertical.
     private var mark: some View {
         Color.clear
             .frame(width: ArgoFeedRow.callSymbolWidth, height: ArgoIconSize.inline.rawValue)
             .overlay {
-                if let symbol = markSymbol {
+                if let symbol = call.kind.symbol {
                     ArgoGlyph(symbol, .inline)
                 }
             }
-            .foregroundStyle(
-                call.ending.hasFailed ? argo.color.state.failure : argo.color.text.disabled,
-            )
+            .foregroundStyle(verdict ?? argo.color.text.disabled)
     }
 
-    /// A failure takes its OWN mark rather than a tinted version of its kind's. Colour alone is
-    /// not a reading: it is the one difference a reader who cannot see it would lose entirely, and
-    /// this row's whole account of the failure is now the mark and one word.
-    private var markSymbol: String? {
-        call.ending.hasFailed ? ArgoSymbol.callFailed : call.kind.symbol
+    /// How many calls this line stands for, where it stands for more than one. `×3` and not "3
+    /// edits": the verb already said what they were.
+    @ViewBuilder private var repeats: some View {
+        if call.repeats > 1 {
+            Text("×\(call.repeats)")
+                .argoMono(.body)
+                .monospacedDigit()
+                .foregroundStyle(argo.color.text.tertiary)
+        }
     }
 
     @ViewBuilder private var churn: some View {
@@ -78,33 +85,31 @@ struct FeedCallLine: View {
                     Text("−\(churn.removed)").foregroundStyle(argo.color.diff.removed)
                 }
             }
-            .argoText(ArgoTypography.machine)
+            .argoMono(.body)
             .monospacedDigit()
-        }
-    }
-
-    /// What the call produced, reduced to one line of its own output — the last line a command
-    /// printed, or the host's exit line where it failed. In the failure ink when it failed, so the
-    /// row says so twice and never only in colour.
-    @ViewBuilder private var outcome: some View {
-        if let outcome = call.ending.outcome {
-            Text(outcome)
-                .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(
-                    call.ending.hasFailed ? argo.color.state.failure : argo.color.text.tertiary,
-                )
         }
     }
 
     @ViewBuilder private var disclosure: some View {
         if call.disclosure == .available {
-            ArgoGlyph(ArgoSymbol.disclosureTrailing, .indicator)
+            ArgoGlyph(ArgoSymbol.disclosureTrailing, .inline)
                 .foregroundStyle(isOpen ? argo.color.interaction.accent : argo.color.text.disabled)
         }
     }
 
+    /// The ink the whole line takes, or `nil` for everything that did not fail.
+    ///
+    /// A failure is the ONLY outcome with a colour. A tick beside every successful call and a green
+    /// line under it is a feed where the fourteen ordinary rows shout as loudly as the one that
+    /// broke — success is the default a feed can assume, and marking it says nothing. What a
+    /// failure says instead, for a reader who cannot see the red, is its accessibility label.
+    private var verdict: ArgoColor? {
+        call.ending.hasFailed ? argo.color.state.failure : nil
+    }
+
     private var spoken: String {
-        [call.kind.verb, call.subject.spoken, call.ending.outcome]
+        let count = call.repeats > 1 ? "\(call.repeats) times" : nil
+        return [call.kind.verb, call.subject.spoken, count, call.ending.spoken]
             .compactMap(\.self)
             .joined(separator: " ")
     }

@@ -11,7 +11,10 @@ struct FeedCallSubject: View {
     let subject: FeedCall.Subject
     /// Where a moved file went. A qualifier rather than a second sentence: the verb already said
     /// what happened, and this says where to.
-    let destination: String?
+    var destination: String?
+    /// The ink the whole line is taking, where it has claimed one — a command that passed, a call
+    /// that failed. The line owns that claim, so the subject is told it rather than deciding it.
+    var tint: ArgoColor?
     /// Whether this row's evidence is the panel's content. The subject is what carries it, because
     /// the subject is what the panel is showing.
     var isOpen = false
@@ -35,10 +38,11 @@ struct FeedCallSubject: View {
     }
 
     /// A command reads as machine text on a ground of its own, because it is the one subject a
-    /// reader might retype.
+    /// reader might retype. On the same rung as the words around it: the mono face already tells
+    /// them apart, and a second size was the line's own type scale disagreeing with itself.
     private func typed(_ command: String) -> some View {
-        Text(command)
-            .argoText(ArgoTypography.machine)
+        Text(FeedCommandLine.head(of: command))
+            .argoMono(.body)
             .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.tight)
             .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.marker))
@@ -50,16 +54,18 @@ struct FeedCallSubject: View {
             .foregroundStyle(ink)
     }
 
-    /// The open row's subject takes the brand hue — the same Ion Blue that marks a selected row in
-    /// the roster, and for the same reason: it is a selection, not a status.
+    /// A verdict outranks the selection, which outranks the ordinary reading: a failed row stays
+    /// red while it is open, because that is the more important of the two things it is saying.
     private var ink: ArgoColor {
-        isOpen ? argo.color.interaction.accentBright : argo.color.text.secondary
+        tint ?? (isOpen ? argo.color.interaction.accentBright : argo.color.text.secondary)
     }
 
+    /// A qualifier is quieter in INK and not in size — it is there to disambiguate rather than to
+    /// be read, and shrinking it was how the line ended up with three sizes on it.
     @ViewBuilder private func quiet(_ text: String?) -> some View {
         if let text {
             Text(text)
-                .argoText(ArgoTypography.caption)
+                .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.disabled)
         }
     }

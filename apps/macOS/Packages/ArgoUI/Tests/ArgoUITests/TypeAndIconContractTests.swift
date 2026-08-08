@@ -24,11 +24,43 @@ struct TypeAndIconContractTests {
         #expect(machineRoles == ["machine", "machineEmphasis", "machineCaption"])
     }
 
+    /// The scale is Apple's macOS table, not a ladder of Argo's own — which is what makes it
+    /// reusable: `body` means the same thing on every surface and in every other Mac app. Anchored
+    /// on two documented values rather than all eleven, so this fails if the enum stops being the
+    /// HIG's and passes without restating it.
     @Test
-    func `every role sits on the dense ladder the cockpit is built at`() {
-        for role in ArgoTypography.all {
-            #expect(role.style.size >= 10 && role.style.size <= 20)
+    func `the scale is the platform's, at the platform's sizes`() {
+        #expect(ArgoTypeScale.allCases.count == 11)
+        #expect(ArgoTypeScale.body.size == 13)
+        #expect(ArgoTypeScale.caption1.size == 10)
+    }
+
+    /// Two half-point rungs used to exist — `11.5` and `10.5`. A rung nobody can see is a rung
+    /// nobody chose.
+    @Test
+    func `every rung is a whole point`() {
+        for rung in ArgoTypeScale.allCases {
+            #expect(rung.size == rung.size.rounded())
         }
+    }
+
+    /// A role is a NAME for a rung, never a size of its own. The app had eleven sizes when a role
+    /// could carry a number; it cannot now, and this is the claim that says so out loud.
+    @Test
+    func `no role carries a size the scale does not have`() {
+        let scale = Set(ArgoTypeScale.allCases.map(\.size))
+
+        for role in ArgoTypography.all {
+            #expect(scale.contains(role.style.size))
+        }
+    }
+
+    /// The feed is the one surface read from start to finish. At the shell's own density its prose
+    /// read as a footnote to the chrome around it.
+    @Test
+    func `the feed's prose is set above the density the shell is packed at`() {
+        #expect(ArgoFeedRow.proseRung.size > ArgoTypography.body.size)
+        #expect(ArgoFeedRow.proseLineSpacing > 0)
     }
 
     // MARK: - The icon scale
@@ -38,7 +70,7 @@ struct TypeAndIconContractTests {
     /// long is picked by proximity rather than by meaning.
     @Test
     func `the icon scale stays short enough to pick a rung by what it means`() {
-        #expect(ArgoIconSize.allCases.count <= 4)
+        #expect(ArgoIconSize.allCases.count <= 3)
     }
 
     @Test
@@ -68,10 +100,10 @@ struct TypeAndIconContractTests {
         #expect(ArgoIconSize.control.rawValue <= ArgoTypography.control.size + 1)
     }
 
-    /// An indicator is punctuation. At label size a chevron reads as a word, which is exactly the
-    /// bug the separate rung exists to prevent.
+    /// A chevron is a control, not punctuation. It had a rung of its own at well under label size,
+    /// and what that bought was a disclosure nobody could see they were allowed to click.
     @Test
-    func `an indicator is well under the smallest rung that names anything`() {
-        #expect(ArgoIconSize.indicator.rawValue < ArgoIconSize.inline.rawValue / 1.5)
+    func `a pointer is drawn at the same size as the marks it shares a line with`() {
+        #expect(ArgoIconSize.allCases.allSatisfy { $0.rawValue >= ArgoIconSize.inline.rawValue })
     }
 }

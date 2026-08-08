@@ -15,17 +15,12 @@ struct EvidenceDiff: View {
         if diff.hunks.isEmpty {
             EvidenceUnreadablePatch(diff: diff)
         } else {
-            ScrollView([.vertical, .horizontal]) {
-                VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-                    ForEach(Array(diff.hunks.enumerated()), id: \.offset) { _, hunk in
-                        EvidenceHunk(hunk: hunk)
-                    }
+            VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
+                ForEach(Array(diff.hunks.enumerated()), id: \.offset) { _, hunk in
+                    EvidenceHunk(hunk: hunk)
                 }
-                .padding(.vertical, ArgoSpacing.comfortable)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .defaultScrollAnchor(.topLeading)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
             .accessibilityLabel("Patch")
         }
     }
@@ -65,12 +60,12 @@ private struct EvidenceDiffLine: View {
     var body: some View {
         HStack(alignment: .top, spacing: ArgoSpacing.snug) {
             Text(number.map(String.init) ?? "")
-                .argoText(ArgoTypography.machineCaption)
+                .argoMono(.body)
                 .monospacedDigit()
                 .foregroundStyle(argo.color.text.disabled)
                 .frame(width: ArgoFeedRow.diffGutterWidth, alignment: .trailing)
             Text(line.text)
-                .argoText(ArgoTypography.machine)
+                .argoMono(.body)
                 .foregroundStyle(ink)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -112,7 +107,7 @@ private struct EvidenceUnreadablePatch: View {
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.secondary)
             Text(diff.change.rawValue)
-                .argoText(ArgoTypography.machineCaption)
+                .argoMono(.body)
                 .foregroundStyle(argo.color.text.disabled)
         }
         .padding(ArgoSpacing.comfortable)
