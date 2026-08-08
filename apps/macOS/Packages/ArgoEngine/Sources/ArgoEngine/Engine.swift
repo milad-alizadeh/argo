@@ -1,13 +1,19 @@
 import Foundation
 
-/// The engine ports the app composes: transcript observation and repository checkout reads.
+/// The engine ports the app composes: transcript observation, repository checkout and process
+/// liveness reads.
 public struct Engine: Sendable {
     private let readCheckout: CheckoutRead
+    private let readLiveness: LivenessRead
 
-    /// The `git`-backed read is the app's adapter; a caller with no repository to read supplies its
-    /// own.
-    public init(readCheckout: @escaping CheckoutRead = gitCheckoutRead) {
+    /// The `git`- and `ps`-backed reads are the app's adapters; a caller with no repository and no
+    /// process table to read supplies its own.
+    public init(
+        readCheckout: @escaping CheckoutRead = gitCheckoutRead,
+        readLiveness: @escaping LivenessRead = processLivenessRead,
+    ) {
         self.readCheckout = readCheckout
+        self.readLiveness = readLiveness
     }
 
     public func observeTranscript(at url: URL) throws -> TranscriptObservation {
@@ -57,5 +63,10 @@ public struct Engine: Sendable {
 
     public func checkout(at url: URL) async -> CheckoutProjection {
         await readCheckout(url)
+    }
+
+    /// The working directories a live CLI is running in, right now.
+    public func liveCwds() async -> Set<String> {
+        await readLiveness()
     }
 }

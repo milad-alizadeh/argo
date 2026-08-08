@@ -4,9 +4,13 @@ import Foundation
 public struct HubSession: Equatable, Identifiable, Sendable {
     public let id: String
     public let sourceURL: URL
-    /// A Session read off a transcript is `external` by construction: the file is all Argo has of
-    /// it, and there is no PTY behind a file. `managed` arrives with the spawner that owns one.
-    public let provenance: SessionProvenance
+    /// Which posture of the `managed | external` axis this Session is on. Read off the ownership
+    /// registry when the Hub publishes the roster, never asserted here: a transcript file says
+    /// nothing about who spawned the CLI that wrote it.
+    public internal(set) var provenance: SessionProvenance = .external
+    /// What Argo can see of the process behind the transcript. Set by the Hub from its own liveness
+    /// read; quiet until one has been taken, because ambiguity resolves toward the quieter state.
+    public internal(set) var liveness: SessionLiveness = .quiet
     public private(set) var title: String
     public private(set) var cwd: String?
     public private(set) var model: String?
@@ -14,33 +18,29 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var headLeafUUID: String?
     /// The newest moment the records report, where they report one.
     public private(set) var lastActivityAtMs: Int?
+    /// The oldest, which is when this Session started — the fact a claim window is matched against.
+    public private(set) var startedAtMs: Int?
     /// The file's own last write, behind it — what a transcript whose records carry no time still
     /// has to say about when it ran.
     private var recordedAtMs: Int?
     private var hasPromptTitle = false
     private var hasExplicitTitle = false
-    private var turnOpen = false
-    private var lastStop: StopReason?
+    private(set) var turnOpen = false
+    private(set) var lastStop: StopReason?
+    /// The `AskUserQuestion` calls in the open Turn that no result has answered.
+    private(set) var pendingAsks: Set<String> = []
 
-    /// The rollup, derived on read: the Turn boundaries are what the transcript says, and the
-    /// status is only ever a reading of them.
-    public var status: SessionStatus {
-        SessionStatus.observed(turnOpen: turnOpen, lastStop: lastStop)
-    }
-
-    /// What the roster sorts on, newest first. `nil` where neither the records nor the file system
-    /// could say when this Session last ran — sorted last rather than given a guessed time.
-    var orderingKeyMs: Int? {
+    /// When this Session was last seen to run: the newest moment its records report, and behind
+    /// that the file's own last write. `nil` where neither could say — which is why the roster
+    /// sorts such a Session last rather than giving it a guessed time, and why liveness reads it
+    /// as uncorroborated rather than as recent.
+    var lastSeenAtMs: Int? {
         lastActivityAtMs ?? recordedAtMs
     }
 
-    public init(
-        observation: TranscriptObservation,
-        provenance: SessionProvenance = .external,
-    ) {
+    public init(observation: TranscriptObservation) {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
-        self.provenance = provenance
         self.title = observation.sourceURL.deletingPathExtension().lastPathComponent
         self.recordedAtMs = observation.modifiedAt.map { Int($0.timeIntervalSince1970 * 1000) }
     }
@@ -67,9 +67,15 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case let .turnEnded(reason):
             turnOpen = false
             lastStop = reason
+            // A question the Turn it was asked in has left behind is not still waiting on anyone.
+            pendingAsks = []
         case let .toolCall(call):
+            if call.name == HubSession.askTool {
+                pendingAsks.insert(call.id)
+            }
             observeActivity(call.atMs)
         case let .toolCallOutcome(outcome):
+            pendingAsks.remove(outcome.id)
             observeActivity(outcome.endedAtMs)
         case let .compaction(atMs):
             observeActivity(atMs)
@@ -83,6 +89,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     private mutating func observeActivity(_ atMs: Int?) {
         guard let atMs else { return }
         lastActivityAtMs = max(lastActivityAtMs ?? atMs, atMs)
+        startedAtMs = min(startedAtMs ?? atMs, atMs)
     }
 
     mutating func mergeContinuation(_ continuation: HubSession) {
@@ -98,12 +105,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         branch = continuation.branch ?? branch
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
         observeActivity(continuation.lastActivityAtMs)
+        observeActivity(continuation.startedAtMs)
         recordedAtMs = continuation.recordedAtMs.map { max(recordedAtMs ?? $0, $0) } ?? recordedAtMs
         // A resume file with no Turn in it yet says nothing about the chain, and taking its
         // silence would close the root's open Turn.
         if continuation.turnOpen || continuation.lastStop != nil {
             turnOpen = continuation.turnOpen
             lastStop = continuation.lastStop
+            pendingAsks = continuation.pendingAsks
         }
     }
 
