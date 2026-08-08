@@ -12,18 +12,25 @@ enum CompanionTool: String, CaseIterable {
 
     /// The status words the channel accepts, and what each one means in the domain.
     ///
-    /// A word outside this list reads `unknown` rather than the nearest guess — the degrade-down
-    /// rule applies to the channel exactly as it applies to a transcript.
+    /// One table, read both ways: it is the `enum` the tool's schema advertises AND the vocabulary
+    /// the reply is read against, so the two cannot drift into a word the agent is offered and
+    /// Argo then cannot understand.
+    ///
+    /// `unknown` is absent from it deliberately — it is what a word OUTSIDE the vocabulary reads
+    /// as, never something an agent can claim about itself.
+    static let statuses: KeyValuePairs<String, SessionStatus> = [
+        "running": .running,
+        "permission": .permission,
+        "asking": .asking,
+        "idle": .idle,
+        "stopped": .stopped,
+        "ended": .ended,
+    ]
+
+    /// A word outside the vocabulary reads `unknown` rather than the nearest guess — the
+    /// degrade-down rule applies to the channel exactly as it applies to a transcript.
     static func status(named word: String) -> SessionStatus {
-        switch word {
-        case "running": .running
-        case "permission": .permission
-        case "asking": .asking
-        case "idle": .idle
-        case "stopped": .stopped
-        case "ended": .ended
-        default: .unknown
-        }
+        statuses.first { $0.key == word }?.value ?? .unknown
     }
 
     var descriptor: [String: Any] {
@@ -65,9 +72,9 @@ enum CompanionTool: String, CaseIterable {
         }
     }
 
-    private static let statusWords = [
-        "running", "permission", "asking", "idle", "stopped", "ended",
-    ]
+    private static var statusWords: [String] {
+        statuses.map(\.key)
+    }
 
     private static func object(_ properties: [String: Any], required: [String]) -> [String: Any] {
         ["type": "object", "properties": properties, "required": required]

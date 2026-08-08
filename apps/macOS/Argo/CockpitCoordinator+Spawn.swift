@@ -11,23 +11,38 @@ extension CockpitCoordinator {
     func spawnSession() async {
         do {
             try await hub.spawnSession()
+        } catch let failure as AgentSpawnError {
+            report(detail: failure.detail)
         } catch {
-            report(spawnFailure: error)
+            report(detail: error.localizedDescription)
         }
     }
 
-    /// Every agent this window started, ended. The PTY dies with the process that owns it whether
-    /// or not this runs — this is what makes it happen at the moment the window closes rather than
-    /// leaving agents attached to a process on its way out.
+    /// Every agent this window started, ended.
     func endOwnedSessions() {
         hub.endOwnedSessions()
     }
 
-    private func report(spawnFailure error: any Error) {
+    /// End them on quit as well as on window close.
+    ///
+    /// ⌘Q with the window still open never runs the view's `onDisappear`, so without this the only
+    /// thing ending those PTYs is the kernel hanging up their side of the terminal as the process
+    /// dies — which is a thing that probably happens rather than a thing Argo did.
+    func endOwnedSessionsOnQuit() {
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main,
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.endOwnedSessions() }
+        }
+    }
+
+    private func report(detail: String) {
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = "Could not start a session"
-        alert.informativeText = (error as? AgentSpawnError)?.detail ?? error.localizedDescription
+        alert.informativeText = detail
         alert.runModal()
     }
 }

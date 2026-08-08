@@ -10,11 +10,13 @@ public struct CompanionInvitation: Sendable, Equatable {
     /// The materialized plugin's root — a real `.claude-plugin` directory, which is what makes this
     /// the companion PLUGIN rather than a bare MCP server.
     public let pluginRoot: String
-    /// The plugin's MCP declaration, passed on argv as well.
+    /// The plugin's MCP declaration, which is also what is passed on argv.
     ///
-    /// The same file serves both: `.mcp.json` is what a plugin installed from a marketplace is
-    /// loaded through, and `--mcp-config` is how this spawn loads the identical document without
-    /// one standing between them.
+    /// `--mcp-config`, not `--plugin-dir`. Both were tried against the real CLI: `--mcp-config`
+    /// registers the server (`mcp__argo__report_status` appears and the socket receives
+    /// `initialize`), while `--plugin-dir` over this same directory registers nothing — an
+    /// uninstalled plugin directory's `.mcp.json` is not read. The bundle around it is still the
+    /// artifact a marketplace would install (#6); today the flag is what does the work.
     public let mcpConfigPath: String
 
     public init(socketPath: String, pluginRoot: String, mcpConfigPath: String) {

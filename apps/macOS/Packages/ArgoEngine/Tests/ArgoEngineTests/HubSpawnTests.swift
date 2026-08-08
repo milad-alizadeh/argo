@@ -122,6 +122,32 @@ struct HubSpawnTests {
         #expect(fixture.hub.ownership.liveClaims.isEmpty)
     }
 
+    /// The spawns outlive a Project switch and their PTYs are meant to — what they must not do is
+    /// follow you into a Project they do not belong to.
+    @Test
+    func `a spawned row does not follow the window into another Project`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        _ = try await fixture.hub.spawnSession()
+        let elsewhere = fixture.root.appending(path: "elsewhere", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
+
+        await fixture.hub.connect(to: LaunchConfiguration(
+            projectURL: elsewhere,
+            transcriptURLs: [],
+        ))
+        let awayRoster = fixture.hub.sessions
+        await fixture.hub.connect(to: LaunchConfiguration(
+            projectURL: fixture.projectURL,
+            transcriptURLs: [],
+        ))
+
+        #expect(awayRoster.isEmpty)
+        // And it is still there — still owned, still steerable — when you come back.
+        #expect(fixture.hub.sessions.map(\.provenance) == [.managed])
+        await fixture.hub.disconnect()
+    }
+
     @Test
     func `a Hub with no process host cannot spawn`() async {
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp"))

@@ -55,9 +55,19 @@ public final class Hub {
     /// before any transcript does (#361) and stand down the moment the record they turned out to be
     /// is bound to their claim — so one agent is one row throughout, never two and never re-keyed.
     public var sessions: [HubSession] {
-        HubSessionChain.ordered(
-            join.sessions.map(observed) + spawns.values.map { observed(HubSession(spawn: $0)) },
-        )
+        HubSessionChain.ordered(join.sessions.map(observed) + provisionalSessions)
+    }
+
+    /// The spawned rows belonging to the Project this Hub is currently on.
+    ///
+    /// Scoped, because the spawns outlive a Project switch and their PTYs are meant to: an agent
+    /// Argo started in another repo is still running and still steerable when you go back to it.
+    /// What it must not do is appear in a roster it does not belong to — the join is re-pointed on
+    /// every switch, and these would otherwise be the one thing that never was.
+    private var provisionalSessions: [HubSession] {
+        spawns.values
+            .filter { ProjectScope.contains(cwd: $0.cwd, projectURL: project.url) }
+            .map { observed(HubSession(spawn: $0)) }
     }
 
     /// Which Sessions this Argo process owns a PTY for. Empty until something spawns one, which is
@@ -65,7 +75,7 @@ public final class Hub {
     public let ownership = SessionOwnership()
 
     /// The PTYs behind those claims. Held for the life of this process, and ended with it.
-    public let terminals = AgentTerminals()
+    let terminals = AgentTerminals()
 
     /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
     /// spawn reaches the roster in the same update that opened its PTY.

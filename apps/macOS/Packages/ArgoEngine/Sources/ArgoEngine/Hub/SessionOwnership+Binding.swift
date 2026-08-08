@@ -6,7 +6,7 @@ import Foundation
 /// one act that puts those together, and it is what lets the row published at spawn stand down
 /// instead of standing beside the Session it turned out to be (#361).
 @MainActor
-public extension SessionOwnership {
+extension SessionOwnership {
     /// Record which claim owns an observed Session, now that it HAS an id.
     ///
     /// Returns the claim this Session JOINED, once and only on the observation that joined it, so
@@ -41,27 +41,5 @@ public extension SessionOwnership {
     /// rather than having them vanish with the process.
     func boundClaim(ofSessionID sessionID: String) -> ClaimID? {
         boundSessions[sessionID]
-    }
-
-    /// Whether a claim's own row is still the only thing standing for it — true from the spawn
-    /// until the CLI writes a record Argo can bind to it.
-    func isUnbound(_ id: ClaimID) -> Bool {
-        claims[id]?.sessionID == nil
-    }
-
-    /// When a claim's PTY died, for the row that has to say so — `nil` while it lives.
-    func endedAtMs(_ id: ClaimID) -> Int? {
-        claims[id]?.toMs
-    }
-
-    /// The folder a claim was made in, resolved. What the row published at spawn reports as its
-    /// working directory, so a spawned Session is placed in the Project before it has said a word.
-    func cwd(of id: ClaimID) -> String? {
-        claims[id]?.cwd
-    }
-
-    /// The moment the claim opened — the spawn's own clock reading, and the row's activity time.
-    func startedAtMs(of id: ClaimID) -> Int? {
-        claims[id]?.fromMs
     }
 }
