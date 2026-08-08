@@ -19,9 +19,8 @@ struct FeedGalleryRow: View {
                 }
             }
         }
-        // A run that fits does not scroll at all. Without this a gallery of one still rubber-bands
-        // under a trackpad and flashes a scroller, which is the row advertising a direction it has
-        // nothing in.
+        // A run that fits must not rubber-band: a row bouncing on a drag advertises a direction
+        // it has nothing in.
         .scrollBounceBehavior(.basedOnSize)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(gallery.spoken)

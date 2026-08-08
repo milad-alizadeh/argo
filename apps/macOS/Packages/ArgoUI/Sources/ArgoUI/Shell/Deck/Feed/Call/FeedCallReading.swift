@@ -27,7 +27,7 @@ enum FeedCallReading {
         )
     }
 
-    /// A result the panel could actually show something for, or `nil`.
+    /// A result a surface could actually show something for, or `nil`.
     ///
     /// The filter is here rather than in the panel because it decides whether the ROW opens at all:
     /// a `Bash` that printed nothing and a patch nothing could parse used to offer a chevron and
@@ -38,11 +38,8 @@ enum FeedCallReading {
         // Blank output never reaches here — the engine reads whitespace as no output at all.
         case .output: result
         case let .diff(diff): diff.hunks.isEmpty ? nil : result
-        // A media result is kept even with no bytes in it, which is the one exception to the rule
-        // above and not a hole in it. The others are dropped because there is nothing to show and
-        // the row would offer a click that opens onto an apology; a picture the record never kept
-        // is drawn as a marked absence IN the gallery, where it stands beside the pictures that
-        // did survive — and it is not clickable, so no click is wasted either.
+        // Kept even with no bytes: an absent picture is drawn as one IN the gallery, beside the
+        // pictures that survived, and it offers no click to waste.
         case .media: result
         case nil: nil
         }

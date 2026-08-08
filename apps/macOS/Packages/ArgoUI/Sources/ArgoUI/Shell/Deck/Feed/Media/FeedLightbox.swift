@@ -46,8 +46,8 @@ struct FeedLightbox: View {
                 .resizable()
                 .scaledToFit()
                 .frame(
-                    maxWidth: picture.image.size.width,
-                    maxHeight: picture.image.size.height,
+                    maxWidth: picture.naturalSize.width,
+                    maxHeight: picture.naturalSize.height,
                 )
                 .clipShape(.rect(cornerRadius: ArgoRadius.popover))
         }
@@ -66,8 +66,13 @@ struct FeedLightbox: View {
         }
     }
 
+    /// Built from the picture this view decoded, so the words under a shot cannot outlive it.
+    private var provenance: MediaProvenance {
+        MediaProvenance(shot.media, showing: picture != nil)
+    }
+
     private var subtitle: String {
-        [shot.media.mediaType, picture?.spokenSize, shot.provenance.words]
+        [shot.media.mediaType, picture?.spokenSize, provenance.words]
             .compactMap(\.self)
             .joined(separator: " · ")
     }

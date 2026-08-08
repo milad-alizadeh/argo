@@ -19,12 +19,15 @@ enum MediaProvenance: Equatable, Sendable {
     /// The companion plugin's own render, arriving over the convention channel. Not a capture of
     /// anything on a screen.
     case rendered
-    /// The record kept no bytes. Never a broken-image glyph — that would be the system claiming a
-    /// failure to LOAD where what happened is that nothing was written down.
+    /// There is no picture to show. Never a broken-image glyph — that would be the system claiming
+    /// a failure to LOAD where what happened is that nothing usable was written down.
     case absent
 
-    init(_ media: MediaEvidence) {
-        guard media.bytes != nil else {
+    /// `showing` is whether the bytes actually became an image, which is a different question from
+    /// whether there were any: a record can carry bytes that do not decode, and a surface drawing
+    /// an absence must not also be offering a click onto one.
+    init(_ media: MediaEvidence, showing hasPicture: Bool) {
+        guard hasPicture else {
             self = .absent
             return
         }
@@ -32,6 +35,28 @@ enum MediaProvenance: Equatable, Sendable {
         case .direct: .captured
         case .derived: .current
         case .convention: .rendered
+        }
+    }
+
+    /// How the picture is FRAMED, which is what tells the four apart before a caption is read.
+    ///
+    /// Held here beside the words rather than inside the view that draws it, so the treatment a
+    /// shot gets is a fact a test can assert instead of a private the eye is the only judge of.
+    enum Treatment: Equatable, Sendable {
+        /// Run to its own edges, in a solid frame. What a screen capture looks like.
+        case bleeding
+        /// Run to its own edges, in the broken frame the shell uses for a weaker claim.
+        case broken
+        /// Inset on a plate. Drawn rather than captured off anything, and it must not read as a
+        /// photograph of a screen.
+        case mounted
+    }
+
+    var treatment: Treatment {
+        switch self {
+        case .captured: .bleeding
+        case .rendered: .mounted
+        case .current, .absent: .broken
         }
     }
 

@@ -80,6 +80,62 @@ struct FeedGalleryTests {
         #expect(shot.provenance.words == nil)
     }
 
+    /// Bytes are not a picture. A record can carry a string that decodes to nothing, and a shot
+    /// that read only "were there bytes" would draw an absence and offer a click onto it — the one
+    /// combination the absent case exists to prevent.
+    @Test
+    func `a picture whose bytes decode to nothing reads as an absence`() throws {
+        let rows = FeedProjection.rows(
+            from: FeedFixture.looked(at: "torn.png", FeedFixture.shot(.direct, bytes: "not-a-png")),
+        )
+        let shot = try #require(FeedFixture.galleries(in: rows).first?.shots.first)
+
+        #expect(shot.provenance == .absent)
+        #expect(shot.isOpenable == false)
+    }
+
+    /// The frame is the fact, so it is derived beside the words rather than decided inside the view
+    /// that draws it: a capture bleeds, a re-read and an absence wear the broken edge the shell
+    /// already uses for a weaker claim, and a render sits mounted because it was never captured off
+    /// anything.
+    @Test(arguments: [
+        Framing(provenance: .captured, treatment: .bleeding),
+        Framing(provenance: .current, treatment: .broken),
+        Framing(provenance: .rendered, treatment: .mounted),
+        Framing(provenance: .absent, treatment: .broken),
+    ])
+    func `each provenance is framed as its own treatment`(_ framing: Framing) {
+        #expect(framing.provenance.treatment == framing.treatment)
+    }
+
+    /// One row of the table above: a provenance, and the frame it is drawn in.
+    struct Framing: Sendable {
+        let provenance: MediaProvenance
+        let treatment: MediaProvenance.Treatment
+    }
+
+    /// A failed call is the loudest thing in a run and a thumbnail carries no failure ink, so a
+    /// call that came back with a picture AND an error stays a line — in the failure colour, with
+    /// what went wrong behind it. The same reason the survey never folds one.
+    @Test
+    func `a failed call holding a picture stays a line rather than joining a gallery`() {
+        let broken: [TranscriptEvent] = [
+            .toolCall(FeedFixture.call("shot", tool: "Read", kind: .read, naming: "half.png")),
+            .toolCallOutcome(ToolCallOutcome(
+                id: "shot",
+                status: .failed,
+                result: FeedFixture.shot(.direct),
+                endedAtMs: nil,
+                usage: nil,
+            )),
+        ]
+
+        let rows = FeedProjection.rows(from: broken)
+
+        #expect(FeedFixture.galleries(in: rows).isEmpty)
+        #expect(FeedFixture.calls(in: broken).map(\.subject.spoken) == ["half.png"])
+    }
+
     @Test
     func `every picture that has bytes opens`() throws {
         let rows = FeedProjection.rows(from: showing(["a.png", "b.png"]))
