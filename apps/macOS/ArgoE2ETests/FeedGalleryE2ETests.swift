@@ -56,5 +56,20 @@ final class FeedGalleryE2ETests: XCTestCase {
             "The lightbox stayed up after being clicked.",
         )
         XCTAssertEqual(app.state, .runningForeground)
+
+        // The other way out, in the same walk rather than a second launch. Escape is the one that
+        // cannot be checked by rendering: it depends on which view holds the responder chain, and
+        // the deck answers for the lightbox precisely because the lightbox is never focused.
+        thumbnail.click()
+        XCTAssertTrue(
+            lit.waitForExistence(timeout: 10),
+            "The thumbnail did not open a second time.",
+        )
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertTrue(
+            lit.waitForNonExistence(timeout: 10),
+            "The lightbox stayed up after Escape.",
+        )
+        XCTAssertEqual(app.state, .runningForeground)
     }
 }
