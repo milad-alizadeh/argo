@@ -28,6 +28,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedProse
     case feedEvidence
     case feedRunEvidence
+    case feedSurveyEvidence
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -119,6 +120,15 @@ public struct SpecimenScreen: View {
                 room: .sessions,
                 feed: FeedProjection.previewCallRows,
                 open: FeedProjection.previewRunCallID,
+            )
+        case .feedSurveyEvidence:
+            // The folded run of looking, open. The line says `Searched 1 · Read 5` and nothing
+            // else; the claim of the fold is that the five files it stopped naming are still all
+            // there, each caption saying which of them the output under it came from.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewCallRows,
+                open: FeedProjection.previewSurveyRowID,
             )
         }
     }

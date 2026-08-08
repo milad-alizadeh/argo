@@ -35,27 +35,36 @@ public enum ArgoFeedRow {
     /// vertical — the only alignment in the feed, and the reason it does not become a table.
     public static let callSymbolWidth: CGFloat = 15
 
-    /// The rung the feed's prose is set on — a step over the shell's own density, because this is
-    /// the one column read from start to finish. Named here so the line height below and the view
-    /// that draws the words cannot end up on two different sizes.
-    public static let proseRung: ArgoTypeScale = .title3
+    /// The rung the feed's BODY is set on — its prose and its call lines alike.
+    ///
+    /// One rung and not two. The column was set a step over the shell's density on the argument
+    /// that it is read from start to finish, which left a paragraph at `title3` sitting directly
+    /// above a call line at `body`: two sizes in one column, and the reader is asked to take the
+    /// larger one as more important when it is only prose. What separates a paragraph from a call
+    /// here is its ink, its measure and its shape — never its size. Markup keeps its own steps: a
+    /// heading is a heading because the agent wrote one.
+    public static let proseRung: ArgoTypeScale = .body
 
-    /// The line height prose is set at. Open for its size on purpose: a feed is read, not
+    /// The line height the body is set at. Open for its size on purpose: a feed is read, not
     /// scanned, and the rest of the cockpit's density does not apply inside the column.
-    public static let lineHeight: CGFloat = 23
+    public static let lineHeight: CGFloat = 20
 
     /// The gutter a patch's line numbers sit in, inside the evidence panel. Wide enough for four
     /// digits, which is where a file stops being one anybody scrolls.
     public static let diffGutterWidth: CGFloat = 32
 
-    /// The widest a line of prose may run, whatever the deck is doing.
+    /// The widest a PROMPT BUBBLE may run.
     ///
-    /// A measure, not a layout: past roughly 75 characters the eye loses the line it is returning
-    /// to, so a wide window gets more feed, never a longer line. Worth about 74 characters of the
-    /// body role — the study's own measure, converted from `ch` at the same size.
-    public static let measure: CGFloat = 540
-    /// The share of the measure a prompt's bubble may take. Under half the column would read as a
-    /// caption; the whole of it would stop reading as somebody speaking into the session.
+    /// It used to cap the feed's prose as well, and no longer does: a paragraph stopping short
+    /// while the call lines beneath it ran the full column read as a block that had failed to lay
+    /// out rather than as a measure, because the thing it is measured against was right there
+    /// beside it. The column is the measure for prose now, and the reader sets it with the seam.
+    ///
+    /// A bubble still needs a bound — it is somebody speaking INTO the session, and one that fills
+    /// the column stops looking like it — so the number survives for the one thing it still holds.
+    public static let measure: CGFloat = 480
+    /// The share of that a prompt's bubble may take. Under half would read as a caption; the whole
+    /// of it would stop reading as somebody speaking into the session.
     public static let bubbleShare: CGFloat = 0.62
     /// How much of a long prompt stands before it is folded — enough to recognise what was asked,
     /// short enough that one prompt cannot push a turn's whole answer off the screen.

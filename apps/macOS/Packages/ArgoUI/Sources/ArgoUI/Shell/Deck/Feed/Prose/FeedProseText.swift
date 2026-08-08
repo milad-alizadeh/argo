@@ -7,11 +7,13 @@ import SwiftUI
 /// ink and its fold; those are the caller's claims, not the type's.
 struct FeedProseText: View {
     let text: String
-    /// Which rung the run is set on. The block decides — a heading is the same words at a bigger
-    /// size, and nothing else about typesetting them changes. `title3` is the feed's reading size:
-    /// a column read from start to finish wants a step over the density the rest of the shell is
-    /// packed at, or a Session's whole record reads as a footnote to the chrome around it.
-    var rung: ArgoTypeScale = .title3
+    /// Which rung the run is set on. Only MARKUP passes one — a heading is the same words at a
+    /// bigger size, and nothing else about typesetting them changes.
+    ///
+    /// The default is the contract's, not a literal. It was `title3` spelled out here, which is
+    /// how the feed ended up with two body sizes after the contract moved to one: a prompt and a
+    /// message took this default while the call line beside them took `ArgoTypography.body`.
+    var rung: ArgoTypeScale = ArgoFeedRow.proseRung
     var weight: Font.Weight?
 
     var body: some View {

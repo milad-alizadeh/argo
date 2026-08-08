@@ -76,6 +76,15 @@ extension FeedCall {
             case let .plain(text): text
             }
         }
+
+        /// What the subject reads as where NO row above it names it — a step inside a folded run of
+        /// looking. The same short address, with the parent that tells two same-named files apart
+        /// kept on the front: the fold took the filenames off the line, so the captions are the
+        /// only place the qualifier still has to do its job.
+        var captioned: String {
+            guard case let .file(file) = self, let qualifier = file.qualifier else { return spoken }
+            return "\(qualifier)/\(file.name)"
+        }
     }
 
     /// A file as the feed addresses it: the filename, and nothing else, at any window width.

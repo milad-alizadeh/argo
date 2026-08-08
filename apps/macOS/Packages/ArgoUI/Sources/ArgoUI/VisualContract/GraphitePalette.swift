@@ -55,5 +55,8 @@ public extension ArgoPalette {
             added: ArgoColor(hex: 0xA9D18E),
             removed: ArgoColor(hex: 0xD98C93),
         ),
+        // Source code takes no ink from this palette. The evidence panel reads a patch in Xcode's
+        // own dark theme (`SyntaxTheme`) — the one surface where matching the editor the reader
+        // already has open beats matching the shell around it.
     )
 }

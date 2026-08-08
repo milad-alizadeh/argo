@@ -1,6 +1,6 @@
-/// The calls the panel's own previews open on, taken out of the shipping feed.
+/// The evidence the panel's own previews open on, taken out of the shipping feed.
 ///
-/// Read from `FeedProjection.previewCallRows` rather than written here: a panel preview holding a
+/// Read from `FeedProjection.previewRows` rather than written here: a panel preview holding a
 /// result of its own would be evidence about a call nobody is shown, and the point of looking at
 /// this surface is what the projection actually hands it.
 enum EvidenceFixture {
@@ -15,12 +15,20 @@ enum EvidenceFixture {
         }
     }
 
-    private static func call(_ matching: (FeedCall) -> Bool) -> FeedCall? {
+    /// The folded run of looking — the only panel whose steps are captioned, because its row no
+    /// longer names the files it stands for.
+    static let surveyed = FeedProjection.previewRows.compactMap { row -> FeedEvidence? in
+        guard case let .survey(survey) = row.content else { return nil }
+        return survey.opened
+    }.first
+
+    private static func call(_ matching: (FeedCall) -> Bool) -> FeedEvidence? {
         FeedProjection.previewCallRows
             .compactMap { row -> FeedCall? in
                 guard case let .call(call) = row.content else { return nil }
                 return call
             }
-            .first(where: matching)
+            .first(where: matching)?
+            .opened
     }
 }
