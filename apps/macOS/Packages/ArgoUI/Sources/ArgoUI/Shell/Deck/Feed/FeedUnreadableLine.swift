@@ -25,7 +25,7 @@ struct FeedUnreadableLine: View {
             }
             .buttonStyle(FeedRowButtonStyle(isOpen: isExpanded))
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(unreadable.spoken)
+            .accessibilityLabel(unreadable.label)
             .accessibilityHint("Shows the text that could not be read")
             if isExpanded {
                 raw

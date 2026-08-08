@@ -88,7 +88,7 @@ struct FeedUnreadableTests {
         ])
         let unreadable = try #require(FeedFixture.unreadable(in: rows).first)
 
-        #expect(unreadable.spoken.contains("2"))
+        #expect(unreadable.label.contains("2"))
     }
 
     private func looking(at paths: [String]) -> [TranscriptEvent] {
