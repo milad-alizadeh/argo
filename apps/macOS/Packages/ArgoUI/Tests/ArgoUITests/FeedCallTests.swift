@@ -12,12 +12,27 @@ struct FeedCallTests {
     @Test
     func `each kind is said in its own verb, under its own mark`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("search", "Grep", .search, "connectionState")),
-            .toolCall(FeedFixture.call("read", "Read", .read, "Token.swift")),
-            .toolCall(FeedFixture.call("run", "Bash", .execute, "swift build")),
-            .toolCall(FeedFixture.call("fetch", "WebFetch", .fetch, "developer.apple.com")),
-            .toolCall(FeedFixture.call("task", "Task", .delegate, "review the feed")),
-            .toolCall(FeedFixture.call("mcp", "mcp__linear__list_issues", .mcp, nil)),
+            .toolCall(FeedFixture.call(
+                "search",
+                tool: "Grep",
+                kind: .search,
+                naming: "connectionState",
+            )),
+            .toolCall(FeedFixture.call("read", tool: "Read", kind: .read, naming: "Token.swift")),
+            .toolCall(FeedFixture.call("run", tool: "Bash", kind: .execute, naming: "swift build")),
+            .toolCall(FeedFixture.call(
+                "fetch",
+                tool: "WebFetch",
+                kind: .fetch,
+                naming: "developer.apple.com",
+            )),
+            .toolCall(FeedFixture.call(
+                "task",
+                tool: "Task",
+                kind: .delegate,
+                naming: "review the feed",
+            )),
+            .toolCall(FeedFixture.call("mcp", tool: "mcp__linear__list_issues", kind: .mcp)),
         ])
 
         #expect(calls.map(\.kind.verb) == [
@@ -30,11 +45,11 @@ struct FeedCallTests {
     @Test
     func `a mutation says which mutation it was, rather than leaving it to the diffstat`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("edit", "Edit", .edit, "Feed.swift")),
+            .toolCall(FeedFixture.call("edit", tool: "Edit", kind: .edit, naming: "Feed.swift")),
             .toolCallOutcome(FeedFixture.answered("edit", FeedFixture.patch(.modify, added: 8))),
-            .toolCall(FeedFixture.call("create", "Write", .edit, "New.swift")),
+            .toolCall(FeedFixture.call("create", tool: "Write", kind: .edit, naming: "New.swift")),
             .toolCallOutcome(FeedFixture.answered("create", FeedFixture.patch(.create, added: 39))),
-            .toolCall(FeedFixture.call("delete", "Write", .edit, "Old.swift")),
+            .toolCall(FeedFixture.call("delete", tool: "Write", kind: .edit, naming: "Old.swift")),
             .toolCallOutcome(FeedFixture.answered(
                 "delete",
                 FeedFixture.patch(.delete, removed: 61),
@@ -49,7 +64,12 @@ struct FeedCallTests {
     @Test
     func `a move says where the file went, and says it as briefly as everything else`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("move", "Edit", .edit, "Shell/Tint.swift")),
+            .toolCall(FeedFixture.call(
+                "move",
+                tool: "Edit",
+                kind: .edit,
+                naming: "Shell/Tint.swift",
+            )),
             .toolCallOutcome(FeedFixture.answered("move", FeedFixture.patch(
                 .move,
                 destination: "VisualContract/Tint.swift",
@@ -67,7 +87,7 @@ struct FeedCallTests {
     @Test
     func `a kind Argo cannot classify keeps the host's tool name and takes no mark`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("strange", "custom_tool_v2", .other, nil)),
+            .toolCall(FeedFixture.call("strange", tool: "custom_tool_v2", kind: .other)),
         ])
 
         #expect(calls.first?.kind == .unclassified)
@@ -75,10 +95,31 @@ struct FeedCallTests {
         #expect(calls.first?.subject == .plain("custom_tool_v2"))
     }
 
+    /// The engine scrapes a target out of whichever field a tool happened to use, and for a kind
+    /// nobody classified that field means nothing. The tool's name is what is known.
+    @Test
+    func `an unclassified call is named by its tool even when it carried an argument`() {
+        let calls = FeedFixture.calls(in: [
+            .toolCall(FeedFixture.call(
+                "strange",
+                tool: "custom_tool_v2",
+                kind: .other,
+                naming: "whatever it does",
+            )),
+        ])
+
+        #expect(calls.first?.subject == .plain("custom_tool_v2"))
+    }
+
     @Test
     func `an MCP call is addressed by the server and tool the host named`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("mcp", "mcp__linear__list_issues", .mcp, "anything")),
+            .toolCall(FeedFixture.call(
+                "mcp",
+                tool: "mcp__linear__list_issues",
+                kind: .mcp,
+                naming: "anything",
+            )),
         ])
 
         #expect(calls.first?.subject == .plain("linear · list_issues"))
@@ -117,8 +158,8 @@ struct FeedCallTests {
     @Test
     func `a command is the subject a command names, and a call that named nothing takes its tool`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("run", "Bash", .execute, "swift build")),
-            .toolCall(FeedFixture.call("quiet", "local command", .execute, nil)),
+            .toolCall(FeedFixture.call("run", tool: "Bash", kind: .execute, naming: "swift build")),
+            .toolCall(FeedFixture.call("quiet", tool: "local command", kind: .execute)),
         ])
 
         #expect(calls.map(\.subject) == [.command("swift build"), .plain("local command")])
@@ -129,7 +170,12 @@ struct FeedCallTests {
     @Test
     func `a failed command shows its exit status and exactly one line beneath it`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("build", "Bash", .execute, "swift build")),
+            .toolCall(FeedFixture.call(
+                "build",
+                tool: "Bash",
+                kind: .execute,
+                naming: "swift build",
+            )),
             .toolCallOutcome(FeedFixture.failed(
                 "build",
                 printing: "Exit code 65\n\nChip.swift:88:7: error: cannot convert value\n"
@@ -137,31 +183,66 @@ struct FeedCallTests {
             )),
         ])
 
-        #expect(calls.first?.failure?.status == "Exit code 65")
-        #expect(calls.first?.failure?.diagnostic == "Chip.swift:88:7: error: cannot convert value")
+        #expect(calls.first?.ending.outcome == "Exit code 65")
+        #expect(calls.first?.ending.diagnostic == "Chip.swift:88:7: error: cannot convert value")
     }
 
     @Test
     func `a failure with nothing trustworthy to say shows only that it failed`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("build", "Bash", .execute, "swift build")),
+            .toolCall(FeedFixture.call(
+                "build",
+                tool: "Bash",
+                kind: .execute,
+                naming: "swift build",
+            )),
             .toolCallOutcome(FeedFixture.failed("build", printing: nil)),
         ])
 
-        #expect(calls.first?.failure == CommandFailure(status: nil, diagnostic: nil))
+        #expect(calls.first?.ending == .failed(CommandFailure(status: nil, diagnostic: nil)))
+        #expect(calls.first?.ending.diagnostic == nil)
     }
 
+    /// One line, and it is the command's OWN last one — not a count of what came before it, which
+    /// is the moment the feed would start writing its own summary of a record it can only read.
     @Test
-    func `a call that succeeded reduces to one line`() {
+    func `a call that succeeded reduces to the last line it printed`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("run", "Bash", .execute, "swift test")),
+            .toolCall(FeedFixture.call("run", tool: "Bash", kind: .execute, naming: "swift test")),
             .toolCallOutcome(FeedFixture.answered(
                 "run",
-                .output(OutputEvidence(tier: .direct, text: "148 passed")),
+                .output(OutputEvidence(
+                    tier: .direct,
+                    text: "Test Suite 'All tests' started\n✔ oneTest\n"
+                        + "Executed 151 tests, with 0 failures\n\n",
+                )),
             )),
         ])
 
-        #expect(calls.first?.failure == nil)
+        #expect(calls.first?.ending == .succeeded(outcome: "Executed 151 tests, with 0 failures"))
+        #expect(calls.first?.ending.diagnostic == nil)
+    }
+
+    /// A successful read's payload is the whole file, so the engine keeps none of it. The row says
+    /// the read happened and claims nothing about what came back.
+    @Test
+    func `a call whose result the engine kept nothing of claims no outcome`() {
+        let calls = FeedFixture.calls(in: [
+            .toolCall(FeedFixture.call("read", tool: "Read", kind: .read, naming: "Token.swift")),
+            .toolCallOutcome(FeedFixture.answered("read", nil)),
+        ])
+
+        #expect(calls.first?.ending == .succeeded(outcome: nil))
+    }
+
+    /// A call the record has not answered yet HAPPENED, and it is a row. Reading it as a success
+    /// would be the feed's first lie, and dropping it would hide the work in flight.
+    @Test
+    func `a call the transcript has not answered is open, not quietly successful`() {
+        let calls = FeedFixture.read("Token.swift")
+
+        #expect(calls.first?.ending == .pending)
+        #expect(calls.first?.ending.outcome == nil)
     }
 
     // MARK: - Disclosure
@@ -171,14 +252,19 @@ struct FeedCallTests {
     @Test
     func `a row offers disclosure exactly where the engine stored something behind it`() {
         let calls = FeedFixture.calls(in: [
-            .toolCall(FeedFixture.call("kept", "Read", .read, "Token.swift")),
+            .toolCall(FeedFixture.call("kept", tool: "Read", kind: .read, naming: "Token.swift")),
             .toolCallOutcome(FeedFixture.answered(
                 "kept",
                 .output(OutputEvidence(tier: .direct, text: "1\texport const token = 1")),
             )),
-            .toolCall(FeedFixture.call("dropped", "Read", .read, "Other.swift")),
+            .toolCall(FeedFixture.call(
+                "dropped",
+                tool: "Read",
+                kind: .read,
+                naming: "Other.swift",
+            )),
             .toolCallOutcome(FeedFixture.answered("dropped", nil)),
-            .toolCall(FeedFixture.call("open", "Read", .read, "Third.swift")),
+            .toolCall(FeedFixture.call("open", tool: "Read", kind: .read, naming: "Third.swift")),
         ])
 
         #expect(calls.map(\.disclosure) == [.available, .none, .none])

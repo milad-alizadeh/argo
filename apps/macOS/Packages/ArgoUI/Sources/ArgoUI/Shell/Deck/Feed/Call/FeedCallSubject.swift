@@ -55,3 +55,20 @@ struct FeedCallSubject: View {
         }
     }
 }
+
+// Every shape a subject takes — a name that stands alone, the two the feed had to qualify, a move's
+// destination, a command on its own ground, a plain address. Taken from the shipping projection
+// rather than written here, so no preview can show a qualifier the shared rule would never produce.
+#Preview("Call subject — every shape a call can name") {
+    VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
+        ForEach(FeedProjection.previewCallRows) { row in
+            if case let .call(call) = row.content {
+                FeedCallSubject(subject: call.subject, destination: call.kind.destination)
+            }
+        }
+    }
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 520)
+    .argoDeckSurface()
+    .argoAppearance()
+}

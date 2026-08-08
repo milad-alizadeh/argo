@@ -25,4 +25,13 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     /// kinds this feed ignores leave no hole for a list to animate across.
     let id: Int
     let content: Content
+
+    /// Whether this row is a piece of work rather than a piece of prose. Two surfaces ask it —
+    /// the feed's own spacing, and the render that shows the calls alone.
+    var isCall: Bool {
+        if case .call = content {
+            return true
+        }
+        return false
+    }
 }

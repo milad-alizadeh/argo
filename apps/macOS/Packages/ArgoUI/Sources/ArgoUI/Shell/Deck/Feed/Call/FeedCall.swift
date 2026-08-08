@@ -11,9 +11,7 @@ struct FeedCall: Equatable, Sendable {
     let subject: Subject
     /// What a mutation did in lines, where the record carried a patch to count.
     let churn: Churn?
-    /// What went wrong. Absent for a call that did not fail — which is every call that earns only
-    /// one line.
-    let failure: CommandFailure?
+    let ending: Ending
     let disclosure: Disclosure
 }
 
@@ -89,6 +87,20 @@ extension FeedCall {
         }
     }
 
+    /// How the call ended, and the one line it gets to say about it.
+    ///
+    /// A sum type because the three are mutually exclusive readings of one record, and flat fields
+    /// would let a row be drawn as both open and failed. `pending` is a real state and not a
+    /// missing one: a call the transcript has not answered yet HAPPENED, and saying it succeeded
+    /// quietly would be the feed's first lie.
+    enum Ending: Equatable, Sendable {
+        case pending
+        /// What it produced, in one line of the record's own characters. `nil` where the engine
+        /// kept nothing to read — a successful file read, whose whole payload is the file.
+        case succeeded(outcome: String?)
+        case failed(CommandFailure)
+    }
+
     /// What a mutation did, in lines.
     struct Churn: Equatable, Sendable {
         let added: Int
@@ -117,9 +129,35 @@ extension FeedCall {
             kind: kind,
             subject: .file(file),
             churn: churn,
-            failure: failure,
+            ending: ending,
             disclosure: disclosure,
         )
+    }
+}
+
+extension FeedCall.Ending {
+    /// The one line the row shows after its subject: what a command produced, or the host's own
+    /// exit line where it did not.
+    var outcome: String? {
+        switch self {
+        case .pending: nil
+        case let .succeeded(outcome): outcome
+        case let .failed(failure): failure.status
+        }
+    }
+
+    /// The one line a failure earns beneath the sentence. Every other ending has none, which is
+    /// what keeps a call to one line.
+    var diagnostic: String? {
+        guard case let .failed(failure) = self else { return nil }
+        return failure.diagnostic
+    }
+
+    var hasFailed: Bool {
+        if case .failed = self {
+            return true
+        }
+        return false
     }
 }
 

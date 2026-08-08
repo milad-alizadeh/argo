@@ -86,7 +86,7 @@ struct FeedProjectionTests {
     @Test
     func `a call and the outcome that answered it are one row, not two`() {
         let rows = FeedProjection.rows(from: [
-            .toolCall(FeedFixture.call("one", "Read", .read, "src/token.ts")),
+            .toolCall(FeedFixture.call("one", tool: "Read", kind: .read, naming: "src/token.ts")),
             .toolCallOutcome(FeedFixture.answered("one", nil)),
         ])
 
@@ -98,7 +98,7 @@ struct FeedProjectionTests {
     @Test
     func `the call that writes the plan is not news of its own`() {
         let rows = FeedProjection.rows(from: [
-            .toolCall(FeedFixture.call("plan", "TodoWrite", .plan, nil)),
+            .toolCall(FeedFixture.call("plan", tool: "TodoWrite", kind: .plan)),
         ])
 
         #expect(rows.isEmpty)
