@@ -15,10 +15,12 @@ public enum Specimen: String, CaseIterable, Sendable {
     case contract
     case sessionRows
     case roster
-    case projectStrip
-    case emptyProjectStrip
     case toolbarScope
     case emptyToolbarScope
+    case projectDrawer
+    case unreachableProjectDrawer
+    case emptyProjectDrawer
+    case openProjectDrawer
     case deck
     case sessionsDeck
 }
@@ -48,16 +50,20 @@ public struct SpecimenScreen: View {
             SessionRowsSpecimen()
         case .roster:
             RosterSpecimen()
-        case .projectStrip:
-            ProjectStripSpecimen(projects: CockpitPresentation.previewProjects)
-        case .emptyProjectStrip:
-            // A machine that has registered nothing: the `+` is the only thing on screen, and it
-            // has to be findable without a Project beside it to point at.
-            ProjectStripSpecimen(projects: [])
         case .toolbarScope:
             ToolbarSpecimen(presentation: .preview)
         case .emptyToolbarScope:
             ToolbarSpecimen(presentation: .unregisteredPreview)
+        case .projectDrawer:
+            DrawerSpecimen(presentation: .preview)
+        case .unreachableProjectDrawer:
+            DrawerSpecimen(presentation: .unreachablePreview)
+        case .emptyProjectDrawer:
+            // A machine that has registered nothing: Add Project… is the only thing on screen,
+            // and it has to be findable without a row beside it to point at.
+            DrawerSpecimen(presentation: .unregisteredPreview)
+        case .openProjectDrawer:
+            OpenDrawerSpecimen()
         case .deck:
             DeckSpecimen()
         case .sessionsDeck:
@@ -94,35 +100,6 @@ private struct RosterSpecimen: View {
     }
 }
 
-/// The strip against the sidebar material it actually sits on, holding its own selection so the
-/// switch can be driven in the rendered state rather than only described.
-private struct ProjectStripSpecimen: View {
-    let projects: [CockpitPresentation.Project]
-
-    @State private var activeProjectID: CockpitPresentation.Project.ID?
-
-    init(projects: [CockpitPresentation.Project]) {
-        self.projects = projects
-        _activeProjectID = State(initialValue: projects.first?.id)
-    }
-
-    var body: some View {
-        ProjectStrip(
-            projects: projects,
-            activeProjectID: activeProjectID,
-            actions: CockpitActions(
-                refreshCheckout: {},
-                retryConnection: {},
-                selectProject: { activeProjectID = $0 },
-                addProject: {},
-                locateProject: { _ in },
-            ),
-        )
-        .frame(maxHeight: .infinity)
-        .background(.bar)
-    }
-}
-
 /// The window chrome alone, against an empty plane. One merged capsule at the leading edge and one
 /// pinned to the trailing edge is a claim about the toolbar, which the shell specimens bury under
 /// everything else in the frame.
@@ -137,6 +114,43 @@ private struct ToolbarSpecimen: View {
                 ShellToolbar(room: $room, presentation: presentation, actions: .inert)
             }
             .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+    }
+}
+
+/// The drawer in a REAL popover, opened on appear.
+///
+/// `DrawerSpecimen` draws the content directly, which renders it but never puts it in the context
+/// it actually lives in — and that context is where it failed: a popover is its own window with
+/// its own environment, and the row's body came apart inside one while rendering fine outside it.
+/// This case is how that is caught by rendering rather than by a person clicking.
+private struct OpenDrawerSpecimen: View {
+    @State private var isOpen = false
+
+    var body: some View {
+        ProjectVessel(presentation: .preview, actions: .inert)
+            .padding(ArgoSpacing.region)
+            .onAppear { isOpen = true }
+            .popover(isPresented: $isOpen, arrowEdge: .bottom) {
+                ProjectDrawer(presentation: .preview, actions: .inert)
+            }
+    }
+}
+
+/// The drawer as it hangs off the vessel: over the window's own ground, at its own width, rather
+/// than filling the frame. A popover is a window of its own and never lands in a screenshot of
+/// this one, so the harness draws the content directly.
+private struct DrawerSpecimen: View {
+    @Environment(\.argo) private var argo
+
+    let presentation: CockpitPresentation
+
+    var body: some View {
+        // The glass belongs HERE, not in the drawer. In a popover the panel is the system's own
+        // material and the drawer must add nothing; this specimen has no popover to sit in, so it
+        // stands in for one.
+        ProjectDrawer(presentation: presentation, actions: .inert)
+            .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
+            .padding(ArgoSpacing.region)
     }
 }
 

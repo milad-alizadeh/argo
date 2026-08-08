@@ -18,6 +18,10 @@ struct ScopeVessel: View {
                 .accessibilityHidden(true)
             GitVessel(checkout: presentation.checkout, refresh: actions.refreshCheckout)
         }
+        // The toolbar draws the glass but not the room inside it. Without this the folder mark sat
+        // ~3.5pt off its own rim while the Rooms vessel next to it breathed at 8.5 — two capsules
+        // on one bar, at two densities.
+        .padding(.horizontal, ArgoSpacing.snug)
         // The contract reserves the brand hue for selection and focus; a symbol in a menu label
         // takes the control's accent unless the control says otherwise.
         .tint(argo.color.text.tertiary)

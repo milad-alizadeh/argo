@@ -5,6 +5,7 @@
   "scripts": {
     "build": "xcodebuild -project Argo.xcodeproj -scheme Argo -configuration Debug -derivedDataPath build build",
     "test": "sh scripts/swift-test.sh",
+    "test:e2e": "sh scripts/e2e-test.sh",
     "lint": "sh ../../scripts/swift-lint.sh",
     "screenshot": "sh scripts/screenshot.sh"
   }

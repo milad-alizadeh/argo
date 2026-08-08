@@ -230,3 +230,8 @@ jobs:
       - name: Swift tests
         if: ${{ !cancelled() }}
         run: bun run test --filter=@argo/macos
+
+      # `bun run test:e2e` is deliberately NOT here. It launches and drives the real app, so it
+      # needs a macOS runner — the most expensive minutes GitHub bills — and it takes them on
+      # every push, to walk a handful of clicks. It is a local gate: run it when you touch the
+      # drawer or the toolbar. See apps/macOS/scripts/e2e-test.sh.

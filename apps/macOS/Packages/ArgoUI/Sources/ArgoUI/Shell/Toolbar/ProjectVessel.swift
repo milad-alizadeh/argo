@@ -1,29 +1,29 @@
 import SwiftUI
 
-/// The active Project as the leading half of the scope vessel: state, full name, disclosure.
+/// The active Project as the leading half of the scope vessel: its symbol, its full name and a
+/// disclosure. Clicking it opens the Project drawer.
 ///
 /// The name is spelled out rather than initialled — an initial is what sent this surface out of
-/// the sidebar. Until the Project drawer lands (#450) the disclosure is a menu over the set.
+/// the sidebar. No state dot: nothing derives the per-Project worst-state rollup yet (#164), and
+/// an empty ring beside every Project is chrome standing in for a fact.
 struct ProjectVessel: View {
     @Environment(\.argo) private var argo
+    @State private var isDrawerOpen = false
 
     let presentation: CockpitPresentation
     let actions: CockpitActions
 
     var body: some View {
-        Menu {
-            ForEach(presentation.projects) { candidate in
-                Button(candidate.name) { actions.selectProject(candidate.id) }
-            }
-            if !presentation.projects.isEmpty {
-                Divider()
-            }
-            Button("Add Project…", action: actions.addProject)
-        } label: {
+        Button { isDrawerOpen.toggle() } label: {
             label
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $isDrawerOpen, arrowEdge: .bottom) {
+            ProjectDrawer(presentation: presentation, actions: actions)
         }
         .help(help)
         .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Opens the Project drawer")
     }
 
     private var project: CockpitPresentation.Project? {
@@ -32,24 +32,26 @@ struct ProjectVessel: View {
 
     private var label: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            stateRing
+            // The drawer rows' role, not a control role. The Project name is the subject of this
+            // vessel and its own row in the drawer — one size for it in both places — and setting
+            // it above the branch is what makes the merged capsule read "this Project, on this
+            // checkout" rather than two equal facts glued together.
+            ArgoGlyph(symbol, ArgoTypography.rowTitle)
             Text(project?.name ?? "No Project")
-                .argoText(ArgoTypography.control)
+                .argoText(ArgoTypography.rowTitle)
                 .lineLimit(1)
                 .truncationMode(.tail)
+            ArgoGlyph(indicator: ArgoSymbol.disclosure, height: ArgoLayout.disclosureHeight)
         }
+        .foregroundStyle(argo.color.text.primary)
         .frame(maxWidth: ArgoLayout.projectVesselMaximumWidth)
+        .toolbarSegment()
     }
 
-    /// The slot the per-Project worst-state rollup fills (#164). Nothing derives it yet, so it is
-    /// drawn as the unknown it is — a ring, not a tinted disc claiming a state Argo cannot read.
-    /// A glyph rather than a `Circle`: a menu label draws text and symbols, and a bare shape in one
-    /// silently renders nothing at all.
-    private var stateRing: some View {
-        Image(systemName: "circle")
-            .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.text.tertiary)
-            .accessibilityHidden(true)
+    /// A Project reads as a Project rather than as a bare word beside a state ring — and a Project
+    /// whose folder is gone says so with its mark as well as in the drawer's words.
+    private var symbol: String {
+        project?.isReachable == false ? ArgoSymbol.unreachableProject : ArgoSymbol.project
     }
 
     private var help: String {

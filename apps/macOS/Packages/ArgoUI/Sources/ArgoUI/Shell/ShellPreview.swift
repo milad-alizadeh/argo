@@ -4,8 +4,15 @@ public extension CockpitPresentation {
     /// because the `AccentColor` asset lives in the app and a package preview never sees it.
     /// Three registered Projects, the third of them somewhere it no longer is: the state the strip
     /// has to draw honestly rather than by dropping a row.
+    /// Only the active Project carries a count: the Hub observes one Project, and the drawer has
+    /// to be looked at with both renderings on screen at once.
     static let previewProjects = [
-        Project(id: "argo", name: "argo", location: "/Users/milad/Developer/argo"),
+        Project(
+            id: "argo",
+            name: "argo",
+            location: "/Users/milad/Developer/argo",
+            liveSessionCount: 5,
+        ),
         Project(id: "cockpit", name: "cockpit", location: "/Users/milad/Developer/cockpit"),
         Project(
             id: "moved",

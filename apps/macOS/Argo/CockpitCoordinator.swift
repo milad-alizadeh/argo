@@ -86,8 +86,32 @@ final class CockpitCoordinator {
         await point(at: .registered(record))
     }
 
+    /// Removing the Project on screen has to land the window somewhere, so the registry's new
+    /// active record is where it goes. Removing the LAST one leaves the cockpit empty and pointed
+    /// at nothing registered: an unregistered pointer at the folder it was on, with the Hub let go,
+    /// rather than a window still tailing a Project the machine no longer knows.
+    func removeProject(projectID: String) async {
+        guard let record = registry.project(id: projectID) else { return }
+        let removed = await store.remove(id: projectID)
+        registry = removed.registry
+        guard projectID == launch.id else { return }
+        guard let landing = removed.project else {
+            launch = .unregistered(record.url)
+            await hub.disconnect()
+            return
+        }
+        await point(at: .registered(landing))
+    }
+
+    /// Show a Project's folder in Finder. An unreachable one has nothing to show, and Finder
+    /// answering with a bounce is a worse reading than the row's own "folder not found".
+    func revealProject(projectID: String) {
+        guard let record = registry.project(id: projectID), record.isReachable else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([record.url])
+    }
+
     /// The Hub is asked to refresh itself rather than told where to look: it is the one that knows
-    /// which Project it is on, and `launch.url` is the folder the strip names, not the repo the
+    /// which Project it is on, and `launch.url` is the folder the vessel names, not the repo the
     /// checkout was read from.
     func refreshCheckout() async {
         await hub.refreshCheckout()

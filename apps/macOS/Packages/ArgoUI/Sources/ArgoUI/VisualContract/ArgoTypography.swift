@@ -38,12 +38,30 @@ public struct ArgoTextStyle: Sendable {
     public var font: Font {
         .system(size: size, weight: weight, design: typeface.design)
     }
+
+    /// The size a symbol beside this role's label is drawn at.
+    ///
+    /// An SF Symbol takes the full point size of the text it sits next to, which puts its cap
+    /// well above the label's — at the cockpit's 11–13pt the mark reads as standing proud of its
+    /// own line. Scaled here it sits on the line instead, which is what makes a row read as one
+    /// line of type with a mark on it rather than as an icon with a caption.
+    public var glyphSize: CGFloat {
+        size * ArgoTypography.glyphScale
+    }
+
+    public var glyphFont: Font {
+        .system(size: glyphSize, weight: weight)
+    }
 }
 
 /// The type hierarchy. Sizes are fixed rather than text-style-relative: the cockpit is a
 /// dense observation surface where a Session row, a machine fact and a feed line have to
 /// stay in a shared rhythm.
 public enum ArgoTypography {
+    /// A symbol is drawn at this fraction of its label's size — see `ArgoTextStyle.glyphSize`.
+    /// One value for every glyph in the interface, so no call site decides how big a mark is.
+    public static let glyphScale: CGFloat = 0.85
+
     /// The largest line in the cockpit: a Session's own title.
     public static let sessionTitle = ArgoTextStyle(
         typeface: .interface,
@@ -104,5 +122,10 @@ public extension View {
     /// `.font()` alone silently drops it.
     func argoText(_ style: ArgoTextStyle) -> some View {
         font(style.font).tracking(style.tracking)
+    }
+
+    /// Draws a symbol at the size the role's own line height wants.
+    func argoGlyph(_ style: ArgoTextStyle) -> some View {
+        font(style.glyphFont)
     }
 }

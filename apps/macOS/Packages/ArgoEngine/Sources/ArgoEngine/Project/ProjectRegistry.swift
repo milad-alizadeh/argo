@@ -56,6 +56,21 @@ public struct ProjectRegistry: Equatable, Sendable {
         )
     }
 
+    /// Forget a Project. Only Argo's registration goes — the folder on disk is not this type's to
+    /// touch, and nothing here reads or writes it.
+    ///
+    /// Removing the ACTIVE Project has to land the cockpit somewhere, so the first remaining record
+    /// takes over. Leaving it to the initialiser's normalisation would empty the active id while
+    /// records remain, which is an unexplained empty window rather than a switch.
+    func removing(id: String) -> ProjectRegistry {
+        guard projects.contains(where: { $0.id == id }) else { return self }
+        let remaining = projects.filter { $0.id != id }
+        return ProjectRegistry(
+            projects: remaining,
+            activeProjectID: activeProjectID == id ? remaining.first?.id : activeProjectID,
+        )
+    }
+
     /// An id no record carries is left alone, and the caller reads the result back to learn whether
     /// the switch took.
     func activating(id: String) -> ProjectRegistry {
