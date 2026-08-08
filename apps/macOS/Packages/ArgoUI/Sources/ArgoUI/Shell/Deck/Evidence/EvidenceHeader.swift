@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// What the panel is open ON: a mark for what kind of thing it was, the address the feed was
@@ -92,6 +93,63 @@ struct EvidenceHeader: View {
             .compactMap(\.self)
             .joined(separator: " ")
     }
+}
+
+/// The header's states, side by side: a file (mark, no verb, nothing to say about how it went), a
+/// command that failed (verb drawn, outcome in the failure ink), and a markdown patch, which is
+/// the only one carrying the reading control.
+private struct EvidenceHeaderSpecimen: View {
+    @State private var reading = EvidenceReading.source
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.base) {
+            EvidenceHeader(evidence: file, reading: $reading, dismiss: {})
+            EvidenceHeader(evidence: command, reading: $reading, dismiss: {})
+            EvidenceHeader(evidence: document, reading: $reading, dismiss: {})
+        }
+    }
+
+    private var file: FeedEvidence {
+        FeedEvidence(
+            verb: "Edited", symbol: ArgoSymbol.swiftSource,
+            address: "Sources/ArgoUI/Shell/Deck/Feed/FeedView.swift",
+            language: .swift, ending: .succeeded, saysVerb: false, steps: [],
+        )
+    }
+
+    private var command: FeedEvidence {
+        FeedEvidence(
+            verb: "Ran", symbol: ArgoSymbol.ran,
+            address: "swift build --package-path Packages/ArgoUI",
+            language: nil, ending: .failed, saysVerb: true, steps: [],
+        )
+    }
+
+    private var document: FeedEvidence {
+        FeedEvidence(
+            verb: "Wrote", symbol: ArgoSymbol.proseSource,
+            address: "docs/designs/feed-command-legibility-spec.md",
+            language: .markdown, ending: .succeeded, saysVerb: false,
+            steps: [FeedEvidence.Step(
+                address: nil, language: nil,
+                result: .diff(DiffEvidence(
+                    tier: .direct, change: .create, destination: nil,
+                    added: 1, removed: 0,
+                    hunks: [DiffHunk(
+                        oldStart: 0, newStart: 1,
+                        lines: [DiffLine(side: .add, text: "# Feed command legibility")],
+                    )],
+                )),
+            )],
+        )
+    }
+}
+
+#Preview("Evidence header — a file, a failed command, and a document") {
+    EvidenceHeaderSpecimen()
+        .frame(width: 480)
+        .background(ArgoPalette.graphite.surface.sunken)
+        .argoAppearance()
 }
 
 extension EvidenceReading {

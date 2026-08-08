@@ -8,10 +8,15 @@ import Testing
 @Suite("Marked prose")
 struct MarkedProseTests {
     let ink = ArgoPalette.graphite.text.code
+    let linkInk = ArgoPalette.graphite.interaction.accent
 
     @Test
     func `a code span is inked and the sentence around it is not`() {
-        let inked = MarkedProse.inked(parsed("Read `FeedView.swift` first."), code: ink)
+        let inked = MarkedProse.inked(
+            parsed("Read `FeedView.swift` first."),
+            code: ink,
+            link: linkInk,
+        )
 
         #expect(coloured(inked) == ["FeedView.swift"])
     }
@@ -20,14 +25,22 @@ struct MarkedProseTests {
     /// would leave the tint meaning "emphasis of some kind" rather than "this is a token".
     @Test
     func `emphasis takes no ink — only code does`() {
-        let inked = MarkedProse.inked(parsed("The **ramp** and `surface.base`."), code: ink)
+        let inked = MarkedProse.inked(
+            parsed("The **ramp** and `surface.base`."),
+            code: ink,
+            link: linkInk,
+        )
 
         #expect(coloured(inked) == ["surface.base"])
     }
 
     @Test
     func `every span in a line is inked, not just the first`() {
-        let inked = MarkedProse.inked(parsed("Drops `VAR=value` and `cd …` preludes."), code: ink)
+        let inked = MarkedProse.inked(
+            parsed("Drops `VAR=value` and `cd …` preludes."),
+            code: ink,
+            link: linkInk,
+        )
 
         #expect(coloured(inked) == ["VAR=value", "cd …"])
     }
@@ -36,7 +49,22 @@ struct MarkedProseTests {
     func `prose with no marks in it comes back untouched`() {
         let plain = parsed("Nothing here was marked.")
 
-        #expect(MarkedProse.inked(plain, code: ink) == plain)
+        #expect(MarkedProse.inked(plain, code: ink, link: linkInk) == plain)
+    }
+
+    /// Colour is not enough on its own — a reader who cannot separate two hues sees an ordinary
+    /// word. The rule under it is what still says "pressable" to them.
+    @Test
+    func `a link is inked and ruled, and nothing else is`() {
+        let inked = MarkedProse.inked(
+            parsed("See [ADR-0020](https://example.com) and `Plan`."),
+            code: ink,
+            link: linkInk,
+        )
+        let ruled = inked.runs.filter { $0.underlineStyle != nil }
+
+        #expect(ruled.map { String(inked[$0.range].characters) } == ["ADR-0020"])
+        #expect(ruled.allSatisfy { $0.foregroundColor == linkInk.color })
     }
 
     private func parsed(_ text: String) -> AttributedString {

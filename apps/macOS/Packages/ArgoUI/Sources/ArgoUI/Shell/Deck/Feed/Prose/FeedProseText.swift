@@ -18,11 +18,28 @@ struct FeedProseText: View {
     var rung: ArgoTypeScale = ArgoFeedRow.proseRung
     var weight: Font.Weight?
 
+    /// Where this paragraph's links ended up once it wrapped. Reported by the renderer, because
+    /// wrapping is the only thing that knows.
+    @State private var links: [ProseLinkRun] = []
+
     var body: some View {
-        Text(MarkedProse.inked(marked, code: argo.color.text.code))
+        MarkedProse.composed(inked)
             .argoText(rung, weight)
             .lineSpacing(ArgoFeedRow.proseLineSpacing)
             .multilineTextAlignment(.leading)
+            .textRenderer(ProseLinkRenderer { found in
+                guard found != links else { return }
+                links = found
+            })
+            .proseLinks(links)
+    }
+
+    private var inked: AttributedString {
+        MarkedProse.inked(
+            marked,
+            code: argo.color.text.code,
+            link: argo.color.interaction.accent,
+        )
     }
 
     /// The agent's own inline marks, drawn as marks: `code` spans and emphasis are how a CLI

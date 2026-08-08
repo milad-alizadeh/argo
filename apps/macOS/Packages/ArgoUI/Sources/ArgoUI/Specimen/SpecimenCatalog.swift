@@ -26,6 +26,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feed
     case feedCalls
     case feedProse
+    case feedMarkdown
     case feedEvidence
     case feedRunEvidence
     case feedSurveyEvidence
@@ -101,6 +102,13 @@ public struct SpecimenScreen: View {
                 room: .sessions,
                 feed: FeedProjection.previewProseRows,
             )
+        case .feedMarkdown:
+            // Every block one message can be made of, at the feed's own measure and nothing else
+            // on the screen. Four of them are judgements no test can make: whether a fence reads
+            // as code under the grammar the agent named, whether a table's columns take the width
+            // their words need, whether a `code` span is findable mid-sentence, and whether a link
+            // reads as pressable before anybody presses it.
+            MarkdownSpecimen()
         case .feedEvidence:
             // The panel open on the failed command. The one state a screenshot has to carry: the
             // feed narrowed to its measure, the rail spent, and what went wrong readable in full

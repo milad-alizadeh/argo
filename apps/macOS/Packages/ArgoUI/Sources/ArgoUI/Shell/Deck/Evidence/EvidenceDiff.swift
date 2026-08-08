@@ -58,8 +58,6 @@ private struct EvidenceHunkProse: View {
 
 /// One contiguous run of changed lines, numbered as the host numbered it.
 private struct EvidenceHunk: View {
-    @Environment(\.argo) private var argo
-
     let hunk: DiffHunk
     let language: EvidenceLanguage?
 

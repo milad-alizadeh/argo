@@ -22,6 +22,9 @@ enum MarkdownBlock: Equatable {
     /// A fenced block, verbatim and unparsed. Its `info` string is the language the agent named,
     /// where it named one.
     case fenced(code: String, info: String?)
+    /// A pipe table. Found when a paragraph closes rather than line by line, because the row of
+    /// dashes on the SECOND line is what says the first one was a header.
+    case table(MarkdownTable)
 
     static func blocks(in text: String) -> [MarkdownBlock] {
         var scan = MarkdownScan()
@@ -84,8 +87,12 @@ private struct MarkdownScan {
     /// lines it meant as one block is joined as it was written rather than reflowed.
     private mutating func closeParagraph() {
         guard !paragraph.isEmpty else { return }
-        blocks.append(.paragraph(paragraph.joined(separator: "\n")))
-        paragraph = []
+        defer { paragraph = [] }
+        guard let table = MarkdownTable.read(paragraph) else {
+            blocks.append(.paragraph(paragraph.joined(separator: "\n")))
+            return
+        }
+        blocks.append(.table(table))
     }
 }
 

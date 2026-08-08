@@ -39,8 +39,9 @@ extension CockpitPresentation.Session {
     ]
         + workedOn
         + [
-            // Written with the shape a CLI actually writes in — a heading, a list, a fenced block.
-            // A fixture of flat paragraphs would prove nothing about reading an agent's markdown.
+            // Written with the shape a CLI actually writes in — a heading, a list, a fenced block,
+            // a pipe table, a link and the `code` spans a sentence is half made of. A fixture of
+            // flat paragraphs would prove nothing about reading an agent's markdown.
             .message(
                 markdown: """
                 ## Landed
@@ -52,9 +53,15 @@ extension CockpitPresentation.Session {
 
                 ```swift
                 public static let inset: CGFloat = ArgoSpacing.section
+                // The measure is typographic, not a rung of the ladder.
                 ```
 
-                - The contract suite asserts every one of them.
+                | Ticket | Label | Blocked by |
+                |---|---|---|
+                | #474 — Read each prose string once | `ready-for-agent` | — |
+                | #477 — Confirm the deck moves cleanly | `ready-for-human` | #474 |
+
+                - The contract suite asserts every one of them, per [ADR-0021](https://example.com).
                 - The build is green again.
                 """,
             ),
