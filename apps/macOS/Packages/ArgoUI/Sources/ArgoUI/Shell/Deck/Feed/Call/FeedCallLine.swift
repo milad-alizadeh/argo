@@ -3,22 +3,27 @@ import SwiftUI
 
 /// A call, drawn as one line of type with a mark on it.
 ///
-/// One line at any window width, which is what the filename-only subject buys: nothing here wraps,
-/// nothing is elided to fit a column, and the only thing that ever adds a second line is a failure
-/// with something to say.
+/// One line at any window width, and one line WHATEVER happened: a failure is marked rather than
+/// explained here, because a feed that prints what went wrong stops being a feed the moment a
+/// stack trace lands in it. What went wrong is the panel's, whole and verbatim.
 struct FeedCallLine: View {
     @Environment(\.argo) private var argo
 
     let call: FeedCall
+    /// Whether this row's evidence is what the panel is showing. The row that was opened stays
+    /// marked, or a reader with a panel full of output has nothing saying which line it came from.
+    let isOpen: Bool
+    let open: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoFeedRow.stepBeforeProse) {
+        Button(action: open) {
             sentence
-            if let diagnostic = call.ending.diagnostic {
-                FeedDiagnostic(text: diagnostic)
-            }
         }
+        .buttonStyle(FeedCallButtonStyle(isOpen: isOpen))
+        .disabled(call.disclosure == .none)
         .accessibilityElement(children: .combine)
+        .accessibilityLabel(spoken)
+        .accessibilityHint(call.disclosure == .available ? "Opens what this call produced" : "")
     }
 
     private var sentence: some View {
@@ -27,7 +32,11 @@ struct FeedCallLine: View {
             Text(call.kind.verb)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.tertiary)
-            FeedCallSubject(subject: call.subject, destination: call.kind.destination)
+            FeedCallSubject(
+                subject: call.subject,
+                destination: call.kind.destination,
+                isOpen: isOpen,
+            )
             churn
             outcome
             disclosure
@@ -35,22 +44,28 @@ struct FeedCallLine: View {
         .lineLimit(1)
     }
 
-    /// The mark takes the failure ink, which is the whole of how a failed call announces itself on
-    /// its own line — the words stay the words, and a red verb would read as a different verb.
-    /// The column is drawn as an empty one where there is no mark, not skipped: a run of calls
-    /// reads as one piece of work because every verb starts on the same vertical, and an
-    /// unclassified row that closed the gap up would be the only line stepping out of it.
+    /// The mark takes the failure ink, which is how a failed call announces itself: the words stay
+    /// the words, and a red verb would read as a different verb. The column is drawn as an empty
+    /// one where there is no mark, not skipped — a run of calls reads as one piece of work because
+    /// every verb starts on the same vertical.
     private var mark: some View {
         Color.clear
             .frame(width: ArgoFeedRow.callSymbolWidth, height: ArgoTypography.body.glyphSize)
             .overlay {
-                if let symbol = call.kind.symbol {
+                if let symbol = markSymbol {
                     ArgoGlyph(symbol, ArgoTypography.body)
                 }
             }
             .foregroundStyle(
                 call.ending.hasFailed ? argo.color.state.failure : argo.color.text.disabled,
             )
+    }
+
+    /// A failure takes its OWN mark rather than a tinted version of its kind's. Colour alone is
+    /// not a reading: it is the one difference a reader who cannot see it would lose entirely, and
+    /// this row's whole account of the failure is now the mark and one word.
+    private var markSymbol: String? {
+        call.ending.hasFailed ? ArgoSymbol.callFailed : call.kind.symbol
     }
 
     @ViewBuilder private var churn: some View {
@@ -69,50 +84,85 @@ struct FeedCallLine: View {
     }
 
     /// What the call produced, reduced to one line of its own output — the last line a command
-    /// printed, or the host's exit line where it failed. A call that produced nothing a row can
-    /// read says nothing rather than a count Argo would have had to work out itself.
+    /// printed, or the host's exit line where it failed. In the failure ink when it failed, so the
+    /// row says so twice and never only in colour.
     @ViewBuilder private var outcome: some View {
         if let outcome = call.ending.outcome {
             Text(outcome)
                 .argoText(ArgoTypography.machineCaption)
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(
+                    call.ending.hasFailed ? argo.color.state.failure : argo.color.text.tertiary,
+                )
         }
     }
 
     @ViewBuilder private var disclosure: some View {
         if call.disclosure == .available {
-            ArgoGlyph(indicator: ArgoSymbol.disclosure, height: ArgoLayout.disclosureHeight)
-                .foregroundStyle(argo.color.text.disabled)
+            ArgoGlyph(indicator: ArgoSymbol.disclosureTrailing, height: ArgoLayout.disclosureHeight)
+                .foregroundStyle(isOpen ? argo.color.interaction.accent : argo.color.text.disabled)
         }
+    }
+
+    private var spoken: String {
+        [call.kind.verb, call.subject.spoken, call.ending.outcome]
+            .compactMap(\.self)
+            .joined(separator: " ")
     }
 }
 
-/// The one line a failure earns, verbatim from the record and never interpreted.
+/// A row that opens something, drawn as a line of prose rather than as a control.
 ///
-/// One line, hard: a feed that spills a stack trace stops being a feed, and the rest of the output
-/// is behind the row's own disclosure. It sits under the words rather than under the mark, so it
-/// reads as the call's second line and not as a row of its own.
-private struct FeedDiagnostic: View {
+/// The whole line is the target and not just the filename in it: at this density a word-sized hit
+/// area is a row you have to aim at, and every part of the sentence is about the same call anyway.
+private struct FeedCallButtonStyle: ButtonStyle {
     @Environment(\.argo) private var argo
+    @Environment(\.isEnabled) private var isEnabled
 
-    let text: String
+    let isOpen: Bool
 
-    var body: some View {
-        Text(text)
-            .argoText(ArgoTypography.machineCaption)
-            .foregroundStyle(argo.color.state.failure)
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .padding(.leading, ArgoFeedRow.diagnosticIndent)
-            .frame(maxWidth: ArgoFeedRow.measure, alignment: .leading)
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, ArgoSpacing.snug)
+            .padding(.vertical, ArgoSpacing.hair)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                ground(configuration.isPressed),
+                in: .rect(cornerRadius: ArgoRadius.control),
+            )
+            // Back out the inset the ground needs, so a row with evidence and one without still
+            // start on the same vertical. The highlight is drawn around the line, not beside it.
+            .padding(.horizontal, -ArgoSpacing.snug)
+            .contentShape(.rect)
+    }
+
+    private func ground(_ isPressed: Bool) -> ArgoColor {
+        guard isEnabled else { return .transparent }
+        if isOpen {
+            return argo.color.surface.selected
+        }
+        return isPressed ? argo.color.surface.selected : .transparent
     }
 }
 
 #Preview("Call lines — every kind the preview transcript makes") {
     VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
-        ForEach(FeedProjection.previewRows) { row in
+        ForEach(FeedProjection.previewCallRows) { row in
             if case let .call(call) = row.content {
-                FeedCallLine(call: call)
+                FeedCallLine(call: call, isOpen: false, open: {})
+            }
+        }
+    }
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 720)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Call lines — the row whose evidence is open") {
+    VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
+        ForEach(FeedProjection.previewCallRows) { row in
+            if case let .call(call) = row.content {
+                FeedCallLine(call: call, isOpen: call.ending.hasFailed, open: {})
             }
         }
     }

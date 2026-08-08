@@ -34,4 +34,12 @@ public enum ArgoLayout {
     public static let agentsRailWidth: CGFloat = 256
     public static let minimapLaneWidth: CGFloat = 56
     public static let deckDockHeight: CGFloat = 40
+
+    /// The evidence panel, opened by a call in the feed.
+    ///
+    /// It takes the Agents rail's width AND whatever the feed has over its reading measure, which
+    /// is the one arrangement that costs the feed nothing it was using: prose is capped at the
+    /// measure, so every point past it was already empty column. The rail goes because a panel
+    /// narrower than this stops being able to show a line of output without wrapping it.
+    public static let evidencePanelMinimumWidth: CGFloat = 320
 }

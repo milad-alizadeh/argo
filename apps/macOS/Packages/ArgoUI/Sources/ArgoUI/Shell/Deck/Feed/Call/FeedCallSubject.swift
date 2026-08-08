@@ -12,6 +12,9 @@ struct FeedCallSubject: View {
     /// Where a moved file went. A qualifier rather than a second sentence: the verb already said
     /// what happened, and this says where to.
     let destination: String?
+    /// Whether this row's evidence is the panel's content. The subject is what carries it, because
+    /// the subject is what the panel is showing.
+    var isOpen = false
 
     var body: some View {
         switch subject {
@@ -25,7 +28,7 @@ struct FeedCallSubject: View {
         HStack(spacing: ArgoSpacing.tight) {
             Text(file.name)
                 .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.secondary)
+                .foregroundStyle(ink)
             quiet(file.qualifier)
             quiet(destination.map { "→ \($0)" })
         }
@@ -36,7 +39,7 @@ struct FeedCallSubject: View {
     private func typed(_ command: String) -> some View {
         Text(command)
             .argoText(ArgoTypography.machine)
-            .foregroundStyle(argo.color.text.secondary)
+            .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.tight)
             .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.marker))
     }
@@ -44,7 +47,13 @@ struct FeedCallSubject: View {
     private func plain(_ text: String) -> some View {
         Text(text)
             .argoText(ArgoTypography.body)
-            .foregroundStyle(argo.color.text.secondary)
+            .foregroundStyle(ink)
+    }
+
+    /// The open row's subject takes the brand hue — the same Ion Blue that marks a selected row in
+    /// the roster, and for the same reason: it is a selection, not a status.
+    private var ink: ArgoColor {
+        isOpen ? argo.color.interaction.accentBright : argo.color.text.secondary
     }
 
     @ViewBuilder private func quiet(_ text: String?) -> some View {

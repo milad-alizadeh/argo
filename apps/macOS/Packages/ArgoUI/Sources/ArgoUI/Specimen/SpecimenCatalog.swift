@@ -25,6 +25,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case sessionsDeck
     case feed
     case feedCalls
+    case feedEvidence
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -87,6 +88,18 @@ public struct SpecimenScreen: View {
             InstrumentDeckShell(
                 room: .sessions,
                 feed: FeedProjection.previewCallRows,
+            )
+        case .feedEvidence:
+            // The panel open on the failed command. The one state a screenshot has to carry: the
+            // feed narrowed to its measure, the rail spent, and what went wrong readable in full
+            // beside the row that says only that it did.
+            // The call rows rather than the whole feed: opening a row narrows the column it is in,
+            // and against the full transcript the failure this is a render OF sits below the fold.
+            // A screenshot of a panel whose row is off screen shows half the state.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewCallRows,
+                open: FeedProjection.previewFailedCallID,
             )
         }
     }

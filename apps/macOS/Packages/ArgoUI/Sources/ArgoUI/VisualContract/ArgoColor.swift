@@ -35,6 +35,10 @@ public struct ArgoColor: Sendable, Hashable {
     public func opacity(_ opacity: Double) -> ArgoColor {
         ArgoColor(red: red, green: green, blue: blue, opacity: opacity)
     }
+
+    /// No ground at all. A role's absence, spelled once, so a view choosing between a wash and
+    /// nothing stays in the contract's own type instead of dropping to `Color.clear` for one arm.
+    public static let transparent = ArgoColor(hex: 0x000000, opacity: 0)
 }
 
 /// Lets a role be spelled straight into `.fill`, `.background` and `.foregroundStyle`

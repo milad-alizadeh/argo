@@ -7,6 +7,9 @@ import SwiftUI
 /// in the order it produced it.
 struct FeedView: View {
     let rows: [FeedRow]
+    /// Which call's evidence is open. Owned by the deck, not here: opening one resizes the column
+    /// this view is drawn in, which is a fact about the deck rather than about the feed.
+    @Binding var open: FeedRow.ID?
 
     /// Which prompts the reader has unfolded. Held here rather than in the row: the stack is lazy,
     /// so a row's own state dies the moment it scrolls out of view.
@@ -16,7 +19,7 @@ struct FeedView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: ArgoSpacing.flush) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { position, row in
-                    FeedRowView(row: row, isExpanded: unfolding(row.id))
+                    FeedRowView(row: row, isExpanded: unfolding(row.id), open: $open)
                         .padding(.top, step(before: position))
                 }
             }
@@ -62,13 +65,20 @@ struct FeedView: View {
 private struct FeedRowView: View {
     let row: FeedRow
     @Binding var isExpanded: Bool
+    @Binding var open: FeedRow.ID?
 
     var body: some View {
         switch row.content {
         case let .prompt(text): FeedPrompt(text: text, isExpanded: $isExpanded)
         case let .message(markdown): FeedProse(text: markdown, voice: .message)
         case let .thought(markdown): FeedProse(text: markdown, voice: .thought)
-        case let .call(call): FeedCallLine(call: call)
+        case let .call(call):
+            FeedCallLine(call: call, isOpen: open == row.id) {
+                // A second click on the open row closes it. The row is the control, so it is also
+                // the way back out — a panel whose only exit is its own ✕ makes the reader aim at
+                // the far side of the deck to undo a click they made on this one.
+                open = open == row.id ? nil : row.id
+            }
         }
     }
 }
@@ -89,21 +99,21 @@ private struct FeedSilence: View {
 }
 
 #Preview("Feed — a turn read from a transcript") {
-    FeedView(rows: FeedProjection.previewRows)
+    FeedView(rows: FeedProjection.previewRows, open: .constant(nil))
         .frame(width: 820, height: 560)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Feed — a deck wide enough to break the measure") {
-    FeedView(rows: FeedProjection.previewRows)
+    FeedView(rows: FeedProjection.previewRows, open: .constant(nil))
         .frame(width: 1440, height: 560)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Feed — a Session that has said nothing") {
-    FeedView(rows: [])
+    FeedView(rows: [], open: .constant(nil))
         .frame(width: 820, height: 320)
         .argoDeckSurface()
         .argoAppearance()

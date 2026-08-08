@@ -38,38 +38,36 @@ struct CallVocabularyTests {
         #expect(diff.destination == "Sources/ArgoUI/VisualContract/Tint.swift")
     }
 
+    /// The status alone. What went wrong is the whole output's to say, and the surface that shows
+    /// it shows all of it — so nothing here picks a line to stand for the failure.
     @Test
-    func `a failure's exit line and its first real line are read apart`() async throws {
+    func `a failed command's exit line is read, and the rest is left whole`() async throws {
         let outcomes = try await Fixture.events("callVocabulary").outcomes()
         guard case let .output(output) = try #require(outcomes["call-build"]?.result) else {
             Issue.record("a failed command carries what it printed")
             return
         }
-        let failure = commandFailure(in: output.text)
 
-        #expect(failure.status == "Exit code 65")
-        #expect(failure
-            .diagnostic == "Tint.swift:12:7: error: cannot find type 'ArgoColour' in scope")
+        #expect(commandExitStatus(in: output.text) == "Exit code 65")
+        #expect(output.text.contains("cannot find type 'ArgoColour' in scope"))
     }
 
     @Test
-    func `a failure that printed nothing but its status has no diagnostic to show`() {
-        #expect(commandFailure(in: "Exit code 1\n") == CommandFailure(
-            status: "Exit code 1",
-            diagnostic: nil,
-        ))
+    func `a failure the host opened with no exit line claims no status`() {
+        #expect(commandExitStatus(in: "File does not exist.") == nil)
+        #expect(commandExitStatus(in: "   \n\n") == nil)
+    }
+
+    /// Anchored at both ends: a line that merely mentions an exit code is not the exit line.
+    @Test
+    func `only a line that IS the exit line is read as one`() {
+        #expect(commandExitStatus(in: "Exit code 1\n") == "Exit code 1")
+        #expect(commandExitStatus(in: "make: Exit code 1 was returned") == nil)
     }
 
     @Test
-    func `a failure with no exit line reads its first line as the diagnostic`() {
-        #expect(commandFailure(in: "File does not exist.") == CommandFailure(
-            status: nil,
-            diagnostic: "File does not exist.",
-        ))
-    }
-
-    @Test
-    func `a failure that printed nothing at all claims neither`() {
-        #expect(commandFailure(in: "   \n\n") == CommandFailure(status: nil, diagnostic: nil))
+    func `a command's outcome is the last line it actually printed`() {
+        #expect(commandOutcome(in: "one\ntwo\n\n  \n") == "two")
+        #expect(commandOutcome(in: "  \n") == nil)
     }
 }

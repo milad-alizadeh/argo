@@ -29,6 +29,10 @@ public enum ArgoFeedRow {
     /// scanned, and the rest of the cockpit's density does not apply inside the column.
     public static let lineHeight: CGFloat = 21
 
+    /// The gutter a patch's line numbers sit in, inside the evidence panel. Wide enough for four
+    /// digits, which is where a file stops being one anybody scrolls.
+    public static let diffGutterWidth: CGFloat = 32
+
     /// The widest a line of prose may run, whatever the deck is doing.
     ///
     /// A measure, not a layout: past roughly 75 characters the eye loses the line it is returning
@@ -57,16 +61,19 @@ public enum ArgoFeedRow {
         measure * bubbleShare
     }
 
-    /// Where a failure's one diagnostic line starts: under the words, not under the mark, so it
-    /// reads as the call's own second line rather than as a row of its own.
-    public static var diagnosticIndent: CGFloat {
-        callSymbolWidth + callGap
-    }
-
     /// The extra leading that puts the body role on `lineHeight`. Floored at zero: a line height
     /// under the font's own is not something leading can express, and a negative one would tighten
     /// the very rhythm this exists to open.
     public static var proseLineSpacing: CGFloat {
         max(0, lineHeight - ArgoTypography.body.size * naturalLineHeightRatio)
     }
+
+    /// The same rhythm for machine output. Tighter than prose because a terminal stream is scanned
+    /// rather than read, and its own lines already carry the structure that leading gives prose.
+    public static var machineLineSpacing: CGFloat {
+        max(0, machineLineHeight - ArgoTypography.machine.size * naturalLineHeightRatio)
+    }
+
+    /// What a line of output is set at, inside the evidence panel.
+    static let machineLineHeight: CGFloat = 18
 }

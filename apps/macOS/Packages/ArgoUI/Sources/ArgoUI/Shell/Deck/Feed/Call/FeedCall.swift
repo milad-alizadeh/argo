@@ -12,7 +12,19 @@ struct FeedCall: Equatable, Sendable {
     /// What a mutation did in lines, where the record carried a patch to count.
     let churn: Churn?
     let ending: Ending
-    let disclosure: Disclosure
+    /// What the engine kept of what the call produced — the panel's whole content, and the reason
+    /// the row can be opened at all. Carried rather than looked up later so the disclosure marker
+    /// cannot promise something the panel then has nothing to show for.
+    let evidence: ToolResult?
+
+    /// Whether the row could open onto anything.
+    ///
+    /// Derived from the evidence and never from the kind: two reads of the same file, one answered
+    /// by the record and one not, are two different rows. Computed rather than stored, so the
+    /// marker and what opens behind it cannot disagree.
+    var disclosure: Disclosure {
+        evidence == nil ? .none : .available
+    }
 }
 
 extension FeedCall {
@@ -46,6 +58,17 @@ extension FeedCall {
         case command(String)
         /// A pattern, a URL, a brief, a tool's own name — whatever the call named, verbatim.
         case plain(String)
+
+        /// What the subject reads as out loud. A file is its name and not its path here too: the
+        /// path is what the panel opens on, and a screen reader working down a feed wants the same
+        /// short address the eye gets.
+        var spoken: String {
+            switch self {
+            case let .file(file): file.name
+            case let .command(command): command
+            case let .plain(text): text
+            }
+        }
     }
 
     /// A file as the feed addresses it: the filename, and nothing else, at any window width.
@@ -98,7 +121,10 @@ extension FeedCall {
         /// What it produced, in one line of the record's own characters. `nil` where the engine
         /// kept nothing to read — a successful file read, whose whole payload is the file.
         case succeeded(outcome: String?)
-        case failed(CommandFailure)
+        /// The host's own exit line, or `nil` where it wrote none. What went wrong is the panel's
+        /// to show, whole; a line of it lifted onto the row would be Argo choosing which part of a
+        /// failure explains it.
+        case failed(status: String?)
     }
 
     /// What a mutation did, in lines.
@@ -113,11 +139,7 @@ extension FeedCall {
         }
     }
 
-    /// Whether the row could open onto anything.
-    ///
-    /// Derived from whether the engine kept a result, never from the kind: two reads of the same
-    /// file, one answered by the record and one not, are two different rows, and a marker that
-    /// followed the kind would promise evidence that was never stored.
+    /// Whether the row could open onto anything — see `FeedCall.disclosure`, which derives it.
     enum Disclosure: Equatable, Sendable {
         case none
         case available
@@ -130,27 +152,24 @@ extension FeedCall {
             subject: .file(file),
             churn: churn,
             ending: ending,
-            disclosure: disclosure,
+            evidence: evidence,
         )
     }
 }
 
 extension FeedCall.Ending {
     /// The one line the row shows after its subject: what a command produced, or the host's own
-    /// exit line where it did not.
+    /// exit line where it failed.
+    ///
+    /// A failure the host gave no exit line reads `Error` — Argo's own word, and the only one on
+    /// the line that is. Something has to say the call went wrong where the record wrote nothing
+    /// sayable, and a blank outcome under a red mark leaves the mark to carry it alone.
     var outcome: String? {
         switch self {
         case .pending: nil
         case let .succeeded(outcome): outcome
-        case let .failed(failure): failure.status
+        case let .failed(status): status ?? "Error"
         }
-    }
-
-    /// The one line a failure earns beneath the sentence. Every other ending has none, which is
-    /// what keeps a call to one line.
-    var diagnostic: String? {
-        guard case let .failed(failure) = self else { return nil }
-        return failure.diagnostic
     }
 
     var hasFailed: Bool {
