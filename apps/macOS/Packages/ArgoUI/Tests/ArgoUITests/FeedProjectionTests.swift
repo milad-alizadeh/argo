@@ -62,9 +62,7 @@ struct FeedProjectionTests {
             .cwd("/tmp/project"),
             .model("claude-opus-5"),
             .branch("main"),
-            .turnEnded(.endTurn),
             .plan(Plan(entries: [PlanEntry(text: "Ship it", status: .pending)])),
-            .compaction(atMs: 1000),
             .unreadableLine(raw: "{"),
         ]
 
@@ -75,7 +73,7 @@ struct FeedProjectionTests {
     func `a row is addressed by its own place in the feed`() {
         let rows = FeedProjection.rows(from: [
             .message(markdown: "Same."),
-            .turnEnded(.endTurn),
+            .title("A title"),
             .message(markdown: "Same."),
         ])
 

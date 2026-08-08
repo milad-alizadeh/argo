@@ -92,6 +92,8 @@ private struct FeedRowView: View {
         // to the picture.
         case let .gallery(gallery):
             FeedGalleryRow(gallery: gallery) { selection.lit = $0 }
+        case let .ask(ask): FeedAskLine(ask: ask)
+        case let .mark(mark): FeedMarkLine(mark: mark)
         }
     }
 

@@ -50,6 +50,7 @@ struct EvidenceReadingTests {
             ending: .succeeded,
             evidence: [.output(OutputEvidence(tier: .direct, text: "    1\t## What I found"))],
             repeats: 1,
+            spend: nil,
         )
 
         #expect(!call.opened.offersProse)
@@ -74,6 +75,7 @@ struct EvidenceReadingTests {
                 ])],
             ))],
             repeats: 1,
+            spend: nil,
         ).opened
     }
 }

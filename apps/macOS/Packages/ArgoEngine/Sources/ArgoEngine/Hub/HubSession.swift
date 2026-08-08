@@ -120,7 +120,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             observeActivity(outcome.endedAtMs)
         case let .compaction(atMs):
             observeActivity(atMs)
-        case .message, .thought, .plan, .unreadableLine:
+        case .message, .thought, .plan, .usage, .unreadableLine:
             break
         }
     }

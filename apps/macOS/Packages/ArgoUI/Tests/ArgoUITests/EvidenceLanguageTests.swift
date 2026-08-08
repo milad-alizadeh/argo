@@ -89,6 +89,7 @@ struct EvidenceLanguageTests {
             ending: .succeeded,
             evidence: [.output(OutputEvidence(tier: .direct, text: "all:"))],
             repeats: 1,
+            spend: nil,
         ).opened
     }
 }

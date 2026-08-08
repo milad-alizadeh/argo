@@ -1,3 +1,5 @@
+import ArgoEngine
+
 /// A run of calls that did the same thing to the same subject, read as one line.
 ///
 /// Three edits of one file are one piece of work and three patches. Drawn as three rows they push
@@ -26,8 +28,14 @@ extension FeedCall {
     /// Whether another call is the same work on the same subject — the same verb AND the same
     /// thing named. A create followed by an edit of one file is two different claims and stays two
     /// rows; the destination a move carries is part of the verb here, for the same reason.
+    ///
+    /// A DELEGATION never stands for another, however alike the two look. Three edits of one file
+    /// are one piece of work repeated; three subagents handed the same brief are three other
+    /// agents, each with its own life, its own ending and its own spend — collapsed, one line would
+    /// report a run that finished when only the last of them had, and the rail reading off it would
+    /// show one agent's figure against every chip.
     func stands(for other: FeedCall) -> Bool {
-        kind == other.kind && subject == other.subject
+        kind != .delegate && kind == other.kind && subject == other.subject
     }
 
     func merged(with next: FeedCall) -> FeedCall {
@@ -38,6 +46,7 @@ extension FeedCall {
             ending: ending.overtaken(by: next.ending),
             evidence: evidence + next.evidence,
             repeats: repeats + next.repeats,
+            spend: Usage.total(spend, next.spend),
         )
     }
 }
