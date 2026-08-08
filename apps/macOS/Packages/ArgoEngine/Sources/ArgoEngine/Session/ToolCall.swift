@@ -39,13 +39,26 @@ public struct ToolCall: Sendable, Equatable {
     public let target: String?
     /// When the agent emitted the call.
     public let atMs: Int?
+    /// The question this call put, for the one tool whose input IS a question. `nil` for every
+    /// other call, and for an `AskUserQuestion` whose input carried no readable question — a call
+    /// that asked something unreadable is still a call, and inventing a question for it would put
+    /// words in the agent's mouth.
+    public let ask: Ask?
 
-    public init(id: String, name: String, kind: ToolCallKind, target: String?, atMs: Int?) {
+    public init(
+        id: String,
+        name: String,
+        kind: ToolCallKind,
+        target: String?,
+        atMs: Int?,
+        ask: Ask? = nil,
+    ) {
         self.id = id
         self.name = name
         self.kind = kind
         self.target = target
         self.atMs = atMs
+        self.ask = ask
     }
 
     /// The host's own name for the structured question. Matched verbatim, because the tool name IS

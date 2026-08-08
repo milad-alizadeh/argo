@@ -17,6 +17,9 @@ public actor TranscriptReader {
     /// evidence its result is read as, and the target is the path a disk fallback would re-read.
     private struct OpenCall {
         let kind: ToolCallKind
+        /// The host's own name, kept because one reading is gated on it rather than on the kind:
+        /// a question's answer is worth keeping and this vocabulary has no kind for a question.
+        let name: String
         let target: String?
     }
 
@@ -117,7 +120,17 @@ public actor TranscriptReader {
     }
 
     private func assistantEvents(_ message: MessageRecord) -> [TranscriptEvent] {
-        contentEvents(message) + turnEnd(of: message)
+        contentEvents(message) + spent(in: message) + turnEnd(of: message)
+    }
+
+    /// What this record reported spending, where it reported anything.
+    ///
+    /// A sidechain record is skipped for the same reason its turn boundary is: the spend is the
+    /// child's, and the delegating call's result already carries it whole. Counted here as well,
+    /// every delegated token would be in the Session's total twice.
+    private func spent(in message: MessageRecord) -> [TranscriptEvent] {
+        guard !message.isSidechain, let usage = message.usage else { return [] }
+        return [.usage(usage)]
     }
 
     /// The Turn boundary a record reports, or nothing.
@@ -160,13 +173,16 @@ public actor TranscriptReader {
 
     private func callEvents(_ use: ToolUseBlock, atMs: Int?) -> [TranscriptEvent] {
         let kind = toolCallKind(use.name)
-        openCalls[use.id] = OpenCall(kind: kind, target: toolCallTarget(use.input))
+        openCalls[use.id] = OpenCall(kind: kind, name: use.name, target: toolCallTarget(use.input))
         let call = ToolCall(
             id: use.id,
             name: use.name,
             kind: kind,
             target: toolCallTarget(use.input),
             atMs: atMs,
+            // Gated on the tool's own name: `AskUserQuestion` is how a record distinguishes a
+            // question that BLOCKS from one the agent merely typed into a message.
+            ask: use.name == ToolCall.askUserQuestion ? ask(from: use.input) : nil,
         )
         // The plan tool's input IS the plan, so the call and the list it wrote are one record's
         // worth of news. Both are emitted: the call is what happened, the plan is what it said.
@@ -186,8 +202,18 @@ public actor TranscriptReader {
             status: status,
             result: evidence(for: result, status: status, reported: message.toolUseResult),
             endedAtMs: message.timestampMs,
-            usage: message.usage,
+            usage: spend(reportedIn: message),
         )
+    }
+
+    /// What the call itself reported spending.
+    ///
+    /// The record answering a call is a USER record, and a user record carries no `usage` of its
+    /// own — so a delegating call's spend, which is the whole reason this field exists, is written
+    /// where the host puts a tool's own result object instead. Read there second rather than
+    /// first: `message.usage` is the host's own field, and it wins wherever one is present.
+    private func spend(reportedIn message: MessageRecord) -> Usage? {
+        message.usage ?? Usage(reported: message.toolUseResult?["usage"])
     }
 
     /// What one resolved call produced, kinded — its patch where it mutated, its image where it
@@ -210,6 +236,7 @@ public actor TranscriptReader {
 
         let resolved = ResolvedCall(
             kind: call.kind,
+            name: call.name,
             status: status,
             target: call.target,
             content: result.content,

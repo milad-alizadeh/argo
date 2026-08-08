@@ -24,6 +24,7 @@ enum FeedCallReading {
             ending: ending(of: outcome),
             evidence: [kept(outcome?.result)].compactMap(\.self),
             repeats: 1,
+            spend: outcome?.usage,
         )
     }
 

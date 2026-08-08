@@ -67,4 +67,5 @@ extension CockpitPresentation.Session {
                 """,
             ),
         ]
+        + fannedOut
 }

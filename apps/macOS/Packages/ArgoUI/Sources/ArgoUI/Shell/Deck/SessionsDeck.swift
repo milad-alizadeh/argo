@@ -63,7 +63,7 @@ private struct DeckContentRow: View {
         GeometryReader { proxy in
             HStack(spacing: ArgoSpacing.flush) {
                 if showsRail {
-                    DeckSlot(zone: .rail)
+                    AgentsRail(agents: agents)
                         .frame(width: railWidth)
                     DeckSeam(
                         width: $railWidth,
@@ -98,7 +98,14 @@ private struct DeckContentRow: View {
     /// looking at what one call produced is not watching a fan-out, and three columns beside a
     /// fourth leaves none of them a usable width.
     private var showsRail: Bool {
-        openEvidence == nil && FeedProjection.runningDelegations(in: feed) > 0
+        openEvidence == nil && agents.contains(where: \.isRunning)
+    }
+
+    /// Read once and asked twice — whether the rail is there at all, and what is in it. Two reads
+    /// of the same rows could not disagree, but they would be two places to change when the
+    /// reading does.
+    private var agents: [FeedAgent] {
+        FeedAgents.all(in: feed)
     }
 
     /// Whatever is over what the reader was reading, innermost first.
@@ -157,11 +164,12 @@ private struct DeckContentRow: View {
         case let .call(call): call.opened
         case let .survey(survey): survey.opened
         // Prose opens nothing, and neither does a gallery — its shots open a lightbox instead, and
-        // routing them through a panel would show a picture beside a smaller copy of itself. A row
-        // that cannot be clicked into the panel cannot be the open one, so both arms are
-        // unreachable — and they are cases rather than a `default` so a new row kind that CAN open
-        // fails this build instead of silently resolving to a closed panel.
-        case .prompt, .message, .thought, .gallery: nil
+        // routing them through a panel would show a picture beside a smaller copy of itself. A
+        // question opens nothing either: what it produced is the answer, and the answer is already
+        // the row. A row that cannot be clicked into the panel cannot be the open one, so these
+        // arms are unreachable — and they are cases rather than a `default` so a new row kind that
+        // CAN open fails this build instead of silently resolving to a closed panel.
+        case .prompt, .message, .thought, .gallery, .ask, .mark: nil
         }
     }
 }

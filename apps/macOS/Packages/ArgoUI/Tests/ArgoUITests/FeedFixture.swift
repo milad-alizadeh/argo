@@ -19,6 +19,25 @@ enum FeedFixture {
         ToolCallOutcome(id: id, status: .completed, result: result, endedAtMs: nil, usage: nil)
     }
 
+    /// A call that reported what it spent — the delegating call, which is the only one that ever
+    /// does. Its result is the subagent's whole sidechain, priced.
+    static func spent(_ id: String, _ usage: Usage) -> ToolCallOutcome {
+        ToolCallOutcome(id: id, status: .completed, result: nil, endedAtMs: nil, usage: usage)
+    }
+
+    /// The question tool, carrying a question. Named `ask` because one is all any of these
+    /// fixtures needs, and the id is what the outcome answering it has to quote.
+    static func asking(_ questions: Ask.Question...) -> ToolCall {
+        ToolCall(
+            id: "ask",
+            name: ToolCall.askUserQuestion,
+            kind: .other,
+            target: nil,
+            atMs: nil,
+            ask: Ask(questions: questions),
+        )
+    }
+
     static func failed(_ id: String, printing output: String?) -> ToolCallOutcome {
         ToolCallOutcome(
             id: id,
@@ -96,9 +115,25 @@ enum FeedFixture {
             case let .survey(survey): survey.calls
             // A gallery keeps its pictures and drops the sentence that carried them: a run of six
             // shots has no line left to make a claim about. `galleries(in:)` is where that half is
-            // asserted.
-            case .prompt, .message, .thought, .gallery: []
+            // asserted — and `asks(in:)` and `marks(in:)` are where the other two kinds' are.
+            case .prompt, .message, .thought, .gallery, .ask, .mark: []
             }
+        }
+    }
+
+    /// Every question a stream put, in order.
+    static func asks(in rows: [FeedRow]) -> [FeedAsk] {
+        rows.compactMap { row in
+            guard case let .ask(ask) = row.content else { return nil }
+            return ask
+        }
+    }
+
+    /// Every mark a stream punctuated its reading with, in order.
+    static func marks(in rows: [FeedRow]) -> [FeedMark] {
+        rows.compactMap { row in
+            guard case let .mark(mark) = row.content else { return nil }
+            return mark
         }
     }
 

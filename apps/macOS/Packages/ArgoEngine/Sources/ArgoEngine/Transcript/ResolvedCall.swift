@@ -9,6 +9,9 @@ struct ResolvedCall {
     /// What the call SAYS it did. Which reading answers it is decided from this and never from the
     /// shape of the payload: a record can carry a patch beside any call at all.
     let kind: ToolCallKind
+    /// The host's own tool name. Read by the one reading whose precondition this vocabulary has no
+    /// kind for — a structured question, whose answer is worth keeping and whose kind is `other`.
+    let name: String
     let status: ToolCallStatus
     /// The one field the call named — a path for the kinds that name one, and a pattern, a command
     /// line or a subagent's description for the kinds that do not.

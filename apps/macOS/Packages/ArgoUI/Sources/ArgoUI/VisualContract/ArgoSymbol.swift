@@ -50,6 +50,13 @@ public enum ArgoSymbol {
     // ordinary
     // rows as loudly as the one that broke.
 
+    /// A question put to somebody, waiting or settled. A bubble rather than a bare question mark:
+    /// the mark is that somebody was ASKED, which is a thing said to a person and not a state.
+    public static let asked = "questionmark.bubble"
+    /// The option an answer named. The one tick in the feed, and it marks a CHOICE rather than a
+    /// success — which is why the call lines still carry none.
+    public static let chosen = "checkmark"
+
     /// Closing the evidence panel.
     public static let dismiss = "xmark"
 

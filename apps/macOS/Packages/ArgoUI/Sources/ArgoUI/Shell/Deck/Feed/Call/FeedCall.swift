@@ -23,6 +23,10 @@ struct FeedCall: Equatable, Sendable {
     let evidence: [ToolResult]
     /// How many calls this one line stands for. `1` for all but a collapsed run.
     let repeats: Int
+    /// What the call itself reported spending. `nil` for the ordinary call, which spends nothing of
+    /// its own — a DELEGATING call is what this is for: its result carries the whole spend of the
+    /// subagent it ran, and that result is the only place a sidechain's cost is ever reported.
+    let spend: Usage?
 
     /// Whether the row could open onto anything.
     ///
@@ -168,6 +172,7 @@ extension FeedCall {
             ending: ending,
             evidence: evidence,
             repeats: repeats,
+            spend: spend,
         )
     }
 }

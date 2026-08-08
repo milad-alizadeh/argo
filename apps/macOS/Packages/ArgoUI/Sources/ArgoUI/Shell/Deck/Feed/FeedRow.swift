@@ -20,6 +20,10 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         case survey(FeedSurvey)
         /// A run of pictures, as one row of thumbnails. See `FeedGalleryFold`.
         case gallery(FeedGallery)
+        /// A question put to somebody, waiting or settled. The feed's one attention state.
+        case ask(FeedAsk)
+        /// Something that happened to the reading rather than in it. See `FeedMark`.
+        case mark(FeedMark)
     }
 
     /// The row's place in the feed.
@@ -35,7 +39,20 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     var isCall: Bool {
         switch content {
         case .call, .survey, .gallery: true
-        case .prompt, .message, .thought: false
+        // A question and a mark are neither: one is somebody being waited on and the other is the
+        // shape of the record, and both want the full step a piece of prose gets rather than the
+        // tighter one that welds a run of work together.
+        case .prompt, .message, .thought, .ask, .mark: false
+        }
+    }
+
+    /// Whether this row is something somebody SAID. Neither the work nor the punctuation around it
+    /// — asked by the render that shows the reading with the work taken out, which wants the words
+    /// and not the marks between them.
+    var isProse: Bool {
+        switch content {
+        case .prompt, .message, .thought: true
+        case .call, .survey, .gallery, .ask, .mark: false
         }
     }
 }

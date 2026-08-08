@@ -37,6 +37,13 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// that continues into a tool call closes nothing, and reading it as an end would report a
     /// working agent as finished once per call.
     case turnEnded(StopReason)
+    /// What a record reported spending. One per assistant record that carries a `usage` object —
+    /// the grain the host actually prices, since every request is billed on its own.
+    ///
+    /// A SIDECHAIN record reports none of these: a subagent's spend is read off the delegating
+    /// call's result, which is where the parent's record reports it, and reading both would count
+    /// the same tokens twice.
+    case usage(Usage)
     /// The agent replaced its to-do list.
     case plan(Plan)
     /// History was condensed here. The resume chain stitches across it.

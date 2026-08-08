@@ -31,6 +31,9 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedRunEvidence
     case feedSurveyEvidence
     case feedDocumentEvidence
+    case feedAttention
+    case feedPunctuation
+    case feedAgents
     case feedGallery
     case feedSingleShot
     case feedAbsentShot
@@ -100,18 +103,12 @@ public struct SpecimenScreen: View {
             // The work itself, between the prose taken out: every kind the feed can name, the two
             // same-named files that make a qualifier appear, and the failure that earns a second
             // line. Its own case because in the full feed they are four rows in a screenful.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewCallRows,
-            )
+            sessions(FeedProjection.previewCallRows)
         case .feedProse:
             // What the agent SAID, with the work taken out: the heading, the list and the fenced
             // block of a real answer. The markdown is drawn as blocks, and whether an outline reads
             // as an outline is the judgement no test can make.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewProseRows,
-            )
+            sessions(FeedProjection.previewProseRows)
         case .feedMarkdown:
             // Every block one message can be made of, at the feed's own measure and nothing else
             // on the screen. Four of them are judgements no test can make: whether a fence reads
@@ -126,38 +123,40 @@ public struct SpecimenScreen: View {
             // The call rows rather than the whole feed: opening a row narrows the column it is in,
             // and against the full transcript the failure this is a render OF sits below the fold.
             // A screenshot of a panel whose row is off screen shows half the state.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewCallRows,
-                open: FeedProjection.previewFailedCallID,
-            )
+            sessions(FeedProjection.previewCallRows, open: FeedProjection.previewFailedCallID)
         case .feedRunEvidence:
             // The collapsed run, open. One row said `Edited FeedCallLine.swift ×3`, and the whole
             // claim of the collapse is that the three moments are still three in the panel — which
             // is a thing to look at rather than to assert.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewCallRows,
-                open: FeedProjection.previewRunCallID,
-            )
+            sessions(FeedProjection.previewCallRows, open: FeedProjection.previewRunCallID)
         case .feedSurveyEvidence:
             // The folded run of looking, open. The line says `Searched 1 · Read 5` and nothing
             // else; the claim of the fold is that the five files it stopped naming are still all
             // there, each caption saying which of them the output under it came from.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewCallRows,
-                open: FeedProjection.previewSurveyRowID,
-            )
+            sessions(FeedProjection.previewCallRows, open: FeedProjection.previewSurveyRowID)
         case .feedDocumentEvidence:
             // A markdown file the agent wrote, open. It opens as the DOCUMENT and not as the
             // patch — whether an outline reads as an outline once the `##` stops being drawn is
             // the whole judgement, and it is not one a test can make.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewCallRows,
-                open: FeedProjection.previewDocumentCallID,
-            )
+            sessions(FeedProjection.previewCallRows, open: FeedProjection.previewDocumentCallID)
+        case .feedAttention:
+            // Both questions at once: the one still waiting, in the only attention ink the feed
+            // has, and the one already settled with the option that was taken marked on it. The
+            // judgement is that the second has stopped asking for attention — which is a thing to
+            // look at, since a colour nobody compares reads as loud whatever it is.
+            sessions(FeedProjection.previewAskRows)
+        case .feedPunctuation:
+            // The marks, alone. Whether a hairline across the column reads as the reading changing
+            // shape — rather than as a rule drawn under the row above it — is the whole question,
+            // and it is only answerable with the three of them on one screen.
+            sessions(FeedProjection.previewMarkRows)
+        case .feedAgents:
+            // The rail, filled. Two subagents still working and one landed with what it spent, at
+            // the width the deck actually gives it: whether a labelled figure fits beside a brief
+            // without either being cut is a measurement, not an assertion.
+            AgentsRail(agents: FeedAgents.all(in: FeedProjection.previewRows))
+                .frame(width: ArgoLayout.agentsRailWidth)
+                .argoDeckSurface()
         case .feedGallery:
             // The run of pictures, in the feed it folds inside. Four provenances in one row, and
             // the judgement is whether they read as four different claims without the captions
@@ -170,27 +169,18 @@ public struct SpecimenScreen: View {
         case .feedSingleShot:
             // One shot, alone. The claim is that it gets the SAME treatment as a set — a gallery
             // of one that shrank back to a filename row would be the fold apologising for itself.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewSingleShotRows,
-            )
+            sessions(FeedProjection.previewSingleShotRows)
         case .feedAbsentShot:
             // The picture the record never kept. It has to read as a marked absence rather than as
             // an image that failed to load, and it must not look pressable — which is a thing to
             // look at, since nothing about a disabled button asserts how it reads.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewAbsentShotRows,
-            )
+            sessions(FeedProjection.previewAbsentShotRows)
         case .feedLightbox:
             // A shot opened full size over the whole deck. Only reachable by clicking a thumbnail,
             // so without this case the surface is never looked at — and what it has to settle is
             // whether the picture reads as laid OVER a deck rather than as a second screen.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewCallRows,
-            )
-            .argoLightbox(.constant(FeedProjection.previewShots.first))
+            sessions(FeedProjection.previewCallRows)
+                .argoLightbox(.constant(FeedProjection.previewShots.first))
         case .planPill:
             // Whether one line above the dock reads as standing state rather than as the newest
             // thing the agent said.
@@ -204,6 +194,14 @@ public struct SpecimenScreen: View {
             // to fill in its own line.
             PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)
         }
+    }
+
+    /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is
+    /// being judged is the assembled container. Spelled once: most of this catalog is that one
+    /// state with a different feed in it, and repeating the call per case made each of them four
+    /// lines of plumbing around the one word that differs.
+    private func sessions(_ feed: [FeedRow], open: FeedRow.ID? = nil) -> some View {
+        InstrumentDeckShell(room: .sessions, feed: feed, open: open)
     }
 }
 
