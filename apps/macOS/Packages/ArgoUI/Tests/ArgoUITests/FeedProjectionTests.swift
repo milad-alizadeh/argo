@@ -16,9 +16,7 @@ struct FeedProjectionTests {
             .prompt(text: "First.", atMs: 1000),
         ])
 
-        // Nothing regrouped by kind, and the timestamps on the prompts sort nothing: the record's
-        // order IS the reading, and a feed that re-ordered it would be describing a session that
-        // never happened.
+        // The prompts' timestamps sort nothing: the record's order IS the reading.
         #expect(rows.map(\.kind) == [.message, .prompt, .thought, .prompt])
         #expect(rows.map(\.text) == ["Second.", "Third.", "Fourth.", "First."])
     }
@@ -43,11 +41,12 @@ struct FeedProjectionTests {
             .message(markdown: "Maybe the palette."),
         ])
 
-        // Same words, two different provenance claims. A projection that collapsed them would let
-        // a turn's reasoning be read as its answer, which it routinely contradicts.
+        // Same words, two different provenance claims.
         #expect(rows.map(\.kind) == [.thought, .message])
     }
 
+    /// Each of these arrives with its own ticket. Until then the honest rendering is nothing at
+    /// all — a placeholder row would be Argo claiming a shape the surface has not decided.
     @Test
     func `an event kind this feed does not handle yet produces no row`() {
         // Every kind this target can build. `toolCall`/`toolCallOutcome` are absent because their
@@ -66,8 +65,6 @@ struct FeedProjectionTests {
             .unreadableLine(raw: "{"),
         ]
 
-        // Each of these arrives with its own ticket. Until then the honest rendering is nothing at
-        // all — a placeholder row would be Argo claiming a shape the surface has not decided.
         #expect(FeedProjection.rows(from: unhandled).isEmpty)
     }
 
@@ -79,8 +76,7 @@ struct FeedProjectionTests {
             .message(markdown: "Same."),
         ])
 
-        // Two identical messages are two rows, so identity cannot be the text; and the ids are
-        // dense over the ROWS, so the events that drew none leave no gap for a list to animate.
+        // Identity cannot be the text, and the ids stay dense over the ROWS.
         #expect(rows.map(\.id) == [0, 1])
     }
 }

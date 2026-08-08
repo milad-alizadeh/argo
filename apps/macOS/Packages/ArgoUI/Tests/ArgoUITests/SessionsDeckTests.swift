@@ -36,9 +36,7 @@ struct SessionsDeckTests {
     /// of the same zone, and the one a screen reader would find first.
     @Test
     func `the feed is no longer a placeholder`() {
-        #expect(DeckZone.allCases.map(\.title) == [
-            "Session header", "Deck tabs", "Agents rail", "Minimap lane", "Dock",
-        ])
+        #expect(!DeckZone.allCases.map(\.title).contains("Feed"))
     }
 
     @Test

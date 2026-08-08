@@ -32,7 +32,7 @@ struct InstrumentDeckShell: View {
 #Preview("Instrument Deck — Sessions") {
     InstrumentDeckShell(
         room: .sessions,
-        feed: FeedProjection.rows(from: CockpitPresentation.Session.preview.events),
+        feed: FeedProjection.previewRows,
     )
     .frame(width: 900, height: 620)
     .argoAppearance()

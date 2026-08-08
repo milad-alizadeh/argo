@@ -59,7 +59,7 @@ private struct FeedColumn: View {
 }
 
 #Preview("Sessions deck — zones") {
-    SessionsDeck(feed: FeedProjection.rows(from: CockpitPresentation.Session.preview.events))
+    SessionsDeck(feed: FeedProjection.previewRows)
         .frame(width: 900, height: 620)
         .argoDeckSurface()
         .argoAppearance()
@@ -73,7 +73,7 @@ private struct FeedColumn: View {
 }
 
 #Preview("Sessions deck — narrowest deck the window allows") {
-    SessionsDeck(feed: FeedProjection.rows(from: CockpitPresentation.Session.preview.events))
+    SessionsDeck(feed: FeedProjection.previewRows)
         .frame(
             width: ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth,
             height: ArgoLayout.windowMinimumHeight,
