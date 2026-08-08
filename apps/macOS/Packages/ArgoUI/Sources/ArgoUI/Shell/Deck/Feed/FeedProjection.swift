@@ -18,7 +18,11 @@ enum FeedProjection {
         // survey counts the work rather than the lines left over from it; tell same-named files
         // apart BEFORE the fold, so a read that ends up inside a survey still carries the parent
         // its captions need — after the fold its filename is no longer in the feed to compare.
-        let work = FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read)))
+        // The gallery comes last, over a stream the survey has already left every picture out of:
+        // both folds read `FeedCall.showsMedia`, so a call cannot be counted here and drawn there.
+        let work = FeedGalleryFold.galleried(
+            FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
+        )
         return work.enumerated().map { position, content in
             FeedRow(id: position, content: content)
         }
@@ -143,6 +147,26 @@ extension FeedProjection {
         }
         return EvidenceLanguage(path: file.path) == .markdown && call.kind == .create
     }?.id
+
+    /// The pictures in that feed, in the order the turn produced them — every provenance the
+    /// cockpit tells apart, taken off the shipping rows rather than written out beside them.
+    static let previewShots: [FeedShot] = previewRows.flatMap { row -> [FeedShot] in
+        guard case let .gallery(gallery) = row.content else { return [] }
+        return gallery.shots
+    }
+
+    /// One shot on its own. A filter over those same shots and not a second set of them: whether a
+    /// gallery of one gets the same treatment as a gallery of six is only answerable if both are
+    /// made of the same pictures.
+    static let previewSingleShotRows = gallery(of: Array(previewShots.prefix(1)))
+
+    /// The shot the record kept no bytes for, alone — the state the full gallery buries at the end
+    /// of a row and the one a reader has to be able to tell from a picture that failed to load.
+    static let previewAbsentShotRows = gallery(of: previewShots.filter { !$0.isOpenable })
+
+    private static func gallery(of shots: [FeedShot]) -> [FeedRow] {
+        shots.isEmpty ? [] : [FeedRow(id: 0, content: .gallery(FeedGallery(shots: shots)))]
+    }
 
     /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
     /// specimen and a `#Preview` cannot be looking at two different failures.

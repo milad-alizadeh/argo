@@ -38,7 +38,12 @@ enum FeedCallReading {
         // Blank output never reaches here — the engine reads whitespace as no output at all.
         case .output: result
         case let .diff(diff): diff.hunks.isEmpty ? nil : result
-        case let .media(media): media.bytes == nil ? nil : result
+        // A media result is kept even with no bytes in it, which is the one exception to the rule
+        // above and not a hole in it. The others are dropped because there is nothing to show and
+        // the row would offer a click that opens onto an apology; a picture the record never kept
+        // is drawn as a marked absence IN the gallery, where it stands beside the pictures that
+        // did survive — and it is not clickable, so no click is wasted either.
+        case .media: result
         case nil: nil
         }
     }

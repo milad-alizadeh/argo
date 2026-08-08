@@ -10,6 +10,9 @@ struct FeedView: View {
     /// Which call's evidence is open. Owned by the deck, not here: opening one resizes the column
     /// this view is drawn in, which is a fact about the deck rather than about the feed.
     @Binding var open: FeedRow.ID?
+    /// Which picture is open full size. The deck's too, and for a stronger reason than the panel's:
+    /// a lightbox covers every zone at once, and the feed is one of the zones it covers.
+    @Binding var lit: FeedShot?
 
     /// Which prompts the reader has unfolded. Held here rather than in the row: the stack is lazy,
     /// so a row's own state dies the moment it scrolls out of view.
@@ -19,8 +22,12 @@ struct FeedView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: ArgoSpacing.flush) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { position, row in
-                    FeedRowView(row: row, isExpanded: unfolding(row.id), open: $open)
-                        .padding(.top, step(before: position))
+                    FeedRowView(
+                        row: row,
+                        isExpanded: unfolding(row.id),
+                        selection: FeedRowSelection(open: $open, lit: $lit),
+                    )
+                    .padding(.top, step(before: position))
                 }
             }
             .padding(.horizontal, ArgoFeedRow.inset)
@@ -66,11 +73,21 @@ struct FeedView: View {
     }
 }
 
+/// What the deck currently has open, in one value.
+///
+/// The two are carried together because a row takes them together: every kind of row can open
+/// something, and threading them as two separate bindings put a fourth parameter on the row view
+/// for no gain — a row does not care that one of them resizes a column and the other covers it.
+struct FeedRowSelection {
+    @Binding var open: FeedRow.ID?
+    @Binding var lit: FeedShot?
+}
+
 /// One row, drawn as what it is.
 private struct FeedRowView: View {
     let row: FeedRow
     @Binding var isExpanded: Bool
-    @Binding var open: FeedRow.ID?
+    let selection: FeedRowSelection
 
     var body: some View {
         switch row.content {
@@ -78,17 +95,25 @@ private struct FeedRowView: View {
         case let .message(markdown): FeedProse(text: markdown, voice: .message)
         case let .thought(markdown): FeedProse(text: markdown, voice: .thought)
         case let .call(call):
-            FeedCallLine(call: call, isOpen: open == row.id, open: toggle)
+            FeedCallLine(call: call, isOpen: isOpen, open: toggle)
         case let .survey(survey):
-            FeedSurveyLine(survey: survey, isOpen: open == row.id, open: toggle)
+            FeedSurveyLine(survey: survey, isOpen: isOpen, open: toggle)
+        // A gallery opens no panel. What one of its shots produced IS the shot, so the click goes
+        // straight to the picture rather than through a panel that would show it again, smaller.
+        case let .gallery(gallery):
+            FeedGalleryRow(gallery: gallery) { selection.lit = $0 }
         }
+    }
+
+    private var isOpen: Bool {
+        selection.open == row.id
     }
 
     /// A second click on the open row closes it. The row is the control, so it is also the way back
     /// out — a panel whose only exit is its own ✕ makes the reader aim at the far side of the deck
     /// to undo a click they made on this one.
     private func toggle() {
-        open = open == row.id ? nil : row.id
+        selection.open = isOpen ? nil : row.id
     }
 }
 
@@ -108,21 +133,21 @@ private struct FeedSilence: View {
 }
 
 #Preview("Feed — a turn read from a transcript") {
-    FeedView(rows: FeedProjection.previewRows, open: .constant(nil))
+    FeedView(rows: FeedProjection.previewRows, open: .constant(nil), lit: .constant(nil))
         .frame(width: 820, height: 560)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Feed — a deck wide enough to break the measure") {
-    FeedView(rows: FeedProjection.previewRows, open: .constant(nil))
+    FeedView(rows: FeedProjection.previewRows, open: .constant(nil), lit: .constant(nil))
         .frame(width: 1440, height: 560)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Feed — a Session that has said nothing") {
-    FeedView(rows: [], open: .constant(nil))
+    FeedView(rows: [], open: .constant(nil), lit: .constant(nil))
         .frame(width: 820, height: 320)
         .argoDeckSurface()
         .argoAppearance()

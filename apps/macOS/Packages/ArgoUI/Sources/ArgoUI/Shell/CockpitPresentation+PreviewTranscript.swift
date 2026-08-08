@@ -38,6 +38,7 @@ extension CockpitPresentation.Session {
         .prompt(text: "Good. Land the metrics in the contract.", atMs: 1_733_000_050_000),
     ]
         + workedOn
+        + shotsTaken
         + [
             // Written with the shape a CLI actually writes in — a heading, a list, a fenced block,
             // a pipe table, a link and the `code` spans a sentence is half made of. A fixture of

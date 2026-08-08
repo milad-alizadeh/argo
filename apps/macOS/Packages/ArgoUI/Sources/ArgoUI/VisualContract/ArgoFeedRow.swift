@@ -35,6 +35,23 @@ public enum ArgoFeedRow {
     /// vertical — the only alignment in the feed, and the reason it does not become a table.
     public static let callSymbolWidth: CGFloat = 15
 
+    /// How wide one shot in a gallery is drawn. Large rather than a filename-sized chip: the
+    /// whole reason a picture is in the feed is that it can be recognised without being opened,
+    /// and four of these across the measure is what a row of screenshots wants.
+    public static let shotWidth: CGFloat = 168
+    /// How tall its picture is. Fixed, so a row of shots at different aspect ratios sets its
+    /// captions on ONE baseline instead of a ragged one.
+    public static let shotHeight: CGFloat = 112
+    /// Between two shots in a gallery. Tighter than the step between rows: a run of shots is one
+    /// piece of looking, exactly as a run of calls is.
+    public static let shotGap: CGFloat = ArgoSpacing.base
+    /// The mount a RENDERED artifact sits on — the inset that keeps it from bleeding to its own
+    /// edges, which is what a captured screen does and a drawn artifact does not.
+    public static let shotMount: CGFloat = ArgoSpacing.snug
+    /// The margin the lightbox leaves around a picture shown full size, so an image that fills
+    /// the deck still reads as something laid over it rather than as a new screen.
+    public static let lightboxInset: CGFloat = ArgoSpacing.region
+
     /// The rung the feed's BODY is set on — its prose and its call lines alike.
     ///
     /// One rung and not two. The column was set a step over the shell's density on the argument

@@ -49,6 +49,11 @@ public extension ArgoPalette {
         /// The neutral wash a selected row carries. Selection is neutral here on purpose —
         /// the Ion Blue of selection is the indicator edge, not the fill.
         public let selected: ArgoColor
+        /// The ground something laid OVER the deck is read against — a picture opened full size.
+        /// Near-opaque rather than a tint: what is behind it is not being read, and a feed
+        /// half-visible under a photograph is two surfaces competing for the same eye. Not a step
+        /// of the ramp, so it is not in it: depth is read off the ramp, and this covers it.
+        public let scrim: ArgoColor
 
         public init(
             sunken: ArgoColor,
@@ -58,6 +63,7 @@ public extension ArgoPalette {
             glassTint: ArgoColor,
             hover: ArgoColor,
             selected: ArgoColor,
+            scrim: ArgoColor,
         ) {
             self.sunken = sunken
             self.base = base
@@ -66,6 +72,7 @@ public extension ArgoPalette {
             self.glassTint = glassTint
             self.hover = hover
             self.selected = selected
+            self.scrim = scrim
         }
 
         /// The ramp in depth order, for contract assertions and the specimen.

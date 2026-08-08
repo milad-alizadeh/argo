@@ -24,41 +24,32 @@ struct EvidenceMedia: View {
     /// A row with no bytes says so. It never draws a broken-image glyph, which is the system
     /// claiming a failure to LOAD where what happened is that nothing was ever recorded.
     @ViewBuilder private var picture: some View {
-        if let image = decoded {
+        if let image = MediaPicture(media)?.image {
             Image(nsImage: image)
                 .resizable()
                 .scaledToFit()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .clipShape(.rect(cornerRadius: ArgoRadius.control))
         } else {
-            Text("The record kept no image for this call")
+            Text(MediaProvenance.absence)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.disabled)
         }
     }
 
+    /// Named in words rather than left to a tier badge nobody can read: one of these is what the
+    /// agent saw, the other is what is on disk now. The words themselves are `MediaProvenance`'s,
+    /// because the feed's gallery says the same thing about the same picture and two surfaces
+    /// wording one provenance twice is two claims that only agree until one of them is edited.
     private var caption: some View {
         HStack(spacing: ArgoSpacing.snug) {
             Text(media.mediaType)
-            Text(provenance)
+            if let words = MediaProvenance(media).words {
+                Text(words)
+            }
         }
         .argoText(ArgoTypography.machineCaption)
         .foregroundStyle(argo.color.text.disabled)
-    }
-
-    /// Named in words rather than left to a tier badge nobody can read: one of these is what the
-    /// agent saw, the other is what is on disk now.
-    private var provenance: String {
-        switch media.tier {
-        case .direct: "as the agent saw it"
-        case .derived: "the file as it stands now"
-        case .convention: "reported by the plugin"
-        }
-    }
-
-    private var decoded: NSImage? {
-        guard let bytes = media.bytes, let data = Data(base64Encoded: bytes) else { return nil }
-        return NSImage(data: data)
     }
 }
 

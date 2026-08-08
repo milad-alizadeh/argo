@@ -72,6 +72,39 @@ struct FeedSurveyTests {
         #expect(FeedFixture.calls(in: broken).map(\.ending) == [.pending, .failed, .pending])
     }
 
+    /// `isQuiet` is true for `.read`, so a `Read` of a PNG is a read like any other to the fold and
+    /// would vanish into `Read 5` — the one row in the run whose whole content is the thing a count
+    /// cannot say. It leaves the run instead, and the reads either side of it are two counted
+    /// lines.
+    @Test
+    func `a picture breaks the run, and the reads either side of it are two surveys`() {
+        let interrupted = looking(at: ["a.swift", "b.swift"])
+            + FeedFixture.looked(at: "render.png", FeedFixture.shot(.direct))
+            + looking(at: ["c.swift", "d.swift"])
+
+        let rows = FeedProjection.rows(from: interrupted)
+
+        #expect(rows.count == 3)
+        #expect(FeedFixture.surveys(in: rows).map(\.label) == [
+            "Searched 1 · Read 2", "Searched 1 · Read 2",
+        ])
+    }
+
+    /// The other side of the same boundary: the picture is not merely absent from the counts, it is
+    /// on screen as a picture. A fold that dropped it would satisfy the assertion above and lose
+    /// the render the turn was about.
+    @Test
+    func `a picture surrounded by reads is drawn as a gallery rather than counted`() throws {
+        let interrupted = looking(at: ["a.swift"])
+            + FeedFixture.looked(at: "render.png", FeedFixture.shot(.direct))
+            + looking(at: ["b.swift"])
+
+        let rows = FeedProjection.rows(from: interrupted)
+        let gallery = try #require(FeedFixture.galleries(in: rows).first)
+
+        #expect(gallery.shots.map(\.name) == ["render.png"])
+    }
+
     /// `Read 1` is the same line with the filename taken off it — a fold that loses information and
     /// saves no room. One quiet call is already as short as it gets.
     @Test
