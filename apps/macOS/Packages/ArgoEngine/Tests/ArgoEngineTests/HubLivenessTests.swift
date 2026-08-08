@@ -9,7 +9,18 @@ import Testing
 struct HubLivenessTests {
     private static let cwd = "/tmp/argo-live"
     private static var nowMs: Int {
-        Int(Date().timeIntervalSince1970 * 1000)
+        Date().epochMs
+    }
+
+    /// A Hub whose machine is running an agent in each of the folders named, with the read already
+    /// taken — so every case below differs only in what the process table was found to say.
+    private static func hub(runningIn cwds: String...) async -> Hub {
+        let hub = testHub(
+            projectURL: URL(fileURLWithPath: cwd),
+            liveness: { Set(cwds) },
+        )
+        await hub.refreshLiveness()
+        return hub
     }
 
     /// A Session mid-turn, writing as of now — so the only thing left to decide its status is
@@ -23,11 +34,7 @@ struct HubLivenessTests {
 
     @Test
     func `a matched process behind an open turn reads running`() async {
-        let hub = testHub(
-            projectURL: URL(fileURLWithPath: Self.cwd),
-            liveness: liveProcesses(in: Self.cwd),
-        )
-        await hub.refreshLiveness()
+        let hub = await Self.hub(runningIn: Self.cwd)
 
         await hubObserveToEnd(hub, Self.working(id: "live"))
 
@@ -37,8 +44,7 @@ struct HubLivenessTests {
 
     @Test
     func `the same open turn with no process behind it never reads running`() async {
-        let hub = testHub(projectURL: URL(fileURLWithPath: Self.cwd))
-        await hub.refreshLiveness()
+        let hub = await Self.hub()
 
         await hubObserveToEnd(hub, Self.working(id: "gone"))
 
@@ -49,11 +55,7 @@ struct HubLivenessTests {
 
     @Test
     func `an agent running somewhere else is not this Session's`() async {
-        let hub = testHub(
-            projectURL: URL(fileURLWithPath: Self.cwd),
-            liveness: liveProcesses(in: "/tmp/argo-elsewhere"),
-        )
-        await hub.refreshLiveness()
+        let hub = await Self.hub(runningIn: "/tmp/argo-elsewhere")
 
         await hubObserveToEnd(hub, Self.working(id: "elsewhere"))
 
@@ -61,19 +63,34 @@ struct HubLivenessTests {
     }
 
     @Test
-    func `a Session whose last write has gone stale stops reading live`() async {
-        let hub = testHub(
-            projectURL: URL(fileURLWithPath: Self.cwd),
-            liveness: liveProcesses(in: Self.cwd),
+    func `a folder reached through a symlink is the same folder`() async throws {
+        // A folder that really exists under `/tmp`, which on this platform is a symlink: `lsof`
+        // answers with `/private/tmp/…` while the transcript reports what the agent was launched
+        // with. Compared as written, the match would never fire.
+        let folder = "/tmp/argo-liveness-\(UUID().uuidString)"
+        try FileManager.default.createDirectory(
+            atPath: folder,
+            withIntermediateDirectories: true,
         )
-        await hub.refreshLiveness()
+        defer { try? FileManager.default.removeItem(atPath: folder) }
+        #expect(resolvedPath(folder) != folder)
+        let hub = await Self.hub(runningIn: resolvedPath(folder))
+
+        await hubObserveToEnd(hub, hubTestObservation(id: "symlinked", events: [
+            .cwd(folder),
+            .prompt(text: "Refactor it", atMs: Self.nowMs),
+        ]))
+
+        #expect(hub.sessions.first?.status == .running)
+    }
+
+    @Test
+    func `a Session whose last write has gone stale stops reading live`() async {
+        let hub = await Self.hub(runningIn: Self.cwd)
+        let stale = Self.nowMs - SessionLiveness.recentActivityWindowMs - 1000
         let quiet = hubTestObservation(id: "stale", events: [
             .cwd(Self.cwd),
-            .prompt(
-                text: "Refactor it",
-                atMs: Self.nowMs - SessionLiveness.recentActivityWindowMs
-                    - 1000,
-            ),
+            .prompt(text: "Refactor it", atMs: stale),
         ])
 
         await hubObserveToEnd(hub, quiet)
@@ -83,11 +100,7 @@ struct HubLivenessTests {
 
     @Test
     func `a transcript that timestamps nothing is read by its own last write`() async {
-        let hub = testHub(
-            projectURL: URL(fileURLWithPath: Self.cwd),
-            liveness: liveProcesses(in: Self.cwd),
-        )
-        await hub.refreshLiveness()
+        let hub = await Self.hub(runningIn: Self.cwd)
         // Not one record carries a time, so mtime is the only thing left to corroborate a match.
         let untimed = hubTestObservation(
             id: "untimed",
@@ -102,7 +115,7 @@ struct HubLivenessTests {
 
     @Test
     func `the roster reads its posture off the ownership registry, not off a literal`() async {
-        let hub = testHub(projectURL: URL(fileURLWithPath: Self.cwd))
+        let hub = await Self.hub()
         let claim = hub.ownership.claim(cwd: Self.cwd)
 
         await hubObserveToEnd(hub, Self.working(id: "ours"))
@@ -115,7 +128,7 @@ struct HubLivenessTests {
 
     @Test
     func `a Session Argo owns and can no longer see has ended`() async {
-        let hub = testHub(projectURL: URL(fileURLWithPath: Self.cwd))
+        let hub = await Self.hub()
         let claim = hub.ownership.claim(cwd: Self.cwd)
         await hubObserveToEnd(hub, hubTestObservation(id: "ended", events: [
             .cwd(Self.cwd),
@@ -130,16 +143,12 @@ struct HubLivenessTests {
 
     @Test
     func `dropping a Project drops what it knew about the machine's processes`() async {
-        let hub = testHub(
-            projectURL: URL(fileURLWithPath: Self.cwd),
-            liveness: liveProcesses(in: Self.cwd),
-        )
-        await hub.refreshLiveness()
+        let hub = await Self.hub(runningIn: Self.cwd)
         #expect(!hub.liveCwds.isEmpty)
 
         await hub.disconnect()
 
         #expect(hub.liveCwds.isEmpty)
-        #expect(hub.livenessReadAtMs == 0)
+        #expect(hub.livenessReadAtMs == nil)
     }
 }

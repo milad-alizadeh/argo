@@ -1,8 +1,4 @@
 public extension HubSession {
-    /// The host's own name for the structured question. Matched verbatim, because the tool name IS
-    /// how the record distinguishes a question that blocks from one the agent merely typed out.
-    static let askTool = "AskUserQuestion"
-
     /// Everything the status is read from, assembled from what the transcript observed and what the
     /// Hub established about the process behind it.
     var signals: SessionSignals {

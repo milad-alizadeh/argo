@@ -38,26 +38,28 @@ public extension SessionStatus {
     /// A Session with no Turn in it yet leaves liveness UNTOUCHED: the process match plus recency
     /// IS the reading, and only the refinements a parsed record would add go absent.
     private static func status(_ signals: SessionSignals) -> SessionStatus {
-        guard signals.liveness == .live else { return settled(signals) }
+        guard signals.liveness == .live else { return quiet(signals) }
         if signals.pendingAsk, signals.turnOpen {
             return .asking
         }
-        return signals.turnOpen || !signals.hasTurns ? .running : settled(signals)
+        return signals.turnOpen || !signals.hasTurns ? .running : boundary(signals)
     }
 
-    /// What the last Turn boundary says, once nothing corroborates the Session working.
+    /// A Session nothing corroborates as working.
     ///
     /// `ended` needs a process exit Argo WITNESSED, and the one it witnesses is its own PTY dying —
-    /// which is precisely the `orphaned` posture. Everything else floors at `idle`: a Session Argo
-    /// never owned may simply be sitting quiet, and calling that a shutdown observes nothing.
+    /// which is precisely the `orphaned` posture. Everything else falls back to what the record's
+    /// last boundary said: a Session Argo never owned may simply be sitting quiet, and calling that
+    /// a shutdown observes nothing.
+    private static func quiet(_ signals: SessionSignals) -> SessionStatus {
+        signals.provenance == .orphaned ? .ended : boundary(signals)
+    }
+
+    /// What the last Turn boundary says on its own.
     ///
-    /// `stopped` is managed-only for the same reason from the other end — reading a wall the agent
-    /// hit AS a wall is a claim about a Session Argo owns, and it collapses to `idle` the moment
-    /// the same Session is observed from outside.
-    private static func settled(_ signals: SessionSignals) -> SessionStatus {
-        if signals.liveness == .quiet, signals.provenance == .orphaned {
-            return .ended
-        }
+    /// `stopped` is managed-only: reading a wall the agent hit AS a wall is a claim about a Session
+    /// Argo owns, and it collapses to `idle` the moment the same Session is observed from outside.
+    private static func boundary(_ signals: SessionSignals) -> SessionStatus {
         // A Turn opened since the last boundary, so that boundary is the previous Turn's and says
         // nothing about this one. Uncorroborated, an open Turn is quiet — never `running`.
         guard !signals.turnOpen else { return .idle }

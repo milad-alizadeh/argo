@@ -59,13 +59,13 @@ public final class Hub {
     public let ownership = SessionOwnership()
 
     /// The working directories a live CLI was running in when the process table was last read, and
-    /// when that was. Empty and epoch-zero until a read has happened, so an unread liveness
-    /// resolves down to quiet rather than up to a running Argo never saw.
+    /// when that was. Absent until a read has happened, so an unread liveness resolves down to
+    /// quiet rather than up to a running Argo never saw.
     ///
     /// Observed rather than ignored: a Session going quiet has to reach the roster, and the roster
     /// is read off these two.
     var liveCwds: Set<String> = []
-    var livenessReadAtMs = 0
+    var livenessReadAtMs: Int?
     @ObservationIgnored var livenessPolling: Task<Void, Never>?
 
     private var join = HubJoin()

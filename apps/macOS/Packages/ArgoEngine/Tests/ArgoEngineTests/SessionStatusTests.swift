@@ -44,7 +44,7 @@ struct SessionStatusTests {
 
     @Test
     func `an answered question is idle rather than a false-active asking`() {
-        #expect(status(signals(lastStop: .endTurn, pendingAsk: false)) != .asking)
+        #expect(status(signals(lastStop: .endTurn, pendingAsk: false)) == .idle)
     }
 
     @Test

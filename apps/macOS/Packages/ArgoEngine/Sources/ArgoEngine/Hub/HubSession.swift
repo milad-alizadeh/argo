@@ -42,7 +42,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
         self.title = observation.sourceURL.deletingPathExtension().lastPathComponent
-        self.recordedAtMs = observation.modifiedAt.map { Int($0.timeIntervalSince1970 * 1000) }
+        self.recordedAtMs = observation.modifiedAt?.epochMs
     }
 
     mutating func apply(_ event: TranscriptEvent) {
@@ -70,7 +70,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             // A question the Turn it was asked in has left behind is not still waiting on anyone.
             pendingAsks = []
         case let .toolCall(call):
-            if call.name == HubSession.askTool {
+            if call.name == ToolCall.askUserQuestion {
                 pendingAsks.insert(call.id)
             }
             observeActivity(call.atMs)

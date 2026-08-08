@@ -19,8 +19,12 @@ public extension SessionLiveness {
 
     /// Both signals, or quiet. A match with no recent write is the long-think case read down; a
     /// recent write with no process is a Session whose CLI has since gone.
-    static func read(processMatch: Bool, lastActivityAtMs: Int?, nowMs: Int) -> SessionLiveness {
-        guard processMatch, let lastActivityAtMs else { return .quiet }
+    ///
+    /// `nowMs` is the moment the process table was read, and is absent until one has been: a match
+    /// against a clock nobody has looked at is not a match, and defaulting that clock to the epoch
+    /// would make every window arithmetic below it pass.
+    static func read(processMatch: Bool, lastActivityAtMs: Int?, nowMs: Int?) -> SessionLiveness {
+        guard processMatch, let nowMs, let lastActivityAtMs else { return .quiet }
         return nowMs - lastActivityAtMs <= recentActivityWindowMs ? .live : .quiet
     }
 }

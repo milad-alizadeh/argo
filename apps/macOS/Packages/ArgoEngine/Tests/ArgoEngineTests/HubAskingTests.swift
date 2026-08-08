@@ -15,7 +15,7 @@ struct HubAskingTests {
     private static func ask(id: String) -> TranscriptEvent {
         .toolCall(ToolCall(
             id: id,
-            name: HubSession.askTool,
+            name: ToolCall.askUserQuestion,
             kind: .other,
             target: nil,
             atMs: nowMs,
@@ -54,7 +54,7 @@ struct HubAskingTests {
     }
 
     @Test
-    func `an answered question reads idle rather than a false-active asking`() async {
+    func `an answered question stops blocking, and the turn reads as still working`() async {
         let hub = await Self.hub(observing: [
             .prompt(text: "Which one?", atMs: Self.nowMs),
             Self.ask(id: "call-ask"),
@@ -92,7 +92,7 @@ struct HubAskingTests {
     func `the reader hands over the question the fixture leaves unanswered`() async throws {
         let events = try await Fixture.events("treeFull")
         let asks = events.compactMap { event -> String? in
-            guard case let .toolCall(call) = event, call.name == HubSession.askTool else {
+            guard case let .toolCall(call) = event, call.name == ToolCall.askUserQuestion else {
                 return nil
             }
             return call.id
