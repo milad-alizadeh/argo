@@ -80,4 +80,11 @@ extension FeedProjection {
     /// paragraphs is a render of the paragraphs — this is a filter over the shipping rows, never a
     /// second set of them.
     static let previewCallRows = previewRows.filter(\.isCall)
+
+    /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
+    /// specimen and a `#Preview` cannot be looking at two different failures.
+    static let previewFailedCallID = previewRows.first { row in
+        guard case let .call(call) = row.content else { return false }
+        return call.ending.hasFailed
+    }?.id
 }

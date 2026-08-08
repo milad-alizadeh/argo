@@ -91,24 +91,6 @@ public struct OutputEvidence: Sendable, Equatable {
     }
 }
 
-/// What a failed call's output says about itself: the host's own exit line, and the first line of
-/// what actually went wrong.
-///
-/// Two readings of one verbatim payload rather than a summary of it. The only judgement here is
-/// WHICH line a row shows under a failure; every character in it is the record's.
-public struct CommandFailure: Sendable, Equatable {
-    /// The host's own exit line — `Exit code 1` — or `nil` where it wrote none.
-    public let status: String?
-    /// The first line that is not the exit line, verbatim, or `nil` where the output carried
-    /// nothing but its status.
-    public let diagnostic: String?
-
-    public init(status: String?, diagnostic: String?) {
-        self.status = status
-        self.diagnostic = diagnostic
-    }
-}
-
 /// What a call SHOWED — the bytes the agent actually looked at, not whatever is at that path now.
 ///
 /// The tier is the whole point of the type rather than a decoration on it. `direct` is the
@@ -123,6 +105,12 @@ public struct MediaEvidence: Sendable, Equatable {
     /// The image, base64, exactly as it was read. `nil` where there are none to show: a row with no
     /// bytes says so, and never renders a broken-image glyph.
     public let bytes: String?
+
+    public init(tier: Tier, mediaType: String, bytes: String?) {
+        self.tier = tier
+        self.mediaType = mediaType
+        self.bytes = bytes
+    }
 }
 
 /// What a Tool Call produced.

@@ -8,6 +8,9 @@ struct InstrumentDeckShell: View {
     /// The selected Session's reading, already projected. Rooms with no feed ignore it, which is
     /// the honest shape: the deck is one container and only one room has a feed in it today.
     var feed: [FeedRow] = []
+    /// Which call's evidence the deck opens with. A parameter so a specimen can render the panel
+    /// open — the state is the deck's, and there is no other way to reach it without a click.
+    var open: FeedRow.ID?
 
     var body: some View {
         content
@@ -22,7 +25,7 @@ struct InstrumentDeckShell: View {
     @ViewBuilder private var content: some View {
         switch room {
         case .sessions:
-            SessionsDeck(feed: feed)
+            SessionsDeck(feed: feed, open: open)
         case .work, .code:
             Color.clear
         }

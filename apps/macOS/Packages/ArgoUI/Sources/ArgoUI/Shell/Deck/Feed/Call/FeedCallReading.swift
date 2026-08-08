@@ -17,7 +17,7 @@ enum FeedCallReading {
             subject: subject(of: call),
             churn: diff.map { FeedCall.Churn(added: $0.added, removed: $0.removed) },
             ending: ending(of: outcome),
-            disclosure: outcome?.result == nil ? .none : .available,
+            evidence: outcome?.result,
         )
     }
 
@@ -101,23 +101,21 @@ enum FeedCallReading {
         return parts.isEmpty ? name : parts.joined(separator: " · ")
     }
 
-    /// How the call ended, from the record and nothing else. A failure the record answered with
-    /// nothing still reports as a failure with neither line — the mark says it went wrong, and
-    /// inventing a reason is the one thing a diagnostic may not do.
+    /// How the call ended, from the record and nothing else.
     ///
-    /// The engine keeps a command's output and drops a successful read's, so the outcome line is
-    /// present exactly where there is one to read rather than wherever a kind suggests one.
+    /// The engine keeps a command's output and drops a successful read's, so the one line a row
+    /// carries is present exactly where there is one to read rather than wherever a kind suggests
+    /// one. A failure the record answered with nothing is still a failure — it just has no exit
+    /// line, and none is invented for it.
     private static func ending(of outcome: ToolCallOutcome?) -> FeedCall.Ending {
         guard let outcome, outcome.status != .pending, outcome.status != .inProgress else {
             return .pending
         }
         guard case let .output(output) = outcome.result else {
-            return outcome.status == .failed
-                ? .failed(CommandFailure(status: nil, diagnostic: nil))
-                : .succeeded(outcome: nil)
+            return outcome.status == .failed ? .failed(status: nil) : .succeeded(outcome: nil)
         }
         return outcome.status == .failed
-            ? .failed(commandFailure(in: output.text))
+            ? .failed(status: commandExitStatus(in: output.text))
             : .succeeded(outcome: commandOutcome(in: output.text))
     }
 }

@@ -18,8 +18,13 @@ public enum ArgoSymbol {
     public static let removeProject = "minus.circle"
     /// The checkout a Project is on.
     public static let branch = "arrow.triangle.branch"
-    /// The disclosure on a control that opens something.
+    /// The disclosure on a control that opens something BELOW it — a menu, a drawer under its
+    /// vessel.
     public static let disclosure = "chevron.down"
+    /// The disclosure on a control that opens something BESIDE it. A feed row's evidence lands in
+    /// the panel to its right, and a chevron pointing down at a row that unfolds nothing promises
+    /// the wrong gesture — the mark has to say which direction the content is in.
+    public static let disclosureTrailing = "chevron.right"
 
     /// One mark per kind of call the feed can name. A call whose kind Argo could not read carries
     /// NO mark — there is no "unknown tool" symbol here on purpose, because a mark is a claim
@@ -34,4 +39,11 @@ public enum ArgoSymbol {
     public static let fetched = "globe"
     public static let delegated = "arrow.turn.down.right"
     public static let mcpTool = "puzzlepiece.extension"
+    /// A call that failed. It replaces the kind's own mark rather than tinting it: colour alone is
+    /// a difference a reader who cannot see it loses entirely, and on a row that no longer prints
+    /// what went wrong, the mark is half of what says anything did.
+    public static let callFailed = "exclamationmark.triangle"
+
+    /// Closing the evidence panel.
+    public static let dismiss = "xmark"
 }

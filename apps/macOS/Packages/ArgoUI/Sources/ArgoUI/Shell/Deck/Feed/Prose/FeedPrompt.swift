@@ -6,8 +6,10 @@ import SwiftUI
 /// object rather than as prose on the ground — a reader scrolling a long session finds where each
 /// turn began by shape alone. Steering typed mid-run lands here too: a steer is a prompt.
 ///
-/// Labelled "Prompt" and not "You": a transcript's prompt carries no author, and a Session read
-/// off somebody else's file was not asked for by the person reading it.
+/// Unlabelled: the shape already says it. A bubble on the trailing edge, against a feed where
+/// everything else is prose on the ground, is the whole distinction — and a word over every one of
+/// them repeats it once per turn. The label survives for screen readers, where the shape does not
+/// carry.
 struct FeedPrompt: View {
     @Environment(\.argo) private var argo
 
@@ -23,13 +25,8 @@ struct FeedPrompt: View {
     @State private var wholeHeight: CGFloat = 0
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: ArgoSpacing.snug) {
-            Text("Prompt")
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.tertiary)
-            bubble
-        }
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        bubble
+            .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     /// Whether anything is actually hidden. A control offering to unfold a prompt that is already

@@ -205,5 +205,12 @@ public extension ArgoPalette {
         public var all: [ArgoColor] {
             [added, removed]
         }
+
+        /// The same role as a GROUND under a whole line of code rather than as an ink on it.
+        /// Weaker than a status chip's tint (`StateRoles.muted`): a chip's ground carries a word
+        /// sized for it, and this one has to sit under source that stays readable on it.
+        public func wash(_ role: ArgoColor) -> ArgoColor {
+            role.opacity(0.12)
+        }
     }
 }
