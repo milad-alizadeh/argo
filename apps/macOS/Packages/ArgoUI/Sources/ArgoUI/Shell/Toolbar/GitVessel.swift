@@ -24,7 +24,7 @@ struct GitVessel: View {
                     // The rooms' role, so the branch mark measures the same as the marks in the
                     // vessel at the other end of the bar. `ArgoGlyph` frames it by HEIGHT, which
                     // is what stops a mark that fills its em box standing over one that does not.
-                    ArgoGlyph(ArgoSymbol.branch, ArgoTypography.control)
+                    ArgoGlyph(ArgoSymbol.branch, .control)
                 }
                 .labelStyle(.argo(ArgoTypography.machineEmphasis))
             }
@@ -34,7 +34,7 @@ struct GitVessel: View {
             // BESIDE the menu, not inside it. A menu re-synthesises its label from the icon and
             // title alone, so a chevron in there never drew at all — and the system's own comes
             // out a different mark from the Project half's, on what is meant to be one vessel.
-            ArgoGlyph(indicator: ArgoSymbol.disclosure, height: ArgoLayout.disclosureHeight)
+            ArgoGlyph(ArgoSymbol.disclosure, .indicator)
         }
         .foregroundStyle(argo.color.text.secondary)
         .toolbarSegment()

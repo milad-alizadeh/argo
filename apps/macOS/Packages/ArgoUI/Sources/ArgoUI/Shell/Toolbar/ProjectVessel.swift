@@ -36,12 +36,12 @@ struct ProjectVessel: View {
             // vessel and its own row in the drawer — one size for it in both places — and setting
             // it above the branch is what makes the merged capsule read "this Project, on this
             // checkout" rather than two equal facts glued together.
-            ArgoGlyph(symbol, ArgoTypography.rowTitle)
+            ArgoGlyph(symbol, .control)
             Text(project?.name ?? "No Project")
                 .argoText(ArgoTypography.rowTitle)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            ArgoGlyph(indicator: ArgoSymbol.disclosure, height: ArgoLayout.disclosureHeight)
+            ArgoGlyph(ArgoSymbol.disclosure, .indicator)
         }
         .foregroundStyle(argo.color.text.primary)
         .frame(maxWidth: ArgoLayout.projectVesselMaximumWidth)
