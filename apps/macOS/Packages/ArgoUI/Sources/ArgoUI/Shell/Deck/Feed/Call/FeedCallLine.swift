@@ -14,7 +14,7 @@ struct FeedCallLine: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.stepBeforeProse) {
             sentence
-            if let diagnostic = call.failure?.diagnostic {
+            if let diagnostic = call.ending.diagnostic {
                 FeedDiagnostic(text: diagnostic)
             }
         }
@@ -29,7 +29,7 @@ struct FeedCallLine: View {
                 .foregroundStyle(argo.color.text.tertiary)
             FeedCallSubject(subject: call.subject, destination: call.kind.destination)
             churn
-            exitStatus
+            outcome
             disclosure
         }
         .lineLimit(1)
@@ -49,7 +49,7 @@ struct FeedCallLine: View {
                 }
             }
             .foregroundStyle(
-                call.failure == nil ? argo.color.text.disabled : argo.color.state.failure,
+                call.ending.hasFailed ? argo.color.state.failure : argo.color.text.disabled,
             )
     }
 
@@ -68,11 +68,12 @@ struct FeedCallLine: View {
         }
     }
 
-    /// A successful call reduces to its one line; a failed one keeps the host's own exit line,
-    /// which is the whole outcome where the command printed nothing else worth showing.
-    @ViewBuilder private var exitStatus: some View {
-        if let status = call.failure?.status {
-            Text(status)
+    /// What the call produced, reduced to one line of its own output — the last line a command
+    /// printed, or the host's exit line where it failed. A call that produced nothing a row can
+    /// read says nothing rather than a count Argo would have had to work out itself.
+    @ViewBuilder private var outcome: some View {
+        if let outcome = call.ending.outcome {
+            Text(outcome)
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.tertiary)
         }

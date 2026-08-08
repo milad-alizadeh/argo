@@ -79,10 +79,5 @@ extension FeedProjection {
     /// The same feed with the prose taken out. A render of the call vocabulary that is four fifths
     /// paragraphs is a render of the paragraphs — this is a filter over the shipping rows, never a
     /// second set of them.
-    static let previewCallRows = previewRows.filter { row in
-        if case .call = row.content {
-            return true
-        }
-        return false
-    }
+    static let previewCallRows = previewRows.filter(\.isCall)
 }

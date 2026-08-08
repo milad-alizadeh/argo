@@ -16,7 +16,7 @@ enum FeedCallReading {
             kind: kind,
             subject: subject(of: call),
             churn: diff.map { FeedCall.Churn(added: $0.added, removed: $0.removed) },
-            failure: failure(of: outcome),
+            ending: ending(of: outcome),
             disclosure: outcome?.result == nil ? .none : .available,
         )
     }
@@ -41,8 +41,11 @@ enum FeedCallReading {
     }
 
     /// Which mutation it was, from the patch rather than from the tool's name — `Write` both
-    /// creates and updates, and the record is the only thing that knows which. A mutation whose
-    /// patch was never read is an edit: the fallback claims the least.
+    /// creates and updates, and only the record knows which.
+    ///
+    /// With no patch to read it stays `edit`, which is not a guess: `edit` is the ENGINE's kind
+    /// for the tool, read off its name, and it is the least the four verbs can say. What is
+    /// unknown is which mutation it was, and none of the other three is claimed without evidence.
     private static func mutation(_ diff: DiffEvidence?, from source: String?) -> FeedCall.Kind {
         switch diff?.change {
         case .create: .create
@@ -52,9 +55,10 @@ enum FeedCallReading {
         }
     }
 
-    /// Where a move went, said as shortly as the feed says everything else: the folder it landed
-    /// in, or its new name where the move renamed it. A destination path drawn whole would be the
-    /// one line in a feed that shows no paths that showed one.
+    /// Where a move went, said as shortly as the feed says everything else: one component of the
+    /// host's destination — the folder it landed in, or its new name where the move renamed it. A
+    /// path drawn whole would be the one line in a feed that shows no paths that showed one; the
+    /// rest of it is the evidence panel's, which reads the record rather than this.
     private static func moveDestination(_ destination: String?, from source: String?) -> String? {
         let parts = destination?.split(separator: "/").map(String.init) ?? []
         guard let name = parts.last else { return nil }
@@ -62,25 +66,34 @@ enum FeedCallReading {
         return renamed ? name : parts.dropLast().last
     }
 
+    /// Two kinds are named by their TOOL rather than by anything the call carried: an MCP call,
+    /// whose name IS its address, and an unclassified one, where the field a target was scraped
+    /// from means nothing without a kind to read it under — drawn, it says `Called whatever it
+    /// does` under a verb that already admits Argo does not know what happened.
     private static func subject(of call: ToolCall) -> FeedCall.Subject {
-        if call.kind == .mcp {
-            return .plain(mcpAddress(of: call.name))
-        }
-        // A call that named nothing is named by the tool that made it — the local command the CLI
-        // ran is the shape this exists for, and it has a name but no arguments to show.
-        guard let named = call.target else { return .plain(call.name) }
         switch call.kind {
-        case .read, .edit:
-            return FeedCall.FileName(path: named).map(FeedCall.Subject.file) ?? .plain(named)
-        case .execute:
-            return .command(named)
-        case .search, .fetch, .delegate, .mcp, .plan, .other:
-            return .plain(named)
+        case .mcp: .plain(mcpAddress(of: call.name))
+        case .other: tool(call)
+        case .read, .edit: file(at: call.target) ?? tool(call)
+        case .execute: call.target.map(FeedCall.Subject.command) ?? tool(call)
+        case .search, .fetch, .delegate, .plan: call.target.map(FeedCall.Subject.plain)
+            ?? tool(call)
         }
     }
 
-    /// `mcp__linear__list_issues` → `linear · list_issues`. The host's own delimiter, drawn as one:
-    /// nothing is renamed, and a name that does not follow the convention is shown as it stands.
+    /// A call that named nothing is named by the tool that made it — the local command the CLI ran
+    /// is the shape this exists for: it has a name, and no arguments to show.
+    private static func tool(_ call: ToolCall) -> FeedCall.Subject {
+        .plain(call.name)
+    }
+
+    private static func file(at path: String?) -> FeedCall.Subject? {
+        path.flatMap(FeedCall.FileName.init(path:)).map(FeedCall.Subject.file)
+    }
+
+    /// `mcp__linear__list_issues` → `linear · list_issues`. Every word is the host's, in its own
+    /// order; what changes is the delimiter it wrote them with, drawn as one. A name that does not
+    /// follow the convention is shown exactly as it stands.
     private static func mcpAddress(of name: String) -> String {
         let parts = name.dropFirst(mcpToolPrefix.count)
             .components(separatedBy: mcpNameSeparator)
@@ -88,14 +101,23 @@ enum FeedCallReading {
         return parts.isEmpty ? name : parts.joined(separator: " · ")
     }
 
-    /// What a failed call said about itself, or `nil` for one that did not fail. A failure the
-    /// record answered with nothing still reports as a failure with neither line — the mark says
-    /// it went wrong, and inventing a reason is the one thing a diagnostic may not do.
-    private static func failure(of outcome: ToolCallOutcome?) -> CommandFailure? {
-        guard let outcome, outcome.status == .failed else { return nil }
-        guard case let .output(output) = outcome.result else {
-            return CommandFailure(status: nil, diagnostic: nil)
+    /// How the call ended, from the record and nothing else. A failure the record answered with
+    /// nothing still reports as a failure with neither line — the mark says it went wrong, and
+    /// inventing a reason is the one thing a diagnostic may not do.
+    ///
+    /// The engine keeps a command's output and drops a successful read's, so the outcome line is
+    /// present exactly where there is one to read rather than wherever a kind suggests one.
+    private static func ending(of outcome: ToolCallOutcome?) -> FeedCall.Ending {
+        guard let outcome, outcome.status != .pending, outcome.status != .inProgress else {
+            return .pending
         }
-        return commandFailure(in: output.text)
+        guard case let .output(output) = outcome.result else {
+            return outcome.status == .failed
+                ? .failed(CommandFailure(status: nil, diagnostic: nil))
+                : .succeeded(outcome: nil)
+        }
+        return outcome.status == .failed
+            ? .failed(commandFailure(in: output.text))
+            : .succeeded(outcome: commandOutcome(in: output.text))
     }
 }

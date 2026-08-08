@@ -58,15 +58,6 @@ struct FeedView: View {
     }
 }
 
-private extension FeedRow {
-    var isCall: Bool {
-        if case .call = content {
-            return true
-        }
-        return false
-    }
-}
-
 /// One row, drawn as what it is.
 private struct FeedRowView: View {
     let row: FeedRow

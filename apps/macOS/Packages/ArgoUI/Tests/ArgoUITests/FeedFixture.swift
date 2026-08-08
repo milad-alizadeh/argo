@@ -7,12 +7,12 @@ import ArgoEngine
 enum FeedFixture {
     static func call(
         _ id: String,
-        _ name: String,
-        _ kind: ToolCallKind,
-        _ target: String?,
+        tool: String,
+        kind: ToolCallKind,
+        naming target: String? = nil,
     )
         -> ToolCall {
-        ToolCall(id: id, name: name, kind: kind, target: target, atMs: nil)
+        ToolCall(id: id, name: tool, kind: kind, target: target, atMs: nil)
     }
 
     static func answered(_ id: String, _ result: ToolResult?) -> ToolCallOutcome {
@@ -56,8 +56,8 @@ enum FeedFixture {
 
     /// One `Read` of a path, already resolved, as the shortest way to ask what a subject reads as.
     static func read(_ paths: String...) -> [FeedCall] {
-        calls(in: paths.enumerated().flatMap { position, path -> [TranscriptEvent] in
-            [.toolCall(call("read-\(position)", "Read", .read, path))]
+        calls(in: paths.enumerated().map { position, path in
+            .toolCall(call("read-\(position)", tool: "Read", kind: .read, naming: path))
         })
     }
 }

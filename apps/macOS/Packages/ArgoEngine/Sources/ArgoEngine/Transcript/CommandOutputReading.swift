@@ -1,8 +1,8 @@
 import Foundation
 
-// A failed call's output → the two things a row shows about it. Nothing is reworded, reordered or
-// summarized: this picks lines out of the payload the call printed and hands them on as they were
-// written.
+// A call's own output → the one or two lines a row shows of it. Nothing is reworded, reordered or
+// summarized: these pick lines out of the payload the call printed and hand them on as they were
+// written. Which line is a decision; the characters in it never are.
 
 /// How the host opens a failed command's output: `Exit code 1`, alone on the first line. Anchored
 /// at both ends, so a diagnostic that happens to mention an exit code is not mistaken for one.
@@ -30,4 +30,15 @@ public func commandFailure(in output: String) -> CommandFailure {
         return CommandFailure(status: nil, diagnostic: first)
     }
     return CommandFailure(status: first, diagnostic: lines.dropFirst().first)
+}
+
+/// What a call that SUCCEEDED produced, in one line — its output's last spoken one, verbatim.
+///
+/// The last line and not a summary of the whole: a command's closing line is where it reports how
+/// it went (`Executed 151 tests, with 0 failures`), and counting or paraphrasing what came before
+/// it would put Argo's words where the command's are. A selection rule, like the failure's above.
+public func commandOutcome(in output: String) -> String? {
+    output.split(separator: "\n", omittingEmptySubsequences: false)
+        .map(String.init)
+        .last(where: spoken)
 }

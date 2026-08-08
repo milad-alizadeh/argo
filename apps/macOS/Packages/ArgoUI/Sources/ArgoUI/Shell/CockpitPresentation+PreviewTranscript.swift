@@ -55,7 +55,9 @@ extension CockpitPresentation.Session {
         .toolCall(ToolCall(
             id: "search", name: "Grep", kind: .search, target: "ArgoFeedRow", atMs: nil,
         )),
-        .toolCallOutcome(answered("search", .output(OutputEvidence(tier: .direct, text: "41")))),
+        .toolCallOutcome(answered("search", .output(OutputEvidence(
+            tier: .direct, text: "41 matches across 12 files",
+        )))),
         .toolCall(ToolCall(
             id: "read", name: "Read", kind: .read,
             target: "Sources/ArgoUI/VisualContract/ArgoFeedRow.swift", atMs: nil,
@@ -104,9 +106,20 @@ extension CockpitPresentation.Session {
             usage: nil,
         )),
         .toolCall(ToolCall(
+            id: "test", name: "Bash", kind: .execute,
+            target: "swift test --package-path Packages/ArgoUI", atMs: nil,
+        )),
+        .toolCallOutcome(answered("test", .output(OutputEvidence(
+            tier: .direct,
+            text: "Test Suite 'All tests' started\n✔ FeedCallTests.everyKindHasItsOwnVerb\n"
+                + "Executed 151 tests, with 0 failures in 24.113 seconds\n",
+        )))),
+        .toolCall(ToolCall(
             id: "fetch", name: "WebFetch", kind: .fetch, target: "developer.apple.com", atMs: nil,
         )),
-        .toolCallOutcome(answered("fetch", .output(OutputEvidence(tier: .direct, text: "…")))),
+        .toolCallOutcome(answered("fetch", .output(OutputEvidence(
+            tier: .direct, text: "Adopting Liquid Glass",
+        )))),
         .toolCall(ToolCall(
             id: "delegate", name: "Task", kind: .delegate, target: "review the feed", atMs: nil,
         )),
@@ -114,9 +127,14 @@ extension CockpitPresentation.Session {
         .toolCall(ToolCall(
             id: "mcp", name: "mcp__linear__list_issues", kind: .mcp, target: nil, atMs: nil,
         )),
-        .toolCallOutcome(answered("mcp", .output(OutputEvidence(tier: .direct, text: "12")))),
+        .toolCallOutcome(answered("mcp", .output(OutputEvidence(
+            tier: .direct, text: "12 issues",
+        )))),
         .toolCall(ToolCall(
-            id: "strange", name: "custom_tool_v2", kind: .other, target: nil, atMs: nil,
+            // With an argument, deliberately: a kind nobody classified is named by its TOOL, and
+            // the render is where that is checked.
+            id: "strange", name: "custom_tool_v2", kind: .other,
+            target: "whatever it does", atMs: nil,
         )),
         .toolCallOutcome(answered("strange", nil)),
     ]
