@@ -53,4 +53,17 @@ public enum ArgoLayout {
     /// output without wrapping it, which is the one thing it exists to do.
     public static let evidencePanelMinimumWidth: CGFloat = 320
     public static let evidencePanelShare: CGFloat = 0.5
+
+    /// How wide the panel may be in a deck of a given width — the split's half of the measure
+    /// invariants, which is why it lives here beside the floors rather than inside the view.
+    ///
+    /// The ceiling is what carries the claim: whatever the reader drags the seam to, the feed is
+    /// left `feedMinimumWidth`. The rail and the minimap are both shut while the panel is up, so
+    /// the feed's floor is the only one to leave room for — and at the narrowest window it has to
+    /// be, since two 320s and the minimap do not fit in the 680 a 960 window leaves the deck.
+    public static func evidencePanelLimits(in deck: CGFloat) -> ClosedRange<CGFloat> {
+        let floor = evidencePanelMinimumWidth
+        let ceiling = deck - feedMinimumWidth
+        return floor ... max(floor, ceiling)
+    }
 }

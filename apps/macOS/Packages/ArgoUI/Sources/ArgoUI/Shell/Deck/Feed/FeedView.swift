@@ -30,8 +30,7 @@ struct FeedView: View {
             // reader's eye on the way back to the next one — so the deck gets wider and the reading
             // does not. Centred rather than pinned left, because a bounded column against the
             // leading edge reads as a column that failed to fill the space beside it.
-            .frame(maxWidth: ArgoFeedRow.column, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .center)
+            .argoFeedMeasure()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {

@@ -137,11 +137,23 @@ struct VisualContractTests {
 
     /// A feed is read start to finish, so it answers to a measure the way a page does. The number
     /// itself is typographic; what the contract holds is that it is a bound the deck cannot widen,
-    /// and that a bubble inside it is a share of the column rather than a second measure.
+    /// and that it is not so tight the column never reaches it.
     @Test
     func `the reading has a measure the deck cannot widen`() {
         #expect(ArgoFeedRow.column > ArgoLayout.feedMinimumWidth)
-        #expect(ArgoFeedRow.column * ArgoFeedRow.bubbleShare < ArgoFeedRow.column)
+        #expect(ArgoFeedRow.column < ArgoLayout.windowMinimumWidth)
+    }
+
+    /// The AC: the split does not starve the column. Asserted against the panel's own ceiling at
+    /// the narrowest window the app allows, because that is the case where the two floors and the
+    /// minimap have the least room to share — a wider deck can only help.
+    @Test
+    func `the feed keeps a usable width at the narrowest deck with the panel open`() {
+        let deck = ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth
+        let widest = ArgoLayout.evidencePanelLimits(in: deck).upperBound
+
+        #expect(widest >= ArgoLayout.evidencePanelMinimumWidth)
+        #expect(deck - widest >= ArgoLayout.feedMinimumWidth)
     }
 
     /// Prose takes the whole column; the bubble does not. It is somebody speaking INTO the

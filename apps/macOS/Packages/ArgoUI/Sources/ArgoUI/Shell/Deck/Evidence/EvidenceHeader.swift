@@ -151,21 +151,3 @@ private struct EvidenceHeaderSpecimen: View {
         .background(ArgoPalette.graphite.surface.sunken)
         .argoAppearance()
 }
-
-extension EvidenceReading {
-    /// The mark for this reading, on the control that switches TO it.
-    var symbol: String {
-        switch self {
-        case .source: ArgoSymbol.readAsSource
-        case .prose: ArgoSymbol.readAsProse
-        }
-    }
-
-    /// What pressing the control offers, for the tooltip and for the ear.
-    var invitation: String {
-        switch self {
-        case .source: "Read the patch"
-        case .prose: "Read as a document"
-        }
-    }
-}

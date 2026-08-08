@@ -58,9 +58,11 @@ private struct DeckContentRow: View {
                     )
                 }
                 FeedColumn(feed: feed, open: $open)
-                DeckSeparator()
-                DeckSlot(zone: .minimap)
-                    .frame(width: ArgoLayout.minimapLaneWidth)
+                if openEvidence == nil {
+                    DeckSeparator()
+                    DeckSlot(zone: .minimap)
+                        .frame(width: ArgoLayout.minimapLaneWidth)
+                }
                 panel(in: proxy.size.width)
             }
             // Escape is the way out of anything that opened over what you were reading, and the
@@ -89,7 +91,7 @@ private struct DeckContentRow: View {
         if let evidence = openEvidence {
             DeckSeam(
                 width: panelBinding(in: deck),
-                limits: panelLimits(in: deck),
+                limits: ArgoLayout.evidencePanelLimits(in: deck),
                 growsRightward: false,
             )
             EvidencePanel(evidence: evidence) { open = nil }
@@ -98,25 +100,15 @@ private struct DeckContentRow: View {
         }
     }
 
-    /// The panel's width, defaulting to its share of everything that is not the minimap — the rail-
-    /// and-feed span it is taking the room from, measured the same whether the rail is up.
+    /// The panel's width, defaulting to its share of the deck. Of the WHOLE deck, because the rail
+    /// and the minimap are both shut while it is open — the feed is the only thing it shares with.
     private func panelBinding(in deck: CGFloat) -> Binding<CGFloat> {
-        let limits = panelLimits(in: deck)
-        let opening = (deck - ArgoLayout.minimapLaneWidth) * ArgoLayout.evidencePanelShare
+        let limits = ArgoLayout.evidencePanelLimits(in: deck)
+        let opening = deck * ArgoLayout.evidencePanelShare
         return Binding(
             get: { min(max(panelWidth ?? opening, limits.lowerBound), limits.upperBound) },
             set: { panelWidth = $0 },
         )
-    }
-
-    /// Both limits are read off the deck's own width, so a window narrow enough that the floors
-    /// cannot all be met yields the least-bad arrangement rather than a negative one.
-    private func panelLimits(in deck: CGFloat) -> ClosedRange<CGFloat> {
-        let floor = ArgoLayout.evidencePanelMinimumWidth
-        // The rail is shut while the panel is up, so the only floor to leave room for is the
-        // feed's.
-        let ceiling = deck - ArgoLayout.minimapLaneWidth - ArgoLayout.feedMinimumWidth
-        return floor ... max(floor, ceiling)
     }
 
     private func railLimits(in deck: CGFloat) -> ClosedRange<CGFloat> {
