@@ -12,8 +12,10 @@ final class CompanionConnection {
     private let respond: (String) -> String?
     private let onClose: () -> Void
     private var source: DispatchSourceRead?
+    private var writeSource: DispatchSourceWrite?
     private static let newline = UInt8(ascii: "\n")
     private var pending: [UInt8] = []
+    private var outbox: [UInt8] = []
 
     init(descriptor: Int32, respond: @escaping (String) -> String?, onClose: @escaping () -> Void) {
         self.descriptor = descriptor
@@ -27,22 +29,30 @@ final class CompanionConnection {
         source.setEventHandler { [weak self] in
             MainActor.assumeIsolated { self?.readAvailable() }
         }
+        // The descriptor is closed HERE and nowhere else. `cancel` is asynchronous, so closing
+        // beside it would free a number GCD is still watching — and the next `accept` hands that
+        // same number to another claim's connection.
+        let closing = descriptor
+        source.setCancelHandler { Darwin.close(closing) }
         source.resume()
         self.source = source
     }
 
     func close() {
+        writeSource?.cancel()
+        writeSource = nil
         source?.cancel()
         source = nil
-        Darwin.close(descriptor)
     }
 
     private func readAvailable() {
         var buffer = [UInt8](repeating: 0, count: 8192)
         let count = read(descriptor, &buffer, buffer.count)
         guard count > 0 else {
-            // 0 is the peer gone; -1 with EAGAIN is a spurious wake-up and nothing to do.
-            if count == 0 || errno != EAGAIN {
+            // 0 is the peer gone. `EAGAIN` is a spurious wake-up and `EINTR` a signal landing
+            // mid-call — neither says anything about the peer, and treating either as a hang-up
+            // would drop a live channel on a passing interruption.
+            if count == 0 || (errno != EAGAIN && errno != EINTR) {
                 onClose()
             }
             return
@@ -67,23 +77,45 @@ final class CompanionConnection {
     }
 
     private func send(_ reply: String) {
-        var bytes = Array((reply + "\n").utf8)
-        var offset = 0
-        while offset < bytes.count {
-            let written = bytes.withUnsafeBytes { raw -> Int in
+        outbox += Array((reply + "\n").utf8)
+        flush()
+    }
+
+    /// Write what the socket will take, and wait to be told when it will take more.
+    ///
+    /// Never spins. This runs on the main queue, so a client that connects and stops reading would
+    /// otherwise freeze the whole window until it changed its mind — an agent's misbehaviour taking
+    /// the cockpit down with it.
+    private func flush() {
+        while !outbox.isEmpty {
+            let written = outbox.withUnsafeBytes { raw -> Int in
                 guard let base = raw.baseAddress else { return -1 }
-                return write(descriptor, base + offset, bytes.count - offset)
+                return write(descriptor, base, outbox.count)
             }
-            guard written > 0 else {
-                // EAGAIN on a socket whose buffer is momentarily full: the replies here are one
-                // line each, so spinning until it drains is bounded and cannot deadlock.
-                if errno == EAGAIN {
-                    continue
-                }
-                onClose()
-                return
+            if written > 0 {
+                outbox.removeFirst(written)
+                continue
             }
-            offset += written
+            guard errno == EAGAIN || errno == EINTR else { return onClose() }
+            armWriteSource()
+            return
         }
+        writeSource?.cancel()
+        writeSource = nil
+    }
+
+    /// Armed only while there is a backlog, and cancelled the moment there is not: a write source
+    /// left running fires continuously for as long as the socket is writable.
+    ///
+    /// Its cancel handler does NOT close the descriptor — the read source above owns that, and two
+    /// handlers closing one number is the double-close this whole arrangement exists to avoid.
+    private func armWriteSource() {
+        guard writeSource == nil else { return }
+        let source = DispatchSource.makeWriteSource(fileDescriptor: descriptor, queue: .main)
+        source.setEventHandler { [weak self] in
+            MainActor.assumeIsolated { self?.flush() }
+        }
+        source.resume()
+        writeSource = source
     }
 }

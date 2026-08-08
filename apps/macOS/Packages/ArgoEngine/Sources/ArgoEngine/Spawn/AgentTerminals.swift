@@ -6,12 +6,12 @@ import Foundation
 /// the child stalls), and kill one when a viewer goes away (the agent outlives the pane watching
 /// it). Both are why the drain is subscribed here, once, at adoption.
 @MainActor
-public final class AgentTerminals {
+final class AgentTerminals {
     /// How many bytes of an agent's output are kept for a viewer that attaches after the fact. A
     /// terminal opens long after the spawn, so with no replay the pane would open blank on a
     /// session mid-flight. Bounded because this is a live tail: the transcript on disk is the
     /// durable record.
-    public static let replayLimit = 200_000
+    static let replayLimit = 200_000
 
     private final class Adopted {
         let process: AgentProcess
@@ -26,30 +26,35 @@ public final class AgentTerminals {
     private var agents: [SessionOwnership.ClaimID: Adopted] = [:]
     private var nextViewer = 0
 
-    public init() {}
+    init() {}
 
     /// Take ownership of a freshly spawned agent's PTY, keyed by the claim that owns it.
-    public func adopt(_ id: SessionOwnership.ClaimID, process: AgentProcess) {
+    func adopt(_ id: SessionOwnership.ClaimID, process: AgentProcess) {
         agents[id] = Adopted(process: process)
     }
 
     /// Fold one chunk of the agent's output into its replay and hand it to whoever is watching.
     /// Called from the host's data callback, which runs whether or not anything is attached.
-    public func received(_ chunk: [UInt8], from id: SessionOwnership.ClaimID) {
+    func received(_ chunk: [UInt8], from id: SessionOwnership.ClaimID) {
         guard let entry = agents[id] else { return }
-        entry.replay = Array((entry.replay + chunk).suffix(Self.replayLimit))
+        // Appended and trimmed from the front, rather than rebuilt: this runs once per chunk on a
+        // busy PTY, and `suffix` over a 200 KB buffer would copy the whole thing every time.
+        entry.replay += chunk
+        if entry.replay.count > Self.replayLimit {
+            entry.replay.removeFirst(entry.replay.count - Self.replayLimit)
+        }
         for viewer in entry.viewers.values {
             viewer(chunk)
         }
     }
 
     /// The PTY exited: there is nothing left to steer.
-    public func drop(_ id: SessionOwnership.ClaimID) {
+    func drop(_ id: SessionOwnership.ClaimID) {
         agents.removeValue(forKey: id)
     }
 
     /// Watch and steer one agent, or `nil` when no live PTY answers to that claim.
-    public func attach(
+    func attach(
         to id: SessionOwnership.ClaimID,
         onData: @escaping ([UInt8]) -> Void,
     )
@@ -69,7 +74,7 @@ public final class AgentTerminals {
 
     /// End every PTY this registry holds. What window close and app quit call, so no agent Argo
     /// started outlives the Argo that started it.
-    public func terminateAll() {
+    func terminateAll() {
         // Snapshotted and cleared BEFORE anything is ended: a host reports the exit it was just
         // asked for, and the owner answers that by dropping the very table this would be walking.
         let ending = Array(agents.values)

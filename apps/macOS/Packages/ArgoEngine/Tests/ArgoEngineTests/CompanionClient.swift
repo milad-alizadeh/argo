@@ -10,6 +10,9 @@ struct CompanionClient {
     private let descriptor: Int32
 
     init?(socketPath: String) {
+        // Bounded like the server's own copy: `sun_path` is 104 bytes, and a path longer than that
+        // would overrun the struct rather than fail to connect.
+        guard socketPath.utf8.count <= unixSocketPathLimit else { return nil }
         let descriptor = socket(AF_UNIX, SOCK_STREAM, 0)
         guard descriptor >= 0 else { return nil }
         var address = sockaddr_un()

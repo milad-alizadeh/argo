@@ -64,7 +64,7 @@ public final class SessionOwnership {
     }
 
     /// Every claim whose PTY is still alive, oldest first — what app quit has to shut down.
-    public var liveClaims: [ClaimID] {
+    var liveClaims: [ClaimID] {
         issuedOrder.filter { claims[$0]?.toMs == nil }
     }
 

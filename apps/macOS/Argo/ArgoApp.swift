@@ -30,10 +30,14 @@ struct ArgoApp: App {
             } else {
                 CockpitView(presentation: cockpit.presentation, actions: actions)
                     .environment(navigation)
-                    .task { await cockpit.start() }
-                    // Every PTY this window owns dies with the window. An agent Argo started must
-                    // not outlive the Argo that started it: nothing can re-adopt it, so it would be
-                    // a process nobody is left to steer or stop.
+                    .task {
+                        cockpit.endOwnedSessionsOnQuit()
+                        await cockpit.start()
+                    }
+                    // Every PTY this window owns dies with the window, and the observer above ends
+                    // them on ⌘Q too. An agent Argo started must not outlive the Argo that started
+                    // it: nothing can re-adopt it, so it would be a process nobody is left to steer
+                    // or stop.
                     .onDisappear { cockpit.endOwnedSessions() }
             }
         }
