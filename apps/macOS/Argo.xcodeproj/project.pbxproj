@@ -94,6 +94,7 @@
 			packageProductDependencies = (
 				A1B2C3D4E5F60000000000A0 /* ArgoEngine */,
 				A1B2C3D4E5F60000000000A1 /* ArgoUI */,
+				A1B2C3D4E5F60000000000A2 /* ArgoTerminal */,
 			);
 			productName = Argo;
 			productReference = A1B2C3D4E5F6000000000010 /* Argo.app */;
@@ -387,6 +388,10 @@
 		A1B2C3D4E5F60000000000A1 /* ArgoUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ArgoUI;
+		};
+		A1B2C3D4E5F60000000000A2 /* ArgoTerminal */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ArgoTerminal;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

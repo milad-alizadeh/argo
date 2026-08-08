@@ -1,5 +1,6 @@
 import AppKit
 import ArgoEngine
+import ArgoTerminal
 import ArgoUI
 import Foundation
 import Observation
@@ -33,7 +34,14 @@ final class CockpitCoordinator {
         self.configuration = configuration
         self.store = store
         self.launch = .unregistered(configuration.projectURL)
-        self.hub = Hub(projectURL: configuration.projectURL, engine: engine)
+        self.hub = Hub(
+            projectURL: configuration.projectURL,
+            engine: engine,
+            // The real PTY host is composed in HERE, at the app layer, which is what keeps the
+            // engine runnable with no window: `ArgoTerminal` links SwiftTerm and therefore AppKit,
+            // and nothing under `ArgoEngine` names either.
+            spawnServices: SpawnServices(host: SwiftTermProcessHost()),
+        )
     }
 
     /// Read the registry, then point the Hub at whatever the launch resolves to. The read comes

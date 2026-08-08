@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "argo": {
+      "type": "stdio",
+      "command": "/usr/bin/nc",
+      "args": ["-U", "__ARGO_COMPANION_SOCKET__"]
+    }
+  }
+}

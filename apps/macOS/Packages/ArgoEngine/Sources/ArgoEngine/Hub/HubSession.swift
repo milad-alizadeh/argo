@@ -3,7 +3,9 @@ import Foundation
 /// The Session facts the shell can establish directly from one transcript stream.
 public struct HubSession: Equatable, Identifiable, Sendable {
     public let id: String
-    public let sourceURL: URL
+    /// The transcript this Session was read from. Absent for one Argo has just spawned: the CLI
+    /// writes no record until its first prompt, and there is no file to name until it does.
+    public let sourceURL: URL?
     /// Which posture of the `managed | external` axis this Session is on. Read off the ownership
     /// registry when the Hub publishes the roster, never asserted here: a transcript file says
     /// nothing about who spawned the CLI that wrote it.
@@ -11,6 +13,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// What Argo can see of the process behind the transcript. Set by the Hub from its own liveness
     /// read; quiet until one has been taken, because ambiguity resolves toward the quieter state.
     public internal(set) var liveness: SessionLiveness = .quiet
+    /// What this Session said over the companion channel, where it has one. Absent for every
+    /// external Session and for a managed one whose agent has not spoken — which is not a degrade,
+    /// only the tier having nothing to say yet.
+    public internal(set) var convention: CompanionReport?
     public private(set) var title: String
     public private(set) var cwd: String?
     public private(set) var model: String?
@@ -51,6 +57,32 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.sourceURL = observation.sourceURL
         self.title = observation.sourceURL.deletingPathExtension().lastPathComponent
         self.recordedAtMs = observation.modifiedAt?.epochMs
+    }
+
+    /// The row for an agent Argo has just STARTED, before the CLI has written a record.
+    ///
+    /// Waiting for the transcript would render a DIRECT fact — Argo owns this claim and its PTY —
+    /// at the DERIVED tier's latency, leaving the roster silent about the one Session it knows for
+    /// certain (#361). Its id IS the claim's, because that is the only handle the spawn and the
+    /// terminal share until the CLI picks one.
+    ///
+    /// Idle, not running: the agent is up and has been asked nothing, which is the state that hands
+    /// the next move back to you. That is what the stop reason spells — a spawn IS a boundary, with
+    /// no Turn in progress on either side of it — and it is a DIRECT fact about a process Argo
+    /// started, not a reading of a record that does not exist. Left absent, the same row would read
+    /// `unknown` until the liveness poll caught up and then `running` over an agent sitting at its
+    /// prompt.
+    ///
+    /// A PTY that goes without a record ever appearing closes that Turn `cancelled`; the `ended`
+    /// the roster then shows comes from the orphaned provenance, never from a reason invented here.
+    init(spawn: AgentSpawn) {
+        self.id = spawn.claim.value
+        self.sourceURL = nil
+        self.title = spawn.title
+        self.cwd = spawn.cwd
+        self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
+        self.startedAtMs = spawn.spawnedAtMs
+        self.lastStop = spawn.exit == nil ? .endTurn : .cancelled
     }
 
     mutating func apply(_ event: TranscriptEvent) {

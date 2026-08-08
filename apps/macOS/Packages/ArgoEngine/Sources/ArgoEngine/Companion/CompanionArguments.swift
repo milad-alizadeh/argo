@@ -1,0 +1,54 @@
+import Foundation
+
+/// One tool call's arguments, read into a fact.
+///
+/// Every read is total: a field that is not the type it should be is absent, not a default. A tool
+/// whose required argument is missing produces no fact at all, so the agent gets a refusal rather
+/// than the cockpit getting an invented one.
+enum CompanionArguments {
+    static func fact(
+        for tool: CompanionTool,
+        from arguments: JSONValue,
+        callID: JSONValue?,
+    )
+        -> CompanionFact? {
+        switch tool {
+        case .reportStatus: status(from: arguments)
+        case .askUser: ask(from: arguments, callID: callID)
+        case .reportOutcome: outcome(from: arguments)
+        }
+    }
+
+    private static func status(from arguments: JSONValue) -> CompanionFact? {
+        guard let word = arguments.stringField("status") else { return nil }
+        return .status(CompanionTool.status(named: word))
+    }
+
+    private static func ask(from arguments: JSONValue, callID: JSONValue?) -> CompanionFact? {
+        guard let question = arguments.stringField("question") else { return nil }
+        return .ask(CompanionAsk(
+            // The call's own id: the agent never sends one, and this is the only handle both sides
+            // already share for the question being asked.
+            id: identifier(callID),
+            question: question,
+            options: arguments["options"]?.array.compactMap(\.string) ?? [],
+        ))
+    }
+
+    private static func outcome(from arguments: JSONValue) -> CompanionFact? {
+        guard let word = arguments.stringField("target"),
+              let target = CompanionOutcome.Target(rawValue: word),
+              let reference = arguments.stringField("reference"),
+              let summary = arguments.stringField("summary")
+        else { return nil }
+        return .outcome(CompanionOutcome(target: target, reference: reference, summary: summary))
+    }
+
+    private static func identifier(_ callID: JSONValue?) -> String {
+        switch callID {
+        case let .string(value): value
+        case let .number(value): String(Int(value))
+        case .bool, .array, .object, .null, .none: "ask"
+        }
+    }
+}

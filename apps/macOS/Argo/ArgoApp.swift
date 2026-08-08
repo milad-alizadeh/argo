@@ -31,11 +31,19 @@ struct ArgoApp: App {
                 CockpitView(presentation: cockpit.presentation, actions: actions)
                     .environment(navigation)
                     .task { await cockpit.start() }
+                    // Every PTY this window owns dies with the window. An agent Argo started must
+                    // not outlive the Argo that started it: nothing can re-adopt it, so it would be
+                    // a process nobody is left to steer or stop.
+                    .onDisappear { cockpit.endOwnedSessions() }
             }
         }
         .defaultSize(width: 1280, height: 800)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("New Session") { actions.spawnSession() }
+                    .keyboardShortcut("n", modifiers: .command)
+            }
             CommandMenu("Navigate") {
                 ForEach(CockpitRoom.allCases) { candidate in
                     Button(candidate.title) { navigation.room = candidate }
@@ -60,6 +68,7 @@ struct ArgoApp: App {
             locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
             revealProject: { id in cockpit.revealProject(projectID: id) },
             removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
+            spawnSession: { Task { await cockpit.spawnSession() } },
         )
     }
 }

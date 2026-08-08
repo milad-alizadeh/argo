@@ -26,7 +26,7 @@ public final class Hub {
         join.transcripts.map { transcript in
             HubObservation(
                 id: transcript.id,
-                sourceURL: transcript.session.sourceURL,
+                sourceURL: transcript.sourceURL,
                 state: tails[transcript.id] == nil ? .stopped : .live,
             )
         }
@@ -50,13 +50,34 @@ public final class Hub {
     /// transcript's: liveness moves with a process table nothing in the file knows about, and
     /// ownership is this Argo process's own claim. Writing them into the join would make a Session
     /// re-render as changed every time the clock moved.
+    ///
+    /// The Sessions Argo has SPAWNED sit in the same list, on the same sort key. Their rows exist
+    /// before any transcript does (#361) and stand down the moment the record they turned out to be
+    /// is bound to their claim — so one agent is one row throughout, never two and never re-keyed.
     public var sessions: [HubSession] {
-        join.sessions.map(observed)
+        HubSessionChain.ordered(
+            join.sessions.map(observed) + spawns.values.map { observed(HubSession(spawn: $0)) },
+        )
     }
 
     /// Which Sessions this Argo process owns a PTY for. Empty until something spawns one, which is
     /// what makes every discovered Session `external` — a read of the registry, not a default.
     public let ownership = SessionOwnership()
+
+    /// The PTYs behind those claims. Held for the life of this process, and ended with it.
+    public let terminals = AgentTerminals()
+
+    /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
+    /// spawn reaches the roster in the same update that opened its PTY.
+    var spawns: [SessionOwnership.ClaimID: AgentSpawn] = [:]
+
+    /// What each claim's agent has said over the companion channel — the CONVENTION tier, and the
+    /// only place it comes from. Keyed by claim rather than by Session id because the claim is what
+    /// exists first and survives the reconciliation.
+    var companionReports: [SessionOwnership.ClaimID: CompanionReport] = [:]
+
+    @ObservationIgnored let spawnServices: SpawnServices
+    @ObservationIgnored private(set) var companion: CompanionChannel?
 
     /// The working directories a live CLI was running in when the process table was last read, and
     /// when that was. Absent until a read has happened, so an unread liveness resolves down to
@@ -68,7 +89,7 @@ public final class Hub {
     var livenessReadAtMs: Int?
     @ObservationIgnored var livenessPolling: Task<Void, Never>?
 
-    private var join = HubJoin()
+    var join = HubJoin()
     /// The rosters of the Projects this Hub has been pointed at, kept across a switch. The
     /// sweep still re-runs and the tails still re-read on re-entry — what the retained join
     /// removes is the empty roster the reader used to sit in front of while they did.
@@ -100,11 +121,24 @@ public final class Hub {
         projectURL: URL,
         engine: Engine = Engine(),
         discovery: SessionDiscovery = SessionDiscovery(),
+        spawnServices: SpawnServices = .none,
     ) {
         self.project = HubProject(url: projectURL)
         self.configuration = LaunchConfiguration(projectURL: projectURL, transcriptURLs: [])
         self.engine = engine
         self.discovery = discovery
+        self.spawnServices = spawnServices
+        openCompanionChannel()
+    }
+
+    /// Opened at construction, not lazily: it closes over `self`, and a channel that came into
+    /// being on the first spawn would be a second thing that could fail at the moment an agent
+    /// starts — which is the one moment there is nothing useful to say about it.
+    private func openCompanionChannel() {
+        let root = spawnServices.companionRoot
+        companion = CompanionChannel(root: root) { [weak self] claim, fact in
+            self?.record(fact, for: claim)
+        }
     }
 
     /// Point the Hub at a Project. Everything the previous one established is cancelled and
@@ -242,6 +276,9 @@ public final class Hub {
     private func drain(_ observation: TranscriptObservation) async {
         for await events in observation.events {
             join.apply(events, to: observation.id)
+            // After the join, never before: reconciliation retires a spawned Session's own row, and
+            // it may only do that once the observed row it is standing in for is published.
+            reconcileSpawns()
         }
         // A tail that ended without delivering a backfill — an unopenable file, or one stopped
         // mid-read — still has to settle, or the roster waits on a transcript that never speaks.

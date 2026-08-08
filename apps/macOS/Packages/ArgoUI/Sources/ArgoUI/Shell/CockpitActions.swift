@@ -14,6 +14,9 @@ public struct CockpitActions {
     public let revealProject: (String) -> Void
     /// Forget a Project — `ProjectRegistry.removing(id:)` is what that means.
     public let removeProject: (String) -> Void
+    /// Start an agent in the active Project's folder, with Argo owning its PTY. The one intent here
+    /// that acts on the world rather than on Argo's own record of it.
+    public let spawnSession: () -> Void
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for
     /// the same reason every action here is: they are called from a view.
@@ -25,6 +28,7 @@ public struct CockpitActions {
         locateProject: { _ in },
         revealProject: { _ in },
         removeProject: { _ in },
+        spawnSession: {},
     )
 
     public init(
@@ -35,6 +39,7 @@ public struct CockpitActions {
         locateProject: @escaping (String) -> Void,
         revealProject: @escaping (String) -> Void,
         removeProject: @escaping (String) -> Void,
+        spawnSession: @escaping () -> Void,
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
@@ -43,5 +48,6 @@ public struct CockpitActions {
         self.locateProject = locateProject
         self.revealProject = revealProject
         self.removeProject = removeProject
+        self.spawnSession = spawnSession
     }
 }

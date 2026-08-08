@@ -16,8 +16,15 @@ public extension HubSession {
     /// The rollup and its tier, derived on read. Nothing about the status is stored: the Turn
     /// boundaries are what the transcript said, liveness is what the process table said a moment
     /// ago, and the status is only ever a reading of the two together.
+    ///
+    /// A status the agent REPORTED wins, at the CONVENTION tier. It is the higher claim by
+    /// construction — the agent knows what it is doing, where the transcript only shows what it
+    /// has finished doing — and it is the one path by which `permission` is reachable at all.
+    /// A Session with no channel, or a channel that has said nothing, falls through to the
+    /// DERIVED reading, never to a worse one.
     var statusReading: SessionStatusReading {
-        SessionStatus.read(signals)
+        guard let reported = convention?.status else { return SessionStatus.read(signals) }
+        return SessionStatusReading(tier: .convention, status: reported)
     }
 
     var status: SessionStatus {
