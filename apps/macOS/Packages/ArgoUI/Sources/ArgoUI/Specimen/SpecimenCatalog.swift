@@ -29,6 +29,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedEvidence
     case feedRunEvidence
     case feedSurveyEvidence
+    case feedDocumentEvidence
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -129,6 +130,15 @@ public struct SpecimenScreen: View {
                 room: .sessions,
                 feed: FeedProjection.previewCallRows,
                 open: FeedProjection.previewSurveyRowID,
+            )
+        case .feedDocumentEvidence:
+            // A markdown file the agent wrote, open. It opens as the DOCUMENT and not as the
+            // patch — whether an outline reads as an outline once the `##` stops being drawn is
+            // the whole judgement, and it is not one a test can make.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewCallRows,
+                open: FeedProjection.previewDocumentCallID,
             )
         }
     }

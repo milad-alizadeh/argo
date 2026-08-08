@@ -24,6 +24,22 @@ enum FeedProjection {
         }
     }
 
+    /// How many subagents are running right now, as far as the record can say.
+    ///
+    /// A delegation the transcript has not answered IS a subagent still working: the parent writes
+    /// the call when it hands the work over and the result when it comes back, so the gap between
+    /// them is the child's whole life. DERIVED, and it degrades the honest way — a transcript that
+    /// stopped mid-turn leaves a delegation open forever, which reads as one running rather than as
+    /// none, and a rail that says nothing is running while one is would be the worse of the two.
+    static func runningDelegations(in rows: [FeedRow]) -> Int {
+        rows.reduce(0) { running, row in
+            guard case let .call(call) = row.content, call.kind == .delegate,
+                  call.ending == .pending
+            else { return running }
+            return running + call.repeats
+        }
+    }
+
     /// Where the Session is working, which is what every address in the feed is said relative to.
     /// The LAST one the record carries: a resume chain can move, and the newest is where it is now.
     private static func workingDirectory(in events: [TranscriptEvent]) -> FeedPath {
@@ -121,6 +137,15 @@ extension FeedProjection {
 
     /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
     /// specimen and a `#Preview` cannot be looking at two different failures.
+    /// The markdown document in that feed — the one row whose panel opens as prose rather than as
+    /// a patch, because the agent wrote the whole file and there is no change in it to read.
+    static let previewDocumentCallID = previewRows.first { row in
+        guard case let .call(call) = row.content, case let .file(file) = call.subject else {
+            return false
+        }
+        return EvidenceLanguage(path: file.path) == .markdown && call.kind == .create
+    }?.id
+
     static let previewFailedCallID = previewRows.first { row in
         guard case let .call(call) = row.content else { return false }
         return call.ending.hasFailed

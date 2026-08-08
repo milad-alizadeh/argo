@@ -27,12 +27,18 @@ struct FeedCallSubject: View {
         }
     }
 
+    /// The filename, and after it only where the file WENT.
+    ///
+    /// No parent folder trailing the name. It was there to tell two same-named files apart, and it
+    /// paid for that by putting a word after every filename in the feed that the reader has to
+    /// discard — a name followed by `Shell` reads as two things until you know it is one. The
+    /// disambiguation lives where a reader who needs it goes: the panel opens on the whole path,
+    /// and a folded run lists its files as paths.
     private func named(_ file: FeedCall.FileName) -> some View {
         HStack(spacing: ArgoSpacing.tight) {
             Text(file.name)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(ink)
-            quiet(file.qualifier)
             quiet(destination.map { "→ \($0)" })
         }
     }

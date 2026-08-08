@@ -12,14 +12,20 @@ struct EvidencePanel: View {
     let evidence: FeedEvidence
     let dismiss: () -> Void
 
+    /// Which way the patches are being read. Owned here rather than by the row, because it is a
+    /// property of looking at this thing and not of the thing: opening a different row asks the
+    /// question again, which is why it is re-seeded whenever the evidence changes.
+    @State private var reading: EvidenceReading = .source
+
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
-            EvidenceHeader(evidence: evidence, dismiss: dismiss)
+            EvidenceHeader(evidence: evidence, reading: $reading, dismiss: dismiss)
             DeckSeparator()
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(argo.color.surface.sunken)
+        .onChange(of: evidence, initial: true) { reading = evidence.opening }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Evidence")
     }
@@ -46,6 +52,7 @@ struct EvidencePanel: View {
                         EvidenceStep(
                             step: step,
                             language: step.language ?? evidence.language,
+                            reading: reading,
                             position: position,
                             count: evidence.steps.count,
                         )
@@ -69,6 +76,7 @@ private struct EvidenceStep: View {
 
     let step: FeedEvidence.Step
     let language: EvidenceLanguage?
+    let reading: EvidenceReading
     let position: Int
     let count: Int
 
@@ -106,80 +114,9 @@ private struct EvidenceStep: View {
     @ViewBuilder private func shown(_ result: ToolResult) -> some View {
         switch result {
         case let .output(output): EvidenceOutput(output: output)
-        case let .diff(diff): EvidenceDiff(diff: diff, language: language)
+        case let .diff(diff): EvidenceDiff(diff: diff, language: language, reading: reading)
         case let .media(media): EvidenceMedia(media: media)
         }
-    }
-}
-
-/// What the panel is open ON: a mark for what kind of thing it was, the address the feed was
-/// standing in for, and — for a subject that is not a file — the verb and how it went.
-private struct EvidenceHeader: View {
-    @Environment(\.argo) private var argo
-
-    let evidence: FeedEvidence
-    let dismiss: () -> Void
-
-    var body: some View {
-        HStack(spacing: ArgoSpacing.snug) {
-            ArgoGlyph(evidence.symbol, .inline)
-                .foregroundStyle(argo.color.text.tertiary)
-            if evidence.saysVerb {
-                Text(evidence.verb)
-                    .argoText(ArgoTypography.body)
-                    .foregroundStyle(argo.color.text.tertiary)
-            }
-            address
-            Spacer(minLength: ArgoSpacing.snug)
-            outcome
-            Button(action: dismiss) {
-                ArgoGlyph(ArgoSymbol.dismiss, .inline)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(argo.color.text.tertiary)
-            .accessibilityLabel("Close evidence")
-        }
-        .padding(.horizontal, ArgoSpacing.comfortable)
-        .padding(.vertical, ArgoSpacing.base)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(spoken)
-    }
-
-    /// The path from the cwd forward, on ONE line, cut from the FRONT where it does not fit. A path
-    /// is identified by its right-hand end, so those are the characters to keep; wrapping it
-    /// instead pushed the close control down and grew the header with the depth of whatever
-    /// happened to be open.
-    private var address: some View {
-        Text(evidence.address)
-            .argoMono(.body)
-            .foregroundStyle(argo.color.text.primary)
-            .textSelection(.enabled)
-            .lineLimit(1)
-            .truncationMode(.head)
-            .help(evidence.address)
-    }
-
-    /// How it went, in a word, and only where there is anything to say. Success is silent here for
-    /// the same reason it is silent on the row: the panel below is the outcome, at length, and
-    /// `succeeded` over a stream of output the reader is already looking at says nothing twice.
-    @ViewBuilder private var outcome: some View {
-        if let spoken = evidence.ending.spoken {
-            Text(spoken)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(
-                    evidence.ending.hasFailed
-                        ? argo.color.state.failure
-                        : argo.color.text.tertiary,
-                )
-        }
-    }
-
-    /// The verb is spoken even where it is not drawn: a mark says "Swift file" to somebody looking
-    /// at it and nothing at all to somebody listening.
-    private var spoken: String {
-        [evidence.verb, evidence.address, evidence.ending.spoken]
-            .compactMap(\.self)
-            .joined(separator: " ")
     }
 }
 

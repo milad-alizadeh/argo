@@ -121,6 +121,15 @@ struct VisualContractTests {
         #expect(ArgoFeedRow.proseLineSpacing > 0)
     }
 
+    /// A feed is read start to finish, so it answers to a measure the way a page does. The number
+    /// itself is typographic; what the contract holds is that it is a bound the deck cannot widen,
+    /// and that a bubble inside it is a share of the column rather than a second measure.
+    @Test
+    func `the reading has a measure the deck cannot widen`() {
+        #expect(ArgoFeedRow.column > ArgoLayout.feedMinimumWidth)
+        #expect(ArgoFeedRow.column * ArgoFeedRow.bubbleShare < ArgoFeedRow.column)
+    }
+
     /// Prose takes the whole column; the bubble does not. It is somebody speaking INTO the
     /// session, and one that filled the column would stop reading as a thing that was said — but
     /// a strip beside full-width paragraphs stops reading as half of one conversation.

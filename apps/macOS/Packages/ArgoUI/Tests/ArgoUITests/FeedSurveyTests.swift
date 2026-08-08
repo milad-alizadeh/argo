@@ -149,6 +149,29 @@ struct FeedSurveyTests {
     }
 
     /// One search and N reads, each answered — the shape a turn's reconnaissance actually has.
+    /// The agents rail is on screen only while subagents are, and a delegation the record has not
+    /// answered is the only thing a transcript can say about one still working.
+    @Test
+    func `a delegation the record has not answered counts as a subagent still running`() {
+        let handed: [TranscriptEvent] = [
+            .toolCall(FeedFixture.call("away", tool: "Task", kind: .delegate, naming: "review")),
+            .toolCall(FeedFixture.call("back", tool: "Task", kind: .delegate, naming: "verify")),
+            .toolCallOutcome(FeedFixture.answered(
+                "back",
+                .output(OutputEvidence(tier: .direct, text: "done")),
+            )),
+        ]
+
+        #expect(FeedProjection.runningDelegations(in: FeedProjection.rows(from: handed)) == 1)
+    }
+
+    @Test
+    func `a session that delegated nothing has no subagents running`() {
+        let rows = FeedProjection.rows(from: looking(at: ["a.swift"]))
+
+        #expect(FeedProjection.runningDelegations(in: rows) == 0)
+    }
+
     private func looking(at paths: [String]) -> [TranscriptEvent] {
         let search = "grep-\(paths.joined())"
         return [

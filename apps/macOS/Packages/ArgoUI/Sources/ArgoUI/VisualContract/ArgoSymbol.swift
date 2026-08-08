@@ -53,6 +53,11 @@ public enum ArgoSymbol {
     /// Closing the evidence panel.
     public static let dismiss = "xmark"
 
+    /// Switching the panel between the patch the record carries and the document that patch made.
+    /// One control, carrying the mark of where it goes — so the two are never on screen together.
+    public static let readAsSource = "chevron.left.forwardslash.chevron.right"
+    public static let readAsProse = "doc.richtext"
+
     /// What a file the panel is open on is written in — one mark per language FAMILY. The
     /// extension is in the path beside it and is what actually names the language; these say only
     /// which KIND of file you are looking at, which is what a glance at a header wants.

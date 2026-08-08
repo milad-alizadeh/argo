@@ -48,10 +48,7 @@ private struct DeckContentRow: View {
     var body: some View {
         GeometryReader { proxy in
             HStack(spacing: ArgoSpacing.flush) {
-                // The rail closes when the panel opens. The two are alternatives rather than
-                // neighbours: a reader looking at what one call produced is not picking a Session,
-                // and three columns beside a fourth leaves none of them a usable width.
-                if openEvidence == nil {
+                if showsRail {
                     DeckSlot(zone: .rail)
                         .frame(width: railWidth)
                     DeckSeam(
@@ -72,6 +69,20 @@ private struct DeckContentRow: View {
             // does not have to reach into the panel first to be allowed to close it.
             .onExitCommand { open = nil }
         }
+    }
+
+    /// Whether the agents rail is on screen at all.
+    ///
+    /// Only while subagents are actually running. A column standing empty for the whole of every
+    /// session that never delegated is a permanent claim that something belongs there — it took a
+    /// third of the deck to say nothing, and the feed it took the room from is the thing being
+    /// read. It appears when there is a subagent to show and goes when the last one lands.
+    ///
+    /// And never beside the panel. The two are alternatives rather than neighbours: a reader
+    /// looking at what one call produced is not watching a fan-out, and three columns beside a
+    /// fourth leaves none of them a usable width.
+    private var showsRail: Bool {
+        openEvidence == nil && FeedProjection.runningDelegations(in: feed) > 0
     }
 
     @ViewBuilder private func panel(in deck: CGFloat) -> some View {

@@ -53,6 +53,15 @@ public enum ArgoFeedRow {
     /// digits, which is where a file stops being one anybody scrolls.
     public static let diffGutterWidth: CGFloat = 32
 
+    /// The widest the feed's content runs, however wide the deck is.
+    ///
+    /// A measure for the WHOLE column and not for one row in it. Prose was once capped on its own
+    /// while the call lines beneath it ran the full width, which read as a paragraph that had
+    /// failed to lay out — the fix is not to unbind the prose but to bind everything, so the
+    /// measure is a property of the reading rather than of one kind of row. Centred in the zone, so
+    /// the deck grows and the line length does not.
+    public static let column: CGFloat = 720
+
     /// The share of the COLUMN a prompt's bubble may take, as a ceiling — a short prompt still
     /// sizes to its own words. Under half would read as a caption; the whole of it would stop
     /// reading as somebody speaking into the session.
