@@ -36,6 +36,22 @@ struct FeedCall: Equatable, Sendable {
     var disclosure: Disclosure {
         evidence.isEmpty ? .none : .available
     }
+
+    /// The whole row as one sentence, for a reader who cannot see it.
+    ///
+    /// Everything the drawn line says WITHOUT words is spelled out here and nowhere else: the
+    /// failure ink, the `×3`, and the parent that tells two same-named files apart. A value on the
+    /// call rather than a string built in the view, so the claim is one a test can hold.
+    var spoken: String {
+        [
+            kind.verb,
+            subject.captioned,
+            repeats > 1 ? "\(repeats) times" : nil,
+            ending.spoken,
+        ]
+        .compactMap(\.self)
+        .joined(separator: " ")
+    }
 }
 
 extension FeedCall {
@@ -73,24 +89,21 @@ extension FeedCall {
         /// A pattern, a URL, a brief, a tool's own name — whatever the call named, verbatim.
         case plain(String)
 
-        /// What the subject reads as out loud. A file is its name and not its path here too: the
-        /// path is what the panel opens on, and a screen reader working down a feed wants the same
-        /// short address the eye gets.
-        var spoken: String {
+        /// The shortest thing that identifies the subject on its own, with no row beside it to
+        /// borrow from: the filename, and the parent in front of it where another file in this
+        /// feed answers to the same name.
+        ///
+        /// Two surfaces need exactly this, for the same reason and so from one rule. A step inside
+        /// a folded run of looking has no line above it naming the file, because the fold took the
+        /// filenames off. And a screen reader arrives at ONE row, with no column to scan — the
+        /// qualifier the eye resolves by comparing two lines has to be in the words.
+        var captioned: String {
             switch self {
-            case let .file(file): file.name
+            case let .file(file):
+                file.qualifier.map { "\($0)/\(file.name)" } ?? file.name
             case let .command(command): command
             case let .plain(text): text
             }
-        }
-
-        /// What the subject reads as where NO row above it names it — a step inside a folded run of
-        /// looking. The same short address, with the parent that tells two same-named files apart
-        /// kept on the front: the fold took the filenames off the line, so the captions are the
-        /// only place the qualifier still has to do its job.
-        var captioned: String {
-            guard case let .file(file) = self, let qualifier = file.qualifier else { return spoken }
-            return "\(qualifier)/\(file.name)"
         }
     }
 

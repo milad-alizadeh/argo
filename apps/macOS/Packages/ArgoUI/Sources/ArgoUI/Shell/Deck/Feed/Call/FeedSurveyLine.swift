@@ -21,7 +21,7 @@ struct FeedSurveyLine: View {
             .buttonStyle(FeedRowButtonStyle(isOpen: isOpen))
             .disabled(survey.disclosure == .none)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(spoken)
+            .accessibilityLabel(survey.spoken)
             .accessibilityHint(
                 survey.disclosure == .available ? "Opens what these calls produced" : "",
             )
@@ -78,12 +78,6 @@ struct FeedSurveyLine: View {
             ArgoGlyph(ArgoSymbol.disclosureTrailing, .inline)
                 .foregroundStyle(isOpen ? argo.color.interaction.accent : argo.color.text.disabled)
         }
-    }
-
-    private var spoken: String {
-        [FeedSurvey.verb, survey.label, survey.ending.spoken]
-            .compactMap(\.self)
-            .joined(separator: " ")
     }
 }
 

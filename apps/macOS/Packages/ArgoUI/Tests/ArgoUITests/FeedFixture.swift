@@ -115,8 +115,9 @@ enum FeedFixture {
             case let .survey(survey): survey.calls
             // A gallery keeps its pictures and drops the sentence that carried them: a run of six
             // shots has no line left to make a claim about. `galleries(in:)` is where that half is
-            // asserted — and `asks(in:)` and `marks(in:)` are where the other two kinds' are.
-            case .prompt, .message, .thought, .gallery, .ask, .mark: []
+            // asserted — and `asks(in:)`, `marks(in:)` and `unreadable(in:)` are where the other
+            // kinds' are.
+            case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: []
             }
         }
     }
@@ -134,6 +135,14 @@ enum FeedFixture {
         rows.compactMap { row in
             guard case let .mark(mark) = row.content else { return nil }
             return mark
+        }
+    }
+
+    /// Every stretch the reader could not parse, in order.
+    static func unreadable(in rows: [FeedRow]) -> [FeedUnreadable] {
+        rows.compactMap { row in
+            guard case let .unreadable(unreadable) = row.content else { return nil }
+            return unreadable
         }
     }
 

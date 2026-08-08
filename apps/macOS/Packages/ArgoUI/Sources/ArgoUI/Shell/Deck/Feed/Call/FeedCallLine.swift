@@ -27,7 +27,7 @@ struct FeedCallLine: View {
         .buttonStyle(FeedRowButtonStyle(isOpen: isOpen))
         .disabled(call.disclosure == .none)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(spoken)
+        .accessibilityLabel(call.spoken)
         .accessibilityHint(call.disclosure == .available ? "Opens what this call produced" : "")
     }
 
@@ -105,13 +105,6 @@ struct FeedCallLine: View {
     /// failure says instead, for a reader who cannot see the red, is its accessibility label.
     private var verdict: ArgoColor? {
         call.ending.hasFailed ? argo.color.state.failure : nil
-    }
-
-    private var spoken: String {
-        let count = call.repeats > 1 ? "\(call.repeats) times" : nil
-        return [call.kind.verb, call.subject.spoken, count, call.ending.spoken]
-            .compactMap(\.self)
-            .joined(separator: " ")
     }
 }
 

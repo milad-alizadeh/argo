@@ -119,7 +119,7 @@ struct FeedSurveyTests {
         let call = try #require(FeedFixture.calls(in: alone).first)
 
         #expect(FeedFixture.surveys(in: FeedProjection.rows(from: alone)).isEmpty)
-        #expect(call.subject.spoken == "Token.swift")
+        #expect(call.subject.captioned == "Token.swift")
     }
 
     /// Counts follow the CALLS and not the rows: three reads of one file are already one collapsed

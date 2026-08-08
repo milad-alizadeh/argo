@@ -9,6 +9,19 @@ extension FeedProjection {
     /// takes its rows from, so none of them can be looking at a different feed.
     static let previewRows = rows(from: CockpitPresentation.Session.previewTranscript)
 
+    /// A session at the length a real one reaches, projected. What every claim about SCALE is
+    /// checked against — the specimen render, the `#Preview`, and the measurement #427 asks for.
+    /// See `CockpitPresentation.Session.longTranscript`.
+    static let longRows = rows(from: CockpitPresentation.Session.longTranscript)
+
+    /// The LAST failed call in that long feed, and the last rather than the first because a panel
+    /// opened fifty turns above the fold would be a screenshot of a pane beside a stretch of
+    /// reading nobody can see.
+    static let longFailedCallID = longRows.last { row in
+        guard case let .call(call) = row.content else { return false }
+        return call.ending.hasFailed
+    }?.id
+
     /// The same feed with the prose taken out. A render of the call vocabulary that is four fifths
     /// paragraphs is a render of the paragraphs — this is a filter over the shipping rows, never a
     /// second set of them.

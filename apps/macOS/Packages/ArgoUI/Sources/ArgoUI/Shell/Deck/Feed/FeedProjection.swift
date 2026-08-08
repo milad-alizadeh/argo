@@ -20,8 +20,10 @@ enum FeedProjection {
         // its captions need — after the fold its filename is no longer in the feed to compare.
         // The gallery last, over a stream the survey has already left every picture out of: its
         // break rule is the wider of the two, so no call is counted here and drawn there.
-        let work = FeedGalleryFold.galleried(
-            FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
+        let work = FeedUnreadableRun.folded(
+            FeedGalleryFold.galleried(
+                FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
+            ),
         )
         return (work + rolledUp(events)).enumerated().map { position, content in
             FeedRow(id: position, content: content)
@@ -97,12 +99,16 @@ enum FeedProjection {
         // work it never contained.
         case .compaction: .mark(.compacted)
         case let .turnEnded(reason): .mark(.turnEnded(reason))
+        // A line nothing could parse. It gets a row rather than being dropped: the line existed,
+        // something wrote it, and a feed that skips it silently cannot tell a Session that was
+        // quiet from a record this reader came up short on.
+        case let .unreadableLine(raw): .unreadable(FeedUnreadable(lines: [raw]))
         // An outcome is not news of its own — it is what the call it answers produced, and that
         // call's row already carries it.
         // A spend is not news of its own either — it is one term of the roll-up at the foot of the
         // reading, and a row per request would punctuate the feed once per answer the agent gave.
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .title, .cwd, .model, .branch,
-             .plan, .unreadableLine: nil
+             .plan: nil
         }
     }
 

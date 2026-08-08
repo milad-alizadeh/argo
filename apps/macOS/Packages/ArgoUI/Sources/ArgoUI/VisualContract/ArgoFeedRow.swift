@@ -70,6 +70,11 @@ public enum ArgoFeedRow {
     /// digits, which is where a file stops being one anybody scrolls.
     public static let diffGutterWidth: CGFloat = 32
 
+    /// How far the way-back-to-the-newest control floats above the bottom of the feed. Clear of
+    /// the last row it would otherwise sit on, and clear of the plan pill, which floats over the
+    /// same edge on the other side of the column.
+    public static let tailLift: CGFloat = ArgoSpacing.loose
+
     /// How thick a drawn rule inside a block of prose is — a table's own gridlines. One point,
     /// because it is a boundary and not a border: it says where a cell ends and never competes
     /// with the words. A WIDTH; the ink it is drawn in is `edge.hairline`.

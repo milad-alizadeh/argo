@@ -54,6 +54,13 @@ struct FeedSurvey: Equatable, Sendable {
     /// it — but spoken by both the row and the panel it opens, which is why it is written once.
     static let verb = "Looked at"
 
+    /// The whole line as one sentence, for a reader who cannot see it. The verb comes back: the
+    /// drawn line is two numbers with the word they count left to the mark beside them, and a mark
+    /// says nothing in the ear.
+    var spoken: String {
+        [Self.verb, label, ending.spoken].compactMap(\.self).joined(separator: " ")
+    }
+
     /// What the panel shows for this line: every result the run produced, each addressed by the
     /// call that produced it. The address is what the fold owes the reader — the line no longer
     /// names the files, so the evidence has to, and it says the whole path because the panel is the

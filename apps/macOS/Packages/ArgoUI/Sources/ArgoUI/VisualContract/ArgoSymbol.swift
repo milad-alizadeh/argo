@@ -56,9 +56,16 @@ public enum ArgoSymbol {
     /// The option an answer named. The one tick in the feed, and it marks a CHOICE rather than a
     /// success — which is why the call lines still carry none.
     public static let chosen = "checkmark"
+    /// A line of the record nothing could parse. Its own mark, and deliberately not a failure's:
+    /// nothing went wrong with the agent's work here — the reader is the one that came up short,
+    /// and a warning triangle over the row would report Argo's gap as the Session's.
+    public static let unreadable = "questionmark.square.dashed"
 
     /// Closing the evidence panel.
     public static let dismiss = "xmark"
+
+    /// Back to the newest thing in the feed, from wherever the reader scrolled to.
+    public static let latest = "arrow.down"
 
     /// What a file the panel is open on is written in — one mark per language FAMILY. The
     /// extension is in the path beside it and is what actually names the language; these say only
