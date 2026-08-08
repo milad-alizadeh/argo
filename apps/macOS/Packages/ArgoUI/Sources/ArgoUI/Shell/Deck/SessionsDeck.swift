@@ -51,7 +51,7 @@ private struct DeckContentRow: View {
                 // The rail closes when the panel opens. The two are alternatives rather than
                 // neighbours: a reader looking at what one call produced is not picking a Session,
                 // and three columns beside a fourth leaves none of them a usable width.
-                if openCall == nil {
+                if openEvidence == nil {
                     DeckSlot(zone: .rail)
                         .frame(width: railWidth)
                     DeckSeam(
@@ -66,17 +66,22 @@ private struct DeckContentRow: View {
                     .frame(width: ArgoLayout.minimapLaneWidth)
                 panel(in: proxy.size.width)
             }
+            // Escape is the way out of anything that opened over what you were reading, and the
+            // panel is no exception. It answers here rather than on the panel so a reader whose
+            // focus is still in the feed — which is where the click that opened it came from —
+            // does not have to reach into the panel first to be allowed to close it.
+            .onExitCommand { open = nil }
         }
     }
 
     @ViewBuilder private func panel(in deck: CGFloat) -> some View {
-        if let call = openCall {
+        if let evidence = openEvidence {
             DeckSeam(
                 width: panelBinding(in: deck),
                 limits: panelLimits(in: deck),
                 growsRightward: false,
             )
-            EvidencePanel(call: call) { open = nil }
+            EvidencePanel(evidence: evidence) { open = nil }
                 .frame(width: panelBinding(in: deck).wrappedValue)
                 .transition(.identity)
         }
@@ -110,14 +115,21 @@ private struct DeckContentRow: View {
         return floor ... max(floor, ceiling)
     }
 
-    /// The open row, resolved against the CURRENT feed rather than remembered. A live transcript
-    /// grows under the panel, and a call held by value here would go on showing what it produced
-    /// after the row it belongs to had gone.
-    private var openCall: FeedCall? {
-        guard let open, case let .call(call) = feed.first(where: { $0.id == open })?.content else {
+    /// The open row's evidence, resolved against the CURRENT feed rather than remembered. A live
+    /// transcript grows under the panel, and evidence held by value here would go on showing what
+    /// a call produced after the row it belongs to had gone.
+    private var openEvidence: FeedEvidence? {
+        guard let open, let content = feed.first(where: { $0.id == open })?.content else {
             return nil
         }
-        return call
+        return switch content {
+        case let .call(call): call.opened
+        case let .survey(survey): survey.opened
+        // Prose opens nothing. A row that cannot be clicked cannot be the open one, so this is
+        // unreachable — and it is a case rather than a `default` so a new row kind that CAN open
+        // fails this build instead of silently resolving to a closed panel.
+        case .prompt, .message, .thought: nil
+        }
     }
 }
 

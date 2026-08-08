@@ -16,6 +16,8 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         case thought(String)
         /// What the agent did, as one sentence-shaped line.
         case call(FeedCall)
+        /// A run of looking, as one line of counts. See `FeedSurveyFold`.
+        case survey(FeedSurvey)
     }
 
     /// The row's place in the feed.
@@ -29,9 +31,9 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     /// Whether this row is a piece of work rather than a piece of prose. Two surfaces ask it —
     /// the feed's own spacing, and the render that shows the calls alone.
     var isCall: Bool {
-        if case .call = content {
-            return true
+        switch content {
+        case .call, .survey: true
+        case .prompt, .message, .thought: false
         }
-        return false
     }
 }

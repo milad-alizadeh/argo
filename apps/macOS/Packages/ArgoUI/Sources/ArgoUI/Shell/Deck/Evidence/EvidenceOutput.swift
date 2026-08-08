@@ -17,6 +17,9 @@ struct EvidenceOutput: View {
             .foregroundStyle(argo.color.text.secondary)
             .textSelection(.enabled)
             .lineSpacing(ArgoFeedRow.machineLineSpacing)
+            // Wraps rather than running off the edge. A stack in a scroll view sizes to its widest
+            // child unless it is told to take the width it is given and grow downwards instead.
+            .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(.horizontal, ArgoSpacing.comfortable)
             .accessibilityLabel("Output")

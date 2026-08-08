@@ -122,10 +122,9 @@ struct VisualContractTests {
     }
 
     @Test
-    func `the measure stays a reading measure, whatever the deck does`() {
-        // Wide enough for the line not to feel clipped, and narrower than the feed column at the
-        // WIDEST deck — the invariant the ticket exists for is that a wide window gets more feed
-        // rather than a longer line.
+    func `a prompt's bubble is bounded even where the column is not`() {
+        // Prose takes the whole column; the bubble does not. It is somebody speaking INTO the
+        // session, and one that filled the column would stop reading as a thing that was said.
         let widestUsefulFeed = ArgoLayout.windowMinimumWidth * 2 - ArgoLayout.agentsRailWidth
             - ArgoLayout.minimapLaneWidth
         #expect(ArgoFeedRow.measure > ArgoLayout.agentsRailWidth)

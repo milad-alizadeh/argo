@@ -8,23 +8,7 @@ extension CockpitPresentation.Session {
     /// Every one of them is an ENGINE call plus the outcome that answered it, because that pairing
     /// is what the projection does — a fixture written as finished calls would prove nothing about
     /// the half of the reading that finds a result two records later.
-    static let workedOn: [TranscriptEvent] = [
-        .toolCall(ToolCall(
-            id: "search", name: "Grep", kind: .search, target: "ArgoFeedRow", atMs: nil,
-        )),
-        .toolCallOutcome(answered("search", .output(OutputEvidence(
-            tier: .direct, text: "41 matches across 12 files",
-        )))),
-        .toolCall(ToolCall(
-            id: "read", name: "Read", kind: .read,
-            target: "Sources/ArgoUI/VisualContract/ArgoFeedRow.swift", atMs: nil,
-        )),
-        .toolCallOutcome(answered("read", .output(OutputEvidence(
-            tier: .direct,
-            text: "    10\tpublic enum ArgoFeedRow {\n    11\t    /// The gutter each row is "
-                + "inset from the feed column's edges.\n    12\t    public static let inset: "
-                + "CGFloat = ArgoSpacing.section\n    13\t}",
-        )))),
+    static let workedOn: [TranscriptEvent] = surveyed + [
         .toolCall(ToolCall(
             id: "edit", name: "Edit", kind: .edit,
             target: "Sources/ArgoUI/Shell/Deck/Feed/FeedView.swift", atMs: nil,
@@ -84,6 +68,17 @@ extension CockpitPresentation.Session {
             endedAtMs: nil,
             usage: nil,
         )),
+        // One read between two commands: a quiet call with a loud one either side of it never
+        // folds, so this is the line that still names the file it looked at. Both states are on
+        // screen at once, which is the only way to judge whether the fold reads as the same feed.
+        .toolCall(ToolCall(
+            id: "reread", name: "Read", kind: .read,
+            target: "Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift", atMs: nil,
+        )),
+        .toolCallOutcome(answered("reread", .output(OutputEvidence(
+            tier: .direct,
+            text: "    88\t        .foregroundStyle(argo.color.diff.added)",
+        )))),
         .toolCall(ToolCall(
             // With a pipeline on it, deliberately: the row shows what RAN and the panel keeps the
             // plumbing, and the render is where that is checked.

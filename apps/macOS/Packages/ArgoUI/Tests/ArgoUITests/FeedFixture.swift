@@ -54,11 +54,27 @@ enum FeedFixture {
         ))
     }
 
-    /// Every call row a stream produced, in order — what the assertions are actually about.
+    /// Every call a stream produced, in order — what the assertions are actually about.
+    ///
+    /// Reaches INSIDE a folded run of looking. What a call says it did is a claim about the call;
+    /// whether it got a line of its own is a claim about the fold, and `surveys(in:)` is where that
+    /// one is made. A helper that stopped at the row would have let the fold quietly empty half the
+    /// vocabulary suite instead of failing it.
     static func calls(in events: [TranscriptEvent]) -> [FeedCall] {
-        FeedProjection.rows(from: events).compactMap { row in
-            guard case let .call(call) = row.content else { return nil }
-            return call
+        FeedProjection.rows(from: events).flatMap { row -> [FeedCall] in
+            switch row.content {
+            case let .call(call): [call]
+            case let .survey(survey): survey.calls
+            case .prompt, .message, .thought: []
+            }
+        }
+    }
+
+    /// Every folded run of looking a stream produced, in order.
+    static func surveys(in rows: [FeedRow]) -> [FeedSurvey] {
+        rows.compactMap { row in
+            guard case let .survey(survey) = row.content else { return nil }
+            return survey
         }
     }
 

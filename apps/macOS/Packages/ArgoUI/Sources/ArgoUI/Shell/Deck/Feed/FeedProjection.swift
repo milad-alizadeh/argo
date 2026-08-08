@@ -14,7 +14,12 @@ enum FeedProjection {
         let answered = outcomes(in: events)
         let within = workingDirectory(in: events)
         let read = events.compactMap { content(of: $0, answeredBy: answered, within: within) }
-        return toldApart(FeedCallRun.collapsed(read)).enumerated().map { position, content in
+        // In this order, and the order is load-bearing. Collapse a run of one call first, so the
+        // survey counts the work rather than the lines left over from it; tell same-named files
+        // apart BEFORE the fold, so a read that ends up inside a survey still carries the parent
+        // its captions need — after the fold its filename is no longer in the feed to compare.
+        let work = FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read)))
+        return work.enumerated().map { position, content in
             FeedRow(id: position, content: content)
         }
     }
@@ -103,6 +108,15 @@ extension FeedProjection {
     static let previewRunCallID = previewRows.first { row in
         guard case let .call(call) = row.content else { return false }
         return call.repeats > 1
+    }?.id
+
+    /// The folded run of looking in that feed — the row standing for the reconnaissance a turn
+    /// opens with, and the only row whose panel captions each of its steps.
+    static let previewSurveyRowID = previewRows.first { row in
+        if case .survey = row.content {
+            return true
+        }
+        return false
     }?.id
 
     /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a

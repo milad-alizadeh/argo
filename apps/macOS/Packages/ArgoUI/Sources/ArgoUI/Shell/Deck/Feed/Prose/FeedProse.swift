@@ -39,9 +39,10 @@ struct FeedProse: View {
             }
             prose
         }
-        // The measure first, then the column: the block takes what it is allowed and sits at the
-        // leading edge of whatever is left, so a wide deck grows the feed and never the line.
-        .frame(maxWidth: ArgoFeedRow.measure, alignment: .leading)
+        // The column, and nothing narrower. Prose used to stop at a reading measure while the call
+        // lines under it ran the full width — which reads as a block that failed to lay out rather
+        // than as a considered measure, because the thing it is measured against is right there
+        // beside it. The COLUMN is the measure now, and the reader sets it with the seam.
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(voice.label.map { "\($0): \(text)" } ?? text)

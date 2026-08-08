@@ -73,13 +73,17 @@ private struct FeedRowView: View {
         case let .message(markdown): FeedProse(text: markdown, voice: .message)
         case let .thought(markdown): FeedProse(text: markdown, voice: .thought)
         case let .call(call):
-            FeedCallLine(call: call, isOpen: open == row.id) {
-                // A second click on the open row closes it. The row is the control, so it is also
-                // the way back out — a panel whose only exit is its own ✕ makes the reader aim at
-                // the far side of the deck to undo a click they made on this one.
-                open = open == row.id ? nil : row.id
-            }
+            FeedCallLine(call: call, isOpen: open == row.id, open: toggle)
+        case let .survey(survey):
+            FeedSurveyLine(survey: survey, isOpen: open == row.id, open: toggle)
         }
+    }
+
+    /// A second click on the open row closes it. The row is the control, so it is also the way back
+    /// out — a panel whose only exit is its own ✕ makes the reader aim at the far side of the deck
+    /// to undo a click they made on this one.
+    private func toggle() {
+        open = open == row.id ? nil : row.id
     }
 }
 

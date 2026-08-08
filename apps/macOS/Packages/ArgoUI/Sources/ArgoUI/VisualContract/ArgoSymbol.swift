@@ -39,6 +39,9 @@ public enum ArgoSymbol {
     public static let fetched = "globe"
     public static let delegated = "arrow.turn.down.right"
     public static let mcpTool = "puzzlepiece.extension"
+    /// A folded run of looking. Its own mark rather than the one for a read or a search: the line
+    /// stands for both of them at once, and borrowing either would name half of what it counts.
+    public static let looked = "eye"
     // A call's outcome has no mark of its own. A failure is the line in the failure ink; success is
     // the default a feed may assume, and a tick on every row that worked marks the fourteen
     // ordinary
@@ -46,4 +49,16 @@ public enum ArgoSymbol {
 
     /// Closing the evidence panel.
     public static let dismiss = "xmark"
+
+    /// What a file the panel is open on is written in — one mark per language FAMILY. The
+    /// extension is in the path beside it and is what actually names the language; these say only
+    /// which KIND of file you are looking at, which is what a glance at a header wants.
+    public static let swiftSource = "swift"
+    public static let programSource = "chevron.left.forwardslash.chevron.right"
+    public static let dataSource = "curlybraces"
+    public static let proseSource = "text.alignleft"
+    public static let markupSource = "chevron.left.slash.chevron.right"
+    /// A file whose extension Argo does not recognise, and anything the panel opens on that is not
+    /// a file at all.
+    public static let plainSource = "doc"
 }

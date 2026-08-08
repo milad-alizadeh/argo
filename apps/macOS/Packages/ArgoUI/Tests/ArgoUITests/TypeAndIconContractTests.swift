@@ -55,12 +55,22 @@ struct TypeAndIconContractTests {
         }
     }
 
-    /// The feed is the one surface read from start to finish. At the shell's own density its prose
-    /// read as a footnote to the chrome around it.
+    /// The feed's body is ONE size. A paragraph set a rung above the call line under it asks the
+    /// reader to take the larger of the two as the more important, when the only difference is that
+    /// one of them is prose. What tells them apart is ink, measure and shape — never size.
     @Test
-    func `the feed's prose is set above the density the shell is packed at`() {
-        #expect(ArgoFeedRow.proseRung.size > ArgoTypography.body.size)
+    func `the feed sets its prose and its call lines on one rung`() {
+        #expect(ArgoFeedRow.proseRung.size == ArgoTypography.body.size)
+        // Still opened up: the column is read rather than scanned, and the leading is what carries
+        // that now that the size does not.
         #expect(ArgoFeedRow.proseLineSpacing > 0)
+    }
+
+    /// Markup keeps its own steps. An outline the agent wrote has to read as one, so a heading
+    /// stands above the paragraph under it — the exception the one-size rule is stated against.
+    @Test
+    func `a heading still stands above the body it belongs to`() {
+        #expect(ArgoTypeScale.title3.size > ArgoFeedRow.proseRung.size)
     }
 
     // MARK: - The icon scale
