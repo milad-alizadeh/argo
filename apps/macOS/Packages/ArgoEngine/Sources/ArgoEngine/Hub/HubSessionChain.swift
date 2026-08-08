@@ -61,9 +61,9 @@ enum HubSessionChain {
     /// about when it ran sorts behind every one that can, never in front on a guessed zero.
     private static func ordered(_ sessions: [HubSession]) -> [HubSession] {
         sessions.sorted { first, second in
-            guard first.orderingKeyMs != second.orderingKeyMs else { return first.id < second.id }
-            guard let firstKey = first.orderingKeyMs else { return false }
-            guard let secondKey = second.orderingKeyMs else { return true }
+            guard first.lastSeenAtMs != second.lastSeenAtMs else { return first.id < second.id }
+            guard let firstKey = first.lastSeenAtMs else { return false }
+            guard let secondKey = second.lastSeenAtMs else { return true }
             return firstKey > secondKey
         }
     }

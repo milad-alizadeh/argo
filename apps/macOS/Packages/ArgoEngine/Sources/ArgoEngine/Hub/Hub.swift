@@ -44,9 +44,29 @@ public final class Hub {
         return tails.isEmpty ? .idle : .connected
     }
 
+    /// The roster, with what Argo knows from OUTSIDE the transcripts folded in as it is published.
+    ///
+    /// Folded in on read rather than written into the join, because neither fact is the
+    /// transcript's: liveness moves with a process table nothing in the file knows about, and
+    /// ownership is this Argo process's own claim. Writing them into the join would make a Session
+    /// re-render as changed every time the clock moved.
     public var sessions: [HubSession] {
-        join.sessions
+        join.sessions.map(observed)
     }
+
+    /// Which Sessions this Argo process owns a PTY for. Empty until something spawns one, which is
+    /// what makes every discovered Session `external` — a read of the registry, not a default.
+    public let ownership = SessionOwnership()
+
+    /// The working directories a live CLI was running in when the process table was last read, and
+    /// when that was. Empty and epoch-zero until a read has happened, so an unread liveness
+    /// resolves down to quiet rather than up to a running Argo never saw.
+    ///
+    /// Observed rather than ignored: a Session going quiet has to reach the roster, and the roster
+    /// is read off these two.
+    var liveCwds: Set<String> = []
+    var livenessReadAtMs = 0
+    @ObservationIgnored var livenessPolling: Task<Void, Never>?
 
     private var join = HubJoin()
     /// The rosters of the Projects this Hub has been pointed at, kept across a switch. The
@@ -105,6 +125,10 @@ public final class Hub {
         await refreshCheckout()
         // Taken against the RESOLVED Project, which is the key it was retained under.
         join = retainedJoins.take(for: project.url.path) ?? HubJoin()
+        // Polled for whichever way the transcripts were found: whether a CLI is still running is a
+        // fact about the world, and a named transcript's Session is no less observed than a swept
+        // one's.
+        await beginLiveness()
         guard !configuration.transcriptURLs.isEmpty else {
             // The sweep runs against the RESOLVED Project, which `refreshCheckout` has just read:
             // launched inside a subdirectory of a repo, the Project is the repo, and scoping to the
@@ -127,6 +151,7 @@ public final class Hub {
     /// have.
     public func disconnect() async {
         await stopSweeping()
+        await stopLiveness()
         // Retained before the tails are torn down, which is what empties the join.
         retainedJoins.retain(join, for: project.url.path)
         await stopObservingAll()

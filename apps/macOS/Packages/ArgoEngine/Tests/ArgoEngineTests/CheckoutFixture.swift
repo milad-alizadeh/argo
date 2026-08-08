@@ -37,12 +37,29 @@ actor CheckoutFixture {
 ///
 /// An empty fixture by default: no repository under any folder, and a read that suspends the way
 /// every real one does, so a test about what `connect` looks like mid-flight has a window to see.
+///
+/// Liveness reads nothing by default for the same reason the checkout does: a suite that asked the
+/// machine's own process table would answer differently depending on what its author had running.
 @MainActor
 func testHub(
     projectURL: URL,
     checkout: @escaping CheckoutRead = CheckoutFixture().read,
     discovery: SessionDiscovery = SessionDiscovery(),
+    liveness: @escaping LivenessRead = noLiveProcesses,
 )
     -> Hub {
-    Hub(projectURL: projectURL, engine: Engine(readCheckout: checkout), discovery: discovery)
+    Hub(
+        projectURL: projectURL,
+        engine: Engine(readCheckout: checkout, readLiveness: liveness),
+        discovery: discovery,
+    )
+}
+
+/// A machine with no agent running on it anywhere.
+let noLiveProcesses: LivenessRead = { [] }
+
+/// A machine running an agent in each of these folders.
+func liveProcesses(in cwds: String...) -> LivenessRead {
+    let live = Set(cwds)
+    return { live }
 }

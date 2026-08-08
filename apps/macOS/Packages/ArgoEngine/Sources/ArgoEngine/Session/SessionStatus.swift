@@ -20,26 +20,51 @@ public enum SessionStatus: Sendable, Equatable, CaseIterable {
 }
 
 public extension SessionStatus {
-    /// The status the observed Turn boundaries imply, and nothing beyond them.
+    /// The Session's status, honesty-gated by posture and corroborated by liveness.
     ///
-    /// `permission` and `asking` are unreachable here by construction: both are managed-only
-    /// signals that arrive over the companion channel, and a transcript that cannot carry them
-    /// must not be read as though it had. A Session with no Turn boundary observed at all is
-    /// `unknown` rather than `idle` — nothing observed is a different claim from observed to be
-    /// quiet.
+    /// The tier is DERIVED for every posture, managed included. Argo may own the PTY, but it does
+    /// not own the link from that PTY to a transcript file — the match is a working directory plus
+    /// a time window, which is not a unique key. Grading this DIRECT off ownership alone would be
+    /// exactly the false DIRECT the degrade-down rule exists to prevent.
     ///
-    /// `running` means the last Turn observed was never closed. Liveness (process match + mtime)
-    /// is not observed yet, so a transcript whose writer died mid-Turn reads as running until it
-    /// is: CONTEXT.md's "no live signal → idle" needs that signal to exist before it can fire.
+    /// `permission` is unreachable here by construction: it is the companion channel's, and a
+    /// transcript that cannot carry it must not be read as though it had.
+    static func read(_ signals: SessionSignals) -> SessionStatusReading {
+        SessionStatusReading(tier: .derived, status: status(signals))
+    }
+
+    /// Liveness is what may claim a Session is working; the record is what says what it was doing.
     ///
-    /// A cancelled TURN reads `idle`, not `ended`: interrupting a run leaves the Session sitting
-    /// there waiting for the next prompt. `ended` is the Session terminating, which is a fact
-    /// about the process rather than about any Turn in it.
-    static func observed(turnOpen: Bool, lastStop: StopReason?) -> SessionStatus {
-        guard !turnOpen else { return .running }
-        return switch lastStop {
+    /// A Session with no Turn in it yet leaves liveness UNTOUCHED: the process match plus recency
+    /// IS the reading, and only the refinements a parsed record would add go absent.
+    private static func status(_ signals: SessionSignals) -> SessionStatus {
+        guard signals.liveness == .live else { return settled(signals) }
+        if signals.pendingAsk, signals.turnOpen {
+            return .asking
+        }
+        return signals.turnOpen || !signals.hasTurns ? .running : settled(signals)
+    }
+
+    /// What the last Turn boundary says, once nothing corroborates the Session working.
+    ///
+    /// `ended` needs a process exit Argo WITNESSED, and the one it witnesses is its own PTY dying —
+    /// which is precisely the `orphaned` posture. Everything else floors at `idle`: a Session Argo
+    /// never owned may simply be sitting quiet, and calling that a shutdown observes nothing.
+    ///
+    /// `stopped` is managed-only for the same reason from the other end — reading a wall the agent
+    /// hit AS a wall is a claim about a Session Argo owns, and it collapses to `idle` the moment
+    /// the same Session is observed from outside.
+    private static func settled(_ signals: SessionSignals) -> SessionStatus {
+        if signals.liveness == .quiet, signals.provenance == .orphaned {
+            return .ended
+        }
+        // A Turn opened since the last boundary, so that boundary is the previous Turn's and says
+        // nothing about this one. Uncorroborated, an open Turn is quiet — never `running`.
+        guard !signals.turnOpen else { return .idle }
+        return switch signals.lastStop {
         case .endTurn, .cancelled: .idle
-        case .maxTokens, .maxTurnRequests, .refusal: .stopped
+        case .maxTokens, .maxTurnRequests, .refusal:
+            signals.provenance == .managed ? .stopped : .idle
         case .unknown, .none: .unknown
         }
     }
