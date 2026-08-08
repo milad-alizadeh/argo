@@ -17,5 +17,13 @@ func timestampMs(_ record: JSONValue) -> Int? {
     guard let date = (try? withFraction.parse(raw)) ?? (try? withoutFraction.parse(raw)) else {
         return nil
     }
-    return Int(date.timeIntervalSince1970 * 1000)
+    return date.epochMs
+}
+
+public extension Date {
+    /// This moment in the engine's own unit. One conversion, so a comparison between a record's
+    /// stamp and a clock reading is never two roundings of the same arithmetic.
+    var epochMs: Int {
+        Int(timeIntervalSince1970 * 1000)
+    }
 }

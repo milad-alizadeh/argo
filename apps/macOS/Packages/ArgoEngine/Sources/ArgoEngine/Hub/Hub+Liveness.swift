@@ -10,15 +10,19 @@ extension Hub {
     /// anything that has stopped, and the recency window bounds it for anything that has not.
     static let livenessInterval = Duration.seconds(5)
 
-    /// Take one read now, then keep taking them for as long as this Hub is pointed somewhere.
+    /// Keep reading the process table for as long as this Hub is pointed somewhere.
+    ///
+    /// The first read is inside the task rather than awaited before it, so `connect` returns
+    /// without waiting on a subprocess. `ps` plus an `lsof` per agent is slow enough to be felt at
+    /// launch, and a window that has not come up yet is a worse answer than a roster that reads
+    /// quiet for a moment longer.
     func beginLiveness() async {
         await stopLiveness()
-        await refreshLiveness()
         livenessPolling = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: Hub.livenessInterval)
-                guard !Task.isCancelled else { return }
                 await self?.refreshLiveness()
+                guard !Task.isCancelled else { return }
+                try? await Task.sleep(for: Hub.livenessInterval)
             }
         }
     }
@@ -33,7 +37,7 @@ extension Hub {
     func refreshLiveness() async {
         let cwds = await engine.liveCwds()
         liveCwds = cwds
-        livenessReadAtMs = Int(Date().timeIntervalSince1970 * 1000)
+        livenessReadAtMs = Date().epochMs
     }
 
     func stopLiveness() async {
@@ -41,7 +45,7 @@ extension Hub {
         await livenessPolling?.value
         livenessPolling = nil
         liveCwds = []
-        livenessReadAtMs = 0
+        livenessReadAtMs = nil
     }
 
     /// One Session as the roster publishes it: what its transcript said, plus what Argo established
@@ -49,7 +53,10 @@ extension Hub {
     func observed(_ session: HubSession) -> HubSession {
         var published = session
         published.liveness = SessionLiveness.read(
-            processMatch: session.cwd.map(liveCwds.contains) ?? false,
+            // Both sides resolved, because they are spelled differently: `lsof` answers with the
+            // symlinks already followed and a transcript reports the path its agent was launched
+            // with, which under `/tmp` is never the same string.
+            processMatch: session.cwd.map { liveCwds.contains(resolvedPath($0)) } ?? false,
             // The records' own times where they carry any, and the file's last write behind them —
             // a transcript that timestamps nothing still says when it was written to.
             lastActivityAtMs: session.lastSeenAtMs,

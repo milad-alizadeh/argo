@@ -28,7 +28,7 @@ public final class SessionOwnership {
     private var claims: [ClaimID: Claim] = [:]
     private var issued = 0
 
-    public init(now: @escaping () -> Int = { Int(Date().timeIntervalSince1970 * 1000) }) {
+    public init(now: @escaping () -> Int = { Date().epochMs }) {
         self.now = now
     }
 

@@ -31,6 +31,10 @@ public struct ToolCall: Sendable, Equatable {
     public let target: String?
     /// When the agent emitted the call.
     public let atMs: Int?
+
+    /// The host's own name for the structured question. Matched verbatim, because the tool name IS
+    /// how a record distinguishes a question that BLOCKS from one the agent merely typed out.
+    public static let askUserQuestion = "AskUserQuestion"
 }
 
 /// A call's resolution: everything the answering `tool_result` record said about it.
