@@ -51,6 +51,7 @@ up?" — with the detected recommendation marked, covering:
 |---|---|---|
 | House engineering rules | `setup-rules` | always |
 | Terse output style (Claude Code default) | `setup-output-style` | always |
+| Always-on task tracking (TodoWrite / update_plan) | `setup-task-tracking` | always |
 | Pre-commit hooks (format/typecheck/test) | `setup-pre-commit` | package.json exists |
 | Quality gates (caps + duplication, as errors) | `setup-quality-gates` | repo has (or should have) a linter |
 | Knowledge graph (committed, hook-refreshed) | `setup-graphify` | repo beyond trivial size |
@@ -75,7 +76,10 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
    the studies/Storybook that step 6 (or the app) provides.
 8. `setup-output-style` — Terse output style as the Claude Code session default;
    independent of the rest, so it can run any time.
-9. Guardrail hooks (if chosen) — re-run the scaffolder with `--hooks`
+9. `setup-task-tracking` — the "Task tracking" section in the project doc; runs
+   after `setup-rules` so it lands beside that skill's Rules pointer rather than
+   racing it for the same file.
+10. Guardrail hooks (if chosen) — re-run the scaffolder with `--hooks`
    (`npx github:milad-alizadeh/argo --hooks`); it's idempotent, so running it after
    the Phase-1 skills install just adds the hooks. No separate `setup-*` skill.
 

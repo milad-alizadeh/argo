@@ -247,6 +247,11 @@
       "skillPath": "packages/argo-skills/skills/setup-rules/SKILL.md",
       "computedHash": "c4d9cc3366411f65e04e389a91fe70e13d7cd53463eb6106d0fdf07efbb9efe1"
     },
+    "setup-task-tracking": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/setup-task-tracking/SKILL.md"
+    },
     "setup-ts-deep-modules": {
       "source": "mattpocock/skills",
       "sourceType": "github",
