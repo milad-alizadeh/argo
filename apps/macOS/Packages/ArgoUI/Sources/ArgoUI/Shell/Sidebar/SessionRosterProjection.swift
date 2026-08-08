@@ -1,5 +1,4 @@
 import ArgoEngine
-import Foundation
 
 enum SessionRosterProjection {
     /// The word every tier-gated fact degrades to. One spelling, because a roster that says
@@ -93,46 +92,9 @@ enum SessionRosterProjection {
         }
     }
 
+    /// A Session whose location names nothing degrades to the roster's one `unknown`, which is
+    /// the word this file owns — the shared rule reports the absence and spells none of it.
     private static func workspaceIdentities(for locations: [String?]) -> [String] {
-        let components = locations.map(pathComponents)
-        return components.enumerated().map { index, path in
-            guard let name = path.last else { return unknown }
-            let matches = components.indices.filter { components[$0].last == name }
-            guard matches.count > 1 else { return name }
-            return shortestUniqueSuffix(at: index, among: matches, paths: components)
-        }
-    }
-
-    private static func pathComponents(_ location: String?) -> [String] {
-        guard let location else { return [] }
-        return URL(fileURLWithPath: location).standardizedFileURL.pathComponents
-            .filter { $0 != "/" }
-    }
-
-    /// The parent qualifier is capped at one, so the label can never grow into the path it
-    /// is standing in for — "absolute paths never appear in the default presentation" (#377).
-    /// Where that leaves two Sessions reading alike, they read alike: hover and the copy
-    /// actions carry the full location, which is the disclosure D30 asks for.
-    private static let identityDepth = 2
-
-    private static func shortestUniqueSuffix(
-        at index: Int,
-        among matches: [Int],
-        paths: [[String]],
-    )
-        -> String {
-        let path = paths[index]
-        guard let name = path.last else { return unknown }
-        // An exact twin is not a rival: no label separates two Sessions on one location, and
-        // treating it as one is what used to push the qualifier out to the whole path.
-        let rivals = matches.filter { $0 != index && paths[$0] != path }
-        guard !rivals.isEmpty, path.count > 1 else { return name }
-        for count in 2 ... min(path.count, identityDepth) {
-            let candidate = path.suffix(count)
-            if rivals.allSatisfy({ paths[$0].suffix(count) != candidate }) {
-                return candidate.joined(separator: "/")
-            }
-        }
-        return path.suffix(identityDepth).joined(separator: "/")
+        DistinguishingLabel.labels(for: locations).map { $0 ?? unknown }
     }
 }
