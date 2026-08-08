@@ -36,6 +36,9 @@ public enum ArgoSymbol {
     public static let deleted = "trash"
     public static let moved = "arrow.right.doc.on.clipboard"
     public static let ran = "terminal"
+    /// A skill the agent invoked by name — instructions it loaded, not a program on the machine,
+    /// which is why it does not take the terminal.
+    public static let skill = "wand.and.sparkles"
     public static let fetched = "globe"
     public static let delegated = "arrow.turn.down.right"
     public static let mcpTool = "puzzlepiece.extension"

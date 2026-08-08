@@ -39,7 +39,7 @@ private struct EvidenceHunk: View {
     /// The hunk's lines, coloured. Empty until the highlighter answers and empty again if it
     /// cannot: the patch draws PLAIN in both cases rather than waiting on a colour, so the record
     /// is on screen from the first frame and the grammar catches up to it.
-    @State private var coloured: [AttributedString] = []
+    @State private var coloured: [AttributedString?] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
@@ -54,20 +54,26 @@ private struct EvidenceHunk: View {
         .task(id: highlightRequest) { await colour() }
     }
 
-    /// What a highlight would be OF. Changing it is what re-runs the task — the same patch under
-    /// the same grammar is never highlighted twice, and a theme that changed with the appearance
-    /// would be a different request.
+    /// What a highlight would be OF: the grammar, and the characters themselves.
+    ///
+    /// The TEXT and not the hunk's position, which is the whole point. A lazy stack recycles a row
+    /// view by its offset, so a second hunk that matched on language, start line and line count
+    /// inherited the first one's `coloured` array — colours drawn over different characters, and no
+    /// way for a reader to know. Two hunks with the same key are now two hunks with the same words.
     private var highlightRequest: String {
-        "\(language?.alias ?? "")·\(hunk.newStart)·\(hunk.lines.count)"
+        "\(language?.alias ?? "")\n\(hunk.lines.map(\.text).joined(separator: "\n"))"
     }
 
     private func colour() async {
-        guard let language else { return }
-        coloured = await SyntaxHighlight.lines(
-            of: hunk.lines.map(\.text),
+        guard let language else {
+            coloured = []
+            return
+        }
+        coloured = await SyntaxPatch.lines(
+            of: hunk.lines,
             in: language,
             colors: SyntaxTheme.colors,
-        ) ?? []
+        )
     }
 
     /// A line's number in the file it ended up in. A removed line has none — it is not in that

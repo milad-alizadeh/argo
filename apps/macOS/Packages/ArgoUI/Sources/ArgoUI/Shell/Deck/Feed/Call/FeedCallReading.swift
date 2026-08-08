@@ -54,6 +54,7 @@ enum FeedCallReading {
         case .read: .read
         case .edit: mutation(diff, from: call.target)
         case .execute: .execute
+        case .skill: .skill
         case .fetch: .fetch
         case .delegate: .delegate
         case .mcp: .mcp
@@ -99,7 +100,8 @@ enum FeedCallReading {
         case .other: tool(call)
         case .read, .edit: file(at: named) ?? tool(call)
         case .execute: named.map(FeedCall.Subject.command) ?? tool(call)
-        case .search, .fetch, .delegate, .plan: named.map(FeedCall.Subject.plain) ?? tool(call)
+        case .search, .fetch, .delegate, .plan, .skill:
+            named.map(FeedCall.Subject.plain) ?? tool(call)
         }
     }
 

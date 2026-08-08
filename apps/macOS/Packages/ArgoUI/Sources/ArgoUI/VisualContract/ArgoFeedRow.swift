@@ -53,19 +53,10 @@ public enum ArgoFeedRow {
     /// digits, which is where a file stops being one anybody scrolls.
     public static let diffGutterWidth: CGFloat = 32
 
-    /// The widest a PROMPT BUBBLE may run.
-    ///
-    /// It used to cap the feed's prose as well, and no longer does: a paragraph stopping short
-    /// while the call lines beneath it ran the full column read as a block that had failed to lay
-    /// out rather than as a measure, because the thing it is measured against was right there
-    /// beside it. The column is the measure for prose now, and the reader sets it with the seam.
-    ///
-    /// A bubble still needs a bound — it is somebody speaking INTO the session, and one that fills
-    /// the column stops looking like it — so the number survives for the one thing it still holds.
-    public static let measure: CGFloat = 480
-    /// The share of that a prompt's bubble may take. Under half would read as a caption; the whole
-    /// of it would stop reading as somebody speaking into the session.
-    public static let bubbleShare: CGFloat = 0.62
+    /// The share of the COLUMN a prompt's bubble may take, as a ceiling — a short prompt still
+    /// sizes to its own words. Under half would read as a caption; the whole of it would stop
+    /// reading as somebody speaking into the session.
+    public static let bubbleShare: CGFloat = 0.78
     /// How much of a long prompt stands before it is folded — enough to recognise what was asked,
     /// short enough that one prompt cannot push a turn's whole answer off the screen.
     public static let collapsedPromptLines = 6
@@ -80,10 +71,6 @@ public enum ArgoFeedRow {
     /// font's own — so the contract's `lineHeight` is spent through this rather than handed to a
     /// view that would have to do the subtraction itself.
     static let naturalLineHeightRatio: CGFloat = 1.21
-
-    public static var bubbleMeasure: CGFloat {
-        measure * bubbleShare
-    }
 
     /// The extra leading that puts the body role on `lineHeight`. Floored at zero: a line height
     /// under the font's own is not something leading can express, and a negative one would tighten

@@ -111,14 +111,28 @@ struct FeedSurveyTests {
     /// Folding is not discarding. Everything the run produced is still one click away, and each
     /// result says which of the files it came from — the one thing the folded line no longer does.
     @Test
-    func `the fold keeps every result, each captioned by the call that produced it`() throws {
+    func `the fold keeps every result, each addressed by the call that produced it`() throws {
         let survey = try #require(
             FeedFixture.surveys(in: FeedProjection.rows(from: looking(at: ["a.swift", "b.swift"])))
                 .first,
         )
 
         #expect(survey.disclosure == .available)
-        #expect(survey.opened.steps.map(\.caption) == ["*Row", "a.swift", "b.swift"])
+        #expect(survey.opened.steps.map(\.address) == ["*Row", "a.swift", "b.swift"])
+    }
+
+    /// The header of a folded run stands for a count, so nothing above a step says what it is —
+    /// which makes the step the only place its language can come from. Taking the panel's own
+    /// would colour every patch in the run after whichever file happened to be read first.
+    @Test
+    func `each step of a folded run carries its own language`() throws {
+        let survey = try #require(
+            FeedFixture.surveys(in: FeedProjection.rows(from: looking(at: ["a.swift", "b.md"])))
+                .first,
+        )
+
+        #expect(survey.opened.language == nil)
+        #expect(survey.opened.steps.map(\.language) == [nil, .swift, .markdown])
     }
 
     /// A run with nothing kept behind it does not offer a click that opens onto nothing.

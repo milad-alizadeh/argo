@@ -41,7 +41,7 @@ struct FeedSurvey: Equatable, Sendable {
     /// Whether the line could open onto anything — derived from what was kept, exactly as an
     /// ordinary row derives it, so a run nobody answered offers no click.
     var disclosure: FeedCall.Disclosure {
-        opened.steps.isEmpty ? .none : .available
+        calls.contains { !$0.evidence.isEmpty } ? .available : .none
     }
 
     /// A run still waiting on one of its calls has not finished looking. Nothing in a survey ever
@@ -50,19 +50,28 @@ struct FeedSurvey: Equatable, Sendable {
         calls.map(\.ending).reduce(.succeeded) { $0.overtaken(by: $1) }
     }
 
-    /// What the panel shows for this line: every result the run produced, each captioned by the
-    /// call that produced it. The caption is what the fold owes the reader — the line no longer
-    /// names the files, so the evidence has to.
+    /// What the panel shows for this line: every result the run produced, each addressed by the
+    /// call that produced it. The address is what the fold owes the reader — the line no longer
+    /// names the files, so the evidence has to, and it says the whole path because the panel is the
+    /// one surface in the cockpit where a path is readable at all.
+    ///
+    /// No language on the header and one per step. A run of looking has no ONE language: the
+    /// header stands for a count across several files, and picking the first file's would colour
+    /// every patch under it after whichever read happened to come first.
     var opened: FeedEvidence {
         FeedEvidence(
             verb: "Looked at",
+            symbol: ArgoSymbol.looked,
             address: label,
-            // A run of looking has no ONE language: the header stands for a count across several
-            // files, and picking the first file's would colour the header after whichever read
-            // happened to come first.
             language: nil,
+            ending: ending,
+            // The counts ARE the verbs. `Looked at · Searched 1 · Read 5` says the same word twice
+            // over, so the header draws the label alone and the verb survives for the ear.
+            saysVerb: false,
             steps: calls.flatMap { call in
-                call.evidence.map { FeedEvidence.Step(caption: call.subject.captioned, result: $0) }
+                call.evidence.map {
+                    FeedEvidence.Step(address: call.address, language: call.language, result: $0)
+                }
             },
         )
     }
@@ -77,7 +86,8 @@ extension FeedCall.Kind {
     var isQuiet: Bool {
         switch self {
         case .read, .search: true
-        case .edit, .create, .delete, .move, .execute, .fetch, .delegate, .mcp, .unclassified:
+        case .edit, .create, .delete, .move, .execute, .skill, .fetch, .delegate, .mcp,
+             .unclassified:
             false
         }
     }

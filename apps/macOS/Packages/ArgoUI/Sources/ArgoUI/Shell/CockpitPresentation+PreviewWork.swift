@@ -91,6 +91,18 @@ extension CockpitPresentation.Session {
             text: "Test Suite 'All tests' started\n✔ FeedCallTests.everyKindHasItsOwnVerb\n"
                 + "Executed 151 tests, with 0 failures in 24.113 seconds\n",
         )))),
+        // A skill, whose result is the instructions themselves: the row names WHICH one, and the
+        // panel behind it is the body the agent went off and read.
+        .toolCall(ToolCall(
+            id: "skill", name: "Skill", kind: .skill, target: "grill", atMs: nil,
+        )),
+        .toolCallOutcome(answered("skill", .output(OutputEvidence(
+            tier: .direct,
+            text: "# Grill\n\nInterrogate a claim until it stands or falls.\n\n"
+                + "## Process\n\n1. State the claim in one sentence.\n"
+                + "2. Name what would have to be true for it to hold.\n"
+                + "3. Go and check each one, in the repo and not in your head.\n",
+        )))),
         .toolCall(ToolCall(
             id: "fetch", name: "WebFetch", kind: .fetch, target: "developer.apple.com", atMs: nil,
         )),

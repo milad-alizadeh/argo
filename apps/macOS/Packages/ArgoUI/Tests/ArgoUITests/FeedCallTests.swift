@@ -29,11 +29,12 @@ struct FeedCallTests {
                 kind: .delegate,
                 naming: "review the feed",
             )),
+            .toolCall(FeedFixture.call("skill", tool: "Skill", kind: .skill, naming: "grill")),
             .toolCall(FeedFixture.call("mcp", tool: "mcp__linear__list_issues", kind: .mcp)),
         ])
 
         #expect(calls.map(\.kind.verb) == [
-            "Searched", "Read", "Ran", "Fetched", "Delegated", "Called",
+            "Searched", "Read", "Ran", "Fetched", "Delegated", "Invoked", "Called",
         ])
         #expect(calls.allSatisfy { $0.kind.symbol != nil })
         #expect(Set(calls.compactMap(\.kind.symbol)).count == calls.count)
