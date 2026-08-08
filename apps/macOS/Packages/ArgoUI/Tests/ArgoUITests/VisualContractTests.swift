@@ -105,6 +105,20 @@ struct VisualContractTests {
         }
     }
 
+    /// A `code` span is tinted so it can be found mid-sentence, which only works if the tint is
+    /// unclaimed. Ion Blue would read as selected, an operational ink as a state — and the span
+    /// is read on two grounds, since a prompt says the same words inside a raised bubble.
+    @Test
+    func `a code span's ink is legible on both grounds and claimed by nothing else`() {
+        let code = palette.text.code
+        #expect(code.contrastRatio(on: palette.surface.base) >= 4.5)
+        #expect(code.contrastRatio(on: palette.surface.raised) >= 4.5)
+        for claimed in palette.state.all + palette.diff.all
+            + [palette.interaction.accent, palette.interaction.accentBright] {
+            #expect(code.distance(to: claimed) > 0.25)
+        }
+    }
+
     @Test
     func `text on an accent fill is legible`() {
         #expect(palette.text.onAccent.contrastRatio(on: palette.interaction.accent) >= 4.5)

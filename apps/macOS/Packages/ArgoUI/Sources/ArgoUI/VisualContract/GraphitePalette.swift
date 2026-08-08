@@ -28,6 +28,10 @@ public extension ArgoPalette {
             tertiary: ArgoColor(hex: 0x868D94),
             disabled: ArgoColor(hex: 0x4E545A),
             onAccent: ArgoColor(hex: 0x05070A),
+            // A lavender, and deliberately not Ion Blue: a tinted span is not selected, and the
+            // brand hue is the selection's. Far enough off every state ink that a `git status`
+            // in a sentence never reads as a status.
+            code: ArgoColor(hex: 0xBFA8F0),
         ),
         edge: EdgeRoles(
             hairline: ArgoColor(hex: 0xFFFFFF, opacity: 0.08),
