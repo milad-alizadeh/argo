@@ -13,14 +13,19 @@ struct FeedShot: Equatable, Sendable {
     /// screen and the filename above it is no longer beside anything.
     let address: String
     let media: MediaEvidence
+    /// Where the picture came from, spelled the panel's way. Answering it costs a decode — it is
+    /// partly the question of whether the bytes ARE a picture — so it is settled once, here, rather
+    /// than recomputed by every surface and every layout pass that asks.
+    let provenance: MediaProvenance
 
-    /// Where the picture came from, spelled the panel's way. Derived rather than stored, so the
-    /// treatment a shot is drawn with and the words under it cannot disagree.
-    var provenance: MediaProvenance {
-        media.provenance
+    init(name: String, address: String, media: MediaEvidence) {
+        self.name = name
+        self.address = address
+        self.media = media
+        self.provenance = media.provenance
     }
 
-    /// Whether clicking this opens anything. A shot with no bytes is not a control: there is
+    /// Whether clicking this opens anything. A shot with no picture is not a control: there is
     /// nothing behind it, and a click that opens an empty lightbox is worse than no click at all.
     var isOpenable: Bool {
         provenance.showsPicture
@@ -49,9 +54,24 @@ extension FeedCall {
     /// failure colour, with what went wrong behind it.
     var showsMedia: Bool {
         guard !evidence.isEmpty, !ending.hasFailed else { return false }
-        return evidence.allSatisfy { result in
-            guard case .media = result else { return false }
-            return true
-        }
+        return evidence.allSatisfy(\.isMedia)
+    }
+
+    /// Whether this call came back holding a picture AT ALL — which is the weaker question, and the
+    /// one the survey's break rule asks.
+    ///
+    /// The two are deliberately different. A call that produced a picture and a page of output is
+    /// not a gallery's, but it is not a count's either: folded into `Read 2` its picture leaves the
+    /// feed entirely, and the rule is that a call carrying a picture never disappears into a line
+    /// of counts. It stays its own row, with the panel that holds both halves.
+    var carriesMedia: Bool {
+        evidence.contains(where: \.isMedia)
+    }
+}
+
+private extension ToolResult {
+    var isMedia: Bool {
+        guard case .media = self else { return false }
+        return true
     }
 }

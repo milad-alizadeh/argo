@@ -15,27 +15,22 @@ struct FeedShotView: View {
     let shot: FeedShot
     let open: (FeedShot) -> Void
 
-    /// Decoded once per shot rather than in `body`. See `MediaPicture`.
-    @State private var picture: MediaPicture?
+    /// Decoded once per shot rather than in `body`, and carrying the only provenance this view
+    /// answers to: a shot drawing an absence must not also be a control.
+    @State private var showing = MediaShowing.undecoded
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             Button { open(shot) } label: { plate }
                 .buttonStyle(.plain)
-                .disabled(picture == nil)
+                .disabled(showing.picture == nil)
             caption
         }
         .frame(width: ArgoFeedRow.shotWidth, alignment: .leading)
-        .onChange(of: shot, initial: true) { picture = MediaPicture(shot.media) }
+        .showing(shot.media, in: $showing)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(spoken)
-        .accessibilityHint(picture == nil ? "" : "Opens this image full size")
-    }
-
-    /// Everything drawn here answers to the picture this view actually decoded, never to the bytes
-    /// the record claimed: a shot showing an absence must not also be a control.
-    private var provenance: MediaProvenance {
-        MediaProvenance(shot.media, showing: picture != nil)
+        .accessibilityHint(showing.picture == nil ? "" : "Opens this image full size")
     }
 
     /// The picture cropped to the shot's own box.
@@ -45,7 +40,7 @@ struct FeedShotView: View {
     /// ground behind it came out offset from the picture on top of it. The clear frame is the one
     /// thing in the stack with an exact size, and everything else is measured against it.
     @ViewBuilder private var plate: some View {
-        if let picture {
+        if let picture = showing.picture {
             Color.clear
                 .frame(width: pictureWidth, height: pictureHeight)
                 .overlay {
@@ -106,12 +101,12 @@ struct FeedShotView: View {
                 .lineLimit(1)
                 .truncationMode(.head)
                 .help(shot.address)
-            if let size = picture?.spokenSize {
+            if let size = showing.picture?.spokenSize {
                 Text(size)
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(argo.color.text.disabled)
             }
-            if let words = provenance.words {
+            if let words = showing.provenance.words {
                 Text(words)
                     .argoText(ArgoTypography.caption)
                     .foregroundStyle(argo.color.text.disabled)
@@ -122,17 +117,21 @@ struct FeedShotView: View {
     }
 
     private var spoken: String {
-        [shot.name, picture?.spokenSize, provenance.words ?? MediaProvenance.absence]
-            .compactMap(\.self)
-            .joined(separator: ", ")
+        [
+            shot.name,
+            showing.picture?.spokenSize,
+            showing.provenance.words ?? MediaProvenance.absence,
+        ]
+        .compactMap(\.self)
+        .joined(separator: ", ")
     }
 
     private var isMounted: Bool {
-        provenance.treatment == .mounted
+        showing.provenance.treatment == .mounted
     }
 
     private var isBroken: Bool {
-        provenance.treatment == .broken
+        showing.provenance.treatment == .broken
     }
 
     private var mount: CGFloat {

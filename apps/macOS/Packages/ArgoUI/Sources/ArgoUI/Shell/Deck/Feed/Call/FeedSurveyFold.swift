@@ -36,11 +36,15 @@ enum FeedSurveyFold {
     /// A picture is loud for the opposite reason. `isQuiet` is true for `.read`, so a `Read` of a
     /// PNG is a read like any other to this rule and would disappear into `Read 6` — the one row
     /// in the run whose whole content is the thing a count cannot say. Named here rather than left
-    /// to the pass order: the gallery fold runs after this one and reads the same property, so the
-    /// precedence between the two folds is stated in one place and asserted from both sides.
+    /// to the pass order: the gallery fold runs after this one, so the precedence between the two
+    /// folds is stated in one place and asserted from both sides.
+    ///
+    /// Broken on `carriesMedia` and not on the gallery's own `showsMedia`, which is the stricter
+    /// of the two: a call that came back with a picture AND a page of output belongs to neither
+    /// fold, and the wider rule here is what leaves it a row of its own instead of a count.
     private static func quiet(_ content: FeedRow.Content) -> FeedCall? {
         guard case let .call(call) = content, call.kind.isQuiet, !call.ending.hasFailed,
-              !call.showsMedia
+              !call.carriesMedia
         else { return nil }
         return call
     }

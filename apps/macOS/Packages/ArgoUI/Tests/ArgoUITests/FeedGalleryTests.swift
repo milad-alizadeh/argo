@@ -203,6 +203,31 @@ struct FeedGalleryTests {
         #expect(call.evidence.count == 2)
     }
 
+    /// The call that belongs to neither fold: a picture AND a page of output. The gallery will not
+    /// take it, because drawing it would drop the output — and the survey must not take it either,
+    /// because a count would drop the picture. It keeps a row, and the panel keeps both halves.
+    @Test
+    func `a run of calls that each produced a picture and output is never folded to a count`() {
+        let mixed = (0 ..< 2).flatMap { position -> [TranscriptEvent] in
+            let path = "chart-\(position).png"
+            return FeedFixture.looked(at: path, FeedFixture.shot(.direct)) + [
+                .toolCall(FeedFixture.call(
+                    "text-\(position)", tool: "Read", kind: .read, naming: path,
+                )),
+                .toolCallOutcome(FeedFixture.answered(
+                    "text-\(position)",
+                    .output(OutputEvidence(tier: .direct, text: "and a page of it")),
+                )),
+            ]
+        }
+
+        let rows = FeedProjection.rows(from: mixed)
+
+        #expect(FeedFixture.surveys(in: rows).isEmpty)
+        #expect(FeedFixture.galleries(in: rows).isEmpty)
+        #expect(rows.count == 2)
+    }
+
     private func showing(_ paths: [String]) -> [TranscriptEvent] {
         paths.flatMap { FeedFixture.looked(at: $0, FeedFixture.shot(.direct)) }
     }

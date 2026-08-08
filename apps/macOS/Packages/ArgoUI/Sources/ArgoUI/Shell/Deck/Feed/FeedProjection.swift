@@ -18,8 +18,8 @@ enum FeedProjection {
         // survey counts the work rather than the lines left over from it; tell same-named files
         // apart BEFORE the fold, so a read that ends up inside a survey still carries the parent
         // its captions need — after the fold its filename is no longer in the feed to compare.
-        // The gallery last: both folds read `showsMedia`, so no call is counted here and drawn
-        // there.
+        // The gallery last, over a stream the survey has already left every picture out of: its
+        // break rule is the wider of the two, so no call is counted here and drawn there.
         let work = FeedGalleryFold.galleried(
             FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
         )

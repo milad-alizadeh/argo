@@ -16,7 +16,7 @@ struct FeedLightbox: View {
     let shot: FeedShot
     let dismiss: () -> Void
 
-    @State private var picture: MediaPicture?
+    @State private var showing = MediaShowing.undecoded
 
     var body: some View {
         Button(action: dismiss) {
@@ -30,7 +30,7 @@ struct FeedLightbox: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .onChange(of: shot, initial: true) { picture = MediaPicture(shot.media) }
+        .showing(shot.media, in: $showing)
         .onExitCommand(perform: dismiss)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(shot.address), full size")
@@ -41,7 +41,7 @@ struct FeedLightbox: View {
     /// Full size means as large as the deck allows and never larger than the file: blowing a 64pt
     /// icon up to fill a window is the surface inventing detail the bytes do not carry.
     @ViewBuilder private var lit: some View {
-        if let picture {
+        if let picture = showing.picture {
             Image(nsImage: picture.image)
                 .resizable()
                 .scaledToFit()
@@ -66,13 +66,8 @@ struct FeedLightbox: View {
         }
     }
 
-    /// Built from the picture this view decoded, so the words under a shot cannot outlive it.
-    private var provenance: MediaProvenance {
-        MediaProvenance(shot.media, showing: picture != nil)
-    }
-
     private var subtitle: String {
-        [shot.media.mediaType, picture?.spokenSize, provenance.words]
+        [shot.media.mediaType, showing.picture?.spokenSize, showing.provenance.words]
             .compactMap(\.self)
             .joined(separator: " · ")
     }
@@ -87,9 +82,12 @@ extension View {
     ///
     /// The fade is `reveal`, so it answers Reduce Motion the way every other disclosure in the
     /// shell does: the change still registers, it just stops moving.
+    /// A shot with no picture opens nothing, here as well as on the thumbnail that offers no click:
+    /// the gallery is not the only way this binding can be set, and a scrim over a caption with no
+    /// image under it is the one state the lightbox has no honest reading of.
     func argoLightbox(_ shot: Binding<FeedShot?>) -> some View {
         overlay {
-            if let lit = shot.wrappedValue {
+            if let lit = shot.wrappedValue, lit.isOpenable {
                 FeedLightbox(shot: lit) { shot.wrappedValue = nil }
                     .transition(.opacity)
             }
