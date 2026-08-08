@@ -19,6 +19,14 @@ struct CallVocabularyTests {
         #expect(try await calls()["call-mcp"]?.name == "mcp__linear__list_issues")
     }
 
+    /// A skill is its own kind and is targeted by the skill's NAME. Read as an `execute` it said
+    /// "Ran Skill" on every row, which names the mechanism and never the thing that ran.
+    @Test
+    func `a skill is read as a skill, named by the one it invoked`() async throws {
+        #expect(try await calls()["call-skill"]?.kind == .skill)
+        #expect(try await calls()["call-skill"]?.target == "grill")
+    }
+
     @Test
     func `a tool nothing recognises stays unclassified, never the nearest kind`() async throws {
         #expect(try await calls()["call-strange"]?.kind == .other)

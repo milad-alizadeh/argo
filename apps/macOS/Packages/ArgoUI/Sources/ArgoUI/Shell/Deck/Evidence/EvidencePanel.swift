@@ -31,20 +31,21 @@ struct EvidencePanel: View {
     /// rather than as three little windows. Content shorter than the pane sits at the TOP of it: a
     /// scroll view centres what it does not have to scroll, which put a four-line build failure in
     /// the middle of an empty pane, reading as a caption rather than as the start of a stream.
+    ///
+    /// Vertical only. A panel that scrolls sideways hides the end of every long line behind a
+    /// gesture, and the reader has no way to know a line HAS an end they have not seen — a wrapped
+    /// line is longer to read and complete to look at. The panel is a column of a resizable deck,
+    /// so the width to wrap to is one the reader already set.
     @ViewBuilder private var content: some View {
         if evidence.steps.isEmpty {
             EvidenceAbsent()
         } else {
-            // Vertical only. A panel that scrolls sideways hides the end of every long line
-            // behind a gesture, and the reader has no way to know a line HAS an end they have not
-            // seen — a wrapped line is longer to read and complete to look at. The panel is a
-            // column of a resizable deck, so the width to wrap to is one the reader already set.
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: ArgoSpacing.section) {
                     ForEach(Array(evidence.steps.enumerated()), id: \.offset) { position, step in
                         EvidenceStep(
                             step: step,
-                            language: evidence.language,
+                            language: step.language ?? evidence.language,
                             position: position,
                             count: evidence.steps.count,
                         )
@@ -73,20 +74,33 @@ private struct EvidenceStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            if let caption {
-                Text(caption)
-                    .argoText(ArgoTypography.sectionLabel)
-                    .foregroundStyle(argo.color.text.tertiary)
-                    .padding(.horizontal, ArgoSpacing.comfortable)
-            }
+            caption
             shown(step.result)
         }
     }
 
-    private var caption: String? {
-        let counted = count > 1 ? "\(position + 1) of \(count)" : nil
-        let parts = [counted, step.caption].compactMap(\.self)
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    /// The step's own header, where it needs one: which of the run this is, and — inside a folded
+    /// run of looking, where the panel's own header carries a count instead — the file it came
+    /// from, under its own mark and cut from the front exactly as the panel's header is.
+    @ViewBuilder private var caption: some View {
+        if count > 1 || step.address != nil {
+            HStack(spacing: ArgoSpacing.snug) {
+                if count > 1 {
+                    Text("\(position + 1) of \(count)")
+                        .monospacedDigit()
+                }
+                if let address = step.address {
+                    ArgoGlyph(language?.symbol ?? ArgoSymbol.plainSource, .inline)
+                    Text(address)
+                        .lineLimit(1)
+                        .truncationMode(.head)
+                        .help(address)
+                }
+            }
+            .argoText(ArgoTypography.sectionLabel)
+            .foregroundStyle(argo.color.text.tertiary)
+            .padding(.horizontal, ArgoSpacing.comfortable)
+        }
     }
 
     @ViewBuilder private func shown(_ result: ToolResult) -> some View {
@@ -98,7 +112,8 @@ private struct EvidenceStep: View {
     }
 }
 
-/// What the panel is open ON: the file's own mark, and the address the feed was standing in for.
+/// What the panel is open ON: a mark for what kind of thing it was, the address the feed was
+/// standing in for, and — for a subject that is not a file — the verb and how it went.
 private struct EvidenceHeader: View {
     @Environment(\.argo) private var argo
 
@@ -107,23 +122,16 @@ private struct EvidenceHeader: View {
 
     var body: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            // The file's own mark instead of the verb the row already said. A header that opened
-            // with `EDITED` spent its first line restating the line that was clicked; the mark
-            // says the one thing the row could not — what kind of file this is.
             ArgoGlyph(evidence.symbol, .inline)
                 .foregroundStyle(argo.color.text.tertiary)
-            // The path from the cwd forward, on ONE line, cut from the FRONT where it does not
-            // fit. A path is identified by its right-hand end, so those are the characters to
-            // keep; wrapping it instead pushed the close control down and grew the header with
-            // the depth of whatever happened to be open.
-            Text(evidence.address)
-                .argoMono(.body)
-                .foregroundStyle(argo.color.text.primary)
-                .textSelection(.enabled)
-                .lineLimit(1)
-                .truncationMode(.head)
-                .help(evidence.address)
+            if evidence.saysVerb {
+                Text(evidence.verb)
+                    .argoText(ArgoTypography.body)
+                    .foregroundStyle(argo.color.text.tertiary)
+            }
+            address
             Spacer(minLength: ArgoSpacing.snug)
+            outcome
             Button(action: dismiss) {
                 ArgoGlyph(ArgoSymbol.dismiss, .inline)
             }
@@ -133,10 +141,45 @@ private struct EvidenceHeader: View {
         }
         .padding(.horizontal, ArgoSpacing.comfortable)
         .padding(.vertical, ArgoSpacing.base)
-        // The verb is spoken even though it is no longer drawn: a mark says "Swift file" to
-        // somebody looking at it and nothing at all to somebody listening.
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(evidence.verb) \(evidence.address)")
+        .accessibilityLabel(spoken)
+    }
+
+    /// The path from the cwd forward, on ONE line, cut from the FRONT where it does not fit. A path
+    /// is identified by its right-hand end, so those are the characters to keep; wrapping it
+    /// instead pushed the close control down and grew the header with the depth of whatever
+    /// happened to be open.
+    private var address: some View {
+        Text(evidence.address)
+            .argoMono(.body)
+            .foregroundStyle(argo.color.text.primary)
+            .textSelection(.enabled)
+            .lineLimit(1)
+            .truncationMode(.head)
+            .help(evidence.address)
+    }
+
+    /// How it went, in a word, and only where there is anything to say. Success is silent here for
+    /// the same reason it is silent on the row: the panel below is the outcome, at length, and
+    /// `succeeded` over a stream of output the reader is already looking at says nothing twice.
+    @ViewBuilder private var outcome: some View {
+        if let spoken = evidence.ending.spoken {
+            Text(spoken)
+                .argoText(ArgoTypography.caption)
+                .foregroundStyle(
+                    evidence.ending.hasFailed
+                        ? argo.color.state.failure
+                        : argo.color.text.tertiary,
+                )
+        }
+    }
+
+    /// The verb is spoken even where it is not drawn: a mark says "Swift file" to somebody looking
+    /// at it and nothing at all to somebody listening.
+    private var spoken: String {
+        [evidence.verb, evidence.address, evidence.ending.spoken]
+            .compactMap(\.self)
+            .joined(separator: " ")
     }
 }
 

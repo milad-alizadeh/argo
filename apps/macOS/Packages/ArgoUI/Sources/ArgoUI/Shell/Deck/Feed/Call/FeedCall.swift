@@ -50,6 +50,9 @@ extension FeedCall {
         /// truth; the destination is the part that was never written down.
         case move(destination: String?)
         case execute
+        /// A skill the agent invoked by name. Told apart from an `execute` because the reader's
+        /// question about it is WHICH skill — the name is the whole content of the row.
+        case skill
         case fetch
         case delegate
         case mcp
@@ -198,6 +201,9 @@ extension FeedCall.Kind {
         case .delete: "Deleted"
         case .move: "Moved"
         case .execute: "Ran"
+        // Not "Ran": a skill and a shell command are two different things to a reader watching a
+        // turn, and one verb over both makes `grill` look like a binary on the machine.
+        case .skill: "Invoked"
         case .fetch: "Fetched"
         case .delegate: "Delegated"
         case .mcp, .unclassified: "Called"
@@ -216,6 +222,7 @@ extension FeedCall.Kind {
         case .delete: ArgoSymbol.deleted
         case .move: ArgoSymbol.moved
         case .execute: ArgoSymbol.ran
+        case .skill: ArgoSymbol.skill
         case .fetch: ArgoSymbol.fetched
         case .delegate: ArgoSymbol.delegated
         case .mcp: ArgoSymbol.mcpTool

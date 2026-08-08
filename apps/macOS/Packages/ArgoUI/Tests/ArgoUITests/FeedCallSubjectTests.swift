@@ -44,6 +44,19 @@ struct FeedCallSubjectTests {
         #expect(calls.map(\.subject) == [.command("swift build"), .plain("local command")])
     }
 
+    /// The one thing worth saying about a skill is WHICH one. Named by its tool it read "Ran Skill"
+    /// on every row, which is the mechanism, and the same words whether the agent invoked `grill`
+    /// or `implement`. The panel behind it is the instructions the skill handed back.
+    @Test
+    func `a skill is named by the skill, never by the tool that loaded it`() {
+        let calls = FeedFixture.calls(in: [
+            .toolCall(FeedFixture.call("skill", tool: "Skill", kind: .skill, naming: "grill")),
+        ])
+
+        #expect(calls.first?.subject == .plain("grill"))
+        #expect(calls.first?.kind.verb == "Invoked")
+    }
+
     /// The engine scrapes a target out of whichever field a tool happened to use, and for a kind
     /// nobody classified that field means nothing. The tool's name is what is known.
     @Test

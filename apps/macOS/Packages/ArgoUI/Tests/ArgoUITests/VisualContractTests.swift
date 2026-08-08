@@ -121,21 +121,13 @@ struct VisualContractTests {
         #expect(ArgoFeedRow.proseLineSpacing > 0)
     }
 
+    /// Prose takes the whole column; the bubble does not. It is somebody speaking INTO the
+    /// session, and one that filled the column would stop reading as a thing that was said — but
+    /// a strip beside full-width paragraphs stops reading as half of one conversation.
     @Test
-    func `a prompt's bubble is bounded even where the column is not`() {
-        // Prose takes the whole column; the bubble does not. It is somebody speaking INTO the
-        // session, and one that filled the column would stop reading as a thing that was said.
-        let widestUsefulFeed = ArgoLayout.windowMinimumWidth * 2 - ArgoLayout.agentsRailWidth
-            - ArgoLayout.minimapLaneWidth
-        #expect(ArgoFeedRow.measure > ArgoLayout.agentsRailWidth)
-        #expect(ArgoFeedRow.measure < widestUsefulFeed)
-    }
-
-    @Test
-    func `a prompt's bubble is a bubble, not the whole column`() {
+    func `a prompt's bubble is most of the column and never all of it`() {
         #expect(ArgoFeedRow.bubbleShare > 0.5)
         #expect(ArgoFeedRow.bubbleShare < 1)
-        #expect(ArgoFeedRow.bubbleMeasure < ArgoFeedRow.measure)
     }
 
     /// A run of calls is one piece of work. If it were spaced like prose, a turn's five edits would

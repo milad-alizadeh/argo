@@ -39,7 +39,7 @@ enum SyntaxHighlight {
     /// attribute scope — and SwiftUI's `Text` reads the SwiftUI one and silently ignores the rest.
     /// Nothing about that is visible at the call site: the patch simply renders in one ink, which
     /// is exactly what an unhighlightable file is supposed to look like.
-    static func readable(_ attributed: AttributedString) -> AttributedString {
+    private static func readable(_ attributed: AttributedString) -> AttributedString {
         var readable = attributed
         for run in attributed.runs {
             guard let ink = run.appKit.foregroundColor else { continue }
@@ -59,7 +59,11 @@ enum SyntaxHighlight {
     /// A count that still does not match is `nil` rather than a best effort. Colours drawn against
     /// the wrong numbers in the gutter is a worse patch than an uncoloured one, and it is the
     /// failure a reader would never notice.
-    static func aligned(_ highlighted: AttributedString, to code: [String]) -> [AttributedString]? {
+    private static func aligned(
+        _ highlighted: AttributedString,
+        to code: [String],
+    )
+        -> [AttributedString]? {
         guard let first = code.firstIndex(where: written),
               let last = code.lastIndex(where: written)
         else { return nil }

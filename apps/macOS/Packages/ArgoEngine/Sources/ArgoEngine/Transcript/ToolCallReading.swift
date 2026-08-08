@@ -27,7 +27,7 @@ private let kindByName: [String: ToolCallKind] = [
     // kind whose effect the record does not describe.
     "EnterWorktree": .execute,
     "ExitWorktree": .execute,
-    "Skill": .execute,
+    "Skill": .skill,
 ]
 
 /// The tool whose input IS the Plan.
@@ -50,7 +50,9 @@ func toolCallKind(_ name: String) -> ToolCallKind {
 
 /// The one field worth naming for the kinds that name something. Read in order because a tool
 /// carries at most one of these; nothing is synthesized when it carries none.
-private let targetKeys = ["file_path", "path", "command", "pattern", "url", "description"]
+private let targetKeys = [
+    "file_path", "path", "command", "pattern", "url", "skill", "description",
+]
 
 func toolCallTarget(_ input: JSONValue) -> String? {
     for key in targetKeys {

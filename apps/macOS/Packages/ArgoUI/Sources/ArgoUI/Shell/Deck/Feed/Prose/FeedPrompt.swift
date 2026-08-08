@@ -23,10 +23,22 @@ struct FeedPrompt: View {
     /// how many characters it has.
     @State private var foldedHeight: CGFloat = 0
     @State private var wholeHeight: CGFloat = 0
+    /// The column the bubble landed in, which is what its ceiling is a share of. Measured rather
+    /// than taken from the contract: the reader drags the seam, and a ceiling off a constant left
+    /// the two sides of one conversation sized against two different things — the bubble a narrow
+    /// strip beside paragraphs running the full width. `nil` until the first layout answers, which
+    /// is one frame of an unbounded bubble rather than one frame of a bubble sized to a guess.
+    @State private var column: CGFloat?
 
     var body: some View {
         bubble
             .frame(maxWidth: .infinity, alignment: .trailing)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { column = $0 }
+    }
+
+    /// The widest the bubble may run: its share of the column it landed in, once that is known.
+    private var ceiling: CGFloat? {
+        column.map { $0 * ArgoFeedRow.bubbleShare }
     }
 
     /// Whether anything is actually hidden. A control offering to unfold a prompt that is already
@@ -47,11 +59,8 @@ struct FeedPrompt: View {
         .padding(.vertical, ArgoSpacing.comfortable)
         .padding(.horizontal, ArgoSpacing.loose)
         .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.popover))
-        // A ceiling, not a width: the bubble sizes to a short prompt and holds a long one at the
-        // measure. Taken off the reading measure rather than off the deck, because a prompt is
-        // prose too — the study caps only the agent's side, and a bubble that grew with the window
-        // would be the one line in the feed allowed past the measure.
-        .frame(maxWidth: ArgoFeedRow.bubbleMeasure, alignment: .trailing)
+        // A ceiling, not a width: the bubble sizes to a short prompt and holds a long one here.
+        .frame(maxWidth: ceiling, alignment: .trailing)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Prompt: \(text)")
     }

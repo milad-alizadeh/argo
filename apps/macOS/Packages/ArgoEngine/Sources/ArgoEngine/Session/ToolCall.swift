@@ -8,6 +8,10 @@ public enum ToolCallKind: String, Sendable, Equatable {
     case fetch
     case delegate
     case plan
+    /// A packaged set of instructions the agent invoked by name. Its own kind rather than an
+    /// `execute`, because the thing worth reading about it is WHICH one — and because what it
+    /// returns is the instructions themselves, which is a body of prose and not a command's output.
+    case skill
     /// A tool the session reached over MCP. Read from the host's own naming convention, never from
     /// what the tool does: a server's tools are arbitrary, and only the name says where they came
     /// from.
