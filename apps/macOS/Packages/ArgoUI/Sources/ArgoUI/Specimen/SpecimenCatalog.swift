@@ -192,20 +192,16 @@ public struct SpecimenScreen: View {
             )
             .argoLightbox(.constant(FeedProjection.previewShots.first))
         case .planPill:
-            // The plan at rest. The judgement is whether one line floating above the dock reads as
-            // standing state rather than as the newest thing the agent said — which is the whole
-            // argument for taking it out of the feed.
+            // Whether one line above the dock reads as standing state rather than as the newest
+            // thing the agent said.
             PlanSpecimen(plan: PlanFixture.working)
         case .openPlanPill:
-            // The same pill with its list revealed. Only reachable by hovering or tabbing to it,
-            // so without this case the half of the surface that carries the plan is never looked
-            // at — and what it has to settle is whether a list opening upward over a column of
-            // prose stays readable against it.
+            // Reachable only by hovering or tabbing, so without this case the half of the surface
+            // that carries the plan is never looked at.
             PlanSpecimen(plan: PlanFixture.working, isRevealed: true)
         case .unstartedPlanPill:
-            // A plan that marks no step in progress. It has to read as a plan nobody has started
-            // rather than as a pill that failed to fill in its own line — the one state where the
-            // honest answer is an absence, and nothing about an absence asserts how it reads.
+            // Whether an absence reads as a plan nobody started rather than as a pill that failed
+            // to fill in its own line.
             PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)
         }
     }

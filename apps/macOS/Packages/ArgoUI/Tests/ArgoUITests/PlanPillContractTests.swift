@@ -37,7 +37,7 @@ struct PlanPillContractTests {
     /// unrelated notes — which is the reading taking it out of the feed was meant to end.
     @Test
     func `two steps sit closer together than two things the agent said`() {
-        #expect(ArgoPlanPill.stepStep < ArgoFeedRow.gap)
+        #expect(ArgoPlanPill.betweenSteps < ArgoFeedRow.gap)
     }
 
     /// The pill's own line takes one and the list's steps take two: a pill that wrapped would stop
@@ -64,7 +64,7 @@ struct PlanPillContractTests {
         #expect(ladder.isSuperset(of: [
             ArgoPlanPill.lift, ArgoPlanPill.gap, ArgoPlanPill.insetX, ArgoPlanPill.insetY,
             ArgoPlanPill.listGap, ArgoPlanPill.listInsetX, ArgoPlanPill.listInsetY,
-            ArgoPlanPill.stepStep,
+            ArgoPlanPill.betweenSteps,
         ]))
     }
 

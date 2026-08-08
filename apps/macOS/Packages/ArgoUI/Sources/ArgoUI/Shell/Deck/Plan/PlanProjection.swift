@@ -16,7 +16,9 @@ enum PlanProjection {
     /// ask for falls out of that one sentence — replacement is the newest winning, carry-over is a
     /// turn with no `.plan` in it leaving the last one standing, and absence is a record with none.
     static func reading(from events: [TranscriptEvent]) -> PlanReading? {
-        let entries = events.reversed().compactMap { event -> [PlanEntry]? in
+        // `lazy`, so a long transcript stops at the newest plan rather than collecting every one
+        // of them to keep the first.
+        let entries = events.reversed().lazy.compactMap { event -> [PlanEntry]? in
             guard case let .plan(plan) = event else { return nil }
             return plan.entries
         }.first

@@ -53,7 +53,8 @@ struct PlanReading: Equatable, Sendable {
     /// the one reading that stays honest when no step is in progress — a finished plan is full and
     /// an untouched one is empty, neither of which needs a current step to say.
     ///
-    /// A reading is never built with no steps (see `PlanProjection`), so the divisor is never zero.
+    /// The projection never hands over a reading with no steps, but the initialiser above does not
+    /// forbid one — so the empty case is answered here rather than assumed away.
     var progress: Double {
         steps.isEmpty ? 0 : Double(completed) / Double(count)
     }

@@ -17,7 +17,7 @@ struct PlanStepList: View {
                 .argoText(ArgoTypography.sectionLabel)
                 .textCase(.uppercase)
                 .foregroundStyle(argo.color.text.tertiary)
-            VStack(alignment: .leading, spacing: ArgoPlanPill.stepStep) {
+            VStack(alignment: .leading, spacing: ArgoPlanPill.betweenSteps) {
                 ForEach(plan.steps) { step in
                     PlanStepLine(step: step)
                 }
@@ -46,31 +46,31 @@ private struct PlanStepLine: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.base) {
-            ArgoGlyph(mark, .inline)
+            ArgoGlyph(reading.mark, .inline)
                 .foregroundStyle(markInk)
                 .frame(width: ArgoPlanPill.markWidth)
             Text(step.text)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(ink)
-                // Struck through in the EDGE ink rather than the text's own, so the rule reads as
-                // a mark over the words instead of as a second, louder line of them.
+                // The EDGE ink, so the rule reads as a mark over the words rather than as a
+                // second, louder line of them.
                 .strikethrough(step.status == .completed, color: argo.color.edge.strong.color)
                 .lineLimit(ArgoPlanPill.stepLines)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        // `.ignore` rather than `.combine`: combining the mark with the words leaves the line as a
-        // static text whose VALUE is the words and whose label is dropped, which loses the status
-        // entirely — and the status is the one thing the mark and the rule through the words say
-        // to a reader who can see them and to nobody else.
+        // `.ignore` and not `.combine`: combining leaves a static text whose VALUE is the words
+        // and whose label is dropped, which loses the status entirely.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(step.text), \(spoken)")
+        .accessibilityLabel("\(step.text), \(reading.spoken)")
     }
 
-    private var mark: String {
+    /// The three-state table, in ONE place. What the status looks like and what it is called are
+    /// the same fact twice, and two switches over one enum drift apart a case at a time.
+    private var reading: (mark: String, spoken: String) {
         switch step.status {
-        case .pending: ArgoSymbol.stepPending
-        case .inProgress: ArgoSymbol.stepInProgress
-        case .completed: ArgoSymbol.stepCompleted
+        case .pending: (ArgoSymbol.stepPending, "pending")
+        case .inProgress: (ArgoSymbol.stepInProgress, "in progress")
+        case .completed: (ArgoSymbol.stepCompleted, "completed")
         }
     }
 
@@ -82,16 +82,6 @@ private struct PlanStepLine: View {
 
     private var ink: ArgoColor {
         step.status == .inProgress ? argo.color.text.primary : argo.color.text.tertiary
-    }
-
-    /// What a screen reader is told, since neither the mark nor the rule through the words says
-    /// anything out loud.
-    private var spoken: String {
-        switch step.status {
-        case .pending: "pending"
-        case .inProgress: "in progress"
-        case .completed: "completed"
-        }
     }
 }
 
