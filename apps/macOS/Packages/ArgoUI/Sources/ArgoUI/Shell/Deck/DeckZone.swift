@@ -1,9 +1,10 @@
-/// The zones the Sessions deck is laid out from, each filled by its own ticket.
+/// The zones of the Sessions deck that are laid out but not yet built, each filled by its own
+/// ticket. A zone leaves this list the moment something real draws it — the feed did, and a case
+/// for it here would be a placeholder for a surface that exists.
 enum DeckZone: CaseIterable, Identifiable {
     case header
     case tabs
     case rail
-    case feed
     case minimap
     case dock
 
@@ -16,7 +17,6 @@ enum DeckZone: CaseIterable, Identifiable {
         case .header: "Session header"
         case .tabs: "Deck tabs"
         case .rail: "Agents rail"
-        case .feed: "Feed"
         case .minimap: "Minimap lane"
         case .dock: "Dock"
         }
@@ -27,7 +27,7 @@ enum DeckZone: CaseIterable, Identifiable {
     var marksVertically: Bool {
         switch self {
         case .minimap: true
-        case .header, .tabs, .rail, .feed, .dock: false
+        case .header, .tabs, .rail, .dock: false
         }
     }
 }

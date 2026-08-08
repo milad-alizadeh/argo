@@ -35,6 +35,7 @@ public extension CockpitPresentation {
                 branch: "argo/#376-native-shell",
                 access: .managed,
                 status: .running,
+                events: CockpitPresentation.Session.previewTranscript,
             ),
             Session(
                 id: "engine",

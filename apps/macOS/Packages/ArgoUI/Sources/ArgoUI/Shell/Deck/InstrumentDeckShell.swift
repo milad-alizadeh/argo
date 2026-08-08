@@ -5,6 +5,9 @@ import SwiftUI
 /// canopy's material (D10, D40).
 struct InstrumentDeckShell: View {
     let room: CockpitRoom
+    /// The selected Session's reading, already projected. Rooms with no feed ignore it, which is
+    /// the honest shape: the deck is one container and only one room has a feed in it today.
+    var feed: [FeedRow] = []
 
     var body: some View {
         content
@@ -19,7 +22,7 @@ struct InstrumentDeckShell: View {
     @ViewBuilder private var content: some View {
         switch room {
         case .sessions:
-            SessionsDeck()
+            SessionsDeck(feed: feed)
         case .work, .code:
             Color.clear
         }
@@ -27,6 +30,15 @@ struct InstrumentDeckShell: View {
 }
 
 #Preview("Instrument Deck — Sessions") {
+    InstrumentDeckShell(
+        room: .sessions,
+        feed: FeedProjection.rows(from: CockpitPresentation.Session.preview.events),
+    )
+    .frame(width: 900, height: 620)
+    .argoAppearance()
+}
+
+#Preview("Instrument Deck — a Session with nothing read yet") {
     InstrumentDeckShell(room: .sessions)
         .frame(width: 900, height: 620)
         .argoAppearance()

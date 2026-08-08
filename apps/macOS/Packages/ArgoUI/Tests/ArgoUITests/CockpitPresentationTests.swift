@@ -72,6 +72,36 @@ struct CockpitPresentationTests {
         #expect(session.status == .unknown)
     }
 
+    @Test
+    @MainActor
+    func `the Session's own stream reaches the shell, in order and unedited`() async throws {
+        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
+        await observe(hub, id: "spoken", events: [
+            .prompt(text: "  Read it  ", atMs: 1000),
+            .thought(markdown: "Start at the contract."),
+            .message(markdown: "Reading."),
+        ], until: { !$0.events.isEmpty })
+
+        let session = try #require(projection(of: hub).sessions.first)
+
+        // Verbatim to the shell: the prompt's own whitespace survives the crossing, because the
+        // presentation is a hand-over and not a reading.
+        #expect(session.events == [
+            .prompt(text: "  Read it  ", atMs: 1000),
+            .thought(markdown: "Start at the contract."),
+            .message(markdown: "Reading."),
+        ])
+    }
+
+    @Test
+    func `a selection that no longer names a Session resolves to nothing`() {
+        let presentation = CockpitPresentation.preview
+
+        #expect(presentation.session("shell")?.id == "shell")
+        #expect(presentation.session("a session that ended") == nil)
+        #expect(presentation.session(nil) == nil)
+    }
+
     /// The Hub half of the projection, which is the half with a derivation in it. The Projects are
     /// the app's own state and are passed straight through.
     @MainActor

@@ -133,6 +133,54 @@ struct VisualContractTests {
             .sorted())
     }
 
+    // MARK: - The feed's rhythm
+
+    @Test
+    func `prose is set more openly than the rest of the cockpit is packed`() {
+        // A feed is read rather than scanned, so its line height clears the dense default the
+        // rest of the shell is built at. Below it, the column stops being a column of prose.
+        #expect(ArgoFeedRow.lineHeight > ArgoTypography.body.size * ArgoFeedRow
+            .naturalLineHeightRatio)
+        #expect(ArgoFeedRow.proseLineSpacing > 0)
+    }
+
+    @Test
+    func `the measure stays a reading measure, whatever the deck does`() {
+        // Wide enough for the line not to feel clipped, and narrower than the feed column at the
+        // WIDEST deck — the invariant the ticket exists for is that a wide window gets more feed
+        // rather than a longer line.
+        let widestUsefulFeed = ArgoLayout.windowMinimumWidth * 2 - ArgoLayout.agentsRailWidth
+            - ArgoLayout.minimapLaneWidth
+        #expect(ArgoFeedRow.measure > ArgoLayout.agentsRailWidth)
+        #expect(ArgoFeedRow.measure < widestUsefulFeed)
+    }
+
+    @Test
+    func `a prompt's bubble is a bubble, not the whole column`() {
+        #expect(ArgoFeedRow.bubbleShare > 0.5)
+        #expect(ArgoFeedRow.bubbleShare < 1)
+        #expect(ArgoFeedRow.bubbleMeasure < ArgoFeedRow.measure)
+    }
+
+    @Test
+    func `the step before prose is the tightest in the feed`() {
+        // A label and the prose under it are one block; two rows are two. If those two steps ever
+        // meet, the label starts reading as a row of its own.
+        #expect(ArgoFeedRow.stepBeforeProse < ArgoFeedRow.gap)
+        #expect(ArgoFeedRow.stepBeforeProse < ArgoFeedRow.inset)
+    }
+
+    @Test
+    func `every feed metric is a step the rhythm already carries`() {
+        // Except the two that are typographic rather than spatial: a line height and a reading
+        // measure answer to the type ramp, and snapping them to the spacing ladder would be
+        // arithmetic dressed as a rule.
+        let ladder = Set(ArgoSpacing.all.map(\.value))
+        #expect(ladder.isSuperset(of: [
+            ArgoFeedRow.inset, ArgoFeedRow.gap, ArgoFeedRow.stepBeforeProse,
+        ]))
+    }
+
     // MARK: - Depth
 
     @Test

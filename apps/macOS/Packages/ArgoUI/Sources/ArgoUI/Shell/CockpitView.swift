@@ -17,6 +17,14 @@ public struct CockpitView: View {
         self.actions = actions
     }
 
+    /// The selected Session's reading, projected here because this is the one view that knows what
+    /// is selected. Recomputed on every update rather than cached: the presentation is a value the
+    /// Hub rebuilds as the transcript grows, so a feed that memoised would be showing the reading
+    /// as it was when the user last clicked.
+    private var feed: [FeedRow] {
+        FeedProjection.rows(from: presentation.session(navigation.session)?.events ?? [])
+    }
+
     public var body: some View {
         @Bindable var navigation = navigation
 
@@ -28,7 +36,7 @@ public struct CockpitView: View {
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            InstrumentDeckShell(room: navigation.room)
+            InstrumentDeckShell(room: navigation.room, feed: feed)
                 .overlay(alignment: .topLeading) {
                     if presentation.connection != .connected {
                         ConnectionChip(

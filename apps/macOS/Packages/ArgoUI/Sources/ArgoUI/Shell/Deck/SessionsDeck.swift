@@ -7,6 +7,10 @@ import SwiftUI
 /// approved study puts them and nowhere else — the header and its tabs read as one region, so
 /// nothing is drawn between them.
 struct SessionsDeck: View {
+    /// The selected Session's reading. Projected above the deck rather than here — the deck is a
+    /// layout, and a zone that looked a Session up would be the layout choosing what to draw.
+    let feed: [FeedRow]
+
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             DeckSlot(zone: .header)
@@ -14,7 +18,7 @@ struct SessionsDeck: View {
             DeckSlot(zone: .tabs)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
             DeckSeparator()
-            DeckContentRow()
+            DeckContentRow(feed: feed)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -24,12 +28,14 @@ struct SessionsDeck: View {
 /// takes everything left, because the deck is as wide as the window is and the feed is what it
 /// exists for.
 private struct DeckContentRow: View {
+    let feed: [FeedRow]
+
     var body: some View {
         HStack(spacing: ArgoSpacing.flush) {
             DeckSlot(zone: .rail)
                 .frame(width: ArgoLayout.agentsRailWidth)
             DeckSeparator()
-            FeedColumn()
+            FeedColumn(feed: feed)
             DeckSeparator()
             DeckSlot(zone: .minimap)
                 .frame(width: ArgoLayout.minimapLaneWidth)
@@ -40,9 +46,11 @@ private struct DeckContentRow: View {
 /// The feed and the dock that steers it, bounded to their own column rather than run across the
 /// deck (C4.1).
 private struct FeedColumn: View {
+    let feed: [FeedRow]
+
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            DeckSlot(zone: .feed)
+            FeedView(rows: feed)
             DeckSeparator()
             DeckSlot(zone: .dock)
                 .frame(height: ArgoLayout.deckDockHeight)
@@ -51,14 +59,21 @@ private struct FeedColumn: View {
 }
 
 #Preview("Sessions deck — zones") {
-    SessionsDeck()
+    SessionsDeck(feed: FeedProjection.rows(from: CockpitPresentation.Session.preview.events))
+        .frame(width: 900, height: 620)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Sessions deck — a Session that has said nothing") {
+    SessionsDeck(feed: [])
         .frame(width: 900, height: 620)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Sessions deck — narrowest deck the window allows") {
-    SessionsDeck()
+    SessionsDeck(feed: FeedProjection.rows(from: CockpitPresentation.Session.preview.events))
         .frame(
             width: ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth,
             height: ArgoLayout.windowMinimumHeight,
