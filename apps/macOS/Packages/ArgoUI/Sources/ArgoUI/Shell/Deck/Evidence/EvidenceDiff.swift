@@ -13,6 +13,9 @@ struct EvidenceDiff: View {
     /// What the file is written in, or `nil` for a path whose extension Argo does not know. The
     /// patch is then drawn in one ink, which is what an unrecognised file honestly gets.
     var language: EvidenceLanguage?
+    /// Whether the patch is drawn as a patch or as the document it made. Only markdown is ever
+    /// asked in `prose`; every other language IS its source.
+    var reading: EvidenceReading = .source
 
     var body: some View {
         if diff.hunks.isEmpty {
@@ -20,12 +23,36 @@ struct EvidenceDiff: View {
         } else {
             VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
                 ForEach(Array(diff.hunks.enumerated()), id: \.offset) { _, hunk in
-                    EvidenceHunk(hunk: hunk, language: language)
+                    switch reading {
+                    case .source: EvidenceHunk(hunk: hunk, language: language)
+                    case .prose: EvidenceHunkProse(hunk: hunk)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .accessibilityLabel("Patch")
         }
+    }
+}
+
+/// A markdown hunk read as the document it made, rather than as the patch that made it.
+///
+/// The AFTER side, which is the whole of the file for something the agent just wrote. A removed
+/// line is not in that document any more and a rendered page has nowhere to put one — that is the
+/// honest cost of this reading, and the reason the patch stays one control away rather than being
+/// replaced by it.
+private struct EvidenceHunkProse: View {
+    let hunk: DiffHunk
+
+    var body: some View {
+        FeedMarkdown(text: document)
+            .textSelection(.enabled)
+            .padding(.horizontal, ArgoSpacing.comfortable)
+            .accessibilityLabel("Document")
+    }
+
+    private var document: String {
+        hunk.lines.filter { $0.side != .del }.map(\.text).joined(separator: "\n")
     }
 }
 

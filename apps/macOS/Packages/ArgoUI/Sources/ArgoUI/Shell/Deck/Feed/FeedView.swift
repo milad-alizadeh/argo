@@ -25,7 +25,13 @@ struct FeedView: View {
             }
             .padding(.horizontal, ArgoFeedRow.inset)
             .padding(.vertical, ArgoSpacing.section)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // The column, held to a measure and centred in whatever the seams leave it. A feed is
+            // read start to finish, and a line that runs the width of a wide display loses the
+            // reader's eye on the way back to the next one — so the deck gets wider and the reading
+            // does not. Centred rather than pinned left, because a bounded column against the
+            // leading edge reads as a column that failed to fill the space beside it.
+            .frame(maxWidth: ArgoFeedRow.column, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {

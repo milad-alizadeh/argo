@@ -91,6 +91,20 @@ extension CockpitPresentation.Session {
             text: "Test Suite 'All tests' started\n✔ FeedCallTests.everyKindHasItsOwnVerb\n"
                 + "Executed 151 tests, with 0 failures in 24.113 seconds\n",
         )))),
+        // A document the agent wrote. Its patch is the whole file with nothing removed, which is
+        // the one shape the panel opens as prose rather than as a patch.
+        .toolCall(ToolCall(
+            id: "spec", name: "Write", kind: .edit,
+            target: "docs/designs/feed-command-legibility-spec.md", atMs: nil,
+        )),
+        .toolCallOutcome(answered("spec", .diff(DiffEvidence(
+            tier: .direct,
+            change: .create,
+            destination: nil,
+            added: 12,
+            removed: 0,
+            hunks: [DiffHunk(oldStart: 0, newStart: 1, lines: specification)],
+        )))),
         // A skill, whose result is the instructions themselves: the row names WHICH one, and the
         // panel behind it is the body the agent went off and read.
         .toolCall(ToolCall(
@@ -127,6 +141,24 @@ extension CockpitPresentation.Session {
         )),
         .toolCallOutcome(answered("strange", nil)),
     ]
+
+    /// Real markdown, because the whole question the render answers is whether an outline reads as
+    /// an outline once the notation stops being drawn.
+    private static let specification: [DiffLine] = [
+        "# Feed command legibility",
+        "",
+        "## 4. Read-only commands fold into the survey line",
+        "",
+        "`FeedCall.Kind.isQuiet` is `true` for `.read` and `.search` only. For `.execute` it",
+        "becomes a question about the **command text**.",
+        "",
+        "- **Cuts, never rewrites** — every character shown is the agent's own.",
+        "- **A fold, never a filter.** The count stays on screen.",
+        "",
+        "```",
+        "Read 2 files · Ran 5",
+        "```",
+    ].map { DiffLine(side: .add, text: $0) }
 
     private static func answered(_ id: String, _ result: ToolResult?) -> ToolCallOutcome {
         ToolCallOutcome(id: id, status: .completed, result: result, endedAtMs: nil, usage: nil)
