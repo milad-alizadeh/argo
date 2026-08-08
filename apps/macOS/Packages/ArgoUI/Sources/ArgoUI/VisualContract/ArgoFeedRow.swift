@@ -53,9 +53,10 @@ public enum ArgoFeedRow {
     /// digits, which is where a file stops being one anybody scrolls.
     public static let diffGutterWidth: CGFloat = 32
 
-    /// A drawn rule inside a block of prose — a table's own gridlines. One point, because it is a
-    /// boundary and not a border: it says where a cell ends and never competes with the words.
-    public static let hairline: CGFloat = 1
+    /// How thick a drawn rule inside a block of prose is — a table's own gridlines. One point,
+    /// because it is a boundary and not a border: it says where a cell ends and never competes
+    /// with the words. A WIDTH; the ink it is drawn in is `edge.hairline`.
+    public static let ruleWidth: CGFloat = 1
 
     /// The widest the feed's content runs, however wide the deck is.
     ///
@@ -100,4 +101,14 @@ public enum ArgoFeedRow {
 
     /// What a line of output is set at, inside the evidence panel.
     static let machineLineHeight: CGFloat = 18
+}
+
+public extension View {
+    /// The feed's measure, applied. The pair is ONE rule and not two — cap the content, then
+    /// centre the capped block in whatever it was given — and a surface that spelled only the
+    /// first half would read as a column stuck to the left edge of a wide deck.
+    func argoFeedMeasure() -> some View {
+        frame(maxWidth: ArgoFeedRow.column, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
 }

@@ -7,12 +7,6 @@ import SwiftUI
 /// have been measured. The header is told apart by weight and a rule under it rather than by a
 /// fill, because the feed's ground already carries the block and a second one inside it reads as
 /// a panel.
-/// A place in a row: a cell's words, or the rule that stands between two of them.
-private struct TableSlot: Identifiable {
-    let id: Int
-    let text: String?
-}
-
 struct FeedMarkdownTable: View {
     @Environment(\.argo) private var argo
 
@@ -21,7 +15,11 @@ struct FeedMarkdownTable: View {
     var body: some View {
         // No spacing of its own in either axis: the gap between two cells is their padding, so a
         // rule drawn between two rows meets the border at both ends instead of stopping short.
-        Grid(alignment: .topLeading, horizontalSpacing: 0, verticalSpacing: 0) {
+        Grid(
+            alignment: .topLeading,
+            horizontalSpacing: ArgoSpacing.flush,
+            verticalSpacing: ArgoSpacing.flush,
+        ) {
             row(table.header, weight: .semibold)
             rule(argo.color.edge.subtle)
             ForEach(Array(table.rows.enumerated()), id: \.offset) { position, cells in
@@ -59,7 +57,7 @@ struct FeedMarkdownTable: View {
                     // the middle of a column it had also just made wide.
                     Rectangle()
                         .fill(argo.color.edge.hairline)
-                        .frame(width: ArgoFeedRow.hairline)
+                        .frame(width: ArgoFeedRow.ruleWidth)
                         .frame(maxHeight: .infinity)
                 }
             }
@@ -98,16 +96,21 @@ struct FeedMarkdownTable: View {
     }
 }
 
-#Preview("Feed table — the shape a ticket list arrives in") {
+/// A place in a row: a cell's words, or the rule that stands between two of them.
+private struct TableSlot: Identifiable {
+    let id: Int
+    let text: String?
+}
+
+#Preview("Feed table — a cell that wraps beside three that do not") {
     FeedMarkdown(text: """
-    | Ticket | Label | Blocked by |
-    |---|---|---|
-    | #474 — Read each prose string once, not once per frame | `ready-for-agent` | — |
-    | #475 — Land seam and panel widths on whole points | `ready-for-agent` | — |
-    | #477 — Confirm the deck moves cleanly | `ready-for-human` | #474, #475 |
+    | Rule | Where it is spelled |
+    |---|---|
+    | Every visual constant is a token, so no view spells a number of its own | `ArgoFeedRow` |
+    | A column is as wide as its widest cell wants to be | `FeedMarkdownTable` |
     """)
     .padding(ArgoFeedRow.inset)
-    .frame(width: 620)
+    .frame(width: 460)
     .argoDeckSurface()
     .argoAppearance()
 }

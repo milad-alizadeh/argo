@@ -30,8 +30,8 @@ enum SyntaxHighlight {
             of: code.components(separatedBy: "\n"),
             in: language,
             colors: colors,
-        ) else { return nil }
-        return lines.dropFirst().reduce(into: lines[0]) { block, line in
+        ), let first = lines.first else { return nil }
+        return lines.dropFirst().reduce(into: first) { block, line in
             block += AttributedString("\n") + line
         }
     }

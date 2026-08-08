@@ -53,6 +53,7 @@ struct EvidencePanel: View {
                             step: step,
                             language: step.language ?? evidence.language,
                             reading: reading,
+                            hasFailed: evidence.ending.hasFailed,
                             position: position,
                             count: evidence.steps.count,
                         )
@@ -77,6 +78,9 @@ private struct EvidenceStep: View {
     let step: FeedEvidence.Step
     let language: EvidenceLanguage?
     let reading: EvidenceReading
+    /// Whether the CALL failed — a fact about the outcome, which is the only grain at which the
+    /// record tells error output apart from ordinary output.
+    let hasFailed: Bool
     let position: Int
     let count: Int
 
@@ -113,7 +117,7 @@ private struct EvidenceStep: View {
 
     @ViewBuilder private func shown(_ result: ToolResult) -> some View {
         switch result {
-        case let .output(output): EvidenceOutput(output: output)
+        case let .output(output): EvidenceOutput(output: output, hasFailed: hasFailed)
         case let .diff(diff): EvidenceDiff(diff: diff, language: language, reading: reading)
         case let .media(media): EvidenceMedia(media: media)
         }

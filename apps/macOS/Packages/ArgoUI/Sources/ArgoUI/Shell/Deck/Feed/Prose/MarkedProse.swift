@@ -19,14 +19,15 @@ enum MarkedProse {
         -> AttributedString {
         var inked = prose
         for run in prose.runs {
-            if isCode(run) {
+            // A link wins over a code span where a span is both — being pressable is the more
+            // useful of the two things to say, and colour alone is not what says it: a reader who
+            // cannot separate two hues needs the rule under the words.
+            if run.link != nil {
+                inked[run.range].foregroundColor = link.color
+                inked[run.range].underlineStyle = .single
+            } else if isCode(run) {
                 inked[run.range].foregroundColor = code.color
             }
-            // Colour alone is not what makes a link a link — a reader who cannot separate the two
-            // hues sees an ordinary word. The rule under it is the part that survives that.
-            guard run.link != nil else { continue }
-            inked[run.range].foregroundColor = link.color
-            inked[run.range].underlineStyle = .single
         }
         return inked
     }
@@ -38,10 +39,10 @@ enum MarkedProse {
     /// keep every attribute they arrived with, so this changes what the type-setter can SAY about
     /// the paragraph and nothing about how it sets it.
     static func composed(_ prose: AttributedString) -> Text {
-        prose.runs.reduce(Text("")) { composed, run in
+        prose.runs.reduce(Text(verbatim: "")) { composed, run in
             let words = Text(AttributedString(prose[run.range]))
-            guard let url = run.link else { return composed + words }
-            return composed + words.customAttribute(ProseLink(url: url))
+            guard let url = run.link else { return Text("\(composed)\(words)") }
+            return Text("\(composed)\(words.customAttribute(ProseLink(url: url)))")
         }
     }
 

@@ -6,8 +6,7 @@ struct MarkdownSpecimen: View {
         ScrollView {
             FeedMarkdown(text: MarkdownSpecimen.message)
                 .padding(ArgoFeedRow.inset)
-                .frame(maxWidth: ArgoFeedRow.column, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .argoFeedMeasure()
         }
         .argoDeckSurface()
     }
