@@ -1,27 +1,28 @@
 /// One drawable line of a Session's reading.
 ///
-/// A row is text and the claim the text makes, and nothing else. Timestamps, tiers and evidence
-/// all belong to events this feed does not draw yet — a row carrying fields no renderer reads
-/// would be this ticket deciding their shape for the tickets that own them.
+/// A row is its place in the feed and the claim it makes, and nothing else. Timestamps, tiers and
+/// evidence all belong to events this feed does not draw yet — a row carrying fields no renderer
+/// reads would be this ticket deciding their shape for the tickets that own them.
 struct FeedRow: Identifiable, Equatable, Sendable {
-    /// What a row IS, which is what decides how it is drawn. Three today; each of the other event
-    /// kinds joins this list with the ticket that draws it.
-    enum Kind: Equatable, Sendable {
-        /// What someone asked for. A steer typed mid-run is one of these too.
-        case prompt
-        /// What the agent said.
-        case message
-        /// What the agent reasoned. Never a message — see `FeedProjection`.
-        case thought
+    /// What a row IS, which is what decides how it is drawn. Each kind carries its own payload
+    /// rather than sharing one `text` field: a call is not a block of prose, and a row shaped to
+    /// hold both would leave every renderer to work out which half applied to it.
+    enum Content: Equatable, Sendable {
+        /// What someone asked for, verbatim. A steer typed mid-run is one of these too.
+        case prompt(String)
+        /// What the agent said, verbatim.
+        case message(String)
+        /// What the agent reasoned, verbatim. Never a message — see `FeedProjection`.
+        case thought(String)
+        /// What the agent did, as one sentence-shaped line.
+        case call(FeedCall)
     }
 
     /// The row's place in the feed.
     ///
-    /// Position rather than the text: two identical messages are two rows, and a feed keyed by
-    /// content would fuse them. Dense over the ROWS rather than over the events, so the kinds this
-    /// feed ignores leave no hole for a list to animate across.
+    /// Position rather than the content: two identical messages are two rows, and a feed keyed by
+    /// what a row says would fuse them. Dense over the ROWS rather than over the events, so the
+    /// kinds this feed ignores leave no hole for a list to animate across.
     let id: Int
-    let kind: Kind
-    /// Verbatim, as the transcript wrote it.
-    let text: String
+    let content: Content
 }

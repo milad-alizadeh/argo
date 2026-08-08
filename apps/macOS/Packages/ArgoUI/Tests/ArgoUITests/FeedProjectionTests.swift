@@ -17,8 +17,9 @@ struct FeedProjectionTests {
         ])
 
         // The prompts' timestamps sort nothing: the record's order IS the reading.
-        #expect(rows.map(\.kind) == [.message, .prompt, .thought, .prompt])
-        #expect(rows.map(\.text) == ["Second.", "Third.", "Fourth.", "First."])
+        #expect(rows.map(\.content) == [
+            .message("Second."), .prompt("Third."), .thought("Fourth."), .prompt("First."),
+        ])
     }
 
     @Test
@@ -31,7 +32,9 @@ struct FeedProjectionTests {
             .thought(markdown: markdown),
         ])
 
-        #expect(rows.allSatisfy { $0.text == markdown })
+        #expect(rows.map(\.content) == [
+            .message(markdown), .prompt(markdown), .thought(markdown),
+        ])
     }
 
     @Test
@@ -42,16 +45,16 @@ struct FeedProjectionTests {
         ])
 
         // Same words, two different provenance claims.
-        #expect(rows.map(\.kind) == [.thought, .message])
+        #expect(rows.map(\.content) == [
+            .thought("Maybe the palette."),
+            .message("Maybe the palette."),
+        ])
     }
 
     /// Each of these arrives with its own ticket. Until then the honest rendering is nothing at
     /// all — a placeholder row would be Argo claiming a shape the surface has not decided.
     @Test
     func `an event kind this feed does not handle yet produces no row`() {
-        // Every kind this target can build. `toolCall`/`toolCallOutcome` are absent because their
-        // payloads have no public initialiser — the projection's own `switch` carries no
-        // `default`, so a kind nobody listed here still cannot be added without deciding it.
         let unhandled: [TranscriptEvent] = [
             .recordIdentity(uuid: "record"),
             .headLeaf(uuid: "leaf"),
@@ -78,5 +81,26 @@ struct FeedProjectionTests {
 
         // Identity cannot be the text, and the ids stay dense over the ROWS.
         #expect(rows.map(\.id) == [0, 1])
+    }
+
+    @Test
+    func `a call and the outcome that answered it are one row, not two`() {
+        let rows = FeedProjection.rows(from: [
+            .toolCall(FeedFixture.call("one", "Read", .read, "src/token.ts")),
+            .toolCallOutcome(FeedFixture.answered("one", nil)),
+        ])
+
+        #expect(rows.count == 1)
+    }
+
+    /// The plan is standing state with a surface of its own. Drawing the call that wrote it would
+    /// say the same thing twice, in the one place where the second saying is the weaker one.
+    @Test
+    func `the call that writes the plan is not news of its own`() {
+        let rows = FeedProjection.rows(from: [
+            .toolCall(FeedFixture.call("plan", "TodoWrite", .plan, nil)),
+        ])
+
+        #expect(rows.isEmpty)
     }
 }

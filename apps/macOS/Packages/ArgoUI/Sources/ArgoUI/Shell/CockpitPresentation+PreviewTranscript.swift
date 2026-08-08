@@ -36,6 +36,114 @@ extension CockpitPresentation.Session {
         ),
         .thought(markdown: "A wide window should get more feed, never a longer line."),
         .prompt(text: "Good. Land the metrics in the contract.", atMs: 1_733_000_050_000),
-        .message(markdown: "Landed. `ArgoFeedRow` holds all four, and no view spells a number."),
     ]
+        + workedOn
+        + [
+            .message(
+                markdown: "Landed. `ArgoFeedRow` holds all four, no view spells a number, and "
+                    + "the build is green again.",
+            ),
+        ]
+
+    /// The work itself, between the prose: one call of every kind the feed can name, the two
+    /// same-named files that make the qualifier appear, and the failure that earns a second line.
+    ///
+    /// Every one of them is an ENGINE call plus the outcome that answered it, because that pairing
+    /// is what the projection does — a fixture written as finished calls would prove nothing about
+    /// the half of the reading that finds a result two records later.
+    private static let workedOn: [TranscriptEvent] = [
+        .toolCall(ToolCall(
+            id: "search", name: "Grep", kind: .search, target: "ArgoFeedRow", atMs: nil,
+        )),
+        .toolCallOutcome(answered("search", .output(OutputEvidence(tier: .direct, text: "41")))),
+        .toolCall(ToolCall(
+            id: "read", name: "Read", kind: .read,
+            target: "Sources/ArgoUI/VisualContract/ArgoFeedRow.swift", atMs: nil,
+        )),
+        .toolCallOutcome(answered("read", nil)),
+        .toolCall(ToolCall(
+            id: "edit", name: "Edit", kind: .edit,
+            target: "Sources/ArgoUI/Shell/Deck/Feed/FeedView.swift", atMs: nil,
+        )),
+        .toolCallOutcome(answered("edit", .diff(patch(.modify, added: 8, removed: 3)))),
+        .toolCall(ToolCall(
+            id: "edit-twin", name: "Edit", kind: .edit,
+            target: "Sources/ArgoUI/Specimen/FeedView.swift", atMs: nil,
+        )),
+        .toolCallOutcome(answered("edit-twin", .diff(patch(.modify, added: 2, removed: 0)))),
+        .toolCall(ToolCall(
+            id: "create", name: "Write", kind: .edit,
+            target: "Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCall.swift", atMs: nil,
+        )),
+        .toolCallOutcome(answered("create", .diff(patch(.create, added: 39, removed: 0)))),
+        .toolCall(ToolCall(
+            id: "delete", name: "Write", kind: .edit,
+            target: "Sources/ArgoUI/Shell/Deck/LegacyCallRow.swift", atMs: nil,
+        )),
+        .toolCallOutcome(answered("delete", .diff(patch(.delete, added: 0, removed: 61)))),
+        .toolCall(ToolCall(
+            id: "move", name: "Edit", kind: .edit,
+            target: "Sources/ArgoUI/Shell/ConnectionTint.swift", atMs: nil,
+        )),
+        .toolCallOutcome(answered("move", .diff(moved(
+            to: "Sources/ArgoUI/VisualContract/ConnectionTint.swift",
+        )))),
+        .toolCall(ToolCall(
+            id: "build", name: "Bash", kind: .execute,
+            target: "swift build --package-path Packages/ArgoUI", atMs: nil,
+        )),
+        .toolCallOutcome(ToolCallOutcome(
+            id: "build",
+            status: .failed,
+            result: .output(OutputEvidence(
+                tier: .direct,
+                text: "Exit code 65\n\nFeedCallLine.swift:88:7: error: cannot find 'diffAdded' "
+                    + "in scope\n** BUILD FAILED **",
+            )),
+            endedAtMs: nil,
+            usage: nil,
+        )),
+        .toolCall(ToolCall(
+            id: "fetch", name: "WebFetch", kind: .fetch, target: "developer.apple.com", atMs: nil,
+        )),
+        .toolCallOutcome(answered("fetch", .output(OutputEvidence(tier: .direct, text: "…")))),
+        .toolCall(ToolCall(
+            id: "delegate", name: "Task", kind: .delegate, target: "review the feed", atMs: nil,
+        )),
+        .toolCallOutcome(answered("delegate", nil)),
+        .toolCall(ToolCall(
+            id: "mcp", name: "mcp__linear__list_issues", kind: .mcp, target: nil, atMs: nil,
+        )),
+        .toolCallOutcome(answered("mcp", .output(OutputEvidence(tier: .direct, text: "12")))),
+        .toolCall(ToolCall(
+            id: "strange", name: "custom_tool_v2", kind: .other, target: nil, atMs: nil,
+        )),
+        .toolCallOutcome(answered("strange", nil)),
+    ]
+
+    private static func answered(_ id: String, _ result: ToolResult?) -> ToolCallOutcome {
+        ToolCallOutcome(id: id, status: .completed, result: result, endedAtMs: nil, usage: nil)
+    }
+
+    private static func patch(_ change: FileChange, added: Int, removed: Int) -> DiffEvidence {
+        DiffEvidence(
+            tier: .direct,
+            change: change,
+            destination: nil,
+            added: added,
+            removed: removed,
+            hunks: [],
+        )
+    }
+
+    private static func moved(to destination: String) -> DiffEvidence {
+        DiffEvidence(
+            tier: .direct,
+            change: .move,
+            destination: destination,
+            added: 0,
+            removed: 0,
+            hunks: [],
+        )
+    }
 }

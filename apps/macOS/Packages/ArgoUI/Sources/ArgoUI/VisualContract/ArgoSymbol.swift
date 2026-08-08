@@ -20,4 +20,18 @@ public enum ArgoSymbol {
     public static let branch = "arrow.triangle.branch"
     /// The disclosure on a control that opens something.
     public static let disclosure = "chevron.down"
+
+    /// One mark per kind of call the feed can name. A call whose kind Argo could not read carries
+    /// NO mark — there is no "unknown tool" symbol here on purpose, because a mark is a claim
+    /// about what happened and that is the one case where nothing is known.
+    public static let searched = "magnifyingglass"
+    public static let read = "doc.text"
+    public static let edited = "pencil"
+    public static let created = "doc.badge.plus"
+    public static let deleted = "trash"
+    public static let moved = "arrow.right.doc.on.clipboard"
+    public static let ran = "terminal"
+    public static let fetched = "globe"
+    public static let delegated = "arrow.turn.down.right"
+    public static let mcpTool = "puzzlepiece.extension"
 }

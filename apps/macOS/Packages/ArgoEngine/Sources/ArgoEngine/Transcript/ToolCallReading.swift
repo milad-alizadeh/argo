@@ -33,8 +33,19 @@ private let kindByName: [String: ToolCallKind] = [
 /// The tool whose input IS the Plan.
 let planTool = "TodoWrite"
 
+/// How a host names a tool it reached over MCP: `mcp__<server>__<tool>`. A prefix rather than a
+/// registry, because the tools behind it are arbitrary — the name is the only thing that says where
+/// one came from, and it says it verbatim.
+public let mcpToolPrefix = "mcp__"
+
+/// The delimiter the same convention puts between the server and the tool it exposes.
+public let mcpNameSeparator = "__"
+
 func toolCallKind(_ name: String) -> ToolCallKind {
-    kindByName[name] ?? .other
+    if let known = kindByName[name] {
+        return known
+    }
+    return name.hasPrefix(mcpToolPrefix) ? .mcp : .other
 }
 
 /// The one field worth naming for the kinds that name something. Read in order because a tool

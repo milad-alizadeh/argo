@@ -48,5 +48,12 @@ public extension ArgoPalette {
             attention: ArgoColor(hex: 0xE8B24A),
             failure: ArgoColor(hex: 0xF2555C),
         ),
+        // The study drew these as the running teal and the failure red, and said so as an open
+        // gap: at a glance a `+8` then read as a live Session. Held apart here — a sage that is
+        // nothing like the running signal, and a rose well off the failure red.
+        diff: DiffRoles(
+            added: ArgoColor(hex: 0xA9D18E),
+            removed: ArgoColor(hex: 0xD98C93),
+        ),
     )
 }

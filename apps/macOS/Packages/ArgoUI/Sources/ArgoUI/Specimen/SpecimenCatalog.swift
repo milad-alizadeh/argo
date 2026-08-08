@@ -24,6 +24,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case deck
     case sessionsDeck
     case feed
+    case feedCalls
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -78,6 +79,14 @@ public struct SpecimenScreen: View {
             InstrumentDeckShell(
                 room: .sessions,
                 feed: FeedProjection.previewRows,
+            )
+        case .feedCalls:
+            // The work itself, between the prose taken out: every kind the feed can name, the two
+            // same-named files that make a qualifier appear, and the failure that earns a second
+            // line. Its own case because in the full feed they are four rows in a screenful.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewCallRows,
             )
         }
     }
@@ -184,5 +193,10 @@ private struct DeckSpecimen: View {
 
 #Preview("Specimen — the feed at rest") {
     SpecimenScreen(specimen: .feed)
+        .frame(width: 1000, height: 620)
+}
+
+#Preview("Specimen — the work, as sentence-shaped lines") {
+    SpecimenScreen(specimen: .feedCalls)
         .frame(width: 1000, height: 620)
 }

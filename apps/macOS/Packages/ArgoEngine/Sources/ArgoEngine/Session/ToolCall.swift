@@ -8,6 +8,10 @@ public enum ToolCallKind: String, Sendable, Equatable {
     case fetch
     case delegate
     case plan
+    /// A tool the session reached over MCP. Read from the host's own naming convention, never from
+    /// what the tool does: a server's tools are arbitrary, and only the name says where they came
+    /// from.
+    case mcp
     case other
 }
 
@@ -32,6 +36,14 @@ public struct ToolCall: Sendable, Equatable {
     /// When the agent emitted the call.
     public let atMs: Int?
 
+    public init(id: String, name: String, kind: ToolCallKind, target: String?, atMs: Int?) {
+        self.id = id
+        self.name = name
+        self.kind = kind
+        self.target = target
+        self.atMs = atMs
+    }
+
     /// The host's own name for the structured question. Matched verbatim, because the tool name IS
     /// how a record distinguishes a question that BLOCKS from one the agent merely typed out.
     public static let askUserQuestion = "AskUserQuestion"
@@ -53,4 +65,18 @@ public struct ToolCallOutcome: Sendable, Equatable {
     /// its own — a DELEGATING call is the case this exists for: its result carries the whole spend
     /// of the subagent it ran, which is the only place that spend is ever visible.
     public let usage: Usage?
+
+    public init(
+        id: String,
+        status: ToolCallStatus,
+        result: ToolResult?,
+        endedAtMs: Int?,
+        usage: Usage?,
+    ) {
+        self.id = id
+        self.status = status
+        self.result = result
+        self.endedAtMs = endedAtMs
+        self.usage = usage
+    }
 }
