@@ -18,6 +18,8 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         case call(FeedCall)
         /// A run of looking, as one line of counts. See `FeedSurveyFold`.
         case survey(FeedSurvey)
+        /// A run of pictures, as one row of thumbnails. See `FeedGalleryFold`.
+        case gallery(FeedGallery)
     }
 
     /// The row's place in the feed.
@@ -32,7 +34,7 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     /// the feed's own spacing, and the render that shows the calls alone.
     var isCall: Bool {
         switch content {
-        case .call, .survey: true
+        case .call, .survey, .gallery: true
         case .prompt, .message, .thought: false
         }
     }

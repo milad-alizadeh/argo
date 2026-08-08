@@ -13,6 +13,10 @@ struct SessionsDeck: View {
     /// Which call's evidence the panel is showing, if any. Held by the deck because the panel is a
     /// zone of the deck: the feed cannot own a selection that resizes the row it sits in.
     @State var open: FeedRow.ID?
+    /// Which picture is open full size. Held HERE and not one level down, because the lightbox
+    /// covers the whole deck: a picture opened over the feed column alone would be a screenshot of
+    /// a deck shown inside a third of one.
+    @State var lit: FeedShot?
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
@@ -21,9 +25,10 @@ struct SessionsDeck: View {
             DeckSlot(zone: .tabs)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
             DeckSeparator()
-            DeckContentRow(feed: feed, open: $open)
+            DeckContentRow(feed: feed, selection: FeedRowSelection(open: $open, lit: $lit))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .argoLightbox($lit)
     }
 }
 
@@ -38,7 +43,7 @@ struct SessionsDeck: View {
 /// map wide enough to be a map is not a preference.
 private struct DeckContentRow: View {
     let feed: [FeedRow]
-    @Binding var open: FeedRow.ID?
+    let selection: FeedRowSelection
 
     @State private var railWidth = ArgoLayout.agentsRailWidth
     /// What the reader dragged the panel to. `nil` until they do — the panel opens at its share of
@@ -57,7 +62,7 @@ private struct DeckContentRow: View {
                         growsRightward: true,
                     )
                 }
-                FeedColumn(feed: feed, open: $open)
+                FeedColumn(feed: feed, selection: selection)
                 if openEvidence == nil {
                     DeckSeparator()
                     DeckSlot(zone: .minimap)
@@ -69,7 +74,15 @@ private struct DeckContentRow: View {
             // panel is no exception. It answers here rather than on the panel so a reader whose
             // focus is still in the feed — which is where the click that opened it came from —
             // does not have to reach into the panel first to be allowed to close it.
-            .onExitCommand { open = nil }
+            //
+            // Never while a picture is up. The lightbox is over all of this and answers Escape
+            // itself; closing the panel underneath it would spend the keystroke on the surface the
+            // reader cannot currently see.
+            .onExitCommand {
+                if selection.lit == nil {
+                    selection.open = nil
+                }
+            }
         }
     }
 
@@ -87,6 +100,10 @@ private struct DeckContentRow: View {
         openEvidence == nil && FeedProjection.runningDelegations(in: feed) > 0
     }
 
+    private var open: FeedRow.ID? {
+        selection.open
+    }
+
     @ViewBuilder private func panel(in deck: CGFloat) -> some View {
         if let evidence = openEvidence {
             DeckSeam(
@@ -94,7 +111,7 @@ private struct DeckContentRow: View {
                 limits: ArgoLayout.evidencePanelLimits(in: deck),
                 growsRightward: false,
             )
-            EvidencePanel(evidence: evidence) { open = nil }
+            EvidencePanel(evidence: evidence) { selection.open = nil }
                 .frame(width: panelBinding(in: deck).wrappedValue)
                 .transition(.identity)
         }
@@ -128,10 +145,12 @@ private struct DeckContentRow: View {
         return switch content {
         case let .call(call): call.opened
         case let .survey(survey): survey.opened
-        // Prose opens nothing. A row that cannot be clicked cannot be the open one, so this is
-        // unreachable — and it is a case rather than a `default` so a new row kind that CAN open
+        // Prose opens nothing, and neither does a gallery — its shots open a lightbox instead, and
+        // routing them through a panel would show a picture beside a smaller copy of itself. A row
+        // that cannot be clicked into the panel cannot be the open one, so both arms are
+        // unreachable — and they are cases rather than a `default` so a new row kind that CAN open
         // fails this build instead of silently resolving to a closed panel.
-        case .prompt, .message, .thought: nil
+        case .prompt, .message, .thought, .gallery: nil
         }
     }
 }
@@ -140,11 +159,11 @@ private struct DeckContentRow: View {
 /// deck (C4.1).
 private struct FeedColumn: View {
     let feed: [FeedRow]
-    @Binding var open: FeedRow.ID?
+    let selection: FeedRowSelection
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            FeedView(rows: feed, open: $open)
+            FeedView(rows: feed, open: selection.$open, lit: selection.$lit)
             DeckSeparator()
             DeckSlot(zone: .dock)
                 .frame(height: ArgoLayout.deckDockHeight)

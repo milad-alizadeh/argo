@@ -31,6 +31,10 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedRunEvidence
     case feedSurveyEvidence
     case feedDocumentEvidence
+    case feedGallery
+    case feedSingleShot
+    case feedAbsentShot
+    case feedLightbox
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -148,96 +152,40 @@ public struct SpecimenScreen: View {
                 feed: FeedProjection.previewCallRows,
                 open: FeedProjection.previewDocumentCallID,
             )
+        case .feedGallery:
+            // The run of pictures, in the feed it folds inside. Four provenances in one row, and
+            // the judgement is whether they read as four different claims without the captions
+            // being read — a capture, a re-read of the path, an artifact the plugin drew, and the
+            // shot the record kept nothing for.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewCallRows,
+            )
+        case .feedSingleShot:
+            // One shot, alone. The claim is that it gets the SAME treatment as a set — a gallery
+            // of one that shrank back to a filename row would be the fold apologising for itself.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewSingleShotRows,
+            )
+        case .feedAbsentShot:
+            // The picture the record never kept. It has to read as a marked absence rather than as
+            // an image that failed to load, and it must not look pressable — which is a thing to
+            // look at, since nothing about a disabled button asserts how it reads.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewAbsentShotRows,
+            )
+        case .feedLightbox:
+            // A shot opened full size over the whole deck. Only reachable by clicking a thumbnail,
+            // so without this case the surface is never looked at — and what it has to settle is
+            // whether the picture reads as laid OVER a deck rather than as a second screen.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewCallRows,
+            )
+            .argoLightbox(.constant(FeedProjection.previewShots.first))
         }
-    }
-}
-
-/// Every operational state a roster row can be in, in one column — the SHIPPING row, over the
-/// sidebar list it ships inside, projected from the same presentation the shell is handed. A
-/// specimen drawing a second row is evidence about a row nobody sees.
-private struct SessionRowsSpecimen: View {
-    var body: some View {
-        List {
-            ForEach(SessionRosterProjection.previewRows) { row in
-                SessionRow(row: row).previewSafeListRow()
-            }
-        }
-        .listStyle(.sidebar)
-        .frame(width: ArgoLayout.sidebarIdealWidth)
-    }
-}
-
-/// The shell against a roster that MIXES access. The lock is drawn only where read-only tells
-/// rows apart, so a uniform roster suppresses it by design and this is the only way to look at it.
-private struct RosterSpecimen: View {
-    @State private var navigation = CockpitNavigationModel()
-
-    var body: some View {
-        CockpitView(presentation: .preview, actions: .inert)
-            .environment(navigation)
-    }
-}
-
-/// The window chrome alone, against an empty plane. One merged capsule at the leading edge and one
-/// pinned to the trailing edge is a claim about the toolbar, which the shell specimens bury under
-/// everything else in the frame.
-private struct ToolbarSpecimen: View {
-    let presentation: CockpitPresentation
-
-    @State private var room = CockpitRoom.sessions
-
-    var body: some View {
-        Color.clear
-            .toolbar {
-                ShellToolbar(room: $room, presentation: presentation, actions: .inert)
-            }
-            .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-    }
-}
-
-/// The drawer in a REAL popover, opened on appear.
-///
-/// `DrawerSpecimen` draws the content directly, which renders it but never puts it in the context
-/// it actually lives in — and that context is where it failed: a popover is its own window with
-/// its own environment, and the row's body came apart inside one while rendering fine outside it.
-/// This case is how that is caught by rendering rather than by a person clicking.
-private struct OpenDrawerSpecimen: View {
-    @State private var isOpen = false
-
-    var body: some View {
-        ProjectVessel(presentation: .preview, actions: .inert)
-            .padding(ArgoSpacing.region)
-            .onAppear { isOpen = true }
-            .popover(isPresented: $isOpen, arrowEdge: .bottom) {
-                ProjectDrawer(presentation: .preview, actions: .inert)
-            }
-    }
-}
-
-/// The drawer as it hangs off the vessel: over the window's own ground, at its own width, rather
-/// than filling the frame. A popover is a window of its own and never lands in a screenshot of
-/// this one, so the harness draws the content directly.
-private struct DrawerSpecimen: View {
-    @Environment(\.argo) private var argo
-
-    let presentation: CockpitPresentation
-
-    var body: some View {
-        // The glass belongs HERE, not in the drawer. In a popover the panel is the system's own
-        // material and the drawer must add nothing; this specimen has no popover to sit in, so it
-        // stands in for one.
-        ProjectDrawer(presentation: presentation, actions: .inert)
-            .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
-            .padding(ArgoSpacing.region)
-    }
-}
-
-/// The deck specimen, holding the tab selection it needs to draw.
-private struct DeckSpecimen: View {
-    @State private var tab = SpecimenFixtures.DeckTab.activity
-
-    var body: some View {
-        SpecimenDeck(session: .preview, tab: $tab)
     }
 }
 
@@ -258,5 +206,15 @@ private struct DeckSpecimen: View {
 
 #Preview("Specimen — the work, as sentence-shaped lines") {
     SpecimenScreen(specimen: .feedCalls)
+        .frame(width: 1000, height: 620)
+}
+
+#Preview("Specimen — a run of pictures in the feed") {
+    SpecimenScreen(specimen: .feedGallery)
+        .frame(width: 1000, height: 620)
+}
+
+#Preview("Specimen — a shot opened full size") {
+    SpecimenScreen(specimen: .feedLightbox)
         .frame(width: 1000, height: 620)
 }

@@ -54,6 +54,35 @@ enum FeedFixture {
         ))
     }
 
+    /// A picture as a record answers a call with one. `bytes: nil` is the call the record answered
+    /// without any — the honest absence, and the only shot that opens nothing.
+    ///
+    /// The bytes are a real one-pixel PNG rather than an arbitrary string, because half of what
+    /// the gallery does with a shot depends on the image decoding at all.
+    static func shot(_ tier: Tier, bytes: String? = onePixelPNG) -> ToolResult {
+        .media(MediaEvidence(tier: tier, mediaType: "image/png", bytes: bytes))
+    }
+
+    /// The smallest thing that is genuinely a PNG: one opaque pixel.
+    static let onePixelPNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z"
+        + "8DwHwAFAAH/q842iQAAAABJRU5ErkJggg=="
+
+    /// Every gallery a stream produced, in order.
+    static func galleries(in rows: [FeedRow]) -> [FeedGallery] {
+        rows.compactMap { row in
+            guard case let .gallery(gallery) = row.content else { return nil }
+            return gallery
+        }
+    }
+
+    /// A `Read` of one path answered with a picture — the pair that makes a gallery.
+    static func looked(at path: String, _ result: ToolResult) -> [TranscriptEvent] {
+        [
+            .toolCall(call("shot-\(path)", tool: "Read", kind: .read, naming: path)),
+            .toolCallOutcome(answered("shot-\(path)", result)),
+        ]
+    }
+
     /// Every call a stream produced, in order — what the assertions are actually about.
     ///
     /// Reaches INSIDE a folded run of looking. What a call says it did is a claim about the call;
@@ -65,7 +94,10 @@ enum FeedFixture {
             switch row.content {
             case let .call(call): [call]
             case let .survey(survey): survey.calls
-            case .prompt, .message, .thought: []
+            // A gallery keeps its pictures and drops the sentence that carried them: a run of six
+            // shots has no line left to make a claim about. `galleries(in:)` is where that half is
+            // asserted.
+            case .prompt, .message, .thought, .gallery: []
             }
         }
     }

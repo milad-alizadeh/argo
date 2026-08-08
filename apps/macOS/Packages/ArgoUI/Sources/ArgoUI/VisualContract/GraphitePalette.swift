@@ -19,6 +19,10 @@ public extension ArgoPalette {
             // `AccentColor` asset must carry the same value: the native sidebar capsule
             // reads that, never this.
             selected: ArgoColor(hex: 0xFFFFFF, opacity: 0.058),
+            // Below `sunken` and nearly opaque: a picture opened full size is the only thing
+            // being read, and the graphite left showing through is a frame around it rather
+            // than a deck the eye keeps trying to finish.
+            scrim: ArgoColor(hex: 0x0B0C0E, opacity: 0.90),
         ),
         text: TextRoles(
             primary: ArgoColor(hex: 0xF2F4F6),
