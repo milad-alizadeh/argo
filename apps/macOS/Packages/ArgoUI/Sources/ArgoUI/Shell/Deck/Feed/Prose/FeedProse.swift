@@ -49,9 +49,8 @@ struct FeedProse: View {
 
     /// Selectable: this is the record, so the reader gets to take it away as the agent wrote it.
     private var prose: some View {
-        FeedProseText(text: text)
+        FeedMarkdown(text: text)
             .foregroundStyle(ink)
-            .fixedSize(horizontal: false, vertical: true)
             .textSelection(.enabled)
     }
 

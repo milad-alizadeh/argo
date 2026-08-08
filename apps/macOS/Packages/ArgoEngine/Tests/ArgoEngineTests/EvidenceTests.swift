@@ -22,10 +22,20 @@ struct EvidenceTests {
         #expect(output.text == "src/x.ts(4,1): error TS2345")
     }
 
+    /// A read's payload is the file as the AGENT saw it, and it is kept for the same reason media
+    /// bytes are: re-reading the path later shows what the file says now, which after three edits
+    /// in
+    /// one turn is a different file. It is the engine's largest payload and it is held anyway.
     @Test
-    func `A successful read keeps no output — the row that folds it never shows one`() async throws {
+    func `A successful read keeps what the agent was looking at`() async throws {
         let outcomes = try await Fixture.events("commands").outcomes()
-        #expect(try #require(outcomes["call-read-ok"]).result == nil)
+        guard case let .output(output) = try #require(outcomes["call-read-ok"]).result else {
+            Issue.record("a read carries the content it returned")
+            return
+        }
+
+        #expect(output.tier == .direct)
+        #expect(output.text == "1\texport const token = 1")
     }
 
     @Test

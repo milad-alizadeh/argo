@@ -24,16 +24,63 @@ struct EvidencePanel: View {
         .accessibilityLabel("Evidence")
     }
 
-    /// One arm per kind of result, and an honest absence for the row that has none. A panel open
-    /// on nothing is a promise the disclosure marker made and this could not keep — it cannot
-    /// happen, because a row with no evidence does not open, and it says so rather than showing a
-    /// blank if it ever does.
+    /// Everything the row stands for, in the order it happened — a collapsed run of three edits is
+    /// three patches down one pane, each one what that ONE call changed.
+    ///
+    /// The scrolling lives here and not in the arms below, so a run reads as one scrollable column
+    /// rather than as three little windows. Content shorter than the pane sits at the TOP of it: a
+    /// scroll view centres what it does not have to scroll, which put a four-line build failure in
+    /// the middle of an empty pane, reading as a caption rather than as the start of a stream.
     @ViewBuilder private var content: some View {
-        switch call.evidence {
+        if call.evidence.isEmpty {
+            EvidenceAbsent()
+        } else {
+            ScrollView([.vertical, .horizontal]) {
+                VStack(alignment: .leading, spacing: ArgoSpacing.section) {
+                    ForEach(Array(call.evidence.enumerated()), id: \.offset) { position, result in
+                        EvidenceStep(
+                            result: result,
+                            position: position,
+                            count: call.evidence.count,
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .defaultScrollAnchor(.topLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+}
+
+/// One result inside the panel, numbered where there is more than one of it.
+///
+/// The number is what keeps a collapsed run honest: three patches with nothing between them read as
+/// one long diff, and the whole reason the row collapsed is that they were three separate moments.
+private struct EvidenceStep: View {
+    @Environment(\.argo) private var argo
+
+    let result: ToolResult
+    let position: Int
+    let count: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+            if count > 1 {
+                Text("\(position + 1) of \(count)")
+                    .argoText(ArgoTypography.sectionLabel)
+                    .foregroundStyle(argo.color.text.tertiary)
+                    .padding(.horizontal, ArgoSpacing.comfortable)
+            }
+            shown(result)
+        }
+    }
+
+    @ViewBuilder private func shown(_ result: ToolResult) -> some View {
+        switch result {
         case let .output(output): EvidenceOutput(output: output)
         case let .diff(diff): EvidenceDiff(diff: diff)
         case let .media(media): EvidenceMedia(media: media)
-        case nil: EvidenceAbsent()
         }
     }
 }
@@ -54,7 +101,7 @@ private struct EvidenceHeader: View {
                     .textCase(.uppercase)
                     .foregroundStyle(argo.color.text.tertiary)
                 Text(address)
-                    .argoText(ArgoTypography.machine)
+                    .argoMono(.body)
                     .foregroundStyle(argo.color.text.primary)
                     .textSelection(.enabled)
                     .lineLimit(2)

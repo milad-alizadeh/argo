@@ -74,6 +74,68 @@ struct FeedCallSubjectTests {
         #expect(calls.first?.subject == .plain("linear · list_issues"))
     }
 
+    // MARK: - Addresses, said from where the Session is standing
+
+    /// Inside a Session everything is relative to that Session's cwd, so the prefix is thirty
+    /// characters of this machine before the first character about the work — and it is the half
+    /// that pushes the informative end of a long address off the edge of the panel.
+    @Test
+    func `an address inside the Session's own tree is said relative to it`() {
+        let calls = FeedFixture.calls(in: [
+            .cwd("/Users/x/argo"),
+            .toolCall(FeedFixture.call(
+                "read",
+                tool: "Read",
+                kind: .read,
+                naming: "/Users/x/argo/Sources/Feed.swift",
+            )),
+        ])
+
+        #expect(fileName(of: calls.first)?.path == "Sources/Feed.swift")
+    }
+
+    /// A path OUTSIDE the tree keeps its shape — it is genuinely elsewhere, and that is worth
+    /// seeing. A command is shortened too: it carries paths in the middle of its own words.
+    @Test
+    func `a command's own words are shortened the same way`() {
+        let calls = FeedFixture.calls(in: [
+            .cwd("/Users/x/argo"),
+            .toolCall(FeedFixture.call(
+                "run",
+                tool: "Bash",
+                kind: .execute,
+                naming: "swift build --package-path /Users/x/argo/apps/macOS",
+            )),
+        ])
+
+        #expect(calls.first?.subject == .command("swift build --package-path apps/macOS"))
+    }
+
+    // MARK: - A command, minus its plumbing
+
+    /// The pipeline is real and the panel shows it whole. On the row it is two clauses about where
+    /// the text went, in front of the verb that says what happened.
+    @Test
+    func `a command is shown as what ran, not as where its output went`() {
+        #expect(FeedCommandLine.head(of: "bun run test 2>&1 | tail -4") == "bun run test …")
+        #expect(FeedCommandLine.head(of: "swift build > out.log") == "swift build …")
+    }
+
+    @Test
+    func `a command with no plumbing on it is shown exactly as it was typed`() {
+        #expect(FeedCommandLine.head(of: "swift build --package-path Packages/ArgoUI")
+            == "swift build --package-path Packages/ArgoUI")
+    }
+
+    /// A `;` or `&&` chain is left alone. Those are separate commands that RAN — cutting them would
+    /// hide work rather than plumbing, which is the one thing this must not do.
+    @Test
+    func `a chain of commands keeps every command in it`() {
+        let chained = "cd apps/macOS && sh scripts/specimens.sh out"
+
+        #expect(FeedCommandLine.head(of: chained) == chained)
+    }
+
     private func fileName(of call: FeedCall?) -> FeedCall.FileName? {
         guard case let .file(file) = call?.subject else { return nil }
         return file

@@ -5,11 +5,13 @@ import Foundation
 
 /// What a call printed, where a row would read it.
 ///
-/// Output is kept only for a command, which shows what it printed, and for a failure of any kind,
-/// which shows what went wrong. A successful read's output is the whole file, and holding every one
-/// a session read would be the engine's largest cost for a payload nothing renders.
+/// Kept for a command, which shows what it printed; for a READ, whose payload is the file as the
+/// agent saw it; and for a failure of any kind, which shows what went wrong. A read's content is
+/// the engine's largest payload by far and is held anyway, because the alternative is a panel that
+/// re-reads the path and shows what the file says NOW — a different file, at a lower tier, on the
+/// one surface whose whole claim is that it shows what the agent was actually looking at.
 func outputEvidence(of call: ResolvedCall) -> OutputEvidence? {
-    guard call.kind == .execute || call.status == .failed else { return nil }
+    guard call.kind == .execute || call.kind == .read || call.status == .failed else { return nil }
     return printedOutput(of: call.content)
 }
 

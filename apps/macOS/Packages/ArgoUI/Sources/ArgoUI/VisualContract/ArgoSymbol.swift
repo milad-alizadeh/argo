@@ -39,10 +39,10 @@ public enum ArgoSymbol {
     public static let fetched = "globe"
     public static let delegated = "arrow.turn.down.right"
     public static let mcpTool = "puzzlepiece.extension"
-    /// A call that failed. It replaces the kind's own mark rather than tinting it: colour alone is
-    /// a difference a reader who cannot see it loses entirely, and on a row that no longer prints
-    /// what went wrong, the mark is half of what says anything did.
-    public static let callFailed = "exclamationmark.triangle"
+    // A call's outcome has no mark of its own. A failure is the line in the failure ink; success is
+    // the default a feed may assume, and a tick on every row that worked marks the fourteen
+    // ordinary
+    // rows as loudly as the one that broke.
 
     /// Closing the evidence panel.
     public static let dismiss = "xmark"

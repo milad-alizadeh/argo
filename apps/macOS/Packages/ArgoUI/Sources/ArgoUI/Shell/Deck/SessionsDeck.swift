@@ -2,10 +2,10 @@ import SwiftUI
 
 /// The Sessions room's zone layout, stacked flush.
 ///
-/// It paints no background: `InstrumentDeckShell` is the opaque plane, and a second fill here
-/// would be a second surface where the contract allows one. The separators sit where the
-/// approved study puts them and nowhere else — the header and its tabs read as one region, so
-/// nothing is drawn between them.
+/// It paints no background: `InstrumentDeckShell` is the opaque plane, and a second fill here would
+/// be a second surface where the contract allows one. The separators sit where the approved study
+/// puts them and nowhere else — the header and its tabs read as one region, so nothing is drawn
+/// between them.
 struct SessionsDeck: View {
     /// The selected Session's reading. Projected above the deck rather than here — the deck is a
     /// layout, and a zone that looked a Session up would be the layout choosing what to draw.
@@ -27,30 +27,87 @@ struct SessionsDeck: View {
     }
 }
 
-/// The minimap is a fixed measure and runs the whole height of the row. The rail is too — until
-/// the panel opens, when it is the width the panel is made of.
+/// The zones across the deck, in the order they are read: the rail, the feed, the minimap pinned to
+/// the feed it maps, and the evidence panel outboard of all of them.
+///
+/// The minimap's place is the load-bearing part. It is a map OF the feed, so nothing may come
+/// between them — a panel opening in that gap pushed the map away from the column it belongs to and
+/// left it reading as a second sidebar. The panel takes the far edge instead.
+///
+/// Two of the three seams move. The minimap's does not: it is a fixed measure, like Xcode's, and a
+/// map wide enough to be a map is not a preference.
 private struct DeckContentRow: View {
     let feed: [FeedRow]
     @Binding var open: FeedRow.ID?
 
+    @State private var railWidth = ArgoLayout.agentsRailWidth
+    /// What the reader dragged the panel to. `nil` until they do — the panel opens at its share of
+    /// the deck, which depends on a width this view does not know until it is laid out.
+    @State private var panelWidth: CGFloat?
+
     var body: some View {
-        HStack(spacing: ArgoSpacing.flush) {
-            if openCall == nil {
-                DeckSlot(zone: .rail)
-                    .frame(width: ArgoLayout.agentsRailWidth)
+        GeometryReader { proxy in
+            HStack(spacing: ArgoSpacing.flush) {
+                // The rail closes when the panel opens. The two are alternatives rather than
+                // neighbours: a reader looking at what one call produced is not picking a Session,
+                // and three columns beside a fourth leaves none of them a usable width.
+                if openCall == nil {
+                    DeckSlot(zone: .rail)
+                        .frame(width: railWidth)
+                    DeckSeam(
+                        width: $railWidth,
+                        limits: railLimits(in: proxy.size.width),
+                        growsRightward: true,
+                    )
+                }
+                FeedColumn(feed: feed, open: $open)
                 DeckSeparator()
+                DeckSlot(zone: .minimap)
+                    .frame(width: ArgoLayout.minimapLaneWidth)
+                panel(in: proxy.size.width)
             }
-            FeedColumn(feed: feed, open: $open)
-            if let call = openCall {
-                DeckSeparator()
-                EvidencePanel(call: call) { open = nil }
-                    .frame(minWidth: ArgoLayout.evidencePanelMinimumWidth)
-                    .transition(.identity)
-            }
-            DeckSeparator()
-            DeckSlot(zone: .minimap)
-                .frame(width: ArgoLayout.minimapLaneWidth)
         }
+    }
+
+    @ViewBuilder private func panel(in deck: CGFloat) -> some View {
+        if let call = openCall {
+            DeckSeam(
+                width: panelBinding(in: deck),
+                limits: panelLimits(in: deck),
+                growsRightward: false,
+            )
+            EvidencePanel(call: call) { open = nil }
+                .frame(width: panelBinding(in: deck).wrappedValue)
+                .transition(.identity)
+        }
+    }
+
+    /// The panel's width, defaulting to its share of everything that is not the minimap — the rail-
+    /// and-feed span it is taking the room from, measured the same whether the rail is up.
+    private func panelBinding(in deck: CGFloat) -> Binding<CGFloat> {
+        let limits = panelLimits(in: deck)
+        let opening = (deck - ArgoLayout.minimapLaneWidth) * ArgoLayout.evidencePanelShare
+        return Binding(
+            get: { min(max(panelWidth ?? opening, limits.lowerBound), limits.upperBound) },
+            set: { panelWidth = $0 },
+        )
+    }
+
+    /// Both limits are read off the deck's own width, so a window narrow enough that the floors
+    /// cannot all be met yields the least-bad arrangement rather than a negative one.
+    private func panelLimits(in deck: CGFloat) -> ClosedRange<CGFloat> {
+        let floor = ArgoLayout.evidencePanelMinimumWidth
+        // The rail is shut while the panel is up, so the only floor to leave room for is the
+        // feed's.
+        let ceiling = deck - ArgoLayout.minimapLaneWidth - ArgoLayout.feedMinimumWidth
+        return floor ... max(floor, ceiling)
+    }
+
+    private func railLimits(in deck: CGFloat) -> ClosedRange<CGFloat> {
+        let taken = ArgoLayout.minimapLaneWidth + ArgoLayout.feedMinimumWidth
+        let ceiling = min(ArgoLayout.railWidths.upperBound, deck - taken)
+        let floor = ArgoLayout.railWidths.lowerBound
+        return floor ... max(floor, ceiling)
     }
 
     /// The open row, resolved against the CURRENT feed rather than remembered. A live transcript
@@ -77,9 +134,11 @@ private struct FeedColumn: View {
             DeckSlot(zone: .dock)
                 .frame(height: ArgoLayout.deckDockHeight)
         }
-        // Never wider than the reading measure once the panel is up: the column has nothing to do
-        // with the extra points, and the panel does.
-        .frame(maxWidth: open == nil ? .infinity : ArgoFeedRow.measure + ArgoFeedRow.inset * 2)
+        // Whatever the two seams leave it. The column used to be capped at its reading measure when
+        // the panel opened, which is the panel deciding how wide the feed is — the seam decides
+        // now,
+        // and prose inside the column is held to the measure by the rows themselves.
+        .frame(maxWidth: .infinity)
     }
 }
 

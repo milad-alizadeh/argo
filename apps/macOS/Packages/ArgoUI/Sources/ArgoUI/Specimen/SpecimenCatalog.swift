@@ -25,7 +25,9 @@ public enum Specimen: String, CaseIterable, Sendable {
     case sessionsDeck
     case feed
     case feedCalls
+    case feedProse
     case feedEvidence
+    case feedRunEvidence
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -89,6 +91,14 @@ public struct SpecimenScreen: View {
                 room: .sessions,
                 feed: FeedProjection.previewCallRows,
             )
+        case .feedProse:
+            // What the agent SAID, with the work taken out: the heading, the list and the fenced
+            // block of a real answer. The markdown is drawn as blocks, and whether an outline reads
+            // as an outline is the judgement no test can make.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewProseRows,
+            )
         case .feedEvidence:
             // The panel open on the failed command. The one state a screenshot has to carry: the
             // feed narrowed to its measure, the rail spent, and what went wrong readable in full
@@ -100,6 +110,15 @@ public struct SpecimenScreen: View {
                 room: .sessions,
                 feed: FeedProjection.previewCallRows,
                 open: FeedProjection.previewFailedCallID,
+            )
+        case .feedRunEvidence:
+            // The collapsed run, open. One row said `Edited FeedCallLine.swift ×3`, and the whole
+            // claim of the collapse is that the three moments are still three in the panel — which
+            // is a thing to look at rather than to assert.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewCallRows,
+                open: FeedProjection.previewRunCallID,
             )
         }
     }

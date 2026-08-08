@@ -9,16 +9,38 @@ enum FeedCallReading {
     /// `nil` where the call is not the feed's news to tell. The plan tool is the case: what it
     /// wrote is standing state with a surface of its own, and drawing the call as well would say
     /// the same thing twice.
-    static func call(_ call: ToolCall, outcome: ToolCallOutcome?) -> FeedCall? {
+    static func call(
+        _ call: ToolCall,
+        outcome: ToolCallOutcome?,
+        within path: FeedPath,
+    )
+        -> FeedCall? {
         let diff = patch(of: outcome)
         guard let kind = kind(of: call, mutating: diff) else { return nil }
         return FeedCall(
             kind: kind,
-            subject: subject(of: call),
+            subject: subject(of: call, within: path),
             churn: diff.map { FeedCall.Churn(added: $0.added, removed: $0.removed) },
             ending: ending(of: outcome),
-            evidence: outcome?.result,
+            evidence: [kept(outcome?.result)].compactMap(\.self),
+            repeats: 1,
         )
+    }
+
+    /// A result the panel could actually show something for, or `nil`.
+    ///
+    /// The filter is here rather than in the panel because it decides whether the ROW opens at all:
+    /// a `Bash` that printed nothing and a patch nothing could parse used to offer a chevron and
+    /// answer it with a line of apology, which is a click the feed asked for and then wasted. The
+    /// call still happened, and the line still says so.
+    private static func kept(_ result: ToolResult?) -> ToolResult? {
+        switch result {
+        // Blank output never reaches here — the engine reads whitespace as no output at all.
+        case .output: result
+        case let .diff(diff): diff.hunks.isEmpty ? nil : result
+        case let .media(media): media.bytes == nil ? nil : result
+        case nil: nil
+        }
     }
 
     private static func patch(of outcome: ToolCallOutcome?) -> DiffEvidence? {
@@ -70,14 +92,14 @@ enum FeedCallReading {
     /// whose name IS its address, and an unclassified one, where the field a target was scraped
     /// from means nothing without a kind to read it under — drawn, it says `Called whatever it
     /// does` under a verb that already admits Argo does not know what happened.
-    private static func subject(of call: ToolCall) -> FeedCall.Subject {
-        switch call.kind {
-        case .mcp: .plain(mcpAddress(of: call.name))
+    private static func subject(of call: ToolCall, within path: FeedPath) -> FeedCall.Subject {
+        let named = call.target.map(path.shortened)
+        return switch call.kind {
+        case .mcp: FeedCall.Subject.plain(mcpAddress(of: call.name))
         case .other: tool(call)
-        case .read, .edit: file(at: call.target) ?? tool(call)
-        case .execute: call.target.map(FeedCall.Subject.command) ?? tool(call)
-        case .search, .fetch, .delegate, .plan: call.target.map(FeedCall.Subject.plain)
-            ?? tool(call)
+        case .read, .edit: file(at: named) ?? tool(call)
+        case .execute: named.map(FeedCall.Subject.command) ?? tool(call)
+        case .search, .fetch, .delegate, .plan: named.map(FeedCall.Subject.plain) ?? tool(call)
         }
     }
 
@@ -101,21 +123,12 @@ enum FeedCallReading {
         return parts.isEmpty ? name : parts.joined(separator: " · ")
     }
 
-    /// How the call ended, from the record and nothing else.
-    ///
-    /// The engine keeps a command's output and drops a successful read's, so the one line a row
-    /// carries is present exactly where there is one to read rather than wherever a kind suggests
-    /// one. A failure the record answered with nothing is still a failure — it just has no exit
-    /// line, and none is invented for it.
+    /// How the call ended, from the host's own status and nothing else. A call the record has not
+    /// answered is `pending` — the absence of a result is not a result.
     private static func ending(of outcome: ToolCallOutcome?) -> FeedCall.Ending {
         guard let outcome, outcome.status != .pending, outcome.status != .inProgress else {
             return .pending
         }
-        guard case let .output(output) = outcome.result else {
-            return outcome.status == .failed ? .failed(status: nil) : .succeeded(outcome: nil)
-        }
-        return outcome.status == .failed
-            ? .failed(status: commandExitStatus(in: output.text))
-            : .succeeded(outcome: commandOutcome(in: output.text))
+        return outcome.status == .failed ? .failed : .succeeded
     }
 }

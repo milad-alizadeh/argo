@@ -29,11 +29,19 @@ enum FeedFixture {
         )
     }
 
+    /// A patch, with a hunk in it unless the fixture is asking for one nothing could read. The hunk
+    /// is what makes it something the panel can show — a change with no readable patch is a row
+    /// that does not open, and half these fixtures are about that difference.
     static func patch(
         _ change: FileChange,
         added: Int = 0,
         removed: Int = 0,
         destination: String? = nil,
+        hunks: [DiffHunk] = [DiffHunk(
+            oldStart: 1,
+            newStart: 1,
+            lines: [DiffLine(side: .add, text: "let token = 1")],
+        )],
     )
         -> ToolResult {
         .diff(DiffEvidence(
@@ -42,7 +50,7 @@ enum FeedFixture {
             destination: destination,
             added: added,
             removed: removed,
-            hunks: [],
+            hunks: hunks,
         ))
     }
 

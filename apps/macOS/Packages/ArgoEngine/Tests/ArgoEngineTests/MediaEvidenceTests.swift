@@ -92,7 +92,14 @@ struct MediaEvidenceTests {
     func `An SVG handed back as source stays text, and is not rendered as a picture`() async throws {
         let outcomes = try await Fixture.events("media", readImage: { _ in "FROM-DISK" }).outcomes()
         // `.svg` is in the disk-fallback table, so only the "result carried text of its own" gate
-        // keeps this a read of source rather than a render of the file.
-        #expect(try #require(outcomes["vector-1"]).result == nil)
+        // keeps this a read of source rather than a render of the file. It is kept as TEXT — what
+        // the agent read was markup, and a panel drawing it as a picture would be showing something
+        // the agent never saw.
+        guard case let .output(output) = try #require(outcomes["vector-1"]).result else {
+            Issue.record("source handed back as text stays text")
+            return
+        }
+
+        #expect(output.text.hasPrefix("<svg"))
     }
 }

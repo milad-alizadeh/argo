@@ -5,11 +5,13 @@
 /// this surface is what the projection actually hands it.
 enum EvidenceFixture {
     static let failed = call { $0.ending.hasFailed }
-    static let edited = call {
-        if case .diff = $0.evidence {
-            true
-        } else {
-            false
+    static let edited = call { call in
+        call.evidence.contains { result in
+            if case .diff = result {
+                true
+            } else {
+                false
+            }
         }
     }
 

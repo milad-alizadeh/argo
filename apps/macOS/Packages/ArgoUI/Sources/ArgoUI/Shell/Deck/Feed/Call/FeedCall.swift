@@ -12,10 +12,17 @@ struct FeedCall: Equatable, Sendable {
     /// What a mutation did in lines, where the record carried a patch to count.
     let churn: Churn?
     let ending: Ending
-    /// What the engine kept of what the call produced — the panel's whole content, and the reason
+    /// What the engine kept of what the calls produced — the panel's whole content, and the reason
     /// the row can be opened at all. Carried rather than looked up later so the disclosure marker
     /// cannot promise something the panel then has nothing to show for.
-    let evidence: ToolResult?
+    ///
+    /// A LIST because a row can stand for a run of calls: three edits of one file are one line and
+    /// three patches. Only results with something in them are here — an empty output or an
+    /// unreadable patch is dropped at the reading, so the row does not offer a panel that would
+    /// open onto "nothing was kept".
+    let evidence: [ToolResult]
+    /// How many calls this one line stands for. `1` for all but a collapsed run.
+    let repeats: Int
 
     /// Whether the row could open onto anything.
     ///
@@ -23,7 +30,7 @@ struct FeedCall: Equatable, Sendable {
     /// by the record and one not, are two different rows. Computed rather than stored, so the
     /// marker and what opens behind it cannot disagree.
     var disclosure: Disclosure {
-        evidence == nil ? .none : .available
+        evidence.isEmpty ? .none : .available
     }
 }
 
@@ -110,21 +117,16 @@ extension FeedCall {
         }
     }
 
-    /// How the call ended, and the one line it gets to say about it.
+    /// How the call ended. Three states and no payload: the row says WHICH of them happened and
+    /// nothing about it in words — a failure is the line in the failure ink with a cross after it,
+    /// and what went wrong is the panel's, whole.
     ///
-    /// A sum type because the three are mutually exclusive readings of one record, and flat fields
-    /// would let a row be drawn as both open and failed. `pending` is a real state and not a
-    /// missing one: a call the transcript has not answered yet HAPPENED, and saying it succeeded
-    /// quietly would be the feed's first lie.
+    /// `pending` is a real state and not a missing one: a call the transcript has not answered yet
+    /// HAPPENED, and saying it succeeded quietly would be the feed's first lie.
     enum Ending: Equatable, Sendable {
         case pending
-        /// What it produced, in one line of the record's own characters. `nil` where the engine
-        /// kept nothing to read — a successful file read, whose whole payload is the file.
-        case succeeded(outcome: String?)
-        /// The host's own exit line, or `nil` where it wrote none. What went wrong is the panel's
-        /// to show, whole; a line of it lifted onto the row would be Argo choosing which part of a
-        /// failure explains it.
-        case failed(status: String?)
+        case succeeded
+        case failed
     }
 
     /// What a mutation did, in lines.
@@ -153,30 +155,25 @@ extension FeedCall {
             churn: churn,
             ending: ending,
             evidence: evidence,
+            repeats: repeats,
         )
     }
 }
 
 extension FeedCall.Ending {
-    /// The one line the row shows after its subject: what a command produced, or the host's own
-    /// exit line where it failed.
-    ///
-    /// A failure the host gave no exit line reads `Error` — Argo's own word, and the only one on
-    /// the line that is. Something has to say the call went wrong where the record wrote nothing
-    /// sayable, and a blank outcome under a red mark leaves the mark to carry it alone.
-    var outcome: String? {
-        switch self {
-        case .pending: nil
-        case let .succeeded(outcome): outcome
-        case let .failed(status): status ?? "Error"
-        }
+    var hasFailed: Bool {
+        self == .failed
     }
 
-    var hasFailed: Bool {
-        if case .failed = self {
-            return true
+    /// What a screen reader hears about the ending, where there is anything to say. A success is
+    /// silent for the same reason the line carries no word for it: the reading is the sentence, and
+    /// "succeeded" after every call is noise in the ear as much as on the screen.
+    var spoken: String? {
+        switch self {
+        case .pending: "still running"
+        case .succeeded: nil
+        case .failed: "failed"
         }
-        return false
     }
 }
 

@@ -12,10 +12,21 @@ enum FeedProjection {
     /// in a box would be claiming a shape the ticket that owns it has not decided.
     static func rows(from events: [TranscriptEvent]) -> [FeedRow] {
         let answered = outcomes(in: events)
-        let read = events.compactMap { content(of: $0, answeredBy: answered) }
-        return toldApart(read).enumerated().map { position, content in
+        let within = workingDirectory(in: events)
+        let read = events.compactMap { content(of: $0, answeredBy: answered, within: within) }
+        return toldApart(FeedCallRun.collapsed(read)).enumerated().map { position, content in
             FeedRow(id: position, content: content)
         }
+    }
+
+    /// Where the Session is working, which is what every address in the feed is said relative to.
+    /// The LAST one the record carries: a resume chain can move, and the newest is where it is now.
+    private static func workingDirectory(in events: [TranscriptEvent]) -> FeedPath {
+        let cwd = events.reversed().compactMap { event -> String? in
+            guard case let .cwd(path) = event else { return nil }
+            return path
+        }.first
+        return FeedPath(cwd: cwd)
     }
 
     /// A call's result is read through its id rather than by position: the two events are written
@@ -32,6 +43,7 @@ enum FeedProjection {
     private static func content(
         of event: TranscriptEvent,
         answeredBy outcomes: [String: ToolCallOutcome],
+        within path: FeedPath,
     )
         -> FeedRow.Content? {
         switch event {
@@ -41,7 +53,8 @@ enum FeedProjection {
         // same words often enough that collapsing them would read a turn's reasoning as its answer.
         case let .thought(markdown): .thought(markdown)
         case let .toolCall(call):
-            FeedCallReading.call(call, outcome: outcomes[call.id]).map(FeedRow.Content.call)
+            FeedCallReading.call(call, outcome: outcomes[call.id], within: path)
+                .map(FeedRow.Content.call)
         // An outcome is not news of its own — it is what the call it answers produced, and that
         // call's row already carries it.
         case .toolCallOutcome, .recordIdentity, .headLeaf, .title, .cwd, .model, .branch,
@@ -80,6 +93,17 @@ extension FeedProjection {
     /// paragraphs is a render of the paragraphs — this is a filter over the shipping rows, never a
     /// second set of them.
     static let previewCallRows = previewRows.filter(\.isCall)
+
+    /// The same feed with the work taken out — what the agent SAID, at the shape it said it in. A
+    /// render of a transcript that is four fifths tool calls is a render of the tool calls.
+    static let previewProseRows = previewRows.filter { !$0.isCall }
+
+    /// The collapsed run in that feed — the row standing for three edits of one file, which is the
+    /// only row whose panel holds more than one thing.
+    static let previewRunCallID = previewRows.first { row in
+        guard case let .call(call) = row.content else { return false }
+        return call.repeats > 1
+    }?.id
 
     /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
     /// specimen and a `#Preview` cannot be looking at two different failures.

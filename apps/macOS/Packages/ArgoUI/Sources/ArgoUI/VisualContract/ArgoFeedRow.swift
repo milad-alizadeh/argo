@@ -21,13 +21,28 @@ public enum ArgoFeedRow {
     public static let callStep: CGFloat = ArgoSpacing.tight
     /// Between the parts of a call's own sentence — its mark, its verb, what it named.
     public static let callGap: CGFloat = ArgoSpacing.snug
+    /// Between two blocks of one message — a heading and the paragraph under it, two paragraphs, a
+    /// list and the prose after it. Tighter than `gap`, which separates two things the agent
+    /// produced: everything inside one message is one thing.
+    public static let blockStep: CGFloat = ArgoSpacing.comfortable
+    /// Between a list item's marker and its words.
+    public static let markerGap: CGFloat = ArgoSpacing.snug
+    /// The column a list marker is drawn in, so a run of items sets its words on one vertical
+    /// whether they are bullets or numbers.
+    public static let markerWidth: CGFloat = 18
+
     /// The column a call's mark is drawn in. Fixed, so every verb in a run of calls starts on one
     /// vertical — the only alignment in the feed, and the reason it does not become a table.
     public static let callSymbolWidth: CGFloat = 15
 
+    /// The rung the feed's prose is set on — a step over the shell's own density, because this is
+    /// the one column read from start to finish. Named here so the line height below and the view
+    /// that draws the words cannot end up on two different sizes.
+    public static let proseRung: ArgoTypeScale = .title3
+
     /// The line height prose is set at. Open for its size on purpose: a feed is read, not
     /// scanned, and the rest of the cockpit's density does not apply inside the column.
-    public static let lineHeight: CGFloat = 21
+    public static let lineHeight: CGFloat = 23
 
     /// The gutter a patch's line numbers sit in, inside the evidence panel. Wide enough for four
     /// digits, which is where a file stops being one anybody scrolls.
@@ -65,7 +80,7 @@ public enum ArgoFeedRow {
     /// under the font's own is not something leading can express, and a negative one would tighten
     /// the very rhythm this exists to open.
     public static var proseLineSpacing: CGFloat {
-        max(0, lineHeight - ArgoTypography.body.size * naturalLineHeightRatio)
+        max(0, lineHeight - ArgoFeedRow.proseRung.size * naturalLineHeightRatio)
     }
 
     /// The same rhythm for machine output. Tighter than prose because a terminal stream is scanned
