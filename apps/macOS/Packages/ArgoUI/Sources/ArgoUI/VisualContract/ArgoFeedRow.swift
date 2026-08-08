@@ -15,6 +15,16 @@ public enum ArgoFeedRow {
     /// Between a row's label and the prose under it — the tightest step in the contract, so the
     /// two read as one block rather than as two rows.
     public static let stepBeforeProse: CGFloat = ArgoSpacing.hair
+    /// Between two calls in a row. Tighter than `gap`, which is the step between one thing the
+    /// agent produced and the next: a run of calls is one piece of work, and spacing them like
+    /// paragraphs breaks it into unrelated events.
+    public static let callStep: CGFloat = ArgoSpacing.tight
+    /// Between the parts of a call's own sentence — its mark, its verb, what it named.
+    public static let callGap: CGFloat = ArgoSpacing.snug
+    /// The column a call's mark is drawn in. Fixed, so every verb in a run of calls starts on one
+    /// vertical — the only alignment in the feed, and the reason it does not become a table.
+    public static let callSymbolWidth: CGFloat = 15
+
     /// The line height prose is set at. Open for its size on purpose: a feed is read, not
     /// scanned, and the rest of the cockpit's density does not apply inside the column.
     public static let lineHeight: CGFloat = 21
@@ -45,6 +55,12 @@ public enum ArgoFeedRow {
 
     public static var bubbleMeasure: CGFloat {
         measure * bubbleShare
+    }
+
+    /// Where a failure's one diagnostic line starts: under the words, not under the mark, so it
+    /// reads as the call's own second line rather than as a row of its own.
+    public static var diagnosticIndent: CGFloat {
+        callSymbolWidth + callGap
     }
 
     /// The extra leading that puts the body role on `lineHeight`. Floored at zero: a line height

@@ -65,8 +65,16 @@ private func declaredChange(_ raw: JSONValue?) -> FileChange? {
     switch raw?.string {
     case "create": .create
     case "update": .modify
+    case "move", "rename": .move
     default: nil
     }
+}
+
+/// Where a moved file went, in the host's own field. Read only under a declared move: no CLI Argo
+/// reads today writes one, and a destination guessed from anything else would be the one part of a
+/// call line nobody could check.
+private func declaredDestination(_ raw: JSONValue, _ change: FileChange) -> String? {
+    change == .move ? raw.stringField("newPath") : nil
 }
 
 /// The Diff a call produced, read off its `toolUseResult`, or `nil` where it produced none.
@@ -87,10 +95,12 @@ func diffEvidence(of call: ResolvedCall) -> DiffEvidence? {
     let after = raw.stringField("content")
     let created = patch.isEmpty ? after.flatMap(wholeFileHunk) : nil
     let hunks = created.map { [$0] } ?? patch
+    let change = declaredChange(raw["type"])
+        ?? fileChange(hunks, before: raw.stringField("originalFile") ?? "", after: after)
     return DiffEvidence(
         tier: .direct,
-        change: declaredChange(raw["type"])
-            ?? fileChange(hunks, before: raw.stringField("originalFile") ?? "", after: after),
+        change: change,
+        destination: declaredDestination(raw, change),
         added: count(hunks, .add),
         removed: count(hunks, .del),
         hunks: hunks,

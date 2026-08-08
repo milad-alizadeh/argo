@@ -43,6 +43,9 @@ public enum FileChange: String, Sendable, Equatable {
     case create
     case modify
     case delete
+    /// The file went somewhere else. Read ONLY from a host that says so in its own word — a patch
+    /// describes one path and cannot see the other end of a move, so nothing here infers one.
+    case move
 }
 
 /// What a mutating call changed, as the record reported it. Point-in-time: what that ONE edit
@@ -53,15 +56,57 @@ public enum FileChange: String, Sendable, Equatable {
 public struct DiffEvidence: Sendable, Equatable {
     public let tier: Tier
     public let change: FileChange
+    /// Where a moved file went, in the host's own characters. `nil` for every other change, and for
+    /// a move whose destination the host did not name.
+    public let destination: String?
     public let added: Int
     public let removed: Int
     public let hunks: [DiffHunk]
+
+    public init(
+        tier: Tier,
+        change: FileChange,
+        destination: String?,
+        added: Int,
+        removed: Int,
+        hunks: [DiffHunk],
+    ) {
+        self.tier = tier
+        self.change = change
+        self.destination = destination
+        self.added = added
+        self.removed = removed
+        self.hunks = hunks
+    }
 }
 
 /// What a call PRINTED, verbatim.
 public struct OutputEvidence: Sendable, Equatable {
     public let tier: Tier
     public let text: String
+
+    public init(tier: Tier, text: String) {
+        self.tier = tier
+        self.text = text
+    }
+}
+
+/// What a failed call's output says about itself: the host's own exit line, and the first line of
+/// what actually went wrong.
+///
+/// Two readings of one verbatim payload rather than a summary of it. The only judgement here is
+/// WHICH line a row shows under a failure; every character in it is the record's.
+public struct CommandFailure: Sendable, Equatable {
+    /// The host's own exit line — `Exit code 1` — or `nil` where it wrote none.
+    public let status: String?
+    /// The first line that is not the exit line, verbatim, or `nil` where the output carried
+    /// nothing but its status.
+    public let diagnostic: String?
+
+    public init(status: String?, diagnostic: String?) {
+        self.status = status
+        self.diagnostic = diagnostic
+    }
 }
 
 /// What a call SHOWED — the bytes the agent actually looked at, not whatever is at that path now.

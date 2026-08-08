@@ -10,6 +10,7 @@ public struct ArgoPalette: Sendable {
     public let edge: EdgeRoles
     public let interaction: InteractionRoles
     public let state: StateRoles
+    public let diff: DiffRoles
 
     public init(
         surface: SurfaceRoles,
@@ -17,12 +18,14 @@ public struct ArgoPalette: Sendable {
         edge: EdgeRoles,
         interaction: InteractionRoles,
         state: StateRoles,
+        diff: DiffRoles,
     ) {
         self.surface = surface
         self.text = text
         self.edge = edge
         self.interaction = interaction
         self.state = state
+        self.diff = diff
     }
 }
 
@@ -182,6 +185,25 @@ public extension ArgoPalette {
         /// The same role at chip strength: a tinted ground rather than an ink.
         public func muted(_ role: ArgoColor) -> ArgoColor {
             role.opacity(0.16)
+        }
+    }
+
+    /// What a change did to a file, as a pair of inks.
+    ///
+    /// Their own roles rather than a borrow from `state`: a diffstat and a running dot sit in the
+    /// same feed, inches apart, and "this line was added" and "this Session is working" are not one
+    /// fact. The contract asserts the distance so the borrow cannot creep back in.
+    struct DiffRoles: Sendable {
+        public let added: ArgoColor
+        public let removed: ArgoColor
+
+        public init(added: ArgoColor, removed: ArgoColor) {
+            self.added = added
+            self.removed = removed
+        }
+
+        public var all: [ArgoColor] {
+            [added, removed]
         }
     }
 }

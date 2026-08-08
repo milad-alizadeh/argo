@@ -67,6 +67,26 @@ struct VisualContractTests {
         #expect(palette.state.idle.chromaticSpread <= 0.08)
     }
 
+    // MARK: - The diff inks are their own roles
+
+    /// The study drew a diffstat in the running teal and the failure red, and flagged the collision
+    /// itself. Held apart here, because the two sit inches apart in one feed: `+8` next to a live
+    /// Session's dot may not be the same green.
+    @Test
+    func `a diffstat never reads as an operational state`() {
+        for ink in palette.diff.all {
+            for state in palette.state.all {
+                #expect(ink.distance(to: state) > 0.25)
+            }
+            #expect(ink.distance(to: palette.interaction.accent) > 0.25)
+        }
+    }
+
+    @Test
+    func `added and removed are told apart by more than a hue nobody can name`() {
+        #expect(palette.diff.added.distance(to: palette.diff.removed) > 0.25)
+    }
+
     // MARK: - Legibility
 
     @Test
@@ -80,7 +100,7 @@ struct VisualContractTests {
     @Test
     func `every state ink and the accent stay legible as a word, not just as a dot`() {
         let base = palette.surface.base
-        for ink in palette.state.all + [palette.interaction.accent] {
+        for ink in palette.state.all + palette.diff.all + [palette.interaction.accent] {
             #expect(ink.contrastRatio(on: base) >= 4.5)
         }
     }
@@ -162,6 +182,13 @@ struct VisualContractTests {
         #expect(ArgoFeedRow.bubbleMeasure < ArgoFeedRow.measure)
     }
 
+    /// A run of calls is one piece of work. If it were spaced like prose, a turn's five edits would
+    /// read as five unrelated events — the tightening is what keeps them one.
+    @Test
+    func `a run of calls sits closer together than two things the agent said`() {
+        #expect(ArgoFeedRow.callStep < ArgoFeedRow.gap)
+    }
+
     @Test
     func `the step before prose is the tightest in the feed`() {
         // A label and the prose under it are one block; two rows are two. If those two steps ever
@@ -178,6 +205,7 @@ struct VisualContractTests {
         let ladder = Set(ArgoSpacing.all.map(\.value))
         #expect(ladder.isSuperset(of: [
             ArgoFeedRow.inset, ArgoFeedRow.gap, ArgoFeedRow.stepBeforeProse,
+            ArgoFeedRow.callStep, ArgoFeedRow.callGap,
         ]))
     }
 
