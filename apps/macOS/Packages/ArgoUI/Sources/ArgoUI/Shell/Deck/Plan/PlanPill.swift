@@ -17,30 +17,39 @@ struct PlanPill: View {
     var isRevealed = false
 
     @State private var isPointedAt = false
+    @State private var isPointedAtList = false
     @FocusState private var isFocused: Bool
 
     var body: some View {
         pill
-            // Above, and by the list's own height: the pill sits at the bottom of the deck, so a
-            // list that opened downward would open into the dock.
-            .overlay(alignment: .top) {
-                PlanStepList(plan: plan)
-                    .alignmentGuide(.top) { $0[.bottom] + ArgoPlanPill.listGap }
-                    .opacity(showsList ? 1 : 0)
-                    // Not merely invisible: a hidden list still under the pointer would eat the
-                    // clicks meant for the feed behind it.
-                    .allowsHitTesting(showsList)
-                    .accessibilityHidden(!showsList)
-            }
+            // Above: the pill sits at the bottom of the deck, so a list opening downward would
+            // open into the dock.
+            .overlay(alignment: .top) { list }
             .argoAnimation(.reveal, value: showsList)
             .accessibilityElement(children: .contain)
     }
 
-    /// Revealed by either way in. Hover is the one a pointer finds; focus is the one a keyboard
-    /// does, and the pill is focusable for exactly that reason — a surface reachable only by
-    /// hovering is a surface half the readers never open.
+    /// The list, standing on the pill's own top edge — the gap between them is padding INSIDE this
+    /// view rather than space outside it, so the two hover regions meet. Pointed at across a gap
+    /// that belonged to neither, the list closed itself the moment the reader reached for it.
+    private var list: some View {
+        PlanStepList(plan: plan)
+            .padding(.bottom, ArgoPlanPill.listGap)
+            .alignmentGuide(.top) { $0[.bottom] }
+            .opacity(showsList ? 1 : 0)
+            // Not merely invisible: a hidden list still under the pointer would eat the clicks
+            // meant for the feed behind it, and would open itself from empty space.
+            .allowsHitTesting(showsList)
+            .onHover { isPointedAtList = $0 }
+            .accessibilityHidden(!showsList)
+    }
+
+    /// Revealed by any way in. Hover is the one a pointer finds and focus the one a keyboard does
+    /// — the pill is focusable for exactly that reason, since a surface reachable only by hovering
+    /// is one half the readers never open. The list keeps ITSELF open once it is: a reader who
+    /// moves onto what they opened has not stopped reading it.
     private var showsList: Bool {
-        isRevealed || isPointedAt || isFocused
+        isRevealed || isPointedAt || isPointedAtList || isFocused
     }
 
     private var pill: some View {
@@ -49,9 +58,9 @@ struct PlanPill: View {
             Text(counter)
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.tertiary)
-            Text(now)
+            Text(currentStep)
                 .argoText(ArgoTypography.body)
-                .foregroundStyle(nowInk)
+                .foregroundStyle(currentStepInk)
                 .lineLimit(1)
         }
         .padding(.horizontal, ArgoPlanPill.insetX)
@@ -63,10 +72,8 @@ struct PlanPill: View {
             Capsule().strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
         }
         .argoShadow(.popover)
-        // Every one of these belongs to the PILL rather than to the view that also holds the
-        // list. An `onHover` wrapping both would open the list from the empty space the closed
-        // list still occupies, and an accessibility element spanning both would put the pill's
-        // own label on a frame the pointer cannot land in.
+        // On the PILL and not on the view that also holds the list: an element spanning both puts
+        // this label on a frame the pointer cannot land in.
         .onHover { isPointedAt = $0 }
         .focusable()
         .focused($isFocused)
@@ -86,18 +93,18 @@ struct PlanPill: View {
         return "Step \(position)/\(plan.count)"
     }
 
-    private var now: String {
+    private var currentStep: String {
         plan.current?.text ?? "No step in progress"
     }
 
     /// The absence is set in the quiet ink, because it is a statement about the record rather than
     /// something the agent said.
-    private var nowInk: ArgoColor {
+    private var currentStepInk: ArgoColor {
         plan.current == nil ? argo.color.text.tertiary : argo.color.text.primary
     }
 
     private var spoken: String {
-        "\(counter), \(now)"
+        "\(counter), \(currentStep)"
     }
 }
 

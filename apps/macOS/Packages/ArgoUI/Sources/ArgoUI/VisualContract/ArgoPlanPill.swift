@@ -31,7 +31,7 @@ public enum ArgoPlanPill {
     public static let listInsetY: CGFloat = ArgoSpacing.comfortable
     /// Between two steps in it. The tightest step in the contract — the list is one thing, and
     /// spacing its entries like paragraphs would break a plan into unrelated notes.
-    public static let stepStep: CGFloat = ArgoSpacing.hair
+    public static let betweenSteps: CGFloat = ArgoSpacing.hair
     /// The column a step's mark is drawn in, so a run of them sets its words on one vertical
     /// whatever each step's status is.
     public static let markWidth: CGFloat = 12
