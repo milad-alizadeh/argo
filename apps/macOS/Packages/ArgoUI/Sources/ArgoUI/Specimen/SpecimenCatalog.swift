@@ -77,7 +77,7 @@ public struct SpecimenScreen: View {
             // nobody is shown.
             InstrumentDeckShell(
                 room: .sessions,
-                feed: FeedProjection.rows(from: CockpitPresentation.Session.preview.events),
+                feed: FeedProjection.previewRows,
             )
         }
     }

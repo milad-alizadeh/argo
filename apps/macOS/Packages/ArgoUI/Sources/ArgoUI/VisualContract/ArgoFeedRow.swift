@@ -31,6 +31,10 @@ public enum ArgoFeedRow {
     /// How much of a long prompt stands before it is folded — enough to recognise what was asked,
     /// short enough that one prompt cannot push a turn's whole answer off the screen.
     public static let collapsedPromptLines = 6
+    /// How much taller than its folded self a prompt must measure before anything is claimed to be
+    /// hidden. Layout answers in fractions of a point, and a fold offered over rounding noise is a
+    /// control that does nothing.
+    public static let foldTolerance: CGFloat = 1
 
     /// What the system already sets a line at, as a multiple of its point size.
     ///

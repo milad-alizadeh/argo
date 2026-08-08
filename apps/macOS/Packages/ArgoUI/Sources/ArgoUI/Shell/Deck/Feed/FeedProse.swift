@@ -47,12 +47,9 @@ struct FeedProse: View {
         .accessibilityLabel(voice.label.map { "\($0): \(text)" } ?? text)
     }
 
-    /// Verbatim, and selectable: this is the record, so the reader gets to take it away exactly as
-    /// the agent wrote it.
+    /// Selectable: this is the record, so the reader gets to take it away as the agent wrote it.
     private var prose: some View {
-        Text(text)
-            .argoText(ArgoTypography.body)
-            .lineSpacing(ArgoFeedRow.proseLineSpacing)
+        FeedProseText(text: text)
             .foregroundStyle(ink)
             .fixedSize(horizontal: false, vertical: true)
             .textSelection(.enabled)

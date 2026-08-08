@@ -30,3 +30,9 @@ enum FeedProjection {
         }
     }
 }
+
+extension FeedProjection {
+    /// The preview transcript, already projected — the one place every specimen and `#Preview`
+    /// takes its rows from, so none of them can be looking at a different feed.
+    static let previewRows = rows(from: CockpitPresentation.Session.previewTranscript)
+}

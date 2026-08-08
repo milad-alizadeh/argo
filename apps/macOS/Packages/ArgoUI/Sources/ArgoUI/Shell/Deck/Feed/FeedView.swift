@@ -8,11 +8,15 @@ import SwiftUI
 struct FeedView: View {
     let rows: [FeedRow]
 
+    /// Which prompts the reader has unfolded. Held here rather than in the row: the stack is lazy,
+    /// so a row's own state dies the moment it scrolls out of view.
+    @State private var unfolded: Set<FeedRow.ID> = []
+
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
                 ForEach(rows) { row in
-                    FeedRowView(row: row)
+                    FeedRowView(row: row, isExpanded: unfolding(row.id))
                 }
             }
             .padding(.horizontal, ArgoFeedRow.inset)
@@ -28,43 +32,59 @@ struct FeedView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Feed")
     }
+
+    private func unfolding(_ id: FeedRow.ID) -> Binding<Bool> {
+        Binding(
+            get: { unfolded.contains(id) },
+            set: { isOn in
+                if isOn {
+                    unfolded.insert(id)
+                } else {
+                    unfolded.remove(id)
+                }
+            },
+        )
+    }
 }
 
 /// One row, drawn as what it is.
 private struct FeedRowView: View {
     let row: FeedRow
+    @Binding var isExpanded: Bool
 
     var body: some View {
         switch row.kind {
-        case .prompt: FeedPrompt(text: row.text)
+        case .prompt: FeedPrompt(text: row.text, isExpanded: $isExpanded)
         case .message: FeedProse(text: row.text, voice: .message)
         case .thought: FeedProse(text: row.text, voice: .thought)
         }
     }
 }
 
-/// A Session with nothing to show yet. It says so, because a blank feed zone is
-/// indistinguishable from one that failed to draw — and the reason is always the same: the kinds
-/// this feed draws have not arrived, not that nothing happened.
+/// A feed with no row in it. It says so, because a blank zone is indistinguishable from one that
+/// failed to draw.
+///
+/// A claim about this SURFACE and not about the Session: an agent can be busy in kinds this feed
+/// does not draw yet, and "nothing said" would be a reading of the record rather than of the feed.
 private struct FeedSilence: View {
     @Environment(\.argo) private var argo
 
     var body: some View {
-        Text("Nothing said yet")
+        Text("Nothing to read yet")
             .argoText(ArgoTypography.body)
             .foregroundStyle(argo.color.text.disabled)
     }
 }
 
 #Preview("Feed — a turn read from a transcript") {
-    FeedView(rows: FeedProjection.rows(from: CockpitPresentation.Session.preview.events))
+    FeedView(rows: FeedProjection.previewRows)
         .frame(width: 820, height: 560)
         .argoDeckSurface()
         .argoAppearance()
 }
 
 #Preview("Feed — a deck wide enough to break the measure") {
-    FeedView(rows: FeedProjection.rows(from: CockpitPresentation.Session.preview.events))
+    FeedView(rows: FeedProjection.previewRows)
         .frame(width: 1440, height: 560)
         .argoDeckSurface()
         .argoAppearance()

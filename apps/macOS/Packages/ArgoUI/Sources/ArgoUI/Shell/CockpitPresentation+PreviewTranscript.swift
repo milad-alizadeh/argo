@@ -1,6 +1,6 @@
 import ArgoEngine
 
-public extension CockpitPresentation.Session {
+extension CockpitPresentation.Session {
     /// A turn as a transcript actually writes one, for the surfaces that read a Session rather
     /// than count one.
     ///
