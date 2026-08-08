@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// One picture in a gallery: the thumbnail, its filename and size, and where it came from.
@@ -21,14 +22,20 @@ struct FeedShotView: View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             Button { open(shot) } label: { plate }
                 .buttonStyle(.plain)
-                .disabled(!shot.isOpenable)
+                .disabled(picture == nil)
             caption
         }
         .frame(width: ArgoFeedRow.shotWidth, alignment: .leading)
         .onChange(of: shot, initial: true) { picture = MediaPicture(shot.media) }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(spoken)
-        .accessibilityHint(shot.isOpenable ? "Opens this image full size" : "")
+        .accessibilityHint(picture == nil ? "" : "Opens this image full size")
+    }
+
+    /// Everything drawn here answers to the picture this view actually decoded, never to the bytes
+    /// the record claimed: a shot showing an absence must not also be a control.
+    private var provenance: MediaProvenance {
+        MediaProvenance(shot.media, showing: picture != nil)
     }
 
     /// The picture cropped to the shot's own box.
@@ -48,7 +55,7 @@ struct FeedShotView: View {
                 }
                 .clipped()
                 .padding(mount)
-                .background(mounted ? argo.color.surface.overlay : argo.color.surface.raised)
+                .background(isMounted ? argo.color.surface.overlay : argo.color.surface.raised)
                 .clipShape(.rect(cornerRadius: ArgoRadius.control))
                 .overlay { frame }
         } else {
@@ -56,7 +63,7 @@ struct FeedShotView: View {
         }
     }
 
-    /// A shot with no bytes says so where the picture would have been, in the panel's own words.
+    /// A shot with no picture says so where the picture would have been, in the panel's own words.
     /// Drawn as an empty plate rather than as a glyph: there was never an image here to fail.
     private var absence: some View {
         Text(MediaProvenance.absence)
@@ -104,7 +111,7 @@ struct FeedShotView: View {
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(argo.color.text.disabled)
             }
-            if let words = shot.provenance.words {
+            if let words = provenance.words {
                 Text(words)
                     .argoText(ArgoTypography.caption)
                     .foregroundStyle(argo.color.text.disabled)
@@ -115,22 +122,21 @@ struct FeedShotView: View {
     }
 
     private var spoken: String {
-        [shot.name, picture?.spokenSize, shot.provenance.words ?? MediaProvenance.absence]
+        [shot.name, picture?.spokenSize, provenance.words ?? MediaProvenance.absence]
             .compactMap(\.self)
             .joined(separator: ", ")
     }
 
-    /// Whether the picture is mounted on a plate rather than run to its own edges.
-    private var mounted: Bool {
-        shot.provenance == .rendered
+    private var isMounted: Bool {
+        provenance.treatment == .mounted
     }
 
     private var isBroken: Bool {
-        shot.provenance == .current || shot.provenance == .absent
+        provenance.treatment == .broken
     }
 
     private var mount: CGFloat {
-        mounted ? ArgoFeedRow.shotMount : 0
+        isMounted ? ArgoFeedRow.shotMount : 0
     }
 
     private var pictureWidth: CGFloat {
@@ -140,4 +146,29 @@ struct FeedShotView: View {
     private var pictureHeight: CGFloat {
         ArgoFeedRow.shotHeight - mount * 2
     }
+}
+
+#Preview("Shot — the four provenances, side by side") {
+    HStack(alignment: .top, spacing: ArgoFeedRow.shotGap) {
+        ForEach(Array(FeedProjection.previewShots.enumerated()), id: \.offset) { _, shot in
+            FeedShotView(shot: shot, open: { _ in })
+        }
+    }
+    .padding(ArgoFeedRow.inset)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Shot — a picture the record kept nothing for") {
+    FeedShotView(
+        shot: FeedShot(
+            name: "lightbox.png",
+            address: "docs/designs/renders/lightbox.png",
+            media: MediaEvidence(tier: .direct, mediaType: "image/png", bytes: nil),
+        ),
+        open: { _ in },
+    )
+    .padding(ArgoFeedRow.inset)
+    .argoDeckSurface()
+    .argoAppearance()
 }

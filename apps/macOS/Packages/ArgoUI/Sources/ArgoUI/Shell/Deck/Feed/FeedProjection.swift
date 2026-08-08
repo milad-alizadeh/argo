@@ -18,8 +18,8 @@ enum FeedProjection {
         // survey counts the work rather than the lines left over from it; tell same-named files
         // apart BEFORE the fold, so a read that ends up inside a survey still carries the parent
         // its captions need — after the fold its filename is no longer in the feed to compare.
-        // The gallery comes last, over a stream the survey has already left every picture out of:
-        // both folds read `FeedCall.showsMedia`, so a call cannot be counted here and drawn there.
+        // The gallery last: both folds read `showsMedia`, so no call is counted here and drawn
+        // there.
         let work = FeedGalleryFold.galleried(
             FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
         )
@@ -160,8 +160,8 @@ extension FeedProjection {
     /// made of the same pictures.
     static let previewSingleShotRows = gallery(of: Array(previewShots.prefix(1)))
 
-    /// The shot the record kept no bytes for, alone — the state the full gallery buries at the end
-    /// of a row and the one a reader has to be able to tell from a picture that failed to load.
+    /// The shot the record kept no bytes for, alone — the one state a reader has to be able to tell
+    /// from a picture that failed to load, with nothing beside it to borrow an explanation from.
     static let previewAbsentShotRows = gallery(of: previewShots.filter { !$0.isOpenable })
 
     private static func gallery(of shots: [FeedShot]) -> [FeedRow] {

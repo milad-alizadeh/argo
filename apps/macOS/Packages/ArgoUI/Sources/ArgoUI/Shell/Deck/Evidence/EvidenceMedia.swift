@@ -24,7 +24,7 @@ struct EvidenceMedia: View {
     /// A row with no bytes says so. It never draws a broken-image glyph, which is the system
     /// claiming a failure to LOAD where what happened is that nothing was ever recorded.
     @ViewBuilder private var picture: some View {
-        if let image = MediaPicture(media)?.image {
+        if let image = decoded?.image {
             Image(nsImage: image)
                 .resizable()
                 .scaledToFit()
@@ -44,12 +44,16 @@ struct EvidenceMedia: View {
     private var caption: some View {
         HStack(spacing: ArgoSpacing.snug) {
             Text(media.mediaType)
-            if let words = MediaProvenance(media).words {
+            if let words = MediaProvenance(media, showing: decoded != nil).words {
                 Text(words)
             }
         }
         .argoText(ArgoTypography.machineCaption)
         .foregroundStyle(argo.color.text.disabled)
+    }
+
+    private var decoded: MediaPicture? {
+        MediaPicture(media)
     }
 }
 

@@ -30,4 +30,21 @@ struct MediaPicture {
     var spokenSize: String? {
         pixels.map { "\($0.width) × \($0.height)" }
     }
+
+    /// How large the image asks to be drawn. Its POINT size and not its pixel count, which is the
+    /// deliberate half: a 2× capture at its pixel count in points is the same picture upscaled and
+    /// softer, and full size means one image pixel per device pixel.
+    var naturalSize: CGSize {
+        image.size
+    }
+}
+
+extension MediaEvidence {
+    /// Where the picture came from, paying a decode to find out whether there is one at all.
+    ///
+    /// A view holds a `MediaPicture` already and builds the provenance from that instead. This is
+    /// for everything that only wants the answer — the projection's own reading, and the tests.
+    var provenance: MediaProvenance {
+        MediaProvenance(self, showing: MediaPicture(self) != nil)
+    }
 }

@@ -17,7 +17,7 @@ struct FeedShot: Equatable, Sendable {
     /// Where the picture came from, spelled the panel's way. Derived rather than stored, so the
     /// treatment a shot is drawn with and the words under it cannot disagree.
     var provenance: MediaProvenance {
-        MediaProvenance(media)
+        media.provenance
     }
 
     /// Whether clicking this opens anything. A shot with no bytes is not a control: there is
@@ -36,14 +36,20 @@ extension FeedCall {
         }
     }
 
-    /// Whether this call is a picture and nothing else — which is what makes it a gallery's rather
-    /// than a line's.
+    /// Whether this call is a picture that worked, and nothing else — which is what makes it a
+    /// gallery's rather than a line's.
     ///
-    /// ALL of it, not any of it. A collapsed run that produced a picture once and a page of output
-    /// the next time is still a call: routing it to the gallery would draw the picture and drop
-    /// the output, and the one thing every fold in this feed guarantees is that nothing is lost.
+    /// ALL of the evidence, not any of it. A collapsed run that produced a picture once and a page
+    /// of output the next time is still a call: routing it to the gallery would draw the picture
+    /// and drop the output, and the one thing every fold in this feed guarantees is that nothing
+    /// is lost.
+    ///
+    /// And never a failure, for the reason `FeedSurveyFold` never folds one: a failed call is the
+    /// loudest thing in a run, and a thumbnail carries no failure ink. It stays a line, in the
+    /// failure colour, with what went wrong behind it.
     var showsMedia: Bool {
-        !evidence.isEmpty && evidence.allSatisfy { result in
+        guard !evidence.isEmpty, !ending.hasFailed else { return false }
+        return evidence.allSatisfy { result in
             guard case .media = result else { return false }
             return true
         }

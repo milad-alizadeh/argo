@@ -74,15 +74,7 @@ private struct DeckContentRow: View {
             // panel is no exception. It answers here rather than on the panel so a reader whose
             // focus is still in the feed — which is where the click that opened it came from —
             // does not have to reach into the panel first to be allowed to close it.
-            //
-            // Never while a picture is up. The lightbox is over all of this and answers Escape
-            // itself; closing the panel underneath it would spend the keystroke on the surface the
-            // reader cannot currently see.
-            .onExitCommand {
-                if selection.lit == nil {
-                    selection.open = nil
-                }
-            }
+            .onExitCommand(perform: dismissTopmost)
         }
     }
 
@@ -100,8 +92,16 @@ private struct DeckContentRow: View {
         openEvidence == nil && FeedProjection.runningDelegations(in: feed) > 0
     }
 
-    private var open: FeedRow.ID? {
-        selection.open
+    /// Whatever is over what the reader was reading, innermost first.
+    ///
+    /// Answering here as well as on the lightbox itself is deliberate: `onExitCommand` only fires
+    /// for a view in the responder chain, and nothing focuses the lightbox on the way in.
+    private func dismissTopmost() {
+        if selection.lit != nil {
+            selection.lit = nil
+        } else {
+            selection.open = nil
+        }
     }
 
     @ViewBuilder private func panel(in deck: CGFloat) -> some View {
@@ -139,7 +139,9 @@ private struct DeckContentRow: View {
     /// transcript grows under the panel, and evidence held by value here would go on showing what
     /// a call produced after the row it belongs to had gone.
     private var openEvidence: FeedEvidence? {
-        guard let open, let content = feed.first(where: { $0.id == open })?.content else {
+        guard let open = selection.open,
+              let content = feed.first(where: { $0.id == open })?.content
+        else {
             return nil
         }
         return switch content {

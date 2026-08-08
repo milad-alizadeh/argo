@@ -27,8 +27,8 @@ extension CockpitPresentation.Session {
             tier: .direct, bytes: shellCapture,
         ),
         PreviewShot(
-            id: "shot-open", path: "docs/designs/renders/feed-row-open.png",
-            tier: .direct, bytes: selectionCapture,
+            id: "shot-gone", path: "docs/designs/renders/lightbox.png",
+            tier: .direct, bytes: nil,
         ),
         PreviewShot(
             id: "shot-chart", path: "docs/designs/renders/churn-by-week.png",
@@ -39,8 +39,8 @@ extension CockpitPresentation.Session {
             tier: .derived, bytes: diskPlate,
         ),
         PreviewShot(
-            id: "shot-gone", path: "docs/designs/renders/lightbox.png",
-            tier: .direct, bytes: nil,
+            id: "shot-open", path: "docs/designs/renders/feed-row-open.png",
+            tier: .direct, bytes: selectionCapture,
         ),
     ].flatMap(showed)
 

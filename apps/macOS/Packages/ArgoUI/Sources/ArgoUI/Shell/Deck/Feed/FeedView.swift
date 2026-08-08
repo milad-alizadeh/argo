@@ -73,16 +73,6 @@ struct FeedView: View {
     }
 }
 
-/// What the deck currently has open, in one value.
-///
-/// The two are carried together because a row takes them together: every kind of row can open
-/// something, and threading them as two separate bindings put a fourth parameter on the row view
-/// for no gain — a row does not care that one of them resizes a column and the other covers it.
-struct FeedRowSelection {
-    @Binding var open: FeedRow.ID?
-    @Binding var lit: FeedShot?
-}
-
 /// One row, drawn as what it is.
 private struct FeedRowView: View {
     let row: FeedRow
@@ -98,8 +88,8 @@ private struct FeedRowView: View {
             FeedCallLine(call: call, isOpen: isOpen, open: toggle)
         case let .survey(survey):
             FeedSurveyLine(survey: survey, isOpen: isOpen, open: toggle)
-        // A gallery opens no panel. What one of its shots produced IS the shot, so the click goes
-        // straight to the picture rather than through a panel that would show it again, smaller.
+        // A gallery opens no panel — what a shot produced IS the shot, so the click goes straight
+        // to the picture.
         case let .gallery(gallery):
             FeedGalleryRow(gallery: gallery) { selection.lit = $0 }
         }
