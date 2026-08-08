@@ -74,4 +74,13 @@ public enum ArgoSymbol {
     /// second glyph meaning the same thing.
     public static let readAsSource = programSource
     public static let readAsProse = "doc.richtext"
+
+    /// Where a step of the plan has got to. Three marks for three states, and the SHAPE carries
+    /// the reading on its own: an empty ring is untouched, a half-filled one is under way, a tick
+    /// is behind the agent. Colour says the same thing a second time for the step in progress and
+    /// nothing at all for the other two — a list where every finished step is green is a list with
+    /// nothing standing out in it.
+    public static let stepPending = "circle"
+    public static let stepInProgress = "circle.lefthalf.filled"
+    public static let stepCompleted = "checkmark.circle.fill"
 }

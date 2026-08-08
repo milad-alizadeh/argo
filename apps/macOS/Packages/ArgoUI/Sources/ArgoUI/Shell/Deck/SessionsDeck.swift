@@ -10,6 +10,10 @@ struct SessionsDeck: View {
     /// The selected Session's reading. Projected above the deck rather than here — the deck is a
     /// layout, and a zone that looked a Session up would be the layout choosing what to draw.
     let feed: [FeedRow]
+    /// The selected Session's plan, projected above the deck for the same reason the feed is. It
+    /// is standing state rather than a row, which is exactly why it arrives beside the rows and
+    /// not among them.
+    var showing = PlanShowing()
     /// Which call's evidence the panel is showing, if any. Held by the deck because the panel is a
     /// zone of the deck: the feed cannot own a selection that resizes the row it sits in.
     @State var open: FeedRow.ID?
@@ -25,7 +29,11 @@ struct SessionsDeck: View {
             DeckSlot(zone: .tabs)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
             DeckSeparator()
-            DeckContentRow(feed: feed, selection: FeedRowSelection(open: $open, lit: $lit))
+            DeckContentRow(
+                feed: feed,
+                showing: showing,
+                selection: FeedRowSelection(open: $open, lit: $lit),
+            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoLightbox($lit)
@@ -43,6 +51,7 @@ struct SessionsDeck: View {
 /// map wide enough to be a map is not a preference.
 private struct DeckContentRow: View {
     let feed: [FeedRow]
+    let showing: PlanShowing
     let selection: FeedRowSelection
 
     @State private var railWidth = ArgoLayout.agentsRailWidth
@@ -62,7 +71,7 @@ private struct DeckContentRow: View {
                         growsRightward: true,
                     )
                 }
-                FeedColumn(feed: feed, selection: selection)
+                FeedColumn(feed: feed, showing: showing, selection: selection)
                 if openEvidence == nil {
                     DeckSeparator()
                     DeckSlot(zone: .minimap)
@@ -161,11 +170,16 @@ private struct DeckContentRow: View {
 /// deck (C4.1).
 private struct FeedColumn: View {
     let feed: [FeedRow]
+    let showing: PlanShowing
     let selection: FeedRowSelection
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
             FeedView(rows: feed, open: selection.$open, lit: selection.$lit)
+                // Over the feed rather than in the column's stack: the pill floats, and a row in
+                // the stack would take height from the reading it is meant to sit above. Bounded
+                // to this column so it moves with the feed when a seam does, never over the panel.
+                .overlay(alignment: .bottom) { pill }
             DeckSeparator()
             DeckSlot(zone: .dock)
                 .frame(height: ArgoLayout.deckDockHeight)
@@ -176,13 +190,25 @@ private struct FeedColumn: View {
         // and prose inside the column is held to the measure by the rows themselves.
         .frame(maxWidth: .infinity)
     }
+
+    /// A Session that never reported a plan gets no pill — not an empty one, and not a note saying
+    /// there is none. Nothing to report is reported by drawing nothing.
+    @ViewBuilder private var pill: some View {
+        if let plan = showing.plan {
+            PlanPill(plan: plan, isRevealed: showing.isRevealed)
+                .padding(.bottom, ArgoPlanPill.lift)
+        }
+    }
 }
 
 #Preview("Sessions deck — zones") {
-    SessionsDeck(feed: FeedProjection.previewRows)
-        .frame(width: 900, height: 620)
-        .argoDeckSurface()
-        .argoAppearance()
+    SessionsDeck(
+        feed: FeedProjection.previewRows,
+        showing: PlanShowing(plan: PlanProjection.previewReading),
+    )
+    .frame(width: 900, height: 620)
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 #Preview("Sessions deck — a call's evidence open beside the feed") {
@@ -192,6 +218,17 @@ private struct FeedColumn: View {
         .argoAppearance()
 }
 
+#Preview("Sessions deck — the plan's list open over the feed") {
+    SessionsDeck(
+        feed: FeedProjection.previewRows,
+        showing: PlanShowing(plan: PlanFixture.working, isRevealed: true),
+    )
+    .frame(width: 900, height: 620)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+// No plan on this one, and that is the point: a Session that never reported one shows no pill.
 #Preview("Sessions deck — a Session that has said nothing") {
     SessionsDeck(feed: [])
         .frame(width: 900, height: 620)

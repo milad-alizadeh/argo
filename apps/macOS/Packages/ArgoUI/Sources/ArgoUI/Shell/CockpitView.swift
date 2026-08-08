@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The production application shell: native navigation, one opaque deck, and two glass vessels.
@@ -22,7 +23,18 @@ public struct CockpitView: View {
     /// Hub rebuilds as the transcript grows, so a feed that memoised would be showing the reading
     /// as it was when the user last clicked.
     private var feed: [FeedRow] {
-        FeedProjection.rows(from: presentation.session(navigation.session)?.events ?? [])
+        FeedProjection.rows(from: events)
+    }
+
+    /// The same Session's plan, off the same stream. Read separately rather than pulled out of the
+    /// rows, because it is not one: the plan is the standing state a whole transcript resolves to,
+    /// and the feed is the sequence of moments that produced it.
+    private var showing: PlanShowing {
+        PlanShowing(plan: PlanProjection.reading(from: events))
+    }
+
+    private var events: [TranscriptEvent] {
+        presentation.session(navigation.session)?.events ?? []
     }
 
     public var body: some View {
@@ -36,7 +48,7 @@ public struct CockpitView: View {
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            InstrumentDeckShell(room: navigation.room, feed: feed)
+            InstrumentDeckShell(room: navigation.room, feed: feed, showing: showing)
                 .overlay(alignment: .topLeading) {
                     if presentation.connection != .connected {
                         ConnectionChip(
