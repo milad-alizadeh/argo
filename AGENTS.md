@@ -23,7 +23,7 @@ Maintain a live to-do list for any task with **three or more distinct steps**, e
 - Exactly **one** item `in_progress` at a time; mark it `completed` the moment it is done, not
   in a batch at the end.
 - One item = one verifiable outcome. "Fix the bug" is a task; "read the file" is not.
-- **Skip it** for single-step edits, lookups, and conversational turns — a one-item list is
+- Keep single-step edits, lookups, and conversational turns off the list — a one-item list is
   noise, and a list nobody needed teaches the next session to ignore lists.
 
 ## Rules
