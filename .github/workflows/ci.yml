@@ -231,11 +231,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: bun run test --filter=@argo/macos
 
-      # The package tests above cannot launch the app or click it, so the one class of bug they
-      # structurally cannot see is a view that renders in isolation and comes apart in a popover.
-      # This launches the real Argo and drives it. It runs on the hosted runner rather than a
-      # developer's Mac because there the UI-testing authorisation is already granted — locally
-      # the first run answers a system prompt by hand (see scripts/e2e-test.sh).
-      - name: App E2E tests
-        if: ${{ !cancelled() }}
-        run: bun run test:e2e --filter=@argo/macos
+      # `bun run test:e2e` is deliberately NOT here. It launches and drives the real app, so it
+      # needs a macOS runner — the most expensive minutes GitHub bills — and it takes them on
+      # every push, to walk a handful of clicks. It is a local gate: run it when you touch the
+      # drawer or the toolbar. See apps/macOS/scripts/e2e-test.sh.

@@ -9,6 +9,10 @@
 # correctly in a specimen and comes apart inside a popover passes all of them. That is not
 # hypothetical: it is what shipped, and this target is the answer to it.
 #
+# A LOCAL gate, deliberately not a CI one. Driving the real app needs a macOS runner, the most
+# expensive minutes GitHub bills, and it would take them on every push to walk a handful of
+# clicks. Run this when you touch the drawer or the toolbar.
+#
 # FIRST RUN ON A NEW MACHINE IS INTERACTIVE. macOS gates UI testing behind a system
 # authorisation prompt ("Authentication cancelled. System authentication is running." is what a
 # refused or unanswered one looks like). Nothing here can grant it — answer the dialog once and

@@ -183,6 +183,18 @@ the design decisions carry no measurements, so `docs/designs/`'s approved study 
 for rhythm, density and type size. Prose in the decision log can be satisfied while the approved
 pixels are not.
 
+**A render is not a click.** `apps/macOS` has one XCUITest target, `ArgoE2ETests` — the only tests
+here that launch Argo and drive it. Every other Swift test is a SwiftPM package test that can build
+a projection and assert on it but cannot click, so a view that renders correctly in a specimen and
+comes apart inside a popover passes all of them. `sh scripts/e2e-test.sh`, from `apps/macOS`.
+
+It is a **local** gate, deliberately not a CI one: driving the real app needs a macOS runner, the
+most expensive minutes GitHub bills, on every push. Run it when you touch a surface that is only
+reachable by clicking. Two things about it that are not obvious — the first run on a machine
+answers a macOS authorisation prompt by hand and a sleeping display fails the same way; and a test
+must launch onto a `--specimen`, never the machine's own registry, or it asserts whatever that Mac
+happens to have on it.
+
 ## Tooling (RTK)
 
 **Always prefix shell commands with `rtk`** so output is filtered before it reaches context. The
