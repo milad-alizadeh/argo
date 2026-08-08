@@ -23,14 +23,11 @@ struct FeedUnreadable: Equatable, Sendable {
 
     /// The whole raw text, which is what the row shows once the reader asks for it. Joined on
     /// newlines because that is how the record held them.
+    ///
+    /// It is what the row DRAWS and never what it speaks: this is malformed JSON, and reading a
+    /// truncated object aloud tells a listener nothing the count has not already said.
     var raw: String {
         lines.joined(separator: "\n")
-    }
-
-    /// What a screen reader hears. The label alone, because the raw text is a record of malformed
-    /// JSON and reading it aloud tells nobody anything.
-    var spoken: String {
-        label
     }
 }
 

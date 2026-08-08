@@ -17,6 +17,16 @@ public enum ArgoPlanPill {
     public static let insetX: CGFloat = ArgoSpacing.comfortable
     public static let insetY: CGFloat = ArgoSpacing.snug
 
+    /// The lane the pill occupies over the feed's bottom edge — its own line plus the insets
+    /// either side of it, and the height anything ELSE floating over that edge has to clear.
+    ///
+    /// Derived rather than sampled, because the pill sizes to its words: what is fixed is the one
+    /// line it is allowed and the inset around it, and a second float measured against a guess
+    /// would sit on top of the plan the first time a step's wording changed.
+    public static var laneHeight: CGFloat {
+        insetY * 2 + ArgoFeedRow.lineHeight
+    }
+
     /// The ring that carries how far the plan has got. Larger than a status dot on purpose: a dot
     /// says one thing and this says a fraction, which needs an arc long enough to read as one.
     public static let ringSize: CGFloat = 12

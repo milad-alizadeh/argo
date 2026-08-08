@@ -70,10 +70,15 @@ public enum ArgoFeedRow {
     /// digits, which is where a file stops being one anybody scrolls.
     public static let diffGutterWidth: CGFloat = 32
 
-    /// How far the way-back-to-the-newest control floats above the bottom of the feed. Clear of
-    /// the last row it would otherwise sit on, and clear of the plan pill, which floats over the
-    /// same edge on the other side of the column.
-    public static let tailLift: CGFloat = ArgoSpacing.loose
+    /// How far the way-back-to-the-newest control floats above the bottom of the feed.
+    ///
+    /// Above the plan pill's lane rather than beside it. The two are the only things that float
+    /// over this edge, and side by side they fit until the deck narrows — at which point a centred
+    /// pill and a trailing capsule are drawn on top of each other, which is the width this ticket
+    /// exists to hold. Stacked, neither depends on how wide the other's words are.
+    public static var tailLift: CGFloat {
+        ArgoPlanPill.lift + ArgoPlanPill.laneHeight + ArgoSpacing.base
+    }
 
     /// How thick a drawn rule inside a block of prose is — a table's own gridlines. One point,
     /// because it is a boundary and not a border: it says where a cell ends and never competes

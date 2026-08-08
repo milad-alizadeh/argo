@@ -17,10 +17,7 @@ extension FeedProjection {
     /// The LAST failed call in that long feed, and the last rather than the first because a panel
     /// opened fifty turns above the fold would be a screenshot of a pane beside a stretch of
     /// reading nobody can see.
-    static let longFailedCallID = longRows.last { row in
-        guard case let .call(call) = row.content else { return false }
-        return call.ending.hasFailed
-    }?.id
+    static let longFailedCallID = longRows.reversed().failedCallID
 
     /// The same feed with the prose taken out. A render of the call vocabulary that is four fifths
     /// paragraphs is a render of the paragraphs — this is a filter over the shipping rows, never a
@@ -109,8 +106,17 @@ extension FeedProjection {
 
     /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
     /// specimen and a `#Preview` cannot be looking at two different failures.
-    static let previewFailedCallID = previewRows.first { row in
-        guard case let .call(call) = row.content else { return false }
-        return call.ending.hasFailed
-    }?.id
+    static let previewFailedCallID = previewRows.failedCallID
+}
+
+private extension Sequence<FeedRow> {
+    /// The first row in this order that stands for a call the record answered with a failure.
+    /// Both feeds want it and neither wants the same end of the feed, so the direction is the
+    /// caller's and the rule is written once.
+    var failedCallID: FeedRow.ID? {
+        first { row in
+            guard case let .call(call) = row.content else { return false }
+            return call.ending.hasFailed
+        }?.id
+    }
 }

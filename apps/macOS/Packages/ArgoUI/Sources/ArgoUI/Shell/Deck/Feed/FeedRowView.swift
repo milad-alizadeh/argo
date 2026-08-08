@@ -47,13 +47,17 @@ struct FeedRowView: View {
 
     /// What Return does to this row, which is exactly what a click on it does.
     ///
-    /// A gallery opens the first picture there is anything behind — the row is one control in the
-    /// keyboard's eye, and a reader who wants the fourth shot arrows into the gallery and picks it.
-    /// Prose does nothing and says so by being handled: `.ignored` lets the key fall through to the
-    /// feed, which is where scrolling lives.
+    /// A gallery opens the FIRST picture there is anything behind. Its shots are each a control of
+    /// their own, so a reader who wants the fourth reaches it the same way they reach any button;
+    /// what the row-level key gets them is the common case in one press.
+    ///
+    /// A row with nothing to open answers `.ignored` rather than `.handled` — prose, a gallery of
+    /// absences, and a call the record never answered alike. Swallowing the key on an inert row
+    /// spends it on nothing AND takes it away from the feed, which is where scrolling lives.
     private func activate() -> KeyPress.Result {
         switch row.content {
         case .call, .survey:
+            guard isOpen || row.opensEvidence else { return .ignored }
             openEvidence()
             return .handled
         case let .gallery(gallery):
@@ -77,12 +81,20 @@ struct FeedRowView: View {
     /// A row with nothing behind it opens nothing at all, rather than marking itself as the open
     /// row over a panel that has nothing to show.
     private func openEvidence() {
-        guard isOpen else {
-            if row.opensEvidence {
-                selection.openEvidence(of: row.id)
-            }
-            return
-        }
-        selection.close()
+        guard !isOpen else { return selection.close() }
+        guard row.opensEvidence else { return }
+        selection.openEvidence(of: row.id)
     }
+}
+
+// Every kind a row can be, drawn through the one view that decides which. Taken from the shipping
+// projection, so nothing here is a shape the feed would never produce.
+#Preview("Feed rows — every kind, at rest") {
+    FeedPreview(rows: FeedProjection.previewRows)
+        .frame(width: 820, height: 620)
+}
+
+#Preview("Feed rows — the row whose evidence is open") {
+    FeedPreview(rows: FeedProjection.previewCallRows, open: FeedProjection.previewFailedCallID)
+        .frame(width: 820, height: 620)
 }

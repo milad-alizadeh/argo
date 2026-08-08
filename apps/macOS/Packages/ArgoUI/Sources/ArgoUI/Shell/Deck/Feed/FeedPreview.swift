@@ -10,7 +10,10 @@ import SwiftUI
 struct FeedPreview: View {
     let rows: [FeedRow]
 
-    @State private var open: FeedRow.ID?
+    /// Which row's evidence the preview opens on. A settable initial state for the same reason
+    /// `SessionsDeck` takes one: the state belongs to the surface, and there is no other way to
+    /// reach it without a click.
+    @State var open: FeedRow.ID?
     @State private var lit: FeedShot?
     @FocusState private var focus: FeedFocus?
 

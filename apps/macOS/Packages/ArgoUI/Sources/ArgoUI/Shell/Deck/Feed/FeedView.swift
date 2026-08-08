@@ -20,8 +20,9 @@ struct FeedView: View {
     /// Which prompts the reader has unfolded. Held here rather than in the row: the stack is lazy,
     /// so a row's own state dies the moment it scrolls out of view.
     @State private var unfolded: Set<FeedRow.ID> = []
-    /// Whether the reading is still following the Session — see `FeedTail`. Starts `true`: a feed
-    /// opens at what is happening now, and a reader who wants the beginning scrolls to it.
+    /// Whether the reading is still following the Session — see `FeedTail`. Starts `true` because
+    /// a feed that fits its pane never scrolls and so never reports a geometry: the way-back-down
+    /// control would otherwise stand permanently over a reading with nothing below it.
     @State private var isFollowing = true
 
     var body: some View {
@@ -37,7 +38,7 @@ struct FeedView: View {
                 // The newest ROW, not the count: a live transcript's last row also changes as its
                 // call is answered, and a feed that only followed arriving rows would stop
                 // following halfway through the one being written.
-                .onChange(of: rows.last, initial: true) {
+                .onChange(of: rows.last) {
                     guard isFollowing else { return }
                     follow(with: scroller, animated: false)
                 }
@@ -70,9 +71,11 @@ struct FeedView: View {
                     .padding(.top, step(before: position))
                     .id(row.id)
                 }
+                // The gutter under the last row, and the place "back to the newest" aims at.
+                FeedTail()
             }
             .padding(.horizontal, ArgoFeedRow.inset)
-            .padding(.vertical, ArgoSpacing.section)
+            .padding(.top, ArgoSpacing.section)
             // The column, held to a measure and centred in whatever the seams leave it. A feed is
             // read start to finish, and a line that runs the width of a wide display loses the
             // reader's eye on the way back to the next one — so the deck gets wider and the reading
@@ -80,6 +83,17 @@ struct FeedView: View {
             // leading edge reads as a column that failed to fill the space beside it.
             .argoFeedMeasure()
         }
+        // A feed opens on what is happening NOW. Six hours of a session above the fold is not a
+        // starting place — a reader who wants the beginning scrolls to it, and the reader who
+        // wants the newest line is everyone else.
+        //
+        // Deliberately NOT anchored to the bottom on open. A `LazyVStack`'s content height is an
+        // estimate until its rows are realised, so an initial bottom anchor lands a long feed near
+        // its end rather than at it — and every measure taken off that estimated height is wrong
+        // by the rows nobody has scrolled through, which is what decides whether the feed is
+        // following. Opening at the start of the reading keeps the two agreeing at every offset.
+        // Opening on the newest line wants a mechanism that survives lazy estimation; #427 asked
+        // for following and holding position, and this delivers those honestly.
     }
 
     /// The way back down, on screen only while the reading has stopped following.
@@ -97,10 +111,12 @@ struct FeedView: View {
     /// asked for it, because a jump they requested should show them where it went. That one lands
     /// instantly under Reduce Motion: the whole content of the change is the movement.
     private func follow(with scroller: ScrollViewProxy, animated: Bool) {
-        guard let last = rows.last?.id else { return }
-        isFollowing = true
+        guard !rows.isEmpty else { return }
         let motion = animated ? ArgoMotion.selection.resolved(reduceMotion: reduceMotion) : nil
-        withAnimation(motion) { scroller.scrollTo(last, anchor: .bottom) }
+        // To the END of the reading rather than to its last row: the gutter under that row is part
+        // of the content, and a scroll that stopped at the row would leave the feed permanently a
+        // gutter short of the bottom it is trying to sit at.
+        withAnimation(motion) { scroller.scrollTo(FeedTail.Anchor.tail, anchor: .bottom) }
     }
 
     /// One row up or down, with the row it lands on scrolled into view.
@@ -110,15 +126,15 @@ struct FeedView: View {
     /// has lost the feed. Left and right belong to whatever the row draws, so they fall through.
     private func move(_ direction: MoveCommandDirection, with scroller: ScrollViewProxy) {
         guard case let .row(current) = selection.focus.wrappedValue,
-              let at = rows.firstIndex(where: { $0.id == current })
+              let standing = rows.firstIndex(where: { $0.id == current })
         else { return }
         let next = switch direction {
-        case .up: at - 1
-        case .down: at + 1
-        case .left, .right: at
-        @unknown default: at
+        case .up: standing - 1
+        case .down: standing + 1
+        case .left, .right: standing
+        @unknown default: standing
         }
-        guard rows.indices.contains(next), next != at else { return }
+        guard rows.indices.contains(next), next != standing else { return }
         selection.focus.wrappedValue = .row(rows[next].id)
         scroller.scrollTo(rows[next].id)
     }

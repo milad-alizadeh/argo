@@ -10,30 +10,14 @@ import Testing
 /// suites use and none of them was ever asked what it costs at four hundred.
 @Suite("Feed at scale")
 struct FeedScaleTests {
-    /// The projection is what stands between a growing transcript and the screen, and it runs
-    /// again from the top every time the record grows. The budget is deliberately loose — this is
-    /// a gate against a pass that went quadratic, not a stopwatch on a machine under load.
-    @Test
-    func `a real session's worth of events projects in well under a frame`() {
-        let events = CockpitPresentation.Session.longTranscript
-        let started = ContinuousClock.now
-
-        let rows = FeedProjection.rows(from: events)
-
-        #expect(ContinuousClock.now - started < .milliseconds(16))
-        #expect(!rows.isEmpty)
-    }
-
-    /// The fixture has to actually BE long, or every claim above it is a claim about a short feed
-    /// with a confident name.
-    @Test
-    func `the scale fixture is hundreds of events`() {
-        #expect(CockpitPresentation.Session.longTranscript.count > 400)
-    }
-
-    /// Cost has to grow with the record, not with the square of it. Ten times the events for
-    /// roughly ten times the work is the whole claim — the tolerance is wide because a clock on a
-    /// shared machine is noisy, and narrow enough that an accidental nested pass fails it.
+    /// Cost has to grow with the record, not with the square of it — which is what the projection
+    /// did until this ticket, because the pass that tells two same-named files apart asked every
+    /// path about every other one.
+    ///
+    /// A RATIO and not a stopwatch, deliberately. An absolute budget on a shared runner measures
+    /// the runner; the shape of the curve is the claim, and it is the one a loaded machine cannot
+    /// change. The tolerance is wide for the same reason, and still nowhere near the hundredfold
+    /// a quadratic pass produces.
     @Test
     func `ten times the events costs nothing like a hundred times the work`() {
         let once = CockpitPresentation.Session.longTranscript
@@ -51,6 +35,7 @@ struct FeedScaleTests {
     func `hundreds of events become hundreds of rows, folds and all`() {
         let rows = FeedProjection.longRows
 
+        #expect(CockpitPresentation.Session.longTranscript.count > 400)
         #expect(rows.count > 200)
         #expect(rows.count < CockpitPresentation.Session.longTranscript.count)
     }
