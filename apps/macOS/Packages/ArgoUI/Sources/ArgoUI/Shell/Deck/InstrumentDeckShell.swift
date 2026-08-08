@@ -14,6 +14,9 @@ struct InstrumentDeckShell: View {
     /// Which call's evidence the deck opens with. A parameter so a specimen can render the panel
     /// open — the state is the deck's, and there is no other way to reach it without a click.
     var open: FeedRow.ID?
+    /// Which picture the deck opens full size, for the same reason `open` is a parameter: the
+    /// lightbox is reachable only by clicking a thumbnail, so without this nobody ever looks at it.
+    var lit: FeedShot?
 
     var body: some View {
         content
@@ -28,7 +31,7 @@ struct InstrumentDeckShell: View {
     @ViewBuilder private var content: some View {
         switch room {
         case .sessions:
-            SessionsDeck(feed: feed, showing: showing, open: open)
+            SessionsDeck(feed: feed, showing: showing, open: open, lit: lit)
         case .work, .code:
             Color.clear
         }

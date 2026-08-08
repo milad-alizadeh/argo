@@ -21,6 +21,9 @@ struct SessionsDeck: View {
     /// covers the whole deck: a picture opened over the feed column alone would be a screenshot of
     /// a deck shown inside a third of one.
     @State var lit: FeedShot?
+    /// Where the keyboard is across the whole reading — the feed, the panel and the lightbox in one
+    /// space, so focus can come back out of the two that cover it. See `FeedFocus`.
+    @FocusState private var focus: FeedFocus?
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
@@ -29,14 +32,14 @@ struct SessionsDeck: View {
             DeckSlot(zone: .tabs)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
             DeckSeparator()
-            DeckContentRow(
-                feed: feed,
-                showing: showing,
-                selection: FeedRowSelection(open: $open, lit: $lit),
-            )
+            DeckContentRow(feed: feed, showing: showing, selection: selection)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .argoLightbox($lit)
+        .argoLightbox(selection, in: feed)
+    }
+
+    private var selection: FeedRowSelection {
+        FeedRowSelection(open: $open, lit: $lit, focus: $focus)
     }
 }
 
@@ -112,11 +115,13 @@ private struct DeckContentRow: View {
     ///
     /// Answering here as well as on the lightbox itself is deliberate: `onExitCommand` only fires
     /// for a view in the responder chain, and nothing focuses the lightbox on the way in.
+    /// Each closes back onto the row it was opened from, rather than leaving the keyboard on a view
+    /// that has just left the screen.
     private func dismissTopmost() {
         if selection.lit != nil {
-            selection.lit = nil
+            selection.darken(returningInto: feed)
         } else {
-            selection.open = nil
+            selection.close()
         }
     }
 
@@ -127,8 +132,10 @@ private struct DeckContentRow: View {
                 limits: ArgoLayout.evidencePanelLimits(in: deck),
                 growsRightward: false,
             )
-            EvidencePanel(evidence: evidence) { selection.open = nil }
+            EvidencePanel(evidence: evidence, dismiss: selection.close)
                 .frame(width: panelBinding(in: deck).wrappedValue)
+                .focusable()
+                .focused(selection.focus, equals: .panel)
                 .transition(.identity)
         }
     }
@@ -166,10 +173,11 @@ private struct DeckContentRow: View {
         // Prose opens nothing, and neither does a gallery — its shots open a lightbox instead, and
         // routing them through a panel would show a picture beside a smaller copy of itself. A
         // question opens nothing either: what it produced is the answer, and the answer is already
-        // the row. A row that cannot be clicked into the panel cannot be the open one, so these
-        // arms are unreachable — and they are cases rather than a `default` so a new row kind that
-        // CAN open fails this build instead of silently resolving to a closed panel.
-        case .prompt, .message, .thought, .gallery, .ask, .mark: nil
+        // the row; an unreadable line produced nothing at all. A row that cannot be clicked into
+        // the panel cannot be the open one, so these arms are unreachable — and they are cases
+        // rather than a `default` so a new row kind that CAN open fails this build instead of
+        // silently resolving to a closed panel.
+        case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: nil
         }
     }
 }
@@ -183,7 +191,7 @@ private struct FeedColumn: View {
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            FeedView(rows: feed, open: selection.$open, lit: selection.$lit)
+            FeedView(rows: feed, selection: selection)
                 // Over the feed rather than in the column's stack: the pill floats, and a row in
                 // the stack would take height from the reading it is meant to sit above. Bounded
                 // to this column so it moves with the feed when a seam does, never over the panel.

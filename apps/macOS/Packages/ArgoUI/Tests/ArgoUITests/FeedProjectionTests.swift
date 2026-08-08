@@ -63,7 +63,6 @@ struct FeedProjectionTests {
             .model("claude-opus-5"),
             .branch("main"),
             .plan(Plan(entries: [PlanEntry(text: "Ship it", status: .pending)])),
-            .unreadableLine(raw: "{"),
         ]
 
         #expect(FeedProjection.rows(from: unhandled).isEmpty)

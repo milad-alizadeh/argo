@@ -133,7 +133,7 @@ struct FeedGalleryTests {
         let rows = FeedProjection.rows(from: broken)
 
         #expect(FeedFixture.galleries(in: rows).isEmpty)
-        #expect(FeedFixture.calls(in: broken).map(\.subject.spoken) == ["half.png"])
+        #expect(FeedFixture.calls(in: broken).map(\.subject.captioned) == ["half.png"])
     }
 
     @Test

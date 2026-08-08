@@ -24,6 +24,8 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         case ask(FeedAsk)
         /// Something that happened to the reading rather than in it. See `FeedMark`.
         case mark(FeedMark)
+        /// A stretch of the record nothing could parse. See `FeedUnreadable`.
+        case unreadable(FeedUnreadable)
     }
 
     /// The row's place in the feed.
@@ -36,23 +38,41 @@ struct FeedRow: Identifiable, Equatable, Sendable {
 
     /// Whether this row is a piece of work rather than a piece of prose. Two surfaces ask it —
     /// the feed's own spacing, and the render that shows the calls alone.
+    ///
+    /// An unreadable line is neither, and answers `false`: it is not work the agent did, so a
+    /// render of the call vocabulary that carried one would be showing a reading failure as a call.
     var isCall: Bool {
         switch content {
         case .call, .survey, .gallery: true
-        // A question and a mark are neither: one is somebody being waited on and the other is the
-        // shape of the record, and both want the full step a piece of prose gets rather than the
-        // tighter one that welds a run of work together.
-        case .prompt, .message, .thought, .ask, .mark: false
+        // A question, a mark and an unreadable line are none of them: one is somebody being waited
+        // on, one is the shape of the record and one is a hole in it, and all three want the full
+        // step a piece of prose gets rather than the tighter one that welds a run of work together.
+        case .prompt, .message, .thought, .ask, .mark, .unreadable: false
         }
     }
 
     /// Whether this row is something somebody SAID. Neither the work nor the punctuation around it
     /// — asked by the render that shows the reading with the work taken out, which wants the words
     /// and not the marks between them.
+    ///
+    /// An unreadable line is not prose either: nobody said it, which is the whole of what it
+    /// reports.
     var isProse: Bool {
         switch content {
         case .prompt, .message, .thought: true
-        case .call, .survey, .gallery, .ask, .mark: false
+        case .call, .survey, .gallery, .ask, .mark, .unreadable: false
+        }
+    }
+
+    /// Whether this row has anything for the evidence panel to show.
+    ///
+    /// Asked by the pointer and the keyboard alike, so it is one rule: a row that draws no
+    /// disclosure marker must not become the open row when Return lands on it either.
+    var opensEvidence: Bool {
+        switch content {
+        case let .call(call): call.disclosure == .available
+        case let .survey(survey): survey.disclosure == .available
+        case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: false
         }
     }
 }

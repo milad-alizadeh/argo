@@ -15,7 +15,10 @@ enum FeedAgents {
         rows.compactMap(delegation(in:)).enumerated().map { position, call in
             FeedAgent(
                 id: position,
-                label: call.subject.spoken,
+                // The disambiguated address, for the rail's own version of the reason the feed
+                // needs one: a row here stands alone in a column of its own, with no line beside
+                // it to tell two same-named subjects apart.
+                label: call.subject.captioned,
                 isRunning: call.ending == .pending,
                 spend: call.spend,
             )

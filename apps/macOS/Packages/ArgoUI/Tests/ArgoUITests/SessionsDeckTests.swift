@@ -52,6 +52,37 @@ struct SessionsDeckTests {
         #expect(feed > ArgoLayout.minimapLaneWidth)
     }
 
+    /// The panel-open half of the same invariant, and the one a long feed actually meets: a reader
+    /// at the narrowest window who opens a call's evidence is reading BOTH columns at once, and a
+    /// panel dragged to its ceiling must still leave the feed a column rather than a gutter.
+    @Test
+    func `the feed keeps its floor at the narrowest deck with the panel at its widest`() {
+        let limits = ArgoLayout.evidencePanelLimits(in: narrowestDeckWidth)
+
+        #expect(narrowestDeckWidth - limits.upperBound >= ArgoLayout.feedMinimumWidth)
+    }
+
+    /// The panel opens at its share before anybody drags it, and that opening width is the one
+    /// nobody chose — so it is the one that can quietly sit outside the limits the drag respects.
+    @Test
+    func `the panel opens inside its own limits at the narrowest deck`() {
+        let limits = ArgoLayout.evidencePanelLimits(in: narrowestDeckWidth)
+        let opening = narrowestDeckWidth * ArgoLayout.evidencePanelShare
+
+        #expect(limits.contains(opening))
+    }
+
+    /// The reading measure is a ceiling, never a floor. A column that insisted on its own width
+    /// would overflow the feed zone at the narrowest deck instead of narrowing with it, and the
+    /// panel this ticket puts beside it is what makes that reachable rather than theoretical.
+    @Test
+    func `the reading measure is wider than any deck can force the column to be`() {
+        let openPanelFeed = narrowestDeckWidth - ArgoLayout.evidencePanelMinimumWidth
+
+        #expect(ArgoFeedRow.column > openPanelFeed)
+        #expect(ArgoLayout.feedMinimumWidth < ArgoFeedRow.column)
+    }
+
     @Test
     func `the lane stays a lane rather than becoming a second rail`() {
         #expect(ArgoLayout.minimapLaneWidth < ArgoLayout.agentsRailWidth / 2)

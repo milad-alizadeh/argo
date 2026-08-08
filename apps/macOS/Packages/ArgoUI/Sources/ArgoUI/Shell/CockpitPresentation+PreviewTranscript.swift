@@ -8,6 +8,10 @@ extension CockpitPresentation.Session {
     /// to build one, and the projection that turns a stream into rows is exactly what the feed's
     /// previews and specimen exist to look at. The kinds this feed does not draw yet are in here
     /// on purpose — a specimen where every event is drawable proves nothing about ignoring one.
+    ///
+    /// The unreadable line is in here for the opposite reason: it IS drawn, and it is the one row
+    /// nobody would ever reach on purpose — a record has to be truncated or corrupt to produce
+    /// one, so without it in the shipping fixture the surface is never looked at.
     static let previewTranscript: [TranscriptEvent] = [
         .prompt(
             text: "Read the anatomy study before you start, then wire the feed's prose through "
@@ -36,6 +40,7 @@ extension CockpitPresentation.Session {
         ),
         .thought(markdown: "A wide window should get more feed, never a longer line."),
         .prompt(text: "Good. Land the metrics in the contract.", atMs: 1_733_000_050_000),
+        .unreadableLine(raw: "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":"),
     ]
         + workedOn
         + shotsTaken

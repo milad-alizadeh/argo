@@ -83,23 +83,34 @@ extension View {
     /// The fade is `reveal`, so it answers Reduce Motion the way every other disclosure in the
     /// shell does: the change still registers, it just stops moving.
     /// A shot with no picture opens nothing, here as well as on the thumbnail that offers no click:
-    /// the gallery is not the only way this binding can be set, and a scrim over a caption with no
-    /// image under it is the one state the lightbox has no honest reading of.
-    func argoLightbox(_ shot: Binding<FeedShot?>) -> some View {
+    /// the gallery is not the only way this can be set, and a scrim over a caption with no image
+    /// under it is the one state the lightbox has no honest reading of.
+    ///
+    /// It takes the feed as well as the selection because closing has to hand the keyboard back to
+    /// the gallery the picture came from, and the shot alone does not say which row that was.
+    func argoLightbox(_ selection: FeedRowSelection, in feed: [FeedRow]) -> some View {
         overlay {
-            if let lit = shot.wrappedValue, lit.isOpenable {
-                FeedLightbox(shot: lit) { shot.wrappedValue = nil }
+            if let lit = selection.lit, lit.isOpenable {
+                FeedLightbox(shot: lit) { selection.darken(returningInto: feed) }
+                    // Focused so `onExitCommand` reaches it at all: it only fires for a view in the
+                    // responder chain, and until this nothing put the lightbox in one.
+                    .focusable()
+                    .focused(selection.focus, equals: .lightbox)
                     .transition(.opacity)
             }
         }
-        .argoAnimation(.reveal, value: shot.wrappedValue)
+        .argoAnimation(.reveal, value: selection.lit)
     }
 }
 
 #Preview("Lightbox — a shot opened over the deck") {
     Color.clear
         .argoDeckSurface()
-        .argoLightbox(.constant(FeedProjection.previewShots.first))
+        .overlay {
+            if let shot = FeedProjection.previewShots.first {
+                FeedLightbox(shot: shot, dismiss: {})
+            }
+        }
         .frame(width: 900, height: 620)
         .argoAppearance()
 }
