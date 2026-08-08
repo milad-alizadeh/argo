@@ -6,6 +6,8 @@ import SwiftUI
 /// the leading and the reading of the inline marks are decided once. Whoever draws it applies its
 /// ink and its fold; those are the caller's claims, not the type's.
 struct FeedProseText: View {
+    @Environment(\.argo) private var argo
+
     let text: String
     /// Which rung the run is set on. Only MARKUP passes one — a heading is the same words at a
     /// bigger size, and nothing else about typesetting them changes.
@@ -17,7 +19,7 @@ struct FeedProseText: View {
     var weight: Font.Weight?
 
     var body: some View {
-        Text(marked)
+        Text(MarkedProse.inked(marked, code: argo.color.text.code))
             .argoText(rung, weight)
             .lineSpacing(ArgoFeedRow.proseLineSpacing)
             .multilineTextAlignment(.leading)

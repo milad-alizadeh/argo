@@ -84,6 +84,10 @@ public extension ArgoPalette {
         public let disabled: ArgoColor
         /// On an Ion Blue fill.
         public let onAccent: ArgoColor
+        /// A `code` span inside prose. Its own ink rather than a rung of the grey ramp: a span
+        /// the agent marked as machine text is a different KIND of thing from the sentence
+        /// around it, not a quieter part of it.
+        public let code: ArgoColor
 
         public init(
             primary: ArgoColor,
@@ -91,12 +95,14 @@ public extension ArgoPalette {
             tertiary: ArgoColor,
             disabled: ArgoColor,
             onAccent: ArgoColor,
+            code: ArgoColor,
         ) {
             self.primary = primary
             self.secondary = secondary
             self.tertiary = tertiary
             self.disabled = disabled
             self.onAccent = onAccent
+            self.code = code
         }
     }
 
