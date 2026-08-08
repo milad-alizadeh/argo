@@ -35,6 +35,9 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedSingleShot
     case feedAbsentShot
     case feedLightbox
+    case planPill
+    case openPlanPill
+    case unstartedPlanPill
 }
 
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
@@ -86,9 +89,12 @@ public struct SpecimenScreen: View {
             // The deck at rest with a Session read into it, drawn through the same projection the
             // shell uses. A specimen holding rows of its own would be evidence about a feed
             // nobody is shown.
+            // The plan comes with it: the transcript carries one, and a render of the deck at rest
+            // that dropped the pill would be evidence about a deck nobody is shown.
             InstrumentDeckShell(
                 room: .sessions,
                 feed: FeedProjection.previewRows,
+                showing: PlanShowing(plan: PlanProjection.previewReading),
             )
         case .feedCalls:
             // The work itself, between the prose taken out: every kind the feed can name, the two
@@ -185,6 +191,22 @@ public struct SpecimenScreen: View {
                 feed: FeedProjection.previewCallRows,
             )
             .argoLightbox(.constant(FeedProjection.previewShots.first))
+        case .planPill:
+            // The plan at rest. The judgement is whether one line floating above the dock reads as
+            // standing state rather than as the newest thing the agent said — which is the whole
+            // argument for taking it out of the feed.
+            PlanSpecimen(plan: PlanFixture.working)
+        case .openPlanPill:
+            // The same pill with its list revealed. Only reachable by hovering or tabbing to it,
+            // so without this case the half of the surface that carries the plan is never looked
+            // at — and what it has to settle is whether a list opening upward over a column of
+            // prose stays readable against it.
+            PlanSpecimen(plan: PlanFixture.working, isRevealed: true)
+        case .unstartedPlanPill:
+            // A plan that marks no step in progress. It has to read as a plan nobody has started
+            // rather than as a pill that failed to fill in its own line — the one state where the
+            // honest answer is an absence, and nothing about an absence asserts how it reads.
+            PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)
         }
     }
 }
@@ -216,5 +238,15 @@ public struct SpecimenScreen: View {
 
 #Preview("Specimen — a shot opened full size") {
     SpecimenScreen(specimen: .feedLightbox)
+        .frame(width: 1000, height: 620)
+}
+
+#Preview("Specimen — the plan above the dock") {
+    SpecimenScreen(specimen: .planPill)
+        .frame(width: 1000, height: 620)
+}
+
+#Preview("Specimen — the plan's whole list") {
+    SpecimenScreen(specimen: .openPlanPill)
         .frame(width: 1000, height: 620)
 }

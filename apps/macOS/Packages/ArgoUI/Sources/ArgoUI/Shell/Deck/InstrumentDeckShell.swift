@@ -8,6 +8,9 @@ struct InstrumentDeckShell: View {
     /// The selected Session's reading, already projected. Rooms with no feed ignore it, which is
     /// the honest shape: the deck is one container and only one room has a feed in it today.
     var feed: [FeedRow] = []
+    /// The same Session's plan, which is standing state rather than a row and so travels beside
+    /// the rows instead of among them.
+    var showing = PlanShowing()
     /// Which call's evidence the deck opens with. A parameter so a specimen can render the panel
     /// open — the state is the deck's, and there is no other way to reach it without a click.
     var open: FeedRow.ID?
@@ -25,7 +28,7 @@ struct InstrumentDeckShell: View {
     @ViewBuilder private var content: some View {
         switch room {
         case .sessions:
-            SessionsDeck(feed: feed, open: open)
+            SessionsDeck(feed: feed, showing: showing, open: open)
         case .work, .code:
             Color.clear
         }
@@ -36,6 +39,7 @@ struct InstrumentDeckShell: View {
     InstrumentDeckShell(
         room: .sessions,
         feed: FeedProjection.previewRows,
+        showing: PlanShowing(plan: PlanProjection.previewReading),
     )
     .frame(width: 900, height: 620)
     .argoAppearance()

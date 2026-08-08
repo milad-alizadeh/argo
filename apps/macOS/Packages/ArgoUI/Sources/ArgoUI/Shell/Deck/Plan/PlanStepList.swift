@@ -1,0 +1,117 @@
+import ArgoEngine
+import SwiftUI
+
+/// The whole plan, revealed over the pill.
+///
+/// Every step, in the agent's own order, each marked with where it has got to. It is the second
+/// half of one surface rather than a panel of its own: the pill answers "where is it", and this
+/// answers the only follow-up worth a gesture — "out of what".
+struct PlanStepList: View {
+    @Environment(\.argo) private var argo
+
+    let plan: PlanReading
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
+            Text("Plan · replaced whole by the agent")
+                .argoText(ArgoTypography.sectionLabel)
+                .textCase(.uppercase)
+                .foregroundStyle(argo.color.text.tertiary)
+            VStack(alignment: .leading, spacing: ArgoPlanPill.stepStep) {
+                ForEach(plan.steps) { step in
+                    PlanStepLine(step: step)
+                }
+            }
+        }
+        .padding(.horizontal, ArgoPlanPill.listInsetX)
+        .padding(.vertical, ArgoPlanPill.listInsetY)
+        .frame(width: ArgoPlanPill.listWidth, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: ArgoRadius.popover)
+                .fill(argo.color.surface.overlay)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: ArgoRadius.popover)
+                .strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
+        }
+        .argoShadow(.popover)
+    }
+}
+
+/// One step, as its mark and its words.
+private struct PlanStepLine: View {
+    @Environment(\.argo) private var argo
+
+    let step: PlanReading.Step
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.base) {
+            ArgoGlyph(mark, .inline)
+                .foregroundStyle(markInk)
+                .frame(width: ArgoPlanPill.markWidth)
+            Text(step.text)
+                .argoText(ArgoTypography.body)
+                .foregroundStyle(ink)
+                // Struck through in the EDGE ink rather than the text's own, so the rule reads as
+                // a mark over the words instead of as a second, louder line of them.
+                .strikethrough(step.status == .completed, color: argo.color.edge.strong.color)
+                .lineLimit(ArgoPlanPill.stepLines)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        // `.ignore` rather than `.combine`: combining the mark with the words leaves the line as a
+        // static text whose VALUE is the words and whose label is dropped, which loses the status
+        // entirely — and the status is the one thing the mark and the rule through the words say
+        // to a reader who can see them and to nobody else.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(step.text), \(spoken)")
+    }
+
+    private var mark: String {
+        switch step.status {
+        case .pending: ArgoSymbol.stepPending
+        case .inProgress: ArgoSymbol.stepInProgress
+        case .completed: ArgoSymbol.stepCompleted
+        }
+    }
+
+    /// Only the step under way is tinted. A tick per finished step in the state ink would put four
+    /// greens on a list whose one interesting line is the fifth.
+    private var markInk: ArgoColor {
+        step.status == .inProgress ? argo.color.state.running : argo.color.text.tertiary
+    }
+
+    private var ink: ArgoColor {
+        step.status == .inProgress ? argo.color.text.primary : argo.color.text.tertiary
+    }
+
+    /// What a screen reader is told, since neither the mark nor the rule through the words says
+    /// anything out loud.
+    private var spoken: String {
+        switch step.status {
+        case .pending: "pending"
+        case .inProgress: "in progress"
+        case .completed: "completed"
+        }
+    }
+}
+
+#Preview("Plan list — a plan under way") {
+    PlanStepList(plan: PlanFixture.working)
+        .padding(ArgoSpacing.region)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Plan list — a plan that names no current step") {
+    PlanStepList(plan: PlanFixture.unstarted)
+        .padding(ArgoSpacing.region)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Plan list — steps longer than the measure") {
+    PlanStepList(plan: PlanFixture.wordy)
+        .padding(ArgoSpacing.region)
+        .argoDeckSurface()
+        .argoAppearance()
+}
