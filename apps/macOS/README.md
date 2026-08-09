@@ -112,6 +112,26 @@ bun run screenshot --filter=@argo/macos -- out/cockpit.png
 Builds, launches, and captures the window. See AGENTS.md ("Visual verification") for what it
 does about an already-running instance, and why that matters.
 
+## End-to-end tests
+
+`ArgoE2ETests` is the one target that launches Argo and clicks it. Two ways to run it:
+
+```bash
+sh scripts/e2e-test.sh                # this machine's screen — takes your mouse for the run
+sh scripts/e2e-vm.sh --provision      # once per machine: pulls a VM image, interactive
+sh scripts/e2e-vm.sh                  # every run after that — headless, in the VM
+```
+
+XCUITest drives the real WindowServer; that is what lets it click, and it is why the direct run
+holds the keyboard and mouse hostage until it finishes. There is no headless mode to switch on, so
+`e2e-vm.sh` gives the suite a screen that is not yours: a Tart VM on Apple silicon, synced from
+this worktree over SSH. Its header documents the one-time cost — an Xcode image measured in tens of
+GB, and macOS's UI-testing authorisation prompt answered once, inside the guest.
+
+Neither is a CI gate. Driving the real app needs a macOS runner, the most expensive minutes GitHub
+bills, and the suite is a handful of clicks; run it locally when you touch a surface that is only
+reachable by clicking.
+
 ## Deployment target
 
 macOS 26.0, no fallback. There is no `#available` branching anywhere — Liquid Glass comes
