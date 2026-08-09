@@ -87,6 +87,32 @@ struct DrawerSpecimen: View {
     }
 }
 
+/// A reading that is still being WRITTEN, for the one claim no stopped fixture can carry: a row
+/// arriving at the end must not drag a reader who has scrolled up away from the line they are on.
+///
+/// Half the fixture on screen and the rest arriving a few rows at a time. Both halves are
+/// load-bearing — a feed that had finished growing before anything scrolled into it would be a
+/// static specimen with extra steps, and a feed that grew in one jump would never overlap a read.
+struct ArrivingFeedSpecimen: View {
+    private static let step = 4
+    private static let beat = Duration.milliseconds(400)
+
+    @State private var written = FeedProjection.longRows.count / 2
+
+    var body: some View {
+        InstrumentDeckShell(room: .sessions, feed: Array(FeedProjection.longRows.prefix(written)))
+            .task {
+                while written < FeedProjection.longRows.count {
+                    try? await Task.sleep(for: Self.beat)
+                    // Cancellation is the only thing `sleep` throws, and swallowing it without
+                    // asking would spin this loop as fast as the window can draw.
+                    guard !Task.isCancelled else { return }
+                    written = min(written + Self.step, FeedProjection.longRows.count)
+                }
+            }
+    }
+}
+
 /// The deck specimen, holding the tab selection it needs to draw.
 struct DeckSpecimen: View {
     @State private var tab = SpecimenFixtures.DeckTab.activity
