@@ -125,8 +125,13 @@ sh scripts/e2e-vm.sh                  # every run after that — headless, in th
 XCUITest drives the real WindowServer; that is what lets it click, and it is why the direct run
 holds the keyboard and mouse hostage until it finishes. There is no headless mode to switch on, so
 `e2e-vm.sh` gives the suite a screen that is not yours: a Tart VM on Apple silicon, synced from
-this worktree over SSH. Its header documents the one-time cost — an Xcode image measured in tens of
-GB, and macOS's UI-testing authorisation prompt answered once, inside the guest.
+this worktree over SSH. Its header documents the one-time cost — a 60-80 GB Xcode image, and
+macOS's UI-testing authorisation prompt answered once, inside the guest.
+
+Each checkout syncs to its own directory in the guest, but they share the guest's one screen, so a
+run takes a lock there and a second worktree is told to wait rather than clicking into the first
+one's window. The VM is left running afterwards (booting is the slow part); `tart stop argo-e2e`,
+or `ARGO_E2E_VM_STOP=1`.
 
 Neither is a CI gate. Driving the real app needs a macOS runner, the most expensive minutes GitHub
 bills, and the suite is a handful of clicks; run it locally when you touch a surface that is only
