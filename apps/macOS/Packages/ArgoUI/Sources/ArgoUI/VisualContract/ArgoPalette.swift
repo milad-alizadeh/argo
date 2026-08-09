@@ -30,6 +30,13 @@ public struct ArgoPalette: Sendable {
 }
 
 public extension ArgoPalette {
+    /// Every appearance the app ships.
+    ///
+    /// The contract's assertions run over this rather than over `graphite` by name, so a second
+    /// palette inherits every legibility floor and every hue-rationing rule the day it is added
+    /// — rather than the day somebody remembers to copy a test.
+    static let all: [(name: String, palette: ArgoPalette)] = [("graphite", .graphite)]
+
     /// The neutral ramp, darkest first. Depth is read off tonal separation between these
     /// steps and the hairline between them, never off a drop shadow.
     struct SurfaceRoles: Sendable {
@@ -54,6 +61,17 @@ public extension ArgoPalette {
         /// half-visible under a photograph is two surfaces competing for the same eye. Not a step
         /// of the ramp, so it is not in it: depth is read off the ramp, and this covers it.
         public let scrim: ArgoColor
+        /// The ground under a run of text marked as machine text — a `code` span mid-sentence.
+        ///
+        /// A ground rather than an ink, because the span is a KIND of text and not a state, and
+        /// this palette rations hue for meaning: brand, four operational states, two diff inks.
+        /// The mono face already says "machine"; what it cannot do is make the run findable in a
+        /// paragraph, and that is this role's whole job.
+        ///
+        /// Translucent by contract, and that is the load-bearing part: the same span is read on
+        /// the deck AND inside a prompt's raised bubble, so a ground that composites keeps its
+        /// separation on both while an opaque one would vanish on one of them.
+        public let marked: ArgoColor
 
         public init(
             sunken: ArgoColor,
@@ -64,6 +82,7 @@ public extension ArgoPalette {
             hover: ArgoColor,
             selected: ArgoColor,
             scrim: ArgoColor,
+            marked: ArgoColor,
         ) {
             self.sunken = sunken
             self.base = base
@@ -73,43 +92,22 @@ public extension ArgoPalette {
             self.hover = hover
             self.selected = selected
             self.scrim = scrim
+            self.marked = marked
         }
 
         /// The ramp in depth order, for contract assertions and the specimen.
         public var ramp: [ArgoColor] {
             [sunken, base, raised, overlay]
         }
-    }
 
-    struct TextRoles: Sendable {
-        /// Titles and row primaries.
-        public let primary: ArgoColor
-        /// The one quiet metadata line.
-        public let secondary: ArgoColor
-        /// Machine facts and non-essential detail.
-        public let tertiary: ArgoColor
-        public let disabled: ArgoColor
-        /// On an Ion Blue fill.
-        public let onAccent: ArgoColor
-        /// A `code` span inside prose. Its own ink rather than a rung of the grey ramp: a span
-        /// the agent marked as machine text is a different KIND of thing from the sentence
-        /// around it, not a quieter part of it.
-        public let code: ArgoColor
-
-        public init(
-            primary: ArgoColor,
-            secondary: ArgoColor,
-            tertiary: ArgoColor,
-            disabled: ArgoColor,
-            onAccent: ArgoColor,
-            code: ArgoColor,
-        ) {
-            self.primary = primary
-            self.secondary = secondary
-            self.tertiary = tertiary
-            self.disabled = disabled
-            self.onAccent = onAccent
-            self.code = code
+        /// Every role, for the specimen and the coverage test. Depth order first, then the
+        /// grounds that are not steps of the ramp.
+        public var all: [(name: String, color: ArgoColor)] {
+            [
+                ("sunken", sunken), ("base", base), ("raised", raised), ("overlay", overlay),
+                ("glassTint", glassTint), ("hover", hover), ("selected", selected),
+                ("scrim", scrim), ("marked", marked),
+            ]
         }
     }
 
@@ -135,6 +133,13 @@ public extension ArgoPalette {
             self.subtle = subtle
             self.strong = strong
             self.glassRim = glassRim
+        }
+
+        public var all: [(name: String, color: ArgoColor)] {
+            [
+                ("hairline", hairline), ("subtle", subtle), ("strong", strong),
+                ("glassRim", glassRim),
+            ]
         }
     }
 
@@ -163,6 +168,13 @@ public extension ArgoPalette {
             self.accentDeep = accentDeep
             self.selectionIndicator = selectionIndicator
             self.focusRing = focusRing
+        }
+
+        public var all: [(name: String, color: ArgoColor)] {
+            [
+                ("accent", accent), ("accentBright", accentBright), ("accentDeep", accentDeep),
+                ("selectionIndicator", selectionIndicator), ("focusRing", focusRing),
+            ]
         }
     }
 
@@ -193,8 +205,11 @@ public extension ArgoPalette {
             self.failure = failure
         }
 
-        public var all: [ArgoColor] {
-            [running, idle, attention, failure]
+        public var all: [(name: String, color: ArgoColor)] {
+            [
+                ("running", running), ("idle", idle), ("attention", attention),
+                ("failure", failure),
+            ]
         }
 
         /// The same role at chip strength: a tinted ground rather than an ink.
@@ -217,8 +232,8 @@ public extension ArgoPalette {
             self.removed = removed
         }
 
-        public var all: [ArgoColor] {
-            [added, removed]
+        public var all: [(name: String, color: ArgoColor)] {
+            [("added", added), ("removed", removed)]
         }
 
         /// The same role as a GROUND under a whole line of code rather than as an ink on it.

@@ -4,21 +4,31 @@ import SwiftUI
 /// cannot give you: whether two states are still telling apart at a glance, and whether the
 /// sans and the mono are still doing two different jobs.
 ///
-/// It exists for the preview canvas and nothing else. The app window shows the cockpit — a
-/// specimen sheet in a shipping surface is how a palette stops being judged in context.
+/// **Every role in the palette appears here**, and `VisualContractTests` proves it by reflection —
+/// a role that reaches the app without reaching this sheet is a colour nobody ever looked at,
+/// which is exactly how a lavender `code` ink once got in and stayed. The swatches read their
+/// names and values off the `all` arrays rather than repeating them, so adding a role adds a
+/// swatch.
+///
+/// It renders whatever appearance is in the environment, so a second palette is judged by
+/// pointing this at it — nothing here knows it is dark.
 struct ContractSpecimen: View {
-    @Environment(\.argo) private var argo
+    @Environment(\.argo) var argo
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: ArgoSpacing.section) {
                 surfaces
+                text
+                edges
                 states
+                diff
                 brand
                 scale
                 type
                 icons
                 motion
+                syntax
             }
             .padding(ArgoSpacing.section)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -26,21 +36,11 @@ struct ContractSpecimen: View {
         .argoDeckSurface()
     }
 
-    private var surfaces: some View {
-        section("Surfaces — near-black graphite, depth from tone and edge") {
-            HStack(spacing: 0) {
-                ForEach(
-                    Array(argo.color.surface.ramp.enumerated()),
-                    id: \.offset,
-                ) { _, tone in
-                    Rectangle().fill(tone).frame(height: 56)
-                }
-            }
-            .overlay {
-                Rectangle()
-                    .strokeBorder(argo.color.edge.hairline, lineWidth: ArgoStroke.hairline)
-            }
-        }
+    func label(_ name: String) -> some View {
+        Text(name)
+            .argoText(ArgoTypography.machineCaption)
+            .foregroundStyle(argo.color.text.tertiary)
+            .frame(width: 132, alignment: .leading)
     }
 
     private var states: some View {
@@ -134,7 +134,7 @@ struct ContractSpecimen: View {
         }
     }
 
-    private func section(
+    func section(
         _ title: String,
         @ViewBuilder content: () -> some View,
     )

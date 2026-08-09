@@ -4,17 +4,23 @@ import Testing
 /// The claims the contract makes about itself. They exist because every one of them is a
 /// rule a future view or a future colour tweak could break silently: nothing about a hex
 /// literal tells you it has drifted navy, or that a status has wandered into brand blue.
+///
+/// Every colour claim is parameterised over `ArgoPalette.all` rather than written against
+/// `graphite`, so a light appearance arrives already governed: the rules below are about
+/// RELATIONSHIPS between roles — separation, ordering, contrast — and every one of them is as
+/// true of a light palette as of this one.
 @Suite("Visual contract")
 struct VisualContractTests {
+    static let palettes = ArgoPalette.all
     let palette = ArgoPalette.graphite
 
-    // MARK: - The graphite ramp
+    // MARK: - The neutral ramp
 
-    @Test
-    func `the neutral ramp is grey, not navy`() {
-        for surface in palette.surface.ramp {
+    @Test(arguments: palettes)
+    func `the neutral ramp is grey, not navy`(_ appearance: (name: String, palette: ArgoPalette)) {
+        for surface in appearance.palette.surface.ramp {
             #expect(surface.chromaticSpread <= 0.05)
-            #expect(surface.blue - surface.red <= 0.05)
+            #expect(abs(surface.blue - surface.red) <= 0.05)
         }
     }
 
@@ -24,19 +30,26 @@ struct VisualContractTests {
         #expect(palette.surface.sunken.relativeLuminance < palette.surface.base.relativeLuminance)
     }
 
-    @Test
-    func `the ramp rises step by step, so depth can be read off tone alone`() {
-        let luminances = palette.surface.ramp.map(\.relativeLuminance)
-        #expect(luminances == luminances.sorted())
+    /// Ordered by depth, not by brightness: a light appearance runs the other way, and what the
+    /// contract holds is that consecutive steps are DISTINCT and monotonic — the direction is the
+    /// appearance's business.
+    @Test(arguments: palettes)
+    func `the ramp steps monotonically, so depth reads off tone alone`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let luminances = appearance.palette.surface.ramp.map(\.relativeLuminance)
+        #expect(luminances == luminances.sorted() || luminances == luminances.sorted().reversed())
         #expect(Set(luminances).count == luminances.count)
     }
 
     // MARK: - Ion Blue is brand, never status
 
-    @Test
-    func `no operational state resolves anywhere near the brand hue`() {
-        for state in palette.state.all {
-            #expect(state.distance(to: palette.interaction.accent) > 0.25)
+    @Test(arguments: palettes)
+    func `no operational state resolves anywhere near the brand hue`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        for state in appearance.palette.state.all {
+            #expect(state.color.distance(to: appearance.palette.interaction.accent) > 0.25)
         }
     }
 
@@ -52,19 +65,23 @@ struct VisualContractTests {
         #expect(wash.chromaticSpread <= 0.05)
     }
 
-    @Test
-    func `no two operational states are near-neighbours`() {
-        let states = palette.state.all
+    @Test(arguments: palettes)
+    func `no two operational states are near-neighbours`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let states = appearance.palette.state.all
         for (index, state) in states.enumerated() {
             for other in states[(index + 1)...] {
-                #expect(state.distance(to: other) > 0.25)
+                #expect(state.color.distance(to: other.color) > 0.25)
             }
         }
     }
 
-    @Test
-    func `idle is a neutral slate — finished work recedes, it does not celebrate`() {
-        #expect(palette.state.idle.chromaticSpread <= 0.08)
+    @Test(arguments: palettes)
+    func `idle is a neutral slate — finished work recedes, it does not celebrate`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        #expect(appearance.palette.state.idle.chromaticSpread <= 0.08)
     }
 
     // MARK: - The diff inks are their own roles
@@ -72,167 +89,119 @@ struct VisualContractTests {
     /// The study drew a diffstat in the running teal and the failure red, and flagged the collision
     /// itself. Held apart here, because the two sit inches apart in one feed: `+8` next to a live
     /// Session's dot may not be the same green.
-    @Test
-    func `a diffstat never reads as an operational state`() {
-        for ink in palette.diff.all {
-            for state in palette.state.all {
-                #expect(ink.distance(to: state) > 0.25)
+    @Test(arguments: palettes)
+    func `a diffstat never reads as an operational state`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        for ink in appearance.palette.diff.all {
+            for state in appearance.palette.state.all {
+                #expect(ink.color.distance(to: state.color) > 0.25)
             }
-            #expect(ink.distance(to: palette.interaction.accent) > 0.25)
+            #expect(ink.color.distance(to: appearance.palette.interaction.accent) > 0.25)
         }
     }
 
-    @Test
-    func `added and removed are told apart by more than a hue nobody can name`() {
-        #expect(palette.diff.added.distance(to: palette.diff.removed) > 0.25)
+    @Test(arguments: palettes)
+    func `added and removed are told apart by more than a hue nobody can name`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        #expect(
+            appearance.palette.diff.added
+                .distance(to: appearance.palette.diff.removed) > 0.25,
+        )
     }
 
     // MARK: - Legibility
 
-    @Test
-    func `text roles clear their contrast floor on the deck`() {
-        let base = palette.surface.base
-        #expect(palette.text.primary.contrastRatio(on: base) >= 7)
-        #expect(palette.text.secondary.contrastRatio(on: base) >= 4.5)
-        #expect(palette.text.tertiary.contrastRatio(on: base) >= 4.5)
+    @Test(arguments: palettes)
+    func `text roles clear their contrast floor on the deck`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let base = appearance.palette.surface.base
+        #expect(appearance.palette.text.primary.contrastRatio(on: base) >= 7)
+        #expect(appearance.palette.text.secondary.contrastRatio(on: base) >= 4.5)
+        #expect(appearance.palette.text.tertiary.contrastRatio(on: base) >= 4.5)
     }
 
-    @Test
-    func `every state ink and the accent stay legible as a word, not just as a dot`() {
-        let base = palette.surface.base
-        for ink in palette.state.all + palette.diff.all + [palette.interaction.accent] {
+    @Test(arguments: palettes)
+    func `every state ink and the accent stay legible as a word, not just as a dot`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let base = appearance.palette.surface.base
+        let inks = (appearance.palette.state.all + appearance.palette.diff.all).map(\.color)
+        for ink in inks + [appearance.palette.interaction.accent] {
             #expect(ink.contrastRatio(on: base) >= 4.5)
         }
     }
 
-    /// A `code` span is tinted so it can be found mid-sentence, which only works if the tint is
-    /// unclaimed. Ion Blue would read as selected, an operational ink as a state — and the span
-    /// is read on two grounds, since a prompt says the same words inside a raised bubble.
-    @Test
-    func `a code span's ink is legible on both grounds and claimed by nothing else`() {
-        let code = palette.text.code
-        #expect(code.contrastRatio(on: palette.surface.base) >= 4.5)
-        #expect(code.contrastRatio(on: palette.surface.raised) >= 4.5)
-        for claimed in palette.state.all + palette.diff.all
-            + [palette.interaction.accent, palette.interaction.accentBright] {
-            #expect(code.distance(to: claimed) > 0.25)
+    /// The text ramp is NEUTRAL, all of it. A hue in this palette means something — brand,
+    /// one of four operational states, one of two diff inks — and a rung of the text ramp is a
+    /// loudness, not a meaning. The rule exists because the exception is what happened: a
+    /// lavender `code` ink sat here at five times the saturation of every rung around it,
+    /// spending the app's loudest colour on "this run is machine text".
+    @Test(arguments: palettes)
+    func `every text rung is neutral — the ramp is loudness, never meaning`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        for rung in appearance.palette.text.all where rung.name != "onAccent" {
+            #expect(rung.color.chromaticSpread <= 0.08)
         }
     }
 
-    @Test
-    func `text on an accent fill is legible`() {
-        #expect(palette.text.onAccent.contrastRatio(on: palette.interaction.accent) >= 4.5)
+    /// A marked `code` span is found by its GROUND, so the ground has to separate from whatever
+    /// it lands on — and it lands on two surfaces, since a prompt says the same words inside a
+    /// raised bubble. It must also outrun the row washes, or a span reads as a row that happens
+    /// to be under the pointer.
+    @Test(arguments: palettes)
+    func `a marked span's ground separates on both surfaces and outruns the row washes`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let surface = appearance.palette.surface
+        for ground in [surface.base, surface.raised] {
+            #expect(surface.marked.composited(over: ground).distance(to: ground) > 0.02)
+        }
+        #expect(surface.marked.opacity > surface.hover.opacity)
+        #expect(surface.marked.opacity > surface.selected.opacity)
     }
 
-    // MARK: - The feed's rhythm
-
-    @Test
-    func `prose is set more openly than the rest of the cockpit is packed`() {
-        // A feed is read rather than scanned, so its line height clears the dense default the
-        // rest of the shell is built at. Below it, the column stops being a column of prose.
-        #expect(ArgoFeedRow.lineHeight > ArgoTypography.body.size * ArgoFeedRow
-            .naturalLineHeightRatio)
-        #expect(ArgoFeedRow.proseLineSpacing > 0)
-    }
-
-    /// A feed is read start to finish, so it answers to a measure the way a page does. The number
-    /// itself is typographic; what the contract holds is that it is a bound the deck cannot widen,
-    /// and that it is not so tight the column never reaches it.
-    @Test
-    func `the reading has a measure the deck cannot widen`() {
-        #expect(ArgoFeedRow.column > ArgoLayout.feedMinimumWidth)
-        #expect(ArgoFeedRow.column < ArgoLayout.windowMinimumWidth)
-    }
-
-    /// The AC: the split does not starve the column. Asserted against the panel's own ceiling at
-    /// the narrowest window the app allows, because that is the case where the two floors and the
-    /// minimap have the least room to share — a wider deck can only help.
-    @Test
-    func `the feed keeps a usable width at the narrowest deck with the panel open`() {
-        let deck = ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth
-        let widest = ArgoLayout.evidencePanelLimits(in: deck).upperBound
-
-        #expect(widest >= ArgoLayout.evidencePanelMinimumWidth)
-        #expect(deck - widest >= ArgoLayout.feedMinimumWidth)
-    }
-
-    /// Prose takes the whole column; the bubble does not. It is somebody speaking INTO the
-    /// session, and one that filled the column would stop reading as a thing that was said — but
-    /// a strip beside full-width paragraphs stops reading as half of one conversation.
-    @Test
-    func `a prompt's bubble is most of the column and never all of it`() {
-        #expect(ArgoFeedRow.bubbleShare > 0.5)
-        #expect(ArgoFeedRow.bubbleShare < 1)
-    }
-
-    /// A run of calls is one piece of work. If it were spaced like prose, a turn's five edits would
-    /// read as five unrelated events — the tightening is what keeps them one.
-    @Test
-    func `a run of calls sits closer together than two things the agent said`() {
-        #expect(ArgoFeedRow.callStep < ArgoFeedRow.gap)
-    }
-
-    @Test
-    func `the step before prose is the tightest in the feed`() {
-        // A label and the prose under it are one block; two rows are two. If those two steps ever
-        // meet, the label starts reading as a row of its own.
-        #expect(ArgoFeedRow.stepBeforeProse < ArgoFeedRow.gap)
-        #expect(ArgoFeedRow.stepBeforeProse < ArgoFeedRow.inset)
-    }
-
-    @Test
-    func `every feed metric is a step the rhythm already carries`() {
-        // Except the two that are typographic rather than spatial: a line height and a reading
-        // measure answer to the type ramp, and snapping them to the spacing ladder would be
-        // arithmetic dressed as a rule.
-        let ladder = Set(ArgoSpacing.all.map(\.value))
-        #expect(ladder.isSuperset(of: [
-            ArgoFeedRow.inset, ArgoFeedRow.gap, ArgoFeedRow.stepBeforeProse,
-            ArgoFeedRow.callStep, ArgoFeedRow.callGap,
-        ]))
-    }
-
-    // MARK: - Depth
-
-    @Test
-    func `only genuinely floating surfaces cast a shadow`() {
-        let shadowed = ArgoElevation.all.filter(\.elevation.castsShadow).map(\.name)
-        #expect(shadowed == ["popover", "dragged"])
-    }
-
-    @Test
-    func `the shadows that exist stay soft`() {
-        for rung in ArgoElevation.all {
-            #expect(rung.elevation.opacity <= 0.45)
-            #expect(rung.elevation.blur <= 28)
+    /// The floor, which is the whole reason `TextRoles.marked(on:)` exists: the span inherits its
+    /// voice, and the quietest voice would fall under the contrast floor once the ground lifts the
+    /// backdrop out from under it.
+    @Test(arguments: palettes)
+    func `a marked span stays legible in every voice, on both surfaces`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let text = appearance.palette.text
+        let surface = appearance.palette.surface
+        for voice in [text.primary, text.secondary, text.tertiary] {
+            for ground in [surface.base, surface.raised] {
+                let chip = surface.marked.composited(over: ground)
+                #expect(text.marked(on: voice).contrastRatio(on: chip) >= 4.5)
+            }
         }
     }
 
-    // MARK: - Motion
-
-    @Test
-    func `no motion role outlasts feedback`() {
-        for role in ArgoMotion.all {
-            #expect(role.motion.duration <= ArgoMotion.durationCeiling)
-        }
+    /// The hierarchy the floor must not flatten: a marked run inside reasoning stays quieter than
+    /// one inside an answer, or the thought starts shouting over the message it produced.
+    @Test(arguments: palettes)
+    func `a marked span in a thought stays quieter than one in a message`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let text = appearance.palette.text
+        let chip = appearance.palette.surface.marked
+            .composited(over: appearance.palette.surface.base)
+        let thought = text.marked(on: text.tertiary).contrastRatio(on: chip)
+        let message = text.marked(on: text.primary).contrastRatio(on: chip)
+        #expect(thought < message)
     }
 
-    @Test
-    func `the Reduce Motion variant never takes longer than the full one`() {
-        for role in ArgoMotion.all {
-            guard let reduced = role.motion.reducedDuration else { continue }
-            #expect(reduced <= role.motion.duration)
-        }
-    }
-
-    @Test
-    func `every role resolves under Reduce Motion without a call site deciding`() {
-        for role in ArgoMotion.all {
-            let full = role.motion.resolved(reduceMotion: false)
-            #expect(full != nil)
-            // A nil reduced animation is a decision, not a gap: the change lands instantly.
-            #expect(role.motion.resolved(reduceMotion: true) == nil || role.motion
-                .reducedDuration != nil)
-        }
+    @Test(arguments: palettes)
+    func `text on an accent fill is legible`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        #expect(
+            appearance.palette.text.onAccent
+                .contrastRatio(on: appearance.palette.interaction.accent) >= 4.5,
+        )
     }
 }

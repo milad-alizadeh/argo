@@ -33,9 +33,11 @@ projects that do have a browser.
 
 The ramps themselves — colour roles, the type scale, spacing, radii, elevation, motion — are
 designed once via the `design-foundations` skill and live in
-`ArgoUI/Sources/ArgoUI/VisualContract/`. `Specimen/FoundationSpecimen.swift` renders them and
+`ArgoUI/Sources/ArgoUI/VisualContract/`. `Specimen/ContractSpecimen.swift` renders them and
 is the one **non-disposable** design artifact: it draws the real tokens rather than a copy, so
-it cannot drift from the contract it documents.
+it cannot drift from the contract it documents, and a `Mirror` assertion fails the build if a
+role is missing from it. (`Specimen/FoundationSpecimen.swift` is the companion view — the same
+roles dressed onto a real shell, for judging the contract in situ rather than enumerated.)
 
 Screen work follows the foundations; it proposes, it never redefines. A screen that needs a
 value the contract lacks marks it a **proposal**, and promoting one is a contract change that

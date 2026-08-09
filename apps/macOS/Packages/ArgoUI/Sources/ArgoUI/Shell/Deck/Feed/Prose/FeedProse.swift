@@ -45,6 +45,11 @@ struct FeedProse: View {
     private var prose: some View {
         FeedMarkdown(text: text)
             .foregroundStyle(ink)
+            // The same ink again, and not a duplication: `foregroundStyle` is what DRAWS the
+            // words and nothing can read it back, so a span inside the block has no way to ask
+            // what it is inheriting. This is the readable copy, and the only thing that consumes
+            // it is the marked-span floor.
+            .environment(\.proseVoice, ink)
             .textSelection(.enabled)
     }
 
@@ -54,6 +59,16 @@ struct FeedProse: View {
         case .thought: argo.color.text.tertiary
         }
     }
+}
+
+public extension EnvironmentValues {
+    /// The ink the prose of the current block is set in.
+    ///
+    /// Only a marked `code` span reads it, and only to find out whether inheriting would put it
+    /// under the contrast floor on its own ground. `nil` means nobody has claimed a voice, which
+    /// is the case for every surface that draws prose at the primary ink and never needed to say
+    /// so — a span there inherits and the floor never engages.
+    @Entry var proseVoice: ArgoColor?
 }
 
 #Preview("Feed prose — a message and the reasoning behind it") {

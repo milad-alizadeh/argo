@@ -3,18 +3,23 @@ import Foundation
 import SwiftUI
 import Testing
 
-/// The tint tracks the agent's backticks and nothing else. Every claim here is about WHICH
-/// characters get it — the ink itself is the visual contract's.
+/// The mark tracks the agent's backticks and nothing else. Every claim here is about WHICH
+/// characters get it — what it looks like is the visual contract's.
+///
+/// A `code` span is drawn as a GROUND, not a hue, so in the ordinary case it takes no ink at all
+/// and these tests would have nothing to read. They pass a `span` ink, which is the floor case:
+/// the one voice quiet enough that inheriting would put the run under the contrast floor on its
+/// own ground. Same runs either way — the ink is just what makes the choice observable.
 @Suite("Marked prose")
 struct MarkedProseTests {
-    let ink = ArgoPalette.graphite.text.code
+    let ink = ArgoPalette.graphite.text.secondary
     let linkInk = ArgoPalette.graphite.interaction.accent
 
     @Test
-    func `a code span is inked and the sentence around it is not`() {
+    func `a code span is marked and the sentence around it is not`() {
         let inked = MarkedProse.inked(
             parsed("Read `FeedView.swift` first."),
-            code: ink,
+            span: ink,
             link: linkInk,
         )
 
@@ -22,12 +27,12 @@ struct MarkedProseTests {
     }
 
     /// Bold is not machine text. It was already told apart by weight, and a second signal on it
-    /// would leave the tint meaning "emphasis of some kind" rather than "this is a token".
+    /// would leave the mark meaning "emphasis of some kind" rather than "this is a token".
     @Test
-    func `emphasis takes no ink — only code does`() {
+    func `emphasis takes no mark — only code does`() {
         let inked = MarkedProse.inked(
             parsed("The **ramp** and `surface.base`."),
-            code: ink,
+            span: ink,
             link: linkInk,
         )
 
@@ -35,10 +40,10 @@ struct MarkedProseTests {
     }
 
     @Test
-    func `every span in a line is inked, not just the first`() {
+    func `every span in a line is marked, not just the first`() {
         let inked = MarkedProse.inked(
             parsed("Drops `VAR=value` and `cd …` preludes."),
-            code: ink,
+            span: ink,
             link: linkInk,
         )
 
@@ -49,7 +54,19 @@ struct MarkedProseTests {
     func `prose with no marks in it comes back untouched`() {
         let plain = parsed("Nothing here was marked.")
 
-        #expect(MarkedProse.inked(plain, code: ink, link: linkInk) == plain)
+        #expect(MarkedProse.inked(plain, span: ink, link: linkInk) == plain)
+    }
+
+    /// The ordinary case, and the reason the span parameter is an Optional rather than a colour:
+    /// a marked run inherits the voice around it, so nothing is written onto it at all. A run that
+    /// came back inked here would be a span claiming more than the sentence carrying it.
+    @Test
+    func `with no floor in force a code span takes no ink of its own`() {
+        let source = parsed("Read `FeedView.swift` first.")
+        let inked = MarkedProse.inked(source, span: nil, link: linkInk)
+
+        #expect(inked == source)
+        #expect(inked.runs.allSatisfy { $0.foregroundColor == nil })
     }
 
     /// Colour is not enough on its own — a reader who cannot separate two hues sees an ordinary
@@ -58,7 +75,7 @@ struct MarkedProseTests {
     func `a link is inked and ruled, and nothing else is`() {
         let inked = MarkedProse.inked(
             parsed("See [ADR-0020](https://example.com) and `Plan`."),
-            code: ink,
+            span: ink,
             link: linkInk,
         )
         let ruled = inked.runs.filter { $0.underlineStyle != nil }
@@ -74,7 +91,7 @@ struct MarkedProseTests {
         )) ?? AttributedString(text)
     }
 
-    /// The runs the tint landed on, as their characters — the only observable that says the
+    /// The runs the mark landed on, as their characters — the only observable that says the
     /// right span was picked rather than merely that some span was.
     private func coloured(_ prose: AttributedString) -> [String] {
         prose.runs.compactMap { run in

@@ -23,6 +23,11 @@ public extension ArgoPalette {
             // being read, and the graphite left showing through is a frame around it rather
             // than a deck the eye keeps trying to finish.
             scrim: ArgoColor(hex: 0x0B0C0E, opacity: 0.90),
+            // Above `hover` (0.045) and `selected` (0.058) by a clear margin, so a marked span
+            // never reads as a row that happens to be under the pointer, and quiet enough that a
+            // paragraph carrying several filenames does not come out striped. Resolves to
+            // #2E3033 on the deck and #343638 in a prompt's bubble.
+            marked: ArgoColor(hex: 0xFFFFFF, opacity: 0.07),
         ),
         text: TextRoles(
             primary: ArgoColor(hex: 0xF2F4F6),
@@ -32,10 +37,9 @@ public extension ArgoPalette {
             tertiary: ArgoColor(hex: 0x868D94),
             disabled: ArgoColor(hex: 0x4E545A),
             onAccent: ArgoColor(hex: 0x05070A),
-            // A lavender, and deliberately not Ion Blue: a tinted span is not selected, and the
-            // brand hue is the selection's. Far enough off every state ink that a `git status`
-            // in a sentence never reads as a status.
-            code: ArgoColor(hex: 0xBFA8F0),
+            // There is no `code` ink. A marked span is drawn on `surface.marked` and keeps the
+            // ink of the voice around it (floored by `TextRoles.marked(on:)`) — the ramp above
+            // is the whole of this palette's text, and every rung of it is neutral.
         ),
         edge: EdgeRoles(
             hairline: ArgoColor(hex: 0xFFFFFF, opacity: 0.08),
