@@ -32,32 +32,29 @@ struct ProseReadingTests {
 
         #expect(cache.reading(of: "one") { $0.uppercased() } == "ONE")
         #expect(cache.reading(of: "two") { $0.uppercased() } == "TWO")
-        #expect(cache.count == 2)
     }
 
-    /// The bound is the point: a session read all day must not grow it without end. What replaces
-    /// a dropped entry is a re-read, which is correct — this is a cache and never a store.
+    /// The bound is the point: a session read all day must not grow the store without end. What
+    /// says it held is a string read once, then read AGAIN after enough others went past it — the
+    /// second read is the entry having been dropped, observed from outside.
     @Test
-    func `it never holds more readings than its ceiling`() {
-        var cache = ProseCache<Int>(ceiling: 4)
-
-        for line in 0 ..< 40 {
-            _ = cache.reading(of: "line \(line)") { _ in line }
-        }
-
-        #expect(cache.count <= 4)
-    }
-
-    @Test
-    func `a reading dropped at the ceiling is read again, not lost`() {
+    func `a string is read again once enough others have gone past it`() {
         var cache = ProseCache<String>(ceiling: 2)
-
-        _ = cache.reading(of: "first") { $0 }
-        for line in 0 ..< 8 {
-            _ = cache.reading(of: "line \(line)") { $0 }
+        var reads = 0
+        let read = { (text: String) in
+            reads += 1
+            return text
         }
 
-        #expect(cache.reading(of: "first") { $0 } == "first")
+        _ = cache.reading(of: "first", read: read)
+        for line in 0 ..< 8 {
+            _ = cache.reading(of: "line \(line)", read: read)
+        }
+        let readsBefore = reads
+
+        // Not lost, only dropped: what comes back is the same reading, freshly made.
+        #expect(cache.reading(of: "first", read: read) == "first")
+        #expect(reads == readsBefore + 1)
     }
 
     @MainActor

@@ -37,15 +37,14 @@ final class FeedMotionE2ETests: XCTestCase {
     /// One walk, for the reason the other suites here state: each case costs a launch, and
     /// relaunching the same bundle id back to back is the flakiest moment in the run.
     ///
-    /// The anchor is a row from the middle of the reading, addressed by the file its edit names —
-    /// the long fixture numbers those, so it is one row rather than one of fifty that read alike.
-    /// Every assertion after the first is the same question asked again: is that row still on
+    /// Every assertion after the first is the same question asked again: is the anchor row still on
     /// screen? Before the fix, opening the panel left the retained offset pointing past the end of
     /// the re-estimated content, and the answer was no.
+    ///
+    /// The seam it drags is the panel's. This specimen has no running subagents, so the rail — and
+    /// the second seam with it — is not on screen to grab; both are the same `DeckSeam`.
     func testTheReaderKeepsTheirPlaceWhileTheColumnIsResized() {
-        let feed = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == 'Feed'"))
-            .firstMatch
+        let feed = element(labelled: "Feed")
         XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
 
         let anchor = row(naming: "FeedView25.swift")
@@ -53,18 +52,14 @@ final class FeedMotionE2ETests: XCTestCase {
         XCTAssertTrue(anchor.isHittable, "Never reached the middle of the reading.")
 
         anchor.click()
-        let panel = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == 'Evidence'"))
-            .firstMatch
+        let panel = element(labelled: "Evidence")
         XCTAssertTrue(panel.waitForExistence(timeout: 10), "The row opened no panel.")
         XCTAssertTrue(
             anchor.isHittable,
             "Opening the panel took the reading away from the row it was opened from.",
         )
 
-        drag(app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == 'Resize'"))
-            .firstMatch)
+        drag(element(labelled: "Resize"))
         XCTAssertTrue(panel.exists, "The seam drag closed the panel.")
         XCTAssertTrue(anchor.isHittable, "Dragging the seam lost the reader's place.")
 
@@ -74,6 +69,14 @@ final class FeedMotionE2ETests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground)
     }
 
+    private func element(labelled label: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", label))
+            .firstMatch
+    }
+
+    /// A call row, addressed by the file its edit names. The long fixture numbers those, so this is
+    /// one row rather than one of fifty that read alike.
     private func row(naming file: String) -> XCUIElement {
         app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", file))
