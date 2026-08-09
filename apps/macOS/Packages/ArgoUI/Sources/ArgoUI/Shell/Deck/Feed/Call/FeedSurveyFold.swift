@@ -33,7 +33,7 @@ enum FeedSurveyFold {
     /// A failed read is loud: it is the one thing in the run worth seeing, and a count saying three
     /// reads happened would be the fold reporting that everything went fine.
     ///
-    /// A picture is loud for the opposite reason. `isQuiet` is true for `.read`, so a `Read` of a
+    /// A picture is loud for the opposite reason. `onlyLooks` is true for `.read`, so a `Read` of a
     /// PNG is a read like any other to this rule and would disappear into `Read 6` — the one row
     /// in the run whose whole content is the thing a count cannot say. Named here rather than left
     /// to the pass order: the gallery fold runs after this one, so the precedence between the two
@@ -43,7 +43,7 @@ enum FeedSurveyFold {
     /// of the two: a call that came back with a picture AND a page of output belongs to neither
     /// fold, and the wider rule here is what leaves it a row of its own instead of a count.
     private static func quiet(_ content: FeedRow.Content) -> FeedCall? {
-        guard case let .call(call) = content, call.kind.isQuiet, !call.ending.hasFailed,
+        guard case let .call(call) = content, call.onlyLooks, !call.ending.hasFailed,
               !call.carriesMedia
         else { return nil }
         return call

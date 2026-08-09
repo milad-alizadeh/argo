@@ -81,25 +81,40 @@ struct FeedSurvey: Equatable, Sendable {
             saysVerb: false,
             steps: calls.flatMap { call in
                 call.evidence.map {
-                    FeedEvidence.Step(address: call.address, language: call.language, result: $0)
+                    FeedEvidence.Step(address: call.caption, language: call.language, result: $0)
                 }
             },
         )
     }
 }
 
-extension FeedCall.Kind {
+extension FeedCall {
     /// Whether the call only LOOKED.
     ///
-    /// Two kinds and not four: `fetch` and `delegate` read like observation and are not — a fetch
-    /// reaches outside the machine and a delegation is a whole other agent's turn, and both are
-    /// rare enough that folding them would save no room while hiding the loudest thing in the run.
-    var isQuiet: Bool {
-        switch self {
+    /// Two kinds are quiet on the strength of the kind alone, and not four: `fetch` and `delegate`
+    /// read like observation and are not — a fetch reaches outside the machine and a delegation is
+    /// a whole other agent's turn, and both are rare enough that folding them would save no room
+    /// while hiding the loudest thing in the run.
+    ///
+    /// An `execute` is the one kind that cannot be answered from the kind: a `cat` and a `git push`
+    /// are the same kind and two entirely different events, so the question moves to the command
+    /// text. It moves there and not to the narration, which is what makes it work on a Codex
+    /// Session — and a call standing in for no command at all is loud, like anything unread.
+    var onlyLooks: Bool {
+        switch kind {
         case .read, .search: true
-        case .edit, .create, .delete, .move, .execute, .skill, .fetch, .delegate, .mcp,
-             .unclassified:
-            false
+        case .execute: command.map(FeedQuietCommand.onlyLooks(at:)) ?? false
+        case .edit, .create, .delete, .move, .skill, .fetch, .delegate, .mcp, .unclassified: false
+        }
+    }
+
+    /// The command the row is standing in for, whether it drew the command itself or the sentence
+    /// the agent wrote about it.
+    private var command: String? {
+        switch subject {
+        case let .command(command): command
+        case let .narration(_, standingIn: target): target
+        case .file, .plain: nil
         }
     }
 }

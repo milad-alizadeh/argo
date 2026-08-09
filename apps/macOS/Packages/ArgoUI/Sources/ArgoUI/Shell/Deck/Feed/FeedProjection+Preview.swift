@@ -39,6 +39,11 @@ extension FeedProjection {
     /// preview rows: those are a Claude Code record, and its commands arrive narrated.
     static let previewCommandRows = rows(from: CockpitPresentation.Session.ranCommands)
 
+    /// A turn that looked around through a shell and then changed something, projected. Its own
+    /// fixture rather than a filter: what it is a render OF is the boundary between a folded
+    /// stretch and the loud rows either side of it, and no filter over another feed has one.
+    static let previewFoldRows = rows(from: CockpitPresentation.Session.foldedLooking)
+
     /// The same feed with the work taken out — what the agent SAID, at the shape it said it in. A
     /// render of a transcript that is four fifths tool calls is a render of the tool calls.
     static let previewProseRows = previewRows.filter(\.isProse)

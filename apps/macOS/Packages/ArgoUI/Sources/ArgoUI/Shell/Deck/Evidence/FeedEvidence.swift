@@ -85,6 +85,17 @@ extension FeedCall {
         }
     }
 
+    /// How a step inside a FOLDED run names the call that produced it.
+    ///
+    /// The address, except where the agent wrote its own account of the call — then that, which is
+    /// the sentence the unfolded row would have drawn. The reasoning that keeps a narration OFF a
+    /// single call's header does not reach here: that header is a second look at a row still on
+    /// screen saying the sentence, and a folded run left no such row behind.
+    var caption: String {
+        guard case let .narration(said, _) = subject else { return address }
+        return said
+    }
+
     /// The language's mark for a file, and the CALL's own for everything else — a command takes
     /// the terminal it was run in, not the generic document that would have made it look like one.
     /// The plain document survives for the one honest gap: a subject Argo could name neither way.
