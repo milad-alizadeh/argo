@@ -15,27 +15,30 @@ final class FeedWalkE2ETests: FeedE2ECase {
     /// The start is addressed by the first file the fixture edits rather than by "a prompt". Only
     /// realised rows are in the accessibility tree, so a query that matches any prompt matches
     /// whichever one is on screen — and a walk that stalled halfway would satisfy it.
+    ///
+    /// Up first and down second, because the feed opens at the END of the reading: the walk starts
+    /// from whichever end the reader is given, and this one is given the newest line.
     func testTheReadingKeepsBothEndsThroughAFullWalk() {
         XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
 
         let opening = row(naming: "FeedView1.swift")
+        walk(by: 600, times: 40)
         XCTAssertTrue(
             opening.waitForExistence(timeout: 10),
-            "The feed did not open at the start of the reading.",
+            "Walking up the whole reading never reached its start.",
         )
-        XCTAssertTrue(opening.isHittable, "The start of the reading was not on screen at launch.")
+        XCTAssertTrue(opening.isHittable, "The start of the reading was not on screen.")
 
         let newest = app.buttons["Newest"]
+        XCTAssertTrue(
+            newest.waitForExistence(timeout: 10),
+            "A reading walked to its start offered no way back to its newest line.",
+        )
+
         walk(by: -600, times: 40)
         XCTAssertTrue(
             newest.waitForNonExistence(timeout: 10),
-            "Walking down the whole reading never reached its end.",
-        )
-
-        walk(by: 600, times: 40)
-        XCTAssertTrue(
-            opening.isHittable,
-            "Walking back up the whole reading did not return to its start.",
+            "Walking back down the whole reading did not return to its end.",
         )
         XCTAssertEqual(app.state, .runningForeground)
     }

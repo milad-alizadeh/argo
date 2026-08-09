@@ -59,7 +59,11 @@ class FeedE2ECase: XCTestCase {
     /// A screenful at a time until the row is reachable. In screenfuls rather than one throw
     /// because the reading is lazy: a row is realised by the scroll that reaches it, and a single
     /// large delta lands past it on estimated heights.
-    func scroll(until row: XCUIElement, by delta: CGFloat = -400, steps: Int = 30) {
+    ///
+    /// Upwards by default, because that is the direction a feed is walked in: it opens on its
+    /// newest line, so everything already written is above the reader. A row that arrives after
+    /// they have gone looking is the case that passes the delta the other way.
+    func scroll(until row: XCUIElement, by delta: CGFloat = 400, steps: Int = 30) {
         let column = feed
         for _ in 0 ..< steps where !row.exists || !row.isHittable {
             column.scroll(byDeltaX: 0, deltaY: delta)

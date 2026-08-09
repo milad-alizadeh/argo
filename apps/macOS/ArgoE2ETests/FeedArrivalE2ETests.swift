@@ -30,8 +30,9 @@ final class FeedArrivalE2ETests: FeedE2ECase {
         let before = anchor.frame
 
         // Long enough for the specimen to write out the rest of the fixture — the claim is about a
-        // reading growing under a reader, so the wait IS the mechanism under test.
-        try await Task.sleep(for: .seconds(5))
+        // reading growing under a reader, so the wait IS the mechanism under test. Read against
+        // `ArrivingFeedSpecimen`'s pace, which is deliberately slow enough to scroll during.
+        try await Task.sleep(for: .seconds(15))
 
         XCTAssertTrue(anchor.isHittable, "Arriving rows took the reader off the row they were on.")
         XCTAssertEqual(
@@ -44,7 +45,7 @@ final class FeedArrivalE2ETests: FeedE2ECase {
         // And the reading really did grow: the last turn's edit is in the half that had not been
         // written when the reader stopped on the row above.
         let arrived = row(naming: "FeedView51.swift")
-        scroll(until: arrived, steps: 60)
+        scroll(until: arrived, by: -400, steps: 60)
         XCTAssertTrue(arrived.exists, "Nothing arrived, so the reader was never read under.")
         XCTAssertEqual(app.state, .runningForeground)
     }

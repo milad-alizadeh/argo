@@ -21,8 +21,9 @@ final class FeedEndE2ETests: FeedE2ECase {
     func testTheEndOfTheReadingSurvivesASeamDrag() {
         XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
 
-        // The column is at its narrowest with the panel open, so the same rows stand several times
-        // taller than they do beside a minimap and one throw lands a long way short of the end.
+        // The feed opens at the end, so nothing here has to walk to it. The scroll is kept for the
+        // case it does not: the column is at its narrowest with the panel open, and a reading that
+        // opened short of its end would need several throws to reach it.
         let newest = app.buttons["Newest"]
         for _ in 0 ..< 60 where newest.exists {
             feed.scroll(byDeltaX: 0, deltaY: -800)
