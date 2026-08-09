@@ -1,106 +1,95 @@
 ---
 paths:
-  - "apps/desktop/src/renderer/src/**/*.{css,tsx,jsx}"
+  - "apps/macOS/**/*.swift"
 ---
 
 # Design System
 
-Style every UI through **design tokens** surfaced as **Tailwind v4 utility classes**,
-never as raw values or inline style objects. Two hard rules, no exceptions outside the
-documented escape hatches.
+Style every surface through the **visual contract**, never through raw values at a call site.
+Two hard rules, no exceptions outside the documented escape hatches.
 
-## Token architecture (ADR-0006)
+The Tailwind/CSS spelling of this rule retired with the Electron cockpit; the shipped
+`packages/argo-skills/skills/setup-rules/rules/design-system.md` still carries it for consumer
+projects that have a browser. What follows is Argo's own, in SwiftUI.
 
-Tokens live across **two files**, and the split is load-bearing:
+## Where the contract lives (ADR-0022)
 
-- **`styles/argo-tokens.css`** — the single source of **raw values**. Every color,
-  radius, size, etc. is a CSS custom property here, split by theme (`:root` = light,
-  `.dark` = dark, per the shadcn convention).
-- **`styles/globals.css`** — maps those raw variables onto Tailwind's theme via
-  `@theme inline { --color-background: var(--background); … }`, which generates the
-  `bg-background` / `text-muted-foreground` utility classes. Wiring only, no raw values.
+`apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` is the single source of visual
+values. One file per family, each value named for the **question it answers**:
+
+| File | Holds |
+|---|---|
+| `ArgoPalette` · `ArgoColor` · `GraphitePalette` | colour ROLES — `surface`, `text`, `edge`, `interaction`, `state`, `diff` — and the one appearance that fills them |
+| `ArgoTheme` | the appearance in force, carried in the environment (`\.argo`) — colour is the only family an appearance changes |
+| `ArgoTypeScale` | the type ladder, which is **Apple's**: the macOS HIG text styles, named as the HIG names them |
+| `ArgoTextStyle` · `ArgoTypography` | named roles over that ladder (face + rung + weight + tracking) |
+| `ArgoSpacing` · `ArgoRadius` · `ArgoStroke` | the rhythm, the four radius rungs, the stroke widths |
+| `ArgoElevation` · `ArgoMotion` · `ArgoIconSize` · `ArgoSymbol` | depth, durations and curves, glyph sizes |
+| `ArgoLayout` · `ArgoFeedRow` · `ArgoPlanPill` | structural proportions and per-surface measures |
+
+`Specimen/FoundationSpecimen.swift` renders the contract on a real surface. It is the living
+proof and the one non-disposable design artifact (`rules/design-studies.md`).
 
 ## Rule 1 — Tokens only, never magic numbers
 
-Every visual constant is a raw variable in `styles/argo-tokens.css`, wired into a
-utility class through the `@theme inline` block in `styles/globals.css`.
+Every visual constant is a named value in `VisualContract/`, and a view reaches it by name.
 
-- **Never** hardcode a hex/rgb/hsl color, a px/rem/em size, a duration, or an opacity
-  anywhere — not in a class, not in a style, not in code.
-- Need a value that doesn't exist yet? **Add the raw variable to `argo-tokens.css`
-  first** (both `:root` and `.dark` if it's themed), map it in `globals.css`, then use
-  the generated utility class. Don't inline the raw value.
-- Prefer the shadcn semantic roles (`background`, `foreground`, `muted`, `border`, …)
-  that already resolve to these variables over inventing a parallel token.
+- **Never** write a colour literal, a font size, a duration, or a spacing number in a view.
+- Need a value that doesn't exist? **Add it to the contract first**, with a comment saying what
+  question it answers, then use the name. Don't inline the raw value "just here".
+- Colour comes from the environment (`@Environment(\.argo) private var theme`), not from a
+  static — a second appearance is a second `ArgoPalette` and an environment write, and every
+  call site that reads a role moves with it for free.
 
-## Roles, not values — typography and spacing
+`scripts/check-design-tokens-swift.sh` is the mechanical half: it reads colour construction,
+the type ladder, and the modifiers that take a rhythm value. `VisualContract/` is exempt
+because it IS the contract, and `Specimen/` because a specimen exists to show what a role is
+worth. A finding is fixed by snapping to a token or promoting one — **never by allowlisting**,
+unless it is pre-existing debt tracked in a ticket.
 
-Tokens are named by **role** (`--text-label`, `--space-inset`), never by their
-value (`--text-10-5`, `--space-7px`). Role names are what survive a redesign and
-what carry a design across frameworks; value names are drift with extra steps.
+## Roles, not values
 
-- A typography role is the **full tuple** — size + line-height + weight +
-  letter-spacing — not just a font size. Components use the role's utility
-  (`text-label`), never a raw size, and never Tailwind arbitrary values
-  (`text-[13px]`, `p-[7px]`, `bg-[#4a5ee0]` are all forbidden in components).
-- The set of roles is deliberately small (roughly: micro / label / body /
-  body-lg / title / display). A new role needs a reason an existing one can't
-  cover — "this looked 0.5px better in one spot" is a snap, not a new role.
-- **A type role reaches the screen through the `Text` atom, never as a class typed
-  at a call site.** `className="text-meta"` is a violation exactly the way
-  `bg-[#4a5ee0]` is — and so is a bare string in a `div` that inherits its type.
-  See `ui-components.md`, "All rendered text is a `Text`".
+Names say what a thing is for, never what it is worth. `ArgoSpacing.comfortable`, not
+`space12`; `state.attention`, not `amber`. Role names survive a redesign; value names are drift
+with extra steps.
+
+- **The type scale is Apple's, and stays Apple's.** `ArgoTypeScale` names the HIG's macOS text
+  styles and renders through the semantic `Font.TextStyle`, so a line takes the platform's
+  metrics — and Accessibility text-size settings already know how to scale it. `size` is on
+  each rung for the arithmetic a line height has to do; it is **read, never set**. Argo does
+  not own a ladder of its own, and `ArgoTextStyle` cannot hold a size the HIG's does not have.
+- The set of roles in each family is deliberately small. A new one needs a reason an existing
+  one can't cover — "this looked 2pt better in one spot" is a snap, not a new role.
+- A **measure** is not a token. How wide a thumbnail is, or how long a line of prose may run,
+  is a property of the content; it lives beside the surface it belongs to (`ArgoFeedRow`) with
+  its reason at the value, not as a rung of the rhythm.
 
 ## Drift — fix the contract, not the symptom
 
-When you find a raw value in a component (yours or inherited), the fix is never
-local: snap it to an existing token or promote it into `argo-tokens.css`, then
-use the utility. Patching one component while the raw value's siblings survive
-elsewhere is how the system rots. Same rule for the AI: when output drifts,
-correct the token contract or the rules — not the one offending line.
+When you find a raw value in a view (yours or inherited), the fix is never local: snap it to an
+existing token or promote it into the contract, then use the name. Patching one view while the
+raw value's siblings survive elsewhere is how the system rots. Same rule for the AI: when
+output drifts, correct the contract or the rules — not the one offending line.
 
-## Rule 2 — Classes/utilities, never inline styles
+## Escape hatches
 
-Style with `className` and Tailwind utilities. **Do not** use static `style={{ ... }}`
-objects. Dynamic per-state styling → **swap classes**, don't compute inline styles:
+A raw number in a view is allowed **only** where it is not a design constant, with a comment
+saying why:
 
-```tsx
-const tone = active ? 'bg-accent text-accent-foreground' : 'bg-input text-muted-foreground'
-return <button className={`px-4 py-2.5 rounded-lg ${tone}`}>Send</button>
-```
+1. **Runtime-derived values** — a width that came from a drag, a `GeometryReader`, or a
+   measured string.
+2. **A content measure with no home yet** — allowed in the same change that gives it one.
 
-## Escape hatches (the ONLY allowed inline styles)
+`frame` is deliberately outside the mechanical gate, because its numbers are usually content
+measures rather than design constants. That makes it the easiest place for a real drift to
+hide: judge it, don't assume the gate did.
 
-Use an inline style **only** for a value the class system genuinely cannot express,
-with a comment saying why:
+## Checklist before you finish visual work
 
-1. **Truly dynamic runtime values** — e.g. `style={{ height: `${height}px` }}`, where
-   the number comes from runtime, not a token.
-2. **Electron shell CSS with no utility class** — e.g. a draggable window region
-   (`WebkitAppRegion: 'drag'`). Keep it inline with a comment.
-
-Everything else is a bug — convert it to classes + tokens.
-
-## Non-token surfaces
-
-A canvas/WebGL surface outside Tailwind's reach (a terminal emulator, a charting
-canvas, the orb) pulls token values via `getComputedStyle` on a host element and
-keeps its theme constants as named `const`s at the top of the component — never bare
-magic numbers inline.
-
-## Checklist before you finish styling work
-
-- [ ] No hex/rgb/px/rem/ms literals (except token defs in `argo-tokens.css`).
-- [ ] No Tailwind arbitrary values (`*-[...]`) carrying a design constant.
-- [ ] No inline `style={{}}` except the two escape hatches above, each commented.
-- [ ] Any new visual value added to `argo-tokens.css` + mapped in `globals.css` first.
+- [ ] No colour literal, font size, duration or spacing number outside `VisualContract/`.
+- [ ] Colour read from `\.argo`, not from a static or a system colour.
+- [ ] Type set with `argoText(_:)` / `argoMono(_:)` or a named `ArgoTypography` role.
+- [ ] Any new visual value added to the contract first, with its reason.
 - [ ] `bun run check:design-tokens` passes (mechanical version of the above).
-- [ ] Typecheck succeeds.
-
-## Figma canvas work
-
-If building in Figma: load Figma's own skills (`figma-use`, then
-`figma-generate-design` / `figma-generate-library`) before any `use_figma` call —
-they own the HOW. On top of that: run the discovery checklist before any mutation
-(reuse existing components/variables, don't rebuild from primitives), assemble one
-section per `use_figma` call, and screenshot after each section lands.
+- [ ] The state RENDERED — a `Specimen` case, screenshotted and looked at
+      (AGENTS.md → *Visual verification*). A view that only compiles has not been checked.

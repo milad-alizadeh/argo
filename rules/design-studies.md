@@ -1,91 +1,97 @@
 ---
 paths:
   - "docs/designs/**"
-  - "apps/desktop/src/renderer/src/**/*.{css,tsx,jsx}"
+  - "apps/macOS/Packages/ArgoUI/Sources/ArgoUI/**/*.swift"
 ---
 
 # Design Studies
 
-High-fidelity UI design studies — the HTML designs you produce while exploring
-a screen's layout, palette, or interaction model — are a **committed repo artifact**,
-not scratch files.
+Design work — the exploration you do while settling a screen's layout, palette, or interaction
+model, and the artifact that records what you settled — is a **committed repo artifact**, not
+scratch files.
 
-## Rule — studies live in `docs/designs/`, committed
+This repo has one UI target: the native SwiftUI app in `apps/macOS`. There is no browser, so
+there is no HTML study; the equivalent of "render one state and look at it" is a **specimen**.
+The HTML-study spelling of this rule retired with the Electron cockpit
+(`docs/designs/README.md` → *What left, and where it went*), and the shipped
+`packages/argo-skills/skills/setup-rules/rules/design-studies.md` still carries it for consumer
+projects that do have a browser.
 
-- When you generate an HTML design study (via `frontend-design`, `prototype`, an ad-hoc
-  mockup, or a fan-out design pass), write the keepers to `docs/designs/`, not to a
-  temp/scratchpad directory. Scratchpad output gets swept — anyone else on the repo then
-  can't see the design you settled on.
-- `docs/designs/` holds only the **agreed-latest** set. When a study supersedes an
-  earlier one, delete the stale file in the same change — don't accumulate v1…v7. A
-  reader opening the directory should see the current direction, not the archaeology.
-- Keep a `docs/designs/README.md` index: one row per file (screen · what it is). Update
-  it whenever you add or prune a study.
-- `docs/` is excluded from the code knowledge graph (`.graphifyignore`), so committing
-  HTML studies here never pollutes the graph.
+## Rule — the settled design lives in `docs/designs/`, committed
 
-## Component-first authoring — designs must transfer
+- When a design pass settles something — a brief, an approved reference render, a decision log
+  — write the keeper to `docs/designs/`, not to a temp/scratchpad directory. Scratchpad output
+  gets swept, and then nobody else can see the design you settled on.
+- `docs/designs/` holds only the **agreed-latest** set. When an artifact supersedes an earlier
+  one, delete the stale file in the same change — don't accumulate v1…v7. A reader opening the
+  directory should see the current direction, not the archaeology.
+- Keep the `docs/designs/README.md` index current: one row per file (screen · what it is).
+- `docs/` is excluded from the code knowledge graph (`.graphifyignore`), so nothing committed
+  here pollutes the graph.
 
-Studies are authored the way the app is built (atoms → molecules → organisms →
-screen), so a settled design can be rebuilt in any target (Electron/shadcn, web,
-React Native) without reverse-engineering the markup:
+## Foundations before screens
 
-- **Tokens first.** Start every study from the token vocabulary mirrored from
-  `argo-tokens.css` — no bespoke hex/px for a value a token already covers.
-  Exploring a value the contract doesn't have yet is allowed (that's what studies
-  are for), but it's a **proposal**: it either snaps to an existing token or gets
-  promoted to a named one when the study settles, never ported raw.
-- **Foundations before screens.** The ramps themselves (type roles, spacing,
-  radii, color roles) are designed once via the `design-foundations` skill and rendered
-  as `docs/designs/foundations.html` — the one **non-disposable** study: it
-  styles only via `var(--token)`, so it always renders the current contract.
-  Screen studies follow it; they propose, they never redefine.
-- **Name every region.** Each meaningful region carries a stable
-  `data-component="SessionRow"` attribute (PascalCase, the future component's
-  name). This name survives into the inventory, the codebase, stories, and
-  tickets — it is decided once, in the study.
-- **Compose from a kit.** Recurring atoms/molecules are named render functions taking
-  an explicit props object (shared `docs/designs/kit.js`, script-included); a study
-  calls them, never re-writes their markup. New primitive → add to the kit first,
-  then compose. Same tiering as `ui-components.md`.
-- **Ship the inventory.** A settled study carries a component-inventory table —
-  name · tier · props/variants · composed-of — next to it in `docs/designs/`. The
-  inventory, not the HTML, is the build contract; the `componentize-design` skill consumes it
-  to scaffold the real components.
+The ramps themselves — colour roles, the type scale, spacing, radii, elevation, motion — are
+designed once via the `design-foundations` skill and live in
+`ArgoUI/Sources/ArgoUI/VisualContract/`. `Specimen/FoundationSpecimen.swift` renders them and
+is the one **non-disposable** design artifact: it draws the real tokens rather than a copy, so
+it cannot drift from the contract it documents.
 
-## The study is a spec, never a source
+Screen work follows the foundations; it proposes, it never redefines. A screen that needs a
+value the contract lacks marks it a **proposal**, and promoting one is a contract change that
+comes back through `design-foundations`' bless step — never a raw constant left in a view.
+`scripts/check-design-tokens-swift.sh` is the gate; `VisualContract/` and `Specimen/` are
+exempt from it because they are, respectively, the contract and the thing that shows it.
 
-A study's markup and CSS are disposable. Building a screen means running
-the `componentize-design` skill — settle values into the token contract, extract the
-inventory, rebuild from tokens + existing components — never copying study markup
-or styles into the app.
+## A state is settled by rendering it
 
-## Drift — the inventory carries a Status column
+`ArgoUI/Specimen/SpecimenCatalog.swift` holds one `Specimen` case per renderable state.
+**Adding a case is all it takes to add a state** — `scripts/specimens.sh` reads the names out
+of the catalog rather than repeating them:
 
-A big screen ships row by row over many tickets, so its study is authoritative for the
-regions not built yet and stale for the ones that are. The inventory says which, per row:
+```sh
+cd apps/macOS
+sh scripts/specimens.sh <dir> [name …]              # render the set, or named cases
+ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png
+ARGO_WINDOW_SIZE=<w>x<h> ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png
+```
 
-- **`spec`** — no component yet. The study region is truth; a design change means editing
-  the study HTML, which is what the study is for.
-- **`partial · <path>`** — the component exists but doesn't cover the row. Code is truth for
-  what it renders, the study for the rest; the row's Notes name what's outstanding.
-- **`built · <path>`** — the component and its stories are truth. A decision made while
-  implementing lands in the **inventory row** — its name and props become whatever the code
-  says, freezing having applied only up to `spec`. The study region is frozen reference and
-  is allowed to go stale.
+A width is part of the state for anything laid out in columns, so a narrow case is rendered at
+a chosen size rather than by dragging a window — that way it is a render somebody else can
+repeat.
 
-Pay to update a settled study's HTML in exactly one case: when a `built` region's drift would
-mislead a still-`spec` neighbour — a changed shell, split ratio, or row height that unbuilt
-regions are laid out against. Cosmetic divergence inside a built region costs nothing and is
-not worth a 100 KB edit.
+**Render before claiming a visual change is done.** The app launched against an ordinary
+checkout shows no Sessions, so without a specimen the surface being built is never actually
+looked at. And a render is not a click: a view that renders correctly in a specimen can still
+come apart inside a popover, which only `ArgoE2ETests` catches
+(`sh scripts/e2e-test.sh`, local gate).
 
-Two corollaries, both cheap and both mandatory in the same change as the code:
-a component that exists with no inventory row gets one (the row is how it becomes findable),
-and a row whose built name diverged from the study proposal keeps the old name in its Notes
-so the study anchor stays greppable.
+## The brief is a spec, never a source
+
+An approved reference render (`cockpit-sessions-liquid-glass.png`) and its decision log are
+**specs**. Building a screen means deriving it from the token contract and the existing views —
+never eyedropping a colour out of the PNG or transcribing a measurement the contract should
+own. The one exception is a measurement the decision log genuinely does not carry, which is why
+`ArgoLayout.swift` cites the PNG by name for the Instrument Deck's zone heights: a value taken
+from pixels says so, at its definition, so the next reader knows what would have to be re-shot
+to change it.
+
+## Drift
+
+A big screen ships region by region over many tickets, so a brief is authoritative for what is
+not built yet and stale for what is:
+
+- **not built** — the brief is truth. A design change means editing the brief.
+- **built** — the code and its specimen case are truth. A decision made while implementing
+  lands in the code with its reason at the value, and the brief's corresponding passage is
+  allowed to go stale.
+
+Pay to update a settled brief in exactly one case: when a built region's drift would mislead an
+unbuilt neighbour — a changed shell, split ratio, or row height that unbuilt regions are laid
+out against. Cosmetic divergence inside a built region costs nothing.
 
 ## Why not scratchpad
 
-The harness default sends temp files to a session scratchpad that is later cleaned up.
-Design decisions are durable team artifacts — they belong in version control where every
-agent and teammate on the repo can open them, diff them, and build the real UI from them.
+The harness default sends temp files to a session scratchpad that is later cleaned up. Design
+decisions are durable team artifacts — they belong in version control where every agent and
+teammate on the repo can open them, diff them, and build the real UI from them.

@@ -4,9 +4,11 @@ import SwiftUI
 ///
 /// A group of its own rather than four more constants in `ArgoLayout`, because these are not
 /// structural proportions of the shell — they are the typographic measure of a column of prose,
-/// and they answer to legibility rather than to the window. Sampled from the approved anatomy
-/// study (`docs/designs/cockpit-feed-anatomy-prototype-399.html`), which is the only source that
-/// carries numbers; the decision log carries none.
+/// and they answer to legibility rather than to the window. Sampled originally from #399's feed
+/// anatomy study, which retired with the Electron-era HTML studies. Nothing is lost with it: every
+/// GAP below names a step of `ArgoSpacing` rather than the number that was read off the study, so
+/// the rhythm is the contract's. What is left as a bare number is a content MEASURE — how wide a
+/// thumbnail is, how long a line of prose may run — and each of those carries its reason here.
 public enum ArgoFeedRow {
     /// The gutter each row is inset from the feed column's edges.
     public static let inset: CGFloat = ArgoSpacing.section

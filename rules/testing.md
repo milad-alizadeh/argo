@@ -1,8 +1,7 @@
 ---
 paths:
-  - "apps/desktop/src/**/*.test.{ts,tsx}"
-  - "apps/desktop/src/**/*.stories.tsx"
-  - "apps/desktop/e2e/**/*.spec.ts"
+  - "apps/macOS/**/Tests/**/*.swift"
+  - "apps/macOS/ArgoE2ETests/**/*.swift"
   - "scripts/*.test.mjs"
 ---
 
@@ -13,10 +12,21 @@ the suite the only documentation that cannot drift — prose goes stale silently
 goes red. These rules exist to keep that property: a suite that passes while the
 product is broken is worse than no suite, because it launders the breakage as safety.
 
-Runner: Vitest, `--project=unit`. End-to-end: Vitest browser mode over Storybook stories (Playwright Chromium,
-`--project=storybook`) — the `story tests` CI check. The rules are about what a test
-proves and how it stays honest, so they hold in any language; only the tool names are
-this project's.
+Runners, and what each can and cannot prove:
+
+- **swift-testing**, per SwiftPM package (`sh apps/macOS/scripts/swift-test.sh`, wired into
+  `bun run test`). Both `ArgoEngine` and `ArgoUI` — ArgoUI carries the visual contract's own
+  assertions. These can build a projection and assert on it; they **cannot click**. A view that
+  renders correctly and comes apart inside a popover passes every one of them.
+- **XCUITest** (`sh apps/macOS/scripts/e2e-test.sh`), the one target that launches Argo and
+  drives it. A deliberate **local** gate, not a CI one: driving the real app needs macOS
+  runners on every push. Run it when you touch a surface only reachable by clicking. A test
+  must launch onto a `--specimen`, never the machine's own registry, or it asserts whatever
+  that Mac happens to have on it.
+- **plain node** for the guardrail hooks (`scripts/*.test.mjs`, `bun run test:hooks`).
+
+The rules below are about what a test proves and how it stays honest, so they hold in any
+language; only the tool names are this project's.
 
 ## Test the behavior, not the implementation
 

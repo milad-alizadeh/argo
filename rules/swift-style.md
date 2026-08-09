@@ -120,10 +120,12 @@ symptom" means when a value is missing. Semantic system colors (`.primary`,
 modifier is the Swift form of the untokenized string `ui-components.md` bans. Use the
 `ArgoUI` text styles so the ramp is the only place a size or weight is decided.
 
-**`#Preview` is the story.** Every view ships previews covering the states it can be in —
-empty, loaded, error, long content — the same coverage rule `ui-components.md` states for
-Storybook, and for the same reason: a state with no preview is a state nobody has looked
-at. A preview that needs a running engine is a view that violated "views take data".
+**`#Preview` is where a state is looked at, and a `Specimen` case is where it is proved.**
+Every view ships previews covering the states it can be in — empty, loaded, error, long
+content — per `ui-components.md`'s coverage rule, and for its reason: a state with no render
+is a state nobody has looked at. A preview that needs a running engine is a view that violated
+"views take data". A state worth a screenshot also earns a case in `SpecimenCatalog`, which is
+what a reviewer and CI can actually see (`design-studies.md`).
 
 ## Self-check before you finish
 
