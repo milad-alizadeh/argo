@@ -1,6 +1,8 @@
 # ADR-0022 — Swift-native macOS runtime replaces Electron
 
-**Status:** Accepted — supersedes [ADR-0002 (electron-desktop-runtime)](./0002-electron-desktop-runtime.md)
+**Status:** Accepted — superseded ADR-0002 (electron-desktop-runtime), since deleted along with
+0004, 0005 and 0006 by [ADR-0023](./0023-the-electron-runtime-is-retired.md), which records the
+migration's final step
 
 ## Context
 
@@ -49,4 +51,5 @@ Swift/SwiftUI/AppKit learning module for the author.
   not reused; the domain model, ADR trail, and CONTEXT.md carry over intact.
 - xterm.js/node-pty are replaced by a native terminal path (decided
   separately).
-- The toolchain decisions in ADR-0006 no longer apply to the desktop app.
+- The toolchain decisions in ADR-0006 no longer apply to the desktop app — that ADR was
+  deleted outright once the app was (ADR-0023).

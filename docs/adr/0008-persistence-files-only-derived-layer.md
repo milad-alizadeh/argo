@@ -1,6 +1,6 @@
 # Persistence: files only; the derived layer is the only durable state
 
-**Context.** ADR-0005 originally specified a `better-sqlite3` mirror for the "durable subset (session history, outcomes)." That reimported argo-v2's shape (v2 used a Drizzle SQL DB) and was challenged: a database for what is essentially "remember what Argo derived" is over-intrusive, and the stock CLIs already persist the authoritative session content as files.
+**Context.** ADR-0005 (since deleted with the Electron runtime — ADR-0023) originally specified a `better-sqlite3` mirror for the "durable subset (session history, outcomes)." That reimported argo-v2's shape (v2 used a Drizzle SQL DB) and was challenged: a database for what is essentially "remember what Argo derived" is over-intrusive, and the stock CLIs already persist the authoritative session content as files.
 
 Facts on the ground: `claude` writes one JSONL transcript per session under `~/.claude/projects/<project>/`; `codex` writes one JSONL per session under `~/.codex/sessions/<yyyy>/<mm>/<dd>/rollout-*.jsonl` (plus `archived_sessions/`), each opening with a `session_meta` line carrying a stable session UUID and `cwd`. Both CLIs already own the transcript-on-disk, keyed by a stable id.
 
@@ -19,7 +19,8 @@ Facts on the ground: `claude` writes one JSONL transcript per session under `~/.
 **Why.** The CLIs already are the durable source of truth for session content, so Argo's only unique, non-reconstructable state is the thin derived layer. One JSONL per Session mirrors exactly how the CLIs themselves store — greppable by hand, no schema/migration, trivially GC'd (delete the one file when its transcript is gone). Discovering the roster instead of persisting it guarantees a single source of truth and the least intrusive footprint. This is the "everything is files" model all the way down.
 
 **Consequences.**
-- ADR-0005's `better-sqlite3` mirror is **withdrawn**; that bullet now points here.
+- ADR-0005's `better-sqlite3` mirror is **withdrawn**; with that ADR now deleted, this is the
+  persistence decision of record outright.
 - **"Session" is no longer necessarily "wrapped in a PTY by Argo."** External Sessions are observed read-only from their transcript — no Argo-owned PTY, no steering terminal. `CONTEXT.md`'s glossary is updated to match. The PTY host is now a property of *managed* Sessions (spawn + companion plugin + steering), not of every Session.
 - **Observation is unified on transcript-tailing** for all Sessions, managed and external alike. The PTY and companion-plugin channel are layered onto managed Sessions only for *control* (steering) and *CONVENTION-tier data* — never as an observation input. One Seam B, one parser; managed and external Sessions cannot drift in how they render.
 - **A rail "Session" is a resume-chain** of one-or-more CLI session files (linked by `leafUuid`), not necessarily a single file — `CONTEXT.md`'s glossary is updated to match.

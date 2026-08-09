@@ -43,7 +43,8 @@ component unit tests.
 
 - `/componentize-design` builds from `cockpit-inventory.md` (wiped #179; git history);
   matrix rows become the test suite.
-- `--tone-landed` (Merged ≠ CI-green) is a proposed token to promote into
-  `argo-tokens.css` at settle time.
+- `--tone-landed` (Merged ≠ CI-green) is a proposed token to promote into the token
+  contract at settle time — which is now `ArgoUI/VisualContract/`, `argo-tokens.css`
+  having gone with the Electron cockpit (ADR-0023).
 - Open: whether the Checks summary rows stay in the story pane or fold entirely
   into the ribbon's Commits drawer.

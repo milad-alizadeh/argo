@@ -1,5 +1,12 @@
 # Session-interior decisions (#186)
 
+> **The HTML prototypes this file cites no longer exist**, and its master–detail *layout* was
+> superseded by the single feed. They were retired with the Electron cockpit (ADR-0023);
+> `README.md` → *What left, and where it went* says why, and
+> `git log --diff-filter=D -- docs/designs/` finds them in history. The BEHAVIOUR decided here —
+> roster rows, dot-carries-state, zero-state, panel natures — still stands; read a
+> `*-prototype.html` reference as a pointer to a settled decision, not to a file you can open.
+
 Running log for the section-by-section grill over `cockpit-session-interior-prototype.html`.
 Format per entry: **Decision** / **Why** / **HTML change**. Folded into the #186 resolution
 comment + one map gist at close, then this file goes.
