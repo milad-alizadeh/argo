@@ -27,17 +27,30 @@ enum FeedCommandLine {
 
     /// Everything up to the pipe that carried the output away.
     ///
-    /// A `||` is not one. A `;`, `&&` or `||` chain is left alone: those are separate commands, and
-    /// dropping them would hide something that RAN rather than something that redirected — which is
-    /// why the pipe is found by scanning rather than by splitting on the character.
+    /// Two `|` are not one. A `;`, `&&` or `||` chain is left alone: those are separate commands,
+    /// and dropping them would hide something that RAN rather than something that redirected. Nor
+    /// is a `|` inside quotes — `jq '.result | keys'` is one argument, and cutting there draws a
+    /// command the agent never wrote. Both are why the pipe is scanned for rather than split on.
     private static func beforePipe(_ command: String) -> String {
         let characters = Array(command)
-        let at = characters.indices.first { index in
-            characters[index] == "|"
-                && (index == characters.startIndex || characters[index - 1] != "|")
-                && (index == characters.count - 1 || characters[index + 1] != "|")
+        var quote: Character?
+        for index in characters.indices {
+            let character = characters[index]
+            if let open = quote {
+                quote = character == open ? nil : open
+            } else if character == "'" || character == "\"" {
+                quote = character
+            } else if character == "|", isAlone(characters, at: index) {
+                return String(characters[..<index])
+            }
         }
-        return at.map { String(characters[..<$0]) } ?? command
+        return command
+    }
+
+    /// Whether this `|` is a pipe rather than half of a `||`.
+    private static func isAlone(_ characters: [Character], at index: Int) -> Bool {
+        (index == characters.startIndex || characters[index - 1] != "|")
+            && (index == characters.count - 1 || characters[index + 1] != "|")
     }
 
     /// What the shell was told before it was told to do anything.

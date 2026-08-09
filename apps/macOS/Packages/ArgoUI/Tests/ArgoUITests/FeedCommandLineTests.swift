@@ -88,7 +88,22 @@ struct FeedCommandLineTests {
         let address = "/private/tmp/claude-501/-Users-milad-Developer-argo/render.sh"
 
         #expect(DeckMiddleCut.applied(to: address) == "/private/t…eloper-argo/render.sh")
+    }
+
+    @Test
+    func `an address that already fits is left exactly as it stands`() {
         #expect(DeckMiddleCut.applied(to: "Sources/ArgoUI/Feed.swift")
             == "Sources/ArgoUI/Feed.swift")
+    }
+
+    // MARK: - What is not plumbing
+
+    /// A `|` between quotes is one argument, not a pipeline. Cutting there draws a command the
+    /// agent never wrote — and takes the address after it off the row with no ellipsis to say so.
+    @Test
+    func `a pipe inside a quoted argument is not plumbing`() {
+        let command = "jq -r '.toolUseResult | keys' session.jsonl"
+
+        #expect(FeedCommandLine.head(of: command) == command)
     }
 }
