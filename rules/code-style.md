@@ -1,7 +1,8 @@
 ---
 paths:
-  - "apps/desktop/**/*.{ts,tsx}"
-  - "packages/**/*.{ts,tsx}"
+  - "apps/**/*.{ts,tsx}"
+  - "packages/**/*.{ts,tsx,mjs}"
+  - "scripts/**/*.mjs"
   - "scripts/**/*.mjs"
 ---
 

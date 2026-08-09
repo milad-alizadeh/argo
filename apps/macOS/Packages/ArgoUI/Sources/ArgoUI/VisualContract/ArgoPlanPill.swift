@@ -5,8 +5,9 @@ import SwiftUI
 /// Its own group rather than four more constants in `ArgoLayout`, for the reason `ArgoFeedRow` is:
 /// these are not structural proportions of the shell. The pill is a thing that FLOATS over one, so
 /// what it answers to is how far it stands off the dock and how wide a list stays readable — never
-/// the window. Sampled from the approved anatomy study
-/// (`docs/designs/cockpit-feed-anatomy-prototype-399.html`), the only source carrying numbers.
+/// the window. Sampled originally from #399's feed anatomy study, which retired with the
+/// Electron-era HTML studies; the gaps below name steps of `ArgoSpacing`, and what stays a bare
+/// number is a measure — a ring, a mark, the width a list of steps stays readable at.
 public enum ArgoPlanPill {
     /// How far the pill floats above the dock. The whole claim of the surface is that it is over
     /// the deck rather than in it, and a pill flush to the separator would read as part of the
