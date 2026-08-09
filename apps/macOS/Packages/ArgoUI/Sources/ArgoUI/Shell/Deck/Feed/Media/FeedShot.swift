@@ -37,7 +37,7 @@ extension FeedCall {
     var shots: [FeedShot] {
         evidence.compactMap { result in
             guard case let .media(media) = result else { return nil }
-            return FeedShot(name: subject.captioned, address: address, media: media)
+            return FeedShot(name: subject.captioned, address: address.text, media: media)
         }
     }
 

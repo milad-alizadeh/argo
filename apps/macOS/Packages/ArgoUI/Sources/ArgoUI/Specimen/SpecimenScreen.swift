@@ -117,6 +117,12 @@ public struct SpecimenScreen: View {
             // patch — whether an outline reads as an outline once the `##` stops being drawn is
             // the whole judgement, and it is not one a test can make.
             sessions(FeedProjection.previewCallRows, open: FeedProjection.previewDocumentCallID)
+        case .evidenceAddresses:
+            // The per-subject split, which is the whole judgement: a command open beside a File
+            // path, at the panel's own floor. What is being looked at is that the two are cut at
+            // OPPOSITE ends — the command from its beginning down three lines, the path from its
+            // front on one — and that a header three lines deep has not moved the close control.
+            EvidenceSpecimen()
         case .feedAttention:
             // Both questions at once: the one still waiting, in the only attention ink the feed
             // has, and the one already settled with the option that was taken marked on it. The

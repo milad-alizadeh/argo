@@ -12,26 +12,35 @@ import Foundation
 ///
 /// It sits at the deck's root rather than inside the feed because the evidence panel's header cuts
 /// the same kind of thing, and one address must not get two answers depending on which surface is
-/// drawing it. The panel still front-cuts today — converting it is its own ticket — so this is
-/// where that change reaches for the rule rather than writing a second one.
+/// drawing it — a row and the panel it opens disagreeing about where one command was cut would make
+/// the ellipsis unreadable on both.
 enum DeckMiddleCut {
     /// The address, whole where it already fits and cut in its middle where it does not. The result
-    /// is exactly `readableLength` characters when it was cut, ellipsis included.
-    static func applied(to address: String) -> String {
-        guard address.count > readableLength else { return address }
+    /// is exactly `keeping` characters when it was cut, ellipsis included.
+    static func applied(to address: String, keeping length: Int = readableLength) -> String {
+        guard address.count > length else { return address }
+        let lead = length / leadShare
         return String(address.prefix(lead))
             + ellipsis
-            + String(address.suffix(readableLength - lead - 1))
+            + String(address.suffix(length - lead - 1))
     }
 
-    /// How many characters an address may take before it is worth cutting. A measurement of what
-    /// stays readable rather than of what fits: the surfaces that draw one are laid out in points,
-    /// and a rule that asked them how wide they were would give the same address two shapes.
+    /// The same cut, to an address given more than one line to run across. A surface that wraps has
+    /// that many readings' worth of room before the middle is worth spending — and it asks in LINES
+    /// rather than in characters so the measure of a readable line stays in one place.
+    static func applied(to address: String, over lines: Int) -> String {
+        applied(to: address, keeping: readableLength * lines)
+    }
+
+    /// How many characters an address may take, per line, before it is worth cutting. A measurement
+    /// of what stays readable rather than of what fits: the surfaces that draw one are laid out in
+    /// points, and a rule that asked them their width would give the same address two shapes.
     private static let readableLength = 32
 
-    /// How much of the opening to keep. A third, so the right-hand end — the filename, the part a
-    /// reader is looking for — keeps the larger share.
-    private static let lead = 10
+    /// How much of the opening to keep — a third, so the right-hand end, the part a reader is
+    /// looking for, keeps the larger share. A share rather than a count, so a longer reading spends
+    /// its extra room on both ends of the address instead of only on one.
+    private static let leadShare = 3
 
     private static let ellipsis = "…"
 }

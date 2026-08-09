@@ -73,7 +73,7 @@ struct FeedSurvey: Equatable, Sendable {
         FeedEvidence(
             verb: Self.verb,
             symbol: ArgoSymbol.looked,
-            address: label,
+            address: .named(label),
             language: nil,
             ending: ending,
             // The counts ARE the verbs. `Looked at · Searched 1 · Read 5` says the same word twice
