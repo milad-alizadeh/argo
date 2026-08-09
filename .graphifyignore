@@ -19,10 +19,6 @@ docs/
 scripts/
 packages/argo-skills/
 
-# the Electron cockpit is deprecated — apps/macOS is the app the graph is about.
-# Left in, its ~2.5k TS nodes swamped the Swift tree to 27 nodes of noise.
-apps/desktop/
-
 # throwaway spike code — answers a question once, then stops being true
 prototypes/
 

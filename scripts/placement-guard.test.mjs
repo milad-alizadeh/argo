@@ -5,6 +5,8 @@ import assert from 'node:assert/strict'
 // The deny cases are the point — every one of them is a file that would otherwise reach the
 // build gate minutes later with imports already pointing at it.
 import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { decide, findWorkspace } from './placement-guard.mjs'
@@ -129,35 +131,39 @@ check('findWorkspace finds the nearest ancestor holding a map', () =>
   ),
 )
 
-// End-to-end: a real Write into this repo's own main/ root is denied by the script.
-check("script denies a new file at this repo's main/ root", () => {
-  const repo = path.dirname(HERE)
-  const out = execFileSync(process.execPath, [HOOK], {
-    input: JSON.stringify({
-      tool_name: 'Write',
-      tool_input: { file_path: `${repo}/apps/desktop/src/main/scratchpad.ts` },
-      cwd: repo,
-    }),
-    env: { ...process.env, CLAUDECODE: '1' },
-    encoding: 'utf8',
-  })
-  assert.equal(JSON.parse(out).hookSpecificOutput.permissionDecision, 'deny')
-})
+// The end-to-end pair runs the script for real, so it needs a map ON DISK. It builds a temp
+// workspace rather than borrowing one this repo ships: the guard is a property of any tree
+// holding a module map, and the last one here left with the Electron cockpit — a test anchored
+// to whichever app exists today dies the next time one is retired.
+const ROOT = mkdtempSync(path.join(tmpdir(), 'placement-guard-'))
+const SCRATCH = path.join(ROOT, 'apps', 'app')
+mkdirSync(path.join(SCRATCH, 'scripts'), { recursive: true })
+writeFileSync(path.join(SCRATCH, 'scripts', 'module-boundaries.json'), JSON.stringify(MAP))
 
-// End-to-end: an allowed write produces no output (silent allow).
-check('script stays silent for a file inside a sub-domain', () => {
-  const repo = path.dirname(HERE)
-  const out = execFileSync(process.execPath, [HOOK], {
+const runHook = (filePath) =>
+  execFileSync(process.execPath, [HOOK], {
     input: JSON.stringify({
       tool_name: 'Write',
-      tool_input: { file_path: `${repo}/apps/desktop/src/main/terminals/scratchpad.ts` },
-      cwd: repo,
+      tool_input: { file_path: path.join(SCRATCH, filePath) },
+      cwd: SCRATCH,
     }),
     env: { ...process.env, CLAUDECODE: '1' },
     encoding: 'utf8',
   })
-  assert.equal(out.trim(), '')
-})
+
+check('script denies a new file at a module root', () =>
+  assert.equal(
+    JSON.parse(runHook('src/main/scratchpad.ts')).hookSpecificOutput.permissionDecision,
+    'deny',
+  ),
+)
+
+// An allowed write produces no output (silent allow).
+check('script stays silent for a file inside a sub-domain', () =>
+  assert.equal(runHook('src/main/terminals/scratchpad.ts').trim(), ''),
+)
+
+rmSync(ROOT, { recursive: true, force: true })
 
 if (failures > 0) {
   console.error(`\nplacement-guard: ${failures} check(s) failed`)

@@ -175,12 +175,6 @@
       "skillPath": "packages/argo-skills/skills/review-componentization/SKILL.md",
       "computedHash": "962217e0f1f2b6207f7cd26a383872e8c98e4e0a36e193a02782a03e57a34ed4"
     },
-    "run-desktop": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "apps/desktop/.claude/skills/run-desktop/SKILL.md",
-      "computedHash": "ba964aa1b63fa2e2c57b5ae0c2cdd627123820258f3b90ece96d28fc65008578"
-    },
     "scaffold-exercises": {
       "source": "mattpocock/skills",
       "sourceType": "github",

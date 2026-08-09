@@ -1,6 +1,5 @@
 {
   "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}": "biome check --write --no-errors-on-unmatched",
-  "apps/desktop/src/renderer/src/**/*.{ts,tsx,css}": "sh scripts/check-design-tokens.sh",
   "apps/macOS/**/*.swift": [
     "sh scripts/swift-format.sh",
     "sh scripts/swift-lint.sh",
