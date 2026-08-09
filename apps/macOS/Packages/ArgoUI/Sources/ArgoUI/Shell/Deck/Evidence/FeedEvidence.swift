@@ -78,6 +78,10 @@ extension FeedCall {
         case let .file(file): file.path
         case let .command(command): command
         case let .plain(text): text
+        // The command, not the sentence the row drew. The panel's whole justification is that it
+        // says the one thing the row could not — repeating the narration here would open a pane on
+        // the line that was clicked, and leave what actually ran nowhere to be read.
+        case let .narration(text, target): target ?? text
         }
     }
 

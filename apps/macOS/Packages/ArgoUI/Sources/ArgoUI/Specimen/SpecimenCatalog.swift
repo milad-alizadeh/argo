@@ -25,6 +25,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case sessionsDeck
     case feed
     case feedCalls
+    case feedNarration
     case feedProse
     case feedMarkdown
     case feedEvidence

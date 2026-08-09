@@ -179,6 +179,7 @@ public actor TranscriptReader {
             name: use.name,
             kind: kind,
             target: toolCallTarget(use.input),
+            narration: toolCallNarration(use.input),
             atMs: atMs,
             // Gated on the tool's own name: `AskUserQuestion` is how a record distinguishes a
             // question that BLOCKS from one the agent merely typed into a message.

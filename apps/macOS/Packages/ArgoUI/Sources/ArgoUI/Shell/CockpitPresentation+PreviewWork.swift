@@ -53,9 +53,13 @@ extension CockpitPresentation.Session {
         .toolCallOutcome(answered("move", .diff(moved(
             to: "Sources/ArgoUI/VisualContract/ConnectionTint.swift",
         )))),
+        // Narrated, as a Claude Code record writes a command: the sentence is what the row draws
+        // and the command is what the panel opens on, so the fixture has to carry both or the
+        // render is of a feed nobody is shown.
         .toolCall(ToolCall(
             id: "build", name: "Bash", kind: .execute,
-            target: "swift build --package-path Packages/ArgoUI", atMs: nil,
+            target: "swift build --package-path Packages/ArgoUI",
+            narration: "Build the UI package", atMs: nil,
         )),
         .toolCallOutcome(ToolCallOutcome(
             id: "build",
@@ -80,7 +84,9 @@ extension CockpitPresentation.Session {
             text: "    88\t        .foregroundStyle(argo.color.diff.added)",
         )))),
         .toolCall(ToolCall(
-            // With a pipeline on it, deliberately: the row shows what RAN and the panel keeps the
+            // With a pipeline on it and NO description, deliberately: this is the row that still
+            // draws the command — the 0.03% of Claude Code calls that narrate nothing and every
+            // command on a CLI that never does. The row shows what RAN and the panel keeps the
             // plumbing, and the render is where that is checked.
             id: "test", name: "Bash", kind: .execute,
             target: "swift test --package-path Packages/ArgoUI 2>&1 | grep -E 'Test run with'",
@@ -124,7 +130,10 @@ extension CockpitPresentation.Session {
             tier: .direct, text: "Adopting Liquid Glass",
         )))),
         .toolCall(ToolCall(
-            id: "delegate", name: "Task", kind: .delegate, target: "review the feed", atMs: nil,
+            // A delegation names itself in the same key a command narrates itself in, so the row
+            // shows the short account and never the brief the agent actually handed over.
+            id: "delegate", name: "Task", kind: .delegate, target: "review the feed",
+            narration: "review the feed", atMs: nil,
         )),
         .toolCallOutcome(answered("delegate", nil)),
         .toolCall(ToolCall(

@@ -24,6 +24,9 @@ struct FeedCallSubject: View {
         case let .file(file): named(file)
         case let .command(command): typed(command)
         case let .plain(text): plain(text)
+        // Prose, drawn as prose. The command it stands in for is the panel's, and setting a
+        // sentence in a mono chip would say the agent's words were something to be run.
+        case let .narration(text, _): plain(text)
         }
     }
 
@@ -37,7 +40,7 @@ struct FeedCallSubject: View {
     private func named(_ file: FeedCall.FileName) -> some View {
         HStack(spacing: ArgoSpacing.tight) {
             Text(file.name)
-                .argoText(ArgoTypography.body)
+                .argoText(subject.style)
                 .foregroundStyle(ink)
             quiet(destination.map { "→ \($0)" })
         }
@@ -48,7 +51,7 @@ struct FeedCallSubject: View {
     /// them apart, and a second size was the line's own type scale disagreeing with itself.
     private func typed(_ command: String) -> some View {
         Text(FeedCommandLine.head(of: command))
-            .argoMono(.body)
+            .argoText(subject.style)
             .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.tight)
             .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.marker))
@@ -56,7 +59,7 @@ struct FeedCallSubject: View {
 
     private func plain(_ text: String) -> some View {
         Text(text)
-            .argoText(ArgoTypography.body)
+            .argoText(subject.style)
             .foregroundStyle(ink)
     }
 
@@ -73,6 +76,24 @@ struct FeedCallSubject: View {
             Text(text)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.disabled)
+        }
+    }
+}
+
+extension FeedCall.Subject {
+    /// Which of the two faces the subject sets in — the one rule about a call line a hurried view
+    /// is most likely to break, so it is a value the contract can hold rather than a modifier three
+    /// branches spell for themselves.
+    ///
+    /// The mono is for the one subject a reader might retype. Everything else is the interface
+    /// sans, a narration emphatically included: it is a sentence somebody wrote, and prose set in
+    /// machine type reads as something to run.
+    var style: ArgoTextStyle {
+        switch self {
+        // On the same rung as the words around it: the face already tells them apart, and a second
+        // size was the line's own type scale disagreeing with itself.
+        case .command: ArgoTextStyle(typeface: .machine, rung: ArgoTypography.body.rung)
+        case .file, .plain, .narration: ArgoTypography.body
         }
     }
 }
