@@ -2,63 +2,90 @@ import ArgoEngine
 
 extension CockpitPresentation.Session {
     /// A session at the length a real one reaches: a run of turns, each the shape a turn actually
-    /// has — a prompt, some reasoning, a stretch of looking, the work that came out of it, and the
-    /// answer.
+    /// has — something asked, sometimes some reasoning, a stretch of looking, the work that came
+    /// out of it, and usually an answer.
     ///
-    /// Generated rather than written out, and that is the honest form for this one. What it is
-    /// evidence about is LENGTH: whether hundreds of rows stay smooth, whether the reader keeps
-    /// their place, whether the fold still reads at the bottom of a long scroll. A hand-written
-    /// four-hundred-event fixture would be the same claim with four hundred chances to drift.
+    /// Generated rather than written out, because what it is evidence about is LENGTH: whether
+    /// hundreds of rows stay smooth, whether the reader keeps their place, whether a fold still
+    /// reads as a fold at the bottom of a long scroll.
     ///
-    /// Varied per turn on purpose. A feed of one repeated row is a feed where every fold, every
-    /// qualifier and every collapsed run fires the same way, which is the one thing a scale
-    /// fixture must not be — the rules this surface is made of are all about where a run BREAKS.
+    /// But generated with the variety a session has, which is the part a template gets wrong. A
+    /// fixture of forty identical turns wraps identically forty times and stands every row at the
+    /// same height — so it proves nothing about rhythm, and a render of it is a wall rather than
+    /// something worth judging. Here the prose is ragged (`LongProse`), some turns answer with one
+    /// word and some say nothing at all, the looking runs two to five files deep, and the work is
+    /// a different shape every few turns.
     static let longTranscript: [TranscriptEvent] = (0 ..< longTurns).flatMap(turn(_:))
 
     /// Enough turns to put hundreds of events through the projection, which is where "a six-hour
-    /// run" starts. Each turn below is roughly a dozen.
-    private static let longTurns = 40
+    /// run" starts.
+    private static let longTurns = 52
 
     private static func turn(_ number: Int) -> [TranscriptEvent] {
-        [
-            .prompt(text: "Take ticket \(400 + number) and land it.", atMs: nil),
-            .thought(markdown: "Read what is there before changing any of it."),
-        ]
+        [.prompt(text: LongProse.prompts[number % LongProse.prompts.count], atMs: nil)]
+            + reasoned(number)
             + surveyed(number)
             + worked(number)
-            + [
-                .message(
-                    markdown: "Landed \(400 + number). The contract suite is green and the "
-                        + "measure holds at the narrowest deck.",
-                ),
-                .turnEnded(.endTurn),
-            ]
+            + answered(number)
     }
 
-    /// The reconnaissance a turn opens with, which the feed folds to one line of counts. Long
-    /// enough to be a fold and not a run of one, and the same two same-named files in every turn —
-    /// so a qualifier appears somewhere in the middle of a long scroll rather than only at the top.
+    /// Not every turn reasons out loud, and a feed where a `THOUGHT` label opens every single turn
+    /// makes the label chrome rather than a claim.
+    private static func reasoned(_ number: Int) -> [TranscriptEvent] {
+        guard number % 3 != 1 else { return [] }
+        return [.thought(markdown: LongProse.thoughts[number % LongProse.thoughts.count])]
+    }
+
+    /// The reconnaissance a turn opens with, which the feed folds to one line of counts. Two to
+    /// five files deep, so the counts on the folded line differ down the length of the feed rather
+    /// than reading as one repeated row.
+    ///
+    /// The same two same-named files recur, which is what makes a qualifier appear somewhere in
+    /// the middle of a long scroll rather than only at the top.
     private static func surveyed(_ number: Int) -> [TranscriptEvent] {
-        [
-            answered("grep-\(number)", tool: "Grep", kind: .search, naming: "argoFeedMeasure"),
-            answered("read-a-\(number)", tool: "Read", kind: .read, naming: "cockpit/Feed.swift"),
-            answered("read-b-\(number)", tool: "Read", kind: .read, naming: "roster/Feed.swift"),
-            answered("read-c-\(number)", tool: "Read", kind: .read, naming: "ArgoFeedRow.swift"),
+        let looked = [
+            "cockpit/Feed.swift",
+            "roster/Feed.swift",
+            "ArgoFeedRow.swift",
+            "DistinguishingLabel.swift",
         ]
-        .flatMap(\.self)
+        let depth = number % 3 + 2
+        return [read("grep-\(number)", tool: "Grep", kind: .search, naming: "argoFeedMeasure")]
+            .flatMap(\.self)
+            + looked.prefix(depth).enumerated().flatMap { at, path in
+                read("read-\(number)-\(at)", tool: "Read", kind: .read, naming: path)
+            }
     }
 
-    /// What the turn changed, plus the command it checked itself with. Every fourth command fails,
-    /// so a long scroll carries the one row worth seeing at intervals rather than only once.
+    /// What the turn changed. Three shapes in rotation — a turn that only looked, a turn that
+    /// edited one file, and a turn that edited one and ran something after it — because a feed
+    /// where every turn has the same anatomy hides whether the rhythm survives one that does not.
     private static func worked(_ number: Int) -> [TranscriptEvent] {
+        switch number % 4 {
+        case 0: []
+        case 1: edited(number)
+        default: edited(number) + ran(number)
+        }
+    }
+
+    /// Some turns end without a word. An agent that hands back silently is a real state, and a
+    /// fixture where every turn signs off makes the feed's spacing look more regular than it is.
+    private static func answered(_ number: Int) -> [TranscriptEvent] {
+        guard number % 7 != 5 else { return [.turnEnded(.endTurn)] }
+        return [
+            .message(markdown: LongProse.messages[number % LongProse.messages.count]),
+            .turnEnded(.endTurn),
+        ]
+    }
+
+    private static func edited(_ number: Int) -> [TranscriptEvent] {
         let id = "edit-\(number)"
-        let ran = "run-\(number)"
         return [
             .toolCall(ToolCall(
                 id: id,
                 name: "Edit",
                 kind: .edit,
-                target: "FeedView\(number).swift",
+                target: "Sources/ArgoUI/Shell/Deck/Feed/FeedView\(number).swift",
                 atMs: nil,
             )),
             .toolCallOutcome(ToolCallOutcome(
@@ -79,19 +106,28 @@ extension CockpitPresentation.Session {
                 endedAtMs: nil,
                 usage: nil,
             )),
+        ]
+    }
+
+    /// Every fourth command fails, so the one row worth seeing recurs down a long scroll rather
+    /// than appearing once at a place nobody scrolls to.
+    private static func ran(_ number: Int) -> [TranscriptEvent] {
+        let id = "run-\(number)"
+        let broke = number % 4 == 3
+        return [
             .toolCall(ToolCall(
-                id: ran,
+                id: id,
                 name: "Bash",
                 kind: .execute,
                 target: "swift test --filter Feed",
                 atMs: nil,
             )),
             .toolCallOutcome(ToolCallOutcome(
-                id: ran,
-                status: number % 4 == 3 ? .failed : .completed,
+                id: id,
+                status: broke ? .failed : .completed,
                 result: .output(OutputEvidence(
                     tier: .direct,
-                    text: number % 4 == 3
+                    text: broke
                         ? "error: 1 test failed in FeedProjectionTests"
                         : "Test run with 229 tests in 29 suites passed.",
                 )),
@@ -101,7 +137,7 @@ extension CockpitPresentation.Session {
         ]
     }
 
-    private static func answered(
+    private static func read(
         _ id: String,
         tool: String,
         kind: ToolCallKind,
