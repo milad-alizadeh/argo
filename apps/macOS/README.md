@@ -137,6 +137,20 @@ Neither is a CI gate. Driving the real app needs a macOS runner, the most expens
 bills, and the suite is a handful of clicks; run it locally when you touch a surface that is only
 reachable by clicking.
 
+## Scrolling a running feed
+
+```bash
+swift scripts/ScrollDriver.swift            # Argo, 8s, 60 ticks/s, 12px a tick
+swift scripts/ScrollDriver.swift Argo 4 60 24
+```
+
+Scrolls a running Argo's feed at a fixed cadence, so "is scrolling smooth" is asked of a repeatable
+input rather than of a hand on a trackpad — a hand cannot scroll the same way twice, and a
+smoothness judgement is only worth comparing against another one taken the same way. It refuses to
+post anything if another window is over the point it aims at, because a scroll goes to whatever is
+under the pointer and that failure otherwise reads as a completed run. Posting events needs
+Accessibility permission for the terminal running it.
+
 ## Deployment target
 
 macOS 26.0, no fallback. There is no `#available` branching anywhere — Liquid Glass comes

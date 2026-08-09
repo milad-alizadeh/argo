@@ -11,6 +11,8 @@ import SwiftUI
 /// where the keyboard is in it.
 struct FeedView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Whether a deck seam is being dragged right now — see `FeedPlace`.
+    @Environment(\.deckIsResizing) private var isResizing
 
     let rows: [FeedRow]
     /// What the deck has open and where the keyboard is. Owned by the deck, not here: opening a
@@ -93,7 +95,6 @@ struct FeedView: View {
                 // which is what keeps a reader arrowing inside an open prompt from jumping rows.
                 .onMoveCommand { move($0, with: scroller) }
                 .overlay(alignment: .bottomTrailing) { tail(with: scroller) }
-                .argoAnimation(.reveal, value: isFollowing)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
@@ -108,7 +109,16 @@ struct FeedView: View {
     private var reading: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: ArgoSpacing.flush) {
-                ForEach(Array(rows.enumerated()), id: \.element.id) { position, row in
+                // Over the indices rather than over `rows.enumerated()`, which is not free: an
+                // enumeration has to be materialised into an array for `ForEach`, and that array
+                // is EVERY row in the session, built again on every evaluation of this body. The
+                // stack below is lazy about what it draws; the pairing above it was eager about
+                // what it allocated, so a body running at drag rate cost a whole session's worth
+                // of rows per frame. A range allocates nothing, and the identity is unchanged —
+                // a row's id IS its position, assigned as one by the only thing that makes rows
+                // (`FeedProjection.rows`). The scroll target stays the row's own id regardless.
+                ForEach(rows.indices, id: \.self) { position in
+                    let row = rows[position]
                     FeedRowView(
                         row: row,
                         isExpanded: unfolding(row.id),
@@ -143,33 +153,34 @@ struct FeedView: View {
         .defaultScrollAnchor(.bottom, for: .initialOffset)
     }
 
-    /// The held row, reported only once the reader has detached from the end.
-    ///
-    /// A reading that is following has no row to hold — the place IS the end — and the position
-    /// binding is a WRITER as well as a reader: left engaged, it puts the topmost row back over the
-    /// offset every arriving row had just moved. Two authorities over one offset, disagreeing once
-    /// per line. Reporting nothing while following leaves the scroll the only one of them.
+    /// The held row, reported only once the reader has detached from the end, and writable only
+    /// while the column is still. Both rules live in `FeedPlace`, which is where they are tested.
     private var pin: Binding<FeedRow.ID?> {
-        Binding(
-            // Recorded whatever the answer above, so the row the reader detaches ON is the row the
-            // pin engages at, rather than one it has to be told about afterwards.
-            get: { isFollowing ? nil : anchored },
-            set: { anchored = $0 },
-        )
+        FeedPlace.pin($anchored, isFollowing: isFollowing, whileResizing: isResizing)
     }
 
     /// The way back down, on screen only while the reading has stopped following.
-    @ViewBuilder private func tail(with scroller: ScrollViewProxy) -> some View {
-        if !isFollowing, !rows.isEmpty {
-            // Nothing to count until the reader has left an end: a reading that is following has no
-            // place to count from, and one taken from the end it sits at would count from now.
-            FeedTailButton(
-                newMessages: leftAt.map { FeedTail.newMessages(in: rows, since: $0) } ?? 0,
-            ) { follow(with: scroller, animated: true) }
-                .padding(.trailing, ArgoFeedRow.inset)
-                .padding(.bottom, ArgoFeedRow.tailLift)
-                .transition(.opacity)
+    ///
+    /// The reveal is scoped to the button and not to the reading it sits over.
+    /// `.animation(_:value:)` animates EVERY pending change in the subtree it is applied to, so
+    /// declared over the scroll view it animated the column's own width — and `isFollowing` is
+    /// computed from the content height, which a seam drag changes on every frame. A button fading
+    /// in was pulling the whole feed through a curve behind it.
+    private func tail(with scroller: ScrollViewProxy) -> some View {
+        ZStack {
+            if !isFollowing, !rows.isEmpty {
+                // Nothing to count until the reader has left an end: a reading that is following
+                // has no place to count from, and one taken from the end it sits at would count
+                // from now.
+                FeedTailButton(
+                    newMessages: leftAt.map { FeedTail.newMessages(in: rows, since: $0) } ?? 0,
+                ) { follow(with: scroller, animated: true) }
+                    .padding(.trailing, ArgoFeedRow.inset)
+                    .padding(.bottom, ArgoFeedRow.tailLift)
+                    .transition(.opacity)
+            }
         }
+        .argoAnimation(.reveal, value: isFollowing)
     }
 
     /// Back to the newest row. Unanimated while the Session is writing — a feed that eased into

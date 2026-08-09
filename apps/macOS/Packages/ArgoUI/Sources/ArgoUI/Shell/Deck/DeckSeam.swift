@@ -14,6 +14,12 @@ struct DeckSeam: View {
     /// Whether dragging right GROWS the measured zone — true when the zone is to the left of the
     /// seam, false when it is to the right.
     let growsRightward: Bool
+    /// Whether the seam is under the reader's hand, reported for as long as it is.
+    ///
+    /// A seam knows this and nothing else does. What it costs to publish is one `Bool`; what it
+    /// buys is every zone downstream being able to tell a layout the READER moved from one it
+    /// moved itself — see `FeedPlace` for the surface that needs the difference.
+    var isDragging: (Bool) -> Void = { _ in }
 
     /// The width the drag started from. Held for the whole gesture so the zone tracks the pointer
     /// instead of accumulating each frame's delta, which drifts.
@@ -35,13 +41,19 @@ struct DeckSeam: View {
         DragGesture(minimumDistance: 1)
             .onChanged { move in
                 let start = startedAt ?? width
+                if startedAt == nil {
+                    isDragging(true)
+                }
                 startedAt = start
                 let travelled = growsRightward ? move.translation.width : -move.translation.width
                 // Seated rather than written through: the pointer answers in fractions of a point,
                 // and the zone this sizes is a column of prose. See `ArgoLayout.seated`.
                 width = ArgoLayout.seated(start + travelled, in: limits)
             }
-            .onEnded { _ in startedAt = nil }
+            .onEnded { _ in
+                startedAt = nil
+                isDragging(false)
+            }
     }
 
     /// Pushed and popped rather than set, so leaving the seam mid-window does not leave the whole
@@ -53,6 +65,14 @@ struct DeckSeam: View {
             NSCursor.pop()
         }
     }
+}
+
+extension EnvironmentValues {
+    /// Whether a deck seam is being dragged right now.
+    ///
+    /// In the environment rather than threaded down, because the zone that needs it is three views
+    /// below the seam and none of the views in between has any business carrying it.
+    @Entry var deckIsResizing: Bool = false
 }
 
 #Preview("Deck seam — a rail the reader can widen") {
