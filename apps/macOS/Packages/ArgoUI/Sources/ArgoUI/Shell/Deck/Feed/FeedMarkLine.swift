@@ -8,6 +8,10 @@ import SwiftUI
 ///
 /// The words are machine type for the same reason: they are the record talking about itself — a
 /// stop reason is the host's own word, and a token count is a number — not the agent talking.
+///
+/// A mark with nothing to say is the rule alone, running the whole column. That is the ordinary end
+/// of a turn: it happens at every turn boundary in the feed, and words repeated that often stop
+/// being read and start being the ground they are drawn on.
 struct FeedMarkLine: View {
     @Environment(\.argo) private var argo
 
@@ -16,16 +20,18 @@ struct FeedMarkLine: View {
     var body: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
             rule
-            Text(mark.words)
-                .argoText(ArgoTypography.machineCaption)
-                .monospacedDigit()
-                .foregroundStyle(argo.color.text.tertiary)
-                .lineLimit(1)
-                .fixedSize()
-            rule
+            if let words = mark.words {
+                Text(words)
+                    .argoText(ArgoTypography.machineCaption)
+                    .monospacedDigit()
+                    .foregroundStyle(argo.color.text.tertiary)
+                    .lineLimit(1)
+                    .fixedSize()
+                rule
+            }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(mark.words)
+        .accessibilityLabel(mark.spoken)
     }
 
     private var rule: some View {
