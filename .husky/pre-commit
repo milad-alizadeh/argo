@@ -18,14 +18,13 @@ bunx lint-staged
 # Per-file caps are biome's, and lint-staged already ran it over the staged files
 # (style/noExcessiveLinesPerFile carries the 150-line ceiling; exemptions in biome.jsonc).
 #
-# The PLACEMENT gates run here, reversing an earlier call that sent them to CI with
-# duplication. Their cost is not comparable: jscpd tokenizes every file and is genuinely a
-# CI-shaped job, while these three glob `src/**` and compare basenames — well under a second.
-# And the timing is the point (ADR-0021). A misplaced file caught in CI is a follow-up ticket
-# written after the session that produced it has ended; caught here, the agent that wrote it
-# is still holding the context and fixes it in the same turn. Placement debt accumulates
-# exactly at that delay, which is what the ratchet in the module map is a record of.
-bun run quality:placement
+# The three PLACEMENT gates used to run here and no longer do: they read a
+# `<workspace>/scripts/module-boundaries.json` module map, and retiring the Electron cockpit
+# left this repo with no workspace that declares one. The scripts stay in `scripts/` — they
+# are what `scaffold.mjs --hooks` ships to consumers, and what a future TypeScript workspace
+# would wire back into `quality`. `scripts/placement-guard.mjs` is unaffected: it finds its
+# map by walking ancestors, so with none present it simply permits, here and in a consumer
+# alike. ADR-0021's rule is dormant, not withdrawn.
 # --- end quality gates ---
 
 # --- graphify: committed knowledge graph, refreshed in-commit (installed by setup-graphify) ---

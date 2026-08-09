@@ -6,9 +6,6 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "out/**"]
     },
-    "typecheck": {
-      "dependsOn": ["^build"]
-    },
     "//#format-and-lint": {},
     "//#format-and-lint:fix": {
       "cache": false
@@ -16,18 +13,11 @@
     "test": {
       "dependsOn": ["^build"]
     },
-    "test:stories": {
-      "cache": false
-    },
     "test:e2e": {
       "cache": false
     },
-    "build-storybook": {
-      "outputs": ["storybook-static/**"]
-    },
-    "storybook": {
-      "cache": false,
-      "persistent": true
+    "screenshot": {
+      "cache": false
     },
     "dev": {
       "cache": false,

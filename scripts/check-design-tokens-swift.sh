@@ -1,6 +1,7 @@
 #!/bin/sh
-# Design-token guardrail for SwiftUI — the Swift sibling of check-design-tokens.sh, and the
-# same bargain: it fails when a design constant escapes the token contract, and a finding is
+# Design-token guardrail for SwiftUI — the repo's only one, since the CSS sibling it was
+# written against retired with the Electron cockpit. The bargain is unchanged: it fails when
+# a design constant escapes the token contract, and a finding is
 # fixed by snapping to an existing token or promoting a named one (rules/design-system.md),
 # never by allowlisting, unless it is pre-existing debt tracked in a ticket.
 #

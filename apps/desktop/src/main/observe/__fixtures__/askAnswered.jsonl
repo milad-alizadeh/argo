@@ -1,5 +1,0 @@
-{"type": "last-prompt", "leafUuid": "k-root-1", "sessionId": "askAnswered"}
-{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T15:00:01.000Z", "uuid": "k-root-1", "parentUuid": null, "message": {"role": "user", "content": "Pick an enum"}}
-{"type": "assistant", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T15:00:02.000Z", "uuid": "k-a-1", "parentUuid": "k-root-1", "message": {"role": "assistant", "stop_reason": "tool_use", "content": [{"type": "tool_use", "id": "k-call-ask", "name": "AskUserQuestion", "input": {"questions": [{"question": "Which enum?"}]}}]}}
-{"type": "user", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T15:00:30.000Z", "uuid": "k-r-1", "parentUuid": "k-a-1", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "k-call-ask", "content": "the locked one"}]}}
-{"type": "assistant", "cwd": "/Users/x/tree", "timestamp": "2026-07-20T15:00:32.000Z", "uuid": "k-a-2", "parentUuid": "k-r-1", "message": {"role": "assistant", "stop_reason": "end_turn", "content": [{"type": "text", "text": "Using the locked enum."}]}}

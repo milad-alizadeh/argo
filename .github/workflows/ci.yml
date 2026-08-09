@@ -1,5 +1,5 @@
-# The default gate for every PR: biome, typecheck, unit, story tests and the native macOS
-# app — build, swift-testing, SwiftLint (#415).
+# The default gate for every PR: biome, the duplication gate and the guardrail-hook tests on
+# Linux, and the native macOS app — build, swift-testing, SwiftLint (#415) — on macOS.
 # Unfiltered on purpose — a workflow skipped by path filtering stays Pending forever when
 # required, so the expensive jobs opt out per-job instead (a skipped job reports Success).
 name: ci
@@ -24,7 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      non_docs: ${{ steps.filter.outputs.non_docs }}
       swift: ${{ steps.filter.outputs.swift }}
     steps:
       - uses: actions/checkout@v5
@@ -38,18 +37,11 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ "$EVENT_NAME" != 'pull_request' ]; then
-            echo 'non_docs=true' >> "$GITHUB_OUTPUT"
             echo 'swift=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          changed() { [ -n "$(git diff --name-only "origin/$BASE_REF...HEAD" -- "$@")" ]; }
-
           # A git pathspec glob spans '/', so ':(exclude)*.md' drops nested markdown too.
-          if changed . ':(exclude)*.md'; then
-            echo 'non_docs=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'non_docs=false' >> "$GITHUB_OUTPUT"
-          fi
+          changed() { [ -n "$(git diff --name-only "origin/$BASE_REF...HEAD" -- "$@")" ]; }
 
           # The macOS job's own scope — everything that can change what it does: the app, the
           # shared Swift shell scripts, the manifests that define the commands it runs
@@ -62,7 +54,7 @@ jobs:
           fi
 
   check:
-    name: lint · typecheck · unit
+    name: lint · duplication · hook tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -78,67 +70,20 @@ jobs:
         run: bun run format-and-lint
 
       # The one cap biome can't express: duplication is whole-tree, and a linter reads one
-      # file at a time. Its own step so a breach doesn't hide the placement gates' counts
+      # file at a time. Its own step so a breach doesn't hide the hook tests' output
       # (see AGENTS.md "Quality gates").
       - name: Duplication gate
         if: ${{ !cancelled() }}
         run: bun run quality:duplication
 
-      # Where files may LIVE, which the boundary linter cannot see: it judges imports, and a
-      # misplaced file's imports are all legal. One step per gate, same reason as above.
-      - name: Composition-root gate
-        if: ${{ !cancelled() }}
-        run: bun run quality:placement:root
-
-      - name: Kind-folder gate
-        if: ${{ !cancelled() }}
-        run: bun run quality:placement:kind
-
-      - name: Earned-shared gate
-        if: ${{ !cancelled() }}
-        run: bun run quality:placement:shared
-
-      - name: Typecheck
-        if: ${{ !cancelled() }}
-        run: bun run typecheck
-
-      - name: Unit tests
-        if: ${{ !cancelled() }}
-        run: bun run test
-
       # Guardrail-hook tests (worktree edit guard + cross-CLI hook projection) live
-      # outside the turbo `test` pipeline — plain node scripts, not a workspace suite.
+      # outside the turbo `test` pipeline — plain node scripts, not a workspace suite. They
+      # are the only executable suite left on Linux: retiring the Electron cockpit took the
+      # last TypeScript workspace with it, so `turbo run test` reaches nothing here and the
+      # Swift suites run in the `macos` job below rather than skipping green in this one.
       - name: Hook tests
         if: ${{ !cancelled() }}
         run: bun run test:hooks
-
-      # Story tests render stories, never the generated Docs pages, so a broken .mdx or a
-      # component react-docgen cannot parse fails only here. It sits in this unconditional job
-      # so an MDX typo is caught even on a docs-only change that skips the `stories` job.
-      - name: Build Storybook
-        if: ${{ !cancelled() }}
-        env:
-          STORYBOOK_DISABLE_TELEMETRY: "1"
-        run: bun run build-storybook
-
-  stories:
-    name: story tests
-    runs-on: ubuntu-latest
-    needs: changes
-    if: needs.changes.outputs.non_docs == 'true'
-    timeout-minutes: 15
-    env:
-      STORYBOOK_DISABLE_TELEMETRY: "1"
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/setup
-
-      # Chromium only: vitest.config.ts declares a single `{ browser: 'chromium' }` instance.
-      - name: Install Playwright Chromium
-        run: bunx playwright install --with-deps chromium
-
-      - name: Story tests
-        run: bun run test:stories
 
   macos:
     name: macos build · swift tests · lint
