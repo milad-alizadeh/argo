@@ -28,8 +28,9 @@ enum FeedQuietCommand {
     private static func reads(_ stage: String) -> Bool {
         let words = stage.split(separator: " ").map(String.init)
         guard words.allSatisfy(isHarmless) else { return false }
-        // A wrapper is judged by what it wrapped: `rtk` filters another command's output and
-        // carries none of its own, so smuggling anything through it is impossible by construction.
+        // A wrapper is judged by what it WRAPPED and never by itself: `rtk err bun run build` runs
+        // whatever it is handed, so what makes this safe is that the allowlist is re-applied to the
+        // tail — `rtk git push` reaches `git push` and is refused there.
         let spoken = Array(words.drop(while: wrappers.contains))
         guard let verb = spoken.first else { return false }
         guard let grammar = subcommands[verb] else { return looking.contains(verb) }
@@ -40,10 +41,10 @@ enum FeedQuietCommand {
     ///
     /// Two ways it could. A redirection with a target WRITES the file it names, and `cat a > b` is
     /// a copy however read-only `cat` is; only a bare descriptor duplication (`2>&1`) survives.
-    /// And `find` carries its own way to run anything at all, which is a shell inside an allowed
-    /// command rather than an argument to it.
+    /// And `find` carries its own ways to run a command and to write a file, neither of which is
+    /// visible as a shell operator — a mutation inside an allowed command rather than beside it.
     private static func isHarmless(_ word: String) -> Bool {
-        guard !runsSomethingElse.contains(word) else { return false }
+        guard !mutatingPrimaries.contains(word) else { return false }
         guard word.contains(">") || word.contains("<") else { return true }
         return word.range(of: descriptor, options: .regularExpression) != nil
     }
@@ -67,8 +68,11 @@ enum FeedQuietCommand {
     /// Commands that carry another command's output and nothing of their own.
     private static let wrappers: Set<String> = ["rtk"]
 
-    private static let runsSomethingElse: Set<String> = [
+    /// `find`'s own verbs for running a command and for writing a file. Named as words rather than
+    /// guarded per command, so a future entry on the allowlist cannot smuggle one of them back in.
+    private static let mutatingPrimaries: Set<String> = [
         "-exec", "-execdir", "-ok", "-okdir", "-delete",
+        "-fprint", "-fprint0", "-fprintf", "-fls",
     ]
 
     /// A descriptor duplication and nothing else — `2>&1`, `>&2`. A `>` with a filename after it
