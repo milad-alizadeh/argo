@@ -27,6 +27,11 @@ public enum ArgoTypography {
     )
     public static let caption = ArgoTextStyle(typeface: .interface, rung: .caption1)
 
+    /// A machine fact set beside the words it belongs to, at the size those words are set at — the
+    /// plan pill's `Step 3/5` against the step it names. Monospaced deliberately: a counter that
+    /// changes while the reader watches it re-measures the surface around it on every step in a
+    /// proportional face, shifting the sentence beside it.
+    public static let machineBody = ArgoTextStyle(typeface: .machine, rung: .body)
     /// Branch, HEAD, elapsed, token counts.
     public static let machine = ArgoTextStyle(typeface: .machine, rung: .callout)
     public static let machineEmphasis = ArgoTextStyle(
@@ -44,6 +49,7 @@ public enum ArgoTypography {
         ("body", body),
         ("control", control),
         ("caption", caption),
+        ("machineBody", machineBody),
         ("machine", machine),
         ("machineEmphasis", machineEmphasis),
         ("machineCaption", machineCaption),

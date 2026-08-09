@@ -235,6 +235,19 @@ its approved study are authoritative for the replacement look and feel.
 - **Consequence:** `Lens Palette` is allowed to be a visual event because routine floating controls
   do not compete with it. Transparency is earned by architectural or interaction importance, not
   applied as a component-library default.
+- **Transient surfaces — 2026-08-09:** **Transient surfaces floating over the deck are glass;
+  furniture in it stays flat.** A surface qualifies when it is present because of a state the reader
+  is in — a reading that has stopped following, a plan being pointed at — and absent otherwise. It
+  is a category and not a list, so the next such control needs no further amendment. What stays
+  flat is everything that is a ZONE of the deck rather than a state over it: roster rows, tabs, the
+  Agents rail, the minimap and the Dock. **Why:** drawing a transient surface in the same material
+  as the plane it covers makes it read as part of the record. The material is what says the
+  difference between a thing the deck IS and a thing the deck is currently DOING. This amends D21's
+  "feed controls remain flat" and the "nearly opaque graphite" recipe above, which stays the rule
+  for an ordinary popover or menu — those hang off a control the reader clicked rather than
+  standing over the reading on their own. D21's shipping gates apply unchanged, and its
+  "individual icons do not receive separate glass bubbles" survives: these are whole surfaces, not
+  decorated icons.
 
 ## D15 — Refine Phosphor instead of replacing it
 
@@ -337,6 +350,11 @@ its approved study are authoritative for the replacement look and feel.
   focus, shortcuts, semantics, and accessibility. Argo supplies the icons, labels, semantic state,
   and grouping. Sidebar navigation, roster rows, tabs, feed controls, Agents, minimap, and Dock
   remain flat within their existing material zones.
+- **Amended — 2026-08-09:** D14's transient-surfaces clause carves the deck's floating controls out
+  of that list — the plan pill, its revealed step list and the way-back-to-the-newest control are
+  glass, because each is present only while the reader is in a state and absent otherwise. "Feed
+  controls remain flat" now means the furniture of the feed. Roster rows, tabs, Agents, minimap and
+  Dock are untouched, and one clause covers whatever floats over the deck next.
 - **Implementation posture:** Use the macOS 26 SwiftUI Liquid Glass APIs directly in the production
   toolbar. Use a shared native vessel for each related group rather than applying material to every
   icon. Do not introduce an AppKit material bridge or a custom blur implementation.

@@ -21,7 +21,17 @@ struct TypeAndIconContractTests {
         let machineRoles = ArgoTypography.all
             .filter { $0.style.typeface == .machine }
             .map(\.name)
-        #expect(machineRoles == ["machine", "machineEmphasis", "machineCaption"])
+        #expect(machineRoles == ["machineBody", "machine", "machineEmphasis", "machineCaption"])
+    }
+
+    /// The machine ladder reaches the body rung, so a machine fact can stand beside the words it
+    /// annotates at ONE size. It stopped at `callout` and `subheadline`, which put the plan pill's
+    /// counter a rung below the step text next to it — two sizes on one line, asking the reader to
+    /// take the larger as the more important when the smaller is the fact that changes.
+    @Test
+    func `a machine fact can meet the interface's own body size`() {
+        #expect(ArgoTypography.machineBody.size == ArgoTypography.body.size)
+        #expect(ArgoTypography.machineBody.typeface == .machine)
     }
 
     /// The scale is Apple's macOS table, not a ladder of Argo's own — which is what makes it

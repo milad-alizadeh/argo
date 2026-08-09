@@ -7,9 +7,14 @@ import SwiftUI
 /// beside it, because it belongs to a state the feed is in and not to the deck's furniture; on the
 /// trailing edge, so it never lands under the plan pill floating over the same edge.
 ///
-/// It says so in words as well as in a mark. A bare arrow in a corner is a gesture the reader has
-/// to guess at, and the one thing this control has to be is obvious to somebody who has lost their
-/// place.
+/// A circle of glass carrying a down arrow and nothing else. Glass because it is here only while
+/// the reading has stopped following — a state the reader is in rather than a zone of the deck
+/// (D14's transient-surfaces clause) — and the material is what tells the two apart.
+///
+/// The word left the face with the capsule. A down arrow in the bottom corner of a scroll is the
+/// one gesture the platform already spells this way, so the label it used to print is now carried
+/// where it costs no space: the control still ANNOUNCES itself as "Newest", unchanged, and the
+/// hint still says what pressing it does.
 struct FeedTailButton: View {
     @Environment(\.argo) private var argo
 
@@ -17,18 +22,13 @@ struct FeedTailButton: View {
 
     var body: some View {
         Button(action: follow) {
-            HStack(spacing: ArgoSpacing.tight) {
-                ArgoGlyph(ArgoSymbol.latest, .inline)
-                Text("Newest")
-                    .argoText(ArgoTypography.caption)
-            }
-            .foregroundStyle(argo.color.text.secondary)
-            .padding(.horizontal, ArgoSpacing.base)
-            .padding(.vertical, ArgoSpacing.tight)
-            .background(argo.color.surface.overlay, in: .capsule)
-            .overlay {
-                Capsule().strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
-            }
+            ArgoGlyph(ArgoSymbol.latest, .control)
+                .foregroundStyle(argo.color.text.secondary)
+                .frame(width: ArgoFeedRow.tailDiameter, height: ArgoFeedRow.tailDiameter)
+                .argoFloatingGlass(in: .circle)
+                // The circle and not the square around it: the corners of a frame that draws
+                // nothing would take clicks meant for the reading behind them.
+                .contentShape(.circle)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Newest")

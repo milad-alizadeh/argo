@@ -56,7 +56,10 @@ struct PlanPill: View {
         HStack(spacing: ArgoPlanPill.gap) {
             PlanRing(progress: plan.progress)
             Text(counter)
-                .argoText(ArgoTypography.machineCaption)
+                // The step text's own size. A rung below it, the counter read as a footnote to a
+                // sentence when it is the half of the line that moves — and the mono is what keeps
+                // the pill from re-measuring itself as `3/5` becomes `10/12`.
+                .argoText(ArgoTypography.machineBody)
                 .foregroundStyle(argo.color.text.tertiary)
             Text(currentStep)
                 .argoText(ArgoTypography.body)
@@ -65,13 +68,9 @@ struct PlanPill: View {
         }
         .padding(.horizontal, ArgoPlanPill.insetX)
         .padding(.vertical, ArgoPlanPill.insetY)
-        .background {
-            Capsule().fill(argo.color.surface.overlay)
-        }
-        .overlay {
-            Capsule().strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
-        }
-        .argoShadow(.popover)
+        // Glass, because the pill is here only while a plan is: it is a state the reader is in
+        // rather than a zone of the deck (D14's transient-surfaces clause).
+        .argoFloatingGlass(in: .capsule)
         // On the PILL and not on the view that also holds the list: an element spanning both puts
         // this label on a frame the pointer cannot land in.
         .onHover { isPointedAt = $0 }
