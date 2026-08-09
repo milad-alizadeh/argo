@@ -9,7 +9,7 @@ extension ContractSpecimen {
     var surfaces: some View {
         section("Surfaces — near-black graphite, depth from tone and edge") {
             VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-                HStack(spacing: 0) {
+                HStack(spacing: ArgoSpacing.flush) {
                     ForEach(
                         Array(argo.color.surface.ramp.enumerated()),
                         id: \.offset,

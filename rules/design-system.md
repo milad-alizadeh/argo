@@ -35,6 +35,26 @@ is the living proof and the one non-disposable design artifact (`rules/design-st
 specimen, and a `Mirror` assertion fails the build when a stored role is missing from it — so a
 colour cannot reach the app without a place it can be looked at.
 
+**A role nothing draws yet says so.** The contract runs ahead of the build, so some roles are
+specified before their surface exists. Those are listed in their family's `unwired` map with
+what they wait on, and the specimen marks them in the attention ink — because a value that has
+never moved a surface has not been judged, and a specimen that draws it identically to a live
+role is how an unjudged value passes for a settled one. An entry naming no role fails the suite,
+so the list shrinks as surfaces land and cannot rot.
+
+Three things are **not** unwired, and telling them apart matters:
+
+- **A value worth zero** (`ArgoRadius.deck`, the flat `ArgoElevation` rungs). Nothing references
+  them because you honour them by drawing nothing. They are the difference between a deck that
+  is flat because somebody decided and one that is flat because nobody thought about it — and
+  they are the control group that gives `only genuinely floating surfaces cast a shadow`
+  something to mean.
+- **A value the system owns.** There was an `ArgoRadius.vessel` at 11pt; a toolbar vessel takes
+  its shape from the toolbar's own material, so no view could ever apply it. That is deleted,
+  not marked — a number that looks like a decision and cannot be honoured is worse than an
+  absence.
+- **A value nothing needs.** Delete it. Not every gap is a plan.
+
 ## Rule 1 — Tokens only, never magic numbers
 
 Every visual constant is a named value in `VisualContract/`, and a view reaches it by name.

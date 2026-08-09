@@ -74,6 +74,19 @@ public extension ArgoMotion {
         ("latch", latch), ("bloom", bloom),
     ]
 
+    /// Roles nothing draws yet, and what each is waiting on.
+    ///
+    /// They are kept because the decision behind each was real — deleting `latch` means arguing
+    /// again about how fast a Dock latches, on the day somebody is busy building one. But the
+    /// specimen has to SAY so: a duration that has never moved a surface is a value nobody has
+    /// judged, and a specimen that draws it exactly like a live role is how an unjudged value
+    /// passes for a settled one. A key naming no role fails the contract suite, so this list
+    /// shrinks as surfaces land and cannot rot.
+    static let unwired: [String: String] = [
+        "latch": "the Dock, still a placeholder",
+        "bloom": "attention arriving",
+    ]
+
     /// No role may run longer than this. Past it a transition stops reading as feedback and
     /// starts reading as latency.
     static let durationCeiling: TimeInterval = 0.5
