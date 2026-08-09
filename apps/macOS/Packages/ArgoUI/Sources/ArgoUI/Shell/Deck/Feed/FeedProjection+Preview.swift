@@ -34,6 +34,11 @@ extension FeedProjection {
         return row.content
     })
 
+    /// A Codex Session's commands, projected — the feed a CLI that narrates nothing produces, and
+    /// the one place the shortening rule is looked at rather than asserted. Not a filter over the
+    /// preview rows: those are a Claude Code record, and its commands arrive narrated.
+    static let previewCommandRows = rows(from: CockpitPresentation.Session.ranCommands)
+
     /// The same feed with the work taken out — what the agent SAID, at the shape it said it in. A
     /// render of a transcript that is four fifths tool calls is a render of the tool calls.
     static let previewProseRows = previewRows.filter(\.isProse)

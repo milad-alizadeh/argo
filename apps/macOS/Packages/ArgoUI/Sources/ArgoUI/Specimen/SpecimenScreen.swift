@@ -68,6 +68,13 @@ public struct SpecimenScreen: View {
             // run of them one under another. The tense clash is deliberate and on screen: `Ran`
             // above `List open issues` is Argo's voice above the agent's, kept rather than fixed.
             sessions(FeedProjection.previewNarratedRows)
+        case .feedCommands:
+            // The other host: eight commands with nothing narrating them, which is every Codex
+            // Session and Claude Code's fallback. The judgement is whether eight rows that all
+            // began life on the same scratchpad path now differ from each other in their first
+            // words — and whether an ellipsis reads as a cut rather than as part of the command.
+            // Rendered narrow as well as wide: a row's whole promise is that it stays one line.
+            sessions(FeedProjection.previewCommandRows)
         case .feedProse:
             // What the agent SAID, with the work taken out: the heading, the list and the fenced
             // block of a real answer. The markdown is drawn as blocks, and whether an outline reads
@@ -226,6 +233,22 @@ public struct SpecimenScreen: View {
 #Preview("Specimen — the plan's whole list") {
     SpecimenScreen(specimen: .openPlanPill)
         .frame(width: 1000, height: 620)
+}
+
+#Preview("Specimen — a Codex feed, where nothing narrates a command") {
+    SpecimenScreen(specimen: .feedCommands)
+        .frame(width: 1000, height: 620)
+}
+
+// The same commands at the narrowest deck a 960-point window produces. The width is part of the
+// state: a shortened command's whole promise is that its row stays one line where there is least
+// room for it.
+#Preview("Specimen — a Codex feed at the narrowest deck") {
+    SpecimenScreen(specimen: .feedCommands)
+        .frame(
+            width: ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth,
+            height: ArgoLayout.windowMinimumHeight,
+        )
 }
 
 #Preview("Specimen — a session at the length a real one reaches") {

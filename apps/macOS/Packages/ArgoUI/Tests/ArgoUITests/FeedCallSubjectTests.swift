@@ -124,31 +124,6 @@ struct FeedCallSubjectTests {
         #expect(calls.first?.subject == .command("swift build --package-path apps/macOS"))
     }
 
-    // MARK: - A command, minus its plumbing
-
-    /// The pipeline is real and the panel shows it whole. On the row it is two clauses about where
-    /// the text went, in front of the verb that says what happened.
-    @Test
-    func `a command is shown as what ran, not as where its output went`() {
-        #expect(FeedCommandLine.head(of: "bun run test 2>&1 | tail -4") == "bun run test …")
-        #expect(FeedCommandLine.head(of: "swift build > out.log") == "swift build …")
-    }
-
-    @Test
-    func `a command with no plumbing on it is shown exactly as it was typed`() {
-        #expect(FeedCommandLine.head(of: "swift build --package-path Packages/ArgoUI")
-            == "swift build --package-path Packages/ArgoUI")
-    }
-
-    /// A `;` or `&&` chain is left alone. Those are separate commands that RAN — cutting them would
-    /// hide work rather than plumbing, which is the one thing this must not do.
-    @Test
-    func `a chain of commands keeps every command in it`() {
-        let chained = "cd apps/macOS && sh scripts/specimens.sh out"
-
-        #expect(FeedCommandLine.head(of: chained) == chained)
-    }
-
     private func fileName(of call: FeedCall?) -> FeedCall.FileName? {
         guard case let .file(file) = call?.subject else { return nil }
         return file
