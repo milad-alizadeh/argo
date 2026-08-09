@@ -38,6 +38,30 @@ struct FeedPunctuationTests {
         #expect(FeedFixture.marks(in: rows).first?.words == "turn ended · unknown")
     }
 
+    /// The ordinary end is drawn as the rule and nothing else — it closes every turn in the feed,
+    /// so a word on it is the same word once per turn all the way down the reading.
+    @Test
+    func `a turn that simply ended is the rule alone`() {
+        #expect(FeedMark.turnEnded(.endTurn).words == nil)
+    }
+
+    /// And every other reason still says itself. This is the claim the silence above must not be
+    /// allowed to grow into: a turn cut off by a ceiling or ended in a refusal is a different event
+    /// from one that finished, and the rule alone cannot tell a reader which they are looking at.
+    @Test(arguments: [
+        StopReason.maxTokens, .maxTurnRequests, .refusal, .cancelled, .unknown,
+    ])
+    func `an end that was not ordinary keeps its reason on screen`(reason: StopReason) {
+        #expect(FeedMark.turnEnded(reason).words == "turn ended · \(reason.rawValue)")
+    }
+
+    /// Silence on screen is not silence to a screen reader: the hairline is a shape, and a shape is
+    /// what does not carry.
+    @Test
+    func `the ordinary end is still spoken`() {
+        #expect(FeedMark.turnEnded(.endTurn).spoken == "Turn ended")
+    }
+
     /// The one thing in the feed with no chronological position, because it is a fact about the
     /// whole reading rather than a moment in it.
     @Test
