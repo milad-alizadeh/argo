@@ -66,26 +66,35 @@ struct TypeAndIconContractTests {
         #expect(ArgoFeedRow.proseLineSpacing > 0)
     }
 
+    /// Every shape the subject slot of a call line can take. Written once because both rules below
+    /// are claims about the whole set — a shape added to one list and not the other would be a
+    /// shape half the contract never sees.
+    private static let subjectShapes: [FeedCall.Subject] = [
+        .command("swift build"),
+        .narration("Build the UI package", standingIn: "swift build"),
+        .plain("grill"),
+    ] + (FeedCall.FileName(path: "Sources/Feed.swift").map { [FeedCall.Subject.file($0)] } ?? [])
+
     /// The mono is the claim "this is machine text", and a call line is where it is easiest to make
     /// by accident: a command and a sentence the agent wrote sit in the SAME slot, one row apart.
     /// Only the command may take the machine face — a narration set in it would say the agent's
     /// words were something to run, and a filename is a name rather than a thing to retype.
     @Test
     func `only a command takes the machine face in a call line's subject slot`() {
-        let file = FeedCall.FileName(path: "Sources/Feed.swift")
-        let subjects: [FeedCall.Subject] = [
-            .command("swift build"),
-            .narration("Build the UI package", standingIn: "swift build"),
-            .plain("grill"),
-        ] + (file.map { [FeedCall.Subject.file($0)] } ?? [])
-
-        for subject in subjects {
+        for subject in Self.subjectShapes {
             var isCommand: Bool {
                 guard case .command = subject else { return false }
                 return true
             }
             #expect((subject.style.typeface == .machine) == isCommand)
-            // And one rung under all of them: what tells them apart is the face, never the size.
+        }
+    }
+
+    /// One rung under all of them. A subject a size above its neighbours would be the line's own
+    /// type scale disagreeing with itself about which of two words matters more.
+    @Test
+    func `every subject shape sits on the feed's one body rung`() {
+        for subject in Self.subjectShapes {
             #expect(subject.style.rung == ArgoTypography.body.rung)
         }
     }

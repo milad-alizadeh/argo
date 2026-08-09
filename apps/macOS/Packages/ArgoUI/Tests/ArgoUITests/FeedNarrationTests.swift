@@ -20,7 +20,7 @@ struct FeedNarrationTests {
     /// because re-tensing is Argo putting words in the agent's mouth and it fails outright on a
     /// description like `Check PRs, main, open issues`.
     @Test
-    func `the sentence is drawn in the agent's own tense and wording`() throws {
+    func `the sentence is drawn in the agent's own words`() throws {
         let call = try #require(ran(saying: "Check PRs, main, open issues").first)
 
         #expect(call.subject.captioned == "Check PRs, main, open issues")
@@ -30,7 +30,7 @@ struct FeedNarrationTests {
     /// The mark column is the thing a reader scans, so a described row keeps the same shape as
     /// every other: a verb, and after it the name of the thing.
     @Test
-    func `a described row keeps the verb and mark of the call it stands for`() throws {
+    func `a described row still says what kind of call it was`() throws {
         let call = try #require(ran(saying: "Build the UI package").first)
 
         #expect(call.kind == .execute)
@@ -86,27 +86,35 @@ struct FeedNarrationTests {
         ))
     }
 
-    /// Three subjects already identify themselves and keep doing so: a file, a skill, and an MCP
-    /// tool whose name IS its address. `Read`/`Edit`/`Write` carry no description at all — the
-    /// claim here is that a row that somehow arrived with one still names its file.
-    @Test
-    func `a file, a skill and an MCP address are not displaced by a description`() {
+    /// A subject that already identifies itself keeps doing so. `Read`/`Edit`/`Write` and `Skill`
+    /// carry no description at all, and an MCP tool's own input is arbitrary — the claim is that a
+    /// row which somehow arrived with one still says the address it always said.
+    @Test(arguments: [
+        Addressed(tool: "Read", kind: .read, named: "Sources/Feed.swift", says: "Feed.swift"),
+        Addressed(tool: "Skill", kind: .skill, named: "grill", says: "grill"),
+        Addressed(
+            tool: "mcp__linear__list_issues", kind: .mcp,
+            named: "open issues", says: "linear · list_issues",
+        ),
+    ])
+    func `a subject with an address of its own is not displaced`(_ row: Addressed) {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call(
-                "read", tool: "Read", kind: .read,
-                naming: "Sources/Feed.swift", saying: "Read the feed",
-            )),
-            .toolCall(FeedFixture.call(
-                "skill", tool: "Skill", kind: .skill, naming: "grill", saying: "Grill the plan",
-            )),
-            .toolCall(FeedFixture.call(
-                "mcp", tool: "mcp__linear__list_issues", kind: .mcp,
-                naming: "open issues", saying: "open issues",
+                "call", tool: row.tool, kind: row.kind,
+                naming: row.named, saying: "An account of the call",
             )),
         ])
 
-        #expect(calls.map(\.subject.captioned)
-            == ["Feed.swift", "grill", "linear · list_issues"])
+        #expect(calls.first?.subject.captioned == row.says)
+    }
+
+    /// One row of that table: a call already addressed by something of its own, and the address it
+    /// has to keep saying.
+    struct Addressed: Sendable {
+        let tool: String
+        let kind: ToolCallKind
+        let named: String
+        let says: String
     }
 
     /// The disclosure is derived from the evidence and from nothing else, which a new subject shape
@@ -126,7 +134,7 @@ struct FeedNarrationTests {
     }
 
     @Test
-    func `the spoken row is its verb and the sentence the agent wrote`() {
+    func `the spoken row reads as the drawn one`() {
         #expect(ran(saying: "List open issues").first?.spoken
             == "Ran List open issues still running")
     }

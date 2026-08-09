@@ -81,17 +81,6 @@ enum FeedCallReading {
         }
     }
 
-    /// Where a move went, said as shortly as the feed says everything else: one component of the
-    /// host's destination — the folder it landed in, or its new name where the move renamed it. A
-    /// path drawn whole would be the one line in a feed that shows no paths that showed one; the
-    /// rest of it is the evidence panel's, which reads the record rather than this.
-    private static func moveDestination(_ destination: String?, from source: String?) -> String? {
-        let parts = destination?.split(separator: "/").map(String.init) ?? []
-        guard let name = parts.last else { return nil }
-        let renamed = name != source?.split(separator: "/").last.map(String.init)
-        return renamed ? name : parts.dropLast().last
-    }
-
     /// The agent's own account of the call outranks whatever it named, wherever the row is not
     /// already addressed by a name of its own. Three are: a file, a skill, and an MCP tool whose
     /// name IS its address — those keep the subject that already identifies them.

@@ -40,9 +40,8 @@ struct FeedCallSubject: View {
             .foregroundStyle(ink)
     }
 
-    /// A command reads as machine text on a ground of its own, because it is the one subject a
-    /// reader might retype. On the same rung as the words around it: the mono face already tells
-    /// them apart, and a second size was the line's own type scale disagreeing with itself.
+    /// A command takes a ground of its own as well as the machine face — it is the one subject a
+    /// reader might retype, and the chip is what says where it starts and ends.
     private func typed(_ command: String) -> some View {
         Text(FeedCommandLine.head(of: command))
             .argoText(subject.style)
