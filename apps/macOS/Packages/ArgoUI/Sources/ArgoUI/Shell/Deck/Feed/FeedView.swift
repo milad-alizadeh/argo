@@ -24,6 +24,15 @@ struct FeedView: View {
     /// a feed that fits its pane never scrolls and so never reports a geometry: the way-back-down
     /// control would otherwise stand permanently over a reading with nothing below it.
     @State private var isFollowing = true
+    /// The row the reader's place is measured from — the topmost one on screen.
+    ///
+    /// A scroll offset in points is not a place in a reading. The stack is lazy, so the height of
+    /// every row nobody has drawn is an estimate, and anything that re-lays the column out — a seam
+    /// moving, the panel taking half of it — throws those estimates away. A retained offset then
+    /// points at a different part of the record, or past the end of it, which is the reading
+    /// jumping and the column standing blank. A row id survives a remeasure because it is not a
+    /// measurement.
+    @State private var anchored: FeedRow.ID?
 
     var body: some View {
         ScrollViewReader { scroller in
@@ -74,6 +83,9 @@ struct FeedView: View {
                 // The gutter under the last row, and the place "back to the newest" aims at.
                 FeedTail()
             }
+            // What gives the reader's place an identity: the rows are the scroll targets, and the
+            // position below is one of them rather than a number of points into an estimate.
+            .scrollTargetLayout()
             .padding(.horizontal, ArgoFeedRow.inset)
             .padding(.top, ArgoSpacing.section)
             // The column, held to a measure and centred in whatever the seams leave it. A feed is
@@ -83,6 +95,11 @@ struct FeedView: View {
             // leading edge reads as a column that failed to fill the space beside it.
             .argoFeedMeasure()
         }
+        // Anchored to the TOP row rather than the centre: the top of the pane is where a reader's
+        // eye is on a column read downwards, and it is the edge a row growing under them moves
+        // least. The tail is in this layout too and is not a row — its own anchor is the scroller's
+        // to aim at, and nothing here has to know about it.
+        .scrollPosition(id: $anchored, anchor: .top)
         // A feed opens on what is happening NOW. Six hours of a session above the fold is not a
         // starting place — a reader who wants the beginning scrolls to it, and the reader who
         // wants the newest line is everyone else.

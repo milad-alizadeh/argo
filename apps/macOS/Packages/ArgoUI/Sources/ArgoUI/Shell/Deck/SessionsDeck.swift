@@ -142,11 +142,14 @@ private struct DeckContentRow: View {
 
     /// The panel's width, defaulting to its share of the deck. Of the WHOLE deck, because the rail
     /// and the minimap are both shut while it is open — the feed is the only thing it shares with.
+    ///
+    /// Seated on a whole point, the opening width included: a share of a fractional deck is a
+    /// fraction, and the feed left beside it is a column of prose either way (`ArgoLayout.seated`).
     private func panelBinding(in deck: CGFloat) -> Binding<CGFloat> {
         let limits = ArgoLayout.evidencePanelLimits(in: deck)
         let opening = deck * ArgoLayout.evidencePanelShare
         return Binding(
-            get: { min(max(panelWidth ?? opening, limits.lowerBound), limits.upperBound) },
+            get: { ArgoLayout.seated(panelWidth ?? opening, in: limits) },
             set: { panelWidth = $0 },
         )
     }
