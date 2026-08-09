@@ -1,5 +1,12 @@
 # Code room spec
 
+> **The HTML prototypes this file cites no longer exist.** They were retired with the Electron
+> cockpit (ADR-0023); `README.md` → *What left, and where it went* says why, and
+> `git log --diff-filter=D -- docs/designs/` finds them in history. What this file decides still
+> stands — read a `*-prototype.html` reference as a pointer to a settled decision, not to a file
+> you can open. The current pixels are `cockpit-sessions-liquid-glass.png`; the current component
+> vocabulary is `apps/macOS`.
+
 > Wayfinder #183, part of #157. The **light-IDE surfaces**: file explorer, lightweight
 > editor, scratch terminal, open-in-editor. Visual source of truth:
 > `docs/designs/cockpit-code-room-prototype.html` (Penumbra #158). Look/density are Phase 2.

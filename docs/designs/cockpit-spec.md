@@ -36,7 +36,13 @@
 | What shows when — surface × state | `cockpit-surface-matrix.md` |
 | Session interior — the grill behind the prototype | `cockpit-session-interior-decisions.md` |
 | Pre-map architecture decisions | `docs/adr/0013`–`0018` |
-| Every settled surface, walkable in a sitting | `cockpit-prototype-switcher.html` (throwaway) |
+| The approved pixels | `cockpit-sessions-liquid-glass.png` + `cockpit-visual-identity-decisions.md` |
+
+> **The HTML prototypes this file cites no longer exist.** They were retired with the Electron
+> cockpit (ADR-0023); `README.md` → *What left, and where it went* says why, and
+> `git log --diff-filter=D -- docs/designs/` finds them in history. What this file decides still
+> stands — read a `*-prototype.html` reference as a pointer to a settled decision, not to a file
+> you can open.
 
 The Sessions room and the Work room have **no written surface spec** — their detail lives in
 `cockpit-session-interior-decisions.md` plus their prototypes. §4 and §5 below are therefore
@@ -391,8 +397,16 @@ Detail: `cockpit-app-shell-spec.md` → *Out-of-window attention*.
 
 ## 11 · The architecture the domain model forces
 
-> Stated here because `CONTEXT.md` and ADRs 0005/0013–0018 already force it — this is the
+> Stated here because `CONTEXT.md` and ADRs 0013–0018 already force it — this is the
 > architectural half a Phase-3 ticket set is cut from, not a start signal for the build.
+>
+> **Written against the Electron runtime (ADR-0023 retired it).** The CLAIM this section
+> makes survives the rewrite and is why it is kept: one owner holds authoritative state,
+> there is exactly ONE seam, and views take facts rather than rendered states. The MECHANISM
+> named below — `applyEvent`/`applyDelta`, `@shared/projection`, IPC deltas, stories — does
+> not. Swift spells it Hub → cockpit projection → SwiftUI, with `swift-boundaries.sh`
+> enforcing the seam that this section could only assert. Read it for the shape; take names
+> and file paths from `apps/macOS`.
 
 ### 11.1 The one seam
 
@@ -406,7 +420,7 @@ git/*      ──HubEvent──▶   CockpitState
 ```
 
 This is the existing shape generalized, not a new architecture: `applyEvent` (main) and
-`applyDelta` (renderer) already run the same pure code so the two copies cannot drift (ADR-0005),
+`applyDelta` (renderer) already run the same pure code so the two copies cannot drift (the retired ADR-0005; see the section note),
 and `SessionView` already carries **facts, never a rendered state**, so grading stays on the
 renderer's side of the bridge. The rooms extend that rule rather than bending it.
 
@@ -506,7 +520,7 @@ everything on either side of it. A test asserting that a component renders a par
 that a reducer was called, is testing implementation and does not earn its place.
 
 - **`@shared/projection`** — feed `HubEvent`s, assert `CockpitState`; replay deltas renderer-side
-  and assert the two copies are identical. This is the one test that proves ADR-0005's no-drift
+  and assert the two copies are identical. This is the one test that proves that no-drift
   claim.
 - **`@shared/lifecycleModel`** — session facts → delivery render state, extended for the
   one-control-line decisions (rail node states, the blocking badge, `Files (N)`).

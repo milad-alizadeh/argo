@@ -41,40 +41,37 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 ### Module boundaries
 
-Import boundaries are enforced mechanically from an LLM-maintained map. Each protected
-workspace has `<workspace>/scripts/module-boundaries.json` (the source of truth: module →
-public entry) which `dependency-cruiser.cjs` compiles into public-entry-only lint rules —
-**edit the map, never the generated `.cjs`**. Run `bun run boundaries` in the workspace (CI
-gates it on every PR). When you add, split, or rename a module, update the map's `path` +
-`publicEntry` in the **same change**; a new module missing from the map is fixed by adding it,
-**never by loosening a regex**. `apps/desktop` locks Electron main ⊥ preload ⊥ renderer isolation.
+`apps/macOS`'s three layers — `ArgoEngine` ⊥ `ArgoUI` ⊥ the app target — are enforced by
+`scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in pre-commit).
+Each edge is ADR-0022's layering and is checkable from imports and declarations alone, which is
+why they are gates rather than review notes. The sharpest one: **exactly one file in `ArgoUI`
+may read live Hub state** — the Hub → cockpit projection. Everything else takes a value.
 
-That linter sees **edges only**, so the same map carries a `placement` block for the rules about
-where a file may *live*. Three gates compile from it (`bun run quality:placement`): **every**
-module declares what may sit loose at its root and a module with no entry FAILS (ADR-0021);
-kind-folders (`utils/`, `types/`, `hooks/`, …) are banned outright; and a symbol in the
-domain-aware shared tier needs more than one module to want it.
-
-Where wiring lives is decided **per module and does not transfer**: renderer slices are pure
-Views, so their store and bridge reads hoist into `cockpit/`; main has no such constraint, so
-each of its domains owns its own bridge and its root is the entry alone.
+The JS/TS half of this — an LLM-maintained `<workspace>/scripts/module-boundaries.json`
+compiled by `dependency-cruiser.cjs` into public-entry-only rules, plus a `placement` block
+driving three folder gates (ADR-0021) — **has no subject here since ADR-0023 retired the
+Electron cockpit.** Its scripts stay in `scripts/`, ship to consumer projects via
+`scaffold.mjs --hooks` and the `setup-module-boundaries` skill, and get rewired into `quality`
+the day a TypeScript workspace returns. Dormant, not withdrawn.
 
 ### Quality gates
 
 The arithmetic half of those rules is a build failure, not a review note — `bun run quality`
-(biome + duplication + placement), and every rule in it is an **error, never a warning**. Biome
+(biome + duplication + Swift), and every rule in it is an **error, never a warning**. Biome
 carries every per-file cap (50 lines per function, cognitive complexity 15, 3 parameters, a
 150-line file ceiling counting code lines only) and the escape-hatch bans (`any`, `@ts-ignore`,
-`!`, nested ternaries); `jscpd` gates whole-tree duplication at 1%; the three placement gates
-above hold `file-structure.md`'s folder rules. Swift has its own half — `bun run quality:swift`
-(SwiftFormat in check mode, SwiftLint, package boundaries), which needs a macOS runner and so
-lives on the `macos` CI job rather than the default Linux ones. CI runs all of them; pre-commit
-runs biome **and** placement.
+`!`, nested ternaries); `jscpd` gates whole-tree duplication at 1% across Swift and JS alike.
+`bun run quality:swift` (SwiftFormat in check mode, SwiftLint, package boundaries) needs a macOS
+runner and so lives on the `macos` CI job rather than the default Linux ones, alongside the
+build and the swift-testing suites. On Linux, CI runs biome, duplication and `test:hooks` —
+which is now the only executable suite there. Pre-commit runs lint-staged: biome, then
+SwiftFormat/SwiftLint/boundaries and the design-token gate over staged Swift.
 
 `scripts/placement-guard.mjs` is a `PreToolUse(Write)` hook that DENIES an agent creating a new
 file loose at a module root, before it exists. It guards the way IN only (`Write`, new files,
-module roots) — a refactor moving files OUT of a root never trips it — and fails open on error,
-with the gate as backstop.
+module roots) — a refactor moving files OUT of a root never trips it — and fails open on error.
+It finds its map by walking ancestors, so with no module map in this tree it simply permits;
+it stays wired because it is what consumers get.
 
 Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
 assertions and exhaustive `switch` over a union.
@@ -170,11 +167,12 @@ by the pre-commit hook — **never run `graphify update` by hand**, and **never 
 
 ## Visual verification
 
-Every Storybook story is rendered in CI (the `stories` job / `story tests` required check) as a
-smoke test — it mounts each story in real Chromium and fails on anything that throws. There is
-no pixel-baseline diffing. For a pixel- or spec-level check, run `/visual-verify` on demand.
+There is no automated render check and no pixel-baseline diffing. The Storybook `stories` CI job
+retired with the Electron cockpit (ADR-0023) — Swift has no Storybook, so nothing mounts a view
+on a Linux runner. **Rendering is therefore a thing YOU do**, not something CI catches for you.
+For a pixel- or spec-level check, run `/visual-verify` on demand.
 
-**Rendering `apps/macOS`.** Swift has no Storybook, so the render method is the app itself:
+**Rendering `apps/macOS`.** The render method is the app itself:
 `bun run screenshot --filter=@argo/macos -- <out.png>` builds it, launches it, and captures the
 WINDOW, not the screen. It quits any running Argo first, and that is **load-bearing**: `open` on
 an already-running bundle id activates THAT instance, so a copy left up by another worktree
@@ -192,9 +190,10 @@ a chosen size — the narrow case is a render somebody else can repeat, not a wi
 
 **Use it before claiming a visual change is done.** The app launched against an ordinary checkout
 shows no Sessions, so without a specimen the surface being built is never actually looked at — and
-the design decisions carry no measurements, so `docs/designs/`'s approved study is the only source
-for rhythm, density and type size. Prose in the decision log can be satisfied while the approved
-pixels are not.
+the design decisions carry no measurements, so `docs/designs/cockpit-sessions-liquid-glass.png` is
+the only source for rhythm, density and type size. Prose in the decision log can be satisfied while
+the approved pixels are not. The rhythm itself lives in `ArgoUI/VisualContract/`, rendered by the
+`foundations` specimen — that, not an HTML page, is the living token contract (`rules/design-system.md`).
 
 **A render is not a click.** `apps/macOS` has one XCUITest target, `ArgoE2ETests` — the only tests
 here that launch Argo and drive it. Every other Swift test is a SwiftPM package test that can build
@@ -222,9 +221,12 @@ there is **no `bun` or `turbo` proxy**, so this repo's canonical entrypoints lea
 unless wrapped explicitly:
 
 ```bash
-rtk test bun run test               # turbo → vitest, failures only
+rtk test bun run test               # turbo → swift-testing, failures only
 rtk err  bun run format-and-lint    # biome at repo root (whole monorepo), errors only
-rtk err  bun run typecheck
+rtk err  bun run quality:swift      # SwiftFormat --check, SwiftLint, package boundaries
 ```
+
+There is no `typecheck` script any more — it ran `tsc` over `apps/desktop`, and no workspace
+carries TypeScript sources to check (ADR-0023).
 
 @CONTEXT.md

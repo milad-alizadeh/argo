@@ -12,15 +12,18 @@ roster's `ConciergeDock` mini orb.
 
 The #157 reset left that engine without an owner, and the contradiction was live:
 
-- `docs/designs/cockpit-ui-inventory.md` said "salvage into `shell` — the orb
-  engine is the shell's orb (`OrbMini`)".
+- `docs/designs/cockpit-ui-inventory.md` (since deleted with the Electron cockpit,
+  ADR-0023) said "salvage into `shell` — the orb engine is the shell's orb
+  (`OrbMini`)".
 - #264 built `OrbMini` as a **cheap CSS ring** instead, because the merged top bar
   wants a 38px glyph and the engine has no 38px rendering. The same ticket stopped
   passing `ConciergeDock` into the roster, so the dock orb was already dead code.
 - `cockpit-spec.md` ships only the orb **seat** in the top bar; behaviour belongs
   to map #190.
-- The settled look, `docs/designs/cockpit-penumbra-reference.html`, renders the
-  orb as a CSS corona plus sphere. There is no canvas in the reference.
+- The settled look, `docs/designs/cockpit-penumbra-reference.html` (since deleted,
+  ADR-0023), rendered the orb as a CSS corona plus sphere. There was no canvas in
+  the reference. The decision below outlives both the file and the runtime: the orb
+  is cheap chrome, whatever draws it.
 
 So the engine belonged to a domain marked retired, while the only thing still
 rendering it was `SessionScreen`'s backdrop — a screen #267 rewrites.

@@ -1,5 +1,12 @@
 # App shell spec
 
+> **The HTML prototypes this file cites no longer exist.** They were retired with the Electron
+> cockpit (ADR-0023); `README.md` → *What left, and where it went* says why, and
+> `git log --diff-filter=D -- docs/designs/` finds them in history. What this file decides still
+> stands — read a `*-prototype.html` reference as a pointer to a settled decision, not to a file
+> you can open. The current pixels are `cockpit-sessions-liquid-glass.png`; the current component
+> vocabulary is `apps/macOS`.
+
 > Wayfinder #172 (amended by #201), part of #157. The shell that hosts every room. This is a
 > **written spec**, not a pixel study — the visual source of truth is the existing settled room
 > prototypes: `cockpit-code-room-prototype.html` (#183) **for the chrome**, plus
