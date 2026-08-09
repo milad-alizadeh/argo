@@ -24,6 +24,16 @@ extension FeedProjection {
     /// second set of them.
     static let previewCallRows = previewRows.filter(\.isCall)
 
+    /// The rows the agent narrated itself, on their own — a Claude Code feed as that host actually
+    /// writes one, where a command arrives with the agent's account of what it was for. A filter
+    /// over the shipping rows like the rest: sentences written here would be a render of a feed
+    /// nobody is shown, and the one claim worth looking at is that prose in this slot still reads
+    /// as a row rather than as a paragraph.
+    static let previewNarratedRows = numbered(previewCallRows.compactMap { row in
+        guard case let .call(call) = row.content, case .narration = call.subject else { return nil }
+        return row.content
+    })
+
     /// The same feed with the work taken out — what the agent SAID, at the shape it said it in. A
     /// render of a transcript that is four fifths tool calls is a render of the tool calls.
     static let previewProseRows = previewRows.filter(\.isProse)

@@ -55,7 +55,7 @@ enum FeedCallReading {
         switch call.kind {
         case .search: .search
         case .read: .read
-        case .edit: mutation(diff, from: call.target)
+        case .edit: mutation(diff)
         case .execute: .execute
         case .skill: .skill
         case .fetch: .fetch
@@ -72,39 +72,34 @@ enum FeedCallReading {
     /// With no patch to read it stays `edit`, which is not a guess: `edit` is the ENGINE's kind
     /// for the tool, read off its name, and it is the least the four verbs can say. What is
     /// unknown is which mutation it was, and none of the other three is claimed without evidence.
-    private static func mutation(_ diff: DiffEvidence?, from source: String?) -> FeedCall.Kind {
+    private static func mutation(_ diff: DiffEvidence?) -> FeedCall.Kind {
         switch diff?.change {
         case .create: .create
         case .delete: .delete
-        case .move: .move(destination: moveDestination(diff?.destination, from: source))
+        case .move: .move
         case .modify, nil: .edit
         }
     }
 
-    /// Where a move went, said as shortly as the feed says everything else: one component of the
-    /// host's destination — the folder it landed in, or its new name where the move renamed it. A
-    /// path drawn whole would be the one line in a feed that shows no paths that showed one; the
-    /// rest of it is the evidence panel's, which reads the record rather than this.
-    private static func moveDestination(_ destination: String?, from source: String?) -> String? {
-        let parts = destination?.split(separator: "/").map(String.init) ?? []
-        guard let name = parts.last else { return nil }
-        let renamed = name != source?.split(separator: "/").last.map(String.init)
-        return renamed ? name : parts.dropLast().last
-    }
-
-    /// Two kinds are named by their TOOL rather than by anything the call carried: an MCP call,
-    /// whose name IS its address, and an unclassified one, where the field a target was scraped
-    /// from means nothing without a kind to read it under — drawn, it says `Called whatever it
-    /// does` under a verb that already admits Argo does not know what happened.
+    /// The agent's own account of the call outranks whatever it named, wherever the row is not
+    /// already addressed by a name of its own. Three are: a file, a skill, and an MCP tool whose
+    /// name IS its address — those keep the subject that already identifies them.
+    ///
+    /// It is the unclassified call the narration rescues most. The field a target was scraped from
+    /// means nothing without a kind to read it under, so it drew `Called custom_tool_v2` under a
+    /// verb that already admits Argo does not know what happened; a description is not a scraped
+    /// field but the host asking the agent what the call was FOR.
     private static func subject(of call: ToolCall, within path: FeedPath) -> FeedCall.Subject {
         let named = call.target.map(path.shortened)
+        let narrated = call.narration.map { FeedCall.Subject.narration($0, standingIn: named) }
         return switch call.kind {
         case .mcp: FeedCall.Subject.plain(mcpAddress(of: call.name))
-        case .other: tool(call)
+        case .other: narrated ?? tool(call)
         case .read, .edit: file(at: named) ?? tool(call)
-        case .execute: named.map(FeedCall.Subject.command) ?? tool(call)
-        case .search, .fetch, .delegate, .plan, .skill:
-            named.map(FeedCall.Subject.plain) ?? tool(call)
+        case .skill: named.map(FeedCall.Subject.plain) ?? tool(call)
+        case .execute: narrated ?? named.map(FeedCall.Subject.command) ?? tool(call)
+        case .search, .fetch, .delegate, .plan:
+            narrated ?? named.map(FeedCall.Subject.plain) ?? tool(call)
         }
     }
 

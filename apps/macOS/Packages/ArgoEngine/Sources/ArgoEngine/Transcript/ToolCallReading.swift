@@ -2,6 +2,8 @@
 // `kind` beside it is what makes the record CLI-agnostic. A name this table does not know reads as
 // `other` — never as a guessed kind.
 
+import Foundation
+
 private let kindByName: [String: ToolCallKind] = [
     "Read": .read,
     "NotebookRead": .read,
@@ -61,6 +63,21 @@ func toolCallTarget(_ input: JSONValue) -> String? {
         }
     }
     return nil
+}
+
+/// The key a host asks the agent to narrate its call in. One key rather than a table: every tool
+/// that carries an account of itself carries it under this name, and a tool that carries none is
+/// the honest silence rather than a gap to fill from somewhere else.
+private let narrationKey = "description"
+
+/// The agent's own account of what a call was for, verbatim, or nothing.
+///
+/// Blank is nothing said rather than an empty thing said — the same reading prose already gets, and
+/// for the same reason: a row whose subject is the empty string is a row that lost its subject.
+func toolCallNarration(_ input: JSONValue) -> String? {
+    guard let written = input.stringField(narrationKey),
+          !written.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+    return written
 }
 
 private func planEntryStatus(_ raw: String?) -> PlanEntryStatus {

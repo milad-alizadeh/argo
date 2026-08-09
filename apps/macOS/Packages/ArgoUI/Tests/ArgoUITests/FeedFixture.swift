@@ -10,9 +10,10 @@ enum FeedFixture {
         tool: String,
         kind: ToolCallKind,
         naming target: String? = nil,
+        saying narration: String? = nil,
     )
         -> ToolCall {
-        ToolCall(id: id, name: tool, kind: kind, target: target, atMs: nil)
+        ToolCall(id: id, name: tool, kind: kind, target: target, narration: narration, atMs: nil)
     }
 
     static func answered(_ id: String, _ result: ToolResult?) -> ToolCallOutcome {

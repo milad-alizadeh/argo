@@ -37,6 +37,14 @@ public struct ToolCall: Sendable, Equatable {
     public let kind: ToolCallKind
     /// The file or command the call names, when it names one.
     public let target: String?
+    /// The agent's own account of what this call was for, where the host asked it for one.
+    ///
+    /// A fact of its own and never the target: the two are read from different keys, so a command
+    /// keeps the command AND the sentence about it. DERIVED and held verbatim — the narrations are
+    /// imperative-present and nothing re-tenses them, because rewording is Argo putting words in
+    /// the agent's mouth. `nil` where the host wrote none, which is every call on a CLI that
+    /// narrates nothing.
+    public let narration: String?
     /// When the agent emitted the call.
     public let atMs: Int?
     /// The question this call put, for the one tool whose input IS a question. `nil` for every
@@ -50,6 +58,7 @@ public struct ToolCall: Sendable, Equatable {
         name: String,
         kind: ToolCallKind,
         target: String?,
+        narration: String? = nil,
         atMs: Int?,
         ask: Ask? = nil,
     ) {
@@ -57,6 +66,7 @@ public struct ToolCall: Sendable, Equatable {
         self.name = name
         self.kind = kind
         self.target = target
+        self.narration = narration
         self.atMs = atMs
         self.ask = ask
     }

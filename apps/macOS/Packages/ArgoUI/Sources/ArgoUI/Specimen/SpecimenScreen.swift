@@ -61,6 +61,13 @@ public struct SpecimenScreen: View {
             // same-named files that make a qualifier appear, and the failure that earns a second
             // line. Its own case because in the full feed they are four rows in a screenful.
             sessions(FeedProjection.previewCallRows)
+        case .feedNarration:
+            // The rows the agent narrated, with the ones it did not taken out. Whether a sentence
+            // in the subject slot still reads as a ROW — label, then name-of-the-thing — rather
+            // than as a paragraph under a verb is the judgement, and it is only answerable with a
+            // run of them one under another. The tense clash is deliberate and on screen: `Ran`
+            // above `List open issues` is Argo's voice above the agent's, kept rather than fixed.
+            sessions(FeedProjection.previewNarratedRows)
         case .feedProse:
             // What the agent SAID, with the work taken out: the heading, the list and the fenced
             // block of a real answer. The markdown is drawn as blocks, and whether an outline reads

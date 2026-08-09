@@ -60,7 +60,7 @@ struct FeedCallTests {
     }
 
     @Test
-    func `a move says where the file went, and says it as briefly as everything else`() {
+    func `a move says the file moved and leaves where to for the panel`() {
         let calls = FeedFixture.calls(in: [
             .toolCall(FeedFixture.call(
                 "move",
@@ -75,9 +75,9 @@ struct FeedCallTests {
         ])
 
         #expect(calls.map(\.kind.verb) == ["Moved"])
-        // The folder it landed in, not the path it landed at: a feed that shows no paths may not
-        // make one exception for the row that happens to have two of them.
-        #expect(calls.first?.kind.destination == "VisualContract")
+        // The filename alone, with nothing trailing it. A destination after the name was a second
+        // cut address on the one row that already had one, in a feed that shows no paths at all.
+        #expect(calls.first?.subject.captioned == "Tint.swift")
     }
 
     /// The one case where a mark would be a claim nothing supports. The host's own name is what is

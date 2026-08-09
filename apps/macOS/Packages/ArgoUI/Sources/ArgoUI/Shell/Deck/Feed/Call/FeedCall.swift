@@ -66,9 +66,9 @@ extension FeedCall {
         case edit
         case create
         case delete
-        /// `nil` where the host declared a move without saying where to. The verb is still the
-        /// truth; the destination is the part that was never written down.
-        case move(destination: String?)
+        /// Where it went is the panel's. The verb is the news; a second address trailing the
+        /// filename put a word after the row that the reader has to discard to reach the end of it.
+        case move
         case execute
         /// A skill the agent invoked by name. Told apart from an `execute` because the reader's
         /// question about it is WHICH skill — the name is the whole content of the row.
@@ -80,14 +80,21 @@ extension FeedCall {
         case unclassified
     }
 
-    /// What the sentence names. Three shapes, because a file, a command line and a pattern are read
-    /// differently and only one of them has a name that is shorter than itself.
+    /// What the sentence names. Four shapes, because a file, a command line, a pattern and a
+    /// sentence the agent wrote are read differently — and only one of them has a name that is
+    /// shorter than itself.
     enum Subject: Equatable, Sendable {
         case file(FileName)
         /// A command as it was typed.
         case command(String)
         /// A pattern, a URL, a brief, a tool's own name — whatever the call named, verbatim.
         case plain(String)
+        /// The agent's own account of what the call was for, and the target it stood in for.
+        ///
+        /// The pair is the point: the row draws the sentence and the panel still opens on the
+        /// command, which is what makes the sentence falsifiable against what actually ran. `nil`
+        /// where the narrating call named nothing else — then the sentence is all there was.
+        case narration(String, standingIn: String?)
 
         /// The shortest thing that identifies the subject on its own, with no row beside it to
         /// borrow from: the filename, and the parent in front of it where another file in this
@@ -103,6 +110,9 @@ extension FeedCall {
                 file.qualifier.map { "\($0)/\(file.name)" } ?? file.name
             case let .command(command): command
             case let .plain(text): text
+            // The sentence, and not the command behind it: a listener arrives at the row the way a
+            // reader does, and the row says what the agent was doing.
+            case let .narration(text, _): text
             }
         }
     }
@@ -246,11 +256,5 @@ extension FeedCall.Kind {
         case .mcp: ArgoSymbol.mcpTool
         case .unclassified: nil
         }
-    }
-
-    /// Where a moved file went, drawn as a quiet qualifier after the name.
-    var destination: String? {
-        guard case let .move(destination) = self else { return nil }
-        return destination
     }
 }
