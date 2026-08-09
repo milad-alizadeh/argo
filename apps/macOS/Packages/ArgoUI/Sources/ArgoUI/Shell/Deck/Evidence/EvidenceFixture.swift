@@ -15,6 +15,18 @@ enum EvidenceFixture {
         }
     }
 
+    /// The longest command that Codex feed ran — the one that runs past the three lines the header
+    /// caps a command at, and so the one state where the middle cut is looked at rather than
+    /// asserted. Taken off the shipping rows for the same reason as the rest: a command written out
+    /// here would be a render of a call nobody is shown.
+    static let ran = FeedProjection.previewCommandRows
+        .compactMap { row -> FeedCall? in
+            guard case let .call(call) = row.content else { return nil }
+            return call
+        }
+        .max { $0.address.text.count < $1.address.text.count }?
+        .opened
+
     /// The folded run of looking — the only panel whose steps are captioned, because its row no
     /// longer names the files it stands for.
     static let surveyed = FeedProjection.previewRows.compactMap { row -> FeedEvidence? in

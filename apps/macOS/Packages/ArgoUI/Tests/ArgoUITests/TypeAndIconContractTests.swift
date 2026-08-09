@@ -149,4 +149,24 @@ struct TypeAndIconContractTests {
     func `a pointer is drawn at the same size as the marks it shares a line with`() {
         #expect(ArgoIconSize.allCases.allSatisfy { $0.rawValue >= ArgoIconSize.inline.rawValue })
     }
+
+    // MARK: - Which mark, in the evidence panel's header
+
+    /// A command has no language, and a header that asked for one anyway fell through to the
+    /// generic document — so every shell call opened its evidence under a page icon. The claim is
+    /// the fall-through itself: the mark is the terminal the command RAN in, and the question about
+    /// a language is one a command is never asked, whatever its own last word happens to end in.
+    @Test
+    func `a command's header takes the terminal, never a language glyph`() {
+        let ran = "sh scripts/screenshot.sh out.png && cat notes.md"
+        let call = FeedCall(
+            kind: .execute, subject: .command(ran), churn: nil, ending: .succeeded,
+            evidence: [], repeats: 1, spend: nil,
+        )
+
+        #expect(call.language == nil)
+        #expect(call.opened.symbol == ArgoSymbol.ran)
+        #expect(call.opened.symbol != ArgoSymbol.plainSource)
+        #expect(call.opened.symbol != EvidenceLanguage.markdown.symbol)
+    }
 }
