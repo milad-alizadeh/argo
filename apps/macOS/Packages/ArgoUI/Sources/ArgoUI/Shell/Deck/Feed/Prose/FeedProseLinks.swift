@@ -20,12 +20,22 @@ struct ProseLinkRun: Equatable {
     let rect: CGRect
 }
 
-/// Draws the paragraph unchanged and reports where its link runs are.
+/// A run the agent wrote between backticks. Carries nothing: where it is, is the whole question,
+/// and only the type-setter knows that.
+struct ProseCode: TextAttribute {}
+
+/// Draws the paragraph — grounds under its code spans, glyphs on top — and reports where its link
+/// runs ended up.
 ///
 /// A renderer rather than a measurement pass because wrapping is the whole question: the same
-/// paragraph at two widths puts its links in different places, and only the thing that broke the
-/// lines knows where.
-struct ProseLinkRenderer: TextRenderer {
+/// paragraph at two widths puts its links and its spans in different places, and only the thing
+/// that broke the lines knows where.
+///
+/// Both jobs live in ONE renderer because `textRenderer` is last-one-wins — a second renderer for
+/// the spans would silently drop the link reporting, and the links would stop being pressable
+/// with nothing to show for it.
+struct ProseRenderer: TextRenderer {
+    let marked: ArgoColor
     let found: ([ProseLinkRun]) -> Void
 
     func draw(layout: Text.Layout, in context: inout GraphicsContext) {
@@ -35,11 +45,30 @@ struct ProseLinkRenderer: TextRenderer {
                 return ProseLinkRun(url: link.url, rect: run.typographicBounds.rect)
             }
         })
+        // Every ground first, then every glyph. Drawn run by run interleaved, a span's ground
+        // would paint over the tail of the word before it wherever two runs overlap their boxes.
+        for line in layout {
+            for run in line where run[ProseCode.self] != nil {
+                context.fill(
+                    Path(roundedRect: ground(run), cornerRadius: ArgoRadius.marker),
+                    with: .color(marked.color),
+                )
+            }
+        }
         for line in layout {
             for run in line {
                 context.draw(run)
             }
         }
+    }
+
+    /// A marked run's chip: its line box, pushed out enough to read as something AROUND the word
+    /// rather than a box jammed against it.
+    private func ground(_ run: Text.Layout.Run) -> CGRect {
+        run.typographicBounds.rect.insetBy(
+            dx: -ArgoFeedRow.markedSpanInsetX,
+            dy: -ArgoFeedRow.markedSpanInsetY,
+        )
     }
 }
 

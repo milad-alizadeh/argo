@@ -7,6 +7,11 @@ import SwiftUI
 /// ink and its fold; those are the caller's claims, not the type's.
 struct FeedProseText: View {
     @Environment(\.argo) private var argo
+    /// The ink the prose around this run is set in. Ambient rather than a parameter: it is a
+    /// property of the block being drawn, not of each span inside it, and threading it through
+    /// every markdown construct that can hold prose would put the same value in four signatures
+    /// to serve one case.
+    @Environment(\.proseVoice) private var voice
 
     let text: String
     /// Which rung the run is set on. Only MARKUP passes one — a heading is the same words at a
@@ -27,7 +32,7 @@ struct FeedProseText: View {
             .argoText(rung, weight)
             .lineSpacing(ArgoFeedRow.proseLineSpacing)
             .multilineTextAlignment(.leading)
-            .textRenderer(ProseLinkRenderer { found in
+            .textRenderer(ProseRenderer(marked: argo.color.surface.marked) { found in
                 guard found != links else { return }
                 links = found
             })
@@ -37,9 +42,18 @@ struct FeedProseText: View {
     @MainActor private var inked: AttributedString {
         MarkedProse.inked(
             marked,
-            code: argo.color.text.code,
+            span: span,
             link: argo.color.interaction.accent,
         )
+    }
+
+    /// What a `code` span is inked in: nothing at all, unless the voice around it would fall under
+    /// the contrast floor once the span's ground lifts the backdrop out from under it. The choice
+    /// itself is the palette's — see `TextRoles.marked(on:)`.
+    private var span: ArgoColor? {
+        guard let voice else { return nil }
+        let floored = argo.color.text.marked(on: voice)
+        return floored == voice ? nil : floored
     }
 
     /// The agent's own inline marks, drawn as marks: `code` spans and emphasis are how a CLI

@@ -11,16 +11,26 @@ the renders the app itself produces.
 
 `apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/` **is** the contract: the colour
 roles, Apple's macOS type scale, spacing, radii, elevation and motion, each a value with a
-documented reason. `ArgoUI/Specimen/FoundationSpecimen.swift` is its living specimen — the
-rendered proof, reachable with:
+documented reason. `ArgoUI/Specimen/ContractSpecimen.swift` is its living specimen — every role
+enumerated on the surfaces it is read against:
 
 ```sh
-cd apps/macOS && ARGO_SPECIMEN=foundations sh scripts/screenshot.sh out.png
+cd apps/macOS && ARGO_SPECIMEN=contract sh scripts/screenshot.sh out.png
 ```
 
 It replaces the deleted `foundations.html`, and it is good at that job for the same reason the
 page was: it renders the real tokens rather than a copy, so it cannot drift. It is the one
 non-disposable design artifact (`rules/design-studies.md`).
+
+**It cannot go partial, either.** Each role group's `all` array is what the specimen iterates,
+and a `Mirror`-based assertion in `VisualContractTests` fails the build if a stored role is
+missing from its array. That guard exists because the gap was real: the specimen once drew four
+of six groups and none of the text inks, which is how a lavender `code` ink shipped without ever
+being looked at.
+
+Do not confuse it with **`FoundationSpecimen.swift`** (`ARGO_SPECIMEN=foundations`), which
+dresses the same roles onto a real `NavigationSplitView` — the judgement of whether the contract
+holds up *in a shell*. It looks like the cockpit because it is one; that is not a bug.
 
 A surface that needs a value the contract lacks marks it a **proposal**; promoting one is a
 contract change, and `scripts/check-design-tokens-swift.sh` is the gate that stops a raw

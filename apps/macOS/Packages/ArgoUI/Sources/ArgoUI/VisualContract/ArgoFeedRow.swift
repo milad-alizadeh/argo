@@ -37,6 +37,15 @@ public enum ArgoFeedRow {
     /// vertical — the only alignment in the feed, and the reason it does not become a table.
     public static let callSymbolWidth: CGFloat = 15
 
+    /// How far a marked span's ground is pushed out past the glyphs it sits under.
+    ///
+    /// Measures rather than rhythm steps, and asymmetric on purpose: the horizontal is what makes
+    /// the ground read as a chip AROUND a word instead of a box jammed against it, while the
+    /// vertical is nearly nothing, because a type-setter's line box already stands well clear of
+    /// the glyphs and anything more would have consecutive lines of a paragraph touching.
+    public static let markedSpanInsetX: CGFloat = 3
+    public static let markedSpanInsetY: CGFloat = 1
+
     /// How wide one shot in a gallery is drawn. Large rather than a filename-sized chip: the
     /// whole reason a picture is in the feed is that it can be recognised without being opened,
     /// and four of these across the measure is what a row of screenshots wants.

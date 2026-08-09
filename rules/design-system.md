@@ -27,8 +27,13 @@ values. One file per family, each value named for the **question it answers**:
 | `ArgoElevation` · `ArgoMotion` · `ArgoIconSize` · `ArgoSymbol` | depth, durations and curves, glyph sizes |
 | `ArgoLayout` · `ArgoFeedRow` · `ArgoPlanPill` | structural proportions and per-surface measures |
 
-`Specimen/FoundationSpecimen.swift` renders the contract on a real surface. It is the living
-proof and the one non-disposable design artifact (`rules/design-studies.md`).
+`Specimen/ContractSpecimen.swift` enumerates every role on the surfaces it is read against. It
+is the living proof and the one non-disposable design artifact (`rules/design-studies.md`);
+`Specimen/FoundationSpecimen.swift` is its companion, the same roles dressed onto a real shell.
+
+**A role that is not in the specimen does not ship.** Each group's `all` array drives the
+specimen, and a `Mirror` assertion fails the build when a stored role is missing from it — so a
+colour cannot reach the app without a place it can be looked at.
 
 ## Rule 1 — Tokens only, never magic numbers
 
@@ -41,11 +46,49 @@ Every visual constant is a named value in `VisualContract/`, and a view reaches 
   static — a second appearance is a second `ArgoPalette` and an environment write, and every
   call site that reads a role moves with it for free.
 
+### Write it so a light appearance costs nothing
+
+A light palette is planned. Everything below already holds for it, and new work has to keep it
+that way — the cost of getting this wrong is not a bug, it is a sweep through every call site.
+
+- **A value belongs to a palette, never to a view.** `surface.marked` is white 7% on graphite
+  and would be a translucent *black* on light; the view says `argo.color.surface.marked` and
+  neither knows nor cares.
+- **State a RELATIONSHIP between roles, not an arithmetic on values.** `TextRoles.marked(on:)`
+  picks a rung; it does not lighten one. A rule phrased as "one step brighter" inverts under a
+  light appearance and a rule phrased as "at least `secondary`" does not.
+- **`ArgoTheme` carries its `scheme` beside its palette**, so `argoAppearance` sets the system's
+  own scheme from the theme. Never write `.preferredColorScheme(.dark)` at a call site.
+- **Assertions run over `ArgoPalette.all`, not over `.graphite`.** Add a palette and it inherits
+  every legibility floor and separation rule the same day. Any claim you cannot phrase that way
+  — anything true only of a dark appearance — is a claim about a value, and probably wrong.
+
 `scripts/check-design-tokens-swift.sh` is the mechanical half: it reads colour construction,
 the type ladder, and the modifiers that take a rhythm value. `VisualContract/` is exempt
 because it IS the contract, and `Specimen/` because a specimen exists to show what a role is
 worth. A finding is fixed by snapping to a token or promoting one — **never by allowlisting**,
 unless it is pre-existing debt tracked in a ticket.
+
+## Hue is rationed; loudness is not
+
+A colour in this palette **means** something. Ion Blue is brand, selection and focus and nothing
+else; four operational states are held apart by construction; two diff inks are held off both.
+That is the whole budget, and every one of them is asserted.
+
+So before adding a colour, say which of those it is. If the answer is "none — it marks a *kind*
+of thing", it does not get a hue:
+
+- **The text ramp is neutral, all of it.** A rung of it is a loudness, not a meaning. This rule
+  is asserted (`every text rung is neutral`), and it exists because the exception happened: a
+  lavender `code` ink sat in the ramp at five times the saturation of every rung around it,
+  spending the app's loudest colour on "this run is machine text" — a thing the mono face
+  already said. It is now a **ground** (`surface.marked`), which costs no hue.
+- **A ground, a weight, a face, or a rule under the words** are the devices for a kind. Reach
+  for one of those first; a hue is the last resort and it takes a role from something else.
+- **Source code is the one exemption**, and it is total: a patch in the evidence panel is read in
+  Xcode's own dark theme (`SyntaxTheme`), because the reader has the same files open in Xcode all
+  day. That theme is sealed behind one constant and never leaks into the shell — a hue that is
+  correct inside the panel is not licensed outside it.
 
 ## Roles, not values
 
