@@ -151,6 +151,16 @@ public struct SpecimenScreen: View {
             // is actually met in: two columns sharing 680 points, and the question is whether the
             // reading is still a reading at the width the panel leaves it.
             sessions(FeedProjection.longRows, open: FeedProjection.longFailedCallID)
+        case .feedArriving:
+            // The same length, still being written. Every other case here is a reading that has
+            // stopped, and the claim this one carries is about a reading that has not: a row
+            // arriving at the end must not move the row somebody is looking at.
+            ArrivingFeedSpecimen()
+        case .emptyFeed:
+            // A Session that has said nothing. The empty column has to SAY so — a blank zone is
+            // indistinguishable from one that failed to draw, and it is the state every change to
+            // how the feed holds its place is most likely to break.
+            sessions([])
         case .feedGallery:
             // The run of pictures, in the feed it folds inside. Four provenances in one row, and
             // the judgement is whether they read as four different claims without the captions
