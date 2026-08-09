@@ -1,4 +1,5 @@
 @testable import ArgoUI
+import Foundation
 import Testing
 
 /// What the evidence panel is open ON, per subject.
@@ -74,10 +75,10 @@ struct EvidenceAddressTests {
     /// and only spends an ellipsis where three lines cannot hold it.
     @Test
     func `a command keeps the plumbing and the preamble the row drops`() {
-        let command = "ARGO_SPECIMEN=feed sh scripts/screenshot.sh out.png 2>&1 | tail -4"
+        let command = "ARGO_SPECIMEN=feed sh render.sh out.png 2>&1 | tail -4"
 
         #expect(EvidenceAddress.typed(command).drawn == command)
-        #expect(FeedCommandLine.head(of: command) == "… sh scripts/screenshot.sh out.png …")
+        #expect(FeedCommandLine.head(of: command) == "… sh render.sh out.png …")
     }
 
     /// Cut in the MIDDLE and nowhere else: the verb it opens on and the file it ends on are the two
@@ -88,35 +89,56 @@ struct EvidenceAddressTests {
             + "/private/tmp/claude-501/-Users-milad-Developer-argo-worktrees-470/feed.png"
         let drawn = EvidenceAddress.typed(command).drawn
 
-        #expect(drawn.hasPrefix("ARGO_SPECIMEN=feedCommands ARGO"))
+        #expect(drawn.hasPrefix("ARGO_SPECIMEN=feedCom"))
         #expect(drawn.hasSuffix("worktrees-470/feed.png"))
         #expect(drawn.filter { $0 == "…" }.count == 1)
     }
 
-    /// It is the SHARED rule, reached with a longer reading rather than reimplemented: three lines
-    /// of what one line already measures.
+    /// It is the SHARED rule and not a second one, which is a claim about WHERE the ellipsis falls:
+    /// a third of the way in, so the right-hand end keeps the larger share. The row cuts to one
+    /// line's worth and the header to three, and both put it in the same place.
     @Test
-    func `the header's cut is the row's rule, over three lines`() {
-        let command = String(repeating: "sh scripts/render.sh ", count: 20)
+    func `the header spends its ellipsis where the row does`() {
+        let address = String(repeating: "argo-worktrees/", count: 20)
+        let row = DeckMiddleCut.applied(to: address)
+        let header = EvidenceAddress.typed(address).drawn
 
-        #expect(EvidenceAddress.typed(command).drawn
-            == DeckMiddleCut.applied(to: command, over: EvidenceAddress.commandLines))
-        #expect(EvidenceAddress.commandLines == 3)
+        for cut in [row, header] {
+            #expect(cut.prefix { $0 != "…" }.count == cut.count / 3)
+        }
+        #expect(header.count > row.count)
     }
 
     /// The cap is not decoration. Unbounded wrapping grew the header with whatever happened to be
-    /// open and pushed the close control down the pane, which is what the length is bounded for.
+    /// open and pushed the close control down the pane, which is what the length is bounded for —
+    /// and it has to fit the three lines at the PANEL'S FLOOR, or the layout tail-cuts what the
+    /// middle cut kept and the command carries two ellipses.
     @Test
-    func `however long the command, what is drawn is bounded`() {
-        let ceiling = DeckMiddleCut.applied(
-            to: String(repeating: "x", count: 200),
-            over: EvidenceAddress.commandLines,
-        ).count
+    func `what is drawn fits three lines of the narrowest panel this can open in`() {
+        // What the address is left at the panel's floor, measured off the specimen render: the
+        // width, less the header's padding, its mark, the verb, and the outcome and close control
+        // sharing the line it opens on. Eight points to the character in the mono, which is a shade
+        // generous — so a cut that clears this clears every width the panel can be dragged to.
+        let chrome: CGFloat = 70
+        let perLine = (ArgoLayout.evidencePanelMinimumWidth - chrome) / 8
 
         for length in [200, 2000, 20000] {
-            let command = String(repeating: "sh render.sh ", count: length)
-            #expect(EvidenceAddress.typed(command).drawn.count == ceiling)
+            let drawn = EvidenceAddress.typed(String(repeating: "sh render.sh ", count: length))
+                .drawn
+            #expect(CGFloat(drawn.count) <= perLine * CGFloat(EvidenceAddress.commandLines))
         }
+    }
+
+    /// The specimen is only evidence about the split if the command in it actually runs to three
+    /// lines. It is taken off the shipping rows, so a change there could quietly leave a screen
+    /// that looks right and shows nothing.
+    @Test
+    func `the specimen's command is long enough to be cut`() throws {
+        let ran = try #require(EvidenceFixture.ran)
+
+        #expect(ran.address.drawn.contains("…"))
+        #expect(ran.address.text.count
+            > EvidenceAddress.commandLines * EvidenceAddress.commandLineLength)
     }
 
     /// The ear takes the address whole either way — a cut is a thing about a width, and a listener

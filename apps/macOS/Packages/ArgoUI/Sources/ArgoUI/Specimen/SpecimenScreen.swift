@@ -118,10 +118,8 @@ public struct SpecimenScreen: View {
             // the whole judgement, and it is not one a test can make.
             sessions(FeedProjection.previewCallRows, open: FeedProjection.previewDocumentCallID)
         case .evidenceAddresses:
-            // The per-subject split, which is the whole judgement: a command open beside a File
-            // path, at the panel's own floor. What is being looked at is that the two are cut at
-            // OPPOSITE ends — the command from its beginning down three lines, the path from its
-            // front on one — and that a header three lines deep has not moved the close control.
+            // A command open beside a File path, at the panel's floor. The two are cut at OPPOSITE
+            // ends, and a header three lines deep has not moved the close control.
             EvidenceSpecimen()
         case .feedAttention:
             // Both questions at once: the one still waiting, in the only attention ink the feed
