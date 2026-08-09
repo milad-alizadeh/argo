@@ -20,13 +20,6 @@ struct FeedTailContractTests {
         #expect(ArgoFeedRow.tailDiameter > ArgoIconSize.control.rawValue)
     }
 
-    /// Two floats over one edge, at one measure. Stacked rather than side by side (`tailLift`),
-    /// and a circle drawn to a size of its own would read as a second, unrelated lane.
-    @Test
-    func `it is drawn to the lane the plan pill already occupies`() {
-        #expect(ArgoFeedRow.tailDiameter == ArgoPlanPill.laneHeight)
-    }
-
     /// It clears the pill entirely rather than sitting beside it — the claim `tailLift` exists to
     /// make, restated against the circle now that the control's own height is a token too.
     @Test

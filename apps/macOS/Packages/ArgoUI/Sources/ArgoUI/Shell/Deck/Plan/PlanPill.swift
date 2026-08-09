@@ -55,12 +55,7 @@ struct PlanPill: View {
     private var pill: some View {
         HStack(spacing: ArgoPlanPill.gap) {
             PlanRing(progress: plan.progress)
-            Text(counter)
-                // The step text's own size. A rung below it, the counter read as a footnote to a
-                // sentence when it is the half of the line that moves — and the mono is what keeps
-                // the pill from re-measuring itself as `3/5` becomes `10/12`.
-                .argoText(ArgoTypography.machineBody)
-                .foregroundStyle(argo.color.text.tertiary)
+            PlanCounter(counter: counter)
             Text(currentStep)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(currentStepInk)
@@ -68,8 +63,6 @@ struct PlanPill: View {
         }
         .padding(.horizontal, ArgoPlanPill.insetX)
         .padding(.vertical, ArgoPlanPill.insetY)
-        // Glass, because the pill is here only while a plan is: it is a state the reader is in
-        // rather than a zone of the deck (D14's transient-surfaces clause).
         .argoFloatingGlass(in: .capsule)
         // On the PILL and not on the view that also holds the list: an element spanning both puts
         // this label on a frame the pointer cannot land in.
@@ -85,11 +78,21 @@ struct PlanPill: View {
     /// it is behind it. Never a position for a step that was not marked: the first pending entry
     /// is what the agent will do next, and reading it out as the current one would be the pill
     /// inventing the one fact it exists to report.
-    private var counter: String {
+    ///
+    /// Both readings come out together — what it says now, and the longest it can say it for this
+    /// plan. Two properties deriving them apart would be one shape decided in two places, and the
+    /// pair is the whole reason the pill can hold still.
+    private var counter: PlanCounter.Reading {
         guard let position = plan.position else {
-            return "\(plan.completed)/\(plan.count) done"
+            return PlanCounter.Reading(
+                shown: "\(plan.completed)/\(plan.count) done",
+                widest: "\(plan.count)/\(plan.count) done",
+            )
         }
-        return "Step \(position)/\(plan.count)"
+        return PlanCounter.Reading(
+            shown: "Step \(position)/\(plan.count)",
+            widest: "Step \(plan.count)/\(plan.count)",
+        )
     }
 
     private var currentStep: String {
@@ -103,7 +106,41 @@ struct PlanPill: View {
     }
 
     private var spoken: String {
-        "\(counter), \(currentStep)"
+        "\(counter.shown), \(currentStep)"
+    }
+}
+
+/// How far along the plan is, in words, holding still while it changes.
+///
+/// The one string in the pill that moves while the reader watches it, so it is the one that decides
+/// whether the sentence beside it moves too. Two things keep it still, and neither is enough alone:
+/// the machine face, which makes every digit the same width, and a lane sized to the longest the
+/// counter can get for THIS plan, which absorbs `9/12` becoming `10/12`. Leading-aligned in that
+/// lane, because a number that slid right as it grew would be the shift moved rather than removed.
+private struct PlanCounter: View {
+    /// What it says now, and the longest it can say it before the plan itself changes.
+    struct Reading {
+        let shown: String
+        let widest: String
+    }
+
+    @Environment(\.argo) private var argo
+
+    let counter: Reading
+
+    var body: some View {
+        Text(counter.widest)
+            .argoText(ArgoTypography.machineBody)
+            .hidden()
+            .overlay(alignment: .leading) {
+                Text(counter.shown)
+                    // The step text's own size. A rung below it, the counter read as a footnote to
+                    // a sentence when it is the half of the line that moves.
+                    .argoText(ArgoTypography.machineBody)
+                    .foregroundStyle(argo.color.text.tertiary)
+                    .fixedSize()
+            }
+            .accessibilityHidden(true)
     }
 }
 

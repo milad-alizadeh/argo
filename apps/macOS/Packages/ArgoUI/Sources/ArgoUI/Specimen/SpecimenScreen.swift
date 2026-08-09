@@ -200,13 +200,12 @@ public struct SpecimenScreen: View {
             // to fill in its own line.
             PlanSpecimen(plan: PlanFixture.unstarted, isRevealed: true)
         case .floatingControls:
-            // The three transient surfaces in one frame, against furniture that stayed flat.
             // Whether glass reads as "a state you are in" rather than as a second record is the
             // whole judgement of D14's clause, and it is not one a test can make.
             FloatingControlsSpecimen()
         case .flatFloatingControls:
-            // The same three with Reduce Transparency on. A shipping gate: every one of them has
-            // to stay legible, findable and pressable with the optical response taken away.
+            // A shipping gate: the same three have to stay legible, findable and pressable with
+            // the optical response taken away.
             FloatingControlsSpecimen(isFlat: true)
         }
     }
