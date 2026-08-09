@@ -17,6 +17,10 @@ struct InstrumentDeckShell: View {
     /// Which picture the deck opens full size, for the same reason `open` is a parameter: the
     /// lightbox is reachable only by clicking a thumbnail, so without this nobody ever looks at it.
     var lit: FeedShot?
+    /// Which row the reading opens held at — see `FeedView.held`. A third parameter of the same
+    /// kind: the way back to the newest line is on screen only for a reader who scrolled away from
+    /// it, and a screenshot cannot scroll.
+    var held: FeedRow.ID?
 
     var body: some View {
         content
@@ -31,7 +35,7 @@ struct InstrumentDeckShell: View {
     @ViewBuilder private var content: some View {
         switch room {
         case .sessions:
-            SessionsDeck(feed: feed, showing: showing, open: open, lit: lit)
+            SessionsDeck(feed: feed, showing: showing, open: open, lit: lit, held: held)
         case .work, .code:
             Color.clear
         }

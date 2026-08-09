@@ -127,6 +127,31 @@ extension FeedProjection {
     /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
     /// specimen and a `#Preview` cannot be looking at two different failures.
     static let previewFailedCallID = previewRows.failedCallID
+
+    /// The row a reader left the end at with six of the Session's messages still below them.
+    ///
+    /// Several rather than one, because what the badge has to prove is that it counts what was SAID
+    /// and not what arrived: the long feed puts dozens of calls under this row for every message,
+    /// and a single-digit number on a control with that much work beneath it is the whole claim.
+    /// Six and not three because the render has to be a reading that visibly LEFT the end — under
+    /// three messages there is less than a pane below, so the scroll clamps to the bottom and the
+    /// case comes out as a control standing over a reading that never went anywhere.
+    ///
+    /// Derived from the rows rather than written down. A hard-coded index is a number that means
+    /// nothing the day the fixture transcript grows a turn, and it would go on rendering SOME row
+    /// while quietly ceasing to be the one the count was chosen for.
+    static let longHeldRowID = longRows.leaving(6)
+
+    /// That same reading with everything SAID below the reader's place taken out.
+    ///
+    /// A long stretch of work and no prose, which is the consequence #490 makes deliberate: the
+    /// reading is still visibly detached and the badge is an ABSENCE rather than a `0`. A filter
+    /// over the same rows held at the same place, so the two renders differ by the badge and by
+    /// nothing else — which is the only way an absence is judgeable at all.
+    static let longSilentRows = longRows.filter { row in
+        guard row.isMessage, let held = longHeldRowID else { return true }
+        return row.id <= held
+    }
 }
 
 private extension Sequence<FeedRow> {
@@ -138,5 +163,20 @@ private extension Sequence<FeedRow> {
             guard case let .call(call) = row.content else { return false }
             return call.ending.hasFailed
         }?.id
+    }
+}
+
+private extension [FeedRow] {
+    /// The row a reader would have to have left the end at for `count` messages to be below them.
+    ///
+    /// The row BEFORE the message that opens the run, so the count is what follows the anchor
+    /// rather than what includes it — which is the rule `FeedTail.newMessages` reads. `0` asks for
+    /// the last row of all, where nothing at all has been said since.
+    func leaving(_ count: Int) -> FeedRow.ID? {
+        let messages = filter(\.isMessage)
+        guard messages.count >= count else { return nil }
+        let opening = messages[messages.count - count].id
+        guard let at = firstIndex(where: { $0.id == opening }), at > 0 else { return nil }
+        return self[at - 1].id
     }
 }

@@ -21,6 +21,9 @@ struct SessionsDeck: View {
     /// covers the whole deck: a picture opened over the feed column alone would be a screenshot of
     /// a deck shown inside a third of one.
     @State var lit: FeedShot?
+    /// Which row the reading opens held at — see `FeedView.held`. Passed straight through rather
+    /// than held as state: it is where the reading STARTS, and the scroll owns it from there.
+    var held: FeedRow.ID?
     /// Where the keyboard is across the whole reading — the feed, the panel and the lightbox in one
     /// space, so focus can come back out of the two that cover it. See `FeedFocus`.
     @FocusState private var focus: FeedFocus?
@@ -32,7 +35,7 @@ struct SessionsDeck: View {
             DeckSlot(zone: .tabs)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
             DeckSeparator()
-            DeckContentRow(feed: feed, showing: showing, selection: selection)
+            DeckContentRow(feed: feed, showing: showing, selection: selection, held: held)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoLightbox(selection, in: feed)
@@ -56,6 +59,7 @@ private struct DeckContentRow: View {
     let feed: [FeedRow]
     let showing: PlanShowing
     let selection: FeedRowSelection
+    var held: FeedRow.ID?
 
     @State private var railWidth = ArgoLayout.agentsRailWidth
     /// What the reader dragged the panel to. `nil` until they do — the panel opens at its share of
@@ -74,7 +78,7 @@ private struct DeckContentRow: View {
                         growsRightward: true,
                     )
                 }
-                FeedColumn(feed: feed, showing: showing, selection: selection)
+                FeedColumn(feed: feed, showing: showing, selection: selection, held: held)
                 if openEvidence == nil {
                     DeckSeparator()
                     DeckSlot(zone: .minimap)
@@ -191,10 +195,11 @@ private struct FeedColumn: View {
     let feed: [FeedRow]
     let showing: PlanShowing
     let selection: FeedRowSelection
+    var held: FeedRow.ID?
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            FeedView(rows: feed, selection: selection)
+            FeedView(rows: feed, selection: selection, held: held)
                 // Over the feed rather than in the column's stack: the pill floats, and a row in
                 // the stack would take height from the reading it is meant to sit above. Bounded
                 // to this column so it moves with the feed when a seam does, never over the panel.

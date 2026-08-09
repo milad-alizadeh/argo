@@ -207,6 +207,17 @@ public struct SpecimenScreen: View {
             // A shipping gate: the same three have to stay legible, findable and pressable with
             // the optical response taken away.
             FloatingControlsSpecimen(isFlat: true)
+        case .feedLeftBehind:
+            // The way back, carrying how much was said while the reader was reading. Three, under a
+            // stretch of the long feed that holds dozens of calls — which is the judgement: whether
+            // a small number on a control standing over that much work reads as "what you missed"
+            // rather than as a count of everything that moved.
+            sessions(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
+        case .feedLeftBehindInSilence:
+            // The same control with nothing said since. The consequence #490 makes deliberate: the
+            // reading is still visibly detached, the way back is still there, and the badge is
+            // ABSENT rather than a `0` — which is only judgeable beside the case above it.
+            sessions(FeedProjection.longSilentRows, held: FeedProjection.longHeldRowID)
         }
     }
 
@@ -218,9 +229,10 @@ public struct SpecimenScreen: View {
         _ feed: [FeedRow],
         open: FeedRow.ID? = nil,
         lit: FeedShot? = nil,
+        held: FeedRow.ID? = nil,
     )
         -> some View {
-        InstrumentDeckShell(room: .sessions, feed: feed, open: open, lit: lit)
+        InstrumentDeckShell(room: .sessions, feed: feed, open: open, lit: lit, held: held)
     }
 }
 

@@ -26,4 +26,28 @@ struct FeedTailContractTests {
     func `it floats clear of the plan pill's whole lane`() {
         #expect(ArgoFeedRow.tailLift > ArgoPlanPill.lift + ArgoPlanPill.laneHeight)
     }
+
+    /// The badge is a mark ON the control and never a second control beside it. A chip as tall as
+    /// the circle it hangs off stops reading as a count carried by the button and starts reading as
+    /// two things floating over the same corner.
+    @Test
+    func `the count sits on the circle rather than rivalling it`() {
+        #expect(ArgoBadge.height < ArgoFeedRow.tailDiameter)
+    }
+
+    /// Hung half off the edge, so half of it is still over the circle: a chip clear of the boundary
+    /// is a second float, and one pulled fully inside covers the mark the control IS. It has room
+    /// to hang there because the control floats in the feed's own gutter.
+    @Test
+    func `it hangs over the circle's edge without leaving the feed's gutter`() {
+        #expect(ArgoBadge.height / 2 < ArgoFeedRow.inset)
+    }
+
+    /// One digit is a disc and two are a capsule — the minimum width IS the height, so a count
+    /// never has to be cut to fit a shape decided before it arrived.
+    @Test
+    func `a single digit reads as a disc rather than as a squeezed capsule`() {
+        #expect(ArgoBadge.height >= ArgoBadge.type.size + ArgoBadge.insetY * 2)
+        #expect(ArgoBadge.insetX > 0)
+    }
 }
