@@ -90,12 +90,16 @@ struct DrawerSpecimen: View {
 /// A reading that is still being WRITTEN, for the one claim no stopped fixture can carry: a row
 /// arriving at the end must not drag a reader who has scrolled up away from the line they are on.
 ///
-/// Half the fixture on screen and the rest arriving a few rows at a time. Both halves are
+/// Half the fixture on screen and the rest arriving a dozen rows at a time. Both halves are
 /// load-bearing — a feed that had finished growing before anything scrolled into it would be a
 /// static specimen with extra steps, and a feed that grew in one jump would never overlap a read.
+///
+/// The rest of it lands inside a few seconds. Whoever is watching has to be able to wait for the
+/// growing to be OVER: a claim that the reader was not moved is worth nothing against a reading
+/// that might simply not have grown yet.
 struct ArrivingFeedSpecimen: View {
-    private static let step = 4
-    private static let beat = Duration.milliseconds(400)
+    private static let step = 12
+    private static let beat = Duration.milliseconds(200)
 
     @State private var written = FeedProjection.longRows.count / 2
 
