@@ -79,6 +79,18 @@ class FeedE2ECase: XCTestCase {
         }
     }
 
+    /// Down until the way back down is gone, which is the only thing that says the end was reached
+    /// — there is no row to name there, and on a reading still being written the place moves while
+    /// the walk is happening. A wide throw because the column is at its tallest with the panel
+    /// open, and it stops as soon as the control does rather than walking a fixed count past it.
+    func walkToEnd() {
+        let newest = app.buttons["Newest"]
+        let column = feed
+        for _ in 0 ..< 60 where newest.exists {
+            column.scroll(byDeltaX: 0, deltaY: -800)
+        }
+    }
+
     /// The seam, moved a column's worth. Held for a moment before it travels: a drag that begins
     /// and ends in the same event is a click, and the gesture under test has a minimum distance.
     func drag(_ seam: XCUIElement) {
