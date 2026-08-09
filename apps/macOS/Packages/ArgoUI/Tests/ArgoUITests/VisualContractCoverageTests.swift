@@ -10,6 +10,29 @@ import Testing
 struct VisualContractCoverageTests {
     static let palettes = ArgoPalette.all
 
+    /// An `unwired` entry naming no role is deleted, not left to excuse a future one.
+    ///
+    /// Same shape as the placement gates' rule about stale exemptions, and for the same reason: a
+    /// list of known gaps that nobody prunes stops being a list of known gaps and becomes noise
+    /// that hides the next one. The day a surface lands, its entry has to go — and if the role is
+    /// renamed instead, this fails rather than silently marking nothing.
+    @Test
+    func `every unwired note names a role that exists`() {
+        let lists: [(String, [String: String], [String])] = [
+            ("ArgoTypography", ArgoTypography.unwired, ArgoTypography.all.map(\.name)),
+            ("ArgoMotion", ArgoMotion.unwired, ArgoMotion.all.map(\.name)),
+            ("ArgoElevation", ArgoElevation.unwired, ArgoElevation.all.map(\.name)),
+        ]
+        for (family, unwired, roles) in lists {
+            for name in unwired.keys {
+                #expect(
+                    roles.contains(name),
+                    "\(family).unwired names \(name), which is not a role",
+                )
+            }
+        }
+    }
+
     /// Every role reaches the specimen, proved by reflection rather than by remembering.
     ///
     /// The `all` arrays are what `ContractSpecimen` renders, so a role missing from one is a

@@ -27,6 +27,8 @@ struct ContractSpecimen: View {
                 scale
                 type
                 icons
+                shape
+                depth
                 motion
                 syntax
             }
@@ -41,6 +43,18 @@ struct ContractSpecimen: View {
             .argoText(ArgoTypography.machineCaption)
             .foregroundStyle(argo.color.text.tertiary)
             .frame(width: 132, alignment: .leading)
+    }
+
+    /// What a role is waiting on, when nothing draws it yet — drawn in the attention ink so an
+    /// unjudged value cannot be mistaken for a settled one at a glance. This is the whole reason
+    /// the `unwired` maps exist; a specimen that renders every role identically is a specimen that
+    /// says every role has been looked at.
+    @ViewBuilder func unwired(_ note: String?) -> some View {
+        if let note {
+            Text("unwired · waits on \(note)")
+                .argoText(ArgoTypography.machineCaption)
+                .foregroundStyle(argo.color.state.attention)
+        }
     }
 
     private var states: some View {
@@ -111,6 +125,7 @@ struct ContractSpecimen: View {
                             .foregroundStyle(argo.color.text.tertiary)
                             .frame(width: 132, alignment: .leading)
                         Text(sample(for: role.style.typeface)).argoText(role.style)
+                        unwired(ArgoTypography.unwired[role.name])
                     }
                 }
             }
@@ -127,6 +142,7 @@ struct ContractSpecimen: View {
                             .frame(width: 132, alignment: .leading)
                         Text(duration(role.motion))
                             .argoText(ArgoTypography.machineCaption)
+                        unwired(ArgoMotion.unwired[role.name])
                     }
                     .foregroundStyle(argo.color.text.secondary)
                 }

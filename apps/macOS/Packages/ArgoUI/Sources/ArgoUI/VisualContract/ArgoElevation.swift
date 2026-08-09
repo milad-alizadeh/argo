@@ -37,6 +37,13 @@ public extension ArgoElevation {
         ("flat", flat), ("deck", deck), ("vessel", vessel),
         ("popover", popover), ("dragged", dragged),
     ]
+
+    /// Roles nothing draws yet. See `ArgoMotion.unwired` for why they stay and why they say so.
+    ///
+    /// The three zero rungs are NOT here. Nothing references them either, but that is what
+    /// honouring them looks like — a flat surface draws no shadow — and they are the control group
+    /// that gives `only genuinely floating surfaces cast a shadow` something to mean.
+    static let unwired: [String: String] = ["dragged": "drag-and-drop"]
 }
 
 public extension View {

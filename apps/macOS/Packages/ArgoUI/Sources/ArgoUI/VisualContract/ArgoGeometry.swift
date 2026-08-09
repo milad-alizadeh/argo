@@ -1,19 +1,32 @@
 import SwiftUI
 
-/// Corner radii. Four rungs, each tied to a kind of surface rather than to a number, so a
-/// view picks the rung by asking what it is.
+/// Corner radii. Each rung is tied to a kind of surface rather than to a number, so a view picks
+/// the rung by asking what it is.
+///
+/// There is deliberately **no rung for a toolbar vessel.** One existed, at 11pt, and nothing could
+/// ever apply it: a bounded Liquid Glass vessel takes its shape from the toolbar's own material,
+/// and a view that drew this radius would be drawing a second shape inside the system's. A number
+/// that looks like a decision and cannot be honoured is worse than an absence, which is why this
+/// paragraph is here instead of the value.
 public enum ArgoRadius {
     /// A status dot's pill, a keyboard hint, anything small enough that a larger radius
-    /// would read as a circle.
+    /// would read as a circle. Also a marked `code` span's ground.
     public static let marker: CGFloat = 3
     /// Buttons, fields, chips.
     public static let control: CGFloat = 6
-    /// A bounded Liquid Glass vessel in the toolbar.
-    public static let vessel: CGFloat = 11
     /// Popovers and the inspection surface.
     public static let popover: CGFloat = 12
     /// The Instrument Deck is flush to the window — it is not a floating card.
+    ///
+    /// Worth zero and kept anyway: nothing references it, because the way a view honours it is by
+    /// drawing no corner at all. What it buys is the difference between a deck that is flat
+    /// BECAUSE SOMEBODY DECIDED and a deck that is flat because nobody thought about it.
     public static let deck: CGFloat = 0
+
+    /// Every rung, for the specimen and its coverage check.
+    public static let all: [(name: String, radius: CGFloat)] = [
+        ("marker", marker), ("control", control), ("popover", popover), ("deck", deck),
+    ]
 }
 
 /// Stroke widths. Every one of them is an edge, which is how depth is built here.
