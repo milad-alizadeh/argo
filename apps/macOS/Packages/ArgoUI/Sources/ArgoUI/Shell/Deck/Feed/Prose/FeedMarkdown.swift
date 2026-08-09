@@ -13,7 +13,7 @@ struct FeedMarkdown: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
-            ForEach(Array(MarkdownBlock.blocks(in: text).enumerated()), id: \.offset) { _, block in
+            ForEach(Array(ProseReading.blocks(in: text).enumerated()), id: \.offset) { _, block in
                 FeedMarkdownBlock(block: block)
             }
         }

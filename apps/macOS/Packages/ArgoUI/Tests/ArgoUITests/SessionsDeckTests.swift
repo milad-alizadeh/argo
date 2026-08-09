@@ -72,6 +72,40 @@ struct SessionsDeckTests {
         #expect(limits.contains(opening))
     }
 
+    /// A seam is dragged by a pointer that answers in fractions of a point, and what it sizes is a
+    /// column of prose: a width between two points re-typesets every line in it, which is the
+    /// shimmer a reader sees for as long as the seam is held.
+    @Test
+    func `a width dragged to a fraction is seated on a whole point`() {
+        let seated = ArgoLayout.seated(263.4177, in: ArgoLayout.railWidths)
+
+        #expect(seated == seated.rounded())
+    }
+
+    /// The rounding must not become a way out of the limits. Both directions, because a floor
+    /// rounded down and a ceiling rounded up are each a zone drawn a point outside what it may be.
+    @Test
+    func `seating never lands a width outside its limits`() {
+        let limits = ArgoLayout.railWidths
+
+        #expect(ArgoLayout.seated(limits.lowerBound - 40, in: limits) == limits.lowerBound)
+        #expect(ArgoLayout.seated(limits.upperBound + 40, in: limits) == limits.upperBound)
+    }
+
+    /// A deck measured in fractions is the ordinary case, not the edge one — a window is resized to
+    /// whatever a pointer leaves it, and the panel's ceiling is derived from that width. Seating
+    /// the limits inward is what keeps a panel dragged to its ceiling on a whole point too.
+    @Test
+    func `a fractional deck cannot put the panel back on a fraction`() {
+        let deck = narrowestDeckWidth + 0.5137
+        let limits = ArgoLayout.evidencePanelLimits(in: deck)
+        let widest = ArgoLayout.seated(deck, in: limits)
+
+        #expect(widest == widest.rounded())
+        #expect(widest <= limits.upperBound)
+        #expect(deck - widest >= ArgoLayout.feedMinimumWidth)
+    }
+
     /// The reading measure is a ceiling, never a floor. A column that insisted on its own width
     /// would overflow the feed zone at the narrowest deck instead of narrowing with it, and the
     /// panel this ticket puts beside it is what makes that reachable rather than theoretical.

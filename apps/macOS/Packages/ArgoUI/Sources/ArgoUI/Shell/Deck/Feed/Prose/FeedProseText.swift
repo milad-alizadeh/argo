@@ -34,7 +34,7 @@ struct FeedProseText: View {
             .proseLinks(links)
     }
 
-    private var inked: AttributedString {
+    @MainActor private var inked: AttributedString {
         MarkedProse.inked(
             marked,
             code: argo.color.text.code,
@@ -49,12 +49,12 @@ struct FeedProseText: View {
     /// Inline only, and whitespace preserved: every line break the record carries survives, and the
     /// BLOCK constructs are `MarkdownBlock`'s to find, because a block is a shape on the screen
     /// rather than a span inside a line. A string markdown cannot parse is drawn as it arrived.
-    private var marked: AttributedString {
-        let parsed = try? AttributedString(
-            markdown: text,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace),
-        )
-        return parsed ?? AttributedString(text)
+    ///
+    /// Read through `ProseReading` rather than here, so the parse happens once per string instead
+    /// of once per evaluation of this body — which is what a prompt's two hidden rulers, and a seam
+    /// being dragged, otherwise multiply.
+    @MainActor private var marked: AttributedString {
+        ProseReading.marked(text)
     }
 }
 

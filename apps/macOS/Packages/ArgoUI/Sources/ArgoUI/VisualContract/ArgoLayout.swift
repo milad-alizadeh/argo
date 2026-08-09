@@ -66,4 +66,21 @@ public enum ArgoLayout {
         let ceiling = deck - feedMinimumWidth
         return floor ... max(floor, ceiling)
     }
+
+    /// A zone's width, seated where it can actually be drawn: inside its limits, and on a whole
+    /// point.
+    ///
+    /// The rounding is the load-bearing half. A pointer reports in fractions of a point and a deck
+    /// is measured in them, so a zone that takes either straight through lands its column on a
+    /// subpixel offset — and a column on a subpixel offset re-typesets every line in it, which is
+    /// prose shimmering for as long as a seam is held. Whole points cost a drag nothing anybody can
+    /// see.
+    ///
+    /// The limits are seated too, inward on both sides: a ceiling derived from a fractional deck
+    /// width would otherwise be the fraction the rounding just took out.
+    public static func seated(_ width: CGFloat, in limits: ClosedRange<CGFloat>) -> CGFloat {
+        let floor = limits.lowerBound.rounded(.up)
+        let ceiling = max(floor, limits.upperBound.rounded(.down))
+        return min(max(width.rounded(), floor), ceiling)
+    }
 }

@@ -37,7 +37,9 @@ struct DeckSeam: View {
                 let start = startedAt ?? width
                 startedAt = start
                 let travelled = growsRightward ? move.translation.width : -move.translation.width
-                width = min(max(start + travelled, limits.lowerBound), limits.upperBound)
+                // Seated rather than written through: the pointer answers in fractions of a point,
+                // and the zone this sizes is a column of prose. See `ArgoLayout.seated`.
+                width = ArgoLayout.seated(start + travelled, in: limits)
             }
             .onEnded { _ in startedAt = nil }
     }
