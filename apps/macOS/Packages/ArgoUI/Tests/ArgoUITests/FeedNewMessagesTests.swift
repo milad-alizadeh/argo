@@ -23,10 +23,8 @@ struct FeedNewMessagesTests {
 
     /// A reading with every kind the feed can draw in it, and three things said across it.
     ///
-    /// The kinds between the messages are the point of the fixture. A working agent produces
-    /// overwhelmingly calls, and a count that took every appended row would read `247` after five
-    /// minutes and mean only "a lot" — so each of them is here to move the feed without moving the
-    /// number.
+    /// The kinds between the messages are the point of the fixture: each is here to move the feed
+    /// without moving the number. Why that is the rule is `FeedTail.newMessages`'s to say.
     private static let reading = numbered([
         .message("Said before the reader ever left"),
         .mark(.compacted),
@@ -80,6 +78,36 @@ struct FeedNewMessagesTests {
     func `a reading with no rows in it counts nothing`() {
         #expect(FeedTail.newMessages(in: [], since: 0) == 0)
     }
+
+    /// The two rendered states, held to what their cases claim they are.
+    ///
+    /// A specimen is evidence, and both of these are derived from a fixture transcript that a later
+    /// ticket will grow. Every way they can rot is silent: `leaving` returning `nil` renders an
+    /// ordinary following feed, and a filter that missed a message renders a badge in the case that
+    /// exists to show none. A PNG of either failure looks exactly like a PNG of the state working.
+    @Test
+    func `the rendered cases carry the counts they are cases of`() throws {
+        let held = try #require(FeedProjection.longHeldRowID)
+        #expect(FeedTail.newMessages(in: FeedProjection.longRows, since: held) == 6)
+        #expect(FeedTail.newMessages(in: FeedProjection.longSilentRows, since: held) == 0)
+    }
+
+    /// And that the silent case is still a reading the reader has visibly LEFT, rather than the
+    /// fixture cut off at the place they stopped. With less than a pane below the anchor the scroll
+    /// clamps to the end, the feed latches back onto following, and the render comes out as no
+    /// control at all — which is a different claim from a control with no badge on it.
+    @Test
+    func `the silent case still runs well past where the reader stopped`() throws {
+        let held = try #require(FeedProjection.longHeldRowID)
+        let rows = FeedProjection.longSilentRows
+        let at = try #require(rows.firstIndex { $0.id == held })
+        #expect(rows.count - at > Self.aPaneOfRows)
+    }
+
+    /// Comfortably more rows than the deck can show at once. A count rather than a height because
+    /// no test here has a pane: what it is standing in for is "the reader cannot see the end from
+    /// where they are", and being generous is what keeps it from failing on a taller display.
+    private static let aPaneOfRows = 25
 
     /// Rows in their places, the way the projection gives them out — dense over the rows, so the
     /// ids a test names are the ids a reading has.

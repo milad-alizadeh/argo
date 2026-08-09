@@ -48,6 +48,17 @@ public struct ArgoTextStyle: Sendable {
         rung.size
     }
 
+    /// What one line of this role actually occupies, before any leading is added to it.
+    ///
+    /// A property of TYPE and of nothing else, which is why it is here. Two surfaces size
+    /// themselves to a line: the feed's prose spends the difference as leading, and a badge
+    /// spends it as a height. It lived on `ArgoFeedRow` while the feed was the only one asking,
+    /// which made a contract-level primitive reach into a per-surface measure to find out how
+    /// tall a line of type is.
+    public var lineBox: CGFloat {
+        rung.size * ArgoTypeScale.naturalLineHeightRatio
+    }
+
     public var font: Font {
         .system(rung.style, design: typeface.design, weight: weight)
     }

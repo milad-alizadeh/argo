@@ -32,7 +32,7 @@ struct ArgoBadge: View {
     /// `ArgoPlanPill.laneHeight` is: the height follows the rung, and a number written down here
     /// goes wrong the moment the type role under it moves.
     static var height: CGFloat {
-        insetY * 2 + (type.size * ArgoFeedRow.naturalLineHeightRatio).rounded(.up)
+        insetY * 2 + type.lineBox.rounded(.up)
     }
 
     let count: Int

@@ -126,24 +126,17 @@ public enum ArgoFeedRow {
     /// control that does nothing.
     public static let foldTolerance: CGFloat = 1
 
-    /// What the system already sets a line at, as a multiple of its point size.
-    ///
-    /// SwiftUI has no line-height modifier — `lineSpacing` is the EXTRA leading on top of the
-    /// font's own — so the contract's `lineHeight` is spent through this rather than handed to a
-    /// view that would have to do the subtraction itself.
-    static let naturalLineHeightRatio: CGFloat = 1.21
-
     /// The extra leading that puts the body role on `lineHeight`. Floored at zero: a line height
     /// under the font's own is not something leading can express, and a negative one would tighten
     /// the very rhythm this exists to open.
     public static var proseLineSpacing: CGFloat {
-        max(0, lineHeight - ArgoFeedRow.proseRung.size * naturalLineHeightRatio)
+        max(0, lineHeight - proseRung.size * ArgoTypeScale.naturalLineHeightRatio)
     }
 
     /// The same rhythm for machine output. Tighter than prose because a terminal stream is scanned
     /// rather than read, and its own lines already carry the structure that leading gives prose.
     public static var machineLineSpacing: CGFloat {
-        max(0, machineLineHeight - ArgoTypography.machine.size * naturalLineHeightRatio)
+        max(0, machineLineHeight - ArgoTypography.machine.lineBox)
     }
 
     /// What a line of output is set at, inside the evidence panel.

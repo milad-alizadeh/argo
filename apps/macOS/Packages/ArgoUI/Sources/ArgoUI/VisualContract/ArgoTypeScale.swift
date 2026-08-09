@@ -56,6 +56,14 @@ public enum ArgoTypeScale: Sendable, CaseIterable {
         }
     }
 
+    /// What the system already sets a line at, as a multiple of its point size.
+    ///
+    /// SwiftUI has no line-height modifier: `lineSpacing` is the EXTRA leading on top of the
+    /// font's own, so anything wanting a line to occupy a stated height does the subtraction
+    /// itself. A fact about how the platform draws type, so it sits with the ladder rather than
+    /// with whichever surface first needed it.
+    static let naturalLineHeightRatio: CGFloat = 1.21
+
     /// Every rung, largest first, for the specimen and the contract's assertions.
     public static let ladder: [(name: String, rung: ArgoTypeScale)] = [
         ("largeTitle", .largeTitle), ("title1", .title1), ("title2", .title2),
