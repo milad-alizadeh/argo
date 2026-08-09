@@ -25,13 +25,6 @@ enum DeckMiddleCut {
             + String(address.suffix(length - lead - 1))
     }
 
-    /// The same cut, to an address given more than one line to run across. A surface that wraps has
-    /// that many readings' worth of room before the middle is worth spending — and it asks in LINES
-    /// rather than in characters so the measure of a readable line stays in one place.
-    static func applied(to address: String, over lines: Int) -> String {
-        applied(to: address, keeping: readableLength * lines)
-    }
-
     /// How many characters an address may take, per line, before it is worth cutting. A measurement
     /// of what stays readable rather than of what fits: the surfaces that draw one are laid out in
     /// points, and a rule that asked them their width would give the same address two shapes.

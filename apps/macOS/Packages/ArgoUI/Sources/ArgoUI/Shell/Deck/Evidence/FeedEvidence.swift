@@ -68,6 +68,18 @@ enum EvidenceAddress: Equatable, Sendable {
     /// most that still reads as a header rather than as the first thing in the panel.
     static let commandLines = 3
 
+    /// How much of a command one of those lines holds, at the PANEL'S FLOOR — the width the cut has
+    /// to be right at, since a wider panel can only fit more. Measured off the render rather than
+    /// reasoned about: 320 points less the header's padding, its mark, and the outcome and controls
+    /// sharing the line it opens on leaves the address about 250, and the mono sets about eight
+    /// points to the character.
+    ///
+    /// Deliberately not the measure a feed ROW is cut to. That one answers to the feed's own width,
+    /// and a cut borrowed from a wider surface is worse than no cut: the layout tail-cuts what will
+    /// not fit on top of it, so the command carries two ellipses and loses the right-hand end the
+    /// middle cut exists to keep.
+    static let commandLineLength = 26
+
     /// The characters themselves. What the ear and the tooltip want: both take the address whole,
     /// and neither has a width to be cut to.
     var text: String {
@@ -86,7 +98,8 @@ enum EvidenceAddress: Equatable, Sendable {
     var drawn: String {
         switch self {
         case let .named(text): text
-        case let .typed(command): DeckMiddleCut.applied(to: command, over: Self.commandLines)
+        case let .typed(command):
+            DeckMiddleCut.applied(to: command, keeping: Self.commandLines * Self.commandLineLength)
         }
     }
 }

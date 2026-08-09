@@ -152,10 +152,10 @@ struct TypeAndIconContractTests {
 
     // MARK: - Which mark, in the evidence panel's header
 
-    /// A command has no language, and a header that asked for one anyway fell through to the
-    /// generic document — so every shell call opened its evidence under a page icon. The claim is
-    /// the fall-through itself: the mark is the terminal the command RAN in, and the question about
-    /// a language is one a command is never asked, whatever its own last word happens to end in.
+    /// A command has no language, and a header that asks for one falls through to the generic
+    /// document — which is a shell call's evidence opening under a page icon. The claim is the
+    /// fall-through itself: the mark is the terminal the command RAN in, and the question about a
+    /// language is one a command is never asked, whatever its own last word happens to end in.
     @Test
     func `a command's header takes the terminal, never a language glyph`() {
         let ran = "sh scripts/screenshot.sh out.png && cat notes.md"

@@ -13,10 +13,9 @@ struct EvidenceHeader: View {
     let dismiss: () -> Void
 
     var body: some View {
-        // On the first baseline, not centred: a command runs to three lines and everything beside
-        // it — the mark, the verb, the outcome, the close control — belongs to the line it opens
-        // on. Centred, the close control would drift down the header with the length of whatever
-        // was run, which is exactly what capping the wrapping exists to prevent.
+        // On the first baseline, not centred: everything beside a three-line command belongs to the
+        // line it opens on, and centred, the close control drifts down with the length of whatever
+        // was run.
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.snug) {
             ArgoGlyph(evidence.symbol, .inline)
                 .foregroundStyle(argo.color.text.tertiary)
@@ -64,7 +63,7 @@ struct EvidenceHeader: View {
     /// where three lines still cannot hold it, so the verb at the front and the file at the end
     /// both survive. The tooltip carries what was typed, uncut.
     private func typed(_ command: String) -> some View {
-        drawn(evidence.address.drawn)
+        drawn(EvidenceAddress.typed(command).drawn)
             .lineLimit(EvidenceAddress.commandLines)
             .multilineTextAlignment(.leading)
             // A wrapped line has to be told it may claim the height it needs; without this the row
