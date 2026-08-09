@@ -214,9 +214,8 @@ public struct SpecimenScreen: View {
             // rather than as a count of everything that moved.
             sessions(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
         case .feedLeftBehindInSilence:
-            // The same control with nothing said since. The consequence #490 makes deliberate: the
-            // reading is still visibly detached, the way back is still there, and the badge is
-            // ABSENT rather than a `0` — which is only judgeable beside the case above it.
+            // The same control with nothing said since, which is only judgeable beside the case
+            // above it. What the pair is a render OF is `FeedProjection.longSilentRows`.
             sessions(FeedProjection.longSilentRows, held: FeedProjection.longHeldRowID)
         case .twoReadings:
             // The whole shell over two Sessions that each have one, because switching between them

@@ -2,10 +2,9 @@ import XCTest
 
 /// A second Session opened after the reader had scrolled away from the end of the first.
 ///
-/// The one claim in this suite is that the pane's state dies with the Session it belonged to. It is
-/// only checkable by clicking: the state is SwiftUI's, the switch runs through the real sidebar,
-/// and
-/// nothing a package test can build has either of those.
+/// The one claim here is that the pane's state dies with the Session it belonged to. It is only
+/// checkable by clicking: the state is SwiftUI's, the switch runs through the real sidebar, and a
+/// package test has neither.
 ///
 /// It reads through `Newest`, exactly as `FeedEndE2ETests` does, because that control IS the
 /// question. It stands on screen precisely while a reading has stopped following — so one still

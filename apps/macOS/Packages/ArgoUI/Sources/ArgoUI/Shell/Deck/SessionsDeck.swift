@@ -24,6 +24,9 @@ struct SessionsDeck: View {
     /// Which row the reading opens held at — see `FeedView.held`. Passed straight through rather
     /// than held as state: it is where the reading STARTS, and the scroll owns it from there.
     var held: FeedRow.ID?
+    /// Where the reader dragged the deck's seams — held above this view, never in it. See
+    /// `DeckSeams`.
+    var seams = DeckSeams.unheld
     /// Where the keyboard is across the whole reading — the feed, the panel and the lightbox in one
     /// space, so focus can come back out of the two that cover it. See `FeedFocus`.
     @FocusState private var focus: FeedFocus?
@@ -35,7 +38,13 @@ struct SessionsDeck: View {
             DeckSlot(zone: .tabs)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
             DeckSeparator()
-            DeckContentRow(feed: feed, showing: showing, selection: selection, held: held)
+            DeckContentRow(
+                feed: feed,
+                showing: showing,
+                selection: selection,
+                held: held,
+                seams: seams,
+            )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoLightbox(selection, in: feed)
@@ -60,20 +69,16 @@ private struct DeckContentRow: View {
     let showing: PlanShowing
     let selection: FeedRowSelection
     var held: FeedRow.ID?
-
-    @State private var railWidth = ArgoLayout.agentsRailWidth
-    /// What the reader dragged the panel to. `nil` until they do — the panel opens at its share of
-    /// the deck, which depends on a width this view does not know until it is laid out.
-    @State private var panelWidth: CGFloat?
+    let seams: DeckSeams
 
     var body: some View {
         GeometryReader { proxy in
             HStack(spacing: ArgoSpacing.flush) {
                 if showsRail {
                     AgentsRail(agents: agents)
-                        .frame(width: railWidth)
+                        .frame(width: seams.rail.wrappedValue)
                     DeckSeam(
-                        width: $railWidth,
+                        width: seams.rail,
                         limits: railLimits(in: proxy.size.width),
                         growsRightward: true,
                     )
@@ -153,8 +158,8 @@ private struct DeckContentRow: View {
         let limits = ArgoLayout.evidencePanelLimits(in: deck)
         let opening = deck * ArgoLayout.evidencePanelShare
         return Binding(
-            get: { ArgoLayout.seated(panelWidth ?? opening, in: limits) },
-            set: { panelWidth = $0 },
+            get: { ArgoLayout.seated(seams.panel.wrappedValue ?? opening, in: limits) },
+            set: { seams.panel.wrappedValue = $0 },
         )
     }
 

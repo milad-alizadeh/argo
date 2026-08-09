@@ -43,11 +43,17 @@ struct FeedTailContractTests {
         #expect(ArgoBadge.height / 2 < ArgoFeedRow.inset)
     }
 
-    /// One digit is a disc and two are a capsule — the minimum width IS the height, so a count
-    /// never has to be cut to fit a shape decided before it arrived.
+    /// The chip is at least a line of its own type plus the inset either side, so the number in it
+    /// is never cut by the shape around it.
     @Test
-    func `a single digit reads as a disc rather than as a squeezed capsule`() {
+    func `the chip clears the line of type it carries`() {
         #expect(ArgoBadge.height >= ArgoBadge.type.size + ArgoBadge.insetY * 2)
+    }
+
+    /// A second digit widens the capsule rather than crowding the first. Nothing bounds the count,
+    /// so the shape has to take whatever arrives.
+    @Test
+    func `a second digit gets room rather than a tighter one`() {
         #expect(ArgoBadge.insetX > 0)
     }
 }

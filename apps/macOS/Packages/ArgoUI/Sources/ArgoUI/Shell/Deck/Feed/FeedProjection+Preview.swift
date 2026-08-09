@@ -144,14 +144,17 @@ extension FeedProjection {
 
     /// That same reading with everything SAID below the reader's place taken out.
     ///
-    /// A long stretch of work and no prose, which is the consequence #490 makes deliberate: the
-    /// reading is still visibly detached and the badge is an ABSENCE rather than a `0`. A filter
-    /// over the same rows held at the same place, so the two renders differ by the badge and by
-    /// nothing else — which is the only way an absence is judgeable at all.
-    static let longSilentRows = longRows.filter { row in
-        guard row.isMessage, let held = longHeldRowID else { return true }
-        return row.id <= held
-    }
+    /// A long stretch of work and no prose, and a filter over the same rows held at the same place,
+    /// so the two renders differ by the badge and by nothing else.
+    ///
+    /// Cut by POSITION in the list rather than by comparing `FeedRow.ID`s. The ids are dense today,
+    /// so `<=` would work and would be a fixture quietly depending on that — the same assumption
+    /// that put a Session's reading at another Session's offset.
+    static let longSilentRows: [FeedRow] = {
+        guard let at = longRows.firstIndex(where: { $0.id == longHeldRowID }) else { return [] }
+        return longRows.prefix(through: at) + longRows[longRows.index(after: at)...]
+            .filter { !$0.isMessage }
+    }()
 }
 
 private extension Sequence<FeedRow> {

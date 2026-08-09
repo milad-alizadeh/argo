@@ -33,6 +33,12 @@ struct InstrumentDeckShell: View {
     /// it, and a screenshot cannot scroll.
     var held: FeedRow.ID?
 
+    /// Where the reader dragged the deck's seams. Owned HERE, above the identity below, because a
+    /// seam is a preference of the window and not a fact about the Session — keyed with the room it
+    /// would snap back to its opening width every time the reader clicked a different Session.
+    @State private var railWidth = ArgoLayout.agentsRailWidth
+    @State private var panelWidth: CGFloat?
+
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -46,14 +52,23 @@ struct InstrumentDeckShell: View {
     @ViewBuilder private var content: some View {
         switch room {
         case .sessions:
-            SessionsDeck(feed: feed, showing: showing, open: open, lit: lit, held: held)
-                // The identity, spent. SwiftUI discards a view's whole state when its id changes,
-                // which is the only thing that makes "the count does not survive a Session switch"
-                // — and "the reading opens on its newest line" with it — true rather than assumed.
-                // On the DECK and not on the feed alone: the panel and the lightbox are keyed to
-                // rows too, and an open panel carried across reopens on whatever call now sits at
-                // that position.
-                .id(session)
+            SessionsDeck(
+                feed: feed,
+                showing: showing,
+                open: open,
+                lit: lit,
+                held: held,
+                seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
+            )
+            // The identity, spent. SwiftUI discards a view's whole state when its id changes, which
+            // is the only thing that makes "the count does not survive a Session switch" — and "the
+            // reading opens on its newest line" with it — true rather than assumed. On the DECK and
+            // not on the feed alone: the panel and the lightbox are keyed to rows too, and an open
+            // panel carried across reopens on whatever call now sits at that position.
+            //
+            // Everything discarded here has to be per-Session, which is why the seams above are
+            // not: they are handed in from outside the identity rather than held under it.
+            .id(session)
         case .work, .code:
             Color.clear
         }
