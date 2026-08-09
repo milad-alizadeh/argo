@@ -101,12 +101,12 @@ final class FeedFollowingE2ETests: XCTestCase {
 
         let newest = app.buttons["Newest"]
 
-        // To the end first: a feed opens at the start of the reading, where there IS more below,
-        // so the control being on screen at launch would prove nothing about scrolling.
-        feed.scroll(byDeltaX: 0, deltaY: -4000)
+        // The feed opens at the end of the reading, so the control is already absent — and its
+        // absence here is the baseline the two scrolls below are read against rather than a claim
+        // of its own (`FeedOpeningE2ETests` makes that one).
         XCTAssertTrue(
             newest.waitForNonExistence(timeout: 10),
-            "The way back down stayed up at the end of the reading.",
+            "The way back down was up at the end of the reading.",
         )
 
         feed.scroll(byDeltaX: 0, deltaY: 2000)

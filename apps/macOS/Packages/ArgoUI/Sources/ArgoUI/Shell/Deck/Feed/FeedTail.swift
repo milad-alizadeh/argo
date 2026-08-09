@@ -20,14 +20,44 @@ struct FeedTail: View {
     /// tolerance and not a screenful: one row up is a reader who has scrolled.
     static let slack: CGFloat = ArgoSpacing.base
 
+    /// How long a scroll to the end is given to settle before it is aimed again.
+    ///
+    /// Not a motion token: nothing about this is on screen. It is a wait for the LAYOUT — the rows
+    /// a scroll to the end realises on its way there replace their own estimated heights, and the
+    /// end moves as they do. One frame at 60Hz is 16ms and one at 120 is 8; this is several of
+    /// either, which is a settled layout rather than a race with one.
+    static let settlingPass = Duration.milliseconds(80)
+
     /// Whether the reading is still following the Session.
     ///
     /// There are only two honest things to do about a transcript growing under the reader: follow
     /// the newest line, or hold the page they scrolled to. Which is right is not a setting — it is
     /// where they are. Someone at the bottom is watching; someone who scrolled up is reading, and
     /// moving that page under them loses the line they were on.
+    ///
+    /// Read only when the READER moved the reading — see `isReaderDriven`. Where they are is the
+    /// answer to what they last did, and a Session appending a row changes this arithmetic without
+    /// anybody having done anything.
     static func isFollowing(offset: CGFloat, pane: CGFloat, reading: CGFloat) -> Bool {
         offset + pane >= reading - slack
+    }
+
+    /// Whether this scroll phase is the reader moving the reading, rather than the feed moving it
+    /// for them.
+    ///
+    /// The distinction is the whole of the fix. `follow()` scrolls to the end against heights the
+    /// lazy stack has only estimated, so it routinely lands a hair short; a latch that read its own
+    /// landing would conclude the reader had left the end and offer them the way back to where they
+    /// already are — once, permanently, and one row from home.
+    ///
+    /// An unrecognised phase reads as not the reader's, which is the quieter of the two: the feed
+    /// goes on following rather than deciding on a phase it has never seen that somebody left.
+    static func isReaderDriven(_ phase: ScrollPhase) -> Bool {
+        switch phase {
+        case .tracking, .interacting, .decelerating: true
+        case .idle, .animating: false
+        @unknown default: false
+        }
     }
 
     var body: some View {

@@ -97,9 +97,15 @@ struct DrawerSpecimen: View {
 /// The rest of it lands inside a few seconds. Whoever is watching has to be able to wait for the
 /// growing to be OVER: a claim that the reader was not moved is worth nothing against a reading
 /// that might simply not have grown yet.
+///
+/// A few seconds and not a fraction of one, which is the load-bearing half of the pace. Every claim
+/// about a reading that is being written is a claim about something a reader DID between two rows
+/// arriving — scrolled up, scrolled back down — and a fixture that finishes writing during the
+/// launch leaves nothing to do that in. Whatever asserts against this specimen would then be
+/// asserting against a stopped one and reading as though it had covered a live one.
 struct ArrivingFeedSpecimen: View {
-    private static let step = 12
-    private static let beat = Duration.milliseconds(200)
+    private static let step = 6
+    private static let beat = Duration.milliseconds(500)
 
     @State private var written = FeedProjection.longRows.count / 2
 
