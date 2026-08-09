@@ -37,18 +37,6 @@ struct FeedNarrationTests {
         #expect(call.kind.symbol == ArgoSymbol.ran)
     }
 
-    /// A narration is prose. It is the only subject whose text is a sentence, and the one rule that
-    /// makes it read as one is the face it is set in.
-    @Test
-    func `a narration sets in the interface sans and a command in the mono`() {
-        #expect(FeedCall.Subject.narration("List open issues", standingIn: "gh issue list").style
-            .typeface == .interface)
-        #expect(FeedCall.Subject.command("gh issue list").style.typeface == .machine)
-        // One rung for the whole line — the face is what tells them apart, never the size.
-        #expect(FeedCall.Subject.narration("List open issues", standingIn: nil).style.rung
-            == ArgoTypography.body.rung)
-    }
-
     /// The command is what the row could not say, so it is exactly what the panel is open on.
     @Test
     func `the panel behind a described row opens on the command and not the sentence`() throws {

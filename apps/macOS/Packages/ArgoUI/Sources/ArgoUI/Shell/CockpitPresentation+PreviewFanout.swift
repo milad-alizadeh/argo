@@ -11,13 +11,13 @@ extension CockpitPresentation.Session {
     static let fannedOut: [TranscriptEvent] = [
         .toolCall(ToolCall(
             id: "fan-research", name: "Task", kind: .delegate,
-            target: "research: how the study inks an attention row",
-            narration: "research: how the study inks an attention row", atMs: nil,
+            target: "Research: how the study inks an attention row",
+            narration: "Research: how the study inks an attention row", atMs: nil,
         )),
         .toolCall(ToolCall(
             id: "fan-verify", name: "Task", kind: .delegate,
-            target: "verify: the fold breaks at every mark",
-            narration: "verify: the fold breaks at every mark", atMs: nil,
+            target: "Verify: the fold breaks at every mark",
+            narration: "Verify: the fold breaks at every mark", atMs: nil,
         )),
         .toolCallOutcome(ToolCallOutcome(
             id: "fan-verify",
@@ -33,8 +33,8 @@ extension CockpitPresentation.Session {
         )),
         .toolCall(ToolCall(
             id: "fan-sweep", name: "Task", kind: .delegate,
-            target: "sweep: every surface that reads a stop reason",
-            narration: "sweep: every surface that reads a stop reason", atMs: nil,
+            target: "Sweep: every surface that reads a stop reason",
+            narration: "Sweep: every surface that reads a stop reason", atMs: nil,
         )),
         // A question already settled, and the answer that settled it. The answer is prose the host
         // wrote, exactly as one arrives — naming the option rather than being it.

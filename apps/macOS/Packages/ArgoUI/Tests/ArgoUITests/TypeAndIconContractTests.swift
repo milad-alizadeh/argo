@@ -66,6 +66,30 @@ struct TypeAndIconContractTests {
         #expect(ArgoFeedRow.proseLineSpacing > 0)
     }
 
+    /// The mono is the claim "this is machine text", and a call line is where it is easiest to make
+    /// by accident: a command and a sentence the agent wrote sit in the SAME slot, one row apart.
+    /// Only the command may take the machine face — a narration set in it would say the agent's
+    /// words were something to run, and a filename is a name rather than a thing to retype.
+    @Test
+    func `only a command takes the machine face in a call line's subject slot`() {
+        let file = FeedCall.FileName(path: "Sources/Feed.swift")
+        let subjects: [FeedCall.Subject] = [
+            .command("swift build"),
+            .narration("Build the UI package", standingIn: "swift build"),
+            .plain("grill"),
+        ] + (file.map { [FeedCall.Subject.file($0)] } ?? [])
+
+        for subject in subjects {
+            var isCommand: Bool {
+                guard case .command = subject else { return false }
+                return true
+            }
+            #expect((subject.style.typeface == .machine) == isCommand)
+            // And one rung under all of them: what tells them apart is the face, never the size.
+            #expect(subject.style.rung == ArgoTypography.body.rung)
+        }
+    }
+
     /// Markup keeps its own steps. An outline the agent wrote has to read as one, so a heading
     /// stands above the paragraph under it — the exception the one-size rule is stated against.
     @Test

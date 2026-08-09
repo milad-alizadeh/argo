@@ -66,9 +66,9 @@ extension FeedCall {
         case edit
         case create
         case delete
-        /// `nil` where the host declared a move without saying where to. The verb is still the
-        /// truth; the destination is the part that was never written down.
-        case move(destination: String?)
+        /// Where it went is the panel's. The verb is the news; a second address trailing the
+        /// filename put a word after the row that the reader has to discard to reach the end of it.
+        case move
         case execute
         /// A skill the agent invoked by name. Told apart from an `execute` because the reader's
         /// question about it is WHICH skill — the name is the whole content of the row.
@@ -256,11 +256,5 @@ extension FeedCall.Kind {
         case .mcp: ArgoSymbol.mcpTool
         case .unclassified: nil
         }
-    }
-
-    /// Where a moved file went, drawn as a quiet qualifier after the name.
-    var destination: String? {
-        guard case let .move(destination) = self else { return nil }
-        return destination
     }
 }

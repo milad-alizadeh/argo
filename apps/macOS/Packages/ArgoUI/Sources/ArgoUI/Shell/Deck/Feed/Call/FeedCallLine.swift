@@ -37,12 +37,7 @@ struct FeedCallLine: View {
             Text(call.kind.verb)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(verdict ?? argo.color.text.tertiary)
-            FeedCallSubject(
-                subject: call.subject,
-                destination: call.kind.destination,
-                tint: verdict,
-                isOpen: isOpen,
-            )
+            FeedCallSubject(subject: call.subject, tint: verdict, isOpen: isOpen)
             repeats
             churn
             disclosure

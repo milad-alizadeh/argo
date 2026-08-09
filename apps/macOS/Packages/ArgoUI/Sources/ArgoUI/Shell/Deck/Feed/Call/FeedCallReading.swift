@@ -55,7 +55,7 @@ enum FeedCallReading {
         switch call.kind {
         case .search: .search
         case .read: .read
-        case .edit: mutation(diff, from: call.target)
+        case .edit: mutation(diff)
         case .execute: .execute
         case .skill: .skill
         case .fetch: .fetch
@@ -72,11 +72,11 @@ enum FeedCallReading {
     /// With no patch to read it stays `edit`, which is not a guess: `edit` is the ENGINE's kind
     /// for the tool, read off its name, and it is the least the four verbs can say. What is
     /// unknown is which mutation it was, and none of the other three is claimed without evidence.
-    private static func mutation(_ diff: DiffEvidence?, from source: String?) -> FeedCall.Kind {
+    private static func mutation(_ diff: DiffEvidence?) -> FeedCall.Kind {
         switch diff?.change {
         case .create: .create
         case .delete: .delete
-        case .move: .move(destination: moveDestination(diff?.destination, from: source))
+        case .move: .move
         case .modify, nil: .edit
         }
     }

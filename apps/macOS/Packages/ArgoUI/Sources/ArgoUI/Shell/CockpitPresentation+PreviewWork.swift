@@ -132,8 +132,8 @@ extension CockpitPresentation.Session {
         .toolCall(ToolCall(
             // A delegation names itself in the same key a command narrates itself in, so the row
             // shows the short account and never the brief the agent actually handed over.
-            id: "delegate", name: "Task", kind: .delegate, target: "review the feed",
-            narration: "review the feed", atMs: nil,
+            id: "delegate", name: "Task", kind: .delegate, target: "Review the feed",
+            narration: "Review the feed", atMs: nil,
         )),
         .toolCallOutcome(answered("delegate", nil)),
         .toolCall(ToolCall(

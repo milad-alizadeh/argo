@@ -9,9 +9,6 @@ struct FeedCallSubject: View {
     @Environment(\.argo) private var argo
 
     let subject: FeedCall.Subject
-    /// Where a moved file went. A qualifier rather than a second sentence: the verb already said
-    /// what happened, and this says where to.
-    var destination: String?
     /// The ink the whole line is taking, where it has claimed one — a command that passed, a call
     /// that failed. The line owns that claim, so the subject is told it rather than deciding it.
     var tint: ArgoColor?
@@ -30,20 +27,17 @@ struct FeedCallSubject: View {
         }
     }
 
-    /// The filename, and after it only where the file WENT.
+    /// The filename, and nothing after it.
     ///
-    /// No parent folder trailing the name. It was there to tell two same-named files apart, and it
-    /// paid for that by putting a word after every filename in the feed that the reader has to
-    /// discard — a name followed by `Shell` reads as two things until you know it is one. The
-    /// disambiguation lives where a reader who needs it goes: the panel opens on the whole path,
-    /// and a folded run lists its files as paths.
+    /// No parent folder trailing the name, and no destination trailing a move. Both put a word
+    /// after every such filename that the reader has to discard — a name followed by `Shell` reads
+    /// as two things until you know it is one, and `→ VisualCont…` is a second cut address on the
+    /// one row that already had one. What a reader who needs them goes to is the panel: it opens on
+    /// the whole path, and a move's patch says where the file landed.
     private func named(_ file: FeedCall.FileName) -> some View {
-        HStack(spacing: ArgoSpacing.tight) {
-            Text(file.name)
-                .argoText(subject.style)
-                .foregroundStyle(ink)
-            quiet(destination.map { "→ \($0)" })
-        }
+        Text(file.name)
+            .argoText(subject.style)
+            .foregroundStyle(ink)
     }
 
     /// A command reads as machine text on a ground of its own, because it is the one subject a
@@ -68,16 +62,6 @@ struct FeedCallSubject: View {
     private var ink: ArgoColor {
         tint ?? (isOpen ? argo.color.interaction.accentBright : argo.color.text.secondary)
     }
-
-    /// A qualifier is quieter in INK and not in size — it is there to disambiguate rather than to
-    /// be read, and shrinking it was how the line ended up with three sizes on it.
-    @ViewBuilder private func quiet(_ text: String?) -> some View {
-        if let text {
-            Text(text)
-                .argoText(ArgoTypography.body)
-                .foregroundStyle(argo.color.text.disabled)
-        }
-    }
 }
 
 extension FeedCall.Subject {
@@ -98,14 +82,14 @@ extension FeedCall.Subject {
     }
 }
 
-// Every shape a subject takes — a name that stands alone, the two the feed had to qualify, a move's
-// destination, a command on its own ground, a plain address. Taken from the shipping projection
-// rather than written here, so no preview can show a qualifier the shared rule would never produce.
+// Every shape a subject takes — a filename, a sentence the agent wrote, a command on its own
+// ground, a plain address. Taken from the shipping projection rather than written here, so no
+// preview can show a shape the shared rule would never produce.
 #Preview("Call subject — every shape a call can name") {
     VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
         ForEach(FeedProjection.previewCallRows) { row in
             if case let .call(call) = row.content {
-                FeedCallSubject(subject: call.subject, destination: call.kind.destination)
+                FeedCallSubject(subject: call.subject)
             }
         }
     }
