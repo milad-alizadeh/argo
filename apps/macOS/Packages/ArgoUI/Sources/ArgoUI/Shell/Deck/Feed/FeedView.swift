@@ -129,6 +129,10 @@ struct FeedView: View {
     /// instantly under Reduce Motion: the whole content of the change is the movement.
     private func follow(with scroller: ScrollViewProxy, animated: Bool) {
         guard !rows.isEmpty else { return }
+        // Let the held row go first. A reading that is following has no place to hold — the place
+        // IS the end — and an anchor left standing is a second authority over the same offset,
+        // pulling back to a row upstream of the line that just arrived.
+        anchored = nil
         let motion = animated ? ArgoMotion.selection.resolved(reduceMotion: reduceMotion) : nil
         // To the END of the reading rather than to its last row: the gutter under that row is part
         // of the content, and a scroll that stopped at the row would leave the feed permanently a

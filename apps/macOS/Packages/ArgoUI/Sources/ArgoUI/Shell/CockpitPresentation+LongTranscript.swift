@@ -29,8 +29,8 @@ extension CockpitPresentation.Session {
             + answered(number)
     }
 
-    /// Not every turn reasons out loud, and a feed where a `THOUGHT` label opens every single turn
-    /// makes the label chrome rather than a claim.
+    /// Not every turn reasons out loud, and a feed where every single turn opens in the quieter ink
+    /// makes that ink the ground rather than a distinction.
     private static func reasoned(_ number: Int) -> [TranscriptEvent] {
         guard number % 3 != 1 else { return [] }
         return [.thought(markdown: LongProse.thoughts[number % LongProse.thoughts.count])]
