@@ -16,6 +16,18 @@ struct FeedView: View {
     /// What the deck has open and where the keyboard is. Owned by the deck, not here: opening a
     /// row resizes the column this view is drawn in, and a picture covers every zone at once.
     let selection: FeedRowSelection
+    /// Which row the reading opens HELD at, as though the reader had scrolled up to it.
+    ///
+    /// A parameter for the reason `open` and `lit` are parameters of the deck: the way-back control
+    /// is on screen exactly while the reading has stopped following, and a screenshot cannot
+    /// scroll. Without it the two states this control has — bare, and carrying what was said since
+    /// — are reachable only by a person with a trackpad, which is a surface nobody ever looks at.
+    ///
+    /// It stands for BOTH halves of a detached reading at once: the place the reader is holding,
+    /// and the end they left. In a live Session those separate — the end is taken when following
+    /// breaks and the reader scrolls on from there — but a fixture that is not growing has no
+    /// moment between them to render.
+    var held: FeedRow.ID?
 
     /// Which prompts the reader has unfolded. Held here rather than in the row: the stack is lazy,
     /// so a row's own state dies the moment it scrolls out of view.
@@ -45,6 +57,15 @@ struct FeedView: View {
     /// jumping and the column standing blank. A row id survives a remeasure because it is not a
     /// measurement.
     @State private var anchored: FeedRow.ID?
+    /// The last row present when following broke — what the count on the way-back control is taken
+    /// from. See `FeedTail.newMessages`.
+    ///
+    /// A second place and not `anchored`, because the two are different questions. `anchored` is
+    /// the TOPMOST row on screen and moves with every scroll a detached reader makes; this one is
+    /// the END of the reading at the moment they left it, and it must not move until they are
+    /// following again — a badge measured from the top of the pane would count what the reader was
+    /// already looking at.
+    @State private var leftAt: FeedRow.ID?
 
     var body: some View {
         ScrollViewReader { scroller in
@@ -140,7 +161,11 @@ struct FeedView: View {
     /// The way back down, on screen only while the reading has stopped following.
     @ViewBuilder private func tail(with scroller: ScrollViewProxy) -> some View {
         if !isFollowing, !rows.isEmpty {
-            FeedTailButton { follow(with: scroller, animated: true) }
+            // Nothing to count until the reader has left an end: a reading that is following has no
+            // place to count from, and one taken from the end it sits at would count from now.
+            FeedTailButton(
+                newMessages: leftAt.map { FeedTail.newMessages(in: rows, since: $0) } ?? 0,
+            ) { follow(with: scroller, animated: true) }
                 .padding(.trailing, ArgoFeedRow.inset)
                 .padding(.bottom, ArgoFeedRow.tailLift)
                 .transition(.opacity)
@@ -158,6 +183,10 @@ struct FeedView: View {
         // geometry taken afterwards could.
         isFollowing = true
         anchored = nil
+        // Cleared here as well as in the latch, because this is the OTHER way following resumes. A
+        // badge left standing over a feed that is following again is a lie the reader has to
+        // disprove by scrolling.
+        leftAt = nil
         isSelfScrolling = true
         let motion = animated ? ArgoMotion.selection.resolved(reduceMotion: reduceMotion) : nil
         // To the END of the reading rather than to its last row: the gutter under that row is part
@@ -177,12 +206,38 @@ struct FeedView: View {
     /// rows it realises on the way turn out to measure; the second aims at the height the first
     /// one settled, and that one is the newest line.
     private func open(with scroller: ScrollViewProxy) async {
+        // Never onto the end of a reading that opened held. `held` says the reader is already
+        // somewhere, and this scroll would take them off it before the first frame is drawn.
+        guard held == nil else { return await hold(with: scroller) }
         follow(with: scroller, animated: false)
         await settle()
         // Not over a reader who got there first. A layout pass is brief, but a scroll inside one is
         // still theirs, and #427's claim does not have an exemption for the first frames of a feed.
         guard isFollowing, !Task.isCancelled else { return }
         follow(with: scroller, animated: false)
+    }
+
+    /// Onto the row a reading opened HELD at — the scroll a specimen cannot make by hand.
+    ///
+    /// Announced as this view's own scroll for its whole length, which is load-bearing: the reading
+    /// starts at the end (`defaultScrollAnchor`), and a geometry read before it has moved would
+    /// latch the reader as following and clear the very state this is putting them in.
+    ///
+    /// Detaching comes last, and in that order for two reasons. `scrollPosition` OWNS the offset
+    /// the moment it is bound, and it is bound exactly while the reading is detached — so a scroll
+    /// after the flip is quietly swallowed, and the control ends up standing over a reading that
+    /// never left the end. And the end the reader left is only true once they have left it.
+    private func hold(with scroller: ScrollViewProxy) async {
+        guard let held else { return }
+        isSelfScrolling = true
+        // After a layout pass, never before one: a lazy stack has no measured height for a row far
+        // above the fold, and a scroll aimed at one during the first pass lands nowhere.
+        await settle()
+        scroller.scrollTo(held, anchor: .top)
+        await settle()
+        leftAt = held
+        isFollowing = false
+        isSelfScrolling = false
     }
 
     /// A layout pass. `Task.yield()` only gives up the scheduler, and the height being waited on is
@@ -219,33 +274,22 @@ struct FeedView: View {
     }
 
     /// Where the reading is, taken as the reader's own position.
+    ///
+    /// The count's anchor is taken on the EDGE rather than on every geometry, and taken fresh each
+    /// time: leaving the end a second time counts from that moment, so the badge always reads
+    /// *since you last left the bottom* rather than *since the first time you ever did*. Arriving
+    /// back at the end clears it by hand, which is what makes a scroll home worth as much as a
+    /// click on the control.
     private func latch(onto geometry: ScrollGeometry) {
         readingHeight = geometry.contentSize.height
-        isFollowing = FeedTail.isFollowing(
+        let following = FeedTail.isFollowing(
             offset: geometry.contentOffset.y,
             pane: geometry.containerSize.height,
             reading: geometry.contentSize.height,
         )
-    }
-
-    /// One row up or down, with the row it lands on scrolled into view.
-    ///
-    /// The scroll is not optional: the stack is lazy, so focus moving to a row below the fold moves
-    /// it to a row that has not been laid out — and a keyboard reader whose cursor left the screen
-    /// has lost the feed. Left and right belong to whatever the row draws, so they fall through.
-    private func move(_ direction: MoveCommandDirection, with scroller: ScrollViewProxy) {
-        guard case let .row(current) = selection.focus.wrappedValue,
-              let standing = rows.firstIndex(where: { $0.id == current })
-        else { return }
-        let next = switch direction {
-        case .up: standing - 1
-        case .down: standing + 1
-        case .left, .right: standing
-        @unknown default: standing
-        }
-        guard rows.indices.contains(next), next != standing else { return }
-        selection.focus.wrappedValue = .row(rows[next].id)
-        scroller.scrollTo(rows[next].id)
+        guard following != isFollowing else { return }
+        isFollowing = following
+        leftAt = following ? nil : rows.last?.id
     }
 
     /// A run of calls is one piece of work and sits closer together than two things the agent
@@ -269,21 +313,6 @@ struct FeedView: View {
                 }
             },
         )
-    }
-}
-
-/// A feed with no row in it. It says so, because a blank zone is indistinguishable from one that
-/// failed to draw.
-///
-/// A claim about this SURFACE and not about the Session: an agent can be busy in kinds this feed
-/// does not draw yet, and "nothing said" would be a reading of the record rather than of the feed.
-private struct FeedSilence: View {
-    @Environment(\.argo) private var argo
-
-    var body: some View {
-        Text("Nothing to read yet")
-            .argoText(ArgoTypography.body)
-            .foregroundStyle(argo.color.text.disabled)
     }
 }
 

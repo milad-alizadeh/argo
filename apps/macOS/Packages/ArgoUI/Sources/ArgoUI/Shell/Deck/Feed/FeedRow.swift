@@ -64,6 +64,20 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         }
     }
 
+    /// Whether this row is something the AGENT said. Narrower than `isProse`, which also takes what
+    /// somebody asked and what the agent reasoned — asked by the count on the way-back control,
+    /// which is a reader's question about what they missed and not about the shape of the record.
+    ///
+    /// A thought is deliberately not one. A Turn's final message routinely contradicts its own
+    /// reasoning, so a count that took both would promise a reader two things to catch up on where
+    /// the agent said one.
+    var isMessage: Bool {
+        switch content {
+        case .message: true
+        case .prompt, .thought, .call, .survey, .gallery, .ask, .mark, .unreadable: false
+        }
+    }
+
     /// Whether this row has anything for the evidence panel to show.
     ///
     /// Asked by the pointer and the keyboard alike, so it is one rule: a row that draws no
