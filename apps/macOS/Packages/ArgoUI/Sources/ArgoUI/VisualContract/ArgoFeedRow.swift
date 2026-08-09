@@ -91,6 +91,15 @@ public enum ArgoFeedRow {
         ArgoPlanPill.lift + ArgoPlanPill.laneHeight + ArgoSpacing.base
     }
 
+    /// How wide across that control is drawn.
+    ///
+    /// The pill's own lane, so the two things floating over this edge are one measure rather than
+    /// two. It carries a mark and no word, which makes the diameter the whole hit area — a circle
+    /// sized to its glyph would be a target nobody who had lost their place could land on.
+    public static var tailDiameter: CGFloat {
+        ArgoPlanPill.laneHeight
+    }
+
     /// How thick a drawn rule inside a block of prose is — a table's own gridlines. One point,
     /// because it is a boundary and not a border: it says where a cell ends and never competes
     /// with the words. A WIDTH; the ink it is drawn in is `edge.hairline`.

@@ -26,15 +26,9 @@ struct PlanStepList: View {
         .padding(.horizontal, ArgoPlanPill.listInsetX)
         .padding(.vertical, ArgoPlanPill.listInsetY)
         .frame(width: ArgoPlanPill.listWidth, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: ArgoRadius.popover)
-                .fill(argo.color.surface.overlay)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: ArgoRadius.popover)
-                .strokeBorder(argo.color.edge.subtle, lineWidth: ArgoStroke.border)
-        }
-        .argoShadow(.popover)
+        // The pill's own material: this is the second half of one surface, and two materials
+        // across a gap the pointer crosses would read as two.
+        .argoFloatingGlass(in: .rect(cornerRadius: ArgoRadius.popover))
     }
 }
 
