@@ -15,6 +15,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case contract
     case sessionRows
     case roster
+    case churningRoster
     case toolbarScope
     case emptyToolbarScope
     case projectDrawer

@@ -69,9 +69,15 @@ public extension ArgoMotion {
     /// Attention arriving: a brightness bloom, once, then still.
     static let bloom = ArgoMotion(duration: 0.42, curve: .easeInOut, reducedDuration: 0.14)
 
+    /// A list re-settling into a new order once the reader has left it. Slower than `selection`
+    /// on purpose: that role moves one indicator the eye is already on, and this one moves rows
+    /// nobody asked to move — it has to be watchable, or it is a teleport with a delay in front of
+    /// it. Pure movement, so it lands instantly when movement is off.
+    static let resettle = ArgoMotion(duration: 0.28, curve: .easeOut, reducedDuration: nil)
+
     static let all: [(name: String, motion: ArgoMotion)] = [
         ("stateChange", stateChange), ("selection", selection), ("reveal", reveal),
-        ("latch", latch), ("bloom", bloom),
+        ("latch", latch), ("bloom", bloom), ("resettle", resettle),
     ]
 
     /// Roles nothing draws yet, and what each is waiting on.

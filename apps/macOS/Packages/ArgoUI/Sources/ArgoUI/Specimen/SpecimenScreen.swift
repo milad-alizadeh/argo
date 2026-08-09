@@ -25,6 +25,11 @@ public struct SpecimenScreen: View {
             SessionRowsSpecimen()
         case .roster:
             RosterSpecimen()
+        case .churningRoster:
+            // The same shell with the sort key moving under it. Every other roster case is an
+            // order that has stopped; this one is the order the bug lives in — two Sessions
+            // trading places on every burst of writes, under a reader who is already on one.
+            ChurningRosterSpecimen()
         case .toolbarScope:
             ToolbarSpecimen(presentation: .preview)
         case .emptyToolbarScope:
