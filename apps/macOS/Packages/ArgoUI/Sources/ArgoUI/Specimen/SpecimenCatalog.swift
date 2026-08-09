@@ -53,4 +53,5 @@ public enum Specimen: String, CaseIterable, Sendable {
     case flatFloatingControls
     case feedLeftBehind
     case feedLeftBehindInSilence
+    case twoReadings
 }

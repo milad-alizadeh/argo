@@ -218,6 +218,12 @@ public struct SpecimenScreen: View {
             // reading is still visibly detached, the way back is still there, and the badge is
             // ABSENT rather than a `0` — which is only judgeable beside the case above it.
             sessions(FeedProjection.longSilentRows, held: FeedProjection.longHeldRowID)
+        case .twoReadings:
+            // The whole shell over two Sessions that each have one, because switching between them
+            // is only reachable through the real sidebar. What it exists to make drivable is the
+            // claim that a pane's state dies with the Session it belonged to — the place the reader
+            // stopped at most of all, which `FeedRow.ID` being a POSITION otherwise carries across.
+            RosterSpecimen(presentation: .twoReadings)
         }
     }
 

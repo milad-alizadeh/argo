@@ -25,10 +25,15 @@ struct SessionRowsSpecimen: View {
 /// The shell against a roster that MIXES access. The lock is drawn only where read-only tells
 /// rows apart, so a uniform roster suppresses it by design and this is the only way to look at it.
 struct RosterSpecimen: View {
+    /// Which roster the shell is drawn against. A parameter because a second case wants the same
+    /// shell over a different set of Sessions — switching between two readings is only reachable
+    /// through the real sidebar, and the roster this defaults to has one reading in it.
+    var presentation: CockpitPresentation = .preview
+
     @State private var navigation = CockpitNavigationModel()
 
     var body: some View {
-        CockpitView(presentation: .preview, actions: .inert)
+        CockpitView(presentation: presentation, actions: .inert)
             .environment(navigation)
     }
 }
