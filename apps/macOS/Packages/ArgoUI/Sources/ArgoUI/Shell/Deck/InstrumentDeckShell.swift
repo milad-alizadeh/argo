@@ -5,6 +5,17 @@ import SwiftUI
 /// canopy's material (D10, D40).
 struct InstrumentDeckShell: View {
     let room: CockpitRoom
+    /// Which Session the deck is reading, as an IDENTITY rather than as content.
+    ///
+    /// Nothing below draws it. What it does is give the room's state a lifetime: the pane's state
+    /// is per-Session — where the reader is in the reading, which prompts they unfolded, which
+    /// call's evidence is open — and every one of those is meaningless against a different record.
+    ///
+    /// It has to be said out loud because the rows cannot say it. `FeedRow.ID` is a dense POSITION,
+    /// so every Session's first row is `0` and its fortieth row is `40`; a pane keyed on the rows
+    /// therefore reads one Session as a continuation of the last, keeps the offset it was left at,
+    /// and opens the new reading in the middle of itself rather than on its newest line.
+    var session: CockpitPresentation.Session.ID?
     /// The selected Session's reading, already projected. Rooms with no feed ignore it, which is
     /// the honest shape: the deck is one container and only one room has a feed in it today.
     var feed: [FeedRow] = []
@@ -36,6 +47,13 @@ struct InstrumentDeckShell: View {
         switch room {
         case .sessions:
             SessionsDeck(feed: feed, showing: showing, open: open, lit: lit, held: held)
+                // The identity, spent. SwiftUI discards a view's whole state when its id changes,
+                // which is the only thing that makes "the count does not survive a Session switch"
+                // — and "the reading opens on its newest line" with it — true rather than assumed.
+                // On the DECK and not on the feed alone: the panel and the lightbox are keyed to
+                // rows too, and an open panel carried across reopens on whatever call now sits at
+                // that position.
+                .id(session)
         case .work, .code:
             Color.clear
         }

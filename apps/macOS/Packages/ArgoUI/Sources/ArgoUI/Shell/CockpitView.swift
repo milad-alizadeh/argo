@@ -48,27 +48,32 @@ public struct CockpitView: View {
                     max: ArgoLayout.sidebarMaximumWidth,
                 )
         } detail: {
-            InstrumentDeckShell(room: navigation.room, feed: feed, showing: showing)
-                .overlay(alignment: .topLeading) {
-                    if presentation.connection != .connected {
-                        ConnectionChip(
-                            connection: presentation.connection,
-                            retry: actions.retryConnection,
-                        )
-                        .padding(ArgoSpacing.section)
-                    }
-                }
-                // On the DETAIL pane, not on the split view. A split view divides the bar into a
-                // region per column, and a flexible spacer only expands inside its own — declared
-                // on the split view it landed in a region that spans nothing, which left Rooms
-                // parked beside the scope vessel instead of at the trailing edge.
-                .toolbar {
-                    ShellToolbar(
-                        room: $navigation.room,
-                        presentation: presentation,
-                        actions: actions,
+            InstrumentDeckShell(
+                room: navigation.room,
+                session: navigation.session,
+                feed: feed,
+                showing: showing,
+            )
+            .overlay(alignment: .topLeading) {
+                if presentation.connection != .connected {
+                    ConnectionChip(
+                        connection: presentation.connection,
+                        retry: actions.retryConnection,
                     )
+                    .padding(ArgoSpacing.section)
                 }
+            }
+            // On the DETAIL pane, not on the split view. A split view divides the bar into a
+            // region per column, and a flexible spacer only expands inside its own — declared
+            // on the split view it landed in a region that spans nothing, which left Rooms
+            // parked beside the scope vessel instead of at the trailing edge.
+            .toolbar {
+                ShellToolbar(
+                    room: $navigation.room,
+                    presentation: presentation,
+                    actions: actions,
+                )
+            }
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)

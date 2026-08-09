@@ -80,6 +80,41 @@ public extension CockpitPresentation {
         connection: .connected,
     )
 
+    /// Two Sessions with a reading EACH, which the roster above deliberately is not.
+    ///
+    /// Only one Session there carries a transcript, and a switch that lands on an empty feed
+    /// settles nothing about the pane's state dying with the Session it belonged to — the empty
+    /// column draws no way-back control whether the state survived or not. Both here are long
+    /// enough to scroll, so the reader can leave the end of one and be shown the end of the other.
+    static let twoReadings = CockpitPresentation(
+        projects: previewProjects,
+        activeProjectID: "argo",
+        sessions: [
+            Session(
+                id: "shell",
+                title: "Ship the native Liquid Glass application shell",
+                model: "claude-opus-5",
+                workspaceLocation: "/Users/milad/Developer/argo",
+                branch: "argo/#376-native-shell",
+                access: .managed,
+                status: .running,
+                events: CockpitPresentation.Session.longTranscript,
+            ),
+            Session(
+                id: "engine",
+                title: "Port the session engine core to Swift",
+                model: "codex",
+                workspaceLocation: "/Users/milad/Experiments/argo",
+                branch: "main",
+                access: .managed,
+                status: .idle,
+                events: CockpitPresentation.Session.longTranscript,
+            ),
+        ],
+        checkout: .branch("main"),
+        connection: .connected,
+    )
+
     /// A machine that has registered nothing: no Project to name, and the checkout unavailable
     /// with it. The state first launch is in, which the chrome has to render honestly.
     static let unregisteredPreview = CockpitPresentation(
