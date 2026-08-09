@@ -7,9 +7,8 @@ import SwiftUI
 /// beside it, because it belongs to a state the feed is in and not to the deck's furniture; on the
 /// trailing edge, so it never lands under the plan pill floating over the same edge.
 ///
-/// A circle of glass carrying a down arrow and nothing else. Glass because it is here only while
-/// the reading has stopped following — a state the reader is in rather than a zone of the deck
-/// (D14's transient-surfaces clause) — and the material is what tells the two apart.
+/// A circle of glass carrying a down arrow and nothing else — the material `ArgoFloatingGlass`
+/// spells, because this is a state the reading is in rather than a zone of the deck.
 ///
 /// The word left the face with the capsule. A down arrow in the bottom corner of a scroll is the
 /// one gesture the platform already spells this way, so the label it used to print is now carried

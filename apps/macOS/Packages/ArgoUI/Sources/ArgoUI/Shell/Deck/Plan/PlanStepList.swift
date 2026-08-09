@@ -26,8 +26,7 @@ struct PlanStepList: View {
         .padding(.horizontal, ArgoPlanPill.listInsetX)
         .padding(.vertical, ArgoPlanPill.listInsetY)
         .frame(width: ArgoPlanPill.listWidth, alignment: .leading)
-        // The pill's own material: this is the second half of one surface, and two materials
-        // across a gap the pointer crosses would read as two.
+        // The pill's own material: this is the second half of one surface.
         .argoFloatingGlass(in: .rect(cornerRadius: ArgoRadius.popover))
     }
 }
