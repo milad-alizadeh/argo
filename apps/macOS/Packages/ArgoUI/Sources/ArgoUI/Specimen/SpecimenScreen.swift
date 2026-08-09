@@ -75,6 +75,13 @@ public struct SpecimenScreen: View {
             // words — and whether an ellipsis reads as a cut rather than as part of the command.
             // Rendered narrow as well as wide: a row's whole promise is that it stays one line.
             sessions(FeedProjection.previewCommandRows)
+        case .feedCommandFold:
+            // A turn that looked around through a shell, then changed something. The count at the
+            // top stands for seven calls, five of them commands; the edit under it is what the
+            // looking was for; and the commit and the push below that are still two rows. What is
+            // being judged is the BOUNDARY — that the folded line reads as a stretch of looking
+            // and not as a summary of the turn, and that nothing loud got counted into it.
+            sessions(FeedProjection.previewFoldRows)
         case .feedProse:
             // What the agent SAID, with the work taken out: the heading, the list and the fenced
             // block of a real answer. The markdown is drawn as blocks, and whether an outline reads
