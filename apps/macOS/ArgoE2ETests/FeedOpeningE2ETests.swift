@@ -5,11 +5,11 @@ import XCTest
 /// The inverse of `FeedArrivalE2ETests`, and deliberately the same specimen. That suite's whole
 /// claim is that a reader who scrolled away is not moved, and its vacuity guard — `Newest` on
 /// screen — is satisfied by a feed that dropped out of following when it should not have. Read
-/// alone it makes a broken feed look covered. These two cases are the other half: a reader who
-/// never left, and a reader who came back.
+/// alone it makes a broken feed look covered. These cases are the other half: a reader who never
+/// left, and a reader who came back.
 ///
-/// Neither scrolls before it asserts the opening position, which is the thing eight existing suites
-/// had no case for.
+/// The first two scroll nothing before they assert, which is what eight existing suites had no
+/// case for.
 @MainActor
 final class FeedOpeningE2ETests: FeedE2ECase {
     override var specimen: String {
@@ -17,46 +17,60 @@ final class FeedOpeningE2ETests: FeedE2ECase {
     }
 
     /// The last edit of the last turn. It is written only as the specimen finishes, so a feed that
-    /// opened six hours upstream and stayed there never shows it — and one that opened at the end
-    /// and kept following shows it without anybody scrolling.
+    /// opened six hours upstream and stayed there never shows it.
+    ///
+    /// A literal, like every row address in these suites: `FeedProjection.longRows` is generated
+    /// inside `ArgoUI` and a UI test target cannot reach it. Grow the fixture past turn 51 and this
+    /// stops naming the last row — the guard is that it is one number in one place.
     private let newestLine = "FeedView51.swift"
 
-    /// The first turn's edit, at the top of the reading. Named so the opening position is asserted
-    /// as a place and not only as an absence of the way-back control.
+    /// The first turn's edit, at the top of the reading.
     private let openingLine = "FeedView1.swift"
 
-    /// A Session opens on what is happening NOW.
+    /// A Session opens on what is happening NOW, and not six hours upstream of it.
     ///
-    /// Nothing here scrolls. `Newest` is asserted as never having appeared rather than as absent at
-    /// one instant: the control is the feed reporting that it lost the end, and the whole of this
-    /// claim is that it never does — through the open and through everything that arrives after it.
-    func testASessionOpensOnItsNewestLineAndStaysThere() {
+    /// Nothing here scrolls. The absence of `Newest` is asserted as never having appeared rather
+    /// than as absent at one instant, because the control is the feed reporting it lost the end.
+    func testASessionOpensOnItsNewestLine() {
         XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
 
         XCTAssertFalse(
             app.buttons["Newest"].waitForExistence(timeout: 5),
-            "The feed offered the way back down, so it was not sitting at the end.",
+            "The feed offered the way back down, so it did not open sitting at the end.",
         )
         XCTAssertFalse(
             row(naming: openingLine).isHittable,
             "The feed opened at the start of the reading rather than at its newest line.",
         )
+        XCTAssertEqual(app.state, .runningForeground)
+    }
 
-        // Without a scroll of any kind: the rows written after launch have to come to the reader.
+    /// And rows arriving under a reader who never left the end bring the reading with them.
+    ///
+    /// Still without a scroll of any kind: the newest line has to come to the reader. The row it
+    /// waits for is written only as the specimen finishes, so a feed that stopped following partway
+    /// through never satisfies it.
+    func testRowsArrivingAtTheEndBringTheReadingWithThem() {
+        XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
+
         let newest = row(naming: newestLine)
         XCTAssertTrue(
             newest.waitForExistence(timeout: 30),
             "The newest line never reached the screen, so arriving rows stopped being followed.",
         )
         XCTAssertTrue(newest.isHittable, "The newest line arrived off screen.")
+        XCTAssertFalse(
+            app.buttons["Newest"].exists,
+            "The feed dropped out of following on a row that arrived while it was at the end.",
+        )
         XCTAssertEqual(app.state, .runningForeground)
     }
 
-    /// And a reader who scrolled away and came back is followed again.
+    /// A reader who scrolled away and came back is followed again.
     ///
-    /// The `Newest` control is read twice on purpose, in opposite directions. It appearing is what
-    /// says the reader really did detach — without that the walk back down is a walk from the end
-    /// to the end. It going, and staying gone while the rest of the fixture arrives, is the claim.
+    /// The `Newest` control is read twice, in opposite directions. It appearing is what says the
+    /// reader really did detach — without that, the walk back down is a walk from the end to the
+    /// end. It going, and staying gone while the reading finishes, is the claim.
     func testAReaderWhoScrollsBackToTheEndIsFollowedAgain() {
         XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
 
@@ -67,29 +81,26 @@ final class FeedOpeningE2ETests: FeedE2ECase {
             "Scrolling up left the feed following, so nothing here is about coming back.",
         )
 
-        // Back to the end by hand, a screenful at a time — the reading is still growing, so the
-        // place being walked to moves while the walk is happening.
-        for _ in 0 ..< 60 where newest.exists {
-            feed.scroll(byDeltaX: 0, deltaY: -800)
-        }
+        walkToEnd()
         XCTAssertTrue(
             newest.waitForNonExistence(timeout: 10),
             "Reaching the end by hand did not resume following.",
         )
 
-        // The guard against a stopped fixture: the last line has to still be unwritten here, or
-        // what follows is a reader sitting at the end of a reading that grows no further.
+        // Whether the fixture is still writing by now is a race with the walk above, so the claim
+        // is stated the one way that holds either side of it: the reader is at the end and the last
+        // line of the reading is on screen with them, without anything further being scrolled. A
+        // walk that outran the writer proves it of a stopped reading and the common case proves it
+        // of a live one — and a feed that dropped following fails both halves.
         let arriving = row(naming: newestLine)
-        XCTAssertFalse(arriving.exists, "The specimen had finished writing before the walk ended.")
-
         XCTAssertTrue(
             arriving.waitForExistence(timeout: 30),
-            "Rows arriving after the reader came back did not move the reading.",
+            "The last line never reached the reader who had walked back to the end.",
         )
         XCTAssertTrue(arriving.isHittable, "The newest line arrived off screen.")
         XCTAssertFalse(
             newest.exists,
-            "The feed dropped out of following on a row that arrived while it was at the end.",
+            "The feed dropped out of following after the reader walked back to the end.",
         )
         XCTAssertEqual(app.state, .runningForeground)
     }
