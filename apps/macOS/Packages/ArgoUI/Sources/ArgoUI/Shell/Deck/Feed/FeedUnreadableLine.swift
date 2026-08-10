@@ -14,8 +14,8 @@ struct FeedUnreadableLine: View {
     @Environment(\.argo) private var argo
 
     let unreadable: FeedUnreadable
-    /// Held by the feed, not here: a row in a lazy stack is discarded the moment it scrolls out,
-    /// and a fold that lived in the row would quietly re-close behind the reader.
+    /// Held by the feed, not here: the projection hands the feed a fresh copy of every row as the
+    /// transcript grows, and a fold that lived in the row would quietly re-close behind the reader.
     @Binding var isExpanded: Bool
 
     var body: some View {

@@ -34,7 +34,7 @@ struct FeedMarkdownFence: View {
         .padding(ArgoSpacing.base)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.control))
-        // Keyed on the characters, not on the language: a lazy stack recycles a block view by its
+        // Keyed on the characters, not on the language: SwiftUI matches a block view by its
         // position, and two fences of one language would otherwise share the first one's colours.
         .task(id: code) { await colour() }
     }

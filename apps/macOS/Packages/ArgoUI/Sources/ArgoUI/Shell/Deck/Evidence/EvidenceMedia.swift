@@ -20,6 +20,9 @@ struct EvidenceMedia: View {
             caption
         }
         .padding(ArgoSpacing.comfortable)
+        // The same breath the feed's gallery takes: a picture seated at the text rhythm reads as
+        // jammed against whatever the panel sets above and below it.
+        .padding(.vertical, ArgoFeedRow.shotBreath)
         .frame(maxWidth: .infinity, alignment: .leading)
         .showing(media, in: $showing)
     }

@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		11CBAC433029566100682C20 /* ArgoTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A2 /* ArgoTerminal */; };
+		11CBAC93302A279300682C20 /* ArgoTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A2 /* ArgoTerminal */; };
 		A1B2C3D4E5F6000000000001 /* ArgoEngine in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A0 /* ArgoEngine */; };
 		A1B2C3D4E5F6000000000002 /* ArgoUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60000000000A1 /* ArgoUI */; };
 /* End PBXBuildFile section */
@@ -46,7 +46,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				11CBAC433029566100682C20 /* ArgoTerminal in Frameworks */,
+				11CBAC93302A279300682C20 /* ArgoTerminal in Frameworks */,
 				A1B2C3D4E5F6000000000001 /* ArgoEngine in Frameworks */,
 				A1B2C3D4E5F6000000000002 /* ArgoUI in Frameworks */,
 			);

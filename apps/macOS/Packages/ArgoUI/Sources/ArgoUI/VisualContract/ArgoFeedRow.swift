@@ -56,6 +56,10 @@ public enum ArgoFeedRow {
     /// Between two shots in a gallery. Tighter than the step between rows: a run of shots is one
     /// piece of looking, exactly as a run of calls is.
     public static let shotGap: CGFloat = ArgoSpacing.base
+    /// Above and below a gallery run, on top of the feed's own step. Pictures need more air from
+    /// prose than prose needs from prose — a run seated at the text rhythm reads as jammed
+    /// between the paragraphs it illustrates.
+    public static let shotBreath: CGFloat = ArgoSpacing.base
     /// The mount a RENDERED artifact sits on — the inset that keeps it from bleeding to its own
     /// edges, which is what a captured screen does and a drawn artifact does not.
     public static let shotMount: CGFloat = ArgoSpacing.snug
