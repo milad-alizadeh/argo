@@ -16,6 +16,10 @@ public enum ArgoSymbol {
     public static let revealInFinder = "arrow.up.forward.app"
     public static let locateProject = "questionmark.folder"
     public static let removeProject = "minus.circle"
+    /// Starting a Session — the toolbar's leading control. The platform's compose mark rather than
+    /// a bare `plus`: `plus` is what the drawer spends on registering a Project, and one mark for
+    /// two different new things is how a mark stops meaning either.
+    public static let newSession = "square.and.pencil"
     /// Clearing a finished Session off the roster — the control a row reveals when it is swiped.
     /// A box and not a bin: the Session is still there, behind the foot of the roster, and a
     /// trash mark would promise that it is not.

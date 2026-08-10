@@ -16,7 +16,11 @@ public struct CockpitActions {
     public let removeProject: (String) -> Void
     /// Start an agent in the active Project's folder, with Argo owning its PTY. The one intent here
     /// that acts on the world rather than on Argo's own record of it.
-    public let spawnSession: () -> Void
+    ///
+    /// It ANSWERS with the fresh Session's id — the claim the roster publishes its row under — and
+    /// `nil` where no Session started. The selection is the shell's own business for the reason
+    /// `handOffSession` is: the app performs the spawn, the shell decides what to point at.
+    public let spawnSession: () async -> String?
     /// Clear a Session off the roster, or put one back. The ONLY thing that ever archives one:
     /// nothing derived from a merge, a branch or a transcript reaches this, which is what makes
     /// archiving a decision rather than a status transition (#502, story 14).
@@ -51,7 +55,7 @@ public struct CockpitActions {
         locateProject: { _ in },
         revealProject: { _ in },
         removeProject: { _ in },
-        spawnSession: {},
+        spawnSession: { nil },
         setSessionArchived: { _, _ in },
         handOffSession: { _, _ in nil },
     )
@@ -64,7 +68,7 @@ public struct CockpitActions {
         locateProject: @escaping (String) -> Void,
         revealProject: @escaping (String) -> Void,
         removeProject: @escaping (String) -> Void,
-        spawnSession: @escaping () -> Void,
+        spawnSession: @escaping () async -> String?,
         setSessionArchived: @escaping (String, Bool) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
     ) {

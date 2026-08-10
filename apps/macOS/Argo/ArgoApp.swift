@@ -44,10 +44,11 @@ struct ArgoApp: App {
         .defaultSize(width: 1280, height: 800)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
-            CommandGroup(replacing: .newItem) {
-                Button("New Session") { actions.spawnSession() }
-                    .keyboardShortcut("n", modifiers: .command)
-            }
+            NewSessionCommands(
+                presentation: cockpit.presentation,
+                actions: actions,
+                navigation: navigation,
+            )
             CommandMenu("Navigate") {
                 ForEach(CockpitRoom.allCases) { candidate in
                     Button(candidate.title) { navigation.room = candidate }
@@ -72,7 +73,7 @@ struct ArgoApp: App {
             locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
             revealProject: { id in cockpit.revealProject(projectID: id) },
             removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
-            spawnSession: { Task { await cockpit.spawnSession() } },
+            spawnSession: { await cockpit.spawnSession() },
             setSessionArchived: { id, isArchived in
                 Task { await cockpit.setArchived(isArchived, sessionID: id) }
             },
