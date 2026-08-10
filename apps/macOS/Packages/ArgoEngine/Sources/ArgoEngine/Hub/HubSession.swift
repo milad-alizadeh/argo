@@ -84,6 +84,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Session — the queue is how its prompt arrived, not what it is.
     public private(set) var isQueued = false
     private var hasPromptTitle = false
+    private var hasProvisionalTitle = false
     private var hasExplicitTitle = false
     private(set) var turnOpen = false
     private(set) var lastStop: StopReason?
@@ -247,6 +248,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         } else if !hasExplicitTitle, !hasPromptTitle, continuation.hasPromptTitle {
             title = continuation.title
             hasPromptTitle = true
+        } else if !hasExplicitTitle, !hasPromptTitle, continuation.hasProvisionalTitle {
+            // A continuation whose only prompt was a bare command still beats the root's
+            // filename fallback — and stays as takeable as any provisional title.
+            title = continuation.title
+            hasProvisionalTitle = true
         }
         // Either half having seen the agent speak is the whole chain having seen it: a resume file
         // opened and not yet answered does not un-run the reading it continues.
@@ -293,6 +299,16 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         let candidate = String(firstLine).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !candidate.isEmpty else { return }
         title = candidate
-        hasPromptTitle = true
+        // A bare slash command — /clear opening a fresh transcript — names the plumbing, not the
+        // work, so it stands in without locking the row to "/clear".
+        if isBareCommand(candidate) {
+            hasProvisionalTitle = true
+        } else {
+            hasPromptTitle = true
+        }
+    }
+
+    private func isBareCommand(_ line: String) -> Bool {
+        line.hasPrefix("/") && !line.contains(where: \.isWhitespace)
     }
 }
