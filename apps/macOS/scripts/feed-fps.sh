@@ -3,9 +3,11 @@
 # "scrolling is smooth" is a number somebody else can reproduce rather than an impression.
 #
 # Usage, from apps/macOS:
-#   sh scripts/feed-fps.sh                                   # feedAtScale, 1600x1000, 6s × 3
-#   sh scripts/feed-fps.sh feedAtScale 760x900 6
+#   sh scripts/feed-fps.sh                                   # feedAtScale, BOTH widths, 6s × 3
+#   sh scripts/feed-fps.sh feedAtScale 760x900 6              # one width
 #   ARGO_FPS_PIXELS=40 ARGO_FPS_DRAGS=5 sh scripts/feed-fps.sh
+#
+# It EXITS NON-ZERO when p95 runs past the 60fps floor, so it is a gate rather than a readout.
 #
 # It launches ONE named specimen at ONE fixed size with the frame meter on, drags the feed at a
 # fixed cadence through `ScrollDriver.swift`, and reports p50 / p95 / worst / dropped over exactly
@@ -29,7 +31,7 @@
 set -eu
 
 SPECIMEN=${1:-feedAtScale}
-SIZE=${2:-1600x1000}
+SIZE=${2:-both}
 SECONDS_TO_DRAG=${3:-6}
 PIXELS=${ARGO_FPS_PIXELS:-30}
 TICKS=${ARGO_FPS_TICKS:-60}
@@ -38,6 +40,15 @@ DRAGS=${ARGO_FPS_DRAGS:-3}
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 OUT_DIR=${ARGO_FPS_OUT:-$SCRIPT_DIR/../out/fps}
 mkdir -p "$OUT_DIR"
+
+# `both` is the default because the target is stated at TWO widths, and a claim about smoothness
+# taken at one of them is a claim about one column. The narrow one is the deck at its tightest, the
+# wide one the deck a reader actually spreads out in; a fix can help one and cost the other.
+if [ "$SIZE" = both ]; then
+  sh "$0" "$SPECIMEN" 760x900 "$SECONDS_TO_DRAG"
+  sh "$0" "$SPECIMEN" 1600x1000 "$SECONDS_TO_DRAG"
+  exit $?
+fi
 
 RUN="$SPECIMEN-$SIZE"
 LOG="$OUT_DIR/$RUN.frames"
@@ -81,12 +92,17 @@ osascript -e 'tell application "Argo" to quit' >/dev/null 2>&1 || true
 # Sorted by `sort` rather than inside awk: `asort` is a gawk extension and this machine's awk is
 # BSD's. Nearest-rank percentiles, matching `FrameReading` — the HUD and this script must not be
 # able to report two different p95s for one run.
+#
+# It EXITS NON-ZERO when p95 is past the floor, so this is a gate and not a readout. A script that
+# only ever prints is a script whose regression somebody has to notice.
 sort -n "$LOG.drag" | awk -v run="$RUN" '
   { ms[NR] = $1; if ($1 > 16.667) dropped++ }
   END {
     if (NR == 0) { print run ": no frames recorded — check Accessibility permission"; exit 1 }
+    p95 = ms[int(NR * 0.95 + 0.999)]
     printf "%s  frames=%d  p50=%.2f  p95=%.2f  worst=%.2f  dropped=%d (%.1f%%)\n", \
-      run, NR, ms[int(NR * 0.5 + 0.999)], ms[int(NR * 0.95 + 0.999)], ms[NR], \
+      run, NR, ms[int(NR * 0.5 + 0.999)], p95, ms[NR], \
       dropped + 0, (dropped + 0) * 100 / NR
+    if (p95 > 16.667) { print run ": p95 is past the 60fps floor."; exit 1 }
   }
 '
