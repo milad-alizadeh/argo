@@ -95,9 +95,12 @@ public extension CockpitPresentation {
         /// wall-clock span; alone, neither of them is a duration.
         public let startedAtMs: Int?
         /// What the Session has spent across its whole life, in tokens — every reported spend
-        /// summed, both grains (`CONTEXT.md` L3). The opposite reading from `contextTokens`
-        /// below, which is only what it is holding now.
-        public let totalTokens: Int?
+        /// summed, both grains (`CONTEXT.md` L3), cache excluded. The opposite reading from
+        /// `contextTokens` below, which is only what it is holding now.
+        public let spentTokens: Int?
+        /// The cache half of the same life — read and re-read once per request, so it dwarfs
+        /// `spentTokens` by the turn count. Split out so neither figure inflates the other.
+        public let cachedTokens: Int?
         /// What its subagents spent, of that total. **Absent, never zero**, where nothing
         /// reported any — which is every CLI in use today, and why the header drops the fact
         /// off its line rather than printing a zero that would claim no subagent ran.
@@ -151,7 +154,8 @@ public extension CockpitPresentation {
             issue: Issue? = nil,
             lastSeenAtMs: Int? = nil,
             startedAtMs: Int? = nil,
-            totalTokens: Int? = nil,
+            spentTokens: Int? = nil,
+            cachedTokens: Int? = nil,
             subagentTokens: Int? = nil,
             contextTokens: Int? = nil,
             handedOffTo: String? = nil,
@@ -171,7 +175,8 @@ public extension CockpitPresentation {
             self.issue = issue
             self.lastSeenAtMs = lastSeenAtMs
             self.startedAtMs = startedAtMs
-            self.totalTokens = totalTokens
+            self.spentTokens = spentTokens
+            self.cachedTokens = cachedTokens
             self.subagentTokens = subagentTokens
             self.contextTokens = contextTokens
             self.handedOffTo = handedOffTo

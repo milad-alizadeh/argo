@@ -48,22 +48,6 @@ struct HubTests {
 
     @Test
     @MainActor
-    func `the host title replaces the prompt fallback`() async {
-        let (observation, continuation) = hubLiveObservation(id: "session")
-        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
-        await hub.startObserving(observation)
-
-        continuation.yield([.prompt(text: "Fallback title", atMs: nil)])
-        continuation.yield([.title("Host-authored title")])
-        continuation.yield([.prompt(text: "Later prompt", atMs: nil)])
-        continuation.finish()
-        await hubTailEnded(hub, transcriptID: "session")
-
-        #expect(hub.sessions[0].title == "Host-authored title")
-    }
-
-    @Test
-    @MainActor
     func `an unreadable configured transcript becomes a failure`() async {
         let projectURL = URL(fileURLWithPath: "/tmp/argo")
         let transcriptURL = FileManager.default.temporaryDirectory

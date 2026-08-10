@@ -46,6 +46,20 @@ public struct Usage: Sendable, Equatable {
         inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens
     }
 
+    /// The fresh half of a bill: what was sent and what came back, cache excluded. On a roll-up
+    /// this is the figure a reader means by "used" — every request re-reads the whole conversation
+    /// from cache, so the cache terms dwarf this by the turn count while costing a fraction of it.
+    public var spentTokens: Int {
+        inputTokens + outputTokens
+    }
+
+    /// The cache half of the same bill — read and written, both cheaper tokens. Split out so a
+    /// roll-up can say `2.1M tokens spent · 73.7M cached` instead of one number read as fresh
+    /// spend.
+    public var cachedTokens: Int {
+        cacheReadTokens + cacheCreationTokens
+    }
+
     public static func + (left: Usage, right: Usage) -> Usage {
         Usage(
             inputTokens: left.inputTokens + right.inputTokens,

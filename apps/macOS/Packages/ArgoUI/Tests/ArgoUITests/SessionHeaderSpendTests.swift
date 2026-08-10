@@ -22,9 +22,10 @@ struct SessionHeaderSpendTests {
         #expect(!unreported.contains("subagents"))
         #expect(zero.contains("0 in subagents"))
         // And nothing else moved: the absence takes its own separator with it rather than
-        // leaving the line spelled `used ·  · started`.
-        #expect(unreported == "29.93M tokens used · started 2h ago · worked 20m")
-        #expect(zero == "29.93M tokens used · 0 in subagents · started 2h ago · worked 20m")
+        // leaving the line spelled `cache ·  · started`.
+        #expect(unreported == "1.83M tokens spent · 28.1M cached · started 2h ago · worked 20m")
+        #expect(zero
+            == "1.83M tokens spent · 28.1M cached · 0 in subagents · started 2h ago · worked 20m")
     }
 
     /// The line composes from what is PRESENT. A Session none of it could be read from carries no
@@ -33,8 +34,8 @@ struct SessionHeaderSpendTests {
     func `absent facts collapse the line rather than leaving stray separators`() {
         #expect(SessionHeaderProjection.spend(from: session()) == nil)
         // One fact is a whole line, with no separator on either side of it.
-        #expect(SessionHeaderProjection.spend(from: session(totalTokens: 29_930_000))
-            == "29.93M tokens used")
+        #expect(SessionHeaderProjection.spend(from: session(spentTokens: 29_930_000))
+            == "29.93M tokens spent")
     }
 
     /// Both durations, always, because either alone is read as the other: `5h 51m` of wall clock
@@ -126,7 +127,8 @@ struct SessionHeaderSpendTests {
         SessionHeaderProjection.spend(from: session(
             startedAtMs: 0,
             lastSeenAtMs: 120 * minute,
-            totalTokens: 29_930_000,
+            spentTokens: 1_830_000,
+            cachedTokens: 28_100_000,
             subagentTokens: subagentTokens,
             events: calls(at: burst(from: 0) + burst(from: 110 * minute)),
         ))
@@ -154,7 +156,8 @@ struct SessionHeaderSpendTests {
     private func session(
         startedAtMs: Int? = nil,
         lastSeenAtMs: Int? = nil,
-        totalTokens: Int? = nil,
+        spentTokens: Int? = nil,
+        cachedTokens: Int? = nil,
         subagentTokens: Int? = nil,
         events: [TranscriptEvent] = [],
     )
@@ -168,7 +171,8 @@ struct SessionHeaderSpendTests {
             status: .idle,
             lastSeenAtMs: lastSeenAtMs,
             startedAtMs: startedAtMs,
-            totalTokens: totalTokens,
+            spentTokens: spentTokens,
+            cachedTokens: cachedTokens,
             subagentTokens: subagentTokens,
             events: events,
         )

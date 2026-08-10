@@ -38,7 +38,10 @@ struct DeckSeam: View {
     }
 
     private var drag: some Gesture {
-        DragGesture(minimumDistance: 1)
+        // Global space, never `.local`: the seam MOVES with the width it writes, so a translation
+        // measured in its own space includes its own movement — a feedback loop that oscillates
+        // the width at half the event rate and reads as ghosting under a fast drag.
+        DragGesture(minimumDistance: 1, coordinateSpace: .global)
             .onChanged { move in
                 let start = startedAt ?? width
                 if startedAt == nil {

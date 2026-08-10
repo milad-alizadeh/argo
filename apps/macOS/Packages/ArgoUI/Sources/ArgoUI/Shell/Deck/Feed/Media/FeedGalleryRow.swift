@@ -1,27 +1,24 @@
 import SwiftUI
 
-/// A run of pictures, drawn as one horizontal row of thumbnails.
+/// A run of pictures, drawn as a wrapping grid of fixed-size thumbnails.
 ///
-/// One row and never a grid, however many shots there are. A gallery sits INSIDE a feed that is
-/// read top to bottom, and a block that grows downward pushes the paragraph explaining it off the
-/// screen — the run stays on one line and scrolls sideways when it outgrows the measure, which is
-/// the one place in this cockpit where sideways is the right answer: a picture has an obvious end,
-/// and nothing is hidden the way the tail of a wrapped line would be.
+/// It wraps rather than scrolls. A sideways scroller inside a feed read top to bottom hides its
+/// tail behind an affordance and fights the reading for every wheel gesture; a grid that breaks
+/// onto the next line shows every shot at the size the contract fixed, and costs only height —
+/// the one direction this column already spends.
 struct FeedGalleryRow: View {
     let gallery: FeedGallery
     let open: (FeedShot) -> Void
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .top, spacing: ArgoFeedRow.shotGap) {
-                ForEach(Array(gallery.shots.enumerated()), id: \.offset) { _, shot in
-                    FeedShotView(shot: shot, open: open)
-                }
+        FeedShotFlow(gap: ArgoFeedRow.shotGap) {
+            ForEach(Array(gallery.shots.enumerated()), id: \.offset) { _, shot in
+                FeedShotView(shot: shot, open: open)
             }
         }
-        // A run that fits must not rubber-band: a row bouncing on a drag advertises a direction
-        // it has nothing in.
-        .scrollBounceBehavior(.basedOnSize)
+        // Pictures need more air from prose than prose needs from prose — a run seated at the
+        // text rhythm reads as jammed between the paragraphs it illustrates.
+        .padding(.vertical, ArgoFeedRow.shotBreath)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(gallery.spoken)
     }
