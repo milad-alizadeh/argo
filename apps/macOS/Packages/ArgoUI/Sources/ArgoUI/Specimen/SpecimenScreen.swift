@@ -23,6 +23,11 @@ public struct SpecimenScreen: View {
             ContractSpecimen()
         case .sessionRows:
             SessionRowsSpecimen()
+        case .ghostedRows:
+            // The same rows with access mixed down the list. Whether a row reads as one you
+            // cannot drive — with no glyph left saying so, and against neighbours you can —
+            // is a comparison, and a comparison needs both halves on one screen.
+            GhostedRosterSpecimen()
         case .roster:
             RosterSpecimen()
         case .churningRoster:

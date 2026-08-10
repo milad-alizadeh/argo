@@ -1,9 +1,10 @@
 import ArgoEngine
 import Foundation
 
-private extension CockpitPresentation {
+extension CockpitPresentation {
     /// Measured back from whenever the preview is read: a fixed stamp would age into `3y ago`
-    /// on every row.
+    /// on every row. Shared with the specimens, which need the same moving `now` for the same
+    /// reason and would otherwise each carry their own copy of this one line.
     static func minutesAgo(_ minutes: Int) -> Int {
         Date().epochMs - minutes * 60 * 1000
     }
@@ -63,8 +64,9 @@ public extension CockpitPresentation {
             ),
             Session(
                 id: "observed",
-                // Long AND read-only, deliberately: the lock holding its own x while the title
-                // truncates into it is the one roster rendering only a screenshot can settle.
+                // Long AND read-only, deliberately: whether a title still truncates cleanly on a
+                // row drawn quieter than the ones around it is a rendering only a screenshot
+                // settles. The close read of ghosting is the `ghostedRows` specimen.
                 title: "Review an externally launched Session nobody here started",
                 model: nil,
                 workspaceLocation: "/Users/milad/Developer/cockpit",

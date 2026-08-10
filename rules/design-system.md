@@ -25,6 +25,7 @@ values. One file per family, each value named for the **question it answers**:
 | `ArgoTextStyle` · `ArgoTypography` | named roles over that ladder (face + rung + weight + tracking) |
 | `ArgoSpacing` · `ArgoRadius` · `ArgoStroke` | the rhythm, the four radius rungs, the stroke widths |
 | `ArgoElevation` · `ArgoMotion` · `ArgoIconSize` · `ArgoSymbol` | depth, durations and curves, glyph sizes |
+| `ArgoOpacity` | how present a whole surface is — the rung a row nobody can drive is ghosted at |
 | `ArgoLayout` · `ArgoFeedRow` · `ArgoPlanPill` | structural proportions and per-surface measures |
 
 `Specimen/ContractSpecimen.swift` enumerates every role on the surfaces it is read against. It

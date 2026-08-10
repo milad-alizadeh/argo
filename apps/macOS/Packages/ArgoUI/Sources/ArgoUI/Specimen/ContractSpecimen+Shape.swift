@@ -33,6 +33,31 @@ extension ContractSpecimen {
         }
     }
 
+    /// Both presence rungs, on a surface rather than on a word: what ghosting dims is a whole
+    /// row at once, so a swatch of one line would be showing the wrong thing. Side by side is
+    /// the only way to judge it — `ghosted` is a comparison before it is a value.
+    var presence: some View {
+        section("Presence — full, and the rung a surface nobody can drive is drawn at") {
+            HStack(alignment: .top, spacing: ArgoSpacing.loose) {
+                ForEach(ArgoOpacity.all, id: \.name) { rung in
+                    VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+                        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
+                            Text("The record of a Session").argoText(ArgoTypography.rowTitle)
+                            Text("argo/#508-external-row-ghosted")
+                                .argoText(ArgoTypography.rowMeta)
+                                .foregroundStyle(argo.color.text.tertiary)
+                        }
+                        // The name stays at full presence: a label drawn at the rung it names
+                        // is unreadable exactly where the rung is quietest.
+                        .opacity(rung.value)
+                        Text(rung.name).argoText(ArgoTypography.machineCaption)
+                            .foregroundStyle(argo.color.text.tertiary)
+                    }
+                }
+            }
+        }
+    }
+
     /// Every elevation rung on a ground it can actually cast onto. Four of the five are flat by
     /// contract, which is the point: depth here is tone and edge, and a shadow is the exception.
     var depth: some View {

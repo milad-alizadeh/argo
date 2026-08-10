@@ -12,11 +12,13 @@ enum SessionRosterProjection {
         /// apart. Absent for a Session that has not branched, rather than a placeholder
         /// standing where a branch nobody can check out would go.
         let branch: String?
-        /// Always true of an observed Session, and always announced. Only the *glyph* is
-        /// conditional, so hiding it never hides the fact.
+        /// True of every Session Argo does not own the terminal of, and always announced.
+        ///
+        /// The row draws it by ghosting — the whole row quieter, title, branch, age and dot
+        /// together — rather than by a mark beside one of them. "You cannot drive this" is a
+        /// property of the row, and a property of the row is spent on all of its ink or none:
+        /// a glyph is a thing to hunt for, and it can only ever be attached to one element.
         let isReadOnly: Bool
-        /// The lock is drawn only when read-only tells the rows apart.
-        let showsLock: Bool
         /// How long ago this Session last did anything — the key the roster is ordered on, said
         /// out loud, so the order stops looking arbitrary. Absent for a Session that is running
         /// and for one whose record carries no time to word.
@@ -26,15 +28,14 @@ enum SessionRosterProjection {
         /// needs the user to stop scanning. D30 keeps counts and words to what helps the scan.
         let stateWord: String?
 
-        /// `fileprivate`, so `rows(from:)` is the only way a row comes into being and a
-        /// `showsLock` that disagrees with `isReadOnly` stops being representable.
+        /// `fileprivate`, so `rows(from:)` is the only way a row comes into being and no surface
+        /// can assemble one that disagrees with what the projection decided.
         fileprivate init(
             id: String,
             title: String,
             location: String?,
             branch: String?,
             isReadOnly: Bool,
-            showsLock: Bool,
             age: String?,
             state: ArgoOperationalState?,
             stateWord: String?,
@@ -44,14 +45,14 @@ enum SessionRosterProjection {
             self.location = location
             self.branch = branch
             self.isReadOnly = isReadOnly
-            self.showsLock = showsLock
             self.age = age
             self.state = state
             self.stateWord = stateWord
         }
 
         /// What a screen reader hears: the same `stateWord` the row draws, so the two can never
-        /// make different claims, plus the read-only fact the lock may drop as visual noise.
+        /// make different claims, plus the read-only fact — which the row spends on ink a screen
+        /// reader has no way to hear, and so has to say out loud here.
         var announcement: String {
             [
                 title,
@@ -68,8 +69,6 @@ enum SessionRosterProjection {
     /// `now` is a parameter because an age is arithmetic against a moment, and a projection that
     /// read the clock itself would answer differently on every call with nothing able to say so.
     static func rows(from sessions: [CockpitPresentation.Session], now: Date = Date()) -> [Row] {
-        let access = sessions.map(\.access)
-        let locksDistinguish = access.contains(.readOnly) && access.contains(.managed)
         let nowMs = now.epochMs
         return sessions.map { session in
             Row(
@@ -77,12 +76,24 @@ enum SessionRosterProjection {
                 title: session.title,
                 location: session.workspaceLocation,
                 branch: session.branch,
-                isReadOnly: session.access == .readOnly,
-                showsLock: locksDistinguish && session.access == .readOnly,
+                isReadOnly: isReadOnly(session.access),
                 age: age(status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
                 state: state(for: session.status),
                 stateWord: stateWord(for: session.status),
             )
+        }
+    }
+
+    /// Whether the whole row is drawn as a Session nobody here can drive.
+    ///
+    /// A `switch` and not `!= .managed`: a third posture is expected on this axis — a managed
+    /// Session whose owner is gone is orphaned, and reads as neither of these two
+    /// (`CONTEXT.md` L2). What it should ANNOUNCE is that ticket's decision, and an inequality
+    /// would take it silently rather than making somebody make it.
+    private static func isReadOnly(_ access: CockpitPresentation.Session.Access) -> Bool {
+        switch access {
+        case .managed: false
+        case .readOnly: true
         }
     }
 
