@@ -56,7 +56,7 @@ the closest thing to a spec they have, and are correspondingly less thin.
 cross projects.
 
 - **Project strip** — far-left, vertical, **borderless** (tabs float on the background), one tab
-  per project. Each tab carries a **single worst-state dot**: amber `needs you` > red `failed` >
+  per project. Each tab carries a **single worst-state dot**: amber `Needs input` > red `Stopped` >
   green `running` > none. The **active** project's tab stays quiet — the strip only ever points
   somewhere *else*. Hovering the active tab reveals the project name and **`last synced`**
   (#201 rehomed this off the deleted project label; tooltip only — the strip dot stays
@@ -374,7 +374,7 @@ the surface specs:
 vocabulary, no ranking of its own — which is why external sessions and blind observation need no
 special case: they cannot honestly reach the firing states.
 
-- **Fires on amber `needs you` and red `failed` only** — exactly the set that lights a strip badge.
+- **Fires on amber `Needs input` and red `Stopped` only** — exactly the set that lights a strip badge.
   **Never on `idle`**: it earns no badge and would fire every turn.
 - **Suppressed whenever any Argo window is focused**, and regaining focus **closes** outstanding
   banners — when you are here, the in-app dots are authoritative. OS DND is honoured.
@@ -385,7 +385,7 @@ special case: they cannot honestly reach the firing states.
 - **A click is a full deep-link** — focus → swap project → `Sessions ⌘1` → open that session,
   overriding remembered per-project state for that swap. An explicit deep-link wins over
   restoration.
-- **Copy:** title `<session title>`, body `<project> · needs you|failed`, words **verbatim from the
+- **Copy:** title `<session title>`, body `<project> · Needs input|Stopped`, words **verbatim from the
   registry** and **never the agent's raw request** — you should not have to decide from a truncated
   OS surface. The real output lives in the Dock.
 - **No in-app toggle and no sound control** — macOS's own per-app settings are the switch; no

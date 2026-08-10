@@ -81,11 +81,13 @@ struct SessionRow: View {
             }
             // The word takes the dot's own ink, so the two never read as separate claims.
             // The contract already carries this: every state ink is asserted legible as a
-            // word and not only as a dot.
-            if let state = row.state, let word = row.stateWord {
+            // word and not only as a dot. Drawn on the word alone, though — a word the
+            // projection spent under a state with no colour would otherwise be announced
+            // and never drawn, which is the disagreement the one `stateWord` exists to stop.
+            if let word = row.stateWord {
                 Text(word)
                     .argoText(ArgoTypography.caption)
-                    .foregroundStyle(state.tint(in: argo.color))
+                    .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
             }
         }
     }

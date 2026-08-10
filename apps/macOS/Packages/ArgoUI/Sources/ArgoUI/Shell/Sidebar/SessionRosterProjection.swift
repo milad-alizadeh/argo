@@ -24,9 +24,6 @@ enum SessionRosterProjection {
         let state: ArgoOperationalState?
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
         /// needs the user to stop scanning. D30 keeps counts and words to what helps the scan.
-        ///
-        /// Read off the status rather than off the colour role beside it, so a second status
-        /// arriving on `.failure` cannot inherit a word that was never about it.
         let stateWord: String?
 
         /// `fileprivate`, so `rows(from:)` is the only way a row comes into being and a
@@ -53,9 +50,8 @@ enum SessionRosterProjection {
             self.stateWord = stateWord
         }
 
-        /// What a screen reader hears. It composes from the same `stateWord` the row draws, so
-        /// the two can never make different claims about the Session — and it keeps the
-        /// read-only fact the lock is allowed to drop as visual noise.
+        /// What a screen reader hears: the same `stateWord` the row draws, so the two can never
+        /// make different claims, plus the read-only fact the lock may drop as visual noise.
         var announcement: String {
             [
                 title,
@@ -117,10 +113,9 @@ enum SessionRosterProjection {
 
     /// Session status → the word the row spends on it, if any.
     ///
-    /// `Needs input` names what the Session is waiting for rather than who it wants.
-    /// `Stopped` is the whole point of the vocabulary: `stopped` is a Turn that ended on
-    /// `max_tokens`, `max_turn_requests` or `refusal` — the agent stopped short. It did not
-    /// crash, and `ended` (cancelled, or the process exited) is a quiet idle, not a failure.
+    /// Read off the status rather than off the colour role beside it, so a second status
+    /// arriving on `.failure` cannot inherit a word that was never about it — and `Stopped`
+    /// means the agent stopped short, never that anything crashed (`CONTEXT.md` L2).
     private static func stateWord(for status: SessionStatus) -> String? {
         switch status {
         case .permission, .asking: "Needs input"

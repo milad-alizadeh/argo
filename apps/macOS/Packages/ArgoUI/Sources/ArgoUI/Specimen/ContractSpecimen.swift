@@ -163,7 +163,9 @@ struct ContractSpecimen: View {
         }
     }
 
-    private let stateWords = ["running", "idle", "needs you", "failed"]
+    /// The words the roster actually spends, so the legibility specimen proves the ink on the
+    /// text it is drawn under rather than on a vocabulary the cockpit has stopped using.
+    private let stateWords = ["running", "idle", "Needs input", "Stopped"]
 
     private func sample(for typeface: ArgoTypeface) -> String {
         switch typeface {

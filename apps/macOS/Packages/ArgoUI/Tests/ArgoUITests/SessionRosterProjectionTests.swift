@@ -25,20 +25,23 @@ struct SessionRosterProjectionTests {
 
     @Test
     func `every Session status spends the one word it has earned`() {
-        // `allCases`, so a status added to the domain fails here rather than quietly
-        // inheriting whichever word its colour role already spends.
-        let rows = SessionRosterProjection.rows(
-            from: SessionStatus.allCases.enumerated()
-                .map { session(id: "\($0.offset)", status: $0.element) },
-        )
+        // `Needs input` says what the Session is waiting for rather than who it wants.
+        // `Stopped` says the Turn ended short — which is what the status means, not that
+        // anything crashed; `ended` is a cancelled or exited Session and reads idle.
+        let expected: [(status: SessionStatus, word: String?)] = [
+            (.running, nil),
+            (.permission, "Needs input"),
+            (.asking, "Needs input"),
+            (.idle, nil),
+            (.stopped, "Stopped"),
+            (.ended, nil),
+            (.unknown, nil),
+        ]
 
-        // In `allCases` order: running · permission · asking · idle · stopped · ended ·
-        // unknown. `Needs input` says what the Session is waiting for rather than who it
-        // wants; `Stopped` says the Turn ended short, which is what the status means — not
-        // that anything crashed. `running`, `idle` and `ended` are the dot's to carry.
-        #expect(rows.map(\.stateWord) == [
-            nil, "Needs input", "Needs input", nil, "Stopped", nil, nil,
-        ])
+        // Every status is answered here, in the order the rows come back in, so a status
+        // added to the domain fails rather than quietly inheriting its colour role's word.
+        #expect(expected.map(\.status) == SessionStatus.allCases)
+        #expect(rows(of: expected.map(\.status)).map(\.stateWord) == expected.map(\.word))
     }
 
     @Test
@@ -66,13 +69,8 @@ struct SessionRosterProjectionTests {
     func `every Session status has one colour role, and unknown has none`() {
         // `allCases`, so a status added to the domain fails here rather than quietly taking
         // whichever colour the mapping's last branch happens to be.
-        let rows = SessionRosterProjection.rows(
-            from: SessionStatus.allCases.enumerated()
-                .map { session(id: "\($0.offset)", status: $0.element) },
-        )
-
         // A dot is a claim about what the Session is doing; `unknown` makes none.
-        #expect(rows.map(\.state) == [
+        #expect(rows(of: SessionStatus.allCases).map(\.state) == [
             .running, .attention, .attention, .idle, .failure, .idle, nil,
         ])
     }
@@ -227,6 +225,15 @@ struct SessionRosterProjectionTests {
 
     private func rows(_ session: CockpitPresentation.Session) -> [SessionRosterProjection.Row] {
         SessionRosterProjection.rows(from: [session], now: now)
+    }
+
+    /// One row per status, in the order given, so a per-status mapping is asserted against
+    /// the statuses it was written for rather than against seven anonymous slots.
+    private func rows(of statuses: [SessionStatus]) -> [SessionRosterProjection.Row] {
+        SessionRosterProjection.rows(
+            from: statuses.enumerated().map { session(id: "\($0.offset)", status: $0.element) },
+            now: now,
+        )
     }
 
     private func session(
