@@ -31,12 +31,20 @@ enum ClaudeTurn {
     /// Both markers are removed rather than escaped, because a bracketed paste has no escape: a
     /// terminator inside the payload ends the paste, and everything after it is read as keystrokes
     /// — an arbitrary command typed at an agent's prompt by a message that merely quoted a
-    /// transcript. Line endings are normalised for the same reason CR is the submit: a CR in the
-    /// payload is a Return.
+    /// transcript. Removed to a FIXED POINT, because one pass is not removal: deleting a marker
+    /// splices its neighbours together, and the right fragments either side of a terminator
+    /// assemble into a fresh opener the single pass had already been run for. The markers go
+    /// before the line endings are normalised — neither marker contains a CR, so the
+    /// normalisation cannot splice one, while the reverse order could leave a spliced raw CR
+    /// standing, and a CR in the payload is a Return.
     private static func pasted(_ text: String) -> String {
-        text
-            .replacingOccurrences(of: pasteStart, with: "")
-            .replacingOccurrences(of: pasteEnd, with: "")
+        var stripped = text
+        while stripped.contains(pasteStart) || stripped.contains(pasteEnd) {
+            stripped = stripped
+                .replacingOccurrences(of: pasteStart, with: "")
+                .replacingOccurrences(of: pasteEnd, with: "")
+        }
+        return stripped
             .replacingOccurrences(of: "\r\n", with: "\n")
             .replacingOccurrences(of: "\r", with: "\n")
     }

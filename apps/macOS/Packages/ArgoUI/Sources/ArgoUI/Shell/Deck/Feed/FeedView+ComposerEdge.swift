@@ -27,7 +27,7 @@ extension FeedView {
     /// with the accent wash. Only a prompt among the ARRIVING rows takes it: rows already in the
     /// reading are history, and an agent's arrivals are what the feed is for, not news about it.
     func washArrived(between was: Int, and now: Int) {
-        guard now > was, was >= 0 else { return }
+        guard now > was else { return }
         guard let echoed = rows[was ..< now].last(where: \.isPrompt) else { return }
         washed = echoed.id
     }
@@ -35,9 +35,14 @@ extension FeedView {
     /// The wash's whole lifetime: it stands for the hold and leaves. `bloom` fades it either
     /// side; the hold itself is the vessel's own measure, past the motion ramp's half-second
     /// ceiling because it is a state, not a transition.
+    ///
+    /// A cancelled sleep RESUMES here rather than stopping, so the clear is gated on it: a
+    /// second send re-keys this task, and the superseded one clearing anyway would wipe the
+    /// fresh row's wash milliseconds into its hold.
     func washExpired() async {
         guard washed != nil else { return }
         try? await Task.sleep(for: .seconds(ArgoComposerVessel.washHold))
+        guard !Task.isCancelled else { return }
         washed = nil
     }
 }

@@ -48,4 +48,23 @@ struct ClaudeTurnTests {
 
         #expect(keys == "\u{1B}[200~beforeafter\u{1B}[201~\r")
     }
+
+    /// Deleting a marker splices its neighbours together, and the right fragments either side of
+    /// one marker assemble into the OTHER — a fresh opener standing in output the single pass had
+    /// already sanitised. Removal has to run to a fixed point or it is not removal.
+    @Test
+    func `fragments spliced by a removal cannot assemble a fresh marker`() {
+        let keys = ClaudeTurn.keystrokes(for: "\u{1B}[20\u{1B}[201~0~payload")
+
+        #expect(keys == "\u{1B}[200~payload\u{1B}[201~\r")
+    }
+
+    /// The other direction of the same splice: a CR split by a marker must not survive as a raw
+    /// Return once the marker between its halves is removed.
+    @Test
+    func `a line ending split by a marker does not survive as a Return`() {
+        let keys = ClaudeTurn.keystrokes(for: "first\r\u{1B}[201~\nsecond")
+
+        #expect(keys == "\u{1B}[200~first\nsecond\u{1B}[201~\r")
+    }
 }

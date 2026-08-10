@@ -4,7 +4,8 @@ import SwiftUI
 ///
 /// A failed send keeps the message where it was typed (design decision 8), so this line carries
 /// only the reason and the retry — never the text, and never a toast that would leave with the
-/// answer still unknown.
+/// answer still unknown. Retry is a real button on the trailing edge rather than a link trailing
+/// the sentence: it is the remedy, and a remedy has to be a target.
 struct ComposerSeam: View {
     @Environment(\.argo) private var argo
 
@@ -13,13 +14,18 @@ struct ComposerSeam: View {
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
+            ArgoGlyph(ArgoSymbol.refused, .control)
+                .foregroundStyle(argo.color.state.failure)
             Text(detail)
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(argo.color.state.failure)
-            Button("Retry", action: retry)
-                .buttonStyle(.plain)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.interaction.accent)
+            Spacer()
+            Button(action: retry) {
+                Label("Retry", systemImage: ArgoSymbol.retry)
+                    .argoText(ArgoTypography.caption)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
         }
         .padding(.horizontal, ArgoSpacing.loose)
         .accessibilityElement(children: .combine)
