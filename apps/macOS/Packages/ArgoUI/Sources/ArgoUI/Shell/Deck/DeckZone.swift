@@ -2,7 +2,6 @@
 /// ticket. A zone leaves this list the moment something real draws it — the feed did, and a case
 /// for it here would be a placeholder for a surface that exists.
 enum DeckZone: CaseIterable, Identifiable {
-    case header
     case tabs
     case rail
     case minimap
@@ -14,7 +13,6 @@ enum DeckZone: CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .header: "Session header"
         case .tabs: "Deck tabs"
         case .rail: "Agents rail"
         case .minimap: "Minimap lane"
@@ -27,7 +25,7 @@ enum DeckZone: CaseIterable, Identifiable {
     var marksVertically: Bool {
         switch self {
         case .minimap: true
-        case .header, .tabs, .rail, .dock: false
+        case .tabs, .rail, .dock: false
         }
     }
 }

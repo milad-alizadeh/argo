@@ -79,11 +79,11 @@ struct SessionRosterProjectionTests {
     func `access is a fact about the whole row, not one the roster spends by comparison`() {
         let mixed = SessionRosterProjection.rows(from: [
             session(id: "managed", access: .managed),
-            session(id: "external", access: .readOnly),
+            session(id: "external", access: .external),
         ])
         let uniform = SessionRosterProjection.rows(from: [
-            session(id: "one", access: .readOnly),
-            session(id: "two", access: .readOnly),
+            session(id: "one", access: .external),
+            session(id: "two", access: .external),
         ])
 
         #expect(mixed.map(\.isReadOnly) == [false, true])
@@ -96,7 +96,7 @@ struct SessionRosterProjectionTests {
 
     @Test
     func `a read-only Session announces itself, with no glyph left to carry the fact`() throws {
-        let row = try #require(rows(session(id: "external", access: .readOnly)).first)
+        let row = try #require(rows(session(id: "external", access: .external)).first)
 
         // The row draws this by ghosting, which a screen reader cannot hear. The label is
         // where the fact survives the ink.
@@ -144,7 +144,7 @@ struct SessionRosterProjectionTests {
     @Test
     func `read-only Sessions carry no invented operational word`() throws {
         let row = try #require(SessionRosterProjection.rows(from: [
-            session(id: "external", access: .readOnly, status: .unknown),
+            session(id: "external", access: .external, status: .unknown),
         ]).first)
 
         #expect(row.stateWord == nil)

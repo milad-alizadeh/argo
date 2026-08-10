@@ -49,9 +49,17 @@ public struct CockpitPresentation: Equatable, Sendable {
     public struct Session: Equatable, Identifiable, Sendable {
         /// What the user can DO with a Session, which is the shell's question. Derived from
         /// provenance — see `Access(provenance:)` — and never asserted beside it.
-        public enum Access: Equatable, Sendable {
+        ///
+        /// Three postures rather than "managed and the rest", because the rest is two facts:
+        /// `external` was never Argo's, and `orphaned` was — Argo spawned it and then lost the
+        /// PTY with the process that owned it (`CONTEXT.md` L2). Both are read-only, which is
+        /// why that is a DERIVED property of a posture here and not a case beside them: a surface
+        /// asking "can this be driven" gets one answer, and a surface naming what it is looking
+        /// at gets the honest one.
+        public enum Access: CaseIterable, Equatable, Sendable {
             case managed
-            case readOnly
+            case external
+            case orphaned
         }
 
         public let id: String

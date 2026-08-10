@@ -45,7 +45,7 @@ struct GhostedRosterSpecimen: View {
             model: nil,
             workspaceLocation: "/Users/milad/Developer/cockpit",
             branch: "argo/#502-roster-row-and-session-header",
-            access: .readOnly,
+            access: .external,
             status: .asking,
             lastSeenAtMs: CockpitPresentation.minutesAgo(7),
         ),
@@ -67,7 +67,7 @@ struct GhostedRosterSpecimen: View {
             model: nil,
             workspaceLocation: "/Users/milad/Experiments/argo",
             branch: "main",
-            access: .readOnly,
+            access: .external,
             status: .running,
         ),
         CockpitPresentation.Session(
@@ -78,7 +78,7 @@ struct GhostedRosterSpecimen: View {
             model: nil,
             workspaceLocation: "/Users/milad/Developer/cockpit",
             branch: nil,
-            access: .readOnly,
+            access: .external,
             status: .unknown,
         ),
     ]

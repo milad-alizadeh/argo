@@ -25,6 +25,9 @@ public enum Specimen: String, CaseIterable, Sendable {
     case openProjectDrawer
     case deck
     case sessionsDeck
+    case sessionHeader
+    case externalSessionHeader
+    case orphanedSessionHeader
     case feed
     case feedCalls
     case feedNarration

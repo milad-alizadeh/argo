@@ -66,12 +66,14 @@ extension CockpitPresentation.Session {
 }
 
 extension CockpitPresentation.Session.Access {
-    /// Read-only is what everything but `managed` IS, rather than a policy applied to it: Argo
-    /// owns no PTY for a Session it did not spawn, and an orphaned one lost the PTY it had.
+    /// Access is what provenance IS, rather than a policy applied to it: Argo owns no PTY for a
+    /// Session it did not spawn, and an orphaned one lost the PTY it had. One case each, so the
+    /// shell can say which of those two it is looking at rather than only that it cannot steer.
     init(provenance: SessionProvenance) {
         self = switch provenance {
         case .managed: .managed
-        case .external, .orphaned: .readOnly
+        case .external: .external
+        case .orphaned: .orphaned
         }
     }
 }

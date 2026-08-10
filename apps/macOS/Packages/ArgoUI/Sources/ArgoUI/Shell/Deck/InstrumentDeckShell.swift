@@ -19,6 +19,9 @@ struct InstrumentDeckShell: View {
     /// The selected Session's reading, already projected. Rooms with no feed ignore it, which is
     /// the honest shape: the deck is one container and only one room has a feed in it today.
     var feed: [FeedRow] = []
+    /// What the deck's top zone names, already projected — the Session as an identity rather than
+    /// as the identifier above, which nothing draws.
+    var header: SessionHeaderProjection.Header?
     /// The same Session's plan, which is standing state rather than a row and so travels beside
     /// the rows instead of among them.
     var showing = PlanShowing()
@@ -54,6 +57,7 @@ struct InstrumentDeckShell: View {
         case .sessions:
             SessionsDeck(
                 feed: feed,
+                header: header,
                 showing: showing,
                 open: open,
                 lit: lit,
@@ -79,6 +83,7 @@ struct InstrumentDeckShell: View {
     InstrumentDeckShell(
         room: .sessions,
         feed: FeedProjection.previewRows,
+        header: SessionHeaderFixture.header(for: .managed),
         showing: PlanShowing(plan: PlanProjection.previewReading),
     )
     .frame(width: 900, height: 620)
