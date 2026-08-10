@@ -115,7 +115,7 @@ exists only to carry text, collapse it into the `Text` via `as` rather than nest
 ## Build from the inventory — when a design study exists
 
 If the UI being built comes from a settled design study, its component inventory
-(`docs/designs/<study>.inventory.md`, produced by the `componentize-design` skill) is the
+(`docs/designs/<study>.inventory.md`, produced by the `design-to-code` skill) is the
 build contract:
 
 - **Names are fixed by the inventory.** The component's name, tier, and props come
@@ -124,7 +124,7 @@ build contract:
   update the inventory first (one row), then build. This keeps the study, the
   inventory, and the codebase telling one story.
 - Never derive a component by copying study markup — rebuild from tokens and
-  existing primitives (the study is a spec, per `design-studies.md`).
+  existing primitives (the study is a spec, per `designs.md`).
 
 ## Icons — one icon component per file
 

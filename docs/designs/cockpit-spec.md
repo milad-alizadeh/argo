@@ -537,7 +537,7 @@ that a reducer was called, is testing implementation and does not earn its place
   word priority, the worst-state dot roll-up and the connection roll-up are asserted; they are all
   pure derivations and none needs a DOM.
 - **Views** — no unit tests. Every story renders in CI (the `stories` job) as a smoke test in real
-  Chromium; pixel- or spec-level checks run on demand via `/visual-verify`.
+  Chromium; pixel- or spec-level checks run on demand via `/pixel-review`.
 
 Prior art to follow rather than re-invent: `src/shared/projection.test.ts`,
 `src/shared/lifecycleModel.test.ts`, `src/main/observe/*.test.ts` with `__fixtures__`,
@@ -587,7 +587,7 @@ UI** (ships heuristic-seeded; earns a ticket only if the heuristic proves wrong 
 
 ### Downstream phases — not skipped, not owned here
 
-- **Phase 2** — design foundations into the token contract (`/design-foundations`, a new
+- **Phase 2** — design foundations into the token contract (`/setup-design-foundations`, a new
   `foundations.html`). **Per-surface density settles here** — #178's audit moved it from open fog
   to out of scope for Phase 1, because every landed surface spec defers it. The prototypes are
   structurally real and visually approximate on purpose.

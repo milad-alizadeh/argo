@@ -125,7 +125,7 @@ Every view ships previews covering the states it can be in — empty, loaded, er
 content — per `ui-components.md`'s coverage rule, and for its reason: a state with no render
 is a state nobody has looked at. A preview that needs a running engine is a view that violated
 "views take data". A state worth a screenshot also earns a case in `SpecimenCatalog`, which is
-what a reviewer and CI can actually see (`design-studies.md`).
+what a reviewer and CI can actually see (`designs.md`).
 
 ## Self-check before you finish
 

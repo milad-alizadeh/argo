@@ -132,7 +132,7 @@ while IFS= read -r line; do
   fi
 done < "$list"
 
-# Prune stale visual-review refs on the remote. visual-verify publishes screenshots to
+# Prune stale visual-review refs on the remote. pixel-review publishes screenshots to
 # refs/pr-screenshots/<slug> (slug = head branch with / → -), and the CI baselines job to
 # refs/visual-baselines/pr-N. Both are ephemeral: once the PR is gone, so is their purpose.
 # Reap them on the same provably-safe footing as worktrees — but only with gh to say which

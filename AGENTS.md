@@ -36,7 +36,7 @@ touch (each rule's `paths:` frontmatter states its scope):
 - **TypeScript** — also `typescript-style.md` (how TS spells `code-style.md`)
 - **Swift** (`apps/macOS`) — also `swift-style.md` (how Swift spells it, SwiftUI included)
 - **Tests** — also `testing.md`
-- **UI work** — also `ui-components.md`, `design-system.md`, `design-studies.md`
+- **UI work** — also `ui-components.md`, `design-system.md`, `designs.md`
 - **Skill authoring** — also `skill-authoring.md` (any `SKILL.md`)
 
 ### Module boundaries
@@ -170,7 +170,7 @@ by the pre-commit hook — **never run `graphify update` by hand**, and **never 
 There is no automated render check and no pixel-baseline diffing. The Storybook `stories` CI job
 retired with the Electron cockpit (ADR-0023) — Swift has no Storybook, so nothing mounts a view
 on a Linux runner. **Rendering is therefore a thing YOU do**, not something CI catches for you.
-For a pixel- or spec-level check, run `/visual-verify` on demand.
+For a pixel- or spec-level check, run `/pixel-review` on demand.
 
 **Rendering `apps/macOS`.** The render method is the app itself:
 `bun run screenshot --filter=@argo/macos -- <out.png>` builds it, launches it, and captures the

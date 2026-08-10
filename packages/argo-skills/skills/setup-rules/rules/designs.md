@@ -11,7 +11,7 @@ a screen's layout, palette, or interaction model — are a **committed repo arti
 not scratch files.
 
 **This file's spelling is HTML studies in `docs/designs/` plus four named skills
-(`frontend-design`, `design-foundations`, `componentize-design`, the kit); its rules are
+(`frontend-design`, `setup-design-foundations`, `design-to-code`, the kit); its rules are
 the intents.** On a stack whose studies take another form (a Storybook playground, a Figma
 file, RN screens behind a dev flag), or a repo where those skills aren't installed, rewrite
 the mechanism and keep the intents (`setup-rules` §3):
@@ -53,7 +53,7 @@ the markup:
   are for), but it's a **proposal**: it either snaps to an existing token or gets
   promoted to a named one when the study settles, never ported raw.
 - **Foundations before screens.** The ramps themselves (type roles, spacing,
-  radii, color roles) are designed once via the `design-foundations` skill and rendered
+  radii, color roles) are designed once via the `setup-design-foundations` skill and rendered
   as `docs/designs/foundations.html` — the one **non-disposable** study: it
   styles only via `var(--token)`, so it always renders the current contract.
   Screen studies follow it; they propose, they never redefine.
@@ -67,13 +67,13 @@ the markup:
   then compose. Same tiering as `ui-components.md`.
 - **Ship the inventory.** A settled study carries a component-inventory table —
   name · tier · props/variants · composed-of — next to it in `docs/designs/`. The
-  inventory, not the HTML, is the build contract; the `componentize-design` skill consumes it
+  inventory, not the HTML, is the build contract; the `design-to-code` skill consumes it
   to scaffold the real components.
 
 ## The study is a spec, never a source
 
 A study's markup and CSS are disposable. Building a screen means running
-the `componentize-design` skill — settle values into the token contract, extract the
+the `design-to-code` skill — settle values into the token contract, extract the
 inventory, rebuild from tokens + existing components — never copying study markup
 or styles into the app. When the app and a settled study disagree, fix whichever
 is wrong *in the same change*; don't let them drift apart silently.

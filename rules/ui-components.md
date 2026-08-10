@@ -34,7 +34,7 @@ Rules that fall out of this:
 - **Build bottom-up.** A new organism is assembled from existing atoms and molecules. This is
   *assembly* order within a build — how tiers stack once a component exists — not a mandate to
   author components ahead of the screen that needs them. For **when** a component is created
-  (assemble the screen first, extract on evidence), see `componentize-design`.
+  (assemble the screen first, extract on evidence), see `design-to-code`.
 - **One tier per file**, and the file is named for the type it exports (`swift-style.md`).
 
 ## Reuse before you build
@@ -87,7 +87,7 @@ Every screen is two things: a thin **container** that resolves state, and a pure
 ## Coverage — a state with no render is a state nobody has looked at
 
 Every view ships `#Preview`s for the states it can be in, and every state worth a screenshot
-gets a `Specimen` case (`design-studies.md`). The coverage rule is the same one at both grains:
+gets a `Specimen` case (`designs.md`). The coverage rule is the same one at both grains:
 
 **A render is an axis, not a value.** The unit is a distinct rendering *behaviour*. Re-running
 the same layout with a different number or word is not a second case.

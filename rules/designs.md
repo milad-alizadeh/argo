@@ -14,7 +14,7 @@ This repo has one UI target: the native SwiftUI app in `apps/macOS`. There is no
 there is no HTML study; the equivalent of "render one state and look at it" is a **specimen**.
 The HTML-study spelling of this rule retired with the Electron cockpit
 (`docs/designs/README.md` → *What left, and where it went*), and the shipped
-`packages/argo-skills/skills/setup-rules/rules/design-studies.md` still carries it for consumer
+`packages/argo-skills/skills/setup-rules/rules/designs.md` still carries it for consumer
 projects that do have a browser.
 
 ## Rule — the settled design lives in `docs/designs/`, committed
@@ -32,7 +32,7 @@ projects that do have a browser.
 ## Foundations before screens
 
 The ramps themselves — colour roles, the type scale, spacing, radii, elevation, motion — are
-designed once via the `design-foundations` skill and live in
+designed once via the `setup-design-foundations` skill and live in
 `ArgoUI/Sources/ArgoUI/VisualContract/`. `Specimen/ContractSpecimen.swift` renders them and
 is the one **non-disposable** design artifact: it draws the real tokens rather than a copy, so
 it cannot drift from the contract it documents, and a `Mirror` assertion fails the build if a
@@ -41,7 +41,7 @@ roles dressed onto a real shell, for judging the contract in situ rather than en
 
 Screen work follows the foundations; it proposes, it never redefines. A screen that needs a
 value the contract lacks marks it a **proposal**, and promoting one is a contract change that
-comes back through `design-foundations`' bless step — never a raw constant left in a view.
+comes back through `setup-design-foundations`' bless step — never a raw constant left in a view.
 `scripts/check-design-tokens-swift.sh` is the gate; `VisualContract/` and `Specimen/` are
 exempt from it because they are, respectively, the contract and the thing that shows it.
 

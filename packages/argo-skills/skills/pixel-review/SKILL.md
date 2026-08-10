@@ -1,17 +1,17 @@
 ---
-name: visual-verify
-description: Verify UI changes visually — render the affected states, screenshot them, and have a fresh agent judge the pixels against the spec. Use after implementing UI work before the PR opens, or on demand when the user wants a screen visually checked.
+name: pixel-review
+description: Review a UI change by its pixels — render the affected states, screenshot them, and have a fresh agent judge the render against the approved design. The third lens beside code-review (the diff) and the mechanical gates. Use after building UI work before the PR opens, or on demand when the user wants a screen checked visually.
 ---
 
-# Visual Verify
+# Pixel Review
 
-Code review reads the diff; this reads the pixels — the class of bug where the code looks right
-but the render is wrong (spec says "inline icons with text", the app stacks them).
+`code-review` reads the diff; this reads the pixels — the class of bug where the code looks right
+but the render is wrong (the design says "inline icons with text", the app stacks them).
 
 ## Gate
 
-Applies when the working diff touches anything rendered: components, styles, stories, design
-studies, renderer/web source. If nothing renderable changed, say so and stop.
+Applies when the working diff touches anything rendered: components, styles, isolated-state
+cases, approved designs, renderer/web source. If nothing renderable changed, say so and stop.
 
 ## 1. Render the affected states
 
@@ -25,15 +25,14 @@ Resolution order — first hit wins:
    port, and render the changed components' stories via
    `iframe.html?id=<story-id>&viewMode=story`. The affected states are the stories of every
    component the diff touched.
-3. **Design studies** (design-handoff project) — screenshot the study HTML directly via
-   `file://`.
+3. **Approved designs** — screenshot the design HTML in `docs/designs/` directly via `file://`.
 4. **Dev server** — a `dev`/`start` script in package.json: launch it, navigate to the
    screens the ticket names.
 5. **Nothing renderable found** — record "visual verification unavailable" in the PR body and
    stop. Never silently pass.
 
 Screenshot mechanics: use `scripts/screenshot-states.mjs` if the project has it (installed by
-the `setup-visual-verify` skill — deterministic viewport, animations disabled); otherwise drive
+the `setup-design-infra` skill — deterministic viewport, animations disabled); otherwise drive
 headless Chromium/Playwright inline with the same settings. Write screenshots to a temp dir,
 one PNG per state, named after the state.
 
@@ -45,7 +44,8 @@ session/conversation seeded with only the inputs below and paste its verdict bac
 inputs:
 
 - the ticket's acceptance criteria (or the user's spec, verbatim);
-- the design references — settled study, foundations specimen — if the project has them;
+- the design references — the approved design's render, the foundations specimen — if the
+  project has them;
 - the screenshots.
 
 Deliberately **not** the diff and not your reasoning: the implementer grading its own render
@@ -75,7 +75,7 @@ slug=$(git rev-parse --abbrev-ref HEAD | tr '/' '-')
 tree=$(for f in "$SHOTS"/*.png; do
   printf '100644 blob %s\t%s\n' "$(git hash-object -w "$f")" "$(basename "$f")"
 done | git mktree)
-commit=$(git commit-tree "$tree" -m "visual-verify: $slug")
+commit=$(git commit-tree "$tree" -m "pixel-review: $slug")
 git push --force origin "$commit:refs/pr-screenshots/$slug"
 ```
 
