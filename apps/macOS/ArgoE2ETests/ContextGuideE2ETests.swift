@@ -1,6 +1,6 @@
 import XCTest
 
-/// The ⓘ panel, opened the way a person opens it.
+/// The ⓘ panel, opened the way a person opens it — by resting the pointer on the mark.
 ///
 /// Every rule the instrument carries is asserted in `SessionHeaderContextTests`, which is where a
 /// rule belongs — but none of those tests can click, and the panel is a POPOVER: its own window,
@@ -35,13 +35,16 @@ final class ContextGuideE2ETests: XCTestCase {
 
     /// ONE test walking the whole gesture rather than one per assertion — each case here costs a
     /// launch, and relaunching the same bundle id is the flakiest moment in the run.
-    func testTheGuideOpensOnClickAndCloseOnEscape() {
+    func testTheGuideOpensOnHoverAndCloseOnEscape() {
         let about = app.descendants(matching: .any)["About the context reading"].firstMatch
         XCTAssertTrue(
             about.waitForExistence(timeout: 20),
             "The header drew no ⓘ — or the zone combined its children and swallowed it.",
         )
-        about.click()
+        // Hover and nothing else, which is now the whole gesture. The dwell before it opens is the
+        // one thing out here that a value test cannot reach — `waitForExistence` below is what
+        // absorbs it, and a panel that never opened fails on the same line.
+        about.hover()
 
         let line = app.staticTexts["handing off is worth doing"]
         XCTAssertTrue(
@@ -49,6 +52,10 @@ final class ContextGuideE2ETests: XCTestCase {
             "The panel is empty — its body came apart inside the popover, or the app went down.",
         )
         XCTAssertTrue(app.staticTexts["handing off is overdue"].exists)
+        // And a click on the mark the pointer is already resting on leaves it OPEN. The control
+        // opens rather than toggling, so the keyboard's way in cannot close what hover just opened.
+        about.click()
+        XCTAssertTrue(line.exists)
         // Liveness after the fact, not only at launch: a crash on click leaves the assertion above
         // passing against a window that is already gone.
         XCTAssertEqual(app.state, .runningForeground)

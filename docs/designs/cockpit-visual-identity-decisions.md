@@ -578,7 +578,12 @@ its approved study are authoritative for the replacement look and feel.
   counts and diagnostic telemetry were banished to the inspection surface; they now sit on the tab
   line with duration, because how full a Session's context is decides what you do next and a fact
   behind a click is a fact nobody reads. The popover keeps the explanation, not the numbers.
-- **Amended by [#513](https://github.com/milad-alizadeh/argo/issues/513) — 2026-08-10:** once a Session's work has been handed over, the **Hand off** button leaves the
+- **Amended by [#513](https://github.com/milad-alizadeh/argo/issues/513) — 2026-08-10:** the
+  explanation opens on **hover** rather than on a click. It was a click so that a legend meant to be
+  read would not fly open as the pointer crossed the header; a dwell before it opens buys the same
+  thing without asking for a gesture to reach a paragraph. The ⓘ still opens it when clicked or
+  focused, and never closes it — the keyboard's way in must not undo what the pointer just did.
+- **Also #513:** once a Session's work has been handed over, the **Hand off** button leaves the
   header and the reading gains its one row that is a way OUT of itself: `handed off to <Session>`,
   at the foot under the spend, in the ink this app spends on links. The coloured reading stays as it
   was — the context really is that full — so what changes is the remedy, not the fact.
