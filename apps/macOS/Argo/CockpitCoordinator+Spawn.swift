@@ -18,6 +18,30 @@ extension CockpitCoordinator {
         }
     }
 
+    /// Hand a full Session's work to a fresh one (#513): `/handoff` in its own terminal, the wait
+    /// for the brief, then #412's spawn path seeded with it and the folder it was running in.
+    ///
+    /// The two refusals are reported for exactly the reason a failed spawn is: a remedy that types
+    /// at a terminal Argo does not own, or waits for a brief that never comes, is otherwise a click
+    /// that did nothing — and the one thing it must never do instead is publish a Session row for
+    /// work nobody handed over.
+    func handOff(sessionID: String) async {
+        do {
+            let session = hub.sessions.first { $0.id == sessionID }
+            guard let cwd = session?.cwd else {
+                return report(detail: "Argo has not read this Session's folder")
+            }
+            try await SessionHandoff(host: hub, root: Hub.handoffRoot)
+                .run(SessionHandoff.Request(sessionID: sessionID, cwd: cwd))
+        } catch let failure as SessionHandoff.Failure {
+            report(detail: failure.detail)
+        } catch let failure as AgentSpawnError {
+            report(detail: failure.detail)
+        } catch {
+            report(detail: error.localizedDescription)
+        }
+    }
+
     /// Every agent this window started, ended.
     func endOwnedSessions() {
         hub.endOwnedSessions()
@@ -38,6 +62,8 @@ extension CockpitCoordinator {
         }
     }
 
+    /// The title is the same for both because the outcome is: a Session that was going to exist and
+    /// does not. What differs is the sentence under it, which is the tool's own.
     private func report(detail: String) {
         let alert = NSAlert()
         alert.alertStyle = .warning

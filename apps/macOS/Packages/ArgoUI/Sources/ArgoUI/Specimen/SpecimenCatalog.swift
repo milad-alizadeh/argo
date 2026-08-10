@@ -34,6 +34,11 @@ public enum Specimen: String, CaseIterable, Sendable {
     case contextCrit
     case contextUnknown
     case contextGuide
+    case handoffWithheld
+    case handoffAtWarn
+    case handoffAtCrit
+    case handoffOnReadOnly
+    case handoffOnOrphaned
     case sessionSpend
     case sessionSpendUnreported
     case feed
