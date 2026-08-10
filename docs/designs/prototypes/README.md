@@ -104,8 +104,9 @@ Every colour, radius, spacing step and type role is transcribed from
 transparent titlebar, scope vessel, Rooms) was corrected against a screenshot of the running app,
 not against the design docs.
 
-**Type is San Francisco throughout.** D22 and D31 say New York for Session titles; that prose is
-stale — `ArgoTypeface` has only `interface` and `machine`, and the app draws SF everywhere.
+**Type is San Francisco throughout**, which D24 and D31 now say too — `ArgoTypeface` has only
+`interface` and `machine`, and the app draws SF everywhere. Their New York prose was corrected
+by #504; it is not something to reinstate from an older read of the decision log.
 
 It is **not** a component structure, a state machine, or anything to port line-by-line. The
 projections in #502 are the real design; this only shows what they must produce.
