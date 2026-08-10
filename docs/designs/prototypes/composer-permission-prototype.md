@@ -35,9 +35,37 @@ not by looking at it.
 ### The states
 
 **Composing** — `rest` · `typing` · `ceiling` · `sent` · `running` · `queued` · `draft`
+**Run settings** — `run` · `run-effort` · `run-ask`
 **Attachments** — `attach` · `dragover` · `paste` · `noattach`
 **Permission** — `perm` · `perm-edit` · `expired`
 **Degraded** — `external` · `orphaned` · `failed`
+
+## The answer: variant B
+
+**B was chosen (2026-08-10)**, so the page opens on it. A and C stay as the record of what it
+was chosen against — they are not maintained beyond that.
+
+**The Dock does not survive.** It promised a Session terminal and there is no longer one to
+hold; B replaces it with a vessel that floats over the feed rather than sitting in a seam, so
+the deck's bottom edge belongs to the feed again. The Dock as a concept goes with #535's
+terminal.
+
+Four things B added after the first pass:
+
+1. **The send control is an arrow in a circle and nothing else.** The word *Send* beside an
+   arrow beside a `⏎` hint is the same instruction three times.
+2. **One run-settings pill in the footer row**, opening a menu of **Model · Mode · Effort**
+   with *Reset to default* under a rule.
+3. **The pill's summary leads with Mode**, then Model, then Effort. Model and Effort are the
+   CLI's own knobs; **Mode is Argo's standing autonomy stance**, and it is the one that decides
+   how often the agent stops to ask you something — so it is never a value you have to open a
+   menu to read. A non-default Mode colours in the pill (`Ask` takes the attention ink).
+4. **The container is native glass, not a tinted panel** — the ground shows through, the rim is
+   a light source rather than a border, and the vessel sits on its own halo.
+
+> **Proposal against the token contract:** the vessel's **18px radius** is not in
+> `ArgoGeometry` (`r-popover` is 12). A vessel this wide reads as a dialog at 12. Promoting it
+> is a contract change through `setup-design-foundations`, not a constant dropped into a view.
 
 ## The three variants
 
@@ -49,10 +77,11 @@ prompt appears — because the second answer depends on the first.
   bottom edge is always the composer's top edge, so nothing is ever hidden behind glass.
   **Permission renders inline in the feed**, indented to the value column, at the Tool Call
   that raised it.
-- **B — floating glass vessel.** A bounded Liquid Glass capsule floating over the feed, the
-  same recipe the approved study uses for the deck's other control vessels; the feed runs under
-  it and fades. **Permission takes the composer's own slot** — the vessel becomes the prompt,
-  so there is exactly one input surface and it always holds whichever question is live.
+- **B — floating glass vessel. ✓ chosen.** A native-glass capsule floating over the feed; the
+  feed runs under it and fades. The field is the whole top; attach, the run-settings pill and
+  the send arrow are one footer row under it. **Permission takes the composer's own slot** —
+  the vessel becomes the prompt, so there is exactly one input surface and it always holds
+  whichever question is live.
 - **C — docked panel with a toolbar.** An always-multi-line panel with its own toolbar row
   (attach, adapter chip, send). Generous by default: it says *write something considered* rather
   than *type a line*. **Permission is a sheet** over the deck only — the roster stays legible
@@ -89,6 +118,11 @@ degradation mocked onto a healthy Session is a picture, not a render.
    the question the field would have raised.
 6. **A failed send must not clear the field.** The message stays where it was typed, with the
    reason and a Retry on the seam.
+7. **Mode does not belong in a menu with Model and Effort, even though it opens from the same
+   pill.** The three sit together because they are all *how this Session runs*, but only Mode
+   changes how often you are interrupted — burying its value one click deep would blur the
+   Mode/Permission distinction `CONTEXT.md` insists on. Hence: all three in the menu, Mode
+   first and always visible in the summary.
 
 ## What it is not
 

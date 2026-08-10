@@ -314,23 +314,82 @@
   .cA .tray { padding-bottom: var(--s-snug); }
   .cA .queued { margin-bottom: var(--s-snug); }
 
-  /* ---------- VARIANT B — floating glass vessel over the feed ---------- */
+  /* ---------- VARIANT B — floating glass vessel over the feed (CHOSEN) ---------- */
   .cB-wrap { position: absolute; left: var(--s-section); right: var(--s-section); bottom: var(--s-loose); z-index: 12; }
+  /* Native glass, not a tinted panel: the ground shows through, the rim is a light source
+     rather than a border, and the whole vessel sits on a soft halo the way a real material
+     does. PROPOSAL — the 18px radius is not in ArgoGeometry (r-popover is 12); a vessel this
+     wide reads as a dialog at 12. Promoting it is a contract change, not a constant here. */
   .cB {
     position: relative;
-    background: rgba(46,49,54,.72); backdrop-filter: blur(28px) saturate(160%);
-    border: 1px solid var(--glass-rim); border-radius: var(--r-popover);
-    box-shadow: 0 18px 44px rgba(0,0,0,.55);
-    padding: var(--s-base) var(--s-base) var(--s-snug) var(--s-comfortable);
+    background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.03));
+    backdrop-filter: blur(42px) saturate(180%);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 18px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.16) inset,      /* the rim catching light from above */
+      0 0 0 1px rgba(0,0,0,.35),                /* separation from whatever it floats over */
+      0 26px 64px rgba(0,0,0,.55);
+    padding: var(--s-comfortable) var(--s-base) var(--s-base) var(--s-loose);
+  }
+  /* the halo — the vessel lifts off the feed rather than being pasted onto it */
+  .cB::before {
+    content: ''; position: absolute; inset: -10px; z-index: -1; border-radius: 28px;
+    background: radial-gradient(120% 140% at 50% 100%, rgba(255,255,255,.045), transparent 70%);
+    pointer-events: none;
   }
   .cB .fieldrow { display: flex; align-items: flex-end; gap: var(--s-base); }
-  .cB .footrow { display: flex; align-items: center; gap: var(--s-base); padding-top: var(--s-tight); }
-  .cB .tray { padding-bottom: var(--s-snug); }
-  .cB .queued { margin-bottom: var(--s-snug); background: rgba(255,255,255,.06); }
+  .cB .footrow { position: relative; display: flex; align-items: center; gap: var(--s-base); padding-top: var(--s-base); }
+  .cB .tray { padding-bottom: var(--s-base); }
+  .cB .queued { margin-bottom: var(--s-base); background: rgba(255,255,255,.07); }
   .cB-wrap .seam { padding: 0 var(--s-tight) var(--s-snug); }
   /* the feed fades out under the floating vessel rather than being clipped by it */
-  .deck.floating .feed { padding-bottom: 108px;
-    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 96px), transparent calc(100% - 24px)); }
+  .deck.floating .feed { padding-bottom: 128px;
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 108px), transparent calc(100% - 28px)); }
+
+  /* ---------- the run-settings pill and its menu ---------- */
+  /* Mode leads the summary. It is the one of the three that changes how often the agent stops
+     to ask you something, so it is never the value you have to open a menu to read. */
+  .runpill {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    background: rgba(255,255,255,.07); border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 0 var(--s-base) 0 10px; height: 26px; cursor: pointer;
+    color: var(--text-2); font: 11.5px var(--sans);
+  }
+  .runpill:hover { background: rgba(255,255,255,.11); color: var(--text-1); }
+  .runpill b { font-weight: 600; color: var(--text-1); }
+  .runpill .sep { color: var(--text-off); }
+  .runpill .chev { width: 9px; height: 9px; opacity: .6; }
+  .runpill.mode-ask b  { color: var(--attention); }
+  .runpill.mode-plan b { color: var(--accent-bright); }
+
+  .runmenu {
+    position: absolute; right: 44px; bottom: calc(100% + var(--s-base)); z-index: 30;
+    width: 232px; padding: var(--s-tight);
+    background: var(--overlay); border: 1px solid var(--subtle);
+    border-radius: var(--r-popover); box-shadow: 0 24px 60px rgba(0,0,0,.62);
+  }
+  .runmenu .mrow {
+    display: flex; align-items: center; gap: var(--s-base);
+    padding: var(--s-snug) var(--s-base); border-radius: var(--r-control);
+    cursor: pointer; font-size: 12.5px; color: var(--text-1);
+  }
+  .runmenu .mrow:hover, .runmenu .mrow.on { background: rgba(255,255,255,.07); }
+  .runmenu .mrow .grow { flex: 1; }
+  .runmenu .mrow .val { color: var(--text-3); font-size: 12px; white-space: nowrap; }
+  .runmenu .mrow .chev { width: 10px; height: 10px; color: var(--text-off); flex: none; }
+  .runmenu .mrow.reset { color: var(--text-3); font-size: 12px; }
+  .runmenu hr { border: none; border-top: 1px solid var(--hairline); margin: var(--s-tight) var(--s-snug); }
+  /* the submenu opens beside the row it belongs to, never in place of it */
+  .submenu {
+    position: absolute; right: calc(100% + var(--s-tight)); top: -1px;
+    width: 208px; padding: var(--s-tight);
+    background: var(--overlay); border: 1px solid var(--subtle);
+    border-radius: var(--r-popover); box-shadow: 0 24px 60px rgba(0,0,0,.62);
+  }
+  .submenu .mrow .tick { width: 12px; flex: none; color: var(--accent); }
+  .submenu .mrow .tick svg { width: 11px; height: 11px; display: block; }
+  .submenu .why { font-size: 11px; color: var(--text-3); padding: var(--s-snug) var(--s-base) var(--s-tight); line-height: 1.45; }
 
   /* ---------- VARIANT C — docked panel with its own toolbar ---------- */
   .cC {
@@ -549,6 +608,13 @@ const STATES = [
   { k:'draft',     sid:'1a102eb8', g:'Composing',   label:'Draft on return',
     note:'You left mid-sentence and came back. The text is simply there; the seam says it was kept and when.' },
 
+  { k:'run',       sid:'1986b0e5', g:'Run settings', label:'Run settings — menu open',
+    note:'Model and Effort are the CLI’s knobs; Mode is Argo’s standing autonomy stance. The pill leads with Mode because it is the one that decides how often you are stopped.' },
+  { k:'run-effort',sid:'1986b0e5', g:'Run settings', label:'Run settings — Effort submenu',
+    note:'The submenu opens beside its row, never in place of it, so the other two values stay readable while you change one.' },
+  { k:'run-ask',   sid:'1986b0e5', g:'Run settings', label:'Mode set to Ask',
+    note:'A non-default Mode colours in the pill and Reset to default lights up. Ask takes the attention ink because it changes the Permission rate.' },
+
   { k:'attach',    sid:'1986b0e5', g:'Attachments', label:'Attached files — chips',
     note:'Three chips: one image with a thumbnail, two documents with a kind glyph. Name ellipsizes, size stays, × removes.' },
   { k:'dragover',  sid:'1986b0e5', g:'Attachments', label:'Drag-over',
@@ -578,12 +644,14 @@ const qs = new URLSearchParams(location.search);
 const VARIANTS = ['A','B','C'];
 const NAMES = {
   A: 'Attached seam (the Dock’s place)',
-  B: 'Floating glass vessel',
+  B: 'Floating glass vessel ✓ chosen',
   C: 'Docked panel with a toolbar',
 };
 const PERM_NAMES = { A: 'Permission inline in the feed', B: 'Permission takes the composer', C: 'Permission as a sheet' };
 
-let variant = (qs.get('variant') || 'A').toUpperCase();
+/* B is the chosen variant (2026-08-10), so it is what the page opens on. A and C stay as the
+   record of what it was chosen against. */
+let variant = (qs.get('variant') || 'B').toUpperCase();
 if (!VARIANTS.includes(variant)) variant = 'A';
 let stateKey = qs.get('state') || 'rest';
 if (!STATES.some(s => s.k === stateKey)) stateKey = 'rest';
@@ -592,6 +660,19 @@ if (!STATES.some(s => s.k === stateKey)) stateKey = 'rest';
 const ui = {
   text: '', atts: [], queue: null, fresh: false, dragging: false,
   failed: false, permission: null, permissionResolved: null, turn: [],
+  /* the standing run settings, and which menu is open over them */
+  run: { model: 'Opus 5', mode: 'Code', effort: 'Medium' },
+  menu: null,   // null | 'root' | 'model' | 'mode' | 'effort'
+};
+const DEFAULT_RUN = { model: 'Opus 5', mode: 'Code', effort: 'Medium' };
+
+/* Mode is Argo's own axis (CONTEXT.md) and is deliberately NOT the CLI's word for it — the
+   adapter maps it onto `--permission-mode` or Codex's approval policy. Model and Effort are
+   the CLI's, and are read back verbatim. */
+const CHOICES = {
+  model:  [['Opus 5', 'the default'], ['Sonnet 5', 'faster, cheaper'], ['Haiku 4.5', 'quick edits']],
+  mode:   [['Ask', 'gate every action'], ['Plan', 'read and propose, no edits'], ['Code', 'act within permissions']],
+  effort: [['Low', 'shallow, fast'], ['Medium', 'the default'], ['High', 'thorough'], ['Max', 'no budget']],
 };
 
 const LOREM_4 = `The roster sorts on last activity, but the caption still says "by name".\nFix the caption, not the sort — the sort is right.\n\nWhile you are in there, check whether SessionRow reads the same field twice.`;
@@ -631,6 +712,9 @@ const SVG = {
   lock: `<rect x="3.4" y="7" width="9.2" height="6.4" rx="1.6"/><path d="M5.6 7V5.4a2.4 2.4 0 0 1 4.8 0V7"/>`,
   redo: `<path d="M12.6 8a4.6 4.6 0 1 1-1.6-3.5"/><path d="M12.8 2.6v2.9h-2.9"/>`,
   clock: `<circle cx="8" cy="8" r="5.8"/><path d="M8 4.8V8l2.2 1.6"/>`,
+  plus: `<path d="M8 3.4v9.2M3.4 8h9.2"/>`,
+  check: `<path d="M3.4 8.4 6.6 11.6 12.6 4.8"/>`,
+  chevR: `<path d="M6.2 3.6 10.6 8l-4.4 4.4"/>`,
 };
 const glyph = (d, cls = '') => `<svg class="g ${cls}" viewBox="0 0 16 16" fill="none"
   stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -841,8 +925,10 @@ function renderSheet(st) {
 const sendGlyph = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
   stroke-linecap="round" stroke-linejoin="round">${SVG.arrowUp}</svg>`;
 const stopGlyph = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">${SVG.stop}</svg>`;
-const clipBtn = s => s.attachOK ? `<button class="clip" aria-label="Attach a file" title="Attach a file"
-  onclick="addFile()">${glyph(SVG.clip)}</button>` : '';
+/* `+` rather than a paperclip on the chosen variant: it is the idiom in every reference the
+   composer is judged against, and it leaves room for the other things a turn can be given. */
+const clipBtn = (s, kind = 'clip') => s.attachOK ? `<button class="clip" aria-label="Attach a file"
+  title="Attach a file" onclick="addFile()">${glyph(SVG[kind])}</button>` : '';
 
 const queuedChip = () => ui.queue ? `
   <div class="queued">
@@ -853,6 +939,55 @@ const queuedChip = () => ui.queue ? `
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
         style="width:10px;height:10px">${SVG.x}</svg></button>
   </div>` : '';
+
+/* ---- run settings: one pill, one menu ----
+   Model and Effort are the CLI's own knobs. Mode is Argo's standing autonomy stance and the
+   reason the summary leads with it: it is the setting that decides how often you are stopped,
+   so it must be readable without opening anything. */
+const runPill = () => `
+  <button class="runpill mode-${ui.run.mode.toLowerCase()}" aria-haspopup="menu"
+    aria-expanded="${ui.menu ? 'true' : 'false'}" title="Model, Mode and Effort for this Session"
+    onclick="event.stopPropagation();ui.menu = ui.menu ? null : 'root';render()">
+    <b>${ui.run.mode}</b><span class="sep">·</span>${ui.run.model}<span class="sep">·</span>${ui.run.effort}
+    ${CHEV}
+  </button>`;
+
+const CHECK = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round">${SVG.check}</svg>`;
+const CHEVR = `<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${SVG.chevR}</svg>`;
+
+const submenu = kind => `
+  <div class="submenu" onclick="event.stopPropagation()">
+    ${CHOICES[kind].map(([v, why]) => `
+      <div class="mrow" onclick="setRun('${kind}','${v}')">
+        <span class="tick">${ui.run[kind] === v ? CHECK : ''}</span>
+        <span class="grow">${v}</span>
+        <span class="val">${why}</span>
+      </div>`).join('')}
+  </div>`;
+
+const isDefault = () => ['model','mode','effort'].every(k => ui.run[k] === DEFAULT_RUN[k]);
+
+const runMenu = () => !ui.menu ? '' : `
+  <div class="runmenu" role="menu" onclick="event.stopPropagation()">
+    ${['model','mode','effort'].map(k => `
+      <div class="mrow ${ui.menu === k ? 'on' : ''}" onmouseenter="ui.menu='${k}';render()"
+           onclick="ui.menu='${k}';render()" style="position:relative">
+        <span class="grow">${k[0].toUpperCase() + k.slice(1)}</span>
+        <span class="val">${ui.run[k]}</span>${CHEVR}
+        ${ui.menu === k ? submenu(k) : ''}
+      </div>`).join('')}
+    <hr />
+    <div class="mrow reset" onclick="resetRun()" style="${isDefault() ? 'opacity:.4;pointer-events:none' : ''}">
+      <span class="grow">Reset to default</span>
+      <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+        stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px">${SVG.redo}</svg>
+    </div>
+  </div>`;
+
+function setRun(kind, v) { ui.run[kind] = v; ui.menu = null; render(); }
+function resetRun() { ui.run = { ...DEFAULT_RUN }; ui.menu = null; render(); }
 
 const placeholder = s => s.state === 'running' ? 'Queue a follow-up…' : `Message ${s.cli}…`;
 const dropwash = () => ui.dragging
@@ -881,8 +1016,11 @@ const composer = {
       </div>
     </div>`,
 
-  /* B — a bounded Liquid Glass vessel floating over the feed, the same recipe the approved
-     study uses for the deck's other control vessels. The feed runs under it and fades. */
+  /* B — CHOSEN. A native-glass vessel floating over the feed: the ground shows through, the
+     rim is a light source rather than a border, and it sits on its own halo. The field is the
+     whole top; everything that governs the turn — attach, the run settings, send — is one
+     footer row under it. The send control is an arrow in a circle and nothing else: the word
+     "Send" beside an arrow beside a ⏎ hint is the same instruction three times. */
   B: (s, st) => `
     <div class="cB-wrap">
       ${seamFor(st)}
@@ -892,13 +1030,15 @@ const composer = {
         ${tray()}
         <div class="fieldrow"><span class="grow">${ta(s)}</span></div>
         <div class="footrow">
-          ${clipBtn(s)}
+          ${clipBtn(s, 'plus')}
           <span class="hint">⇧⏎ newline${s.state === 'running' ? ' · esc stops' : ''}</span>
           <span class="grow"></span>
+          ${runPill()}
           ${s.state === 'running'
-            ? `<button class="send stop" style="padding:0 var(--s-comfortable);height:26px" onclick="stop()">${stopGlyph} Stop</button>`
-            : `<button class="send" style="padding:0 var(--s-comfortable);height:26px" onclick="send()"
-                 ${ui.text.trim() || ui.atts.length ? '' : 'disabled'}>Send <span class="kbd" style="background:rgba(255,255,255,.22);border-color:transparent;color:#fff">⏎</span></button>`}
+            ? `<button class="send round stop" title="Stop this Turn  esc" onclick="stop()">${stopGlyph}</button>`
+            : `<button class="send round" title="Send  ⏎" onclick="send()"
+                 ${ui.text.trim() || ui.atts.length ? '' : 'disabled'}>${sendGlyph}</button>`}
+          ${runMenu()}
         </div>
       </div>
     </div>`,
@@ -918,8 +1058,8 @@ const composer = {
         <span class="grow"></span>
         <span class="hint">⇧⏎ newline</span>
         ${s.state === 'running'
-          ? `<button class="send stop" onclick="stop()">${stopGlyph} Stop</button>`
-          : `<button class="send" onclick="send()" ${ui.text.trim() || ui.atts.length ? '' : 'disabled'}>Send ⏎</button>`}
+          ? `<button class="send round stop" title="Stop this Turn  esc" onclick="stop()">${stopGlyph}</button>`
+          : `<button class="send round" title="Send  ⏎" onclick="send()" ${ui.text.trim() || ui.atts.length ? '' : 'disabled'}>${sendGlyph}</button>`}
       </div>
     </div>`,
 };
@@ -1022,6 +1162,10 @@ const session = () => {
 
 function applyStatePresets(st) {
   ui.text = ''; ui.atts = []; ui.queue = null; ui.dragging = false; ui.failed = false;
+  ui.menu = null; ui.run = { ...DEFAULT_RUN };
+  if (st.k === 'run') ui.menu = 'root';
+  if (st.k === 'run-effort') { ui.menu = 'effort'; }
+  if (st.k === 'run-ask') { ui.run.mode = 'Ask'; ui.run.effort = 'High'; }
   if (st.k === 'typing') ui.text = LOREM_4;
   if (st.k === 'ceiling') ui.text = LOREM_LONG;
   if (st.k === 'draft') ui.text = DRAFT;
@@ -1087,7 +1231,12 @@ function cycleState(d) {
   const i = STATES.findIndex(s => s.k === stateKey);
   setState(STATES[(i + d + STATES.length) % STATES.length].k);
 }
+/* The menu closes on a click anywhere that is not it — the pill's own handler stops the event
+   before this sees it, so the pill still toggles. */
+addEventListener('pointerdown', () => { if (ui.menu) { ui.menu = null; render(); } });
+
 addEventListener('keydown', e => {
+  if (e.key === 'Escape' && ui.menu) { e.preventDefault(); ui.menu = null; render(); return; }
   if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
   if (e.key === 'ArrowLeft')  cycleVariant(-1);
   if (e.key === 'ArrowRight') cycleVariant(1);
