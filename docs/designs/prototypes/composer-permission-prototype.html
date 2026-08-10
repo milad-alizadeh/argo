@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE — Composer, attachments, Permission</title>
+<!--
+  THROWAWAY PROTOTYPE for #536. Three variants of the Session composer and of where a
+  Permission prompt appears, switchable via ?variant=A|B|C (or ←/→), with every state in the
+  ticket reachable via ?state=<key> (or ↑/↓, or the picker in the floating bar).
+
+  Every colour, radius, spacing step and type role below is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette.swift,
+  ArgoGeometry.swift, ArgoLayout.swift, ArgoTypography.swift. Nothing here is invented.
+  Type is San Francisco throughout — SF Pro and SF Mono. The contract has no serif.
+
+  The shell (full-height glass sidebar, transparent titlebar, scope vessel, Rooms) and the
+  roster row are LIFTED FROM roster-header-prototype.html, already settled by #502. They are
+  here as context, not as the thing under evaluation — a composer judged in a vacuum looks
+  fine in all three.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — ground */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --hover:      rgba(255,255,255,.045);
+    --selected:   rgba(255,255,255,.058);
+    --marked:     rgba(255,255,255,.07);
+    --scrim:      rgba(11,12,14,.90);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edges */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+    --glass-rim: rgba(255,255,255,.30);
+
+    /* accent + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+
+    /* ArgoGeometry.swift — radii */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    /* ArgoGeometry.swift — spacing */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px;
+    --deck-header-h: 56px;
+    --deck-tab-h: 40px;
+    --dot: 6px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10;
+    color: var(--text-1);
+    font: 13px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- window ---------- */
+  .window {
+    position: fixed; inset: var(--s-section) var(--s-section) 78px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base);
+    min-width: 980px;
+  }
+  .panes { display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100%; }
+
+  /* ---------- titlebar ---------- */
+  .titlebar {
+    position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 20;
+    display: grid; grid-template-columns: var(--sidebar-w) 1fr; pointer-events: none;
+  }
+  .titlebar > * { pointer-events: auto; }
+  .tb-lead { display: flex; align-items: center; padding-left: var(--s-base); }
+  .tb-trail { display: flex; align-items: center; gap: var(--s-comfortable);
+              padding: 0 var(--s-comfortable) 0 var(--s-loose); }
+  .lights { display: flex; gap: var(--s-base); padding: 0 var(--s-base) 0 var(--s-tight); }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .bare {
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    width: 26px; height: 26px; border-radius: var(--r-control);
+    display: grid; place-items: center; flex: none;
+  }
+  .bare:hover { background: rgba(255,255,255,.07); color: var(--text-1); }
+  .bare svg { width: 15px; height: 15px; display: block; }
+  .vessel {
+    display: inline-flex; align-items: center;
+    background: var(--glass-tint); border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 3px; height: 30px;
+  }
+  .vessel > button {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; color: var(--text-2);
+    padding: 0 10px; height: 24px; border-radius: 999px; font: 13px var(--sans);
+  }
+  .vessel .project { font-weight: 500; color: var(--text-1); }
+  .vessel .checkout { font-family: var(--mono); font-size: 12px; }
+  .vessel .divider { width: 1px; height: 16px; background: var(--subtle); flex: none; }
+  .vessel svg { width: 13px; height: 13px; flex: none; }
+  .vessel .chev { width: 9px; height: 9px; opacity: .65; }
+  .rooms { display: inline-flex; gap: 2px; background: var(--glass-tint);
+           border: 1px solid var(--hairline); border-radius: 999px; padding: 3px; }
+  .rooms button {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    font: 500 12.5px var(--sans); padding: 0 var(--s-comfortable); height: 24px; border-radius: 999px;
+  }
+  .rooms button svg { width: 13px; height: 13px; flex: none; }
+  .rooms button.on { background: var(--overlay); color: var(--text-1); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+
+  /* ---------- sidebar / roster (settled by #502 — context, not under test) ---------- */
+  .sidebar {
+    display: flex; flex-direction: column; border-right: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%);
+  }
+  .sidebar-head { display: flex; align-items: center; gap: 2px;
+                  height: 46px; flex: none; padding: 0 var(--s-snug) 0 var(--s-comfortable); }
+  .roster { flex: 1; overflow-y: auto; padding: 0 var(--s-base) var(--s-base); }
+  .sidebar-foot { padding: var(--s-base) var(--s-comfortable) var(--s-comfortable);
+                  border-top: 1px solid var(--hairline); color: var(--text-3); font-size: 12px; }
+  .row { position: relative; border-radius: var(--r-control);
+         padding: 7px var(--s-base); margin-bottom: 1px; cursor: default; }
+  .row:hover { background: var(--hover); }
+  .row.sel { background: var(--selected); }
+  .row.ext { opacity: .58; }
+  .dot { width: var(--dot); height: var(--dot); border-radius: 50%; flex: none; }
+  .dot.running   { background: var(--running); box-shadow: 0 0 6px rgba(70,211,168,.5); }
+  .dot.attn      { background: var(--attention); box-shadow: 0 0 6px rgba(232,178,74,.45); }
+  .dot.fail      { background: var(--failure); }
+  .dot.idle      { background: var(--idle); }
+  .dot.hollow    { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); }
+  .title { font-size: 13px; font-weight: 500; color: var(--text-1); letter-spacing: -.05px;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta { font-family: var(--mono); font-size: 11px; color: var(--text-3);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .time { font-family: var(--mono); font-size: 11px; color: var(--text-3); flex: none; }
+  .badge { flex: none; font-size: 10px; font-weight: 600; letter-spacing: .5px;
+           text-transform: uppercase; color: var(--attention); }
+  .badge.fail { color: var(--failure); }
+
+  /* ---------- deck ---------- */
+  .deck { position: relative; display: flex; flex-direction: column;
+          background: var(--base); min-width: 0; padding-top: 46px; overflow: hidden; }
+  .band { height: var(--deck-header-h); flex: none; display: flex; align-items: center;
+          gap: var(--s-comfortable); padding: 0 var(--s-section); }
+  .tabslot { height: var(--deck-tab-h); flex: none; display: flex; align-items: flex-end;
+             gap: var(--s-loose); padding: 0 var(--s-section); border-bottom: 1px solid var(--hairline); }
+  .tab { font-size: 12.5px; color: var(--text-3); padding-bottom: var(--s-base);
+         border-bottom: 1.5px solid transparent; margin-bottom: -1px; }
+  .tab.on { color: var(--text-1); font-weight: 500; border-bottom-color: var(--accent); }
+  .h-title { font-size: 19px; font-weight: 600; letter-spacing: -.35px; color: var(--text-1);
+             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fact { font-size: 11.5px; color: var(--text-2); white-space: nowrap; }
+  .fact.mono { font-family: var(--mono); font-size: 11px; }
+  .fact.dim { color: var(--text-3); }
+  .fact.warn { color: var(--attention); }
+  .fact.crit { color: var(--failure); }
+  .fact.link { color: var(--accent); }
+  .factline { display: flex; align-items: center; gap: var(--s-snug); min-width: 0; overflow: hidden; }
+  .dotsep { color: var(--text-off); font-size: 11px; }
+  svg.g { width: 13px; height: 13px; flex: none; display: inline-block; vertical-align: -2px; }
+  .gitline { display: inline-flex; align-items: center; gap: var(--s-tight); }
+  .gitline .g { width: 12px; height: 12px; flex: none; opacity: .8; }
+  .chip { display: inline-flex; align-items: center; gap: var(--s-tight);
+          font-size: 11px; font-family: var(--mono); color: var(--text-2);
+          background: var(--glass-tint); border: 1px solid var(--hairline);
+          padding: 2px var(--s-snug); border-radius: var(--r-marker); white-space: nowrap; }
+  .chip.warn { color: var(--attention); border-color: rgba(232,178,74,.3); }
+  .chip.dim  { color: var(--text-3); }
+
+  /* ---------- feed ---------- */
+  .feed { flex: 1; overflow-y: auto; padding: var(--s-loose) var(--s-section) var(--s-loose); }
+  .fr { display: flex; gap: var(--s-comfortable); padding: var(--s-snug) 0; align-items: baseline; }
+  .fr .k { width: 52px; flex: none; font-size: 11px; color: var(--text-3); text-align: right; }
+  .fr .v { font-size: 12.5px; color: var(--text-2); min-width: 0; }
+  .fr .v code { font-family: var(--mono); font-size: 11.5px; color: var(--text-1); }
+  .fr .add { color: #A9D18E; font-family: var(--mono); font-size: 11.5px; }
+  .fr .rem { color: #D98C93; font-family: var(--mono); font-size: 11.5px; }
+  /* The user's own words are never blurred with agent output (US7): the label is accent, the
+     prose is text-1 rather than text-2, and a hairline rule sits under it as a turn boundary. */
+  .fr.user .k { color: var(--accent); font-weight: 600; }
+  .fr.user .v { color: var(--text-1); white-space: pre-wrap; }
+  .fr.user { padding-bottom: var(--s-base); }
+  .fr.you-attach { padding-top: 0; }
+  .fr.interrupt .k { color: var(--attention); }
+  .fr.interrupt .v { color: var(--attention); font-style: italic; }
+  .fr.pending .k { color: var(--attention); }
+  .fr .v.dim { color: var(--text-3); }
+  /* Freshly accepted turn: a one-shot accent wash that decays. Acceptance is the echo itself. */
+  @keyframes accepted { from { background: rgba(62,155,255,.16); } to { background: transparent; } }
+  .fr.fresh { animation: accepted 1400ms ease-out both; border-radius: var(--r-control);
+              margin: 0 calc(var(--s-base) * -1); padding-left: var(--s-base); padding-right: var(--s-base); }
+  .working { display: inline-flex; align-items: center; gap: var(--s-snug); color: var(--text-3); font-size: 12px; }
+  .working i { width: 5px; height: 5px; border-radius: 50%; background: var(--running); display: block;
+               animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
+
+  /* ---------- composer: shared parts ---------- */
+  .ta {
+    display: block; width: 100%; resize: none; border: none; outline: none; background: none;
+    color: var(--text-1); font: 13px/1.5 var(--sans); padding: 0;
+    max-height: 132px; overflow-y: auto;    /* ceiling = 6 lines, then it scrolls */
+  }
+  .ta::placeholder { color: var(--text-off); }
+  .send {
+    flex: none; border: none; cursor: pointer; display: inline-flex; align-items: center;
+    justify-content: center; gap: var(--s-snug); border-radius: var(--r-control);
+    background: var(--accent); color: #fff; font: 600 12px var(--sans);
+  }
+  .send:hover { filter: brightness(1.1); }
+  .send:disabled { background: var(--glass-tint); color: var(--text-off); cursor: default; filter: none; }
+  .send svg { width: 14px; height: 14px; }
+  .send.round { width: 26px; height: 26px; border-radius: 50%; padding: 0; }
+  .send.stop { background: var(--attention); color: var(--on-accent); }
+  .clip {
+    flex: none; border: none; background: none; cursor: pointer; color: var(--text-3);
+    width: 26px; height: 26px; border-radius: var(--r-control); display: grid; place-items: center;
+  }
+  .clip:hover { background: rgba(255,255,255,.07); color: var(--text-1); }
+  .clip svg { width: 15px; height: 15px; display: block; }
+  .hint { font-size: 10.5px; color: var(--text-off); white-space: nowrap; }
+  .kbd { font: 10.5px var(--mono); color: var(--text-3); background: rgba(255,255,255,.06);
+         border: 1px solid var(--hairline); border-radius: var(--r-marker); padding: 0 4px; }
+
+  /* attachment chips — one chip shape for every source (drop, paste, picker) */
+  .tray { display: flex; flex-wrap: wrap; gap: var(--s-snug); }
+  .att {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    background: var(--raised); border: 1px solid var(--hairline);
+    border-radius: var(--r-control); padding: 3px 3px 3px var(--s-snug); max-width: 240px;
+  }
+  .att .thumb { width: 20px; height: 20px; border-radius: var(--r-marker); flex: none;
+                object-fit: cover; display: block; background: var(--overlay); }
+  .att .ico { width: 20px; height: 20px; flex: none; display: grid; place-items: center; color: var(--text-3); }
+  .att .ico svg { width: 14px; height: 14px; }
+  .att .nm { font-size: 11.5px; color: var(--text-1); overflow: hidden;
+             text-overflow: ellipsis; white-space: nowrap; }
+  .att .sz { font: 10.5px var(--mono); color: var(--text-3); flex: none; }
+  .att .x { flex: none; border: none; background: none; cursor: pointer; color: var(--text-3);
+            width: 18px; height: 18px; border-radius: var(--r-marker); display: grid; place-items: center; }
+  .att .x:hover { background: rgba(255,255,255,.09); color: var(--text-1); }
+  .att .x svg { width: 10px; height: 10px; }
+
+  /* drag-over: the whole composer takes an accent rim and says what dropping will do */
+  .dropwash {
+    position: absolute; inset: 0; z-index: 5; border-radius: inherit;
+    background: rgba(62,155,255,.10); border: 1.5px dashed var(--accent);
+    display: grid; place-items: center; font: 600 12px var(--sans); color: var(--accent-bright);
+    pointer-events: none;
+  }
+
+  /* the seam line above the composer: draft marker, queue, failure, capability notice */
+  .seam {
+    display: flex; align-items: center; gap: var(--s-snug);
+    font-size: 11.5px; color: var(--text-3); padding: var(--s-snug) 0;
+  }
+  .seam.warn { color: var(--attention); }
+  .seam.crit { color: var(--failure); }
+  .seam .grow { flex: 1; }
+  .seam button.inline {
+    border: 1px solid var(--subtle); background: var(--glass-tint); color: var(--text-2);
+    font: 500 11px var(--sans); padding: 2px var(--s-snug); border-radius: var(--r-marker); cursor: pointer;
+  }
+  .seam button.inline:hover { color: var(--text-1); }
+  .seam svg.g { width: 12px; height: 12px; }
+
+  /* the queued follow-up rides above the field, never inside it */
+  .queued {
+    display: flex; align-items: flex-start; gap: var(--s-snug);
+    background: rgba(255,255,255,.045); border: 1px solid var(--hairline);
+    border-left: 2px solid var(--accent);
+    border-radius: var(--r-control); padding: var(--s-snug) var(--s-base);
+  }
+  .queued .qt { font-size: 12px; color: var(--text-2); min-width: 0; overflow: hidden;
+                text-overflow: ellipsis; white-space: nowrap; }
+  .queued .ql { font-size: 10.5px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase;
+                color: var(--accent); flex: none; padding-top: 1px; }
+
+  /* ---------- VARIANT A — attached seam (the Dock's own position) ---------- */
+  .cA {
+    position: relative; flex: none; border-top: 1px solid var(--hairline);
+    background: var(--sunken); padding: var(--s-snug) var(--s-section);
+  }
+  .cA .fieldrow { display: flex; align-items: flex-end; gap: var(--s-base); min-height: 28px; }
+  .cA .ta { padding: 4px 0; }
+  .cA .send { padding: 0; }
+  .cA .tray { padding-bottom: var(--s-snug); }
+  .cA .queued { margin-bottom: var(--s-snug); }
+
+  /* ---------- VARIANT B — floating glass vessel over the feed ---------- */
+  .cB-wrap { position: absolute; left: var(--s-section); right: var(--s-section); bottom: var(--s-loose); z-index: 12; }
+  .cB {
+    position: relative;
+    background: rgba(46,49,54,.72); backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid var(--glass-rim); border-radius: var(--r-popover);
+    box-shadow: 0 18px 44px rgba(0,0,0,.55);
+    padding: var(--s-base) var(--s-base) var(--s-snug) var(--s-comfortable);
+  }
+  .cB .fieldrow { display: flex; align-items: flex-end; gap: var(--s-base); }
+  .cB .footrow { display: flex; align-items: center; gap: var(--s-base); padding-top: var(--s-tight); }
+  .cB .tray { padding-bottom: var(--s-snug); }
+  .cB .queued { margin-bottom: var(--s-snug); background: rgba(255,255,255,.06); }
+  .cB-wrap .seam { padding: 0 var(--s-tight) var(--s-snug); }
+  /* the feed fades out under the floating vessel rather than being clipped by it */
+  .deck.floating .feed { padding-bottom: 108px;
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 96px), transparent calc(100% - 24px)); }
+
+  /* ---------- VARIANT C — docked panel with its own toolbar ---------- */
+  .cC {
+    position: relative; flex: none; margin: 0 var(--s-section) var(--s-loose);
+    background: var(--raised); border: 1px solid var(--subtle); border-radius: var(--r-popover);
+    padding: var(--s-comfortable);
+  }
+  .cC .ta { min-height: 54px; }
+  .cC .toolbar { display: flex; align-items: center; gap: var(--s-base);
+                 padding-top: var(--s-base); margin-top: var(--s-base);
+                 border-top: 1px solid var(--hairline); }
+  .cC .send { padding: 0 var(--s-comfortable); height: 26px; }
+  .cC .tray { padding-bottom: var(--s-base); }
+  .cC .queued { margin-bottom: var(--s-base); }
+  .cC-seam { padding: 0 var(--s-section); }
+
+  /* ---------- Permission ---------- */
+  .perm-tool { display: flex; align-items: baseline; gap: var(--s-snug); flex-wrap: wrap; }
+  .perm-tool .name { font: 600 12.5px var(--sans); color: var(--text-1); }
+  .perm-tool .why { font-size: 11.5px; color: var(--text-3); }
+  /* The target is shown verbatim and in full — a decision made on a truncated command is a
+     guess, which is the thing the prompt exists to prevent. */
+  .perm-target {
+    font: 11.5px/1.55 var(--mono); color: var(--text-1); white-space: pre-wrap; word-break: break-word;
+    background: var(--sunken); border: 1px solid var(--hairline); border-radius: var(--r-control);
+    padding: var(--s-snug) var(--s-base); margin: var(--s-base) 0;
+    max-height: 108px; overflow-y: auto;
+  }
+  .perm-acts { display: flex; align-items: center; gap: var(--s-base); flex-wrap: wrap; }
+  .perm-acts .grow { flex: 1; }
+  .pbtn {
+    display: inline-flex; align-items: center; gap: var(--s-snug); cursor: pointer;
+    font: 600 12px var(--sans); padding: 5px var(--s-comfortable); border-radius: var(--r-control);
+    border: 1px solid var(--subtle); background: var(--glass-tint); color: var(--text-2);
+  }
+  .pbtn:hover { color: var(--text-1); }
+  .pbtn.allow { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pbtn.deny  { border-color: rgba(242,85,92,.35); color: #F0989C; }
+  .pbtn.deny:hover { color: #fff; background: rgba(242,85,92,.16); }
+  .pbtn.quiet { border-color: transparent; background: none; color: var(--text-3); font-weight: 500; }
+  .pbtn.quiet:hover { color: var(--text-2); background: rgba(255,255,255,.05); }
+  .pbtn .kbd { background: rgba(255,255,255,.14); border-color: transparent; color: inherit; opacity: .85; }
+  .pbtn.allow .kbd { background: rgba(255,255,255,.22); }
+  /* The patience window is the hook's timeout, so it is drawn: the user can see that walking
+     away denies rather than approves. */
+  .fuse { height: 2px; background: rgba(255,255,255,.07); border-radius: 1px; overflow: hidden; margin-top: var(--s-base); }
+  .fuse > i { display: block; height: 100%; background: var(--attention); width: 100%;
+              transform-origin: left center; }
+  .perm-head { display: flex; align-items: center; gap: var(--s-snug); }
+  .perm-head .lbl { font-size: 10.5px; font-weight: 600; letter-spacing: .5px;
+                    text-transform: uppercase; color: var(--attention); }
+  .perm-head .grow { flex: 1; }
+  .perm-head .left { font: 11px var(--mono); color: var(--text-3); }
+
+  /* A — inline in the feed at the Tool Call */
+  .permA {
+    border: 1px solid rgba(232,178,74,.34); border-left: 2px solid var(--attention);
+    border-radius: var(--r-control); background: rgba(232,178,74,.05);
+    padding: var(--s-comfortable); margin: var(--s-base) 0 var(--s-base) 64px;
+  }
+  /* B — the composer vessel becomes the prompt: one input surface, one live question */
+  .permB { border-color: rgba(232,178,74,.5); }
+  .permB-body { padding: var(--s-tight) var(--s-tight) 0; }
+  /* C — a sheet over the deck only; the roster stays legible behind it */
+  .sheet-scrim { position: absolute; inset: 0; z-index: 45; background: var(--scrim); display: grid; place-items: center; }
+  .sheet {
+    width: 460px; max-width: calc(100% - 48px); background: var(--overlay);
+    border: 1px solid var(--subtle); border-radius: var(--r-popover);
+    padding: var(--s-loose); box-shadow: 0 30px 70px rgba(0,0,0,.6);
+  }
+
+  /* the read-only / orphaned replacement for the composer */
+  .noinput {
+    flex: none; border-top: 1px solid var(--hairline); background: var(--sunken);
+    padding: var(--s-comfortable) var(--s-section);
+    display: flex; align-items: center; gap: var(--s-base);
+    font-size: 12px; color: var(--text-3);
+  }
+  .noinput .grow { flex: 1; }
+  .noinput b { color: var(--text-2); font-weight: 600; }
+  .noinput .g { color: var(--text-off); }
+  .noinput button {
+    border: 1px solid var(--subtle); background: var(--glass-tint); color: var(--text-2);
+    font: 500 11.5px var(--sans); padding: 4px var(--s-base); border-radius: var(--r-control); cursor: pointer;
+  }
+  .noinput button:hover { color: var(--text-1); }
+
+  /* ---------- switcher (not part of the design under evaluation) ---------- */
+  .switch {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 60;
+    display: flex; align-items: center; gap: var(--s-snug);
+    background: #fff; color: #111; border-radius: 999px; padding: 4px 6px 4px 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 600 12px/1 var(--sans);
+  }
+  .switch button { border: none; background: none; cursor: pointer; width: 26px; height: 26px;
+                   border-radius: 999px; font-size: 15px; color: #111; }
+  .switch button:hover { background: rgba(0,0,0,.08); }
+  .switch .lab { padding: 0 var(--s-snug); white-space: nowrap; }
+  .switch select { font: 600 12px var(--sans); border: none; background: rgba(0,0,0,.06);
+                   border-radius: 999px; padding: 5px var(--s-base); color: #111; cursor: pointer; }
+  .switch .sep { width: 1px; height: 18px; background: rgba(0,0,0,.14); }
+  .note {
+    position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%); z-index: 59;
+    max-width: 720px; text-align: center; font-size: 11.5px; color: var(--text-3);
+    background: rgba(0,0,0,.55); border-radius: var(--r-control); padding: 4px var(--s-comfortable);
+  }
+
+  .flex { display: flex; align-items: center; }
+  .col { display: flex; flex-direction: column; }
+  .grow { flex: 1; min-width: 0; }
+  .g2 { gap: 2px } .g4 { gap: var(--s-tight) } .g6 { gap: var(--s-snug) }
+  .g8 { gap: var(--s-base) } .g12 { gap: var(--s-comfortable) } .g16 { gap: var(--s-loose) }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <header class="titlebar">
+    <div class="tb-lead">
+      <span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+    </div>
+    <div class="tb-trail">
+      <div id="scope"></div>
+      <span style="flex:1"></span>
+      <div class="rooms">
+        <button class="on"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2.5 6.5v3M5.5 4v8M8.5 2.5v11M11.5 5v6M14 7v2"/></svg>Sessions</button>
+        <button><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="3" cy="4" r="1.2"/><circle cx="3" cy="9.5" r="1.2"/><path d="M6.5 4h7M6.5 9.5h7M6.5 13.5h4"/></svg>Work</button>
+        <button><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5.5 5 2.5 8l3 3M10.5 5l3 3-3 3"/></svg>Code</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="panes">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <span style="flex:1"></span>
+        <button class="bare" aria-label="New Session" title="New Session  ⌘N">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M8 3.4v9.2M3.4 8h9.2"/></svg>
+        </button>
+        <button class="bare" aria-label="Hide Sessions">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35">
+            <rect x="1.6" y="3" width="12.8" height="10" rx="2"/><path d="M6.2 3v10"/></svg>
+        </button>
+      </div>
+      <div class="roster" id="roster"></div>
+      <div class="sidebar-foot">Archived (2)</div>
+    </aside>
+
+    <section class="deck" id="deck">
+      <div id="hdr"></div>
+      <div class="feed" id="feed"></div>
+      <div id="composer"></div>
+      <div id="sheet"></div>
+    </section>
+  </div>
+</div>
+
+<div class="note" id="note"></div>
+<div class="switch">
+  <button onclick="cycleVariant(-1)" aria-label="Previous variant">‹</button>
+  <span class="lab" id="switch-label"></span>
+  <button onclick="cycleVariant(1)" aria-label="Next variant">›</button>
+  <span class="sep"></span>
+  <select id="state-picker" onchange="setState(this.value)" aria-label="State"></select>
+</div>
+
+<script>
+/* ============================================================================
+   The Sessions are the same real ones read off this machine for #502's prototype
+   (2026-08-10) — titles derived from each transcript's opening prompt, branches from
+   `git worktree list`. Only liveness and the managed/external/orphaned posture are
+   assigned, because the renderings need states a transcript at rest does not have.
+   ============================================================================ */
+const sessions = [
+  { id:'0ec3b3b6', title:'Drive a Session from a composer', state:'running', access:'managed',
+    branch:'argo/#535-session-drive-port', worktree:true, cli:'Claude Code', model:'Opus 5',
+    ticket:'#535', seen:null, attach:true },
+  { id:'1986b0e5', title:'Restore the sessions Warp closed', state:'idle', access:'managed',
+    branch:'main', worktree:false, cli:'Claude Code', model:'Opus 5',
+    ticket:null, seen:'2m', attach:true },
+  { id:'1a102eb8', title:'Which worktrees need a PR?', state:'idle', access:'managed',
+    branch:'argo/#476-feed-scroll-anchor', worktree:true, cli:'Claude Code', model:'Opus 5',
+    ticket:'#476', seen:'51m', attach:true },
+  /* A Codex worktree under ~/.codex — observed from disk, never spawned by Argo. */
+  { id:'codex-56bf', title:'Native Session roster in Swift', state:'idle', access:'external',
+    branch:'argo/#377-native-session-roster', worktree:true, cli:'Codex', model:'unknown',
+    ticket:'#377', seen:'2d', attach:false },
+  /* Its worktree survives, but nothing owns the PTY any more — Argo restarted under it. */
+  { id:'w-375', title:'Graphite and Ion Blue across the shell', state:'idle', access:'orphaned',
+    branch:'worktree-ticket-375-graphite-ion-blue', worktree:true, cli:'Claude Code', model:'Opus 5',
+    ticket:'#375', seen:'3d', attach:true },
+];
+
+/* ============================================================================
+   STATES — every one the ticket asks for, each addressable as ?state=<key>.
+   `sid` is which Session the state belongs to; a degraded state has to be shown on a
+   Session that is genuinely in that posture, or it is a mock rather than a render.
+   ============================================================================ */
+const STATES = [
+  { k:'rest',      sid:'1986b0e5', g:'Composing',   label:'At rest — empty',
+    note:'Nothing typed. This is the height the composer holds when a Session is idle and the user has said nothing.' },
+  { k:'typing',    sid:'1986b0e5', g:'Composing',   label:'Multi-line, growing',
+    note:'Four lines of real prose at the cockpit’s 13px/1.5. The field grows with the content; ⇧⏎ makes a line, ⏎ sends.' },
+  { k:'ceiling',   sid:'1986b0e5', g:'Composing',   label:'At the ceiling — scrolling',
+    note:'Past six lines (132px) the field stops growing and scrolls inside itself, so the feed above is never squeezed out.' },
+  { k:'sent',      sid:'1986b0e5', g:'Composing',   label:'Turn accepted',
+    note:'Acceptance IS the echo: the field clears, the words appear in the feed as the user’s own, and the wash decays over 1.4s. No toast.' },
+  { k:'running',   sid:'0ec3b3b6', g:'Composing',   label:'Turn running — interrupt',
+    note:'While a Turn runs the send control becomes Stop (ESC to the PTY). The field stays live — you can keep typing.' },
+  { k:'queued',    sid:'0ec3b3b6', g:'Composing',   label:'Follow-up queued',
+    note:'A second turn committed while the first is still running rides above the field as a chip, cancellable, and is sent when the Turn ends.' },
+  { k:'draft',     sid:'1a102eb8', g:'Composing',   label:'Draft on return',
+    note:'You left mid-sentence and came back. The text is simply there; the seam says it was kept and when.' },
+
+  { k:'attach',    sid:'1986b0e5', g:'Attachments', label:'Attached files — chips',
+    note:'Three chips: one image with a thumbnail, two documents with a kind glyph. Name ellipsizes, size stays, × removes.' },
+  { k:'dragover',  sid:'1986b0e5', g:'Attachments', label:'Drag-over',
+    note:'A file dragged over the composer. The whole surface takes the accent rim and says what dropping does.' },
+  { k:'paste',     sid:'1986b0e5', g:'Attachments', label:'Pasted image',
+    note:'⌘V of a screenshot makes exactly the chip a drop makes — same shape, only the derived name differs.' },
+  { k:'noattach',  sid:'1986b0e5', g:'Attachments', label:'Adapter takes no attachments',
+    note:'Capability is declared, not discovered: the paperclip is ABSENT, and a drop is refused with the reason rather than failing silently.' },
+
+  { k:'perm',      sid:'0ec3b3b6', g:'Permission',  label:'Permission pending',
+    note:'Tool, target verbatim, and a fuse showing the patience window. Allow is focused; ⏎ allows, Esc denies, walking away denies.' },
+  { k:'perm-edit', sid:'0ec3b3b6', g:'Permission',  label:'Permission — an edit',
+    note:'A different tool kind: the target is a path plus the hunk it would write, not a command line.' },
+  { k:'expired',   sid:'0ec3b3b6', g:'Permission',  label:'Expired, not answered',
+    note:'The hook timed out and denied. The record says expired — never “denied” flat, which would claim a decision nobody made.' },
+
+  { k:'external',  sid:'codex-56bf', g:'Degraded',  label:'Read-only external Session',
+    note:'No composer at all. An input surface that cannot reach anything is worse than its absence — the seam says why.' },
+  { k:'orphaned',  sid:'w-375',    g:'Degraded',    label:'Orphaned Session',
+    note:'The steering channel died with the owning process and cannot be re-adopted. The exit offered is a fresh Session on the same branch.' },
+  { k:'failed',    sid:'1986b0e5', g:'Degraded',    label:'Send failed',
+    note:'The text is NOT cleared — a failed send that empties the field loses the message. Retry sits on the seam.' },
+];
+
+/* --------------------------- state model --------------------------- */
+const qs = new URLSearchParams(location.search);
+const VARIANTS = ['A','B','C'];
+const NAMES = {
+  A: 'Attached seam (the Dock’s place)',
+  B: 'Floating glass vessel',
+  C: 'Docked panel with a toolbar',
+};
+const PERM_NAMES = { A: 'Permission inline in the feed', B: 'Permission takes the composer', C: 'Permission as a sheet' };
+
+let variant = (qs.get('variant') || 'A').toUpperCase();
+if (!VARIANTS.includes(variant)) variant = 'A';
+let stateKey = qs.get('state') || 'rest';
+if (!STATES.some(s => s.k === stateKey)) stateKey = 'rest';
+
+/* Live UI state, so the prototype can actually be driven rather than only looked at. */
+const ui = {
+  text: '', atts: [], queue: null, fresh: false, dragging: false,
+  failed: false, permission: null, permissionResolved: null, turn: [],
+};
+
+const LOREM_4 = `The roster sorts on last activity, but the caption still says "by name".\nFix the caption, not the sort — the sort is right.\n\nWhile you are in there, check whether SessionRow reads the same field twice.`;
+const LOREM_LONG = LOREM_4 + `\n\nAnd if it does, pull it up into the projection rather than into a computed property on the row — the row should be handed a value, never derive one.\n\nNo tests for the caption; the projection test covers it.`;
+const DRAFT = `Before the PR: check that the scroll anchor survives a compaction. I think it`;
+
+/* Attachment fixtures. The thumbnail is a real inline SVG data URI so the chip is judged
+   with a picture in it, not with a grey square standing in for one. */
+const THUMB = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#1E2024"/>` +
+  `<rect x="3" y="4" width="34" height="7" rx="2" fill="#2E3136"/>` +
+  `<rect x="3" y="14" width="20" height="4" rx="1" fill="#3E9BFF" opacity=".7"/>` +
+  `<rect x="3" y="21" width="30" height="4" rx="1" fill="#46D3A8" opacity=".55"/>` +
+  `<rect x="3" y="28" width="24" height="4" rx="1" fill="#868D94" opacity=".5"/></svg>`);
+
+const FILES = {
+  shot:  { kind:'image', name:'Screenshot 2026-08-10 at 14.22.08.png', size:'248 KB', thumb: THUMB },
+  paste: { kind:'image', name:'Pasted image', size:'186 KB', thumb: THUMB },
+  log:   { kind:'text',  name:'ArgoEngineTests-failure.log', size:'12 KB' },
+  swift: { kind:'code',  name:'SessionRosterProjection.swift', size:'6 KB' },
+};
+
+/* --------------------------- glyphs --------------------------- */
+const SVG = {
+  branch: `<path d="M4.5 5.3v5.4"/><circle cx="4.5" cy="3.6" r="1.7"/><circle cx="4.5" cy="12.4" r="1.7"/>
+           <circle cx="11.5" cy="3.6" r="1.7"/><path d="M11.5 5.3v1.4a2.4 2.4 0 0 1-2.4 2.4H6.2"/>`,
+  worktree: `<rect x="5.4" y="5.4" width="8.2" height="8.2" rx="1.4"/><path d="M10.6 2.4H3.8a1.4 1.4 0 0 0-1.4 1.4v6.8"/>`,
+  folder: `<path d="M1.9 4.6a1.4 1.4 0 0 1 1.4-1.4h2.4l1.5 1.7h5.5a1.4 1.4 0 0 1 1.4 1.4v5.7a1.4 1.4 0 0 1-1.4 1.4H3.3a1.4 1.4 0 0 1-1.4-1.4z"/>`,
+  clip: `<path d="M12.4 7.3 7.6 12a2.9 2.9 0 0 1-4.1-4.1l5.3-5.3a1.9 1.9 0 1 1 2.7 2.7l-5.2 5.2a.9.9 0 0 1-1.3-1.3l4.7-4.7"/>`,
+  arrowUp: `<path d="M8 12.6V4"/><path d="M4.2 7.6 8 3.8l3.8 3.8"/>`,
+  stop: `<rect x="4.6" y="4.6" width="6.8" height="6.8" rx="1.4" fill="currentColor" stroke="none"/>`,
+  x: `<path d="M3.6 3.6l8.8 8.8M12.4 3.6l-8.8 8.8"/>`,
+  doc: `<path d="M4 2.4h5l3 3v8.2H4z"/><path d="M9 2.4v3h3"/>`,
+  code: `<path d="M6 5.5 3.4 8 6 10.5M10 5.5 12.6 8 10 10.5"/>`,
+  warn: `<path d="M8 3.2 14 13H2z"/><path d="M8 6.8v3M8 11.3v.4"/>`,
+  info: `<circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4"/><path d="M8 4.8v.5"/>`,
+  lock: `<rect x="3.4" y="7" width="9.2" height="6.4" rx="1.6"/><path d="M5.6 7V5.4a2.4 2.4 0 0 1 4.8 0V7"/>`,
+  redo: `<path d="M12.6 8a4.6 4.6 0 1 1-1.6-3.5"/><path d="M12.8 2.6v2.9h-2.9"/>`,
+  clock: `<circle cx="8" cy="8" r="5.8"/><path d="M8 4.8V8l2.2 1.6"/>`,
+};
+const glyph = (d, cls = '') => `<svg class="g ${cls}" viewBox="0 0 16 16" fill="none"
+  stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c]));
+
+/* --------------------------- shell chrome --------------------------- */
+const CHEV = `<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 8 10.5l4-4"/></svg>`;
+function renderScope() {
+  document.getElementById('scope').innerHTML = `
+    <div class="vessel">
+      <button class="project">${glyph(SVG.folder)}argo${CHEV}</button>
+      <span class="divider"></span>
+      <button class="checkout">${glyph(SVG.branch)}main${CHEV}</button>
+    </div>`;
+}
+
+/* --------------------------- roster --------------------------- */
+/* #502's settled row, with one addition this ticket forces: an unanswered Permission has to
+   be legible without opening the Session, so the row carries `Needs input` and an amber dot. */
+const dotClass = (s, needs) => s.access === 'external' ? 'hollow' : needs ? 'attn' : s.state;
+const rowWord = (s, needs) => needs ? 'Needs input' : null;
+
+function renderRoster(sel, needsInput) {
+  document.getElementById('roster').innerHTML = sessions.map(s => {
+    const needs = needsInput && s.id === sel.id;
+    const w = rowWord(s, needs);
+    return `
+    <div class="row ${s.id === sel.id ? 'sel' : ''} ${s.access === 'external' ? 'ext' : ''}"
+         onclick="pickSession('${s.id}')">
+      <div class="flex g8">
+        <span class="dot ${dotClass(s, needs)}"></span>
+        <span class="title grow">${esc(s.title)}</span>
+        ${w ? `<span class="badge">${w}</span>` : ''}
+      </div>
+      <div class="flex g8" style="padding-left:14px">
+        <span class="meta grow">${esc(s.branch)}</span>
+        ${s.state !== 'running' && s.seen ? `<span class="time">${s.seen} ago</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* --------------------------- deck header --------------------------- */
+/* #502 variant A, trimmed: the context column is not what this ticket is about, so the band
+   carries identity and one status word — including the `Needs input` this ticket introduces. */
+function renderHeader(s, needsInput) {
+  const statusWord = needsInput ? `<span class="fact warn">Needs input</span>`
+    : s.state === 'running' ? `<span class="working"><i></i>Running</span>`
+    : `<span class="fact dim">Idle</span>`;
+  document.getElementById('hdr').innerHTML = `
+    <div class="band">
+      <div class="col g2 grow">
+        <span class="h-title">${esc(s.title)}</span>
+        <div class="factline">
+          <span class="fact mono dim"><span class="gitline">${glyph(s.worktree ? SVG.worktree : SVG.branch)}<span>${esc(s.branch)}</span></span></span>
+          <span class="dotsep">·</span>
+          <span class="fact dim">${s.cli} · ${s.model}</span>
+          ${s.ticket ? `<span class="dotsep">·</span><span class="fact link">Issue ${s.ticket} ↗</span>` : ''}
+          ${s.access !== 'managed' ? `<span class="dotsep">·</span><span class="fact ${s.access === 'orphaned' ? 'warn' : 'dim'}">${s.access === 'orphaned' ? 'orphaned' : 'read-only'}</span>` : ''}
+        </div>
+      </div>
+      ${statusWord}
+    </div>
+    <div class="tabslot">
+      <span class="tab on">Activity</span><span class="tab">Delivery</span>
+    </div>`;
+}
+
+/* --------------------------- feed --------------------------- */
+const BASE_FEED = [
+  { k:'Search', v:`<code>rg "scroll anchor" apps/macOS</code> · 41 matches · 180ms` },
+  { k:'Read',   v:`<code>CockpitPresentation.swift</code> · 142 lines` },
+  { k:'Message',v:`The anchor is recomputed on every projection, which is why it slips after a compaction.` },
+  { k:'Edit',   v:`<span class="add">+18</span> <span class="rem">−6</span> &nbsp;<code>SessionFeedView.swift</code>` },
+];
+
+function userRow(text, atts, fresh) {
+  const chips = atts && atts.length
+    ? `<div class="fr you-attach"><span class="k"></span><span class="v"><span class="tray">${atts.map(a => attChip(a, false)).join('')}</span></span></div>` : '';
+  return `<div class="fr user ${fresh ? 'fresh' : ''}"><span class="k">You</span><span class="v">${esc(text)}</span></div>${chips}`;
+}
+
+function renderFeed(st, s) {
+  const rows = [...BASE_FEED];
+  let html = rows.map(r => `<div class="fr"><span class="k">${r.k}</span><span class="v">${r.v}</span></div>`).join('');
+
+  if (st.k === 'sent') {
+    html += userRow('Fix the caption, not the sort — the sort is right.', [], true);
+    html += `<div class="fr"><span class="k"></span><span class="v"><span class="working"><i></i>Working…</span></span></div>`;
+  }
+  if (st.k === 'running' || st.k === 'queued') {
+    html += userRow('Check whether SessionRow reads the same field twice.', [], false);
+    html += `<div class="fr"><span class="k">Read</span><span class="v"><code>SessionRow.swift</code> · 88 lines</span></div>`;
+    html += `<div class="fr"><span class="k"></span><span class="v"><span class="working"><i></i>Working…</span></span></div>`;
+  }
+  if (st.k === 'perm' || st.k === 'perm-edit') {
+    html += userRow('Run the roster suite and push if it is green.', [], false);
+    html += `<div class="fr pending"><span class="k">${st.k === 'perm' ? 'Bash' : 'Edit'}</span>
+      <span class="v dim">waiting for you${variant === 'A' ? '' : ' — see the prompt'}</span></div>`;
+    if (variant === 'A') html += permissionInline(st);
+  }
+  if (st.k === 'expired') {
+    html += userRow('Run the roster suite and push if it is green.', [], false);
+    /* Expired is its own word. "Denied" would claim a decision, and nobody made one. */
+    html += `<div class="fr interrupt"><span class="k">Bash</span>
+      <span class="v">Permission expired after 5m — denied, unanswered. <code>swift test --filter SessionRoster</code></span></div>`;
+    html += `<div class="fr"><span class="k">Message</span><span class="v">I could not run the tests — the permission request timed out. Want me to try again?</span></div>`;
+  }
+  if (st.k === 'failed') {
+    html += userRow('Check whether SessionRow reads the same field twice.', [], false);
+  }
+  if (st.k === 'external') {
+    html = rows.map(r => `<div class="fr"><span class="k">${r.k}</span><span class="v">${r.v}</span></div>`).join('');
+  }
+  document.getElementById('feed').innerHTML = html;
+  const feed = document.getElementById('feed');
+  feed.scrollTop = feed.scrollHeight;
+}
+
+/* --------------------------- attachment chips --------------------------- */
+/* ONE chip shape for every source. A pasted screenshot and a dropped file differ only in the
+   name the chip derives, because the user's model of "I gave the agent this" is one thing. */
+function attChip(a, removable = true) {
+  const lead = a.thumb
+    ? `<img class="thumb" src="${a.thumb}" alt="" />`
+    : `<span class="ico">${glyph(a.kind === 'code' ? SVG.code : SVG.doc)}</span>`;
+  return `<span class="att" title="${esc(a.name)} · ${a.size}">
+    ${lead}<span class="nm">${esc(a.name)}</span><span class="sz">${a.size}</span>
+    ${removable ? `<button class="x" aria-label="Remove ${esc(a.name)}" onclick="removeAtt('${esc(a.name)}')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">${SVG.x}</svg>
+    </button>` : ''}
+  </span>`;
+}
+const tray = () => ui.atts.length ? `<div class="tray">${ui.atts.map(a => attChip(a)).join('')}</div>` : '';
+function removeAtt(name) { ui.atts = ui.atts.filter(a => a.name !== name); render(); }
+
+/* --------------------------- seam lines --------------------------- */
+const seamFor = st => {
+  if (st.k === 'failed') return `
+    <div class="seam crit">
+      ${glyph(SVG.warn)}<span><b>Send failed</b> — the session’s channel is not accepting input. Your message is still here.</span>
+      <span class="grow"></span>
+      <button class="inline" onclick="retry()">${glyph(SVG.redo)} Retry</button>
+    </div>`;
+  if (st.k === 'draft') return `
+    <div class="seam">${glyph(SVG.clock)}<span>Draft kept from 51m ago</span></div>`;
+  if (st.k === 'noattach') return `
+    <div class="seam">${glyph(SVG.info)}<span>This adapter takes no attachments — dropped files are refused rather than silently dropped.</span></div>`;
+  return '';
+};
+
+/* --------------------------- Permission --------------------------- */
+const PERMS = {
+  bash: {
+    tool: 'Bash',
+    why: 'wants to run a command in this Workspace',
+    target: 'swift test --filter SessionRosterProjectionTests 2>&1 | tail -40',
+    where: '~/Developer/argo/.claude/worktrees/argo+535-session-drive-port',
+  },
+  edit: {
+    tool: 'Edit',
+    why: 'wants to write to a file',
+    target: 'apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Session/SessionFeedView.swift\n\n'
+          + '-   let anchor = rows.last?.id\n'
+          + '+   let anchor = projection.anchorID',
+    where: '+1 −1 · 1 hunk',
+  },
+};
+
+function permBody(p, sheet) {
+  return `
+    <div class="perm-head">
+      <span class="lbl">${glyph(SVG.lock)} Permission</span>
+      <span class="grow"></span>
+      <span class="left" id="fuse-left">denies in 0:45</span>
+    </div>
+    <div class="perm-tool" style="margin-top:var(--s-snug)">
+      <span class="name">${p.tool}</span><span class="why">${p.why}</span>
+    </div>
+    <div class="perm-target">${esc(p.target)}</div>
+    <div class="flex g6" style="margin-bottom:var(--s-comfortable)">
+      <span class="fact dim mono">${esc(p.where)}</span>
+    </div>
+    <div class="perm-acts">
+      <button class="pbtn allow" id="perm-allow" onclick="decide('allow')">Allow <span class="kbd">⏎</span></button>
+      <button class="pbtn deny" onclick="decide('deny')">Deny <span class="kbd">esc</span></button>
+      <span class="grow"></span>
+      <button class="pbtn quiet" onclick="decide('always')">Always allow ${p.tool} here</button>
+    </div>
+    <div class="fuse"><i id="fuse-bar"></i></div>`;
+}
+
+/* A — the prompt sits in the feed at the Tool Call that raised it, indented to the value
+   column so it reads as that call's own question rather than as a new turn. */
+const permissionInline = st => `<div class="permA">${permBody(st.k === 'perm-edit' ? PERMS.edit : PERMS.bash)}</div>`;
+
+/* C — a sheet over the DECK only. The roster stays readable behind it, so the other Sessions
+   are still legible while one of them is blocking. */
+function renderSheet(st) {
+  const host = document.getElementById('sheet');
+  if (variant !== 'C' || !(st.k === 'perm' || st.k === 'perm-edit')) { host.innerHTML = ''; return; }
+  host.innerHTML = `<div class="sheet-scrim"><div class="sheet" role="dialog" aria-label="Permission">
+    ${permBody(st.k === 'perm-edit' ? PERMS.edit : PERMS.bash, true)}</div></div>`;
+}
+
+/* --------------------------- composer variants --------------------------- */
+const sendGlyph = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+  stroke-linecap="round" stroke-linejoin="round">${SVG.arrowUp}</svg>`;
+const stopGlyph = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">${SVG.stop}</svg>`;
+const clipBtn = s => s.attachOK ? `<button class="clip" aria-label="Attach a file" title="Attach a file"
+  onclick="addFile()">${glyph(SVG.clip)}</button>` : '';
+
+const queuedChip = () => ui.queue ? `
+  <div class="queued">
+    <span class="ql">Queued</span>
+    <span class="qt grow">${esc(ui.queue)}</span>
+    <button class="x" aria-label="Cancel queued message" onclick="ui.queue=null;render()"
+      style="border:none;background:none;cursor:pointer;color:var(--text-3);width:18px;height:18px">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+        style="width:10px;height:10px">${SVG.x}</svg></button>
+  </div>` : '';
+
+const placeholder = s => s.state === 'running' ? 'Queue a follow-up…' : `Message ${s.cli}…`;
+const dropwash = () => ui.dragging
+  ? `<div class="dropwash">${ui.attachOK === false ? 'This adapter takes no attachments' : 'Drop to attach'}</div>` : '';
+
+const ta = s => `<textarea class="ta" id="ta" rows="1" placeholder="${placeholder(s)}"
+  oninput="ui.text=this.value;grow(this)" onkeydown="keys(event)">${esc(ui.text)}</textarea>`;
+
+const composer = {
+  /* A — the Dock's own attached seam. 40pt at rest, exactly the Dock height it replaces;
+     it grows downward-into the deck rather than floating, so the feed's bottom edge is
+     always the composer's top edge and nothing is ever hidden behind glass. */
+  A: (s, st) => `
+    <div class="cA" ondragover="drag(event,1)" ondragleave="drag(event,0)" ondrop="drop(event)">
+      ${dropwash()}
+      ${seamFor(st)}
+      ${queuedChip()}
+      ${tray()}
+      <div class="fieldrow">
+        ${clipBtn(s)}
+        <span class="grow">${ta(s)}</span>
+        <span class="hint">${s.state === 'running' ? 'esc stops' : '⇧⏎ newline'}</span>
+        ${s.state === 'running'
+          ? `<button class="send round stop" title="Stop this Turn  esc" onclick="stop()">${stopGlyph}</button>`
+          : `<button class="send round" title="Send  ⏎" onclick="send()" ${ui.text.trim() || ui.atts.length ? '' : 'disabled'}>${sendGlyph}</button>`}
+      </div>
+    </div>`,
+
+  /* B — a bounded Liquid Glass vessel floating over the feed, the same recipe the approved
+     study uses for the deck's other control vessels. The feed runs under it and fades. */
+  B: (s, st) => `
+    <div class="cB-wrap">
+      ${seamFor(st)}
+      <div class="cB" ondragover="drag(event,1)" ondragleave="drag(event,0)" ondrop="drop(event)">
+        ${dropwash()}
+        ${queuedChip()}
+        ${tray()}
+        <div class="fieldrow"><span class="grow">${ta(s)}</span></div>
+        <div class="footrow">
+          ${clipBtn(s)}
+          <span class="hint">⇧⏎ newline${s.state === 'running' ? ' · esc stops' : ''}</span>
+          <span class="grow"></span>
+          ${s.state === 'running'
+            ? `<button class="send stop" style="padding:0 var(--s-comfortable);height:26px" onclick="stop()">${stopGlyph} Stop</button>`
+            : `<button class="send" style="padding:0 var(--s-comfortable);height:26px" onclick="send()"
+                 ${ui.text.trim() || ui.atts.length ? '' : 'disabled'}>Send <span class="kbd" style="background:rgba(255,255,255,.22);border-color:transparent;color:#fff">⏎</span></button>`}
+        </div>
+      </div>
+    </div>`,
+
+  /* C — an always-multi-line docked panel with its own toolbar. Generous by default: it
+     says "write something considered here" rather than "type a line". */
+  C: (s, st) => `
+    <div class="cC-seam">${seamFor(st)}</div>
+    <div class="cC" ondragover="drag(event,1)" ondragleave="drag(event,0)" ondrop="drop(event)">
+      ${dropwash()}
+      ${queuedChip()}
+      ${tray()}
+      ${ta(s)}
+      <div class="toolbar">
+        ${clipBtn(s)}
+        <span class="chip dim">${s.cli} · ${s.model}</span>
+        <span class="grow"></span>
+        <span class="hint">⇧⏎ newline</span>
+        ${s.state === 'running'
+          ? `<button class="send stop" onclick="stop()">${stopGlyph} Stop</button>`
+          : `<button class="send" onclick="send()" ${ui.text.trim() || ui.atts.length ? '' : 'disabled'}>Send ⏎</button>`}
+      </div>
+    </div>`,
+};
+
+/* B answers a Permission in the composer's own slot: one input surface, whichever question
+   is live. The field is not merely disabled — it is replaced, so there is nothing to type
+   into while the agent is waiting on you. */
+const permissionComposer = (s, st) => `
+  <div class="cB-wrap">
+    <div class="cB permB">
+      <div class="permB-body">${permBody(st.k === 'perm-edit' ? PERMS.edit : PERMS.bash)}</div>
+    </div>
+  </div>`;
+
+/* Degraded: the composer is ABSENT, replaced by one line saying why. A disabled field still
+   invites a click; an absence with a reason does not. */
+const noInput = s => {
+  const orphan = s.access === 'orphaned';
+  return `
+  <div class="noinput">
+    ${glyph(orphan ? SVG.warn : SVG.lock)}
+    <span class="grow">${orphan
+      ? `<b>Orphaned</b> — the steering channel died with the process that owned it. Argo can still read this Session, but cannot type into it.`
+      : `<b>Read-only</b> — Argo did not spawn this Session, so there is nothing to steer. Permission here is unobservable, not granted.`}</span>
+    ${orphan ? `<button>New Session on this branch</button>` : ''}
+  </div>`;
+};
+
+/* --------------------------- actions --------------------------- */
+function grow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 132) + 'px';
+  const btn = document.querySelector('.send:not(.stop)');
+  if (btn) btn.disabled = !(el.value.trim() || ui.atts.length);
+}
+function keys(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  if (e.key === 'Escape') { e.preventDefault(); e.target.blur(); }
+}
+function send() {
+  const s = session();
+  if (!ui.text.trim() && !ui.atts.length) return;
+  if (s.state === 'running') { ui.queue = ui.text.trim(); ui.text = ''; ui.atts = []; render(); return; }
+  ui.turn = [ui.text.trim(), ui.atts.slice()];
+  ui.text = ''; ui.atts = []; ui.fresh = true;
+  render();
+  setTimeout(() => { ui.fresh = false; }, 1500);
+}
+function stop() { alert('ESC to the PTY. The Turn stops, the Session survives, and the feed records the interrupt.'); }
+function retry() { ui.failed = false; setState('sent'); }
+function addFile() { ui.atts = ui.atts.concat([FILES.log]); render(); }
+function drag(e, on) {
+  e.preventDefault();
+  if (ui.dragging !== !!on) { ui.dragging = !!on; render(); }
+}
+function drop(e) {
+  e.preventDefault(); ui.dragging = false;
+  if (session().attachOK) ui.atts = ui.atts.concat([FILES.shot]);
+  render();
+}
+function decide(kind) {
+  ui.permissionResolved = kind;
+  clearInterval(fuseTimer);
+  setState(kind === 'deny' ? 'expired' : 'running');
+}
+function pickSession(id) {
+  const st = STATES.find(s => s.k === stateKey);
+  if (st && st.sid === id) return;
+  const next = STATES.find(s => s.sid === id);
+  if (next) setState(next.k);
+}
+
+/* --------------------------- the fuse --------------------------- */
+/* The real patience window is the hook's `timeout` — minutes, not seconds. It runs at 45s
+   here so expiry can actually be watched rather than described. */
+let fuseTimer = null;
+function startFuse() {
+  clearInterval(fuseTimer);
+  const bar = document.getElementById('fuse-bar');
+  const left = document.getElementById('fuse-left');
+  if (!bar) return;
+  let t = 45;
+  const tick = () => {
+    bar.style.transform = `scaleX(${t / 45})`;
+    left.textContent = `denies in 0:${String(t).padStart(2, '0')}`;
+    if (t <= 0) { clearInterval(fuseTimer); setState('expired'); }
+    t -= 1;
+  };
+  tick();
+  fuseTimer = setInterval(tick, 1000);
+}
+
+/* --------------------------- render --------------------------- */
+const session = () => {
+  const st = STATES.find(s => s.k === stateKey);
+  const s = { ...sessions.find(x => x.id === st.sid) };
+  s.attachOK = st.k === 'noattach' ? false : s.attach;
+  return s;
+};
+
+function applyStatePresets(st) {
+  ui.text = ''; ui.atts = []; ui.queue = null; ui.dragging = false; ui.failed = false;
+  if (st.k === 'typing') ui.text = LOREM_4;
+  if (st.k === 'ceiling') ui.text = LOREM_LONG;
+  if (st.k === 'draft') ui.text = DRAFT;
+  if (st.k === 'failed') ui.text = 'Check whether SessionRow reads the same field twice, and pull it into the projection if so.';
+  if (st.k === 'attach') { ui.atts = [FILES.shot, FILES.log, FILES.swift]; ui.text = 'This is what the roster does after a compaction — see the gap at the top.'; }
+  if (st.k === 'paste')  { ui.atts = [FILES.paste]; ui.text = 'Same bug, from the other machine.'; }
+  if (st.k === 'dragover') { ui.dragging = true; ui.text = ''; }
+  if (st.k === 'noattach') { ui.dragging = false; ui.text = ''; }
+  if (st.k === 'queued') ui.queue = 'And when that is green, open the PR against main.';
+  if (st.k === 'sent') ui.fresh = true;
+}
+
+function render() {
+  const st = STATES.find(s => s.k === stateKey);
+  const s = session();
+  const isPerm = st.k === 'perm' || st.k === 'perm-edit';
+  const deck = document.getElementById('deck');
+  deck.classList.toggle('floating', variant === 'B');
+
+  renderScope();
+  renderRoster(s, isPerm);
+  renderHeader(s, isPerm);
+  renderFeed(st, s);
+  renderSheet(st);
+
+  const host = document.getElementById('composer');
+  if (s.access !== 'managed') host.innerHTML = noInput(s);
+  else if (isPerm && variant === 'B') host.innerHTML = permissionComposer(s, st);
+  else host.innerHTML = composer[variant](s, st);
+
+  const t = document.getElementById('ta');
+  if (t) { grow(t); }
+  if (isPerm) { startFuse(); const a = document.getElementById('perm-allow'); if (a) a.focus(); }
+  else clearInterval(fuseTimer);
+
+  document.getElementById('switch-label').textContent =
+    `${variant} — ${NAMES[variant]} · ${PERM_NAMES[variant]}`;
+  document.getElementById('note').textContent = st.note;
+  document.getElementById('state-picker').value = st.k;
+}
+
+/* --------------------------- switcher --------------------------- */
+function buildPicker() {
+  const sel = document.getElementById('state-picker');
+  const groups = [...new Set(STATES.map(s => s.g))];
+  sel.innerHTML = groups.map(g =>
+    `<optgroup label="${g}">${STATES.filter(s => s.g === g)
+      .map(s => `<option value="${s.k}">${s.label}</option>`).join('')}</optgroup>`).join('');
+}
+function url() {
+  history.replaceState(null, '', `?variant=${variant}&state=${stateKey}`);
+}
+function setState(k) {
+  stateKey = k;
+  applyStatePresets(STATES.find(s => s.k === k));
+  url(); render();
+}
+function cycleVariant(d) {
+  variant = VARIANTS[(VARIANTS.indexOf(variant) + d + VARIANTS.length) % VARIANTS.length];
+  url(); render();
+}
+function cycleState(d) {
+  const i = STATES.findIndex(s => s.k === stateKey);
+  setState(STATES[(i + d + STATES.length) % STATES.length].k);
+}
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.key === 'ArrowLeft')  cycleVariant(-1);
+  if (e.key === 'ArrowRight') cycleVariant(1);
+  if (e.key === 'ArrowUp')   { e.preventDefault(); cycleState(-1); }
+  if (e.key === 'ArrowDown') { e.preventDefault(); cycleState(1); }
+  /* Permission is answerable from the keyboard without reaching for the prompt first. */
+  const st = STATES.find(s => s.k === stateKey);
+  if (st.k === 'perm' || st.k === 'perm-edit') {
+    if (e.key === 'Enter')  { e.preventDefault(); decide('allow'); }
+    if (e.key === 'Escape') { e.preventDefault(); decide('deny'); }
+  }
+});
+/* A real paste of an image makes the same chip a drop does. */
+addEventListener('paste', e => {
+  if (!session().attachOK) return;
+  ui.atts = ui.atts.concat([FILES.paste]);
+  render();
+});
+
+buildPicker();
+applyStatePresets(STATES.find(s => s.k === stateKey));
+render();
+</script>
+</body>
+</html>
