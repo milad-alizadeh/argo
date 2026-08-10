@@ -18,6 +18,19 @@ public enum ArgoSymbol {
     public static let removeProject = "minus.circle"
     /// The checkout a Project is on.
     public static let branch = "arrow.triangle.branch"
+    /// A Session working in a checkout of its OWN rather than in the Project's. Two planes
+    /// stacked, because that is what a worktree is — a second copy of the same repository beside
+    /// the one everything else is looking at.
+    public static let worktree = "square.on.square"
+    /// Files changed and not yet committed. The same pencil the feed spends on an edit,
+    /// deliberately: both marks mean a file was changed, and two marks for one meaning is how a
+    /// reader learns that a mark means nothing in particular.
+    public static let uncommitted = edited
+    /// Commits made and not yet pushed — the arrow points the way they have not gone.
+    public static let unpushed = "arrow.up"
+    /// A reading that needs decoding once: the mark that opens the explanation beside it. An `i`
+    /// rather than a `?` — what it opens is what these lines MEAN, not help with using the app.
+    public static let about = "info.circle"
     /// The disclosure on a control that opens something BELOW it — a menu, a drawer under its
     /// vessel.
     public static let disclosure = "chevron.down"

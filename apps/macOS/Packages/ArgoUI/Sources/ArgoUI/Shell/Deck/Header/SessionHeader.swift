@@ -1,16 +1,18 @@
 import SwiftUI
 
-/// The deck's top zone: the Session's own title, and — only when it is not a plain managed
-/// Session — what you can do with it.
+/// The deck's top zone: the Session's own title, what you can do with it when that is not the
+/// default, and the facts that say what it is working on and with — its branch and that branch's
+/// state, its CLI and model, and the issue it serves.
 ///
 /// It draws no ground and no rule of its own. The deck is one opaque plane and the header reads as
 /// one region with the tabs beneath it, which is why the approved study puts no separator between
 /// the two.
 ///
-/// The mark beside the title is set as words rather than as a chip, which is how the study draws
-/// it. A second badge drawn by hand is the shape `ArgoBadge` warns about, and the primitive it
-/// would be borrowed from carries a COUNT — a capsule around one quiet word would be louder than
-/// the fact deserves at the top of every read-only reading.
+/// The facts sit UNDER the title, not beside it, which is what the approved study draws
+/// (`docs/designs/prototypes/roster-header-prototype.html`, variant A). Beside it, the title and
+/// the facts compete for one line's width at every window size, and the title — the largest line
+/// in the cockpit and the thing the zone exists to say — is the one that loses. Stacked, the title
+/// gets the whole width and the facts get their own.
 struct SessionHeader: View {
     @Environment(\.argo) private var argo
 
@@ -19,20 +21,37 @@ struct SessionHeader: View {
     let header: SessionHeaderProjection.Header?
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.comfortable) {
-            if let header {
-                title(header)
-                mark(header)
-                branch(header)
-            }
-            // The trailing space the later header tickets fill — the branch's state, the CLI and
-            // model, the linked issue, and the context reading on the right edge.
+        // Centred rather than baseline-aligned, because only one half of this line is type: the
+        // instrument on the trailing edge is a reading over a bar, and a bar has no baseline to
+        // sit on. The identity beside it is two stacked lines, which has no one baseline either.
+        HStack(alignment: .center, spacing: ArgoSpacing.comfortable) {
+            identity
+                // Combined here and NOT over the whole header: combining over the instrument would
+                // swallow its ⓘ, and a control nothing can address is a panel nobody can open.
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(header?.announcement ?? "No Session selected")
+                // Above the Spacer, which otherwise takes the slack first and cuts a title that
+                // had room.
+                .layoutPriority(1)
             Spacer(minLength: ArgoSpacing.loose)
+            if let header {
+                SessionHeaderContext(context: header.context)
+            }
         }
         .padding(.horizontal, ArgoSpacing.section)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(header?.announcement ?? "No Session selected")
+        .accessibilityElement(children: .contain)
+    }
+
+    /// Tight on purpose: the title and the line under it are ONE identity, and a step of the
+    /// ordinary rhythm between them would read as two stacked regions.
+    private var identity: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
+            if let header {
+                title(header)
+                SessionHeaderFacts(header: header)
+            }
+        }
     }
 
     /// The largest interface line in the cockpit, and the one thing on the header that is allowed
@@ -44,45 +63,6 @@ struct SessionHeader: View {
             .foregroundStyle(argo.color.text.primary)
             .lineLimit(1)
             .truncationMode(.tail)
-    }
-
-    /// The branch. A ref is addressed from both ends — the ticket at the head, the subject at the
-    /// tail — so where the line cannot hold one it is cut at the middle, which is the part that
-    /// repeats across every branch in a repo.
-    ///
-    /// Under the glyph the vessel already spends on a branch, so the header and the toolbar name
-    /// the same kind of thing the same way — and so the ref needs no word introducing it.
-    @ViewBuilder private func branch(_ header: SessionHeaderProjection.Header) -> some View {
-        if let branch = header.branch {
-            Label {
-                Text(branch)
-            } icon: {
-                ArgoGlyph(ArgoSymbol.branch, .inline)
-            }
-            .labelStyle(.argo(ArgoTypography.control))
-            .foregroundStyle(argo.color.text.secondary)
-            .lineLimit(1)
-            .truncationMode(.middle)
-        }
-    }
-
-    /// Quiet by construction: the mark says the Session is one you cannot drive, which is worth
-    /// reading once and never worth competing with the title beside it.
-    ///
-    /// Set in capitals, which is the study's treatment and a property of the TYPE rather than of
-    /// the vocabulary — the word itself, and the sentence explaining it, are the projection's.
-    @ViewBuilder private func mark(_ header: SessionHeaderProjection.Header) -> some View {
-        if let access = header.access {
-            Text(access.word)
-                .argoText(ArgoTypography.caption)
-                .textCase(.uppercase)
-                .foregroundStyle(argo.color.text.tertiary)
-                .lineLimit(1)
-                .help(access.detail)
-                // It must survive a title long enough to need cutting: a fact that disappears at
-                // the width real titles reach is a fact drawn only in fixtures.
-                .layoutPriority(1)
-        }
     }
 }
 

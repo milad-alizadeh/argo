@@ -63,9 +63,9 @@ struct ChurningRosterSpecimen: View {
         model: "claude-opus-5",
         workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
             + "ticket-498-roster-order-freeze",
-        branch: "argo/#498-roster-order-freeze",
         access: .managed,
         status: .running,
+        workspace: .init(kind: .worktree, branch: "argo/#498-roster-order-freeze"),
     )
 }
 

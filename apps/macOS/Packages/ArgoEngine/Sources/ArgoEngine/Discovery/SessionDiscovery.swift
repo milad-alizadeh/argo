@@ -18,6 +18,12 @@ public actor SessionDiscovery {
     /// be opened deliberately, but not what the cockpit is watching.
     public static let workingSetWindow: TimeInterval = 24 * 60 * 60
 
+    /// Which CLI the swept records belong to. `nonisolated` because it is the store's own
+    /// constant — the Hub reads it while publishing the roster, and hopping onto this actor to
+    /// learn a `let` would make a synchronous read asynchronous for nothing. Internal, because
+    /// the Hub is the only thing that has to ask.
+    nonisolated let cli: AgentCLI
+
     private let store: TranscriptRecordStore
     /// Transcript path → the working directory read out of its head.
     ///
@@ -28,6 +34,7 @@ public actor SessionDiscovery {
 
     public init(store: TranscriptRecordStore = .claudeCode) {
         self.store = store
+        self.cli = store.cli
     }
 
     /// The transcripts to tail for one Project, newest first.

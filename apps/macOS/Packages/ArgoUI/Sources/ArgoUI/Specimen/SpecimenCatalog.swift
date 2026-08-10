@@ -28,6 +28,12 @@ public enum Specimen: String, CaseIterable, Sendable {
     case sessionHeader
     case externalSessionHeader
     case orphanedSessionHeader
+    case longBranchSessionHeader
+    case contextOk
+    case contextWarn
+    case contextCrit
+    case contextUnknown
+    case contextGuide
     case feed
     case feedCalls
     case feedNarration

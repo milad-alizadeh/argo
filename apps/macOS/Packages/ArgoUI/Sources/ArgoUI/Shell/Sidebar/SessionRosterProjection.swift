@@ -16,9 +16,10 @@ enum SessionRosterProjection {
         /// move under a reader mid-scan the way a branch does, and because it is the actionable
         /// one — where you would `cd`, and what says two Sessions cannot collide.
         ///
-        /// Absent for a Session in the Project's shared main checkout, and for one whose record
-        /// never said where it ran. A line spent on the folder every unisolated Session shares
-        /// tells nothing apart, which is exactly what D30 deletes.
+        /// Absent for a Session in the Project's own checkout — a line spent on the folder every
+        /// unisolated Session shares tells nothing apart, which is exactly what D30 deletes —
+        /// and absent again where Argo has not read git, because a label is a claim that the
+        /// folder IS a worktree, and an unread kind is not a `main` one.
         let worktree: String?
         /// Never drawn either: the branch belongs to the session header. Kept so the row's copy
         /// action can still hand it over.
@@ -81,23 +82,16 @@ enum SessionRosterProjection {
 
     /// `now` is a parameter because an age is arithmetic against a moment, and a projection that
     /// read the clock itself would answer differently on every call with nothing able to say so.
-    /// `mainCheckout` for the same reason, and it takes no default: an omitted one would label
-    /// the shared checkout on every row — the constant D30 deletes — and would do it silently.
-    static func rows(
-        from sessions: [CockpitPresentation.Session],
-        mainCheckout: String?,
-        now: Date = Date(),
-    )
-        -> [Row] {
+    static func rows(from sessions: [CockpitPresentation.Session], now: Date = Date()) -> [Row] {
         let nowMs = now.epochMs
-        let worktrees = worktrees(of: sessions, mainCheckout: mainCheckout)
+        let worktrees = worktrees(of: sessions)
         return zip(sessions, worktrees).map { session, worktree in
             Row(
                 id: session.id,
                 title: session.title,
                 location: session.workspaceLocation,
                 worktree: worktree,
-                branch: session.branch,
+                branch: session.workspace?.branch,
                 isReadOnly: isReadOnly(session.access),
                 age: age(status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
                 state: state(for: session.status),
@@ -110,26 +104,17 @@ enum SessionRosterProjection {
     /// name can be and still tell one Session from another is a question about its neighbours,
     /// which is why this is one pass over the list rather than a per-row derivation.
     ///
-    /// The shared checkout is dropped BEFORE the labels are drawn, so it is not a rival either —
-    /// a `main`-checkout row is silent, and it must not push the worktree rows into longer names
-    /// to be told apart from something nobody can see.
-    private static func worktrees(
-        of sessions: [CockpitPresentation.Session], mainCheckout: String?,
-    )
-        -> [String?] {
-        let shared = normalisedPath(mainCheckout)
-        return DistinguishingLabel.labels(for: sessions.map {
-            let location = normalisedPath($0.workspaceLocation)
-            return location == shared ? nil : location
+    /// Every row that draws no label is dropped BEFORE the labels are decided, so a silent row is
+    /// not a rival either: it must not push the worktree rows into longer names to be told apart
+    /// from something nobody can see.
+    ///
+    /// Which folders are worktrees is git's answer (`WorkspaceProjection.Kind`) rather than a
+    /// shape read off the path — Argo's own worktrees live INSIDE the checkout they branch from,
+    /// so no amount of prefix-matching separates the two.
+    private static func worktrees(of sessions: [CockpitPresentation.Session]) -> [String?] {
+        DistinguishingLabel.labels(for: sessions.map {
+            $0.workspace?.kind == .worktree ? $0.workspaceLocation : nil
         })
-    }
-
-    /// A path compared as a path: one trailing slash apart is one folder, and reading those as two
-    /// would put the shared checkout's own name back on the row it was taken off. The root is left
-    /// alone — dropping ITS slash leaves the empty string, which is no longer a path.
-    private static func normalisedPath(_ location: String?) -> String? {
-        guard let location, location != "/", location.hasSuffix("/") else { return location }
-        return String(location.dropLast())
     }
 
     /// Whether the whole row is drawn as a Session nobody here can drive.

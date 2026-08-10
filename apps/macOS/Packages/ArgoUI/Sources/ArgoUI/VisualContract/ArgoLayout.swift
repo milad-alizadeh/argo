@@ -28,6 +28,24 @@ public enum ArgoLayout {
     // measurements, so the pixels are the only source for these.
     public static let deckHeaderHeight: CGFloat = 56
     public static let deckTabSlotHeight: CGFloat = 40
+
+    /// The context instrument on the header's trailing edge: a label and a reading over a bar.
+    ///
+    /// A fixed width rather than a share of the line, because it is the thing the line must NOT
+    /// give — the branch beside it is what gives way (#502, story 25), and an instrument that
+    /// shrank with the window would move its two threshold ticks on every resize.
+    public static let contextInstrumentWidth: CGFloat = 200
+    /// Thin enough to read as a gauge rather than as a control: nothing here is draggable, and a
+    /// bar the height of a scrollbar invites a grab.
+    public static let contextBarHeight: CGFloat = 3
+    /// How far a threshold tick stands proud of the bar on each side. Without the overshoot a
+    /// hairline inside a 3pt bar is indistinguishable from the fill's own edge.
+    public static let contextBarTickOvershoot: CGFloat = 2
+    /// The ⓘ panel. Wide enough for a sentence at the caption size and no wider — it hangs off a
+    /// 10pt glyph, not over the deck.
+    public static let contextGuideWidth: CGFloat = 320
+    /// The threshold column in that panel, so the two meanings beside it start on one edge.
+    public static let contextGuideThresholdWidth: CGFloat = 74
     /// Where the rail opens. It is a starting width now rather than a fixed one — the seam beside
     /// it moves.
     public static let agentsRailWidth: CGFloat = 256

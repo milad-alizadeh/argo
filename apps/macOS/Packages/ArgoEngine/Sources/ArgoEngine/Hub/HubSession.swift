@@ -13,6 +13,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// What Argo can see of the process behind the transcript. Set by the Hub from its own liveness
     /// read; quiet until one has been taken, because ambiguity resolves toward the quieter state.
     public internal(set) var liveness: SessionLiveness = .quiet
+    /// Which agent program wrote this record (`CONTEXT.md` L2). Set by the Hub from the record
+    /// store the transcript was swept out of, or DIRECT from the spawn for a Session Argo
+    /// started; never guessed from the prose inside the file.
+    public internal(set) var cli: AgentCLI?
+    /// The git context of the Session's working directory, as of the last read. Absent until one
+    /// has happened, and absent for a folder git could not answer for — an unread Workspace is
+    /// not a clean one.
+    public internal(set) var workspace: WorkspaceProjection?
     /// What this Session said over the companion channel, where it has one. Absent for every
     /// external Session and for a managed one whose agent has not spoken — which is not a degrade,
     /// only the tier having nothing to say yet.
@@ -30,6 +38,17 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// stream is retained whole and nothing decides on the Hub's side which kinds are worth
     /// keeping. What a reader does not handle it ignores; what it was never given it cannot draw.
     public private(set) var events: [TranscriptEvent] = []
+    /// How full the Session's context is: the tokens the LATEST reported spend was made against.
+    ///
+    /// The last reading rather than a sum of all of them, because this is not what the Session has
+    /// SPENT — it is what it is currently holding, and every request re-sends the whole
+    /// conversation. Summing would count the same context once per turn and read as a Session
+    /// hundreds of times over a window it is nowhere near. It falls as well as rises for the same
+    /// reason: the reading after a compaction is the compacted one, with nothing here to reset.
+    ///
+    /// Absent until a record carries a `usage` object at all, which is the honest gap the header
+    /// renders as `unknown` rather than as an empty context.
+    public private(set) var contextTokens: Int?
     /// The newest moment the records report, where they report one.
     public private(set) var lastActivityAtMs: Int?
     /// The oldest, which is when this Session started — the fact a claim window is matched against.
@@ -80,6 +99,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.sourceURL = nil
         self.title = spawn.title
         self.cwd = spawn.cwd
+        // DIRECT: Argo chose this program and started it.
+        self.cli = spawn.cli
         self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
         self.startedAtMs = spawn.spawnedAtMs
         self.lastStop = spawn.exit == nil ? .endTurn : .cancelled
@@ -120,7 +141,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             observeActivity(outcome.endedAtMs)
         case let .compaction(atMs):
             observeActivity(atMs)
-        case .message, .thought, .plan, .usage, .unreadableLine:
+        case let .usage(usage):
+            contextTokens = usage.contextTokens
+        case .message, .thought, .plan, .unreadableLine:
             break
         }
     }
@@ -155,6 +178,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         events += continuation.events
         cwd = continuation.cwd ?? cwd
         model = continuation.model ?? model
+        // The later half of the chain wins where it read one, and says nothing where it did not: a
+        // resume file with no `usage` in it yet is not a Session that has emptied its context.
+        contextTokens = continuation.contextTokens ?? contextTokens
         branch = continuation.branch ?? branch
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
         observeActivity(continuation.lastActivityAtMs)

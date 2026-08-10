@@ -7,9 +7,14 @@ import Foundation
 /// compiled in.
 public struct TranscriptRecordStore: Sendable, Equatable {
     public let rootURL: URL
+    /// Whose directory this is. Carried by the store rather than inferred from a transcript's
+    /// contents: which CLI wrote a record is a fact about WHERE it was found, and a file swept out
+    /// of Claude Code's folder was written by Claude Code whatever it says inside.
+    public let cli: AgentCLI
 
-    public init(rootURL: URL) {
+    public init(rootURL: URL, cli: AgentCLI) {
         self.rootURL = rootURL.standardizedFileURL
+        self.cli = cli
     }
 
     /// Where Claude Code writes.
@@ -17,6 +22,7 @@ public struct TranscriptRecordStore: Sendable, Equatable {
         TranscriptRecordStore(
             rootURL: FileManager.default.homeDirectoryForCurrentUser
                 .appending(path: ".claude/projects", directoryHint: .isDirectory),
+            cli: .claude,
         )
     }
 

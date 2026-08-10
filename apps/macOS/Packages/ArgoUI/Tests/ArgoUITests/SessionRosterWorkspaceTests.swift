@@ -5,62 +5,48 @@ import Testing
 /// it that the row no longer draws.
 @Suite("Session roster workspace")
 struct SessionRosterWorkspaceTests {
-    private let main = RosterSessionFixture.mainCheckout
+    private let checkout = RosterSessionFixture.checkout
 
     @Test
     func `the row's second line is the worktree its Session is in`() {
         // Two Sessions in one repo: the worktree is what tells them apart, and unlike the
         // branch it cannot move under the reader mid-scan.
-        let rows = SessionRosterProjection.rows(
-            from: [
-                RosterSessionFixture.session(
-                    id: "one",
-                    workspaceLocation: "\(main)/.claude/worktrees/tkt-505",
-                ),
-                RosterSessionFixture.session(
-                    id: "two",
-                    workspaceLocation: "\(main)/.claude/worktrees/tkt-509",
-                ),
-            ],
-            mainCheckout: main,
-        )
+        let rows = SessionRosterProjection.rows(from: [
+            worktreeSession(id: "one", at: "\(checkout)/.claude/worktrees/tkt-505"),
+            worktreeSession(id: "two", at: "\(checkout)/.claude/worktrees/tkt-509"),
+        ])
 
         #expect(rows.map(\.worktree) == ["tkt-505", "tkt-509"])
     }
 
     @Test
-    func `a Session in the shared main checkout carries no second line`() throws {
-        let row = try #require(SessionRosterProjection.rows(
-            from: [RosterSessionFixture.session(id: "shared", workspaceLocation: main)],
-            mainCheckout: main,
-        ).first)
+    func `a Session in the Project's own checkout carries no second line`() throws {
+        let row = try #require(SessionRosterProjection.rows(from: [
+            RosterSessionFixture.session(id: "shared", kind: .main),
+        ]).first)
 
-        // Absent, not the folder's own name: the main checkout is where every unisolated
+        // Absent, not the folder's own name: the shared checkout is where every unisolated
         // Session sits, so naming it on each row spends a line on a constant.
         #expect(row.worktree == nil)
         #expect(!row.announcement.contains("argo"))
     }
 
     @Test
-    func `a trailing slash on either path is the same checkout`() throws {
-        let row = try #require(SessionRosterProjection.rows(
-            from: [RosterSessionFixture.session(id: "shared", workspaceLocation: "\(main)/")],
-            mainCheckout: main,
-        ).first)
+    func `a workspace whose kind Argo has not read carries no second line either`() throws {
+        // The label is a claim that the folder IS a worktree. An unread kind cannot make it,
+        // and `CONTEXT.md`'s degrade-down rule gives it the absent rendering, not the guess.
+        let row = try #require(SessionRosterProjection.rows(from: [
+            RosterSessionFixture.session(id: "unread", kind: nil),
+        ]).first)
 
-        // A path is compared as a path. Two spellings of one folder reading as two would put
-        // the main checkout's own name back on the row it was taken off.
         #expect(row.worktree == nil)
     }
 
     @Test
     func `a Session with no cwd carries no second line rather than a word for one`() throws {
-        let row = try #require(SessionRosterProjection.rows(
-            from: [
-                RosterSessionFixture.session(id: "placeless", workspaceLocation: nil),
-            ],
-            mainCheckout: main,
-        ).first)
+        let row = try #require(SessionRosterProjection.rows(from: [
+            worktreeSession(id: "placeless", at: nil),
+        ]).first)
 
         // Absent, not the roster's `unknown`: a Session whose record never said where it ran
         // has nothing to say here, and a placeholder would read as a folder nobody can find.
@@ -71,60 +57,35 @@ struct SessionRosterWorkspaceTests {
     func `two worktrees with the same leaf name still read apart`() {
         // The leaf alone is the label wherever it is unambiguous; where two Projects hold a
         // worktree of one name, the nearest distinguishing parent joins it.
-        let rows = SessionRosterProjection.rows(
-            from: [
-                RosterSessionFixture.session(
-                    id: "one",
-                    workspaceLocation: "/Users/milad/argo/trees/tkt-537",
-                ),
-                RosterSessionFixture.session(
-                    id: "two",
-                    workspaceLocation: "/Users/milad/cockpit/trees/tkt-537",
-                ),
-                RosterSessionFixture.session(
-                    id: "three",
-                    workspaceLocation: "/Users/milad/argo/trees/tkt-509",
-                ),
-            ],
-            mainCheckout: main,
-        )
+        let rows = SessionRosterProjection.rows(from: [
+            worktreeSession(id: "one", at: "/Users/milad/argo/trees/tkt-537"),
+            worktreeSession(id: "two", at: "/Users/milad/cockpit/trees/tkt-537"),
+            worktreeSession(id: "three", at: "/Users/milad/argo/trees/tkt-509"),
+        ])
 
         #expect(rows.map(\.worktree) == ["trees/tkt-537", "trees/tkt-537", "tkt-509"])
     }
 
     @Test
-    func `the shared checkout is no rival to the worktrees it holds`() {
-        // Dropped BEFORE the labels are drawn: a silent row must not push the rows around it
+    func `a row that draws no label is no rival to the ones that do`() {
+        // Dropped BEFORE the labels are decided: a silent row must not push the rows around it
         // into longer names to be told apart from something nobody can see.
-        let rows = SessionRosterProjection.rows(
-            from: [
-                RosterSessionFixture.session(
-                    id: "shared",
-                    workspaceLocation: "/Users/milad/trees/argo",
-                ),
-                RosterSessionFixture.session(
-                    id: "one",
-                    workspaceLocation: "/Users/milad/worktrees/argo",
-                ),
-            ],
-            mainCheckout: "/Users/milad/trees/argo",
-        )
+        let rows = SessionRosterProjection.rows(from: [
+            RosterSessionFixture.session(id: "shared", workspaceLocation: "/Users/milad/a/argo"),
+            worktreeSession(id: "one", at: "/Users/milad/b/argo"),
+        ])
 
         #expect(rows.map(\.worktree) == [nil, "argo"])
     }
 
     @Test
     func `the branch survives the row for the copy action, and is never announced`() throws {
-        // It moved to the session header, where there is room to name it. The row keeps it for
+        // It belongs to the session header, where there is room to name it. The row keeps it for
         // the same reason it keeps the full location: dropping the line is a rendering
         // decision, not a data one.
-        let row = try #require(SessionRosterProjection.rows(
-            from: [RosterSessionFixture.session(
-                id: "one",
-                branch: "argo/#537-session-rail-worktree",
-            )],
-            mainCheckout: main,
-        ).first)
+        let row = try #require(SessionRosterProjection.rows(from: [
+            RosterSessionFixture.session(id: "one", branch: "argo/#537-session-rail-worktree"),
+        ]).first)
 
         #expect(row.branch == "argo/#537-session-rail-worktree")
         #expect(!row.announcement.contains("argo/#537-session-rail-worktree"))
@@ -139,8 +100,13 @@ struct SessionRosterWorkspaceTests {
             RosterSessionFixture.session(id: "two", workspaceLocation: nil),
         ]
 
-        let rows = SessionRosterProjection.rows(from: sessions, mainCheckout: main)
+        let rows = SessionRosterProjection.rows(from: sessions)
 
         #expect(rows.map(\.location) == sessions.map(\.workspaceLocation))
+    }
+
+    private func worktreeSession(id: String, at location: String?)
+        -> CockpitPresentation.Session {
+        RosterSessionFixture.session(id: id, workspaceLocation: location, kind: .worktree)
     }
 }

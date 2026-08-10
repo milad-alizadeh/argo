@@ -105,7 +105,10 @@ struct SessionDiscoveryTests {
     @Test
     func `a missing record directory sweeps to nothing`() async {
         let absent = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
-        let discovery = SessionDiscovery(store: TranscriptRecordStore(rootURL: absent))
+        let discovery = SessionDiscovery(store: TranscriptRecordStore(
+            rootURL: absent,
+            cli: .claude,
+        ))
 
         #expect(await discovery.workingSet(for: URL(fileURLWithPath: "/tmp/checkout")).isEmpty)
     }

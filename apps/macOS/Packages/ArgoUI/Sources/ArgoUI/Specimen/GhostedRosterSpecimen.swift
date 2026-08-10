@@ -25,10 +25,10 @@ struct GhostedRosterSpecimen: View {
         .frame(width: ArgoLayout.sidebarIdealWidth)
     }
 
-    static let rows = SessionRosterProjection.rows(from: mixedAccess, mainCheckout: mainCheckout)
+    static let rows = SessionRosterProjection.rows(from: mixedAccess)
 
     /// The Project this roster is scoped to — the checkout whose rows draw no second line.
-    private static let mainCheckout = "/Users/milad/Developer/argo"
+    private static let checkout = "/Users/milad/Developer/argo"
 
     /// Managed and observed alternating, so no run of one access reads as the roster's default.
     private static let mixedAccess = [
@@ -36,32 +36,32 @@ struct GhostedRosterSpecimen: View {
             id: "managed-running",
             title: "Ship the native Liquid Glass application shell",
             model: "claude-opus-5",
-            workspaceLocation: "\(mainCheckout)/.claude/worktrees/ticket-508-row-ghosted",
-            branch: "argo/#508-external-row-ghosted",
+            workspaceLocation: "\(checkout)/.claude/worktrees/ticket-508-row-ghosted",
             access: .managed,
             status: .running,
+            workspace: .init(kind: .worktree, branch: "argo/#508-external-row-ghosted"),
         ),
         CockpitPresentation.Session(
             id: "observed-asking",
             // Long, located, aged and waiting: everything a row can draw, all of it ghosted.
             title: "Answer a question from a Session nobody here started",
             model: nil,
-            workspaceLocation: "\(mainCheckout)/.claude/worktrees/ticket-502-session-header",
-            branch: "argo/#502-roster-row-and-session-header",
+            workspaceLocation: "\(checkout)/.claude/worktrees/ticket-502-session-header",
             access: .external,
             status: .asking,
+            workspace: .init(kind: .worktree, branch: "argo/#502-roster-row-and-session-header"),
             lastSeenAtMs: CockpitPresentation.minutesAgo(7),
         ),
         CockpitPresentation.Session(
             id: "managed-idle",
-            // In the shared checkout: a one-line row between two-line ones, so the rhythm of a
-            // roster that does not label every workspace is what the PNG is looked at for.
+            // In the Project's own checkout: a one-line row between two-line ones, so the rhythm
+            // of a roster that does not label every workspace is what the PNG is looked at for.
             title: "Wait for the next instruction",
             model: "claude-sonnet-4",
-            workspaceLocation: mainCheckout,
-            branch: "main",
+            workspaceLocation: checkout,
             access: .managed,
             status: .idle,
+            workspace: .init(kind: .main, branch: "main"),
             lastSeenAtMs: CockpitPresentation.minutesAgo(3 * 60),
         ),
         CockpitPresentation.Session(
@@ -73,18 +73,17 @@ struct GhostedRosterSpecimen: View {
             title: "Watch an externally launched agent work",
             model: nil,
             workspaceLocation: "/Users/milad/Experiments/argo/.claude/worktrees/ticket-311-spike",
-            branch: nil,
             access: .external,
             status: .running,
+            workspace: .init(kind: .worktree),
         ),
         CockpitPresentation.Session(
             id: "observed-unknown",
-            // A transcript that stamped nothing and carried no turn boundary: no dot, no age,
-            // nowhere named. The quietest row the roster can draw, ghosted on top of that.
+            // A transcript that stamped nothing and carried no turn boundary: no dot, no age, and
+            // no git read behind it either. The quietest row the roster can draw, ghosted on top.
             title: "Read a transcript that says almost nothing",
             model: nil,
-            workspaceLocation: mainCheckout,
-            branch: nil,
+            workspaceLocation: "/Users/milad/Developer/cockpit",
             access: .external,
             status: .unknown,
         ),

@@ -21,10 +21,30 @@ extension Hub {
         livenessPolling = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.refreshLiveness()
+                // On the same beat, because both are reads of a world outside the transcript and
+                // both go stale the same way. A second timer would be a second thing to stop.
+                await self?.refreshWorkspaces()
                 guard !Task.isCancelled else { return }
                 try? await Task.sleep(for: Hub.livenessInterval)
             }
         }
+    }
+
+    /// Ask git what each Session's working folder looks like now — one read per DISTINCT cwd, so
+    /// four Sessions in one checkout cost one subprocess run rather than four.
+    ///
+    /// It is a handful of subprocesses per poll, run one after another off the main actor, and
+    /// the cancellation check is what keeps a Project switch from paying for the rest of a sweep
+    /// it no longer wants. A folder git cannot answer for keeps no entry at all: the roster reads
+    /// an absent Workspace as unread, which is the honest claim about a folder that has been
+    /// deleted under a Session.
+    func refreshWorkspaces() async {
+        var read: [String: WorkspaceProjection] = [:]
+        for cwd in Set(sessions.compactMap(\.cwd)) {
+            guard !Task.isCancelled else { return }
+            read[cwd] = await engine.workspace(at: URL(fileURLWithPath: cwd))
+        }
+        workspaces = read
     }
 
     /// Ask the process table which working directories an agent is running in, and stamp the answer
@@ -46,6 +66,8 @@ extension Hub {
         livenessPolling = nil
         liveCwds = []
         livenessReadAtMs = nil
+        // A branch belonging to a Project nobody is pointed at is a fact we no longer have.
+        workspaces = [:]
     }
 
     /// One Session as the roster publishes it: what its transcript said, plus what Argo established
@@ -66,6 +88,9 @@ extension Hub {
             cwd: session.cwd,
             startedAtMs: session.startedAtMs,
         )
+        // A spawn already knows its own program; a swept record's is the store it came out of.
+        published.cli = session.cli ?? discovery.cli
+        published.workspace = session.cwd.flatMap { workspaces[$0] }
         // The CONVENTION tier, reached through the claim rather than the Session id: the claim is
         // what the channel is keyed by, exists before the CLI has picked an id, and outlives the
         // reconciliation that gave the Session one.

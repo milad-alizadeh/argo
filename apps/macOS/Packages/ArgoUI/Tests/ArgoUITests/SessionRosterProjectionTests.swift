@@ -8,7 +8,6 @@ struct SessionRosterProjectionTests {
     /// A fixed clock, because an age is arithmetic against one: a projection read against
     /// `Date()` asserts whatever the test machine's second happened to be.
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
-    private let main = RosterSessionFixture.mainCheckout
 
     @Test
     func `input order survives operational state changes`() {
@@ -18,7 +17,7 @@ struct SessionRosterProjectionTests {
             RosterSessionFixture.session(id: "newer", status: .running),
         ]
 
-        let rows = SessionRosterProjection.rows(from: sessions, mainCheckout: main)
+        let rows = SessionRosterProjection.rows(from: sessions)
 
         #expect(rows.map(\.id) == ["older", "attention", "newer"])
         #expect(rows.map(\.state) == [.idle, .attention, .running])
@@ -61,7 +60,8 @@ struct SessionRosterProjectionTests {
         let row = try #require(
             rows(RosterSessionFixture.session(
                 id: "quiet",
-                workspaceLocation: "\(main)/.claude/worktrees/tkt-537",
+                workspaceLocation: "\(RosterSessionFixture.checkout)/.claude/worktrees/tkt-537",
+                kind: .worktree,
                 status: .idle,
                 lastSeenAtMs: msAgo(120),
             )).first,
@@ -89,14 +89,12 @@ struct SessionRosterProjectionTests {
                 RosterSessionFixture.session(id: "managed", access: .managed),
                 RosterSessionFixture.session(id: "external", access: .external),
             ],
-            mainCheckout: main,
         )
         let uniform = SessionRosterProjection.rows(
             from: [
                 RosterSessionFixture.session(id: "one", access: .external),
                 RosterSessionFixture.session(id: "two", access: .external),
             ],
-            mainCheckout: main,
         )
 
         #expect(mixed.map(\.isReadOnly) == [false, true])
@@ -124,7 +122,6 @@ struct SessionRosterProjectionTests {
             from: [
                 RosterSessionFixture.session(id: "external", access: .external, status: .unknown),
             ],
-            mainCheckout: main,
         ).first)
 
         #expect(row.stateWord == nil)
@@ -202,7 +199,7 @@ struct SessionRosterProjectionTests {
     }
 
     private func rows(_ session: CockpitPresentation.Session) -> [SessionRosterProjection.Row] {
-        SessionRosterProjection.rows(from: [session], mainCheckout: main, now: now)
+        SessionRosterProjection.rows(from: [session], now: now)
     }
 
     /// One row per status, in the order given, so a per-status mapping is asserted against
@@ -211,7 +208,6 @@ struct SessionRosterProjectionTests {
         SessionRosterProjection.rows(
             from: statuses.enumerated()
                 .map { RosterSessionFixture.session(id: "\($0.offset)", status: $0.element) },
-            mainCheckout: main,
             now: now,
         )
     }

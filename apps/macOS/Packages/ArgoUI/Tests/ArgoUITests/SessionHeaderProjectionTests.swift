@@ -19,8 +19,12 @@ struct SessionHeaderProjectionTests {
 
         // The default state is silent. A mark on every header is a mark nobody reads by the
         // second Session, and the exceptions below are the only two worth the ink.
+        // Not a mark reading "managed", and not an empty one: no mark at all.
         #expect(header.access == nil)
-        #expect(header.announcement == "Session")
+        // The title, then the Session's own facts — and nothing after them where a posture would
+        // have gone, whatever word it might have spent.
+        #expect(header.announcement.hasPrefix("Session, Claude Code · Opus 5"))
+        #expect(header.announcement.hasSuffix("On main"))
     }
 
     @Test
@@ -60,6 +64,23 @@ struct SessionHeaderProjectionTests {
     }
 
     @Test
+    func `only the posture that lost something is worth a colour`() throws {
+        // Both are read-only, and colouring both would spend the loudest ink on the line for the
+        // ordinary case — which is how the reader learns to scan past the one that matters. The
+        // Session Argo LOST is the one somebody had reason to expect otherwise about.
+        let marks = CockpitPresentation.Session.Access.allCases.map {
+            SessionHeaderProjection.header(from: session(access: $0)).access
+        }
+
+        // Asserted on the MARKS, not on a list of tones: a managed Session has no mark at all and
+        // an external one has a mark with no tint, and mapping straight to `tone` would collapse
+        // those two different absences into the same `nil`.
+        #expect(marks[0] == nil)
+        #expect(try #require(marks[1]).tone == nil)
+        #expect(try #require(marks[2]).tone == .attention)
+    }
+
+    @Test
     func `what the header announces is the mark it draws, never a second claim`() {
         // A screen reader hears no ink, so the word the mark spends has to be said out loud —
         // and it has to be the SAME word, decided once here.
@@ -68,27 +89,8 @@ struct SessionHeaderProjectionTests {
             access: .external,
         ))
 
-        #expect(header.announcement == "Watch an externally launched agent, Read-only")
-    }
-
-    @Test
-    func `the header names the branch the roster no longer has room for`() {
-        let header = SessionHeaderProjection.header(from: session(branch: "argo/#537-rail"))
-
-        // Verbatim, and not shortened to its ticket: the header is where a ref is spelled out
-        // well enough to be typed back into a terminal.
-        #expect(header.branch == "argo/#537-rail")
-        #expect(header.announcement.contains("on argo/#537-rail"))
-    }
-
-    @Test
-    func `a Session on no branch says nothing where the branch would go`() {
-        // A detached checkout, or a Session that never branched at all. Absent rather than the
-        // `HEAD` its record carries: an unestablishable fact is not rendered as the nearest word.
-        let header = SessionHeaderProjection.header(from: session(branch: nil))
-
-        #expect(header.branch == nil)
-        #expect(header.announcement == "Session")
+        #expect(header.announcement.hasPrefix("Watch an externally launched agent, Claude Code"))
+        #expect(header.announcement.hasSuffix("Read-only"))
     }
 
     @Test
@@ -111,20 +113,17 @@ struct SessionHeaderProjectionTests {
         let drawn = SessionHeaderFixture.headers
 
         #expect(drawn.map { $0.access?.word } == [nil, "Read-only", "Orphaned"])
-        // A marked posture whose title is long enough to be cut at the narrowest deck, because
-        // whether the mark survives that cut is the render question no value test can settle —
-        // and a short title on every marked fixture would leave it unrendered.
-        #expect(drawn.contains { $0.access != nil && $0.title.count > 100 })
-        // Both branch renderings, because the header is where the branch went: a fixture set
-        // that always carried one would leave the detached rendering unlooked-at.
-        #expect(drawn.contains { $0.branch != nil })
-        #expect(drawn.contains { $0.branch == nil })
+        // A marked posture on a branch long enough to eat the fact line, because whether the mark
+        // survives that cut is the render question no value test can settle — the mark sits at
+        // the END of the line now, so what crowds it out is the branch and not the title.
+        #expect(drawn.contains {
+            $0.access != nil && $0.checkout?.branch == SessionHeaderFixture.longBranchName
+        })
     }
 
     private func session(
         title: String = "Session",
         access: CockpitPresentation.Session.Access = .managed,
-        branch: String? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -132,9 +131,10 @@ struct SessionHeaderProjectionTests {
             title: title,
             model: "claude-opus-5",
             workspaceLocation: "/Users/milad/Developer/argo",
-            branch: branch,
             access: access,
             status: .idle,
+            cli: .claude,
+            workspace: .init(branch: "main"),
         )
     }
 }

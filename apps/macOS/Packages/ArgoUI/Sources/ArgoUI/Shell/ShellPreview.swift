@@ -43,26 +43,37 @@ public extension CockpitPresentation {
                 title: "Ship the native Liquid Glass application shell "
                     + "with a deliberately long title",
                 model: "claude-opus-5",
-                // The shared main checkout: the one workspace the roster draws no label for.
-                workspaceLocation: "/Users/milad/Developer/argo",
-                branch: "argo/#376-native-shell",
+                workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
+                    + "ticket-376-native-shell",
                 access: .managed,
                 status: .running,
+                cli: .claude,
+                workspace: .init(
+                    kind: .worktree,
+                    branch: "argo/#376-native-shell",
+                    dirty: 3,
+                    unpushed: 1,
+                ),
                 // A time it will not draw: the age is suppressed by the status, and a running
                 // Session with none would leave that unrendered.
                 lastSeenAtMs: minutesAgo(0),
+                // A real reading off this machine, past the first line — so the roster's own
+                // Session shows the instrument doing something rather than sitting at `unknown`.
+                contextTokens: 216_764,
                 events: CockpitPresentation.Session.previewTranscript,
             ),
             Session(
                 id: "engine",
                 title: "Port the session engine core to Swift",
                 model: "codex",
-                workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
-                    + "ticket-502-roster-row",
-                branch: "argo/#502-roster-row",
+                // The Project's own checkout: the one workspace the roster draws no label for.
+                workspaceLocation: "/Users/milad/Experiments/argo",
                 access: .managed,
                 status: .asking,
+                cli: .claude,
+                workspace: .init(kind: .main, branch: "main"),
                 lastSeenAtMs: minutesAgo(4),
+                contextTokens: 67175,
             ),
             Session(
                 id: "observed",
@@ -73,22 +84,24 @@ public extension CockpitPresentation {
                 model: nil,
                 workspaceLocation: "/Users/milad/Developer/cockpit/.claude/worktrees/"
                     + "ticket-118-replay",
-                // A detached checkout, which has no branch to name.
-                branch: nil,
                 access: .external,
                 // No time at all — a transcript that stamped nothing. Idle, so the absence is
                 // the record's rather than the status's.
                 status: .unknown,
+                // A detached checkout, so there is no branch to name — the row is located anyway.
+                workspace: .init(kind: .worktree),
             ),
             Session(
                 id: "idle",
                 title: "Wait for the next instruction",
                 model: "claude-sonnet-4",
                 workspaceLocation: "/Users/milad/Developer/cockpit",
-                branch: "main",
                 access: .managed,
                 status: .idle,
+                cli: .claude,
+                workspace: .init(kind: .main, branch: "main", dirty: 0, unpushed: 0),
                 lastSeenAtMs: minutesAgo(3 * 60),
+                contextTokens: 88400,
             ),
             Session(
                 id: "failed",
@@ -98,10 +111,18 @@ public extension CockpitPresentation {
                 // pushing the age off the line is the other question only a render settles.
                 workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
                     + "ticket-377-session-roster-and-the-header-above-it",
-                branch: "argo/#377-session-roster-and-the-header-above-it",
                 access: .managed,
                 status: .stopped,
+                cli: .claude,
+                // The same is asked of the branch on the header above it.
+                workspace: .init(
+                    kind: .worktree,
+                    branch: "argo/#377-session-roster-and-the-header-above-it",
+                    dirty: 12,
+                ),
                 lastSeenAtMs: minutesAgo(2 * 24 * 60),
+                // Past the second line, which is what a Session that stopped short usually is.
+                contextTokens: 472_233,
             ),
         ],
         checkout: .branch("main"),
@@ -123,9 +144,11 @@ public extension CockpitPresentation {
                 title: "Ship the native Liquid Glass application shell",
                 model: "claude-opus-5",
                 workspaceLocation: "/Users/milad/Developer/argo",
-                branch: "argo/#376-native-shell",
                 access: .managed,
                 status: .running,
+                cli: .claude,
+                workspace: .init(kind: .worktree, branch: "argo/#376-native-shell"),
+                contextTokens: 216_764,
                 events: CockpitPresentation.Session.longTranscript,
             ),
             Session(
@@ -133,9 +156,11 @@ public extension CockpitPresentation {
                 title: "Port the session engine core to Swift",
                 model: "codex",
                 workspaceLocation: "/Users/milad/Experiments/argo",
-                branch: "main",
                 access: .managed,
                 status: .idle,
+                cli: .claude,
+                workspace: .init(kind: .main, branch: "main"),
+                contextTokens: 67175,
                 events: CockpitPresentation.Session.longTranscript,
             ),
         ],

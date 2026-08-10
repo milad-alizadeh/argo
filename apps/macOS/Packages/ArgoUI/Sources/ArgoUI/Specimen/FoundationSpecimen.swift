@@ -62,8 +62,11 @@ public struct FoundationSpecimen: View {
                 // The word `GitVessel` degrades an unnameable checkout to, because this menu
                 // stands in for that vessel. The roster's own answer — draw no line at all —
                 // is not open to a control that has to be labelled something.
-                Label(selected.branch ?? "unknown", systemImage: "arrow.trianglehead.branch")
-                    .labelStyle(.titleAndIcon)
+                Label(
+                    selected.workspace?.branch ?? "unknown",
+                    systemImage: "arrow.trianglehead.branch",
+                )
+                .labelStyle(.titleAndIcon)
             }
         }
     }
