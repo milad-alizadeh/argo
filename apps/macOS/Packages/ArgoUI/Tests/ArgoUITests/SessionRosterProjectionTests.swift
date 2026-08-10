@@ -1,9 +1,14 @@
 import ArgoEngine
 @testable import ArgoUI
+import Foundation
 import Testing
 
 @Suite("Session roster projection")
 struct SessionRosterProjectionTests {
+    /// A fixed clock, because an age is arithmetic against one: a projection read against
+    /// `Date()` asserts whatever the test machine's second happened to be.
+    private let now = Date(timeIntervalSince1970: 1_800_000_000)
+
     @Test
     func `input order survives operational state changes`() {
         let sessions = [
@@ -132,6 +137,70 @@ struct SessionRosterProjectionTests {
         // A real ticket branch, not a bare `main`: whether one truncates at the row's width
         // without losing the ticket it is named for is the other question the PNG settles.
         #expect(rows.contains { $0.branch?.hasPrefix("argo/#") == true })
+        // Both age renderings too: whether the age holds the same right edge as the state word
+        // above it, and how a row with no age reads beside one that has one, are both questions
+        // only the PNG answers.
+        #expect(rows.contains { $0.age != nil })
+        #expect(rows.contains { $0.age == nil })
+    }
+
+    @Test
+    func `an idle Session says how long ago it last moved`() throws {
+        let row = try #require(rows(session(id: "idle", lastSeenAtMs: msAgo(120))).first)
+
+        // `ago` and not a bare `2m`, which reads as how long something took rather than as
+        // how long since it happened.
+        #expect(row.age == "2m ago")
+    }
+
+    @Test(arguments: [
+        (0, "just now"),
+        (1, "just now"),
+        (59, "just now"),
+        (60, "1m ago"),
+        (3599, "59m ago"),
+        (3600, "1h ago"),
+        (86399, "23h ago"),
+        (86400, "1d ago"),
+    ])
+    func `an age is worded in the largest unit that has fully passed`(
+        secondsAgo: Int, phrase: String,
+    ) throws {
+        let row = try #require(rows(session(id: "idle", lastSeenAtMs: msAgo(secondsAgo))).first)
+
+        #expect(row.age == phrase)
+    }
+
+    @Test
+    func `a clock behind the record it is measuring against reads as no time at all`() throws {
+        // Two machines' clocks, or one that moved: the record is allowed to be newer than the
+        // read of the moment. `in 3m` would be the roster claiming the future.
+        let row = try #require(rows(session(id: "skewed", lastSeenAtMs: msAgo(-180))).first)
+
+        #expect(row.age == "just now")
+    }
+
+    @Test
+    func `a running Session shows no age`() throws {
+        let row = try #require(
+            rows(session(id: "running", status: .running, lastSeenAtMs: msAgo(120))).first,
+        )
+
+        // The dot already says it is live, and the same `0m ago` repeated down the roster is
+        // noise. Suppressed by the status, not by an absent time — this Session has one.
+        #expect(row.age == nil)
+    }
+
+    @Test
+    func `a Session whose record carries no activity time shows no age`() throws {
+        let row = try #require(rows(session(id: "timeless", lastSeenAtMs: nil)).first)
+
+        // Absence renders as absence. A placeholder would read as a moment nobody observed.
+        #expect(row.age == nil)
+    }
+
+    private func rows(_ session: CockpitPresentation.Session) -> [SessionRosterProjection.Row] {
+        SessionRosterProjection.rows(from: [session], now: now)
     }
 
     private func session(
@@ -140,6 +209,7 @@ struct SessionRosterProjectionTests {
         branch: String? = "main",
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
+        lastSeenAtMs: Int? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -150,6 +220,11 @@ struct SessionRosterProjectionTests {
             branch: branch,
             access: access,
             status: status,
+            lastSeenAtMs: lastSeenAtMs,
         )
+    }
+
+    private func msAgo(_ seconds: Int) -> Int {
+        now.epochMs - seconds * 1000
     }
 }

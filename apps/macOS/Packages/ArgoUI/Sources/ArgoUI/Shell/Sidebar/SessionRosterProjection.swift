@@ -1,4 +1,5 @@
 import ArgoEngine
+import Foundation
 
 enum SessionRosterProjection {
     struct Row: Identifiable, Sendable {
@@ -16,6 +17,10 @@ enum SessionRosterProjection {
         let isReadOnly: Bool
         /// The lock is drawn only when read-only tells the rows apart.
         let showsLock: Bool
+        /// How long ago this Session last did anything — the key the roster is ordered on, said
+        /// out loud, so the order stops looking arbitrary. Absent for a Session that is running
+        /// and for one whose record carries no time to word.
+        let age: String?
         let state: ArgoOperationalState?
 
         /// `fileprivate`, so `rows(from:)` is the only way a row comes into being and a
@@ -27,6 +32,7 @@ enum SessionRosterProjection {
             branch: String?,
             isReadOnly: Bool,
             showsLock: Bool,
+            age: String?,
             state: ArgoOperationalState?,
         ) {
             self.id = id
@@ -35,6 +41,7 @@ enum SessionRosterProjection {
             self.branch = branch
             self.isReadOnly = isReadOnly
             self.showsLock = showsLock
+            self.age = age
             self.state = state
         }
 
@@ -49,9 +56,12 @@ enum SessionRosterProjection {
         }
     }
 
-    static func rows(from sessions: [CockpitPresentation.Session]) -> [Row] {
+    /// `now` is a parameter because an age is arithmetic against a moment, and a projection that
+    /// read the clock itself would answer differently on every call with nothing able to say so.
+    static func rows(from sessions: [CockpitPresentation.Session], now: Date = Date()) -> [Row] {
         let access = sessions.map(\.access)
         let locksDistinguish = access.contains(.readOnly) && access.contains(.managed)
+        let nowMs = now.epochMs
         return sessions.map { session in
             Row(
                 id: session.id,
@@ -60,9 +70,20 @@ enum SessionRosterProjection {
                 branch: session.branch,
                 isReadOnly: session.access == .readOnly,
                 showsLock: locksDistinguish && session.access == .readOnly,
+                age: age(of: session, nowMs: nowMs),
                 state: state(for: session.status),
             )
         }
+    }
+
+    /// A running Session has no age: the dot already says it is live, and `just now` repeated
+    /// down the roster is the noise D30 deletes. A Session whose record carries no time has none
+    /// either — a moment nobody observed is not one to word.
+    private static func age(of session: CockpitPresentation.Session, nowMs: Int) -> String? {
+        guard session.status != .running, let lastSeenAtMs = session.lastSeenAtMs else {
+            return nil
+        }
+        return SessionAge.phrase(sinceMs: lastSeenAtMs, nowMs: nowMs)
     }
 
     /// Session status → the four colour roles the visual contract carries.

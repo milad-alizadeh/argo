@@ -1,4 +1,13 @@
+import ArgoEngine
+import Foundation
+
 public extension CockpitPresentation {
+    /// A moment measured back from whenever the preview is read, so a render shows the phrases a
+    /// roster actually says. A fixed stamp would age into `3y ago` on every row.
+    static func minutesAgo(_ minutes: Int) -> Int {
+        Date().epochMs - minutes * 60000
+    }
+
     /// Public so the app target can preview against it. Anything the system accent drives —
     /// the sidebar's selection capsule most of all — renders wrong in a package preview,
     /// because the `AccentColor` asset lives in the app and a package preview never sees it.
@@ -35,6 +44,9 @@ public extension CockpitPresentation {
                 branch: "argo/#376-native-shell",
                 access: .managed,
                 status: .running,
+                // A time it will not draw, deliberately: the age is suppressed by the status,
+                // and a running Session with none would leave that unrendered.
+                lastSeenAtMs: minutesAgo(0),
                 events: CockpitPresentation.Session.previewTranscript,
             ),
             Session(
@@ -45,6 +57,7 @@ public extension CockpitPresentation {
                 branch: "main",
                 access: .managed,
                 status: .asking,
+                lastSeenAtMs: minutesAgo(4),
             ),
             Session(
                 id: "observed",
@@ -55,6 +68,8 @@ public extension CockpitPresentation {
                 workspaceLocation: "/Users/milad/Developer/cockpit",
                 branch: nil,
                 access: .readOnly,
+                // No time at all: a transcript that stamped nothing, which is the row that has
+                // to read as an absence rather than as a guess.
                 status: .unknown,
             ),
             Session(
@@ -65,6 +80,7 @@ public extension CockpitPresentation {
                 branch: "main",
                 access: .managed,
                 status: .idle,
+                lastSeenAtMs: minutesAgo(3 * 60),
             ),
             Session(
                 id: "failed",
@@ -74,6 +90,7 @@ public extension CockpitPresentation {
                 branch: "argo/#377-session-roster",
                 access: .managed,
                 status: .stopped,
+                lastSeenAtMs: minutesAgo(2 * 24 * 60),
             ),
         ],
         checkout: .branch("main"),
