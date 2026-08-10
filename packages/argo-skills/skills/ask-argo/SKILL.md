@@ -1,6 +1,6 @@
 ---
 name: ask-argo
-description: The map of Argo's own skills and where they merge onto the engineering flow — especially the design route, which ask-matt has no stage for. Use when you don't know which skill comes next, when a design needs building, when setting up a project's design or quality machinery, or when the user asks what to run.
+description: Router for Argo's own skills, and for the design route ask-matt has no stage for. Use when the next step is unclear, when work touches a design or the token contract, or when the user asks what to run.
 ---
 
 # Ask Argo

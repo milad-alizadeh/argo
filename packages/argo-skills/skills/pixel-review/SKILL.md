@@ -1,6 +1,6 @@
 ---
 name: pixel-review
-description: Review a UI change by its pixels — render the affected states, screenshot them, and have a fresh agent judge the render against the approved design. The third lens beside code-review (the diff) and the mechanical gates. Use after building UI work before the PR opens, or on demand when the user wants a screen checked visually.
+description: Judge a UI change by its pixels — render the affected states and have a fresh agent compare them against the approved design. Use after building UI work before the PR opens, or when the user wants a screen checked visually.
 ---
 
 # Pixel Review

@@ -1,6 +1,6 @@
 ---
 name: design-to-code
-description: Build a screen from an approved design — assemble it from existing primitives against a derived view-model, extract components only where repetition or unexercised states force them out, write the inventory those extractions prove, and cover each one in the project's isolated-state mechanism. Reads docs/designs/stack.md, so it is framework-agnostic. Run once per ticket. Use when the user wants a design built, a screen implemented from docs/designs/, or a design transferred into the app.
+description: Build a screen from an approved design — assembled from existing primitives, components extracted only on evidence. Once per ticket. Use for any UI ticket whose screen has a design in docs/designs/, including when the user says "implement" or "build" without naming the design — a UI ticket built without its design drifts from what was agreed.
 ---
 
 # Design To Code
@@ -31,13 +31,14 @@ is, and how to render a state. **Every instruction below defers to it.** Where t
 skill says "isolated-state case", that file says whether it means a story, a specimen
 catalog case, or a preview target.
 
-If `stack.md` is missing, run `setup-design-infra` first rather than guessing the
-framework from what happens to be in the repo.
+If `stack.md` is missing, stop and ask the user to run `/setup-design-infra` — the
+framework it records is a decision, not something to infer from what happens to be in
+the repo.
 
 ## 1. Confirm the design is current
 
-If its front matter reads `status: stale`, stop and re-base it first (screenshot the
-shipped screen, correct the design, then continue). Building from a stale design
+If its front matter reads `status: stale`, re-base it first — screenshot the shipped
+screen, correct the design to match, then continue. Building from a stale design
 silently reverts whatever shipped since it was approved.
 
 Values were settled at approval time, so **there is no token work here**. A raw value
@@ -101,9 +102,9 @@ cases, with connected/data logic in a wrapper outside it. That screen case is th
 visual baseline for every region that stayed inline; extracted components add their
 own.
 
-## 5. Verify — never self-review
+## 5. Verify — fresh eyes only
 
-The screen is not signed off by the agent that built it.
+The screen is signed off by an agent that never saw it being built.
 
 First make the mechanical gates green — the repo's lint and test commands, wrapped per
 its tooling rules, and the no-raw-values check.
@@ -118,9 +119,5 @@ is fixed-and-re-judged or rejected with a cited rule.
 ## 6. Mark the design
 
 When this ticket was the **last** one against the design — the screen is now whole —
-set its front matter to `status: built` and record the commit.
-
-`built` is not `stale`. Building a design *as approved* is the design coming true, and
-further tickets may still run against it. It goes **stale** later, when someone changes
-that screen without coming through here — which is exactly when the next person must
-re-base before editing.
+set its front matter to `status: built` and record the commit. The lifecycle those
+values belong to is defined in `prototype-to-design`.

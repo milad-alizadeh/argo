@@ -1,6 +1,6 @@
 ---
 name: setup-design-infra
-description: Install the design→code machinery into a project — a token contract (the single named-decision layer for colors, type roles, spacing), the docs/designs/ scaffolding and browser token mirror, a mechanical no-raw-values check wired into CI, a deterministic screenshot method, and the stack.md file that tells every later design skill where this project keeps things. Framework-agnostic — adapts to Tailwind, React Native/Tamagui, native Swift/Kotlin, or a multi-platform DTCG pipeline. Usually dispatched by the /setup-argo-skills wizard (after setup-rules); run directly to (re)install just this piece.
+description: Install a project's design→code machinery — token contract, docs/designs/ scaffolding, no-raw-values check, render method, and the stack.md every later design skill reads instead of hardcoding a framework.
 disable-model-invocation: true
 ---
 

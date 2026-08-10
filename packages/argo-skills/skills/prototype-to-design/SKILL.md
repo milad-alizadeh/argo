@@ -1,6 +1,6 @@
 ---
 name: prototype-to-design
-description: Turn an agreed prototype variant into the project's approved design — drop the losing variants, snap every raw value to the token contract or promote it behind a bless, move the winner into docs/designs/ speaking only tokens, and commit a render beside it. Run once per screen, after /prototype settles which variant wins and before any code is written. Use when the user has agreed a prototype variant, wants a design approved or settled, or asks what to do with a finished prototype.
+description: Turn an agreed prototype variant into the approved design — values snapped to the token contract, a render committed beside it. Once per screen, before any code. Use when the user picks a variant ("variant A looks right", "go with the second one"), wants a design approved or settled, or asks what to do with a finished prototype.
 ---
 
 # Prototype To Design
@@ -12,14 +12,8 @@ token contract, and a **render** of it.
 Run it **once per screen**. `design-to-code` then runs once per ticket against what
 this produces — that difference in cardinality is why these are two skills.
 
-## Why this step exists
-
-`/prototype` rule 6 says the prototype goes to a throwaway branch and *"the main
-branch keeps only the validated decision."* Read as prose, that sentence loses every
-measurement the prototype settled — the column width, the band height, where the
-fact line sits — and the built screen drifts from the agreed one with nothing able to
-catch it. The validated decision for a UI prototype is **the pixels plus the tokens**,
-not a paragraph describing them.
+The validated decision for a UI prototype is **the pixels plus the tokens** — a
+paragraph describing them loses every measurement the prototype settled.
 
 ## Gate
 
@@ -27,9 +21,9 @@ Needs a prototype whose variant is **agreed**. If the user has not picked one, s
 and ask — approving a screen nobody chose is the one failure this skill can't undo.
 
 If the token contract is missing a whole family the prototype uses (no typography
-roles at all, no spacing steps), stop and run `setup-design-foundations` with the
-prototype as raw material, then come back. **This skill reconciles a screen against
-foundations; it never designs a scale.**
+roles at all, no spacing steps), stop and ask the user to run
+`/setup-design-foundations` with the prototype as raw material, then come back. **This
+skill reconciles a screen against foundations; designing a scale belongs there.**
 
 ## 1. Drop the losing variants
 

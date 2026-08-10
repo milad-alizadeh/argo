@@ -1,6 +1,7 @@
 ---
 name: setup-design-foundations
-description: The moodboard→contract ceremony. Run once per project after setup-design-infra (and re-run any time as an audit) — take whatever exploration produced (moodboards, reference screens, an existing app's CSS) and deliberately design the foundations (type ramp, spacing rhythm, color roles, radii, motion), get the user's bless, land them in the token contract, and render them as a living specimen page every later design follows. Use when a project's token contract is missing whole families, when the user wants to settle or audit the design foundations or text scale, or before the first screen design is approved.
+description: Design a project's type ramp, spacing rhythm, colour roles, radii and motion, bless them, and land them in the token contract. Once per project, or any time as an audit.
+disable-model-invocation: true
 ---
 
 # Setup Design Foundations
