@@ -26,16 +26,21 @@ extension SessionAnnotations: Codable {
 extension SessionAnnotations.Annotation: Codable {
     private enum CodingKeys: String, CodingKey {
         case archived
+        case name
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let archived = try container.decodeIfPresent(Bool.self, forKey: .archived)
-        self.init(isArchived: archived ?? false)
+        let name = try container.decodeIfPresent(String.self, forKey: .name)
+        self.init(isArchived: archived ?? false, explicitName: name)
     }
 
+    /// The name is written only when there is one: an explicit `null` beside every archived
+    /// Session would be a record of a rename that never happened.
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(isArchived, forKey: .archived)
+        try container.encodeIfPresent(explicitName, forKey: .name)
     }
 }

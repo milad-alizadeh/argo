@@ -105,34 +105,3 @@ private extension SessionAnnotationStore {
         load().isArchived(sessionID)
     }
 }
-
-/// A throwaway `userData` location: a file that does not exist yet, under a folder that is
-/// deleted when the test is done.
-private struct AnnotationFile {
-    let directoryURL = URL(fileURLWithPath: NSTemporaryDirectory())
-        .appending(path: "argo-annotations-\(UUID().uuidString)", directoryHint: .isDirectory)
-
-    var url: URL {
-        directoryURL.appending(path: "Argo/sessions.json")
-    }
-
-    func store() -> SessionAnnotationStore {
-        SessionAnnotationStore(fileURL: url)
-    }
-
-    func write(_ contents: String) throws {
-        try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(),
-            withIntermediateDirectories: true,
-        )
-        try contents.write(to: url, atomically: true, encoding: .utf8)
-    }
-
-    func read() throws -> String {
-        try String(contentsOf: url, encoding: .utf8)
-    }
-
-    func remove() {
-        try? FileManager.default.removeItem(at: directoryURL)
-    }
-}

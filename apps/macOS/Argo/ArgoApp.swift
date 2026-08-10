@@ -76,6 +76,9 @@ struct ArgoApp: App {
             setSessionArchived: { id, isArchived in
                 Task { await cockpit.setArchived(isArchived, sessionID: id) }
             },
+            setSessionName: { id, name in
+                Task { await cockpit.setName(name, sessionID: id) }
+            },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
         )
     }

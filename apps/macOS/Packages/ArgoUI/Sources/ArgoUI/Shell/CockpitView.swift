@@ -68,6 +68,7 @@ public struct CockpitView: View {
                 presentation: presentation,
                 selection: $navigation.session,
                 archive: actions.setSessionArchived,
+                rename: actions.setSessionName,
             )
             .navigationSplitViewColumnWidth(
                 min: ArgoLayout.sidebarMinimumWidth,
