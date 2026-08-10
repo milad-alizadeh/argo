@@ -1105,7 +1105,9 @@ const composer = {
         <div class="fieldrow"><span class="grow">${ta(s)}</span></div>
         <div class="footrow">
           ${clipBtn(s, 'plus')}
-          <span class="hint">⇧⏎ newline${s.state === 'running' ? ' · esc stops' : ''}</span>
+          <!-- No keyboard hint. ⇧⏎ and esc are the conventions every text field on the
+               platform already carries; printing them makes the composer explain itself
+               forever to teach a first-run fact. Tooltips on the controls carry them. -->
           <span class="grow"></span>
           ${FOOTERS[footer].html()}
           ${s.state === 'running'
