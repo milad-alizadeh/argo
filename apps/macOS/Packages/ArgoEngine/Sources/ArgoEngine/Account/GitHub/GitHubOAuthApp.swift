@@ -6,10 +6,7 @@ import Foundation
 /// the device flow is chosen precisely because it needs none (ADR-0018 / #367). Shipping it in the
 /// source is the intended posture, not an oversight.
 public enum GitHubOAuthApp {
-    /// PLACEHOLDER — the OAuth App is not registered yet (#566). The grant round-trip cannot be
-    /// verified against GitHub until a real id lands here, and that verification is what the
-    /// ticket owes the PR. Nothing else in this file changes when it does.
-    public static let clientID = "Iv1.ARGO_CLIENT_ID_UNREGISTERED"
+    public static let clientID = "Ov23liGeLJ8U6w5dq6oA"
 
     /// `repo` is the settled scope (ADR-0018). `read:project` rides along now rather than forcing
     /// every user through a second consent screen the day GitHub Projects lands — the consent is
