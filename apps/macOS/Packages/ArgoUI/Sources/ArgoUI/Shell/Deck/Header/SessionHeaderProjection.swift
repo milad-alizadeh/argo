@@ -23,13 +23,12 @@ enum SessionHeaderProjection {
         /// the default state is silent, and a mark drawn on every header is a mark that has
         /// stopped meaning anything by the second Session.
         let access: AccessMark?
-        /// The branch this Session is on, verbatim and never shortened — the header is the one
-        /// surface with room to spell a ref out well enough to be typed back into a terminal,
-        /// which is why the roster row hands it up here rather than drawing it small (#537).
+        /// The branch this Session is on, verbatim — the header is the surface with room for a
+        /// ref, which is why the roster row's second line names its worktree instead.
         ///
-        /// Absent for a detached checkout and for a Session that never branched. The engine has
-        /// already read the `HEAD` a detached record carries as the absence it is, so nothing
-        /// here has to know the convention to avoid rendering it as a name.
+        /// Absent for a detached checkout and for a Session that never branched. The engine
+        /// reads the `HEAD` a detached record carries as the absence it is, so nothing here has
+        /// to know the convention to avoid rendering it as a name.
         let branch: String?
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being and no

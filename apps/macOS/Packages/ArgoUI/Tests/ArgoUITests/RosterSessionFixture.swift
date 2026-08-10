@@ -7,26 +7,28 @@ import ArgoEngine
 /// Shared rather than repeated per suite, because two copies of a fixture drift into two
 /// different ideas of what a default Session is, and an assertion then reads against whichever
 /// one its own file happened to carry.
-func rosterSession(
-    id: String,
-    workspaceLocation: String? = rosterMainCheckout,
-    branch: String? = "main",
-    access: CockpitPresentation.Session.Access = .managed,
-    status: SessionStatus = .idle,
-    lastSeenAtMs: Int? = nil,
-)
-    -> CockpitPresentation.Session {
-    CockpitPresentation.Session(
-        id: id,
-        title: "Session \(id)",
-        model: "claude-opus-5",
-        workspaceLocation: workspaceLocation,
-        branch: branch,
-        access: access,
-        status: status,
-        lastSeenAtMs: lastSeenAtMs,
-    )
-}
+enum RosterSessionFixture {
+    /// The Project's shared checkout — the one location the roster draws nothing for.
+    static let mainCheckout = "/Users/milad/Developer/argo"
 
-/// The Project's shared checkout — the one location the roster draws nothing for.
-let rosterMainCheckout = "/Users/milad/Developer/argo"
+    static func session(
+        id: String,
+        workspaceLocation: String? = mainCheckout,
+        branch: String? = "main",
+        access: CockpitPresentation.Session.Access = .managed,
+        status: SessionStatus = .idle,
+        lastSeenAtMs: Int? = nil,
+    )
+        -> CockpitPresentation.Session {
+        CockpitPresentation.Session(
+            id: id,
+            title: "Session \(id)",
+            model: "claude-opus-5",
+            workspaceLocation: workspaceLocation,
+            branch: branch,
+            access: access,
+            status: status,
+            lastSeenAtMs: lastSeenAtMs,
+        )
+    }
+}

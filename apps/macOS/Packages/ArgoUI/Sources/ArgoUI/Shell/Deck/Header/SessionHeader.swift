@@ -46,9 +46,9 @@ struct SessionHeader: View {
             .truncationMode(.tail)
     }
 
-    /// The branch, which the roster row gave up so its own second line could name the worktree
-    /// two Sessions in one repo are told apart by (#537). Here there is room to spell a ref out
-    /// whole, so it is cut at the middle rather than at either end a reader addresses it from.
+    /// The branch. A ref is addressed from both ends — the ticket at the head, the subject at the
+    /// tail — so where the line cannot hold one it is cut at the middle, which is the part that
+    /// repeats across every branch in a repo.
     ///
     /// Under the glyph the vessel already spends on a branch, so the header and the toolbar name
     /// the same kind of thing the same way — and so the ref needs no word introducing it.

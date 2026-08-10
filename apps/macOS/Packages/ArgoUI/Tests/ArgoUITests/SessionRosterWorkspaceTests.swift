@@ -5,7 +5,7 @@ import Testing
 /// it that the row no longer draws.
 @Suite("Session roster workspace")
 struct SessionRosterWorkspaceTests {
-    private let main = rosterMainCheckout
+    private let main = RosterSessionFixture.mainCheckout
 
     @Test
     func `the row's second line is the worktree its Session is in`() {
@@ -13,8 +13,14 @@ struct SessionRosterWorkspaceTests {
         // branch it cannot move under the reader mid-scan.
         let rows = SessionRosterProjection.rows(
             from: [
-                rosterSession(id: "one", workspaceLocation: "\(main)/.claude/worktrees/tkt-505"),
-                rosterSession(id: "two", workspaceLocation: "\(main)/.claude/worktrees/tkt-509"),
+                RosterSessionFixture.session(
+                    id: "one",
+                    workspaceLocation: "\(main)/.claude/worktrees/tkt-505",
+                ),
+                RosterSessionFixture.session(
+                    id: "two",
+                    workspaceLocation: "\(main)/.claude/worktrees/tkt-509",
+                ),
             ],
             mainCheckout: main,
         )
@@ -25,7 +31,7 @@ struct SessionRosterWorkspaceTests {
     @Test
     func `a Session in the shared main checkout carries no second line`() throws {
         let row = try #require(SessionRosterProjection.rows(
-            from: [rosterSession(id: "shared", workspaceLocation: main)],
+            from: [RosterSessionFixture.session(id: "shared", workspaceLocation: main)],
             mainCheckout: main,
         ).first)
 
@@ -38,7 +44,7 @@ struct SessionRosterWorkspaceTests {
     @Test
     func `a trailing slash on either path is the same checkout`() throws {
         let row = try #require(SessionRosterProjection.rows(
-            from: [rosterSession(id: "shared", workspaceLocation: "\(main)/")],
+            from: [RosterSessionFixture.session(id: "shared", workspaceLocation: "\(main)/")],
             mainCheckout: main,
         ).first)
 
@@ -49,9 +55,12 @@ struct SessionRosterWorkspaceTests {
 
     @Test
     func `a Session with no cwd carries no second line rather than a word for one`() throws {
-        let row = try #require(SessionRosterProjection.rows(from: [
-            rosterSession(id: "placeless", workspaceLocation: nil),
-        ]).first)
+        let row = try #require(SessionRosterProjection.rows(
+            from: [
+                RosterSessionFixture.session(id: "placeless", workspaceLocation: nil),
+            ],
+            mainCheckout: main,
+        ).first)
 
         // Absent, not the roster's `unknown`: a Session whose record never said where it ran
         // has nothing to say here, and a placeholder would read as a folder nobody can find.
@@ -64,9 +73,18 @@ struct SessionRosterWorkspaceTests {
         // worktree of one name, the nearest distinguishing parent joins it.
         let rows = SessionRosterProjection.rows(
             from: [
-                rosterSession(id: "one", workspaceLocation: "/Users/milad/argo/trees/tkt-537"),
-                rosterSession(id: "two", workspaceLocation: "/Users/milad/cockpit/trees/tkt-537"),
-                rosterSession(id: "three", workspaceLocation: "/Users/milad/argo/trees/tkt-509"),
+                RosterSessionFixture.session(
+                    id: "one",
+                    workspaceLocation: "/Users/milad/argo/trees/tkt-537",
+                ),
+                RosterSessionFixture.session(
+                    id: "two",
+                    workspaceLocation: "/Users/milad/cockpit/trees/tkt-537",
+                ),
+                RosterSessionFixture.session(
+                    id: "three",
+                    workspaceLocation: "/Users/milad/argo/trees/tkt-509",
+                ),
             ],
             mainCheckout: main,
         )
@@ -80,8 +98,14 @@ struct SessionRosterWorkspaceTests {
         // into longer names to be told apart from something nobody can see.
         let rows = SessionRosterProjection.rows(
             from: [
-                rosterSession(id: "shared", workspaceLocation: "/Users/milad/trees/argo"),
-                rosterSession(id: "one", workspaceLocation: "/Users/milad/worktrees/argo"),
+                RosterSessionFixture.session(
+                    id: "shared",
+                    workspaceLocation: "/Users/milad/trees/argo",
+                ),
+                RosterSessionFixture.session(
+                    id: "one",
+                    workspaceLocation: "/Users/milad/worktrees/argo",
+                ),
             ],
             mainCheckout: "/Users/milad/trees/argo",
         )
@@ -95,7 +119,10 @@ struct SessionRosterWorkspaceTests {
         // the same reason it keeps the full location: dropping the line is a rendering
         // decision, not a data one.
         let row = try #require(SessionRosterProjection.rows(
-            from: [rosterSession(id: "one", branch: "argo/#537-session-rail-worktree")],
+            from: [RosterSessionFixture.session(
+                id: "one",
+                branch: "argo/#537-session-rail-worktree",
+            )],
             mainCheckout: main,
         ).first)
 
@@ -108,11 +135,11 @@ struct SessionRosterWorkspaceTests {
         // The line is a label, but copy-the-location and the row's tooltip still need the whole
         // path — dropping the workspace identity is a rendering decision, not a data one.
         let sessions = [
-            rosterSession(id: "one", workspaceLocation: "/Users/milad/Client/argo"),
-            rosterSession(id: "two", workspaceLocation: nil),
+            RosterSessionFixture.session(id: "one", workspaceLocation: "/Users/milad/Client/argo"),
+            RosterSessionFixture.session(id: "two", workspaceLocation: nil),
         ]
 
-        let rows = SessionRosterProjection.rows(from: sessions)
+        let rows = SessionRosterProjection.rows(from: sessions, mainCheckout: main)
 
         #expect(rows.map(\.location) == sessions.map(\.workspaceLocation))
     }

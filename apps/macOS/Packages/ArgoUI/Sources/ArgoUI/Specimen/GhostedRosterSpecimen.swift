@@ -69,10 +69,10 @@ struct GhostedRosterSpecimen: View {
             // Live and unreachable at once: the dot is the loudest thing on a running row, and
             // it has to dim with the rest rather than reading as a Session you could steer.
             //
-            // Detached, too — its record said `HEAD`, and the row draws where it is instead.
+            // Detached, so there is no branch to name — the row is located all the same.
             title: "Watch an externally launched agent work",
             model: nil,
-            workspaceLocation: "/Users/milad/Experiments/argo",
+            workspaceLocation: "/Users/milad/Experiments/argo/.claude/worktrees/ticket-311-spike",
             branch: nil,
             access: .external,
             status: .running,

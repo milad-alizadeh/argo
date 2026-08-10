@@ -73,8 +73,7 @@ public extension CockpitPresentation {
                 model: nil,
                 workspaceLocation: "/Users/milad/Developer/cockpit/.claude/worktrees/"
                     + "ticket-118-replay",
-                // A detached checkout. Its record says `HEAD`, which is no branch anybody can
-                // check out — the row used to draw that word, and now draws its worktree.
+                // A detached checkout, which has no branch to name.
                 branch: nil,
                 access: .external,
                 // No time at all — a transcript that stamped nothing. Idle, so the absence is

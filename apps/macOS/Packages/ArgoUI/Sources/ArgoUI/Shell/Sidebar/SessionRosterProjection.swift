@@ -20,8 +20,8 @@ enum SessionRosterProjection {
         /// never said where it ran. A line spent on the folder every unisolated Session shares
         /// tells nothing apart, which is exactly what D30 deletes.
         let worktree: String?
-        /// Never drawn either: the branch belongs to the session header, where there is room to
-        /// name it. Kept so the row's copy action can still hand it over.
+        /// Never drawn either: the branch belongs to the session header. Kept so the row's copy
+        /// action can still hand it over.
         let branch: String?
         /// True of every Session Argo does not own the terminal of, and always announced.
         ///
@@ -81,11 +81,11 @@ enum SessionRosterProjection {
 
     /// `now` is a parameter because an age is arithmetic against a moment, and a projection that
     /// read the clock itself would answer differently on every call with nothing able to say so.
-    /// `mainCheckout` for the same reason: which folder is shared is the Project's fact, and a
-    /// projection that guessed it would decide on every roster which rows say nothing.
+    /// `mainCheckout` for the same reason, and it takes no default: an omitted one would label
+    /// the shared checkout on every row — the constant D30 deletes — and would do it silently.
     static func rows(
         from sessions: [CockpitPresentation.Session],
-        mainCheckout: String? = nil,
+        mainCheckout: String?,
         now: Date = Date(),
     )
         -> [Row] {
@@ -117,18 +117,19 @@ enum SessionRosterProjection {
         of sessions: [CockpitPresentation.Session], mainCheckout: String?,
     )
         -> [String?] {
-        let shared = path(mainCheckout)
+        let shared = normalisedPath(mainCheckout)
         return DistinguishingLabel.labels(for: sessions.map {
-            let location = path($0.workspaceLocation)
+            let location = normalisedPath($0.workspaceLocation)
             return location == shared ? nil : location
         })
     }
 
     /// A path compared as a path: one trailing slash apart is one folder, and reading those as two
-    /// would put the shared checkout's own name back on the row it was taken off.
-    private static func path(_ location: String?) -> String? {
-        guard let location, location != "/" else { return location }
-        return location.hasSuffix("/") ? String(location.dropLast()) : location
+    /// would put the shared checkout's own name back on the row it was taken off. The root is left
+    /// alone — dropping ITS slash leaves the empty string, which is no longer a path.
+    private static func normalisedPath(_ location: String?) -> String? {
+        guard let location, location != "/", location.hasSuffix("/") else { return location }
+        return String(location.dropLast())
     }
 
     /// Whether the whole row is drawn as a Session nobody here can drive.
