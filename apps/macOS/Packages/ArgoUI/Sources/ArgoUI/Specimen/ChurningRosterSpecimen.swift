@@ -61,10 +61,11 @@ struct ChurningRosterSpecimen: View {
         id: "arriving",
         title: "Start a Session while the roster is being read",
         model: "claude-opus-5",
-        workspaceLocation: "/Users/milad/Developer/argo",
+        workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
+            + "ticket-498-roster-order-freeze",
         access: .managed,
         status: .running,
-        workspace: .init(branch: "argo/#498-roster-order-freeze"),
+        workspace: .init(kind: .worktree, branch: "argo/#498-roster-order-freeze"),
     )
 }
 
