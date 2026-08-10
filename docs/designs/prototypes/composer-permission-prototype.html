@@ -168,7 +168,10 @@
   /* ---------- deck ---------- */
   .deck { position: relative; display: flex; flex-direction: column;
           background: var(--base); min-width: 0; padding-top: 46px; overflow: hidden; }
-  .band { height: var(--deck-header-h); flex: none; display: flex; align-items: center;
+  /* position:relative so the header's own popover can anchor to it — the fact line inside
+     clips its overflow (branch names are long), so a popover nested there is invisible. */
+  .band { position: relative;
+          height: var(--deck-header-h); flex: none; display: flex; align-items: center;
           gap: var(--s-comfortable); padding: 0 var(--s-section); }
   .tabslot { height: var(--deck-tab-h); flex: none; display: flex; align-items: flex-end;
              gap: var(--s-loose); padding: 0 var(--s-section); border-bottom: 1px solid var(--hairline); }
@@ -370,7 +373,7 @@
   /* ---- everything below is a stand-in for a stock SwiftUI control ----
      Nothing here is a bespoke widget, and the implementation should not build one:
        .seg      → Picker(…) { … }.pickerStyle(.segmented).controlSize(.small)
-       .menupick → Picker(…) { … }.pickerStyle(.menu) — the plain pop-up button
+       .picklist → Picker(…) { … }.pickerStyle(.inline) — rows with a checkmark
        .runpanel → .popover(…) { … } with .presentationBackground(.regularMaterial)
        the panel's body → Form/LabeledContent rows: label leading, control trailing
      The CSS exists only so the arrangement can be judged; it is not a spec for a view. */
@@ -395,33 +398,19 @@
   /* Effort fills its container evenly — an ordered scale, not a row of chips */
   .seg.fill { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
 
-  /* stock pop-up button: current value, the ⌄⌃ pair, a menu of names */
-  .menupick {
-    display: inline-flex; align-items: center; gap: var(--s-snug);
-    background: rgba(255,255,255,.07); border: 1px solid var(--hairline);
-    border-radius: var(--r-control); padding: 0 var(--s-snug) 0 var(--s-base);
-    height: 24px; cursor: pointer; color: var(--text-1); font: 12.5px var(--sans);
-  }
-  .menupick:hover { background: rgba(255,255,255,.11); }
-  .menupick .updown { width: 11px; height: 11px; color: var(--text-3); flex: none; }
-  .pickmenu {
-    position: absolute; right: 0; top: calc(100% + var(--s-tight)); z-index: 40;
-    min-width: 196px; padding: var(--s-tight);
-    background: rgba(58,61,67,.82); backdrop-filter: blur(40px) saturate(180%);
-    border: 1px solid rgba(255,255,255,.14); border-radius: var(--r-control);
-    box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 18px 44px rgba(0,0,0,.6);
-  }
-  .pickmenu button {
+  /* inline list with checkmarks — Picker(…).pickerStyle(.inline). Three names fit, so nothing
+     has to open on top of anything: the popover has no second layer at all. */
+  .picklist { display: grid; gap: 1px; }
+  .picklist button {
     display: flex; align-items: baseline; gap: var(--s-base); width: 100%; text-align: left;
     border: none; background: none; cursor: pointer; color: var(--text-1);
-    font: 12.5px var(--sans); padding: var(--s-tight) var(--s-snug); border-radius: var(--r-marker);
+    font: 12.5px var(--sans); padding: 3px var(--s-snug); border-radius: var(--r-marker);
   }
-  .pickmenu button:hover { background: var(--accent); color: #fff; }
-  .pickmenu button:hover .why { color: rgba(255,255,255,.75); }
-  .pickmenu button .grow { flex: 1; }
-  .pickmenu button .why { font-size: 11px; color: var(--text-3); }
-  .pickmenu button .tick { width: 13px; flex: none; }
-  .pickmenu button .tick svg { width: 11px; height: 11px; display: block; }
+  .picklist button:hover { background: rgba(255,255,255,.07); }
+  .picklist button .grow { flex: 1; }
+  .picklist button .why { font-size: 11px; color: var(--text-3); }
+  .picklist button .tick { width: 13px; flex: none; color: var(--accent); }
+  .picklist button .tick svg { width: 11px; height: 11px; display: block; }
 
   /* the popover — a real material, not a flat overlay fill */
   .runpanel {
@@ -431,16 +420,14 @@
     border: 1px solid rgba(255,255,255,.14); border-radius: var(--r-popover);
     box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 24px 60px rgba(0,0,0,.6);
   }
-  .runpanel.below { top: calc(100% + var(--s-snug)); bottom: auto; right: auto; left: 0; }
-  /* LabeledContent: label leading and secondary, control trailing */
-  .frow {
-    display: flex; align-items: center; gap: var(--s-comfortable);
-    position: relative; min-height: 26px;
+  /* dropped from the header's fact line: under the band, aligned to the deck's own gutter */
+  .runpanel.below { top: calc(100% - var(--s-base)); bottom: auto; right: auto; left: var(--s-section); }
+  /* two Form sections, each with its own header — a list cannot be a trailing control */
+  .fsec + .fsec { margin-top: var(--s-loose); }
+  .fsec > h4 {
+    font-size: 10px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: var(--s-snug); padding-left: var(--s-snug);
   }
-  .frow + .frow { margin-top: var(--s-comfortable); }
-  .frow > .lbl { font-size: 12.5px; color: var(--text-2); flex: none; width: 46px; }
-  .frow > .ctl { flex: 1; display: flex; justify-content: flex-end; position: relative; }
-  .frow > .ctl .seg.fill { flex: 1; }
   .runpanel .reset {
     display: flex; align-items: center; gap: var(--s-snug); width: 100%;
     margin-top: var(--s-comfortable); padding-top: var(--s-comfortable);
@@ -670,9 +657,7 @@ const STATES = [
     note:'You left mid-sentence and came back. The text is simply there; the seam says it was kept and when.' },
 
   { k:'run',       sid:'1986b0e5', g:'Run settings', label:'Popover open — at defaults',
-    note:'Two labelled rows and nothing else. Mode is not repeated in here — it is on the footer, where you can read it without opening anything.' },
-  { k:'run-model', sid:'1986b0e5', g:'Run settings', label:'Model pop-up open',
-    note:'Model is a plain pop-up button over a list of names — Picker(.menu), not a bespoke list.' },
+    note:'Model as an inline list with checkmarks, Effort as a segmented picker. Nothing opens on top of anything. Mode is not repeated in here — it is on the footer, where you read it without opening anything.' },
   { k:'run-ask',   sid:'1986b0e5', g:'Run settings', label:'Ask · Sonnet 5 · High',
     note:'Non-default: Ask takes the attention ink because it changes how often you are stopped, and the reset names what it resets to rather than saying “default”.' },
   { k:'run-plan',  sid:'1986b0e5', g:'Run settings', label:'Closed — Plan mode set',
@@ -685,7 +670,7 @@ const STATES = [
   { k:'paste',     sid:'1986b0e5', g:'Attachments', label:'Pasted image',
     note:'⌘V of a screenshot makes exactly the chip a drop makes — same shape, only the derived name differs.' },
   { k:'noattach',  sid:'1986b0e5', g:'Attachments', label:'Adapter takes no attachments',
-    note:'Capability is declared, not discovered: the paperclip is ABSENT, and a drop is refused with the reason rather than failing silently.' },
+    note:'Capability is declared, not discovered: the + is ABSENT, and a drop is refused with the reason rather than failing silently.' },
 
   { k:'perm',      sid:'0ec3b3b6', g:'Permission',  label:'Permission pending',
     note:'Tool, target verbatim, and a fuse showing the patience window. Allow is focused; ⏎ allows, Esc denies, walking away denies.' },
@@ -728,8 +713,7 @@ const ui = {
   failed: false, permission: null, permissionResolved: null, turn: [],
   /* the standing run settings, and which menu is open over them */
   run: { model: 'Opus 5', mode: 'Code', effort: 'Medium' },
-  menu: false,       // is the run-settings popover open
-  modelMenu: false,  // is the Model pop-up button's menu open inside it
+  menu: false,       // is the run-settings popover open (it has no second layer)
 };
 const DEFAULT_RUN = { model: 'Opus 5', mode: 'Code', effort: 'Medium' };
 
@@ -832,6 +816,7 @@ function renderHeader(s, needsInput) {
   const statusWord = needsInput ? `<span class="fact warn">Needs input</span>`
     : s.state === 'running' ? `<span class="working"><i></i>Running</span>`
     : `<span class="fact dim">Idle</span>`;
+  const headerRun = footer === '2' && variant === 'B';
   document.getElementById('hdr').innerHTML = `
     <div class="band">
       <div class="col g2 grow">
@@ -839,17 +824,17 @@ function renderHeader(s, needsInput) {
         <div class="factline">
           <span class="fact mono dim"><span class="gitline">${glyph(s.worktree ? SVG.worktree : SVG.branch)}<span>${esc(s.branch)}</span></span></span>
           <span class="dotsep">·</span>
-          ${footer === '2' && variant === 'B' && s.access === 'managed'
-            /* Treatment 3 moves Model and Effort up to the line that already states the CLI —
+          ${headerRun && s.access === 'managed'
+            /* Treatment 2 moves Model and Effort up to the line that already states the CLI —
                the header is where a Session's standing facts live, so they join them there. */
-            ? `<span class="fact dim">${s.cli}</span><span class="dotsep">·</span>
-               <span style="position:relative">${runFacts(false)}${runPanel('below')}</span>`
+            ? `<span class="fact dim">${s.cli}</span><span class="dotsep">·</span>${runFacts(false)}`
             : `<span class="fact dim">${s.cli} · ${s.model}</span>`}
           ${s.ticket ? `<span class="dotsep">·</span><span class="fact link">Issue ${s.ticket} ↗</span>` : ''}
           ${s.access !== 'managed' ? `<span class="dotsep">·</span><span class="fact ${s.access === 'orphaned' ? 'warn' : 'dim'}">${s.access === 'orphaned' ? 'orphaned' : 'read-only'}</span>` : ''}
         </div>
       </div>
       ${statusWord}
+      ${headerRun && s.access === 'managed' ? runPanel('below') : ''}
     </div>
     <div class="tabslot">
       <span class="tab on">Activity</span><span class="tab">Delivery</span>
@@ -1044,36 +1029,22 @@ const segments = (kind, fill) => `
   </span>`;
 const modeSegments = () => segments('mode', false);
 
-const UPDOWN = `<svg class="updown" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M4.8 6.4 8 3.2l3.2 3.2"/><path d="M4.8 9.6 8 12.8l3.2-3.2"/></svg>`;
-
-/* Model is a plain pop-up button — a list of names is all it is. */
-const modelPicker = () => `
-  <button class="menupick" aria-haspopup="listbox" aria-expanded="${ui.modelMenu}"
-    onclick="event.stopPropagation();ui.modelMenu=!ui.modelMenu;render()">
-    ${ui.run.model}${UPDOWN}
-  </button>
-  ${ui.modelMenu ? `<div class="pickmenu" role="listbox" onclick="event.stopPropagation()">
+/* Model is an inline list with checkmarks. Three names fit, so nothing has to open on top of
+   anything — the popover never grows a second layer. */
+const modelList = () => `
+  <div class="picklist" role="radiogroup" aria-label="Model">
     ${CHOICES.model.map(([v, why]) => `
-      <button role="option" aria-selected="${ui.run.model === v}" onclick="setRun('model','${v}')">
+      <button role="radio" aria-checked="${ui.run.model === v}" onclick="setRun('model','${v}')">
         <span class="tick">${ui.run.model === v ? CHECK : ''}</span>
         <span class="grow">${v}</span><span class="why">${why}</span>
       </button>`).join('')}
-  </div>` : ''}`;
+  </div>`;
 
-/* The popover holds only what the footer does not already say: Model and Effort. Two labelled
-   rows, each a stock picker — there is nothing here to invent. */
+/* The popover holds only what the footer does not already say: Model and Effort. */
 const runPanel = (where = 'above') => !ui.menu ? '' : `
   <div class="runpanel ${where}" role="dialog" aria-label="How this Session runs" onclick="event.stopPropagation()">
-    <div class="frow">
-      <span class="lbl">Model</span>
-      <span class="ctl">${modelPicker()}</span>
-    </div>
-    <div class="frow">
-      <span class="lbl">Effort</span>
-      <span class="ctl">${segments('effort', true)}</span>
-    </div>
+    <div class="fsec"><h4>Model</h4>${modelList()}</div>
+    <div class="fsec"><h4>Effort</h4>${segments('effort', true)}</div>
     <button class="reset" onclick="resetRun()" style="${isDefault() ? 'opacity:.35;pointer-events:none' : ''}">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
         stroke-linecap="round" stroke-linejoin="round">${SVG.redo}</svg>
@@ -1089,8 +1060,8 @@ const FOOTERS = {
        html: () => `${modeSegments()}` },
 };
 
-function setRun(kind, v) { ui.run[kind] = v; ui.modelMenu = false; render(); }
-function resetRun() { ui.run = { ...DEFAULT_RUN }; ui.modelMenu = false; render(); }
+function setRun(kind, v) { ui.run[kind] = v; render(); }
+function resetRun() { ui.run = { ...DEFAULT_RUN }; render(); }
 
 const placeholder = s => s.state === 'running' ? 'Queue a follow-up…' : `Message ${s.cli}…`;
 const dropwash = () => ui.dragging
@@ -1264,10 +1235,9 @@ const session = () => {
 
 function applyStatePresets(st) {
   ui.text = ''; ui.atts = []; ui.queue = null; ui.dragging = false; ui.failed = false;
-  ui.menu = false; ui.modelMenu = false; ui.run = { ...DEFAULT_RUN };
+  ui.menu = false; ui.run = { ...DEFAULT_RUN };
   if (st.k === 'run') ui.menu = true;
   if (st.k === 'run-ask') { ui.menu = true; ui.run = { mode:'Ask', model:'Sonnet 5', effort:'High' }; }
-  if (st.k === 'run-model') { ui.menu = true; ui.modelMenu = true; }
   if (st.k === 'run-plan') { ui.run.mode = 'Plan'; }
   if (st.k === 'typing') ui.text = LOREM_4;
   if (st.k === 'ceiling') ui.text = LOREM_LONG;
@@ -1343,15 +1313,11 @@ function cycleState(d) {
 /* The menu closes on a click anywhere that is not it — the pill's own handler stops the event
    before this sees it, so the pill still toggles. */
 addEventListener('pointerdown', () => {
-  if (ui.menu || ui.modelMenu) { ui.menu = false; ui.modelMenu = false; render(); }
+  if (ui.menu) { ui.menu = false; render(); }
 });
 
 addEventListener('keydown', e => {
-  if (e.key === 'Escape' && (ui.menu || ui.modelMenu)) {
-    e.preventDefault();
-    if (ui.modelMenu) ui.modelMenu = false; else ui.menu = false;
-    render(); return;
-  }
+  if (e.key === 'Escape' && ui.menu) { e.preventDefault(); ui.menu = false; render(); return; }
   if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
   if (e.key === 'ArrowLeft')  cycleVariant(-1);
   if (e.key === 'ArrowRight') cycleVariant(1);

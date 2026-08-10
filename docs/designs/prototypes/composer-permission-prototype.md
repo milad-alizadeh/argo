@@ -36,7 +36,7 @@ not by looking at it.
 ### The states
 
 **Composing** — `rest` · `typing` · `ceiling` · `sent` · `running` · `queued` · `draft`
-**Run settings** — `run` · `run-model` · `run-ask` · `run-plan`
+**Run settings** — `run` · `run-ask` · `run-plan`
 **Attachments** — `attach` · `dragover` · `paste` · `noattach`
 **Permission** — `perm` · `perm-edit` · `expired`
 **Degraded** — `external` · `orphaned` · `failed`
@@ -71,9 +71,9 @@ ones.** The prototype's CSS exists only so the arrangement can be judged:
 | In the study | In the app |
 |---|---|
 | `.seg` (Mode, Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` |
-| `.menupick` (Model) | `Picker(…).pickerStyle(.menu)` — a plain pop-up button |
+| `.picklist` (Model) | `Picker(…).pickerStyle(.inline)` — rows with a checkmark |
 | `.runpanel` | `.popover(…)` with `.presentationBackground(.regularMaterial)` |
-| the panel's rows | `Form` / `LabeledContent` — label leading, control trailing |
+| the panel's two groups | `Form` sections, each with its own header |
 
 **Mode lives on the composer footer and is never repeated in the popover.** It is the one of
 the three that decides how often the agent stops to ask you something, so it must be readable
@@ -81,17 +81,24 @@ without opening anything — and once it is on the footer, restating it inside i
 twice. `Ask` takes the attention ink and `Plan` the accent, because both are departures from
 acting autonomously.
 
-The popover therefore holds exactly what the footer does not say: **Model** as a pop-up button
-over a list of names, and **Effort** as a segmented picker because it is an ordered scale rather
-than a set of equals. **Reset** names what it resets *to* — `Reset to Code · Opus 5 · Medium` —
-instead of saying "default" and making you open it to find out.
+The popover therefore holds exactly what the footer does not say: **Model** as an inline list
+with checkmarks, and **Effort** as a segmented picker because it is an ordered scale rather than
+a set of equals. Three model names fit, so the list stays inline — **the popover never grows a
+second layer**, which is what a pop-up button inside it did: its menu overflowed the popover's
+right edge and covered the Effort row. **Reset** names what it resets *to* —
+`Reset to Code · Opus 5 · Medium` — instead of saying "default" and making you open it to find
+out.
 
 The two treatments differ in where Model and Effort are read and set:
 
 | `&f=` | Composer footer | Deck header |
 |---|---|---|
 | **1** | Mode segments + a `Sonnet 5 · High` fact line opening the popover | unchanged |
-| **2** | Mode segments only | `Claude Code · Opus 5 · Medium`, clickable, popover drops below |
+| **2** | Mode segments only | `Claude Code · Opus 5 · Medium`, clickable, popover drops below the band |
+
+> The header's popover anchors to the **band**, not to the fact line it opens from: the fact
+> line clips its own overflow so long branch names ellipsize, which made a popover nested there
+> invisible.
 
 **2 is the quieter of the two**: the header is already where a Session's standing facts live, so
 Model and Effort join the line that states the CLI, and the composer keeps only the setting you
