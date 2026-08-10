@@ -226,11 +226,9 @@ answers a macOS authorisation prompt by hand and a sleeping display fails the sa
 must launch onto a `--specimen`, never the machine's own registry, or it asserts whatever that Mac
 happens to have on it.
 
-That run drives the **real WindowServer**, so it holds the keyboard and mouse for its whole length —
-there is no headless XCUITest to switch on. `sh scripts/e2e-vm.sh` gives it a screen that is not
-yours instead, running the same suite inside a Tart VM synced from the current worktree
-(`--provision` once per machine, headless every run after). Same gate, same tests; only the screen
-changes.
+That run drives the **real WindowServer**, so it holds the keyboard and mouse for its whole length,
+and there is no headless XCUITest to switch on. **Say so and wait before starting one** — the run
+takes the machine out from under whoever is at it.
 
 ## Tooling (RTK)
 
