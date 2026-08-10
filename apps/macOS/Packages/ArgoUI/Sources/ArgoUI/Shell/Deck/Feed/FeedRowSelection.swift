@@ -12,6 +12,10 @@ struct FeedRowSelection {
     /// Where the keyboard is. A `FocusState` binding rather than an ordinary one: focus is the
     /// system's to move, and a plain copy of it goes stale the moment a click lands somewhere else.
     var focus: FocusState<FeedFocus?>.Binding
+    /// The way the keyboard comes back to a row. The rows live inside the table's cells now, so
+    /// a `FocusState` value naming one resolves to nothing — the feed installs the table's own
+    /// hand-back here, and the default keeps the focus write for a surface that never did.
+    var homeward: ((FeedRow.ID) -> Void)?
 
     /// Open a row's evidence and go there. Focus follows the panel because the reader ASKED for
     /// it: a panel that opens beside an unmoved cursor is a pane a keyboard reader has to go and
@@ -28,7 +32,7 @@ struct FeedRowSelection {
     /// panel is showing.
     func close() {
         if let open {
-            focus.wrappedValue = .row(open)
+            hand(back: open)
         }
         open = nil
     }
@@ -49,9 +53,17 @@ struct FeedRowSelection {
     /// under an open lightbox.
     func darken(returningInto feed: [FeedRow]) {
         if let shot = lit, let row = feed.first(where: { $0.shows(shot) }) {
-            focus.wrappedValue = .row(row.id)
+            hand(back: row.id)
         }
         lit = nil
+    }
+
+    private func hand(back row: FeedRow.ID) {
+        if let homeward {
+            homeward(row)
+        } else {
+            focus.wrappedValue = .row(row)
+        }
     }
 }
 

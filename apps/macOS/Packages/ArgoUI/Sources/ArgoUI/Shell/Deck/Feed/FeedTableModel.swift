@@ -14,6 +14,9 @@ import SwiftUI
     var held: FeedRow.ID?
     /// Whether the reading is following the Session. Owned by `FeedView`, obeyed here.
     var isFollowing: Bool
+    /// Whether a deck seam is being dragged right now. Mid-drag the table re-measures visible
+    /// rows only; the edge off this flag is when the deferred full pass runs.
+    var isResizing: Bool
     /// Which prompts the reader has unfolded — the feed's copy, written through.
     var unfolded: Binding<Set<FeedRow.ID>>
     /// Reports a scroll the READER made, as the following answer it produced. Never called for a

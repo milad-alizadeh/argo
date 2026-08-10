@@ -11,6 +11,9 @@ import SwiftUI
 /// whether it is still following the Session, and what was said since the reader left the end.
 struct FeedView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Whether a deck seam is being dragged right now — the table degrades its re-measure to
+    /// the visible rows for exactly that long.
+    @Environment(\.deckIsResizing) private var isResizing
 
     let rows: [FeedRow]
     /// What the deck has open and where the keyboard is. Owned by the deck, not here: opening a
@@ -56,16 +59,17 @@ struct FeedView: View {
     var body: some View {
         FeedTable(
             rows: rows,
-            selection: selection,
+            selection: routed,
             held: held,
             isFollowing: isFollowing,
+            isResizing: isResizing,
             unfolded: $unfolded,
             onReaderScroll: reader(isNowFollowing:),
             handle: table,
         )
-        // The deck hands the keyboard back by writing a row into its focus space — but the rows
-        // live in the table's cells now, so the value is translated into the table's own focus
-        // rather than left for a hierarchy that holds no row to resolve.
+        // The deck's own surfaces still hand the keyboard back the old way — by writing a row
+        // into the focus space. No row resolves there any more, so the value is translated into
+        // the table's focus the moment it appears.
         .onChange(of: selection.focus.wrappedValue) { _, focus in
             guard case let .row(id) = focus else { return }
             table.focus(onto: id)
@@ -79,6 +83,16 @@ struct FeedView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Feed")
+    }
+
+    /// The deck's selection with the keyboard's way home rewired onto the table. A row closing
+    /// its own panel from inside a cell cannot ride `FocusState` back — nothing binds `.row`
+    /// any more — so the hand-back is the table's own, deterministic rather than a write into a
+    /// focus space that resolves it to nothing.
+    private var routed: FeedRowSelection {
+        var routed = selection
+        routed.homeward = { [table] id in table.focus(onto: id) }
+        return routed
     }
 
     /// The way back down, on screen only while the reading has stopped following.

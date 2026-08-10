@@ -15,6 +15,7 @@ struct FeedTable: NSViewRepresentable {
     let selection: FeedRowSelection
     let held: FeedRow.ID?
     let isFollowing: Bool
+    let isResizing: Bool
     @Binding var unfolded: Set<FeedRow.ID>
     let onReaderScroll: (Bool) -> Void
     let handle: FeedTableHandle
@@ -41,6 +42,7 @@ struct FeedTable: NSViewRepresentable {
             selection: selection,
             held: held,
             isFollowing: isFollowing,
+            isResizing: isResizing,
             unfolded: $unfolded,
             onReaderScroll: onReaderScroll,
             environment: context.environment,

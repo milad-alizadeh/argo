@@ -14,6 +14,11 @@ final class FeedTableView: NSTableView {
     /// should not have to learn which one this surface chose. Answers whether the row took it;
     /// a key an inert row refused falls through to the table's own handling.
     var activateFocused: (() -> Bool)?
+    /// A key the table's own handling scrolled by — Space paging, Home, End. Reported so the
+    /// follow latch reads the landing; a paged scroll is the reader's as much as a wheel's.
+    var keyScrolled: (() -> Void)?
+    /// The window's live resize ending — the moment the deferred full re-measure runs.
+    var liveResizeEnded: (() -> Void)?
 
     override func keyDown(with event: NSEvent) {
         if event.specialKey == .upArrow {
@@ -23,10 +28,17 @@ final class FeedTableView: NSTableView {
         } else if isActivation(event) {
             if activateFocused?() != true {
                 super.keyDown(with: event)
+                keyScrolled?()
             }
         } else {
             super.keyDown(with: event)
+            keyScrolled?()
         }
+    }
+
+    override func viewDidEndLiveResize() {
+        super.viewDidEndLiveResize()
+        liveResizeEnded?()
     }
 
     private func isActivation(_ event: NSEvent) -> Bool {
@@ -46,6 +58,10 @@ final class FeedRowCell: NSTableCellView {
 
     init() {
         self.host = NSHostingView(rootView: AnyView(EmptyView()))
+        // No sizing constraints at all: the table dictates the frame — width from the column,
+        // height from `heightOfRow` — so every constraint the hosting view would build is a
+        // SwiftUI layout pass spent probing a size nothing reads.
+        host.sizingOptions = []
         super.init(frame: .zero)
         identifier = Self.reuse
         host.translatesAutoresizingMaskIntoConstraints = false
