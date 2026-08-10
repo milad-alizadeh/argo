@@ -86,6 +86,11 @@ public final class Hub {
     /// exists first and survives the reconciliation.
     var companionReports: [SessionOwnership.ClaimID: CompanionReport] = [:]
 
+    /// Which Session handed its work to which, keyed by the Session that handed it over and holding
+    /// the id the fresh row was published under. Observed, because a handoff completing has to
+    /// reach the reading it is drawn at the foot of.
+    var handoffs: [String: String] = [:]
+
     @ObservationIgnored let spawnServices: SpawnServices
     @ObservationIgnored private(set) var companion: CompanionChannel?
 

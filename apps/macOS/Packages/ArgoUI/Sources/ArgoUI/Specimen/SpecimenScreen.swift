@@ -93,6 +93,17 @@ public struct SpecimenScreen: View {
             // urgency reads as the reading's, and — in the first and last two — that a header with
             // no button on it is still a complete line rather than one a control fell out of.
             SessionHeaderSpecimen(header: handoffHeader)
+        case .handedOffReading:
+            // The other half of the remedy, which is a pair of claims about one Session and so one
+            // PNG: the header keeps its red reading and has no button left on it, and the reading
+            // ends in the link to the Session the work went to. The link is the only row in the
+            // feed that leads anywhere, and whether it reads as pressable at the foot of a spent
+            // transcript — under a hairline, in machine type — is exactly what no test can say.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewHandedOffRows,
+                header: handoffHeader,
+            )
         case .contextGuide:
             // The ⓘ panel, stood in a glass of its own — a popover is a window of its own and
             // never lands in a screenshot of this one (`DrawerSpecimen`).

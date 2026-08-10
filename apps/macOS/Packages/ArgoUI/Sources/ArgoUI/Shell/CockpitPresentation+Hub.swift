@@ -69,6 +69,7 @@ extension CockpitPresentation.Session {
             totalTokens: session.totalTokens,
             subagentTokens: session.subagentTokens,
             contextTokens: session.contextTokens,
+            handedOffTo: session.handedOffTo,
             events: session.events,
         )
     }

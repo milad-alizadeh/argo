@@ -16,6 +16,14 @@ public protocol HandoffHost: AnyObject {
     func brief(at path: String) -> String?
     /// Start a fresh Session, seeded. Returns the id of the row it published.
     func spawn(_ seed: SessionSeed) async throws -> String
+    /// Remember that one Session's work now belongs to another.
+    ///
+    /// The fourth act, and the only one that happens after the handoff has succeeded: without it
+    /// the two rows are two Sessions that happen to share a folder, and the chain the remedy was
+    /// for exists nowhere but in the memory of whoever pressed the button. Told to the host rather
+    /// than returned to the caller, so the sequence that PRODUCED the edge is the sequence that
+    /// records it — a caller that forgot to would leave a handoff no surface could show.
+    func handedOff(sessionID: String, to fresh: String)
 }
 
 /// How long Argo waits for a brief, and how often it looks.

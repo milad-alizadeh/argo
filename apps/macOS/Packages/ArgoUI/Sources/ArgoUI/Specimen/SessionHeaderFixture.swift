@@ -62,14 +62,17 @@ enum SessionHeaderFixture {
     ///
     /// The first is the one with NOTHING in it, and it is here on purpose: story 44 is a claim
     /// about an absence, and an absence has to be looked at on the same line as the presence to be
-    /// judged at all. The last two are the same reading on a Session Argo cannot drive — the
-    /// warning without the button (story 49), which no value test can show is still legible.
+    /// judged at all. Then the same reading on a Session Argo cannot drive — the warning without
+    /// the button (story 49), which no value test can show is still legible. The last is the fourth
+    /// way the button can be absent: the remedy already taken, at a reading that stays red because
+    /// the context really is that full.
     static let handoffs: [(specimen: Specimen, header: SessionHeaderProjection.Header)] = [
         (.handoffWithheld, header(context: 67175)),
         (.handoffAtWarn, header(context: 216_764)),
         (.handoffAtCrit, header(context: 472_233)),
         (.handoffOnReadOnly, header(context: 216_764, access: .external)),
         (.handoffOnOrphaned, header(context: 472_233, access: .orphaned)),
+        (.handedOffReading, header(context: 472_233, handedOffTo: "fresh-session")),
     ]
 
     /// The button's own states for the preview that judges the three side by side — amber, red, and
@@ -103,6 +106,7 @@ enum SessionHeaderFixture {
     static func header(
         context tokens: Int?,
         access: CockpitPresentation.Session.Access = .managed,
+        handedOffTo: String? = nil,
     )
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: session(
@@ -110,6 +114,7 @@ enum SessionHeaderFixture {
             title: "Ship the native Liquid Glass application shell",
             branch: "argo/#511-header-context-fullness",
             contextTokens: tokens,
+            handedOffTo: handedOffTo,
         ))
     }
 
@@ -134,6 +139,7 @@ enum SessionHeaderFixture {
         title: String,
         branch: String,
         contextTokens: Int? = 216_764,
+        handedOffTo: String? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -150,6 +156,7 @@ enum SessionHeaderFixture {
                 title: "The header carries the Session's Workspace, CLI and issue",
             ),
             contextTokens: contextTokens,
+            handedOffTo: handedOffTo,
         )
     }
 

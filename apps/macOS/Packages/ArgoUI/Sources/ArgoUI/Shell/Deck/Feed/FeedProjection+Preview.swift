@@ -62,6 +62,21 @@ extension FeedProjection {
         return mark
     }
 
+    /// The same reading, handed over. The whole feed and not a filter, because what the render has
+    /// to settle is the row's place: the last thing under a Session's whole transcript and its
+    /// spend, reading as a way OUT of it rather than as one more thing the agent said.
+    static let previewHandedOffRows = rows(
+        from: CockpitPresentation.Session.previewTranscript,
+        handedOff: previewHandoff,
+    )
+
+    /// The Session the preview reading was handed to. Titled like a real one, because the link is
+    /// only judgeable at the length a title actually reaches.
+    static let previewHandoff = FeedHandoff(
+        sessionID: "session-handed-to",
+        title: "Ship the native Liquid Glass application shell",
+    )
+
     /// The attention state on its own: both questions, with everything they were asked between
     /// taken away. In the full feed they are two rows in a screenful, and a render where the one
     /// waiting is below the fold settles nothing about the ink it takes.

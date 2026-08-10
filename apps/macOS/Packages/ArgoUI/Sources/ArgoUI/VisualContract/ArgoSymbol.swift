@@ -31,6 +31,11 @@ public enum ArgoSymbol {
     /// A reading that needs decoding once: the mark that opens the explanation beside it. An `i`
     /// rather than a `?` — what it opens is what these lines MEAN, not help with using the app.
     public static let about = "info.circle"
+    /// The work carried on in a fresh Session: the mark on the link at the foot of the reading it
+    /// was carried on FROM. It points the way the reader is being sent, which is why it is not the
+    /// `delegated` turn-down arrow — a handoff is not work nested inside this Session's, it is this
+    /// Session's work continuing beside it.
+    public static let handedOff = "arrow.right.circle"
     /// The disclosure on a control that opens something BELOW it — a menu, a drawer under its
     /// vessel.
     public static let disclosure = "chevron.down"

@@ -94,6 +94,10 @@ public final class SessionHandoff {
             cwd: request.cwd,
             opening: HandoffScript.opening(fromBriefAt: brief.path, issue: request.issue),
         ))
+        // Last, and only on the path where a fresh Session actually exists: the edge is what makes
+        // the two rows a chain, and one recorded before the spawn returned would name a Session
+        // that a refusal has just prevented from being there.
+        host.handedOff(sessionID: request.sessionID, to: sessionID)
         return Outcome(briefPath: brief.path, sessionID: sessionID)
     }
 

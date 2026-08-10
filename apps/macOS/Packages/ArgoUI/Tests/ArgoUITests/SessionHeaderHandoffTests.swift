@@ -57,6 +57,17 @@ struct SessionHeaderHandoffTests {
         }
     }
 
+    /// The remedy is offered once. A Session that has already handed its work over keeps the
+    /// coloured reading — the context really is that full — and loses the button, because a second
+    /// press would open a third Session on the same branch.
+    @Test
+    func `a Session that has handed off keeps the reading and loses the button`() {
+        let header = header(tokens: Self.pastCrit, handedOffTo: "fresh-session")
+
+        #expect(header.context.tier == .crit)
+        #expect(header.handoff == nil)
+    }
+
     /// The whole rule in one table, over both axes at once — so a posture added to the access enum
     /// or a tier added to the reading has to answer here rather than inheriting a branch.
     @Test
@@ -147,13 +158,15 @@ struct SessionHeaderHandoffTests {
             .handoffAtCrit,
             .handoffOnReadOnly,
             .handoffOnOrphaned,
+            .handedOffReading,
         ])
-        #expect(drawn.map(\.header.handoff?.tier) == [nil, .warn, .crit, nil, nil])
+        #expect(drawn.map(\.header.handoff?.tier) == [nil, .warn, .crit, nil, nil, nil])
     }
 
     private func header(
         tokens: Int?,
         access: CockpitPresentation.Session.Access = .managed,
+        handedOffTo: String? = nil,
     )
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: CockpitPresentation.Session(
@@ -166,6 +179,7 @@ struct SessionHeaderHandoffTests {
             cli: .claude,
             workspace: .init(branch: "main"),
             contextTokens: tokens,
+            handedOffTo: handedOffTo,
         ))
     }
 }

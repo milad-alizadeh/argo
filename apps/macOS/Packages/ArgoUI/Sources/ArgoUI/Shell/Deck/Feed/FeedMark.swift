@@ -1,9 +1,9 @@
 import ArgoEngine
 
-/// The punctuation of a reading: the three things that happen BETWEEN what an agent said and did.
+/// The punctuation of a reading: the things that happen BETWEEN what an agent said and did.
 ///
 /// Not rows about the work — rows about the shape of the record itself. That is why they are one
-/// kind rather than three: they are drawn alike, they carry the feed's only hairlines, and a run of
+/// kind rather than four: they are drawn alike, they carry the feed's only hairlines, and a run of
 /// looking breaks at each of them for the same reason a paragraph does.
 enum FeedMark: Equatable, Sendable {
     /// History was condensed here. The resume chain stitches across it; the reading says so.
@@ -13,6 +13,9 @@ enum FeedMark: Equatable, Sendable {
     case turnEnded(StopReason)
     /// What the Session has spent, as the record reported it.
     case spent(Usage)
+    /// The work left here for a fresh Session, and where it went. The feed's one row that is a way
+    /// out of the reading rather than a part of it — see `FeedHandoff`.
+    case handedOff(FeedHandoff)
 }
 
 extension FeedMark {
@@ -32,7 +35,19 @@ extension FeedMark {
         // cannot get anywhere else.
         case let .turnEnded(reason): "turn ended · \(reason.rawValue)"
         case let .spent(usage): "session · \(FeedSpend.words(usage))"
+        // Named, rather than "handed off" alone. The whole of what this row is for is the reader
+        // knowing where to go next, and the destination's own title is what the roster will show
+        // them when they get there.
+        case let .handedOff(handoff): "handed off to \(handoff.title)"
         }
+    }
+
+    /// Where this mark leads, for the one kind that leads anywhere. `nil` for the rest, which is
+    /// what keeps a hairline a hairline: three of these four rows are punctuation, and a renderer
+    /// that made all of them pressable would offer a click that does nothing three times a turn.
+    var handoff: FeedHandoff? {
+        guard case let .handedOff(handoff) = self else { return nil }
+        return handoff
     }
 
     /// What a screen reader is told the mark is. A rule with no words is a shape, and a shape is

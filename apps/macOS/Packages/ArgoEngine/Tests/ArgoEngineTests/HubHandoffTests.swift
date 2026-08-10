@@ -97,6 +97,39 @@ struct HubHandoffTests {
         #expect(launch.arguments == ["--mcp-config", launch.arguments[1]])
     }
 
+    /// The chain, as the roster publishes it — and the part of it that is easy to get wrong: the
+    /// fresh row is published under a claim id and re-keyed to the id its CLI picks, so a link that
+    /// held the id it was handed would go nowhere the moment the fresh agent wrote its first
+    /// record.
+    @Test
+    func `the handed-off Session names the fresh row, through the rebind`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        // The full Session first, so no claim covers it: it is somebody else's agent, observed.
+        await hubObserveToEnd(fixture.hub, Self.observedFullSession(of: fixture))
+        let fresh = try await fixture.hub.spawn(SessionSeed(cwd: fixture.projectURL.path))
+        fixture.hub.handedOff(sessionID: "full-session", to: fresh)
+
+        #expect(Self.handedOffTo(in: fixture.hub, from: "full-session") == fresh)
+
+        // The fresh agent writes its first record, and its row stands down in favour of the one the
+        // CLI named. The link has to arrive at the same place.
+        await hubObserveToEnd(fixture.hub, Self.observedSpawn(of: fixture))
+
+        #expect(Self.handedOffTo(in: fixture.hub, from: "full-session") == "session-from-cli")
+        #expect(fixture.hub.sessions.count == 2)
+    }
+
+    /// Every other Session says nothing, rather than an absent link reading as one to nowhere.
+    @Test
+    func `a Session that handed nothing over carries no chain`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        await hubObserveToEnd(fixture.hub, Self.observedFullSession(of: fixture))
+
+        #expect(Self.handedOffTo(in: fixture.hub, from: "full-session") == nil)
+    }
+
     /// Briefs are owned state in application support, beside the Project registry — never in the
     /// Project. A brief is a working note between two Sessions, and a repo is not where one
     /// belongs.
@@ -105,6 +138,24 @@ struct HubHandoffTests {
         #expect(Hub.handoffRoot.lastPathComponent == "handoffs")
         #expect(Hub.handoffRoot.deletingLastPathComponent()
             == ProjectRegistryStore.defaultFileURL.deletingLastPathComponent())
+    }
+
+    private static func handedOffTo(in hub: Hub, from sessionID: String) -> String? {
+        hub.sessions.first { $0.id == sessionID }?.handedOffTo
+    }
+
+    /// The Session being handed OFF: in the Project's folder like the spawn, but observed before
+    /// any
+    /// claim exists, so nothing here is Argo's.
+    private static func observedFullSession(of fixture: SpawnFixture) -> TranscriptObservation {
+        hubTestObservation(
+            id: "full-session",
+            events: [
+                .cwd(fixture.projectURL.path),
+                .prompt(text: "A long conversation", atMs: Date().epochMs),
+                .turnEnded(.endTurn),
+            ],
+        )
     }
 
     private static func observedSpawn(of fixture: SpawnFixture) -> TranscriptObservation {

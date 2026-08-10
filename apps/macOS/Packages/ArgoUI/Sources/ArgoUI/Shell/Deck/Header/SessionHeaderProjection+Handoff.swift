@@ -4,14 +4,20 @@ import ArgoEngine
 ///
 /// The spec's own line, spelled in Swift and nowhere else in the app:
 ///
-///     handoff(s) = tier(s) ∈ {.warn, .crit} && s.access == .managed
+///     handoff(s) = tier(s) ∈ {.warn, .crit} && s.access == .managed && s.handedOffTo == nil
 ///
-/// Two facts and no third. It is not offered under the WARN line because a control that is always
-/// there is a control nobody reads by the second Session (#502, story 44) — the remedy appears at
-/// the moment it is the right move and not before. It is not offered on a Session Argo cannot drive
-/// because handing off means TYPING at a prompt, and Argo owns no prompt on an external or an
-/// orphaned Session (story 49): the coloured reading still warns, and the button that would lie
-/// about what Argo can do is simply not drawn.
+/// Three facts and no fourth. It is not offered under the WARN line because a control that is
+/// always there is a control nobody reads by the second Session (#502, story 44) — the remedy
+/// appears at the moment it is the right move and not before. It is not offered on a Session Argo
+/// cannot drive because handing off means TYPING at a prompt, and Argo owns no prompt on an
+/// external or an orphaned Session (story 49): the coloured reading still warns, and the button
+/// that would lie about what Argo can do is simply not drawn.
+///
+/// And it is not offered TWICE. A Session that has already handed its work over keeps its coloured
+/// reading — the context really is that full, and saying otherwise would be a lie about the number
+/// — but the remedy has been taken, and the reading now ends in a link to the Session that took it.
+/// A second press would type `/handoff` at an agent that has already summarised itself and open a
+/// third Session against the same branch, which is not a chain but a fork nobody asked for.
 extension SessionHeaderProjection {
     struct Handoff: Equatable, Sendable {
         /// The verb, and the whole of the control's ink — **no caption** (story 46): the coloured
@@ -49,6 +55,7 @@ extension SessionHeaderProjection {
 
     static func handoff(from session: CockpitPresentation.Session) -> Handoff? {
         guard session.access == .managed,
+              session.handedOffTo == nil,
               let tier = context(tokens: session.contextTokens).tier,
               tier != .okay
         else { return nil }
