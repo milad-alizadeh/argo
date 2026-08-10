@@ -1,43 +1,86 @@
 import SwiftUI
 
-/// What the Session is working on and with, beside its title: the branch and that branch's state,
-/// the CLI and model running it, and the issue it serves.
+/// What the Session is working on and with, on the quiet line under its title: what is running it,
+/// the issue it serves, the branch and that branch's state, and — last — whether it can be driven
+/// at all.
 ///
 /// Its own view rather than four more helpers on `SessionHeader`, because the line has one layout
 /// rule of its own and it is the whole point of the surface: **the branch gives way first.** A
-/// name long enough to fill the line must not cost the facts after it, so everything to the right
-/// of the branch holds its width and only the branch is cut.
+/// name long enough to fill the line must not cost the facts after it, so every other fact holds
+/// its width and only the branch is cut.
+///
+/// Which is also why the branch sits LATE rather than first. The facts that never change length —
+/// the CLI, the model, the issue number — read in the same place on every Session, and the one
+/// that varies from eight characters to forty is put where its variation costs the others nothing.
+///
+/// The facts are divided by a middle dot rather than by whitespace alone, which is how the
+/// approved study draws them. At this size the groups are three or four words with spaces already
+/// inside them, and a gap is not a boundary a reader can see.
 struct SessionHeaderFacts: View {
     @Environment(\.argo) private var argo
 
     let header: SessionHeaderProjection.Header
 
+    /// Where each fact falls on the line. The order is here, once, rather than implied by the
+    /// order of four `if`s and restated by three booleans that have to agree with them.
+    private enum Position: Int, CaseIterable {
+        case agent, issue, checkout, access
+    }
+
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.comfortable) {
-            branch
-            marks
-            fixedFact(header.agent)
+        HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.snug) {
+            agent
             issue
+            checkout
+            access
         }
     }
 
-    /// The one flexible thing on the line, cut in the MIDDLE: a real branch name is addressed
-    /// from both ends — the ticket number at the head and the slug at the tail — and a tail cut
-    /// takes the half that says what the work is.
-    @ViewBuilder private var branch: some View {
-        if let branch = header.branch {
-            HStack(spacing: ArgoSpacing.tight) {
-                ArgoGlyph(ArgoSymbol.branch, .inline)
-                Text(branch)
-                    .argoText(ArgoTypography.machine)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+    /// Which facts this Session actually has, in the order above.
+    private var presence: [Bool] {
+        [header.agent != nil, header.issue != nil, header.checkout != nil, header.access != nil]
+    }
+
+    /// Whether anything before this fact is actually on the line. A dot divides two facts; a dot
+    /// with nothing on one side of it divides a fact from nothing, which is how a line about a
+    /// Session with no CLI on record would open on a stray mark.
+    private func preceded(_ position: Position) -> Bool {
+        presence.prefix(position.rawValue).contains(true)
+    }
+
+    /// The branch under the mark that says which kind of checkout it is — a plain branch, or the
+    /// two stacked planes of a worktree. The counts ride INSIDE this group, unseparated: they are
+    /// facts about this branch and not a fourth thing on the line.
+    ///
+    /// The one flexible thing here, cut in the MIDDLE: a real branch name is addressed from both
+    /// ends — the ticket number at the head and the slug at the tail — and a tail cut takes the
+    /// half that says what the work is.
+    @ViewBuilder private var checkout: some View {
+        if let checkout = header.checkout {
+            separated(by: preceded(.checkout)) {
+                // A step wider than the gap INSIDE the branch group, so the counts read as
+                // hanging off the branch rather than as more of its name.
+                HStack(spacing: ArgoSpacing.base) {
+                    HStack(spacing: ArgoSpacing.tight) {
+                        // Absent, not substituted, when Argo has not read the kind: the mark is
+                        // the only thing that tells a worktree from the Project's own checkout,
+                        // so drawing the plain one would claim this is not a worktree.
+                        if let symbol = checkout.symbol {
+                            ArgoGlyph(symbol, .inline)
+                        }
+                        Text(checkout.branch)
+                            .argoText(ArgoTypography.machineCaption)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    .foregroundStyle(argo.color.text.tertiary)
+                    .help(checkout.detail)
+                    marks
+                }
             }
-            .foregroundStyle(argo.color.text.secondary)
-            .help(branch)
-            // BELOW the title, which takes no priority of its own. Two unprioritised texts on
-            // one line share the shortfall between them, so the title would be cut alongside the
-            // branch — and the branch is the fact this line can most afford to lose half of.
+            // BELOW everything else on the line, which holds its width. Two unprioritised groups
+            // share a shortfall between them, and the branch is the one fact here that can afford
+            // to lose half of itself.
             .layoutPriority(-1)
         }
     }
@@ -45,6 +88,9 @@ struct SessionHeaderFacts: View {
     /// Drawn rather than spelled — a pencil with a count and a push-arrow with a count need no
     /// key. Each carries the sentence that says what it counts, because a glyph is a thing you
     /// recognise and not a thing you can be sure of.
+    ///
+    /// One step brighter than the branch they sit against, as the study sets them: the branch is
+    /// where the Session is, and these are what is UNSAVED there.
     private var marks: some View {
         HStack(spacing: ArgoSpacing.base) {
             // By position, not by symbol: `ArgoSymbol.uncommitted` is deliberately the same mark
@@ -55,36 +101,92 @@ struct SessionHeaderFacts: View {
                     ArgoGlyph(mark.symbol, .inline)
                     if let count = mark.count {
                         Text("\(count)")
-                            .argoText(ArgoTypography.machine)
+                            .argoText(ArgoTypography.machineCaption)
                     }
                 }
                 .help(mark.detail)
             }
         }
-        .foregroundStyle(argo.color.text.tertiary)
+        .foregroundStyle(argo.color.text.secondary)
         .layoutPriority(1)
+    }
+
+    /// What is running: `Claude Code · Opus 5`, composed by the projection out of whichever of
+    /// the two it could establish.
+    @ViewBuilder private var agent: some View {
+        if let agent = header.agent {
+            separated(by: preceded(.agent)) {
+                Text(agent)
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(argo.color.text.tertiary)
+                    .lineLimit(1)
+            }
+        }
     }
 
     /// Named, never bare — and carrying the issue's own words on hover, where the provider gave
     /// any. There is no attach control beside it: with no provider connected there is nothing to
     /// attach to (`CONTEXT.md` L1).
+    ///
+    /// Set in Ion Blue under the mark that says where it leads, which is the study's treatment.
+    /// The two travel together on purpose — the colour alone would say only that something here
+    /// is special.
+    ///
+    /// The arrow is a CHARACTER in the run rather than an `ArgoGlyph`, as the study writes it. An
+    /// icon rung is an absolute size and would stand a head above 11pt type; set as type it takes
+    /// the label's own size and baseline, which is what "beside the words" means here.
     @ViewBuilder private var issue: some View {
         if let issue = header.issue {
-            fixedFact(issue.label)
-                .help(issue.detail ?? issue.label)
+            separated(by: preceded(.issue)) {
+                Text("\(issue.label) ↗")
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(argo.color.interaction.accent)
+                    .lineLimit(1)
+                    .help(issue.detail ?? issue.label)
+            }
         }
     }
 
-    /// A fact that holds its width. Everything after the branch is drawn this way, which is what
-    /// makes the branch the thing that gives.
-    @ViewBuilder private func fixedFact(_ text: String?) -> some View {
-        if let text {
-            Text(text)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.tertiary)
-                .lineLimit(1)
-                .layoutPriority(1)
+    /// Last on the line, because it is the only fact here that is about the READER rather than
+    /// about the work — and silent for the managed Session, which is most of them.
+    ///
+    /// Which of the two postures is worth a colour was decided by the projection: a Session Argo
+    /// LOST is the one worth finding, and one it never owned is an ordinary thing to be reading.
+    @ViewBuilder private var access: some View {
+        if let access = header.access {
+            separated(by: preceded(.access)) {
+                Text(access.word)
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(access.tone?.tint(in: argo.color) ?? argo.color.text.tertiary)
+                    .lineLimit(1)
+                    .help(access.detail)
+            }
         }
+    }
+
+    /// A fact and the dot that divides it from whatever came before it, drawn together so the two
+    /// can never come apart — and holding their width, which is what makes the branch the one
+    /// thing on the line that gives.
+    ///
+    /// The dot is hidden from accessibility: it is punctuation between facts a screen reader is
+    /// already given as a list, and read aloud it is a word in the middle of every one of them.
+    private func separated(
+        by preceded: Bool,
+        @ViewBuilder _ fact: () -> some View,
+    )
+        -> some View {
+        HStack(spacing: ArgoSpacing.snug) {
+            if preceded {
+                // Dimmer than the facts either side of it, as the study sets it: punctuation that
+                // reads as loudly as the words is a third fact between every two.
+                Text(verbatim: "·")
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(argo.color.text.disabled)
+                    .accessibilityHidden(true)
+            }
+            fact()
+        }
+        .layoutPriority(1)
     }
 }
 

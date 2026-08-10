@@ -13,12 +13,15 @@ enum SessionHeaderFixture {
     static let headers = CockpitPresentation.Session.Access.allCases.map(header(for:))
 
     /// A real branch name off this machine, long enough that the line cannot hold it — the case
-    /// story 25 is about. What the PNG settles is that the cut lands on the BRANCH and that the
-    /// marks, the model and the issue after it are all still there.
+    /// story 25 is about.
+    static let longBranchName = "worktree-ticket-375-graphite-ion-blue"
+
+    /// What the PNG settles is that the cut lands on the BRANCH and that the marks, the model and
+    /// the issue after it are all still there.
     static let longBranch = SessionHeaderProjection.header(from: session(
         access: .managed,
         title: "Ship the graphite ion-blue scope vessel",
-        branch: "worktree-ticket-375-graphite-ion-blue",
+        branch: longBranchName,
     ))
 
     /// A Session whose record carried almost nothing: no CLI, a model nobody's table knows, no
@@ -60,7 +63,7 @@ enum SessionHeaderFixture {
         SessionHeaderProjection.header(from: session(
             access: access,
             title: title(for: access),
-            branch: "argo/#510-session-header-facts",
+            branch: branch(for: access),
         ))
     }
 
@@ -73,6 +76,19 @@ enum SessionHeaderFixture {
             branch: "argo/#511-header-context-fullness",
             contextTokens: tokens,
         ))
+    }
+
+    /// The external posture is given the branch that does not fit, deliberately. The branch sits
+    /// immediately BEFORE the access mark on the line, so a name long enough to eat the width is
+    /// exactly what crowds the mark out — and a mark that survives only beside a short name is a
+    /// mark drawn for fixtures.
+    ///
+    /// A `switch`, so a fourth posture has to choose rather than inheriting the short one.
+    private static func branch(for access: CockpitPresentation.Session.Access) -> String {
+        switch access {
+        case .external: longBranchName
+        case .managed, .orphaned: "argo/#510-session-header-facts"
+        }
     }
 
     /// The Workspace and the issue are drawn on every posture on purpose: whether a read-only
@@ -102,9 +118,9 @@ enum SessionHeaderFixture {
         )
     }
 
-    /// The external one's title is long enough to be CUT at the narrowest deck, deliberately: a
-    /// mark that survives only in a wide window is a mark drawn for fixtures, and the render this
-    /// exists for is whether `READ-ONLY` still sits beside a title the line could not hold.
+    /// The external one's title is long enough to be CUT at the narrowest deck, deliberately: the
+    /// title has the width to itself now, and what a PNG has to show is that taking all of it
+    /// still leaves it cut at the tail rather than wrapping into the line below.
     private static func title(
         for access: CockpitPresentation.Session.Access,
     )
