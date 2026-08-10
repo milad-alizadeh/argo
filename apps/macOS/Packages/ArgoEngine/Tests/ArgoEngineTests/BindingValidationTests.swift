@@ -7,7 +7,7 @@ import Testing
 @Suite("Bind-time validation")
 struct BindingValidationTests {
     @Test
-    func `an Account that cannot see the scope is refused, and nothing is written`() async throws {
+    func `an Account that cannot see the scope is refused`() async throws {
         let fixture = try BindingFixture()
         defer { fixture.remove() }
         let projectID = try await fixture.project("argo")
@@ -18,6 +18,20 @@ struct BindingValidationTests {
         await #expect(throws: BindingRefusal.scopeNotVisible("acme/private")) {
             try await bindings.bind(.gitHub(scope: "acme/private"), to: projectID)
         }
+    }
+
+    /// The half that matters after the refusal: a Binding recorded here would read empty forever,
+    /// which is the state bind-time validation exists to prevent.
+    @Test
+    func `a refused bind writes nothing`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let projectID = try await fixture.project("argo")
+        try await fixture.accountStore().authorizeGitHub(id: "1")
+        await fixture.scopeCheck.answer(.notVisible, for: "acme/private")
+        let bindings = fixture.bindings()
+
+        _ = try? await bindings.bind(.gitHub(scope: "acme/private"), to: projectID)
 
         #expect(await fixture.projects.store().load().binding(on: .workItem, of: projectID) == nil)
     }

@@ -37,8 +37,8 @@ public actor ProjectBindings {
         let account = try await account(binding.accountID, filling: binding.port)
         let grant = try await grant(for: account)
         switch await scopeCheck.visibility(of: BindingProbe(
+            binding: binding,
             provider: account.provider,
-            scope: binding.scope,
             grant: grant,
         )) {
         case .visible: break
@@ -63,6 +63,12 @@ public actor ProjectBindings {
         }
         guard let account = await accounts.load().account(id: binding.accountID) else {
             return .broken(binding, .accountRemoved)
+        }
+        // `bind` refuses this, so reaching it means the file was written by something else — a hand
+        // edit, or a build that once allowed it. Re-asked here because the registry is not a
+        // trusted input, and the alternative is reading Delivery truth off a Work Item provider.
+        guard account.provider.serves(port) else {
+            return .broken(binding, .portNotServedByProvider)
         }
         guard let grant = try? await accounts.grant(for: binding.accountID) else {
             return .broken(binding, .grantMissing)

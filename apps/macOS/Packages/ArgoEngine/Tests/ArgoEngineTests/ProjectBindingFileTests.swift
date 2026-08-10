@@ -59,7 +59,21 @@ struct ProjectBindingFileTests {
     /// unbound — a state the cockpit already renders and the user can bind again — rather than
     /// costing the Project every Binding it had.
     @Test
-    func `an unreadable Binding leaves its port unbound and the rest readable`() async throws {
+    func `an unreadable Binding leaves its own port unbound`() async throws {
+        let registry = try await Self.halfUnreadableRegistry()
+
+        #expect(registry.binding(on: .workItem, of: "a") == nil)
+    }
+
+    @Test
+    func `an unreadable Binding costs the Project none of its others`() async throws {
+        let registry = try await Self.halfUnreadableRegistry()
+
+        #expect(registry.binding(on: .codeHost, of: "a")?.scope == "milad/argo")
+    }
+
+    /// One Project, two Bindings, and only the second one decodable.
+    private static func halfUnreadableRegistry() async throws -> ProjectRegistry {
         let fixture = try ProjectFixture()
         defer { fixture.remove() }
         try fixture.writeRegistryFile("""
@@ -69,11 +83,7 @@ struct ProjectBindingFileTests {
             { "port": "codeHost", "accountID": "github:1", "scope": "milad/argo" }
           ] }] }
         """)
-
-        let registry = await fixture.store().load()
-
-        #expect(registry.binding(on: .workItem, of: "a") == nil)
-        #expect(registry.binding(on: .codeHost, of: "a")?.scope == "milad/argo")
+        return await fixture.store().load()
     }
 
     /// The path is an attribute and the id is the key, so a Project that moves keeps every choice

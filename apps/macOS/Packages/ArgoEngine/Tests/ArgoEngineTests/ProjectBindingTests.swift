@@ -111,7 +111,7 @@ struct ProjectBindingTests {
         defer { fixture.remove() }
         let first = try await fixture.project("first")
         let second = try await fixture.project("second")
-        let api = StubProviderAPI(body: #"{ "full_name": "milad/app" }"#)
+        let api = StubProviderAPI(body: #"{ "full_name": "milad/app", "has_issues": true }"#)
         let store = fixture.accountStore()
         try await store.authorizeGitHub(id: "1", token: "ghu_personal")
         let bindings = fixture.bindings(scopeCheck: ProviderScopeCheck(transport: api))

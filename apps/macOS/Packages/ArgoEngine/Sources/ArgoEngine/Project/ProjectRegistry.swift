@@ -67,17 +67,17 @@ public struct ProjectRegistry: Equatable, Sendable {
     ///
     /// An id no record carries is left alone rather than creating one: binding is a choice about a
     /// Project, and a Project is created by registration and by nothing else.
-    func binding(_ binding: ProjectBinding, to projectID: String) -> ProjectRegistry {
-        mapping(projectID) { $0.binding(binding) }
+    func replacingBinding(_ binding: ProjectBinding, of projectID: String) -> ProjectRegistry {
+        updating(projectID) { $0.replacingBinding(binding) }
     }
 
     /// Give a port back to unbound. The Account keeps its grant — this says which provider *this*
     /// Project reads through, and nothing about the identity itself.
-    func unbinding(port: AccountPort, from projectID: String) -> ProjectRegistry {
-        mapping(projectID) { $0.unbinding(port: port) }
+    func removingBinding(port: AccountPort, of projectID: String) -> ProjectRegistry {
+        updating(projectID) { $0.removingBinding(port: port) }
     }
 
-    private func mapping(
+    private func updating(
         _ projectID: String,
         _ transform: (ProjectRecord) -> ProjectRecord,
     )

@@ -33,7 +33,7 @@ public struct ProjectRecord: Equatable, Sendable, Identifiable {
 
     /// Bind a port, replacing whatever filled it. Only that port moves: one GitHub Account normally
     /// fills both, and nothing in the model says the two have to name the same one.
-    func binding(_ binding: ProjectBinding) -> ProjectRecord {
+    func replacingBinding(_ binding: ProjectBinding) -> ProjectRecord {
         ProjectRecord(
             id: id,
             path: path,
@@ -41,7 +41,7 @@ public struct ProjectRecord: Equatable, Sendable, Identifiable {
         )
     }
 
-    func unbinding(port: AccountPort) -> ProjectRecord {
+    func removingBinding(port: AccountPort) -> ProjectRecord {
         ProjectRecord(id: id, path: path, bindings: bindings.filter { $0.port != port })
     }
 

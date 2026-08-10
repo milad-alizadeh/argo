@@ -18,10 +18,14 @@ public actor AccountRegistryStore {
     private let grants: AccountGrantStore
     private let bindings: AccountBindingIndex
 
+    /// `bindings` carries no default on purpose. It is the *other* registry — the Project one — and
+    /// a default would quietly reach for the machine's real `projects.json` however this store was
+    /// pointed, so a store built against a temporary file would report orphans from somewhere else
+    /// entirely. Which registry answers is a decision the composition root makes out loud.
     public init(
         fileURL: URL = AccountRegistryStore.defaultFileURL,
         grants: AccountGrantStore = KeychainGrantStore(),
-        bindings: AccountBindingIndex = ProjectBindingIndex(),
+        bindings: AccountBindingIndex,
     ) {
         self.fileURL = fileURL
         self.grants = grants

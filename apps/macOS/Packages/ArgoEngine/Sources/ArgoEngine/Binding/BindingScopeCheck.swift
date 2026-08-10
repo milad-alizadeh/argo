@@ -1,16 +1,29 @@
 import Foundation
 
 /// What Argo asks a provider before it records a Binding: can this identity, holding this grant,
-/// see this scope?
+/// read this scope **through this port**?
+///
+/// The port is part of the question and not context around it. One GitHub repository can be
+/// perfectly visible and still have Issues switched off, and a Work Item Binding to it reads empty
+/// forever — the same silence a scope the Account cannot see produces, and the one bind time exists
+/// to tell apart.
 public struct BindingProbe: Sendable {
+    public let binding: ProjectBinding
     public let provider: AccountProvider
-    public let scope: String
     public let grant: AccountGrant
 
-    public init(provider: AccountProvider, scope: String, grant: AccountGrant) {
+    public init(binding: ProjectBinding, provider: AccountProvider, grant: AccountGrant) {
+        self.binding = binding
         self.provider = provider
-        self.scope = scope
         self.grant = grant
+    }
+
+    public var scope: String {
+        binding.scope
+    }
+
+    public var port: AccountPort {
+        binding.port
     }
 }
 

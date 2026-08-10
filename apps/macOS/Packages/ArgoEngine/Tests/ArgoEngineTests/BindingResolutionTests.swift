@@ -97,6 +97,29 @@ struct BindingResolutionTests {
         #expect(Set(removal.orphaned.map(\.port)) == [.workItem, .codeHost])
     }
 
+    /// `bind` refuses this, so a registry holding it was written by something else. Re-asked at
+    /// read time because the file is not a trusted input — the alternative is reading Delivery
+    /// truth off a Work Item provider.
+    @Test
+    func `a hand-written Binding to a port its provider cannot fill reads as broken`() async throws {
+        let fixture = try BindingFixture()
+        defer { fixture.remove() }
+        let projectID = try await fixture.project("argo")
+        try await fixture.accountStore().authorizeLinear(id: "u_9", token: "lin_work")
+        await fixture.projects.store().bind(
+            ProjectBinding(port: .codeHost, accountID: "linear:u_9", scope: "TEAM-1"),
+            to: projectID,
+        )
+
+        let resolution = await fixture.bindings().resolve(port: .codeHost, for: projectID)
+
+        guard case let .broken(_, fault) = resolution else {
+            Issue.record("expected a broken Binding, got \(resolution)")
+            return
+        }
+        #expect(fault == .portNotServedByProvider)
+    }
+
     @Test
     func `a Binding whose token has expired reads as broken`() async throws {
         let fixture = try BindingFixture()

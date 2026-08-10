@@ -10,18 +10,20 @@ struct BindingScopeCheckTests {
     private static func probe(
         provider: AccountProvider = .github,
         scope: String = "milad/argo",
+        port: AccountPort = .workItem,
     )
         -> BindingProbe {
         BindingProbe(
+            binding: ProjectBinding(port: port, accountID: "\(provider.rawValue):1", scope: scope),
             provider: provider,
-            scope: scope,
             grant: AccountGrant(accessToken: "ghu_personal", scopes: ["repo"]),
         )
     }
 
     @Test
     func `a repository the token can read is visible`() async {
-        let api = StubProviderAPI(body: #"{ "id": 1, "full_name": "milad/argo" }"#)
+        let api =
+            StubProviderAPI(body: #"{ "id": 1, "full_name": "milad/argo", "has_issues": true }"#)
 
         let visibility = await ProviderScopeCheck(transport: api).visibility(of: Self.probe())
 
@@ -39,6 +41,33 @@ struct BindingScopeCheckTests {
         let visibility = await ProviderScopeCheck(transport: api).visibility(of: Self.probe())
 
         #expect(visibility == .notVisible)
+    }
+
+    /// Visible and sourcing no Work Items are different things. After bind time a repository with
+    /// Issues switched off is indistinguishable from one nobody has filed anything in, which is the
+    /// silence the whole check exists to prevent.
+    @Test
+    func `a repository with Issues switched off cannot fill the Work Item port`() async {
+        let api = StubProviderAPI(
+            body: #"{ "id": 1, "full_name": "milad/argo", "has_issues": false }"#,
+        )
+
+        let check = ProviderScopeCheck(transport: api)
+
+        #expect(await check.visibility(of: Self.probe(port: .workItem)) == .notVisible)
+    }
+
+    /// PRs, checks and reviews are on every repository there is, so the code-host port asks nothing
+    /// beyond visibility.
+    @Test
+    func `a repository with Issues switched off still fills the code host port`() async {
+        let api = StubProviderAPI(
+            body: #"{ "id": 1, "full_name": "milad/argo", "has_issues": false }"#,
+        )
+
+        let check = ProviderScopeCheck(transport: api)
+
+        #expect(await check.visibility(of: Self.probe(port: .codeHost)) == .visible)
     }
 
     @Test

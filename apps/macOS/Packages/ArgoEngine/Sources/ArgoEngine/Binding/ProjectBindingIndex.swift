@@ -13,7 +13,7 @@ import Foundation
 public struct ProjectBindingIndex: AccountBindingIndex {
     private let projects: ProjectRegistryStore
 
-    public init(projects: ProjectRegistryStore = ProjectRegistryStore()) {
+    public init(projects: ProjectRegistryStore) {
         self.projects = projects
     }
 

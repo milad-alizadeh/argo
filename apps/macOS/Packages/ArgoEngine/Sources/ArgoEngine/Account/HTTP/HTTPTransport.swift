@@ -28,13 +28,6 @@ public struct HTTPRequest: Sendable {
     public init(url: String, form: [String: String], bearerToken: String? = nil) {
         self.init(url: url, body: .form(form), bearerToken: bearerToken)
     }
-
-    /// The form fields, where this request has any. What a test asserting *what was asked* reads,
-    /// and the one place the `.json` case has nothing to say.
-    public var form: [String: String]? {
-        guard case let .form(fields) = body else { return nil }
-        return fields
-    }
 }
 
 /// The seam the provider adapters read through.

@@ -60,13 +60,13 @@ public actor ProjectRegistryStore {
     /// Binding that reads empty. `ProjectBindings` is the only caller, and the only public way in.
     @discardableResult
     func bind(_ binding: ProjectBinding, to projectID: String) -> ProjectChange {
-        let registry = persist(load().binding(binding, to: projectID))
+        let registry = persist(load().replacingBinding(binding, of: projectID))
         return ProjectChange(registry: registry, project: registry.project(id: projectID))
     }
 
     @discardableResult
     func unbind(port: AccountPort, from projectID: String) -> ProjectChange {
-        let registry = persist(load().unbinding(port: port, from: projectID))
+        let registry = persist(load().removingBinding(port: port, of: projectID))
         return ProjectChange(registry: registry, project: registry.project(id: projectID))
     }
 

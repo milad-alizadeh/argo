@@ -26,10 +26,10 @@ struct GitHubScopeCheck: BindingScopeCheck {
             ))
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
-            guard (try? decoder.decode(RepositoryResponse.self, from: data)) != nil else {
+            guard let repository = try? decoder.decode(RepositoryResponse.self, from: data) else {
                 return .notVisible
             }
-            return .visible
+            return Self.serves(probe.port, repository) ? .visible : .notVisible
         } catch HTTPTransportError.unauthorized {
             return .unauthorized
         } catch {
@@ -37,10 +37,21 @@ struct GitHubScopeCheck: BindingScopeCheck {
         }
     }
 
-    /// The one field that proves this is a repository and not GitHub's error body. `fullName` and
-    /// not `id`, because an error body has no `id` either but a future one might; a repository
-    /// without an `owner/repo` name is not a thing GitHub returns.
+    /// A repository with Issues switched off is visible and sources no Work Items, which after bind
+    /// time is indistinguishable from a repository nobody has filed anything in. The code-host port
+    /// asks nothing further: PRs, checks and reviews are on every repository there is.
+    private static func serves(_ port: AccountPort, _ repository: RepositoryResponse) -> Bool {
+        switch port {
+        case .workItem: repository.hasIssues
+        case .codeHost: true
+        }
+    }
+
+    /// `fullName` proves this is a repository and not GitHub's error body — an error body has no
+    /// `id` either, but a future one might, and a repository without an `owner/repo` name is not a
+    /// thing GitHub returns.
     private struct RepositoryResponse: Decodable {
         let fullName: String
+        let hasIssues: Bool
     }
 }

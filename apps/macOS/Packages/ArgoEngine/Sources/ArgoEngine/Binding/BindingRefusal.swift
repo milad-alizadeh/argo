@@ -37,6 +37,9 @@ public enum BindingFault: Equatable, Sendable {
     /// The Account was removed (#566) while this Binding still named it. Reported rather than
     /// silently dropped, which is what makes the Binding re-bindable instead of an empty read.
     case accountRemoved
+    /// A Binding `bind` would have refused, so it was written by something else — a hand edit, or a
+    /// build that once allowed it. The registry is not a trusted input.
+    case portNotServedByProvider
     case grantMissing
     case grantExpired
 }

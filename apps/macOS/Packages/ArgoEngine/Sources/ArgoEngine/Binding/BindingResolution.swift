@@ -19,10 +19,6 @@ public struct ResolvedBinding: Sendable {
     public var provider: AccountProvider {
         account.provider
     }
-
-    public var scope: String {
-        binding.scope
-    }
 }
 
 /// What a Project's port is, asked at read time.
