@@ -127,15 +127,59 @@ struct CockpitPresentationTests {
         #expect(session.workspace?.unpushed == nil)
     }
 
+    @Test
+    @MainActor
+    func `an archived Session reaches the shell archived, however busy its record is`(
+    ) async throws {
+        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
+        await observe(hub, id: "cleared", events: [
+            .cwd("/Users/milad/Developer/argo"),
+            .prompt(text: "Keep going", atMs: nil),
+        ], until: { !$0.events.isEmpty })
+        // Through the real store, in a throwaway location: the flag the shell reads is the one
+        // that was written to disk, not a value assembled beside it.
+        let fileURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "argo-\(UUID().uuidString)/sessions.json")
+        defer { try? FileManager.default.removeItem(at: fileURL.deletingLastPathComponent()) }
+        let store = SessionAnnotationStore(fileURL: fileURL)
+        await store.setArchived(true, sessionID: "cleared")
+        let annotations = await store.load()
+
+        let session = try #require(projection(of: hub, annotations: annotations).sessions.first)
+
+        // Read by chain id off Argo's own record, never off the transcript — which is why a
+        // Session whose file just grew is still archived (#502, story 16).
+        #expect(session.isArchived)
+    }
+
+    @Test
+    @MainActor
+    func `a Session nobody archived reaches the shell on the roster`() async throws {
+        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
+        await observe(hub, id: "kept", events: [.cwd("/Users/milad/Developer/argo")], until: {
+            $0.workspaceLocation != nil
+        })
+
+        let session = try #require(projection(of: hub).sessions.first)
+
+        #expect(session.isArchived == false)
+    }
+
     /// The Hub half of the projection, which is the half with a derivation in it. The Projects are
     /// the app's own state and are passed straight through.
     @MainActor
     private func projection(
         of hub: Hub,
         projects: [CockpitPresentation.Project] = [],
+        annotations: SessionAnnotations = .empty,
     )
         -> CockpitPresentation {
-        CockpitPresentation(projects: projects, activeProjectID: projects.first?.id, hub: hub)
+        CockpitPresentation(
+            projects: projects,
+            activeProjectID: projects.first?.id,
+            hub: hub,
+            annotations: annotations,
+        )
     }
 
     /// Drive a finite stream into the Hub and yield until the roster has read all of it.

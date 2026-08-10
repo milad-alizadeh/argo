@@ -21,9 +21,7 @@ struct ArchiveSwipeRow: View {
         ZStack(alignment: .trailing) {
             control
             SessionRow(row: row)
-                // Only while the row is off its resting place. At rest the row keeps the
-                // sidebar's own material under it (D3), and a ground painted permanently here
-                // would trade that away on every row for a state almost none of them are in.
+                // At rest the row keeps the sidebar's own material under it (D3).
                 .background(isRevealing ? argo.color.surface.raised : .transparent)
                 .offset(x: swipe.offset(of: row.id))
         }
@@ -35,10 +33,10 @@ struct ArchiveSwipeRow: View {
     /// — which is the whole bargain of putting the verb behind a gesture (#514, story 11).
     @ViewBuilder private var control: some View {
         if isRevealing {
-            Button(action: archive) {
+            Button(action: take) {
                 ArgoGlyph(symbol, .control)
                     .foregroundStyle(argo.color.text.onAccent)
-                    .frame(width: ArgoLayout.rosterSwipeRevealWidth, alignment: .center)
+                    .frame(width: swipe.revealedWidth(of: row.id), alignment: .center)
                     .frame(maxHeight: .infinity)
                     .background(argo.color.interaction.accent)
                     .contentShape(.rect)
@@ -50,6 +48,13 @@ struct ArchiveSwipeRow: View {
 
     private var isRevealing: Bool {
         swipe.isRevealing(row.id)
+    }
+
+    /// The row goes, and the swipe goes with it. Archiving does not change the chain id, so a
+    /// row left open would come back open under the other list — showing the opposite verb.
+    private func take() {
+        swipe.close()
+        archive()
     }
 
     /// An icon and no label (#514): the roster is a narrow column, and a word behind every row
@@ -71,22 +76,13 @@ struct ArchiveSwipeRow: View {
             .onChanged { swipe.drag(row.id, translation: $0.translation.width) }
             .onEnded { _ in
                 guard swipe.release(row.id) == .archive else { return }
-                archive()
+                take()
             }
     }
 }
 
 #Preview("Roster row — at rest, and one swiped open beside them") {
-    @Previewable @State var swipe = RosterSwipe(
-        openRowID: SessionRosterProjection.previewRows[1].id,
-    )
-
-    List {
-        ForEach(SessionRosterProjection.previewRows) { row in
-            ArchiveSwipeRow(row: row, swipe: $swipe, archive: {}).previewSafeListRow()
-        }
-    }
-    .listStyle(.sidebar)
-    .frame(width: ArgoLayout.sidebarIdealWidth, height: 340)
-    .argoAppearance()
+    SwipedRowSpecimen()
+        .frame(height: 340)
+        .argoAppearance()
 }

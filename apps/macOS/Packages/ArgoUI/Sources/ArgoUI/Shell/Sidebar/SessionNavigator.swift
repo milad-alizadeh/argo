@@ -26,7 +26,7 @@ struct SessionNavigator: View {
                 emptyState.previewSafeListRow()
             } else {
                 ForEach(rows) { row in
-                    swipeable(row, to: true)
+                    swipeable(row)
                 }
             }
             archivedFoot
@@ -35,10 +35,16 @@ struct SessionNavigator: View {
         // it for a styled list. Selection is that style's own capsule, coloured from the
         // `AccentColor` asset — SwiftUI's `.tint` does not reach it (D30).
         .listStyle(.sidebar)
-        // Moving the selection is going somewhere else, and a row left half open behind the
-        // reader is the state story 13 is about.
+        // Anything clicked in the roster that is not the revealed control itself is somewhere
+        // else, and a row left half open behind the reader is the state story 13 is about.
+        // Simultaneous, so the List still takes the click as a selection.
+        .simultaneousGesture(TapGesture().onEnded { swipe.close() })
         .onChange(of: selection) { _, _ in
             swipe.close()
+        }
+        // The foot is shut whenever it comes back, not left open from the last time it existed.
+        .onChange(of: archived.isEmpty) { _, isEmpty in
+            isArchiveShowing = isArchiveShowing && !isEmpty
         }
     }
 
@@ -48,7 +54,7 @@ struct SessionNavigator: View {
         if let label = SessionRosterProjection.archivedFoot(archived) {
             Section(isExpanded: $isArchiveShowing) {
                 ForEach(archived) { row in
-                    swipeable(row, to: false)
+                    swipeable(row)
                 }
             } header: {
                 Text(label)
@@ -58,11 +64,10 @@ struct SessionNavigator: View {
         }
     }
 
-    private func swipeable(
-        _ row: SessionRosterProjection.Row, to isArchived: Bool,
-    )
-        -> some View {
-        ArchiveSwipeRow(row: row, swipe: $swipe, archive: { archive(row.id, isArchived) })
+    /// Which way the gesture goes is the row's own state and not a second reading of which list
+    /// it was drawn in — two sources for one fact is how they come to disagree.
+    private func swipeable(_ row: SessionRosterProjection.Row) -> some View {
+        ArchiveSwipeRow(row: row, swipe: $swipe, archive: { archive(row.id, !row.isArchived) })
             .previewSafeListRow()
             .tag(row.id)
     }

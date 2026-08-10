@@ -40,7 +40,14 @@ struct RosterSwipe: Equatable {
     /// Whether the control behind this row is worth drawing at all. A row at rest draws none:
     /// clearing a Session costs one gesture and NO chrome at rest (story 11).
     func isRevealing(_ rowID: String) -> Bool {
-        travelled(rowID) > 0
+        revealedWidth(of: rowID) > 0
+    }
+
+    /// How wide the control behind a row is drawn: the WHOLE distance the row has travelled,
+    /// never a fixed slot. Pinned at the reveal it would leave bare sidebar between the row and
+    /// the control for the entire approach to the hard swipe, which is most of that gesture.
+    func revealedWidth(of rowID: String) -> CGFloat {
+        travelled(rowID)
     }
 
     /// The gesture moving. `translation` is the drag's own x, so a pull left is negative and a
