@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// The affordance for STARTING a Session: a bare icon button at the leading edge of the bar, next
-/// to the system sidebar toggle and at the same weight as it.
+/// The affordance for STARTING a Session: one icon at the leading edge of the bar, in a glass
+/// container of its own, next to the system sidebar toggle.
 ///
-/// Deliberately not a third glass vessel. The two approved ones each hold a compound reading — this
-/// Project on this checkout, and the rooms — where this holds a verb; and the platform puts that
-/// verb (Notes, Mail, Finder) beside the toggle for the sidebar the new thing lands in, which here
-/// is the Sessions roster.
+/// The glass is spelled HERE and not left to the toolbar, which is the opposite of what the two
+/// vessels do — and for their own reason. A vessel takes the toolbar's glass so its halves MERGE
+/// into one capsule; this control must not merge with anything, so its item hides the shared
+/// background and carries its own. Between them: one capsule per reading, and a verb is its own
+/// reading, not a fourth fact inside "this Project, on this checkout".
 struct NewSessionButton: View {
     @Environment(\.argo) private var argo
 
@@ -20,6 +21,9 @@ struct NewSessionButton: View {
             ArgoGlyph(ArgoSymbol.newSession, .control)
                 .foregroundStyle(ink)
                 .toolbarSegment()
+                // A capsule, like every other container on this bar: one mark inside it makes that
+                // a circle, which is the shape the platform gives a lone toolbar verb anyway.
+                .glassEffect(in: .capsule)
         }
         .buttonStyle(.plain)
         .disabled(!offer.isLaunchable)

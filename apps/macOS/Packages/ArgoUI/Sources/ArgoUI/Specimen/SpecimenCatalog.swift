@@ -20,6 +20,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case swipedRow
     case hardSwipedRow
     case archivedRoster
+    case spawningRoster
     case toolbarScope
     case emptyToolbarScope
     case projectDrawer
