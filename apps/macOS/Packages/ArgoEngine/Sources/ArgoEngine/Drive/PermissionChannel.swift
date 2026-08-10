@@ -5,14 +5,15 @@ import Foundation
 ///
 /// Every answer it sends is `allow` or `deny`, never `ask` — `ask` would fall through to the TUI's
 /// own dialog, which is hidden and has no reader. A hook whose peer goes before an answer was sent
-/// expired on its own clock, and the CLI treats that expiry as a denial; this end only has to stop
-/// showing a prompt nobody can answer any more.
+/// is over either way — its turn was cancelled, or the day-long `timeout` finally ran out; this
+/// end only has to stop showing a prompt nobody can answer any more.
 @MainActor
 final class PermissionChannel {
-    /// How long a Permission may sit unanswered before the hook's own clock denies it. Written
-    /// into the hook's `timeout` and drawn by the prompt as the fuse — one number, or the clock
-    /// the UI counts down would not be the clock that fires.
-    nonisolated static let patienceSeconds = 300
+    /// The hook's `timeout`, a day long. A prompt waits for the person, not for a clock: nobody
+    /// is watching the cockpit the whole time an agent runs, and a window that answers by expiry
+    /// answers on its own. Long enough that the timeout is never the thing that decides, and no
+    /// clock is drawn because there is none worth reading.
+    nonisolated static let patienceSeconds = 86400
 
     private struct Pending {
         let request: PermissionRequest
@@ -21,7 +22,6 @@ final class PermissionChannel {
     }
 
     private let root: URL
-    private let now: () -> Int
     private let onChange: (SessionOwnership.ClaimID, [PermissionRequest]) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
@@ -30,11 +30,9 @@ final class PermissionChannel {
 
     init(
         root: URL,
-        now: @escaping () -> Int = { Date().epochMs },
         onChange: @escaping (SessionOwnership.ClaimID, [PermissionRequest]) -> Void,
     ) {
         self.root = root
-        self.now = now
         self.onChange = onChange
     }
 
@@ -94,13 +92,7 @@ final class PermissionChannel {
         reply: @escaping CompanionConnection.Reply,
     ) {
         issued += 1
-        let raisedAtMs = now()
-        guard let request = PermissionRequest(
-            line: line,
-            id: "permission-\(issued)",
-            raisedAtMs: raisedAtMs,
-            deniesAtMs: raisedAtMs + Self.patienceSeconds * 1000,
-        ) else {
+        guard let request = PermissionRequest(line: line, id: "permission-\(issued)") else {
             // Fail closed, and fast: a request Argo could not read is not one the user can be
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
             return reply(Self.decisionLine(.deny))

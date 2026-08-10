@@ -24,13 +24,7 @@ struct PermissionPromptProjectionTests {
     }
 
     private func request(_ target: PermissionRequest.Target, tool: String) -> PermissionRequest {
-        PermissionRequest(
-            id: "permission-1",
-            toolName: tool,
-            target: target,
-            raisedAtMs: 1000,
-            deniesAtMs: 301_000,
-        )
+        PermissionRequest(id: "permission-1", toolName: tool, target: target)
     }
 
     @Test
@@ -78,16 +72,5 @@ struct PermissionPromptProjectionTests {
 
         #expect(prompt.subject == "wants to write to a file")
         #expect(prompt.caption == "+2 −1 · 2 hunks")
-    }
-
-    @Test
-    func `the prompt counts the same clock the hook fires`() throws {
-        let request = request(.command("ls"), tool: "Bash")
-        let prompt = try #require(
-            PermissionPromptProjection.prompt(for: session(permission: request)),
-        )
-
-        #expect(prompt.raisedAtMs == 1000)
-        #expect(prompt.deniesAtMs == 301_000)
     }
 }

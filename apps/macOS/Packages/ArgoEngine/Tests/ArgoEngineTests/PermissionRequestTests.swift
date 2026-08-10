@@ -6,7 +6,7 @@ import Testing
 @Suite("Permission request")
 struct PermissionRequestTests {
     private func read(_ line: String) -> PermissionRequest? {
-        PermissionRequest(line: line, id: "perm-1", raisedAtMs: 1000, deniesAtMs: 301_000)
+        PermissionRequest(line: line, id: "perm-1")
     }
 
     @Test
@@ -62,7 +62,8 @@ struct PermissionRequestTests {
     }
 
     @Test
-    func `a tool outside the vocabulary keeps its input verbatim rather than a guessed shape`() throws {
+    func `a tool outside the vocabulary keeps its input verbatim rather than a guessed shape`(
+    ) throws {
         let line = """
         {"tool_name":"WebFetch","tool_input":{"url":"https://example.com"}}
         """

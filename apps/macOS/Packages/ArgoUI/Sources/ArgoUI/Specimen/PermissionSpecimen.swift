@@ -2,8 +2,7 @@ import ArgoEngine
 import Foundation
 
 /// The Permission prompt's two fixtures — a command, and a path with its hunk — mirroring the
-/// approved renders (`docs/designs/composer/perm.png`, `perm-edit.png`). The clock is seeded
-/// relative to launch so the countdown and the fuse render mid-burn rather than expired.
+/// approved renders (`docs/designs/composer/perm.png`, `perm-edit.png`).
 enum PermissionSpecimen {
     static let command = prompt(
         toolName: "Bash",
@@ -32,16 +31,12 @@ enum PermissionSpecimen {
         caption: String,
     )
         -> PermissionPromptProjection.Prompt {
-        let nowMs = Date().epochMs
-        return PermissionPromptProjection.Prompt(
+        PermissionPromptProjection.Prompt(
             sessionID: "specimen",
             toolName: toolName,
             subject: subject,
             target: target,
             caption: caption,
-            // The render's own clock: 0:43 left of a fuse that reads about nine-tenths full.
-            raisedAtMs: nowMs - 2000,
-            deniesAtMs: nowMs + 43_000,
             alwaysAllowLabel: "Always allow \(toolName) here",
         )
     }

@@ -14,7 +14,7 @@ struct PermissionPrompt: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-            PermissionPromptHeader(deniesAtMs: prompt.deniesAtMs)
+            PermissionPromptHeader()
             subject
             PermissionPromptTarget(target: prompt.target)
             if let caption = prompt.caption {
@@ -28,9 +28,6 @@ struct PermissionPrompt: View {
         .padding(.leading, ArgoSpacing.loose)
         .padding(.trailing, ArgoSpacing.base)
         .padding(.bottom, ArgoSpacing.base)
-        .overlay(alignment: .bottomLeading) {
-            PermissionPromptFuse(raisedAtMs: prompt.raisedAtMs, deniesAtMs: prompt.deniesAtMs)
-        }
         .argoFloatingGlass(in: RoundedRectangle(cornerRadius: ArgoRadius.popover))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Permission: \(prompt.toolName) \(prompt.subject)")

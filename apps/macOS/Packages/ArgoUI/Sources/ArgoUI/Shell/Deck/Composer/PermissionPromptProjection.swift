@@ -18,10 +18,6 @@ enum PermissionPromptProjection {
         /// The quiet line under the target: the Workspace a command runs in, or an edit's
         /// `+1 −1 · 1 hunk`. Absent where neither fact exists.
         let caption: String?
-        /// The patience window's two ends, so the fuse and `denies in m:ss` count the same clock
-        /// the hook fires.
-        let raisedAtMs: Int
-        let deniesAtMs: Int
         /// `Always allow Bash here` — the quieter third option, mapping to the standing baseline.
         let alwaysAllowLabel: String
     }
@@ -37,8 +33,6 @@ enum PermissionPromptProjection {
             subject: subject(of: permission.target),
             target: permission.target,
             caption: caption(of: permission.target, in: session),
-            raisedAtMs: permission.raisedAtMs,
-            deniesAtMs: permission.deniesAtMs,
             alwaysAllowLabel: "Always allow \(permission.toolName) here",
         )
     }

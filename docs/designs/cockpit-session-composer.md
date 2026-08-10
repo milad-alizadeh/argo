@@ -13,6 +13,10 @@ Session experience; this replaces it.
 from the study with its switcher hidden. The measurements below are the numbers a ticket must
 carry — prose that omits them cannot be failed for getting them wrong.
 
+One exception, and it is named so nothing downstream reads it as drift: `perm.png` and
+`perm-edit.png` still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**.
+Everything else in those two renders stands; the countdown and the burning line do not.
+
 The study itself lives on the throwaway branch `prototype/536-composer`
 (`docs/designs/prototypes/composer-permission-prototype.html`), where every state is reachable
 as `?variant=B&state=<key>`. It is there to be re-explored, not built from.
@@ -99,12 +103,14 @@ anything.
    the user's own, the status flips to *Running*. A 1.4s accent wash marks the new row; there is
    no fourth signal.
 4. **A queued follow-up rides above the field**, cancellable, and is sent when the Turn ends.
-5. **`expired` is its own word.** An unanswered Permission renders
-   `Permission expired after 5m — denied, unanswered`; *denied* alone would claim a decision
-   nobody made.
-6. **The patience window is drawn.** The `PreToolUse` hook's timeout is a real clock, so the
-   prompt carries a fuse and `denies in m:ss`. Without it, walking away looks free. Allow is
-   focused, `⏎` allows, `esc` denies, expiry denies.
+5. **`expired` is its own word.** A Permission whose hook went before anyone answered renders
+   `Permission expired — denied, unanswered`; *denied* alone would claim a decision nobody made.
+6. **No clock is drawn — the prompt waits for the person.** The `PreToolUse` hook's `timeout` is
+   set a day out, so expiry is never the thing that decides: nobody watches the cockpit for the
+   whole of an agent's run, and a countdown on an unwatched surface only asks to be beaten. The
+   prompt holds where it is until it is answered. Allow is focused, `⏎` allows, `esc` denies.
+   (Superseded: the earlier reading drew the window as a fuse and `denies in m:ss`, on the
+   argument that walking away otherwise looks free. It is free — that is the point.)
 7. **A degraded composer is absent, not disabled.** A greyed field invites a click and gives no
    reason; one line saying *read-only — Argo did not spawn this Session* answers the question the
    field would have raised. Orphaned additionally offers a fresh Session on the same branch.

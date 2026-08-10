@@ -20,30 +20,22 @@ public struct PermissionRequest: Sendable, Equatable, Identifiable {
     /// The CLI's own name for the tool, never renamed.
     public let toolName: String
     public let target: Target
-    public let raisedAtMs: Int
-    /// When the hook's own clock runs out and the call is denied unanswered — the patience window
-    /// the prompt draws, because without it walking away looks free.
-    public let deniesAtMs: Int
 
-    public init(id: String, toolName: String, target: Target, raisedAtMs: Int, deniesAtMs: Int) {
+    public init(id: String, toolName: String, target: Target) {
         self.id = id
         self.toolName = toolName
         self.target = target
-        self.raisedAtMs = raisedAtMs
-        self.deniesAtMs = deniesAtMs
     }
 
     /// One hook payload read into the domain, or nothing for a line that names no tool: a prompt
     /// that cannot say what is asking is not a prompt anyone can answer.
-    init?(line: String, id: String, raisedAtMs: Int, deniesAtMs: Int) {
+    init?(line: String, id: String) {
         guard let payload = JSONValue.record(fromLine: line),
               let toolName = payload.stringField("tool_name")
         else { return nil }
         self.id = id
         self.toolName = toolName
         self.target = Target(toolName: toolName, input: payload["tool_input"] ?? .object([:]))
-        self.raisedAtMs = raisedAtMs
-        self.deniesAtMs = deniesAtMs
     }
 }
 
@@ -61,7 +53,11 @@ extension PermissionRequest.Target {
         self = target ?? .raw(Self.verbatim(input))
     }
 
-    private static func editTarget(_ input: JSONValue, hunks: (JSONValue) -> [[DiffLine]]) -> Self? {
+    private static func editTarget(
+        _ input: JSONValue,
+        hunks: (JSONValue) -> [[DiffLine]],
+    )
+        -> Self? {
         input.stringField("file_path").map { .edit(path: $0, hunks: hunks(input)) }
     }
 
