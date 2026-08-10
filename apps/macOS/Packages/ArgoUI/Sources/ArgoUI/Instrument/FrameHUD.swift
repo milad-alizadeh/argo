@@ -12,45 +12,58 @@ struct FrameHUD: View {
 
     var body: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
-            figure("p50", reading.p50)
-            figure("p95", reading.p95)
-            figure("worst", reading.worst)
-            dropped
+            FrameFigure(label: "p50", value: reading.p50)
+            FrameFigure(label: "p95", value: reading.p95)
+            FrameFigure(label: "worst", value: reading.worst)
+            FrameFigure(
+                label: "dropped",
+                reading: "\(reading.dropped)/\(reading.count)",
+                isOver: reading.dropped > 0,
+            )
         }
         .padding(.vertical, ArgoSpacing.snug)
         .padding(.horizontal, ArgoSpacing.comfortable)
         .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.popover))
         .accessibilityHidden(true)
     }
+}
 
-    private func figure(_ label: String, _ milliseconds: Double) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+/// One labelled number. A view rather than a builder function, so the four of them cannot drift
+/// apart and the count reads the same way the three intervals do.
+private struct FrameFigure: View {
+    @Environment(\.argo) private var argo
+
+    let label: String
+    let reading: String
+    /// Whether this number is the failure the HUD exists to show. It is the only thing that
+    /// changes colour: a figure nobody compares reads as loud whatever ink it is in.
+    let isOver: Bool
+
+    /// An interval in milliseconds, which is what three of the four are.
+    init(label: String, value: Double) {
+        self.init(
+            label: label,
+            reading: String(format: "%.1f", value),
+            isOver: value > FrameReading.floor,
+        )
+    }
+
+    init(label: String, reading: String, isOver: Bool) {
+        self.label = label
+        self.reading = reading
+        self.isOver = isOver
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             Text(label)
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(argo.color.text.tertiary)
-            Text(String(format: "%.1f", milliseconds))
+            Text(reading)
                 .argoText(ArgoTypography.caption)
                 .monospacedDigit()
-                .foregroundStyle(ink(over: milliseconds))
+                .foregroundStyle(isOver ? argo.color.state.attention : argo.color.text.primary)
         }
-    }
-
-    private var dropped: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("dropped")
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.tertiary)
-            Text("\(reading.dropped)/\(reading.count)")
-                .argoText(ArgoTypography.caption)
-                .monospacedDigit()
-                .foregroundStyle(reading.dropped > 0 ? argo.color.state.attention : ink(over: 0))
-        }
-    }
-
-    /// A number over the floor is the failure this exists to show, so it is the one number that
-    /// changes colour. Everything under it reads at the ordinary ink.
-    private func ink(over milliseconds: Double) -> ArgoColor {
-        milliseconds > FrameReading.floor ? argo.color.state.attention : argo.color.text.primary
     }
 }
 

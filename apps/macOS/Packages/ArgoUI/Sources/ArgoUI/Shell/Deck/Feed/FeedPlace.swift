@@ -15,13 +15,13 @@ enum FeedPlace {
     /// Where the place is kept — and deliberately NOT view state.
     ///
     /// `.scrollPosition(id:)` writes the topmost row back through its binding as the reading moves,
-    /// which during a drag is most frames. Held as `@State`, every one of those writes invalidated
-    /// the body that owns the whole reading, so a thousand-row `ForEach` and every visible row were
-    /// rebuilt at drag rate: #516 measured two frames in five over the 60fps floor, and the cost
-    /// scaled with the number of rows in the SESSION rather than the number on screen.
+    /// which during a drag is most frames. As `@State` each of those writes invalidates the body
+    /// that owns the whole reading, so a thousand-row `ForEach` and every visible row are rebuilt
+    /// at drag rate — a cost that scales with the rows in the SESSION rather than the rows on
+    /// screen, and measurably two frames in five past the 60fps floor.
     ///
     /// Nothing on screen is drawn from this value, so nothing needs redrawing when it changes —
-    /// which is the whole reason it can live outside the invalidation graph. It is read back by the
+    /// which is what lets it live outside the invalidation graph at all. It is read back by the
     /// binding's getter, and that runs whenever anything that IS observed re-evaluates the body,
     /// including the one moment the value has to be current: a seam starting to move.
     @MainActor
