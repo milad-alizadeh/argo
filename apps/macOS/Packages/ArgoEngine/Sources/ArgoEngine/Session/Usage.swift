@@ -17,6 +17,17 @@ public struct Usage: Sendable, Equatable {
         self.cacheCreationTokens = cacheCreationTokens
     }
 
+    /// How much context ONE request was made against: everything that went into the window plus
+    /// what came back out of it.
+    ///
+    /// All four terms, cache included. A cached read is a cheaper token, not a smaller one — the
+    /// model still reads it — so a reading that dropped the cache would report a Session at a
+    /// fraction of the window it is actually filling, which for a long agent run is nearly all of
+    /// it.
+    public var contextTokens: Int {
+        inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens
+    }
+
     public static func + (left: Usage, right: Usage) -> Usage {
         Usage(
             inputTokens: left.inputTokens + right.inputTokens,

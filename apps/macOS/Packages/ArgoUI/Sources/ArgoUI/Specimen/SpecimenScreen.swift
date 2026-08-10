@@ -76,6 +76,18 @@ public struct SpecimenScreen: View {
             // repeat rather than a window dragged by hand. What it settles is which fact gives
             // way: the branch is cut, and the marks, the model and the issue after it survive.
             SessionHeaderSpecimen(header: SessionHeaderFixture.longBranch)
+        case .contextOk, .contextWarn, .contextCrit, .contextUnknown:
+            // One PNG per tier, and the fourth is the one that matters most: an unreadable context
+            // has to look like an ABSENCE — an empty track and a quiet word — rather than like a
+            // Session that has said nothing yet, which is what `.ok` at zero would draw.
+            // A whole header each, because the judgement is whether the reading is findable beside
+            // a title and a branch, which an instrument on its own would never show.
+            SessionHeaderSpecimen(header: contextHeader)
+        case .contextGuide:
+            // The panel's content, stood in a glass of its own. A popover is a window of its own
+            // and never lands in a screenshot of this one, so the harness draws it directly — the
+            // same bargain `DrawerSpecimen` makes, for the same reason.
+            ContextGuideSpecimen()
         case .feed:
             // The deck at rest with a Session read into it, drawn through the same projection the
             // shell uses. A specimen holding rows of its own would be evidence about a feed
@@ -255,6 +267,13 @@ public struct SpecimenScreen: View {
             // stopped at most of all, which `FeedRow.ID` being a POSITION otherwise carries across.
             RosterSpecimen(presentation: .twoReadings)
         }
+    }
+
+    /// The header whose context tier this case is a render of. The fixture set names the case it
+    /// belongs to, so neither side can be renamed into drawing another tier's reading.
+    private var contextHeader: SessionHeaderProjection.Header {
+        SessionHeaderFixture.contexts.first { $0.specimen == specimen }?.header
+            ?? SessionHeaderFixture.header(for: .managed)
     }
 
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is

@@ -20,20 +20,40 @@ struct SessionHeader: View {
     let header: SessionHeaderProjection.Header?
 
     var body: some View {
+        // Centred rather than baseline-aligned, because only one half of this line is type: the
+        // instrument on the trailing edge is a reading over a bar, and a bar has no baseline to
+        // sit on. The identity below keeps its own baseline alignment.
+        HStack(alignment: .center, spacing: ArgoSpacing.comfortable) {
+            identity
+                // `combine`, so the facts are heard as one line rather than as six elements. It is
+                // scoped to the identity and not to the whole header on purpose: combining over
+                // the instrument would swallow the ⓘ, and a control nothing can address is a
+                // panel nobody can open.
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(header?.announcement ?? "No Session selected")
+                // Above the Spacer beside it, which otherwise takes the slack first and cuts a
+                // title and a branch that both had room. The instrument holds its width whatever
+                // this is, because a fixed frame is inflexible — so what this priority decides is
+                // only how much of the identity the empty middle is allowed to eat.
+                .layoutPriority(1)
+            Spacer(minLength: ArgoSpacing.loose)
+            if let header {
+                SessionHeaderContext(context: header.context)
+            }
+        }
+        .padding(.horizontal, ArgoSpacing.section)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var identity: some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.comfortable) {
             if let header {
                 title(header)
                 mark(header)
                 SessionHeaderFacts(header: header)
             }
-            // The trailing space the later header tickets fill — the context reading on the
-            // right edge, and what it offers to do about it.
-            Spacer(minLength: ArgoSpacing.loose)
         }
-        .padding(.horizontal, ArgoSpacing.section)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(header?.announcement ?? "No Session selected")
     }
 
     /// The largest interface line in the cockpit, and the one thing on the header that is allowed

@@ -55,6 +55,11 @@ enum SessionHeaderProjection {
         /// Session whose record named a model but no CLI reads as the model alone.
         let agent: String?
         let issue: IssueLink?
+        /// The one instrument on the header. Never absent: a Session whose context cannot be read
+        /// still has a context, and an instrument that disappeared would say the fact does not
+        /// apply rather than that Argo could not establish it. The absence lives INSIDE the
+        /// reading, as `unknown`.
+        let context: Context
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being and no
         /// surface can assemble one that disagrees with what the projection decided.
@@ -65,6 +70,7 @@ enum SessionHeaderProjection {
             marks: [Mark],
             agent: String?,
             issue: IssueLink?,
+            context: Context,
         ) {
             self.title = title
             self.access = access
@@ -72,6 +78,7 @@ enum SessionHeaderProjection {
             self.marks = marks
             self.agent = agent
             self.issue = issue
+            self.context = context
         }
 
         /// What a screen reader hears: the same facts the header draws, said out loud — because
@@ -80,7 +87,7 @@ enum SessionHeaderProjection {
         var announcement: String {
             ([title, access?.word, branch.map { "on \($0)" }]
                 + marks.map(\.detail)
-                + [agent, issue?.label])
+                + [agent, issue?.label, context.detail])
                 .compactMap(\.self)
                 .joined(separator: ", ")
         }
@@ -94,6 +101,7 @@ enum SessionHeaderProjection {
             marks: marks(for: session.workspace),
             agent: agent(cli: session.cli, model: session.model),
             issue: link(to: session.issue),
+            context: context(tokens: session.contextTokens),
         )
     }
 

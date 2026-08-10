@@ -38,6 +38,17 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// stream is retained whole and nothing decides on the Hub's side which kinds are worth
     /// keeping. What a reader does not handle it ignores; what it was never given it cannot draw.
     public private(set) var events: [TranscriptEvent] = []
+    /// How full the Session's context is: the tokens the LATEST reported spend was made against.
+    ///
+    /// The last reading rather than a sum of all of them, because this is not what the Session has
+    /// SPENT — it is what it is currently holding, and every request re-sends the whole
+    /// conversation. Summing would count the same context once per turn and read as a Session
+    /// hundreds of times over a window it is nowhere near. It falls as well as rises for the same
+    /// reason: the reading after a compaction is the compacted one, with nothing here to reset.
+    ///
+    /// Absent until a record carries a `usage` object at all, which is the honest gap the header
+    /// renders as `unknown` rather than as an empty context.
+    public private(set) var contextTokens: Int?
     /// The newest moment the records report, where they report one.
     public private(set) var lastActivityAtMs: Int?
     /// The oldest, which is when this Session started — the fact a claim window is matched against.
@@ -130,7 +141,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             observeActivity(outcome.endedAtMs)
         case let .compaction(atMs):
             observeActivity(atMs)
-        case .message, .thought, .plan, .usage, .unreadableLine:
+        case let .usage(usage):
+            contextTokens = usage.contextTokens
+        case .message, .thought, .plan, .unreadableLine:
             break
         }
     }
@@ -156,6 +169,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         events += continuation.events
         cwd = continuation.cwd ?? cwd
         model = continuation.model ?? model
+        // The later half of the chain wins where it read one, and says nothing where it did not: a
+        // resume file with no `usage` in it yet is not a Session that has emptied its context.
+        contextTokens = continuation.contextTokens ?? contextTokens
         branch = continuation.branch ?? branch
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
         observeActivity(continuation.lastActivityAtMs)

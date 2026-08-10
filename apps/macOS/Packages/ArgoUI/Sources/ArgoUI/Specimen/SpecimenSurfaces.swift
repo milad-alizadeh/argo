@@ -126,6 +126,20 @@ struct ArrivingFeedSpecimen: View {
     }
 }
 
+/// The ⓘ panel's content, stood in a glass of its own — the same stand-in `DrawerSpecimen` makes,
+/// because a popover is a window of its own and never lands in a screenshot of this one.
+///
+/// What the PNG has to settle is the thing no value test can: that two coloured thresholds over a
+/// sentence read as a LEGEND — a decoding of the reading on the header — rather than as a warning
+/// about the Session it was opened from.
+struct ContextGuideSpecimen: View {
+    var body: some View {
+        SessionContextGuide()
+            .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
+            .padding(ArgoSpacing.region)
+    }
+}
+
 /// The deck specimen, holding the tab selection it needs to draw.
 struct DeckSpecimen: View {
     @State private var tab = SpecimenFixtures.DeckTab.activity

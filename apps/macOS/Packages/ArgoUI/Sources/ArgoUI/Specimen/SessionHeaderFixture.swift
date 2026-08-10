@@ -36,12 +36,42 @@ enum SessionHeaderFixture {
     /// Every shape the fact line takes, for the previews that judge them as a group.
     static let gallery = headers + [longBranch, sparse]
 
+    /// One header per context tier, plus the record that carried no usage at all.
+    ///
+    /// The numbers are readings off real Sessions on this machine rather than round ones: `67.2k`
+    /// and `216.8k` are what the instrument actually has to fit, and a fixture set to `150000`
+    /// exactly would render the one reading no real Session ever shows.
+    ///
+    /// Each is keyed by the catalog case that renders it, so the tier a PNG is named for and the
+    /// tier it actually draws cannot drift apart — and so a tier with no case of its own fails a
+    /// test rather than shipping unlooked-at.
+    static let contexts: [(specimen: Specimen, header: SessionHeaderProjection.Header)] = [
+        (.contextOk, header(context: 67175)),
+        (.contextWarn, header(context: 216_764)),
+        (.contextCrit, header(context: 472_233)),
+        (.contextUnknown, header(context: nil)),
+    ]
+
+    /// Just the readings, for the preview that judges the four side by side.
+    static let contextReadings = contexts.map(\.header.context)
+
     static func header(for access: CockpitPresentation.Session.Access)
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: session(
             access: access,
             title: title(for: access),
             branch: "argo/#510-session-header-facts",
+        ))
+    }
+
+    /// A managed Session at a given fullness, with every other fact held still — so a PNG of two
+    /// tiers differs in the one thing the tier decides.
+    static func header(context tokens: Int?) -> SessionHeaderProjection.Header {
+        SessionHeaderProjection.header(from: session(
+            access: .managed,
+            title: "Ship the native Liquid Glass application shell",
+            branch: "argo/#511-header-context-fullness",
+            contextTokens: tokens,
         ))
     }
 
@@ -52,6 +82,7 @@ enum SessionHeaderFixture {
         access: CockpitPresentation.Session.Access,
         title: String,
         branch: String,
+        contextTokens: Int? = 216_764,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -67,6 +98,7 @@ enum SessionHeaderFixture {
                 number: 510,
                 title: "The header carries the Session's Workspace, CLI and issue",
             ),
+            contextTokens: contextTokens,
         )
     }
 

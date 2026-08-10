@@ -56,6 +56,9 @@ public extension CockpitPresentation {
                 // A time it will not draw: the age is suppressed by the status, and a running
                 // Session with none would leave that unrendered.
                 lastSeenAtMs: minutesAgo(0),
+                // A real reading off this machine, past the first line — so the roster's own
+                // Session shows the instrument doing something rather than sitting at `unknown`.
+                contextTokens: 216_764,
                 events: CockpitPresentation.Session.previewTranscript,
             ),
             Session(
@@ -68,6 +71,7 @@ public extension CockpitPresentation {
                 cli: .claude,
                 workspace: .init(kind: .main, branch: "main"),
                 lastSeenAtMs: minutesAgo(4),
+                contextTokens: 67175,
             ),
             Session(
                 id: "observed",
@@ -92,6 +96,7 @@ public extension CockpitPresentation {
                 cli: .claude,
                 workspace: .init(kind: .main, branch: "main", dirty: 0, unpushed: 0),
                 lastSeenAtMs: minutesAgo(3 * 60),
+                contextTokens: 88400,
             ),
             Session(
                 id: "failed",
@@ -109,6 +114,8 @@ public extension CockpitPresentation {
                     dirty: 12,
                 ),
                 lastSeenAtMs: minutesAgo(2 * 24 * 60),
+                // Past the second line, which is what a Session that stopped short usually is.
+                contextTokens: 472_233,
             ),
         ],
         checkout: .branch("main"),
@@ -134,6 +141,7 @@ public extension CockpitPresentation {
                 status: .running,
                 cli: .claude,
                 workspace: .init(kind: .worktree, branch: "argo/#376-native-shell"),
+                contextTokens: 216_764,
                 events: CockpitPresentation.Session.longTranscript,
             ),
             Session(
@@ -145,6 +153,7 @@ public extension CockpitPresentation {
                 status: .idle,
                 cli: .claude,
                 workspace: .init(kind: .main, branch: "main"),
+                contextTokens: 67175,
                 events: CockpitPresentation.Session.longTranscript,
             ),
         ],
