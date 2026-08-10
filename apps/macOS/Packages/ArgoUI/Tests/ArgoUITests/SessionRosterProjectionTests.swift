@@ -175,7 +175,7 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
-    func `a running Session shows no age`() throws {
+    func `a running Session words its age like any other`() throws {
         let row = try #require(
             rows(RosterSessionFixture.session(
                 id: "running",
@@ -184,9 +184,10 @@ struct SessionRosterProjectionTests {
             )).first,
         )
 
-        // The dot already says it is live, and the same `0m ago` repeated down the roster is
-        // noise. Suppressed by the status, not by an absent time — this Session has one.
-        #expect(row.age == nil)
+        // The age holds the left of the second line: a running row that skipped it left the
+        // worktree beside an empty column, reading as a differently-built row rather than a live
+        // one. The status decides the dot, never whether the line is there.
+        #expect(row.age == "2m ago")
     }
 
     @Test

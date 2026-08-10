@@ -8,14 +8,19 @@ import SwiftUI
 /// an amber dot still meaning "folder not found" where the drawer says it in words.
 ///
 /// It is also where the roster's PUBLISHED order is decided, because that decision needs a fact
-/// the engine does not have: whether the reader is in this list. The Hub keeps sorting by newest
-/// activity — a live key that moves on every record either agent writes — and this holds the
-/// resulting order still while somebody is reading it, letting it re-settle once they are not.
+/// the engine does not have: whether anybody is looking at this window. The Hub keeps sorting by
+/// newest activity — a live key that moves on every record either agent writes — and this holds
+/// the resulting order still for as long as the window is up, re-settling only while it is not.
+///
+/// The window and not the pointer, which is what this held before (#498) and what left the roster
+/// still reshuffling on launch: a list nobody had touched yet was never holding anything, so two
+/// working agents traded places once a second in front of a reader who had not arrived by the one
+/// route the sidebar was watching for. A frozen roster is one that does not move while you can see
+/// it — the pointer being elsewhere on screen is not permission to reshuffle.
 struct ShellSidebar: View {
-    /// How long the order stays held after the last sign of a reader. Long enough that crossing
-    /// the list on the way somewhere else is not a re-settle; short enough that a sidebar nobody
-    /// is in goes back to answering "what moved last" while the answer still matters.
-    private static let quiet = Duration.seconds(2)
+    /// `.inactive` means the window is not front: nothing on this roster is being read, and it can
+    /// go back to answering "what moved last" so it is already right when the reader returns.
+    @Environment(\.controlActiveState) private var activeState
 
     let presentation: CockpitPresentation
     @Binding var selection: CockpitPresentation.Session.ID?
@@ -30,25 +35,18 @@ struct ShellSidebar: View {
     var renamingSessionID: Binding<String?> = .constant(nil)
 
     @State private var order = RosterOrder()
-    @State private var isPointerInside = false
     /// What is typed in the search field. The sidebar's own and not the presentation's: a filter is
     /// a way of LOOKING at the roster, and a machine that restarted mid-search should come back to
     /// the whole list rather than to three rows and no memory of why.
     @State private var query = ""
-    /// Bumped by anything that says the reader is still here, which restarts the quiet interval.
-    ///
-    /// Keyboard focus is deliberately NOT one of these. A pointer leaving the list clears itself,
-    /// but focus does not: a Session clicked and then left alone would hold the order frozen for
-    /// as long as the window stayed frontmost, which is the opposite of re-settling when quiet.
-    /// Walking the roster with the arrow keys changes the selection, and that is the signal.
-    @State private var interactions = 0
 
     var body: some View {
         // Filtered AFTER the order is published, so searching cannot re-order what is left: the
-        // rows a query keeps stay in the order the roster already had them in.
-        let rows = RosterSearch.matching(
-            query, in: order.published(SessionRosterProjection.rows(from: presentation.sessions)),
-        )
+        // rows a query keeps stay in the order the roster already had them in. The order itself is
+        // held over the WHOLE roster and not over what a query left of it — a freeze taken on three
+        // matching rows would have nothing to say about the ones the query hid.
+        let ordered = order.published(SessionRosterProjection.rows(from: presentation.sessions))
+        let rows = RosterSearch.matching(query, in: ordered)
 
         SessionNavigator(
             rows: rows,
@@ -68,40 +66,24 @@ struct ShellSidebar: View {
             renamingRowID: renamingSessionID,
         )
         .searchable(text: $query, placement: .sidebar, prompt: "Search Sessions")
-        .onHover { isPointerInside = $0 }
         .argoAnimation(.resettle, value: rows.map(\.id))
         // What the held order has absorbed, recorded so a row admitted once stays where it
         // was put. Read off the PUBLISHED rows, which is what makes it a fixed point rather
         // than a second placement decision.
-        .onChange(of: rows.map(\.id)) { _, ids in
+        .onChange(of: ordered.map(\.id)) { _, ids in
             order.admit(ids)
         }
-        .onChange(of: selection) { _, _ in
-            interactions += 1
+        // Taken when the roster is first drawn, released only when the window goes away.
+        .onChange(of: activeState, initial: true) { previous, state in
+            // A window is not reported active for the first moments of its life, and those are
+            // exactly the moments the roster was reshuffling in.
+            let isFirstDraw = previous == state
+            if state == .inactive, !isFirstDraw {
+                order.release()
+            } else {
+                order.hold(ordered.map(\.id))
+            }
         }
-        .task(id: Reading(isPointerInside: isPointerInside, interactions: interactions)) {
-            await settle(to: rows.map(\.id))
-        }
-    }
-
-    /// Held from the moment a reader is in the list, and re-settled a quiet interval after the
-    /// last sign of one — never the instant they leave, which is the same surprise moved later.
-    /// A pointer still inside holds it open with no timer at all: the signal clears itself.
-    private func settle(to ids: [String]) async {
-        guard isPointerInside || interactions > 0 else { return }
-        order.hold(ids)
-        guard !isPointerInside else { return }
-        try? await Task.sleep(for: Self.quiet)
-        // Cancellation is the only thing `sleep` throws, and it means a fresher reading of this
-        // arrived — releasing anyway would re-settle under the reader it just detected.
-        guard !Task.isCancelled else { return }
-        order.release()
-    }
-
-    /// The whole of "somebody is reading this", as one value, because `task(id:)` restarts on one.
-    private struct Reading: Equatable {
-        let isPointerInside: Bool
-        let interactions: Int
     }
 }
 
