@@ -66,7 +66,7 @@ enum FeedProjection {
         case let .usage(usage): usage
         case let .toolCallOutcome(outcome): outcome.usage
         case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .title, .cwd,
-             .model, .branch, .turnEnded, .plan, .compaction, .unreadableLine: nil
+             .model, .branch, .turnEnded, .plan, .compaction, .queued, .unreadableLine: nil
         }
     }
 
@@ -120,8 +120,10 @@ enum FeedProjection {
         // call's row already carries it.
         // A spend is not news of its own either — it is one term of the roll-up at the foot of the
         // reading, and a row per request would punctuate the feed once per answer the agent gave.
+        // A queue note is not news either: it says how the prompt below it ARRIVED, and the prompt
+        // is already the row.
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .title, .cwd, .model, .branch,
-             .plan: nil
+             .plan, .queued: nil
         }
     }
 

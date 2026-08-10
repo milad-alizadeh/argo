@@ -67,6 +67,22 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The file's own last write, behind it — what a transcript whose records carry no time still
     /// has to say about when it ran.
     private var recordedAtMs: Int?
+    /// Whether an AGENT has ever spoken in this transcript — said something, thought, called a
+    /// tool, ended a turn, or been priced. A prompt does not count: it is what was ASKED.
+    ///
+    /// Alone this says nothing worth acting on, because a Session that has just started has a
+    /// prompt and no answer yet and is perfectly real. It earns its keep only beside `isQueued`.
+    ///
+    /// DIRECT for a Session Argo spawned (`init(spawn:)` sets it): Argo started that process, so
+    /// the row exists because the process does.
+    public private(set) var hasAgentActivity = false
+    /// Whether the host wrote a `queue-operation` record here — a prompt QUEUED rather than run.
+    ///
+    /// With no agent output beside it, that pair is the whole of the rendering this fixes: the CLI
+    /// opens a transcript per queued prompt, each holding one copy of the same words and nothing
+    /// else, and the roster drew one Session once per file. Queued AND answered is an ordinary
+    /// Session — the queue is how its prompt arrived, not what it is.
+    public private(set) var isQueued = false
     private var hasPromptTitle = false
     private var hasExplicitTitle = false
     private(set) var turnOpen = false
@@ -131,6 +147,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
         self.startedAtMs = spawn.spawnedAtMs
         self.lastStop = spawn.exit == nil ? .endTurn : .cancelled
+        // Argo started this process, so the row is DIRECT and belongs on the roster from the moment
+        // it exists — waiting for the agent to answer would hide the Session somebody just spawned.
+        self.hasAgentActivity = true
     }
 
     mutating func apply(_ event: TranscriptEvent) {
@@ -154,25 +173,36 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             turnOpen = true
             observeActivity(atMs)
         case let .turnEnded(reason):
+            hasAgentActivity = true
             turnOpen = false
             lastStop = reason
             // A question the Turn it was asked in has left behind is not still waiting on anyone.
             pendingAsks = []
         case let .toolCall(call):
+            hasAgentActivity = true
             if call.name == ToolCall.askUserQuestion {
                 pendingAsks.insert(call.id)
             }
             observeActivity(call.atMs)
         case let .toolCallOutcome(outcome):
+            hasAgentActivity = true
             pendingAsks.remove(outcome.id)
             observeActivity(outcome.endedAtMs)
             observeSubagentSpend(outcome.usage)
         case let .compaction(atMs):
+            hasAgentActivity = true
             observeActivity(atMs)
         case let .usage(usage):
+            hasAgentActivity = true
             contextTokens = usage.contextTokens
             spend = Self.summed(spend, usage)
-        case .message, .thought, .plan, .unreadableLine:
+        case .message, .thought, .plan:
+            hasAgentActivity = true
+        case .queued:
+            isQueued = true
+        // An unreadable line says a file was written, never who wrote it — which is exactly the
+        // claim `hasAgentActivity` is about, so it deliberately does not count.
+        case .unreadableLine:
             break
         }
     }
@@ -211,6 +241,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             title = continuation.title
             hasPromptTitle = true
         }
+        // Either half having seen the agent speak is the whole chain having seen it: a resume file
+        // opened and not yet answered does not un-run the reading it continues.
+        hasAgentActivity = hasAgentActivity || continuation.hasAgentActivity
+        isQueued = isQueued || continuation.isQueued
         // Appended, not merged: a resume chain is walked root-first, so the continuation's stream
         // is the later half of one reading and belongs behind what came before it.
         events += continuation.events
