@@ -90,6 +90,10 @@ public extension CockpitPresentation {
         /// says about that order cannot disagree. Absent where neither the records nor the file
         /// behind them could say — which is a gap, never a moment to stand in for one.
         public let lastSeenAtMs: Int?
+        /// How full the Session's context is right now, in tokens — the latest reading its records
+        /// carry, DERIVED. Absent for a record that reported no spend at all, which the header
+        /// draws as `unknown`: unreadable is not an empty context.
+        public let contextTokens: Int?
         /// Everything the Session's transcript said, in order — the feed's whole input.
         ///
         /// The engine's own events rather than a second shape named for the shell: the surface
@@ -109,6 +113,7 @@ public extension CockpitPresentation {
             workspace: Workspace? = nil,
             issue: Issue? = nil,
             lastSeenAtMs: Int? = nil,
+            contextTokens: Int? = nil,
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -121,6 +126,7 @@ public extension CockpitPresentation {
             self.status = status
             self.issue = issue
             self.lastSeenAtMs = lastSeenAtMs
+            self.contextTokens = contextTokens
             self.events = events
         }
     }

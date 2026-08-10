@@ -21,23 +21,37 @@ struct SessionHeader: View {
     let header: SessionHeaderProjection.Header?
 
     var body: some View {
-        HStack(alignment: .top, spacing: ArgoSpacing.comfortable) {
-            if let header {
-                // Tight on purpose: the title and the line under it are ONE identity, and a step
-                // of the ordinary rhythm between them would read as two stacked regions.
-                VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
-                    title(header)
-                    SessionHeaderFacts(header: header)
-                }
-            }
-            // The trailing space the later header tickets fill — the context reading on the
-            // right edge, and what it offers to do about it.
+        // Centred rather than baseline-aligned, because only one half of this line is type: the
+        // instrument on the trailing edge is a reading over a bar, and a bar has no baseline to
+        // sit on. The identity beside it is two stacked lines, which has no one baseline either.
+        HStack(alignment: .center, spacing: ArgoSpacing.comfortable) {
+            identity
+                // Combined here and NOT over the whole header: combining over the instrument would
+                // swallow its ⓘ, and a control nothing can address is a panel nobody can open.
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(header?.announcement ?? "No Session selected")
+                // Above the Spacer, which otherwise takes the slack first and cuts a title that
+                // had room.
+                .layoutPriority(1)
             Spacer(minLength: ArgoSpacing.loose)
+            if let header {
+                SessionHeaderContext(context: header.context)
+            }
         }
         .padding(.horizontal, ArgoSpacing.section)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(header?.announcement ?? "No Session selected")
+        .accessibilityElement(children: .contain)
+    }
+
+    /// Tight on purpose: the title and the line under it are ONE identity, and a step of the
+    /// ordinary rhythm between them would read as two stacked regions.
+    private var identity: some View {
+        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
+            if let header {
+                title(header)
+                SessionHeaderFacts(header: header)
+            }
+        }
     }
 
     /// The largest interface line in the cockpit, and the one thing on the header that is allowed

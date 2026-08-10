@@ -76,6 +76,15 @@ public struct SpecimenScreen: View {
             // repeat rather than a window dragged by hand. What it settles is which fact gives
             // way: the branch is cut, and the marks, the model and the issue after it survive.
             SessionHeaderSpecimen(header: SessionHeaderFixture.longBranch)
+        case .contextOk, .contextWarn, .contextCrit, .contextUnknown:
+            // A whole header per tier, because what is being judged is whether the reading is
+            // findable beside a title and a branch — and the fourth is the one that matters most:
+            // an unreadable context has to look like an ABSENCE rather than like a fresh window.
+            SessionHeaderSpecimen(header: contextHeader)
+        case .contextGuide:
+            // The ⓘ panel, stood in a glass of its own — a popover is a window of its own and
+            // never lands in a screenshot of this one (`DrawerSpecimen`).
+            ContextGuideSpecimen()
         case .feed:
             // The deck at rest with a Session read into it, drawn through the same projection the
             // shell uses. A specimen holding rows of its own would be evidence about a feed
@@ -255,6 +264,13 @@ public struct SpecimenScreen: View {
             // stopped at most of all, which `FeedRow.ID` being a POSITION otherwise carries across.
             RosterSpecimen(presentation: .twoReadings)
         }
+    }
+
+    /// The header whose context tier this case is a render of. The fixture set names the case it
+    /// belongs to, so neither side can be renamed into drawing another tier's reading.
+    private var contextHeader: SessionHeaderProjection.Header {
+        SessionHeaderFixture.contexts.first { $0.specimen == specimen }?.header
+            ?? SessionHeaderFixture.header(for: .managed)
     }
 
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is

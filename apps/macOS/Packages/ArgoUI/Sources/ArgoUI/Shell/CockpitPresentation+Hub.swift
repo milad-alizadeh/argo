@@ -65,6 +65,7 @@ extension CockpitPresentation.Session {
             // provider that does not exist.
             issue: nil,
             lastSeenAtMs: session.lastSeenAtMs,
+            contextTokens: session.contextTokens,
             events: session.events,
         )
     }

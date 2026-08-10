@@ -81,6 +81,11 @@ enum SessionHeaderProjection {
         /// Session whose record named a model but no CLI reads as the model alone.
         let agent: String?
         let issue: IssueLink?
+        /// The one instrument on the header. Never absent: a Session whose context cannot be read
+        /// still has a context, and an instrument that disappeared would say the fact does not
+        /// apply rather than that Argo could not establish it. The absence lives INSIDE the
+        /// reading, as `unknown`.
+        let context: Context
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being and no
         /// surface can assemble one that disagrees with what the projection decided.
@@ -91,6 +96,7 @@ enum SessionHeaderProjection {
             marks: [Mark],
             agent: String?,
             issue: IssueLink?,
+            context: Context,
         ) {
             self.title = title
             self.access = access
@@ -98,12 +104,17 @@ enum SessionHeaderProjection {
             self.marks = marks
             self.agent = agent
             self.issue = issue
+            self.context = context
         }
 
-        /// What a screen reader hears: the same facts the header draws, in the order it draws
-        /// them — because a mark is ink and ink is nothing a screen reader can hear. Each mark
-        /// says what it counts rather than naming its glyph, and the checkout says which kind it
-        /// is in words rather than by which of two glyphs got drawn.
+        /// What a screen reader hears of the Session's IDENTITY: the facts on the header's leading
+        /// half, in the order it draws them — because a mark is ink and ink is nothing a screen
+        /// reader can hear. Each mark says what it counts rather than naming its glyph, and the
+        /// checkout says which kind it is in words rather than by which of two glyphs got drawn.
+        ///
+        /// The context reading is deliberately not in it. The instrument is its own element on the
+        /// line — it has to be, since it carries a control — and it announces itself
+        /// (`Context.detail`); saying it here as well would read the same number out twice.
         var announcement: String {
             ([title, agent, issue?.label, checkout?.detail]
                 + marks.map(\.detail)
@@ -121,6 +132,7 @@ enum SessionHeaderProjection {
             marks: marks(for: session.workspace),
             agent: agent(cli: session.cli, model: session.model),
             issue: link(to: session.issue),
+            context: context(tokens: session.contextTokens),
         )
     }
 

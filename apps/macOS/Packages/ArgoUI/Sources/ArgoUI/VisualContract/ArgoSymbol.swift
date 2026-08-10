@@ -28,6 +28,9 @@ public enum ArgoSymbol {
     public static let uncommitted = edited
     /// Commits made and not yet pushed — the arrow points the way they have not gone.
     public static let unpushed = "arrow.up"
+    /// A reading that needs decoding once: the mark that opens the explanation beside it. An `i`
+    /// rather than a `?` — what it opens is what these lines MEAN, not help with using the app.
+    public static let about = "info.circle"
     /// The disclosure on a control that opens something BELOW it — a menu, a drawer under its
     /// vessel.
     public static let disclosure = "chevron.down"
