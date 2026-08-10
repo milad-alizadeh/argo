@@ -17,6 +17,12 @@ import SwiftUI
     /// Whether a deck seam is being dragged right now. Mid-drag the table re-measures visible
     /// rows only; the edge off this flag is when the deferred full pass runs.
     var isResizing: Bool
+    /// Whether the composer floats over this reading — it grows the gutter under the last row,
+    /// so the newest line genuinely ends clear of the vessel.
+    var isUnderComposer: Bool
+    /// The row the user's own words just landed on, while the accent wash stands over it — see
+    /// `FeedView.washed`.
+    var washed: FeedRow.ID?
     /// Which prompts the reader has unfolded — the feed's copy, written through.
     var unfolded: Binding<Set<FeedRow.ID>>
     /// Reports a scroll the READER made, as the following answer it produced. Never called for a
@@ -33,6 +39,14 @@ import SwiftUI
         return AnyView(
             FeedRowView(row: row, isExpanded: unfolding(row.id), selection: selection)
                 .padding(.top, step(before: index))
+                .background {
+                    if washed == row.id {
+                        RoundedRectangle(cornerRadius: ArgoRadius.control)
+                            .fill(environment.argo.color.state
+                                .muted(environment.argo.color.interaction.accent))
+                    }
+                }
+                .argoAnimation(.bloom, value: washed == row.id)
                 .padding(.horizontal, ArgoFeedRow.inset)
                 .argoFeedMeasure()
                 .environment(\.self, environment),

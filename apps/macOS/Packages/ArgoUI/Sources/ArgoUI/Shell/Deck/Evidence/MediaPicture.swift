@@ -28,7 +28,7 @@ struct MediaPicture {
     /// frames, which read as a flash.
     /// `nonisolated(unsafe)` on the strength of `NSCache`'s own documented thread safety — the
     /// compiler cannot see it, but the type synchronises its accesses itself.
-    private nonisolated(unsafe) static let decoded = NSCache<NSString, NSImage>()
+    nonisolated(unsafe) private static let decoded = NSCache<NSString, NSImage>()
 
     private static func decode(_ bytes: String) -> NSImage? {
         if let image = decoded.object(forKey: bytes as NSString) {

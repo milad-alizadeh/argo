@@ -50,6 +50,25 @@ struct AgentLauncherTests {
         #expect(launch.environment["CLAUDE_PLUGIN_ROOT"] == "/tmp/plugin")
     }
 
+    /// Argo runs under `claude` as often as not, and a CLI that believes it is a child of another
+    /// one writes no transcript of its own — so the Session Argo just spawned would be the one
+    /// Session nothing could ever observe.
+    @Test
+    func `a spawned Session is never told it is another CLI's child`() async throws {
+        let directory = try Self.directoryHolding("claude")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let launcher = AgentLauncher(
+            run: { _ in "\(directory.path)\n" },
+            inherited: ["CLAUDE_CODE_CHILD_SESSION": "1", "HOME": "/Users/somebody"],
+        )
+
+        let launch = try await launcher.launch(cli: .claude, cwd: "/tmp", companion: nil)
+
+        #expect(launch.environment["CLAUDE_CODE_CHILD_SESSION"] == nil)
+        // Scrubbed, not replaced: an agent needs the rest of the user's environment.
+        #expect(launch.environment["HOME"] == "/Users/somebody")
+    }
+
     /// The shell is asked ONCE. A `PATH` does not change while a window is open, and paying a
     /// login shell's startup per spawn would be felt.
     @Test

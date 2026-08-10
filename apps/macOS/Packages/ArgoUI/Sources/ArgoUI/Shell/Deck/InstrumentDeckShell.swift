@@ -38,6 +38,11 @@ struct InstrumentDeckShell: View {
     /// kind: the way back to the newest line is on screen only for a reader who scrolled away from
     /// it, and a screenshot cannot scroll.
     var held: FeedRow.ID?
+    /// The shown Session's composer, already projected — absent for one Argo cannot drive.
+    var composer: SessionComposerProjection.Composer?
+    /// One Turn to the shown Session. Inert by default, so a specimen renders the vessel with
+    /// nothing behind it.
+    var send: (String) throws -> Void = { _ in }
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below, because a
     /// seam is a preference of the window and not a fact about the Session — keyed with the room it
@@ -66,6 +71,8 @@ struct InstrumentDeckShell: View {
                 open: open,
                 lit: lit,
                 held: held,
+                composer: composer,
+                send: send,
                 seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
             )
             // The identity, spent. SwiftUI discards a view's whole state when its id changes, which

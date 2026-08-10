@@ -127,8 +127,11 @@ struct SessionsDeckTests {
         #expect(contentRowHeight > ArgoLayout.windowMinimumHeight / 2)
     }
 
+    /// The composer floats over the reading rather than taking a row from it, so what it may
+    /// cost the feed is scroll room, and even that must leave the reading most of the column at
+    /// the shortest window.
     @Test
-    func `the dock leaves the feed most of its column`() {
-        #expect(contentRowHeight - ArgoLayout.deckDockHeight > contentRowHeight / 2)
+    func `the composer's clearance leaves the feed most of its column`() {
+        #expect(contentRowHeight - ArgoComposerVessel.feedClearance > contentRowHeight / 2)
     }
 }

@@ -14,6 +14,8 @@ import SwiftUI
     private var folds: Set<FeedRow.ID> = []
     /// The open row the visible cells were last drawn against.
     private var drawnOpen: FeedRow.ID?
+    /// The washed row they were last drawn against — see `FeedTableModel.washed`.
+    private var drawnWashed: FeedRow.ID?
     /// Whether the last model arrived mid seam-drag — the edge off it is when the full
     /// re-measure runs.
     private var wasResizing = false
@@ -84,6 +86,11 @@ import SwiftUI
             settleAfterResize()
         }
         wasResizing = fresh.isResizing
+        // The gutter under the last row is part of the content — grown under a composer so the
+        // newest line genuinely ends clear of the vessel, and every follow lands below it.
+        scroller?.contentInsets.bottom = fresh.isUnderComposer
+            ? ArgoComposerVessel.feedClearance
+            : ArgoSpacing.section
         place()
     }
 
@@ -163,7 +170,11 @@ import SwiftUI
         if refolded {
             affected.formUnion(IndexSet(folds.symmetricDifference(unfolded)))
         }
+        if fresh.washed != drawnWashed {
+            affected.formUnion(IndexSet([drawnWashed, fresh.washed].compactMap(\.self)))
+        }
         folds = unfolded
+        drawnWashed = fresh.washed
         drawnOpen = fresh.selection.open
         guard !affected.isEmpty else { return }
         refresh(rows: affected, remeasuring: refolded)

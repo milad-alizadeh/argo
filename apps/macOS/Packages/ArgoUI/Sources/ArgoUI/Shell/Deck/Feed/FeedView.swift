@@ -10,6 +10,7 @@ import SwiftUI
 /// here is the one behaviour that is a fact about the WHOLE reading rather than about a scroll:
 /// whether it is still following the Session, and what was said since the reader left the end.
 struct FeedView: View {
+    @Environment(\.argo) private var argo
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Whether a deck seam is being dragged right now — the table degrades its re-measure to
     /// the visible rows for exactly that long.
@@ -26,6 +27,10 @@ struct FeedView: View {
     /// scroll. Without it the two states this control has — bare, and carrying what was said since
     /// — are reachable only by a person with a trackpad, which is a surface nobody ever looks at.
     var held: FeedRow.ID?
+    /// Whether the composer floats over this reading. It decides three things at once — the
+    /// gutter at the end (`FeedTail`), the fade that lets rows run under the vessel, and how far
+    /// the way-back control lifts — because all three are one fact about the column's bottom edge.
+    var isUnderComposer = false
 
     /// Which prompts the reader has unfolded. Held here rather than in the row, because it is a
     /// fact about the READING rather than about the view drawing a row — it has to survive the row
@@ -42,13 +47,22 @@ struct FeedView: View {
     /// from. See `FeedTail.newMessages`. It must not move until the reader is following again — a
     /// place measured from the top of the pane would count what they were already looking at.
     @State private var leftAt: FeedRow.ID?
+    /// The row the user's own words just landed on, while the accent wash stands over it. The
+    /// echo is the acceptance — no toast — and the wash is what marks the echo as new.
+    @State var washed: FeedRow.ID?
     /// The table's imperative verbs — see `FeedTableHandle`.
     @State private var table = FeedTableHandle()
 
-    init(rows: [FeedRow], selection: FeedRowSelection, held: FeedRow.ID? = nil) {
+    init(
+        rows: [FeedRow],
+        selection: FeedRowSelection,
+        held: FeedRow.ID? = nil,
+        isUnderComposer: Bool = false,
+    ) {
         self.rows = rows
         self.selection = selection
         self.held = held
+        self.isUnderComposer = isUnderComposer
         // A reading that opens held has already left the end, and the end it left is the row it
         // was opened at — both true before the first frame, which is what lets a screenshot show
         // the detached state.
@@ -63,6 +77,8 @@ struct FeedView: View {
             held: held,
             isFollowing: isFollowing,
             isResizing: isResizing,
+            isUnderComposer: isUnderComposer,
+            washed: washed,
             unfolded: $unfolded,
             onReaderScroll: reader(isNowFollowing:),
             handle: table,
@@ -74,6 +90,15 @@ struct FeedView: View {
             guard case let .row(id) = focus else { return }
             table.focus(onto: id)
         }
+        .onChange(of: rows.count) { was, now in
+            washArrived(between: was, and: now)
+        }
+        // Cancellation IS the reset: a second send while the first wash stands re-keys
+        // the task, and the fresh one times the fresh row.
+        .task(id: washed) { await washExpired() }
+        // On the reading and NOT on the view: the way-back control and the empty-feed word float
+        // over this and must never fade with it.
+        .mask { fade }
         .overlay(alignment: .bottomTrailing) { tail }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
@@ -104,7 +129,12 @@ struct FeedView: View {
                     follow: follow,
                 )
                 .padding(.trailing, ArgoFeedRow.inset)
-                .padding(.bottom, ArgoFeedRow.tailLift)
+                // Lifted clear of the vessel when one floats there: a way back standing on
+                // the composer is a control on a control.
+                .padding(
+                    .bottom,
+                    isUnderComposer ? ArgoComposerVessel.feedClearance : ArgoFeedRow.tailLift,
+                )
                 .transition(.opacity)
             }
         }

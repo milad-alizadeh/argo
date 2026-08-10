@@ -60,12 +60,6 @@ public extension ArgoMotion {
     static let selection = ArgoMotion(duration: 0.14, curve: .easeOut, reducedDuration: nil)
     /// A popover, a disclosure, an expanding piece of evidence.
     static let reveal = ArgoMotion(duration: 0.22, curve: .easeOut, reducedDuration: 0.10)
-    /// The Dock latching open or closed.
-    static let latch = ArgoMotion(
-        duration: 0.32,
-        curve: .spring(damping: 0.86),
-        reducedDuration: nil,
-    )
     /// Attention arriving: a brightness bloom, once, then still.
     static let bloom = ArgoMotion(duration: 0.42, curve: .easeInOut, reducedDuration: 0.14)
 
@@ -77,21 +71,18 @@ public extension ArgoMotion {
 
     static let all: [(name: String, motion: ArgoMotion)] = [
         ("stateChange", stateChange), ("selection", selection), ("reveal", reveal),
-        ("latch", latch), ("bloom", bloom), ("resettle", resettle),
+        ("bloom", bloom), ("resettle", resettle),
     ]
 
     /// Roles nothing draws yet, and what each is waiting on.
     ///
-    /// They are kept because the decision behind each was real — deleting `latch` means arguing
-    /// again about how fast a Dock latches, on the day somebody is busy building one. But the
-    /// specimen has to SAY so: a duration that has never moved a surface is a value nobody has
-    /// judged, and a specimen that draws it exactly like a live role is how an unjudged value
-    /// passes for a settled one. A key naming no role fails the contract suite, so this list
-    /// shrinks as surfaces land and cannot rot.
-    static let unwired: [String: String] = [
-        "latch": "the Dock, still a placeholder",
-        "bloom": "attention arriving",
-    ]
+    /// A role is kept while the decision behind it still has a surface coming — `latch` left with
+    /// the Dock it timed (#536 closed on the floating composer), because a duration whose surface
+    /// is cancelled is not waiting, it is dead. The specimen has to SAY a kept role is unjudged: a
+    /// duration that has never moved a surface drawn exactly like a live role is how an unjudged
+    /// value passes for a settled one. A key naming no role fails the contract suite, so this
+    /// list shrinks as surfaces land and cannot rot.
+    static let unwired: [String: String] = [:]
 
     /// No role may run longer than this. Past it a transition stops reading as feedback and
     /// starts reading as latency.

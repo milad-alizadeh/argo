@@ -1,0 +1,91 @@
+import ArgoEngine
+@testable import ArgoUI
+import Testing
+
+/// Who gets a composer at all, and what it states — the projection's honesty claims.
+@Suite("Session composer projection")
+struct SessionComposerProjectionTests {
+    @Test
+    func `a managed live Session gets a composer addressed to its agent`() throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(for: session(access: .managed)),
+        )
+
+        #expect(composer.sessionID == "session-a")
+        #expect(composer.placeholder == "Message Claude Code…")
+        #expect(composer.facts == "Opus 5")
+    }
+
+    /// Absent, not disabled: a greyed field invites a click and gives no reason. `external` was
+    /// never Argo's to drive and `orphaned` lost the PTY it had — neither can take a keystroke.
+    @Test(arguments: [
+        CockpitPresentation.Session.Access.external,
+        CockpitPresentation.Session.Access.orphaned,
+    ])
+    func `a Session Argo cannot drive gets no composer at all`(
+        access: CockpitPresentation.Session.Access,
+    ) {
+        #expect(SessionComposerProjection.composer(for: session(access: access)) == nil)
+    }
+
+    @Test
+    func `an ended Session gets no composer even though Argo owned it`() {
+        let ended = session(access: .managed, status: .ended)
+        #expect(SessionComposerProjection.composer(for: ended) == nil)
+    }
+
+    @Test
+    func `no Session selected is no composer`() {
+        #expect(SessionComposerProjection.composer(for: nil) == nil)
+    }
+
+    /// A managed Session's first moments are a claim without a record behind it — no CLI named
+    /// yet, so the field is addressed to the role rather than inventing an agent.
+    @Test
+    func `a Session whose record named no CLI is addressed generically`() throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(for: session(access: .managed, cli: nil)),
+        )
+        #expect(composer.placeholder == "Message the agent…")
+    }
+
+    /// Composed of what is present: no model is no facts, never a placeholder keeping the line
+    /// company.
+    @Test
+    func `a Session whose record named no model states no facts`() throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(for: session(access: .managed, model: nil)),
+        )
+        #expect(composer.facts == nil)
+    }
+
+    /// An id the model table does not know is stated verbatim — ugly-but-true beats the nearest
+    /// guess.
+    @Test
+    func `an unknown model id is stated verbatim`() throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(
+                for: session(access: .managed, model: "brand-new-model"),
+            ),
+        )
+        #expect(composer.facts == "brand-new-model")
+    }
+
+    private func session(
+        access: CockpitPresentation.Session.Access,
+        status: SessionStatus = .running,
+        cli: AgentCLI? = .claude,
+        model: String? = "claude-opus-5",
+    )
+        -> CockpitPresentation.Session {
+        CockpitPresentation.Session(
+            id: "session-a",
+            title: "Restore the sessions Warp closed",
+            model: model,
+            workspaceLocation: nil,
+            access: access,
+            status: status,
+            cli: cli,
+        )
+    }
+}

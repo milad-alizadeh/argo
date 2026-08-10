@@ -14,6 +14,12 @@ struct DeckContentRow: View {
     let showing: PlanShowing
     let selection: FeedRowSelection
     var held: FeedRow.ID?
+    /// The composer for the shown Session, and absent for one Argo cannot drive — the absence is
+    /// the honest state, not a disabled field (design decision 7).
+    var composer: SessionComposerProjection.Composer?
+    /// One Turn to the shown Session. A closure so a specimen renders the vessel with nothing
+    /// behind it; refusals are thrown back and the composer's seam repeats them.
+    var send: (String) throws -> Void = { _ in }
     let seams: DeckSeams
     /// Whether either seam is under the reader's hand. One flag for both, because only one of them
     /// can be dragged at a time and the zones downstream care that the column is moving, not which
@@ -33,7 +39,14 @@ struct DeckContentRow: View {
                         isDragging: { isResizing = $0 },
                     )
                 }
-                FeedColumn(feed: feed, showing: showing, selection: selection, held: held)
+                FeedColumn(
+                    feed: feed,
+                    showing: showing,
+                    selection: selection,
+                    held: held,
+                    composer: composer,
+                    send: send,
+                )
                 if !isPanelOpen {
                     DeckSeparator()
                         .transition(.opacity)
@@ -173,38 +186,49 @@ struct DeckContentRow: View {
     }
 }
 
-/// The feed and the dock that steers it, bounded to their own column rather than run across the
-/// deck (C4.1).
+/// The feed and the composer floating over it, bounded to their own column rather than run across
+/// the deck (C4.1). The Dock seam it used to end in did not survive the composer — the deck's
+/// bottom edge belongs to the reading again, and the vessel floats over it (#403, closed by #536).
 private struct FeedColumn: View {
     let feed: [FeedRow]
     let showing: PlanShowing
     let selection: FeedRowSelection
     var held: FeedRow.ID?
+    var composer: SessionComposerProjection.Composer?
+    var send: (String) throws -> Void = { _ in }
 
     var body: some View {
-        VStack(spacing: ArgoSpacing.flush) {
-            FeedView(rows: feed, selection: selection, held: held)
-                // Over the feed rather than in the column's stack: the pill floats, and a row in
-                // the stack would take height from the reading it is meant to sit above. Bounded
-                // to this column so it moves with the feed when a seam does, never over the panel.
-                .overlay(alignment: .bottom) { pill }
-            DeckSeparator()
-            DeckSlot(zone: .dock)
-                .frame(height: ArgoLayout.deckDockHeight)
-        }
-        // Whatever the two seams leave it. The column used to be capped at its reading measure when
-        // the panel opened, which is the panel deciding how wide the feed is — the seam decides
-        // now,
-        // and prose inside the column is held to the measure by the rows themselves.
-        .frame(maxWidth: .infinity)
+        FeedView(rows: feed, selection: selection, held: held, isUnderComposer: composer != nil)
+            // Over the feed rather than in the column's stack: the pill floats, and a row in
+            // the stack would take height from the reading it is meant to sit above. Bounded
+            // to this column so it moves with the feed when a seam does, never over the panel.
+            .overlay(alignment: .bottom) { pill }
+            .overlay(alignment: .bottom) { vessel }
+            // Whatever the two seams leave it. The column used to be capped at its reading measure
+            // when the panel opened, which is the panel deciding how wide the feed is — the seam
+            // decides now, and prose inside the column is held to the measure by the rows
+            // themselves.
+            .frame(maxWidth: .infinity)
     }
 
     /// A Session that never reported a plan gets no pill — not an empty one, and not a note saying
-    /// there is none. Nothing to report is reported by drawing nothing.
+    /// there is none. Nothing to report is reported by drawing nothing. Lifted clear of the vessel
+    /// when one floats under it, for the reason the way-back control is.
     @ViewBuilder private var pill: some View {
         if let plan = showing.plan {
             PlanPill(plan: plan, isRevealed: showing.isRevealed)
-                .padding(.bottom, ArgoPlanPill.lift)
+                .padding(
+                    .bottom,
+                    composer == nil ? ArgoPlanPill.lift : ArgoComposerVessel.feedClearance,
+                )
+        }
+    }
+
+    @ViewBuilder private var vessel: some View {
+        if let composer {
+            SessionComposer(composer: composer, send: send)
+                .padding(.horizontal, ArgoSpacing.section)
+                .padding(.bottom, ArgoSpacing.loose)
         }
     }
 }

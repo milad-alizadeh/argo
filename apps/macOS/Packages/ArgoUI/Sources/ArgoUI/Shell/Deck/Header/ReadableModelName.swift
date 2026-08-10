@@ -34,6 +34,16 @@ enum ReadableModelName {
         "claude-3-haiku": "Haiku 3",
     ]
 
+    /// An id the table knows, said the way a person says it; an id it does not, VERBATIM.
+    ///
+    /// Ugly-but-true beats invisible and beats the nearest guess: a model released this morning
+    /// renders as its own id rather than as the closest name Argo happens to hold, or as nothing
+    /// at all. The date suffix a provider pins a snapshot with is dropped before the lookup, so a
+    /// dated id of a model the table DOES know still reads as that model.
+    static func readable(_ id: String) -> String {
+        table[id] ?? table[undated(id)] ?? id
+    }
+
     /// The id with a provider's pinned-snapshot date taken off the end: `claude-opus-4-1-20250805`
     /// is the same model as `claude-opus-4-1`, and a table that had to carry every snapshot of
     /// every model would be stale the day after each one ships.

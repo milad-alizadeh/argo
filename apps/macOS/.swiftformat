@@ -25,7 +25,9 @@
 
 # Access control and ordering are the linter's business, not the formatter's.
 --enable isEmpty, redundantParens, redundantReturn, redundantType, sortImports, blankLinesAtStartOfScope, trailingCommas
---disable wrapMultilineStatementBraces, organizeDeclarations, blankLinesAroundMark
+# modifierOrder included: SwiftLint's modifier_order already gates ordering, and the two
+# defaults disagree on `nonisolated` vs access control — one owner, and it is the linter.
+--disable wrapMultilineStatementBraces, organizeDeclarations, blankLinesAroundMark, modifierOrder
 
 # Header comments are written by hand or not at all — see rules/comments.md.
 --header ignore
