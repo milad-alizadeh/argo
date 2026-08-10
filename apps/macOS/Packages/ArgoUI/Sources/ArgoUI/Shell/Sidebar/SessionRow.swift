@@ -38,12 +38,11 @@ struct SessionRow: View {
         }
     }
 
-    /// The branch, and how long ago the Session last moved held against the row's own right
-    /// edge — the same edge the state word above it takes, so the two read as one column down
-    /// the roster rather than zigzagging to wherever the text before them happened to end.
+    /// The age takes the row's own right edge, which is the edge the state word above it takes:
+    /// one column down the roster rather than a mark at wherever the text before it ended.
     ///
-    /// Absent entirely when neither is there, rather than an empty `Text`, which would leave a
-    /// gap of whatever height the font happened to give it.
+    /// Absent entirely when neither half is there, rather than an empty `Text`, which would
+    /// leave a gap of whatever height the font happened to give it.
     @ViewBuilder private var secondaryLine: some View {
         if row.branch != nil || row.age != nil {
             HStack(spacing: ArgoSpacing.snug) {
@@ -60,8 +59,7 @@ struct SessionRow: View {
                     Text(age)
                         .argoText(ArgoTypography.rowMeta)
                         .lineLimit(1)
-                        // The gutter is the age's before it is the branch's: a branch long
-                        // enough to reach it truncates rather than pushing the age off the line.
+                        // The gutter is the age's before it is the branch's.
                         .layoutPriority(1)
                 }
             }

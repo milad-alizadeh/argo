@@ -70,19 +70,19 @@ enum SessionRosterProjection {
                 branch: session.branch,
                 isReadOnly: session.access == .readOnly,
                 showsLock: locksDistinguish && session.access == .readOnly,
-                age: age(of: session, nowMs: nowMs),
+                age: age(status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
                 state: state(for: session.status),
             )
         }
     }
 
     /// A running Session has no age: the dot already says it is live, and `just now` repeated
-    /// down the roster is the noise D30 deletes. A Session whose record carries no time has none
-    /// either — a moment nobody observed is not one to word.
-    private static func age(of session: CockpitPresentation.Session, nowMs: Int) -> String? {
-        guard session.status != .running, let lastSeenAtMs = session.lastSeenAtMs else {
-            return nil
-        }
+    /// down the roster is the noise D30 deletes.
+    private static func age(
+        status: SessionStatus, lastSeenAtMs: Int?, nowMs: Int,
+    )
+        -> String? {
+        guard status != .running, let lastSeenAtMs else { return nil }
         return SessionAge.phrase(sinceMs: lastSeenAtMs, nowMs: nowMs)
     }
 

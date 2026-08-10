@@ -137,11 +137,13 @@ struct SessionRosterProjectionTests {
         // A real ticket branch, not a bare `main`: whether one truncates at the row's width
         // without losing the ticket it is named for is the other question the PNG settles.
         #expect(rows.contains { $0.branch?.hasPrefix("argo/#") == true })
-        // Both age renderings too: whether the age holds the same right edge as the state word
-        // above it, and how a row with no age reads beside one that has one, are both questions
-        // only the PNG answers.
-        #expect(rows.contains { $0.age != nil })
-        #expect(rows.contains { $0.age == nil })
+        // A long branch beside an age, because whether the branch truncates rather than pushing
+        // the age off the line is a layout claim no value test can see.
+        #expect(rows.contains { ($0.branch?.count ?? 0) > 30 && $0.age != nil })
+        // And a row with no age that is not simply the running one: the record-carried-no-time
+        // rendering is the absence the roster has to draw, and the running row would satisfy a
+        // bare `age == nil` on its own.
+        #expect(rows.contains { $0.age == nil && $0.state != .running })
     }
 
     @Test
