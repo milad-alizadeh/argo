@@ -25,8 +25,8 @@ final class FrameRecorder {
     private let log: FrameLog?
 
     init(flag: FrameFlag) {
-        recent = Array(repeating: 0, count: Self.window)
-        log = flag.logPath.flatMap(FrameLog.init(path:))
+        self.recent = Array(repeating: 0, count: Self.window)
+        self.log = flag.logPath.flatMap(FrameLog.init(path:))
     }
 
     func record(_ milliseconds: Double) {

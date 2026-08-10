@@ -3,17 +3,25 @@
 # "scrolling is smooth" is a number somebody else can reproduce rather than an impression.
 #
 # Usage, from apps/macOS:
-#   sh scripts/feed-fps.sh                                   # feedAtScale, 1600x1000, 8s
-#   sh scripts/feed-fps.sh feedAtScale 760x900 8
-#   ARGO_FPS_PIXELS=40 sh scripts/feed-fps.sh                 # a faster drag
+#   sh scripts/feed-fps.sh                                   # feedAtScale, 1600x1000, 6s × 3
+#   sh scripts/feed-fps.sh feedAtScale 760x900 6
+#   ARGO_FPS_PIXELS=40 ARGO_FPS_DRAGS=5 sh scripts/feed-fps.sh
 #
 # It launches ONE named specimen at ONE fixed size with the frame meter on, drags the feed at a
 # fixed cadence through `ScrollDriver.swift`, and reports p50 / p95 / worst / dropped over exactly
-# the frames that drag produced. Same transcript, same width, same gesture, every run — which is
+# the frames those drags produced. Same transcript, same width, same gesture, every run — which is
 # the only reason two runs are comparable at all.
 #
+# SEVERAL drags in one launch, with the first thrown away, and that is not thoroughness — it is what
+# makes the number mean anything. A single drag right after a launch disagreed with itself by a
+# factor of twenty across consecutive runs (14.7% of frames dropped, then 0.3%), because it was
+# still measuring the launch: caches cold, the window just resized, the build's writes still
+# settling. The warm-up absorbs that, and the repeats say whether what is left is the feed or the
+# machine.
+#
 # The numbers come out of the RAW intervals the app wrote, not off the HUD: the log is kept so a
-# reported figure can be recomputed from what was actually observed.
+# reported figure can be recomputed from what was actually observed. The idle stretches BETWEEN
+# drags are cut out — a gap of quiet frames would dilute every percentage by however long it was.
 #
 # Two permissions, and neither can be granted from here. Screen Recording, for the screenshot the
 # launch takes (`screenshot.sh`); Accessibility, for the synthetic scroll events — without the
@@ -22,9 +30,10 @@ set -eu
 
 SPECIMEN=${1:-feedAtScale}
 SIZE=${2:-1600x1000}
-SECONDS_TO_DRAG=${3:-8}
+SECONDS_TO_DRAG=${3:-6}
 PIXELS=${ARGO_FPS_PIXELS:-30}
 TICKS=${ARGO_FPS_TICKS:-60}
+DRAGS=${ARGO_FPS_DRAGS:-3}
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 OUT_DIR=${ARGO_FPS_OUT:-$SCRIPT_DIR/../out/fps}
@@ -49,16 +58,25 @@ ARGO_KEEP_RUNNING=1 \
 # no-op.
 osascript -e 'tell application "Argo" to activate' >/dev/null 2>&1 || true
 sleep 3
-BEFORE=$(wc -l <"$LOG" | tr -d ' ')
 
-swift "$SCRIPT_DIR/ScrollDriver.swift" Argo "$SECONDS_TO_DRAG" "$TICKS" "$PIXELS" >/dev/null
+drag() {
+  before=$(wc -l <"$LOG" | tr -d ' ')
+  swift "$SCRIPT_DIR/ScrollDriver.swift" Argo "$SECONDS_TO_DRAG" "$TICKS" "$PIXELS" >/dev/null
+  # The app writes in batches, so the last fraction of a second is still in memory when the driver
+  # stops. A beat lets it land before the slice is cut.
+  sleep 1
+  tail -n "+$((before + 1))" "$LOG"
+}
 
-# The app batches its writes, so the last fraction of a second is still in memory when the driver
-# stops. Quitting flushes it — the meter settles what it holds when its window goes away.
+drag >/dev/null
+: >"$LOG.drag"
+run=0
+while [ "$run" -lt "$DRAGS" ]; do
+  run=$((run + 1))
+  drag >>"$LOG.drag"
+done
+
 osascript -e 'tell application "Argo" to quit' >/dev/null 2>&1 || true
-sleep 1
-
-tail -n "+$((BEFORE + 1))" "$LOG" >"$LOG.drag"
 
 # Sorted by `sort` rather than inside awk: `asort` is a gawk extension and this machine's awk is
 # BSD's. Nearest-rank percentiles, matching `FrameReading` — the HUD and this script must not be

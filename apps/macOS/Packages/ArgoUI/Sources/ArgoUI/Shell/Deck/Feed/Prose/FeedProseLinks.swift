@@ -80,8 +80,8 @@ extension View {
     /// pressable, feels pressable, and does nothing.
     func proseLinks(_ runs: [ProseLinkRun]) -> some View {
         overlay {
-            ForEach(Array(runs.enumerated()), id: \.offset) { _, run in
-                ProseLinkTarget(run: run)
+            ForEach(runs.indices, id: \.self) { at in
+                ProseLinkTarget(run: runs[at])
             }
         }
     }

@@ -25,8 +25,8 @@ struct FrameFlag: Equatable {
 
     init(environment: [String: String], arguments: [String]) {
         let path = environment["ARGO_FEED_FPS_LOG"] ?? arguments.value(after: "--feed-fps-log")
-        isOn = environment["ARGO_FEED_FPS"] == "1" || path != nil
-        logPath = isOn ? path : nil
+        self.isOn = environment["ARGO_FEED_FPS"] == "1" || path != nil
+        self.logPath = isOn ? path : nil
     }
 
     /// What the running process asked for.

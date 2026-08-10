@@ -58,11 +58,14 @@ struct FeedView: View {
     /// points at a different part of the record, or past the end of it, which is the reading
     /// jumping and the column standing blank. A row id survives a remeasure because it is not a
     /// measurement.
-    @State private var anchored: FeedRow.ID?
+    ///
+    /// Kept in a store rather than in `@State`, which is a performance fact and not a modelling
+    /// one — the value and every rule over it are unchanged. See `FeedPlace.Store`.
+    @State private var place = FeedPlace.Store()
     /// The last row present when following broke — what the count on the way-back control is taken
     /// from. See `FeedTail.newMessages`.
     ///
-    /// A second place and not `anchored`, because the two are different questions. `anchored` is
+    /// A second place and not the held one, because the two are different questions. The place is
     /// the TOPMOST row on screen and moves with every scroll a detached reader makes; this one is
     /// the END of the reading at the moment they left it, and it must not move until they are
     /// following again — a badge measured from the top of the pane would count what the reader was
@@ -156,7 +159,7 @@ struct FeedView: View {
     /// The held row, reported only once the reader has detached from the end, and writable only
     /// while the column is still. Both rules live in `FeedPlace`, which is where they are tested.
     private var pin: Binding<FeedRow.ID?> {
-        FeedPlace.pin($anchored, isFollowing: isFollowing, whileResizing: isResizing)
+        FeedPlace.pin(place.binding, isFollowing: isFollowing, whileResizing: isResizing)
     }
 
     /// The way back down, on screen only while the reading has stopped following.
@@ -193,7 +196,7 @@ struct FeedView: View {
         // and a reader tapping the way back down has said what they want more plainly than a
         // geometry taken afterwards could.
         isFollowing = true
-        anchored = nil
+        place.held = nil
         // Cleared here as well as in the latch, because this is the OTHER way following resumes. A
         // badge left standing over a feed that is following again is a lie the reader has to
         // disprove by scrolling.
@@ -292,7 +295,13 @@ struct FeedView: View {
     /// back at the end clears it by hand, which is what makes a scroll home worth as much as a
     /// click on the control.
     private func latch(onto geometry: ScrollGeometry) {
-        readingHeight = geometry.contentSize.height
+        // Only when it MOVED, and this is the drag-rate path: a geometry arrives on every frame of
+        // a drag carrying the same height on nearly all of them, and a `@State` write invalidates
+        // whether or not the value changed — SwiftUI does not compare at the setter. The branch
+        // above is the quiet one (nobody's hand on the reading), so it writes plainly.
+        if readingHeight != geometry.contentSize.height {
+            readingHeight = geometry.contentSize.height
+        }
         let following = FeedTail.isFollowing(
             offset: geometry.contentOffset.y,
             pane: geometry.containerSize.height,

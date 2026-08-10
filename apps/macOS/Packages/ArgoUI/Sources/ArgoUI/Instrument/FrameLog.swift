@@ -17,7 +17,7 @@ struct FrameLog {
         }
         guard let opened = FileHandle(forWritingAtPath: path) else { return nil }
         opened.seekToEndOfFile()
-        handle = opened
+        self.handle = opened
     }
 
     func append(_ milliseconds: [Double]) {
