@@ -8,11 +8,21 @@ import ArgoEngine
 /// Session grants, what its status can be said to be), and those are exactly the claims that have
 /// to be provable in a test rather than asserted in `@main`.
 public extension CockpitPresentation {
-    /// The Projects are passed in rather than read here: the registered set is the app's own state,
-    /// while everything below is the Hub's reading of the one it is pointed at.
+    /// The Projects and the annotations are passed in rather than read here: both are the app's
+    /// own state — one registered, one asserted by hand — while everything below is the Hub's
+    /// reading of the Project it is pointed at.
+    ///
+    /// The annotations arrive as a whole set rather than as a flag per Session because a Session
+    /// the Hub is not reporting still has one: an archive is a decision about a chain id, and it
+    /// outlives every observation of it.
     @MainActor
-    init(projects: [Project], activeProjectID: Project.ID?, hub: Hub) {
-        let sessions = hub.sessions.map(Session.init(observed:))
+    init(
+        projects: [Project],
+        activeProjectID: Project.ID?,
+        hub: Hub,
+        annotations: SessionAnnotations = .empty,
+    ) {
+        let sessions = hub.sessions.map { Session(observed: $0, annotations: annotations) }
         self.init(
             projects: Self.counted(projects, activeProjectID: activeProjectID, in: sessions),
             activeProjectID: activeProjectID,
@@ -50,7 +60,7 @@ extension CockpitPresentation.Session {
 }
 
 extension CockpitPresentation.Session {
-    init(observed session: HubSession) {
+    init(observed session: HubSession, annotations: SessionAnnotations) {
         self.init(
             id: session.id,
             title: session.title,
@@ -69,6 +79,9 @@ extension CockpitPresentation.Session {
             totalTokens: session.totalTokens,
             subagentTokens: session.subagentTokens,
             contextTokens: session.contextTokens,
+            // Read off the annotations by chain id and never off the record: the transcript has
+            // no opinion about this, and a Session whose file just grew is still archived.
+            isArchived: annotations.isArchived(session.id),
             events: session.events,
         )
     }

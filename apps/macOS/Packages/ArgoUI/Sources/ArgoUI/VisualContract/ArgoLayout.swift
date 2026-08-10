@@ -23,6 +23,19 @@ public enum ArgoLayout {
     /// the mark 4pt further from the panel edge than the icon column is on the other side.
     public static let rowMenuWidth: CGFloat = 16
 
+    /// The Archive control revealed behind a roster row swiped left. Wide enough for a mark and
+    /// the air around it, and no wider: the control carries an icon and no label (#514), so the
+    /// width is the mark's target rather than a word's measure.
+    public static let rosterSwipeRevealWidth: CGFloat = 56
+    /// How far a row must have travelled when the gesture is released for it to settle OPEN
+    /// rather than snap back. Well short of the reveal, so a swipe that clearly started counts —
+    /// the row springs the rest of the way rather than punishing a short pull.
+    public static let rosterSwipeSettle: CGFloat = 24
+    /// Past this, releasing archives outright — the hard swipe, which clears several Sessions
+    /// without two gestures each (#514, story 12). Far enough past the reveal that it cannot be
+    /// reached by a pull that meant to stop at the control.
+    public static let rosterSwipeCommit: CGFloat = 132
+
     // The Instrument Deck's zones, measured off the approved study
     // (`docs/designs/cockpit-sessions-liquid-glass.png`) — the decision log carries no
     // measurements, so the pixels are the only source for these.

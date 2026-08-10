@@ -1,0 +1,87 @@
+import ArgoEngine
+import SwiftUI
+
+/// A roster with Sessions behind its foot: the kept rows, and `Archived (n)` under them.
+///
+/// The judgement the PNG exists for is how QUIET the foot is. It is the one piece of permanent
+/// chrome archiving adds, it sits under a list that is the window's main subject, and a machine
+/// that has archived nothing must not see it at all — so what has to read here is a count that
+/// is findable when it is wanted and invisible when it is not.
+struct ArchivedRosterSpecimen: View {
+    var body: some View {
+        SessionNavigator(rows: Self.rows, archived: Self.archived, selection: .constant(nil))
+            .frame(width: ArgoLayout.sidebarIdealWidth)
+    }
+
+    static let rows = SessionRosterProjection.rows(from: sessions)
+    static let archived = SessionRosterProjection.archivedRows(from: sessions)
+
+    /// Two Sessions cleared away and three kept — a count of more than one, because `Archived (1)`
+    /// would leave the label's plural unrendered.
+    ///
+    /// One of the two archived Sessions is RUNNING and carries the newest activity on this
+    /// roster. That is story 16 made visible: a Session does not come back because something
+    /// moved in it, and a fixture where everything archived was also finished would draw a
+    /// rendering that agreed with the wrong rule.
+    private static let sessions = [
+        CockpitPresentation.Session(
+            id: "shell",
+            title: "Ship the native Liquid Glass application shell",
+            model: nil,
+            workspaceLocation: "/Users/milad/Developer/argo",
+            access: .managed,
+            status: .running,
+            workspace: .init(branch: "argo/#514-archive-session-swipe"),
+        ),
+        CockpitPresentation.Session(
+            id: "merged",
+            // Merged, and kept: the roster does not clear a Session on its branch's behalf
+            // (#502, story 14), so this is the row that would have vanished under the old spec.
+            title: "Correct the design docs the next session would design from",
+            model: nil,
+            workspaceLocation: "/Users/milad/Developer/argo",
+            access: .managed,
+            status: .idle,
+            workspace: .init(branch: "argo/#504-correct-design-docs"),
+            lastSeenAtMs: CockpitPresentation.minutesAgo(46),
+        ),
+        CockpitPresentation.Session(
+            id: "observed",
+            title: "Watch an externally launched agent work",
+            model: nil,
+            workspaceLocation: "/Users/milad/Developer/cockpit",
+            access: .external,
+            status: .idle,
+            workspace: .init(branch: "main"),
+            lastSeenAtMs: CockpitPresentation.minutesAgo(4 * 60),
+        ),
+        CockpitPresentation.Session(
+            id: "archived-running",
+            title: "Answer a question nobody is going to read",
+            model: nil,
+            workspaceLocation: "/Users/milad/Developer/argo",
+            access: .managed,
+            status: .running,
+            workspace: .init(branch: "argo/#498-roster-order"),
+            lastSeenAtMs: CockpitPresentation.minutesAgo(0),
+            isArchived: true,
+        ),
+        CockpitPresentation.Session(
+            id: "archived-old",
+            title: "Rebuild the graphite ramp",
+            model: nil,
+            workspaceLocation: "/Users/milad/Developer/argo",
+            access: .managed,
+            status: .idle,
+            workspace: .init(branch: "argo/#375-graphite-ion-blue"),
+            lastSeenAtMs: CockpitPresentation.minutesAgo(6 * 24 * 60),
+            isArchived: true,
+        ),
+    ]
+}
+
+#Preview("Archived roster — three kept, two behind the foot") {
+    ArchivedRosterSpecimen()
+        .frame(height: 420)
+        .argoAppearance()
+}
