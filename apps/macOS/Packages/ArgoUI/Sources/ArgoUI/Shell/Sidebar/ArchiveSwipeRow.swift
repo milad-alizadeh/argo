@@ -16,11 +16,14 @@ struct ArchiveSwipeRow: View {
     /// Archive this Session, or — for a row already behind the foot — put it back. One closure
     /// because it is one gesture; which way it goes is the row's own `isArchived`.
     let archive: () -> Void
+    /// Name this Session, or drop the name it has. Passed straight through to the row, which is
+    /// where the title somebody double-clicks is drawn.
+    var rename: (String?) -> Void = { _ in }
 
     var body: some View {
         ZStack(alignment: .trailing) {
             control
-            SessionRow(row: row)
+            SessionRow(row: row, rename: rename)
                 // At rest the row keeps the sidebar's own material under it (D3).
                 .background(isRevealing ? argo.color.surface.raised : .transparent)
                 .offset(x: swipe.offset(of: row.id))

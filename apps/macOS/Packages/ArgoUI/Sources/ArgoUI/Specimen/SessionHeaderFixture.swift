@@ -151,10 +151,12 @@ enum SessionHeaderFixture {
             status: .idle,
             cli: .claude,
             workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),
-            issue: .init(
-                number: 510,
-                title: "The header carries the Session's Workspace, CLI and issue",
-            ),
+            // The link with no title read through it, which is every Session in this build: no
+            // provider is connected (#414), so nothing answers with one. It is also what keeps
+            // the crafted titles above ON these renders — a Work Item's title beats the derived
+            // one (#515), so a fixture that invented one would draw a header naming a ticket
+            // instead of the long title these PNGs exist to cut.
+            issue: .init(number: 510),
             contextTokens: contextTokens,
             handedOffTo: handedOffTo,
         )

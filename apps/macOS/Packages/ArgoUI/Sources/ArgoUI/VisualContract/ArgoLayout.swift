@@ -35,6 +35,11 @@ public enum ArgoLayout {
     /// without two gestures each (#514, story 12). Far enough past the reveal that it cannot be
     /// reached by a pull that meant to stop at the control.
     public static let rosterSwipeCommit: CGFloat = 132
+    /// The rename dialog hanging off a row's title. Wider than the sidebar it opens over, because
+    /// what goes in the field is a Session's whole title and a box narrower than the row would
+    /// make every rename a scroll — and no wider than the drawer, which is the widest thing the
+    /// chrome hangs off anything.
+    public static let renameDialogWidth: CGFloat = 340
 
     // The Instrument Deck's zones, measured off the approved study
     // (`docs/designs/cockpit-sessions-liquid-glass.png`) — the decision log carries no
