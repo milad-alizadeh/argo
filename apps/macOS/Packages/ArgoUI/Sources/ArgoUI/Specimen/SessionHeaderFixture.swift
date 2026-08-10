@@ -21,6 +21,21 @@ enum SessionHeaderFixture {
         branch: "worktree-ticket-375-graphite-ion-blue",
     ))
 
+    /// A Session whose record carried almost nothing: no CLI, a model nobody's table knows, no
+    /// git read behind it and no issue. The line has to hold its shape with most of it missing,
+    /// which is the state a fixture that filled every field in would never have shown.
+    static let sparse = SessionHeaderProjection.header(from: CockpitPresentation.Session(
+        id: "header-sparse",
+        title: "Watch a Session read off a record that said very little",
+        model: "some-unreleased-model",
+        workspaceLocation: "/Users/milad/Developer/argo",
+        access: .external,
+        status: .unknown,
+    ))
+
+    /// Every shape the fact line takes, for the previews that judge them as a group.
+    static let gallery = headers + [longBranch, sparse]
+
     static func header(for access: CockpitPresentation.Session.Access)
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: session(

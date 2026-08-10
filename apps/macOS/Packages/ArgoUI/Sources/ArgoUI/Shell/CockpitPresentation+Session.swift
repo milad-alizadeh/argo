@@ -23,14 +23,10 @@ public extension CockpitPresentation {
             case orphaned
         }
 
-        /// Whether the Session's checkout is the Project's own or one it was given.
-        ///
-        /// Beside `Workspace` rather than inside it, because the nesting cap is two deep and a
-        /// third level would be a rule bent to fit a name.
-        public enum WorkspaceKind: Equatable, Sendable {
-            case main
-            case worktree
-        }
+        /// Whether the Session's checkout is the Project's own or one it was given — the
+        /// engine's own enum, named for the shell rather than restated as it. A second copy
+        /// would be two vocabularies for one fact, kept in step by hand.
+        public typealias WorkspaceKind = WorkspaceProjection.Kind
 
         /// The git working context the Session is running in (`CONTEXT.md` L3).
         ///

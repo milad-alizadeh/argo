@@ -31,13 +31,17 @@ extension Hub {
     }
 
     /// Ask git what each Session's working folder looks like now — one read per DISTINCT cwd, so
-    /// four Sessions in one checkout cost one subprocess rather than four.
+    /// four Sessions in one checkout cost one subprocess run rather than four.
     ///
-    /// A folder git cannot answer for keeps no entry at all: the roster reads an absent Workspace
-    /// as unread, which is the honest claim about a folder that has been deleted under a Session.
+    /// It is a handful of subprocesses per poll, run one after another off the main actor, and
+    /// the cancellation check is what keeps a Project switch from paying for the rest of a sweep
+    /// it no longer wants. A folder git cannot answer for keeps no entry at all: the roster reads
+    /// an absent Workspace as unread, which is the honest claim about a folder that has been
+    /// deleted under a Session.
     func refreshWorkspaces() async {
         var read: [String: WorkspaceProjection] = [:]
         for cwd in Set(sessions.compactMap(\.cwd)) {
+            guard !Task.isCancelled else { return }
             read[cwd] = await engine.workspace(at: URL(fileURLWithPath: cwd))
         }
         workspaces = read

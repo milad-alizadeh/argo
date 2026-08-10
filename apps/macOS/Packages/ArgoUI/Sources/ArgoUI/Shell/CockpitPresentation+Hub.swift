@@ -73,20 +73,19 @@ extension CockpitPresentation.Session {
 extension CockpitPresentation.Session.Workspace {
     /// The git context behind a Session, and `nil` where the transcript and the repository
     /// together said nothing about one — an empty Workspace is still a claim that there is one.
+    ///
+    /// git's own branch wins over the transcript's where there is one: the counts beside it are
+    /// a reading of the folder as it is NOW, and a name from a record written an hour ago would
+    /// put two moments on one line. The transcript's is the fallback, for a Session whose folder
+    /// has not been read yet or is no longer there.
     init?(observed session: HubSession) {
         guard session.branch != nil || session.workspace != nil else { return nil }
         self.init(
-            kind: session.workspace.map(CockpitPresentation.Session.WorkspaceKind.init(read:)),
-            branch: session.branch,
+            kind: session.workspace?.kind,
+            branch: session.workspace?.branch ?? session.branch,
             dirty: session.workspace?.dirty,
             unpushed: session.workspace?.unpushed,
         )
-    }
-}
-
-extension CockpitPresentation.Session.WorkspaceKind {
-    init(read workspace: WorkspaceProjection) {
-        self = workspace.isWorktree ? .worktree : .main
     }
 }
 

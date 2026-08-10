@@ -103,6 +103,30 @@ struct CockpitPresentationTests {
         #expect(presentation.session(nil) == nil)
     }
 
+    @Test
+    @MainActor
+    func `the branch reaches the shell on a Workspace, with the CLI beside it`() async throws {
+        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
+        await observe(hub, id: "branched", events: [
+            .cwd("/Users/milad/Developer/argo"),
+            .branch("argo/#510-session-header-facts"),
+            .prompt(text: "Draw the header", atMs: nil),
+            .turnEnded(.endTurn),
+        ], until: { $0.status == .idle })
+
+        let session = try #require(projection(of: hub).sessions.first)
+
+        // The join key lives on the Workspace (`CONTEXT.md` L3), and the CLI is the record store
+        // the transcript was swept out of rather than a guess at the prose inside it.
+        #expect(session.workspace?.branch == "argo/#510-session-header-facts")
+        #expect(session.cli == .claude)
+        // Nothing has read git for this folder, so its state is ABSENT rather than clean: the
+        // header draws no marks at all, which is a different claim from `0`.
+        #expect(session.workspace?.kind == nil)
+        #expect(session.workspace?.dirty == nil)
+        #expect(session.workspace?.unpushed == nil)
+    }
+
     /// The Hub half of the projection, which is the half with a derivation in it. The Projects are
     /// the app's own state and are passed straight through.
     @MainActor

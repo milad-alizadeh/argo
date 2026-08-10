@@ -70,4 +70,9 @@ struct HubWorkspaceTests {
 
 /// What git would say about the folder every Session in this suite is running in. Outside the
 /// suite because the read is handed to an `Engine` and runs off the main actor.
-private let gitRead = WorkspaceProjection(isWorktree: true, dirty: 3, unpushed: 1)
+private let gitRead = WorkspaceProjection(
+    kind: .worktree,
+    branch: "argo/#510",
+    dirty: 3,
+    unpushed: 1,
+)

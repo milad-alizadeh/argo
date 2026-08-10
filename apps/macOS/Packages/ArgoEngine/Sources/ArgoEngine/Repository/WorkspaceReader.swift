@@ -14,22 +14,33 @@ actor WorkspaceReader {
     }
 
     func read(at directoryURL: URL) -> WorkspaceProjection? {
-        // Asked before anything is counted, because a clean tree and a folder that is not a
-        // repository both answer `status` with nothing at all.
-        guard answer(["rev-parse", "--is-inside-work-tree"], at: directoryURL) == "true"
-        else { return nil }
+        // A folder git will not count for is a folder Argo has nothing to say about — the whole
+        // read hangs off that answer rather than any one number inside it.
+        guard let dirty = dirtyCount(at: directoryURL) else { return nil }
         return WorkspaceProjection(
-            isWorktree: isWorktree(at: directoryURL),
-            dirty: dirtyCount(at: directoryURL),
+            kind: isWorktree(at: directoryURL) ? .worktree : .main,
+            branch: branch(at: directoryURL),
+            dirty: dirty,
             unpushed: unpushedCount(at: directoryURL),
         )
     }
 
-    /// The porcelain listing, one line per changed path — so no lines is a clean tree, which is
-    /// a count of zero and not an absence.
-    private func dirtyCount(at directoryURL: URL) -> Int {
-        (git(["status", "--porcelain"], directoryURL) ?? "")
-            .split(whereSeparator: \.isNewline).count
+    /// The porcelain listing, one line per changed path, with untracked directories expanded to
+    /// the FILES in them — `--untracked-files=all`, because the mark beside the count says
+    /// "uncommitted files" and porcelain's default collapses a new folder to a single entry.
+    ///
+    /// An empty answer is a clean tree and counts zero; NO answer is a folder git could not read,
+    /// and the two must not come out the same (`CONTEXT.md`, the degrade-down rule).
+    private func dirtyCount(at directoryURL: URL) -> Int? {
+        git(["status", "--porcelain", "--untracked-files=all"], directoryURL)
+            .map { $0.split(whereSeparator: \.isNewline).count }
+    }
+
+    /// The branch the folder is on, and nothing for a detached HEAD — `HEAD` is what git answers
+    /// there, and it is not a name anybody can check out.
+    private func branch(at directoryURL: URL) -> String? {
+        let head = answer(["rev-parse", "--abbrev-ref", "HEAD"], at: directoryURL)
+        return head == "HEAD" ? nil : head
     }
 
     /// A linked worktree keeps its own git directory and shares the repository's common one; the

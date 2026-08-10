@@ -11,27 +11,26 @@ struct WorkspaceReaderTests {
     @Test
     func `a linked worktree keeps its own git directory beside the shared one`() async {
         let projection = await read([
-            insideWorkTree: "true\n",
+            status: "",
             gitDirs: "/tmp/argo/.git/worktrees/ticket-510\n/tmp/argo/.git\n",
         ])
 
-        #expect(projection?.isWorktree == true)
+        #expect(projection?.kind == .worktree)
     }
 
     @Test
     func `the primary checkout answers the same path twice, and is not a worktree`() async {
         let projection = await read([
-            insideWorkTree: "true\n",
+            status: "",
             gitDirs: "/tmp/argo/.git\n/tmp/argo/.git\n",
         ])
 
-        #expect(projection?.isWorktree == false)
+        #expect(projection?.kind == .main)
     }
 
     @Test
     func `the porcelain listing is counted a line per changed file`() async {
         let projection = await read([
-            insideWorkTree: "true\n",
             status: " M apps/macOS/Argo.swift\n?? notes.md\n M README.md\n",
         ])
 
@@ -40,16 +39,14 @@ struct WorkspaceReaderTests {
 
     @Test
     func `a clean tree counts zero rather than reading as unknown`() async {
-        // git answers a clean tree with nothing at all, and nothing at all is also what a folder
-        // it cannot read answers — which is why the read is gated on the question above.
-        let projection = await read([insideWorkTree: "true\n"])
-
-        #expect(projection?.dirty == 0)
+        // An EMPTY answer is a clean tree; NO answer is a folder git could not read, and the
+        // case below is what keeps the two from coming out the same.
+        #expect(await read([status: ""])?.dirty == 0)
     }
 
     @Test
     func `commits ahead of the upstream are counted`() async {
-        let projection = await read([insideWorkTree: "true\n", unpushed: "2\n"])
+        let projection = await read([status: "", unpushed: "2\n"])
 
         #expect(projection?.unpushed == 2)
     }
@@ -57,18 +54,32 @@ struct WorkspaceReaderTests {
     @Test
     func `a branch with no upstream is absent, never zero`() async {
         // git exits non-zero for a branch with nothing to be ahead OF, and "nothing to compare
-        // against" is a different fact from "level with it".
-        let projection = await read([insideWorkTree: "true\n"])
+        // against" is a different fact from "level with it". Asked of a folder that answered
+        // everything else, so the absence is the upstream's and not the read's.
+        let projection = await read([status: " M README.md\n", branch: "main\n"])
 
+        #expect(projection?.dirty == 1)
         #expect(projection?.unpushed == nil)
     }
 
-    @Test(arguments: [[:], [insideWorkTree: "false\n"]])
-    func `a folder git cannot answer for reads as nothing at all`(
-        answers: [String: String],
-    ) async {
-        // Not a Workspace of zeroes: a folder deleted under a Session has no clean tree.
-        #expect(await read(answers) == nil)
+    @Test
+    func `the branch is read at the same moment as the counts beside it`() async {
+        let projection = await read([status: "", branch: "argo/#510-session-header-facts\n"])
+
+        #expect(projection?.branch == "argo/#510-session-header-facts")
+    }
+
+    @Test
+    func `a detached HEAD names no branch`() async {
+        // `HEAD` is what git answers there, and it is not a name anybody can check out.
+        #expect(await read([status: "", branch: "HEAD\n"])?.branch == nil)
+    }
+
+    @Test
+    func `a folder git will not count for reads as nothing at all`() async {
+        // Not a Workspace of zeroes: a folder deleted under a Session has no clean tree, and a
+        // read that answered `0 dirty` there would be a false DIRECT (`CONTEXT.md`).
+        #expect(await read([branch: "main\n"]) == nil)
     }
 
     private func read(_ answers: [String: String]) async -> WorkspaceProjection? {
@@ -77,9 +88,9 @@ struct WorkspaceReaderTests {
 }
 
 /// The four questions a Workspace read asks git, as the tables above key them.
-private let insideWorkTree = "rev-parse --is-inside-work-tree"
 private let gitDirs = "rev-parse --path-format=absolute --git-dir --git-common-dir"
-private let status = "status --porcelain"
+private let branch = "rev-parse --abbrev-ref HEAD"
+private let status = "status --porcelain --untracked-files=all"
 private let unpushed = "rev-list --count @{upstream}..HEAD"
 
 /// A table of what git would say, keyed by the arguments asked; anything absent is a command that
