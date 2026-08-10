@@ -16,11 +16,18 @@ struct SessionRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
             primaryLine
-            Text(row.metadata)
-                .argoText(ArgoTypography.rowMeta)
-                .foregroundStyle(argo.color.text.tertiary)
-                .lineLimit(1)
-                .truncationMode(.tail)
+            // No branch, no line — not an empty `Text`, which would leave a gap of whatever
+            // height the font happened to give it. A Session that has not branched draws a
+            // one-line row, which is a shape, rather than a two-line row with a hole in it.
+            if let branch = row.branch {
+                Text(branch)
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(argo.color.text.tertiary)
+                    .lineLimit(1)
+                    // A branch name is addressed from its end — `argo/#505-…` is the prefix
+                    // every row here shares, and the ticket is what tells them apart.
+                    .truncationMode(.middle)
+            }
         }
         .padding(.vertical, ArgoSpacing.tight)
         .contentShape(.rect)
@@ -75,9 +82,14 @@ struct SessionRow: View {
 
     /// The lock can be suppressed as visual noise; the fact behind it never is.
     private var accessibilityLabel: String {
-        [row.title, row.stateWord, row.isReadOnly ? "Read-only Session" : nil, row.metadata]
-            .compactMap(\.self)
-            .joined(separator: ", ")
+        [
+            row.title,
+            row.stateWord,
+            row.isReadOnly ? "Read-only Session" : nil,
+            row.branch.map { "on \($0)" },
+        ]
+        .compactMap(\.self)
+        .joined(separator: ", ")
     }
 
     private var inspectionText: String {

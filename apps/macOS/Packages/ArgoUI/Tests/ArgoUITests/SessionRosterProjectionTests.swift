@@ -67,46 +67,40 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
-    func `workspace labels omit absolute paths and disambiguate duplicate names`() {
+    func `the row's second line is the branch its Session is on`() {
+        // Two Sessions in one repo: the branch is the only thing on the row that tells them
+        // apart, which is the whole reason it took the line the model used to have.
+        let rows = SessionRosterProjection.rows(from: [
+            session(id: "one", branch: "argo/#505-roster-row-branch"),
+            session(id: "two", branch: "main"),
+        ])
+
+        #expect(rows.map(\.branch) == ["argo/#505-roster-row-branch", "main"])
+    }
+
+    @Test
+    func `a Session with no branch carries no second line rather than a word for one`() throws {
+        let row = try #require(SessionRosterProjection.rows(from: [
+            session(id: "branchless", branch: nil),
+        ]).first)
+
+        // Absent, not the roster's `unknown`: a Session that has not branched has nothing to
+        // say here, and a placeholder would read as a branch nobody can find.
+        #expect(row.branch == nil)
+    }
+
+    @Test
+    func `the full location survives the row even though it never draws on it`() {
+        // The line is the branch, but copy-the-location and the row's tooltip still need the
+        // path — dropping the workspace identity is a rendering decision, not a data one.
         let sessions = [
             session(id: "one", workspaceLocation: "/Users/milad/Client/argo"),
-            session(id: "two", workspaceLocation: "/Users/milad/Labs/argo"),
-            session(id: "three", workspaceLocation: "/Users/milad/Labs/cockpit"),
-            session(id: "four", workspaceLocation: "/Users/milad/Labs/cockpit"),
+            session(id: "two", workspaceLocation: nil),
         ]
 
         let rows = SessionRosterProjection.rows(from: sessions)
 
-        #expect(rows.map(\.workspaceIdentity) == [
-            "Client/argo", "Labs/argo", "cockpit", "cockpit",
-        ])
-        #expect(rows.allSatisfy { !$0.metadata.contains("/Users/") })
         #expect(rows.map(\.location) == sessions.map(\.workspaceLocation))
-    }
-
-    @Test
-    func `a duplicated location never pushes a label out into the path it stands for`() {
-        // The twin can never be told apart, and the third row wants the same leaf — the case
-        // that used to fall through to the whole path in the visible metadata line.
-        let rows = SessionRosterProjection.rows(from: [
-            session(id: "twin-a", workspaceLocation: "/Users/milad/Labs/argo"),
-            session(id: "twin-b", workspaceLocation: "/Users/milad/Labs/argo"),
-            session(id: "other", workspaceLocation: "/Users/milad/Client/argo"),
-        ])
-
-        #expect(rows.map(\.workspaceIdentity) == ["Labs/argo", "Labs/argo", "Client/argo"])
-        #expect(rows.allSatisfy { !$0.metadata.contains("/Users") })
-        #expect(rows.allSatisfy { $0.workspaceIdentity.split(separator: "/").count <= 2 })
-    }
-
-    @Test
-    func `a deep location is qualified by one parent, never by its whole path`() {
-        let rows = SessionRosterProjection.rows(from: [
-            session(id: "deep", workspaceLocation: "/Users/milad/a/b/c/d/argo"),
-            session(id: "shallow", workspaceLocation: "/Users/milad/z/argo"),
-        ])
-
-        #expect(rows.map(\.workspaceIdentity) == ["d/argo", "z/argo"])
     }
 
     @Test
@@ -117,15 +111,6 @@ struct SessionRosterProjectionTests {
 
         #expect(row.stateWord == nil)
         #expect(row.state == nil)
-    }
-
-    @Test
-    func `a Session with no model reads as unknown rather than as a blank`() throws {
-        let row = try #require(SessionRosterProjection.rows(from: [
-            session(id: "external", model: nil),
-        ]).first)
-
-        #expect(row.metadata == "unknown · argo")
     }
 
     @Test
@@ -140,22 +125,29 @@ struct SessionRosterProjectionTests {
         // truncates into it is the render question the PNG exists to settle, and a short
         // locked title would leave it unrendered without failing anything.
         #expect(rows.contains { $0.showsLock && $0.title.count > 40 })
+        // Both branch renderings, for the same reason: a one-line row sitting between two-line
+        // ones is a rhythm question, and a roster where every Session had a branch would leave
+        // it unrendered.
+        #expect(rows.contains { $0.branch == nil })
+        // A real branch name, long enough to run at the row's width — the truncation the short
+        // fixtures never reach.
+        #expect(rows.contains { ($0.branch?.count ?? 0) > 20 })
     }
 
     private func session(
         id: String,
-        workspaceLocation: String = "/Users/milad/Developer/argo",
+        workspaceLocation: String? = "/Users/milad/Developer/argo",
+        branch: String? = "main",
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
-        model: String? = "claude-opus-5",
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
             id: id,
             title: "Session \(id)",
-            model: model,
+            model: "claude-opus-5",
             workspaceLocation: workspaceLocation,
-            branch: "main",
+            branch: branch,
             access: access,
             status: status,
         )

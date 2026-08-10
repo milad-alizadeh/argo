@@ -59,11 +59,10 @@ public struct FoundationSpecimen: View {
                 Button("Checkout…") {}
                 Button("Fetch") {}
             } label: {
-                Label(
-                    selected.branch ?? SessionRosterProjection.unknown,
-                    systemImage: "arrow.trianglehead.branch",
-                )
-                .labelStyle(.titleAndIcon)
+                // A toolbar control has to say something; the roster's own answer to a
+                // branchless Session is to draw no line at all, which a menu label cannot do.
+                Label(selected.branch ?? "unknown", systemImage: "arrow.trianglehead.branch")
+                    .labelStyle(.titleAndIcon)
             }
         }
     }
