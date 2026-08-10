@@ -86,6 +86,7 @@ extension CockpitPresentation.Session {
             // Read off the annotations by the same chain id, and beside the observed title rather
             // than over it: the derived one is what Reset goes back to (#502, story 20).
             explicitName: annotations.explicitName(session.id),
+            permission: session.permission,
             events: session.events,
         )
     }

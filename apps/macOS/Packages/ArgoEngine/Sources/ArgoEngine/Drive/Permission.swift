@@ -25,6 +25,14 @@ public struct PermissionRequest: Sendable, Equatable, Identifiable {
     /// the prompt draws, because without it walking away looks free.
     public let deniesAtMs: Int
 
+    public init(id: String, toolName: String, target: Target, raisedAtMs: Int, deniesAtMs: Int) {
+        self.id = id
+        self.toolName = toolName
+        self.target = target
+        self.raisedAtMs = raisedAtMs
+        self.deniesAtMs = deniesAtMs
+    }
+
     /// One hook payload read into the domain, or nothing for a line that names no tool: a prompt
     /// that cannot say what is asking is not a prompt anyone can answer.
     init?(line: String, id: String, raisedAtMs: Int, deniesAtMs: Int) {

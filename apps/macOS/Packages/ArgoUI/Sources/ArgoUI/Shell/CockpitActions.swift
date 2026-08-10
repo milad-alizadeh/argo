@@ -1,3 +1,5 @@
+import ArgoEngine
+
 /// The intents the shell raises. Every one of them is performed by the app layer — a folder
 /// picker, a Finder call, a registry write — so the View decides WHAT is being asked for and
 /// nothing about how it happens.
@@ -58,6 +60,10 @@ public struct CockpitActions {
     /// composer's seam: a refusal keeps the message where it was typed, which only the raising
     /// surface can do.
     public let sendTurn: (String, String) throws -> Void
+    /// Answer the Session's pending Permission (#542). Not throwing, unlike `sendTurn`: the one
+    /// refusal — the Permission already expired — is answered by the prompt leaving the screen,
+    /// and there is no field holding words that need a seam to explain them.
+    public let decidePermission: (String, PermissionDecision) -> Void
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for
     /// the same reason every action here is: they are called from a view.
@@ -74,6 +80,7 @@ public struct CockpitActions {
         setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
         sendTurn: { _, _ in },
+        decidePermission: { _, _ in },
     )
 
     public init(
@@ -89,6 +96,7 @@ public struct CockpitActions {
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
         sendTurn: @escaping (String, String) throws -> Void,
+        decidePermission: @escaping (String, PermissionDecision) -> Void,
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
@@ -102,5 +110,6 @@ public struct CockpitActions {
         self.setSessionName = setSessionName
         self.handOffSession = handOffSession
         self.sendTurn = sendTurn
+        self.decidePermission = decidePermission
     }
 }

@@ -21,6 +21,11 @@ public enum ArgoComposerVessel {
     public static let feedFadeHeight: CGFloat = 80
     public static let feedClearHeight: CGFloat = 28
 
+    /// The Permission prompt's target block past which the verbatim command or hunk scrolls
+    /// inside itself — the study's 108pt. A ceiling and not a truncation: every character is
+    /// reachable, because a decision made on a cut command is a guess.
+    public static let targetCeiling: CGFloat = 108
+
     /// How long the accent wash stands over a row the user just sent. A hold, not a motion —
     /// the fade in and out is `ArgoMotion.bloom` — which is why it lives beside the vessel's
     /// measurements rather than on the motion ramp with its half-second ceiling.

@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The Sessions room's zone layout, stacked flush.
@@ -36,6 +37,11 @@ struct SessionsDeck: View {
     /// One Turn to the shown Session. Inert by default so a specimen draws the vessel without
     /// reaching for a terminal.
     var send: (String) throws -> Void = { _ in }
+    /// The Permission the shown Session is blocked on, projected above the deck like the composer
+    /// it displaces.
+    var prompt: PermissionPromptProjection.Prompt?
+    /// The answer to it. Inert by default for the reason `send` is.
+    var decide: (PermissionDecision) -> Void = { _ in }
     /// Where the reader dragged the deck's seams — held above this view, never in it. See
     /// `DeckSeams`.
     var seams = DeckSeams.unheld
@@ -57,6 +63,8 @@ struct SessionsDeck: View {
                 held: held,
                 composer: composer,
                 send: send,
+                prompt: prompt,
+                decide: decide,
                 seams: seams,
             )
         }

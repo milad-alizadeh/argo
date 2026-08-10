@@ -325,6 +325,18 @@ public struct SpecimenScreen: View {
             // with the optical response taken away.
             sessions(FeedProjection.previewRows, composer: ComposerSpecimen.composer)
                 .argoWithoutTransparency()
+        case .permission:
+            // A gated command holding the composer's slot: the tool and its target verbatim, the
+            // fuse burning, Allow focused — the state the whole channel exists to raise.
+            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
+        case .permissionEdit:
+            // The other tool kind the prompt renders: a path and the hunk it would write, with
+            // the counts said under the block rather than inside it.
+            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.edit)
+        case .flatPermission:
+            // The same shipping gate the composer's glass carries.
+            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
+                .argoWithoutTransparency()
         }
     }
 }

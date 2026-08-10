@@ -127,6 +127,10 @@ public extension CockpitPresentation {
         /// Which of the two the surfaces DRAW is not decided here — that is the fallback chain,
         /// and it lives in the projections where it can be asserted (`SessionTitle`).
         public let explicitName: String?
+        /// The Permission the Session's agent is blocked on, verbatim from the engine — DIRECT,
+        /// because Argo holds the blocked hook itself. Absent for every Session that is not
+        /// waiting on one, which is what returns the composer to its slot.
+        public let permission: PermissionRequest?
         /// Everything the Session's transcript said, in order — the feed's whole input.
         ///
         /// The engine's own events rather than a second shape named for the shell: the surface
@@ -153,6 +157,7 @@ public extension CockpitPresentation {
             handedOffTo: String? = nil,
             isArchived: Bool = false,
             explicitName: String? = nil,
+            permission: PermissionRequest? = nil,
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -172,6 +177,7 @@ public extension CockpitPresentation {
             self.handedOffTo = handedOffTo
             self.isArchived = isArchived
             self.explicitName = explicitName
+            self.permission = permission
             self.events = events
         }
     }

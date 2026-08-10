@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The opaque plane filling the detail side of the split view, flush to the window. It is the
@@ -43,6 +44,11 @@ struct InstrumentDeckShell: View {
     /// One Turn to the shown Session. Inert by default, so a specimen renders the vessel with
     /// nothing behind it.
     var send: (String) throws -> Void = { _ in }
+    /// The Permission the shown Session is blocked on, already projected — it takes the
+    /// composer's slot while present (design decision 6).
+    var prompt: PermissionPromptProjection.Prompt?
+    /// The answer to it. Inert by default, for the reason `send` is.
+    var decide: (PermissionDecision) -> Void = { _ in }
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below, because a
     /// seam is a preference of the window and not a fact about the Session — keyed with the room it
@@ -73,6 +79,8 @@ struct InstrumentDeckShell: View {
                 held: held,
                 composer: composer,
                 send: send,
+                prompt: prompt,
+                decide: decide,
                 seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
             )
             // The identity, spent. SwiftUI discards a view's whole state when its id changes, which
