@@ -1,6 +1,6 @@
 ---
 name: setup-task-tracking
-description: Install Argo's standing task-tracking instruction into a project's agent-facing docs. Usually dispatched by the /setup-argo-skills wizard; run directly to (re)install just this piece.
+description: Install Argo's standing task-tracking instruction into a project's agent-facing docs.
 disable-model-invocation: true
 ---
 

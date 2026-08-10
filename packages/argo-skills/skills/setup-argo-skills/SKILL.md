@@ -1,6 +1,6 @@
 ---
 name: setup-argo-skills
-description: The ONE project-bootstrap command for Argo tooling. Installs the skill bundle (third-party + Argo's own skills), then runs a wizard over the repo — which infra do you want installed (house rules, graphify knowledge graph, module boundaries, design handoff, pre-commit hooks) — and dispatches each choice to its setup skill. Run once per project; re-run an individual setup-* skill later to redo one piece.
+description: The one project-bootstrap command. Installs the skill bundle, then wizards over the repo — which infra do you want — and dispatches each choice to its setup skill.
 disable-model-invocation: true
 ---
 

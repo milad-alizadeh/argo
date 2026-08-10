@@ -1,6 +1,6 @@
 ---
 name: setup-rules
-description: Install Argo's engineering rule set into a project — language-agnostic core rules (principles, code style, comments, file structure, testing) plus a per-language binding that names how this stack spells them, all adapted to the detected structure, with a pointer wired into CLAUDE.md/AGENTS.md so Claude Code and Codex actually load them. Ships the TypeScript binding; generates one for any other language at install time. Usually dispatched by the /setup-argo-skills wizard; run directly to (re)install just this piece.
+description: Install Argo's engineering rules plus a binding naming how this stack spells them, wired into CLAUDE.md/AGENTS.md so agents load them.
 disable-model-invocation: true
 ---
 
