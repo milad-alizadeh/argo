@@ -92,6 +92,7 @@ under `docs/adr/`.
 | `cockpit-onboarding-spec.md` | Onboarding (wayfinder #165) | Two screens, three independent connect rows, folder-not-repo floor, device-flow sign-in, seven states |
 | `cockpit-status-vocabulary.md` | The canonical status-word registry (wayfinder #174, amended by #173) | One word per state, identical everywhere. Argo-owned words (session · attention · delivery · check · connection) vs provider-owned Work Item status shown verbatim |
 | `cockpit-surface-matrix.md` | The surface × state matrix | Every cockpit surface and the states it must render — the testable spec the app is checked against |
+| `cockpit-session-composer.md` + `composer/` | **Approved composer design** (#536, under #535 / ADR-0024) | The composer that replaces the Session terminal, its attachment chips, the run-settings popover and the Permission prompt. Twenty state renders in `composer/` are the spec; the doc carries the measurements and the frozen component names |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | Roster rows, dot-carries-state, zero-state, panel natures. Behaviour lineage; its master–detail *layout* was superseded by the single feed |
 
 ## `renders/` — what the app actually drew

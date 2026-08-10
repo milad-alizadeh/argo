@@ -3,6 +3,10 @@
 The design study for [#536](https://github.com/milad-alizadeh/argo/issues/536), under
 [#535](https://github.com/milad-alizadeh/argo/issues/535) / ADR-0024.
 
+> **Settled.** The approved design is `docs/designs/cockpit-session-composer.md` on `main`,
+> with its state renders in `docs/designs/composer/`. Build from those. This branch is the
+> record of how they were arrived at — the variants that lost, and what they lost to.
+
 ## Run it
 
 ```sh
@@ -22,7 +26,7 @@ drawn when the Dock held a terminal.
 |---|---|
 | `?variant=A\|B\|C` | Which composer, and where Permission appears. Also `←`/`→`, or the floating bar. |
 | `&state=<key>` | Which state. Also `↑`/`↓`, or the picker in the floating bar. |
-| `&f=1\|2` | Where Model and Effort sit (variant B only). The ⚙ picker in the floating bar. |
+| `&bare=1` | Hide the switcher and its caption — how the approved renders were taken. |
 
 Every state the ticket lists is addressable by URL, which is the point — a state you cannot
 link to is a state nobody re-checks. The caption above the switcher says what each one is.
@@ -60,7 +64,7 @@ Three things B added after the first pass:
 3. **Model, Mode and Effort are selectable**, in the app's own vocabulary rather than the
    reference apps' — see below.
 
-## Run settings — a second axis, `&f=1|2`
+## Run settings
 
 Every agent app puts a grey capsule with a chevron next to the send button and drills down
 through *Model → · Effort → · Reset to default*. Copying that shape says nothing about this app.
@@ -89,24 +93,25 @@ right edge and covered the Effort row. **Reset** names what it resets *to* —
 `Reset to Code · Opus 5 · Medium` — instead of saying "default" and making you open it to find
 out.
 
-The two treatments differ in where Model and Effort are read and set:
+Where Model and Effort are read and set was explored two ways, and **settled on the composer**:
 
-| `&f=` | Composer footer | Deck header |
-|---|---|---|
-| **1** | Mode segments + a `Sonnet 5 · High` fact line opening the popover | unchanged |
-| **2** | Mode segments only | `Claude Code · Opus 5 · Medium`, clickable, popover drops below the band |
+| | Composer footer | Deck header | |
+|---|---|---|---|
+| **chosen** | Mode segments + an `Opus 5 · Medium` fact line opening the popover | `Claude Code` alone | ✓ |
+| rejected | Mode segments only | `Claude Code · Opus 5 · Medium`, clickable | |
 
-> The header's popover anchors to the **band**, not to the fact line it opens from: the fact
-> line clips its own overflow so long branch names ellipsize, which made a popover nested there
-> invisible.
+Everything governing the turn ends up in one place, and no value is stated twice — the rejected
+arrangement had the model on the header *and* in the popover, which is a pair you keep in sync
+by eye.
 
-**2 is the quieter of the two**: the header is already where a Session's standing facts live, so
-Model and Effort join the line that states the CLI, and the composer keeps only the setting you
-change mid-session.
+> Worth keeping if that is ever revisited: a popover dropped from the header's fact line must
+> anchor to the **band**. The fact line clips its own overflow so long branch names ellipsize,
+> which made a popover nested there invisible.
 
-> **Proposal against the token contract:** the vessel's **18px radius** is not in
-> `ArgoGeometry` (`r-popover` is 12). A vessel this wide reads as a dialog at 12. Promoting it
-> is a contract change through `setup-design-foundations`, not a constant dropped into a view.
+> **Superseded — the 18px vessel radius.** It was carried here as a proposal against
+> `ArgoGeometry` (`r-popover` is 12), on the claim that a vessel this wide reads as a dialog at
+> 12. Rendering the two against each other at real size showed no difference worth a fifth
+> radius rung, so the design snaps to `popover` and the contract is unchanged.
 
 ## The three variants
 

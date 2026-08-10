@@ -129,7 +129,7 @@
   .rooms button {
     display: inline-flex; align-items: center; gap: var(--s-snug);
     border: none; background: none; cursor: pointer; color: var(--text-3);
-    font: 500 12.5px var(--sans); padding: 0 var(--s-comfortable); height: 24px; border-radius: 999px;
+    font: 500 12px var(--sans); padding: 0 var(--s-comfortable); height: 24px; border-radius: 999px;
   }
   .rooms button svg { width: 13px; height: 13px; flex: none; }
   .rooms button.on { background: var(--overlay); color: var(--text-1); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
@@ -175,12 +175,12 @@
           gap: var(--s-comfortable); padding: 0 var(--s-section); }
   .tabslot { height: var(--deck-tab-h); flex: none; display: flex; align-items: flex-end;
              gap: var(--s-loose); padding: 0 var(--s-section); border-bottom: 1px solid var(--hairline); }
-  .tab { font-size: 12.5px; color: var(--text-3); padding-bottom: var(--s-base);
+  .tab { font-size: 12px; color: var(--text-3); padding-bottom: var(--s-base);
          border-bottom: 1.5px solid transparent; margin-bottom: -1px; }
   .tab.on { color: var(--text-1); font-weight: 500; border-bottom-color: var(--accent); }
   .h-title { font-size: 19px; font-weight: 600; letter-spacing: -.35px; color: var(--text-1);
              overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .fact { font-size: 11.5px; color: var(--text-2); white-space: nowrap; }
+  .fact { font-size: 11px; color: var(--text-2); white-space: nowrap; }
   .fact.mono { font-family: var(--mono); font-size: 11px; }
   .fact.dim { color: var(--text-3); }
   .fact.warn { color: var(--attention); }
@@ -202,10 +202,10 @@
   .feed { flex: 1; overflow-y: auto; padding: var(--s-loose) var(--s-section) var(--s-loose); }
   .fr { display: flex; gap: var(--s-comfortable); padding: var(--s-snug) 0; align-items: baseline; }
   .fr .k { width: 52px; flex: none; font-size: 11px; color: var(--text-3); text-align: right; }
-  .fr .v { font-size: 12.5px; color: var(--text-2); min-width: 0; }
-  .fr .v code { font-family: var(--mono); font-size: 11.5px; color: var(--text-1); }
-  .fr .add { color: #A9D18E; font-family: var(--mono); font-size: 11.5px; }
-  .fr .rem { color: #D98C93; font-family: var(--mono); font-size: 11.5px; }
+  .fr .v { font-size: 12px; color: var(--text-2); min-width: 0; }
+  .fr .v code { font-family: var(--mono); font-size: 11px; color: var(--text-1); }
+  .fr .add { color: #A9D18E; font-family: var(--mono); font-size: 11px; }
+  .fr .rem { color: #D98C93; font-family: var(--mono); font-size: 11px; }
   /* The user's own words are never blurred with agent output (US7): the label is accent, the
      prose is text-1 rather than text-2, and a hairline rule sits under it as a turn boundary. */
   .fr.user .k { color: var(--accent); font-weight: 600; }
@@ -248,8 +248,8 @@
   }
   .clip:hover { background: rgba(255,255,255,.07); color: var(--text-1); }
   .clip svg { width: 15px; height: 15px; display: block; }
-  .hint { font-size: 10.5px; color: var(--text-off); white-space: nowrap; }
-  .kbd { font: 10.5px var(--mono); color: var(--text-3); background: rgba(255,255,255,.06);
+  .hint { font-size: 10px; color: var(--text-off); white-space: nowrap; }
+  .kbd { font: 10px var(--mono); color: var(--text-3); background: rgba(255,255,255,.06);
          border: 1px solid var(--hairline); border-radius: var(--r-marker); padding: 0 4px; }
 
   /* attachment chips — one chip shape for every source (drop, paste, picker) */
@@ -263,9 +263,9 @@
                 object-fit: cover; display: block; background: var(--overlay); }
   .att .ico { width: 20px; height: 20px; flex: none; display: grid; place-items: center; color: var(--text-3); }
   .att .ico svg { width: 14px; height: 14px; }
-  .att .nm { font-size: 11.5px; color: var(--text-1); overflow: hidden;
+  .att .nm { font-size: 11px; color: var(--text-1); overflow: hidden;
              text-overflow: ellipsis; white-space: nowrap; }
-  .att .sz { font: 10.5px var(--mono); color: var(--text-3); flex: none; }
+  .att .sz { font: 10px var(--mono); color: var(--text-3); flex: none; }
   .att .x { flex: none; border: none; background: none; cursor: pointer; color: var(--text-3);
             width: 18px; height: 18px; border-radius: var(--r-marker); display: grid; place-items: center; }
   .att .x:hover { background: rgba(255,255,255,.09); color: var(--text-1); }
@@ -274,7 +274,7 @@
   /* drag-over: the whole composer takes an accent rim and says what dropping will do */
   .dropwash {
     position: absolute; inset: 0; z-index: 5; border-radius: inherit;
-    background: rgba(62,155,255,.10); border: 1.5px dashed var(--accent);
+    background: rgba(62,155,255,.10); border: 2px dashed var(--accent);   /* ArgoStroke.indicator */
     display: grid; place-items: center; font: 600 12px var(--sans); color: var(--accent-bright);
     pointer-events: none;
   }
@@ -282,7 +282,7 @@
   /* the seam line above the composer: draft marker, queue, failure, capability notice */
   .seam {
     display: flex; align-items: center; gap: var(--s-snug);
-    font-size: 11.5px; color: var(--text-3); padding: var(--s-snug) 0;
+    font-size: 11px; color: var(--text-3); padding: var(--s-snug) 0;
   }
   .seam.warn { color: var(--attention); }
   .seam.crit { color: var(--failure); }
@@ -303,7 +303,7 @@
   }
   .queued .qt { font-size: 12px; color: var(--text-2); min-width: 0; overflow: hidden;
                 text-overflow: ellipsis; white-space: nowrap; }
-  .queued .ql { font-size: 10.5px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase;
+  .queued .ql { font-size: 10px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase;
                 color: var(--accent); flex: none; padding-top: 1px; }
 
   /* ---------- VARIANT A — attached seam (the Dock's own position) ---------- */
@@ -321,14 +321,15 @@
   .cB-wrap { position: absolute; left: var(--s-section); right: var(--s-section); bottom: var(--s-loose); z-index: 12; }
   /* Native glass, not a tinted panel: the ground shows through, the rim is a light source
      rather than a border, and the whole vessel sits on a soft halo the way a real material
-     does. PROPOSAL — the 18px radius is not in ArgoGeometry (r-popover is 12); a vessel this
-     wide reads as a dialog at 12. Promoting it is a contract change, not a constant here. */
+     does. Every value is the contract's — glassTint, glassRim, ArgoRadius.popover. An 18px
+     radius was explored and dropped: rendered against 12 at real size the two were
+     indistinguishable, so a fifth radius rung was not earned. */
   .cB {
     position: relative;
-    background: linear-gradient(180deg, rgba(255,255,255,.065), rgba(255,255,255,.03));
+    background: var(--glass-tint);
     backdrop-filter: blur(42px) saturate(180%);
-    border: 1px solid rgba(255,255,255,.14);
-    border-radius: 18px;
+    border: 1px solid var(--glass-rim);
+    border-radius: var(--r-popover);
     box-shadow:
       0 1px 0 rgba(255,255,255,.16) inset,      /* the rim catching light from above */
       0 0 0 1px rgba(0,0,0,.35),                /* separation from whatever it floats over */
@@ -385,7 +386,7 @@
   }
   .seg button {
     border: none; background: none; cursor: pointer; color: var(--text-2);
-    font: 500 11.5px var(--sans); padding: 0 10px; height: 20px; border-radius: 5px;
+    font: 500 11px var(--sans); padding: 0 10px; height: 20px; border-radius: 5px;
   }
   .seg button:hover:not(.on) { color: var(--text-1); }
   .seg button.on {
@@ -404,7 +405,7 @@
   .picklist button {
     display: flex; align-items: baseline; gap: var(--s-base); width: 100%; text-align: left;
     border: none; background: none; cursor: pointer; color: var(--text-1);
-    font: 12.5px var(--sans); padding: 3px var(--s-snug); border-radius: var(--r-marker);
+    font: 12px var(--sans); padding: 3px var(--s-snug); border-radius: var(--r-marker);
   }
   .picklist button:hover { background: rgba(255,255,255,.07); }
   .picklist button .grow { flex: 1; }
@@ -417,7 +418,7 @@
     position: absolute; right: 0; bottom: calc(100% + var(--s-base)); z-index: 30;
     width: 264px; padding: var(--s-comfortable) var(--s-loose) var(--s-comfortable);
     background: rgba(52,55,61,.78); backdrop-filter: blur(44px) saturate(180%);
-    border: 1px solid rgba(255,255,255,.14); border-radius: var(--r-popover);
+    border: 1px solid var(--glass-rim); border-radius: var(--r-popover);
     box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 24px 60px rgba(0,0,0,.6);
   }
   /* dropped from the header's fact line: under the band, aligned to the deck's own gutter */
@@ -432,7 +433,7 @@
     display: flex; align-items: center; gap: var(--s-snug); width: 100%;
     margin-top: var(--s-comfortable); padding-top: var(--s-comfortable);
     border: none; border-top: 1px solid var(--hairline); background: none;
-    color: var(--text-3); font: 11.5px var(--sans); cursor: pointer;
+    color: var(--text-3); font: 11px var(--sans); cursor: pointer;
   }
   .runpanel .reset:hover { color: var(--text-1); }
   .runpanel .reset svg { width: 12px; height: 12px; }
@@ -454,12 +455,12 @@
 
   /* ---------- Permission ---------- */
   .perm-tool { display: flex; align-items: baseline; gap: var(--s-snug); flex-wrap: wrap; }
-  .perm-tool .name { font: 600 12.5px var(--sans); color: var(--text-1); }
-  .perm-tool .why { font-size: 11.5px; color: var(--text-3); }
+  .perm-tool .name { font: 600 12px var(--sans); color: var(--text-1); }
+  .perm-tool .why { font-size: 11px; color: var(--text-3); }
   /* The target is shown verbatim and in full — a decision made on a truncated command is a
      guess, which is the thing the prompt exists to prevent. */
   .perm-target {
-    font: 11.5px/1.55 var(--mono); color: var(--text-1); white-space: pre-wrap; word-break: break-word;
+    font: 11px/1.55 var(--mono); color: var(--text-1); white-space: pre-wrap; word-break: break-word;
     background: var(--sunken); border: 1px solid var(--hairline); border-radius: var(--r-control);
     padding: var(--s-snug) var(--s-base); margin: var(--s-base) 0;
     max-height: 108px; overflow-y: auto;
@@ -485,7 +486,7 @@
   .fuse > i { display: block; height: 100%; background: var(--attention); width: 100%;
               transform-origin: left center; }
   .perm-head { display: flex; align-items: center; gap: var(--s-snug); }
-  .perm-head .lbl { font-size: 10.5px; font-weight: 600; letter-spacing: .5px;
+  .perm-head .lbl { font-size: 10px; font-weight: 600; letter-spacing: .5px;
                     text-transform: uppercase; color: var(--attention); }
   .perm-head .grow { flex: 1; }
   .perm-head .left { font: 11px var(--mono); color: var(--text-3); }
@@ -519,7 +520,7 @@
   .noinput .g { color: var(--text-off); }
   .noinput button {
     border: 1px solid var(--subtle); background: var(--glass-tint); color: var(--text-2);
-    font: 500 11.5px var(--sans); padding: 4px var(--s-base); border-radius: var(--r-control); cursor: pointer;
+    font: 500 11px var(--sans); padding: 4px var(--s-base); border-radius: var(--r-control); cursor: pointer;
   }
   .noinput button:hover { color: var(--text-1); }
 
@@ -539,7 +540,7 @@
   .switch .sep { width: 1px; height: 18px; background: rgba(0,0,0,.14); }
   .note {
     position: fixed; bottom: 54px; left: 50%; transform: translateX(-50%); z-index: 59;
-    max-width: 720px; text-align: center; font-size: 11.5px; color: var(--text-3);
+    max-width: 720px; text-align: center; font-size: 11px; color: var(--text-3);
     background: rgba(0,0,0,.55); border-radius: var(--r-control); padding: 4px var(--s-comfortable);
   }
 
@@ -605,7 +606,6 @@
   <span class="sep"></span>
   <select id="state-picker" onchange="setState(this.value)" aria-label="State"></select>
   <span class="sep"></span>
-  <select id="footer-picker" onchange="setFooter(this.value)" aria-label="Run-settings treatment"></select>
 </div>
 
 <script>
@@ -703,9 +703,10 @@ let variant = (qs.get('variant') || 'B').toUpperCase();
 if (!VARIANTS.includes(variant)) variant = 'A';
 let stateKey = qs.get('state') || 'rest';
 if (!STATES.some(s => s.k === stateKey)) stateKey = 'rest';
+/* `&bare=1` hides the switcher and its caption. The approved renders are taken this way — a
+   PNG that carries the prototype's own chrome is not a picture of the screen. */
+const bare = qs.get('bare') === '1';
 /* Second axis, chosen variant only: where the run settings sit. `&f=1|2|3`. */
-let footer = qs.get('f') || '1';
-if (!['1','2'].includes(footer)) footer = '1';
 
 /* Live UI state, so the prototype can actually be driven rather than only looked at. */
 const ui = {
@@ -816,7 +817,6 @@ function renderHeader(s, needsInput) {
   const statusWord = needsInput ? `<span class="fact warn">Needs input</span>`
     : s.state === 'running' ? `<span class="working"><i></i>Running</span>`
     : `<span class="fact dim">Idle</span>`;
-  const headerRun = footer === '2' && variant === 'B';
   document.getElementById('hdr').innerHTML = `
     <div class="band">
       <div class="col g2 grow">
@@ -824,17 +824,14 @@ function renderHeader(s, needsInput) {
         <div class="factline">
           <span class="fact mono dim"><span class="gitline">${glyph(s.worktree ? SVG.worktree : SVG.branch)}<span>${esc(s.branch)}</span></span></span>
           <span class="dotsep">·</span>
-          ${headerRun && s.access === 'managed'
-            /* Treatment 2 moves Model and Effort up to the line that already states the CLI —
-               the header is where a Session's standing facts live, so they join them there. */
-            ? `<span class="fact dim">${s.cli}</span><span class="dotsep">·</span>${runFacts(false)}`
-            : `<span class="fact dim">${s.cli} · ${s.model}</span>`}
+          <!-- The CLI only. Model and Effort are set and read on the composer, and a value
+               stated in two places is a value you have to keep in sync by eye. -->
+          <span class="fact dim">${s.cli}</span>
           ${s.ticket ? `<span class="dotsep">·</span><span class="fact link">Issue ${s.ticket} ↗</span>` : ''}
           ${s.access !== 'managed' ? `<span class="dotsep">·</span><span class="fact ${s.access === 'orphaned' ? 'warn' : 'dim'}">${s.access === 'orphaned' ? 'orphaned' : 'read-only'}</span>` : ''}
         </div>
       </div>
       ${statusWord}
-      ${headerRun && s.access === 'managed' ? runPanel('below') : ''}
     </div>
     <div class="tabslot">
       <span class="tab on">Activity</span><span class="tab">Delivery</span>
@@ -1052,13 +1049,10 @@ const runPanel = (where = 'above') => !ui.menu ? '' : `
     </button>
   </div>`;
 
-/* Mode is on the footer in both. What differs is where Model and Effort are read and set. */
-const FOOTERS = {
-  1: { name: 'Model · Effort on the composer, beside Mode',
-       html: () => `${modeSegments()}${runFacts(false)}${runPanel()}` },
-  2: { name: 'Model · Effort up in the deck header',
-       html: () => `${modeSegments()}` },
-};
+/* SETTLED (2026-08-10): everything governing the turn is on the composer's own footer, and the
+   deck header states the CLI alone. A value stated in two places is one you keep in sync by eye.
+   The rejected alternative put Model and Effort on the header's fact line. */
+const runControls = () => `${modeSegments()}${runFacts(false)}${runPanel()}`;
 
 function setRun(kind, v) { ui.run[kind] = v; render(); }
 function resetRun() { ui.run = { ...DEFAULT_RUN }; render(); }
@@ -1109,7 +1103,7 @@ const composer = {
                platform already carries; printing them makes the composer explain itself
                forever to teach a first-run fact. Tooltips on the controls carry them. -->
           <span class="grow"></span>
-          ${FOOTERS[footer].html()}
+          ${runControls()}
           ${s.state === 'running'
             ? `<button class="send round stop" title="Stop this Turn  esc" onclick="stop()">${stopGlyph}</button>`
             : `<button class="send round" title="Send  ⏎" onclick="send()"
@@ -1280,9 +1274,6 @@ function render() {
     `${variant} — ${NAMES[variant]} · ${PERM_NAMES[variant]}`;
   document.getElementById('note').textContent = st.note;
   document.getElementById('state-picker').value = st.k;
-  const fp = document.getElementById('footer-picker');
-  fp.value = footer;
-  fp.style.display = variant === 'B' ? '' : 'none';
 }
 
 /* --------------------------- switcher --------------------------- */
@@ -1292,13 +1283,10 @@ function buildPicker() {
   sel.innerHTML = groups.map(g =>
     `<optgroup label="${g}">${STATES.filter(s => s.g === g)
       .map(s => `<option value="${s.k}">${s.label}</option>`).join('')}</optgroup>`).join('');
-  document.getElementById('footer-picker').innerHTML = Object.entries(FOOTERS)
-    .map(([f, v]) => `<option value="${f}">⚙ ${f} — ${v.name}</option>`).join('');
 }
 function url() {
-  history.replaceState(null, '', `?variant=${variant}&state=${stateKey}&f=${footer}`);
+  history.replaceState(null, '', `?variant=${variant}&state=${stateKey}${bare ? '&bare=1' : ''}`);
 }
-function setFooter(f) { footer = f; ui.menu = false; url(); render(); }
 function setState(k) {
   stateKey = k;
   applyStatePresets(STATES.find(s => s.k === k));
@@ -1342,6 +1330,12 @@ addEventListener('paste', e => {
 buildPicker();
 applyStatePresets(STATES.find(s => s.k === stateKey));
 render();
+if (bare) {
+  document.querySelector('.switch').style.display = 'none';
+  document.getElementById('note').style.display = 'none';
+  /* with nothing below it, the window takes the whole viewport */
+  document.querySelector('.window').style.bottom = 'var(--s-section)';
+}
 </script>
 </body>
 </html>
