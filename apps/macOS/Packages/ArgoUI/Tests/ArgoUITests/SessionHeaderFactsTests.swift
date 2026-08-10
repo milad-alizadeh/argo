@@ -141,9 +141,7 @@ struct SessionHeaderFactsTests {
             cli: .claude,
             model: "claude-opus-5",
             workspace: .init(kind: .worktree, branch: "argo/#510", dirty: 2, unpushed: 1),
-            // Untitled on purpose: a Work Item's title is a TITLE source (#515), so a titled one
-            // here would put the ticket's words in the first slot and make this a test about the
-            // fallback chain instead of about the marks. That chain has its own suite.
+            // Untitled: a Work Item's title is a title SOURCE, and the chain has its own suite.
             issue: .init(number: 510),
         )
 

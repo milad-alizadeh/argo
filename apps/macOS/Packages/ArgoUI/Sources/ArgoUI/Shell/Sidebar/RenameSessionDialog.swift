@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The panel a double-click on a roster row's title opens. Its words and its seed are
@@ -78,18 +79,21 @@ struct RenameSessionDialog: View {
                 .keyboardShortcut(.cancelAction)
             Button(SessionRenameProjection.confirm, action: save)
                 .keyboardShortcut(.defaultAction)
-                // A blank field is not a name (`SessionAnnotations`), and a confirm that silently
-                // reset the Session would be the Reset control taken by surprise.
-                .disabled(isBlank)
+                // A confirm that silently reset the Session would be the Reset control taken by
+                // surprise, so what is in the field is asked of the type that decides it.
+                .disabled(spoken == nil)
         }
+        .argoText(ArgoTypography.control)
     }
 
-    private var isBlank: Bool {
-        typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    /// What is in the field, as a NAME — `nil` while it is blank. The engine's own rule rather
+    /// than a second reading of it: the store would drop a name this view had accepted.
+    private var spoken: String? {
+        SessionAnnotations.name(from: typed)
     }
 
     private func save() {
-        guard !isBlank else { return }
+        guard spoken != nil else { return }
         commit(typed)
     }
 }

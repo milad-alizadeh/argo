@@ -83,7 +83,7 @@ extension CockpitPresentation.Session {
             // no opinion about this, and a Session whose file just grew is still archived.
             isArchived: annotations.isArchived(session.id),
             // Read off the annotations by the same chain id, and beside the observed title rather
-            // than over it: the derived one is what Reset goes back to (#515, story 20).
+            // than over it: the derived one is what Reset goes back to (#502, story 20).
             explicitName: annotations.explicitName(session.id),
             events: session.events,
         )
