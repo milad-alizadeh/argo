@@ -17,8 +17,8 @@ enum CompanionPlugin {
     /// leaving the reader to wonder why the tier never appears.
     ///
     /// `gatedBy` is the permission gate's socket; with one, the bundle also carries the
-    /// `PreToolUse` hook and the settings file that installs it — which is what makes a spawned
-    /// Session's Permissions answerable in the cockpit rather than in a TUI nobody sees.
+    /// `PreToolUse` hook and the `hooks/hooks.json` that installs it — which is what makes a
+    /// spawned Session's Permissions answerable in the cockpit rather than in a TUI nobody sees.
     static func materialize(
         forClaim claim: SessionOwnership.ClaimID,
         under root: URL,
@@ -42,13 +42,12 @@ enum CompanionPlugin {
             socketPath: socketPath,
             pluginRoot: pluginRoot.path,
             mcpConfigPath: mcpConfig.path,
-            settingsPath: permissionSocketPath.map { try gate(in: pluginRoot, socket: $0) },
+            hooksPath: permissionSocketPath.map { try gate(in: pluginRoot, socket: $0) },
         )
     }
 
-    /// The hook and the settings that install it, materialized beside the plugin. The hook's
-    /// `timeout` and the prompt's fuse are the same number by construction — both read
-    /// `PermissionChannel.patienceSeconds`.
+    /// The hook and the plugin's own `hooks/hooks.json` that installs it. The hook's `timeout` is
+    /// `PermissionChannel.patienceSeconds`, the one number the gate's patience is written in.
     private static func gate(in pluginRoot: URL, socket: String) throws -> String {
         let hook = pluginRoot.appending(path: "permission-hook.sh")
         try write(
@@ -57,12 +56,17 @@ enum CompanionPlugin {
             to: hook,
             substituting: ["__ARGO_PERMISSION_SOCKET__": socket],
         )
-        let settings = pluginRoot.appending(path: "settings.json")
-        try write(resource: "settings", to: settings, substituting: [
+        let hooksDirectory = pluginRoot.appending(path: "hooks", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(
+            at: hooksDirectory,
+            withIntermediateDirectories: true,
+        )
+        let hooks = hooksDirectory.appending(path: "hooks.json")
+        try write(resource: "hooks", to: hooks, substituting: [
             "__ARGO_PERMISSION_HOOK__": hook.path,
             "__ARGO_PERMISSION_TIMEOUT__": String(PermissionChannel.patienceSeconds),
         ])
-        return settings.path
+        return hooks.path
     }
 
     /// Everything this claim wrote, gone. Called when its PTY dies: the socket is unlinked with it,

@@ -13,14 +13,14 @@ struct PermissionChannelTests {
     """
 
     @Test
-    func `a spawn installs the hook and passes its settings on argv`() async throws {
+    func `a spawn installs the hook and loads the plugin that registers it`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
 
         let claim = try await fixture.hub.spawnSession()
         let pluginRoot = fixture.companionRoot.appending(path: claim.value)
-        let settings = try String(
-            contentsOf: pluginRoot.appending(path: "settings.json"),
+        let hooks = try String(
+            contentsOf: pluginRoot.appending(path: "hooks/hooks.json"),
             encoding: .utf8,
         )
         let hook = try String(
@@ -29,9 +29,11 @@ struct PermissionChannelTests {
         )
 
         let launch = try #require(fixture.host.launches.first)
-        #expect(launch.arguments.contains("--settings"))
-        #expect(settings.contains("permission-hook.sh"))
-        #expect(settings.contains("\"timeout\": \(PermissionChannel.patienceSeconds)"))
+        // `--plugin-dir` and not `--settings`: a hook declared in a settings file passed on argv
+        // is never registered, and an unregistered gate fails silently open.
+        #expect(launch.arguments.contains("--plugin-dir"))
+        #expect(hooks.contains("permission-hook.sh"))
+        #expect(hooks.contains("\"timeout\": \(PermissionChannel.patienceSeconds)"))
         #expect(hook.contains("\(claim.value).gate.sock"))
         #expect(!hook.contains("__ARGO_PERMISSION_SOCKET__"))
     }

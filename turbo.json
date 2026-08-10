@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalPassThroughEnv": ["OPENAI_API_KEY", "REALTIME_MODEL"],
+  "globalPassThroughEnv": ["OPENAI_API_KEY", "REALTIME_MODEL", "ARGO_LIVE_CLI"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

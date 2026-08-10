@@ -18,24 +18,32 @@ public struct CompanionInvitation: Sendable, Equatable {
     /// uninstalled plugin directory's `.mcp.json` is not read. The bundle around it is still the
     /// artifact a marketplace would install (#6); today the flag is what does the work.
     public let mcpConfigPath: String
-    /// The per-claim settings that install the `PreToolUse` permission hook — also passed on
-    /// argv. Absent when no gate was opened, which spawns the session exactly as before.
-    public let settingsPath: String?
+    /// The plugin's `hooks/hooks.json`, which installs the `PreToolUse` permission hook. Absent
+    /// when no gate was opened, which spawns the session exactly as before.
+    ///
+    /// It is the plugin that carries the hook, and `--plugin-dir` that loads it. `--settings` was
+    /// tried first and does NOT do this: against claude 2.1.226 a settings file passed on argv
+    /// leaves `/hooks` showing the same count it showed without one, and a gated call runs
+    /// unstopped — the hook that would have asked was never registered, and an unregistered hook
+    /// fails silently open. `--plugin-dir` registers it, which is why both flags are passed:
+    /// `--mcp-config` for the companion server, `--plugin-dir` for the gate.
+    public let hooksPath: String?
 
     public init(
         socketPath: String,
         pluginRoot: String,
         mcpConfigPath: String,
-        settingsPath: String? = nil,
+        hooksPath: String? = nil,
     ) {
         self.socketPath = socketPath
         self.pluginRoot = pluginRoot
         self.mcpConfigPath = mcpConfigPath
-        self.settingsPath = settingsPath
+        self.hooksPath = hooksPath
     }
 
     var arguments: [String] {
-        ["--mcp-config", mcpConfigPath] + (settingsPath.map { ["--settings", $0] } ?? [])
+        ["--mcp-config", mcpConfigPath]
+            + (hooksPath == nil ? [] : ["--plugin-dir", pluginRoot])
     }
 
     var environment: [String: String] {

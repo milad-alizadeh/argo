@@ -9,7 +9,18 @@
     "ignoreUnknown": false,
     // Xcode owns the JSON inside `.xcodeproj` and `.xcassets` and rewrites it on every
     // edit — formatting it here would just trade one churn for another.
-    "includes": ["**", "!graphify-out", "!docs", "!**/*.xcodeproj", "!**/*.xcassets"]
+    //
+    // KIND — the companion plugin's `Plugin/` resources are TEMPLATES, not documents: they
+    // carry `__ARGO_*__` placeholders that the spawn substitutes, and one of them stands where
+    // a number goes, which is not JSON until it is written out.
+    "includes": [
+      "**",
+      "!graphify-out",
+      "!docs",
+      "!**/*.xcodeproj",
+      "!**/*.xcassets",
+      "!**/ArgoEngine/Companion/Plugin"
+    ]
   },
   "formatter": {
     "enabled": true,
