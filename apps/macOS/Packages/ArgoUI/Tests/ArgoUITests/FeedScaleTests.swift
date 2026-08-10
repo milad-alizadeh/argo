@@ -40,6 +40,19 @@ struct FeedScaleTests {
         #expect(rows.count < CockpitPresentation.Session.longTranscript.count)
     }
 
+    /// The fixture is as long as a real long session, and this is a gate rather than a note.
+    ///
+    /// A performance fixture that is short is worse than none: it answers the smoothness question
+    /// about a feed nobody has, and it answers it favourably. Four genuine Claude Code transcripts
+    /// projected to 380 / 585 / 1168 / 5718 rows; this fixture stood at 301, which put it BELOW the
+    /// shortest of them. The floor is the middle of that range — a long day, not the worst day —
+    /// and the number is here so shortening the fixture to make a render cheaper fails the suite
+    /// rather than quietly weakening every claim about scale.
+    @Test
+    func `the long feed is as long as a real long session`() {
+        #expect(FeedProjection.longRows.count > 1000)
+    }
+
     /// The rules the feed is made of are all about where a run BREAKS, so a scale fixture in which
     /// none of them fires is a scale fixture that proves nothing about a long feed.
     @Test

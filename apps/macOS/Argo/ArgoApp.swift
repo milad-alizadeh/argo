@@ -25,21 +25,7 @@ struct ArgoApp: App {
 
     var body: some Scene {
         Window("Argo", id: "cockpit") {
-            if let specimen {
-                SpecimenScreen(specimen: specimen)
-            } else {
-                CockpitView(presentation: cockpit.presentation, actions: actions)
-                    .environment(navigation)
-                    .task {
-                        cockpit.endOwnedSessionsOnQuit()
-                        await cockpit.start()
-                    }
-                    // Every PTY this window owns dies with the window, and the observer above ends
-                    // them on ⌘Q too. An agent Argo started must not outlive the Argo that started
-                    // it: nothing can re-adopt it, so it would be a process nobody is left to steer
-                    // or stop.
-                    .onDisappear { cockpit.endOwnedSessions() }
-            }
+            window.argoFrameMeter()
         }
         .defaultSize(width: 1280, height: 800)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -54,6 +40,28 @@ struct ArgoApp: App {
                         .keyboardShortcut(candidate.shortcut, modifiers: .command)
                 }
             }
+        }
+    }
+
+    /// Over the whole window rather than inside the feed, and that is the point: a meter attached
+    /// under the surface being measured re-renders inside the subtree whose re-renders are the
+    /// question. Here it is a sibling of everything, and what it times is the main run loop — which
+    /// is what a frame is.
+    @ViewBuilder private var window: some View {
+        if let specimen {
+            SpecimenScreen(specimen: specimen)
+        } else {
+            CockpitView(presentation: cockpit.presentation, actions: actions)
+                .environment(navigation)
+                .task {
+                    cockpit.endOwnedSessionsOnQuit()
+                    await cockpit.start()
+                }
+                // Every PTY this window owns dies with the window, and the observer above ends
+                // them on ⌘Q too. An agent Argo started must not outlive the Argo that started
+                // it: nothing can re-adopt it, so it would be a process nobody is left to steer
+                // or stop.
+                .onDisappear { cockpit.endOwnedSessions() }
         }
     }
 
