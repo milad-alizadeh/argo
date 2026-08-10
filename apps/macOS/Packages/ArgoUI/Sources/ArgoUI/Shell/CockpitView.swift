@@ -44,6 +44,14 @@ public struct CockpitView: View {
         presentation.session(navigation.session)?.events ?? []
     }
 
+    /// The header's one intent, bound to the Session the header is naming — resolved here for the
+    /// same reason the header is: this is the view that knows which Session is selected. It does
+    /// nothing when nothing is, which is also when there is no button to press.
+    private var handOff: () -> Void {
+        guard let id = navigation.session else { return {} }
+        return { actions.handOffSession(id) }
+    }
+
     public var body: some View {
         @Bindable var navigation = navigation
 
@@ -60,6 +68,7 @@ public struct CockpitView: View {
                 session: navigation.session,
                 feed: feed,
                 header: header,
+                handOff: handOff,
                 showing: showing,
             )
             .overlay(alignment: .topLeading) {

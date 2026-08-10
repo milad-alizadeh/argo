@@ -53,6 +53,16 @@ final class AgentTerminals {
         agents.removeValue(forKey: id)
     }
 
+    /// Type at one agent's prompt without becoming a viewer of it — what Argo steering a Session it
+    /// is not drawing means. `false` where no live PTY answers to that claim, which the caller has
+    /// to hear: a keystroke sent nowhere is exactly what "nothing happened" looks like.
+    @discardableResult
+    func write(_ text: String, to id: SessionOwnership.ClaimID) -> Bool {
+        guard let entry = agents[id] else { return false }
+        entry.process.write(text)
+        return true
+    }
+
     /// Watch and steer one agent, or `nil` when no live PTY answers to that claim.
     func attach(
         to id: SessionOwnership.ClaimID,

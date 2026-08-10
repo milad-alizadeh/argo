@@ -17,6 +17,13 @@ public struct CockpitActions {
     /// Start an agent in the active Project's folder, with Argo owning its PTY. The one intent here
     /// that acts on the world rather than on Argo's own record of it.
     public let spawnSession: () -> Void
+    /// Hand a full Session's work to a fresh one: run `/handoff` in it, wait for the brief, and
+    /// start a Session seeded with it in the same folder (#513). Named by Session id, because the
+    /// header is not always drawing the roster's selection.
+    ///
+    /// One intent and not three, deliberately — the sequence is `SessionHandoff`'s, and a view that
+    /// could raise the three halves separately could raise the third without the first.
+    public let handOffSession: (String) -> Void
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for
     /// the same reason every action here is: they are called from a view.
@@ -29,6 +36,7 @@ public struct CockpitActions {
         revealProject: { _ in },
         removeProject: { _ in },
         spawnSession: {},
+        handOffSession: { _ in },
     )
 
     public init(
@@ -40,6 +48,7 @@ public struct CockpitActions {
         revealProject: @escaping (String) -> Void,
         removeProject: @escaping (String) -> Void,
         spawnSession: @escaping () -> Void,
+        handOffSession: @escaping (String) -> Void,
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
@@ -49,5 +58,6 @@ public struct CockpitActions {
         self.revealProject = revealProject
         self.removeProject = removeProject
         self.spawnSession = spawnSession
+        self.handOffSession = handOffSession
     }
 }

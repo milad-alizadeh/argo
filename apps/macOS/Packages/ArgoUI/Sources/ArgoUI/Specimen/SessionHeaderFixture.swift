@@ -58,6 +58,36 @@ enum SessionHeaderFixture {
     /// Just the readings, for the preview that judges the four side by side.
     static let contextReadings = contexts.map(\.header.context)
 
+    /// Every state the handoff offer has, keyed by the case that renders it.
+    ///
+    /// The first is the one with NOTHING in it, and it is here on purpose: story 44 is a claim
+    /// about an absence, and an absence has to be looked at on the same line as the presence to be
+    /// judged at all. The last two are the same reading on a Session Argo cannot drive — the
+    /// warning without the button (story 49), which no value test can show is still legible.
+    static let handoffs: [(specimen: Specimen, header: SessionHeaderProjection.Header)] = [
+        (.handoffWithheld, header(context: 67175)),
+        (.handoffAtWarn, header(context: 216_764)),
+        (.handoffAtCrit, header(context: 472_233)),
+        (.handoffOnReadOnly, header(context: 216_764, access: .external)),
+        (.handoffOnOrphaned, header(context: 472_233, access: .orphaned)),
+    ]
+
+    /// The button's own states for the preview that judges the three side by side — amber, red, and
+    /// the one that is drawn and out of reach.
+    static let handoffOffers: [SessionHeaderProjection.Handoff] = [
+        header(context: 216_764).handoff,
+        header(context: 472_233).handoff,
+        SessionHeaderProjection.handoff(from: CockpitPresentation.Session(
+            id: "header-folderless",
+            title: "A Session whose folder Argo never read",
+            model: "claude-opus-5",
+            workspaceLocation: nil,
+            access: .managed,
+            status: .idle,
+            contextTokens: 216_764,
+        )),
+    ].compactMap(\.self)
+
     static func header(for access: CockpitPresentation.Session.Access)
         -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: session(
@@ -67,11 +97,16 @@ enum SessionHeaderFixture {
         ))
     }
 
-    /// A managed Session at a given fullness, with every other fact held still — so a PNG of two
-    /// tiers differs in the one thing the tier decides.
-    static func header(context tokens: Int?) -> SessionHeaderProjection.Header {
+    /// A Session at a given fullness, with every other fact held still — so a PNG of two tiers
+    /// differs in the one thing the tier decides, and a PNG of two postures at one reading differs
+    /// only in what Argo is allowed to offer.
+    static func header(
+        context tokens: Int?,
+        access: CockpitPresentation.Session.Access = .managed,
+    )
+        -> SessionHeaderProjection.Header {
         SessionHeaderProjection.header(from: session(
-            access: .managed,
+            access: access,
             title: "Ship the native Liquid Glass application shell",
             branch: "argo/#511-header-context-fullness",
             contextTokens: tokens,

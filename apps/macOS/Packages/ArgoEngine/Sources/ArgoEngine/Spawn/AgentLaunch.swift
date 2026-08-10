@@ -31,4 +31,20 @@ public struct AgentLaunch: Sendable, Equatable {
     public var environmentStrings: [String] {
         environment.map { "\($0.key)=\($0.value)" }.sorted()
     }
+
+    /// The same launch, opening on a prompt.
+    ///
+    /// Applied HERE rather than in the launcher: how a CLI is handed an opening prompt is a
+    /// property of the CLI, and the launcher's job is the program and the user's `PATH`.
+    ///
+    /// Last on argv, after the companion's flags — a positional that arrived before a flag's value
+    /// would be read as that value.
+    func opening(_ prompt: String) -> AgentLaunch {
+        AgentLaunch(
+            executablePath: executablePath,
+            cwd: cwd,
+            arguments: arguments + [prompt],
+            environment: environment,
+        )
+    }
 }
