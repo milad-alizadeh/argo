@@ -22,7 +22,7 @@ drawn when the Dock held a terminal.
 |---|---|
 | `?variant=A\|B\|C` | Which composer, and where Permission appears. Also `←`/`→`, or the floating bar. |
 | `&state=<key>` | Which state. Also `↑`/`↓`, or the picker in the floating bar. |
-| `&f=1\|2\|3` | Where the run settings sit (variant B only). The ⚙ picker in the floating bar. |
+| `&f=1\|2` | Where Model and Effort sit (variant B only). The ⚙ picker in the floating bar. |
 
 Every state the ticket lists is addressable by URL, which is the point — a state you cannot
 link to is a state nobody re-checks. The caption above the switcher says what each one is.
@@ -36,7 +36,7 @@ not by looking at it.
 ### The states
 
 **Composing** — `rest` · `typing` · `ceiling` · `sent` · `running` · `queued` · `draft`
-**Run settings** — `run` · `run-ask` · `run-plan`
+**Run settings** — `run` · `run-model` · `run-ask` · `run-plan`
 **Attachments** — `attach` · `dragover` · `paste` · `noattach`
 **Permission** — `perm` · `perm-edit` · `expired`
 **Degraded** — `external` · `orphaned` · `failed`
@@ -60,38 +60,42 @@ Three things B added after the first pass:
 3. **Model, Mode and Effort are selectable**, in the app's own vocabulary rather than the
    reference apps' — see below.
 
-## Run settings — a second axis, `&f=1|2|3`
+## Run settings — a second axis, `&f=1|2`
 
 Every agent app puts a grey capsule with a chevron next to the send button and drills down
-through *Model → · Effort → · Reset to default*. Copying that shape says nothing about this
-app, so the settings are built out of two idioms the cockpit already has, and the panel is
-**flat** — no rows, no submenus, everything visible at once, because three settings do not need
-drilling and **Mode and Effort interact** (a `Plan` session at `Max` is a different animal from
-a `Code` one).
+through *Model → · Effort → · Reset to default*. Copying that shape says nothing about this app.
 
-- **Mode** → the Rooms segmented capsule at composer scale. You see all three stances and which
-  one you are in without opening anything. `Ask` takes the attention ink and `Plan` the accent,
-  because both are departures from acting autonomously.
-- **Model** → a short list of names; three names do not need a menu.
-- **Effort** → a four-stop scale rather than a list of equals, because it is ordered.
-- **Reset** names what it resets *to* — `Reset to Code · Opus 5 · Medium` — instead of saying
-  "default" and making you open it to find out.
+**These are all stock AppKit/SwiftUI controls, and the implementation must not build bespoke
+ones.** The prototype's CSS exists only so the arrangement can be judged:
 
-The three treatments differ only in **where Mode sits**, which is the real question:
+| In the study | In the app |
+|---|---|
+| `.seg` (Mode, Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` |
+| `.menupick` (Model) | `Picker(…).pickerStyle(.menu)` — a plain pop-up button |
+| `.runpanel` | `.popover(…)` with `.presentationBackground(.regularMaterial)` |
+| the panel's rows | `Form` / `LabeledContent` — label leading, control trailing |
+
+**Mode lives on the composer footer and is never repeated in the popover.** It is the one of
+the three that decides how often the agent stops to ask you something, so it must be readable
+without opening anything — and once it is on the footer, restating it inside is the same fact
+twice. `Ask` takes the attention ink and `Plan` the accent, because both are departures from
+acting autonomously.
+
+The popover therefore holds exactly what the footer does not say: **Model** as a pop-up button
+over a list of names, and **Effort** as a segmented picker because it is an ordered scale rather
+than a set of equals. **Reset** names what it resets *to* — `Reset to Code · Opus 5 · Medium` —
+instead of saying "default" and making you open it to find out.
+
+The two treatments differ in where Model and Effort are read and set:
 
 | `&f=` | Composer footer | Deck header |
 |---|---|---|
-| **1** | Mode segments + a `Sonnet 5 · High` fact line | unchanged |
-| **2** | one fact line, `Code · Opus 5 · Medium`; the panel holds all three | unchanged |
-| **3** | Mode segments only | `Claude Code · Opus 5 · Medium`, clickable |
+| **1** | Mode segments + a `Sonnet 5 · High` fact line opening the popover | unchanged |
+| **2** | Mode segments only | `Claude Code · Opus 5 · Medium`, clickable, popover drops below |
 
-**3 is the quietest and the most Argo-shaped**: the header is already where a Session's standing
-facts live, so Model and Effort join the line that states the CLI, and the composer keeps only
-the setting you change mid-session. 2 is the most compact and the closest to the references; 1
-is the loudest about Mode.
-
-Whichever wins, **Mode is never a value you have to open something to read** — burying it would
-blur the Mode/Permission distinction `CONTEXT.md` insists on.
+**2 is the quieter of the two**: the header is already where a Session's standing facts live, so
+Model and Effort join the line that states the CLI, and the composer keeps only the setting you
+change mid-session.
 
 > **Proposal against the token contract:** the vessel's **18px radius** is not in
 > `ArgoGeometry` (`r-popover` is 12). A vessel this wide reads as a dialog at 12. Promoting it
@@ -148,10 +152,10 @@ degradation mocked onto a healthy Session is a picture, not a render.
    the question the field would have raised.
 6. **A failed send must not clear the field.** The message stays where it was typed, with the
    reason and a Retry on the seam.
-7. **A drill-down menu is the wrong shape for three settings that interact.** Mode and Effort
-   are read together — `Plan · Max` and `Code · Low` are different animals — so a menu that
-   shows one at a time hides the thing you are actually deciding. One flat panel, everything
-   at once.
+7. **A setting that is visible on the surface must not also appear in the popover that opens
+   from it.** Mode on the footer *and* Mode in the panel reads as two controls for one value,
+   and the second one is the one you distrust. Putting Mode outside is what makes the popover
+   small enough to be two labelled rows.
 
 ## What it is not
 
