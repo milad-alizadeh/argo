@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE — Roster row + Session header</title>
+<!--
+  THROWAWAY PROTOTYPE. Three variants of the Sessions roster row and the Session deck
+  header, switchable via ?variant=A|B|C, the floating bar, or ←/→.
+
+  Every colour, radius, spacing step and type role below is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette.swift,
+  ArgoGeometry.swift, ArgoLayout.swift, ArgoTypography.swift. Nothing here is invented.
+  Type is San Francisco throughout — SF Pro and SF Mono. The contract has no serif.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — ground */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --hover:      rgba(255,255,255,.045);
+    --selected:   rgba(255,255,255,.058);
+    --marked:     rgba(255,255,255,.07);
+    --scrim:      rgba(11,12,14,.90);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edges */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+    --glass-rim: rgba(255,255,255,.30);
+
+    /* accent + state */
+    --accent: #3E9BFF;
+    --accent-bright: #6FB6FF;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+
+    /* ArgoGeometry.swift — radii */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    /* ArgoGeometry.swift — spacing */
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px;
+    --deck-header-h: 56px;
+    --deck-tab-h: 40px;
+    --dot: 6px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10;
+    color: var(--text-1);
+    font: 13px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- window ---------- */
+  .window {
+    position: fixed; inset: var(--s-section) var(--s-section) 72px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base);
+    min-width: 960px;
+  }
+  /* The sidebar runs the FULL height of the window and the titlebar is transparent over it —
+     the split view's own geometry on macOS. A banded titlebar above both columns is a
+     different app's window. */
+  .panes {
+    display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100%;
+    transition: grid-template-columns 200ms cubic-bezier(.2,.8,.2,1);
+  }
+  .panes.collapsed { grid-template-columns: 0 1fr; }
+  .panes.collapsed .sidebar { border-right: none; }
+
+  /* ---------- titlebar ---------- */
+  /* Scope leading, Rooms trailing — ShellToolbar.swift's two jobs in two places. It paints
+     no ground: whatever column is under it shows through. */
+  /* The titlebar shares the split's own columns, so the scope vessel starts exactly where the
+     detail pane does rather than straddling the sidebar's trailing edge. */
+  .titlebar {
+    position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 20;
+    display: grid; grid-template-columns: var(--sidebar-w) 1fr;
+    transition: grid-template-columns 200ms cubic-bezier(.2,.8,.2,1);
+    pointer-events: none;
+  }
+  .titlebar.collapsed { grid-template-columns: 0 1fr; }
+  .titlebar > * { pointer-events: auto; }
+  .tb-lead { display: flex; align-items: center; padding-left: var(--s-base); }
+  .tb-trail {
+    display: flex; align-items: center; gap: var(--s-comfortable);
+    padding: 0 var(--s-comfortable) 0 var(--s-loose);
+  }
+  .bare {
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    width: 26px; height: 26px; border-radius: var(--r-control);
+    display: grid; place-items: center; flex: none;
+  }
+  .bare:hover { background: rgba(255,255,255,.07); color: var(--text-1); }
+  .bare svg { width: 15px; height: 15px; display: block; }
+  .lights { display: flex; gap: var(--s-base); padding: 0 var(--s-base) 0 var(--s-tight); }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+
+  /* One Liquid Glass capsule around both halves — Project, then the checkout it sits on. */
+  .vessel {
+    display: inline-flex; align-items: center;
+    background: var(--glass-tint); border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 3px; height: 30px;
+  }
+  .vessel > button {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; color: var(--text-2);
+    padding: 0 10px; height: 24px; border-radius: 999px; font: 13px var(--sans);
+  }
+  .vessel > button:hover { background: rgba(255,255,255,.06); color: var(--text-1); }
+  .vessel .project { font-weight: 500; color: var(--text-1); }
+  .vessel .checkout { font-family: var(--mono); font-size: 12px; }
+  .vessel .divider { width: 1px; height: 16px; background: var(--subtle); flex: none; }
+  .vessel svg { width: 13px; height: 13px; flex: none; }
+  .vessel .chev { width: 9px; height: 9px; opacity: .65; }
+
+  /* Rooms — one capsule, the active segment raised out of it. */
+  .rooms { display: inline-flex; gap: 2px; background: var(--glass-tint);
+           border: 1px solid var(--hairline); border-radius: 999px; padding: 3px; }
+  .rooms button {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    font: 500 12.5px var(--sans); padding: 0 var(--s-comfortable); height: 24px; border-radius: 999px;
+  }
+  .rooms button svg { width: 13px; height: 13px; flex: none; }
+  .rooms button.on { background: var(--overlay); color: var(--text-1); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .rooms button:hover:not(.on) { color: var(--text-2); }
+
+  .conn { display: inline-flex; align-items: center; gap: var(--s-snug); font-size: 11.5px; color: var(--text-3); }
+  .conn i { width: 6px; height: 6px; border-radius: 50%; background: var(--running); display: block; }
+
+  /* ---------- project drawer ---------- */
+  .drawer {
+    position: absolute; top: 42px; left: var(--s-base); z-index: 40;
+    width: 340px; padding: var(--s-comfortable);
+    background: var(--overlay); border: 1px solid var(--subtle);
+    border-radius: var(--r-popover); box-shadow: 0 24px 60px rgba(0,0,0,.62);
+    display: none;
+  }
+  .drawer.open { display: block; }
+  .drawer h4 {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--text-3); padding: 0 var(--s-snug) var(--s-base);
+  }
+  .prow {
+    display: flex; align-items: center; gap: var(--s-base);
+    padding: var(--s-snug); border-radius: var(--r-control); cursor: pointer;
+  }
+  .prow:hover { background: rgba(255,255,255,.05); }
+  .prow.on { background: var(--selected); }
+  .prow .pname { font-size: 13px; font-weight: 500; color: var(--text-1); }
+  .prow .ppath { font: 11px var(--mono); color: var(--text-3); overflow: hidden;
+                 text-overflow: ellipsis; white-space: nowrap; }
+  .prow .count { font: 11px var(--mono); color: var(--text-3); flex: none; }
+  .prow.gone .pname, .prow.gone .ppath { color: var(--text-off); }
+  .prow .locate {
+    flex: none; font: 500 11px var(--sans); color: var(--attention); cursor: pointer;
+    background: none; border: 1px solid rgba(232,178,74,.35); border-radius: var(--r-marker);
+    padding: 2px var(--s-snug);
+  }
+  .drawer .add {
+    display: flex; align-items: center; gap: var(--s-snug); width: 100%;
+    margin-top: var(--s-base); padding: var(--s-snug); border: none; background: none;
+    border-top: 1px solid var(--hairline); padding-top: var(--s-comfortable);
+    color: var(--text-2); font: 12.5px var(--sans); cursor: pointer; border-radius: 0;
+  }
+  .drawer .add:hover { color: var(--text-1); }
+  .drawer .add svg { width: 13px; height: 13px; }
+
+  /* The roster is native Liquid Glass and paints no ground of its own (D2/D3/D14). */
+  .sidebar {
+    display: flex; flex-direction: column; border-right: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%);
+  }
+  /* Content clears the transparent titlebar; the glass itself runs behind it. */
+  .sidebar-head {
+    display: flex; align-items: center; gap: 2px;
+    height: 46px; flex: none; padding: 0 var(--s-snug) 0 var(--s-comfortable);
+  }
+  .eyebrow {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .roster { flex: 1; overflow-y: auto; padding: 0 var(--s-base) var(--s-base); }
+  .sidebar-foot {
+    padding: var(--s-base) var(--s-comfortable) var(--s-comfortable);
+    border-top: 1px solid var(--hairline); color: var(--text-3); font-size: 12px;
+  }
+
+  /* ---------- roster row ---------- */
+  .row {
+    position: relative; border-radius: var(--r-control);
+    padding: 7px var(--s-base); margin-bottom: 1px;
+    cursor: default; transition: background 120ms ease;
+  }
+  .row:hover { background: var(--hover); }
+  /* Selection is the neutral wash alone — the sidebar's own capsule, as D30 asks. */
+  .row.sel { background: var(--selected); }
+  /* external sessions are ghosted whole — read-only is a property of the row, not a glyph */
+  .row.ext { opacity: .58; }
+
+  .dot { width: var(--dot); height: var(--dot); border-radius: 50%; flex: none; }
+  .dot.running   { background: var(--running); box-shadow: 0 0 6px rgba(70,211,168,.5); }
+  .dot.attn      { background: var(--attention); }
+  .dot.fail      { background: var(--failure); }
+  .dot.idle      { background: var(--idle); }
+  .dot.hollow    { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); }
+  .dot.none      { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); opacity: .4; }
+
+  .title {
+    font-size: 13px; font-weight: 500; color: var(--text-1); letter-spacing: -.05px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .meta {
+    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .time { font-family: var(--mono); font-size: 11px; color: var(--text-3); flex: none; }
+  .badge {
+    flex: none; font-size: 10px; font-weight: 600; letter-spacing: .5px;
+    text-transform: uppercase; color: var(--attention);
+  }
+  .badge.fail { color: var(--failure); }
+
+  /* Swipe left on a row to reveal Archive, iOS-Mail style. The action sits behind the row
+     body; the body carries an opaque ground only while it is displaced, so the sidebar's
+     glass is undisturbed at rest. */
+  .row { overflow: hidden; }
+  .row-body {
+    position: relative; z-index: 1; border-radius: var(--r-control);
+    transform: translateX(var(--dx, 0px));
+  }
+  .row-body.settling { transition: transform 180ms cubic-bezier(.2,.8,.2,1); }
+  .row.swiping .row-body { background: var(--raised); box-shadow: -8px 0 12px -6px rgba(0,0,0,.5); }
+  /* The pane exists only while the row is displaced — at rest the row body is transparent,
+     so an always-present pane would show through every row at once. */
+  .row-action {
+    position: absolute; inset: 0 0 0 auto; width: 44px; z-index: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 120ms ease;
+  }
+  .row.swiping .row-action { opacity: 1; pointer-events: auto; }
+  .archive {
+    display: grid; place-items: center;
+    width: 28px; height: 28px; border: none; cursor: pointer;
+    border-radius: var(--r-control); background: var(--overlay); color: var(--text-2);
+  }
+  .archive:hover { background: #3a3e45; color: var(--text-1); }
+  .archive svg { width: 15px; height: 15px; display: block; }
+
+  /* ---------- deck ---------- */
+  .deck {
+    position: relative; display: flex; flex-direction: column;
+    background: var(--base); min-width: 0; padding-top: 46px;
+  }
+
+  /* The inspection surface (D14/D31): everything countable, one click away, so the band
+     itself carries no accounting. Click-opened, not hover — it is meant to be read. */
+  .inspect {
+    position: absolute; top: 52px; right: var(--s-section); z-index: 30;
+    width: 320px; padding: var(--s-comfortable) var(--s-loose) var(--s-loose);
+    background: var(--overlay); border: 1px solid var(--subtle);
+    border-radius: var(--r-popover); box-shadow: 0 24px 60px rgba(0,0,0,.62);
+    display: none;
+  }
+  .inspect.open { display: block; }
+  .inspect h4 {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: var(--s-snug);
+  }
+  .inspect .reading { font: 600 15px/1 var(--mono); margin-bottom: var(--s-base); }
+  .inspect .legend { display: grid; gap: var(--s-snug); margin: var(--s-comfortable) 0; }
+  .inspect .legend div { display: flex; gap: var(--s-base); align-items: baseline; font-size: 11.5px; }
+  .inspect .legend b {
+    font: 600 11px/1.4 var(--mono); width: 74px; flex: none;
+  }
+  .inspect .legend span { color: var(--text-2); }
+  .inspect p { font-size: 11.5px; line-height: 1.55; color: var(--text-2); }
+  .inspect hr { border: none; border-top: 1px solid var(--hairline); margin: var(--s-comfortable) 0; }
+  .inspect dl { display: grid; grid-template-columns: 96px 1fr; gap: var(--s-snug) var(--s-base); font-size: 11.5px; }
+  .inspect dt { color: var(--text-3); }
+  .inspect dd { font-family: var(--mono); font-size: 11px; color: var(--text-1); word-break: break-all; }
+
+  .band {
+    height: var(--deck-header-h); flex: none;
+    display: flex; align-items: center; gap: var(--s-comfortable);
+    padding: 0 var(--s-section);
+  }
+  .tabslot {
+    height: var(--deck-tab-h); flex: none;
+    display: flex; align-items: flex-end; gap: var(--s-loose);
+    padding: 0 var(--s-section);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .tab {
+    font-size: 12.5px; color: var(--text-3); padding-bottom: var(--s-base);
+    border-bottom: 1.5px solid transparent; margin-bottom: -1px;
+  }
+  .tab.on { color: var(--text-1); font-weight: 500; border-bottom-color: var(--accent); }
+
+  /* SF Pro. The contract carries exactly two faces — interface and machine — and no serif.
+     D22's New York is stale prose the Swift never adopted, and the app draws SF throughout. */
+  .h-title {
+    font-size: 19px; font-weight: 600; letter-spacing: -.35px;
+    color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .fact { font-size: 11.5px; color: var(--text-2); white-space: nowrap; }
+  .fact.mono { font-family: var(--mono); font-size: 11px; }
+  .fact.dim { color: var(--text-3); }
+  .fact.warn { color: var(--attention); }
+  .fact.ok { color: var(--text-2); }
+  /* The fact line must never push into the context column — real branch names are long. */
+  .factline { display: flex; align-items: center; gap: var(--s-snug); min-width: 0; overflow: hidden; }
+  /* The branch is the one thing allowed to shrink — the chips after it must survive. */
+  .factline > * { flex: none; }
+  .factline > .fact:has(.gitline) { flex: 0 1 auto; min-width: 40px; overflow: hidden; }
+  .factline .gitline { min-width: 0; max-width: 100%; }
+  /* Every glyph() carries .g — size it once, or it fills whatever box it lands in. */
+  svg.g { width: 13px; height: 13px; flex: none; display: inline-block; vertical-align: -2px; }
+  .gitline { display: inline-flex; align-items: center; gap: var(--s-tight); }
+  .gitline > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gitline .g { width: 12px; height: 12px; flex: none; opacity: .8; }
+  .gitline .mark {
+    display: inline-flex; align-items: center; gap: 2px; margin-left: var(--s-tight);
+    color: var(--text-2);
+  }
+  .gitline .mark .g { width: 11px; height: 11px; opacity: 1; }
+  .fact.crit { color: var(--failure); }
+  .chip.ok { color: var(--text-2); }
+  .fact.link { color: var(--accent); }
+  .dotsep { color: var(--text-off); font-size: 11px; }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: var(--s-tight);
+    font-size: 11px; font-family: var(--mono); color: var(--text-2);
+    background: var(--glass-tint); border: 1px solid var(--hairline);
+    padding: 2px var(--s-snug); border-radius: var(--r-marker); white-space: nowrap;
+  }
+  .chip.warn { color: var(--attention); border-color: rgba(232,178,74,.3); }
+  .chip.crit { color: var(--failure); border-color: rgba(242,85,92,.32); }
+  .chip.dim  { color: var(--text-3); }
+  .chip.link { color: var(--accent); border-color: rgba(62,155,255,.28); }
+
+  .handoff {
+    flex: none; display: inline-flex; align-items: center; gap: var(--s-snug);
+    font: 600 12px/1.2 var(--sans); color: var(--on-accent);
+    background: var(--attention); border: none;
+    border-radius: var(--r-control); padding: 5px var(--s-base) 5px 10px; cursor: pointer;
+    text-align: left;
+  }
+  .handoff.warn { background: var(--attention); color: var(--on-accent); }
+  .handoff.crit { background: var(--failure); color: #fff; }
+  .handoff:hover { filter: brightness(1.08); }
+  .info {
+    border: none; background: none; cursor: help; color: var(--text-off);
+    width: 14px; height: 14px; padding: 0; display: block; flex: none;
+  }
+  .info:hover { color: var(--text-2); }
+  .info svg { width: 14px; height: 14px; display: block; }
+  .handoff svg { width: 14px; height: 14px; flex: none; }
+  /* Why it is here is carried by the coloured reading beside it, not by a caption. */
+  .handoff span { display: block; }
+
+  /* context renderings */
+  /* Three tiers: healthy, worth handing off, past the point of choosing. */
+  .bar { height: 3px; border-radius: 1.5px; background: rgba(255,255,255,.07); position: relative; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 1.5px; background: var(--running); }
+  .bar.ok > i   { background: var(--running); }
+  .bar.warn > i { background: var(--attention); }
+  .bar.crit > i { background: var(--failure); }
+  .bar .tick { position: absolute; top: -2.5px; bottom: -2.5px; width: 1px; background: var(--strong); }
+
+  .medallion {
+    --p: 0; width: 40px; height: 40px; flex: none; border-radius: 50%; display: grid; place-items: center;
+    background: conic-gradient(var(--running) calc(var(--p) * 1%), rgba(255,255,255,.09) 0);
+  }
+  .medallion.warn { background: conic-gradient(var(--attention) calc(var(--p) * 1%), rgba(255,255,255,.09) 0); }
+  .medallion.crit { background: conic-gradient(var(--failure) calc(var(--p) * 1%), rgba(255,255,255,.09) 0); }
+  .medallion.warn b { color: var(--attention); }
+  .medallion.crit b { color: var(--failure); }
+  .medallion.unk  { background: none; box-shadow: inset 0 0 0 1px var(--subtle); }
+  .medallion > div {
+    width: 33px; height: 33px; border-radius: 50%; background: var(--base);
+    display: grid; place-items: center; text-align: center;
+  }
+  .medallion b { font: 600 11px/1 var(--mono); color: var(--text-1); }
+  .medallion small { font-size: 8px; letter-spacing: .3px; color: var(--text-3); }
+
+  .spine { height: 2px; flex: none; background: rgba(255,255,255,.06); position: relative; }
+  .spine > i { position: absolute; inset: 0 auto 0 0; background: var(--running); }
+  .spine.warn > i { background: var(--attention); }
+  .spine.crit > i { background: var(--failure); }
+  .spine .tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--strong); }
+
+  /* ---------- feed (context for the header, not under test) ---------- */
+  .feed {
+    flex: 1; overflow: hidden; padding: var(--s-loose) var(--s-section);
+    -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent 100%);
+  }
+  .fr { display: flex; gap: var(--s-comfortable); padding: var(--s-snug) 0; align-items: baseline; }
+  .fr .k { width: 52px; flex: none; font-size: 11px; color: var(--text-3); text-align: right; }
+  .fr .v { font-size: 12.5px; color: var(--text-2); }
+  .fr .v code { font-family: var(--mono); font-size: 11.5px; color: var(--text-1); }
+  .fr .add { color: #A9D18E; font-family: var(--mono); font-size: 11.5px; }
+  .fr .rem { color: #D98C93; font-family: var(--mono); font-size: 11.5px; }
+  .dock {
+    flex: none; height: var(--deck-tab-h); border-top: 1px solid var(--hairline);
+    display: flex; align-items: center; gap: var(--s-base); padding: 0 var(--s-section);
+    font-size: 11.5px; color: var(--text-3); background: var(--sunken);
+  }
+
+  /* ---------- switcher (not part of the design under evaluation) ---------- */
+  .switch {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 50;
+    display: flex; align-items: center; gap: 2px;
+    background: #fff; color: #111; border-radius: 999px; padding: 4px 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 600 12px/1 var(--sans);
+  }
+  .switch button { border: none; background: none; cursor: pointer; width: 26px; height: 26px; border-radius: 999px; font-size: 15px; }
+  .switch button:hover { background: rgba(0,0,0,.08); }
+  .switch span { padding: 0 var(--s-base); white-space: nowrap; }
+
+  /* ---------- rename modal (D14 graphite popover recipe) ---------- */
+  .scrim { position: fixed; inset: 0; z-index: 60; background: var(--scrim); display: none; place-items: center; }
+  .scrim.on { display: grid; }
+  .modal {
+    width: 400px; background: var(--overlay); border: 1px solid var(--subtle);
+    border-radius: var(--r-popover); padding: var(--s-loose);
+    box-shadow: 0 30px 70px rgba(0,0,0,.6);
+  }
+  .modal h3 { font-size: 13px; font-weight: 600; }
+  .modal p { font-size: 11.5px; color: var(--text-3); margin: var(--s-tight) 0 var(--s-comfortable); }
+  .modal input {
+    width: 100%; background: var(--sunken); border: 1px solid var(--subtle);
+    border-radius: var(--r-control); color: var(--text-1);
+    padding: var(--s-snug) var(--s-base); font: 13px var(--sans);
+  }
+  .modal .acts { display: flex; gap: var(--s-base); margin-top: var(--s-loose); align-items: center; }
+  .modal .acts .grow { flex: 1; }
+  .modal button {
+    font: 12px var(--sans); padding: var(--s-tight) var(--s-comfortable);
+    border-radius: var(--r-control); cursor: pointer;
+    border: 1px solid var(--subtle); background: var(--glass-tint); color: var(--text-2);
+  }
+  .modal button:hover { color: var(--text-1); }
+  .modal button.pri { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  .flex { display: flex; align-items: center; }
+  .col { display: flex; flex-direction: column; }
+  .grow { flex: 1; min-width: 0; }
+  .g2 { gap: 2px } .g4 { gap: var(--s-tight) } .g6 { gap: var(--s-snug) }
+  .g8 { gap: var(--s-base) } .g12 { gap: var(--s-comfortable) } .g16 { gap: var(--s-loose) }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <header class="titlebar">
+    <div class="tb-lead">
+      <span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+    </div>
+    <div class="tb-trail">
+    <div id="scope"></div>
+    <span style="flex:1"></span>
+    <div class="rooms">
+      <button class="on"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M2.5 6.5v3M5.5 4v8M8.5 2.5v11M11.5 5v6M14 7v2"/></svg>Sessions</button>
+      <button><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <circle cx="3" cy="4" r="1.2"/><circle cx="3" cy="9.5" r="1.2"/><path d="M6.5 4h7M6.5 9.5h7M6.5 13.5h4"/></svg>Work</button>
+      <button><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5.5 5 2.5 8l3 3M10.5 5l3 3-3 3"/></svg>Code</button>
+    </div>
+    <!-- The Hub connection chip is an EXCEPTION chip: with live sessions on it, it renders
+         nothing at all (ConnectionChip.swift). Nothing here is a provider — GitHub and Linear
+         are per-Project ports, configured in Project Settings, never global toolbar chrome. -->
+    </div>
+    <div id="drawer"></div>
+  </header>
+  <div class="panes" id="panes">
+    <aside class="sidebar">
+    <!-- The app puts the sidebar toggle at the sidebar's own trailing edge, not beside the
+         traffic lights. New Session (#433, unbuilt) sits immediately beside it, same weight. -->
+    <div class="sidebar-head">
+      <span style="flex:1"></span>
+      <button class="bare" aria-label="New Session" title="New Session  ⌘N">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M8 3.4v9.2M3.4 8h9.2"/></svg>
+      </button>
+      <button class="bare" id="toggle" aria-label="Hide Sessions" onclick="toggleSidebar()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35">
+          <rect x="1.6" y="3" width="12.8" height="10" rx="2"/><path d="M6.2 3v10"/></svg>
+      </button>
+    </div>
+    <div class="roster" id="roster"></div>
+    <div class="sidebar-foot" id="archived-count">Archived (2)</div>
+  </aside>
+
+  <section class="deck">
+    <div id="hdr"></div>
+    <div class="feed">
+      <div class="fr"><span class="k">Search</span><span class="v"><code>rg toggleDevTools</code> · 41 matches · 180ms</span></div>
+      <div class="fr"><span class="k">Message</span><span class="v">The roster sorts on last activity now, and the caption says so.</span></div>
+      <div class="fr"><span class="k">Edit</span><span class="v"><span class="add">+18</span> <span class="rem">−6</span> &nbsp;<code>SessionRow.swift</code></span></div>
+      <div class="fr"><span class="k">Edit</span><span class="v"><span class="add">+2</span> <span class="rem">−9</span> &nbsp;<code>DeckZone.swift</code></span></div>
+      <div class="fr"><span class="k">Read</span><span class="v"><code>CockpitPresentation.swift</code> · 142 lines</span></div>
+      <div class="fr"><span class="k">Bash</span><span class="v"><code>swift test --filter SessionRosterProjectionTests</code></span></div>
+    </div>
+    <div class="dock" id="dock"></div>
+  </section>
+  </div>
+</div>
+
+<div class="switch">
+  <button onclick="cycle(-1)" aria-label="Previous variant">‹</button>
+  <span id="switch-label"></span>
+  <button onclick="cycle(1)" aria-label="Next variant">›</button>
+</div>
+
+<div class="scrim" id="scrim" onclick="if(event.target===this)closeRename()">
+  <div class="modal" role="dialog" aria-label="Rename Session">
+    <h3>Rename Session</h3>
+    <p>An explicit name beats the derived title and the linked ticket, and stays until you reset it.</p>
+    <input id="rename-input" />
+    <div class="acts">
+      <button onclick="closeRename()">Reset to derived title</button>
+      <span class="grow"></span>
+      <button onclick="closeRename()">Cancel</button>
+      <button class="pri" onclick="closeRename()">Rename</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CAPACITY = 1_000_000;   // the session's total context capacity
+/* Two Argo-owned lines, neither configurable. 150k is where handing off starts being worth
+   it; 300k is where it stops being optional. */
+const WARN = 150_000;
+const CRIT = 300_000;
+const tier = s => s.ctx == null ? null : s.ctx >= CRIT ? 'crit' : s.ctx >= WARN ? 'warn' : 'ok';
+
+/* Real sessions off this machine, 2026-08-10 00:10. Titles are derived from each
+   transcript's opening prompt; ctx is the last turn's input+cache+output; total is the sum
+   across every turn; branches and worktrees are `git worktree list`. The liveness states
+   are the one assigned part — the renderings need all five, and a transcript at rest reads
+   idle. `sub: null` is not a placeholder: subagent spend is NOT attributed in any of these
+   records, which is the honest reading of what Argo could show today. */
+const sessions = [
+  { id:'0ec3b3b6', title:'Roster and header content, then a prototype', state:'running', access:'managed',
+    branch:'main', worktree:false, dirty:1, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:'#400', ctx:216_764, total:29_926_918, sub:null, ran:'5h 51m', worked:'1h 13m', seen:null },
+
+  { id:'1986b0e5', title:'Restore the sessions Warp closed', state:'idle', access:'managed',
+    branch:'main', worktree:false, dirty:1, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:null, ctx:67_175, total:1_287_782, sub:null, ran:'12m', worked:'12m', seen:'2m' },
+
+  { id:'32c9e59a', title:'Retire Electron, set new design foundations', state:'idle', access:'managed',
+    branch:'argo/retire-electron', worktree:true, dirty:0, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:'#373', ctx:472_233, total:193_281_846, sub:null, ran:'9h 25m', worked:'1h 35m', seen:'6m' },
+
+  { id:'1a102eb8', title:'Which worktrees are half-finished and need a PR?', state:'attn', access:'managed',
+    branch:'argo/#476-feed-scroll-anchor', worktree:true, dirty:0, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:'#476', ctx:164_071, total:22_468_451, sub:null, ran:'48m', worked:'41m', seen:'51m' },
+
+  { id:'fff58dd6', title:'Draw the deck’s floating controls in glass', state:'fail', access:'managed',
+    branch:'argo/#490-new-message-badge', worktree:true, dirty:0, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:'#489', ctx:250_997, total:45_875_370, sub:null, ran:'46m', worked:'46m', seen:'5h' },
+
+  /* A Codex worktree under ~/.codex — observed from disk, never spawned by Argo. */
+  { id:'codex-56bf', title:'Native Session roster in Swift', state:'idle', access:'external',
+    branch:'argo/#377-native-session-roster', worktree:true, dirty:0, unpushed:0,
+    cli:'Codex', model:'unknown', ticket:'#377', ctx:null, total:null, sub:null, ran:null, worked:null, seen:'2d' },
+
+  /* Its worktree survives, but nothing owns the PTY any more — Argo restarted under it. */
+  { id:'w-375', title:'Graphite and Ion Blue across the shell', state:'idle', access:'orphaned',
+    branch:'worktree-ticket-375-graphite-ion-blue', worktree:true, dirty:0, unpushed:1,
+    cli:'Claude Code', model:'Opus 5', ticket:'#375', ctx:88_400, total:12_940_000, sub:null, ran:'2h 04m', worked:'1h 08m', seen:'3d' },
+];
+
+let selected = new URLSearchParams(location.search).get('s') || '0ec3b3b6';
+
+/* The registry, as it actually is on this Mac. argo-plugin has three sessions on record but
+   no folder any more — a registered Project that moved is still a Project, drawn and
+   re-pointable rather than quietly missing. A live-session count exists only for the Project
+   the Hub is pointed at; for any other it is a fact Argo does not have. */
+const projects = [
+  { id: 'p1', name: 'argo',        path: '~/Developer/argo',        checkout: 'main', live: 7,    here: true },
+  { id: 'p2', name: 'argo-v2',     path: '~/Developer/argo-v2',     checkout: 'main', live: null, here: true },
+  { id: 'p3', name: 'argo-plugin', path: '~/Developer/argo-plugin', checkout: null,   live: null, here: false },
+];
+let activeProject = 'p1';
+let drawerOpen = new URLSearchParams(location.search).get('d') === '1';
+const CHEV = `<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+  stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5 8 10.5l4-4"/></svg>`;
+
+function toggleSidebar() {
+  const p = document.getElementById('panes');
+  const off = p.classList.toggle('collapsed');
+  document.querySelector('.titlebar').classList.toggle('collapsed', off);
+  document.getElementById('toggle').setAttribute('aria-label', off ? 'Show Sessions' : 'Hide Sessions');
+}
+
+function toggleDrawer(e) { e.stopPropagation(); drawerOpen = !drawerOpen; render(); }
+function pickProject(id) { activeProject = id; drawerOpen = false; render(); }
+
+function renderScope() {
+  const p = projects.find(x => x.id === activeProject);
+  document.getElementById('scope').innerHTML = `
+    <div class="vessel">
+      <button class="project" onclick="toggleDrawer(event)">
+        ${glyph(SVG.folder)}${p.name}${CHEV}
+      </button>
+      <span class="divider"></span>
+      <button class="checkout" title="Global checkout — ${p.checkout ?? 'unknown'}">
+        ${glyph(SVG.branch)}${p.checkout ?? 'unknown'}${CHEV}
+      </button>
+    </div>`;
+  document.getElementById('drawer').innerHTML = `
+    <div class="drawer ${drawerOpen ? 'open' : ''}" onclick="event.stopPropagation()">
+      <h4>Projects · registered on this Mac</h4>
+      ${projects.map(x => `
+        <div class="prow ${x.id === activeProject ? 'on' : ''} ${x.here ? '' : 'gone'}"
+             onclick="pickProject('${x.id}')">
+          ${glyph(SVG.folder)}
+          <span class="grow" style="min-width:0">
+            <span class="pname">${x.name}</span>
+            <span class="ppath" style="display:block">${x.path}</span>
+          </span>
+          ${x.here
+            ? `<span class="count">${x.live == null ? '' : x.live + ' live'}</span>`
+            : `<button class="locate" onclick="event.stopPropagation()">Locate…</button>`}
+        </div>`).join('')}
+      <button class="add">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M8 3.5v9M3.5 8h9"/></svg>Add Project…
+      </button>
+    </div>`;
+}
+const k = n =>
+  n >= 1_000_000 ? (n / 1_000_000).toFixed(n % 1_000_000 ? 2 : 0).replace(/\.?0+$/,'') + 'M'
+  : n >= 1000 ? (n / 1000).toFixed(n >= 100_000 ? 0 : 1).replace('.0','') + 'k'
+  : String(n);
+const pct  = s => s.ctx == null ? null : Math.round(s.ctx / CAPACITY * 100);
+const over = s => tier(s) === 'warn' || tier(s) === 'crit';
+const word = s => s.state === 'attn' ? 'Needs input' : s.state === 'fail' ? 'Stopped' : null;
+const dotClass = s => s.access === 'external' ? 'hollow' : s.state;
+const sep = `<span class="dotsep">·</span>`;
+const ARCHIVE = id => `<div class="row-action"><button class="archive" aria-label="Archive Session"
+  onclick="event.stopPropagation();archive('${id}')">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+    <rect x="2" y="2.6" width="12" height="3.2" rx="1"/>
+    <path d="M3.2 5.8v6a1.4 1.4 0 0 0 1.4 1.4h6.8a1.4 1.4 0 0 0 1.4-1.4v-6"/>
+    <path d="M6.4 8.6h3.2"/></svg></button></div>`;
+
+/* branch + worktree marker + dirty/unpushed (sharedCount and headSha are inspection-only).
+   Drawn, not spelled: `•3 ↑1` needs a key, a pencil and an up-arrow do not. */
+const SVG = {
+  branch: `<path d="M4.5 5.3v5.4"/><circle cx="4.5" cy="3.6" r="1.7"/><circle cx="4.5" cy="12.4" r="1.7"/>
+           <circle cx="11.5" cy="3.6" r="1.7"/><path d="M11.5 5.3v1.4a2.4 2.4 0 0 1-2.4 2.4H6.2"/>`,
+  worktree: `<rect x="5.4" y="5.4" width="8.2" height="8.2" rx="1.4"/><path d="M10.6 2.4H3.8a1.4 1.4 0 0 0-1.4 1.4v6.8"/>`,
+  /* The Project is a folder, as the app draws it — not the worktree's stacked squares. */
+  folder: `<path d="M1.9 4.6a1.4 1.4 0 0 1 1.4-1.4h2.4l1.5 1.7h5.5a1.4 1.4 0 0 1 1.4 1.4v5.7a1.4 1.4 0 0 1-1.4 1.4H3.3a1.4 1.4 0 0 1-1.4-1.4z"/>`,
+  pencil: `<path d="M11.2 2.6 13.4 4.8 5.6 12.6 2.6 13.4l.8-3z"/>`,
+  push: `<path d="M8 13V4"/><path d="M4.4 7.6 8 4l3.6 3.6"/><path d="M4 2.6h8"/>`,
+};
+const glyph = (d, cls = '') => `<svg class="g ${cls}" viewBox="0 0 16 16" fill="none"
+  stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+const git = s => `
+  <span class="gitline">
+    ${glyph(s.worktree ? SVG.worktree : SVG.branch)}<span>${s.branch}</span>
+    ${s.dirty ? `<span class="mark" title="${s.dirty} uncommitted file${s.dirty > 1 ? 's' : ''}">${glyph(SVG.pencil)}${s.dirty}</span>` : ''}
+    ${s.unpushed ? `<span class="mark" title="${s.unpushed} commit${s.unpushed > 1 ? 's' : ''} not pushed">${glyph(SVG.push)}${s.unpushed}</span>` : ''}
+  </span>`;
+/* managed is the default posture and takes no badge; the other two are each named */
+function access(s, chip) {
+  const cls = chip ? 'chip' : 'fact';
+  if (s.access === 'external') return `<span class="${cls} dim">read-only</span>`;
+  if (s.access === 'orphaned') return `<span class="${cls} warn">orphaned</span>`;
+  return '';
+}
+const ctxWord = s => s.ctx == null ? 'unknown' : `${k(s.ctx)} / ${k(CAPACITY)}`;
+/* Absent subagent spend is reported as absent — never as a zero it would be read as. */
+/* An unreported subagent split simply does not appear — a line that says so is noise on
+   every session, since no CLI here attributes it. */
+/* Real issue titles, so the link's tooltip says what the number is. */
+const TICKETS = {
+  '#400': 'Build the Sessions deck header',
+  '#373': 'Migrate the cockpit to SwiftUI',
+  '#476': 'Anchor the feed on its newest line',
+  '#489': 'Draw the deck’s floating controls in glass',
+  '#377': 'Native Session roster in Swift',
+  '#375': 'Graphite and Ion Blue across the shell',
+};
+const ticketTip = s => s.ticket ? `${s.ticket} — ${TICKETS[s.ticket] ?? ''}` : '';
+
+/* The button carries its own reason in two words. The full sentence lives in the tooltip,
+   because the band has room for a control, not for a paragraph. Managed only: a session
+   Argo cannot type into has nothing to hand off with. */
+const handoff = s => !over(s) || s.access !== 'managed' ? '' : `
+  <button class="handoff ${tier(s)}"
+    title="Runs /handoff in this session, then opens a fresh one on the same branch and issue.">
+    <span>Hand off</span>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M13.5 11.5h-7a3 3 0 0 1 0-6H10"/><path d="M8 3.2 10.5 5.5 8 7.8"/></svg>
+  </button>`;
+
+const INFO = `<button class="info" aria-label="About the context budget" onclick="toggleInspect(event)">
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+    <circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4"/><path d="M8 4.8v.5"/></svg></button>`;
+
+/* Everything countable, in the one place D31 puts it. The band above carries no accounting. */
+let inspectOpen = new URLSearchParams(location.search).get('i') === '1';
+function toggleInspect(e) { e.stopPropagation(); inspectOpen = !inspectOpen; render(); }
+/* Explanation only. The reading itself is two inches up and to the left; repeating it here
+   would be the same fact twice, and usage and duration are glanced at, not looked up. */
+const inspect = () => `
+  <div class="inspect ${inspectOpen ? 'open' : ''}" onclick="event.stopPropagation()">
+    <div class="legend">
+      <div><b class="fact warn">past ${k(WARN)}</b><span>handing off is worth doing</span></div>
+      <div><b class="fact crit">past ${k(CRIT)}</b><span>handing off is overdue</span></div>
+    </div>
+    <p>A long context makes an agent slower and less accurate. <b>Hand off</b> runs
+       <code>/handoff</code> here, then opens a fresh session on the same branch and issue.</p>
+  </div>`;
+
+/* `ran` is wall-clock from the transcript's first record to its last. It is NOT time an
+   agent spent working — this session ran 5h 51m and worked 1h 13m, the rest being the user
+   away from the keyboard. Both are shown, because either alone is misread as the other. */
+const spend = s => [
+  s.total == null ? null : `${k(s.total)} tokens used`,
+  s.sub == null ? null : `${k(s.sub)} subagents`,
+  s.ran == null ? null : `started ${s.ran} ago`,
+  s.worked == null ? null : `worked ${s.worked}`,
+].filter(Boolean).join(' · ');
+const TICK_WARN = (WARN / CAPACITY * 100) + '%';
+const TICK_CRIT = (CRIT / CAPACITY * 100) + '%';
+
+/* ============ ROSTER VARIANTS ============ */
+const roster = {
+  /* A — two lines. Identity above, the branch and its age below. */
+  A: s => `
+    <div class="flex g8">
+      <span class="dot ${dotClass(s)}"></span>
+      <span class="title grow">${s.title}</span>
+      ${word(s) ? `<span class="badge ${s.state === 'fail' ? 'fail' : ''}">${word(s)}</span>` : ''}
+    </div>
+    <div class="flex g8" style="padding-left:14px">
+      <span class="meta grow">${s.branch}</span>
+      ${s.state !== 'running' && s.seen ? `<span class="time">${s.seen} ago</span>` : ''}
+    </div>`,
+
+  /* B — one dense line, age in a fixed right column so the times align down the list. */
+  B: s => `
+    <div class="flex g8">
+      <span class="dot ${dotClass(s)}"></span>
+      <span class="title grow">${s.title}</span>
+      ${word(s) ? `<span class="badge ${s.state === 'fail' ? 'fail' : ''}">${word(s)}</span>` : ''}
+      <span class="time" style="width:72px;text-align:right">${s.state === 'running' ? '' : (s.seen ? s.seen + ' ago' : '')}</span>
+    </div>`,
+
+  /* C — branch-first. You switch to a branch; the title is its gloss. */
+  C: s => `
+    <div class="flex g8">
+      <span class="dot ${dotClass(s)}"></span>
+      <span class="meta grow" style="color:var(--text-1)">${s.branch}</span>
+      ${word(s) ? `<span class="badge ${s.state === 'fail' ? 'fail' : ''}">${word(s)}</span>` : ''}
+    </div>
+    <div class="flex g8" style="padding-left:14px">
+      <span class="title grow" style="color:var(--text-3);font-weight:400">${s.title}</span>
+      ${s.state !== 'running' && s.seen ? `<span class="time">${s.seen} ago</span>` : ''}
+    </div>`,
+};
+
+/* ============ HEADER VARIANTS ============ */
+/* All three respect ArgoLayout: a 56pt band, then the 40pt tab slot. */
+const header = {
+  /* A — serif title left, one quiet right-aligned fact strip, context as a budget bar in it. */
+  A: s => `
+    <div class="band">
+      <div class="col g2 grow">
+        <span class="h-title">${s.title}</span>
+        <div class="factline">
+          <span class="fact mono dim">${git(s)}</span> ${sep}
+          <span class="fact dim">${s.cli} · ${s.model}</span>
+          ${s.ticket ? `${sep}<span class="fact link" title="${ticketTip(s)}">Issue ${s.ticket} ↗</span>` : ''}
+          ${access(s, false) ? `${sep}${access(s, false)}` : ''}
+        </div>
+      </div>
+      <div class="col g4" style="width:200px;flex:none">
+        <div class="flex g6" style="justify-content:space-between">
+          <span class="flex g4">
+            <span class="fact dim" style="font-size:10.5px;letter-spacing:.4px;text-transform:uppercase">Context</span>
+            ${INFO}
+          </span>
+          <span class="fact mono ${tier(s) ?? ''}">${ctxWord(s)}</span>
+        </div>
+        <div class="bar ${tier(s) ?? ''}">
+          ${s.ctx != null ? `<i style="width:${Math.min(100, pct(s))}%"></i><span class="tick" style="left:${TICK_WARN}"></span><span class="tick" style="left:${TICK_CRIT}"></span>` : ''}
+        </div>
+      </div>
+      ${handoff(s)}
+    </div>
+    <div class="tabslot">
+      <span class="tab on">Activity</span><span class="tab">Delivery</span>
+      <span class="grow"></span>
+      <span class="fact dim mono" style="padding-bottom:var(--s-base)">${spend(s)}</span>
+    </div>${inspect()}`,
+
+  /* B — context medallion left, as the approved study draws it; facts as chips beside the title. */
+  B: s => `
+    <div class="band">
+      <div class="medallion ${s.ctx == null ? 'unk' : tier(s)}" style="--p:${Math.min(100, pct(s) || 0)}">
+        <div>${s.ctx == null ? `<small>unknown</small>` : `<b>${pct(s)}%</b>`}</div>
+      </div>
+      <div class="col g2 grow">
+        <span class="h-title">${s.title}</span>
+        <div class="factline">
+          <span class="fact mono ${tier(s) ?? 'dim'}">${ctxWord(s)}</span>${INFO} ${sep}
+          <span class="fact mono dim">${git(s)}</span> ${sep}
+          <span class="fact dim">${s.cli} · ${s.model}</span>
+          ${s.ticket ? `${sep}<span class="fact link" title="${ticketTip(s)}">Issue ${s.ticket} ↗</span>` : ''}
+          ${access(s, false) ? `${sep}${access(s, false)}` : ''}
+        </div>
+      </div>
+      ${handoff(s)}
+    </div>
+    <div class="tabslot">
+      <span class="tab on">Activity</span><span class="tab">Delivery</span>
+      <span class="grow"></span>
+      <span class="fact dim mono" style="padding-bottom:var(--s-base)">${spend(s)}</span>
+    </div>${inspect()}`,
+
+  /* C — the budget is the deck's spine: a full-width rail with the threshold tick standing in it. */
+  C: s => `
+    <div class="spine ${tier(s) ?? ''}">
+      ${s.ctx != null ? `<i style="width:${Math.min(100, pct(s))}%"></i><span class="tick" style="left:${TICK_WARN}"></span><span class="tick" style="left:${TICK_CRIT}"></span>` : ''}
+    </div>
+    <div class="band">
+      <span class="h-title grow">${s.title}</span>
+      <div class="flex g6">
+        <span class="chip ${tier(s) ?? ''}">${ctxWord(s)}</span>${INFO}
+        <span class="chip">${git(s)}</span>
+        <span class="chip dim">${s.cli} · ${s.model}</span>
+        ${s.ticket ? `<span class="chip link" title="${ticketTip(s)}">Issue ${s.ticket} ↗</span>` : ''}
+        ${access(s, true)}
+      </div>
+      ${handoff(s)}
+    </div>
+    <div class="tabslot">
+      <span class="tab on">Activity</span><span class="tab">Delivery</span>
+      <span class="grow"></span>
+      <span class="fact dim mono" style="padding-bottom:var(--s-base)">${spend(s)}</span>
+    </div>${inspect()}`,
+};
+
+const NAMES = { A: 'Fact strip on the tab line', B: 'Context medallion', C: 'Budget spine' };
+
+function current() {
+  const v = (new URLSearchParams(location.search).get('variant') || 'A').toUpperCase();
+  return ['A','B','C'].includes(v) ? v : 'A';
+}
+function render() {
+  const v = current();
+  const s = sessions.find(x => x.id === selected);
+  document.getElementById('roster').innerHTML = sessions.filter(x => !archived.has(x.id)).map(x => `
+    <div class="row ${x.id === selected ? 'sel' : ''} ${x.access === 'external' ? 'ext' : ''}" data-id="${x.id}"
+         onclick="selected='${x.id}';render()" ondblclick="openRename('${x.id}')">
+      ${ARCHIVE(x.id)}
+      <div class="row-body">${roster[v](x)}</div>
+    </div>`).join('');
+  document.getElementById('hdr').innerHTML = header[v](s);
+  document.getElementById('dock').innerHTML = s.access === 'managed'
+    ? `Terminal <span class="dotsep">·</span> live <span class="dotsep">·</span> <span style="font-family:var(--mono)">swift test --filter SessionRoster…</span>`
+    : `Transcript <span class="dotsep">·</span> ${s.access === 'orphaned'
+        ? 'orphaned — the terminal died with Argo, nothing to steer'
+        : 'read-only — external session, no PTY to steer'}`;
+  renderScope();
+  document.getElementById('switch-label').textContent = `${v} — ${NAMES[v]}`;
+}
+function cycle(d) {
+  const ks = ['A','B','C'];
+  history.replaceState(null, '', '?variant=' + ks[(ks.indexOf(current()) + d + ks.length) % ks.length]);
+  render();
+}
+function openRename(id) {
+  const s = sessions.find(x => x.id === id);
+  const input = document.getElementById('rename-input');
+  input.value = s.title;
+  document.getElementById('scrim').classList.add('on');
+  input.focus();
+  input.select();
+}
+function closeRename() { document.getElementById('scrim').classList.remove('on'); }
+
+/* ---------- swipe-left to archive ---------- */
+const archived = new Set();
+const REST = -44;        // where an open row settles: just enough to clear the icon
+const COMMIT = -110;     // past this, the swipe archives without a second click
+let open = null;         // the one row held open — only ever one
+
+function offset(row, dx, settling) {
+  const body = row.querySelector('.row-body');
+  body.classList.toggle('settling', !!settling);
+  body.style.setProperty('--dx', dx + 'px');
+  row.classList.toggle('swiping', dx < -1);
+}
+function closeOpen() {
+  if (!open) return;
+  offset(open.row, 0, true);
+  open = null;
+}
+function archive(id) {
+  archived.add(id);
+  open = null;
+  if (selected === id) selected = sessions.find(s => !archived.has(s.id))?.id ?? null;
+  render();
+  document.getElementById('archived-count').textContent = `Archived (${2 + archived.size})`;
+}
+
+/* Trackpad: a horizontal wheel is a two-finger swipe. Mouse: click-drag does the same,
+   so the gesture is testable without a trackpad. */
+let swipe = null, settleTimer = null;
+document.getElementById('roster').addEventListener('wheel', e => {
+  const row = e.target.closest('.row');
+  if (!row || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+  e.preventDefault();
+  if (open && open.row !== row) closeOpen();
+  const dx = Math.max(-180, Math.min(0, (swipe?.row === row ? swipe.dx : 0) - e.deltaX));
+  swipe = { row, dx };
+  offset(row, dx, false);
+  clearTimeout(settleTimer);
+  settleTimer = setTimeout(() => settle(row, dx), 130);
+}, { passive: false });
+
+function settle(row, dx) {
+  swipe = null;
+  if (dx <= COMMIT) return archive(row.dataset.id);
+  if (dx < REST / 2) { offset(row, REST, true); open = { row }; }
+  else { offset(row, 0, true); open = null; }
+}
+
+let drag = null;
+document.getElementById('roster').addEventListener('pointerdown', e => {
+  const row = e.target.closest('.row');
+  if (!row || e.target.closest('.archive')) return;
+  drag = { row, x0: e.clientX, dx: 0, moved: false };
+});
+addEventListener('pointermove', e => {
+  if (!drag) return;
+  const dx = Math.max(-180, Math.min(0, e.clientX - drag.x0));
+  if (dx < -3) { drag.moved = true; drag.dx = dx; offset(drag.row, dx, false); }
+});
+addEventListener('pointerup', () => {
+  if (!drag) return;
+  if (drag.moved) { if (open && open.row !== drag.row) closeOpen(); settle(drag.row, drag.dx); }
+  drag = null;
+});
+addEventListener('pointerdown', e => {
+  if (open && !e.target.closest('.row')) closeOpen();
+  if (drawerOpen && !e.target.closest('.drawer') && !e.target.closest('.project')) { drawerOpen = false; render(); }
+  if (inspectOpen && !e.target.closest('.inspect') && !e.target.closest('.info')) {
+    inspectOpen = false; render();
+  }
+});
+addEventListener('keydown', e => {
+  if (e.key === 'Escape' && inspectOpen) { inspectOpen = false; render(); }
+});
+
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) || e.target.isContentEditable) {
+    if (e.key === 'Escape') closeRename();
+    return;
+  }
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+});
+render();
+
+/* #swiped opens one row, so the revealed state can be screenshotted without a trackpad. */
+if (location.hash === '#swiped') {
+  const row = document.querySelector('.roster .row:nth-child(2)');
+  offset(row, REST, false);
+  open = { row };
+}
+</script>
+</body>
+</html>
