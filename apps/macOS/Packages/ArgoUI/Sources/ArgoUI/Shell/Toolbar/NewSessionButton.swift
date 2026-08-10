@@ -21,8 +21,12 @@ struct NewSessionButton: View {
             ArgoGlyph(ArgoSymbol.newSession, .control)
                 .foregroundStyle(ink)
                 .toolbarSegment()
-                // A capsule, like every other container on this bar: one mark inside it makes that
-                // a circle, which is the shape the platform gives a lone toolbar verb anyway.
+                // The height of the vessel beside it, not the height of one glyph. A container
+                // that sizes to its content is a smaller container than every other one on the
+                // bar, and two container heights on one bar is the thing a reader sees first.
+                .frame(height: ArgoLayout.toolbarVesselHeight)
+                // A capsule, like every other container here. One mark inside it at that height
+                // makes it near enough a circle, which is what the platform draws for a lone verb.
                 .glassEffect(in: .capsule)
         }
         .buttonStyle(.plain)
