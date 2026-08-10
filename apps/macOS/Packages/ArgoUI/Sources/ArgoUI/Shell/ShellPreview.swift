@@ -1,3 +1,14 @@
+import ArgoEngine
+import Foundation
+
+private extension CockpitPresentation {
+    /// Measured back from whenever the preview is read: a fixed stamp would age into `3y ago`
+    /// on every row.
+    static func minutesAgo(_ minutes: Int) -> Int {
+        Date().epochMs - minutes * 60 * 1000
+    }
+}
+
 public extension CockpitPresentation {
     /// Public so the app target can preview against it. Anything the system accent drives —
     /// the sidebar's selection capsule most of all — renders wrong in a package preview,
@@ -35,6 +46,9 @@ public extension CockpitPresentation {
                 branch: "argo/#376-native-shell",
                 access: .managed,
                 status: .running,
+                // A time it will not draw: the age is suppressed by the status, and a running
+                // Session with none would leave that unrendered.
+                lastSeenAtMs: minutesAgo(0),
                 events: CockpitPresentation.Session.previewTranscript,
             ),
             Session(
@@ -45,6 +59,7 @@ public extension CockpitPresentation {
                 branch: "main",
                 access: .managed,
                 status: .asking,
+                lastSeenAtMs: minutesAgo(4),
             ),
             Session(
                 id: "observed",
@@ -55,6 +70,8 @@ public extension CockpitPresentation {
                 workspaceLocation: "/Users/milad/Developer/cockpit",
                 branch: nil,
                 access: .readOnly,
+                // No time at all — a transcript that stamped nothing. Idle, so the absence is
+                // the record's rather than the status's.
                 status: .unknown,
             ),
             Session(
@@ -65,15 +82,19 @@ public extension CockpitPresentation {
                 branch: "main",
                 access: .managed,
                 status: .idle,
+                lastSeenAtMs: minutesAgo(3 * 60),
             ),
             Session(
                 id: "failed",
                 title: "Repair the failed native build",
                 model: "codex",
                 workspaceLocation: "/Users/milad/Developer/native-shell",
-                branch: "argo/#377-session-roster",
+                // Long AND aged, deliberately: whether a real branch name truncates rather than
+                // pushing the age off the line is the other question only a render settles.
+                branch: "argo/#377-session-roster-and-the-header-above-it",
                 access: .managed,
                 status: .stopped,
+                lastSeenAtMs: minutesAgo(2 * 24 * 60),
             ),
         ],
         checkout: .branch("main"),

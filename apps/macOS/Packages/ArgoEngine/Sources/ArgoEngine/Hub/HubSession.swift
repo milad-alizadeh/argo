@@ -48,7 +48,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// that the file's own last write. `nil` where neither could say — which is why the roster
     /// sorts such a Session last rather than giving it a guessed time, and why liveness reads it
     /// as uncorroborated rather than as recent.
-    var lastSeenAtMs: Int? {
+    public var lastSeenAtMs: Int? {
         lastActivityAtMs ?? recordedAtMs
     }
 

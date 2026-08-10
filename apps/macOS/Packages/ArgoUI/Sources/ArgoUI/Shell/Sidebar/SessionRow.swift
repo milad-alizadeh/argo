@@ -16,17 +16,7 @@ struct SessionRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
             primaryLine
-            // Absent rather than an empty `Text`, which would leave a gap of whatever height
-            // the font happened to give it.
-            if let branch = row.branch {
-                Text(branch)
-                    .argoText(ArgoTypography.rowMeta)
-                    .foregroundStyle(argo.color.text.tertiary)
-                    .lineLimit(1)
-                    // A branch name is addressed from both ends — the ticket at the head and
-                    // the subject at the tail. The middle is the part that repeats.
-                    .truncationMode(.middle)
-            }
+            secondaryLine
         }
         .padding(.vertical, ArgoSpacing.tight)
         .contentShape(.rect)
@@ -45,6 +35,35 @@ struct SessionRow: View {
                 .truncationMode(.tail)
             Spacer(minLength: ArgoSpacing.tight)
             trailingMarks
+        }
+    }
+
+    /// The age takes the row's own right edge, which is the edge the state word above it takes:
+    /// one column down the roster rather than a mark at wherever the text before it ended.
+    ///
+    /// Absent entirely when neither half is there, rather than an empty `Text`, which would
+    /// leave a gap of whatever height the font happened to give it.
+    @ViewBuilder private var secondaryLine: some View {
+        if row.branch != nil || row.age != nil {
+            HStack(spacing: ArgoSpacing.snug) {
+                if let branch = row.branch {
+                    Text(branch)
+                        .argoText(ArgoTypography.rowMeta)
+                        .lineLimit(1)
+                        // A branch name is addressed from both ends — the ticket at the head and
+                        // the subject at the tail. The middle is the part that repeats.
+                        .truncationMode(.middle)
+                }
+                Spacer(minLength: ArgoSpacing.tight)
+                if let age = row.age {
+                    Text(age)
+                        .argoText(ArgoTypography.rowMeta)
+                        .lineLimit(1)
+                        // The gutter is the age's before it is the branch's.
+                        .layoutPriority(1)
+                }
+            }
+            .foregroundStyle(argo.color.text.tertiary)
         }
     }
 
@@ -86,6 +105,7 @@ struct SessionRow: View {
             row.stateWord,
             row.isReadOnly ? "Read-only Session" : nil,
             row.branch.map { "on \($0)" },
+            row.age.map { "last active \($0)" },
         ]
         .compactMap(\.self)
         .joined(separator: ", ")

@@ -61,6 +61,11 @@ public struct CockpitPresentation: Equatable, Sendable {
         public let branch: String?
         public let access: Access
         public let status: SessionStatus
+        /// When this Session was last seen to run, in milliseconds since the epoch. The Hub's own
+        /// sort key rather than a second reading of it, so the roster's order and what the roster
+        /// says about that order cannot disagree. Absent where neither the records nor the file
+        /// behind them could say — which is a gap, never a moment to stand in for one.
+        public let lastSeenAtMs: Int?
         /// Everything the Session's transcript said, in order — the feed's whole input.
         ///
         /// The engine's own events rather than a second shape named for the shell: the surface
@@ -77,6 +82,7 @@ public struct CockpitPresentation: Equatable, Sendable {
             branch: String?,
             access: Access,
             status: SessionStatus,
+            lastSeenAtMs: Int? = nil,
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -86,6 +92,7 @@ public struct CockpitPresentation: Equatable, Sendable {
             self.branch = branch
             self.access = access
             self.status = status
+            self.lastSeenAtMs = lastSeenAtMs
             self.events = events
         }
     }
