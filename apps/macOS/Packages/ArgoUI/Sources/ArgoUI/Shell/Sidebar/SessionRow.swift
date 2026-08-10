@@ -16,16 +16,15 @@ struct SessionRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
             primaryLine
-            // No branch, no line — not an empty `Text`, which would leave a gap of whatever
-            // height the font happened to give it. A Session that has not branched draws a
-            // one-line row, which is a shape, rather than a two-line row with a hole in it.
+            // Absent rather than an empty `Text`, which would leave a gap of whatever height
+            // the font happened to give it.
             if let branch = row.branch {
                 Text(branch)
                     .argoText(ArgoTypography.rowMeta)
                     .foregroundStyle(argo.color.text.tertiary)
                     .lineLimit(1)
-                    // A branch name is addressed from its end — `argo/#505-…` is the prefix
-                    // every row here shares, and the ticket is what tells them apart.
+                    // A branch name is addressed from both ends — the ticket at the head and
+                    // the subject at the tail. The middle is the part that repeats.
                     .truncationMode(.middle)
             }
         }

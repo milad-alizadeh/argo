@@ -59,8 +59,9 @@ public struct FoundationSpecimen: View {
                 Button("Checkout…") {}
                 Button("Fetch") {}
             } label: {
-                // A toolbar control has to say something; the roster's own answer to a
-                // branchless Session is to draw no line at all, which a menu label cannot do.
+                // The word `GitVessel` degrades an unnameable checkout to, because this menu
+                // stands in for that vessel. The roster's own answer — draw no line at all —
+                // is not open to a control that has to be labelled something.
                 Label(selected.branch ?? "unknown", systemImage: "arrow.trianglehead.branch")
                     .labelStyle(.titleAndIcon)
             }
