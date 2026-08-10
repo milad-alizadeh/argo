@@ -70,6 +70,12 @@ public struct SpecimenScreen: View {
             // Argo lost the terminal" against "this was never yours". Its own case because the
             // two are only judgeable as a PAIR, and a pair is two PNGs.
             SessionHeaderSpecimen(access: .orphaned)
+        case .longBranchSessionHeader:
+            // A real branch name that the line cannot hold, rendered narrow as well as wide with
+            // `ARGO_WINDOW_SIZE` — which is what makes the floor a render somebody else can
+            // repeat rather than a window dragged by hand. What it settles is which fact gives
+            // way: the branch is cut, and the marks, the model and the issue after it survive.
+            SessionHeaderSpecimen(header: SessionHeaderFixture.longBranch)
         case .feed:
             // The deck at rest with a Session read into it, drawn through the same projection the
             // shell uses. A specimen holding rows of its own would be evidence about a feed

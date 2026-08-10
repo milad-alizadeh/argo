@@ -25,7 +25,7 @@ struct RecordDirectoryFixture {
     }
 
     var store: TranscriptRecordStore {
-        TranscriptRecordStore(rootURL: rootURL)
+        TranscriptRecordStore(rootURL: rootURL, cli: .claude)
     }
 
     /// A path under the fixture root, for a Project or a working directory the test names.

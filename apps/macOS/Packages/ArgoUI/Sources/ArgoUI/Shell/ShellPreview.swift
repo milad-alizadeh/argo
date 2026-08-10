@@ -44,9 +44,15 @@ public extension CockpitPresentation {
                     + "with a deliberately long title",
                 model: "claude-opus-5",
                 workspaceLocation: "/Users/milad/Developer/argo",
-                branch: "argo/#376-native-shell",
                 access: .managed,
                 status: .running,
+                cli: .claude,
+                workspace: .init(
+                    kind: .worktree,
+                    branch: "argo/#376-native-shell",
+                    dirty: 3,
+                    unpushed: 1,
+                ),
                 // A time it will not draw: the age is suppressed by the status, and a running
                 // Session with none would leave that unrendered.
                 lastSeenAtMs: minutesAgo(0),
@@ -57,9 +63,10 @@ public extension CockpitPresentation {
                 title: "Port the session engine core to Swift",
                 model: "codex",
                 workspaceLocation: "/Users/milad/Experiments/argo",
-                branch: "main",
                 access: .managed,
                 status: .asking,
+                cli: .claude,
+                workspace: .init(kind: .main, branch: "main"),
                 lastSeenAtMs: minutesAgo(4),
             ),
             Session(
@@ -70,7 +77,6 @@ public extension CockpitPresentation {
                 title: "Review an externally launched Session nobody here started",
                 model: nil,
                 workspaceLocation: "/Users/milad/Developer/cockpit",
-                branch: nil,
                 access: .external,
                 // No time at all — a transcript that stamped nothing. Idle, so the absence is
                 // the record's rather than the status's.
@@ -81,9 +87,10 @@ public extension CockpitPresentation {
                 title: "Wait for the next instruction",
                 model: "claude-sonnet-4",
                 workspaceLocation: "/Users/milad/Developer/cockpit",
-                branch: "main",
                 access: .managed,
                 status: .idle,
+                cli: .claude,
+                workspace: .init(kind: .main, branch: "main", dirty: 0, unpushed: 0),
                 lastSeenAtMs: minutesAgo(3 * 60),
             ),
             Session(
@@ -91,11 +98,16 @@ public extension CockpitPresentation {
                 title: "Repair the failed native build",
                 model: "codex",
                 workspaceLocation: "/Users/milad/Developer/native-shell",
-                // Long AND aged, deliberately: whether a real branch name truncates rather than
-                // pushing the age off the line is the other question only a render settles.
-                branch: "argo/#377-session-roster-and-the-header-above-it",
                 access: .managed,
                 status: .stopped,
+                cli: .claude,
+                // Long AND aged, deliberately: whether a real branch name truncates rather than
+                // pushing the age off the line is the other question only a render settles.
+                workspace: .init(
+                    kind: .worktree,
+                    branch: "argo/#377-session-roster-and-the-header-above-it",
+                    dirty: 12,
+                ),
                 lastSeenAtMs: minutesAgo(2 * 24 * 60),
             ),
         ],
@@ -118,9 +130,10 @@ public extension CockpitPresentation {
                 title: "Ship the native Liquid Glass application shell",
                 model: "claude-opus-5",
                 workspaceLocation: "/Users/milad/Developer/argo",
-                branch: "argo/#376-native-shell",
                 access: .managed,
                 status: .running,
+                cli: .claude,
+                workspace: .init(kind: .worktree, branch: "argo/#376-native-shell"),
                 events: CockpitPresentation.Session.longTranscript,
             ),
             Session(
@@ -128,9 +141,10 @@ public extension CockpitPresentation {
                 title: "Port the session engine core to Swift",
                 model: "codex",
                 workspaceLocation: "/Users/milad/Experiments/argo",
-                branch: "main",
                 access: .managed,
                 status: .idle,
+                cli: .claude,
+                workspace: .init(kind: .main, branch: "main"),
                 events: CockpitPresentation.Session.longTranscript,
             ),
         ],

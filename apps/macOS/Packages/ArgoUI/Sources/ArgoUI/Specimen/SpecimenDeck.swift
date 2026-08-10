@@ -34,7 +34,7 @@ struct SpecimenDeck: View {
                 Text(session.title)
                     .argoText(ArgoTypography.sessionTitle)
                 Spacer(minLength: ArgoSpacing.loose)
-                if let branch = session.branch {
+                if let branch = session.workspace?.branch {
                     Label(branch, systemImage: "arrow.trianglehead.branch")
                         .argoText(ArgoTypography.machine)
                         .foregroundStyle(argo.color.text.tertiary)

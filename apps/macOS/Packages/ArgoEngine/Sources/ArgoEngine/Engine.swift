@@ -4,15 +4,18 @@ import Foundation
 /// liveness reads.
 public struct Engine: Sendable {
     private let readCheckout: CheckoutRead
+    private let readWorkspace: WorkspaceRead
     private let readLiveness: LivenessRead
 
     /// The `git`- and `ps`-backed reads are the app's adapters; a caller with no repository and no
     /// process table to read supplies its own.
     public init(
         readCheckout: @escaping CheckoutRead = gitCheckoutRead,
+        readWorkspace: @escaping WorkspaceRead = gitWorkspaceRead,
         readLiveness: @escaping LivenessRead = processLivenessRead,
     ) {
         self.readCheckout = readCheckout
+        self.readWorkspace = readWorkspace
         self.readLiveness = readLiveness
     }
 
@@ -63,6 +66,11 @@ public struct Engine: Sendable {
 
     public func checkout(at url: URL) async -> CheckoutProjection {
         await readCheckout(url)
+    }
+
+    /// The git working context of one folder, or nothing where git could not answer for it.
+    public func workspace(at url: URL) async -> WorkspaceProjection? {
+        await readWorkspace(url)
     }
 
     /// The working directories a live CLI is running in, right now.
