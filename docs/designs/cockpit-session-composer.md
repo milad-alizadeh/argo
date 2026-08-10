@@ -13,9 +13,12 @@ Session experience; this replaces it.
 from the study with its switcher hidden. The measurements below are the numbers a ticket must
 carry — prose that omits them cannot be failed for getting them wrong.
 
-One exception, and it is named so nothing downstream reads it as drift: `perm.png` and
-`perm-edit.png` still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**.
-Everything else in those two renders stands; the countdown and the burning line do not.
+Two exceptions, named so nothing downstream reads them as drift. `perm.png` and `perm-edit.png`
+still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**, and they still
+draw the *Always allow Bash here* option on the footer's trailing edge, which **#542 removed and
+#572 will bring back properly**: the grant it made was a set of tool names nobody could see or
+undo, which is the class of thing this prompt exists to prevent. Everything else in those two
+renders stands.
 
 The study itself lives on the throwaway branch `prototype/536-composer`
 (`docs/designs/prototypes/composer-permission-prototype.html`), where every state is reachable
@@ -103,8 +106,13 @@ anything.
    the user's own, the status flips to *Running*. A 1.4s accent wash marks the new row; there is
    no fourth signal.
 4. **A queued follow-up rides above the field**, cancellable, and is sent when the Turn ends.
-5. **`expired` is its own word.** A Permission whose hook went before anyone answered renders
-   `Permission expired — denied, unanswered`; *denied* alone would claim a decision nobody made.
+5. **A prompt whose hook has gone leaves without a word.** Decision 6 moved the timeout a day out,
+   which leaves cancelling the turn as the only way anyone reaches this in practice — and a prompt
+   that vanishes when you cancel the turn it belonged to is the expected answer, not a silence
+   that needs explaining. (Superseded: the earlier reading rendered
+   `Permission expired — denied, unanswered`, on the argument that *denied* alone would claim a
+   decision nobody made. That argument still holds for a real expiry; #573 is where it goes if
+   the timeout ever comes back down.)
 6. **No clock is drawn — the prompt waits for the person.** The `PreToolUse` hook's `timeout` is
    set a day out, so expiry is never the thing that decides: nobody watches the cockpit for the
    whole of an agent's run, and a countdown on an unwatched surface only asks to be beaten. The

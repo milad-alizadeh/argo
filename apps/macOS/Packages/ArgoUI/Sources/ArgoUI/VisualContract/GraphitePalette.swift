@@ -15,6 +15,9 @@ public extension ArgoPalette {
             overlay: ArgoColor(hex: 0x2E3136),
             glassTint: ArgoColor(hex: 0xFFFFFF, opacity: 0.06),
             hover: ArgoColor(hex: 0xFFFFFF, opacity: 0.045),
+            // Resolves to #3B3E44 on the composer vessel — the study's Deny pill, sampled from
+            // `docs/designs/composer/perm.png` rather than chosen.
+            control: ArgoColor(hex: 0xFFFFFF, opacity: 0.06),
             // Resolves to #2B2D31 over `base` — the study's selected row. The app's
             // `AccentColor` asset must carry the same value: the native sidebar capsule
             // reads that, never this.

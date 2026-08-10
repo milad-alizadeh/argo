@@ -43,7 +43,6 @@ struct PermissionPromptProjectionTests {
         #expect(prompt.toolName == "Bash")
         #expect(prompt.subject == "wants to run a command in this Workspace")
         #expect(prompt.target == .command("rm -rf build"))
-        #expect(prompt.alwaysAllowLabel == "Always allow Bash here")
     }
 
     @Test

@@ -25,7 +25,6 @@ final class PermissionChannel {
     private let onChange: (SessionOwnership.ClaimID, [PermissionRequest]) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
-    private var alwaysAllowed: [SessionOwnership.ClaimID: Set<String>] = [:]
     private var issued = 0
 
     init(
@@ -60,7 +59,6 @@ final class PermissionChannel {
     /// The PTY is gone, so nothing can be waiting and nothing more can ask.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         sockets.removeValue(forKey: claim)?.close()
-        alwaysAllowed.removeValue(forKey: claim)
         guard pending.removeValue(forKey: claim) != nil else { return }
         onChange(claim, [])
     }
@@ -88,9 +86,6 @@ final class PermissionChannel {
         else { return false }
         let answered = waiting.remove(at: index)
         pending[claim] = waiting
-        if decision == .allowAlways {
-            alwaysAllowed[claim, default: []].insert(answered.request.toolName)
-        }
         answered.reply(Self.decisionLine(decision))
         onChange(claim, waiting.map(\.request))
         return true
@@ -108,9 +103,6 @@ final class PermissionChannel {
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
             return reply(Self.decisionLine(.deny))
         }
-        guard alwaysAllowed[claim, default: []].contains(request.toolName) == false else {
-            return reply(Self.decisionLine(.allow))
-        }
         pending[claim, default: []].append(Pending(request: request, peer: peer, reply: reply))
         onChange(claim, pending[claim, default: []].map(\.request))
     }
@@ -125,8 +117,7 @@ final class PermissionChannel {
         onChange(claim, remaining.map(\.request))
     }
 
-    /// The hook's whole reply vocabulary. `allowAlways` travels as a plain allow — the standing
-    /// half of it is this end's to remember, not the CLI's.
+    /// The hook's whole reply vocabulary — the two words it has, and no third.
     private static func decisionLine(_ decision: PermissionDecision) -> String {
         let word = decision == .deny ? "deny" : "allow"
         let reason = decision == .deny ? "Denied in Argo" : "Allowed in Argo"

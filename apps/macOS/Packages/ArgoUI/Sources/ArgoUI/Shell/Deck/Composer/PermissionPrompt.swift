@@ -22,13 +22,18 @@ struct PermissionPrompt: View {
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(argo.color.text.tertiary)
             }
-            PermissionPromptFooter(alwaysAllowLabel: prompt.alwaysAllowLabel, decide: decide)
+            PermissionPromptFooter(decide: decide)
         }
         .padding(.top, ArgoSpacing.comfortable)
         .padding(.leading, ArgoSpacing.loose)
         .padding(.trailing, ArgoSpacing.base)
         .padding(.bottom, ArgoSpacing.base)
-        .argoFloatingGlass(in: RoundedRectangle(cornerRadius: ArgoRadius.popover))
+        // The rim is the state, on all four edges: this vessel is here because the agent stopped,
+        // and a prompt that reads as the composer at rest is one a reader scrolls past.
+        .argoFloatingGlass(
+            in: RoundedRectangle(cornerRadius: ArgoRadius.popover),
+            rim: argo.color.state.rim(argo.color.state.attention),
+        )
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Permission: \(prompt.toolName) \(prompt.subject)")
     }
@@ -41,42 +46,6 @@ struct PermissionPrompt: View {
             Text(prompt.subject)
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(argo.color.text.secondary)
-        }
-    }
-}
-
-/// Allow focused, `⏎` allows, `esc` denies — and the quieter third option on the trailing edge,
-/// mapping to the standing baseline so a blessed tool pays no further round trip.
-private struct PermissionPromptFooter: View {
-    @Environment(\.argo) private var argo
-
-    let alwaysAllowLabel: String
-    let decide: (PermissionDecision) -> Void
-
-    var body: some View {
-        HStack(spacing: ArgoSpacing.base) {
-            Button { decide(.allow) } label: { hinted("Allow", key: "⏎") }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-            Button { decide(.deny) } label: { hinted("Deny", key: "esc") }
-                .buttonStyle(.bordered)
-                .tint(argo.color.state.failure.color)
-                .keyboardShortcut(.cancelAction)
-            Spacer()
-            Button(alwaysAllowLabel) { decide(.allowAlways) }
-                .buttonStyle(.borderless)
-                .foregroundStyle(argo.color.text.secondary)
-        }
-        .controlSize(.small)
-        .argoText(ArgoTypography.control)
-    }
-
-    private func hinted(_ verb: String, key: String) -> some View {
-        HStack(spacing: ArgoSpacing.tight) {
-            Text(verb)
-            Text(key)
-                .argoText(ArgoTypography.machineCaption)
-                .opacity(ArgoOpacity.ghosted)
         }
     }
 }

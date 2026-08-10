@@ -327,7 +327,7 @@ public struct SpecimenScreen: View {
                 .argoWithoutTransparency()
         case .permission:
             // A gated command holding the composer's slot: the tool and its target verbatim, the
-            // fuse burning, Allow focused — the state the whole channel exists to raise.
+            // amber rim, Allow focused — the state the whole channel exists to raise.
             sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
         case .permissionEdit:
             // The other tool kind the prompt renders: a path and the hunk it would write, with

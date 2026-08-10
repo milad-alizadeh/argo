@@ -21,8 +21,6 @@ enum PermissionPromptProjection {
         /// The quiet line under the target: the Workspace a command runs in, or an edit's
         /// `+1 −1 · 1 hunk`. Absent where neither fact exists.
         let caption: String?
-        /// `Always allow Bash here` — the quieter third option, mapping to the standing baseline.
-        let alwaysAllowLabel: String
     }
 
     /// A prompt only while the Session is blocked on one. The composer's slot is singular: the
@@ -37,7 +35,6 @@ enum PermissionPromptProjection {
             subject: subject(of: permission.target),
             target: permission.target,
             caption: caption(of: permission.target, in: session),
-            alwaysAllowLabel: "Always allow \(permission.toolName) here",
         )
     }
 

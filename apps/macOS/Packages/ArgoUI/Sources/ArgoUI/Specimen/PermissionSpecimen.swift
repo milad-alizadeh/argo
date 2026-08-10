@@ -38,7 +38,6 @@ enum PermissionSpecimen {
             subject: subject,
             target: target,
             caption: caption,
-            alwaysAllowLabel: "Always allow \(toolName) here",
         )
     }
 }

@@ -19,12 +19,17 @@ struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
     @Environment(\.argoSuppressesTransparency) private var isSuppressed
 
     let vessel: Vessel
+    /// The state the surface is present BECAUSE of, when it is one worth wearing on the edge — the
+    /// amber a Permission vessel takes. A parameter and not a second modifier at the call site, so
+    /// the flat fallback swaps its neutral edge for this one instead of stacking two strokes on
+    /// one boundary.
+    let rim: ArgoColor?
 
     func body(content: Content) -> some View {
         if isFlat {
             content
                 .background(argo.color.surface.overlay, in: vessel)
-                .overlay { vessel.strokeBorder(edge, lineWidth: ArgoStroke.border) }
+                .overlay { vessel.strokeBorder(rim ?? edge, lineWidth: ArgoStroke.border) }
                 // Without a rim, the shadow is the only thing left saying the surface is above the
                 // plane rather than drawn on it.
                 .argoShadow(.popover)
@@ -33,6 +38,7 @@ struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
             // shadow under it would stack two of them on one surface.
             content
                 .glassEffect(.regular.tint(argo.color.surface.glassTint.color), in: vessel)
+                .overlay { rim.map { vessel.strokeBorder($0, lineWidth: ArgoStroke.border) } }
                 .argoShadow(.vessel)
         }
     }
@@ -58,8 +64,8 @@ extension EnvironmentValues {
 
 extension View {
     /// Draws this surface as a transient float over the deck — see `ArgoFloatingGlass`.
-    func argoFloatingGlass(in vessel: some InsettableShape) -> some View {
-        modifier(ArgoFloatingGlass(vessel: vessel))
+    func argoFloatingGlass(in vessel: some InsettableShape, rim: ArgoColor? = nil) -> some View {
+        modifier(ArgoFloatingGlass(vessel: vessel, rim: rim))
     }
 
     /// Renders everything below as it is drawn for a reader who asked for no transparency.

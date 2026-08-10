@@ -8,15 +8,30 @@ struct PermissionPromptTarget: View {
 
     let target: PermissionRequest.Target
 
+    @State private var contentHeight: CGFloat?
+
     var body: some View {
         ScrollView {
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(ArgoSpacing.base)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                    contentHeight = $0
+                }
         }
-        .frame(maxHeight: ArgoComposerVessel.targetCeiling)
+        .frame(height: drawnHeight)
         .background(argo.color.surface.sunken)
         .clipShape(RoundedRectangle(cornerRadius: ArgoRadius.control))
+    }
+
+    /// As tall as what is in it, and no taller than the ceiling.
+    ///
+    /// A `ScrollView` accepts whatever height it is proposed, so `maxHeight` on one is a FIXED
+    /// height: a one-line command drew the full ceiling with three quarters of it dead black. The
+    /// ceiling has to be spelled as the height itself, which means measuring the content — nil
+    /// until the first pass, where the scroller's own ideal height stands in.
+    private var drawnHeight: CGFloat? {
+        contentHeight.map { min($0, ArgoComposerVessel.targetCeiling) }
     }
 
     @ViewBuilder private var content: some View {
@@ -43,8 +58,14 @@ struct PermissionPromptTarget: View {
     }
 }
 
-/// One hunk of what an edit would write, each line under its own side's ink. The `−`/`+` markers
-/// are drawn here, once — the domain keeps them off the text so no consumer strips them back off.
+/// One hunk of what an edit would write, in one neutral ink with the `−`/`+` markers telling the
+/// sides apart.
+///
+/// The markers are drawn here, once — the domain keeps them off the text so no consumer strips
+/// them back off. The ink stays neutral because this block is the VERBATIM target of a decision:
+/// what the reader is being asked to weigh is the whole of it, and a line washed green while its
+/// neighbour is washed red spends the feed's diff inks on saying what two characters already say.
+/// The diffstat under the block is where a side gets a colour.
 private struct PermissionPromptHunk: View {
     @Environment(\.argo) private var argo
 
@@ -55,7 +76,7 @@ private struct PermissionPromptHunk: View {
             ForEach(Array(lines.enumerated()), id: \.offset) { line in
                 Text(marker(for: line.element.side) + line.element.text)
                     .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(ink(for: line.element.side))
+                    .foregroundStyle(argo.color.text.primary)
                     .textSelection(.enabled)
             }
         }
@@ -66,14 +87,6 @@ private struct PermissionPromptHunk: View {
         case .add: "+  "
         case .del: "−  "
         case .context: "   "
-        }
-    }
-
-    private func ink(for side: DiffLineSide) -> ArgoColor {
-        switch side {
-        case .add: argo.color.diff.added
-        case .del: argo.color.diff.removed
-        case .context: argo.color.text.secondary
         }
     }
 }

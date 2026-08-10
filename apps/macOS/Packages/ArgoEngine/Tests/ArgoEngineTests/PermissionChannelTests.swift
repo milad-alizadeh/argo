@@ -87,21 +87,22 @@ struct PermissionChannelTests {
     }
 
     @Test
-    func `always allow answers the next call for that tool with no prompt at all`() async throws {
+    func `answering one call does not answer the next one for the same tool`() async throws {
         try await withGate { fixture, claim, client in
             client.sendLine(Self.bashCall)
             await settle { fixture.hub.sessions.first?.permission != nil }
             let waiting = try #require(fixture.hub.sessions.first?.permission)
-            try fixture.hub.driver.decide(.allowAlways, answering: waiting.id, for: claim.value)
+            try fixture.hub.driver.decide(.allow, answering: waiting.id, for: claim.value)
             _ = try await Self.decision(read: client)
 
+            // An allow is spent on the call it was given for. Nothing here remembers a tool as
+            // blessed (#572), so the same command asked again is asked again.
             let second = try #require(CompanionClient(socketPath: Self.gatePath(fixture, claim)))
             defer { second.close() }
             second.sendLine(Self.bashCall)
-            let decision = try await Self.decision(read: second)
+            await settle { fixture.hub.sessions.first?.permission != nil }
 
-            #expect(decision.stringField("permissionDecision") == "allow")
-            #expect(fixture.hub.sessions.first?.permission == nil)
+            #expect(fixture.hub.sessions.first?.permission != nil)
         }
     }
 
