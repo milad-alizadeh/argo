@@ -18,6 +18,7 @@ import {
   restoreOwnedSkills,
   snapshotOwnedSkills,
 } from './protect-owned-skills.mjs'
+import { contradictoryNames, describeRetired, retireSkills } from './retire-skills.mjs'
 import { groupBySource, LOCK_PATH } from './skills-lock.mjs'
 
 const STARTER_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -135,6 +136,14 @@ try {
 }
 if (!manifest.skills) fail(`${LOCK_PATH} has no "skills" map — it is not a skills lock.`)
 
+const retired = manifest.retired ?? []
+const contradictory = contradictoryNames(manifest)
+if (contradictory.length) {
+  fail(
+    `${LOCK_PATH} lists these as both installed and retired: ${contradictory.join(', ')}\n  Remove them from one list.`,
+  )
+}
+
 const selection = parseSelection(argv)
 const bySource = groupBySource(manifest, selectedNames(manifest, selection))
 const total = [...bySource.values()].reduce((count, names) => count + names.length, 0)
@@ -159,6 +168,14 @@ for (const [source, names] of bySource) {
 
 const restored = restoreOwnedSkills(projectRoot, ownedSkills)
 if (restored.length) console.log(describeRestore(restored))
+
+// After the adds, so a source that still ships a retired name cannot leave it behind.
+const retirement = describeRetired(
+  retireSkills(projectRoot, retired, dryRun),
+  retired.length,
+  dryRun,
+)
+if (retirement) console.log(retirement)
 
 if (wantHooks) {
   try {

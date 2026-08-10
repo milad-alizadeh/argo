@@ -16,7 +16,9 @@ import { lstatSync, unlinkSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 // Every location `skills add` publishes into for the agents it treats as universal.
-const SKILL_DIRS = ['.claude/skills', '.agents/skills', '.cursor/skills', '.codex/skills']
+// Exported because `scaffold.mjs` retires skills from the same set — two lists would let a
+// skill be protected in one directory and deleted from another.
+export const SKILL_DIRS = ['.claude/skills', '.agents/skills', '.cursor/skills', '.codex/skills']
 
 function git(root, args) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' })

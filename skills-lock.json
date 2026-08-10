@@ -1,5 +1,13 @@
 {
   "version": 1,
+  "retired": [
+    "componentize-design",
+    "design-foundations",
+    "review-componentization",
+    "setup-design-handoff",
+    "setup-visual-verify",
+    "visual-verify"
+  ],
   "skills": {
     "ask-argo": {
       "source": "milad-alizadeh/argo",

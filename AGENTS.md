@@ -131,6 +131,14 @@ The repo-root `skills-lock.json` is the bundle manifest **and** this repo's own 
 `bun run scaffold` (= `npx github:milad-alizadeh/argo`) installs from it with one
 `npx skills add` per source; `--skill a,b` installs a subset.
 
+**Renaming or deleting a skill needs its old name in the lock's `retired` array**, or the old
+copy stays installed and goes on advertising itself — two skills competing for the same prompts,
+the retired one sometimes winning. `skills add` only ever adds, so removing the `skills` entry
+uninstalls nothing. Retirement is an explicit list rather than "whatever the lock no longer
+names" because nothing under a skills directory is git-tracked here, so absence cannot
+distinguish a retired skill from one installed out of band (graphify ships its own). A name in
+both lists fails the install rather than resolving silently.
+
 The set is **deliberate** — a lock has no `"*"` wildcard. Add a skill with
 `npx skills add <source> --skill <name>` and commit the lock; sweep a source with `--skill '*'`
 and review the diff. Nothing appears on its own; the weekly `skills-drift` workflow reports what
