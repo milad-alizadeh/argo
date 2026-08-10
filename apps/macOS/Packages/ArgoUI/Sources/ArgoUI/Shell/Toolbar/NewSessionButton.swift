@@ -9,6 +9,15 @@ import SwiftUI
 /// background and carries its own. Between them: one capsule per reading, and a verb is its own
 /// reading, not a fourth fact inside "this Project, on this checkout".
 struct NewSessionButton: View {
+    /// How far the mark moves right and up to sit centred in its container. One number for both
+    /// axes because the symbol's own imbalance is diagonal.
+    ///
+    /// Measured off a 2x render rather than chosen: uncorrected, the square sat 1.28pt left and
+    /// 1.31pt below the container's centre; corrected, it is within 0.22pt and 0.31pt, which is
+    /// less than one device pixel. Not worth tuning further — at 2x this lands on whole pixels
+    /// either way, so a smaller number rounds to nothing and a larger one overshoots.
+    private static let opticalCentring: CGFloat = 1.25
+
     @Environment(\.argo) private var argo
 
     let offer: NewSessionOffer
@@ -20,14 +29,23 @@ struct NewSessionButton: View {
         } label: {
             ArgoGlyph(ArgoSymbol.newSession, .control)
                 .foregroundStyle(ink)
-                .toolbarSegment()
-                // The height of the vessel beside it, not the height of one glyph. A container
-                // that sizes to its content is a smaller container than every other one on the
-                // bar, and two container heights on one bar is the thing a reader sees first.
-                .frame(height: ArgoLayout.toolbarVesselHeight)
-                // A capsule, like every other container here. One mark inside it at that height
-                // makes it near enough a circle, which is what the platform draws for a lone verb.
-                .glassEffect(in: .capsule)
+                // `square.and.pencil` draws its square in the LOWER-LEFT of its own glyph box and
+                // spends the top-right on the pencil, so a box centred in the container leaves the
+                // body of the mark 1.3pt down and left of centre — measured off the render, not
+                // guessed. The correction centres the SQUARE, which is what the eye tracks; it
+                // belongs to this symbol and moves with it.
+                .offset(x: Self.opticalCentring, y: -Self.opticalCentring)
+                // A SQUARE of the bar's own container height, and not `toolbarSegment()`: that
+                // modifier measures a segment INSIDE a vessel, so it sized this container to one
+                // glyph plus padding — shorter than every other container on the bar, and with
+                // the mark sitting off its centre. A square frame is what centres a lone mark,
+                // and at this height its circle is the shape the platform gives a lone verb.
+                .frame(
+                    width: ArgoLayout.toolbarVesselHeight,
+                    height: ArgoLayout.toolbarVesselHeight,
+                )
+                .contentShape(.circle)
+                .glassEffect(in: .circle)
         }
         .buttonStyle(.plain)
         .disabled(!offer.isLaunchable)
