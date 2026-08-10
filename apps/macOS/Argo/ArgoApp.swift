@@ -98,7 +98,9 @@ struct ArgoApp: App {
             },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
             sendTurn: { id, text in try cockpit.send(text, to: id) },
-            decidePermission: { id, decision in cockpit.decide(decision, for: id) },
+            decidePermission: { id, request, decision in
+                cockpit.decide(decision, answering: request, for: id)
+            },
         )
     }
 }

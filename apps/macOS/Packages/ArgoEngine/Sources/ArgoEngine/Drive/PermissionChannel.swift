@@ -71,11 +71,22 @@ final class PermissionChannel {
         }
     }
 
-    /// Answer the claim's oldest waiting Permission. `false` when none is waiting — a decision
-    /// that raced the hook's own expiry, which the caller reports rather than swallows.
-    func decide(_ decision: PermissionDecision, for claim: SessionOwnership.ClaimID) -> Bool {
-        guard var waiting = pending[claim], !waiting.isEmpty else { return false }
-        let answered = waiting.removeFirst()
+    /// Answer the named waiting Permission. `false` when that request is no longer waiting — a
+    /// decision that raced the hook's own expiry, which the caller reports rather than swallows.
+    ///
+    /// By id and never by position: a Session can have several calls waiting at once, and a prompt
+    /// that was replaced between the reading and the click would otherwise spend the user's Allow
+    /// on the command underneath it.
+    func decide(
+        _ decision: PermissionDecision,
+        answering requestID: String,
+        for claim: SessionOwnership.ClaimID,
+    )
+        -> Bool {
+        guard var waiting = pending[claim],
+              let index = waiting.firstIndex(where: { $0.request.id == requestID })
+        else { return false }
+        let answered = waiting.remove(at: index)
         pending[claim] = waiting
         if decision == .allowAlways {
             alwaysAllowed[claim, default: []].insert(answered.request.toolName)

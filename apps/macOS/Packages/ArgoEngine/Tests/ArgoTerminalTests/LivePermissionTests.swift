@@ -22,7 +22,7 @@ struct LivePermissionTests {
         #expect(Self.command(of: request.target)?
             .contains(live.markerURL.lastPathComponent) == true)
 
-        try live.hub.driver.decide(.allow, for: live.claim.value)
+        try live.hub.driver.decide(.allow, answering: request.id, for: live.claim.value)
         await live.settle(seconds: 120) { live.hasMarkerFile() }
 
         #expect(live.hasMarkerFile())
@@ -35,8 +35,8 @@ struct LivePermissionTests {
         defer { live.end() }
         try live.ask(Self.prompt(touching: live.markerURL.path))
 
-        _ = try #require(await live.pendingPermission())
-        try live.hub.driver.decide(.deny, for: live.claim.value)
+        let request = try #require(await live.pendingPermission())
+        try live.hub.driver.decide(.deny, answering: request.id, for: live.claim.value)
         // A denial is proven by an absence, so the wait IS the assertion: long enough that a call
         // the CLI had gone ahead with would have finished several times over.
         await live.settle(seconds: 30) { live.hasMarkerFile() }

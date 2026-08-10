@@ -26,11 +26,15 @@ struct ClaudeSessionDriver: SessionDriver {
         }
     }
 
-    func decide(_ decision: PermissionDecision, for sessionID: String) throws {
+    func decide(
+        _ decision: PermissionDecision,
+        answering requestID: String,
+        for sessionID: String,
+    ) throws {
         guard let permissions, let claim = ownership.ownerOf(sessionID: sessionID) else {
             throw SessionDriveError.notDrivable
         }
-        guard permissions.decide(decision, for: claim) else {
+        guard permissions.decide(decision, answering: requestID, for: claim) else {
             throw SessionDriveError.nothingPending
         }
     }

@@ -5,8 +5,11 @@ import Foundation
 /// facts are: off the presentation, in a projection a test can hold still.
 enum PermissionPromptProjection {
     struct Prompt: Equatable {
-        /// The handle `decide` is keyed by — the roster's own id for the Session.
+        /// The handles `decide` is keyed by: the roster's own id for the Session, and the request
+        /// itself. Both, because the answer must reach the Permission whose words are on screen —
+        /// a Session with two calls waiting cannot say which one that is.
         let sessionID: String
+        let requestID: String
         /// The CLI's name for the tool, verbatim — never renamed, because the answer authorises
         /// exactly what was asked.
         let toolName: String
@@ -29,6 +32,7 @@ enum PermissionPromptProjection {
         guard let session, let permission = session.permission else { return nil }
         return Prompt(
             sessionID: session.id,
+            requestID: permission.id,
             toolName: permission.toolName,
             subject: subject(of: permission.target),
             target: permission.target,

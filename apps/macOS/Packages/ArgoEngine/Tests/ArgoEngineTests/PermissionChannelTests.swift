@@ -61,7 +61,8 @@ struct PermissionChannelTests {
             client.sendLine(Self.bashCall)
             await settle { fixture.hub.sessions.first?.permission != nil }
 
-            try fixture.hub.driver.decide(.allow, for: claim.value)
+            let waiting = try #require(fixture.hub.sessions.first?.permission)
+            try fixture.hub.driver.decide(.allow, answering: waiting.id, for: claim.value)
             let decision = try await Self.decision(read: client)
 
             #expect(decision.stringField("permissionDecision") == "allow")
@@ -76,7 +77,8 @@ struct PermissionChannelTests {
             client.sendLine(Self.bashCall)
             await settle { fixture.hub.sessions.first?.permission != nil }
 
-            try fixture.hub.driver.decide(.deny, for: claim.value)
+            let waiting = try #require(fixture.hub.sessions.first?.permission)
+            try fixture.hub.driver.decide(.deny, answering: waiting.id, for: claim.value)
             let decision = try await Self.decision(read: client)
 
             #expect(decision.stringField("permissionDecision") == "deny")
@@ -89,7 +91,8 @@ struct PermissionChannelTests {
         try await withGate { fixture, claim, client in
             client.sendLine(Self.bashCall)
             await settle { fixture.hub.sessions.first?.permission != nil }
-            try fixture.hub.driver.decide(.allowAlways, for: claim.value)
+            let waiting = try #require(fixture.hub.sessions.first?.permission)
+            try fixture.hub.driver.decide(.allowAlways, answering: waiting.id, for: claim.value)
             _ = try await Self.decision(read: client)
 
             let second = try #require(CompanionClient(socketPath: Self.gatePath(fixture, claim)))
@@ -134,7 +137,32 @@ struct PermissionChannelTests {
         let claim = try await fixture.hub.spawnSession()
 
         #expect(throws: SessionDriveError.nothingPending) {
-            try fixture.hub.driver.decide(.allow, for: claim.value)
+            try fixture.hub.driver.decide(.allow, answering: "permission-1", for: claim.value)
+        }
+    }
+
+    @Test
+    func `an answer to a Permission that is no longer waiting reaches no other one`() async throws {
+        try await withGate { fixture, claim, client in
+            client.sendLine(Self.bashCall)
+            await settle { fixture.hub.sessions.first?.permission != nil }
+            let displayed = try #require(fixture.hub.sessions.first?.permission)
+
+            // A second call arrives behind the first, then the first's hook goes with its own
+            // turn — the window in which a positional answer would spend the user's Allow on the
+            // newcomer, which is a command they never read.
+            let second = try #require(CompanionClient(socketPath: Self.gatePath(fixture, claim)))
+            defer { second.close() }
+            second.sendLine(Self.bashCall)
+            client.close()
+            await settle {
+                fixture.hub.sessions.first?.permission.map { $0.id != displayed.id } ?? false
+            }
+
+            #expect(throws: SessionDriveError.nothingPending) {
+                try fixture.hub.driver.decide(.allow, answering: displayed.id, for: claim.value)
+            }
+            #expect(fixture.hub.sessions.first?.permission != nil)
         }
     }
 
