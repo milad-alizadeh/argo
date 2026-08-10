@@ -25,21 +25,34 @@ struct ArgoApp: App {
 
     var body: some Scene {
         Window("Argo", id: "cockpit") {
-            if let specimen {
-                SpecimenScreen(specimen: specimen)
-            } else {
-                CockpitView(presentation: cockpit.presentation, actions: actions)
-                    .environment(navigation)
-                    .task {
-                        cockpit.endOwnedSessionsOnQuit()
-                        await cockpit.start()
-                    }
-                    // Every PTY this window owns dies with the window, and the observer above ends
-                    // them on ⌘Q too. An agent Argo started must not outlive the Argo that started
-                    // it: nothing can re-adopt it, so it would be a process nobody is left to steer
-                    // or stop.
-                    .onDisappear { cockpit.endOwnedSessions() }
+            Group {
+                if let specimen {
+                    SpecimenScreen(specimen: specimen)
+                } else {
+                    CockpitView(presentation: cockpit.presentation, actions: actions)
+                        .environment(navigation)
+                        .task {
+                            cockpit.endOwnedSessionsOnQuit()
+                            await cockpit.start()
+                        }
+                        // Every PTY this window owns dies with the window, and the observer above
+                        // ends them on ⌘Q too. An agent Argo started must not outlive the Argo that
+                        // started it: nothing can re-adopt it, so it would be a process nobody is
+                        // left to steer or stop.
+                        .onDisappear { cockpit.endOwnedSessions() }
+                }
             }
+            // The system focus ring, off for the whole window.
+            //
+            // Almost everything focusable in this cockpit is a CONTAINER made focusable to catch a
+            // key — a feed row, the evidence panel, the lightbox — not a control. SwiftUI rings
+            // them all the same, and it rings them on a CLICK, so a pointer user who has expressed
+            // no interest in the keyboard gets a blue rectangle around whatever they last touched.
+            //
+            // It is an environment value, so it reaches the specimens as well: a state rendered for
+            // review has to be the state that ships, and a ring only the real app draws is a
+            // difference no screenshot could report.
+            .focusEffectDisabled()
         }
         .defaultSize(width: 1280, height: 800)
         .windowToolbarStyle(.unified(showsTitle: false))

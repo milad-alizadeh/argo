@@ -34,13 +34,21 @@ struct DeckContentRow: View {
                     )
                 }
                 FeedColumn(feed: feed, showing: showing, selection: selection, held: held)
-                if openEvidence == nil {
+                if !isPanelOpen {
                     DeckSeparator()
+                        .transition(.opacity)
                     DeckSlot(zone: .minimap)
                         .frame(width: ArgoLayout.minimapLaneWidth)
+                        .transition(.opacity)
                 }
                 panel(in: proxy.size.width)
             }
+            // One transaction for the whole re-flow, driven by whether the panel is open and by
+            // nothing else. Three zones move on that one fact — the panel arrives, the rail and the
+            // minimap leave — and animating only the panel would slide it in beside two columns
+            // that had already blinked out of existence. Scoped to the value rather than left
+            // ambient so a feed growing underneath is still laid out instantly.
+            .argoAnimation(.reveal, value: isPanelOpen)
             // Escape is the way out of anything that opened over what you were reading, and the
             // panel is no exception. It answers here rather than on the panel so a reader whose
             // focus is still in the feed — which is where the click that opened it came from —
@@ -61,7 +69,14 @@ struct DeckContentRow: View {
     /// looking at what one call produced is not watching a fan-out, and three columns beside a
     /// fourth leaves none of them a usable width.
     private var showsRail: Bool {
-        openEvidence == nil && agents.contains(where: \.isRunning)
+        !isPanelOpen && agents.contains(where: \.isRunning)
+    }
+
+    /// The one fact the deck's whole re-flow turns on. A `Bool` rather than the evidence itself,
+    /// because the evidence is re-read out of a live feed every time the transcript grows — an
+    /// animation keyed to it would re-run the whole re-flow whenever the open call's output did.
+    private var isPanelOpen: Bool {
+        openEvidence != nil
     }
 
     /// Read once and asked twice — whether the rail is there at all, and what is in it. Two reads
@@ -85,19 +100,31 @@ struct DeckContentRow: View {
         }
     }
 
+    /// The panel and the edge that sizes it, as ONE thing that arrives.
+    ///
+    /// They are stacked here rather than left as siblings of the deck's own row because of what
+    /// `.move` measures: it travels a view by its OWN width, and the seam is a hairline — a
+    /// transition it carries alone moves it about a point and reads as a line fading up in the
+    /// middle of the feed. Stacked, the pair travels the panel's width, and the seam arrives as
+    /// what it is: that column's leading edge.
+    ///
+    /// In from the edge it lives on, the way a trailing inspector does. The slot opens in the same
+    /// transaction, so the feed narrows as it comes rather than after it lands.
     @ViewBuilder private func panel(in deck: CGFloat) -> some View {
         if let evidence = openEvidence {
-            DeckSeam(
-                width: panelBinding(in: deck),
-                limits: ArgoLayout.evidencePanelLimits(in: deck),
-                growsRightward: false,
-                isDragging: { isResizing = $0 },
-            )
-            EvidencePanel(evidence: evidence, dismiss: selection.close)
-                .frame(width: panelBinding(in: deck).wrappedValue)
-                .focusable()
-                .focused(selection.focus, equals: .panel)
-                .transition(.identity)
+            HStack(spacing: ArgoSpacing.flush) {
+                DeckSeam(
+                    width: panelBinding(in: deck),
+                    limits: ArgoLayout.evidencePanelLimits(in: deck),
+                    growsRightward: false,
+                    isDragging: { isResizing = $0 },
+                )
+                EvidencePanel(evidence: evidence, dismiss: selection.close)
+                    .frame(width: panelBinding(in: deck).wrappedValue)
+                    .focusable()
+                    .focused(selection.focus, equals: .panel)
+            }
+            .transition(.move(edge: .trailing))
         }
     }
 

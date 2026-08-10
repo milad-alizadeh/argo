@@ -31,8 +31,9 @@ struct FeedView: View {
     /// moment between them to render.
     var held: FeedRow.ID?
 
-    /// Which prompts the reader has unfolded. Held here rather than in the row: the stack is lazy,
-    /// so a row's own state dies the moment it scrolls out of view.
+    /// Which prompts the reader has unfolded. Held here rather than in the row, because it is a
+    /// fact about the READING rather than about the view drawing a row — it has to survive the row
+    /// being rebuilt when the projection hands the feed a newer copy of it.
     @State private var unfolded: Set<FeedRow.ID> = []
     /// Whether the reading is still following the Session — see `FeedTail`. Starts `true` because
     /// a feed that fits its pane never scrolls and so never reports a geometry: the way-back-down
@@ -42,22 +43,15 @@ struct FeedView: View {
     /// Session appending a row moves the end away from an offset nobody touched, and following
     /// recomputed from that un-follows itself every time it has something new to show.
     @State private var isFollowing = true
-    /// Whether the reader's hand is on the reading right now — see `FeedTail.isReaderDriven`.
-    @State private var isReaderScrolling = false
-    /// Whether a scroll this view asked for is still in flight. It lands short against estimated
-    /// heights, so a geometry read during one puts the reader off an end they are being taken to.
-    @State private var isSelfScrolling = false
-    /// The content height the last geometry carried. What tells a reading that GREW from one the
-    /// reader moved through, when no scroll phase does — the two arrive as the same callback.
-    @State private var readingHeight: CGFloat = 0
+    /// The three facts a geometry callback writes on every frame. Off the dependency graph, and
+    /// deliberately — see `FeedWatch`.
+    @State private var watch = FeedWatch()
     /// The row the reader's place is measured from — the topmost one on screen.
     ///
-    /// A scroll offset in points is not a place in a reading. The stack is lazy, so the height of
-    /// every row nobody has drawn is an estimate, and anything that re-lays the column out — a seam
-    /// moving, the panel taking half of it — throws those estimates away. A retained offset then
-    /// points at a different part of the record, or past the end of it, which is the reading
-    /// jumping and the column standing blank. A row id survives a remeasure because it is not a
-    /// measurement.
+    /// A scroll offset in points is not a place in a reading. Heights are measured now rather than
+    /// estimated, but they are still measured AT A WIDTH: a seam moving or the panel taking half
+    /// the deck re-wraps every paragraph, so the document a retained offset was taken against is
+    /// not the one it would be applied to. A row id survives that because it is not a measurement.
     @State private var anchored: FeedRow.ID?
     /// The last row present when following broke — what the count on the way-back control is taken
     /// from. See `FeedTail.newMessages`.
@@ -108,13 +102,26 @@ struct FeedView: View {
 
     private var reading: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: ArgoSpacing.flush) {
+            // Eager, and that is the load-bearing choice on this view.
+            //
+            // A lazy stack hands the scroller an ESTIMATE for every row nobody has drawn, and the
+            // scroll offset is points measured against those estimates. Anything that re-lays the
+            // column out — a seam moving, the panel taking half of it, prose re-wrapping — throws
+            // them away, and the reading slides against a document that is changing shape beneath
+            // it. Every scroll-position bug this feed has had is that one fact wearing a different
+            // hat, and each was patched at the surface that exposed it.
+            //
+            // Measured heights cost the whole session's rows at open — ~0.8s for 1,031 rows on a
+            // debug build — and buy back a document with a real height: the reader's place survives
+            // a remeasure because there is nothing to remeasure, and the minimap has something to
+            // be a scale drawing OF.
+            VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
                 // Over the indices rather than over `rows.enumerated()`, which is not free: an
                 // enumeration has to be materialised into an array for `ForEach`, and that array
-                // is EVERY row in the session, built again on every evaluation of this body. The
-                // stack below is lazy about what it draws; the pairing above it was eager about
-                // what it allocated, so a body running at drag rate cost a whole session's worth
-                // of rows per frame. A range allocates nothing, and the identity is unchanged —
+                // is EVERY row in the session, built again on every evaluation of this body — so a
+                // body running at drag rate cost a whole session's worth of tuples per frame on
+                // top of the rows themselves. A range allocates nothing, and the identity is
+                // unchanged —
                 // a row's id IS its position, assigned as one by the only thing that makes rows
                 // (`FeedProjection.rows`). The scroll target stays the row's own id regardless.
                 ForEach(rows.indices, id: \.self) { position in
@@ -148,9 +155,20 @@ struct FeedView: View {
         // to aim at, and nothing here has to know about it.
         .scrollPosition(id: pin, anchor: .top)
         // The opening offset only, and the half of getting there that does not depend on estimated
-        // heights — `open(with:)` is the other. Not `.sizeChanges`, which would hold the bottom
-        // against a reader who scrolled away from it; that is `isFollowing`'s question.
+        // heights — `open(with:)` is the other.
         .defaultScrollAnchor(.bottom, for: .initialOffset)
+        // What holds a FOLLOWING reading still while the column is re-measured.
+        //
+        // `pin` reports nothing while the reading follows — deliberately, so an arriving row is not
+        // fought over by two authorities — which leaves the scroll view holding a raw point offset.
+        // That is fine while the content's width is fixed. Under a seam it is not: every paragraph
+        // re-wraps on every frame of the drag, so the height those points are measured against is
+        // moving, and the reading slides against content that is changing shape beneath it.
+        //
+        // Answering `.bottom` here is not a second authority over the offset — it is the same claim
+        // `isFollowing` already makes, applied to the one event that was moving it. Absent the
+        // moment the reader detaches, which is what keeps it from holding a bottom nobody is at.
+        .defaultScrollAnchor(isFollowing ? .bottom : nil, for: .sizeChanges)
     }
 
     /// The held row, reported only once the reader has detached from the end, and writable only
@@ -198,7 +216,7 @@ struct FeedView: View {
         // badge left standing over a feed that is following again is a lie the reader has to
         // disprove by scrolling.
         leftAt = nil
-        isSelfScrolling = true
+        watch.isSelfScrolling = true
         let motion = animated ? ArgoMotion.selection.resolved(reduceMotion: reduceMotion) : nil
         // To the END of the reading rather than to its last row: the gutter under that row is part
         // of the content, and a scroll that stopped at the row would leave the feed permanently a
@@ -206,25 +224,19 @@ struct FeedView: View {
         withAnimation(motion) { scroller.scrollTo(FeedTail.Anchor.tail, anchor: .bottom) }
         Task {
             await settle()
-            isSelfScrolling = false
+            watch.isSelfScrolling = false
         }
     }
 
     /// Onto the newest line of a reading being opened.
     ///
-    /// Twice, with a layout pass between. `LazyVStack` gives the scroll view an ESTIMATED height
-    /// for every row nobody has drawn, so the first scroll aims at a number wrong by whatever the
-    /// rows it realises on the way turn out to measure; the second aims at the height the first
-    /// one settled, and that one is the newest line.
+    /// Once. It used to be twice with a layout pass between, because a lazy stack's first scroll
+    /// aimed at a height estimated from rows nobody had drawn and landed short of the end; the
+    /// stack is eager now, so the height the first scroll aims at is the height the document has.
     private func open(with scroller: ScrollViewProxy) async {
         // Never onto the end of a reading that opened held. `held` says the reader is already
         // somewhere, and this scroll would take them off it before the first frame is drawn.
         guard held == nil else { return await hold(with: scroller) }
-        follow(with: scroller, animated: false)
-        await settle()
-        // Not over a reader who got there first. A layout pass is brief, but a scroll inside one is
-        // still theirs, and #427's claim does not have an exemption for the first frames of a feed.
-        guard isFollowing, !Task.isCancelled else { return }
         follow(with: scroller, animated: false)
     }
 
@@ -240,15 +252,15 @@ struct FeedView: View {
     /// never left the end. And the end the reader left is only true once they have left it.
     private func hold(with scroller: ScrollViewProxy) async {
         guard let held else { return }
-        isSelfScrolling = true
-        // After a layout pass, never before one: a lazy stack has no measured height for a row far
-        // above the fold, and a scroll aimed at one during the first pass lands nowhere.
+        watch.isSelfScrolling = true
+        // After a layout pass, never before one: the row has to be IN the document before the
+        // scroller can be aimed at it, and on the first pass it is not yet.
         await settle()
         scroller.scrollTo(held, anchor: .top)
         await settle()
         leftAt = held
         isFollowing = false
-        isSelfScrolling = false
+        watch.isSelfScrolling = false
     }
 
     /// A layout pass. `Task.yield()` only gives up the scheduler, and the height being waited on is
@@ -264,9 +276,9 @@ struct FeedView: View {
     /// report none at all. The content height says WHAT changed: a reading that grew moved its own
     /// end, and a reader who has not touched anything cannot have left an end that came to them.
     private func moved(to geometry: ScrollGeometry) {
-        let grew = geometry.contentSize.height != readingHeight
-        guard isReaderScrolling || !(grew || isSelfScrolling) else {
-            readingHeight = geometry.contentSize.height
+        let grew = geometry.contentSize.height != watch.readingHeight
+        guard watch.isReaderScrolling || !(grew || watch.isSelfScrolling) else {
+            watch.readingHeight = geometry.contentSize.height
             return
         }
         latch(onto: geometry)
@@ -279,8 +291,8 @@ struct FeedView: View {
     /// and not as a movement, and a latch left on the frame before it would say they stopped short.
     private func reader(reached phase: ScrollPhase, in geometry: ScrollGeometry) {
         let isTheirs = FeedTail.isReaderDriven(phase)
-        guard isReaderScrolling || isTheirs else { return }
-        isReaderScrolling = isTheirs
+        guard watch.isReaderScrolling || isTheirs else { return }
+        watch.isReaderScrolling = isTheirs
         latch(onto: geometry)
     }
 
@@ -292,7 +304,7 @@ struct FeedView: View {
     /// back at the end clears it by hand, which is what makes a scroll home worth as much as a
     /// click on the control.
     private func latch(onto geometry: ScrollGeometry) {
-        readingHeight = geometry.contentSize.height
+        watch.readingHeight = geometry.contentSize.height
         let following = FeedTail.isFollowing(
             offset: geometry.contentOffset.y,
             pane: geometry.containerSize.height,

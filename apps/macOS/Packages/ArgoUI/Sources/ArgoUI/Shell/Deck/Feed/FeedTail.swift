@@ -20,12 +20,12 @@ struct FeedTail: View {
     /// tolerance and not a screenful: one row up is a reader who has scrolled.
     nonisolated static let slack: CGFloat = ArgoSpacing.base
 
-    /// How long a scroll to the end is given to settle before it is aimed again.
+    /// How long a scroll is given to land before anything is read of where it landed.
     ///
-    /// Not a motion token: nothing about this is on screen. It is a wait for the LAYOUT — the rows
-    /// a scroll to the end realises on its way there replace their own estimated heights, and the
-    /// end moves as they do. One frame at 60Hz is 16ms and one at 120 is 8; this is several of
-    /// either, which is a settled layout rather than a race with one.
+    /// Not a motion token: nothing about this is on screen. It is a wait for the LAYOUT — a view
+    /// asked to scroll on the first pass has no document to scroll within yet. One frame at 60Hz
+    /// is 16ms and one at 120 is 8; this is several of either, which is a settled layout rather
+    /// than a race with one.
     nonisolated static let settlingPass = Duration.milliseconds(80)
 
     /// Whether the reading is still following the Session.
@@ -66,9 +66,9 @@ struct FeedTail: View {
     /// Whether this scroll phase is the reader moving the reading, rather than the feed moving it
     /// for them.
     ///
-    /// `follow()` scrolls to the end against heights the lazy stack has only estimated, so it
-    /// routinely lands a hair short; a latch that read its own landing would conclude the reader
-    /// had left the end and offer them the way back to where they already are — permanently.
+    /// `follow()` lands on the end within a fraction of a point rather than exactly on it, and a
+    /// latch that read its own landing would conclude the reader had left the end and offer them
+    /// the way back to where they already are — permanently.
     ///
     /// The quieter answer wins twice over. An unrecognised phase reads as not the reader's, and a
     /// device that reports NO phase — a discrete wheel raises no gesture — reads as not the reader

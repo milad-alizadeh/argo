@@ -8,9 +8,9 @@ import SwiftUI
 extension FeedView {
     /// One row up or down, with the row it lands on scrolled into view.
     ///
-    /// The scroll is not optional: the stack is lazy, so focus moving to a row below the fold moves
-    /// it to a row that has not been laid out — and a keyboard reader whose cursor left the screen
-    /// has lost the feed. Left and right belong to whatever the row draws, so they fall through.
+    /// The scroll is not optional: focus moving to a row below the fold moves it off screen, and a
+    /// keyboard reader whose cursor left the screen has lost the feed. Left and right belong to
+    /// whatever the row draws, so they fall through.
     func move(_ direction: MoveCommandDirection, with scroller: ScrollViewProxy) {
         guard case let .row(current) = selection.focus.wrappedValue,
               let standing = rows.firstIndex(where: { $0.id == current })
