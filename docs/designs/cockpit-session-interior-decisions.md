@@ -220,7 +220,7 @@ Amends C3a.1 on two points; everything else in it stands.
   - **Rename** → done in the terminal (or by editing the linked ticket); not a header control.
   - **Open in editor** → that's the file-editor surface (#183), reached as its own tab/surface, not a header action.
   - **Relaunch** → not a concept.
-  - **Archive** → **automatic**, a status transition (session ends/merges/orphans → it moves to Archived); never a manual action.
+  - **Archive** → a **manual** act, but not a header one: it lives on the roster row (swipe to reveal), so the header still carries no action. *Amended by [#502](https://github.com/milad-alizadeh/argo/issues/502) — 2026-08-10: this read "automatic, a status transition … never a manual action". Overturned because a merged Session is often exactly the one you go back to, so nothing may clear it on the branch's behalf.*
   - **Link/unlink intent** → the inline `+ link intent` / `intent ↗` affordance already in the meta row.
 - **Steering clarification (drives C4):** there is **no separate steer widget**. The dock is a live claude-code / codex **PTY**; you steer by typing at its prompt like any terminal. "Stop" = Ctrl-C into the PTY. The header owns none of this.
 - **Why:** Frequent interaction is terminal typing; the "rare actions" either live on their proper surface or don't exist. A menu was speculative chrome.

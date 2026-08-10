@@ -152,9 +152,13 @@ Detail: `cockpit-onboarding-spec.md`; Project Settings in `cockpit-app-shell-spe
 - **`+ New session` pinned quiet at the top, `⚙ Archived (n)` at the foot.** With no sessions at
   all the zero-state is *just* the `+ New session` row — a one-time transient state costs no
   permanent chrome.
-- **`⌘N` spawns zero-config at the project root** into the active project. A finished or merged
-  session **leaves the roster automatically** for Archived: archiving is a status transition,
-  never a button.
+- **`⌘N` spawns zero-config at the project root** into the active project. A session leaves the
+  roster for Archived **only when you archive it** — archiving is an act, never a status
+  transition.
+  - **Amended by [#502](https://github.com/milad-alizadeh/argo/issues/502) — 2026-08-10:** this
+    read "a finished or merged session leaves the roster automatically … archiving is a status
+    transition, never a button". Overturned because a merged Session is often exactly the one you
+    go back to, so the roster may not clear it on the branch's behalf.
 
 ### 4.2 Session interior
 
