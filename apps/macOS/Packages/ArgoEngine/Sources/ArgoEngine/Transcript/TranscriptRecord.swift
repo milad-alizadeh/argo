@@ -36,6 +36,11 @@ public enum TranscriptRecord: Sendable, Equatable {
     case attachment(MessageRecord)
     case aiTitle(String)
     case lastPrompt(leafUuid: String)
+    /// The host's own note that a prompt was QUEUED rather than run. Recognised because of what a
+    /// file carrying nothing else is: the CLI opens a transcript the moment a prompt is queued, so
+    /// a machine that queued several off one Session leaves several files, each holding one copy of
+    /// the same prompt and no agent output at all.
+    case queueOperation
     /// A record whose `type` this reader does not know — the hosts write several (`system`,
     /// `mode`, `bridge-session`) and will write more. Carries the raw line so observing it loses
     /// nothing.
@@ -64,6 +69,8 @@ public extension TranscriptRecord {
         case "last-prompt":
             return record.stringField("leafUuid")
                 .map { TranscriptRecord.lastPrompt(leafUuid: $0) } ?? .unknown(raw: line)
+        case "queue-operation":
+            return .queueOperation
         default:
             return .unknown(raw: line)
         }
@@ -77,7 +84,7 @@ extension TranscriptRecord {
         switch self {
         case let .user(record), let .assistant(record), let .attachment(record):
             record.cwd
-        case .aiTitle, .lastPrompt, .unknown:
+        case .aiTitle, .lastPrompt, .queueOperation, .unknown:
             nil
         }
     }

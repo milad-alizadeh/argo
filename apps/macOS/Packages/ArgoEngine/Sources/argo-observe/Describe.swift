@@ -63,6 +63,8 @@ func describe(_ event: TranscriptEvent) -> String {
             + plan.entries.filter { $0.status == .completed }.count.description + " done"
     case let .usage(usage):
         "usage       \(usage.inputTokens) in, \(usage.outputTokens) out"
+    case .queued:
+        "queued      a prompt queued rather than run"
     case .compaction:
         "compaction  history condensed here"
     case let .unreadableLine(raw):

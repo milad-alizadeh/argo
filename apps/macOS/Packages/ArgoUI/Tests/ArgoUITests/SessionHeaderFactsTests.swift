@@ -141,7 +141,8 @@ struct SessionHeaderFactsTests {
             cli: .claude,
             model: "claude-opus-5",
             workspace: .init(kind: .worktree, branch: "argo/#510", dirty: 2, unpushed: 1),
-            issue: .init(number: 510, title: "The header carries the Session's facts"),
+            // Untitled: a Work Item's title is a title SOURCE, and the chain has its own suite.
+            issue: .init(number: 510),
         )
 
         // A glyph is nothing a screen reader can hear, so each mark says what it COUNTS — and

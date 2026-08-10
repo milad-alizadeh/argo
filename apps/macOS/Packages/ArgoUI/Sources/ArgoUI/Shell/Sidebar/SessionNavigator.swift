@@ -12,10 +12,18 @@ struct SessionNavigator: View {
     /// Clear a Session off the roster, or put one back. Inert by default, so every preview and
     /// specimen draws the gesture without wiring a store to it.
     var archive: (String, Bool) -> Void = { _, _ in }
+    /// Name a Session, or — with `nil` — drop the name it has. Inert by default, like the archive
+    /// beside it: a specimen draws the dialog without a store to write to.
+    var rename: (String, String?) -> Void = { _, _ in }
+    /// Whether a search is narrowing the two lists above. It changes only what an EMPTY roster
+    /// says: "no Sessions" and "none that match what you typed" are different claims, and a
+    /// machine full of Sessions that reported the first would read as one that had lost them.
+    var isFiltered = false
+    /// Which row is being typed into, if any — at most one, by construction. Held above the rows
+    /// because the menu bar's Rename opens it too, and a state per row could only ever be set by
+    /// the row that owns it.
+    var renamingRowID: Binding<String?> = .constant(nil)
 
-    /// One swipe for the whole list, which is what makes "only one row is ever open" true: a
-    /// state per row could only ever close the row that owns it (#514, story 13).
-    @State private var swipe = RosterSwipe()
     /// Shut on launch. Going back to an archived Session is deliberate (story 15), and a foot
     /// that opened itself would put the cleared rows back under the ones that were kept.
     @State private var isArchiveShowing = false
@@ -35,13 +43,6 @@ struct SessionNavigator: View {
         // it for a styled list. Selection is that style's own capsule, coloured from the
         // `AccentColor` asset — SwiftUI's `.tint` does not reach it (D30).
         .listStyle(.sidebar)
-        // Anything clicked in the roster that is not the revealed control itself is somewhere
-        // else, and a row left half open behind the reader is the state story 13 is about.
-        // Simultaneous, so the List still takes the click as a selection.
-        .simultaneousGesture(TapGesture().onEnded { swipe.close() })
-        .onChange(of: selection) { _, _ in
-            swipe.close()
-        }
         // The foot is shut whenever it comes back, not left open from the last time it existed.
         .onChange(of: archived.isEmpty) { _, isEmpty in
             isArchiveShowing = isArchiveShowing && !isEmpty
@@ -81,17 +82,47 @@ struct SessionNavigator: View {
 
     /// Which way the gesture goes is the row's own state and not a second reading of which list
     /// it was drawn in — two sources for one fact is how they come to disagree.
+    ///
+    /// `.swipeActions` rather than a gesture of Argo's own: the reveal, the spring back, which row
+    /// closes when another opens and the full-swipe commit are all the system's here, which is what
+    /// makes the roster behave like every other macOS sidebar rather than like one list that had to
+    /// be learned. `allowsFullSwipe` is what keeps story 12 — a hard pull still archives outright,
+    /// without a second click.
     private func swipeable(_ row: SessionRosterProjection.Row) -> some View {
-        ArchiveSwipeRow(row: row, swipe: $swipe, archive: { archive(row.id, !row.isArchived) })
-            .previewSafeListRow()
-            .tag(row.id)
+        SessionRow(
+            row: row,
+            rename: { rename(row.id, $0) },
+            isRenaming: Binding(
+                get: { renamingRowID.wrappedValue == row.id },
+                set: { renamingRowID.wrappedValue = $0 ? row.id : nil },
+            ),
+        )
+        .previewSafeListRow()
+        .tag(row.id)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(archiveLabel(row), systemImage: archiveSymbol(row)) {
+                archive(row.id, !row.isArchived)
+            }
+            .tint(argo.color.interaction.destructive)
+        }
+    }
+
+    /// An icon and a label, where the hand-rolled control could only afford the icon: the system's
+    /// control sizes to what is in it, so the verb no longer has to live only in the announcement.
+    private func archiveSymbol(_ row: SessionRosterProjection.Row) -> String {
+        row.isArchived ? ArgoSymbol.unarchive : ArgoSymbol.archive
+    }
+
+    private func archiveLabel(_ row: SessionRosterProjection.Row) -> String {
+        row.isArchived ? "Put back on the roster" : "Archive Session"
     }
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            Text("No Sessions yet")
+            Text(isFiltered ? "No matching Sessions" : "No Sessions yet")
                 .argoText(ArgoTypography.rowTitle)
-            Text("Observed Sessions appear here.")
+            Text(isFiltered ? "Nothing here matches what you typed." :
+                "Observed Sessions appear here.")
                 .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(argo.color.text.tertiary)
         }

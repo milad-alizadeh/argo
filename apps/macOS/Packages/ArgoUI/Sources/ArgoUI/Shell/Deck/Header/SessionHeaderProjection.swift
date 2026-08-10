@@ -64,8 +64,9 @@ enum SessionHeaderProjection {
             let detail: String?
         }
 
-        /// The Session's own title, verbatim. Never shortened, completed or re-capitalised: the
-        /// header names its subject rather than describing it.
+        /// The Session's name, verbatim — the user's own where they set one, and otherwise the
+        /// derived one (`SessionTitle`). Never shortened, completed or re-capitalised: the header
+        /// names its subject rather than describing it.
         let title: String
         /// The mark a Session spends when it is not a plain managed one, and `nil` when it is —
         /// the default state is silent, and a mark drawn on every header is a mark that has
@@ -137,7 +138,10 @@ enum SessionHeaderProjection {
 
     static func header(from session: CockpitPresentation.Session) -> Header {
         Header(
-            title: session.title,
+            // The same chain the roster row reads, through the same function: a header naming a
+            // Session differently from the row that selected it would be two answers to one
+            // question (#502, story 19).
+            title: SessionTitle.resolved(for: session),
             access: mark(for: session.access),
             checkout: checkout(for: session.workspace),
             marks: marks(for: session.workspace),

@@ -22,9 +22,19 @@ struct ShellSidebar: View {
     /// Clear a Session off the roster, or put one back — the only thing that ever does either
     /// (#502, story 14). Inert by default, so a preview draws the gesture without a store.
     var archive: (String, Bool) -> Void = { _, _ in }
+    /// Name a Session, or drop the name it has (#502, story 18). Inert by default, for the reason
+    /// the archive above it is.
+    var rename: (String, String?) -> Void = { _, _ in }
+    /// Which row is being typed into. Passed in rather than held here, because the menu bar's
+    /// Rename sets it from outside the sidebar entirely (`SessionCommands`).
+    var renamingSessionID: Binding<String?> = .constant(nil)
 
     @State private var order = RosterOrder()
     @State private var isPointerInside = false
+    /// What is typed in the search field. The sidebar's own and not the presentation's: a filter is
+    /// a way of LOOKING at the roster, and a machine that restarted mid-search should come back to
+    /// the whole list rather than to three rows and no memory of why.
+    @State private var query = ""
     /// Bumped by anything that says the reader is still here, which restarts the quiet interval.
     ///
     /// Keyboard focus is deliberately NOT one of these. A pointer leaving the list clears itself,
@@ -34,16 +44,30 @@ struct ShellSidebar: View {
     @State private var interactions = 0
 
     var body: some View {
-        let rows = order.published(SessionRosterProjection.rows(from: presentation.sessions))
+        // Filtered AFTER the order is published, so searching cannot re-order what is left: the
+        // rows a query keeps stay in the order the roster already had them in.
+        let rows = RosterSearch.matching(
+            query, in: order.published(SessionRosterProjection.rows(from: presentation.sessions)),
+        )
 
         SessionNavigator(
             rows: rows,
             // Not held by the order above: the foot is not a place anything is reached for in
             // a hurry, so a row settling into it under a reader costs nothing.
-            archived: SessionRosterProjection.archivedRows(from: presentation.sessions),
+            //
+            // Filtered by the same query as the roster, because a Session you cannot find on it is
+            // exactly the one you might have archived — a search that stopped at the fold would
+            // answer "no Sessions" about a list it never looked in.
+            archived: RosterSearch.matching(
+                query, in: SessionRosterProjection.archivedRows(from: presentation.sessions),
+            ),
             selection: $selection,
             archive: archive,
+            rename: rename,
+            isFiltered: !query.isEmpty,
+            renamingRowID: renamingSessionID,
         )
+        .searchable(text: $query, placement: .sidebar, prompt: "Search Sessions")
         .onHover { isPointerInside = $0 }
         .argoAnimation(.resettle, value: rows.map(\.id))
         // What the held order has absorbed, recorded so a row admitted once stays where it

@@ -17,9 +17,12 @@ public enum Specimen: String, CaseIterable, Sendable {
     case ghostedRows
     case roster
     case churningRoster
-    case swipedRow
-    case hardSwipedRow
+    // No swiped-row case: the reveal belongs to `.swipeActions` now, and the system opens it from
+    // a real gesture only — there is no state to hand the harness. It is an XCUITest claim
+    // (`ArgoE2ETests`), not a PNG.
     case archivedRoster
+    case renamedRoster
+    case editingRow
     case toolbarScope
     case emptyToolbarScope
     case projectDrawer

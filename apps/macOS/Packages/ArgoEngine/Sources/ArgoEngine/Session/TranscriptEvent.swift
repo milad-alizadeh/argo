@@ -37,6 +37,10 @@ public enum TranscriptEvent: Sendable, Equatable {
     /// that continues into a tool call closes nothing, and reading it as an end would report a
     /// working agent as finished once per call.
     case turnEnded(StopReason)
+    /// The host noted that a prompt was QUEUED rather than run. Observed rather than dropped
+    /// because it is the one thing that tells a queued prompt's file apart from a Session whose
+    /// agent simply has not answered yet — the two are otherwise the same records.
+    case queued
     /// What a record reported spending. One per assistant record that carries a `usage` object —
     /// the grain the host actually prices, since every request is billed on its own.
     ///

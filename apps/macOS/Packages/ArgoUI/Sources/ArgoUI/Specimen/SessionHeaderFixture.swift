@@ -151,10 +151,9 @@ enum SessionHeaderFixture {
             status: .idle,
             cli: .claude,
             workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),
-            issue: .init(
-                number: 510,
-                title: "The header carries the Session's Workspace, CLI and issue",
-            ),
+            // A link with no title read through it, which is every Session in this build: no
+            // provider is connected (#414), so nothing answers with one.
+            issue: .init(number: 510),
             contextTokens: contextTokens,
             handedOffTo: handedOffTo,
         )

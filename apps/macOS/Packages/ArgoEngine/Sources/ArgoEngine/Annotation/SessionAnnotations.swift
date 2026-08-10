@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Everything else about a Session is observed: the transcript is the source of truth and Argo
 /// only reads it. These are the facts no external signal carries — a Session cleared off the
-/// roster by hand, and the name a user gives one (#515). Owned glue, which is the one thing
+/// roster by hand, and the name a user gives one (#502). Owned glue, which is the one thing
 /// `CONTEXT.md` says Argo may store.
 ///
 /// Held as a value with every transition returning a new set, so the store above it does nothing
@@ -17,9 +17,14 @@ public struct SessionAnnotations: Equatable, Sendable {
     /// fact has to be re-keyed for the second one — and the second one is already spoken for.
     public struct Annotation: Equatable, Sendable {
         public var isArchived: Bool
+        /// The name the user gave this Session, and `nil` for one they never named — which is
+        /// what makes the derived title reachable again: dropping the name IS the reset (#502,
+        /// story 20), so there is no second flag saying whether the name is in force.
+        public var explicitName: String?
 
-        public init(isArchived: Bool = false) {
+        public init(isArchived: Bool = false, explicitName: String? = nil) {
             self.isArchived = isArchived
+            self.explicitName = SessionAnnotations.name(from: explicitName)
         }
 
         /// An annotation that asserts nothing, which is what every Session has until somebody
@@ -34,6 +39,13 @@ public struct SessionAnnotations: Equatable, Sendable {
         func archived(_ isArchived: Bool) -> Annotation {
             var next = self
             next.isArchived = isArchived
+            return next
+        }
+
+        /// The same copy-with-one-fact-changed for the name.
+        func named(_ name: String?) -> Annotation {
+            var next = self
+            next.explicitName = SessionAnnotations.name(from: name)
             return next
         }
     }
@@ -56,11 +68,37 @@ public struct SessionAnnotations: Equatable, Sendable {
         annotation(for: sessionID).isArchived
     }
 
+    /// A name is what somebody typed, trimmed — and blank is not a name.
+    ///
+    /// Public because the dialog that raises a rename has to know whether what is in the field IS
+    /// one before it offers to keep it. Two places deciding that is how a confirm button comes to
+    /// disagree with the record it writes — and normalising here rather than at the dialog means a
+    /// name arriving from a hand-edited file obeys the same rule as one that was typed.
+    public static func name(from typed: String?) -> String? {
+        guard let trimmed = typed?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty
+        else { return nil }
+        return trimmed
+    }
+
+    /// The name the user gave a Session, and `nil` for one they never named. Which title that
+    /// `nil` falls back to is not decided here: the fallback chain is a rendering decision and
+    /// lives in the projections, where it can be asserted (#502 §Seams).
+    public func explicitName(_ sessionID: String) -> String? {
+        annotation(for: sessionID).explicitName
+    }
+
     /// Archive a Session, or put one back. Keyed on the chain id and on nothing observed, which
     /// is why re-reading a transcript cannot disturb it: a record arriving for an archived
     /// Session is new activity, and new activity is not a decision (#502, story 16).
     func archiving(_ isArchived: Bool, sessionID: String) -> SessionAnnotations {
         setting(annotation(for: sessionID).archived(isArchived), for: sessionID)
+    }
+
+    /// Name a Session, or drop the name it was given — the reset is `nil` and not a second verb,
+    /// because "no explicit name" is the state every Session starts in (#502, story 20).
+    func naming(_ name: String?, sessionID: String) -> SessionAnnotations {
+        setting(annotation(for: sessionID).named(name), for: sessionID)
     }
 
     /// The one write path, so an annotation that has fallen back to asserting nothing is dropped
