@@ -58,30 +58,26 @@ struct SessionRow: View {
                     Text(age)
                         .argoText(ArgoTypography.rowMeta)
                         .lineLimit(1)
-                        // The gutter is the worktree's before it is the age's.
+                        // Three words that never lose one: a shortfall lands on the worktree
+                        // instead, which is built to give up its middle.
                         .layoutPriority(1)
                 }
                 Spacer(minLength: ArgoSpacing.tight)
-                worktree
+                worktreeLabel
             }
             .foregroundStyle(argo.color.text.tertiary)
         }
     }
 
     /// The same two stacked planes the session header spends on a worktree — one mark for one
-    /// meaning across the two surfaces — and drawn only where the label is, so a Session in the
-    /// Project's own checkout carries no orphan glyph.
-    @ViewBuilder private var worktree: some View {
+    /// meaning across the two surfaces. The mark is unconditional here where the header's is not:
+    /// the projection populates `worktree` only for a checkout git answered `worktree` for, so
+    /// there is no unread kind left for this to claim anything about.
+    @ViewBuilder private var worktreeLabel: some View {
         if let worktree = row.worktree {
-            HStack(spacing: ArgoSpacing.tight) {
-                ArgoGlyph(ArgoSymbol.worktree, .inline)
-                Text(worktree)
-                    .argoText(ArgoTypography.rowMeta)
-                    .lineLimit(1)
-                    // A worktree name is addressed from both ends — the parent that qualifies it
-                    // at the head, the ticket at the tail. The middle is what repeats.
-                    .truncationMode(.middle)
-            }
+            ArgoMarkedName(
+                symbol: ArgoSymbol.worktree, name: worktree, style: ArgoTypography.rowMeta,
+            )
         }
     }
 

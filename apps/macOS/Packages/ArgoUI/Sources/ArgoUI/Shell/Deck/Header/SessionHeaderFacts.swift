@@ -52,27 +52,21 @@ struct SessionHeaderFacts: View {
     /// two stacked planes of a worktree. The counts ride INSIDE this group, unseparated: they are
     /// facts about this branch and not a fourth thing on the line.
     ///
-    /// The one flexible thing here, cut in the MIDDLE: a real branch name is addressed from both
-    /// ends — the ticket number at the head and the slug at the tail — and a tail cut takes the
-    /// half that says what the work is.
+    /// The one flexible thing on the line — `ArgoMarkedName` carries how a name that long is cut.
     @ViewBuilder private var checkout: some View {
         if let checkout = header.checkout {
             separated(by: preceded(.checkout)) {
                 // A step wider than the gap INSIDE the branch group, so the counts read as
                 // hanging off the branch rather than as more of its name.
                 HStack(spacing: ArgoSpacing.base) {
-                    HStack(spacing: ArgoSpacing.tight) {
-                        // Absent, not substituted, when Argo has not read the kind: the mark is
-                        // the only thing that tells a worktree from the Project's own checkout,
-                        // so drawing the plain one would claim this is not a worktree.
-                        if let symbol = checkout.symbol {
-                            ArgoGlyph(symbol, .inline)
-                        }
-                        Text(checkout.branch)
-                            .argoText(ArgoTypography.machineCaption)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
+                    // The mark goes absent, never substituted, when Argo has not read the kind: it
+                    // is the only thing that tells a worktree from the Project's own checkout, so
+                    // drawing the plain one would claim this is not a worktree.
+                    ArgoMarkedName(
+                        symbol: checkout.symbol,
+                        name: checkout.branch,
+                        style: ArgoTypography.machineCaption,
+                    )
                     .foregroundStyle(argo.color.text.tertiary)
                     .help(checkout.detail)
                     marks
