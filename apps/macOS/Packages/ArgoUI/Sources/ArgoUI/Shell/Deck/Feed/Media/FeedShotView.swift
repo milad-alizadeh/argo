@@ -1,14 +1,16 @@
 import ArgoEngine
 import SwiftUI
 
-/// One picture in a gallery: the thumbnail, its filename and size, and where it came from.
+/// One picture in a gallery: the thumbnail, and where it came from.
 ///
-/// The four provenances are drawn apart rather than only captioned apart. A caption is read by
-/// whoever stops to read it; the frame is read by everyone, and the difference between what the
-/// agent SAW and what is on that path now is exactly the difference a reader must not have to
-/// squint for. Captured bleeds to its own edges the way a screen capture does; the current file is
-/// framed in the broken edge the shell already uses for a weaker claim; a rendered artifact sits
-/// mounted on a plate, because it was drawn rather than captured off anything.
+/// No caption. The name, the dimensions and the provenance words all belong to the lightbox —
+/// the surface a reader opens when they want to know ABOUT the picture — and captioning every
+/// thumbnail with them said each three times per row. What stays on the thumbnail is the half a
+/// caption cannot carry: the provenances are drawn apart, not captioned apart. Captured bleeds to
+/// its own edges the way a screen capture does; the current file is framed in the broken edge the
+/// shell already uses for a weaker claim; a rendered artifact sits mounted on a plate, because it
+/// was drawn rather than captured off anything. The address survives as the hover's word and the
+/// spoken label.
 struct FeedShotView: View {
     @Environment(\.argo) private var argo
 
@@ -20,17 +22,15 @@ struct FeedShotView: View {
     @State private var showing = MediaShowing.undecoded
 
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            Button { open(shot) } label: { plate }
-                .buttonStyle(.plain)
-                .disabled(showing.picture == nil)
-            caption
-        }
-        .frame(width: ArgoFeedRow.shotWidth, alignment: .leading)
-        .showing(shot.media, in: $showing)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(spoken)
-        .accessibilityHint(showing.picture == nil ? "" : "Opens this image full size")
+        Button { open(shot) } label: { plate }
+            .buttonStyle(.plain)
+            .disabled(showing.picture == nil)
+            .help(shot.address)
+            .frame(width: ArgoFeedRow.shotWidth, alignment: .leading)
+            .showing(shot.media, in: $showing)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(spoken)
+            .accessibilityHint(showing.picture == nil ? "" : "Opens this image full size")
     }
 
     /// The picture cropped to the shot's own box.
@@ -88,32 +88,6 @@ struct FeedShotView: View {
                     dash: isBroken ? [ArgoStroke.dash] : [],
                 ),
             )
-    }
-
-    /// Three lines and not one run of them: the name, the size, then where the pixels came from.
-    /// Joined into a subtitle they were one string too long for the measure, and the half that got
-    /// cut was always the provenance — the half the shot exists to be honest about.
-    private var caption: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
-            Text(shot.name)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(argo.color.text.secondary)
-                .lineLimit(1)
-                .truncationMode(.head)
-                .help(shot.address)
-            if let size = showing.picture?.spokenSize {
-                Text(size)
-                    .argoText(ArgoTypography.machineCaption)
-                    .foregroundStyle(argo.color.text.disabled)
-            }
-            if let words = showing.provenance.words {
-                Text(words)
-                    .argoText(ArgoTypography.caption)
-                    .foregroundStyle(argo.color.text.disabled)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
     }
 
     private var spoken: String {
