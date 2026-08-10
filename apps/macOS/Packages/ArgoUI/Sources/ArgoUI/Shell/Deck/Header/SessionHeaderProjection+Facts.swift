@@ -6,8 +6,34 @@ import ArgoEngine
 /// reasons — an unread count is not a zero, an unknown model is still a model, and a link to a
 /// provider nobody connected is worse than no link at all.
 extension SessionHeaderProjection {
-    /// The Workspace's facts as drawn marks, in reading order: what kind of checkout this is,
-    /// then what is uncommitted in it, then what is unpushed from it.
+    /// The branch and the glyph that says which kind of checkout it is on.
+    ///
+    /// The kind is carried by SWAPPING the branch's own mark rather than by a second mark after
+    /// it, which is how the approved study draws it: a worktree is not another fact about the
+    /// Session, it is what this checkout IS. A kind nobody has read draws the plain branch mark —
+    /// that is the shape of a checkout with nothing said about it, not a claim that it is the
+    /// Project's own.
+    static func checkout(
+        for workspace: CockpitPresentation.Session.Workspace?,
+    )
+        -> Header.Checkout? {
+        guard let branch = workspace?.branch else { return nil }
+        // A `switch`, so a third kind of checkout has to answer here rather than inheriting
+        // whichever glyph the mapping happens to end on.
+        return switch workspace?.kind {
+        case .worktree:
+            Header.Checkout(
+                branch: branch,
+                symbol: ArgoSymbol.worktree,
+                detail: "On \(branch), in a worktree of its own",
+            )
+        case .main, nil:
+            Header.Checkout(branch: branch, symbol: ArgoSymbol.branch, detail: "On \(branch)")
+        }
+    }
+
+    /// The Workspace's counts as drawn marks, in reading order: what is uncommitted in it, then
+    /// what is unpushed from it.
     ///
     /// A zero renders NOTHING. An absent count renders nothing either, and the two are the same
     /// ink on purpose: a mark claims there is something to see, and neither a clean tree nor an
@@ -16,7 +42,6 @@ extension SessionHeaderProjection {
     static func marks(for workspace: CockpitPresentation.Session.Workspace?) -> [Header.Mark] {
         guard let workspace else { return [] }
         return [
-            worktreeMark(workspace.kind),
             countMark(
                 workspace.dirty,
                 symbol: ArgoSymbol.uncommitted,
@@ -49,24 +74,6 @@ extension SessionHeaderProjection {
         guard let issue else { return nil }
         // Named, never bare: `#400` alone is whatever number the reader last saw one of.
         return Header.IssueLink(label: "Issue #\(issue.number)", detail: issue.title)
-    }
-
-    private static func worktreeMark(
-        _ kind: CockpitPresentation.Session.WorkspaceKind?,
-    )
-        -> Header.Mark? {
-        // A `switch`, so a third kind of checkout has to answer here rather than inheriting
-        // silence. `main` draws nothing: it is where a Session is unless something says otherwise.
-        switch kind {
-        case .worktree:
-            Header.Mark(
-                symbol: ArgoSymbol.worktree,
-                count: nil,
-                detail: "In a worktree of its own",
-            )
-        case .main, nil:
-            nil
-        }
     }
 
     private static func countMark(

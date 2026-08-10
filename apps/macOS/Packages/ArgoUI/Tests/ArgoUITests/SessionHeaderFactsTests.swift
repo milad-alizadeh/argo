@@ -10,27 +10,43 @@ struct SessionHeaderFactsTests {
 
         // Verbatim and uncut: how much of a name fits is a WIDTH, and a projection that
         // ellipsized would have decided that for every width at once.
-        #expect(header.branch == "worktree-ticket-375-graphite-ion-blue")
+        #expect(header.checkout?.branch == "worktree-ticket-375-graphite-ion-blue")
     }
 
     @Test
-    func `a Session that has not branched shows no branch`() {
-        #expect(header(workspace: nil).branch == nil)
-        #expect(header(workspace: .init(branch: nil)).branch == nil)
+    func `a Session that has not branched shows no checkout at all`() {
+        // Not a checkout with an empty name, and not a lone glyph: the mark is a drawing OF the
+        // branch, so with no branch there is nothing for it to be a drawing of.
+        #expect(header(workspace: nil).checkout == nil)
+        #expect(header(workspace: .init(branch: nil)).checkout == nil)
+        #expect(header(workspace: .init(kind: .worktree, branch: nil)).checkout == nil)
     }
 
     @Test
-    func `only a worktree is marked as one`() {
+    func `a worktree is marked by the branch's own glyph, not by a mark after it`() {
         let worktree = header(workspace: .init(kind: .worktree, branch: "argo/#510"))
         let main = header(workspace: .init(kind: .main, branch: "main"))
         let unread = header(workspace: .init(kind: nil, branch: "main"))
 
-        // The Project's own checkout is where a Session is unless something says otherwise, so
-        // it spends no ink — and a kind nobody has read is not a claim that it is the main one.
-        #expect(worktree.marks.map(\.symbol) == [ArgoSymbol.worktree])
-        #expect(worktree.marks.first?.count == nil)
-        #expect(main.marks.isEmpty)
-        #expect(unread.marks.isEmpty)
+        // A worktree is not another fact about the Session — it is what this checkout IS, so it
+        // swaps the mark rather than adding one. The counts after it stay the counts.
+        #expect(worktree.checkout?.symbol == ArgoSymbol.worktree)
+        #expect(worktree.marks.isEmpty)
+        // The Project's own checkout is where a Session is unless something says otherwise, and a
+        // kind nobody has READ is not a claim that it is the main one — both draw the plain mark.
+        #expect(main.checkout?.symbol == ArgoSymbol.branch)
+        #expect(unread.checkout?.symbol == ArgoSymbol.branch)
+    }
+
+    @Test
+    func `the checkout says which kind it is in words as well as in ink`() throws {
+        // A glyph is nothing a screen reader can hear and nothing a hover can be sure of, so the
+        // sentence travels with the mark rather than being left to whichever surface draws one.
+        let worktree = header(workspace: .init(kind: .worktree, branch: "argo/#510"))
+        let main = header(workspace: .init(kind: .main, branch: "main"))
+
+        #expect(try #require(worktree.checkout).detail == "On argo/#510, in a worktree of its own")
+        #expect(try #require(main.checkout).detail == "On main")
     }
 
     @Test
@@ -121,13 +137,30 @@ struct SessionHeaderFactsTests {
         // says it once, in the same order the header draws it.
         #expect(header.announcement == [
             "Session",
-            "on argo/#510",
-            "In a worktree of its own",
+            "On argo/#510, in a worktree of its own",
             "2 uncommitted files",
             "1 unpushed commit",
             "Claude Code · Opus 5",
             "Issue #510",
         ].joined(separator: ", "))
+    }
+
+    @Test
+    func `the access mark is announced last, where the header draws it`() {
+        // The posture is the one fact on the line about the READER rather than about the work,
+        // and what a screen reader hears has to be the order the line is written in.
+        let header = SessionHeaderProjection.header(from: CockpitPresentation.Session(
+            id: "session",
+            title: "Session",
+            model: "claude-opus-5",
+            workspaceLocation: "/Users/milad/Developer/argo",
+            access: .orphaned,
+            status: .idle,
+            cli: .claude,
+            workspace: .init(branch: "main"),
+        ))
+
+        #expect(header.announcement.hasSuffix("Claude Code · Opus 5, Orphaned"))
     }
 
     private func header(
