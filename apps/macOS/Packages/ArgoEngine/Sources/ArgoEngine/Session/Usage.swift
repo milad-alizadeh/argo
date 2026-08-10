@@ -29,6 +29,20 @@ public struct Usage: Sendable, Equatable {
     /// and every request re-sends the conversation, so this taken off a roll-up would count the
     /// same window once per turn.
     public var contextTokens: Int {
+        tokens
+    }
+
+    /// What a spend COST — the same four terms, answering the other question.
+    ///
+    /// The arithmetic is `contextTokens`'; the READING is its opposite. That one is meaningful
+    /// only on a single reported spend, and this one only on a roll-up: a Session's bill is every
+    /// request it made, conversation re-sent each time and cache included. Two names because a
+    /// number used for the wrong one of those two questions is wrong by a factor of the turn count.
+    public var billedTokens: Int {
+        tokens
+    }
+
+    private var tokens: Int {
         inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens
     }
 

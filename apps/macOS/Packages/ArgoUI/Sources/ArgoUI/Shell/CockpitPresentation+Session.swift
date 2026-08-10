@@ -90,6 +90,18 @@ public extension CockpitPresentation {
         /// says about that order cannot disagree. Absent where neither the records nor the file
         /// behind them could say — which is a gap, never a moment to stand in for one.
         public let lastSeenAtMs: Int?
+        /// When this Session first did anything, in milliseconds since the epoch — the oldest
+        /// moment its records report. With `lastSeenAtMs` above it, the pair IS the Session's
+        /// wall-clock span; alone, neither of them is a duration.
+        public let startedAtMs: Int?
+        /// What the Session has spent across its whole life, in tokens — every reported spend
+        /// summed, both grains (`CONTEXT.md` L3). The opposite reading from `contextTokens`
+        /// below, which is only what it is holding now.
+        public let totalTokens: Int?
+        /// What its subagents spent, of that total. **Absent, never zero**, where nothing
+        /// reported any — which is every CLI in use today, and why the header drops the fact
+        /// off its line rather than printing a zero that would claim no subagent ran.
+        public let subagentTokens: Int?
         /// How full the Session's context is right now, in tokens — the latest reading its records
         /// carry, DERIVED. Absent for a record that reported no spend at all, which the header
         /// draws as `unknown`: unreadable is not an empty context.
@@ -113,6 +125,9 @@ public extension CockpitPresentation {
             workspace: Workspace? = nil,
             issue: Issue? = nil,
             lastSeenAtMs: Int? = nil,
+            startedAtMs: Int? = nil,
+            totalTokens: Int? = nil,
+            subagentTokens: Int? = nil,
             contextTokens: Int? = nil,
             events: [TranscriptEvent] = [],
         ) {
@@ -126,6 +141,9 @@ public extension CockpitPresentation {
             self.status = status
             self.issue = issue
             self.lastSeenAtMs = lastSeenAtMs
+            self.startedAtMs = startedAtMs
+            self.totalTokens = totalTokens
+            self.subagentTokens = subagentTokens
             self.contextTokens = contextTokens
             self.events = events
         }

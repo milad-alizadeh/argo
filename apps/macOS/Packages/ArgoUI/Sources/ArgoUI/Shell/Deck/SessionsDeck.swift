@@ -38,7 +38,7 @@ struct SessionsDeck: View {
         VStack(spacing: ArgoSpacing.flush) {
             SessionHeader(header: header)
                 .frame(height: ArgoLayout.deckHeaderHeight)
-            DeckSlot(zone: .tabs)
+            SessionTabLine(spend: header?.spend)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
             DeckSeparator()
             DeckContentRow(

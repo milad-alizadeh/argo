@@ -86,6 +86,10 @@ enum SessionHeaderProjection {
         /// apply rather than that Argo could not establish it. The absence lives INSIDE the
         /// reading, as `unknown`.
         let context: Context
+        /// What the Session has spent and how long it has been going, already composed — the tab
+        /// line's whole content. `nil` for a Session none of those facts could be established
+        /// for: the line collapses rather than drawing the separators of facts it does not have.
+        let spend: String?
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being and no
         /// surface can assemble one that disagrees with what the projection decided.
@@ -97,6 +101,7 @@ enum SessionHeaderProjection {
             agent: String?,
             issue: IssueLink?,
             context: Context,
+            spend: String?,
         ) {
             self.title = title
             self.access = access
@@ -105,6 +110,7 @@ enum SessionHeaderProjection {
             self.agent = agent
             self.issue = issue
             self.context = context
+            self.spend = spend
         }
 
         /// What a screen reader hears of the Session's IDENTITY: the facts on the header's leading
@@ -133,6 +139,7 @@ enum SessionHeaderProjection {
             agent: agent(cli: session.cli, model: session.model),
             issue: link(to: session.issue),
             context: context(tokens: session.contextTokens),
+            spend: spend(from: session),
         )
     }
 
