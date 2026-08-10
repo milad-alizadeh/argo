@@ -23,7 +23,9 @@ struct SessionRow: View {
         .help(inspectionText)
         .contextMenu { copyActions }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel)
+        // The lock can be suppressed as visual noise; the fact behind it never is. What is
+        // announced is the projection's decision, not a second one taken here.
+        .accessibilityLabel(row.announcement)
     }
 
     private var primaryLine: some View {
@@ -96,19 +98,6 @@ struct SessionRow: View {
         if let branch = row.branch {
             Button("Copy branch") { copy(branch) }
         }
-    }
-
-    /// The lock can be suppressed as visual noise; the fact behind it never is.
-    private var accessibilityLabel: String {
-        [
-            row.title,
-            row.stateWord,
-            row.isReadOnly ? "Read-only Session" : nil,
-            row.branch.map { "on \($0)" },
-            row.age.map { "last active \($0)" },
-        ]
-        .compactMap(\.self)
-        .joined(separator: ", ")
     }
 
     private var inspectionText: String {

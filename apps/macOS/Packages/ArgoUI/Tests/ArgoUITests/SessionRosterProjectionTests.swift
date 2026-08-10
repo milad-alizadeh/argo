@@ -24,18 +24,42 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
-    func `a word is spent only where the roster wants the scan to stop`() {
-        let sessions = [
-            session(id: "idle", status: .idle),
-            session(id: "running", status: .running),
-            session(id: "attention", status: .asking),
-            session(id: "failure", status: .stopped),
-            session(id: "unknown", status: .unknown),
-        ]
+    func `every Session status spends the one word it has earned`() {
+        // `allCases`, so a status added to the domain fails here rather than quietly
+        // inheriting whichever word its colour role already spends.
+        let rows = SessionRosterProjection.rows(
+            from: SessionStatus.allCases.enumerated()
+                .map { session(id: "\($0.offset)", status: $0.element) },
+        )
 
-        let rows = SessionRosterProjection.rows(from: sessions)
+        // In `allCases` order: running · permission · asking · idle · stopped · ended ·
+        // unknown. `Needs input` says what the Session is waiting for rather than who it
+        // wants; `Stopped` says the Turn ended short, which is what the status means — not
+        // that anything crashed. `running`, `idle` and `ended` are the dot's to carry.
+        #expect(rows.map(\.stateWord) == [
+            nil, "Needs input", "Needs input", nil, "Stopped", nil, nil,
+        ])
+    }
 
-        #expect(rows.map(\.stateWord) == [nil, nil, "Needs you", "Failed", nil])
+    @Test
+    func `the announced word is the drawn word, never a second claim beside it`() throws {
+        // The word is one decision made once: a label that said `Failed` while the row read
+        // `Stopped` would be the roster telling a screen reader something else.
+        let row = try #require(rows(session(id: "stopped", status: .stopped)).first)
+
+        #expect(row.stateWord == "Stopped")
+        #expect(row.announcement.contains("Stopped"))
+    }
+
+    @Test
+    func `a Session with no word announces the rest of the row without it`() throws {
+        let row = try #require(
+            rows(session(id: "quiet", status: .idle, lastSeenAtMs: msAgo(120))).first,
+        )
+
+        // No empty slot where the word would have been, and the read-only fact — which the
+        // lock is allowed to suppress visually — is never suppressed here.
+        #expect(row.announcement == "Session quiet, on main, last active 2m ago")
     }
 
     @Test

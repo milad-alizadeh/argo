@@ -22,6 +22,12 @@ enum SessionRosterProjection {
         /// and for one whose record carries no time to word.
         let age: String?
         let state: ArgoOperationalState?
+        /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
+        /// needs the user to stop scanning. D30 keeps counts and words to what helps the scan.
+        ///
+        /// Read off the status rather than off the colour role beside it, so a second status
+        /// arriving on `.failure` cannot inherit a word that was never about it.
+        let stateWord: String?
 
         /// `fileprivate`, so `rows(from:)` is the only way a row comes into being and a
         /// `showsLock` that disagrees with `isReadOnly` stops being representable.
@@ -34,6 +40,7 @@ enum SessionRosterProjection {
             showsLock: Bool,
             age: String?,
             state: ArgoOperationalState?,
+            stateWord: String?,
         ) {
             self.id = id
             self.title = title
@@ -43,16 +50,22 @@ enum SessionRosterProjection {
             self.showsLock = showsLock
             self.age = age
             self.state = state
+            self.stateWord = stateWord
         }
 
-        /// The dot carries `running` and `idle`; a word is spent only where the roster needs
-        /// the user to stop scanning. D30 keeps counts and words to what helps the scan.
-        var stateWord: String? {
-            switch state {
-            case .attention: "Needs you"
-            case .failure: "Failed"
-            case .running, .idle, nil: nil
-            }
+        /// What a screen reader hears. It composes from the same `stateWord` the row draws, so
+        /// the two can never make different claims about the Session — and it keeps the
+        /// read-only fact the lock is allowed to drop as visual noise.
+        var announcement: String {
+            [
+                title,
+                stateWord,
+                isReadOnly ? "Read-only Session" : nil,
+                branch.map { "on \($0)" },
+                age.map { "last active \($0)" },
+            ]
+            .compactMap(\.self)
+            .joined(separator: ", ")
         }
     }
 
@@ -72,6 +85,7 @@ enum SessionRosterProjection {
                 showsLock: locksDistinguish && session.access == .readOnly,
                 age: age(status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
                 state: state(for: session.status),
+                stateWord: stateWord(for: session.status),
             )
         }
     }
@@ -98,6 +112,20 @@ enum SessionRosterProjection {
         case .idle, .ended: .idle
         case .stopped: .failure
         case .unknown: nil
+        }
+    }
+
+    /// Session status → the word the row spends on it, if any.
+    ///
+    /// `Needs input` names what the Session is waiting for rather than who it wants.
+    /// `Stopped` is the whole point of the vocabulary: `stopped` is a Turn that ended on
+    /// `max_tokens`, `max_turn_requests` or `refusal` — the agent stopped short. It did not
+    /// crash, and `ended` (cancelled, or the process exited) is a quiet idle, not a failure.
+    private static func stateWord(for status: SessionStatus) -> String? {
+        switch status {
+        case .permission, .asking: "Needs input"
+        case .stopped: "Stopped"
+        case .running, .idle, .ended, .unknown: nil
         }
     }
 }

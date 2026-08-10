@@ -50,8 +50,8 @@ neutral dim text — no coloured words, no double-encoding.
 |---|---|---|---|
 | Running | `running` | green, live glow | the normal state with 3–4 sessions; liveness stays legible under attention |
 | Idle | `idle` | dim grey | agent alive, not currently working — **and the honest reading of an agent's free-form question**, which the record cannot tell apart from idle |
-| Needs you | `needs you` | amber/gold | the one attention state (#164) — a "come here", not a calm state. **Two domain states share this one word** (`CONTEXT.md` L2): `permission` (blocked on a permission prompt, DIRECT and managed-only) and `asking` (blocked on a structured question). Which flavour of "come here" it is would be a second telling, so the row never spells it |
-| Failed | `failed` | red | crash / canceled / `stopped`→red; a "come here" signal, hue-distinct from needs-you |
+| Needs input | `Needs input` | amber/gold | the one attention state (#164) — a "come here", not a calm state. **Two domain states share this one word** (`CONTEXT.md` L2): `permission` (blocked on a permission prompt, DIRECT and managed-only) and `asking` (blocked on a structured question). Which flavour of "come here" it is would be a second telling, so the row never spells it. It names **what the Session is waiting for**, not who it wants (#507, superseding `needs you`) |
+| Stopped | `Stopped` | red | `stopped` only — a Turn that ended on `max_tokens`, `max_turn_requests` or `refusal`: the agent stopped short. **Not `Failed`** (#507): nothing crashed, and a cancelled or exited Session is `ended`, which reads idle |
 | Ended | `ended` | dim grey | the session terminated. Needs a process exit Argo witnessed, so an external session floors above it at `idle` rather than claiming a shutdown it never saw |
 | External | *(identity, no state word)* | hollow | observed non-managed session; status degrades away, not faked. **`orphaned`** — a managed session whose owning Argo process is gone — renders the same way: it is a posture on the `managed \| external` axis, not a state word |
 
@@ -65,12 +65,12 @@ neutral dim text — no coloured words, no double-encoding.
 
 ## Attention (Argo-owned)
 
-One flat state, not a subsystem (#164). It **is** the amber `needs you` above at the
+One flat state, not a subsystem (#164). It **is** the amber `Needs input` above at the
 session level. Rolled up:
 
 | Surface | Reads |
 |---|---|
-| Project strip icon | single **worst-state** dot: amber (needs you) > red (failed) > green (running) > none; active project stays quiet |
+| Project strip icon | single **worst-state** dot: amber (needs input) > red (stopped) > green (running) > none; active project stays quiet |
 | Roster row | the session's own dot (above) |
 | Dock badge / OS banner | the out-of-window projection of the same dot — amber + red only, verbatim words (#188) |
 
