@@ -55,6 +55,21 @@ public struct SpecimenScreen: View {
             // The shell, not `SessionsDeck` — the assembled container is the plane plus its
             // zones, and "one opaque plane" is a claim about the plane.
             InstrumentDeckShell(room: .sessions)
+        case .sessionHeader:
+            // The default posture, and the quiet one: a header that names its Session and spends
+            // no mark at all. What the PNG settles is that the silence reads as a header rather
+            // than as a zone that failed to draw half of itself — and that a real title, long
+            // enough to be cut, still reads as the largest line on the plane.
+            SessionHeaderSpecimen(access: .managed)
+        case .externalSessionHeader:
+            // A Session nobody here started, marked. The judgement is whether one small word
+            // beside a title is findable without being loud — a fact worth reading once.
+            SessionHeaderSpecimen(access: .external)
+        case .orphanedSessionHeader:
+            // The posture that only exists because the two read differently: "this was yours and
+            // Argo lost the terminal" against "this was never yours". Its own case because the
+            // two are only judgeable as a PAIR, and a pair is two PNGs.
+            SessionHeaderSpecimen(access: .orphaned)
         case .feed:
             // The deck at rest with a Session read into it, drawn through the same projection the
             // shell uses. A specimen holding rows of its own would be evidence about a feed
@@ -247,6 +262,15 @@ public struct SpecimenScreen: View {
         held: FeedRow.ID? = nil,
     )
         -> some View {
-        InstrumentDeckShell(room: .sessions, feed: feed, open: open, lit: lit, held: held)
+        // Named, because a reading is always OF something: a deck whose top zone says nothing is
+        // the no-Session-selected state, and every case below has a Session in it.
+        InstrumentDeckShell(
+            room: .sessions,
+            feed: feed,
+            header: SessionHeaderFixture.header(for: .managed),
+            open: open,
+            lit: lit,
+            held: held,
+        )
     }
 }

@@ -10,8 +10,9 @@ struct CockpitPresentationTests {
         // `allCases`, so a provenance added to the domain has to decide its access here.
         let access = SessionProvenance.allCases.map(CockpitPresentation.Session.Access.init)
 
-        // Orphaned reads read-only too: the PTY died with the Argo that owned it.
-        #expect(access == [.managed, .readOnly, .readOnly])
+        // One posture each, in provenance's own order. Orphaned is read-only too — the PTY died
+        // with the Argo that owned it — but it is not `external`, and the header says which.
+        #expect(access == [.managed, .external, .orphaned])
     }
 
     @Test
@@ -52,7 +53,7 @@ struct CockpitPresentationTests {
         #expect(session.title == "Refactor the auth module")
         #expect(session.model == "claude-opus-5")
         #expect(session.workspaceLocation == "/Users/milad/Developer/argo")
-        #expect(session.access == .readOnly)
+        #expect(session.access == .external)
         #expect(session.status == .idle)
     }
 

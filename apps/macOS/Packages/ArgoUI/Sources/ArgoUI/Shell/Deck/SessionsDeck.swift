@@ -10,6 +10,9 @@ struct SessionsDeck: View {
     /// The selected Session's reading. Projected above the deck rather than here — the deck is a
     /// layout, and a zone that looked a Session up would be the layout choosing what to draw.
     let feed: [FeedRow]
+    /// What the top zone names, projected above the deck for the same reason the feed is. Absent
+    /// when nothing is selected: the zone keeps its height and says nothing.
+    var header: SessionHeaderProjection.Header?
     /// The selected Session's plan, projected above the deck for the same reason the feed is. It
     /// is standing state rather than a row, which is exactly why it arrives beside the rows and
     /// not among them.
@@ -33,7 +36,7 @@ struct SessionsDeck: View {
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            DeckSlot(zone: .header)
+            SessionHeader(header: header)
                 .frame(height: ArgoLayout.deckHeaderHeight)
             DeckSlot(zone: .tabs)
                 .frame(height: ArgoLayout.deckTabSlotHeight)
@@ -58,6 +61,7 @@ struct SessionsDeck: View {
 #Preview("Sessions deck — zones") {
     SessionsDeck(
         feed: FeedProjection.previewRows,
+        header: SessionHeaderFixture.header(for: .managed),
         showing: PlanShowing(plan: PlanProjection.previewReading),
     )
     .frame(width: 900, height: 620)

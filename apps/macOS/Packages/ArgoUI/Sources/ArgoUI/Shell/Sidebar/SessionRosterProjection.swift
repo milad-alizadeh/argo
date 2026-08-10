@@ -86,14 +86,14 @@ enum SessionRosterProjection {
 
     /// Whether the whole row is drawn as a Session nobody here can drive.
     ///
-    /// A `switch` and not `!= .managed`: a third posture is expected on this axis — a managed
-    /// Session whose owner is gone is orphaned, and reads as neither of these two
-    /// (`CONTEXT.md` L2). What it should ANNOUNCE is that ticket's decision, and an inequality
-    /// would take it silently rather than making somebody make it.
+    /// A `switch` and not `!= .managed`, so a posture arriving on this axis has to answer the
+    /// question rather than inherit an answer. The two that do are one row rendering on purpose:
+    /// the roster is a SWITCHER, and "you cannot drive this" is all of it a row needs to say —
+    /// which of the two it is belongs to the header, where there is room to name it.
     private static func isReadOnly(_ access: CockpitPresentation.Session.Access) -> Bool {
         switch access {
         case .managed: false
-        case .readOnly: true
+        case .external, .orphaned: true
         }
     }
 

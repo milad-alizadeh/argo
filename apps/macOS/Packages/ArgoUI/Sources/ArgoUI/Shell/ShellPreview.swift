@@ -71,7 +71,7 @@ public extension CockpitPresentation {
                 model: nil,
                 workspaceLocation: "/Users/milad/Developer/cockpit",
                 branch: nil,
-                access: .readOnly,
+                access: .external,
                 // No time at all — a transcript that stamped nothing. Idle, so the absence is
                 // the record's rather than the status's.
                 status: .unknown,

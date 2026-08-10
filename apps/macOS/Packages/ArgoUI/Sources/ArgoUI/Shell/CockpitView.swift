@@ -33,6 +33,13 @@ public struct CockpitView: View {
         PlanShowing(plan: PlanProjection.reading(from: events))
     }
 
+    /// What the deck's top zone names, projected here for the reason the feed is: this is the one
+    /// view that knows which Session is selected, and a zone that looked one up would be a layout
+    /// choosing its own subject.
+    private var header: SessionHeaderProjection.Header? {
+        presentation.session(navigation.session).map(SessionHeaderProjection.header(from:))
+    }
+
     private var events: [TranscriptEvent] {
         presentation.session(navigation.session)?.events ?? []
     }
@@ -52,6 +59,7 @@ public struct CockpitView: View {
                 room: navigation.room,
                 session: navigation.session,
                 feed: feed,
+                header: header,
                 showing: showing,
             )
             .overlay(alignment: .topLeading) {
