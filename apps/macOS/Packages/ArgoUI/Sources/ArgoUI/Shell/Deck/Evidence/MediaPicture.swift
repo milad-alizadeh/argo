@@ -17,12 +17,28 @@ struct MediaPicture {
     /// `nil` where there are no bytes, or none that decode. Both are the same thing to a surface:
     /// there is no picture, and it says so rather than drawing a broken one.
     init?(_ media: MediaEvidence) {
-        guard let bytes = media.bytes,
-              let data = Data(base64Encoded: bytes),
-              let image = NSImage(data: data)
-        else { return nil }
+        guard let bytes = media.bytes, let image = Self.decode(bytes) else { return nil }
         self.image = image
         self.pixels = image.representations.first.map { ($0.pixelsWide, $0.pixelsHigh) }
+    }
+
+    /// One decode per distinct byte run, however many surfaces show it. The lightbox opens the
+    /// SAME `NSImage` the thumbnail drew, so AppKit reuses the rasterised bitmap and the open
+    /// fade starts on a free main thread — a second decode at mount stalled the fade's first
+    /// frames, which read as a flash.
+    /// `nonisolated(unsafe)` on the strength of `NSCache`'s own documented thread safety — the
+    /// compiler cannot see it, but the type synchronises its accesses itself.
+    private nonisolated(unsafe) static let decoded = NSCache<NSString, NSImage>()
+
+    private static func decode(_ bytes: String) -> NSImage? {
+        if let image = decoded.object(forKey: bytes as NSString) {
+            return image
+        }
+        guard let data = Data(base64Encoded: bytes), let image = NSImage(data: data) else {
+            return nil
+        }
+        decoded.setObject(image, forKey: bytes as NSString)
+        return image
     }
 
     /// `1280 × 800`, or nothing at all where the image did not say. Never a guess from the point

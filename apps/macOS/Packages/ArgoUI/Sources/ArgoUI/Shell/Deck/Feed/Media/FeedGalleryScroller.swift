@@ -40,8 +40,14 @@ struct FeedGalleryScroller<Content: View>: NSViewRepresentable {
 
     /// The run with the cockpit's environment replayed onto it — an `NSHostingView` inherits
     /// nothing from the hierarchy above it, and a shot drawn without it renders the theme's
-    /// defaults rather than the cockpit's.
+    /// defaults rather than the cockpit's. Pinned top-leading because the document is sized to
+    /// the clip, never smaller — a hosting view left to itself centres a run inside the slack,
+    /// which floats the shots away from the reading's left edge.
     private func dressed(in context: Context) -> AnyView {
-        AnyView(content.environment(\.self, context.environment))
+        AnyView(
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .environment(\.self, context.environment),
+        )
     }
 }
