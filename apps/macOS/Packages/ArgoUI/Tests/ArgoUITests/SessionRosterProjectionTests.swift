@@ -24,31 +24,53 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
-    func `a word is spent only where the roster wants the scan to stop`() {
-        let sessions = [
-            session(id: "idle", status: .idle),
-            session(id: "running", status: .running),
-            session(id: "attention", status: .asking),
-            session(id: "failure", status: .stopped),
-            session(id: "unknown", status: .unknown),
+    func `every Session status spends the one word it has earned`() {
+        // `Needs input` says what the Session is waiting for rather than who it wants.
+        // `Stopped` says the Turn ended short — which is what the status means, not that
+        // anything crashed; `ended` is a cancelled or exited Session and reads idle.
+        let expected: [(status: SessionStatus, word: String?)] = [
+            (.running, nil),
+            (.permission, "Needs input"),
+            (.asking, "Needs input"),
+            (.idle, nil),
+            (.stopped, "Stopped"),
+            (.ended, nil),
+            (.unknown, nil),
         ]
 
-        let rows = SessionRosterProjection.rows(from: sessions)
+        // Every status is answered here, in the order the rows come back in, so a status
+        // added to the domain fails rather than quietly inheriting its colour role's word.
+        #expect(expected.map(\.status) == SessionStatus.allCases)
+        #expect(rows(of: expected.map(\.status)).map(\.stateWord) == expected.map(\.word))
+    }
 
-        #expect(rows.map(\.stateWord) == [nil, nil, "Needs you", "Failed", nil])
+    @Test
+    func `the announced word is the drawn word, never a second claim beside it`() throws {
+        // The word is one decision made once: a label that said `Failed` while the row read
+        // `Stopped` would be the roster telling a screen reader something else.
+        let row = try #require(rows(session(id: "stopped", status: .stopped)).first)
+
+        #expect(row.stateWord == "Stopped")
+        #expect(row.announcement.contains("Stopped"))
+    }
+
+    @Test
+    func `a Session with no word announces the rest of the row without it`() throws {
+        let row = try #require(
+            rows(session(id: "quiet", status: .idle, lastSeenAtMs: msAgo(120))).first,
+        )
+
+        // No empty slot where the word would have been, and the read-only fact — which the
+        // lock is allowed to suppress visually — is never suppressed here.
+        #expect(row.announcement == "Session quiet, on main, last active 2m ago")
     }
 
     @Test
     func `every Session status has one colour role, and unknown has none`() {
         // `allCases`, so a status added to the domain fails here rather than quietly taking
         // whichever colour the mapping's last branch happens to be.
-        let rows = SessionRosterProjection.rows(
-            from: SessionStatus.allCases.enumerated()
-                .map { session(id: "\($0.offset)", status: $0.element) },
-        )
-
         // A dot is a claim about what the Session is doing; `unknown` makes none.
-        #expect(rows.map(\.state) == [
+        #expect(rows(of: SessionStatus.allCases).map(\.state) == [
             .running, .attention, .attention, .idle, .failure, .idle, nil,
         ])
     }
@@ -203,6 +225,15 @@ struct SessionRosterProjectionTests {
 
     private func rows(_ session: CockpitPresentation.Session) -> [SessionRosterProjection.Row] {
         SessionRosterProjection.rows(from: [session], now: now)
+    }
+
+    /// One row per status, in the order given, so a per-status mapping is asserted against
+    /// the statuses it was written for rather than against seven anonymous slots.
+    private func rows(of statuses: [SessionStatus]) -> [SessionRosterProjection.Row] {
+        SessionRosterProjection.rows(
+            from: statuses.enumerated().map { session(id: "\($0.offset)", status: $0.element) },
+            now: now,
+        )
     }
 
     private func session(

@@ -23,7 +23,9 @@ struct SessionRow: View {
         .help(inspectionText)
         .contextMenu { copyActions }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel)
+        // The lock can be suppressed as visual noise; the fact behind it never is. What is
+        // announced is the projection's decision, not a second one taken here.
+        .accessibilityLabel(row.announcement)
     }
 
     private var primaryLine: some View {
@@ -79,11 +81,13 @@ struct SessionRow: View {
             }
             // The word takes the dot's own ink, so the two never read as separate claims.
             // The contract already carries this: every state ink is asserted legible as a
-            // word and not only as a dot.
-            if let state = row.state, let word = row.stateWord {
+            // word and not only as a dot. Drawn on the word alone, though — a word the
+            // projection spent under a state with no colour would otherwise be announced
+            // and never drawn, which is the disagreement the one `stateWord` exists to stop.
+            if let word = row.stateWord {
                 Text(word)
                     .argoText(ArgoTypography.caption)
-                    .foregroundStyle(state.tint(in: argo.color))
+                    .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
             }
         }
     }
@@ -96,19 +100,6 @@ struct SessionRow: View {
         if let branch = row.branch {
             Button("Copy branch") { copy(branch) }
         }
-    }
-
-    /// The lock can be suppressed as visual noise; the fact behind it never is.
-    private var accessibilityLabel: String {
-        [
-            row.title,
-            row.stateWord,
-            row.isReadOnly ? "Read-only Session" : nil,
-            row.branch.map { "on \($0)" },
-            row.age.map { "last active \($0)" },
-        ]
-        .compactMap(\.self)
-        .joined(separator: ", ")
     }
 
     private var inspectionText: String {

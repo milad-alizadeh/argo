@@ -45,7 +45,7 @@ there — in the Sessions room, the session Dock (#161).
 
 - **Project strip** — far-left, ~60px, **borderless**: tabs float on the scene, no panel fill,
   no divider. One tab per connected project; **one worst-state dot per project** (amber
-  needs-you > red failed > green running > none), active project stays quiet (#164). `+` adds a
+  needs-input > red stopped > green running > none), active project stays quiet (#164). `+` adds a
   project. **Hovering the active tab reveals project name + `last synced`** as a tooltip — the
   only place either appears, now that the bar carries no project label. Tooltip only: no dot,
   no state, so #164's session-only strip dot is untouched. Swap = **view change, not teardown**
@@ -222,7 +222,7 @@ its own. Every property below is derived from #164's four-state dot, which is wh
 sessions and blind observation need no special-casing: they cannot honestly reach the firing
 states, so they cannot fire.
 
-- **Fires on** a session entering **amber `needs you`** or **red `failed`** — exactly the set
+- **Fires on** a session entering **amber `Needs input`** or **red `Stopped`** — exactly the set
   that lights a project-strip badge (#164). **Never on `idle`**, including a clean `end_turn`:
   `idle` deliberately earns no badge, so notifying on it would invent an interrupt with nothing
   in-app to answer or clear — and a session goes idle after *every* turn.
@@ -238,7 +238,7 @@ states, so they cannot fire.
   is rare, and macOS already groups per-app. A threshold collapse (`3 sessions need you`) is
   purely additive later.
 - **Dock badge = count of amber + red across all projects** (`app.setBadgeCount`), the same set,
-  keeping one definition of "needs you" across dot, badge, and banner. **Focus-independent** —
+  keeping one definition of "needs input" across dot, badge, and banner. **Focus-independent** —
   banners are interrupts that focus answers; the badge is a state readout and stays until the
   sessions actually leave those states. A *count*, not a dot, because unlike the project strip
   (worst-state, no counts, per-project dots underneath) the dock icon is a single global object
@@ -256,11 +256,12 @@ states, so they cannot fire.
   prompt appears at first send with no in-app framing, and a denial is recoverable only in System
   Settings (onboarding copy may mention it — a copy amendment, not a surface). Sound is on by
   default; this is the channel that has to reach you across the room.
-- **Copy** — title = `<session title>`, body = `<project> · needs you` or `<project> · failed`.
+- **Copy** — title = `<session title>`, body = `<project> · Needs input` or `<project> · Stopped`.
   No `Argo` in the title (macOS renders the app name itself). The project is mandatory: this is
   the one cross-project channel, and the session title alone does not say where. State words come
   **verbatim from the status vocabulary registry**, so banner, dot, and roll-up read identically;
-  `stopped` and `ended` both render `failed`, the same fold as the dot. The agent's raw request is
+  only `stopped` renders `Stopped` — `ended` (cancelled, or the process exited) reads idle and so
+  never fires at all, and nothing here says `failed` (#507). The agent's raw request is
   **not** in the body — an OS surface we do not control the truncation of invites deciding from
   the banner, when the real output lives one gesture away in the Dock (failure spec §5).
 

@@ -64,7 +64,7 @@ independently and at different levels:
 - **Background projects stay silent.** A background project whose provider died does **not** light
   its strip dot. You learn on switch — which is also the first moment you could act on it.
 - **The project-strip dot stays session-only**, exactly as #164 locked it: worst-state, amber
-  `needs you` > red `failed` > green `running` > none. Connection health never enters that channel.
+  `Needs input` > red `Stopped` > green `running` > none. Connection health never enters that channel.
 
 **Why:** the strip dot's one channel carries *"your agent is waiting on you"* — something you can
 act on this second. Putting *"GitHub is unreachable"* at the same urgency, in the app's densest
