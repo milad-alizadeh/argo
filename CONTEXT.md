@@ -14,7 +14,8 @@ Ports · Experience · Relationships.**
 
 Every source of truth is external: Work Items live in a project-management provider, Delivery
 truth in a code host, Sessions in the filesystem (CLI transcripts) + terminal. Argo owns only
-the **glue** — the Project registry and the user-asserted links no external signal carries.
+the **glue** — the Project registry, the Account registry, and the user-asserted links no
+external signal carries.
 
 - **Files are always the source of truth.** Argo's owned state lives in **per-machine app
   data** (`userData`), **never committed** (sessions, paths, registration are per-machine).
@@ -27,12 +28,30 @@ the **glue** — the Project registry and the user-asserted links no external si
 ## L1 · Organisation entities
 
 - **Project** — the scope of one cockpit window: a **registered git repo, keyed to a stable
-  id** (path is a mutable attribute), carrying an **optional** Work Item provider and an
-  **optional** Code host. One git root = one Project (a monorepo is one Project). Registration
-  is the act that creates it — an unregistered repo on disk is not a Project. One active
-  Project per window; the known set lives in a per-machine file registry. The **only entity
-  above the Session that Argo owns rather than observes**, and the shared base ref every
-  session's Workspace branches from.
+  id** (path is a mutable attribute), carrying an **optional** Work Item **Binding** and an
+  **optional** Code host Binding. One git root = one Project (a monorepo is one Project).
+  Registration is the act that creates it — an unregistered repo on disk is not a Project. One
+  active Project per window; the known set lives in a per-machine file registry. The **only
+  entity in the L1 triangle that Argo owns rather than observes** (Account is owned too, but
+  sits outside it), and the shared base ref every session's Workspace branches from.
+
+- **Account** — one authenticated identity with a provider: **one OAuth grant, one token in the
+  OS keychain**, keyed by the **provider's own stable id** for it (login/workspace name is a
+  mutable display attribute — same shape as Project's id-vs-path). **N per provider per
+  machine** — a personal GitHub and a work GitHub are two Accounts, not one re-authorized; the
+  same identity added twice is one Account, because the id and not the name is the key. Owned
+  state, per-machine, never committed; the known set lives in a per-machine registry beside the
+  Project one, holding no token itself. Revocation and expiry are **Account-level** — their
+  blast radius is every Binding naming that Account, not every Binding on that provider.
+
+- **Binding** — a Project's use of **one Account through one port**, plus the **provider-side
+  scope** that Account reads through (GitHub: an `owner/repo`; Linear: a team). The unit that
+  makes provider choice *per-Project*: one Project on Linear for Work Items while another is on
+  GitHub Issues, each naming its own Account. **Per-port, not per-Project** — one GitHub
+  Account normally fills both Bindings in one act, and nothing in the model stops the two from
+  naming different Accounts. A Binding is **validated against its Account at bind time**: an
+  Account that cannot see the scope is a bind-time refusal, never a run of reads that 404 and
+  read as "the ticket does not exist." Health is keyed here, not on the Project (#260).
 
 - **Work Item** — intent. A ticket owned by a Work Item provider; **Argo stores only the link**
   (provider id + which port), never the content (title/status/body/blockers are read-through,
@@ -329,6 +348,11 @@ Argo's two adapter ports — how **Argo itself** reads external truth. **Access 
 provider's HTTP API, not the `gh` CLI** (tokens in the OS keychain; polled, since a desktop app
 receives no webhooks). `gh` remains how *agents* operate the repo — a different layer.
 
+A port names the *kind* of external truth; an **Account** is who Argo is when it reads, and a
+**Binding** is which Account one Project reads through. Authorizing is Account-level and done
+once per identity per machine; choosing is Binding-level and done per Project — so a second
+Project on an already-authorized provider **binds without a second OAuth round-trip**.
+
 - **Work Item provider** — sources intent. GitHub Issues / Linear for v1; pluggable. The read
   contract is children **in author order** (native on every provider); per ticket the verbatim
   status word, open/closed, closure kind, assignee, priority and labels; `blockedBy` **verified
@@ -339,8 +363,9 @@ receives no webhooks). `gh` remains how *agents* operate the repo — a differen
   `closureKind: native | configured | none`), and **per-fact `unknown`** for a value it reads
   but cannot establish. Capabilities decide whether an affordance **exists**; `unknown` decides
   what a present affordance **shows**.
-- **Code host** — sources Delivery truth (PR/CI/review/merge). GitHub for v1. One GitHub OAuth
-  grant can feed **both** ports; Linear is Work-Item-only.
+- **Code host** — sources Delivery truth (PR/CI/review/merge). GitHub for v1. One GitHub
+  Account can feed **both** ports **and fails as one** — but only within that Account; a second
+  GitHub Account is a separate grant with its own failure. Linear is Work-Item-only.
 - **MCP server** — *distinct from the ports above*: tool/context providers the **observed
   session** connects to. An observable Session attribute, **not** an Argo port. Deferred for v1.
 
@@ -364,8 +389,12 @@ ADR-0023/0017) and the **transcript-tailing parser** are runtime *mechanisms*.
 
 ## Relationships (the whole graph)
 
-- **Project** `1—N` **Session**, `1—N` **Delivery**; scopes which **Work Item provider** +
-  **Code host** are connected.
+- **Project** `1—N` **Session**, `1—N` **Delivery**; holds **`0..1` Binding per port** (Work
+  Item, Code host), which is what scopes the providers it reads.
+- **Account** `0—N` **Binding**, across any number of Projects; a **Binding** names exactly
+  **one Account** and **one port**. A provider has `0—N` **Accounts** on this machine, so
+  Account is the level a grant, a token and a revocation all sit at, and Binding is the level a
+  provider *choice* and its health sit at.
 - **L1 triangle** (all optional): **Session—Work Item** (branchless-fallback assertion, else
   derived), **Session—Delivery** (**`0..1` at a time**, N over a resume chain),
   **Delivery—Work Item** (join precedence, **user-assertable when unlinked**). Many-to-many
