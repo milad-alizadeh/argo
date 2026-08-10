@@ -134,6 +134,23 @@ struct VisualContractTests {
         }
     }
 
+    /// Ghosting a whole surface takes every ink on it down at once, which is the one device in
+    /// the contract that can push a rung under its own floor. What holds it is a RELATIONSHIP
+    /// rather than a second number: a ghosted row's ink stays at least as present as `disabled`,
+    /// the rung this palette already spends on something inert — so a Session you cannot drive
+    /// reads no fainter than a control you cannot press, under any appearance.
+    @Test(arguments: palettes)
+    func `a ghosted surface never falls below the ramp's own inert rung`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let base = appearance.palette.surface.base
+        let floor = appearance.palette.text.disabled.contrastRatio(on: base)
+        let ghosted = [appearance.palette.text.primary, appearance.palette.text.tertiary]
+        for ink in ghosted {
+            #expect(ink.opacity(ArgoOpacity.ghosted).contrastRatio(on: base) >= floor)
+        }
+    }
+
     /// The text ramp is NEUTRAL, all of it. A hue in this palette means something — brand,
     /// one of four operational states, one of two diff inks — and a rung of the text ramp is a
     /// loudness, not a meaning. The rule exists because the exception is what happened: a

@@ -76,7 +76,7 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
-    func `the lock is drawn only when read-only tells the rows apart`() {
+    func `access is a fact about the whole row, not one the roster spends by comparison`() {
         let mixed = SessionRosterProjection.rows(from: [
             session(id: "managed", access: .managed),
             session(id: "external", access: .readOnly),
@@ -86,11 +86,22 @@ struct SessionRosterProjectionTests {
             session(id: "two", access: .readOnly),
         ])
 
-        #expect(mixed.map(\.showsLock) == [false, true])
-        // Every Session read-only: the glyph distinguishes nothing, so it is the repeated
-        // badge D30 deleted. The fact itself survives on every row.
-        #expect(uniform.map(\.showsLock) == [false, false])
+        #expect(mixed.map(\.isReadOnly) == [false, true])
+        // A roster where every Session is read-only says so on every row. The glyph this
+        // replaced was suppressed here, because a badge repeated down a list distinguishes
+        // nothing — a row drawn quieter than its neighbours carries no such cost, and there
+        // are no neighbours to compare against on a roster of one.
         #expect(uniform.map(\.isReadOnly) == [true, true])
+    }
+
+    @Test
+    func `a read-only Session announces itself, with no glyph left to carry the fact`() throws {
+        let row = try #require(rows(session(id: "external", access: .readOnly)).first)
+
+        // The row draws this by ghosting, which a screen reader cannot hear. The label is
+        // where the fact survives the ink.
+        #expect(row.isReadOnly)
+        #expect(row.announcement.contains("Read-only Session"))
     }
 
     @Test
@@ -148,10 +159,10 @@ struct SessionRosterProjectionTests {
         let rows = SessionRosterProjection.previewRows
 
         #expect(Set(rows.map(\.state)) == [.running, .attention, .idle, .failure, nil])
-        // The locked row is also the long one: whether the lock holds its x while a title
-        // truncates into it is the render question the PNG exists to settle, and a short
-        // locked title would leave it unrendered without failing anything.
-        #expect(rows.contains { $0.showsLock && $0.title.count > 40 })
+        // The ghosted row is also the long one: whether a title still truncates cleanly once
+        // the whole row is drawn quieter is the render question the PNG exists to settle, and
+        // a short read-only title would leave it unrendered without failing anything.
+        #expect(rows.contains { $0.isReadOnly && $0.title.count > 40 })
         // Both branch renderings, for the same reason: a one-line row sitting between two-line
         // ones is a rhythm question, and a roster where every Session had a branch would leave
         // it unrendered.
@@ -166,6 +177,23 @@ struct SessionRosterProjectionTests {
         // rendering is the absence the roster has to draw, and the running row would satisfy a
         // bare `age == nil` on its own.
         #expect(rows.contains { $0.age == nil && $0.state != .running })
+    }
+
+    @Test
+    func `the ghosted roster the specimen renders puts both accesses on one screen`() {
+        // The `ghostedRows` PNG is the only evidence whole-row ghosting has, and it is a
+        // COMPARISON: a list of nothing but read-only rows would look like a roster with a
+        // dimmer palette, and prove nothing about the state.
+        let rows = GhostedRosterSpecimen.rows
+
+        #expect(rows.contains { $0.isReadOnly })
+        #expect(rows.contains { !$0.isReadOnly })
+        // Every element a row can draw has to appear ON a ghosted row, or the claim that the
+        // row degrades as one is only rendered for the half of it that happened to be there.
+        #expect(rows.contains { $0.isReadOnly && $0.stateWord != nil })
+        #expect(rows.contains { $0.isReadOnly && $0.branch != nil && $0.age != nil })
+        // Including the loudest ink the roster has: a live dot on a Session nobody can steer.
+        #expect(rows.contains { $0.isReadOnly && $0.state == .running })
     }
 
     @Test

@@ -19,12 +19,17 @@ struct SessionRow: View {
             secondaryLine
         }
         .padding(.vertical, ArgoSpacing.tight)
+        // A Session nobody here can drive is drawn quieter as a WHOLE — every element of it at
+        // once, including the state dot, which is the loudest thing on a running row. Applied
+        // over the assembled row rather than per-element so nothing can be left behind at full
+        // strength, and so a fact added to the row inherits it without being told.
+        .opacity(row.isReadOnly ? ArgoOpacity.ghosted : ArgoOpacity.full)
         .contentShape(.rect)
         .help(inspectionText)
         .contextMenu { copyActions }
         .accessibilityElement(children: .combine)
-        // The lock can be suppressed as visual noise; the fact behind it never is. What is
-        // announced is the projection's decision, not a second one taken here.
+        // Ghosting is ink, and ink is nothing a screen reader can hear. What is announced is
+        // the projection's decision, not a second one taken here.
         .accessibilityLabel(row.announcement)
     }
 
@@ -36,7 +41,7 @@ struct SessionRow: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
             Spacer(minLength: ArgoSpacing.tight)
-            trailingMarks
+            stateWord
         }
     }
 
@@ -69,26 +74,20 @@ struct SessionRow: View {
         }
     }
 
-    /// Everything exceptional about the row, in one right-aligned column. The lock sits here
-    /// rather than beside the title so the marks land on a single x across the roster — a
-    /// glyph that floats to wherever a title happens to end is a mark you have to hunt for.
-    private var trailingMarks: some View {
-        HStack(spacing: ArgoSpacing.snug) {
-            if row.showsLock {
-                ArgoGlyph("lock", .inline)
-                    .foregroundStyle(argo.color.text.tertiary)
-                    .accessibilityHidden(true)
-            }
-            // The word takes the dot's own ink, so the two never read as separate claims.
-            // The contract already carries this: every state ink is asserted legible as a
-            // word and not only as a dot. Drawn on the word alone, though — a word the
-            // projection spent under a state with no colour would otherwise be announced
-            // and never drawn, which is the disagreement the one `stateWord` exists to stop.
-            if let word = row.stateWord {
-                Text(word)
-                    .argoText(ArgoTypography.caption)
-                    .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
-            }
+    /// The one exceptional thing the row's first line still carries, on the right edge the age
+    /// under it takes — a column of marks reading down the roster rather than a word at wherever
+    /// each title happened to end.
+    ///
+    /// The word takes the dot's own ink, so the two never read as separate claims. The contract
+    /// already carries this: every state ink is asserted legible as a word and not only as a dot.
+    /// Drawn on the word alone, though — a word the projection spent under a state with no colour
+    /// would otherwise be announced and never drawn, which is the disagreement the one
+    /// `stateWord` exists to stop.
+    @ViewBuilder private var stateWord: some View {
+        if let word = row.stateWord {
+            Text(word)
+                .argoText(ArgoTypography.caption)
+                .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
         }
     }
 

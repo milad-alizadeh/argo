@@ -63,8 +63,9 @@ public extension CockpitPresentation {
             ),
             Session(
                 id: "observed",
-                // Long AND read-only, deliberately: the lock holding its own x while the title
-                // truncates into it is the one roster rendering only a screenshot can settle.
+                // Long AND read-only, deliberately: whether a title still truncates cleanly on a
+                // row drawn quieter than the ones around it is a rendering only a screenshot
+                // settles. The close read of ghosting is the `ghostedRows` specimen.
                 title: "Review an externally launched Session nobody here started",
                 model: nil,
                 workspaceLocation: "/Users/milad/Developer/cockpit",

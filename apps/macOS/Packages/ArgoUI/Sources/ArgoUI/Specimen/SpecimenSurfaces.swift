@@ -22,8 +22,9 @@ struct SessionRowsSpecimen: View {
     }
 }
 
-/// The shell against a roster that MIXES access. The lock is drawn only where read-only tells
-/// rows apart, so a uniform roster suppresses it by design and this is the only way to look at it.
+/// The shell against a roster that MIXES access — a ghosted row inside the whole window rather
+/// than in a list on its own, which is where a reader actually meets it. `ghostedRows` is the
+/// close read of the same claim.
 struct RosterSpecimen: View {
     /// Which roster the shell is drawn against. A parameter because a second case wants the same
     /// shell over a different set of Sessions — switching between two readings is only reachable
