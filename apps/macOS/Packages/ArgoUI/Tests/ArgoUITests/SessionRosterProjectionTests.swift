@@ -129,9 +129,9 @@ struct SessionRosterProjectionTests {
         // ones is a rhythm question, and a roster where every Session had a branch would leave
         // it unrendered.
         #expect(rows.contains { $0.branch == nil })
-        // A real branch name, long enough to run at the row's width — the truncation the short
-        // fixtures never reach.
-        #expect(rows.contains { ($0.branch?.count ?? 0) > 20 })
+        // A real ticket branch, not a bare `main`: whether one truncates at the row's width
+        // without losing the ticket it is named for is the other question the PNG settles.
+        #expect(rows.contains { $0.branch?.hasPrefix("argo/#") == true })
     }
 
     private func session(

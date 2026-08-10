@@ -4,12 +4,12 @@ enum SessionRosterProjection {
     struct Row: Identifiable, Sendable {
         let id: String
         let title: String
-        /// The full path the Session sits at. Never drawn on the row — the branch took that
-        /// line — but the tooltip and the copy actions still address the Session by it.
+        /// Never drawn — the branch took that line — but the tooltip and the copy actions
+        /// still address the Session by it.
         let location: String?
-        /// The row's second line, and the only thing that tells two Sessions in one repo apart.
-        /// Absent for a Session that has not branched: the row then has one line, rather than a
-        /// placeholder standing where a branch nobody can check out would go.
+        /// The row's second line, and the only thing that tells two Sessions in one repo
+        /// apart. Absent for a Session that has not branched, rather than a placeholder
+        /// standing where a branch nobody can check out would go.
         let branch: String?
         /// Always true of an observed Session, and always announced. Only the *glyph* is
         /// conditional, so hiding it never hides the fact.
