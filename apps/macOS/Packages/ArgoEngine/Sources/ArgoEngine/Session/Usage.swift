@@ -24,6 +24,10 @@ public struct Usage: Sendable, Equatable {
     /// model still reads it — so a reading that dropped the cache would report a Session at a
     /// fraction of the window it is actually filling, which for a long agent run is nearly all of
     /// it.
+    ///
+    /// Meaningful only on ONE reported spend. Summed `Usage` values are what a Session has BILLED,
+    /// and every request re-sends the conversation, so this taken off a roll-up would count the
+    /// same window once per turn.
     public var contextTokens: Int {
         inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens
     }

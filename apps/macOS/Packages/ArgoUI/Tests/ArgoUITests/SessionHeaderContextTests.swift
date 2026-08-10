@@ -56,6 +56,9 @@ struct SessionHeaderContextTests {
         // a number that changes every turn.
         #expect(SessionHeaderProjection.context(tokens: 67175).reading == "67.2k / 1M")
         #expect(SessionHeaderProjection.context(tokens: 984).reading == "984 / 1M")
+        // The rounding must not carry a reading over the unit it was picked for: `1000k / 1M` is
+        // one number said two ways on one line.
+        #expect(SessionHeaderProjection.context(tokens: 999_999).reading == "1M / 1M")
     }
 
     /// Both lines, every time there is a bar to draw them on — so which threshold is coming is
@@ -111,14 +114,19 @@ struct SessionHeaderContextTests {
         let unread = SessionHeaderProjection.header(from: session(tokens: nil))
 
         #expect(unread.context.reading == "unknown")
-        #expect(unread.announcement.hasSuffix("Context unknown"))
+        #expect(unread.context.detail == "Context unknown")
     }
 
+    /// The reading is said out loud by the INSTRUMENT, which is its own element on the line because
+    /// it carries a control. The identity beside it must not say it as well, or a screen reader
+    /// hears the same number twice crossing one header.
     @Test
-    func `what the header announces carries the reading, since a bar is ink`() {
+    func `the identity announcement leaves the reading to the instrument`() {
         let header = SessionHeaderProjection.header(from: session(tokens: 216_764))
 
-        #expect(header.announcement.hasSuffix("Context 217k of 1M"))
+        #expect(header.context.detail == "Context 217k of 1M")
+        #expect(!header.announcement.contains("217k"))
+        #expect(!header.announcement.contains("Context"))
     }
 
     /// The PNGs are the only evidence these renderings have, so a tier with no case in the catalog

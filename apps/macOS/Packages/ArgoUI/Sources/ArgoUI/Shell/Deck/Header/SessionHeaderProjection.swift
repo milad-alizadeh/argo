@@ -81,13 +81,17 @@ enum SessionHeaderProjection {
             self.context = context
         }
 
-        /// What a screen reader hears: the same facts the header draws, said out loud — because
-        /// a mark is ink and ink is nothing a screen reader can hear. Each mark says what it
-        /// counts rather than naming its glyph.
+        /// What a screen reader hears of the Session's IDENTITY: the facts on the header's leading
+        /// half, said out loud — because a mark is ink and ink is nothing a screen reader can
+        /// hear. Each mark says what it counts rather than naming its glyph.
+        ///
+        /// The context reading is deliberately not in it. The instrument is its own element on the
+        /// line — it has to be, since it carries a control — and it announces itself
+        /// (`Context.detail`); saying it here as well would read the same number out twice.
         var announcement: String {
             ([title, access?.word, branch.map { "on \($0)" }]
                 + marks.map(\.detail)
-                + [agent, issue?.label, context.detail])
+                + [agent, issue?.label])
                 .compactMap(\.self)
                 .joined(separator: ", ")
         }

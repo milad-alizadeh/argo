@@ -37,11 +37,18 @@ extension SessionHeaderProjection {
 
     /// The window and the two lines drawn across it.
     ///
-    /// `capacity` is the model's; the two thresholds are **Argo's own policy and DIRECT** — a fixed
-    /// number of tokens rather than a share of the window, which is what sidesteps the
-    /// model-dependent denominator `CONTEXT.md` warns about. Only the count they are compared
-    /// against is DERIVED. They are not user-configurable: this app has no Preferences surface by
-    /// design, and a threshold somebody can move is a threshold the ⓘ panel cannot explain.
+    /// The two thresholds are **Argo's own policy and DIRECT** — a fixed number of tokens rather
+    /// than a share of the window, which is what sidesteps the model-dependent denominator
+    /// `CONTEXT.md` warns about: the ink a Session wears never depends on a window Argo may have
+    /// read wrong. Only the count they are compared against is DERIVED. They are not
+    /// user-configurable: this app has no Preferences surface by design, and a threshold somebody
+    /// can move is a threshold the ⓘ panel cannot explain.
+    ///
+    /// `capacity` is the denominator the reading is printed against, and it is ONE number for
+    /// every Session — the window of the models this build reads. It is the weakest thing here,
+    /// and it is deliberately not load-bearing: it moves no threshold and decides no colour. A
+    /// per-model window is its own change, upstream of this, where the model id would have to be
+    /// mapped to a size Argo can stand behind.
     enum ContextPolicy {
         static let capacity = 1_000_000
         /// Handing off is worth doing.

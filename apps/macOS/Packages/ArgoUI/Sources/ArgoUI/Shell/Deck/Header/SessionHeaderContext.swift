@@ -50,33 +50,10 @@ struct SessionHeaderContext: View {
         }
     }
 
-    /// Quiet until it is not. `okay` is set in the ordinary metadata ink rather than in a green — a
-    /// reading that celebrates is a reading the eye stops sorting from its neighbours — and an
-    /// unreadable one drops a rung further still, because absence is the quietest thing on the
-    /// header.
+    /// An unreadable context drops to the quietest rung on the header, because absence is the one
+    /// thing here that is not a claim about the Session.
     private var readingInk: ArgoColor {
-        switch context.tier {
-        case .warn, .crit: context.tier?.tint(in: argo.color) ?? argo.color.text.tertiary
-        case .okay: argo.color.text.secondary
-        case nil: argo.color.text.tertiary
-        }
-    }
-}
-
-extension SessionHeaderProjection.Context.Tier {
-    /// The tier in the contract's own vocabulary. Amber and red are ROLES here, never hues: the
-    /// tier borrows the operational state that already means "needs you" and "went wrong", so the
-    /// header cannot drift away from the dot on the roster row beside it.
-    var operationalState: ArgoOperationalState {
-        switch self {
-        case .okay: .running
-        case .warn: .attention
-        case .crit: .failure
-        }
-    }
-
-    func tint(in palette: ArgoPalette) -> ArgoColor {
-        operationalState.tint(in: palette)
+        context.tier?.readingInk(in: argo.color) ?? argo.color.text.tertiary
     }
 }
 

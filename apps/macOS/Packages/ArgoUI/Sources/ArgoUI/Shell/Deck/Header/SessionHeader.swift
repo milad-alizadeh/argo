@@ -25,16 +25,12 @@ struct SessionHeader: View {
         // sit on. The identity below keeps its own baseline alignment.
         HStack(alignment: .center, spacing: ArgoSpacing.comfortable) {
             identity
-                // `combine`, so the facts are heard as one line rather than as six elements. It is
-                // scoped to the identity and not to the whole header on purpose: combining over
-                // the instrument would swallow the ⓘ, and a control nothing can address is a
-                // panel nobody can open.
+                // Combined here and NOT over the whole header: combining over the instrument would
+                // swallow its ⓘ, and a control nothing can address is a panel nobody can open.
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(header?.announcement ?? "No Session selected")
-                // Above the Spacer beside it, which otherwise takes the slack first and cuts a
-                // title and a branch that both had room. The instrument holds its width whatever
-                // this is, because a fixed frame is inflexible — so what this priority decides is
-                // only how much of the identity the empty middle is allowed to eat.
+                // Above the Spacer, which otherwise takes the slack first and cuts a title that
+                // had room.
                 .layoutPriority(1)
             Spacer(minLength: ArgoSpacing.loose)
             if let header {

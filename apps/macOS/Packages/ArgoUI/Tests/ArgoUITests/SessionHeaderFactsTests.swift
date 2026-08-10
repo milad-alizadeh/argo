@@ -127,9 +127,6 @@ struct SessionHeaderFactsTests {
             "1 unpushed commit",
             "Claude Code · Opus 5",
             "Issue #510",
-            // Last, and always present: the instrument is a bar, and a bar is ink a screen reader
-            // hears nothing of. This fixture prices nothing, so what it says out loud is the gap.
-            "Context unknown",
         ].joined(separator: ", "))
     }
 

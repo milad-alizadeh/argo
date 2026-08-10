@@ -77,16 +77,13 @@ public struct SpecimenScreen: View {
             // way: the branch is cut, and the marks, the model and the issue after it survive.
             SessionHeaderSpecimen(header: SessionHeaderFixture.longBranch)
         case .contextOk, .contextWarn, .contextCrit, .contextUnknown:
-            // One PNG per tier, and the fourth is the one that matters most: an unreadable context
-            // has to look like an ABSENCE — an empty track and a quiet word — rather than like a
-            // Session that has said nothing yet, which is what `.ok` at zero would draw.
-            // A whole header each, because the judgement is whether the reading is findable beside
-            // a title and a branch, which an instrument on its own would never show.
+            // A whole header per tier, because what is being judged is whether the reading is
+            // findable beside a title and a branch — and the fourth is the one that matters most:
+            // an unreadable context has to look like an ABSENCE rather than like a fresh window.
             SessionHeaderSpecimen(header: contextHeader)
         case .contextGuide:
-            // The panel's content, stood in a glass of its own. A popover is a window of its own
-            // and never lands in a screenshot of this one, so the harness draws it directly — the
-            // same bargain `DrawerSpecimen` makes, for the same reason.
+            // The ⓘ panel, stood in a glass of its own — a popover is a window of its own and
+            // never lands in a screenshot of this one (`DrawerSpecimen`).
             ContextGuideSpecimen()
         case .feed:
             // The deck at rest with a Session read into it, drawn through the same projection the

@@ -1,52 +1,6 @@
 import SwiftUI
 
-/// What the ⓘ beside `CONTEXT` opens: the two lines named, with the ink each of them turns the
-/// reading, and what the remedy actually does.
-///
-/// It **explains and does not report.** The reading is two inches away and unmissable; a panel that
-/// repeated it would be the same fact twice with two chances to disagree, and it would make the
-/// panel worth opening once per Session rather than once ever (#502, story 42). Nothing here is
-/// per-Session for the same reason — the thresholds are Argo's own policy, so the panel is the
-/// same panel over every header.
-extension SessionHeaderProjection.Context {
-    /// One policy line, said the way the panel says it.
-    struct GuideLine: Equatable, Sendable, Identifiable {
-        /// `past 150k` — the threshold, not the Session's distance from it.
-        let threshold: String
-        let meaning: String
-        /// Which ink the line is set in, so the panel decodes the colour by WEARING it rather than
-        /// by naming it. A legend that spelled "amber" would be a second vocabulary to keep in step
-        /// with the palette, and unreadable to anybody who cannot tell the two hues apart anyway.
-        let tier: Tier
-
-        var id: String {
-            threshold
-        }
-    }
-
-    static let guide: [GuideLine] = [
-        GuideLine(
-            threshold: "past \(TokenCount.short(SessionHeaderProjection.ContextPolicy.warn))",
-            meaning: "handing off is worth doing",
-            tier: .warn,
-        ),
-        GuideLine(
-            threshold: "past \(TokenCount.short(SessionHeaderProjection.ContextPolicy.crit))",
-            meaning: "handing off is overdue",
-            tier: .crit,
-        ),
-    ]
-
-    /// Why the lines are where they are, and what the remedy is. It names Hand off as a thing that
-    /// exists rather than as a control on this header: the button is #513's, and a panel promising
-    /// one before it is built would send somebody looking for it.
-    static let remedy = """
-    A long context makes an agent slower and less accurate. Handing off runs /handoff in the \
-    Session, then opens a fresh one on the same branch and issue, so the work continues rather \
-    than restarting.
-    """
-}
-
+/// The panel the ⓘ opens. Its words are `SessionHeaderProjection.Context`'s — this draws them.
 struct SessionContextGuide: View {
     @Environment(\.argo) private var argo
 

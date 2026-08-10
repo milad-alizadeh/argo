@@ -20,7 +20,11 @@ enum TokenCount {
             return scaled(count, by: 1_000_000, decimals: decimals) + "M"
         }
         if count >= 1000 {
-            return scaled(count, by: 1000, decimals: count >= 100_000 ? 0 : 1) + "k"
+            let thousands = scaled(count, by: 1000, decimals: count >= 100_000 ? 0 : 1)
+            // Rounding can carry a reading over the unit it was picked for: `999_999` scales to
+            // `1000k`, which is a million said the long way and a reading nobody would compare
+            // against the `1M` beside it.
+            return thousands == "1000" ? "1M" : thousands + "k"
         }
         return "\(count)"
     }
