@@ -6,8 +6,19 @@
 #   sh scripts/feed-fps.sh                                   # feedAtScale, BOTH widths, 6s × 3
 #   sh scripts/feed-fps.sh feedAtScale 760x900 6              # one width
 #   ARGO_FPS_PIXELS=40 ARGO_FPS_DRAGS=5 sh scripts/feed-fps.sh
+#   ARGO_FPS_TRANSCRIPT=~/.claude/projects/…/x.jsonl sh scripts/feed-fps.sh   # a REAL session
 #
-# It EXITS NON-ZERO when p95 runs past the 60fps floor, so it is a gate rather than a readout.
+# `ARGO_FPS_TRANSCRIPT` measures the cockpit against a transcript on this machine instead of the
+# fixture, and it is not interchangeable with the default: the same fix that holds `feedAtScale` at
+# 0.4% dropped holds a real 4,000-line session at 2.1—2.6%, because real turns carry far more prose
+# per row. The fixture is therefore the OPTIMISTIC case, and a gate that only ever reads it would
+# wave through a regression that had doubled what a reader actually feels. It stays opt-in because
+# the file is per-machine and cannot be committed — a repeatable default has to be the fixture.
+#
+# Two exit codes, and the difference between them matters more than either: **1** means measured and
+# past the floor (a regression), **2** means it could not be measured at all (no app, no frames, no
+# Accessibility permission). Collapsing the two lets an infrastructure failure read as a clean run
+# or as a regression, and both readings are wrong.
 #
 # It launches ONE named specimen at ONE fixed size with the frame meter on, drags the feed at a
 # fixed cadence through `ScrollDriver.swift`, and reports p50 / p95 / worst / dropped over exactly
@@ -36,27 +47,72 @@ SECONDS_TO_DRAG=${3:-6}
 PIXELS=${ARGO_FPS_PIXELS:-30}
 TICKS=${ARGO_FPS_TICKS:-60}
 DRAGS=${ARGO_FPS_DRAGS:-3}
+TRANSCRIPT=${ARGO_FPS_TRANSCRIPT:-}
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 OUT_DIR=${ARGO_FPS_OUT:-$SCRIPT_DIR/../out/fps}
 mkdir -p "$OUT_DIR"
 
+# Named, so a run against a real session cannot be mistaken for a fixture run in the log directory
+# or in whatever a reader pastes into a ticket. Truncated because a transcript's name is a uuid and
+# the first segment already tells two of them apart.
+if [ -n "$TRANSCRIPT" ]; then
+  [ -f "$TRANSCRIPT" ] || { echo "feed-fps: no transcript at $TRANSCRIPT" >&2; exit 2; }
+  SUBJECT="real-$(basename "$TRANSCRIPT" .jsonl | cut -c1-8)"
+else
+  SUBJECT="$SPECIMEN"
+fi
+
 # `both` is the default because the target is stated at TWO widths, and a claim about smoothness
 # taken at one of them is a claim about one column. The narrow one is the deck at its tightest, the
 # wide one the deck a reader actually spreads out in; a fix can help one and cost the other.
+#
+# BOTH legs run whatever the first one did. Under `set -e` a bare pair of calls stops at the first
+# failure, so the width that was never measured reads as the width that was fine — and the leg most
+# likely to fail first is the narrow one, which is the tighter claim. Each status is kept and the
+# worse of the two decides the exit: unmeasurable beats regressed, because a number nobody took is
+# not evidence about the floor.
 if [ "$SIZE" = both ]; then
-  sh "$0" "$SPECIMEN" 760x900 "$SECONDS_TO_DRAG"
-  sh "$0" "$SPECIMEN" 1600x1000 "$SECONDS_TO_DRAG"
-  exit $?
+  narrow=0
+  wide=0
+  sh "$0" "$SPECIMEN" 760x900 "$SECONDS_TO_DRAG" || narrow=$?
+  sh "$0" "$SPECIMEN" 1600x1000 "$SECONDS_TO_DRAG" || wide=$?
+  # Spelled as `if` rather than `[ … ] || [ … ] && exit`: under `set -e` the status of that list is
+  # the status of the last test it actually ran, so the both-fine case exits the script as a failure.
+  if [ "$narrow" -eq 2 ] || [ "$wide" -eq 2 ]; then
+    exit 2
+  fi
+  if [ "$narrow" -ne 0 ] || [ "$wide" -ne 0 ]; then
+    exit 1
+  fi
+  exit 0
 fi
 
-RUN="$SPECIMEN-$SIZE"
+RUN="$SUBJECT-$SIZE"
 LOG="$OUT_DIR/$RUN.frames"
 : >"$LOG"
 
+# A leg of `both` inherits whatever the previous leg left behind, and `screenshot.sh` gives up
+# waiting for a quit after five seconds and launches anyway — at which point `open` activates the
+# instance that is still terminating, the driver finds no window, and the width goes unmeasured. So
+# the wait for the previous app to be GONE happens here, before the launch that would race it.
+wait_for_quit() {
+  attempt=0
+  while pgrep -x Argo >/dev/null 2>&1 && [ "$attempt" -lt 40 ]; do
+    attempt=$((attempt + 1))
+    sleep 0.25
+  done
+}
+
+wait_for_quit
+
 # `ARGO_KEEP_RUNNING` is what leaves the app up to be dragged; without it the launch quits itself
 # the moment the screenshot lands and the driver finds nothing to scroll.
-ARGO_SPECIMEN="$SPECIMEN" \
+#
+# `ARGO_SPECIMEN` is set only when there is no transcript: a specimen renders INSTEAD of the
+# cockpit, so passing both would measure the fixture while claiming a real session.
+ARGO_SPECIMEN=$([ -n "$TRANSCRIPT" ] || echo "$SPECIMEN") \
+ARGO_TRANSCRIPT_PATH="$TRANSCRIPT" \
 ARGO_WINDOW_SIZE="$SIZE" \
 ARGO_FEED_FPS=1 \
 ARGO_FEED_FPS_LOG="$LOG" \
@@ -69,6 +125,14 @@ ARGO_KEEP_RUNNING=1 \
 # no-op.
 osascript -e 'tell application "Argo" to activate' >/dev/null 2>&1 || true
 sleep 3
+
+# Checked rather than assumed. Every failure below this line is reported by the driver on stderr and
+# the run still prints a percentile table from whatever the log happens to hold — so the one thing
+# that must not be silent is the app not being there at all.
+if ! pgrep -x Argo >/dev/null 2>&1; then
+  echo "$RUN: Argo is not running — nothing was measured" >&2
+  exit 2
+fi
 
 drag() {
   before=$(wc -l <"$LOG" | tr -d ' ')
@@ -98,7 +162,7 @@ osascript -e 'tell application "Argo" to quit' >/dev/null 2>&1 || true
 sort -n "$LOG.drag" | awk -v run="$RUN" '
   { ms[NR] = $1; if ($1 > 16.667) dropped++ }
   END {
-    if (NR == 0) { print run ": no frames recorded — check Accessibility permission"; exit 1 }
+    if (NR == 0) { print run ": no frames recorded — check Accessibility permission"; exit 2 }
     p95 = ms[int(NR * 0.95 + 0.999)]
     printf "%s  frames=%d  p50=%.2f  p95=%.2f  worst=%.2f  dropped=%d (%.1f%%)\n", \
       run, NR, ms[int(NR * 0.5 + 0.999)], p95, ms[NR], \
