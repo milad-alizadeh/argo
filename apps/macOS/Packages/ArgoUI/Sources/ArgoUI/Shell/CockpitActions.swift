@@ -18,12 +18,21 @@ public struct CockpitActions {
     /// that acts on the world rather than on Argo's own record of it.
     public let spawnSession: () -> Void
     /// Hand a full Session's work to a fresh one: run `/handoff` in it, wait for the brief, and
-    /// start a Session seeded with it in the same folder (#513). Named by Session id, because the
-    /// header is not always drawing the roster's selection.
+    /// start a Session seeded with it in the same folder and against the same issue (#513).
     ///
     /// One intent and not three, deliberately — the sequence is `SessionHandoff`'s, and a view that
     /// could raise the three halves separately could raise the third without the first.
-    public let handOffSession: (String) -> Void
+    ///
+    /// The only `async` action here, because it is the only one answered in minutes: the control
+    /// that raises it has to hold itself for as long as it runs, and a fire-and-forget closure
+    /// gives it nothing to hold itself against. The issue travels WITH the id because the view is
+    /// where the link is known — the engine carries no Work Item today, so a fresh Session would
+    /// otherwise open against no intent at all.
+    ///
+    /// It ANSWERS with the fresh Session's id, and `nil` where no handoff happened. The selection
+    /// is the shell's own business (`CockpitNavigationModel.session` is deliberately not public),
+    /// so the app performs the handoff and the shell decides what to point at.
+    public let handOffSession: (String, Int?) async -> String?
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for
     /// the same reason every action here is: they are called from a view.
@@ -36,7 +45,7 @@ public struct CockpitActions {
         revealProject: { _ in },
         removeProject: { _ in },
         spawnSession: {},
-        handOffSession: { _ in },
+        handOffSession: { _, _ in nil },
     )
 
     public init(
@@ -48,7 +57,7 @@ public struct CockpitActions {
         revealProject: @escaping (String) -> Void,
         removeProject: @escaping (String) -> Void,
         spawnSession: @escaping () -> Void,
-        handOffSession: @escaping (String) -> Void,
+        handOffSession: @escaping (String, Int?) async -> String?,
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection

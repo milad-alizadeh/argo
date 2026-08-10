@@ -1,3 +1,4 @@
+import ArgoEngine
 @testable import ArgoUI
 import Testing
 
@@ -100,6 +101,17 @@ struct SessionHeaderHandoffTests {
         #expect(handoff.label.count < 12)
     }
 
+    /// The press is answered in minutes, so the control has a second word for the time it is
+    /// running. Decided here rather than in the view, and distinct from the resting one — a button
+    /// that read the same either way is a button somebody presses twice.
+    @Test
+    func `the button has a word for the minutes it is running`() throws {
+        let handoff = try #require(header(tokens: Self.pastWarn).handoff)
+
+        #expect(handoff.runningLabel != handoff.label)
+        #expect(handoff.runningLabel == "Handing off…")
+    }
+
     /// The AC that says a handoff which cannot be launched is DISABLED with a reason rather than
     /// silently nothing. The reachable value-level case is a Session with no folder to start one
     /// beside — Argo would have to invent a working directory, and it does not.
@@ -118,7 +130,9 @@ struct SessionHeaderHandoffTests {
         )
 
         #expect(!handoff.isLaunchable)
-        #expect(try #require(handoff.blocked).contains("folder"))
+        // The engine's own sentence, not a second one written beside it: the tooltip that explains
+        // the disabled button and the alert that reports the same refusal are one string.
+        #expect(handoff.blocked == SessionHandoff.Failure.noFolder.detail)
     }
 
     /// The PNGs are the only evidence these renderings have, and a state with no case in the

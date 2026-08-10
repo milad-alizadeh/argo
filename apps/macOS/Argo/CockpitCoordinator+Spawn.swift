@@ -21,18 +21,19 @@ extension CockpitCoordinator {
     /// Hand a full Session's work to a fresh one (#513): `/handoff` in its own terminal, the wait
     /// for the brief, then #412's spawn path seeded with it and the folder it was running in.
     ///
-    /// The two refusals are reported for exactly the reason a failed spawn is: a remedy that types
-    /// at a terminal Argo does not own, or waits for a brief that never comes, is otherwise a click
-    /// that did nothing — and the one thing it must never do instead is publish a Session row for
-    /// work nobody handed over.
-    func handOff(sessionID: String) async {
+    /// Returns the fresh Session's id so the caller can put the roster on it, and `nil` when the
+    /// handoff did not happen. Every refusal is reported for exactly the reason a failed spawn is:
+    /// a remedy that types at a terminal Argo does not own, or waits for a brief that never comes,
+    /// is otherwise a click that did nothing — and the one thing it must never do instead is
+    /// publish a Session row for work nobody handed over.
+    func handOff(sessionID: String, issue: Int?) async -> String? {
         do {
-            let session = hub.sessions.first { $0.id == sessionID }
-            guard let cwd = session?.cwd else {
-                return report(detail: "Argo has not read this Session's folder")
+            guard let cwd = hub.sessions.first(where: { $0.id == sessionID })?.cwd else {
+                throw SessionHandoff.Failure.noFolder
             }
-            try await SessionHandoff(host: hub, root: Hub.handoffRoot)
-                .run(SessionHandoff.Request(sessionID: sessionID, cwd: cwd))
+            return try await SessionHandoff(host: hub, root: Hub.handoffRoot)
+                .run(SessionHandoff.Request(sessionID: sessionID, cwd: cwd, issue: issue))
+                .sessionID
         } catch let failure as SessionHandoff.Failure {
             report(detail: failure.detail)
         } catch let failure as AgentSpawnError {
@@ -40,6 +41,7 @@ extension CockpitCoordinator {
         } catch {
             report(detail: error.localizedDescription)
         }
+        return nil
     }
 
     /// Every agent this window started, ended.

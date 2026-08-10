@@ -4,51 +4,57 @@ import SwiftUI
 ///
 /// It draws an offer it was handed and judges nothing: whether there is one at all, and how urgent
 /// it is, are `SessionHeaderProjection.handoff(from:)`'s. What lives here is the ink each answer
-/// wears — and the ink is the TIER's, borrowed from the reading two inches away, so the button and
-/// the number it is about cannot end up two different alarms.
-///
-/// **No caption.** The verb is the whole control (#502, story 46); the coloured reading beside it
-/// and the ⓘ above it have already said what handing off is for, and a third telling would make the
-/// header a paragraph.
+/// wears — the TIER's, borrowed from the reading two inches away, so the button and the number it
+/// is about cannot end up two different alarms — and the one state that is the control's own rather
+/// than the Session's: whether this press is still being answered. It holds itself while it runs,
+/// because a button that looked untouched for twenty minutes would be pressed again, and each press
+/// starts another handoff.
 struct SessionHandoffButton: View {
     @Environment(\.argo) private var argo
 
     let handoff: SessionHeaderProjection.Handoff
-    let run: () -> Void
+    let run: () async -> Void
+
+    @State private var isRunning = false
 
     var body: some View {
-        Button(action: run) {
-            Text(handoff.label)
+        Button {
+            Task {
+                isRunning = true
+                await run()
+                isRunning = false
+            }
+        } label: {
+            Text(isRunning ? handoff.runningLabel : handoff.label)
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(ink)
                 .lineLimit(1)
                 .padding(.horizontal, ArgoSpacing.snug)
                 .padding(.vertical, ArgoSpacing.hair)
-                // The ground is the neutral step every float lands on, exactly as `ArgoBadge`'s is:
-                // this palette rations hue for MEANING, so the tier's colour is spent on the word
-                // and the rim that carries it and never on a filled patch of alarm at the top of
-                // the deck.
+                // The neutral step every float lands on, exactly as `ArgoBadge`'s is: this palette
+                // rations hue for meaning, so the tier's colour is spent on the word and its rim.
                 .background(argo.color.surface.overlay, in: .capsule)
                 .overlay {
                     Capsule().strokeBorder(ink, lineWidth: ArgoStroke.border)
                 }
         }
         .buttonStyle(.plain)
-        .disabled(!handoff.isLaunchable)
+        .disabled(!handoff.isLaunchable || isRunning)
         // The reason travels with the control rather than being left to whatever surface happens to
-        // draw a tooltip: a remedy that is out of reach has to say what is in its way.
+        // draw a tooltip: a remedy out of reach has to say what is in its way.
         .help(handoff.blocked ?? handoff.detail)
-        .accessibilityLabel(handoff.label)
+        .accessibilityLabel(isRunning ? handoff.runningLabel : handoff.label)
         .accessibilityHint(handoff.blocked ?? handoff.detail)
-        // It must survive a title long enough to need cutting: the branch is what gives way on this
-        // line (#502, story 25), never the remedy.
+        // The branch is what gives way on this line (#502, story 25), never the remedy.
         .layoutPriority(1)
     }
 
     /// The tier's own tint, at full strength — this is a CONTROL, and the quietening the reading
     /// gets at `okay` has no case here: a button only exists past a line.
+    ///
+    /// It drops to the inert rung while it is out of reach or already running.
     private var ink: ArgoColor {
-        handoff.isLaunchable
+        handoff.isLaunchable && !isRunning
             ? handoff.tier.tint(in: argo.color)
             : argo.color.text.disabled
     }

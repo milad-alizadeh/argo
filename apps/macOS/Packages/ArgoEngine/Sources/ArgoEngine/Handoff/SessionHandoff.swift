@@ -47,6 +47,10 @@ public final class SessionHandoff {
     public enum Failure: Error, Equatable {
         /// Argo owns no live PTY for that Session, so there is no prompt to type at.
         case notSteerable
+        /// There is no folder to start the fresh Session in. The header disables its button on
+        /// this same case, and reads its sentence from HERE — one rule, one wording, so the
+        /// tooltip that explains the refusal and the alert that reports it cannot disagree.
+        case noFolder
         /// `/handoff` was typed and no brief appeared before Argo stopped waiting.
         case briefNeverArrived(afterMs: Int)
 
@@ -54,6 +58,8 @@ public final class SessionHandoff {
             switch self {
             case .notSteerable:
                 "Argo does not own this Session's terminal, so it cannot run /handoff in it"
+            case .noFolder:
+                "Argo has not read this Session's folder, so it cannot start one beside it"
             case let .briefNeverArrived(afterMs):
                 "/handoff wrote no brief in \(afterMs / 60000) minutes"
             }
