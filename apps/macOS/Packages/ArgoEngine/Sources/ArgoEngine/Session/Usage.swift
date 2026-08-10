@@ -54,7 +54,8 @@ public struct Usage: Sendable, Equatable {
     }
 
     /// The cache half of the same bill — read and written, both cheaper tokens. Split out so a
-    /// roll-up can say `2.1M spent · 73.7M cache` instead of one number that reads as fresh spend.
+    /// roll-up can say `2.1M tokens spent · 73.7M cached` instead of one number read as fresh
+    /// spend.
     public var cachedTokens: Int {
         cacheReadTokens + cacheCreationTokens
     }

@@ -41,7 +41,7 @@ enum SessionSpendFixture {
             lastSeenAtMs: moments.last,
             startedAtMs: moments.first,
             // Readings off a real long-running Session on this machine, not round numbers: what
-            // the line has to fit is `1.83M spent · 28.1M cache`, and a fixture set to `2M`/`30M`
+            // the line has to fit is `1.83M tokens spent · 28.1M cached`, and one set to `2M`/`30M`
             // would render the one width no real Session ever has.
             spentTokens: 1_830_000,
             cachedTokens: 28_100_000,

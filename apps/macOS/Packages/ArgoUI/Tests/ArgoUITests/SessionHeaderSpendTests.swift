@@ -23,8 +23,9 @@ struct SessionHeaderSpendTests {
         #expect(zero.contains("0 in subagents"))
         // And nothing else moved: the absence takes its own separator with it rather than
         // leaving the line spelled `cache ·  · started`.
-        #expect(unreported == "1.83M spent · 28.1M cache · started 2h ago · worked 20m")
-        #expect(zero == "1.83M spent · 28.1M cache · 0 in subagents · started 2h ago · worked 20m")
+        #expect(unreported == "1.83M tokens spent · 28.1M cached · started 2h ago · worked 20m")
+        #expect(zero
+            == "1.83M tokens spent · 28.1M cached · 0 in subagents · started 2h ago · worked 20m")
     }
 
     /// The line composes from what is PRESENT. A Session none of it could be read from carries no
@@ -34,7 +35,7 @@ struct SessionHeaderSpendTests {
         #expect(SessionHeaderProjection.spend(from: session()) == nil)
         // One fact is a whole line, with no separator on either side of it.
         #expect(SessionHeaderProjection.spend(from: session(spentTokens: 29_930_000))
-            == "29.93M spent")
+            == "29.93M tokens spent")
     }
 
     /// Both durations, always, because either alone is read as the other: `5h 51m` of wall clock

@@ -22,7 +22,7 @@ struct SessionSpendTests {
 
     @Test
     @MainActor
-    func `the total is every reported spend summed, where the context is only the last`() async
+    func `the spend is every reported spend summed, where the context is only the last`() async
         throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "session", events: [
@@ -42,7 +42,7 @@ struct SessionSpendTests {
     /// whose records priced nothing has not spent nothing.
     @Test
     @MainActor
-    func `a Session nothing priced carries no total at all`() async throws {
+    func `a Session nothing priced carries no spend at all`() async throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "silent", events: [
             .prompt(text: "Read the contract", atMs: 1000),
