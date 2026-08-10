@@ -12,6 +12,13 @@ struct SessionRow: View {
     @Environment(\.argo) private var argo
 
     let row: SessionRosterProjection.Row
+    /// Name this Session, or — with `nil` — drop the name it has. Inert by default, so every
+    /// preview and specimen draws the row without a store behind it.
+    var rename: (String?) -> Void = { _ in }
+
+    /// The dialog's own state, and the row's: a popover per roster rather than per row would have
+    /// to be told which row it was opened from, and it is already standing on it.
+    @State private var isRenaming = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
@@ -36,13 +43,34 @@ struct SessionRow: View {
     private var primaryLine: some View {
         HStack(spacing: ArgoSpacing.snug) {
             SessionStateIndicator(state: row.state)
-            Text(row.title)
-                .argoText(ArgoTypography.rowTitle)
-                .lineLimit(1)
-                .truncationMode(.tail)
+            title
             Spacer(minLength: ArgoSpacing.tight)
             stateWord
         }
+    }
+
+    /// The title, and the one thing on the row that is double-clickable: a Session you will come
+    /// back to earns a name you chose (#502, story 18).
+    ///
+    /// The gesture is on the TITLE and not on the row, because the row belongs to the List — a
+    /// double-click anywhere on it is two selections of the thing you already selected, and a
+    /// dialog opening off that would fire while somebody was clicking about.
+    private var title: some View {
+        Text(row.title)
+            .argoText(ArgoTypography.rowTitle)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .onTapGesture(count: 2) { isRenaming = true }
+            .popover(isPresented: $isRenaming, arrowEdge: .trailing) {
+                RenameSessionDialog(
+                    rename: row.rename,
+                    commit: {
+                        rename($0)
+                        isRenaming = false
+                    },
+                    cancel: { isRenaming = false },
+                )
+            }
     }
 
     /// The age takes the row's own right edge, which is the edge the state word above it takes:
@@ -92,6 +120,10 @@ struct SessionRow: View {
     }
 
     @ViewBuilder private var copyActions: some View {
+        // The one thing here that is not a copy: a double-click is the gesture, and a gesture with
+        // nothing naming it is a feature only the person who built it knows about.
+        Button("\(SessionRenameProjection.heading)…") { isRenaming = true }
+        Divider()
         Button("Copy Session title") { copy(row.title) }
         if let location = row.location {
             Button("Copy full location") { copy(location) }

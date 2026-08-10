@@ -12,6 +12,9 @@ struct SessionNavigator: View {
     /// Clear a Session off the roster, or put one back. Inert by default, so every preview and
     /// specimen draws the gesture without wiring a store to it.
     var archive: (String, Bool) -> Void = { _, _ in }
+    /// Name a Session, or — with `nil` — drop the name it has. Inert by default, like the archive
+    /// beside it: a specimen draws the dialog without a store to write to.
+    var rename: (String, String?) -> Void = { _, _ in }
 
     /// One swipe for the whole list, which is what makes "only one row is ever open" true: a
     /// state per row could only ever close the row that owns it (#514, story 13).
@@ -67,9 +70,14 @@ struct SessionNavigator: View {
     /// Which way the gesture goes is the row's own state and not a second reading of which list
     /// it was drawn in — two sources for one fact is how they come to disagree.
     private func swipeable(_ row: SessionRosterProjection.Row) -> some View {
-        ArchiveSwipeRow(row: row, swipe: $swipe, archive: { archive(row.id, !row.isArchived) })
-            .previewSafeListRow()
-            .tag(row.id)
+        ArchiveSwipeRow(
+            row: row,
+            swipe: $swipe,
+            archive: { archive(row.id, !row.isArchived) },
+            rename: { rename(row.id, $0) },
+        )
+        .previewSafeListRow()
+        .tag(row.id)
     }
 
     private var emptyState: some View {

@@ -47,6 +47,21 @@ public struct SpecimenScreen: View {
             // The other half of the same feature: where a cleared Session went, and how loud
             // the foot that holds it is under a roster it must not compete with.
             ArchivedRosterSpecimen()
+        case .renamedRoster:
+            // A roster with one name somebody typed on it, beside two the transcripts derived.
+            // Whether a chosen name reads as the Session's own rather than as a label pinned over
+            // a title is a rendering, and it is only judgeable against rows that were not renamed.
+            RenamedRosterSpecimen()
+        case .renameDialog:
+            // The panel a double-click opens, in both its states: one Session already renamed with
+            // the title it covered up under the field, and one nobody has touched. The second is
+            // the claim — that a panel with no Reset is still a whole panel.
+            RenameDialogSpecimen()
+        case .openRenameDialog:
+            // The same panel in a REAL popover, hung off the row it opens from. A popover is its
+            // own window with its own environment, which is where a panel that renders fine
+            // outside one comes apart — and no package test can click (`OpenDrawerSpecimen`).
+            OpenRenameDialogSpecimen()
         case .toolbarScope:
             ToolbarSpecimen(presentation: .preview)
         case .emptyToolbarScope:

@@ -17,9 +17,14 @@ public struct SessionAnnotations: Equatable, Sendable {
     /// fact has to be re-keyed for the second one — and the second one is already spoken for.
     public struct Annotation: Equatable, Sendable {
         public var isArchived: Bool
+        /// The name the user gave this Session, and `nil` for one they never named — which is
+        /// what makes the derived title reachable again: dropping the name IS the reset (#515,
+        /// story 20), so there is no second flag saying whether the name is in force.
+        public var explicitName: String?
 
-        public init(isArchived: Bool = false) {
+        public init(isArchived: Bool = false, explicitName: String? = nil) {
             self.isArchived = isArchived
+            self.explicitName = Self.spoken(explicitName)
         }
 
         /// An annotation that asserts nothing, which is what every Session has until somebody
@@ -35,6 +40,24 @@ public struct SessionAnnotations: Equatable, Sendable {
             var next = self
             next.isArchived = isArchived
             return next
+        }
+
+        /// The same copy-with-one-fact-changed for the name.
+        func named(_ name: String?) -> Annotation {
+            var next = self
+            next.explicitName = Self.spoken(name)
+            return next
+        }
+
+        /// A name is what somebody typed, trimmed — and blank is not a name. Normalised at the
+        /// one place a name enters the type rather than at the dialog that raised it, so a name
+        /// arriving from a hand-edited file obeys the same rule as one typed into the field:
+        /// spaces are not a title, and a record holding them would claim a Session was renamed.
+        private static func spoken(_ name: String?) -> String? {
+            guard let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !trimmed.isEmpty
+            else { return nil }
+            return trimmed
         }
     }
 
@@ -56,11 +79,24 @@ public struct SessionAnnotations: Equatable, Sendable {
         annotation(for: sessionID).isArchived
     }
 
+    /// The name the user gave a Session, and `nil` for one they never named. Which title that
+    /// `nil` falls back to is not decided here: the fallback chain is a rendering decision and
+    /// lives in the projections, where it can be asserted (#502 §Seams).
+    public func explicitName(_ sessionID: String) -> String? {
+        annotation(for: sessionID).explicitName
+    }
+
     /// Archive a Session, or put one back. Keyed on the chain id and on nothing observed, which
     /// is why re-reading a transcript cannot disturb it: a record arriving for an archived
     /// Session is new activity, and new activity is not a decision (#502, story 16).
     func archiving(_ isArchived: Bool, sessionID: String) -> SessionAnnotations {
         setting(annotation(for: sessionID).archived(isArchived), for: sessionID)
+    }
+
+    /// Name a Session, or drop the name it was given — the reset is `nil` and not a second verb,
+    /// because "no explicit name" is the state every Session starts in (#515, story 20).
+    func naming(_ name: String?, sessionID: String) -> SessionAnnotations {
+        setting(annotation(for: sessionID).named(name), for: sessionID)
     }
 
     /// The one write path, so an annotation that has fallen back to asserting nothing is dropped

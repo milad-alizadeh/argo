@@ -23,8 +23,8 @@ final class CockpitCoordinator {
     private(set) var launchOrigin: LaunchProject?
 
     /// What the user has said about Sessions themselves, as opposed to what the Hub observed of
-    /// them: which ones they cleared off the roster. Per machine and never committed, exactly as
-    /// registration above it is.
+    /// them: which ones they cleared off the roster, and what they named. Per machine and never
+    /// committed, exactly as registration above it is.
     private(set) var annotations = SessionAnnotations.empty
 
     let hub: Hub
@@ -124,6 +124,12 @@ final class CockpitCoordinator {
     /// on a row — nothing derived from a merge or a transcript calls this (#502, story 14).
     func setArchived(_ isArchived: Bool, sessionID: String) async {
         annotations = await annotationStore.setArchived(isArchived, sessionID: sessionID)
+    }
+
+    /// Name a Session, or drop the name it was given. Reached from the dialog a double-click on a
+    /// title opens and from nowhere else: nothing observed names a Session (#502, story 18).
+    func setName(_ name: String?, sessionID: String) async {
+        annotations = await annotationStore.setName(name, sessionID: sessionID)
     }
 
     /// Show a Project's folder in Finder. An unreachable one has nothing to show, and Finder

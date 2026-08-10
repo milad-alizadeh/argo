@@ -344,6 +344,16 @@ struct SessionRosterProjectionTests {
             .isDisjoint(with: archived.map(\.id)))
     }
 
+    @Test
+    func `an explicit name beats the derived title`() throws {
+        let row = try #require(rows(session(id: "named", explicitName: "The overnight run")).first)
+
+        // The name you set is the name you see — on the row above all, since the row is where
+        // you set it (#502, story 19).
+        #expect(row.title == "The overnight run")
+        #expect(row.announcement.hasPrefix("The overnight run"))
+    }
+
     private func rows(_ session: CockpitPresentation.Session) -> [SessionRosterProjection.Row] {
         SessionRosterProjection.rows(from: [session], now: now)
     }
@@ -365,6 +375,7 @@ struct SessionRosterProjectionTests {
         status: SessionStatus = .idle,
         lastSeenAtMs: Int? = nil,
         isArchived: Bool = false,
+        explicitName: String? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -377,6 +388,7 @@ struct SessionRosterProjectionTests {
             workspace: branch.map { .init(branch: $0) },
             lastSeenAtMs: lastSeenAtMs,
             isArchived: isArchived,
+            explicitName: explicitName,
         )
     }
 

@@ -22,6 +22,9 @@ struct ShellSidebar: View {
     /// Clear a Session off the roster, or put one back — the only thing that ever does either
     /// (#502, story 14). Inert by default, so a preview draws the gesture without a store.
     var archive: (String, Bool) -> Void = { _, _ in }
+    /// Name a Session, or drop the name it has (#502, story 18). Inert by default, for the reason
+    /// the archive above it is.
+    var rename: (String, String?) -> Void = { _, _ in }
 
     @State private var order = RosterOrder()
     @State private var isPointerInside = false
@@ -43,6 +46,7 @@ struct ShellSidebar: View {
             archived: SessionRosterProjection.archivedRows(from: presentation.sessions),
             selection: $selection,
             archive: archive,
+            rename: rename,
         )
         .onHover { isPointerInside = $0 }
         .argoAnimation(.resettle, value: rows.map(\.id))

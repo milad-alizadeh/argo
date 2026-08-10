@@ -111,6 +111,14 @@ public extension CockpitPresentation {
         /// which is why new activity on an archived Session leaves it archived (#502, story 16)
         /// and why a merged branch does not clear its Session (story 14).
         public let isArchived: Bool
+        /// The name the user gave this Session, beside — never instead of — the `title` above:
+        /// the derived one has to survive being overridden, or the Reset in the rename dialog
+        /// would have nothing to go back to (#502, story 20). Argo's own fact, like `isArchived`
+        /// beside it, and absent for a Session nobody renamed.
+        ///
+        /// Which of the two the surfaces DRAW is not decided here — that is the fallback chain,
+        /// and it lives in the projections where it can be asserted (`SessionTitle`).
+        public let explicitName: String?
         /// Everything the Session's transcript said, in order — the feed's whole input.
         ///
         /// The engine's own events rather than a second shape named for the shell: the surface
@@ -135,6 +143,7 @@ public extension CockpitPresentation {
             subagentTokens: Int? = nil,
             contextTokens: Int? = nil,
             isArchived: Bool = false,
+            explicitName: String? = nil,
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -152,6 +161,7 @@ public extension CockpitPresentation {
             self.subagentTokens = subagentTokens
             self.contextTokens = contextTokens
             self.isArchived = isArchived
+            self.explicitName = explicitName
             self.events = events
         }
     }

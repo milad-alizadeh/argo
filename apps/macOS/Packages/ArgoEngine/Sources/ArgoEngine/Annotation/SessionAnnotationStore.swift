@@ -35,6 +35,14 @@ public actor SessionAnnotationStore {
         persist(load().archiving(isArchived, sessionID: sessionID))
     }
 
+    /// Give a Session a name of the user's own, or — with `nil` — drop it and let the derived
+    /// title come back (#515, stories 18 and 20). One verb for both, because resetting is not a
+    /// second decision: it is this one, unmade.
+    @discardableResult
+    public func setName(_ name: String?, sessionID: String) -> SessionAnnotations {
+        persist(load().naming(name, sessionID: sessionID))
+    }
+
     /// A file that cannot be written still holds for this launch and is forgotten by the next
     /// one. Refusing the gesture is a worse answer to a full disk than losing the memory of it.
     private func persist(_ annotations: SessionAnnotations) -> SessionAnnotations {
