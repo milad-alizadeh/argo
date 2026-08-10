@@ -115,23 +115,30 @@ struct SessionRenameProjectionTests {
         let row = try #require(SessionRosterProjection.archivedRows(from: [renamed]).first)
 
         // A Session put out of sight is not a Session described differently — the foot draws the
-        // same row, and the same dialog opens off it.
+        // same row, and the same field opens in it.
         #expect(row.title == "Cleared, and named")
         #expect(row.rename.derived == "Ship the native shell")
     }
 
     @Test
     func `the roster the rename specimens render puts a chosen name beside derived ones`() {
-        // The `renameDialog` and `renamedRoster` PNGs are the only evidence these renderings have.
+        // The `renamedRoster` and `editingRow` PNGs are the only evidence these renderings have.
         // A fixture where every row was renamed would draw a roster nothing could be compared
         // against, and one where none were would draw the feature switched off.
-        let rows = RenameDialogFixture.rows
+        let rows = RenameFixture.rows
 
         #expect(rows.contains { $0.rename.derived != nil })
         #expect(rows.contains { $0.rename.derived == nil })
-        // Both panels the dialog has, so neither state ships unlooked-at.
-        #expect(RenameDialogFixture.renamed.derived != nil)
-        #expect(RenameDialogFixture.untouched.derived == nil)
+    }
+
+    @Test
+    func `the editing specimen opens its field on a row that is actually on the roster`() throws {
+        // A specimen naming a Session the roster does not carry would render a list with no field
+        // in it at all — which looks like the roster at rest rather than like a broken case.
+        let editing = try #require(RenameFixture.rows.first { $0.id == RenameFixture.editingRowID })
+
+        // The first rename of a Session, which is the state the field is met in: nothing to reset.
+        #expect(editing.rename.derived == nil)
     }
 
     private func session(

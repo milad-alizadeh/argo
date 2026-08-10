@@ -4,24 +4,19 @@ import ArgoEngine
 /// and the roster the two are met on.
 ///
 /// Projected through `SessionRosterProjection` exactly as the shell projects it, so a PNG is
-/// evidence about the dialog the app opens rather than about a value a specimen assembled.
-enum RenameDialogFixture {
-    /// A Session carrying a name somebody typed, which is the only state the Reset exists in. The
-    /// name is SHORTER than the title under it on purpose: the caption has to read as the title
-    /// being gone back to rather than as a second field.
-    static let renamed = SessionRenameProjection.rename(for: renamedSession)
-
-    /// The first rename of a Session: the field seeded with the derived title, and nothing under
-    /// it. Only judgeable beside the case above — the claim is that a panel with no Reset on it is
-    /// still a complete panel rather than one a control fell out of.
-    static let untouched = SessionRenameProjection.rename(for: untouchedSession)
-
-    /// The roster both are opened from. An explicit name beside two derived titles, because a
+/// evidence about the row the app draws rather than about a value a specimen assembled.
+enum RenameFixture {
+    /// The roster the rename is met on. An explicit name beside two derived titles, because a
     /// renamed row only reads as renamed against rows that are not (#502, story 19).
     static let rows = SessionRosterProjection.rows(from: sessions)
 
-    /// Named by the Session rather than looked up in the rows above, so neither panel can be a
-    /// search that quietly missed and drew the other one.
+    /// Which row `EditingRowSpecimen` opens the field on: the one nobody has renamed, because the
+    /// first rename of a Session is the state the field is met in, and it is the row with
+    /// neighbours on both sides.
+    static let editingRowID = untouchedSession.id
+
+    /// Named by the Session rather than looked up in the rows above, so the specimen cannot open
+    /// its field on a search that quietly missed and took the other row.
     private static let renamedSession = CockpitPresentation.Session(
         id: "renamed",
         title: "Ship the native Liquid Glass application shell with a deliberately long title",

@@ -1,4 +1,5 @@
 import AppKit
+import ArgoEngine
 import SwiftUI
 
 /// One flat sidebar row over the sidebar's system material.
@@ -15,10 +16,14 @@ struct SessionRow: View {
     /// Name this Session, or — with `nil` — drop the name it has. Inert by default, so every
     /// preview and specimen draws the row without a store behind it.
     var rename: (String?) -> Void = { _ in }
+    /// Whether this row is the one being typed into. Owned ABOVE the row rather than by it, because
+    /// two things outside the row now open the field: the menu bar's Rename, which is addressed at
+    /// whichever Session is selected, and the render harness, which cannot click. A row drawn
+    /// without one — every plain preview — is a row at rest.
+    var isRenaming: Binding<Bool> = .constant(false)
 
-    /// The dialog's own state, and the row's: a popover per roster rather than per row would have
-    /// to be told which row it was opened from, and it is already standing on it.
-    @State private var isRenaming = false
+    @State private var typed = ""
+    @FocusState private var isFieldFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
@@ -38,6 +43,13 @@ struct SessionRow: View {
         // Ghosting is ink, and ink is nothing a screen reader can hear. What is announced is
         // the projection's decision, not a second one taken here.
         .accessibilityLabel(row.announcement)
+        // Opened from outside the row — the menu bar, or the render harness. The field seeds and
+        // takes focus the same way a double-click seeds it, so there is one way in and not two.
+        .onChange(of: isRenaming.wrappedValue) { _, isOpen in
+            guard isOpen, !isFieldFocused else { return }
+            typed = row.rename.name
+            isFieldFocused = true
+        }
     }
 
     private var primaryLine: some View {
@@ -54,23 +66,66 @@ struct SessionRow: View {
     ///
     /// The gesture is on the TITLE and not on the row, because the row belongs to the List — a
     /// double-click anywhere on it is two selections of the thing you already selected, and a
-    /// dialog opening off that would fire while somebody was clicking about.
-    private var title: some View {
-        Text(row.title)
+    /// field opening off that would take the cursor while somebody was clicking about.
+    @ViewBuilder private var title: some View {
+        if isRenaming.wrappedValue {
+            nameField
+        } else {
+            Text(row.title)
+                .argoText(ArgoTypography.rowTitle)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                // SIMULTANEOUS, and that is the whole of it: `onTapGesture` on a subview of a List
+                // row consumes the click before the List sees it, which cost the roster its
+                // selection — the title is most of the row, so most of the roster stopped
+                // selecting. This lets the double-click open the field and the single click
+                // through to the List that owns the selection.
+                .simultaneousGesture(TapGesture(count: 2).onEnded { beginRenaming() })
+        }
+    }
+
+    /// The name edited where it is READ — the Finder idiom for a sidebar, and the reason the panel
+    /// this replaced is gone: a rename that happens in the row cannot show you one title while you
+    /// retype another.
+    ///
+    /// Return commits, Escape restores, and losing focus commits — which is the platform's own
+    /// bargain for edit-in-place and not a fourth rule of Argo's. The Reset the panel had room for
+    /// is the row's context menu now (`resetAction`); it is the rarer of the two by far, and
+    /// story 20 asks that it exist, not that it sit under the field.
+    private var nameField: some View {
+        TextField(SessionRenameProjection.prompt, text: $typed)
+            .textFieldStyle(.plain)
             .argoText(ArgoTypography.rowTitle)
+            .focused($isFieldFocused)
             .lineLimit(1)
-            .truncationMode(.tail)
-            .onTapGesture(count: 2) { isRenaming = true }
-            .popover(isPresented: $isRenaming, arrowEdge: .trailing) {
-                RenameSessionDialog(
-                    rename: row.rename,
-                    commit: {
-                        rename($0)
-                        isRenaming = false
-                    },
-                    cancel: { isRenaming = false },
-                )
+            .onSubmit(commitRenaming)
+            .onExitCommand(perform: cancelRenaming)
+            .onChange(of: isFieldFocused) { _, isFocused in
+                guard !isFocused else { return }
+                commitRenaming()
             }
+            .accessibilityLabel(SessionRenameProjection.prompt)
+    }
+
+    /// Seeded at the moment the field opens rather than held in step with the row: re-opening on a
+    /// Session renamed since has to draw the name it has NOW, not the one this view was built with.
+    private func beginRenaming() {
+        typed = row.rename.name
+        isRenaming.wrappedValue = true
+        isFieldFocused = true
+    }
+
+    /// A blank field is not a rename and not a reset — the engine's own rule (`SessionAnnotations`)
+    /// rather than a second reading of it, so the store cannot drop a name this row accepted.
+    /// Nothing is raised for it: the row closes on the title it already had.
+    private func commitRenaming() {
+        defer { isRenaming.wrappedValue = false }
+        guard SessionAnnotations.name(from: typed) != nil else { return }
+        rename(typed)
+    }
+
+    private func cancelRenaming() {
+        isRenaming.wrappedValue = false
     }
 
     /// The age takes the leading edge, under the title's own: it is the fact a scan down the
@@ -127,9 +182,10 @@ struct SessionRow: View {
     }
 
     @ViewBuilder private var copyActions: some View {
-        // The one thing here that is not a copy: a double-click is the gesture, and a gesture with
-        // nothing naming it is a feature only the person who built it knows about.
-        Button("\(SessionRenameProjection.heading)…") { isRenaming = true }
+        // The two things here that are not copies: a double-click is the gesture, and a gesture
+        // with nothing naming it is a feature only the person who built it knows about.
+        Button(SessionRenameProjection.heading) { beginRenaming() }
+        resetAction
         Divider()
         Button("Copy Session title") { copy(row.title) }
         if let location = row.location {
@@ -137,6 +193,19 @@ struct SessionRow: View {
         }
         if let branch = row.branch {
             Button("Copy branch") { copy(branch) }
+        }
+    }
+
+    /// The way back to the title the rename covered up (#502, story 20). Absent entirely for a
+    /// Session nobody has renamed: there is nothing to go back to, and a disabled item would read
+    /// as a way to clear the name.
+    ///
+    /// It names the title it restores rather than saying "Reset" alone, because by the time
+    /// somebody reaches for this the derived title is nowhere else on screen — which is the whole
+    /// reason the story exists, and the one thing the panel did that a menu has to keep doing.
+    @ViewBuilder private var resetAction: some View {
+        if let derived = row.rename.derived {
+            Button("\(SessionRenameProjection.reset) “\(derived)”") { rename(nil) }
         }
     }
 

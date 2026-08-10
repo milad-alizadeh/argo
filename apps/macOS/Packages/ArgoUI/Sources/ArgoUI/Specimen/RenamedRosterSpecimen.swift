@@ -9,7 +9,7 @@ import SwiftUI
 struct RenamedRosterSpecimen: View {
     var body: some View {
         List {
-            ForEach(RenameDialogFixture.rows) { row in
+            ForEach(RenameFixture.rows) { row in
                 SessionRow(row: row).previewSafeListRow()
             }
         }

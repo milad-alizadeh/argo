@@ -22,11 +22,10 @@ enum SessionRenameProjection {
 
     static let heading = "Rename Session"
     static let prompt = "Session name"
-    /// Spelled as what it goes back TO rather than as "Reset" alone: the control is only ever met
-    /// once, by somebody who has lost the name they started with.
-    static let reset = "Reset to derived title"
-    static let confirm = "Rename"
-    static let cancel = "Cancel"
+    /// Spelled as what it goes back TO rather than as "Reset" alone, and completed by the title
+    /// itself where it is drawn: the control is only ever met once, by somebody who has lost the
+    /// name they started with, and by then the derived title is nowhere else on screen.
+    static let reset = "Reset to"
 
     static func rename(for session: CockpitPresentation.Session) -> Rename {
         Rename(
