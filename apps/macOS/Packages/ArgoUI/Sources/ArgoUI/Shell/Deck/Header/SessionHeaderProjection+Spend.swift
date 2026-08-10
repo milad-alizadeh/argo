@@ -19,7 +19,10 @@ extension SessionHeaderProjection {
     /// rather than leaving the separators of facts it does not have.
     static func spend(from session: CockpitPresentation.Session) -> String? {
         let parts = [
-            session.totalTokens.map { "\(TokenCount.short($0)) tokens used" },
+            // Cache split off the spend, not summed into it: every request re-reads the whole
+            // conversation from cache, so one figure would read tens of millions as fresh spend.
+            session.spentTokens.map { "\(TokenCount.short($0)) spent" },
+            session.cachedTokens.map { "\(TokenCount.short($0)) cache" },
             // Said as a spend, not as a count: `4.1M subagents` reads as four million of them.
             session.subagentTokens.map { "\(TokenCount.short($0)) in subagents" },
             ran(from: session).map { "started \(ElapsedTime.phrase(milliseconds: $0)) ago" },

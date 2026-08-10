@@ -40,10 +40,11 @@ enum SessionSpendFixture {
             workspace: .init(kind: .worktree, branch: "argo/#512-header-spend-duration", dirty: 3),
             lastSeenAtMs: moments.last,
             startedAtMs: moments.first,
-            // A reading off a real long-running Session on this machine, not a round number: what
-            // the line has to fit is `29.93M`, and a fixture set to `30M` would render the one
-            // width no real Session ever has.
-            totalTokens: 29_930_000,
+            // Readings off a real long-running Session on this machine, not round numbers: what
+            // the line has to fit is `1.83M spent · 28.1M cache`, and a fixture set to `2M`/`30M`
+            // would render the one width no real Session ever has.
+            spentTokens: 1_830_000,
+            cachedTokens: 28_100_000,
             subagentTokens: subagentTokens,
             contextTokens: 216_764,
             events: events,

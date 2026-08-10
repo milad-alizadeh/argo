@@ -100,9 +100,16 @@ public struct HubSession: Equatable, Identifiable, Sendable {
 
     /// What the Session has SPENT across its whole life — the opposite reading from
     /// `contextTokens`, which is only what it is holding now. Absent until a record prices
-    /// something: a Session nobody priced has not spent nothing.
-    public var totalTokens: Int? {
-        spend?.billedTokens
+    /// something: a Session nobody priced has not spent nothing. Cache excluded — that figure
+    /// is `cachedTokens`, split out so neither inflates the other's reading.
+    public var spentTokens: Int? {
+        spend?.spentTokens
+    }
+
+    /// The cache half of the same life: read and re-read once per request, so it runs to tens of
+    /// millions on a long Session while the spend stays small. Absent with `spentTokens`.
+    public var cachedTokens: Int? {
+        spend?.cachedTokens
     }
 
     /// What this Session's subagents spent, read off the DELEGATING call's result — the only place
