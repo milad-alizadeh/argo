@@ -43,6 +43,7 @@ public extension CockpitPresentation {
                 title: "Ship the native Liquid Glass application shell "
                     + "with a deliberately long title",
                 model: "claude-opus-5",
+                // The shared main checkout: the one workspace the roster draws no label for.
                 workspaceLocation: "/Users/milad/Developer/argo",
                 branch: "argo/#376-native-shell",
                 access: .managed,
@@ -56,8 +57,9 @@ public extension CockpitPresentation {
                 id: "engine",
                 title: "Port the session engine core to Swift",
                 model: "codex",
-                workspaceLocation: "/Users/milad/Experiments/argo",
-                branch: "main",
+                workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
+                    + "ticket-502-roster-row",
+                branch: "argo/#502-roster-row",
                 access: .managed,
                 status: .asking,
                 lastSeenAtMs: minutesAgo(4),
@@ -69,7 +71,10 @@ public extension CockpitPresentation {
                 // settles. The close read of ghosting is the `ghostedRows` specimen.
                 title: "Review an externally launched Session nobody here started",
                 model: nil,
-                workspaceLocation: "/Users/milad/Developer/cockpit",
+                workspaceLocation: "/Users/milad/Developer/cockpit/.claude/worktrees/"
+                    + "ticket-118-replay",
+                // A detached checkout. Its record says `HEAD`, which is no branch anybody can
+                // check out — the row used to draw that word, and now draws its worktree.
                 branch: nil,
                 access: .external,
                 // No time at all — a transcript that stamped nothing. Idle, so the absence is
@@ -90,9 +95,10 @@ public extension CockpitPresentation {
                 id: "failed",
                 title: "Repair the failed native build",
                 model: "codex",
-                workspaceLocation: "/Users/milad/Developer/native-shell",
-                // Long AND aged, deliberately: whether a real branch name truncates rather than
+                // Long AND aged, deliberately: whether a real worktree name truncates rather than
                 // pushing the age off the line is the other question only a render settles.
+                workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
+                    + "ticket-377-session-roster-and-the-header-above-it",
                 branch: "argo/#377-session-roster-and-the-header-above-it",
                 access: .managed,
                 status: .stopped,

@@ -23,9 +23,10 @@ struct SessionHeader: View {
             if let header {
                 title(header)
                 mark(header)
+                branch(header)
             }
-            // The trailing space the later header tickets fill — the branch and its state, the
-            // CLI and model, the linked issue, and the context reading on the right edge.
+            // The trailing space the later header tickets fill — the branch's state, the CLI and
+            // model, the linked issue, and the context reading on the right edge.
             Spacer(minLength: ArgoSpacing.loose)
         }
         .padding(.horizontal, ArgoSpacing.section)
@@ -43,6 +44,26 @@ struct SessionHeader: View {
             .foregroundStyle(argo.color.text.primary)
             .lineLimit(1)
             .truncationMode(.tail)
+    }
+
+    /// The branch, which the roster row gave up so its own second line could name the worktree
+    /// two Sessions in one repo are told apart by (#537). Here there is room to spell a ref out
+    /// whole, so it is cut at the middle rather than at either end a reader addresses it from.
+    ///
+    /// Under the glyph the vessel already spends on a branch, so the header and the toolbar name
+    /// the same kind of thing the same way — and so the ref needs no word introducing it.
+    @ViewBuilder private func branch(_ header: SessionHeaderProjection.Header) -> some View {
+        if let branch = header.branch {
+            Label {
+                Text(branch)
+            } icon: {
+                ArgoGlyph(ArgoSymbol.branch, .inline)
+            }
+            .labelStyle(.argo(ArgoTypography.control))
+            .foregroundStyle(argo.color.text.secondary)
+            .lineLimit(1)
+            .truncationMode(.middle)
+        }
     }
 
     /// Quiet by construction: the mark says the Session is one you cannot drive, which is worth

@@ -23,10 +23,24 @@ enum SessionHeaderFixture {
             title: title(for: access),
             model: "claude-opus-5",
             workspaceLocation: "/Users/milad/Developer/argo",
-            branch: "argo/#509-session-header-title",
+            branch: branch(for: access),
             access: access,
             status: .idle,
         )
+    }
+
+    /// The orphaned one is on a detached checkout, so the set carries both branch renderings: a
+    /// header that always had a ref would leave the absence unlooked-at, and the absence is the
+    /// rendering the `HEAD` this replaced used to fill in for.
+    private static func branch(
+        for access: CockpitPresentation.Session.Access,
+    )
+        -> String? {
+        switch access {
+        case .managed: "argo/#509-session-header-title"
+        case .external: "argo/#537-session-rail-worktree"
+        case .orphaned: nil
+        }
     }
 
     /// The external one's title is long enough to be CUT at the narrowest deck, deliberately: a

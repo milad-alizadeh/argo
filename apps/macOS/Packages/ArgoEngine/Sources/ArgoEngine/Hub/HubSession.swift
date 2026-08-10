@@ -100,7 +100,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case let .model(observedModel):
             model = observedModel
         case let .branch(observedBranch):
-            branch = observedBranch
+            branch = Self.branchName(observedBranch)
         case let .prompt(text, atMs):
             applyPromptTitle(text)
             turnOpen = true
@@ -123,6 +123,15 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case .message, .thought, .plan, .usage, .unreadableLine:
             break
         }
+    }
+
+    /// What a transcript's branch field is worth reading as a branch.
+    ///
+    /// A detached checkout makes the CLI write the literal `HEAD`, which is not a ref anybody can
+    /// check out. Read at the point the fact enters the Hub rather than at each surface that draws
+    /// it, so no reader has to know the convention to avoid rendering an absence as a word.
+    private static func branchName(_ observed: String) -> String? {
+        observed == "HEAD" ? nil : observed
     }
 
     /// The latest time wins, and an absent one says nothing: a record with no timestamp is not a

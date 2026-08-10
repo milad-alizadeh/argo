@@ -12,9 +12,9 @@ struct SessionRosterProjectionTests {
     @Test
     func `input order survives operational state changes`() {
         let sessions = [
-            session(id: "older", status: .idle),
-            session(id: "attention", status: .asking),
-            session(id: "newer", status: .running),
+            rosterSession(id: "older", status: .idle),
+            rosterSession(id: "attention", status: .asking),
+            rosterSession(id: "newer", status: .running),
         ]
 
         let rows = SessionRosterProjection.rows(from: sessions)
@@ -48,7 +48,7 @@ struct SessionRosterProjectionTests {
     func `the announced word is the drawn word, never a second claim beside it`() throws {
         // The word is one decision made once: a label that said `Failed` while the row read
         // `Stopped` would be the roster telling a screen reader something else.
-        let row = try #require(rows(session(id: "stopped", status: .stopped)).first)
+        let row = try #require(rows(rosterSession(id: "stopped", status: .stopped)).first)
 
         #expect(row.stateWord == "Stopped")
         #expect(row.announcement.contains("Stopped"))
@@ -57,12 +57,12 @@ struct SessionRosterProjectionTests {
     @Test
     func `a Session with no word announces the rest of the row without it`() throws {
         let row = try #require(
-            rows(session(id: "quiet", status: .idle, lastSeenAtMs: msAgo(120))).first,
+            rows(rosterSession(id: "quiet", status: .idle, lastSeenAtMs: msAgo(120))).first,
         )
 
         // No empty slot where the word would have been, and the read-only fact — which the
         // lock is allowed to suppress visually — is never suppressed here.
-        #expect(row.announcement == "Session quiet, on main, last active 2m ago")
+        #expect(row.announcement == "Session quiet, in argo, last active 2m ago")
     }
 
     @Test
@@ -78,12 +78,12 @@ struct SessionRosterProjectionTests {
     @Test
     func `access is a fact about the whole row, not one the roster spends by comparison`() {
         let mixed = SessionRosterProjection.rows(from: [
-            session(id: "managed", access: .managed),
-            session(id: "external", access: .external),
+            rosterSession(id: "managed", access: .managed),
+            rosterSession(id: "external", access: .external),
         ])
         let uniform = SessionRosterProjection.rows(from: [
-            session(id: "one", access: .external),
-            session(id: "two", access: .external),
+            rosterSession(id: "one", access: .external),
+            rosterSession(id: "two", access: .external),
         ])
 
         #expect(mixed.map(\.isReadOnly) == [false, true])
@@ -96,7 +96,7 @@ struct SessionRosterProjectionTests {
 
     @Test
     func `a read-only Session announces itself, with no glyph left to carry the fact`() throws {
-        let row = try #require(rows(session(id: "external", access: .external)).first)
+        let row = try #require(rows(rosterSession(id: "external", access: .external)).first)
 
         // The row draws this by ghosting, which a screen reader cannot hear. The label is
         // where the fact survives the ink.
@@ -105,46 +105,9 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
-    func `the row's second line is the branch its Session is on`() {
-        // Two Sessions in one repo: the branch is the only thing on the row that tells them
-        // apart, which is the whole reason it took the line the model used to have.
-        let rows = SessionRosterProjection.rows(from: [
-            session(id: "one", branch: "argo/#505-roster-row-branch"),
-            session(id: "two", branch: "main"),
-        ])
-
-        #expect(rows.map(\.branch) == ["argo/#505-roster-row-branch", "main"])
-    }
-
-    @Test
-    func `a Session with no branch carries no second line rather than a word for one`() throws {
-        let row = try #require(SessionRosterProjection.rows(from: [
-            session(id: "branchless", branch: nil),
-        ]).first)
-
-        // Absent, not the roster's `unknown`: a Session that has not branched has nothing to
-        // say here, and a placeholder would read as a branch nobody can find.
-        #expect(row.branch == nil)
-    }
-
-    @Test
-    func `the full location survives the row even though it never draws on it`() {
-        // The line is the branch, but copy-the-location and the row's tooltip still need the
-        // path — dropping the workspace identity is a rendering decision, not a data one.
-        let sessions = [
-            session(id: "one", workspaceLocation: "/Users/milad/Client/argo"),
-            session(id: "two", workspaceLocation: nil),
-        ]
-
-        let rows = SessionRosterProjection.rows(from: sessions)
-
-        #expect(rows.map(\.location) == sessions.map(\.workspaceLocation))
-    }
-
-    @Test
     func `read-only Sessions carry no invented operational word`() throws {
         let row = try #require(SessionRosterProjection.rows(from: [
-            session(id: "external", access: .external, status: .unknown),
+            rosterSession(id: "external", access: .external, status: .unknown),
         ]).first)
 
         #expect(row.stateWord == nil)
@@ -163,16 +126,18 @@ struct SessionRosterProjectionTests {
         // the whole row is drawn quieter is the render question the PNG exists to settle, and
         // a short read-only title would leave it unrendered without failing anything.
         #expect(rows.contains { $0.isReadOnly && $0.title.count > 40 })
-        // Both branch renderings, for the same reason: a one-line row sitting between two-line
-        // ones is a rhythm question, and a roster where every Session had a branch would leave
-        // it unrendered.
-        #expect(rows.contains { $0.branch == nil })
-        // A real ticket branch, not a bare `main`: whether one truncates at the row's width
-        // without losing the ticket it is named for is the other question the PNG settles.
-        #expect(rows.contains { $0.branch?.hasPrefix("argo/#") == true })
-        // A long branch beside an age, because whether the branch truncates rather than pushing
+        // Both worktree renderings, for the same reason: a one-line row sitting between
+        // two-line ones is a rhythm question, and a roster where every Session sat in its own
+        // worktree would leave it unrendered.
+        #expect(rows.contains { $0.worktree == nil })
+        // A real ticket worktree, not a folder called `argo`: whether one truncates at the row's
+        // width without losing the ticket it is named for is the other question the PNG settles.
+        #expect(rows.contains { $0.worktree?.hasPrefix("ticket-") == true })
+        // A long label beside an age, because whether the worktree truncates rather than pushing
         // the age off the line is a layout claim no value test can see.
-        #expect(rows.contains { ($0.branch?.count ?? 0) > 30 && $0.age != nil })
+        #expect(rows.contains { ($0.worktree?.count ?? 0) > 30 && $0.age != nil })
+        // And a Session on a detached checkout, which used to draw the literal word `HEAD` here.
+        #expect(rows.contains { $0.branch == nil && $0.worktree != nil })
         // And a row with no age that is not simply the running one: the record-carried-no-time
         // rendering is the absence the roster has to draw, and the running row would satisfy a
         // bare `age == nil` on its own.
@@ -191,14 +156,17 @@ struct SessionRosterProjectionTests {
         // Every element a row can draw has to appear ON a ghosted row, or the claim that the
         // row degrades as one is only rendered for the half of it that happened to be there.
         #expect(rows.contains { $0.isReadOnly && $0.stateWord != nil })
-        #expect(rows.contains { $0.isReadOnly && $0.branch != nil && $0.age != nil })
+        #expect(rows.contains { $0.isReadOnly && $0.worktree != nil && $0.age != nil })
+        // And the other rendering on a ghosted row too: a row with nothing on its second line
+        // but an age is the shortest thing the roster draws, and ghosting has to reach it.
+        #expect(rows.contains { $0.isReadOnly && $0.worktree == nil })
         // Including the loudest ink the roster has: a live dot on a Session nobody can steer.
         #expect(rows.contains { $0.isReadOnly && $0.state == .running })
     }
 
     @Test
     func `an idle Session says how long ago it last moved`() throws {
-        let row = try #require(rows(session(id: "idle", lastSeenAtMs: msAgo(120))).first)
+        let row = try #require(rows(rosterSession(id: "idle", lastSeenAtMs: msAgo(120))).first)
 
         // `ago` and not a bare `2m`, which reads as how long something took rather than as
         // how long since it happened.
@@ -218,7 +186,8 @@ struct SessionRosterProjectionTests {
     func `an age is worded in the largest unit that has fully passed`(
         secondsAgo: Int, phrase: String,
     ) throws {
-        let row = try #require(rows(session(id: "idle", lastSeenAtMs: msAgo(secondsAgo))).first)
+        let row = try #require(rows(rosterSession(id: "idle", lastSeenAtMs: msAgo(secondsAgo)))
+            .first)
 
         #expect(row.age == phrase)
     }
@@ -227,7 +196,7 @@ struct SessionRosterProjectionTests {
     func `a clock behind the record it is measuring against reads as no time at all`() throws {
         // Two machines' clocks, or one that moved: the record is allowed to be newer than the
         // read of the moment. `in 3m` would be the roster claiming the future.
-        let row = try #require(rows(session(id: "skewed", lastSeenAtMs: msAgo(-180))).first)
+        let row = try #require(rows(rosterSession(id: "skewed", lastSeenAtMs: msAgo(-180))).first)
 
         #expect(row.age == "just now")
     }
@@ -235,7 +204,7 @@ struct SessionRosterProjectionTests {
     @Test
     func `a running Session shows no age`() throws {
         let row = try #require(
-            rows(session(id: "running", status: .running, lastSeenAtMs: msAgo(120))).first,
+            rows(rosterSession(id: "running", status: .running, lastSeenAtMs: msAgo(120))).first,
         )
 
         // The dot already says it is live, and the same `0m ago` repeated down the roster is
@@ -245,7 +214,7 @@ struct SessionRosterProjectionTests {
 
     @Test
     func `a Session whose record carries no activity time shows no age`() throws {
-        let row = try #require(rows(session(id: "timeless", lastSeenAtMs: nil)).first)
+        let row = try #require(rows(rosterSession(id: "timeless", lastSeenAtMs: nil)).first)
 
         // Absence renders as absence. A placeholder would read as a moment nobody observed.
         #expect(row.age == nil)
@@ -259,29 +228,9 @@ struct SessionRosterProjectionTests {
     /// the statuses it was written for rather than against seven anonymous slots.
     private func rows(of statuses: [SessionStatus]) -> [SessionRosterProjection.Row] {
         SessionRosterProjection.rows(
-            from: statuses.enumerated().map { session(id: "\($0.offset)", status: $0.element) },
+            from: statuses.enumerated()
+                .map { rosterSession(id: "\($0.offset)", status: $0.element) },
             now: now,
-        )
-    }
-
-    private func session(
-        id: String,
-        workspaceLocation: String? = "/Users/milad/Developer/argo",
-        branch: String? = "main",
-        access: CockpitPresentation.Session.Access = .managed,
-        status: SessionStatus = .idle,
-        lastSeenAtMs: Int? = nil,
-    )
-        -> CockpitPresentation.Session {
-        CockpitPresentation.Session(
-            id: id,
-            title: "Session \(id)",
-            model: "claude-opus-5",
-            workspaceLocation: workspaceLocation,
-            branch: branch,
-            access: access,
-            status: status,
-            lastSeenAtMs: lastSeenAtMs,
         )
     }
 

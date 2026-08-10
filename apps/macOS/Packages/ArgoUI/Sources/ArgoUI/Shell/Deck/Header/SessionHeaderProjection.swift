@@ -23,23 +23,38 @@ enum SessionHeaderProjection {
         /// the default state is silent, and a mark drawn on every header is a mark that has
         /// stopped meaning anything by the second Session.
         let access: AccessMark?
+        /// The branch this Session is on, verbatim and never shortened — the header is the one
+        /// surface with room to spell a ref out well enough to be typed back into a terminal,
+        /// which is why the roster row hands it up here rather than drawing it small (#537).
+        ///
+        /// Absent for a detached checkout and for a Session that never branched. The engine has
+        /// already read the `HEAD` a detached record carries as the absence it is, so nothing
+        /// here has to know the convention to avoid rendering it as a name.
+        let branch: String?
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being and no
         /// surface can assemble one that disagrees with what the projection decided.
-        fileprivate init(title: String, access: AccessMark?) {
+        fileprivate init(title: String, access: AccessMark?, branch: String?) {
             self.title = title
             self.access = access
+            self.branch = branch
         }
 
         /// What a screen reader hears: the same word the header draws, because a mark is ink and
         /// ink is nothing a screen reader can hear.
         var announcement: String {
-            [title, access?.word].compactMap(\.self).joined(separator: ", ")
+            [title, access?.word, branch.map { "on \($0)" }]
+                .compactMap(\.self)
+                .joined(separator: ", ")
         }
     }
 
     static func header(from session: CockpitPresentation.Session) -> Header {
-        Header(title: session.title, access: mark(for: session.access))
+        Header(
+            title: session.title,
+            access: mark(for: session.access),
+            branch: session.branch,
+        )
     }
 
     /// Access → the mark the header spends on it, if any.

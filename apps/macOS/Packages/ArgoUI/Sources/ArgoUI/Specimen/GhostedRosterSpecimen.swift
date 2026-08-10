@@ -9,7 +9,7 @@ import SwiftUI
 /// a row, and whether "you cannot drive this" reads without a glyph to hunt for is only answerable
 /// with driveable rows above and below it. `sessionRows` carries one read-only Session among four;
 /// this one alternates, and puts every element a row can draw on a ghosted one — a long title, a
-/// branch, an age, and a state word in the loudest ink the roster has.
+/// worktree, an age, and a state word in the loudest ink the roster has.
 ///
 /// The last of those is the judgement the PNG exists for: an attention word is the one ink on the
 /// row that is meant to be loud, and a ghosted row has to take it down with everything else rather
@@ -25,7 +25,10 @@ struct GhostedRosterSpecimen: View {
         .frame(width: ArgoLayout.sidebarIdealWidth)
     }
 
-    static let rows = SessionRosterProjection.rows(from: mixedAccess)
+    static let rows = SessionRosterProjection.rows(from: mixedAccess, mainCheckout: mainCheckout)
+
+    /// The Project this roster is scoped to — the checkout whose rows draw no second line.
+    private static let mainCheckout = "/Users/milad/Developer/argo"
 
     /// Managed and observed alternating, so no run of one access reads as the roster's default.
     private static let mixedAccess = [
@@ -33,17 +36,17 @@ struct GhostedRosterSpecimen: View {
             id: "managed-running",
             title: "Ship the native Liquid Glass application shell",
             model: "claude-opus-5",
-            workspaceLocation: "/Users/milad/Developer/argo",
+            workspaceLocation: "\(mainCheckout)/.claude/worktrees/ticket-508-row-ghosted",
             branch: "argo/#508-external-row-ghosted",
             access: .managed,
             status: .running,
         ),
         CockpitPresentation.Session(
             id: "observed-asking",
-            // Long, branched, aged and waiting: everything a row can draw, all of it ghosted.
+            // Long, located, aged and waiting: everything a row can draw, all of it ghosted.
             title: "Answer a question from a Session nobody here started",
             model: nil,
-            workspaceLocation: "/Users/milad/Developer/cockpit",
+            workspaceLocation: "\(mainCheckout)/.claude/worktrees/ticket-502-session-header",
             branch: "argo/#502-roster-row-and-session-header",
             access: .external,
             status: .asking,
@@ -51,9 +54,11 @@ struct GhostedRosterSpecimen: View {
         ),
         CockpitPresentation.Session(
             id: "managed-idle",
+            // In the shared checkout: a one-line row between two-line ones, so the rhythm of a
+            // roster that does not label every workspace is what the PNG is looked at for.
             title: "Wait for the next instruction",
             model: "claude-sonnet-4",
-            workspaceLocation: "/Users/milad/Developer/cockpit",
+            workspaceLocation: mainCheckout,
             branch: "main",
             access: .managed,
             status: .idle,
@@ -63,20 +68,22 @@ struct GhostedRosterSpecimen: View {
             id: "observed-running",
             // Live and unreachable at once: the dot is the loudest thing on a running row, and
             // it has to dim with the rest rather than reading as a Session you could steer.
+            //
+            // Detached, too — its record said `HEAD`, and the row draws where it is instead.
             title: "Watch an externally launched agent work",
             model: nil,
             workspaceLocation: "/Users/milad/Experiments/argo",
-            branch: "main",
+            branch: nil,
             access: .external,
             status: .running,
         ),
         CockpitPresentation.Session(
             id: "observed-unknown",
             // A transcript that stamped nothing and carried no turn boundary: no dot, no age,
-            // no branch. The quietest row the roster can draw, ghosted on top of that.
+            // nowhere named. The quietest row the roster can draw, ghosted on top of that.
             title: "Read a transcript that says almost nothing",
             model: nil,
-            workspaceLocation: "/Users/milad/Developer/cockpit",
+            workspaceLocation: mainCheckout,
             branch: nil,
             access: .external,
             status: .unknown,

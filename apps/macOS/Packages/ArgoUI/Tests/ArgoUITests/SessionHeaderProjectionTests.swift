@@ -72,6 +72,26 @@ struct SessionHeaderProjectionTests {
     }
 
     @Test
+    func `the header names the branch the roster no longer has room for`() {
+        let header = SessionHeaderProjection.header(from: session(branch: "argo/#537-rail"))
+
+        // Verbatim, and not shortened to its ticket: the header is where a ref is spelled out
+        // well enough to be typed back into a terminal.
+        #expect(header.branch == "argo/#537-rail")
+        #expect(header.announcement.contains("on argo/#537-rail"))
+    }
+
+    @Test
+    func `a Session on no branch says nothing where the branch would go`() {
+        // A detached checkout, or a Session that never branched at all. Absent rather than the
+        // `HEAD` its record carries: an unestablishable fact is not rendered as the nearest word.
+        let header = SessionHeaderProjection.header(from: session(branch: nil))
+
+        #expect(header.branch == nil)
+        #expect(header.announcement == "Session")
+    }
+
+    @Test
     func `the cwd is not on the header`() {
         // The line carries what identifies the Session, not where it happens to sit. Asserted
         // rather than assumed: the location is on the value the header is projected FROM, so
@@ -95,11 +115,16 @@ struct SessionHeaderProjectionTests {
         // whether the mark survives that cut is the render question no value test can settle —
         // and a short title on every marked fixture would leave it unrendered.
         #expect(drawn.contains { $0.access != nil && $0.title.count > 100 })
+        // Both branch renderings, because the header is where the branch went: a fixture set
+        // that always carried one would leave the detached rendering unlooked-at.
+        #expect(drawn.contains { $0.branch != nil })
+        #expect(drawn.contains { $0.branch == nil })
     }
 
     private func session(
         title: String = "Session",
         access: CockpitPresentation.Session.Access = .managed,
+        branch: String? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -107,7 +132,7 @@ struct SessionHeaderProjectionTests {
             title: title,
             model: "claude-opus-5",
             workspaceLocation: "/Users/milad/Developer/argo",
-            branch: "main",
+            branch: branch,
             access: access,
             status: .idle,
         )

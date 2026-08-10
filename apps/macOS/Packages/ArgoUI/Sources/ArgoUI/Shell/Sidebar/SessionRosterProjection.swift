@@ -5,12 +5,23 @@ enum SessionRosterProjection {
     struct Row: Identifiable, Sendable {
         let id: String
         let title: String
-        /// Never drawn — the branch took that line — but the tooltip and the copy actions
-        /// still address the Session by it.
+        /// Never drawn — the worktree label stands in for it — but the tooltip and the copy
+        /// actions still address the Session by it.
         let location: String?
-        /// The row's second line, and the only thing that tells two Sessions in one repo
-        /// apart. Absent for a Session that has not branched, rather than a placeholder
-        /// standing where a branch nobody can check out would go.
+        /// The row's second line: which worktree this Session is in, named by the shortest
+        /// suffix that tells it apart from the others on the roster.
+        ///
+        /// The worktree rather than the branch, because it is the higher-tier fact (a `cwd` is
+        /// DIRECT for a managed Session, and can never render as `HEAD`), because it does not
+        /// move under a reader mid-scan the way a branch does, and because it is the actionable
+        /// one — where you would `cd`, and what says two Sessions cannot collide.
+        ///
+        /// Absent for a Session in the Project's shared main checkout, and for one whose record
+        /// never said where it ran. A line spent on the folder every unisolated Session shares
+        /// tells nothing apart, which is exactly what D30 deletes.
+        let worktree: String?
+        /// Never drawn either: the branch belongs to the session header, where there is room to
+        /// name it. Kept so the row's copy action can still hand it over.
         let branch: String?
         /// True of every Session Argo does not own the terminal of, and always announced.
         ///
@@ -34,6 +45,7 @@ enum SessionRosterProjection {
             id: String,
             title: String,
             location: String?,
+            worktree: String?,
             branch: String?,
             isReadOnly: Bool,
             age: String?,
@@ -43,6 +55,7 @@ enum SessionRosterProjection {
             self.id = id
             self.title = title
             self.location = location
+            self.worktree = worktree
             self.branch = branch
             self.isReadOnly = isReadOnly
             self.age = age
@@ -58,7 +71,7 @@ enum SessionRosterProjection {
                 title,
                 stateWord,
                 isReadOnly ? "Read-only Session" : nil,
-                branch.map { "on \($0)" },
+                worktree.map { "in \($0)" },
                 age.map { "last active \($0)" },
             ]
             .compactMap(\.self)
@@ -68,13 +81,22 @@ enum SessionRosterProjection {
 
     /// `now` is a parameter because an age is arithmetic against a moment, and a projection that
     /// read the clock itself would answer differently on every call with nothing able to say so.
-    static func rows(from sessions: [CockpitPresentation.Session], now: Date = Date()) -> [Row] {
+    /// `mainCheckout` for the same reason: which folder is shared is the Project's fact, and a
+    /// projection that guessed it would decide on every roster which rows say nothing.
+    static func rows(
+        from sessions: [CockpitPresentation.Session],
+        mainCheckout: String? = nil,
+        now: Date = Date(),
+    )
+        -> [Row] {
         let nowMs = now.epochMs
-        return sessions.map { session in
+        let worktrees = worktrees(of: sessions, mainCheckout: mainCheckout)
+        return zip(sessions, worktrees).map { session, worktree in
             Row(
                 id: session.id,
                 title: session.title,
                 location: session.workspaceLocation,
+                worktree: worktree,
                 branch: session.branch,
                 isReadOnly: isReadOnly(session.access),
                 age: age(status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
@@ -82,6 +104,31 @@ enum SessionRosterProjection {
                 stateWord: stateWord(for: session.status),
             )
         }
+    }
+
+    /// The label each row spends on its workspace, decided across the WHOLE roster: how short a
+    /// name can be and still tell one Session from another is a question about its neighbours,
+    /// which is why this is one pass over the list rather than a per-row derivation.
+    ///
+    /// The shared checkout is dropped BEFORE the labels are drawn, so it is not a rival either —
+    /// a `main`-checkout row is silent, and it must not push the worktree rows into longer names
+    /// to be told apart from something nobody can see.
+    private static func worktrees(
+        of sessions: [CockpitPresentation.Session], mainCheckout: String?,
+    )
+        -> [String?] {
+        let shared = path(mainCheckout)
+        return DistinguishingLabel.labels(for: sessions.map {
+            let location = path($0.workspaceLocation)
+            return location == shared ? nil : location
+        })
+    }
+
+    /// A path compared as a path: one trailing slash apart is one folder, and reading those as two
+    /// would put the shared checkout's own name back on the row it was taken off.
+    private static func path(_ location: String?) -> String? {
+        guard let location, location != "/" else { return location }
+        return location.hasSuffix("/") ? String(location.dropLast()) : location
     }
 
     /// Whether the whole row is drawn as a Session nobody here can drive.

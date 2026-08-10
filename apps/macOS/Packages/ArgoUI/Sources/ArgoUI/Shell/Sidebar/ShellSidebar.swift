@@ -31,7 +31,12 @@ struct ShellSidebar: View {
     @State private var interactions = 0
 
     var body: some View {
-        let rows = order.published(SessionRosterProjection.rows(from: presentation.sessions))
+        let rows = order.published(SessionRosterProjection.rows(
+            from: presentation.sessions,
+            // The active Project's folder is the shared checkout every unisolated Session sits
+            // in, and the one location a row says nothing about.
+            mainCheckout: presentation.activeProject?.location,
+        ))
 
         SessionNavigator(rows: rows, selection: $selection)
             .onHover { isPointerInside = $0 }
