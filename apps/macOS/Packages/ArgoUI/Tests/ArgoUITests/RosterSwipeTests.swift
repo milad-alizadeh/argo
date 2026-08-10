@@ -52,6 +52,23 @@ struct RosterSwipeTests {
         #expect(swipe.offset(of: "a") == -ArgoLayout.rosterSwipeCommit)
     }
 
+    /// The control is the whole travelled distance, not a fixed slot at the trailing edge —
+    /// which would leave bare sidebar between the row and the control for the entire approach
+    /// to the hard swipe.
+    @Test
+    func `the revealed control is as wide as the row has travelled`() {
+        var swipe = RosterSwipe()
+
+        swipe.drag("a", translation: -ArgoLayout.rosterSwipeCommit)
+        #expect(swipe.revealedWidth(of: "a") == ArgoLayout.rosterSwipeCommit)
+
+        _ = swipe.release("a")
+        swipe.drag("a", translation: -ArgoLayout.rosterSwipeSettle)
+        _ = swipe.release("a")
+        // Settled open, it is the control's own width and no more.
+        #expect(swipe.revealedWidth(of: "a") == ArgoLayout.rosterSwipeRevealWidth)
+    }
+
     @Test
     func `a row at rest is not drawn off its place and reveals nothing`() {
         let swipe = RosterSwipe()

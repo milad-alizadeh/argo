@@ -16,7 +16,7 @@ public struct SessionAnnotations: Equatable, Sendable {
     /// A struct rather than the bare `Bool` archiving needs today, because a set keyed to one
     /// fact has to be re-keyed for the second one — and the second one is already spoken for.
     public struct Annotation: Equatable, Sendable {
-        public let isArchived: Bool
+        public var isArchived: Bool
 
         public init(isArchived: Bool = false) {
             self.isArchived = isArchived
@@ -29,8 +29,12 @@ public struct SessionAnnotations: Equatable, Sendable {
             self == Annotation()
         }
 
+        /// A copy with one fact changed, by mutation rather than by rebuilding: a second field
+        /// added to this type would be silently dropped by an initialiser call left behind here.
         func archived(_ isArchived: Bool) -> Annotation {
-            Annotation(isArchived: isArchived)
+            var next = self
+            next.isArchived = isArchived
+            return next
         }
     }
 
