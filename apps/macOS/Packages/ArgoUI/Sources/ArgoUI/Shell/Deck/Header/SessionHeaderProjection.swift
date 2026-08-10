@@ -68,6 +68,13 @@ enum SessionHeaderProjection {
         /// derived one (`SessionTitle`). Never shortened, completed or re-capitalised: the header
         /// names its subject rather than describing it.
         let title: String
+        /// What the Session is waiting for, and `nil` for every status that spends no word — the
+        /// calm ones, which are most of them.
+        ///
+        /// `SessionState`'s reading rather than a mapping of the header's own: the roster row and
+        /// the header above it name the state of the same Session, and one word per state wherever
+        /// it appears is `cockpit-status-vocabulary.md`'s one rule.
+        let state: SessionState.Reading?
         /// The mark a Session spends when it is not a plain managed one, and `nil` when it is —
         /// the default state is silent, and a mark drawn on every header is a mark that has
         /// stopped meaning anything by the second Session.
@@ -99,6 +106,7 @@ enum SessionHeaderProjection {
         /// surface can assemble one that disagrees with what the projection decided.
         fileprivate init(
             title: String,
+            state: SessionState.Reading?,
             access: AccessMark?,
             checkout: Checkout?,
             marks: [Mark],
@@ -109,6 +117,7 @@ enum SessionHeaderProjection {
             handoff: Handoff?,
         ) {
             self.title = title
+            self.state = state
             self.access = access
             self.checkout = checkout
             self.marks = marks
@@ -142,6 +151,10 @@ enum SessionHeaderProjection {
             // Session differently from the row that selected it would be two answers to one
             // question (#502, story 19).
             title: SessionTitle.resolved(for: session),
+            // Through the same function the roster row reads, for the same reason the title is:
+            // a header saying one thing about a Session's state while the row that selected it
+            // says another would be two answers to one question.
+            state: SessionState.reading(for: session.status),
             access: mark(for: session.access),
             checkout: checkout(for: session.workspace),
             marks: marks(for: session.workspace),

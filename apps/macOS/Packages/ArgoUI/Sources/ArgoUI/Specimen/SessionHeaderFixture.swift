@@ -36,6 +36,16 @@ enum SessionHeaderFixture {
         status: .unknown,
     ))
 
+    /// The one Session the band spends a word on: an agent blocked on a Permission. Drawn beside
+    /// the calm postures on purpose — whether the word carries from across the window is a
+    /// question about the headers around it, not about the header it is on.
+    static let needsInput = SessionHeaderProjection.header(from: session(
+        access: .managed,
+        title: "Drive a Session from a composer",
+        branch: "argo/#535-session-drive-port",
+        status: .permission,
+    ))
+
     /// Every shape the fact line takes, for the previews that judge them as a group.
     static let gallery = headers + [longBranch, sparse]
 
@@ -140,6 +150,7 @@ enum SessionHeaderFixture {
         branch: String,
         contextTokens: Int? = 216_764,
         handedOffTo: String? = nil,
+        status: SessionStatus = .idle,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -148,7 +159,7 @@ enum SessionHeaderFixture {
             model: "claude-opus-5",
             workspaceLocation: "/Users/milad/Developer/argo",
             access: access,
-            status: .idle,
+            status: status,
             cli: .claude,
             workspace: .init(kind: .worktree, branch: branch, dirty: 3, unpushed: 1),
             // A link with no title read through it, which is every Session in this build: no
