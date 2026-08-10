@@ -10,6 +10,12 @@ import SwiftUI
 /// replacing it means leaving `.listStyle(.sidebar)` — which is what the sidebar's Liquid
 /// Glass comes from (D3). Contents only, therefore; selection belongs to the system.
 struct SessionRow: View {
+    /// How many times the field asks for focus before giving up, and how long it waits between
+    /// asks. A bound rather than a loop that could spin for the life of the row, and an interval
+    /// short enough that the first ask a settled `List` accepts is the one nobody notices.
+    private static let focusAttempts = 20
+    private static let focusRetry = Duration.milliseconds(20)
+
     @Environment(\.argo) private var argo
 
     let row: SessionRosterProjection.Row
@@ -41,8 +47,6 @@ struct SessionRow: View {
         // strength, and so a fact added to the row inherits it without being told.
         .opacity(row.isReadOnly ? ArgoOpacity.ghosted : ArgoOpacity.full)
         .contentShape(.rect)
-        .help(inspectionText)
-        .contextMenu { copyActions }
         // `.ignore` while the row is at rest and `.contain` while it is being typed into: the row
         // is ONE thing to a screen reader, said in the projection's words, but a field opened
         // inside it is a thing of its own that has to stay reachable.
@@ -50,19 +54,10 @@ struct SessionRow: View {
         // Ghosting is ink, and ink is nothing a screen reader can hear. What is announced is
         // the projection's decision, not a second one taken here.
         .accessibilityLabel(row.announcement)
-        // Both clicks are the row's, and BOTH have to be: a tap gesture anywhere in a `List` row
-        // hit-tests ahead of the row and swallows the click the `List` would have selected with —
-        // `simultaneousGesture` included, which composes with other SwiftUI gestures and not with
-        // AppKit's selection, and an `NSClickGestureRecognizer` on the row view never sees the
-        // second click at all, because the table's own mouse tracking has taken the loop by then.
-        // So the row selects itself (#502, story 18 is the double-click; a roster that stopped
-        // selecting was the price of taking it any other way).
-        //
-        // On a clear layer OVER the row rather than on the row itself, and hidden from
-        // accessibility: a gesture anywhere inside the announced element takes the combine apart,
-        // and the row goes back to announcing its own truncated first line in place of everything
-        // the projection decided to say.
-        .overlay { clickCatcher }
+        // AFTER the title's own gestures, so the layer that catches a double-click cannot stand
+        // between the pointer and the menu holding Reset (#502, story 20).
+        .help(inspectionText)
+        .contextMenu { copyActions }
     }
 
     private var primaryLine: some View {
@@ -74,21 +69,24 @@ struct SessionRow: View {
         }
     }
 
-    /// Absent while the name is being typed, so the field keeps its own clicks — a caret you cannot
-    /// place is worse than no edit-in-place at all.
-    @ViewBuilder private var clickCatcher: some View {
-        if !isRenaming.wrappedValue {
-            Color.clear
-                .contentShape(.rect)
-                // Two before one: a single tap declared first would fire on the opening click of
-                // every double one.
-                .onTapGesture(count: 2) {
-                    select()
-                    beginRenaming()
-                }
-                .onTapGesture(count: 1) { select() }
-                .accessibilityHidden(true)
-        }
+    /// The clear layer that answers both clicks over the title, and the title's alone: story 18
+    /// asks for a double-click on the TITLE, and a layer over the whole row would rename off the
+    /// state word and the empty end of the line too.
+    ///
+    /// It has to answer BOTH, because a tap gesture inside a `List` row hit-tests ahead of the row
+    /// and swallows the click the `List` selects with — so a layer that took only the double-click
+    /// would cost the title its selection, which is the bug this replaced.
+    private var clickCatcher: some View {
+        Color.clear
+            .contentShape(.rect)
+            // Two before one: a single tap declared first would fire on the opening click of
+            // every double one.
+            .onTapGesture(count: 2) {
+                select()
+                beginRenaming()
+            }
+            .onTapGesture(count: 1) { select() }
+            .accessibilityHidden(true)
     }
 
     @ViewBuilder private var title: some View {
@@ -99,6 +97,9 @@ struct SessionRow: View {
                 .argoText(ArgoTypography.rowTitle)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                // Only while the row is at rest: the field above keeps its own clicks, because a
+                // caret you cannot place is worse than no edit-in-place at all.
+                .overlay { clickCatcher }
         }
     }
 
@@ -123,31 +124,27 @@ struct SessionRow: View {
                 commitRenaming()
             }
             .accessibilityLabel(SessionRenameProjection.prompt)
-            // The ONE way a field is seeded and focused, whichever gesture asked for it — the row's
-            // double-click, the menu bar's Rename, or the render harness. On the FIELD and not
-            // beside whatever opened it, because focus cannot be taken before the thing being
-            // focused is on screen: a `@FocusState` set in the same update lands on nothing, and
-            // then reads as focus already held. That is what shipped a field you had to click into
-            // and that ignored Return.
-            //
-            // The name is read here for the same reason it is focused here — re-opening on a
-            // Session renamed since has to draw the name it has NOW.
-            //
-            // Asked for a beat AFTER the field is on screen, not in the same breath: the `List`
-            // holds keyboard focus until its own update has settled, and a request made inside that
-            // update is dropped without a word.
-            .task {
-                typed = row.rename.name
-                try? await Task.sleep(for: .milliseconds(50))
-                isFieldFocused = true
-            }
+            .task { await open() }
     }
 
-    /// Opens the field and nothing else. Seeding and focus belong to the `onChange` above, which is
-    /// what the menu bar's Rename goes through too — and focus in particular CANNOT be taken here:
-    /// the field does not exist until this flag has been drawn against, so a `@FocusState` set in
-    /// the same breath lands on nothing and then reads as already-focused, which is exactly what
-    /// left the field open and deaf to Return.
+    /// The field's own first moment, whichever gesture asked for it — this row's double-click, the
+    /// menu bar's Rename, or the render harness. It lives on the field because focus cannot be
+    /// taken before the thing being focused exists, and the name is read here for the same reason:
+    /// re-opening on a Session renamed since has to draw the name it has NOW.
+    ///
+    /// Asked for until it is HELD rather than once and hopefully: the `List` keeps keyboard focus
+    /// until its own update settles, and a request made before then is dropped without a word —
+    /// which is what shipped a field you had to click into and that ignored Return.
+    private func open() async {
+        typed = row.rename.name
+        for _ in 0 ..< Self.focusAttempts where !isFieldFocused {
+            isFieldFocused = true
+            try? await Task.sleep(for: Self.focusRetry)
+        }
+    }
+
+    /// Opens the field. Everything else about opening — the name, the focus — belongs to the field
+    /// itself (`open`), which is the only place that knows it is on screen.
     private func beginRenaming() {
         isRenaming.wrappedValue = true
     }

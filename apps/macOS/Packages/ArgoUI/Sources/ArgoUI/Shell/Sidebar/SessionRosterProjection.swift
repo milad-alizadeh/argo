@@ -32,8 +32,9 @@ enum SessionRosterProjection {
         /// a glyph is a thing to hunt for, and it can only ever be attached to one element.
         let isReadOnly: Bool
         /// How long ago this Session last did anything — the key the roster is ordered on, said
-        /// out loud, so the order stops looking arbitrary. Absent only for a Session whose record
-        /// carries no time to word.
+        /// out loud, so the order stops looking arbitrary. A running Session says it too (`just
+        /// now`): the age holds the left of the second line, and a row that skipped it left the
+        /// worktree alone against an empty column. Absent only for a record carrying no time.
         let age: String?
         let state: ArgoOperationalState?
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
@@ -139,7 +140,8 @@ enum SessionRosterProjection {
                     worktree: worktree,
                     branch: session.workspace?.branch,
                     isReadOnly: isReadOnly(session.access),
-                    age: age(lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
+                    age: session.lastSeenAtMs
+                        .map { SessionAge.phrase(sinceMs: $0, nowMs: nowMs) },
                     state: state(for: session.status),
                     stateWord: stateWord(for: session.status),
                     isArchived: session.isArchived,
@@ -176,15 +178,6 @@ enum SessionRosterProjection {
         case .managed: false
         case .external, .orphaned: true
         }
-    }
-
-    /// Every row that has a time says it, a running Session included — `just now` there, which the
-    /// phrasing already gives. The age holds the left of the second line and the worktree the
-    /// right, so a row that skipped it left the worktree alone against an empty column and read as
-    /// a differently-built row rather than as a live one.
-    private static func age(lastSeenAtMs: Int?, nowMs: Int) -> String? {
-        guard let lastSeenAtMs else { return nil }
-        return SessionAge.phrase(sinceMs: lastSeenAtMs, nowMs: nowMs)
     }
 
     /// Session status → the four colour roles the visual contract carries.

@@ -11,7 +11,7 @@ import XCTest
 /// the list for its whole length, which is what let the freeze ship holding on the pointer alone: a
 /// roster nobody had touched yet held nothing, and reshuffled from launch.
 @MainActor
-final class RosterOrderE2ETests: XCTestCase {
+final class RosterOrderE2ETests: RosterE2ECase {
     /// The two Sessions `ChurningRosterSpecimen` leapfrogs. Addressed by the titles the roster
     /// already draws, so the test needs no identifier invented for its benefit.
     private static let leapfroggers = (
@@ -19,22 +19,8 @@ final class RosterOrderE2ETests: XCTestCase {
         second: "Port the session engine core to Swift",
     )
 
-    private let app = XCUIApplication()
-
-    override func setUp() async throws {
-        try await super.setUp()
-        continueAfterFailure = false
-        app.launchArguments += ["--specimen", "churningRoster"]
-        app.launch()
-        XCTAssertTrue(
-            app.wait(for: .runningForeground, timeout: 30),
-            "Argo did not reach the foreground.",
-        )
-    }
-
-    override func tearDown() async throws {
-        app.terminate()
-        try await super.tearDown()
+    override var specimen: String {
+        "churningRoster"
     }
 
     /// ONE test walking the whole thing, because each case here costs a launch and the walk is
@@ -104,11 +90,5 @@ final class RosterOrderE2ETests: XCTestCase {
 
     private var arrival: XCUIElement {
         row(titled: "Start a Session while the roster is being read")
-    }
-
-    private func row(titled title: String) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label BEGINSWITH %@", title))
-            .firstMatch
     }
 }

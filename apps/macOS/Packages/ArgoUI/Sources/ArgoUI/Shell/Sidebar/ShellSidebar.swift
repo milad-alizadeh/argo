@@ -73,16 +73,12 @@ struct ShellSidebar: View {
         .onChange(of: ordered.map(\.id)) { _, ids in
             order.admit(ids)
         }
-        // The order is taken at the moment the roster is first drawn and released only when the
-        // window goes away, so what re-settles is a roster nobody is in front of. Reading the rows
-        // already published makes the freeze a fixed point rather than a fresh sort of its own.
-        //
-        // The first firing holds WHATEVER the window's state is then, which is why it is read as
-        // "first or not" rather than by state alone: a window is not reported active for the first
-        // moments of its life, and a freeze that waited for the report would spend them
-        // reshuffling — which is the whole of the bug it exists to stop.
+        // Taken when the roster is first drawn, released only when the window goes away.
         .onChange(of: activeState, initial: true) { previous, state in
-            if state == .inactive, previous != state {
+            // A window is not reported active for the first moments of its life, and those are
+            // exactly the moments the roster was reshuffling in.
+            let isFirstDraw = previous == state
+            if state == .inactive, !isFirstDraw {
                 order.release()
             } else {
                 order.hold(ordered.map(\.id))
