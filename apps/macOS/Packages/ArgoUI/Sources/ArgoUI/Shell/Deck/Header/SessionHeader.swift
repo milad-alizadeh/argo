@@ -23,7 +23,10 @@ struct SessionHeader: View {
     /// reason `GitVessel` takes `refresh:` — the header raises one intent, and the sequence behind
     /// it is `SessionHandoff`'s. Inert by default, which is what a specimen and a `#Preview` want:
     /// the button is drawn and nothing is spawned.
-    var handOff: () -> Void = {}
+    ///
+    /// `async` because it is answered in minutes rather than instantly, and the control has to hold
+    /// itself for exactly as long as that takes.
+    var handOff: () async -> Void = {}
 
     var body: some View {
         // Centred rather than baseline-aligned, because only one half of this line is type: the
@@ -40,10 +43,8 @@ struct SessionHeader: View {
                 .layoutPriority(1)
             Spacer(minLength: ArgoSpacing.loose)
             if let header {
-                // Before the instrument, so the remedy sits between the facts and the reading that
-                // asks for it — and so the instrument keeps the trailing edge it is measured
-                // against. A button on the outside would move the bar's two threshold ticks in and
-                // out of the margin as Sessions fill up.
+                // Before the instrument, so the instrument keeps the trailing edge it is measured
+                // against.
                 if let handoff = header.handoff {
                     SessionHandoffButton(handoff: handoff, run: handOff)
                 }

@@ -73,7 +73,7 @@ struct ArgoApp: App {
             revealProject: { id in cockpit.revealProject(projectID: id) },
             removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
             spawnSession: { Task { await cockpit.spawnSession() } },
-            handOffSession: { id in Task { await cockpit.handOff(sessionID: id) } },
+            handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
         )
     }
 }

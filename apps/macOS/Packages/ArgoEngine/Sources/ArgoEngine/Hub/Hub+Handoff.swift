@@ -25,9 +25,8 @@ extension Hub: HandoffHost {
         try await spawnSession(seed: seed).value
     }
 
-    /// Where briefs land: Argo's own per-machine data, beside the Project registry, never the
-    /// Project. A brief is a working note between two Sessions, and a repo is not where one
-    /// belongs.
+    /// The address `HandoffScript` explains, made concrete: Argo's own per-machine data, beside the
+    /// Project registry.
     public static let handoffRoot = ProjectRegistryStore.defaultFileURL
         .deletingLastPathComponent()
         .appending(path: "handoffs", directoryHint: .isDirectory)

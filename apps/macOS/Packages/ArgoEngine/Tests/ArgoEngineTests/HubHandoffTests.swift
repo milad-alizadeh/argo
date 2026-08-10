@@ -65,9 +65,7 @@ struct HubHandoffTests {
     func `a seeded spawn runs where it is told and opens on what it is given`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        // Inside the Project, because a handoff spawns into the folder the FULL Session is running
-        // in — the same Workspace, in the same Project's scope, which is why the fresh row appears
-        // in the roster beside the one it continues rather than being filtered out of it.
+        // Inside the Project, because a handoff spawns into the FULL Session's own folder.
         let elsewhere = fixture.projectURL.appending(path: "sub", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: elsewhere, withIntermediateDirectories: true)
 
@@ -78,8 +76,6 @@ struct HubHandoffTests {
 
         let launch = try #require(fixture.host.launches.first)
         #expect(launch.cwd == elsewhere.path)
-        // Last on argv, after the companion's flags: a positional that arrived before a flag's
-        // value would be read as that value.
         #expect(launch.arguments.last == "Read the handoff brief at /tmp/b.md.")
         #expect(launch.arguments.dropLast().contains("--mcp-config"))
         // And it is a managed row in the roster like any other spawn.
