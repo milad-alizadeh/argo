@@ -35,6 +35,18 @@ public struct SpecimenScreen: View {
             // order that has stopped; this one is the order the bug lives in — two Sessions
             // trading places on every burst of writes, under a reader who is already on one.
             ChurningRosterSpecimen()
+        case .swipedRow:
+            // One row pulled left, its neighbours at rest. An icon-only control in a narrow
+            // column is a rendering, and the only evidence of it is a picture of it.
+            SwipedRowSpecimen()
+        case .hardSwipedRow:
+            // The same row pulled far enough that letting go archives it. The control grows
+            // with the pull, so the two gestures are told apart while they are being made.
+            SwipedRowSpecimen(pull: .hard)
+        case .archivedRoster:
+            // The other half of the same feature: where a cleared Session went, and how loud
+            // the foot that holds it is under a roster it must not compete with.
+            ArchivedRosterSpecimen()
         case .toolbarScope:
             ToolbarSpecimen(presentation: .preview)
         case .emptyToolbarScope:

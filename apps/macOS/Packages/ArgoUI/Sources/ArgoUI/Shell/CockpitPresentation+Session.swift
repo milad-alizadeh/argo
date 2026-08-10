@@ -114,6 +114,11 @@ public extension CockpitPresentation {
         /// An id and not the Session, deliberately: the fresh row is in the same roster, and a
         /// copy of it here would be a second reading of a Session that is already on screen.
         public let handedOffTo: String?
+        /// Whether the user cleared this Session off the roster. Argo's own fact and not a
+        /// reading of anything (`CONTEXT.md` "Storage & ownership"): nothing observed sets it,
+        /// which is why new activity on an archived Session leaves it archived (#502, story 16)
+        /// and why a merged branch does not clear its Session (story 14).
+        public let isArchived: Bool
         /// Everything the Session's transcript said, in order — the feed's whole input.
         ///
         /// The engine's own events rather than a second shape named for the shell: the surface
@@ -138,6 +143,7 @@ public extension CockpitPresentation {
             subagentTokens: Int? = nil,
             contextTokens: Int? = nil,
             handedOffTo: String? = nil,
+            isArchived: Bool = false,
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -155,6 +161,7 @@ public extension CockpitPresentation {
             self.subagentTokens = subagentTokens
             self.contextTokens = contextTokens
             self.handedOffTo = handedOffTo
+            self.isArchived = isArchived
             self.events = events
         }
     }

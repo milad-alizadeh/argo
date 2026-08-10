@@ -17,6 +17,13 @@ public struct CockpitActions {
     /// Start an agent in the active Project's folder, with Argo owning its PTY. The one intent here
     /// that acts on the world rather than on Argo's own record of it.
     public let spawnSession: () -> Void
+    /// Clear a Session off the roster, or put one back. The ONLY thing that ever archives one:
+    /// nothing derived from a merge, a branch or a transcript reaches this, which is what makes
+    /// archiving a decision rather than a status transition (#502, story 14).
+    ///
+    /// One intent with a direction rather than two, because it is one gesture on one row — a
+    /// pair would let a surface offer the way in without the way out.
+    public let setSessionArchived: (String, Bool) -> Void
     /// Hand a full Session's work to a fresh one: run `/handoff` in it, wait for the brief, and
     /// start a Session seeded with it in the same folder and against the same issue (#513).
     ///
@@ -45,6 +52,7 @@ public struct CockpitActions {
         revealProject: { _ in },
         removeProject: { _ in },
         spawnSession: {},
+        setSessionArchived: { _, _ in },
         handOffSession: { _, _ in nil },
     )
 
@@ -57,6 +65,7 @@ public struct CockpitActions {
         revealProject: @escaping (String) -> Void,
         removeProject: @escaping (String) -> Void,
         spawnSession: @escaping () -> Void,
+        setSessionArchived: @escaping (String, Bool) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
     ) {
         self.refreshCheckout = refreshCheckout
@@ -67,6 +76,7 @@ public struct CockpitActions {
         self.revealProject = revealProject
         self.removeProject = removeProject
         self.spawnSession = spawnSession
+        self.setSessionArchived = setSessionArchived
         self.handOffSession = handOffSession
     }
 }
