@@ -51,14 +51,14 @@ struct SessionRow: View {
     /// Absent entirely when neither half is there, rather than an empty `Text`, which would
     /// leave a gap of whatever height the font happened to give it.
     @ViewBuilder private var secondaryLine: some View {
-        if row.branch != nil || row.age != nil {
+        if row.worktree != nil || row.age != nil {
             HStack(spacing: ArgoSpacing.snug) {
-                if let branch = row.branch {
-                    Text(branch)
+                if let worktree = row.worktree {
+                    Text(worktree)
                         .argoText(ArgoTypography.rowMeta)
                         .lineLimit(1)
-                        // A branch name is addressed from both ends — the ticket at the head and
-                        // the subject at the tail. The middle is the part that repeats.
+                        // A worktree name is addressed from both ends — the parent that qualifies
+                        // it at the head, the ticket at the tail. The middle is what repeats.
                         .truncationMode(.middle)
                 }
                 Spacer(minLength: ArgoSpacing.tight)
@@ -66,7 +66,7 @@ struct SessionRow: View {
                     Text(age)
                         .argoText(ArgoTypography.rowMeta)
                         .lineLimit(1)
-                        // The gutter is the age's before it is the branch's.
+                        // The gutter is the age's before it is the worktree's.
                         .layoutPriority(1)
                 }
             }
@@ -101,8 +101,12 @@ struct SessionRow: View {
         }
     }
 
+    /// The full path, which is what the line above it stands in for — "absolute paths never
+    /// appear in the default presentation" (#377), and hover is where the whole of one belongs.
+    /// The branch is not here: it is the header's now, and a tooltip repeating it would be a
+    /// second place to read a fact that can change between the two.
     private var inspectionText: String {
-        [row.title, row.location, row.branch].compactMap(\.self).joined(separator: "\n")
+        [row.title, row.location].compactMap(\.self).joined(separator: "\n")
     }
 
     private func copy(_ value: String) {

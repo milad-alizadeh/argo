@@ -31,6 +31,23 @@ struct HubTests {
 
     @Test
     @MainActor
+    func `a detached checkout carries no branch rather than the word HEAD`() async {
+        let (observation, continuation) = hubLiveObservation(id: "session")
+        let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
+        await hub.startObserving(observation)
+
+        continuation.yield([.branch("HEAD")])
+        continuation.finish()
+        await hubTailEnded(hub, transcriptID: "session")
+
+        // What the CLI writes for a checkout that is on no branch. Rendered as-is it is a branch
+        // name nobody can check out — the degrade-down rule says an unestablishable fact is
+        // absent, never the nearest word (`CONTEXT.md`, Honesty tier).
+        #expect(hub.sessions[0].branch == nil)
+    }
+
+    @Test
+    @MainActor
     func `the host title replaces the prompt fallback`() async {
         let (observation, continuation) = hubLiveObservation(id: "session")
         let hub = testHub(projectURL: URL(fileURLWithPath: "/tmp/argo"))
