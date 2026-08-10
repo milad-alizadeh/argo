@@ -96,6 +96,23 @@ CGWarpMouseCursorPosition(target)
 let ticks = Int(seconds * ticksPerSecond)
 let interval = 1 / ticksPerSecond
 
+/// A trackpad DRAG, not a wheel. The two are different inputs to the same scroll view: a wheel tick
+/// is discrete and lands as a single change, while a drag is continuous and carries a phase, which
+/// is what puts the scroll view into an interactive scroll and what `onScrollPhaseChange` answers
+/// to. Measuring the wheel would be measuring the input nobody is complaining about.
+///
+/// The phase field has no name in `CGEventField`, so it is addressed by its raw value the way
+/// every other tool that synthesises a trackpad scroll does.
+let scrollPhase = CGEventField(rawValue: 99)
+
+/// `began` on the first tick, `ended` on the last, `changed` for everything between — the shape of
+/// one unbroken drag rather than a run of separate ones.
+func phase(at tick: Int, of ticks: Int) -> Int64 {
+    if tick == 0 { return 1 }
+    if tick == ticks - 1 { return 4 }
+    return 2
+}
+
 for tick in 0 ..< ticks {
     let delta = tick < ticks / 2 ? -pixelsPerTick : pixelsPerTick
     let event = CGEvent(
@@ -106,6 +123,10 @@ for tick in 0 ..< ticks {
         wheel2: 0,
         wheel3: 0,
     )
+    event?.setIntegerValueField(.scrollWheelEventIsContinuous, value: 1)
+    if let scrollPhase {
+        event?.setIntegerValueField(scrollPhase, value: phase(at: tick, of: ticks))
+    }
     event?.location = target
     event?.post(tap: .cghidEventTap)
     Thread.sleep(forTimeInterval: interval)

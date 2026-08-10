@@ -67,6 +67,18 @@ fi
 set -- --project "$PROJECT_ROOT"
 [ -n "$TRANSCRIPT" ] && set -- "$@" --transcript "$TRANSCRIPT"
 [ -n "${ARGO_SPECIMEN:-}" ] && set -- "$@" --specimen "$ARGO_SPECIMEN"
+# The frame meter, forwarded as an ARGUMENT and not as environment. `open` goes through Launch
+# Services, which hands the app launchd's environment rather than this shell's — so exporting
+# ARGO_FEED_FPS here and expecting the app to see it is a run that silently measures nothing.
+#
+# One flag carrying a value, never two bare ones: AppKit reads argv as `-key value` pairs, and two
+# adjacent `--flag`s leave Argo running with no window, no output and no crash report. A meter
+# asked for with no log named still gets one, because that is the shape the app can be launched in.
+if [ -n "${ARGO_FEED_FPS:-}${ARGO_FEED_FPS_LOG:-}" ]; then
+  FPS_LOG=${ARGO_FEED_FPS_LOG:-$APP_DIR/out/fps/frames.log}
+  mkdir -p "$(dirname "$FPS_LOG")"
+  set -- "$@" --feed-fps-log "$FPS_LOG"
+fi
 open "$APP" --args "$@"
 
 # The window is not on screen the instant `open` returns, and the first frame it does put up

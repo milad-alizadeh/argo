@@ -17,9 +17,15 @@ extension CockpitPresentation.Session {
     /// a different shape every few turns.
     static let longTranscript: [TranscriptEvent] = (0 ..< longTurns).flatMap(turn(_:))
 
-    /// Enough turns to put hundreds of events through the projection, which is where "a six-hour
-    /// run" starts.
-    private static let longTurns = 52
+    /// Enough turns to reach the length real sessions on this machine actually reach.
+    ///
+    /// Counted rather than guessed, which is what #516 found: at 52 turns this fixture projected to
+    /// 301 rows, and four genuine Claude Code transcripts out of `~/.claude/projects` projected to
+    /// 380, 585, 1168 and 5718. So the fixture every claim about SCALE was checked against was not
+    /// a long session at all — it was a short one, and the smoothness question was being asked of a
+    /// feed a quarter the size of the one the reader complains about. 200 turns puts it at ~1160
+    /// rows: the 38-hour session, which is a long day rather than the worst day.
+    private static let longTurns = 200
 
     private static func turn(_ number: Int) -> [TranscriptEvent] {
         [.prompt(text: LongProse.prompts[number % LongProse.prompts.count], atMs: nil)]
