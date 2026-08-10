@@ -65,6 +65,7 @@ extension FeedTableCoordinator {
     /// The one full re-measure a live resize defers — run the moment the seam or the window
     /// lets go, when the width is finally a fact rather than a frame of a drag.
     func settleAfterResize() {
+        settling?.cancel()
         rewrap(fully: true)
     }
 
@@ -115,23 +116,49 @@ extension FeedTableCoordinator {
                 // rows created before layout have no width to be measured against — and the
                 // table has those answers cached. A reload retires them all at once, lazily
                 // re-asked; left alone, every row stands at the estimate forever, short rows
-                // over a gap and long ones clipped.
+                // over a gap and long ones clipped. The measured cache goes with it: a row
+                // measured against an interim launch width is cached too tall, and a reload
+                // that re-asks the same cache re-seats every row on the stale answer — content
+                // at the top, a blank gulf, the tail pinned below it.
+                dropMeasuredHeights()
                 table?.reloadData()
                 if model?.isFollowing == true {
                     scrollToEnd(over: nil)
                 }
             } else {
-                rewrap(fully: !isMidResize)
+                // Degraded FIRST, squared up later — never trusting the flag alone. A width
+                // change is usually one frame of many, and only the seam's own drag carries
+                // `isResizing`: the panel's reveal ANIMATES the feed's width with no flag at
+                // all, and a full re-measure of the whole transcript on each of those frames
+                // was the jitter the panel had that the bare seam did not. Visible rows
+                // re-measure now; the full pass waits for the burst to go quiet.
+                rewrap(fully: false)
+                settleSoon()
             }
         } else if model?.isFollowing == true {
             scrollToEnd(over: nil)
         }
     }
 
-    /// Whether the width is still a frame of a drag rather than a fact — the seam's flag rides
-    /// the model; the window's own resize is AppKit's.
-    private var isMidResize: Bool {
-        model?.isResizing == true || table?.inLiveResize == true
+    /// One settle per burst: each width frame pushes the full pass back, and only the quiet
+    /// after the last one runs it. The seam's own end-of-drag settle still lands first when the
+    /// flag path is live — `settleAfterResize` retires this timer.
+    ///
+    /// Quiet is not enough on its own: a hand pauses mid-drag longer than any debounce, and a
+    /// full re-measure fired into that pause lands UNDER the hand — hundreds of ms of freeze the
+    /// moment it moves again. So a live drag defers the settle for as long as it is live, and
+    /// the end-of-drag edge (`apply`) or the timer finally finding quiet runs it.
+    private func settleSoon() {
+        settling?.cancel()
+        settling = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            if self?.model?.isResizing == true || self?.table?.inLiveResize == true {
+                self?.settleSoon()
+            } else {
+                self?.settleAfterResize()
+            }
+        }
     }
 
     /// Hold the reading still through a re-wrap: the end if following, the topmost row if not —

@@ -32,6 +32,8 @@ import SwiftUI
     var focusedRow: Int?
     /// The pane width last laid out against — what tells a re-wrap from a plain height change.
     var paneWidth: CGFloat = 0
+    /// The full re-measure waiting for a width burst to go quiet — see `paneChanged`.
+    var settling: Task<Void, Never>?
 
     /// Measured row heights, by row index — the cache behind `heightOfRow`.
     ///

@@ -12,16 +12,13 @@ struct FeedGalleryRow: View {
     let open: (FeedShot) -> Void
 
     var body: some View {
-        ScrollView(.horizontal) {
+        FeedGalleryScroller {
             HStack(alignment: .top, spacing: ArgoFeedRow.shotGap) {
                 ForEach(Array(gallery.shots.enumerated()), id: \.offset) { _, shot in
                     FeedShotView(shot: shot, open: open)
                 }
             }
         }
-        // A run that fits must not rubber-band: a row bouncing on a drag advertises a direction
-        // it has nothing in.
-        .scrollBounceBehavior(.basedOnSize)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(gallery.spoken)
     }
