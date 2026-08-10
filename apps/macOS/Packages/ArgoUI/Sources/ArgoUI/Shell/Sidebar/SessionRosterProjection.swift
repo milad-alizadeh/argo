@@ -32,8 +32,8 @@ enum SessionRosterProjection {
         /// a glyph is a thing to hunt for, and it can only ever be attached to one element.
         let isReadOnly: Bool
         /// How long ago this Session last did anything — the key the roster is ordered on, said
-        /// out loud, so the order stops looking arbitrary. Absent for a Session that is running
-        /// and for one whose record carries no time to word.
+        /// out loud, so the order stops looking arbitrary. Absent only for a Session whose record
+        /// carries no time to word.
         let age: String?
         let state: ArgoOperationalState?
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
@@ -139,9 +139,7 @@ enum SessionRosterProjection {
                     worktree: worktree,
                     branch: session.workspace?.branch,
                     isReadOnly: isReadOnly(session.access),
-                    age: age(
-                        status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs,
-                    ),
+                    age: age(lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
                     state: state(for: session.status),
                     stateWord: stateWord(for: session.status),
                     isArchived: session.isArchived,
@@ -180,13 +178,12 @@ enum SessionRosterProjection {
         }
     }
 
-    /// A running Session has no age: the dot already says it is live, and `just now` repeated
-    /// down the roster is the noise D30 deletes.
-    private static func age(
-        status: SessionStatus, lastSeenAtMs: Int?, nowMs: Int,
-    )
-        -> String? {
-        guard status != .running, let lastSeenAtMs else { return nil }
+    /// Every row that has a time says it, a running Session included — `just now` there, which the
+    /// phrasing already gives. The age holds the left of the second line and the worktree the
+    /// right, so a row that skipped it left the worktree alone against an empty column and read as
+    /// a differently-built row rather than as a live one.
+    private static func age(lastSeenAtMs: Int?, nowMs: Int) -> String? {
+        guard let lastSeenAtMs else { return nil }
         return SessionAge.phrase(sinceMs: lastSeenAtMs, nowMs: nowMs)
     }
 

@@ -37,6 +37,9 @@ struct SessionRow: View {
         // strength, and so a fact added to the row inherits it without being told.
         .opacity(row.isReadOnly ? ArgoOpacity.ghosted : ArgoOpacity.full)
         .contentShape(.rect)
+        // A Session you will come back to earns a name you chose (#502, story 18). The gesture is
+        // AppKit's because SwiftUI's would take the row's selection with it — see `RowDoubleClick`.
+        .onRowDoubleClick { beginRenaming() }
         .help(inspectionText)
         .contextMenu { copyActions }
         .accessibilityElement(children: .combine)
@@ -61,12 +64,6 @@ struct SessionRow: View {
         }
     }
 
-    /// The title, and the one thing on the row that is double-clickable: a Session you will come
-    /// back to earns a name you chose (#502, story 18).
-    ///
-    /// The gesture is on the TITLE and not on the row, because the row belongs to the List — a
-    /// double-click anywhere on it is two selections of the thing you already selected, and a
-    /// field opening off that would take the cursor while somebody was clicking about.
     @ViewBuilder private var title: some View {
         if isRenaming.wrappedValue {
             nameField
@@ -75,12 +72,6 @@ struct SessionRow: View {
                 .argoText(ArgoTypography.rowTitle)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                // SIMULTANEOUS, and that is the whole of it: `onTapGesture` on a subview of a List
-                // row consumes the click before the List sees it, which cost the roster its
-                // selection — the title is most of the row, so most of the roster stopped
-                // selecting. This lets the double-click open the field and the single click
-                // through to the List that owns the selection.
-                .simultaneousGesture(TapGesture(count: 2).onEnded { beginRenaming() })
         }
     }
 
