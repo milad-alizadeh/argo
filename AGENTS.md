@@ -165,6 +165,17 @@ by the pre-commit hook — **never run `graphify update` by hand**, and **never 
 `graphify label`** for upkeep (it re-clusters and drops dated backups). Wiring lives in the
 `setup-graphify` skill.
 
+## Design work
+
+A UI ticket whose screen has a design in `docs/designs/` is built with **`design-to-code`**,
+not `implement`. The design carries measurements the ticket's prose does not, so a screen built
+without it drifts from what was agreed and nothing downstream can tell that drift from a bug.
+
+The route in full — `/prototype` explores variants, `prototype-to-design` approves one and lands
+it with a render, `design-to-code` builds it per ticket, `pixel-review` judges the pixels. This
+is a **repo rule, not a skill description**: which tickets take the design route depends on what
+is in `docs/designs/`, which no portable skill can know. `ask-argo` maps the rest.
+
 ## Visual verification
 
 There is no automated render check and no pixel-baseline diffing. The Storybook `stories` CI job
