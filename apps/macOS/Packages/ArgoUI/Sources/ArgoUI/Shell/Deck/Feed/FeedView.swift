@@ -10,6 +10,7 @@ import SwiftUI
 /// because both are facts about the WHOLE reading: whether it is still following the Session, and
 /// where the keyboard is in it.
 struct FeedView: View {
+    @Environment(\.argo) private var argo
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Whether a deck seam is being dragged right now — see `FeedPlace`.
     @Environment(\.deckIsResizing) private var isResizing
@@ -30,10 +31,14 @@ struct FeedView: View {
     /// breaks and the reader scrolls on from there — but a fixture that is not growing has no
     /// moment between them to render.
     var held: FeedRow.ID?
+    /// Whether the composer floats over this reading. It decides three things at once — the
+    /// gutter at the end (`FeedTail`), the fade that lets rows run under the vessel, and how far
+    /// the way-back control lifts — because all three are one fact about the column's bottom edge.
+    var isUnderComposer = false
 
     /// Which prompts the reader has unfolded. Held here rather than in the row: the stack is lazy,
     /// so a row's own state dies the moment it scrolls out of view.
-    @State private var unfolded: Set<FeedRow.ID> = []
+    @State var unfolded: Set<FeedRow.ID> = []
     /// Whether the reading is still following the Session — see `FeedTail`. Starts `true` because
     /// a feed that fits its pane never scrolls and so never reports a geometry: the way-back-down
     /// control would otherwise stand permanently over a reading with nothing below it.
@@ -68,6 +73,9 @@ struct FeedView: View {
     /// following again — a badge measured from the top of the pane would count what the reader was
     /// already looking at.
     @State private var leftAt: FeedRow.ID?
+    /// The row the user's own words just landed on, while the accent wash stands over it. The
+    /// echo is the acceptance — no toast — and the wash is what marks the echo as new.
+    @State var washed: FeedRow.ID?
 
     var body: some View {
         ScrollViewReader { scroller in
@@ -90,6 +98,12 @@ struct FeedView: View {
                 // Keyed on the FIRST row because that is what says a reading is a different one:
                 // a Session appends, so its opening line is what does not move.
                 .task(id: rows.first?.id) { await open(with: scroller) }
+                .onChange(of: rows.count) { was, now in
+                    washArrived(between: was, and: now)
+                }
+                // Cancellation IS the reset: a second send while the first wash stands re-keys
+                // the task, and the fresh one times the fresh row.
+                .task(id: washed) { await washExpired() }
                 // Arrow keys answer here rather than on the row, so one place decides what "the
                 // next row" means. It fires only when a focused descendant left the key unhandled,
                 // which is what keeps a reader arrowing inside an open prompt from jumping rows.
@@ -125,10 +139,17 @@ struct FeedView: View {
                         selection: selection,
                     )
                     .padding(.top, step(before: position))
+                    .background {
+                        if washed == row.id {
+                            RoundedRectangle(cornerRadius: ArgoRadius.control)
+                                .fill(argo.color.state.muted(argo.color.interaction.accent))
+                        }
+                    }
+                    .argoAnimation(.bloom, value: washed == row.id)
                     .id(row.id)
                 }
                 // The gutter under the last row, and the place "back to the newest" aims at.
-                FeedTail()
+                FeedTail(isUnderComposer: isUnderComposer)
             }
             // What gives the reader's place an identity: the rows are the scroll targets, and the
             // position below is one of them rather than a number of points into an estimate.
@@ -151,6 +172,9 @@ struct FeedView: View {
         // heights — `open(with:)` is the other. Not `.sizeChanges`, which would hold the bottom
         // against a reader who scrolled away from it; that is `isFollowing`'s question.
         .defaultScrollAnchor(.bottom, for: .initialOffset)
+        // On the reading and NOT on the view: the way-back control and the empty-feed word float
+        // over this and must never fade with it.
+        .mask { fade }
     }
 
     /// The held row, reported only once the reader has detached from the end, and writable only
@@ -176,7 +200,12 @@ struct FeedView: View {
                     newMessages: leftAt.map { FeedTail.newMessages(in: rows, since: $0) } ?? 0,
                 ) { follow(with: scroller, animated: true) }
                     .padding(.trailing, ArgoFeedRow.inset)
-                    .padding(.bottom, ArgoFeedRow.tailLift)
+                    // Lifted clear of the vessel when one floats there: a way back standing on
+                    // the composer is a control on a control.
+                    .padding(
+                        .bottom,
+                        isUnderComposer ? ArgoComposerVessel.feedClearance : ArgoFeedRow.tailLift,
+                    )
                     .transition(.opacity)
             }
         }
@@ -301,29 +330,6 @@ struct FeedView: View {
         guard following != isFollowing else { return }
         isFollowing = following
         leftAt = following ? nil : rows.last?.id
-    }
-
-    /// A run of calls is one piece of work and sits closer together than two things the agent
-    /// said. The step lives here rather than on the row because it is a fact about a PAIR of rows,
-    /// and a row that padded itself would double the gap wherever two of them met.
-    private func step(before position: Int) -> CGFloat {
-        guard position > 0 else { return 0 }
-        return rows[position - 1].isCall && rows[position].isCall
-            ? ArgoFeedRow.callStep
-            : ArgoFeedRow.gap
-    }
-
-    private func unfolding(_ id: FeedRow.ID) -> Binding<Bool> {
-        Binding(
-            get: { unfolded.contains(id) },
-            set: { isOn in
-                if isOn {
-                    unfolded.insert(id)
-                } else {
-                    unfolded.remove(id)
-                }
-            },
-        )
     }
 }
 

@@ -58,7 +58,6 @@ public enum ArgoLayout {
     /// Xcode's measure, near enough. The lane was 56 while it held a placeholder, which is wide
     /// enough for a label turned on its side and not for a map of a file.
     public static let minimapLaneWidth: CGFloat = 112
-    public static let deckDockHeight: CGFloat = 40
 
     /// How far the rail may be dragged. It stops well before nothing: a zone dragged shut is a
     /// surface with no way back except guessing where its seam went.

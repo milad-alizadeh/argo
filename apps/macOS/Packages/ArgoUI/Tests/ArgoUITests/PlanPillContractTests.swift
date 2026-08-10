@@ -11,12 +11,12 @@ import Testing
 @Suite("The plan pill's measures")
 struct PlanPillContractTests {
     /// The pill floats over the deck rather than sitting in it, and the lift is the only thing
-    /// that says so. Flush to the separator it would read as part of the dock's own row; taller
-    /// than the dock it would be a second row rather than a thing above one.
+    /// that says so. Flush to the edge it would read as part of the reading's last row; lifted
+    /// past the composer's clearance it would stand in the reading rather than at its foot.
     @Test
-    func `the pill stands clear of the dock without becoming a row of its own`() {
+    func `the pill stands clear of the edge without leaving the reading's foot`() {
         #expect(ArgoPlanPill.lift > 0)
-        #expect(ArgoPlanPill.lift < ArgoLayout.deckDockHeight)
+        #expect(ArgoPlanPill.lift < ArgoComposerVessel.feedClearance)
     }
 
     /// A list as wide as the reading it opens over stops being a note about the feed and starts

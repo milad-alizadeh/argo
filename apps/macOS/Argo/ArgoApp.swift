@@ -84,6 +84,7 @@ struct ArgoApp: App {
                 Task { await cockpit.setName(name, sessionID: id) }
             },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
+            sendTurn: { id, text in try cockpit.send(text, to: id) },
         )
     }
 }

@@ -30,6 +30,12 @@ struct SessionsDeck: View {
     /// Which row the reading opens held at — see `FeedView.held`. Passed straight through rather
     /// than held as state: it is where the reading STARTS, and the scroll owns it from there.
     var held: FeedRow.ID?
+    /// The shown Session's composer, projected above the deck for the reason the feed is — and
+    /// absent for a Session Argo cannot drive, which draws nothing rather than a disabled field.
+    var composer: SessionComposerProjection.Composer?
+    /// One Turn to the shown Session. Inert by default so a specimen draws the vessel without
+    /// reaching for a terminal.
+    var send: (String) throws -> Void = { _ in }
     /// Where the reader dragged the deck's seams — held above this view, never in it. See
     /// `DeckSeams`.
     var seams = DeckSeams.unheld
@@ -49,6 +55,8 @@ struct SessionsDeck: View {
                 showing: showing,
                 selection: selection,
                 held: held,
+                composer: composer,
+                send: send,
                 seams: seams,
             )
         }

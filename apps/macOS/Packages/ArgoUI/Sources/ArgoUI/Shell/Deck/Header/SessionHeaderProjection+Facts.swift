@@ -70,7 +70,7 @@ extension SessionHeaderProjection {
     /// model but no CLI reads as the model alone, which is true, where `Unknown · Opus 5` would
     /// be Argo inventing half a fact to keep a separator company.
     static func agent(cli: AgentCLI?, model: String?) -> String? {
-        let parts = [cli.map(name(of:)), model.map(readable(model:))].compactMap(\.self)
+        let parts = [cli?.readableName, model.map(ReadableModelName.readable)].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
@@ -94,23 +94,5 @@ extension SessionHeaderProjection {
         guard let count, count > 0 else { return nil }
         let plural = count == 1 ? thing : "\(thing)s"
         return Header.Mark(symbol: symbol, count: count, detail: "\(count) \(plural)")
-    }
-
-    private static func name(of cli: AgentCLI) -> String {
-        switch cli {
-        case .claude: "Claude Code"
-        }
-    }
-
-    /// An id the table knows, said the way a person says it; an id it does not, VERBATIM.
-    ///
-    /// Ugly-but-true beats invisible and beats the nearest guess: a model released this morning
-    /// renders as its own id rather than as the closest name Argo happens to hold, or as nothing
-    /// at all. The date suffix a provider pins a snapshot with is dropped before the lookup, so a
-    /// dated id of a model the table DOES know still reads as that model.
-    private static func readable(model id: String) -> String {
-        ReadableModelName.table[id]
-            ?? ReadableModelName.table[ReadableModelName.undated(id)]
-            ?? id
     }
 }

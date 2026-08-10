@@ -78,6 +78,16 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         }
     }
 
+    /// Whether this row is something the USER asked for. Asked by the accent wash that marks a
+    /// just-sent Turn's echo: the reader's own words are the one arrival that is news to nobody
+    /// and still has to be SEEN to have landed.
+    var isPrompt: Bool {
+        switch content {
+        case .prompt: true
+        case .message, .thought, .call, .survey, .gallery, .ask, .mark, .unreadable: false
+        }
+    }
+
     /// Whether this row has anything for the evidence panel to show.
     ///
     /// Asked by the pointer and the keyboard alike, so it is one rule: a row that draws no

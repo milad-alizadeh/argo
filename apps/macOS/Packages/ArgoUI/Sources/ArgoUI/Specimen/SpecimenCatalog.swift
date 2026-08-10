@@ -80,4 +80,8 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedLeftBehind
     case feedLeftBehindInSilence
     case twoReadings
+    case composer
+    case composerTyping
+    case composerRefusal
+    case flatComposer
 }

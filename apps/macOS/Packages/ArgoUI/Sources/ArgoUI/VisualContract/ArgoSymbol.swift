@@ -96,6 +96,18 @@ public enum ArgoSymbol {
     /// Back to the newest thing in the feed, from wherever the reader scrolled to.
     public static let latest = "arrow.down"
 
+    /// The composer's send: an arrow and no word, because "Send" beside an arrow beside a Return
+    /// hint is one instruction three times.
+    public static let send = "arrow.up"
+
+    /// A send the Session refused — on the seam, beside the reason. A triangle is earned here
+    /// where the feed's rows never take one: this failure is Argo's to report about its own act,
+    /// not a reading of the agent's work.
+    public static let refused = "exclamationmark.triangle"
+
+    /// Try the refused send again, with the message exactly where it was typed.
+    public static let retry = "arrow.clockwise"
+
     /// What a file the panel is open on is written in — one mark per language FAMILY. The
     /// extension is in the path beside it and is what actually names the language; these say only
     /// which KIND of file you are looking at, which is what a glance at a header wants.

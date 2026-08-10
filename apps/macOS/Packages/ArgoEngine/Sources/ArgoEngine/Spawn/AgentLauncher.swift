@@ -7,16 +7,20 @@ import Foundation
 /// that changes while a window is open, and paying for it per spawn would be felt.
 public actor AgentLauncher {
     private let run: ShellCommand
+    private let inherited: [String: String]
     private var searchPath: String?
 
     public init() {
         self.run = shellCommand
+        self.inherited = ProcessInfo.processInfo.environment
     }
 
     /// The shell is a seam so a test can answer for it: what the user's `PATH` is cannot be
-    /// asserted about the machine running the suite.
-    init(run: @escaping ShellCommand) {
+    /// asserted about the machine running the suite. The environment is one for the same reason —
+    /// what this process was started with is a property of whoever launched Argo.
+    init(run: @escaping ShellCommand, inherited: [String: String] = [:]) {
         self.run = run
+        self.inherited = inherited
     }
 
     /// Throws `AgentSpawnError` for everything the user can act on — the CLI missing from their
@@ -40,6 +44,15 @@ public actor AgentLauncher {
         )
     }
 
+    /// Variables that are true of Argo and false of every agent Argo starts.
+    ///
+    /// `CLAUDE_CODE_CHILD_SESSION` is set in the environment of a `claude` running under another
+    /// one, and a `claude` that reads it writes no transcript of its own. Argo is very often
+    /// itself such a child — it is developed from inside a Session — so a spawn that passed this
+    /// through would produce the one Session no observation could ever reach: a live PTY with no
+    /// record behind it, permanently `unknown` in the roster.
+    private static let inheritedByNobody = ["CLAUDE_CODE_CHILD_SESSION"]
+
     private func resolvedSearchPath() -> String {
         if let searchPath {
             return searchPath
@@ -53,12 +66,18 @@ public actor AgentLauncher {
     /// variables. Inherited rather than built: an agent needs the user's whole environment —
     /// credentials, proxies, `mise` shims — and a hand-picked subset would break a machine at a
     /// time.
+    ///
+    /// Scrubbed, therefore, rather than filtered: everything comes through except the variables
+    /// that describe the process ARGO is, which are never true of the child it starts.
     private func environment(
         searchPath: String,
         companion: CompanionInvitation?,
     )
         -> [String: String] {
-        var environment = ProcessInfo.processInfo.environment
+        var environment = inherited
+        for key in Self.inheritedByNobody {
+            environment.removeValue(forKey: key)
+        }
         environment["PATH"] = searchPath
         // The PTY is a real terminal, and an agent told otherwise draws for a dumb one.
         environment["TERM"] = "xterm-256color"

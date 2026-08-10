@@ -82,9 +82,16 @@ struct FeedTail: View {
         }
     }
 
+    /// Whether the composer floats over this reading. The gutter is part of the content, so
+    /// growing it here is what keeps every scroll target and follow reading honest: the newest
+    /// line sits clear of the vessel because the end of the reading genuinely is below it.
+    var isUnderComposer = false
+
     var body: some View {
         Color.clear
-            .frame(height: ArgoSpacing.section)
+            .frame(
+                height: isUnderComposer ? ArgoComposerVessel.feedClearance : ArgoSpacing.section,
+            )
             .id(Anchor.tail)
             .accessibilityHidden(true)
     }
