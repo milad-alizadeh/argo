@@ -19,17 +19,29 @@ struct FeedLightbox: View {
     @State private var showing = MediaShowing.undecoded
 
     var body: some View {
-        Button(action: dismiss) {
-            VStack(spacing: ArgoSpacing.comfortable) {
-                lit
-                caption
+        ZStack {
+            // The scrim lands at full dim on the first frame, the way Preview's does. Faded WITH
+            // the picture, the reading stays bright under a half-opaque overlay for the whole way
+            // in — a double exposure over the prose that reads as the entire lightbox flickering.
+            // The way out fades it with the picture: a scrim gone early would float a ghost of
+            // the image over bright text, the same flash mirrored. Independent transitions only
+            // work because the CONTAINER'S transition is `.identity` (see `argoLightbox`) — a
+            // parent opacity would composite both layers into one translucent group again.
+            Rectangle()
+                .fill(argo.color.surface.scrim)
+                .transition(.asymmetric(insertion: .identity, removal: .opacity))
+            Button(action: dismiss) {
+                VStack(spacing: ArgoSpacing.comfortable) {
+                    lit
+                    caption
+                }
+                .padding(ArgoFeedRow.lightboxInset)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(.rect)
             }
-            .padding(ArgoFeedRow.lightboxInset)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(argo.color.surface.scrim)
-            .contentShape(.rect)
+            .buttonStyle(.plain)
+            .transition(.opacity)
         }
-        .buttonStyle(.plain)
         .showing(shot.media, in: $showing)
         .onExitCommand(perform: dismiss)
         .accessibilityElement(children: .contain)
@@ -96,7 +108,11 @@ extension View {
                     // responder chain, and until this nothing put the lightbox in one.
                     .focusable()
                     .focused(selection.focus, equals: .lightbox)
-                    .transition(.opacity)
+                    // `.identity`, never `.opacity`: a transition here composites the WHOLE
+                    // lightbox — scrim, picture, caption — into one translucent group, and the
+                    // reading burns through all of it for the length of the fade. The layers
+                    // carry their own transitions instead (see `FeedLightbox.body`).
+                    .transition(.identity)
             }
         }
         .argoAnimation(.reveal, value: selection.lit)

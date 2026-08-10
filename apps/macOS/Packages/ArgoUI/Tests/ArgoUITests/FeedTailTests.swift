@@ -2,15 +2,13 @@
 import SwiftUI
 import Testing
 
-/// Whether the reading is still following the Session, over geometry and scroll phases alone.
+/// Whether the reading is still following the Session, over geometry alone.
 ///
-/// The whole of this rule is arithmetic and a five-case enum, and none of it needs a view: the one
-/// suite that drives a real feed has to launch the app to say anything at all, which is the wrong
-/// place to establish that a point short of the end still counts as the end.
-///
-/// The two halves answer different questions and are both here. The geometry says WHERE the reading
-/// is; the phase says WHOSE scroll put it there — and it is the second that stops a Session growing
-/// under a reader from being read as the reader leaving the end.
+/// The whole of this rule is arithmetic, and none of it needs a view: the one suite that drives a
+/// real feed has to launch the app to say anything at all, which is the wrong place to establish
+/// that a point short of the end still counts as the end. WHOSE scroll produced the geometry is
+/// AppKit's answer now — only the reader's hand posts a live-scroll notification — so the suite
+/// no longer has a phase vocabulary to test.
 @Suite("Feed tail")
 struct FeedTailTests {
     /// The pane and the reading every row below is measured in. Numbers rather than tokens: this is
@@ -43,21 +41,5 @@ struct FeedTailTests {
                 == row.isFollowing,
             "\(row.at)",
         )
-    }
-
-    /// The phases the READER produces, and the ones the app does. `follow()` scrolls this view
-    /// itself, and a latch that listened to its own scroll would read a landing a hair short as the
-    /// reader having left — which is the bug that made the feed stop following for good.
-    @Test(arguments: [
-        (phase: ScrollPhase.tracking, isTheirs: true),
-        (phase: .interacting, isTheirs: true),
-        (phase: .decelerating, isTheirs: true),
-        (phase: .animating, isTheirs: false),
-        (phase: .idle, isTheirs: false),
-    ])
-    func `only the reader's own scroll phases are read as the reader`(
-        row: (phase: ScrollPhase, isTheirs: Bool),
-    ) {
-        #expect(FeedTail.isReaderDriven(row.phase) == row.isTheirs, "\(row.phase)")
     }
 }
