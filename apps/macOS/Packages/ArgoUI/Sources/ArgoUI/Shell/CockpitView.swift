@@ -47,6 +47,21 @@ public struct CockpitView: View {
         presentation.session(navigation.session)?.events ?? []
     }
 
+    /// The same Session's composer, projected here for the reason the header is: this is the one
+    /// view that knows what is selected. Absent — no vessel at all — for a Session Argo cannot
+    /// drive.
+    private var composer: SessionComposerProjection.Composer? {
+        SessionComposerProjection.composer(for: presentation.session(navigation.session))
+    }
+
+    /// The composer's one intent, bound to the Session the composer addresses — inert when there
+    /// is no composer, which is also when there is no field to type into.
+    private var send: (String) throws -> Void {
+        guard let composer else { return { _ in } }
+        let sessionID = composer.sessionID
+        return { try actions.sendTurn(sessionID, $0) }
+    }
+
     /// The header's one intent, bound to the Session the header is naming — resolved here for the
     /// same reason the header is: this is the view that knows which Session is selected, and the
     /// issue it serves. It does nothing when nothing is selected, which is also when there is no
@@ -103,6 +118,8 @@ public struct CockpitView: View {
                 header: header,
                 handOff: handOff,
                 showing: showing,
+                composer: composer,
+                send: send,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation — the same division the handoff itself

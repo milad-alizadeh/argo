@@ -5,7 +5,6 @@ enum DeckZone: CaseIterable, Identifiable {
     case tabs
     case rail
     case minimap
-    case dock
 
     var id: Self {
         self
@@ -16,7 +15,6 @@ enum DeckZone: CaseIterable, Identifiable {
         case .tabs: "Deck tabs"
         case .rail: "Agents rail"
         case .minimap: "Minimap lane"
-        case .dock: "Dock"
         }
     }
 
@@ -25,7 +23,7 @@ enum DeckZone: CaseIterable, Identifiable {
     var marksVertically: Bool {
         switch self {
         case .minimap: true
-        case .tabs, .rail, .dock: false
+        case .tabs, .rail: false
         }
     }
 }

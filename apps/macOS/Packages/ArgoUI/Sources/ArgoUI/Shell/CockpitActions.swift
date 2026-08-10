@@ -51,6 +51,13 @@ public struct CockpitActions {
     /// is the shell's own business (`CockpitNavigationModel.session` is deliberately not public),
     /// so the app performs the handoff and the shell decides what to point at.
     public let handOffSession: (String, Int?) async -> String?
+    /// Put one Turn to a Session, as though the user had typed it at that CLI's own prompt —
+    /// the composer's whole intent (#538, under #535 / ADR-0024).
+    ///
+    /// Throwing rather than answered, and the thrown `SessionDriveError` is repeated on the
+    /// composer's seam: a refusal keeps the message where it was typed, which only the raising
+    /// surface can do.
+    public let sendTurn: (String, String) throws -> Void
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for
     /// the same reason every action here is: they are called from a view.
@@ -66,6 +73,7 @@ public struct CockpitActions {
         setSessionArchived: { _, _ in },
         setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
+        sendTurn: { _, _ in },
     )
 
     public init(
@@ -80,6 +88,7 @@ public struct CockpitActions {
         setSessionArchived: @escaping (String, Bool) -> Void,
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
+        sendTurn: @escaping (String, String) throws -> Void,
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
@@ -92,5 +101,6 @@ public struct CockpitActions {
         self.setSessionArchived = setSessionArchived
         self.setSessionName = setSessionName
         self.handOffSession = handOffSession
+        self.sendTurn = sendTurn
     }
 }
