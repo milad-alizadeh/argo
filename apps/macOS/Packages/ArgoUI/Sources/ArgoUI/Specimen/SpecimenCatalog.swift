@@ -21,6 +21,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     // a real gesture only — there is no state to hand the harness. It is an XCUITest claim
     // (`ArgoE2ETests`), not a PNG.
     case archivedRoster
+    case spawningRoster
     case renamedRoster
     case editingRow
     case toolbarScope

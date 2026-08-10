@@ -1,6 +1,12 @@
 import SwiftUI
 
-/// Two jobs in two places: scope at the leading edge, navigation pinned to the trailing one.
+/// Two jobs in two places: scope at the leading edge, navigation pinned to the trailing one — with
+/// the one verb the bar carries in front of both, beside the sidebar toggle.
+///
+/// New Session is NOT a third vessel (#433). The two bounded vessels each hold a compound reading
+/// and take the toolbar's own glass so their halves merge; the verb carries a small glass of its
+/// own, merged with nothing, which is the platform's answer for "create the thing this sidebar
+/// holds" and keeps it at the weight of the toggle it stands next to.
 ///
 /// Scope is ONE toolbar item, because that is what the toolbar draws one Liquid Glass capsule
 /// around — a `ToolbarItemGroup` gives each control in it a capsule of its own, which is the split
@@ -15,8 +21,18 @@ struct ShellToolbar: ToolbarContent {
     @Binding var room: CockpitRoom
     let presentation: CockpitPresentation
     let actions: CockpitActions
+    let spawn: CockpitSpawn
 
     @ToolbarContentBuilder var body: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            NewSessionButton(offer: spawn.offer) { await spawn.run() }
+        }
+        .sharedBackgroundVisibility(.hidden)
+        // The break that gives the verb a container of its own. Adjacent items in one region share
+        // a single Liquid Glass capsule, so the button drew as a third segment of "this Project,
+        // on this checkout" — a fourth fact inside a reading of three. The item hides that shared
+        // background and draws its own glass; this keeps it off the folder mark beside it.
+        ToolbarSpacer(.fixed, placement: .navigation)
         ToolbarItem(placement: .navigation) {
             ScopeVessel(presentation: presentation, actions: actions)
         }

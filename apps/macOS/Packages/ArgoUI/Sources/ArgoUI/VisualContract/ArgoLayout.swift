@@ -11,6 +11,12 @@ public enum ArgoLayout {
     public static let connectionSlotWidth: CGFloat = 180
     public static let gitVesselMaximumWidth: CGFloat = 280
 
+    /// How tall a container on the toolbar is. The two vessels get this from the toolbar, which
+    /// sizes its own glass and not to their content; a control drawing a container of its OWN has
+    /// nothing to inherit it from, so the number lives here and is measured off a render rather
+    /// than guessed — two container heights on one bar is the first thing a reader sees.
+    public static let toolbarVesselHeight: CGFloat = 36
+
     // The toolbar's scope cluster: the Project and its checkout in one capsule. The Project half
     // is the wider of the two because it carries a full name rather than a branch.
     public static let projectVesselMaximumWidth: CGFloat = 220

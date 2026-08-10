@@ -39,18 +39,33 @@ struct RosterSpecimen: View {
     }
 }
 
-/// The window chrome alone, against an empty plane. One merged capsule at the leading edge and one
-/// pinned to the trailing edge is a claim about the toolbar, which the shell specimens bury under
-/// everything else in the frame.
+/// The window chrome alone, against an empty plane. A bare verb beside the toggle, one merged
+/// capsule after it and one pinned to the trailing edge is a claim about the toolbar, which the
+/// shell specimens bury under everything else in the frame.
+///
+/// Both cases carry the New Session button, and the pair is what makes it judgeable: `toolbarScope`
+/// draws it live beside a Project, `emptyToolbarScope` draws the same control disabled on a machine
+/// that has registered nothing — and whether that reads as unavailable rather than as a mark that
+/// failed to draw is not a thing a test can say.
 struct ToolbarSpecimen: View {
     let presentation: CockpitPresentation
 
     @State private var room = CockpitRoom.sessions
+    @State private var navigation = CockpitNavigationModel()
 
     var body: some View {
         Color.clear
             .toolbar {
-                ShellToolbar(room: $room, presentation: presentation, actions: .inert)
+                ShellToolbar(
+                    room: $room,
+                    presentation: presentation,
+                    actions: .inert,
+                    spawn: CockpitSpawn(
+                        presentation: presentation,
+                        actions: .inert,
+                        navigation: navigation,
+                    ),
+                )
             }
             .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
     }
