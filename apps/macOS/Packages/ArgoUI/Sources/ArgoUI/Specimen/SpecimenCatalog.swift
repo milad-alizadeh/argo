@@ -34,6 +34,8 @@ public enum Specimen: String, CaseIterable, Sendable {
     case contextCrit
     case contextUnknown
     case contextGuide
+    case sessionSpend
+    case sessionSpendUnreported
     case feed
     case feedCalls
     case feedNarration

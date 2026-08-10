@@ -81,6 +81,11 @@ public struct SpecimenScreen: View {
             // findable beside a title and a branch — and the fourth is the one that matters most:
             // an unreadable context has to look like an ABSENCE rather than like a fresh window.
             SessionHeaderSpecimen(header: contextHeader)
+        case .sessionSpend, .sessionSpendUnreported:
+            // The spend line in the deck it lives in, with and without the subagent fact. The two
+            // are only judgeable as a PAIR — what has to be true is that the shorter line reads as
+            // a complete line rather than as one a number fell out of — and a pair is two PNGs.
+            SessionHeaderSpecimen(header: spendHeader)
         case .contextGuide:
             // The ⓘ panel, stood in a glass of its own — a popover is a window of its own and
             // never lands in a screenshot of this one (`DrawerSpecimen`).
@@ -270,6 +275,12 @@ public struct SpecimenScreen: View {
     /// belongs to, so neither side can be renamed into drawing another tier's reading.
     private var contextHeader: SessionHeaderProjection.Header {
         SessionHeaderFixture.contexts.first { $0.specimen == specimen }?.header
+            ?? SessionHeaderFixture.header(for: .managed)
+    }
+
+    /// The header whose spend line this case is a render of, keyed the same way the tiers are.
+    private var spendHeader: SessionHeaderProjection.Header {
+        SessionSpendFixture.spends.first { $0.specimen == specimen }?.header
             ?? SessionHeaderFixture.header(for: .managed)
     }
 

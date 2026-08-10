@@ -49,6 +49,19 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Absent until a record carries a `usage` object at all, which is the honest gap the header
     /// renders as `unknown` rather than as an empty context.
     public private(set) var contextTokens: Int?
+    /// What the Session has SPENT across its whole life — every reported spend summed, which is
+    /// the opposite reading from `contextTokens` above and the reason the two are separate fields.
+    ///
+    /// Both grains, per `CONTEXT.md` L3: the assistant records' own usage plus whatever a
+    /// delegating call reported for the subagent it ran. Absent until a record prices something,
+    /// because a Session nobody priced has not spent nothing.
+    public private(set) var totalTokens: Int?
+    /// What this Session's subagents spent, read off the DELEGATING call's result — the only place
+    /// that spend is ever reported, since a sidechain's own records carry none.
+    ///
+    /// Absent, never zero, where no delegating call reported any: every CLI in use today reports
+    /// nothing here, and a zero would claim no subagent ran.
+    public private(set) var subagentTokens: Int?
     /// The newest moment the records report, where they report one.
     public private(set) var lastActivityAtMs: Int?
     /// The oldest, which is when this Session started — the fact a claim window is matched against.
@@ -139,13 +152,24 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case let .toolCallOutcome(outcome):
             pendingAsks.remove(outcome.id)
             observeActivity(outcome.endedAtMs)
+            observeSubagentSpend(outcome.usage)
         case let .compaction(atMs):
             observeActivity(atMs)
         case let .usage(usage):
             contextTokens = usage.contextTokens
+            totalTokens = (totalTokens ?? 0) + usage.contextTokens
         case .message, .thought, .plan, .unreadableLine:
             break
         }
+    }
+
+    /// A delegating call's result is where a subagent's whole spend arrives, so it counts twice:
+    /// once as this Session's own subagent line, and once into what the Session has spent
+    /// altogether. A call that reported nothing leaves both absent rather than adding a zero.
+    private mutating func observeSubagentSpend(_ usage: Usage?) {
+        guard let usage else { return }
+        subagentTokens = (subagentTokens ?? 0) + usage.contextTokens
+        totalTokens = (totalTokens ?? 0) + usage.contextTokens
     }
 
     /// The latest time wins, and an absent one says nothing: a record with no timestamp is not a
@@ -172,6 +196,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // The later half of the chain wins where it read one, and says nothing where it did not: a
         // resume file with no `usage` in it yet is not a Session that has emptied its context.
         contextTokens = continuation.contextTokens ?? contextTokens
+        // Spend, unlike the context reading, ADDS across the chain: a resumed file's tokens were
+        // billed on top of the root's, not instead of them.
+        totalTokens = Self.summed(totalTokens, continuation.totalTokens)
+        subagentTokens = Self.summed(subagentTokens, continuation.subagentTokens)
         branch = continuation.branch ?? branch
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
         observeActivity(continuation.lastActivityAtMs)
@@ -184,6 +212,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             lastStop = continuation.lastStop
             pendingAsks = continuation.pendingAsks
         }
+    }
+
+    /// Two spends added without either of them being able to invent one: an absent half leaves the
+    /// other exactly as it was, and two absences stay absent.
+    private static func summed(_ left: Int?, _ right: Int?) -> Int? {
+        guard let left else { return right }
+        guard let right else { return left }
+        return left + right
     }
 
     private mutating func applyPromptTitle(_ text: String) {
