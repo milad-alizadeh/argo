@@ -108,6 +108,10 @@ public enum ArgoSymbol {
     /// Try the refused send again, with the message exactly where it was typed.
     public static let retry = "arrow.clockwise"
 
+    /// A Permission waiting on the user — the prompt's own mark. A lock, not a question mark,
+    /// because the agent is not wondering: it is barred until somebody with the key answers.
+    public static let permission = "lock.fill"
+
     /// What a file the panel is open on is written in — one mark per language FAMILY. The
     /// extension is in the path beside it and is what actually names the language; these say only
     /// which KIND of file you are looking at, which is what a glance at a header wants.

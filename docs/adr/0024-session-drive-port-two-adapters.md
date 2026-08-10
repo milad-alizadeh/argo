@@ -70,10 +70,20 @@ is the per-action layer on top.
 > The hook must return **`allow` or `deny`, never `ask`.** `ask` falls through to the TUI's own
 > dialog — which is hidden, so the session would stall against a prompt with no reader.
 
-**The hook's `timeout` is the cockpit's patience window.** A blocked hook is what holds the UI on
-"needs input", so that timeout must be set to however long a Permission may sit unanswered — it is
-a deliberate value, not a default to leave alone. Expiry is safe (it denies; see Verification) but
-it *ends the turn*, so the freeze is bounded by whatever number is configured there.
+**The hook's `timeout` is the cockpit's patience window, and it is set a day out.** A blocked hook
+is what holds the UI on "needs input", so the timeout is how long a Permission may sit unanswered —
+a deliberate value, not a default to leave alone. Expiry is safe (it denies; see Verification) and
+it *ends the turn*, which is exactly why the number is large: nobody watches the cockpit for the
+whole of an agent's run, so a window short enough to expire is a window that decides on its own.
+The prompt draws no clock for the same reason (#542 rewrote the study's decision 6).
+
+**The hook is registered by the companion PLUGIN, not by `--settings`.** Against claude 2.1.226 a
+`hooks` block in a settings file passed as `--settings <path>` is never registered — `/hooks` shows
+the same count with and without it, and a gated call runs unstopped. The same block written to the
+plugin's `hooks/hooks.json` and loaded with `--plugin-dir <root>` registers and fires. This matters
+beyond configuration: an unregistered hook fails **open**, silently, because the CLI treats a hook
+that produced nothing as no opinion. The gate is therefore covered by a live-CLI test rather than
+by a fixture that could only ever prove Argo talks to itself.
 
 *`codex`* — with `approval_policy` at `untrusted` or `on-request`, the MCP server raises approvals
 as `elicitation/create`. Argo, as the client, renders the dialog and replies.
@@ -136,7 +146,11 @@ Against `claude` 2.1.226 and `codex-cli` 0.144.5, 2026-08-10.
   executed on `allow`.
 - **Hook timeout fails closed.** With a 5s timeout and no answer, the tool came back
   `is_error: true` and the file was not written. No silent fall-through to the hidden TUI dialog,
-  no stall — the turn ended and the agent asked for approval in prose.
+  no stall — the turn ended and the agent asked for approval in prose. Shipped at a day, so this
+  is the safety net rather than the mechanism.
+- **The gate itself is under test against the real CLI** (`ARGO_LIVE_CLI=1`, excluded from the
+  default run): a spawned session asked to run one command raises the Permission in the Hub; on
+  `allow` the command's file appears, and on `deny` it never does.
 - **`ESC` interrupts a running turn.** Mid-essay, output stopped dead (0 chars over the following
   5s), the TUI showed `Interrupted · What should Claude do instead?`, the process stayed alive, and
   a follow-up turn was answered. The transcript records it as a first-class entry —

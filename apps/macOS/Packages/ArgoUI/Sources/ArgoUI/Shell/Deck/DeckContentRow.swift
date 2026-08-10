@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The zones across the deck, in the order they are read: the rail, the feed, the minimap pinned to
@@ -20,6 +21,10 @@ struct DeckContentRow: View {
     /// One Turn to the shown Session. A closure so a specimen renders the vessel with nothing
     /// behind it; refusals are thrown back and the composer's seam repeats them.
     var send: (String) throws -> Void = { _ in }
+    /// The Permission the shown Session is blocked on — it takes the composer's slot.
+    var prompt: PermissionPromptProjection.Prompt?
+    /// The answer to it, inert by default for the reason `send` is.
+    var decide: (PermissionDecision) -> Void = { _ in }
     let seams: DeckSeams
     /// Whether either seam is under the reader's hand. One flag for both, because only one of them
     /// can be dragged at a time and the zones downstream care that the column is moving, not which
@@ -46,6 +51,8 @@ struct DeckContentRow: View {
                     held: held,
                     composer: composer,
                     send: send,
+                    prompt: prompt,
+                    decide: decide,
                 )
                 if !isPanelOpen {
                     DeckSeparator()
@@ -196,9 +203,11 @@ private struct FeedColumn: View {
     var held: FeedRow.ID?
     var composer: SessionComposerProjection.Composer?
     var send: (String) throws -> Void = { _ in }
+    var prompt: PermissionPromptProjection.Prompt?
+    var decide: (PermissionDecision) -> Void = { _ in }
 
     var body: some View {
-        FeedView(rows: feed, selection: selection, held: held, isUnderComposer: composer != nil)
+        FeedView(rows: feed, selection: selection, held: held, isUnderComposer: hasVessel)
             // Over the feed rather than in the column's stack: the pill floats, and a row in
             // the stack would take height from the reading it is meant to sit above. Bounded
             // to this column so it moves with the feed when a seam does, never over the panel.
@@ -211,6 +220,10 @@ private struct FeedColumn: View {
             .frame(maxWidth: .infinity)
     }
 
+    private var hasVessel: Bool {
+        composer != nil || prompt != nil
+    }
+
     /// A Session that never reported a plan gets no pill — not an empty one, and not a note saying
     /// there is none. Nothing to report is reported by drawing nothing. Lifted clear of the vessel
     /// when one floats under it, for the reason the way-back control is.
@@ -219,13 +232,19 @@ private struct FeedColumn: View {
             PlanPill(plan: plan, isRevealed: showing.isRevealed)
                 .padding(
                     .bottom,
-                    composer == nil ? ArgoPlanPill.lift : ArgoComposerVessel.feedClearance,
+                    hasVessel ? ArgoComposerVessel.feedClearance : ArgoPlanPill.lift,
                 )
         }
     }
 
+    /// The prompt takes the composer's own slot: one vessel, holding whichever question is live.
+    /// The field is replaced, not disabled — there is nothing to type into while the agent waits.
     @ViewBuilder private var vessel: some View {
-        if let composer {
+        if let prompt {
+            PermissionPrompt(prompt: prompt, decide: decide)
+                .padding(.horizontal, ArgoSpacing.section)
+                .padding(.bottom, ArgoSpacing.loose)
+        } else if let composer {
             SessionComposer(composer: composer, send: send)
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.bottom, ArgoSpacing.loose)

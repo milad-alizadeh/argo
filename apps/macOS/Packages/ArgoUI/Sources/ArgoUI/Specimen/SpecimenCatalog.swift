@@ -84,4 +84,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case composerTyping
     case composerRefusal
     case flatComposer
+    case permission
+    case permissionEdit
+    case flatPermission
 }

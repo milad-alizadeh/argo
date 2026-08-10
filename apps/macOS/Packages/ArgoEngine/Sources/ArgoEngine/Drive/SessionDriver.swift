@@ -18,6 +18,11 @@ public protocol SessionDriver {
     /// throwing: a keystroke either reaches a descriptor or it does not, and there is nothing to
     /// wait for in between.
     func send(_ text: String, to sessionID: String) throws
+
+    /// Answer the Session's oldest pending Permission (#542, under #535 / ADR-0024). Keyed and
+    /// shaped like `send`, and for the same reasons; the pending Permission itself travels the
+    /// observation side — Hub to presentation — because observation is not on this port.
+    func decide(_ decision: PermissionDecision, for sessionID: String) throws
 }
 
 /// Whether there is a Turn in the text at all. On the port rather than in an adapter — it is the
@@ -39,12 +44,17 @@ public enum SessionDriveError: Error, Equatable {
     /// alternative is a bare Return at a live prompt — an empty Turn that reads as the user having
     /// asked for something.
     case nothingToSend
+    /// A decision arrived after the Permission it answered was gone — expired on the hook's own
+    /// clock, or cancelled with its turn. Said rather than swallowed, because the user pressed
+    /// something and nothing happened.
+    case nothingPending
 
     /// What the seam says. Verbatim, and short enough to sit on one line above the field.
     public var detail: String {
         switch self {
         case .notDrivable: "Argo no longer holds this Session — nothing was sent"
         case .nothingToSend: "Nothing to send"
+        case .nothingPending: "No Permission is waiting on this Session"
         }
     }
 }

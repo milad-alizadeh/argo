@@ -17,15 +17,35 @@ let unixSocketPathLimit = 103
 @MainActor
 final class CompanionSocket {
     let path: String
-    private let respond: (String) -> String?
+    private let respond: (String, Int, @escaping CompanionConnection.Reply) -> Void
+    private let endsAfterReply: Bool
+    private let onPeerClosed: (Int) -> Void
     private var descriptor: Int32 = -1
     private var source: DispatchSourceRead?
     private var connections: [Int: CompanionConnection] = [:]
     private var accepted = 0
 
-    init(path: String, respond: @escaping (String) -> String?) {
+    /// The full shape: each line arrives with the peer it came down and a reply that can be held
+    /// open across a decision; `endsAfterReply` makes the first reply also the last, and
+    /// `onPeerClosed` says when a peer went — answered or not, which is the caller's to tell.
+    init(
+        path: String,
+        endsAfterReply: Bool = false,
+        onPeerClosed: @escaping (Int) -> Void = { _ in },
+        respond: @escaping (String, Int, @escaping CompanionConnection.Reply) -> Void,
+    ) {
         self.path = path
+        self.endsAfterReply = endsAfterReply
+        self.onPeerClosed = onPeerClosed
         self.respond = respond
+    }
+
+    /// The companion channel's own shape: one line in, at most one answer out, decided in place.
+    convenience init(path: String, respond: @escaping (String) -> String?) {
+        self.init(path: path) { line, _, reply in
+            guard let answer = respond(line) else { return }
+            reply(answer)
+        }
     }
 
     /// Bind and start accepting. Throws rather than degrading, because a spawn that went ahead
@@ -102,7 +122,8 @@ final class CompanionSocket {
         let key = accepted
         let connection = CompanionConnection(
             descriptor: client,
-            respond: respond,
+            endsAfterReply: endsAfterReply,
+            respond: { [weak self] line, reply in self?.respond(line, key, reply) },
             onClose: { [weak self] in self?.drop(key) },
         )
         connections[key] = connection
@@ -110,6 +131,8 @@ final class CompanionSocket {
     }
 
     private func drop(_ key: Int) {
-        connections.removeValue(forKey: key)?.close()
+        guard let connection = connections.removeValue(forKey: key) else { return }
+        connection.close()
+        onPeerClosed(key)
     }
 }

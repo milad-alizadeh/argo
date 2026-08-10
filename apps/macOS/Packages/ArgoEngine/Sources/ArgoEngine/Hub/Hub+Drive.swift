@@ -12,6 +12,6 @@ public extension Hub {
     /// a choice made on the Session's own `cli`, and the wrong place to make it is the surface that
     /// raised the intent.
     var driver: some SessionDriver {
-        ClaudeSessionDriver(ownership: ownership, terminals: terminals)
+        ClaudeSessionDriver(ownership: ownership, terminals: terminals, permissions: permissions)
     }
 }

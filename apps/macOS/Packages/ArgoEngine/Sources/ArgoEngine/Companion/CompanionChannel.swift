@@ -32,8 +32,14 @@ public final class CompanionChannel {
         self.onFact = onFact
     }
 
-    /// Open this claim's channel and write the plugin that reaches it.
-    func invite(_ claim: SessionOwnership.ClaimID) throws -> CompanionInvitation {
+    /// Open this claim's channel and write the plugin that reaches it. `gatedBy` names the
+    /// permission gate's socket, when one was opened, so the bundle installs the hook that dials
+    /// it — the channel only carries the path; the gate itself is `PermissionChannel`'s.
+    func invite(
+        _ claim: SessionOwnership.ClaimID,
+        gatedBy permissionSocketPath: String? = nil,
+    ) throws
+        -> CompanionInvitation {
         try FileManager.default.createDirectory(
             at: root,
             withIntermediateDirectories: true,
@@ -44,6 +50,7 @@ public final class CompanionChannel {
             forClaim: claim,
             under: root,
             socketPath: socketPath,
+            gatedBy: permissionSocketPath,
         )
         let endpoint = CompanionEndpoint { [weak self] fact in self?.onFact(claim, fact) }
         let socket = CompanionSocket(path: socketPath) { line in

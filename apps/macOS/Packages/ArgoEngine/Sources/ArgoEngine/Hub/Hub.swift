@@ -86,6 +86,12 @@ public final class Hub {
     /// exists first and survives the reconciliation.
     var companionReports: [SessionOwnership.ClaimID: CompanionReport] = [:]
 
+    /// The Permissions each claim's agent is blocked on, oldest first — DIRECT, because Argo holds
+    /// the hook that raised them and the channel the answer goes down. Observed, so a prompt
+    /// reaches the cockpit in the update that raised it; keyed by claim for the reason the
+    /// reports above are.
+    var pendingPermissions: [SessionOwnership.ClaimID: [PermissionRequest]] = [:]
+
     /// The handoffs THIS process made, keyed by the Session that handed over and holding the id the
     /// fresh row was published under — a claim, until its CLI writes a record. Observed, because a
     /// handoff completing has to reach the reading it is drawn at the foot of.
@@ -98,6 +104,7 @@ public final class Hub {
 
     @ObservationIgnored let spawnServices: SpawnServices
     @ObservationIgnored private(set) var companion: CompanionChannel?
+    @ObservationIgnored private(set) var permissions: PermissionChannel?
 
     /// The working directories a live CLI was running in when the process table was last read, and
     /// when that was. Absent until a read has happened, so an unread liveness resolves down to
@@ -167,6 +174,14 @@ public final class Hub {
         let root = spawnServices.companionRoot
         companion = CompanionChannel(root: root) { [weak self] claim, fact in
             self?.record(fact, for: claim)
+        }
+        permissions = PermissionChannel(root: root) { [weak self] claim, waiting in
+            guard let self else { return }
+            if waiting.isEmpty {
+                pendingPermissions.removeValue(forKey: claim)
+            } else {
+                pendingPermissions[claim] = waiting
+            }
         }
     }
 

@@ -33,6 +33,7 @@ extension SpecimenScreen {
         lit: FeedShot? = nil,
         held: FeedRow.ID? = nil,
         composer: SessionComposerProjection.Composer? = nil,
+        prompt: PermissionPromptProjection.Prompt? = nil,
     )
         -> some View {
         // Named, because a reading is always OF something: a deck whose top zone says nothing is
@@ -45,6 +46,7 @@ extension SpecimenScreen {
             lit: lit,
             held: held,
             composer: composer,
+            prompt: prompt,
         )
     }
 }

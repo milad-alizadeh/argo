@@ -31,7 +31,7 @@ public extension Hub {
 
         let claim = ownership.claim(cwd: cwd)
         do {
-            let invitation = try companion?.invite(claim)
+            let invitation = try companion?.invite(claim, gatedBy: permissions?.grant(claim))
             let launch = try await spawnServices.launcher.launch(
                 cli: cli,
                 cwd: cwd,
@@ -54,6 +54,7 @@ public extension Hub {
             // agent somebody else starts in this folder a moment later.
             ownership.release(claim)
             companion?.withdraw(claim)
+            permissions?.withdraw(claim)
             throw error
         }
     }
@@ -63,6 +64,7 @@ public extension Hub {
     func endOwnedSessions() {
         terminals.terminateAll()
         companion?.withdrawAll()
+        permissions?.withdrawAll()
         for claim in ownership.liveClaims {
             ownership.release(claim)
         }
@@ -86,6 +88,7 @@ public extension Hub {
         ownership.release(claim)
         terminals.drop(claim)
         companion?.withdraw(claim)
+        permissions?.withdraw(claim)
         guard var spawn = spawns[claim] else { return }
         spawn.exit = AgentSpawn.Exit(code: exitCode, atMs: Date().epochMs)
         spawns[claim] = spawn

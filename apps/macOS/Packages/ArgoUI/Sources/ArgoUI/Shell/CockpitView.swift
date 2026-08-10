@@ -62,6 +62,21 @@ public struct CockpitView: View {
         return { try actions.sendTurn(sessionID, $0) }
     }
 
+    /// The selected Session's pending Permission, projected here for the reason the composer is:
+    /// this is the one view that knows what is selected. While present it takes the composer's
+    /// slot in the deck.
+    private var prompt: PermissionPromptProjection.Prompt? {
+        PermissionPromptProjection.prompt(for: presentation.session(navigation.session))
+    }
+
+    /// The prompt's one intent, bound the way `send` is — inert when there is no prompt, which is
+    /// also when there is nothing to answer.
+    private var decide: (PermissionDecision) -> Void {
+        guard let prompt else { return { _ in } }
+        let sessionID = prompt.sessionID
+        return { actions.decidePermission(sessionID, $0) }
+    }
+
     /// The header's one intent, bound to the Session the header is naming — resolved here for the
     /// same reason the header is: this is the view that knows which Session is selected, and the
     /// issue it serves. It does nothing when nothing is selected, which is also when there is no
@@ -120,6 +135,8 @@ public struct CockpitView: View {
                 showing: showing,
                 composer: composer,
                 send: send,
+                prompt: prompt,
+                decide: decide,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation — the same division the handoff itself

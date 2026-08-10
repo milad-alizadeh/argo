@@ -9,4 +9,13 @@ extension CockpitCoordinator {
     func send(_ text: String, to sessionID: String) throws {
         try hub.driver.send(text, to: sessionID)
     }
+
+    /// One Permission answered through the same port. A refusal is dropped, not alerted: the only
+    /// one the port can raise here is a decision that lost the race with the hook's own expiry,
+    /// and the prompt leaving the screen already says everything there is to say about that.
+    func decide(_ decision: PermissionDecision, for sessionID: String) {
+        do {
+            try hub.driver.decide(decision, for: sessionID)
+        } catch {}
+    }
 }

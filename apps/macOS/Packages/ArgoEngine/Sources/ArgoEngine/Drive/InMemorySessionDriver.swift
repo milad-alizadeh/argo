@@ -15,6 +15,7 @@ public final class InMemorySessionDriver: SessionDriver {
     public var refusal: SessionDriveError?
 
     private var turns: [String: [String]] = [:]
+    private var decisions: [String: [PermissionDecision]] = [:]
 
     public init() {}
 
@@ -26,11 +27,23 @@ public final class InMemorySessionDriver: SessionDriver {
         turns[sessionID, default: []].append(text)
     }
 
+    public func decide(_ decision: PermissionDecision, for sessionID: String) throws {
+        if let refusal {
+            throw refusal
+        }
+        decisions[sessionID, default: []].append(decision)
+    }
+
     /// The Turns put to one Session, in the order they were sent.
     ///
     /// The text as the user typed it, not the keystrokes it would have become: what a cockpit test
     /// has a claim about is the message, and the wire encoding is `ClaudeTurn`'s own suite.
     public func sent(to sessionID: String) -> [String] {
         turns[sessionID] ?? []
+    }
+
+    /// The answers put to one Session's Permissions, in the order they were decided.
+    public func decided(for sessionID: String) -> [PermissionDecision] {
+        decisions[sessionID] ?? []
     }
 }

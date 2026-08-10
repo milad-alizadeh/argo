@@ -13,6 +13,7 @@ import Foundation
 struct ClaudeSessionDriver: SessionDriver {
     let ownership: SessionOwnership
     let terminals: AgentTerminals
+    let permissions: PermissionChannel?
 
     func send(_ text: String, to sessionID: String) throws {
         guard SessionTurn.isSendable(text) else { throw SessionDriveError.nothingToSend }
@@ -22,6 +23,15 @@ struct ClaudeSessionDriver: SessionDriver {
               terminals.write(ClaudeTurn.keystrokes(for: text), to: claim)
         else {
             throw SessionDriveError.notDrivable
+        }
+    }
+
+    func decide(_ decision: PermissionDecision, for sessionID: String) throws {
+        guard let permissions, let claim = ownership.ownerOf(sessionID: sessionID) else {
+            throw SessionDriveError.notDrivable
+        }
+        guard permissions.decide(decision, for: claim) else {
+            throw SessionDriveError.nothingPending
         }
     }
 }

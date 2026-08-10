@@ -25,12 +25,22 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// external Session and for a managed one whose agent has not spoken — which is not a degrade,
     /// only the tier having nothing to say yet.
     public internal(set) var convention: CompanionReport?
+    /// The Permission this Session's agent is blocked on, where Argo holds one — DIRECT, because
+    /// the blocked hook and the channel its answer goes down are both Argo's own. Absent for every
+    /// external Session (the fact is unobservable there, per ADR-0024) and for a managed one with
+    /// nothing gated in flight.
+    public internal(set) var permission: PermissionRequest?
     /// The Session this one handed its work to, where it handed it to one — the row a reader
     /// follows to find the work continuing. Set by the Hub from its own record of the handoff,
     /// never read from a transcript: neither CLI knows anything happened, and the fresh agent's own
     /// record says only that it was opened on a brief.
     public internal(set) var handedOffTo: String?
-    public private(set) var title: String
+    /// What this row is called, and how firmly — see `SessionTitle`.
+    private var name: SessionTitle
+    public var title: String {
+        name.text
+    }
+
     public private(set) var cwd: String?
     public private(set) var model: String?
     public private(set) var branch: String?
@@ -83,9 +93,6 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// else, and the roster drew one Session once per file. Queued AND answered is an ordinary
     /// Session — the queue is how its prompt arrived, not what it is.
     public private(set) var isQueued = false
-    private var hasPromptTitle = false
-    private var hasProvisionalTitle = false
-    private var hasExplicitTitle = false
     private(set) var turnOpen = false
     private(set) var lastStop: StopReason?
     /// The `AskUserQuestion` calls in the open Turn that no result has answered.
@@ -125,7 +132,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public init(observation: TranscriptObservation) {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
-        self.title = observation.sourceURL.deletingPathExtension().lastPathComponent
+        self.name = SessionTitle(
+            startingWith: observation.sourceURL.deletingPathExtension().lastPathComponent,
+        )
         self.recordedAtMs = observation.modifiedAt?.epochMs
     }
 
@@ -148,7 +157,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     init(spawn: AgentSpawn) {
         self.id = spawn.claim.value
         self.sourceURL = nil
-        self.title = spawn.title
+        self.name = SessionTitle(startingWith: spawn.title)
         self.cwd = spawn.cwd
         // DIRECT: Argo chose this program and started it.
         self.cli = spawn.cli
@@ -168,8 +177,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case let .headLeaf(uuid):
             headLeafUUID = uuid
         case let .title(observedTitle):
-            title = observedTitle
-            hasExplicitTitle = true
+            name.state(observedTitle)
         case let .cwd(observedCwd):
             cwd = observedCwd
         case let .model(observedModel):
@@ -177,7 +185,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case let .branch(observedBranch):
             branch = Self.branchName(observedBranch)
         case let .prompt(text, atMs):
-            applyPromptTitle(text)
+            name.observe(prompt: text)
             turnOpen = true
             observeActivity(atMs)
         case let .turnEnded(reason):
@@ -242,18 +250,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     }
 
     mutating func mergeContinuation(_ continuation: HubSession) {
-        if continuation.hasExplicitTitle {
-            title = continuation.title
-            hasExplicitTitle = true
-        } else if !hasExplicitTitle, !hasPromptTitle, continuation.hasPromptTitle {
-            title = continuation.title
-            hasPromptTitle = true
-        } else if !hasExplicitTitle, !hasPromptTitle, continuation.hasProvisionalTitle {
-            // A continuation whose only prompt was a bare command still beats the root's
-            // filename fallback — and stays as takeable as any provisional title.
-            title = continuation.title
-            hasProvisionalTitle = true
-        }
+        name.merge(continuation.name)
         // Either half having seen the agent speak is the whole chain having seen it: a resume file
         // opened and not yet answered does not un-run the reading it continues.
         hasAgentActivity = hasAgentActivity || continuation.hasAgentActivity
@@ -290,25 +287,5 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         guard let left else { return right }
         guard let right else { return left }
         return left + right
-    }
-
-    private mutating func applyPromptTitle(_ text: String) {
-        guard !hasExplicitTitle, !hasPromptTitle,
-              let firstLine = text.split(whereSeparator: \.isNewline).first
-        else { return }
-        let candidate = String(firstLine).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !candidate.isEmpty else { return }
-        title = candidate
-        // A bare slash command — /clear opening a fresh transcript — names the plumbing, not the
-        // work, so it stands in without locking the row to "/clear".
-        if isBareCommand(candidate) {
-            hasProvisionalTitle = true
-        } else {
-            hasPromptTitle = true
-        }
-    }
-
-    private func isBareCommand(_ line: String) -> Bool {
-        line.hasPrefix("/") && !line.contains(where: \.isWhitespace)
     }
 }
