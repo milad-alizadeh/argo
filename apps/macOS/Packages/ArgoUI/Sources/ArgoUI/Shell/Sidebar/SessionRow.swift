@@ -45,32 +45,39 @@ struct SessionRow: View {
         }
     }
 
-    /// The age takes the row's own right edge, which is the edge the state word above it takes:
-    /// one column down the roster rather than a mark at wherever the text before it ended.
+    /// The age takes the leading edge, under the title's own: it is the fact a scan down the
+    /// roster finds on nearly every row, and a column that starts where the last worktree name
+    /// happened to end is not a column. The worktree takes the right, under the state word.
     ///
     /// Absent entirely when neither half is there, rather than an empty `Text`, which would
     /// leave a gap of whatever height the font happened to give it.
     @ViewBuilder private var secondaryLine: some View {
         if row.worktree != nil || row.age != nil {
             HStack(spacing: ArgoSpacing.snug) {
-                if let worktree = row.worktree {
-                    Text(worktree)
-                        .argoText(ArgoTypography.rowMeta)
-                        .lineLimit(1)
-                        // A worktree name is addressed from both ends — the parent that qualifies
-                        // it at the head, the ticket at the tail. The middle is what repeats.
-                        .truncationMode(.middle)
-                }
-                Spacer(minLength: ArgoSpacing.tight)
                 if let age = row.age {
                     Text(age)
                         .argoText(ArgoTypography.rowMeta)
                         .lineLimit(1)
-                        // The gutter is the age's before it is the worktree's.
+                        // Three words that never lose one: a shortfall lands on the worktree
+                        // instead, which is built to give up its middle.
                         .layoutPriority(1)
                 }
+                Spacer(minLength: ArgoSpacing.tight)
+                worktreeLabel
             }
             .foregroundStyle(argo.color.text.tertiary)
+        }
+    }
+
+    /// The same two stacked planes the session header spends on a worktree — one mark for one
+    /// meaning across the two surfaces. The mark is unconditional here where the header's is not:
+    /// the projection populates `worktree` only for a checkout git answered `worktree` for, so
+    /// there is no unread kind left for this to claim anything about.
+    @ViewBuilder private var worktreeLabel: some View {
+        if let worktree = row.worktree {
+            ArgoMarkedName(
+                symbol: ArgoSymbol.worktree, name: worktree, style: ArgoTypography.rowMeta,
+            )
         }
     }
 
