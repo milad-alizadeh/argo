@@ -7,17 +7,6 @@
 /// can hold to. The zones the later header tickets fill — the context reading and what it offers
 /// to do about it — land on `Header` for the same reason.
 enum SessionHeaderProjection {
-    /// How loudly an access mark is set. Which of the two read-only postures is worth a colour is
-    /// a rule about the POSTURES, not about the line they land on — a view choosing it would
-    /// decide the same thing again for every surface that ever draws one.
-    enum AccessTone: Equatable, Sendable {
-        /// A fact about the Session, no louder than the branch beside it.
-        case quiet
-        /// Something happened to a Session that WAS Argo's. The colour is the difference between
-        /// reading it and scanning past it.
-        case attention
-    }
-
     struct Header: Equatable, Sendable {
         /// The word a Session spends on its access, what that word MEANS in a sentence for the
         /// surface that can afford one, and how loudly it is set. ONE value, because the three are
@@ -25,7 +14,13 @@ enum SessionHeaderProjection {
         struct AccessMark: Equatable, Sendable {
             let word: String
             let detail: String
-            let tone: AccessTone
+            /// The operational role the word is set in, and `nil` for the line's own quiet ink.
+            ///
+            /// Which of the two read-only postures is worth a colour is a rule about the POSTURES,
+            /// not about the line they land on — a view choosing it would decide the same thing
+            /// again for every surface that ever draws one. The contract's own enum rather than a
+            /// second one beside it, so the role→palette mapping stays in one place.
+            let tone: ArgoOperationalState?
         }
 
         /// The branch, and which KIND of checkout it names.
@@ -38,7 +33,13 @@ enum SessionHeaderProjection {
             /// how much of a name fits is a width, and a projection that ellipsized would decide
             /// it for every width at once.
             let branch: String
-            let symbol: String
+            /// The mark the branch is drawn under, and **`nil` when Argo has not read the kind**.
+            ///
+            /// The glyph is now the only thing that tells the two kinds apart, so an unread kind
+            /// must draw NOTHING rather than the plain branch mark: that mark says "not a
+            /// worktree", which is a claim, and `CONTEXT.md`'s degrade-down rule gives an
+            /// unestablished fact an absent rendering rather than the nearest guess.
+            let symbol: String?
             let detail: String
         }
 
@@ -104,9 +105,9 @@ enum SessionHeaderProjection {
         /// says what it counts rather than naming its glyph, and the checkout says which kind it
         /// is in words rather than by which of two glyphs got drawn.
         var announcement: String {
-            ([title, checkout?.detail]
+            ([title, agent, issue?.label, checkout?.detail]
                 + marks.map(\.detail)
-                + [agent, issue?.label, access?.word])
+                + [access?.word])
                 .compactMap(\.self)
                 .joined(separator: ", ")
         }
@@ -140,9 +141,9 @@ enum SessionHeaderProjection {
                 word: "Read-only",
                 detail: "Argo never owned this Session's terminal, "
                     + "so it cannot be driven from here.",
-                // Quiet: a Session Argo never owned is an ordinary thing to be looking at, and a
-                // colour on every external header would train the reader past the other one.
-                tone: .quiet,
+                // No colour: a Session Argo never owned is an ordinary thing to be looking at, and
+                // a tint on every external header would train the reader past the other one.
+                tone: nil,
             )
         case .orphaned:
             Header.AccessMark(

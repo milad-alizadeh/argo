@@ -26,27 +26,38 @@ struct SessionHeaderFactsTests {
     func `a worktree is marked by the branch's own glyph, not by a mark after it`() {
         let worktree = header(workspace: .init(kind: .worktree, branch: "argo/#510"))
         let main = header(workspace: .init(kind: .main, branch: "main"))
-        let unread = header(workspace: .init(kind: nil, branch: "main"))
 
         // A worktree is not another fact about the Session — it is what this checkout IS, so it
         // swaps the mark rather than adding one. The counts after it stay the counts.
         #expect(worktree.checkout?.symbol == ArgoSymbol.worktree)
         #expect(worktree.marks.isEmpty)
-        // The Project's own checkout is where a Session is unless something says otherwise, and a
-        // kind nobody has READ is not a claim that it is the main one — both draw the plain mark.
         #expect(main.checkout?.symbol == ArgoSymbol.branch)
-        #expect(unread.checkout?.symbol == ArgoSymbol.branch)
+    }
+
+    @Test
+    func `a checkout nobody has read draws no mark, rather than the one meaning not-a-worktree`() {
+        let unread = header(workspace: .init(kind: nil, branch: "main"))
+
+        // The glyph is the ONLY thing telling the two kinds apart now, so the plain branch mark
+        // is a positive claim — and Argo has not read the kind. The degrade-down rule gives an
+        // unestablished fact an absent rendering, never the nearest guess (`CONTEXT.md`).
+        #expect(unread.checkout?.symbol == nil)
+        // Still a checkout, though: the BRANCH was read, and that is what the line is about.
+        #expect(unread.checkout?.branch == "main")
     }
 
     @Test
     func `the checkout says which kind it is in words as well as in ink`() throws {
         // A glyph is nothing a screen reader can hear and nothing a hover can be sure of, so the
-        // sentence travels with the mark rather than being left to whichever surface draws one.
+        // sentence travels with the mark rather than being left to whichever surface draws one —
+        // and the kind Argo could not read says nothing about a kind, in words either.
         let worktree = header(workspace: .init(kind: .worktree, branch: "argo/#510"))
         let main = header(workspace: .init(kind: .main, branch: "main"))
+        let unread = header(workspace: .init(kind: nil, branch: "main"))
 
         #expect(try #require(worktree.checkout).detail == "On argo/#510, in a worktree of its own")
-        #expect(try #require(main.checkout).detail == "On main")
+        #expect(try #require(main.checkout).detail == "On main, in the Project's own checkout")
+        #expect(try #require(unread.checkout).detail == "On main")
     }
 
     @Test
@@ -137,11 +148,11 @@ struct SessionHeaderFactsTests {
         // says it once, in the same order the header draws it.
         #expect(header.announcement == [
             "Session",
+            "Claude Code · Opus 5",
+            "Issue #510",
             "On argo/#510, in a worktree of its own",
             "2 uncommitted files",
             "1 unpushed commit",
-            "Claude Code · Opus 5",
-            "Issue #510",
         ].joined(separator: ", "))
     }
 
@@ -160,7 +171,7 @@ struct SessionHeaderFactsTests {
             workspace: .init(branch: "main"),
         ))
 
-        #expect(header.announcement.hasSuffix("Claude Code · Opus 5, Orphaned"))
+        #expect(header.announcement.hasSuffix("On main, Orphaned"))
     }
 
     private func header(

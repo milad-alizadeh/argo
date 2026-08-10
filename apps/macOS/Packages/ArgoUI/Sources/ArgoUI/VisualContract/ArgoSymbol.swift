@@ -28,10 +28,6 @@ public enum ArgoSymbol {
     public static let uncommitted = edited
     /// Commits made and not yet pushed — the arrow points the way they have not gone.
     public static let unpushed = "arrow.up"
-    /// A reference that leads OUT of Argo — the linked issue, sitting on its provider. The mark
-    /// is what makes the ink honest: Ion Blue on its own says a thing can be clicked, and this
-    /// says where the click lands.
-    public static let opensExternally = "arrow.up.forward"
     /// The disclosure on a control that opens something BELOW it — a menu, a drawer under its
     /// vessel.
     public static let disclosure = "chevron.down"

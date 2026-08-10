@@ -10,9 +10,12 @@ extension SessionHeaderProjection {
     ///
     /// The kind is carried by SWAPPING the branch's own mark rather than by a second mark after
     /// it, which is how the approved study draws it: a worktree is not another fact about the
-    /// Session, it is what this checkout IS. A kind nobody has read draws the plain branch mark —
-    /// that is the shape of a checkout with nothing said about it, not a claim that it is the
-    /// Project's own.
+    /// Session, it is what this checkout IS.
+    ///
+    /// Which is exactly why an unread kind draws NO mark. Once the glyph is the only thing telling
+    /// the two apart, the plain branch mark stops meaning "a checkout" and starts meaning "not a
+    /// worktree" — a claim Argo cannot make about a Workspace it has not read. Silence is the
+    /// absent rendering `CONTEXT.md`'s degrade-down rule asks for.
     static func checkout(
         for workspace: CockpitPresentation.Session.Workspace?,
     )
@@ -27,8 +30,14 @@ extension SessionHeaderProjection {
                 symbol: ArgoSymbol.worktree,
                 detail: "On \(branch), in a worktree of its own",
             )
-        case .main, nil:
-            Header.Checkout(branch: branch, symbol: ArgoSymbol.branch, detail: "On \(branch)")
+        case .main:
+            Header.Checkout(
+                branch: branch,
+                symbol: ArgoSymbol.branch,
+                detail: "On \(branch), in the Project's own checkout",
+            )
+        case nil:
+            Header.Checkout(branch: branch, symbol: nil, detail: "On \(branch)")
         }
     }
 

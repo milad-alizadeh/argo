@@ -48,12 +48,17 @@ enum SessionHeaderFixture {
         ))
     }
 
-    /// The external posture is given the branch that does not fit, deliberately. The access mark
-    /// sits at the END of the fact line, so what crowds it out is a long BRANCH and not a long
-    /// title — the title has a line of its own. A mark that survives only beside a short name is
-    /// a mark drawn for fixtures.
+    /// The external posture is given the branch that does not fit, deliberately. The branch sits
+    /// immediately BEFORE the access mark on the line, so a name long enough to eat the width is
+    /// exactly what crowds the mark out — and a mark that survives only beside a short name is a
+    /// mark drawn for fixtures.
+    ///
+    /// A `switch`, so a fourth posture has to choose rather than inheriting the short one.
     private static func branch(for access: CockpitPresentation.Session.Access) -> String {
-        access == .external ? longBranchName : "argo/#510-session-header-facts"
+        switch access {
+        case .external: longBranchName
+        case .managed, .orphaned: "argo/#510-session-header-facts"
+        }
     }
 
     /// The Workspace and the issue are drawn on every posture on purpose: whether a read-only

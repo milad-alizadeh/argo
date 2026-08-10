@@ -1,13 +1,17 @@
 import SwiftUI
 
-/// What the Session is working on and with, on the quiet line under its title: the branch and that
-/// branch's state, the CLI and model running it, the issue it serves, and — last — whether it can
-/// be driven at all.
+/// What the Session is working on and with, on the quiet line under its title: what is running it,
+/// the issue it serves, the branch and that branch's state, and — last — whether it can be driven
+/// at all.
 ///
 /// Its own view rather than four more helpers on `SessionHeader`, because the line has one layout
 /// rule of its own and it is the whole point of the surface: **the branch gives way first.** A
-/// name long enough to fill the line must not cost the facts after it, so everything to the right
-/// of the branch holds its width and only the branch is cut.
+/// name long enough to fill the line must not cost the facts after it, so every other fact holds
+/// its width and only the branch is cut.
+///
+/// Which is also why the branch sits LATE rather than first. The facts that never change length —
+/// the CLI, the model, the issue number — read in the same place on every Session, and the one
+/// that varies from eight characters to forty is put where its variation costs the others nothing.
 ///
 /// The facts are divided by a middle dot rather than by whitespace alone, which is how the
 /// approved study draws them. At this size the groups are three or four words with spaces already
@@ -17,28 +21,31 @@ struct SessionHeaderFacts: View {
 
     let header: SessionHeaderProjection.Header
 
+    /// Where each fact falls on the line. The order is here, once, rather than implied by the
+    /// order of four `if`s and restated by three booleans that have to agree with them.
+    private enum Position: Int, CaseIterable {
+        case agent, issue, checkout, access
+    }
+
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.snug) {
-            checkout
             agent
             issue
+            checkout
             access
         }
     }
 
-    /// Whether anything before each fact is actually on the line. A dot divides two facts; a dot
+    /// Which facts this Session actually has, in the order above.
+    private var presence: [Bool] {
+        [header.agent != nil, header.issue != nil, header.checkout != nil, header.access != nil]
+    }
+
+    /// Whether anything before this fact is actually on the line. A dot divides two facts; a dot
     /// with nothing on one side of it divides a fact from nothing, which is how a line about a
-    /// Session that happens to have no branch would open on a stray mark.
-    private var anythingBeforeAgent: Bool {
-        header.checkout != nil
-    }
-
-    private var anythingBeforeIssue: Bool {
-        anythingBeforeAgent || header.agent != nil
-    }
-
-    private var anythingBeforeAccess: Bool {
-        anythingBeforeIssue || header.issue != nil
+    /// Session with no CLI on record would open on a stray mark.
+    private func preceded(_ position: Position) -> Bool {
+        presence.prefix(position.rawValue).contains(true)
     }
 
     /// The branch under the mark that says which kind of checkout it is — a plain branch, or the
@@ -50,21 +57,30 @@ struct SessionHeaderFacts: View {
     /// half that says what the work is.
     @ViewBuilder private var checkout: some View {
         if let checkout = header.checkout {
-            HStack(spacing: ArgoSpacing.tight) {
-                HStack(spacing: ArgoSpacing.hair) {
-                    ArgoGlyph(checkout.symbol, .inline)
-                    Text(checkout.branch)
-                        .argoText(ArgoTypography.machine)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+            separated(by: preceded(.checkout)) {
+                // A step wider than the gap INSIDE the branch group, so the counts read as
+                // hanging off the branch rather than as more of its name.
+                HStack(spacing: ArgoSpacing.base) {
+                    HStack(spacing: ArgoSpacing.tight) {
+                        // Absent, not substituted, when Argo has not read the kind: the mark is
+                        // the only thing that tells a worktree from the Project's own checkout,
+                        // so drawing the plain one would claim this is not a worktree.
+                        if let symbol = checkout.symbol {
+                            ArgoGlyph(symbol, .inline)
+                        }
+                        Text(checkout.branch)
+                            .argoText(ArgoTypography.machineCaption)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                    .foregroundStyle(argo.color.text.tertiary)
+                    .help(checkout.detail)
+                    marks
                 }
-                .help(checkout.detail)
-                marks
             }
-            .foregroundStyle(argo.color.text.tertiary)
-            // BELOW everything else on the line, which takes no priority of its own. Two
-            // unprioritised groups share a shortfall between them, and the branch is the one fact
-            // here that can afford to lose half of itself.
+            // BELOW everything else on the line, which holds its width. Two unprioritised groups
+            // share a shortfall between them, and the branch is the one fact here that can afford
+            // to lose half of itself.
             .layoutPriority(-1)
         }
     }
@@ -72,8 +88,11 @@ struct SessionHeaderFacts: View {
     /// Drawn rather than spelled — a pencil with a count and a push-arrow with a count need no
     /// key. Each carries the sentence that says what it counts, because a glyph is a thing you
     /// recognise and not a thing you can be sure of.
+    ///
+    /// One step brighter than the branch they sit against, as the study sets them: the branch is
+    /// where the Session is, and these are what is UNSAVED there.
     private var marks: some View {
-        HStack(spacing: ArgoSpacing.tight) {
+        HStack(spacing: ArgoSpacing.base) {
             // By position, not by symbol: `ArgoSymbol.uncommitted` is deliberately the same mark
             // the feed spends on an edit, and two marks that ever shared a glyph would collide in
             // the diff and one of them would stop being drawn.
@@ -82,12 +101,13 @@ struct SessionHeaderFacts: View {
                     ArgoGlyph(mark.symbol, .inline)
                     if let count = mark.count {
                         Text("\(count)")
-                            .argoText(ArgoTypography.machine)
+                            .argoText(ArgoTypography.machineCaption)
                     }
                 }
                 .help(mark.detail)
             }
         }
+        .foregroundStyle(argo.color.text.secondary)
         .layoutPriority(1)
     }
 
@@ -95,9 +115,9 @@ struct SessionHeaderFacts: View {
     /// the two it could establish.
     @ViewBuilder private var agent: some View {
         if let agent = header.agent {
-            separated(by: anythingBeforeAgent) {
+            separated(by: preceded(.agent)) {
                 Text(agent)
-                    .argoText(ArgoTypography.caption)
+                    .argoText(ArgoTypography.rowMeta)
                     .foregroundStyle(argo.color.text.tertiary)
                     .lineLimit(1)
             }
@@ -111,17 +131,18 @@ struct SessionHeaderFacts: View {
     /// Set in Ion Blue under the mark that says where it leads, which is the study's treatment.
     /// The two travel together on purpose — the colour alone would say only that something here
     /// is special.
+    ///
+    /// The arrow is a CHARACTER in the run rather than an `ArgoGlyph`, as the study writes it. An
+    /// icon rung is an absolute size and would stand a head above 11pt type; set as type it takes
+    /// the label's own size and baseline, which is what "beside the words" means here.
     @ViewBuilder private var issue: some View {
         if let issue = header.issue {
-            separated(by: anythingBeforeIssue) {
-                HStack(spacing: ArgoSpacing.hair) {
-                    Text(issue.label)
-                        .argoText(ArgoTypography.caption)
-                        .lineLimit(1)
-                    ArgoGlyph(ArgoSymbol.opensExternally, .inline)
-                }
-                .foregroundStyle(argo.color.interaction.accent)
-                .help(issue.detail ?? issue.label)
+            separated(by: preceded(.issue)) {
+                Text("\(issue.label) ↗")
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(argo.color.interaction.accent)
+                    .lineLimit(1)
+                    .help(issue.detail ?? issue.label)
             }
         }
     }
@@ -133,20 +154,13 @@ struct SessionHeaderFacts: View {
     /// LOST is the one worth finding, and one it never owned is an ordinary thing to be reading.
     @ViewBuilder private var access: some View {
         if let access = header.access {
-            separated(by: anythingBeforeAccess) {
+            separated(by: preceded(.access)) {
                 Text(access.word)
-                    .argoText(ArgoTypography.caption)
-                    .foregroundStyle(ink(for: access.tone))
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(access.tone?.tint(in: argo.color) ?? argo.color.text.tertiary)
                     .lineLimit(1)
                     .help(access.detail)
             }
-        }
-    }
-
-    private func ink(for tone: SessionHeaderProjection.AccessTone) -> ArgoColor {
-        switch tone {
-        case .quiet: argo.color.text.tertiary
-        case .attention: argo.color.state.attention
         }
     }
 
@@ -163,9 +177,11 @@ struct SessionHeaderFacts: View {
         -> some View {
         HStack(spacing: ArgoSpacing.snug) {
             if preceded {
+                // Dimmer than the facts either side of it, as the study sets it: punctuation that
+                // reads as loudly as the words is a third fact between every two.
                 Text(verbatim: "·")
-                    .argoText(ArgoTypography.caption)
-                    .foregroundStyle(argo.color.text.tertiary)
+                    .argoText(ArgoTypography.rowMeta)
+                    .foregroundStyle(argo.color.text.disabled)
                     .accessibilityHidden(true)
             }
             fact()

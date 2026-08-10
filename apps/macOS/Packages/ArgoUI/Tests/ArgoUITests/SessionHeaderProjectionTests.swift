@@ -19,11 +19,12 @@ struct SessionHeaderProjectionTests {
 
         // The default state is silent. A mark on every header is a mark nobody reads by the
         // second Session, and the exceptions below are the only two worth the ink.
+        // Not a mark reading "managed", and not an empty one: no mark at all.
         #expect(header.access == nil)
-        // The title, then the Session's own facts — and no word at the end of them where a
-        // posture would have gone.
-        #expect(header.announcement.hasPrefix("Session, On main"))
-        #expect(!header.announcement.hasSuffix("Read-only"))
+        // The title, then the Session's own facts — and nothing after them where a posture would
+        // have gone, whatever word it might have spent.
+        #expect(header.announcement.hasPrefix("Session, Claude Code · Opus 5"))
+        #expect(header.announcement.hasSuffix("On main"))
     }
 
     @Test
@@ -63,15 +64,20 @@ struct SessionHeaderProjectionTests {
     }
 
     @Test
-    func `only the posture that lost something is worth a colour`() {
+    func `only the posture that lost something is worth a colour`() throws {
         // Both are read-only, and colouring both would spend the loudest ink on the line for the
         // ordinary case — which is how the reader learns to scan past the one that matters. The
         // Session Argo LOST is the one somebody had reason to expect otherwise about.
-        let tones = CockpitPresentation.Session.Access.allCases.map {
-            SessionHeaderProjection.header(from: session(access: $0)).access?.tone
+        let marks = CockpitPresentation.Session.Access.allCases.map {
+            SessionHeaderProjection.header(from: session(access: $0)).access
         }
 
-        #expect(tones == [nil, .quiet, .attention])
+        // Asserted on the MARKS, not on a list of tones: a managed Session has no mark at all and
+        // an external one has a mark with no tint, and mapping straight to `tone` would collapse
+        // those two different absences into the same `nil`.
+        #expect(marks[0] == nil)
+        #expect(try #require(marks[1]).tone == nil)
+        #expect(try #require(marks[2]).tone == .attention)
     }
 
     @Test
@@ -83,7 +89,7 @@ struct SessionHeaderProjectionTests {
             access: .external,
         ))
 
-        #expect(header.announcement.hasPrefix("Watch an externally launched agent, On main"))
+        #expect(header.announcement.hasPrefix("Watch an externally launched agent, Claude Code"))
         #expect(header.announcement.hasSuffix("Read-only"))
     }
 
