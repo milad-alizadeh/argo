@@ -13,8 +13,9 @@ struct FeedMarkdown: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
-            ForEach(Array(ProseReading.blocks(in: text).enumerated()), id: \.offset) { _, block in
-                FeedMarkdownBlock(block: block)
+            let blocks = ProseReading.blocks(in: text)
+            ForEach(blocks.indices, id: \.self) { at in
+                FeedMarkdownBlock(block: blocks[at])
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

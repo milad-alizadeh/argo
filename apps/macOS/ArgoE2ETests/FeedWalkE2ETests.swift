@@ -18,11 +18,16 @@ final class FeedWalkE2ETests: FeedE2ECase {
     ///
     /// Up first and down second, because the feed opens at the END of the reading: the walk starts
     /// from whichever end the reader is given, and this one is given the newest line.
+    ///
+    /// The count of screenfuls is a fact about the FIXTURE's length, so it moved when #516 made that
+    /// fixture as long as a real session — four times the rows is four times the walk. A walk that
+    /// stops short does not fail loudly; it fails as "the start was never reached", which reads like
+    /// a bug in the feed.
     func testTheReadingKeepsBothEndsThroughAFullWalk() {
         XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
 
         let opening = row(naming: "FeedView1.swift")
-        walk(by: 600, times: 40)
+        walk(by: 600, times: 160)
         XCTAssertTrue(
             opening.waitForExistence(timeout: 10),
             "Walking up the whole reading never reached its start.",
@@ -35,7 +40,7 @@ final class FeedWalkE2ETests: FeedE2ECase {
             "A reading walked to its start offered no way back to its newest line.",
         )
 
-        walk(by: -600, times: 40)
+        walk(by: -600, times: 160)
         XCTAssertTrue(
             newest.waitForNonExistence(timeout: 10),
             "Walking back down the whole reading did not return to its end.",

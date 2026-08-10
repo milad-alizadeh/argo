@@ -44,7 +44,8 @@ struct FrameReadingTests {
     func `nothing observed reads as nothing`() {
         let reading = FrameReading(milliseconds: [])
 
-        #expect(reading.count == 0)
+        #expect(reading.p50 == 0)
+        #expect(reading.p95 == 0)
         #expect(reading.worst == 0)
         #expect(reading.dropped == 0)
     }

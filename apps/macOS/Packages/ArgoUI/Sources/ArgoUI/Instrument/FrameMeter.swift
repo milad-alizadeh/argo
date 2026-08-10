@@ -12,11 +12,11 @@ import SwiftUI
 struct FrameMeter: NSViewRepresentable {
     let recorder: FrameRecorder
 
-    func makeNSView(context: Context) -> FrameMeterHost {
+    func makeNSView(context _: Context) -> FrameMeterHost {
         FrameMeterHost(recorder: recorder)
     }
 
-    func updateNSView(_ view: FrameMeterHost, context: Context) {}
+    func updateNSView(_: FrameMeterHost, context _: Context) {}
 }
 
 final class FrameMeterHost: NSView {
@@ -31,7 +31,9 @@ final class FrameMeterHost: NSView {
 
     /// Never loaded from a nib — this view is only ever made in code, by the line above.
     @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
+    required init?(coder _: NSCoder) {
+        nil
+    }
 
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
@@ -46,7 +48,11 @@ final class FrameMeterHost: NSView {
         // The display's top rate, asked for explicitly. A ProMotion panel drops to a low refresh
         // when nothing is moving, and an idle 41ms interval is not a dropped frame — without this,
         // the quietest part of a run reads as the worst of it.
-        started.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+        started.preferredFrameRateRange = CAFrameRateRange(
+            minimum: 60,
+            maximum: 120,
+            preferred: 120,
+        )
         started.add(to: .main, forMode: .common)
         link = started
     }

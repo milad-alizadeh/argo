@@ -21,11 +21,11 @@ struct FrameReading: Equatable {
 
     init(milliseconds: [Double], floor: Double = FrameReading.floor) {
         let sorted = milliseconds.sorted()
-        count = sorted.count
-        p50 = Self.rank(sorted, at: 0.5)
-        p95 = Self.rank(sorted, at: 0.95)
-        worst = sorted.last ?? 0
-        dropped = sorted.count { $0 > floor }
+        self.count = sorted.count
+        self.p50 = Self.rank(sorted, at: 0.5)
+        self.p95 = Self.rank(sorted, at: 0.95)
+        self.worst = sorted.last ?? 0
+        self.dropped = sorted.count { $0 > floor }
     }
 
     /// Nearest-rank rather than interpolated. An interval that was actually observed is a truer

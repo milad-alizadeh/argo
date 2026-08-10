@@ -12,6 +12,33 @@ import SwiftUI
 /// So the place is the scroller's while the column is still and the reader's while it is not. A
 /// place that survives a remeasure is one nothing re-decided during it.
 enum FeedPlace {
+    /// Where the place is kept — and deliberately NOT view state.
+    ///
+    /// `.scrollPosition(id:)` writes the topmost row back through its binding as the reading moves,
+    /// which during a drag is most frames. Held as `@State`, every one of those writes invalidated
+    /// the body that owns the whole reading, so a thousand-row `ForEach` and every visible row were
+    /// rebuilt at drag rate: #516 measured two frames in five over the 60fps floor, and the cost
+    /// scaled with the number of rows in the SESSION rather than the number on screen.
+    ///
+    /// Nothing on screen is drawn from this value, so nothing needs redrawing when it changes —
+    /// which is the whole reason it can live outside the invalidation graph. It is read back by the
+    /// binding's getter, and that runs whenever anything that IS observed re-evaluates the body,
+    /// including the one moment the value has to be current: a seam starting to move.
+    @MainActor
+    final class Store {
+        var held: FeedRow.ID?
+
+        init(held: FeedRow.ID? = nil) {
+            self.held = held
+        }
+
+        /// The store as the two-way binding `.scrollPosition(id:)` wants — spelled here so the view
+        /// says what it means (`pin(place.binding, …)`) rather than assembling a closure pair.
+        var binding: Binding<FeedRow.ID?> {
+            Binding(get: { self.held }, set: { self.held = $0 })
+        }
+    }
+
     /// The row the reading stays at, given what the scroller has just elected.
     static func held(
         _ standing: FeedRow.ID?,

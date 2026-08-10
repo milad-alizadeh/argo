@@ -108,8 +108,12 @@ let scrollPhase = CGEventField(rawValue: 99)
 /// `began` on the first tick, `ended` on the last, `changed` for everything between — the shape of
 /// one unbroken drag rather than a run of separate ones.
 func phase(at tick: Int, of ticks: Int) -> Int64 {
-    if tick == 0 { return 1 }
-    if tick == ticks - 1 { return 4 }
+    if tick == 0 {
+        return 1
+    }
+    if tick == ticks - 1 {
+        return 4
+    }
     return 2
 }
 
