@@ -47,7 +47,7 @@ struct GhostedRosterSpecimen: View {
             branch: "argo/#502-roster-row-and-session-header",
             access: .readOnly,
             status: .asking,
-            lastSeenAtMs: minutesAgo(7),
+            lastSeenAtMs: CockpitPresentation.minutesAgo(7),
         ),
         CockpitPresentation.Session(
             id: "managed-idle",
@@ -57,7 +57,7 @@ struct GhostedRosterSpecimen: View {
             branch: "main",
             access: .managed,
             status: .idle,
-            lastSeenAtMs: minutesAgo(3 * 60),
+            lastSeenAtMs: CockpitPresentation.minutesAgo(3 * 60),
         ),
         CockpitPresentation.Session(
             id: "observed-running",
@@ -82,11 +82,6 @@ struct GhostedRosterSpecimen: View {
             status: .unknown,
         ),
     ]
-
-    /// Measured back from whenever the specimen is read: a fixed stamp would age into `3y ago`.
-    private static func minutesAgo(_ minutes: Int) -> Int {
-        Date().epochMs - minutes * 60 * 1000
-    }
 }
 
 #Preview("Ghosted roster — driveable rows and rows that are not") {

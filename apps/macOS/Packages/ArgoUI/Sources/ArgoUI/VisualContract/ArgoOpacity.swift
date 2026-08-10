@@ -18,9 +18,9 @@ public enum ArgoOpacity {
     /// leaned into; brighter and the ghosting stops reading as a state.
     public static let ghosted: Double = 0.6
 
-    /// Every rung, for the specimen and its coverage check. `ghosted` is looked at on the real
-    /// surface by the `ghostedRows` specimen, which is a roster mixing driveable rows with rows
-    /// that are not.
+    /// Every rung, for the contract sheet's `presence` section. `ghosted` is looked at on the
+    /// real surface too, by the `ghostedRows` specimen — a roster mixing driveable rows with
+    /// rows that are not.
     public static let all: [(name: String, value: Double)] = [
         ("full", full), ("ghosted", ghosted),
     ]

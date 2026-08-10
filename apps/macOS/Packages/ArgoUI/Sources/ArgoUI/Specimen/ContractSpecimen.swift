@@ -28,6 +28,7 @@ struct ContractSpecimen: View {
                 type
                 icons
                 shape
+                presence
                 depth
                 motion
                 syntax

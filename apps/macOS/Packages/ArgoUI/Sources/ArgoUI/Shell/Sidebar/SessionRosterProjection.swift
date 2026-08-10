@@ -76,15 +76,24 @@ enum SessionRosterProjection {
                 title: session.title,
                 location: session.workspaceLocation,
                 branch: session.branch,
-                // Asked as "not managed" rather than as "read-only", so a Session Argo started
-                // and then lost the terminal of — orphaned, `CONTEXT.md` L2 — ghosts the day
-                // that posture reaches this seam, rather than reading as driveable until
-                // somebody remembers to add it here.
-                isReadOnly: session.access != .managed,
+                isReadOnly: isReadOnly(session.access),
                 age: age(status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
                 state: state(for: session.status),
                 stateWord: stateWord(for: session.status),
             )
+        }
+    }
+
+    /// Whether the whole row is drawn as a Session nobody here can drive.
+    ///
+    /// A `switch` and not `!= .managed`: a third posture is expected on this axis — a managed
+    /// Session whose owner is gone is orphaned, and reads as neither of these two
+    /// (`CONTEXT.md` L2). What it should ANNOUNCE is that ticket's decision, and an inequality
+    /// would take it silently rather than making somebody make it.
+    private static func isReadOnly(_ access: CockpitPresentation.Session.Access) -> Bool {
+        switch access {
+        case .managed: false
+        case .readOnly: true
         }
     }
 

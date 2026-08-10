@@ -145,7 +145,12 @@ struct VisualContractTests {
     ) {
         let base = appearance.palette.surface.base
         let floor = appearance.palette.text.disabled.contrastRatio(on: base)
+        // The state inks are in this loop for the reason they are asserted legible as words
+        // elsewhere: on a ghosted row they are the LOUDEST thing being taken down — an amber
+        // `Needs input`, a red `Stopped`, a live dot — and a word that survives the dimming
+        // while its row does not is the per-ink rendering this replaced.
         let ghosted = [appearance.palette.text.primary, appearance.palette.text.tertiary]
+            + appearance.palette.state.all.map(\.color)
         for ink in ghosted {
             #expect(ink.opacity(ArgoOpacity.ghosted).contrastRatio(on: base) >= floor)
         }
