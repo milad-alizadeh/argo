@@ -23,51 +23,8 @@ struct RenameDialogSpecimen: View {
     }
 }
 
-/// The same dialog in a REAL popover, hung off the row it is opened from.
-///
-/// `RenameDialogSpecimen` draws the content directly, which renders it but never puts it in the
-/// context it actually lives in — and a popover is its own window with its own environment, which
-/// is exactly where a panel that renders fine outside one comes apart (`OpenDrawerSpecimen`). No
-/// package test can click, so this case is how that is reachable at all.
-struct OpenRenameDialogSpecimen: View {
-    @State private var isOpen = false
-
-    var body: some View {
-        RenamedRosterSpecimen()
-            .onAppear { isOpen = true }
-            .popover(isPresented: $isOpen, arrowEdge: .trailing) {
-                RenameSessionDialog(
-                    rename: RenameDialogFixture.renamed,
-                    commit: { _ in },
-                    cancel: { isOpen = false },
-                )
-            }
-    }
-}
-
-/// The roster with one row carrying a name somebody typed. The claim is story 19's, drawn: the
-/// renamed row reads as the Session's name rather than as a label pinned over a title, and the
-/// rows either side of it still show the ones their transcripts derived.
-struct RenamedRosterSpecimen: View {
-    var body: some View {
-        List {
-            ForEach(RenameDialogFixture.rows) { row in
-                SessionRow(row: row).previewSafeListRow()
-            }
-        }
-        .listStyle(.sidebar)
-        .frame(width: ArgoLayout.sidebarIdealWidth)
-    }
-}
-
 #Preview("Rename dialog — renamed and untouched, side by side") {
     RenameDialogSpecimen()
         .frame(height: 340)
-        .argoAppearance()
-}
-
-#Preview("Renamed roster — one name somebody typed, two derived") {
-    RenamedRosterSpecimen()
-        .frame(height: 240)
         .argoAppearance()
 }

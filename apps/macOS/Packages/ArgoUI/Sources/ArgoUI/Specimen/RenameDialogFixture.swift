@@ -9,42 +9,44 @@ enum RenameDialogFixture {
     /// A Session carrying a name somebody typed, which is the only state the Reset exists in. The
     /// name is SHORTER than the title under it on purpose: the caption has to read as the title
     /// being gone back to rather than as a second field.
-    static let renamed = rename(of: "renamed")
+    static let renamed = SessionRenameProjection.rename(for: renamedSession)
 
     /// The first rename of a Session: the field seeded with the derived title, and nothing under
     /// it. Only judgeable beside the case above — the claim is that a panel with no Reset on it is
     /// still a complete panel rather than one a control fell out of.
-    static let untouched = rename(of: "untouched")
+    static let untouched = SessionRenameProjection.rename(for: untouchedSession)
 
     /// The roster both are opened from. An explicit name beside two derived titles, because a
     /// renamed row only reads as renamed against rows that are not (#502, story 19).
     static let rows = SessionRosterProjection.rows(from: sessions)
 
-    private static func rename(of id: String) -> SessionRenameProjection.Rename {
-        (rows.first { $0.id == id } ?? rows[0]).rename
-    }
+    /// Named by the Session rather than looked up in the rows above, so neither panel can be a
+    /// search that quietly missed and drew the other one.
+    private static let renamedSession = CockpitPresentation.Session(
+        id: "renamed",
+        title: "Ship the native Liquid Glass application shell with a deliberately long title",
+        model: nil,
+        workspaceLocation: "/Users/milad/Developer/argo",
+        access: .managed,
+        status: .running,
+        workspace: .init(branch: "argo/#515-rename-session"),
+        explicitName: "Tonight's rename run",
+    )
+
+    private static let untouchedSession = CockpitPresentation.Session(
+        id: "untouched",
+        title: "Correct the design docs the next session would design from",
+        model: nil,
+        workspaceLocation: "/Users/milad/Developer/argo",
+        access: .managed,
+        status: .idle,
+        workspace: .init(branch: "argo/#504-correct-design-docs"),
+        lastSeenAtMs: CockpitPresentation.minutesAgo(46),
+    )
 
     private static let sessions = [
-        CockpitPresentation.Session(
-            id: "renamed",
-            title: "Ship the native Liquid Glass application shell with a deliberately long title",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/argo",
-            access: .managed,
-            status: .running,
-            workspace: .init(branch: "argo/#515-rename-session"),
-            explicitName: "Tonight's rename run",
-        ),
-        CockpitPresentation.Session(
-            id: "untouched",
-            title: "Correct the design docs the next session would design from",
-            model: nil,
-            workspaceLocation: "/Users/milad/Developer/argo",
-            access: .managed,
-            status: .idle,
-            workspace: .init(branch: "argo/#504-correct-design-docs"),
-            lastSeenAtMs: CockpitPresentation.minutesAgo(46),
-        ),
+        renamedSession,
+        untouchedSession,
         CockpitPresentation.Session(
             id: "observed",
             title: "Watch an externally launched agent work",

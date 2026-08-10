@@ -36,7 +36,7 @@ public actor SessionAnnotationStore {
     }
 
     /// Give a Session a name of the user's own, or — with `nil` — drop it and let the derived
-    /// title come back (#515, stories 18 and 20). One verb for both, because resetting is not a
+    /// title come back (#502, stories 18 and 20). One verb for both, because resetting is not a
     /// second decision: it is this one, unmade.
     @discardableResult
     public func setName(_ name: String?, sessionID: String) -> SessionAnnotations {
