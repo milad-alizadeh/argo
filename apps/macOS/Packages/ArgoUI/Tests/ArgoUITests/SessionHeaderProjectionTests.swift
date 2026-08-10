@@ -94,6 +94,64 @@ struct SessionHeaderProjectionTests {
     }
 
     @Test
+    func `a Session blocked on a Permission says so on its header`() throws {
+        let header = SessionHeaderProjection.header(from: session(status: .permission))
+
+        // The same word the roster row spends, in the amber the dot beside it is set in: a
+        // Session waiting on somebody is visible on the band it was opened onto, not only on
+        // the row that got you there.
+        let state = try #require(header.state)
+        #expect(state.word == "Needs input")
+        #expect(state.tone == .attention)
+    }
+
+    @Test
+    func `the header spends the roster's word or none, never a second wording`() {
+        // Every status answered here, against the one place the word is decided — so a header
+        // that grew a mapping of its own reds rather than quietly disagreeing with the row.
+        let words = SessionStatus.allCases.map {
+            SessionHeaderProjection.header(from: session(status: $0)).state?.word
+        }
+
+        #expect(words == SessionStatus.allCases.map { SessionState.word(for: $0) })
+        #expect(words == [nil, "Needs input", "Needs input", nil, "Stopped", nil, nil])
+    }
+
+    @Test
+    func `a Session at rest leaves the band's word unspent`() {
+        // The calm states say nothing at all rather than naming themselves: a word on every
+        // header is a word nobody reads by the second Session, which is what would cost
+        // `Needs input` the one thing it is for.
+        let header = SessionHeaderProjection.header(from: session(status: .idle))
+
+        #expect(header.state == nil)
+        // And the rest of the header is untouched by the absence — it is a quiet band, not a
+        // shorter one.
+        #expect(header.title == "Session")
+        #expect(header.checkout?.branch == "main")
+    }
+
+    @Test
+    func `the word is announced once, beside the identity rather than inside it`() {
+        // The band draws it as its own element, so a screen reader already reaches it. Folding
+        // it into the identity as well would read the Session's state out twice — the rule the
+        // context instrument is kept out of `announcement` for.
+        let header = SessionHeaderProjection.header(from: session(status: .permission))
+
+        #expect(!header.announcement.contains("Needs input"))
+    }
+
+    @Test
+    func `the header the preview draws the word on is a Session really waiting on one`() throws {
+        // The word's rendering has no evidence but a look at it, and a fixture that carried the
+        // word without the status would be a picture of something the projection cannot produce.
+        let state = try #require(SessionHeaderFixture.needsInput.state)
+
+        #expect(state.word == "Needs input")
+        #expect(SessionHeaderFixture.headers.allSatisfy { $0.state == nil })
+    }
+
+    @Test
     func `the cwd is not on the header`() {
         // The line carries what identifies the Session, not where it happens to sit. Asserted
         // rather than assumed: the location is on the value the header is projected FROM, so
@@ -124,6 +182,7 @@ struct SessionHeaderProjectionTests {
     private func session(
         title: String = "Session",
         access: CockpitPresentation.Session.Access = .managed,
+        status: SessionStatus = .idle,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -132,7 +191,7 @@ struct SessionHeaderProjectionTests {
             model: "claude-opus-5",
             workspaceLocation: "/Users/milad/Developer/argo",
             access: access,
-            status: .idle,
+            status: status,
             cli: .claude,
             workspace: .init(branch: "main"),
         )

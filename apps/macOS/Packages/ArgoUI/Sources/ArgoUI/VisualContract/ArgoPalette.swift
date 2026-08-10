@@ -53,6 +53,15 @@ public extension ArgoPalette {
         public let glassTint: ArgoColor
         /// A row under the pointer, before selection.
         public let hover: ArgoColor
+        /// The ground under a control that has to read as a control on a surface which is not the
+        /// deck — the Deny pill inside the Permission vessel.
+        ///
+        /// Translucent for the reason `marked` is: the same control is drawn on a glass vessel and
+        /// on the flat fallback under Reduce Transparency, and a ground that composites keeps its
+        /// lift on both, where a step of the opaque ramp would read as a hole in one of them. The
+        /// platform's own bordered fill is what this replaces — on glass it resolves within a
+        /// point or two of the vessel, which is a button nobody can see the edges of.
+        public let control: ArgoColor
         /// The neutral wash a selected row carries. Selection is neutral here on purpose —
         /// the Ion Blue of selection is the indicator edge, not the fill.
         public let selected: ArgoColor
@@ -80,6 +89,7 @@ public extension ArgoPalette {
             overlay: ArgoColor,
             glassTint: ArgoColor,
             hover: ArgoColor,
+            control: ArgoColor,
             selected: ArgoColor,
             scrim: ArgoColor,
             marked: ArgoColor,
@@ -90,6 +100,7 @@ public extension ArgoPalette {
             self.overlay = overlay
             self.glassTint = glassTint
             self.hover = hover
+            self.control = control
             self.selected = selected
             self.scrim = scrim
             self.marked = marked
@@ -105,7 +116,8 @@ public extension ArgoPalette {
         public var all: [(name: String, color: ArgoColor)] {
             [
                 ("sunken", sunken), ("base", base), ("raised", raised), ("overlay", overlay),
-                ("glassTint", glassTint), ("hover", hover), ("selected", selected),
+                ("glassTint", glassTint), ("hover", hover), ("control", control),
+                ("selected", selected),
                 ("scrim", scrim), ("marked", marked),
             ]
         }
@@ -228,6 +240,16 @@ public extension ArgoPalette {
         /// The same role at chip strength: a tinted ground rather than an ink.
         public func muted(_ role: ArgoColor) -> ArgoColor {
             role.opacity(0.16)
+        }
+
+        /// The same role as the EDGE of a surface rather than as an ink on it: the amber rim a
+        /// Permission vessel wears, the red one the Deny pill does.
+        ///
+        /// Half strength, because an edge states which state a surface is in and the words inside
+        /// it say what the state means — a rim at full ink outshouts its own contents. Louder than
+        /// `muted`, which is a ground a word is read ON and so has to stay under it.
+        public func rim(_ role: ArgoColor) -> ArgoColor {
+            role.opacity(0.5)
         }
     }
 

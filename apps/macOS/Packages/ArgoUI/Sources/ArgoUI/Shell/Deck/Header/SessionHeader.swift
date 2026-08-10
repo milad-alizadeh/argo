@@ -43,6 +43,9 @@ struct SessionHeader: View {
                 .layoutPriority(1)
             Spacer(minLength: ArgoSpacing.loose)
             if let header {
+                if let state = header.state {
+                    stateWord(state)
+                }
                 // Before the instrument, so the instrument keeps the trailing edge it is measured
                 // against.
                 if let handoff = header.handoff {
@@ -67,6 +70,20 @@ struct SessionHeader: View {
         }
     }
 
+    /// What the Session is waiting for, on the band's trailing side and level with the title —
+    /// where the approved render puts it (`docs/designs/composer/perm.png`), and outside the
+    /// identity element so a screen reader hears it as the separate claim it is rather than as a
+    /// second reading of the title's own line.
+    ///
+    /// The word takes the state's own ink, as the roster row's does: `Needs input` is a "come
+    /// here", and the amber is what makes it one from across the window.
+    private func stateWord(_ state: SessionState.Reading) -> some View {
+        Text(state.word)
+            .argoText(ArgoTypography.rowMeta)
+            .foregroundStyle(state.tone?.tint(in: argo.color) ?? argo.color.text.tertiary)
+            .lineLimit(1)
+    }
+
     /// The largest interface line in the cockpit, and the one thing on the header that is allowed
     /// to take the room it needs — cut at the tail, because a Session's title is written subject
     /// first and the front of it is what tells two of them apart.
@@ -80,13 +97,19 @@ struct SessionHeader: View {
 }
 
 /// Every posture in one gallery — the silent one included, which is why nothing selected is drawn
-/// under them: an empty zone and a zone with no mark on it are two different absences.
+/// under them: an empty zone and a zone with no mark on it are two different absences. The Session
+/// blocked on a Permission closes the set: its word is the only one the band ever spends, and a
+/// word that only reads as loud on its own is not the signal the render was approved for.
 private struct SessionHeaderGallery: View {
     let width: CGFloat
 
+    private var headers: [SessionHeaderProjection.Header] {
+        SessionHeaderFixture.headers + [SessionHeaderFixture.needsInput]
+    }
+
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            ForEach(Array(SessionHeaderFixture.headers.enumerated()), id: \.offset) { _, header in
+            ForEach(Array(headers.enumerated()), id: \.offset) { _, header in
                 SessionHeader(header: header)
                     .frame(height: ArgoLayout.deckHeaderHeight)
             }

@@ -15,7 +15,9 @@ public final class InMemorySessionDriver: SessionDriver {
     public var refusal: SessionDriveError?
 
     private var turns: [String: [String]] = [:]
-    private var decisions: [String: [PermissionDecision]] = [:]
+    /// The answers, each still naming the request it answered — the pairing is the thing a caller
+    /// most needs to assert, since the bug it guards against is an answer meeting the wrong one.
+    private var decisions: [String: [(request: String, decision: PermissionDecision)]] = [:]
 
     public init() {}
 
@@ -27,11 +29,15 @@ public final class InMemorySessionDriver: SessionDriver {
         turns[sessionID, default: []].append(text)
     }
 
-    public func decide(_ decision: PermissionDecision, for sessionID: String) throws {
+    public func decide(
+        _ decision: PermissionDecision,
+        answering requestID: String,
+        for sessionID: String,
+    ) throws {
         if let refusal {
             throw refusal
         }
-        decisions[sessionID, default: []].append(decision)
+        decisions[sessionID, default: []].append((request: requestID, decision: decision))
     }
 
     /// The Turns put to one Session, in the order they were sent.
@@ -44,6 +50,12 @@ public final class InMemorySessionDriver: SessionDriver {
 
     /// The answers put to one Session's Permissions, in the order they were decided.
     public func decided(for sessionID: String) -> [PermissionDecision] {
-        decisions[sessionID] ?? []
+        (decisions[sessionID] ?? []).map(\.decision)
+    }
+
+    /// Which request each of those answers named — what a caller asserts when the claim is that the
+    /// answer reached the Permission the user was reading.
+    public func decidedRequests(for sessionID: String) -> [String] {
+        (decisions[sessionID] ?? []).map(\.request)
     }
 }

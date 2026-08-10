@@ -19,10 +19,19 @@ public protocol SessionDriver {
     /// wait for in between.
     func send(_ text: String, to sessionID: String) throws
 
-    /// Answer the Session's oldest pending Permission (#542, under #535 / ADR-0024). Keyed and
-    /// shaped like `send`, and for the same reasons; the pending Permission itself travels the
-    /// observation side — Hub to presentation — because observation is not on this port.
-    func decide(_ decision: PermissionDecision, for sessionID: String) throws
+    /// Answer ONE pending Permission, named (#542, under #535 / ADR-0024). Keyed by Session like
+    /// `send`, and by the request's own id besides, because a Session can have more than one call
+    /// waiting: answering "whatever is pending" would let a prompt that left the screen between
+    /// the read and the click hand the user's Allow to a command they never saw. A request that is
+    /// no longer waiting raises `nothingPending` rather than falling through to its neighbour.
+    ///
+    /// The pending Permission itself travels the observation side — Hub to presentation — because
+    /// observation is not on this port.
+    func decide(
+        _ decision: PermissionDecision,
+        answering requestID: String,
+        for sessionID: String,
+    ) throws
 }
 
 /// Whether there is a Turn in the text at all. On the port rather than in an adapter — it is the

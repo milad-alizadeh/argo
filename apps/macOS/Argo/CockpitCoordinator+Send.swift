@@ -10,12 +10,18 @@ extension CockpitCoordinator {
         try hub.driver.send(text, to: sessionID)
     }
 
-    /// One Permission answered through the same port. A refusal is dropped, not alerted: the only
-    /// one the port can raise here is a decision that lost the race with the hook's own expiry,
-    /// and the prompt leaving the screen already says everything there is to say about that.
-    func decide(_ decision: PermissionDecision, for sessionID: String) {
+    /// One named Permission answered through the same port. A refusal is dropped rather than
+    /// alerted, and both of the port's refusals mean the same thing here: the Permission that
+    /// button was drawn for is gone — expired, cancelled with its turn, or taken down with the PTY
+    /// — and the prompt leaving the screen says it. There is no field holding words that a seam
+    /// would have to explain.
+    func decide(
+        _ decision: PermissionDecision,
+        answering requestID: String,
+        for sessionID: String,
+    ) {
         do {
-            try hub.driver.decide(decision, for: sessionID)
+            try hub.driver.decide(decision, answering: requestID, for: sessionID)
         } catch {}
     }
 }

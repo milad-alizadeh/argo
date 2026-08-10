@@ -41,7 +41,12 @@ extension SpecimenScreen {
         InstrumentDeckShell(
             room: .sessions,
             feed: feed,
-            header: SessionHeaderFixture.header(for: .managed),
+            // A prompt in the composer's slot IS the Session's status, so the band above it is
+            // read off the same fact rather than named per case: a deck that says nothing while a
+            // Permission is pending under it is a contradiction the catalog would be teaching.
+            header: prompt == nil
+                ? SessionHeaderFixture.header(for: .managed)
+                : SessionHeaderFixture.needsInput,
             open: open,
             lit: lit,
             held: held,

@@ -60,10 +60,14 @@ public struct CockpitActions {
     /// composer's seam: a refusal keeps the message where it was typed, which only the raising
     /// surface can do.
     public let sendTurn: (String, String) throws -> Void
-    /// Answer the Session's pending Permission (#542). Not throwing, unlike `sendTurn`: the one
-    /// refusal — the Permission already expired — is answered by the prompt leaving the screen,
-    /// and there is no field holding words that need a seam to explain them.
-    public let decidePermission: (String, PermissionDecision) -> Void
+    /// Answer the named Permission on a Session (#542) — `(sessionID, requestID, decision)`. The
+    /// request is named because the answer must reach the prompt the user was reading and no
+    /// other; the Session alone does not say that when two calls are waiting.
+    ///
+    /// Not throwing, unlike `sendTurn`: the one refusal — the Permission already gone — is
+    /// answered by the prompt leaving the screen, and there is no field holding words that need a
+    /// seam to explain them.
+    public let decidePermission: (String, String, PermissionDecision) -> Void
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for
     /// the same reason every action here is: they are called from a view.
@@ -80,7 +84,7 @@ public struct CockpitActions {
         setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
         sendTurn: { _, _ in },
-        decidePermission: { _, _ in },
+        decidePermission: { _, _, _ in },
     )
 
     public init(
@@ -96,7 +100,7 @@ public struct CockpitActions {
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
         sendTurn: @escaping (String, String) throws -> Void,
-        decidePermission: @escaping (String, PermissionDecision) -> Void,
+        decidePermission: @escaping (String, String, PermissionDecision) -> Void,
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection

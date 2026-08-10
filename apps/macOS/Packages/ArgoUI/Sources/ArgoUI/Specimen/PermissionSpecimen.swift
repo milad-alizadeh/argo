@@ -33,11 +33,11 @@ enum PermissionSpecimen {
         -> PermissionPromptProjection.Prompt {
         PermissionPromptProjection.Prompt(
             sessionID: "specimen",
+            requestID: "permission-1",
             toolName: toolName,
             subject: subject,
             target: target,
             caption: caption,
-            alwaysAllowLabel: "Always allow \(toolName) here",
         )
     }
 }

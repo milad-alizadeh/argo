@@ -26,6 +26,15 @@ public enum ArgoComposerVessel {
     /// reachable, because a decision made on a cut command is a guess.
     public static let targetCeiling: CGFloat = 108
 
+    /// How tall an answer to a Permission stands, and how narrow it may get.
+    ///
+    /// Drawn rather than taken from a `controlSize`, because no rung the platform offers is the
+    /// study's 27pt — `.small` renders 21 — and a decision the agent is blocked on is not a control
+    /// to be crowded. The width is a floor and not a size: `Allow ⏎` and `Deny esc` are different
+    /// lengths, and what has to hold is that neither reads as the smaller offer.
+    public static let decisionHeight: CGFloat = 27
+    public static let decisionMinimumWidth: CGFloat = 80
+
     /// How long the accent wash stands over a row the user just sent. A hold, not a motion —
     /// the fade in and out is `ArgoMotion.bloom` — which is why it lives beside the vessel's
     /// measurements rather than on the motion ramp with its half-second ceiling.

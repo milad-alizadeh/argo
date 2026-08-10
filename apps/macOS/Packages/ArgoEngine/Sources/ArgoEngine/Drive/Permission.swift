@@ -77,13 +77,14 @@ extension PermissionRequest.Target {
     }
 }
 
-/// The user's answer to a pending Permission — the composer's other intent, and the only three
-/// words the hook's reply vocabulary has room for. `ask` is deliberately unrepresentable: it would
-/// fall through to the hidden TUI dialog, which has no reader.
+/// The user's answer to a pending Permission — the composer's other intent, and both of the words
+/// the hook's reply vocabulary has room for. `ask` is deliberately unrepresentable: it would fall
+/// through to the hidden TUI dialog, which has no reader.
+///
+/// There is no standing "allow this tool from now on" here either, and its absence is a decision
+/// (#572): the version that shipped first was a set of tool names nobody could see or revoke, and
+/// a grant that cannot be found later is the thing this prompt exists to prevent.
 public enum PermissionDecision: Sendable, Equatable {
     case allow
-    /// Allow, and stop asking about this tool for the rest of this Session — the standing
-    /// baseline, so a tool the user has blessed pays no further round trip.
-    case allowAlways
     case deny
 }

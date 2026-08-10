@@ -74,7 +74,10 @@ public struct CockpitView: View {
     private var decide: (PermissionDecision) -> Void {
         guard let prompt else { return { _ in } }
         let sessionID = prompt.sessionID
-        return { actions.decidePermission(sessionID, $0) }
+        // The request is captured with the Session, so the answer names the Permission this
+        // closure was built over rather than whatever is pending by the time it is called.
+        let requestID = prompt.requestID
+        return { actions.decidePermission(sessionID, requestID, $0) }
     }
 
     /// The header's one intent, bound to the Session the header is naming — resolved here for the
