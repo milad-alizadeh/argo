@@ -21,6 +21,10 @@ struct SessionRow: View {
     /// whichever Session is selected, and the render harness, which cannot click. A row drawn
     /// without one — every plain preview — is a row at rest.
     var isRenaming: Binding<Bool> = .constant(false)
+    /// Make this row the selected one. The row selects ITSELF because it also has to answer a
+    /// double-click, and one view cannot both carry a tap gesture and leave the click to the `List`
+    /// underneath it — see the gestures on `body`. Inert by default, like the rename beside it.
+    var select: () -> Void = {}
 
     @State private var typed = ""
     @FocusState private var isFieldFocused: Bool
@@ -37,22 +41,28 @@ struct SessionRow: View {
         // strength, and so a fact added to the row inherits it without being told.
         .opacity(row.isReadOnly ? ArgoOpacity.ghosted : ArgoOpacity.full)
         .contentShape(.rect)
-        // A Session you will come back to earns a name you chose (#502, story 18). The gesture is
-        // AppKit's because SwiftUI's would take the row's selection with it — see `RowDoubleClick`.
-        .onRowDoubleClick { beginRenaming() }
         .help(inspectionText)
         .contextMenu { copyActions }
-        .accessibilityElement(children: .combine)
+        // `.ignore` while the row is at rest and `.contain` while it is being typed into: the row
+        // is ONE thing to a screen reader, said in the projection's words, but a field opened
+        // inside it is a thing of its own that has to stay reachable.
+        .accessibilityElement(children: isRenaming.wrappedValue ? .contain : .ignore)
         // Ghosting is ink, and ink is nothing a screen reader can hear. What is announced is
         // the projection's decision, not a second one taken here.
         .accessibilityLabel(row.announcement)
-        // Opened from outside the row — the menu bar, or the render harness. The field seeds and
-        // takes focus the same way a double-click seeds it, so there is one way in and not two.
-        .onChange(of: isRenaming.wrappedValue) { _, isOpen in
-            guard isOpen, !isFieldFocused else { return }
-            typed = row.rename.name
-            isFieldFocused = true
-        }
+        // Both clicks are the row's, and BOTH have to be: a tap gesture anywhere in a `List` row
+        // hit-tests ahead of the row and swallows the click the `List` would have selected with —
+        // `simultaneousGesture` included, which composes with other SwiftUI gestures and not with
+        // AppKit's selection, and an `NSClickGestureRecognizer` on the row view never sees the
+        // second click at all, because the table's own mouse tracking has taken the loop by then.
+        // So the row selects itself (#502, story 18 is the double-click; a roster that stopped
+        // selecting was the price of taking it any other way).
+        //
+        // On a clear layer OVER the row rather than on the row itself, and hidden from
+        // accessibility: a gesture anywhere inside the announced element takes the combine apart,
+        // and the row goes back to announcing its own truncated first line in place of everything
+        // the projection decided to say.
+        .overlay { clickCatcher }
     }
 
     private var primaryLine: some View {
@@ -61,6 +71,23 @@ struct SessionRow: View {
             title
             Spacer(minLength: ArgoSpacing.tight)
             stateWord
+        }
+    }
+
+    /// Absent while the name is being typed, so the field keeps its own clicks — a caret you cannot
+    /// place is worse than no edit-in-place at all.
+    @ViewBuilder private var clickCatcher: some View {
+        if !isRenaming.wrappedValue {
+            Color.clear
+                .contentShape(.rect)
+                // Two before one: a single tap declared first would fire on the opening click of
+                // every double one.
+                .onTapGesture(count: 2) {
+                    select()
+                    beginRenaming()
+                }
+                .onTapGesture(count: 1) { select() }
+                .accessibilityHidden(true)
         }
     }
 
@@ -96,14 +123,33 @@ struct SessionRow: View {
                 commitRenaming()
             }
             .accessibilityLabel(SessionRenameProjection.prompt)
+            // The ONE way a field is seeded and focused, whichever gesture asked for it — the row's
+            // double-click, the menu bar's Rename, or the render harness. On the FIELD and not
+            // beside whatever opened it, because focus cannot be taken before the thing being
+            // focused is on screen: a `@FocusState` set in the same update lands on nothing, and
+            // then reads as focus already held. That is what shipped a field you had to click into
+            // and that ignored Return.
+            //
+            // The name is read here for the same reason it is focused here — re-opening on a
+            // Session renamed since has to draw the name it has NOW.
+            //
+            // Asked for a beat AFTER the field is on screen, not in the same breath: the `List`
+            // holds keyboard focus until its own update has settled, and a request made inside that
+            // update is dropped without a word.
+            .task {
+                typed = row.rename.name
+                try? await Task.sleep(for: .milliseconds(50))
+                isFieldFocused = true
+            }
     }
 
-    /// Seeded at the moment the field opens rather than held in step with the row: re-opening on a
-    /// Session renamed since has to draw the name it has NOW, not the one this view was built with.
+    /// Opens the field and nothing else. Seeding and focus belong to the `onChange` above, which is
+    /// what the menu bar's Rename goes through too — and focus in particular CANNOT be taken here:
+    /// the field does not exist until this flag has been drawn against, so a `@FocusState` set in
+    /// the same breath lands on nothing and then reads as already-focused, which is exactly what
+    /// left the field open and deaf to Return.
     private func beginRenaming() {
-        typed = row.rename.name
         isRenaming.wrappedValue = true
-        isFieldFocused = true
     }
 
     /// A blank field is not a rename and not a reset — the engine's own rule (`SessionAnnotations`)

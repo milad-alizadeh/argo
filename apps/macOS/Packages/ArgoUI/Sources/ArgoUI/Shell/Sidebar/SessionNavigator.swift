@@ -96,6 +96,10 @@ struct SessionNavigator: View {
                 get: { renamingRowID.wrappedValue == row.id },
                 set: { renamingRowID.wrappedValue = $0 ? row.id : nil },
             ),
+            // The selection the `List`'s own click would have made, made by the row instead — the
+            // row carries a double-click, and the two cannot share one click. Written through the
+            // same binding, so the highlight, the keyboard and the deck all still read one fact.
+            select: { selection = row.id },
         )
         .previewSafeListRow()
         .tag(row.id)
