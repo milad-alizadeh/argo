@@ -181,17 +181,15 @@ import SwiftUI
     }
 
     private func reshape(from stale: [FeedRow], on table: NSTableView) {
-        if shown.count >= stale.count, shown.starts(with: stale.dropLast()) {
-            // The append fast path — the live case. The last stale row is left out of the
-            // prefix on purpose: a live transcript rewrites its newest row as the call in it
-            // is answered, sometimes with rows appended after it and sometimes alone.
-            if shown.count > stale.count {
-                table.insertRows(at: IndexSet(stale.count ..< shown.count), withAnimation: [])
+        switch FeedTableDelta.between(stale, and: shown) {
+        case let .append(arrived, rewritten):
+            if !arrived.isEmpty {
+                table.insertRows(at: IndexSet(integersIn: arrived), withAnimation: [])
             }
-            if let rewritten = stale.indices.last {
+            if let rewritten {
                 refresh(rows: IndexSet(integer: rewritten), remeasuring: true)
             }
-        } else {
+        case .reload:
             dropMeasuredHeights()
             table.reloadData()
         }

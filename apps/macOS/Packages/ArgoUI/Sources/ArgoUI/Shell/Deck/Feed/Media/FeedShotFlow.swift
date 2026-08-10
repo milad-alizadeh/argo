@@ -16,7 +16,7 @@ struct FeedShotFlow: Layout {
     )
         -> CGSize {
         let width = proposal.width ?? .infinity
-        let places = placements(for: subviews, in: width)
+        let places = Self.placements(of: sizes(of: subviews), in: width, gap: gap)
         let height = places.map(\.maxY).max() ?? 0
         let widest = places.map(\.maxX).max() ?? 0
         return CGSize(width: width.isFinite ? width : widest, height: height)
@@ -25,7 +25,8 @@ struct FeedShotFlow: Layout {
     func placeSubviews(
         in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout (),
     ) {
-        for (place, view) in zip(placements(for: subviews, in: bounds.width), subviews) {
+        let places = Self.placements(of: sizes(of: subviews), in: bounds.width, gap: gap)
+        for (place, view) in zip(places, subviews) {
             view.place(
                 at: CGPoint(x: bounds.minX + place.minX, y: bounds.minY + place.minY),
                 proposal: ProposedViewSize(place.size),
@@ -33,16 +34,23 @@ struct FeedShotFlow: Layout {
         }
     }
 
-    /// Every tile's frame, measured once and shared by both passes. A tile is asked for its own
-    /// size — the layout imposes nothing — and a line breaks before any tile that would cross the
-    /// measure, never after the first: a tile wider than the whole measure still gets a line.
-    private func placements(for subviews: Subviews, in width: CGFloat) -> [CGRect] {
+    /// A tile is asked for its own size — the layout imposes nothing.
+    private func sizes(of subviews: Subviews) -> [CGSize] {
+        subviews.map { $0.sizeThatFits(.unspecified) }
+    }
+
+    /// Every tile's frame, from sizes alone — the arithmetic both passes share, and the part of
+    /// the layout a test can hold without a view. A line breaks before any tile that would cross
+    /// the measure, never after the first: a tile wider than the whole measure still gets a line.
+    nonisolated static func placements(
+        of sizes: [CGSize], in width: CGFloat, gap: CGFloat,
+    )
+        -> [CGRect] {
         var places: [CGRect] = []
         var x: CGFloat = 0
         var y: CGFloat = 0
         var line: CGFloat = 0
-        for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
+        for size in sizes {
             if x > 0, x + size.width > width {
                 x = 0
                 y += line + gap
