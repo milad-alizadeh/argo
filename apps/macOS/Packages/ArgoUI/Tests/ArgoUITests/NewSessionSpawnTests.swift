@@ -26,6 +26,7 @@ struct NewSessionSpawnTests {
                     return answer
                 },
                 setSessionArchived: { _, _ in },
+                setSessionName: { _, _ in },
                 handOffSession: { _, _ in nil },
             )
         }

@@ -9,6 +9,9 @@ public struct CockpitView: View {
     private let presentation: CockpitPresentation
     private let actions: CockpitActions
     @Environment(CockpitNavigationModel.self) private var navigation
+    /// Which roster row has its name field open. Held here rather than in the sidebar because the
+    /// menu bar reaches it (`sessionCommands` below), and the menu bar is outside the sidebar.
+    @State private var renamingSessionID: String?
 
     public init(
         presentation: CockpitPresentation,
@@ -60,6 +63,22 @@ public struct CockpitView: View {
         }
     }
 
+    /// The menu bar's half of the roster's two gestures, addressed at the selected Session — and
+    /// `nil` when nothing is selected, which is what greys the items out rather than leaving a
+    /// command that would act on nobody.
+    ///
+    /// Rename opens the row's own field rather than doing anything itself: there is one rename in
+    /// this app and it happens in the row, so the menu is a way to REACH it (`SessionCommands`).
+    private var sessionCommands: SessionCommands? {
+        guard let session = presentation.session(navigation.session) else { return nil }
+        return SessionCommands(
+            rename: { renamingSessionID = session.id },
+            archive: { actions.setSessionArchived(session.id, !session.isArchived) },
+            renameTitle: SessionRenameProjection.heading,
+            archiveTitle: session.isArchived ? "Put Back on the Roster" : "Archive Session",
+        )
+    }
+
     public var body: some View {
         @Bindable var navigation = navigation
 
@@ -68,6 +87,8 @@ public struct CockpitView: View {
                 presentation: presentation,
                 selection: $navigation.session,
                 archive: actions.setSessionArchived,
+                rename: actions.setSessionName,
+                renamingSessionID: $renamingSessionID,
             )
             .navigationSplitViewColumnWidth(
                 min: ArgoLayout.sidebarMinimumWidth,
@@ -120,6 +141,7 @@ public struct CockpitView: View {
             minHeight: ArgoLayout.windowMinimumHeight,
         )
         .argoAppearance()
+        .focusedValue(\.sessionCommands, sessionCommands)
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in
             navigation.reconcile(against: sessionIDs)
         }

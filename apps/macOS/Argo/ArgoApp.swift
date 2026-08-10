@@ -8,6 +8,8 @@ import SwiftUI
 struct ArgoApp: App {
     @State private var cockpit: CockpitCoordinator
     @State private var navigation = CockpitNavigationModel()
+    /// What the Session menu acts on, published by the shell — absent when nothing is selected.
+    @FocusedValue(\.sessionCommands) private var sessionCommands
     private let specimenName: String?
 
     init() {
@@ -55,6 +57,7 @@ struct ArgoApp: App {
                         .keyboardShortcut(candidate.shortcut, modifiers: .command)
                 }
             }
+            CommandMenu("Session") { SessionCommandItems(commands: sessionCommands) }
         }
     }
 
@@ -76,6 +79,9 @@ struct ArgoApp: App {
             spawnSession: { await cockpit.spawnSession() },
             setSessionArchived: { id, isArchived in
                 Task { await cockpit.setArchived(isArchived, sessionID: id) }
+            },
+            setSessionName: { id, name in
+                Task { await cockpit.setName(name, sessionID: id) }
             },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
         )

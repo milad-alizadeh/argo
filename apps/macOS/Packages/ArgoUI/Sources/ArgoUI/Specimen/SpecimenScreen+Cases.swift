@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// Which fixture a case is a render OF, and the one container most of them are drawn in.
-///
-/// Split from the switch next door because the two answer different questions — that file is the
-/// case-by-case list, this is the lookup behind it — and because the list is the half that grows
-/// with every state added.
+/// What the catalog's cases are BUILT from, kept off the switch itself: the switch is a list of
+/// states and reads as one, and a fixture lookup or a four-argument shell call sitting between two
+/// cases turns that list into plumbing.
 extension SpecimenScreen {
     /// The header whose context tier this case is a render of. The fixture set names the case it
     /// belongs to, so neither side can be renamed into drawing another tier's reading.

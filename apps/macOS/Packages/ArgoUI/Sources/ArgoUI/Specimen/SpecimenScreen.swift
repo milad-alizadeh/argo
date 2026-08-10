@@ -3,8 +3,7 @@ import SwiftUI
 /// One catalog entry filling the window. No per-case frame: a state is judged at the width the app
 /// actually gives it.
 public struct SpecimenScreen: View {
-    /// Internal rather than private: the fixture lookups this case is a render of live in
-    /// `SpecimenScreen+Fixtures`, and they are keyed by the case they belong to.
+    /// Read by the case helpers in `SpecimenScreen+Cases.swift`, which key their fixtures off it.
     let specimen: Specimen
 
     public init(specimen: Specimen) {
@@ -37,14 +36,6 @@ public struct SpecimenScreen: View {
             // order that has stopped; this one is the order the bug lives in — two Sessions
             // trading places on every burst of writes, under a reader who is already on one.
             ChurningRosterSpecimen()
-        case .swipedRow:
-            // One row pulled left, its neighbours at rest. An icon-only control in a narrow
-            // column is a rendering, and the only evidence of it is a picture of it.
-            SwipedRowSpecimen()
-        case .hardSwipedRow:
-            // The same row pulled far enough that letting go archives it. The control grows
-            // with the pull, so the two gestures are told apart while they are being made.
-            SwipedRowSpecimen(pull: .hard)
         case .archivedRoster:
             // The other half of the same feature: where a cleared Session went, and how loud
             // the foot that holds it is under a roster it must not compete with.
@@ -55,6 +46,17 @@ public struct SpecimenScreen: View {
             // Rendered, it is the empty roster beside a live New Session button; driven, it is
             // the only way to see that pressing it puts a Session on the roster and points there.
             SpawningRosterSpecimen()
+        case .renamedRoster:
+            // A roster with one name somebody typed on it, beside two the transcripts derived.
+            // Whether a chosen name reads as the Session's own rather than as a label pinned over
+            // a title is a rendering, and it is only judgeable against rows that were not renamed.
+            RenamedRosterSpecimen()
+        case .editingRow:
+            // A row mid-rename, its neighbours at rest. The field stands where the title was, so
+            // what has to be judged is whether the row still reads as one row of a list while it
+            // is being typed into — a claim about a box inside a sidebar capsule that no value
+            // test can reach.
+            EditingRowSpecimen()
         case .toolbarScope:
             ToolbarSpecimen(presentation: .preview)
         case .emptyToolbarScope:

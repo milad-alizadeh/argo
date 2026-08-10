@@ -28,6 +28,13 @@ public struct CockpitActions {
     /// One intent with a direction rather than two, because it is one gesture on one row — a
     /// pair would let a surface offer the way in without the way out.
     public let setSessionArchived: (String, Bool) -> Void
+    /// Give a Session a name of the user's own, or — with `nil` — drop it and let the derived
+    /// title come back (#502, stories 18 and 20).
+    ///
+    /// One intent with a nullable name rather than a rename and a reset, for the reason archiving
+    /// is one intent with a direction: resetting is not a second decision, it is this one unmade,
+    /// and a pair would let a surface offer the way in without the way out.
+    public let setSessionName: (String, String?) -> Void
     /// Hand a full Session's work to a fresh one: run `/handoff` in it, wait for the brief, and
     /// start a Session seeded with it in the same folder and against the same issue (#513).
     ///
@@ -57,6 +64,7 @@ public struct CockpitActions {
         removeProject: { _ in },
         spawnSession: { nil },
         setSessionArchived: { _, _ in },
+        setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
     )
 
@@ -70,6 +78,7 @@ public struct CockpitActions {
         removeProject: @escaping (String) -> Void,
         spawnSession: @escaping () async -> String?,
         setSessionArchived: @escaping (String, Bool) -> Void,
+        setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
     ) {
         self.refreshCheckout = refreshCheckout
@@ -81,6 +90,7 @@ public struct CockpitActions {
         self.removeProject = removeProject
         self.spawnSession = spawnSession
         self.setSessionArchived = setSessionArchived
+        self.setSessionName = setSessionName
         self.handOffSession = handOffSession
     }
 }

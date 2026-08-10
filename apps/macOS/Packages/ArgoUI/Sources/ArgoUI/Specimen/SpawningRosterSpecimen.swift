@@ -35,6 +35,7 @@ struct SpawningRosterSpecimen: View {
             removeProject: { _ in },
             spawnSession: publish,
             setSessionArchived: { _, _ in },
+            setSessionName: { _, _ in },
             handOffSession: { _, _ in nil },
         )
     }
