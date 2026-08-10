@@ -347,49 +347,85 @@
   .deck.floating .feed { padding-bottom: 128px;
     -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 108px), transparent calc(100% - 28px)); }
 
-  /* ---------- the run-settings pill and its menu ---------- */
-  /* Mode leads the summary. It is the one of the three that changes how often the agent stops
-     to ask you something, so it is never the value you have to open a menu to read. */
-  .runpill {
-    display: inline-flex; align-items: center; gap: var(--s-snug);
-    background: rgba(255,255,255,.07); border: 1px solid var(--hairline);
-    border-radius: 999px; padding: 0 var(--s-base) 0 10px; height: 26px; cursor: pointer;
-    color: var(--text-2); font: 11.5px var(--sans);
-  }
-  .runpill:hover { background: rgba(255,255,255,.11); color: var(--text-1); }
-  .runpill b { font-weight: 600; color: var(--text-1); }
-  .runpill .sep { color: var(--text-off); }
-  .runpill .chev { width: 9px; height: 9px; opacity: .6; }
-  .runpill.mode-ask b  { color: var(--attention); }
-  .runpill.mode-plan b { color: var(--accent-bright); }
+  /* ---------- run settings ----------
+     Deliberately NOT a grey capsule with a chevron opening a drill-down menu — that is the
+     shape every other agent app uses and it says nothing about this one. Two house idioms
+     instead, both already in the app:
+       · the deck header's `·`-separated dim fact line, for values you read;
+       · the Rooms segmented capsule, for a standing stance you set.
+     And one flat panel rather than rows-with-submenus: three settings do not need drilling,
+     and seeing all three at once is the point when they interact. */
 
-  .runmenu {
-    position: absolute; right: 44px; bottom: calc(100% + var(--s-base)); z-index: 30;
-    width: 232px; padding: var(--s-tight);
+  /* the fact line — chromeless until you touch it, exactly like the header's */
+  .runfacts {
+    display: inline-flex; align-items: baseline; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; padding: 2px var(--s-snug);
+    border-radius: var(--r-marker); font: 11px var(--mono); color: var(--text-3);
+  }
+  .runfacts:hover { color: var(--text-1); background: rgba(255,255,255,.05); }
+  .runfacts .sep { color: var(--text-off); }
+  .runfacts b { font-weight: 400; color: var(--text-2); }
+  .runfacts.dirty b { color: var(--text-1); }
+
+  /* the Mode segments — ArgoUI's Rooms capsule, at composer scale */
+  .modeseg {
+    display: inline-flex; gap: 2px; background: rgba(255,255,255,.05);
+    border: 1px solid var(--hairline); border-radius: 999px; padding: 2px;
+  }
+  .modeseg button {
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    font: 500 11px var(--sans); padding: 0 var(--s-base); height: 20px; border-radius: 999px;
+  }
+  .modeseg button:hover:not(.on) { color: var(--text-2); }
+  .modeseg button.on { background: var(--overlay); color: var(--text-1); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  /* Ask and Plan are departures from acting autonomously, and each says so in its own ink. */
+  .modeseg button.on.ask  { color: var(--attention); }
+  .modeseg button.on.plan { color: var(--accent-bright); }
+
+  /* one flat panel — no rows, no submenus, nothing to drill into */
+  .runpanel {
+    position: absolute; right: 0; bottom: calc(100% + var(--s-base)); z-index: 30;
+    width: 268px; padding: var(--s-comfortable) var(--s-loose) var(--s-comfortable);
     background: var(--overlay); border: 1px solid var(--subtle);
     border-radius: var(--r-popover); box-shadow: 0 24px 60px rgba(0,0,0,.62);
   }
-  .runmenu .mrow {
-    display: flex; align-items: center; gap: var(--s-base);
-    padding: var(--s-snug) var(--s-base); border-radius: var(--r-control);
-    cursor: pointer; font-size: 12.5px; color: var(--text-1);
+  .runpanel.below { top: calc(100% + var(--s-snug)); bottom: auto; right: auto; left: 0; }
+  .runpanel h4 {
+    font-size: 10px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: var(--s-snug);
   }
-  .runmenu .mrow:hover, .runmenu .mrow.on { background: rgba(255,255,255,.07); }
-  .runmenu .mrow .grow { flex: 1; }
-  .runmenu .mrow .val { color: var(--text-3); font-size: 12px; white-space: nowrap; }
-  .runmenu .mrow .chev { width: 10px; height: 10px; color: var(--text-off); flex: none; }
-  .runmenu .mrow.reset { color: var(--text-3); font-size: 12px; }
-  .runmenu hr { border: none; border-top: 1px solid var(--hairline); margin: var(--s-tight) var(--s-snug); }
-  /* the submenu opens beside the row it belongs to, never in place of it */
-  .submenu {
-    position: absolute; right: calc(100% + var(--s-tight)); top: -1px;
-    width: 208px; padding: var(--s-tight);
-    background: var(--overlay); border: 1px solid var(--subtle);
-    border-radius: var(--r-popover); box-shadow: 0 24px 60px rgba(0,0,0,.62);
+  .runpanel .grp + .grp { margin-top: var(--s-loose); }
+  .runpanel .gloss { font-size: 11px; color: var(--text-3); margin-top: var(--s-snug); line-height: 1.45; }
+  /* Model as a list of names — short enough that a list beats a menu */
+  .picklist { display: grid; gap: 1px; }
+  .picklist button {
+    display: flex; align-items: baseline; gap: var(--s-base); width: 100%; text-align: left;
+    border: none; background: none; cursor: pointer; color: var(--text-1);
+    font: 12.5px var(--sans); padding: var(--s-tight) var(--s-snug); border-radius: var(--r-control);
   }
-  .submenu .mrow .tick { width: 12px; flex: none; color: var(--accent); }
-  .submenu .mrow .tick svg { width: 11px; height: 11px; display: block; }
-  .submenu .why { font-size: 11px; color: var(--text-3); padding: var(--s-snug) var(--s-base) var(--s-tight); line-height: 1.45; }
+  .picklist button:hover { background: rgba(255,255,255,.06); }
+  .picklist button .grow { flex: 1; }
+  .picklist button .why { font-size: 11px; color: var(--text-3); }
+  .picklist button .tick { width: 12px; flex: none; color: var(--accent); }
+  .picklist button .tick svg { width: 11px; height: 11px; display: block; }
+  /* Effort is ordered, so it is drawn as a scale rather than as a list of equals */
+  .scale { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px;
+           background: rgba(255,255,255,.05); border: 1px solid var(--hairline);
+           border-radius: var(--r-control); padding: 2px; }
+  .scale button {
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    font: 500 11px var(--sans); height: 22px; border-radius: var(--r-marker);
+  }
+  .scale button:hover:not(.on) { color: var(--text-2); }
+  .scale button.on { background: var(--overlay); color: var(--text-1); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .runpanel .reset {
+    display: flex; align-items: center; gap: var(--s-snug); width: 100%;
+    margin-top: var(--s-loose); padding-top: var(--s-comfortable);
+    border: none; border-top: 1px solid var(--hairline); background: none;
+    color: var(--text-3); font: 11.5px var(--sans); cursor: pointer;
+  }
+  .runpanel .reset:hover { color: var(--text-1); }
+  .runpanel .reset svg { width: 12px; height: 12px; }
 
   /* ---------- VARIANT C — docked panel with its own toolbar ---------- */
   .cC {
@@ -558,6 +594,8 @@
   <button onclick="cycleVariant(1)" aria-label="Next variant">›</button>
   <span class="sep"></span>
   <select id="state-picker" onchange="setState(this.value)" aria-label="State"></select>
+  <span class="sep"></span>
+  <select id="footer-picker" onchange="setFooter(this.value)" aria-label="Run-settings treatment"></select>
 </div>
 
 <script>
@@ -608,12 +646,12 @@ const STATES = [
   { k:'draft',     sid:'1a102eb8', g:'Composing',   label:'Draft on return',
     note:'You left mid-sentence and came back. The text is simply there; the seam says it was kept and when.' },
 
-  { k:'run',       sid:'1986b0e5', g:'Run settings', label:'Run settings — menu open',
-    note:'Model and Effort are the CLI’s knobs; Mode is Argo’s standing autonomy stance. The pill leads with Mode because it is the one that decides how often you are stopped.' },
-  { k:'run-effort',sid:'1986b0e5', g:'Run settings', label:'Run settings — Effort submenu',
-    note:'The submenu opens beside its row, never in place of it, so the other two values stay readable while you change one.' },
-  { k:'run-ask',   sid:'1986b0e5', g:'Run settings', label:'Mode set to Ask',
-    note:'A non-default Mode colours in the pill and Reset to default lights up. Ask takes the attention ink because it changes the Permission rate.' },
+  { k:'run',       sid:'1986b0e5', g:'Run settings', label:'Panel open — at defaults',
+    note:'One flat panel, no drilling: Mode as segments, Model as a short list, Effort as a scale because it is ordered. Try the ⚙ picker in the bar — three treatments differ in where Mode sits.' },
+  { k:'run-ask',   sid:'1986b0e5', g:'Run settings', label:'Panel open — Ask · Sonnet · High',
+    note:'Non-default: Ask takes the attention ink because it changes how often you are stopped, and the reset names what it resets to rather than saying “default”.' },
+  { k:'run-plan',  sid:'1986b0e5', g:'Run settings', label:'Closed — Plan mode set',
+    note:'Panel shut, stance still legible. Mode is never a value you have to open something to read.' },
 
   { k:'attach',    sid:'1986b0e5', g:'Attachments', label:'Attached files — chips',
     note:'Three chips: one image with a thumbnail, two documents with a kind glyph. Name ellipsizes, size stays, × removes.' },
@@ -655,6 +693,9 @@ let variant = (qs.get('variant') || 'B').toUpperCase();
 if (!VARIANTS.includes(variant)) variant = 'A';
 let stateKey = qs.get('state') || 'rest';
 if (!STATES.some(s => s.k === stateKey)) stateKey = 'rest';
+/* Second axis, chosen variant only: where the run settings sit. `&f=1|2|3`. */
+let footer = qs.get('f') || '1';
+if (!['1','2','3'].includes(footer)) footer = '1';
 
 /* Live UI state, so the prototype can actually be driven rather than only looked at. */
 const ui = {
@@ -662,7 +703,7 @@ const ui = {
   failed: false, permission: null, permissionResolved: null, turn: [],
   /* the standing run settings, and which menu is open over them */
   run: { model: 'Opus 5', mode: 'Code', effort: 'Medium' },
-  menu: null,   // null | 'root' | 'model' | 'mode' | 'effort'
+  menu: false,  // is the run-settings panel open
 };
 const DEFAULT_RUN = { model: 'Opus 5', mode: 'Code', effort: 'Medium' };
 
@@ -772,7 +813,12 @@ function renderHeader(s, needsInput) {
         <div class="factline">
           <span class="fact mono dim"><span class="gitline">${glyph(s.worktree ? SVG.worktree : SVG.branch)}<span>${esc(s.branch)}</span></span></span>
           <span class="dotsep">·</span>
-          <span class="fact dim">${s.cli} · ${s.model}</span>
+          ${footer === '3' && variant === 'B' && s.access === 'managed'
+            /* Treatment 3 moves Model and Effort up to the line that already states the CLI —
+               the header is where a Session's standing facts live, so they join them there. */
+            ? `<span class="fact dim">${s.cli}</span><span class="dotsep">·</span>
+               <span style="position:relative">${runFacts(false)}${runPanel('below')}</span>`
+            : `<span class="fact dim">${s.cli} · ${s.model}</span>`}
           ${s.ticket ? `<span class="dotsep">·</span><span class="fact link">Issue ${s.ticket} ↗</span>` : ''}
           ${s.access !== 'managed' ? `<span class="dotsep">·</span><span class="fact ${s.access === 'orphaned' ? 'warn' : 'dim'}">${s.access === 'orphaned' ? 'orphaned' : 'read-only'}</span>` : ''}
         </div>
@@ -940,54 +986,82 @@ const queuedChip = () => ui.queue ? `
         style="width:10px;height:10px">${SVG.x}</svg></button>
   </div>` : '';
 
-/* ---- run settings: one pill, one menu ----
-   Model and Effort are the CLI's own knobs. Mode is Argo's standing autonomy stance and the
-   reason the summary leads with it: it is the setting that decides how often you are stopped,
-   so it must be readable without opening anything. */
-const runPill = () => `
-  <button class="runpill mode-${ui.run.mode.toLowerCase()}" aria-haspopup="menu"
-    aria-expanded="${ui.menu ? 'true' : 'false'}" title="Model, Mode and Effort for this Session"
-    onclick="event.stopPropagation();ui.menu = ui.menu ? null : 'root';render()">
-    <b>${ui.run.mode}</b><span class="sep">·</span>${ui.run.model}<span class="sep">·</span>${ui.run.effort}
-    ${CHEV}
-  </button>`;
+/* ---- run settings ----
+   Model and Effort are the CLI's own knobs, read back verbatim. Mode is Argo's standing
+   autonomy stance and the only one of the three that changes how often the agent stops to ask
+   you something — which is why the treatments below differ mainly in how visible Mode is. */
 
 const CHECK = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round">${SVG.check}</svg>`;
-const CHEVR = `<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${SVG.chevR}</svg>`;
-
-const submenu = kind => `
-  <div class="submenu" onclick="event.stopPropagation()">
-    ${CHOICES[kind].map(([v, why]) => `
-      <div class="mrow" onclick="setRun('${kind}','${v}')">
-        <span class="tick">${ui.run[kind] === v ? CHECK : ''}</span>
-        <span class="grow">${v}</span>
-        <span class="val">${why}</span>
-      </div>`).join('')}
-  </div>`;
-
 const isDefault = () => ['model','mode','effort'].every(k => ui.run[k] === DEFAULT_RUN[k]);
+const glossFor = kind => (CHOICES[kind].find(([v]) => v === ui.run[kind]) || [])[1] ?? '';
 
-const runMenu = () => !ui.menu ? '' : `
-  <div class="runmenu" role="menu" onclick="event.stopPropagation()">
-    ${['model','mode','effort'].map(k => `
-      <div class="mrow ${ui.menu === k ? 'on' : ''}" onmouseenter="ui.menu='${k}';render()"
-           onclick="ui.menu='${k}';render()" style="position:relative">
-        <span class="grow">${k[0].toUpperCase() + k.slice(1)}</span>
-        <span class="val">${ui.run[k]}</span>${CHEVR}
-        ${ui.menu === k ? submenu(k) : ''}
-      </div>`).join('')}
-    <hr />
-    <div class="mrow reset" onclick="resetRun()" style="${isDefault() ? 'opacity:.4;pointer-events:none' : ''}">
-      <span class="grow">Reset to default</span>
-      <svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
-        stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px">${SVG.redo}</svg>
+/* the header's own fact line, made clickable. `mode` is dropped from it when a Mode control
+   sits beside it, so the same value is never stated twice on one row. */
+const runFacts = (withMode = true) => {
+  const parts = (withMode ? ['mode','model','effort'] : ['model','effort'])
+    .map(k => `<b>${ui.run[k]}</b>`).join('<span class="sep">·</span>');
+  return `<button class="runfacts ${isDefault() ? '' : 'dirty'}" aria-haspopup="dialog"
+    aria-expanded="${ui.menu ? 'true' : 'false'}" title="How this Session runs"
+    onclick="event.stopPropagation();ui.menu=!ui.menu;render()">${parts}</button>`;
+};
+
+/* Mode as segments — you can see all three stances and which one you are in without opening
+   anything. This is ArgoUI's Rooms capsule at composer scale, not a new control. */
+const modeSegments = () => `
+  <span class="modeseg" role="radiogroup" aria-label="Mode">
+    ${CHOICES.mode.map(([v, why]) => `
+      <button class="${ui.run.mode === v ? 'on ' + v.toLowerCase() : ''}" role="radio"
+        aria-checked="${ui.run.mode === v}" title="${why}"
+        onclick="event.stopPropagation();setRun('mode','${v}')">${v}</button>`).join('')}
+  </span>`;
+
+/* One flat panel. Three settings do not need drilling, and Mode and Effort interact — a Plan
+   session at Max effort is a different animal from a Code one — so both are visible at once. */
+const runPanel = (where = 'above') => !ui.menu ? '' : `
+  <div class="runpanel ${where}" role="dialog" aria-label="How this Session runs" onclick="event.stopPropagation()">
+    <div class="grp">
+      <h4>Mode · how far it goes on its own</h4>
+      ${modeSegments()}
+      <div class="gloss">${glossFor('mode')}</div>
     </div>
+    <div class="grp">
+      <h4>Model</h4>
+      <div class="picklist">
+        ${CHOICES.model.map(([v, why]) => `
+          <button onclick="setRun('model','${v}')">
+            <span class="tick">${ui.run.model === v ? CHECK : ''}</span>
+            <span class="grow">${v}</span><span class="why">${why}</span>
+          </button>`).join('')}
+      </div>
+    </div>
+    <div class="grp">
+      <h4>Effort</h4>
+      <div class="scale" role="radiogroup" aria-label="Effort">
+        ${CHOICES.effort.map(([v]) => `
+          <button class="${ui.run.effort === v ? 'on' : ''}" role="radio"
+            aria-checked="${ui.run.effort === v}" onclick="setRun('effort','${v}')">${v}</button>`).join('')}
+      </div>
+    </div>
+    <button class="reset" onclick="resetRun()" style="${isDefault() ? 'opacity:.35;pointer-events:none' : ''}">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+        stroke-linecap="round" stroke-linejoin="round">${SVG.redo}</svg>
+      Reset to ${DEFAULT_RUN.mode} · ${DEFAULT_RUN.model} · ${DEFAULT_RUN.effort}
+    </button>
   </div>`;
 
-function setRun(kind, v) { ui.run[kind] = v; ui.menu = null; render(); }
-function resetRun() { ui.run = { ...DEFAULT_RUN }; ui.menu = null; render(); }
+/* Three treatments of the same three settings, differing in where Mode sits. `&f=` picks one. */
+const FOOTERS = {
+  1: { name: 'Mode as segments, facts beside them',
+       html: () => `${modeSegments()}${runFacts(false)}${runPanel()}` },
+  2: { name: 'One fact line, panel holds everything',
+       html: () => `${runFacts(true)}${runPanel()}` },
+  3: { name: 'Mode segments only; Model/Effort in the header',
+       html: () => `${modeSegments()}${runPanel()}` },
+};
+
+function setRun(kind, v) { ui.run[kind] = v; if (kind !== 'mode') ui.menu = ui.menu; render(); }
+function resetRun() { ui.run = { ...DEFAULT_RUN }; render(); }
 
 const placeholder = s => s.state === 'running' ? 'Queue a follow-up…' : `Message ${s.cli}…`;
 const dropwash = () => ui.dragging
@@ -1033,12 +1107,11 @@ const composer = {
           ${clipBtn(s, 'plus')}
           <span class="hint">⇧⏎ newline${s.state === 'running' ? ' · esc stops' : ''}</span>
           <span class="grow"></span>
-          ${runPill()}
+          ${FOOTERS[footer].html()}
           ${s.state === 'running'
             ? `<button class="send round stop" title="Stop this Turn  esc" onclick="stop()">${stopGlyph}</button>`
             : `<button class="send round" title="Send  ⏎" onclick="send()"
                  ${ui.text.trim() || ui.atts.length ? '' : 'disabled'}>${sendGlyph}</button>`}
-          ${runMenu()}
         </div>
       </div>
     </div>`,
@@ -1162,10 +1235,10 @@ const session = () => {
 
 function applyStatePresets(st) {
   ui.text = ''; ui.atts = []; ui.queue = null; ui.dragging = false; ui.failed = false;
-  ui.menu = null; ui.run = { ...DEFAULT_RUN };
-  if (st.k === 'run') ui.menu = 'root';
-  if (st.k === 'run-effort') { ui.menu = 'effort'; }
-  if (st.k === 'run-ask') { ui.run.mode = 'Ask'; ui.run.effort = 'High'; }
+  ui.menu = false; ui.run = { ...DEFAULT_RUN };
+  if (st.k === 'run') ui.menu = true;
+  if (st.k === 'run-ask') { ui.menu = true; ui.run = { mode:'Ask', model:'Sonnet 5', effort:'High' }; }
+  if (st.k === 'run-plan') { ui.run.mode = 'Plan'; }
   if (st.k === 'typing') ui.text = LOREM_4;
   if (st.k === 'ceiling') ui.text = LOREM_LONG;
   if (st.k === 'draft') ui.text = DRAFT;
@@ -1205,6 +1278,9 @@ function render() {
     `${variant} — ${NAMES[variant]} · ${PERM_NAMES[variant]}`;
   document.getElementById('note').textContent = st.note;
   document.getElementById('state-picker').value = st.k;
+  const fp = document.getElementById('footer-picker');
+  fp.value = footer;
+  fp.style.display = variant === 'B' ? '' : 'none';
 }
 
 /* --------------------------- switcher --------------------------- */
@@ -1214,10 +1290,13 @@ function buildPicker() {
   sel.innerHTML = groups.map(g =>
     `<optgroup label="${g}">${STATES.filter(s => s.g === g)
       .map(s => `<option value="${s.k}">${s.label}</option>`).join('')}</optgroup>`).join('');
+  document.getElementById('footer-picker').innerHTML = Object.entries(FOOTERS)
+    .map(([f, v]) => `<option value="${f}">⚙ ${f} — ${v.name}</option>`).join('');
 }
 function url() {
-  history.replaceState(null, '', `?variant=${variant}&state=${stateKey}`);
+  history.replaceState(null, '', `?variant=${variant}&state=${stateKey}&f=${footer}`);
 }
+function setFooter(f) { footer = f; ui.menu = false; url(); render(); }
 function setState(k) {
   stateKey = k;
   applyStatePresets(STATES.find(s => s.k === k));
@@ -1233,10 +1312,10 @@ function cycleState(d) {
 }
 /* The menu closes on a click anywhere that is not it — the pill's own handler stops the event
    before this sees it, so the pill still toggles. */
-addEventListener('pointerdown', () => { if (ui.menu) { ui.menu = null; render(); } });
+addEventListener('pointerdown', () => { if (ui.menu) { ui.menu = false; render(); } });
 
 addEventListener('keydown', e => {
-  if (e.key === 'Escape' && ui.menu) { e.preventDefault(); ui.menu = null; render(); return; }
+  if (e.key === 'Escape' && ui.menu) { e.preventDefault(); ui.menu = false; render(); return; }
   if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
   if (e.key === 'ArrowLeft')  cycleVariant(-1);
   if (e.key === 'ArrowRight') cycleVariant(1);

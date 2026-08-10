@@ -22,6 +22,7 @@ drawn when the Dock held a terminal.
 |---|---|
 | `?variant=A\|B\|C` | Which composer, and where Permission appears. Also `←`/`→`, or the floating bar. |
 | `&state=<key>` | Which state. Also `↑`/`↓`, or the picker in the floating bar. |
+| `&f=1\|2\|3` | Where the run settings sit (variant B only). The ⚙ picker in the floating bar. |
 
 Every state the ticket lists is addressable by URL, which is the point — a state you cannot
 link to is a state nobody re-checks. The caption above the switcher says what each one is.
@@ -35,7 +36,7 @@ not by looking at it.
 ### The states
 
 **Composing** — `rest` · `typing` · `ceiling` · `sent` · `running` · `queued` · `draft`
-**Run settings** — `run` · `run-effort` · `run-ask`
+**Run settings** — `run` · `run-ask` · `run-plan`
 **Attachments** — `attach` · `dragover` · `paste` · `noattach`
 **Permission** — `perm` · `perm-edit` · `expired`
 **Degraded** — `external` · `orphaned` · `failed`
@@ -50,18 +51,47 @@ hold; B replaces it with a vessel that floats over the feed rather than sitting 
 the deck's bottom edge belongs to the feed again. The Dock as a concept goes with #535's
 terminal.
 
-Four things B added after the first pass:
+Three things B added after the first pass:
 
 1. **The send control is an arrow in a circle and nothing else.** The word *Send* beside an
    arrow beside a `⏎` hint is the same instruction three times.
-2. **One run-settings pill in the footer row**, opening a menu of **Model · Mode · Effort**
-   with *Reset to default* under a rule.
-3. **The pill's summary leads with Mode**, then Model, then Effort. Model and Effort are the
-   CLI's own knobs; **Mode is Argo's standing autonomy stance**, and it is the one that decides
-   how often the agent stops to ask you something — so it is never a value you have to open a
-   menu to read. A non-default Mode colours in the pill (`Ask` takes the attention ink).
-4. **The container is native glass, not a tinted panel** — the ground shows through, the rim is
+2. **The container is native glass, not a tinted panel** — the ground shows through, the rim is
    a light source rather than a border, and the vessel sits on its own halo.
+3. **Model, Mode and Effort are selectable**, in the app's own vocabulary rather than the
+   reference apps' — see below.
+
+## Run settings — a second axis, `&f=1|2|3`
+
+Every agent app puts a grey capsule with a chevron next to the send button and drills down
+through *Model → · Effort → · Reset to default*. Copying that shape says nothing about this
+app, so the settings are built out of two idioms the cockpit already has, and the panel is
+**flat** — no rows, no submenus, everything visible at once, because three settings do not need
+drilling and **Mode and Effort interact** (a `Plan` session at `Max` is a different animal from
+a `Code` one).
+
+- **Mode** → the Rooms segmented capsule at composer scale. You see all three stances and which
+  one you are in without opening anything. `Ask` takes the attention ink and `Plan` the accent,
+  because both are departures from acting autonomously.
+- **Model** → a short list of names; three names do not need a menu.
+- **Effort** → a four-stop scale rather than a list of equals, because it is ordered.
+- **Reset** names what it resets *to* — `Reset to Code · Opus 5 · Medium` — instead of saying
+  "default" and making you open it to find out.
+
+The three treatments differ only in **where Mode sits**, which is the real question:
+
+| `&f=` | Composer footer | Deck header |
+|---|---|---|
+| **1** | Mode segments + a `Sonnet 5 · High` fact line | unchanged |
+| **2** | one fact line, `Code · Opus 5 · Medium`; the panel holds all three | unchanged |
+| **3** | Mode segments only | `Claude Code · Opus 5 · Medium`, clickable |
+
+**3 is the quietest and the most Argo-shaped**: the header is already where a Session's standing
+facts live, so Model and Effort join the line that states the CLI, and the composer keeps only
+the setting you change mid-session. 2 is the most compact and the closest to the references; 1
+is the loudest about Mode.
+
+Whichever wins, **Mode is never a value you have to open something to read** — burying it would
+blur the Mode/Permission distinction `CONTEXT.md` insists on.
 
 > **Proposal against the token contract:** the vessel's **18px radius** is not in
 > `ArgoGeometry` (`r-popover` is 12). A vessel this wide reads as a dialog at 12. Promoting it
@@ -118,11 +148,10 @@ degradation mocked onto a healthy Session is a picture, not a render.
    the question the field would have raised.
 6. **A failed send must not clear the field.** The message stays where it was typed, with the
    reason and a Retry on the seam.
-7. **Mode does not belong in a menu with Model and Effort, even though it opens from the same
-   pill.** The three sit together because they are all *how this Session runs*, but only Mode
-   changes how often you are interrupted — burying its value one click deep would blur the
-   Mode/Permission distinction `CONTEXT.md` insists on. Hence: all three in the menu, Mode
-   first and always visible in the summary.
+7. **A drill-down menu is the wrong shape for three settings that interact.** Mode and Effort
+   are read together — `Plan · Max` and `Code · Low` are different animals — so a menu that
+   shows one at a time hides the thing you are actually deciding. One flat panel, everything
+   at once.
 
 ## What it is not
 
