@@ -40,6 +40,12 @@ struct CompanionClient {
 
     func send(_ message: [String: Any]) {
         guard let line = CompanionResponse.line(message) else { return }
+        sendLine(line)
+    }
+
+    /// One raw line, as the permission hook's relay would put it: whatever the text is, newline
+    /// framed — which is what lets a test speak malformed lines too.
+    func sendLine(_ line: String) {
         let bytes = Array((line + "\n").utf8)
         _ = bytes.withUnsafeBytes { write(descriptor, $0.baseAddress, bytes.count) }
     }

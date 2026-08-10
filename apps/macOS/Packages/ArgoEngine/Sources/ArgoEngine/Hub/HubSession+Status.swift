@@ -17,12 +17,16 @@ public extension HubSession {
     /// boundaries are what the transcript said, liveness is what the process table said a moment
     /// ago, and the status is only ever a reading of the two together.
     ///
-    /// A status the agent REPORTED wins, at the CONVENTION tier. It is the higher claim by
-    /// construction — the agent knows what it is doing, where the transcript only shows what it
-    /// has finished doing — and it is the one path by which `permission` is reachable at all.
-    /// A Session with no channel, or a channel that has said nothing, falls through to the
-    /// DERIVED reading, never to a worse one.
+    /// A Permission Argo itself is holding open wins outright, at DIRECT: the agent is blocked on
+    /// a hook whose both ends are Argo's, which outranks anything the agent said before it
+    /// blocked. Below that, a status the agent REPORTED wins at the CONVENTION tier — the higher
+    /// claim by construction, since the agent knows what it is doing where the transcript only
+    /// shows what it has finished doing. A Session with no channel, or a channel that has said
+    /// nothing, falls through to the DERIVED reading, never to a worse one.
     var statusReading: SessionStatusReading {
+        if permission != nil {
+            return SessionStatusReading(tier: .direct, status: .permission)
+        }
         guard let reported = convention?.status else { return SessionStatus.read(signals) }
         return SessionStatusReading(tier: .convention, status: reported)
     }

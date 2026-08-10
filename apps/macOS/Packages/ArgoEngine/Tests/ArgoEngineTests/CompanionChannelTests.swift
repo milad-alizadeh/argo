@@ -28,7 +28,7 @@ struct CompanionChannelTests {
         // On argv as well as on disk: the plugin is loadable today without a marketplace between
         // it and the spawn.
         let launch = try #require(fixture.host.launches.first)
-        #expect(launch.arguments == ["--mcp-config", mcpConfig.path])
+        #expect(launch.arguments.contains(["--mcp-config", mcpConfig.path]))
         #expect(launch.environment["ARGO_COMPANION_SOCKET"]?
             .hasSuffix("\(claim.value).sock") == true)
     }

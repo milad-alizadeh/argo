@@ -96,6 +96,10 @@ extension Hub {
         // reconciliation that gave the Session one.
         published.convention = ownership.boundClaim(ofSessionID: session.id)
             .flatMap { companionReports[$0] }
+        // The oldest waiting Permission, through the same claim: prompts are answered one at a
+        // time, and the first one raised is the one the agent is blocked on.
+        published.permission = ownership.boundClaim(ofSessionID: session.id)
+            .flatMap { pendingPermissions[$0]?.first }
         // Read through the claim rather than published as it was recorded: the fresh row is
         // re-keyed to its CLI's own id the moment its record appears, and the link has to follow it
         // there.

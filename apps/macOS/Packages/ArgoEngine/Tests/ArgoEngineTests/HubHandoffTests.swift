@@ -94,7 +94,8 @@ struct HubHandoffTests {
 
         let launch = try #require(fixture.host.launches.first)
         #expect(launch.cwd == fixture.projectURL.path)
-        #expect(launch.arguments == ["--mcp-config", launch.arguments[1]])
+        #expect(launch.arguments
+            == ["--mcp-config", launch.arguments[1], "--settings", launch.arguments[3]])
     }
 
     /// The chain, as the roster publishes it — and the part of it that is easy to get wrong: the

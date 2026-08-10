@@ -8,17 +8,31 @@ import Foundation
 /// bulk traffic goes nowhere near it.
 @MainActor
 final class CompanionConnection {
+    /// A reply owed for one line — callable now for a request answered in place, or held and
+    /// called later for one that waits on a decision.
+    typealias Reply = @MainActor (String) -> Void
+
     private let descriptor: Int32
-    private let respond: (String) -> String?
+    private let respond: (String, @escaping Reply) -> Void
     private let onClose: () -> Void
+    /// Whether the first reply ends the connection — the hook channel's one-exchange lifecycle,
+    /// where closing is what releases the relay waiting on the far end.
+    private let endsAfterReply: Bool
+    private var closeWhenDrained = false
     private var source: DispatchSourceRead?
     private var writeSource: DispatchSourceWrite?
     private static let newline = UInt8(ascii: "\n")
     private var pending: [UInt8] = []
     private var outbox: [UInt8] = []
 
-    init(descriptor: Int32, respond: @escaping (String) -> String?, onClose: @escaping () -> Void) {
+    init(
+        descriptor: Int32,
+        endsAfterReply: Bool = false,
+        respond: @escaping (String, @escaping Reply) -> Void,
+        onClose: @escaping () -> Void,
+    ) {
         self.descriptor = descriptor
+        self.endsAfterReply = endsAfterReply
         self.respond = respond
         self.onClose = onClose
     }
@@ -71,13 +85,14 @@ final class CompanionConnection {
         while let end = pending.firstIndex(of: Self.newline) {
             let line = String(bytes: pending[..<end], encoding: .utf8)
             pending = Array(pending[pending.index(after: end)...])
-            guard let line, let reply = respond(line) else { continue }
-            send(reply)
+            guard let line else { continue }
+            respond(line) { [weak self] reply in self?.send(reply) }
         }
     }
 
     private func send(_ reply: String) {
         outbox += Array((reply + "\n").utf8)
+        closeWhenDrained = endsAfterReply
         flush()
     }
 
@@ -102,6 +117,11 @@ final class CompanionConnection {
         }
         writeSource?.cancel()
         writeSource = nil
+        // Only once everything owed is on the wire: a reply that closed beside its own send would
+        // race the bytes it was closing after.
+        if closeWhenDrained {
+            onClose()
+        }
     }
 
     /// Armed only while there is a backlog, and cancelled the moment there is not: a write source

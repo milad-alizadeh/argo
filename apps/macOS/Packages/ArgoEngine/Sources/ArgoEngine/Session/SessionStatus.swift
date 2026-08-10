@@ -27,8 +27,9 @@ public extension SessionStatus {
     /// a time window, which is not a unique key. Grading this DIRECT off ownership alone would be
     /// exactly the false DIRECT the degrade-down rule exists to prevent.
     ///
-    /// `permission` is unreachable here by construction: it is the companion channel's, and a
-    /// transcript that cannot carry it must not be read as though it had.
+    /// `permission` is unreachable here by construction: it belongs to the channels Argo owns —
+    /// the permission gate first, the companion's report behind it — and a transcript that cannot
+    /// carry it must not be read as though it had.
     static func read(_ signals: SessionSignals) -> SessionStatusReading {
         SessionStatusReading(tier: .derived, status: status(signals))
     }

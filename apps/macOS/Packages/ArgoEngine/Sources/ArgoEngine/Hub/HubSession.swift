@@ -25,6 +25,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// external Session and for a managed one whose agent has not spoken — which is not a degrade,
     /// only the tier having nothing to say yet.
     public internal(set) var convention: CompanionReport?
+    /// The Permission this Session's agent is blocked on, where Argo holds one — DIRECT, because
+    /// the blocked hook and the channel its answer goes down are both Argo's own. Absent for every
+    /// external Session (the fact is unobservable there, per ADR-0024) and for a managed one with
+    /// nothing gated in flight.
+    public internal(set) var permission: PermissionRequest?
     /// The Session this one handed its work to, where it handed it to one — the row a reader
     /// follows to find the work continuing. Set by the Hub from its own record of the handoff,
     /// never read from a transcript: neither CLI knows anything happened, and the fresh agent's own

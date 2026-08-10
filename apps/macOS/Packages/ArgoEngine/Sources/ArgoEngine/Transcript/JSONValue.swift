@@ -38,6 +38,31 @@ extension JSONValue: Decodable {
     }
 }
 
+extension JSONValue: Encodable {
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case let .string(value): try container.encode(value)
+        case let .number(value): try container.encode(value)
+        case let .bool(value): try container.encode(value)
+        case let .array(value): try container.encode(value)
+        case let .object(value): try container.encode(value)
+        case .null: try container.encodeNil()
+        }
+    }
+}
+
+public extension JSONValue {
+    /// This value back as one line of JSON, keys sorted so equal values print equal strings.
+    /// `nil` only when encoding itself fails, which a value built from decoded JSON cannot.
+    var compactJSON: String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        guard let data = try? encoder.encode(self) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+}
+
 public extension JSONValue {
     /// One line of a `.jsonl` transcript, or `nil` where it is not a JSON object.
     ///

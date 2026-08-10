@@ -18,15 +18,24 @@ public struct CompanionInvitation: Sendable, Equatable {
     /// uninstalled plugin directory's `.mcp.json` is not read. The bundle around it is still the
     /// artifact a marketplace would install (#6); today the flag is what does the work.
     public let mcpConfigPath: String
+    /// The per-claim settings that install the `PreToolUse` permission hook — also passed on
+    /// argv. Absent when no gate was opened, which spawns the session exactly as before.
+    public let settingsPath: String?
 
-    public init(socketPath: String, pluginRoot: String, mcpConfigPath: String) {
+    public init(
+        socketPath: String,
+        pluginRoot: String,
+        mcpConfigPath: String,
+        settingsPath: String? = nil,
+    ) {
         self.socketPath = socketPath
         self.pluginRoot = pluginRoot
         self.mcpConfigPath = mcpConfigPath
+        self.settingsPath = settingsPath
     }
 
     var arguments: [String] {
-        ["--mcp-config", mcpConfigPath]
+        ["--mcp-config", mcpConfigPath] + (settingsPath.map { ["--settings", $0] } ?? [])
     }
 
     var environment: [String: String] {

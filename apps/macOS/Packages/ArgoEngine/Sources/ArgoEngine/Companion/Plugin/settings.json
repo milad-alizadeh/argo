@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|NotebookEdit|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh \"__ARGO_PERMISSION_HOOK__\"",
+            "timeout": __ARGO_PERMISSION_TIMEOUT__
+          }
+        ]
+      }
+    ]
+  }
+}
