@@ -1,7 +1,8 @@
 <!doctype html>
-<!-- Design study template (design-studies rule):
+<!-- Design template (design-studies rule):
      · every value = var(-token) from tokens.css; a value the contract lacks is a
-       PROPOSAL — mark it "PROPOSAL" in a comment; it snaps or gets promoted at settle
+       PROPOSAL — mark it "PROPOSAL" in a comment; it snaps or gets promoted when
+       prototype-to-design approves this screen
      · every meaningful region carries data-component="PascalCaseName" — that name is
        final: it becomes the component file, its stories, and its ticket
      · repeated shapes: add a render function to kit.js and call it, don't copy markup
@@ -10,10 +11,10 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
-    <title>STUDY — screen name</title>
+    <title>DESIGN — screen name</title>
     <link rel="stylesheet" href="./tokens.css" />
     <style>
-      /* Study-local layout only — colour and spacing from tokens, type from role classes. */
+      /* Page-local layout only — colour and spacing from tokens, type from role classes. */
       .panel {
         background: var(--panel);
         border-radius: var(--radius);
@@ -29,7 +30,7 @@
     <main data-component="ExampleScreen">
       <section class="panel" data-component="ExamplePanel">
         <h2 class="text-label">Section label</h2>
-        <p class="text-body">Row copy uses the settled ladder — no bespoke sizes.</p>
+        <p class="text-body">Row copy uses the blessed ladder — no bespoke sizes.</p>
         <!-- rows via kit.js: document.write / DOM-append from named render fns -->
       </section>
     </main>

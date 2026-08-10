@@ -20,7 +20,7 @@ cd apps/macOS && ARGO_SPECIMEN=contract sh scripts/screenshot.sh out.png
 
 It replaces the deleted `foundations.html`, and it is good at that job for the same reason the
 page was: it renders the real tokens rather than a copy, so it cannot drift. It is the one
-non-disposable design artifact (`rules/design-studies.md`).
+non-disposable design artifact (`rules/designs.md`).
 
 **It cannot go partial, either.** Each role group's `all` array is what the specimen iterates,
 and a `Mirror`-based assertion in `VisualContractTests` fails the build if a stored role is

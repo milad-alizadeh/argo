@@ -1,6 +1,6 @@
 ---
 name: setup-output-style
-description: Install Argo's Terse output style into a project — copies the style template into .claude/output-styles/ and sets it as the Claude Code session default in .claude/settings.json. Usually dispatched by the /setup-argo-skills wizard; run directly to (re)install just this piece.
+description: Install Argo's Terse output style as the Claude Code session default.
 disable-model-invocation: true
 ---
 

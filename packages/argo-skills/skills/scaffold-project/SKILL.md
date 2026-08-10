@@ -1,6 +1,6 @@
 ---
 name: scaffold-project
-description: Generic project scaffolder. Runs a short wizard, then searches online for the ecosystem's official generator and language server, scaffolds a new project of any stack, and wires the LSP into whatever agent is running (Claude Code, Codex, Cursor, …). Use when starting a new project or repo from scratch.
+description: Scaffold a new project of any stack from the ecosystem's own generator, with its language server wired into whichever agent is running. Use when starting a new project or repo from scratch, or setting up an empty directory.
 ---
 
 # Scaffold Project

@@ -1,6 +1,6 @@
 ---
 name: setup-argo-skills
-description: The ONE project-bootstrap command for Argo tooling. Installs the skill bundle (third-party + Argo's own skills), then runs a wizard over the repo — which infra do you want installed (house rules, graphify knowledge graph, module boundaries, design handoff, pre-commit hooks) — and dispatches each choice to its setup skill. Run once per project; re-run an individual setup-* skill later to redo one piece.
+description: The one project-bootstrap command. Installs the skill bundle, then wizards over the repo — which infra do you want — and dispatches each choice to its setup skill.
 disable-model-invocation: true
 ---
 
@@ -56,8 +56,8 @@ up?" — with the detected recommendation marked, covering:
 | Quality gates (caps + duplication, as errors) | `setup-quality-gates` | repo has (or should have) a linter |
 | Knowledge graph (committed, hook-refreshed) | `setup-graphify` | repo beyond trivial size |
 | Module boundaries (dependency-cruiser) | `setup-module-boundaries` | monorepo / layered app |
-| Design handoff (tokens, studies, check) | `setup-design-handoff` | project has UI |
-| Visual verification (screenshot script + verify stage) | `setup-visual-verify` | project has UI |
+| Design infra (tokens, `docs/designs/`, check, render method) | `setup-design-infra` | project has UI |
+| Design foundations (the token *values*, blessed) | `setup-design-foundations` | project has UI and no settled scale |
 | Cross-CLI guardrail hooks (graphify-guard, worktree guard + reaper) | scaffolder `--hooks` | user runs git worktrees / wants graphify-before-grep |
 
 ## Phase 3 — dispatch in order
@@ -70,10 +70,12 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
    appends to step 2's hook and lands the caps the rules state in prose.
 4. `setup-graphify` — appends its refresh block to the pre-commit hook.
 5. `setup-module-boundaries` — lint config + CI gate.
-6. `setup-design-handoff` — token contract, study scaffolding, design-token
-   check; depends on the rules from step 1.
-7. `setup-visual-verify` — screenshot script + declared render method; points at
-   the studies/Storybook that step 6 (or the app) provides.
+6. `setup-design-infra` — token contract, `docs/designs/` scaffolding, the
+   no-raw-values check, the render method, and `stack.md`; depends on the rules
+   from step 1.
+7. `setup-design-foundations` — the token *values*, designed and blessed. Step 6
+   installs the structure; this fills it. Skip only if the project already has a
+   settled scale in every family.
 8. `setup-output-style` — Terse output style as the Claude Code session default;
    independent of the rest, so it can run any time.
 9. `setup-task-tracking` — the "Task tracking" section in the project doc; runs
@@ -93,7 +95,7 @@ Summarize the whole bootstrap: skills installed/updated (lock delta), infra
 installed per piece, anything deferred with the reason, and how to re-run any
 single piece later — invoke its `setup-<piece>` skill (Claude Code: `/setup-<piece>`).
 
-If design handoff was installed, point at the design loop's first move: explore
-a moodboard, then run the `design-foundations` skill to settle the token ramps **before
-the first screen study is settled** — the `componentize-design` skill reconciles screens
-against foundations; it doesn't design them.
+If design infra was installed, point at the design loop's first move: explore a
+moodboard, then run `setup-design-foundations` to settle the token ramps **before
+the first screen is approved** — `prototype-to-design` reconciles screens against
+foundations; it doesn't design them. `ask-argo` maps the rest of the route.

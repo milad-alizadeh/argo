@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "ask-argo": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/ask-argo/SKILL.md"
+    },
     "ask-matt": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -31,23 +36,16 @@
       "skillPath": "skills/engineering/codebase-design/SKILL.md",
       "computedHash": "6d9d51d8caa01633fd00cf87089c5618c982321f942ac69f62565dc001c6b22f"
     },
-    "componentize-design": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/componentize-design/SKILL.md",
-      "computedHash": "a119e9164061411855bf1476255eaaced3b885768deee24a4151c06917c14aad"
-    },
     "design-an-interface": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/deprecated/design-an-interface/SKILL.md",
       "computedHash": "aef348a9af675b771635623b5aa7790da4d40adc1ee88b58b6fd116eda2047d8"
     },
-    "design-foundations": {
+    "design-to-code": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/design-foundations/SKILL.md",
-      "computedHash": "60d8bf37f6c9fee4b801111fedc705dc9f3d272f7a9920ffbc9e85433e45a712"
+      "skillPath": "packages/argo-skills/skills/design-to-code/SKILL.md"
     },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
@@ -139,11 +137,21 @@
       "skillPath": "skills/personal/obsidian-vault/SKILL.md",
       "computedHash": "5c08eda96fd76a71793c0a8cb91bef41d518586654a14af4f2edf8f8fd0f96a7"
     },
+    "pixel-review": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/pixel-review/SKILL.md"
+    },
     "prototype": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/engineering/prototype/SKILL.md",
       "computedHash": "faba901c53a6ca245174c4ba5db3929d14253232b3050fdbd46539720adf1ab8"
+    },
+    "prototype-to-design": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/prototype-to-design/SKILL.md"
     },
     "qa": {
       "source": "mattpocock/skills",
@@ -169,12 +177,6 @@
       "skillPath": "skills/engineering/resolving-merge-conflicts/SKILL.md",
       "computedHash": "28aad6f8b1b7025abc8892fa8890f68fe1533499b28a565f416b159131d22fad"
     },
-    "review-componentization": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/review-componentization/SKILL.md",
-      "computedHash": "962217e0f1f2b6207f7cd26a383872e8c98e4e0a36e193a02782a03e57a34ed4"
-    },
     "scaffold-exercises": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -193,11 +195,15 @@
       "skillPath": "packages/argo-skills/skills/setup-argo-skills/SKILL.md",
       "computedHash": "5e8625598f057b760906b0326bd9e11aa6e88cd74c39355dc972063183936e18"
     },
-    "setup-design-handoff": {
+    "setup-design-foundations": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/setup-design-handoff/SKILL.md",
-      "computedHash": "f5f1e24983956c29f6d150b77f864b2f5ffeaf8afe56b9f39907a6d82b30c817"
+      "skillPath": "packages/argo-skills/skills/setup-design-foundations/SKILL.md"
+    },
+    "setup-design-infra": {
+      "source": "milad-alizadeh/argo",
+      "sourceType": "github",
+      "skillPath": "packages/argo-skills/skills/setup-design-infra/SKILL.md"
     },
     "setup-graphify": {
       "source": "milad-alizadeh/argo",
@@ -252,12 +258,6 @@
       "skillPath": "skills/in-progress/setup-ts-deep-modules/SKILL.md",
       "computedHash": "bd5cbaa455454c2d6c27a1b734e0d820606da6c482bf3c79ec55fbc3f3e03ef3"
     },
-    "setup-visual-verify": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/setup-visual-verify/SKILL.md",
-      "computedHash": "c6b26f9b3a4a219e9522faf9276f839c5008cca50c5a8c04367ed9367bebb343"
-    },
     "ship": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
@@ -311,12 +311,6 @@
       "sourceType": "github",
       "skillPath": "skills/deprecated/ubiquitous-language/SKILL.md",
       "computedHash": "0395170031b57ea63f2eb22561542894c03e3047430a2f1118a06b411054429b"
-    },
-    "visual-verify": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/visual-verify/SKILL.md",
-      "computedHash": "a090ae1024def06ce0b705a2bba2b9ef56023ba052d8d5d3d9a1e94894db8119"
     },
     "wayfinder": {
       "source": "mattpocock/skills",

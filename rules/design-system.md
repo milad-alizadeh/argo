@@ -29,7 +29,7 @@ values. One file per family, each value named for the **question it answers**:
 | `ArgoLayout` · `ArgoFeedRow` · `ArgoPlanPill` | structural proportions and per-surface measures |
 
 `Specimen/ContractSpecimen.swift` enumerates every role on the surfaces it is read against. It
-is the living proof and the one non-disposable design artifact (`rules/design-studies.md`);
+is the living proof and the one non-disposable design artifact (`rules/designs.md`);
 `Specimen/FoundationSpecimen.swift` is its companion, the same roles dressed onto a real shell.
 
 **A role that is not in the specimen does not ship.** Each group's `all` array drives the

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build, launch and screenshot the real Argo window — the render method the visual-verify
+# Build, launch and screenshot the real Argo window — the render method the pixel-review
 # skill resolves to for this app (see AGENTS.md, "Visual verification").
 #
 # Usage, from apps/macOS:

@@ -1,6 +1,6 @@
 ---
 name: setup-rules
-description: Install Argo's engineering rule set into a project — language-agnostic core rules (principles, code style, comments, file structure, testing) plus a per-language binding that names how this stack spells them, all adapted to the detected structure, with a pointer wired into CLAUDE.md/AGENTS.md so Claude Code and Codex actually load them. Ships the TypeScript binding; generates one for any other language at install time. Usually dispatched by the /setup-argo-skills wizard; run directly to (re)install just this piece.
+description: Install Argo's engineering rules plus a binding naming how this stack spells them, wired into CLAUDE.md/AGENTS.md so agents load them.
 disable-model-invocation: true
 ---
 
@@ -49,7 +49,7 @@ rule; it points at it.
 | `database.md` | project owns a schema — a migrations directory, an ORM/schema file, or a query layer it maintains |
 | `ui-components.md` | project has a UI component tree |
 | `design-system.md` | project has a design-token layer — **any** form: a Tailwind v4 `@theme` block, a TS/JSON token module, a generator, a native theme object |
-| `design-studies.md` | the repo holds a prototype/study directory, or a design-tool config, and its UI is the product surface — not merely "has UI" |
+| `designs.md` | the repo holds a prototype/study directory, or a design-tool config, and its UI is the product surface — not merely "has UI" |
 
 `ui-components.md` ships shaped for a **TypeScript web** tree: Storybook, DOM elements,
 CSS classes. On any other UI stack that file needs *rewriting*, not trimming — treat it
@@ -383,7 +383,7 @@ touch (each rule's `paths:` frontmatter states its scope):
 - **<Language> code** — also `<language>-style.md` (one line per language present)
 - **Tests** — also `testing.md`
 - **Database / migrations** — also `database.md`
-- **UI work** — also `ui-components.md`, `design-system.md`, `design-studies.md`
+- **UI work** — also `ui-components.md`, `design-system.md`, `designs.md`
 ```
 
 List only what this run installed — a pointer naming a deferred rule is a dead end
