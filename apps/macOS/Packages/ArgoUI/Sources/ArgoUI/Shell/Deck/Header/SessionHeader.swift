@@ -47,16 +47,17 @@ struct SessionHeader: View {
 
     /// Quiet by construction: the mark says the Session is one you cannot drive, which is worth
     /// reading once and never worth competing with the title beside it.
+    ///
+    /// Set in capitals, which is the study's treatment and a property of the TYPE rather than of
+    /// the vocabulary — the word itself, and the sentence explaining it, are the projection's.
     @ViewBuilder private func mark(_ header: SessionHeaderProjection.Header) -> some View {
-        if let word = header.accessWord {
-            Text(word)
+        if let access = header.access {
+            Text(access.word)
                 .argoText(ArgoTypography.caption)
                 .textCase(.uppercase)
                 .foregroundStyle(argo.color.text.tertiary)
                 .lineLimit(1)
-                // The word is short because it sits beside a title; the sentence is where it is
-                // explained, and the projection is where the sentence was decided.
-                .help(header.accessDetail ?? "")
+                .help(access.detail)
                 // It must survive a title long enough to need cutting: a fact that disappears at
                 // the width real titles reach is a fact drawn only in fixtures.
                 .layoutPriority(1)
@@ -64,40 +65,32 @@ struct SessionHeader: View {
     }
 }
 
-#Preview("Session header — a managed Session, silent about its access") {
-    SessionHeader(header: SessionHeaderFixture.headers.first)
-        .frame(width: 900, height: ArgoLayout.deckHeaderHeight)
-        .argoDeckSurface()
-        .argoAppearance()
-}
+/// Every posture in one gallery — the silent one included, which is why nothing selected is drawn
+/// under them: an empty zone and a zone with no mark on it are two different absences.
+private struct SessionHeaderGallery: View {
+    let width: CGFloat
 
-#Preview("Session header — every access posture") {
-    VStack(spacing: ArgoSpacing.flush) {
-        ForEach(Array(SessionHeaderFixture.headers.enumerated()), id: \.offset) { _, header in
-            SessionHeader(header: header)
+    var body: some View {
+        VStack(spacing: ArgoSpacing.flush) {
+            ForEach(Array(SessionHeaderFixture.headers.enumerated()), id: \.offset) { _, header in
+                SessionHeader(header: header)
+                    .frame(height: ArgoLayout.deckHeaderHeight)
+            }
+            SessionHeader(header: nil)
                 .frame(height: ArgoLayout.deckHeaderHeight)
         }
-    }
-    .frame(width: 900)
-    .argoDeckSurface()
-    .argoAppearance()
-}
-
-#Preview("Session header — nothing selected") {
-    SessionHeader(header: nil)
-        .frame(width: 900, height: ArgoLayout.deckHeaderHeight)
+        .frame(width: width)
         .argoDeckSurface()
         .argoAppearance()
+    }
 }
 
+#Preview("Session header — every access posture, and nothing selected") {
+    SessionHeaderGallery(width: 900)
+}
+
+// The width real titles are cut at: a mark that survives only in a wide window is a mark drawn
+// for fixtures.
 #Preview("Session header — at the narrowest deck the window allows") {
-    VStack(spacing: ArgoSpacing.flush) {
-        ForEach(Array(SessionHeaderFixture.headers.enumerated()), id: \.offset) { _, header in
-            SessionHeader(header: header)
-                .frame(height: ArgoLayout.deckHeaderHeight)
-        }
-    }
-    .frame(width: ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth)
-    .argoDeckSurface()
-    .argoAppearance()
+    SessionHeaderGallery(width: ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth)
 }

@@ -19,8 +19,7 @@ struct SessionHeaderProjectionTests {
 
         // The default state is silent. A mark on every header is a mark nobody reads by the
         // second Session, and the exceptions below are the only two worth the ink.
-        #expect(header.accessWord == nil)
-        #expect(header.accessDetail == nil)
+        #expect(header.access == nil)
         #expect(header.announcement == "Session")
     }
 
@@ -28,11 +27,11 @@ struct SessionHeaderProjectionTests {
     func `an external Session is marked read-only`() throws {
         let header = SessionHeaderProjection.header(from: session(access: .external))
 
-        #expect(header.accessWord == "Read-only")
         // The word is short enough to sit beside a title; what it MEANS is the sentence, and
         // the sentence lives here rather than in whatever surface happens to draw a tooltip.
-        let detail = try #require(header.accessDetail)
-        #expect(detail.contains("never owned"))
+        let mark = try #require(header.access)
+        #expect(mark.word == "Read-only")
+        #expect(mark.detail.contains("never owned"))
     }
 
     @Test
@@ -42,11 +41,11 @@ struct SessionHeaderProjectionTests {
         // "This was yours and Argo lost the terminal" is a different fact from "this was never
         // yours" — both are read-only, and a header spelling them the same way would say the
         // Session had never been Argo's.
-        #expect(header.accessWord == "Orphaned")
-        #expect(header.accessWord != SessionHeaderProjection
-            .header(from: session(access: .external)).accessWord)
-        let detail = try #require(header.accessDetail)
-        #expect(detail.contains("terminal died"))
+        let mark = try #require(header.access)
+        #expect(mark.word == "Orphaned")
+        #expect(mark.word != SessionHeaderProjection
+            .header(from: session(access: .external)).access?.word)
+        #expect(mark.detail.contains("terminal died"))
     }
 
     @Test
@@ -54,7 +53,7 @@ struct SessionHeaderProjectionTests {
         // `allCases`, so a posture added to the axis has to answer here rather than inheriting
         // whichever branch the mapping happens to end on.
         let words = CockpitPresentation.Session.Access.allCases.map {
-            SessionHeaderProjection.header(from: session(access: $0)).accessWord
+            SessionHeaderProjection.header(from: session(access: $0)).access?.word
         }
 
         #expect(words == [nil, "Read-only", "Orphaned"])
@@ -91,10 +90,11 @@ struct SessionHeaderProjectionTests {
         // from the catalog is a state that ships without anybody looking at it.
         let drawn = SessionHeaderFixture.headers
 
-        #expect(drawn.map(\.accessWord) == [nil, "Read-only", "Orphaned"])
-        // A title long enough to have to truncate, because whether it does so cleanly rather
-        // than pushing the mark off the line is the render question no value test can settle.
-        #expect(drawn.contains { $0.title.count > 40 })
+        #expect(drawn.map { $0.access?.word } == [nil, "Read-only", "Orphaned"])
+        // A marked posture whose title is long enough to be cut at the narrowest deck, because
+        // whether the mark survives that cut is the render question no value test can settle —
+        // and a short title on every marked fixture would leave it unrendered.
+        #expect(drawn.contains { $0.access != nil && $0.title.count > 100 })
     }
 
     private func session(

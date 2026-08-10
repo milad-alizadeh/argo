@@ -8,36 +8,38 @@
 /// model, the linked issue, the context reading — land on `Header` for the same reason.
 enum SessionHeaderProjection {
     struct Header: Equatable, Sendable {
+        /// The word a Session spends on its access, and what that word MEANS in a sentence for
+        /// the surface that can afford one. ONE value, because the two are one fact: two
+        /// optionals beside each other would let a header have an explanation of nothing.
+        struct AccessMark: Equatable, Sendable {
+            let word: String
+            let detail: String
+        }
+
         /// The Session's own title, verbatim. Never shortened, completed or re-capitalised: the
         /// header names its subject rather than describing it.
         let title: String
-        /// The one word a Session spends when it is not a plain managed one, and `nil` when it
-        /// is — the default state is silent, and a mark drawn on every header is a mark that has
+        /// The mark a Session spends when it is not a plain managed one, and `nil` when it is —
+        /// the default state is silent, and a mark drawn on every header is a mark that has
         /// stopped meaning anything by the second Session.
-        let accessWord: String?
-        /// What that word MEANS, in a sentence, for the surface that can afford one. Absent
-        /// exactly when the word is, so the two can never disagree about whether there is
-        /// anything to say.
-        let accessDetail: String?
+        let access: AccessMark?
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being and no
         /// surface can assemble one that disagrees with what the projection decided.
-        fileprivate init(title: String, accessWord: String?, accessDetail: String?) {
+        fileprivate init(title: String, access: AccessMark?) {
             self.title = title
-            self.accessWord = accessWord
-            self.accessDetail = accessDetail
+            self.access = access
         }
 
         /// What a screen reader hears: the same word the header draws, because a mark is ink and
         /// ink is nothing a screen reader can hear.
         var announcement: String {
-            [title, accessWord].compactMap(\.self).joined(separator: ", ")
+            [title, access?.word].compactMap(\.self).joined(separator: ", ")
         }
     }
 
     static func header(from session: CockpitPresentation.Session) -> Header {
-        let mark = mark(for: session.access)
-        return Header(title: session.title, accessWord: mark?.word, accessDetail: mark?.detail)
+        Header(title: session.title, access: mark(for: session.access))
     }
 
     /// Access → the mark the header spends on it, if any.
@@ -48,19 +50,20 @@ enum SessionHeaderProjection {
     private static func mark(
         for access: CockpitPresentation.Session.Access,
     )
-        -> (word: String, detail: String)? {
+        -> Header.AccessMark? {
         switch access {
         case .managed:
             nil
         case .external:
-            (
-                "Read-only",
-                "Argo never owned this Session's terminal, so it cannot be driven from here.",
+            Header.AccessMark(
+                word: "Read-only",
+                detail: "Argo never owned this Session's terminal, "
+                    + "so it cannot be driven from here.",
             )
         case .orphaned:
-            (
-                "Orphaned",
-                "Argo owned this Session; its terminal died with the process, "
+            Header.AccessMark(
+                word: "Orphaned",
+                detail: "Argo owned this Session; its terminal died with the process, "
                     + "so it cannot be driven from here.",
             )
         }

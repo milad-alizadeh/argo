@@ -29,9 +29,9 @@ enum SessionHeaderFixture {
         )
     }
 
-    /// A title long enough to have to be cut on the managed one, because the silent posture is the
-    /// one that gives a title the whole line — if truncation is going to be ugly anywhere it is
-    /// there, and a short fixture would leave it unrendered.
+    /// The external one's title is long enough to be CUT at the narrowest deck, deliberately: a
+    /// mark that survives only in a wide window is a mark drawn for fixtures, and the render this
+    /// exists for is whether `READ-ONLY` still sits beside a title the line could not hold.
     private static func title(
         for access: CockpitPresentation.Session.Access,
     )
@@ -40,7 +40,8 @@ enum SessionHeaderFixture {
         case .managed:
             "Ship the native Liquid Glass application shell with a deliberately long title"
         case .external:
-            "Review a Session nobody here started"
+            "Review a Session nobody here started, and decide whether the reading it left "
+                + "behind is worth keeping or should be archived tonight"
         case .orphaned:
             "Resume a Session whose terminal Argo lost"
         }
