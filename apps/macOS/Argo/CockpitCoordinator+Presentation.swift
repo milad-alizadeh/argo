@@ -8,7 +8,12 @@ import Foundation
 @MainActor
 extension CockpitCoordinator {
     var presentation: CockpitPresentation {
-        CockpitPresentation(projects: projects, activeProjectID: launch.id, hub: hub)
+        CockpitPresentation(
+            projects: projects,
+            activeProjectID: launch.id,
+            hub: hub,
+            annotations: annotations,
+        )
     }
 
     /// The registered set, and — on a launch pointed at a folder nobody registered — that folder

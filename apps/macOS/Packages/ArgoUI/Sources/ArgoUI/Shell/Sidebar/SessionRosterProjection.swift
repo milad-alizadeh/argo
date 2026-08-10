@@ -39,6 +39,9 @@ enum SessionRosterProjection {
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
         /// needs the user to stop scanning. D30 keeps counts and words to what helps the scan.
         let stateWord: String?
+        /// Which of the roster's two lists this row belongs to — and, on the row itself, which
+        /// way its swipe goes: a row on the roster archives, a row under the foot comes back.
+        let isArchived: Bool
 
         /// `fileprivate`, so `rows(from:)` is the only way a row comes into being and no surface
         /// can assemble one that disagrees with what the projection decided.
@@ -52,6 +55,7 @@ enum SessionRosterProjection {
             age: String?,
             state: ArgoOperationalState?,
             stateWord: String?,
+            isArchived: Bool,
         ) {
             self.id = id
             self.title = title
@@ -62,6 +66,7 @@ enum SessionRosterProjection {
             self.age = age
             self.state = state
             self.stateWord = stateWord
+            self.isArchived = isArchived
         }
 
         /// What a screen reader hears: the same `stateWord` the row draws, so the two can never
@@ -80,24 +85,59 @@ enum SessionRosterProjection {
         }
     }
 
+    /// The roster proper: everything the user has not cleared off it.
+    ///
+    /// The filter is on Argo's own flag and on nothing observed, which is what makes archiving a
+    /// decision rather than a filter — a Session whose transcript grew a second ago is as absent
+    /// from this list as one that has not moved in a week (#502, stories 14 and 16).
+    ///
     /// `now` is a parameter because an age is arithmetic against a moment, and a projection that
     /// read the clock itself would answer differently on every call with nothing able to say so.
     static func rows(from sessions: [CockpitPresentation.Session], now: Date = Date()) -> [Row] {
+        rows(from: sessions, archived: false, now: now)
+    }
+
+    /// What is behind the foot of the roster. The same rows by the same rules — a Session put out
+    /// of sight is not a Session described differently.
+    static func archivedRows(
+        from sessions: [CockpitPresentation.Session], now: Date = Date(),
+    )
+        -> [Row] {
+        rows(from: sessions, archived: true, now: now)
+    }
+
+    /// The foot's own label, and `nil` where there is nothing behind it: a machine that has
+    /// archived nothing pays no permanent chrome for the fact (`cockpit-spec.md` §4.1).
+    static func archivedFoot(_ archived: [Row]) -> String? {
+        archived.isEmpty ? nil : "Archived (\(archived.count))"
+    }
+
+    private static func rows(
+        from sessions: [CockpitPresentation.Session], archived: Bool, now: Date,
+    )
+        -> [Row] {
         let nowMs = now.epochMs
-        let worktrees = worktrees(of: sessions)
-        return zip(sessions, worktrees).map { session, worktree in
-            Row(
-                id: session.id,
-                title: session.title,
-                location: session.workspaceLocation,
-                worktree: worktree,
-                branch: session.workspace?.branch,
-                isReadOnly: isReadOnly(session.access),
-                age: age(status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
-                state: state(for: session.status),
-                stateWord: stateWord(for: session.status),
-            )
-        }
+        // Labelled before the split and filtered after: the kept rows and the archived ones are
+        // drawn in one column, so a worktree told apart only from its own list would come out
+        // reading the same as one in the other.
+        return zip(sessions, worktrees(of: sessions))
+            .filter { session, _ in session.isArchived == archived }
+            .map { session, worktree in
+                Row(
+                    id: session.id,
+                    title: session.title,
+                    location: session.workspaceLocation,
+                    worktree: worktree,
+                    branch: session.workspace?.branch,
+                    isReadOnly: isReadOnly(session.access),
+                    age: age(
+                        status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs,
+                    ),
+                    state: state(for: session.status),
+                    stateWord: stateWord(for: session.status),
+                    isArchived: session.isArchived,
+                )
+            }
     }
 
     /// The label each row spends on its workspace, decided across the WHOLE roster: how short a

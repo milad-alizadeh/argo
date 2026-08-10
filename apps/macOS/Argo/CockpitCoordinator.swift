@@ -22,17 +22,25 @@ final class CockpitCoordinator {
     /// to be reversible without a relaunch — and a named transcript belongs to this target alone.
     private(set) var launchOrigin: LaunchProject?
 
+    /// What the user has said about Sessions themselves, as opposed to what the Hub observed of
+    /// them: which ones they cleared off the roster. Per machine and never committed, exactly as
+    /// registration above it is.
+    private(set) var annotations = SessionAnnotations.empty
+
     let hub: Hub
     private let store: ProjectRegistryStore
+    private let annotationStore: SessionAnnotationStore
     private let configuration: LaunchConfiguration
 
     init(
         configuration: LaunchConfiguration,
         engine: Engine = Engine(),
         store: ProjectRegistryStore = ProjectRegistryStore(),
+        annotationStore: SessionAnnotationStore = SessionAnnotationStore(),
     ) {
         self.configuration = configuration
         self.store = store
+        self.annotationStore = annotationStore
         self.launch = .unregistered(configuration.projectURL)
         self.hub = Hub(
             projectURL: configuration.projectURL,
@@ -54,6 +62,7 @@ final class CockpitCoordinator {
     /// once the file has been read.
     func start() async {
         registry = await store.load()
+        annotations = await annotationStore.load()
         let resolved = await launchConfiguration()
         let origin = LaunchProject.resolve(configuration: resolved, registry: registry)
         launchOrigin = origin
@@ -114,6 +123,12 @@ final class CockpitCoordinator {
             return
         }
         await point(at: .registered(landing))
+    }
+
+    /// Archive a Session, or put one back. The only path to it, and it is reached from a gesture
+    /// on a row — nothing derived from a merge or a transcript calls this (#502, story 14).
+    func setArchived(_ isArchived: Bool, sessionID: String) async {
+        annotations = await annotationStore.setArchived(isArchived, sessionID: sessionID)
     }
 
     /// Show a Project's folder in Finder. An unreachable one has nothing to show, and Finder

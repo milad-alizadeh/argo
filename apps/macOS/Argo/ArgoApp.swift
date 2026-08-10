@@ -73,6 +73,9 @@ struct ArgoApp: App {
             revealProject: { id in cockpit.revealProject(projectID: id) },
             removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
             spawnSession: { Task { await cockpit.spawnSession() } },
+            setSessionArchived: { id, isArchived in
+                Task { await cockpit.setArchived(isArchived, sessionID: id) }
+            },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
         )
     }

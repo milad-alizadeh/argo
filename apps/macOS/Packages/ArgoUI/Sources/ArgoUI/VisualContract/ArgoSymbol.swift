@@ -16,6 +16,13 @@ public enum ArgoSymbol {
     public static let revealInFinder = "arrow.up.forward.app"
     public static let locateProject = "questionmark.folder"
     public static let removeProject = "minus.circle"
+    /// Clearing a finished Session off the roster — the control a row reveals when it is swiped.
+    /// A box and not a bin: the Session is still there, behind the foot of the roster, and a
+    /// trash mark would promise that it is not.
+    public static let archive = "archivebox"
+    /// Putting one back, from behind that foot. A container with the arrow coming OUT of it, so
+    /// the pair reads as one act and its undo rather than as two unrelated verbs.
+    public static let unarchive = "tray.and.arrow.up"
     /// The checkout a Project is on.
     public static let branch = "arrow.triangle.branch"
     /// A Session working in a checkout of its OWN rather than in the Project's. Two planes

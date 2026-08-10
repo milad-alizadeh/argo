@@ -19,6 +19,9 @@ struct ShellSidebar: View {
 
     let presentation: CockpitPresentation
     @Binding var selection: CockpitPresentation.Session.ID?
+    /// Clear a Session off the roster, or put one back — the only thing that ever does either
+    /// (#502, story 14). Inert by default, so a preview draws the gesture without a store.
+    var archive: (String, Bool) -> Void = { _, _ in }
 
     @State private var order = RosterOrder()
     @State private var isPointerInside = false
@@ -33,21 +36,28 @@ struct ShellSidebar: View {
     var body: some View {
         let rows = order.published(SessionRosterProjection.rows(from: presentation.sessions))
 
-        SessionNavigator(rows: rows, selection: $selection)
-            .onHover { isPointerInside = $0 }
-            .argoAnimation(.resettle, value: rows.map(\.id))
-            // What the held order has absorbed, recorded so a row admitted once stays where it
-            // was put. Read off the PUBLISHED rows, which is what makes it a fixed point rather
-            // than a second placement decision.
-            .onChange(of: rows.map(\.id)) { _, ids in
-                order.admit(ids)
-            }
-            .onChange(of: selection) { _, _ in
-                interactions += 1
-            }
-            .task(id: Reading(isPointerInside: isPointerInside, interactions: interactions)) {
-                await settle(to: rows.map(\.id))
-            }
+        SessionNavigator(
+            rows: rows,
+            // Not held by the order above: the foot is not a place anything is reached for in
+            // a hurry, so a row settling into it under a reader costs nothing.
+            archived: SessionRosterProjection.archivedRows(from: presentation.sessions),
+            selection: $selection,
+            archive: archive,
+        )
+        .onHover { isPointerInside = $0 }
+        .argoAnimation(.resettle, value: rows.map(\.id))
+        // What the held order has absorbed, recorded so a row admitted once stays where it
+        // was put. Read off the PUBLISHED rows, which is what makes it a fixed point rather
+        // than a second placement decision.
+        .onChange(of: rows.map(\.id)) { _, ids in
+            order.admit(ids)
+        }
+        .onChange(of: selection) { _, _ in
+            interactions += 1
+        }
+        .task(id: Reading(isPointerInside: isPointerInside, interactions: interactions)) {
+            await settle(to: rows.map(\.id))
+        }
     }
 
     /// Held from the moment a reader is in the list, and re-settled a quiet interval after the

@@ -19,6 +19,7 @@ enum RosterSessionFixture {
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus = .idle,
         lastSeenAtMs: Int? = nil,
+        isArchived: Bool = false,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -30,6 +31,7 @@ enum RosterSessionFixture {
             status: status,
             workspace: kind == nil && branch == nil ? nil : .init(kind: kind, branch: branch),
             lastSeenAtMs: lastSeenAtMs,
+            isArchived: isArchived,
         )
     }
 }
