@@ -200,18 +200,28 @@ here that launch Argo and drive it. Every other Swift test is a SwiftPM package 
 a projection and assert on it but cannot click, so a view that renders correctly in a specimen and
 comes apart inside a popover passes all of them. `sh scripts/e2e-test.sh`, from `apps/macOS`.
 
-It is a **local** gate, deliberately not a CI one: driving the real app needs a macOS runner, the
-most expensive minutes GitHub bills, on every push. Run it when you touch a surface that is only
-reachable by clicking. Two things about it that are not obvious — the first run on a machine
-answers a macOS authorisation prompt by hand and a sleeping display fails the same way; and a test
-must launch onto a `--specimen`, never the machine's own registry, or it asserts whatever that Mac
-happens to have on it.
+**That run goes to a VM, and that is the default.** XCUITest drives the **real WindowServer** —
+there is no headless mode to switch on — so a suite pointed at this machine holds the keyboard and
+mouse for its whole length and locks out whoever is sitting at it. `e2e-test.sh` is therefore a
+**router**: it sends the suite to `scripts/e2e-vm.sh`, which runs the same target inside a Tart VM
+synced from the current worktree (`--provision` once per machine, headless every run after). Same
+gate, same tests; only the screen changes.
 
-That run drives the **real WindowServer**, so it holds the keyboard and mouse for its whole length —
-there is no headless XCUITest to switch on. `sh scripts/e2e-vm.sh` gives it a screen that is not
-yours instead, running the same suite inside a Tart VM synced from the current worktree
-(`--provision` once per machine, headless every run after). Same gate, same tests; only the screen
-changes.
+The host path is **kept but opt-in**: `sh scripts/e2e-test.sh --host` (or `ARGO_E2E_HOST=1`), which
+execs `scripts/e2e-host.sh` — the runner, and the one that **seizes the real mouse and keyboard**.
+Reach for it when there is no VM (no Tart, an Intel Mac, no provision yet) or when you want to
+watch the suite drive the app. Two things about that path that are not obvious: the first run on a
+machine answers a macOS authorisation prompt **by hand**, and a locked or sleeping display fails
+the same way. The VM has that same prompt, answered once inside the guest during `--provision`.
+
+Router and runner are two files on purpose — `e2e-vm.sh` runs `e2e-host.sh` *inside* the guest, so
+routing `e2e-test.sh` to the VM would otherwise be a loop with no bottom.
+
+It stays a **local** gate either way, deliberately not a CI one: driving the real app needs a macOS
+runner, the most expensive minutes GitHub bills, on every push. Routing to a VM changes whose
+screen is driven, not where the gate lives. Run it when you touch a surface that is only reachable
+by clicking — and a test must launch onto a `--specimen`, never the machine's own registry, or it
+asserts whatever that Mac happens to have on it.
 
 ## Tooling (RTK)
 

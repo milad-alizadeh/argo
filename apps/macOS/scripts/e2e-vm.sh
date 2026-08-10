@@ -6,13 +6,13 @@
 #   sh scripts/e2e-vm.sh                        # every run after that, headless and unattended
 #   sh scripts/e2e-vm.sh -only-testing:ArgoE2ETests/ProjectDrawerE2ETests
 #
-# `scripts/e2e-test.sh` drives the real app through the real WindowServer. That is what makes it
+# `scripts/e2e-host.sh` drives the real app through the real WindowServer. That is what makes it
 # the only test here that can click, and it is also why it takes the keyboard and mouse away from
 # whoever is at the machine for the length of the run. There is no headless or sandboxed XCUITest
 # mode to switch on — the test needs a graphical session, so the only fix is giving it a session
 # that is not yours. This script does that with a Tart VM (Apple silicon,
-# `Virtualization.framework`); `e2e-test.sh` is unchanged and stays the direct path for anyone who
-# wants it.
+# `Virtualization.framework`), and it is where `scripts/e2e-test.sh` now sends a run by default;
+# `e2e-host.sh` stays reachable by hand, and is what this script runs inside the guest.
 #
 # THE FIRST RUN ON A NEW MACHINE IS INTERACTIVE AND EXPENSIVE. `--provision` pulls an Xcode image —
 # 60-80 GB, with its own Xcode inside it — asks for the guest's SSH password once to install a key,
@@ -62,8 +62,8 @@ fi
 # Fall through to the direct run rather than leaving the developer with nothing — loudly, because
 # the whole point of this script is that the direct run takes the machine over.
 if [ "$(uname -m)" != "arm64" ]; then
-  echo "e2e-vm: no VM on Intel — falling back to scripts/e2e-test.sh, which WILL take your mouse"
-  exec sh scripts/e2e-test.sh "$@"
+  echo "e2e-vm: no VM on Intel — falling back to scripts/e2e-host.sh, which WILL take your mouse"
+  exec sh scripts/e2e-host.sh "$@"
 fi
 
 if ! command -v tart >/dev/null 2>&1; then
@@ -179,7 +179,7 @@ if [ "$PROVISION" -eq 1 ]; then
   echo "e2e-vm: running the suite once — ANSWER THE AUTHORISATION PROMPT IN THE VM's WINDOW"
   # `|| true` because this run is not a gate: an unanswered prompt fails it, and that failure says
   # nothing about the code. What matters is that the prompt got raised and answered.
-  run_in_guest "$IP" "sh scripts/e2e-test.sh" || true
+  run_in_guest "$IP" "sh scripts/e2e-host.sh" || true
 
   echo "e2e-vm: provisioned, and $VM is still up ('tart stop $VM' to close its window)."
   echo "e2e-vm: 'sh scripts/e2e-vm.sh' from here on — headless, no prompt, no window."
@@ -224,4 +224,4 @@ echo "e2e-vm: syncing $APP_DIR"
 sync_tree "$IP"
 
 echo "e2e-vm: running the suite in $VM"
-run_in_guest "$IP" "sh scripts/e2e-test.sh$(quote_args "$@")"
+run_in_guest "$IP" "sh scripts/e2e-host.sh$(quote_args "$@")"

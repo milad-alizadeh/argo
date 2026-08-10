@@ -114,19 +114,25 @@ does about an already-running instance, and why that matters.
 
 ## End-to-end tests
 
-`ArgoE2ETests` is the one target that launches Argo and clicks it. Two ways to run it:
+`ArgoE2ETests` is the one target that launches Argo and clicks it. It runs in a VM by default:
 
 ```bash
-sh scripts/e2e-test.sh                # this machine's screen — takes your mouse for the run
 sh scripts/e2e-vm.sh --provision      # once per machine: pulls a VM image, interactive
-sh scripts/e2e-vm.sh                  # every run after that — headless, in the VM
+sh scripts/e2e-test.sh                # every run after that — headless, in the VM
+sh scripts/e2e-test.sh --host         # opt in to THIS machine's screen — takes your mouse
 ```
 
-XCUITest drives the real WindowServer; that is what lets it click, and it is why the direct run
-holds the keyboard and mouse hostage until it finishes. There is no headless mode to switch on, so
-`e2e-vm.sh` gives the suite a screen that is not yours: a Tart VM on Apple silicon, synced from
-this worktree over SSH. Its header documents the one-time cost — a 60-80 GB Xcode image, and
-macOS's UI-testing authorisation prompt answered once, inside the guest.
+XCUITest drives the real WindowServer; that is what lets it click, and it is why a run pointed at
+this machine holds the keyboard and mouse hostage until it finishes. There is no headless mode to
+switch on, so `e2e-vm.sh` gives the suite a screen that is not yours: a Tart VM on Apple silicon,
+synced from this worktree over SSH. Its header documents the one-time cost — a 60-80 GB Xcode
+image, and macOS's UI-testing authorisation prompt answered once, inside the guest.
+
+`e2e-test.sh` is a router, not the runner: it sends the suite to the VM unless you ask for the
+host with `--host` (or `ARGO_E2E_HOST=1`). The runner itself is `scripts/e2e-host.sh` — kept as its
+own file both so the opt-in stays honest about what it takes, and because it is what the VM script
+runs inside the guest, where seizing the screen is the point. Keeping them separate is what stops
+the router and the VM from calling each other in a loop.
 
 Each checkout syncs to its own directory in the guest, but they share the guest's one screen, so a
 run takes a lock there and a second worktree is told to wait rather than clicking into the first
