@@ -22,7 +22,7 @@ struct SessionSpendTests {
 
     @Test
     @MainActor
-    func `the total is every reported spend summed, where the context is only the last`() async
+    func `the spend is every reported spend summed, where the context is only the last`() async
         throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "session", events: [
@@ -33,7 +33,8 @@ struct SessionSpendTests {
         await hubObserveToEnd(hub, observed)
 
         let session = try #require(hub.sessions.first)
-        #expect(session.totalTokens == 83000)
+        #expect(session.spentTokens == 3000)
+        #expect(session.cachedTokens == 80000)
         #expect(session.contextTokens == 52000)
     }
 
@@ -41,7 +42,7 @@ struct SessionSpendTests {
     /// whose records priced nothing has not spent nothing.
     @Test
     @MainActor
-    func `a Session nothing priced carries no total at all`() async throws {
+    func `a Session nothing priced carries no spend at all`() async throws {
         let hub = testHub(projectURL: Self.projectURL)
         let observed = hubTestObservation(id: "silent", events: [
             .prompt(text: "Read the contract", atMs: 1000),
@@ -51,7 +52,8 @@ struct SessionSpendTests {
         await hubObserveToEnd(hub, observed)
 
         let session = try #require(hub.sessions.first)
-        #expect(session.totalTokens == nil)
+        #expect(session.spentTokens == nil)
+        #expect(session.cachedTokens == nil)
         #expect(session.subagentTokens == nil)
     }
 
@@ -77,7 +79,7 @@ struct SessionSpendTests {
 
         let session = try #require(hub.sessions.first)
         #expect(session.subagentTokens == 40000)
-        #expect(session.totalTokens == 41000)
+        #expect(session.spentTokens == 41000)
     }
 
     /// An ordinary call reports no usage of its own, which must leave the subagent line ABSENT
@@ -101,7 +103,7 @@ struct SessionSpendTests {
 
         let session = try #require(hub.sessions.first)
         #expect(session.subagentTokens == nil)
-        #expect(session.totalTokens == 1000)
+        #expect(session.spentTokens == 1000)
     }
 
     /// A resume chain is one Session and one bill. The context reading is REPLACED across the
@@ -122,6 +124,6 @@ struct SessionSpendTests {
         await hubObserveToEnd(hub, child)
         await hubObserveToEnd(hub, root)
 
-        #expect(try #require(hub.sessions.first).totalTokens == 3000)
+        #expect(try #require(hub.sessions.first).spentTokens == 3000)
     }
 }
