@@ -8,14 +8,18 @@ import ArgoEngine
 /// exactly like success otherwise: nothing happens (#361).
 @MainActor
 extension CockpitCoordinator {
-    func spawnSession() async {
+    /// Returns the id the roster publishes the provisional row under — the claim's own, until the
+    /// CLI names a Session — so the shell can point at what it just started, and `nil` where
+    /// nothing started at all.
+    func spawnSession() async -> String? {
         do {
-            try await hub.spawnSession()
+            return try await hub.spawnSession().value
         } catch let failure as AgentSpawnError {
             report(detail: failure.detail)
         } catch {
             report(detail: error.localizedDescription)
         }
+        return nil
     }
 
     /// Hand a full Session's work to a fresh one (#513): `/handoff` in its own terminal, the wait

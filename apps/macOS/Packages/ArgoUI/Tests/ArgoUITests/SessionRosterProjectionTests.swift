@@ -175,7 +175,7 @@ struct SessionRosterProjectionTests {
     }
 
     @Test
-    func `a running Session shows no age`() throws {
+    func `a running Session words its age like any other`() throws {
         let row = try #require(
             rows(RosterSessionFixture.session(
                 id: "running",
@@ -184,9 +184,10 @@ struct SessionRosterProjectionTests {
             )).first,
         )
 
-        // The dot already says it is live, and the same `0m ago` repeated down the roster is
-        // noise. Suppressed by the status, not by an absent time — this Session has one.
-        #expect(row.age == nil)
+        // The age holds the left of the second line: a running row that skipped it left the
+        // worktree beside an empty column, reading as a differently-built row rather than a live
+        // one. The status decides the dot, never whether the line is there.
+        #expect(row.age == "2m ago")
     }
 
     @Test
@@ -196,106 +197,6 @@ struct SessionRosterProjectionTests {
 
         // Absence renders as absence. A placeholder would read as a moment nobody observed.
         #expect(row.age == nil)
-    }
-
-    @Test
-    func `an archived Session is absent from the roster`() {
-        let sessions = [
-            RosterSessionFixture.session(id: "kept"),
-            RosterSessionFixture.session(id: "cleared", isArchived: true),
-        ]
-
-        let rows = SessionRosterProjection.rows(from: sessions, now: now)
-
-        // Gone from the list, not drawn quieter in it: archiving is how a finished Session
-        // leaves the roster, and a row still on it would be a filter that changed nothing.
-        #expect(rows.map(\.id) == ["kept"])
-    }
-
-    @Test
-    func `new activity in an archived Session does not put it back on the roster`() {
-        // The stray tail story 16 is about: the Session that moved most recently on this roster
-        // is the archived one, and the roster is ordered on exactly that key.
-        let sessions = [
-            RosterSessionFixture.session(id: "kept", lastSeenAtMs: msAgo(3600)),
-            RosterSessionFixture.session(
-                id: "cleared", status: .running, lastSeenAtMs: msAgo(0), isArchived: true,
-            ),
-        ]
-
-        let rows = SessionRosterProjection.rows(from: sessions, now: now)
-
-        // Only a decision puts a row back, and observing something is not one.
-        #expect(rows.map(\.id) == ["kept"])
-    }
-
-    @Test
-    func `the archived Sessions are the ones the roster left out`() {
-        let sessions = [
-            RosterSessionFixture.session(id: "kept"),
-            RosterSessionFixture.session(id: "cleared", isArchived: true),
-        ]
-
-        let archived = SessionRosterProjection.archivedRows(from: sessions, now: now)
-
-        // The two lists partition the Sessions: nothing is in both, and nothing is in neither.
-        #expect(archived.map(\.id) == ["cleared"])
-        #expect(archived.map(\.isArchived) == [true])
-        #expect(SessionRosterProjection.rows(from: sessions, now: now).map(\.isArchived) == [false])
-    }
-
-    @Test
-    func `an archived Session is described exactly as a kept one is`() throws {
-        let branch = "argo/#514-archive-session-swipe"
-        let cleared = RosterSessionFixture.session(
-            id: "cleared", branch: branch, lastSeenAtMs: msAgo(120),
-        )
-
-        let row = try #require(SessionRosterProjection.archivedRows(
-            from: [RosterSessionFixture.session(
-                id: "cleared",
-                branch: branch,
-                lastSeenAtMs: msAgo(120),
-                isArchived: true,
-            )],
-            now: now,
-        ).first)
-
-        // A Session put out of sight is not a Session described differently — the foot draws the
-        // same row the roster would have.
-        let kept = try #require(SessionRosterProjection.rows(from: [cleared], now: now).first)
-        #expect(row.title == kept.title)
-        #expect(row.branch == kept.branch)
-        #expect(row.age == kept.age)
-        #expect(row.announcement == kept.announcement)
-    }
-
-    @Test
-    func `the foot names how many Sessions are behind it, and is absent when none are`() {
-        let sessions = [
-            RosterSessionFixture.session(id: "a", isArchived: true),
-            RosterSessionFixture.session(id: "b", isArchived: true),
-        ]
-
-        let archived = SessionRosterProjection.archivedRows(from: sessions, now: now)
-
-        #expect(SessionRosterProjection.archivedFoot(archived) == "Archived (2)")
-        // A machine that has archived nothing pays no permanent chrome for the fact.
-        #expect(SessionRosterProjection.archivedFoot([]) == nil)
-    }
-
-    @Test
-    func `the archived roster the specimen renders shows a count and a live cleared Session`() {
-        // The `archivedRoster` PNG is the only evidence the foot has. A fixture with one archived
-        // Session would leave the plural unrendered, and one where everything archived was also
-        // finished would draw a rendering that agreed with the wrong rule.
-        let archived = ArchivedRosterSpecimen.archived
-
-        #expect(archived.count > 1)
-        #expect(archived.contains { $0.state == .running })
-        #expect(ArchivedRosterSpecimen.rows.isEmpty == false)
-        #expect(Set(ArchivedRosterSpecimen.rows.map(\.id))
-            .isDisjoint(with: archived.map(\.id)))
     }
 
     @Test

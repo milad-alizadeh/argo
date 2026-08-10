@@ -40,6 +40,12 @@ public struct SpecimenScreen: View {
             // The other half of the same feature: where a cleared Session went, and how loud
             // the foot that holds it is under a roster it must not compete with.
             ArchivedRosterSpecimen()
+        case .spawningRoster:
+            // The one case whose point is the CLICK: the shell over a Project with nothing
+            // started in it, and a spawn that answers with a row instead of doing nothing.
+            // Rendered, it is the empty roster beside a live New Session button; driven, it is
+            // the only way to see that pressing it puts a Session on the roster and points there.
+            SpawningRosterSpecimen()
         case .renamedRoster:
             // A roster with one name somebody typed on it, beside two the transcripts derived.
             // Whether a chosen name reads as the Session's own rather than as a label pinned over

@@ -126,6 +126,11 @@ public struct CockpitView: View {
                     room: $navigation.room,
                     presentation: presentation,
                     actions: actions,
+                    spawn: CockpitSpawn(
+                        presentation: presentation,
+                        actions: actions,
+                        navigation: navigation,
+                    ),
                 )
             }
         }
