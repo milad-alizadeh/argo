@@ -5,6 +5,10 @@
 /// a row and the header above it come to disagree about what the user renamed. Both projections
 /// call this and both assert through it (#502 §Seams).
 ///
+/// That BOTH read it is the spec's own requirement, not an extension of it: `cockpit-spec.md` §4.2
+/// — "Title resolves through a stable fallback chain — explicit name → linked ticket →
+/// conversation-derived … so rail and header always match."
+///
 /// Not a computed property on `CockpitPresentation.Session`, for the reason the projections exist
 /// at all: the presentation is the VALUE the shell is handed, and a rendering decision living on
 /// it would be a decision every surface inherits without having asked for it.
