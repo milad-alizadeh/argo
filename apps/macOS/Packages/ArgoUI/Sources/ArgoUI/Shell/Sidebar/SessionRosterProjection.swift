@@ -42,6 +42,10 @@ enum SessionRosterProjection {
         /// Which of the roster's two lists this row belongs to — and, on the row itself, which
         /// way its swipe goes: a row on the roster archives, a row under the foot comes back.
         let isArchived: Bool
+        /// What the dialog behind a double-click on the title opens with. Carried ON the row
+        /// because the row is all the view has: a surface that looked the Session up again to
+        /// build it could open a dialog naming something other than the line that was clicked.
+        let rename: SessionRenameProjection.Rename
 
         /// `fileprivate`, so `rows(from:)` is the only way a row comes into being and no surface
         /// can assemble one that disagrees with what the projection decided.
@@ -56,6 +60,7 @@ enum SessionRosterProjection {
             state: ArgoOperationalState?,
             stateWord: String?,
             isArchived: Bool,
+            rename: SessionRenameProjection.Rename,
         ) {
             self.id = id
             self.title = title
@@ -67,6 +72,7 @@ enum SessionRosterProjection {
             self.state = state
             self.stateWord = stateWord
             self.isArchived = isArchived
+            self.rename = rename
         }
 
         /// What a screen reader hears: the same `stateWord` the row draws, so the two can never
@@ -125,7 +131,10 @@ enum SessionRosterProjection {
             .map { session, worktree in
                 Row(
                     id: session.id,
-                    title: session.title,
+                    // The name the user set, ahead of the issue's and the derived one — the row
+                    // is where somebody set it, and it is the first place they look for it
+                    // afterwards (#502, story 19).
+                    title: SessionTitle.resolved(for: session),
                     location: session.workspaceLocation,
                     worktree: worktree,
                     branch: session.workspace?.branch,
@@ -136,6 +145,7 @@ enum SessionRosterProjection {
                     state: state(for: session.status),
                     stateWord: stateWord(for: session.status),
                     isArchived: session.isArchived,
+                    rename: SessionRenameProjection.rename(for: session),
                 )
             }
     }

@@ -55,7 +55,18 @@ enum HubSessionChain {
             }
             sessions.append(session)
         }
-        return ordered(sessions)
+        // A QUEUED prompt nothing has answered is not a Session. The CLI opens a transcript per
+        // queued prompt, so a Session queued several leaves several files, each holding one copy of
+        // the same words and no agent output — which the roster drew as that Session once per file.
+        //
+        // Both halves are load-bearing. Queued alone is an ordinary Session whose prompt arrived
+        // through the queue; unanswered alone is a Session that has only just started, and
+        // hiding those would be the roster missing live work. Only the pair is a file nothing will
+        // ever write to again.
+        //
+        // Dropped at publication rather than at discovery: the file is still tailed, so if an agent
+        // does pick the prompt up, its row appears without another sweep having to find it.
+        return ordered(sessions.filter { !$0.isQueued || $0.hasAgentActivity })
     }
 
     /// Newest activity first, with the id breaking a tie.

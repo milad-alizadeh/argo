@@ -53,6 +53,8 @@ public actor TranscriptReader {
             return [.title(title)]
         case let .lastPrompt(leafUuid):
             return [.headLeaf(uuid: leafUuid)]
+        case .queueOperation:
+            return [.queued]
         case .unknown:
             return []
         }
