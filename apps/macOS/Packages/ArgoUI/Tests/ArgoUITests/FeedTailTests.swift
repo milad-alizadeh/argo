@@ -26,16 +26,31 @@ struct FeedTailTests {
     /// A reading shorter than its pane is the row that looks like an edge case and is not. It never
     /// scrolls, so zero is its only offset AND its end; read as "not following", the way-back
     /// control would stand permanently over a reading with nothing below it.
+    struct Row {
+        let offset: CGFloat
+        let reading: CGFloat
+        let isFollowing: Bool
+        let at: String
+    }
+
     @Test(arguments: [
-        (offset: end, reading: reading, isFollowing: true, at: "the very end"),
-        (offset: end - FeedTail.slack / 2, reading: reading, isFollowing: true, at: "a hair short"),
-        (offset: end - FeedTail.slack - 1, reading: reading, isFollowing: false, at: "a row short"),
-        (offset: 0, reading: reading, isFollowing: false, at: "the start"),
-        (offset: 0, reading: 200, isFollowing: true, at: "a reading inside its pane"),
+        Row(offset: end, reading: reading, isFollowing: true, at: "the very end"),
+        Row(
+            offset: end - FeedTail.slack / 2,
+            reading: reading,
+            isFollowing: true,
+            at: "a hair short",
+        ),
+        Row(
+            offset: end - FeedTail.slack - 1,
+            reading: reading,
+            isFollowing: false,
+            at: "a row short",
+        ),
+        Row(offset: 0, reading: reading, isFollowing: false, at: "the start"),
+        Row(offset: 0, reading: 200, isFollowing: true, at: "a reading inside its pane"),
     ])
-    func `where the reading sits decides whether it is following`(
-        row: (offset: CGFloat, reading: CGFloat, isFollowing: Bool, at: String),
-    ) {
+    func `where the reading sits decides whether it is following`(row: Row) {
         #expect(
             FeedTail.isFollowing(offset: row.offset, pane: Self.pane, reading: row.reading)
                 == row.isFollowing,
