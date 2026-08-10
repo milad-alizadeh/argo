@@ -164,8 +164,12 @@ The shell owns the seams *between* the settled surfaces, not the surfaces themse
   active (driven) session. (Spawn is owned here because no other ticket owns it.)
 - **Cross-surface navigation** — project → room (`⌘1/⌘2/⌘3`) → drill into a roster row or backlog
   ticket → `Esc` returns to the room. Drilling never leaves the shell; the chrome persists.
-- **Session exit** — a merged / archived / finished session leaves the active roster and moves
-  to Archived (opened as a list, per #161). The roster shows the live world by default.
+- **Session exit** — an **archived** session leaves the active roster and moves to Archived
+  (opened as a list, per #161). Merging or finishing does not archive on your behalf; the roster
+  shows every unarchived session, live or not.
+  - **Amended by [#502](https://github.com/milad-alizadeh/argo/issues/502) — 2026-08-10:** this
+    read "a merged / archived / finished session leaves the active roster", because a merged
+    Session is often exactly the one you go back to. See `cockpit-spec.md` §4.1.
 
 ### Project Settings — the onboarding panel, re-entered
 

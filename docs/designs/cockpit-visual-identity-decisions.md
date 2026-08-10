@@ -143,6 +143,10 @@ its approved study are authoritative for the replacement look and feel.
 - **Boundary:** Typography remains quiet at cockpit density. The identity face is not used for body
   copy or every label, and the mono face does not become a decorative techno motif. Exact faces and
   metrics are settled by rendered comparison inside the Sessions study.
+- **Amended by [#502](https://github.com/milad-alizadeh/argo/issues/502) — 2026-08-10:** that
+  settlement landed on two faces, not three — see D24. The identity role is SF Pro at its own rung
+  and weight rather than a separate family, so this entry stands as the reasoning and D24 as the
+  faces.
 
 ## D9 — Geometry is part of the reskin
 
@@ -401,21 +405,24 @@ its approved study are authoritative for the replacement look and feel.
   without reducing user risk. Branch isolation supplies the necessary comparison and recovery
   boundary while allowing the final codebase to express one visual system cleanly.
 
-## D24 — Use the native macOS type trio
+## D24 — Use the native macOS type pair
 
-- **Decision:** Use SF Pro for controls, navigation, metadata, and prose; New York for Session titles
-  and only equally rare identity headings; and SF Mono for commands, branches, paths, diffs,
-  telemetry, and terminal-adjacent facts.
+- **Decision:** Use SF Pro for Session titles, identity headings, controls, navigation, metadata,
+  and prose; and SF Mono for commands, branches, paths, diffs, telemetry, and terminal-adjacent
+  facts. There is no third, serif voice.
 - **Delivery:** Resolve the families through macOS system stacks rather than bundling copies. Define
   their metrics as semantic type-role tokens, including size, line height, weight, and tracking;
   components consume those roles rather than naming fonts or dimensions locally.
-- **Boundary:** New York remains a restrained identity voice, not a general heading or body face.
-  SF Mono communicates machine evidence rather than decorating ordinary UI labels. Platform
-  fallbacks must preserve the serif, sans, and mono roles without pretending to be exact Apple
-  fonts.
-- **Why:** The trio matches the approved study, strengthens the native macOS character, and separates
-  human intent from interface language and machine output without adding font files or another
-  visual dependency.
+- **Boundary:** SF Mono communicates machine evidence rather than decorating ordinary UI labels.
+  Platform fallbacks must preserve the sans and mono roles without pretending to be exact Apple
+  fonts. Hierarchy inside SF Pro comes from rung, weight, and tracking, not from a second family.
+- **Why:** Two families separate human intent and interface language from machine output, which is
+  the distinction the cockpit actually reads on, and they do it in the native macOS voice without
+  adding font files or another visual dependency.
+- **Amended by [#502](https://github.com/milad-alizadeh/argo/issues/502) — 2026-08-10:** this read
+  as a trio, assigning New York to Session titles and rare identity headings. Corrected because the
+  serif was never implemented — `ArgoTypeface` carries exactly two cases, `interface` and `machine`,
+  and the running app draws SF everywhere — so the prose described a cockpit that does not exist.
 
 ## D25 — The minimap is a semantic event overview
 
@@ -556,16 +563,21 @@ its approved study are authoritative for the replacement look and feel.
 - **Decision:** The default header shows the Session title, current meaningful state, branch or
   detached `HEAD`, and useful elapsed or idle time. Absent, unknown, default, or accounting-oriented
   facts do not occupy the primary header line.
-- **Removed noise:** Do not render `unknown` as a fact or as a large placeholder medallion. Token
-  counts and remaining diagnostic telemetry move to a compact inspection surface, where their exact
-  values remain available on demand.
-- **Composition:** The New York title is the human anchor. Operational facts form one quiet,
+- **Removed noise:** Do not render `unknown` as a fact or as a large placeholder medallion. What
+  remains absent, default, or unreadable stays off the primary line rather than occupying it with a
+  placeholder.
+- **Composition:** The SF Pro title is the human anchor. Operational facts form one quiet,
   right-aligned strip using SF Pro and SF Mono by role; separators and labels appear only where they
   prevent ambiguity. The inspection surface follows D14's nearly opaque graphite popover recipe,
-  not a new glass island.
-- **Why:** The current header gives absent identity and large token accounting the same prominence as
-  the Session's purpose. Removing placeholders and demoting diagnostic totals restores a glanceable
-  hierarchy without discarding information.
+  not a new glass island, and it **explains** — it names the thresholds and what handing off does
+  rather than repeating a reading already on the line.
+- **Why:** The current header gives absent identity the same prominence as the Session's purpose.
+  Removing placeholders restores a glanceable hierarchy without discarding information.
+- **Amended by [#502](https://github.com/milad-alizadeh/argo/issues/502) — 2026-08-10:** two
+  clauses go. The title was assigned New York, corrected for the reason given in D24. And token
+  counts and diagnostic telemetry were banished to the inspection surface; they now sit on the tab
+  line with duration, because how full a Session's context is decides what you do next and a fact
+  behind a click is a fact nobody reads. The popover keeps the explanation, not the numbers.
 
 ## D32 — Activity and Delivery are attached edge tabs
 
