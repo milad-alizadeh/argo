@@ -23,9 +23,17 @@ extension SessionHeaderProjection {
             // Said as a spend, not as a count: `4.1M subagents` reads as four million of them.
             session.subagentTokens.map { "\(TokenCount.short($0)) in subagents" },
             ran(from: session).map { "started \(ElapsedTime.phrase(milliseconds: $0)) ago" },
-            worked(across: session.events).map { "worked \(ElapsedTime.phrase(milliseconds: $0))" },
+            worked(across: session.events).map(worked(for:)),
         ].compactMap(\.self)
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// A Session every one of whose gaps was too long worked NONE of the time it ran, and that is
+    /// the fact worth reading — `worked under a minute` would spell a Session left alone all day
+    /// exactly like one that has just started.
+    private static func worked(for milliseconds: Int) -> String {
+        guard milliseconds > 0 else { return "worked none of it" }
+        return "worked \(ElapsedTime.phrase(milliseconds: milliseconds))"
     }
 
     /// Wall-clock: the transcript's first record to its last, which is what the Session has
@@ -58,8 +66,6 @@ extension SessionHeaderProjection {
     /// gaps are only gaps if the moments they run between are the ones either side of them.
     private static func moments(in events: [TranscriptEvent]) -> [Int] {
         events.compactMap { event in
-            // Exhaustive on purpose: a timed event added to the stream has to answer here rather
-            // than being silently left out of a duration it belongs in.
             switch event {
             case let .prompt(_, atMs): atMs
             case let .toolCall(call): call.atMs

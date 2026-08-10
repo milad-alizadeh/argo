@@ -77,10 +77,11 @@ struct SessionHeaderSpendTests {
         #expect(SessionHeaderProjection.worked(across: []) == nil)
         #expect(SessionHeaderProjection.worked(across: calls(at: [0])) == nil)
         #expect(SessionHeaderProjection.worked(across: calls(at: [0, 60 * minute])) == 0)
-        // Rendered rather than dropped, and worded rather than said as `0m`.
+        // Rendered rather than dropped — and said as none of it, because `under a minute` would
+        // spell a Session left alone all day exactly like one that has just started.
         #expect(SessionHeaderProjection.spend(from: session(
             events: calls(at: [0, 60 * minute]),
-        )) == "worked under a minute")
+        )) == "worked none of it")
     }
 
     /// The moments are sorted before the gaps between them are taken. A resume chain is stitched

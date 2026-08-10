@@ -31,4 +31,17 @@ struct SpendReadingTests {
     func `a subagent's own record is not counted a second time`() async throws {
         #expect(try await spends(in: "askOffered").allSatisfy { $0.inputTokens != 900 })
     }
+
+    /// The other half of that overlap, on the grain a subagent's spend actually arrives at: a
+    /// delegating call's result carries the WHOLE subtree it ran, so a delegation made inside the
+    /// sidechain reports the same tokens again one level down. Only the outer one is read.
+    @Test
+    func `a delegation made inside a sidechain is not read as a second spend`() async throws {
+        let reported = try await Fixture.events("nestedDelegation").compactMap { event -> Usage? in
+            guard case let .toolCallOutcome(outcome) = event else { return nil }
+            return outcome.usage
+        }
+
+        #expect(reported.map(\.inputTokens) == [40000])
+    }
 }

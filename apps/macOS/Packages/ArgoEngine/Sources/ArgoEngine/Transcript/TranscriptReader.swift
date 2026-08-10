@@ -214,7 +214,11 @@ public actor TranscriptReader {
     /// where the host puts a tool's own result object instead. Read there second rather than
     /// first: `message.usage` is the host's own field, and it wins wherever one is present.
     private func spend(reportedIn message: MessageRecord) -> Usage? {
-        message.usage ?? Usage(reported: message.toolUseResult?["usage"])
+        // A SIDECHAIN result is the subagent's own call, not a delegation, and the delegating call
+        // above it already reports the whole subtree. Reading both would bill a nested delegation
+        // twice — the same guard, and the same reason, as `.usage` and the turn end have.
+        guard !message.isSidechain else { return nil }
+        return message.usage ?? Usage(reported: message.toolUseResult?["usage"])
     }
 
     /// What one resolved call produced, kinded — its patch where it mutated, its image where it

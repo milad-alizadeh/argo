@@ -5,8 +5,7 @@ import SwiftUI
 ///
 /// The spend sits HERE rather than beside the title because the header carries the Session's
 /// identity and one instrument, and a second reading beside the first would be two numbers
-/// competing at the top of the plane. This overturns D31, which banished token counts to an
-/// inspection popover — a fact worth acting on is worth being on screen.
+/// competing at the top of the plane (D31, as #502 amended it).
 ///
 /// The tabs themselves are still a placeholder (#401–#404). It is the slot that takes the slack, so
 /// the spend keeps its own edge on the day something real fills the zone.
