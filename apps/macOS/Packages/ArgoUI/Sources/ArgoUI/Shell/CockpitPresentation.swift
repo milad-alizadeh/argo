@@ -46,65 +46,6 @@ public struct CockpitPresentation: Equatable, Sendable {
         }
     }
 
-    public struct Session: Equatable, Identifiable, Sendable {
-        /// What the user can DO with a Session, which is the shell's question. Derived from
-        /// provenance — see `Access(provenance:)` — and never asserted beside it.
-        ///
-        /// Three postures rather than "managed and the rest", because the rest is two facts:
-        /// `external` was never Argo's, and `orphaned` was — Argo spawned it and then lost the
-        /// PTY with the process that owned it (`CONTEXT.md` L2). Both are read-only, which is
-        /// why that is a DERIVED property of a posture here and not a case beside them: a surface
-        /// asking "can this be driven" gets one answer, and a surface naming what it is looking
-        /// at gets the honest one.
-        public enum Access: CaseIterable, Equatable, Sendable {
-            case managed
-            case external
-            case orphaned
-        }
-
-        public let id: String
-        public let title: String
-        public let model: String?
-        public let workspaceLocation: String?
-        public let branch: String?
-        public let access: Access
-        public let status: SessionStatus
-        /// When this Session was last seen to run, in milliseconds since the epoch. The Hub's own
-        /// sort key rather than a second reading of it, so the roster's order and what the roster
-        /// says about that order cannot disagree. Absent where neither the records nor the file
-        /// behind them could say — which is a gap, never a moment to stand in for one.
-        public let lastSeenAtMs: Int?
-        /// Everything the Session's transcript said, in order — the feed's whole input.
-        ///
-        /// The engine's own events rather than a second shape named for the shell: the surface
-        /// that draws them is `FeedProjection`, and a presentation that pre-digested the stream
-        /// would put the reading decisions somewhere no test can reach them. Empty by default, so
-        /// a Session named for a fact about the roster does not have to invent a transcript.
-        public let events: [TranscriptEvent]
-
-        public init(
-            id: String,
-            title: String,
-            model: String?,
-            workspaceLocation: String?,
-            branch: String?,
-            access: Access,
-            status: SessionStatus,
-            lastSeenAtMs: Int? = nil,
-            events: [TranscriptEvent] = [],
-        ) {
-            self.id = id
-            self.title = title
-            self.model = model
-            self.workspaceLocation = workspaceLocation
-            self.branch = branch
-            self.access = access
-            self.status = status
-            self.lastSeenAtMs = lastSeenAtMs
-            self.events = events
-        }
-    }
-
     /// The engine's own enums, named for the shell rather than restated as it. A second copy would
     /// be two vocabularies for one fact, kept in step by hand.
     public typealias Checkout = CheckoutProjection.Head

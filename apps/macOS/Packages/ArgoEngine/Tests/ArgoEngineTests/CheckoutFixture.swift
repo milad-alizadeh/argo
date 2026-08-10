@@ -50,13 +50,23 @@ func testHub(
     -> Hub {
     Hub(
         projectURL: projectURL,
-        engine: Engine(readCheckout: checkout, readLiveness: liveness),
+        // No git read of any Session's folder: a suite that shelled out per poll would be
+        // asserting what this machine's checkouts happen to be. `HubWorkspaceTests` supplies its
+        // own read where the answer is the point.
+        engine: Engine(
+            readCheckout: checkout,
+            readWorkspace: noWorkspaceRead,
+            readLiveness: liveness,
+        ),
         discovery: discovery,
     )
 }
 
 /// A machine with no agent running on it anywhere.
 let noLiveProcesses: LivenessRead = { [] }
+
+/// A machine where git answers for no folder at all.
+let noWorkspaceRead: WorkspaceRead = { _ in nil }
 
 /// A machine running an agent in each of these folders.
 func liveProcesses(in cwds: String...) -> LivenessRead {

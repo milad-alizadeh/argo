@@ -56,12 +56,37 @@ extension CockpitPresentation.Session {
             title: session.title,
             model: session.model,
             workspaceLocation: session.cwd,
-            branch: session.branch,
             access: Access(provenance: session.provenance),
             status: session.status,
+            cli: session.cli,
+            workspace: Workspace(observed: session),
+            // No Work Item provider is connected in this build (#414 is the OAuth grant), so
+            // there is no link to read and nothing to render. Absent, rather than a link to a
+            // provider that does not exist.
+            issue: nil,
             lastSeenAtMs: session.lastSeenAtMs,
             events: session.events,
         )
+    }
+}
+
+extension CockpitPresentation.Session.Workspace {
+    /// The git context behind a Session, and `nil` where the transcript and the repository
+    /// together said nothing about one — an empty Workspace is still a claim that there is one.
+    init?(observed session: HubSession) {
+        guard session.branch != nil || session.workspace != nil else { return nil }
+        self.init(
+            kind: session.workspace.map(CockpitPresentation.Session.WorkspaceKind.init(read:)),
+            branch: session.branch,
+            dirty: session.workspace?.dirty,
+            unpushed: session.workspace?.unpushed,
+        )
+    }
+}
+
+extension CockpitPresentation.Session.WorkspaceKind {
+    init(read workspace: WorkspaceProjection) {
+        self = workspace.isWorktree ? .worktree : .main
     }
 }
 

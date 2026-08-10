@@ -97,6 +97,10 @@ public final class Hub {
     /// is read off these two.
     var liveCwds: Set<String> = []
     var livenessReadAtMs: Int?
+    /// What git last said about each Session's working folder, keyed by cwd. Observed for the
+    /// same reason liveness is: a branch that moves or a file that changes has to reach the
+    /// roster, and the roster is read off this.
+    var workspaces: [String: WorkspaceProjection] = [:]
     @ObservationIgnored var livenessPolling: Task<Void, Never>?
 
     var join = HubJoin()

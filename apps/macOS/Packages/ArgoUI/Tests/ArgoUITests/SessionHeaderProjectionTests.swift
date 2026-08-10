@@ -20,7 +20,9 @@ struct SessionHeaderProjectionTests {
         // The default state is silent. A mark on every header is a mark nobody reads by the
         // second Session, and the exceptions below are the only two worth the ink.
         #expect(header.access == nil)
-        #expect(header.announcement == "Session")
+        // The title, then the Session's own facts — and no word between them where a posture
+        // would have gone.
+        #expect(header.announcement.hasPrefix("Session, on main"))
     }
 
     @Test
@@ -68,7 +70,7 @@ struct SessionHeaderProjectionTests {
             access: .external,
         ))
 
-        #expect(header.announcement == "Watch an externally launched agent, Read-only")
+        #expect(header.announcement.hasPrefix("Watch an externally launched agent, Read-only"))
     }
 
     @Test
@@ -107,9 +109,10 @@ struct SessionHeaderProjectionTests {
             title: title,
             model: "claude-opus-5",
             workspaceLocation: "/Users/milad/Developer/argo",
-            branch: "main",
             access: access,
             status: .idle,
+            cli: .claude,
+            workspace: .init(branch: "main"),
         )
     }
 }

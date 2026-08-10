@@ -13,6 +13,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// What Argo can see of the process behind the transcript. Set by the Hub from its own liveness
     /// read; quiet until one has been taken, because ambiguity resolves toward the quieter state.
     public internal(set) var liveness: SessionLiveness = .quiet
+    /// Which agent program wrote this record (`CONTEXT.md` L2). Set by the Hub from the record
+    /// store the transcript was swept out of, or DIRECT from the spawn for a Session Argo
+    /// started; never guessed from the prose inside the file.
+    public internal(set) var cli: AgentCLI?
+    /// The git context of the Session's working directory, as of the last read. Absent until one
+    /// has happened, and absent for a folder git could not answer for — an unread Workspace is
+    /// not a clean one.
+    public internal(set) var workspace: WorkspaceProjection?
     /// What this Session said over the companion channel, where it has one. Absent for every
     /// external Session and for a managed one whose agent has not spoken — which is not a degrade,
     /// only the tier having nothing to say yet.
@@ -80,6 +88,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.sourceURL = nil
         self.title = spawn.title
         self.cwd = spawn.cwd
+        // DIRECT: Argo chose this program and started it.
+        self.cli = spawn.cli
         self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
         self.startedAtMs = spawn.spawnedAtMs
         self.lastStop = spawn.exit == nil ? .endTurn : .cancelled

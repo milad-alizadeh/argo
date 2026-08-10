@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The deck's top zone: the Session's own title, and — only when it is not a plain managed
-/// Session — what you can do with it.
+/// The deck's top zone: the Session's own title, what you can do with it when that is not the
+/// default, and the facts that say what it is working on and with — its branch and that branch's
+/// state, its CLI and model, and the issue it serves.
 ///
 /// It draws no ground and no rule of its own. The deck is one opaque plane and the header reads as
 /// one region with the tabs beneath it, which is why the approved study puts no separator between
@@ -23,9 +24,10 @@ struct SessionHeader: View {
             if let header {
                 title(header)
                 mark(header)
+                SessionHeaderFacts(header: header)
             }
-            // The trailing space the later header tickets fill — the branch and its state, the
-            // CLI and model, the linked issue, and the context reading on the right edge.
+            // The trailing space the later header tickets fill — the context reading on the
+            // right edge, and what it offers to do about it.
             Spacer(minLength: ArgoSpacing.loose)
         }
         .padding(.horizontal, ArgoSpacing.section)

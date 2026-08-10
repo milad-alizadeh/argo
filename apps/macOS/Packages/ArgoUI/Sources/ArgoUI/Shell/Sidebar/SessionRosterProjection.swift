@@ -75,7 +75,7 @@ enum SessionRosterProjection {
                 id: session.id,
                 title: session.title,
                 location: session.workspaceLocation,
-                branch: session.branch,
+                branch: session.workspace?.branch,
                 isReadOnly: isReadOnly(session.access),
                 age: age(status: session.status, lastSeenAtMs: session.lastSeenAtMs, nowMs: nowMs),
                 state: state(for: session.status),

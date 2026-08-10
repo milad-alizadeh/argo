@@ -278,9 +278,9 @@ struct SessionRosterProjectionTests {
             title: "Session \(id)",
             model: "claude-opus-5",
             workspaceLocation: workspaceLocation,
-            branch: branch,
             access: access,
             status: status,
+            workspace: branch.map { .init(branch: $0) },
             lastSeenAtMs: lastSeenAtMs,
         )
     }
