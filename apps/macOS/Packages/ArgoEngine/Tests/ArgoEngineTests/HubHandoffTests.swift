@@ -17,7 +17,7 @@ struct HubHandoffTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         _ = try await fixture.hub.spawnSession()
-        await hubObserveToEnd(fixture.hub, Self.observedSpawn(of: fixture))
+        await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
 
         #expect(fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff /tmp/b.md\n"))
 
@@ -31,7 +31,7 @@ struct HubHandoffTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         _ = try await fixture.hub.spawnSession()
-        await hubObserveToEnd(fixture.hub, Self.observedSpawn(of: fixture))
+        await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
         fixture.host.endLastProcess(exitCode: 0)
 
         #expect(!fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff\n"))
@@ -106,7 +106,7 @@ struct HubHandoffTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         // The full Session first, so no claim covers it: it is somebody else's agent, observed.
-        await hubObserveToEnd(fixture.hub, Self.observedFullSession(of: fixture))
+        await hubObserveToEnd(fixture.hub, handedOffSessionObservation(of: fixture))
         let fresh = try await fixture.hub.spawn(SessionSeed(cwd: fixture.projectURL.path))
         fixture.hub.handedOff(sessionID: "full-session", to: fresh)
 
@@ -114,7 +114,7 @@ struct HubHandoffTests {
 
         // The fresh agent writes its first record, and its row stands down in favour of the one the
         // CLI named. The link has to arrive at the same place.
-        await hubObserveToEnd(fixture.hub, Self.observedSpawn(of: fixture))
+        await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
 
         #expect(Self.handedOffTo(in: fixture.hub, from: "full-session") == "session-from-cli")
         #expect(fixture.hub.sessions.count == 2)
@@ -125,7 +125,7 @@ struct HubHandoffTests {
     func `a Session that handed nothing over carries no chain`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        await hubObserveToEnd(fixture.hub, Self.observedFullSession(of: fixture))
+        await hubObserveToEnd(fixture.hub, handedOffSessionObservation(of: fixture))
 
         #expect(Self.handedOffTo(in: fixture.hub, from: "full-session") == nil)
     }
@@ -142,30 +142,5 @@ struct HubHandoffTests {
 
     private static func handedOffTo(in hub: Hub, from sessionID: String) -> String? {
         hub.sessions.first { $0.id == sessionID }?.handedOffTo
-    }
-
-    /// The Session being handed OFF: in the Project's folder like the spawn, but observed before
-    /// any
-    /// claim exists, so nothing here is Argo's.
-    private static func observedFullSession(of fixture: SpawnFixture) -> TranscriptObservation {
-        hubTestObservation(
-            id: "full-session",
-            events: [
-                .cwd(fixture.projectURL.path),
-                .prompt(text: "A long conversation", atMs: Date().epochMs),
-                .turnEnded(.endTurn),
-            ],
-        )
-    }
-
-    private static func observedSpawn(of fixture: SpawnFixture) -> TranscriptObservation {
-        hubTestObservation(
-            id: "session-from-cli",
-            events: [
-                .cwd(fixture.projectURL.path),
-                .prompt(text: "First prompt", atMs: Date().epochMs),
-                .turnEnded(.endTurn),
-            ],
-        )
     }
 }

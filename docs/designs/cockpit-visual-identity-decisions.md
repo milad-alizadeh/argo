@@ -586,7 +586,10 @@ its approved study are authoritative for the replacement look and feel.
 - **Also #513:** once a Session's work has been handed over, the **Hand off** button leaves the
   header and the reading gains its one row that is a way OUT of itself: `handed off to <Session>`,
   at the foot under the spend, in the ink this app spends on links. The coloured reading stays as it
-  was — the context really is that full — so what changes is the remedy, not the fact.
+  was — the context really is that full — so what changes is the remedy, not the fact. The link
+  **survives a restart**: it is written beside the brief it came from, in Argo's own per-machine
+  data, and named with the fresh Session's real id once its CLI has written one. A handoff whose
+  fresh agent never wrote a record leaves no link rather than one to a claim nobody can follow.
 
 ## D32 — Activity and Delivery are attached edge tabs
 

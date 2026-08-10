@@ -12,15 +12,22 @@ public struct SpawnServices {
     public let launcher: AgentLauncher
     /// Where the companion channel writes its sockets and plugin directories.
     public let companionRoot: URL
+    /// Where the handoff chain is remembered. `nil` remembers nothing, which is the honest default
+    /// here for the reason `host` is absent by default: a Hub that cannot spawn cannot hand off,
+    /// and a test or a render harness that named no folder must not read or write the machine's own
+    /// file.
+    public let chainFileURL: URL?
 
     public init(
         host: AgentProcessHost?,
         launcher: AgentLauncher = AgentLauncher(),
         companionRoot: URL = CompanionChannel.defaultRoot,
+        chainFileURL: URL? = nil,
     ) {
         self.host = host
         self.launcher = launcher
         self.companionRoot = companionRoot
+        self.chainFileURL = chainFileURL
     }
 
     /// A Hub that observes and never spawns.

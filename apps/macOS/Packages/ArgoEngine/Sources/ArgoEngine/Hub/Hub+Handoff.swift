@@ -25,17 +25,33 @@ extension Hub: HandoffHost {
         try await spawnSession(seed: seed).value
     }
 
-    /// The edge, held for the life of this process and no longer.
+    /// The edge, held in memory and written down.
     ///
-    /// In memory for the reason `SessionOwnership` is (ADR-0013): what the fresh row is CALLED is a
-    /// claim id until its CLI writes a record, and a claim cannot be re-adopted by a later Argo. A
-    /// restart therefore forgets the chain — and forgets it in the one direction that stays honest,
-    /// because the same restart demotes the handed-off Session to `orphaned`, which offers no
-    /// button to press and no fresh row to point at either. The briefs on disk under `handoffs/`
-    /// are what a durable chain would be DERIVED from the day one is wanted; a stored link would be
-    /// Argo owning a fact it can no longer stand behind.
+    /// In memory because what the fresh row is CALLED right now is a claim id, and a claim belongs
+    /// to this process (ADR-0013) — the roster reads it back through `rowID(ofClaim:)`. On disk
+    /// because the handoff itself is not a fact about this process: it is what a Session PRODUCED,
+    /// which `CONTEXT.md` keeps as an Outcome, and nothing else on the machine records it.
+    ///
+    /// The written link is recorded against the CLAIM and named later, when the fresh agent's first
+    /// record gives it an id — see `HandoffChain`. So a link is durable exactly when it is worth
+    /// following, and a fresh Session that wrote nothing leaves an absence rather than a dead name.
     public func handedOff(sessionID: String, to fresh: String) {
         handoffs[sessionID] = fresh
+        chain = chainStore.update { chain in
+            chain.record(from: sessionID, claim: fresh, atMs: Date().epochMs)
+            return true
+        }
+    }
+
+    /// The fresh agent has written a record and its claim now has the id the CLI picked. That is
+    /// the moment the written link stops being about a claim, so it is the moment it is named.
+    ///
+    /// Called on every observation batch and answers nothing when there is nothing to name — the
+    /// store is only written when a link actually changed.
+    func nameChain(claim: SessionOwnership.ClaimID, as sessionID: String) {
+        guard chain.links.contains(where: { $0.claim == claim.value && $0.to == nil })
+        else { return }
+        chain = chainStore.update { chain in chain.name(claim: claim.value, as: sessionID) }
     }
 
     /// The address `HandoffScript` explains, made concrete: Argo's own per-machine data, beside the
@@ -43,4 +59,16 @@ extension Hub: HandoffHost {
     public static let handoffRoot = ProjectRegistryStore.defaultFileURL
         .deletingLastPathComponent()
         .appending(path: "handoffs", directoryHint: .isDirectory)
+}
+
+@MainActor
+extension Hub {
+    /// The chain as the ROSTER reads it: the links a restart can still follow, plus the ones this
+    /// process made a moment ago and has not seen a record for yet.
+    ///
+    /// The live half wins where both have something to say about a Session — it is the same
+    /// handoff, held under the claim that is still the row's id until the rebind happens.
+    var followableHandoffs: [String: String] {
+        chain.resolved.merging(handoffs) { _, live in live }
+    }
 }

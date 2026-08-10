@@ -108,6 +108,10 @@ extension Hub {
                 startedAtMs: session.startedAtMs,
             ) else { continue }
             spawns.removeValue(forKey: claim)
+            // The one moment a written handoff link can stop naming a claim and name a Session
+            // instead. Here rather than in the store, because binding happens once per claim and
+            // this is the call that knows it just did (#513).
+            nameChain(claim: claim, as: session.id)
         }
     }
 

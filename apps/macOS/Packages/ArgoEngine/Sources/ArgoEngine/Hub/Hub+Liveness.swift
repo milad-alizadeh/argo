@@ -99,7 +99,7 @@ extension Hub {
         // Read through the claim rather than published as it was recorded: the fresh row is
         // re-keyed to its CLI's own id the moment its record appears, and the link has to follow it
         // there.
-        published.handedOffTo = handoffs[session.id].map(ownership.rowID(ofClaim:))
+        published.handedOffTo = followableHandoffs[session.id].map(ownership.rowID(ofClaim:))
         return published
     }
 }
