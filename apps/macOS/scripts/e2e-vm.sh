@@ -3,8 +3,11 @@
 #
 # Usage, from apps/macOS:
 #   sh scripts/e2e-vm.sh --provision            # once per machine, interactive, downloads the image
-#   sh scripts/e2e-vm.sh                        # every run after that, headless and unattended
-#   sh scripts/e2e-vm.sh -only-testing:ArgoE2ETests/ProjectDrawerE2ETests
+#   sh scripts/e2e-test.sh                      # every run after that, headless and unattended
+#   sh scripts/e2e-test.sh -only-testing:ArgoE2ETests/ProjectDrawerE2ETests
+#
+# `--provision` is the only one you call HERE. Everything after it goes through `e2e-test.sh`,
+# which routes to this script by default — one answer to "what do I type", not two.
 #
 # `scripts/e2e-host.sh` drives the real app through the real WindowServer. That is what makes it
 # the only test here that can click, and it is also why it takes the keyboard and mouse away from
@@ -52,18 +55,22 @@ GUEST_DIR="argo/$TREE/apps/macOS"
 # and two `xcodebuild test` runs clicking at the same window is a flake with no honest diagnosis.
 GUEST_LOCK="argo/.e2e-lock"
 
+# Virtualization.framework is Apple silicon only, so on Intel there is no VM to hand the suite.
+# Refuse rather than fall through to the host run: this script is what the default entry point
+# reaches, and a fallback here would take the machine over for somebody who never asked. That is
+# the same answer the no-tart and no-VM branches below give, so all three "no VM available" cases
+# behave alike. Checked before `--provision` is parsed, because an image that cannot boot here is
+# no more provisionable than it is runnable.
+if [ "$(uname -m)" != "arm64" ]; then
+  echo "e2e-vm: no VM on Intel — Virtualization.framework is Apple silicon only." >&2
+  echo "e2e-vm: 'sh scripts/e2e-test.sh --host' runs it here, and WILL take your mouse." >&2
+  exit 1
+fi
+
 PROVISION=0
 if [ "${1:-}" = "--provision" ]; then
   PROVISION=1
   shift
-fi
-
-# Virtualization.framework is Apple silicon only, so on Intel there is no VM to hand the suite.
-# Fall through to the direct run rather than leaving the developer with nothing — loudly, because
-# the whole point of this script is that the direct run takes the machine over.
-if [ "$(uname -m)" != "arm64" ]; then
-  echo "e2e-vm: no VM on Intel — falling back to scripts/e2e-host.sh, which WILL take your mouse"
-  exec sh scripts/e2e-host.sh "$@"
 fi
 
 if ! command -v tart >/dev/null 2>&1; then
@@ -182,7 +189,7 @@ if [ "$PROVISION" -eq 1 ]; then
   run_in_guest "$IP" "sh scripts/e2e-host.sh" || true
 
   echo "e2e-vm: provisioned, and $VM is still up ('tart stop $VM' to close its window)."
-  echo "e2e-vm: 'sh scripts/e2e-vm.sh' from here on — headless, no prompt, no window."
+  echo "e2e-vm: 'sh scripts/e2e-test.sh' from here on — headless, no prompt, no window."
   exit 0
 fi
 

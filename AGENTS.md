@@ -210,9 +210,12 @@ gate, same tests; only the screen changes.
 The host path is **kept but opt-in**: `sh scripts/e2e-test.sh --host` (or `ARGO_E2E_HOST=1`), which
 execs `scripts/e2e-host.sh` — the runner, and the one that **seizes the real mouse and keyboard**.
 Reach for it when there is no VM (no Tart, an Intel Mac, no provision yet) or when you want to
-watch the suite drive the app. Two things about that path that are not obvious: the first run on a
-machine answers a macOS authorisation prompt **by hand**, and a locked or sleeping display fails
-the same way. The VM has that same prompt, answered once inside the guest during `--provision`.
+watch the suite drive the app. When there is no VM the default **fails with instructions rather
+than falling back** — all three of those cases exit rather than quietly taking the machine, so the
+host run is only ever reached by asking for it. Two things about that path that are not obvious:
+the first run on a machine answers a macOS authorisation prompt **by hand**, and a locked or
+sleeping display fails the same way. The VM has that same prompt, answered once inside the guest
+during `--provision`.
 
 Router and runner are two files on purpose — `e2e-vm.sh` runs `e2e-host.sh` *inside* the guest, so
 routing `e2e-test.sh` to the VM would otherwise be a loop with no bottom.
