@@ -57,11 +57,26 @@ struct SessionNavigator: View {
                     swipeable(row)
                 }
             } header: {
-                Text(label)
-                    .argoText(ArgoTypography.caption)
-                    .foregroundStyle(argo.color.text.tertiary)
+                footHeader(label)
             }
         }
+    }
+
+    /// The chevron is drawn rather than left to the section, which shows one only under the
+    /// pointer: a foot nobody knows opens is a foot nobody opens. Inert — the section's own header
+    /// takes the click, and a second control on top of it would toggle twice.
+    private func footHeader(_ label: String) -> some View {
+        HStack(spacing: ArgoSpacing.snug) {
+            ArgoGlyph(
+                isArchiveShowing ? ArgoSymbol.disclosure : ArgoSymbol.disclosureTrailing, .inline,
+            )
+            Text(label)
+                .argoText(ArgoTypography.caption)
+            Spacer(minLength: ArgoSpacing.flush)
+        }
+        .foregroundStyle(argo.color.text.tertiary)
+        .padding(.vertical, ArgoSpacing.tight)
+        .contentShape(.rect)
     }
 
     /// Which way the gesture goes is the row's own state and not a second reading of which list

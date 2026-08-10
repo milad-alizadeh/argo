@@ -143,7 +143,8 @@ public extension ArgoPalette {
         }
     }
 
-    /// Ion Blue and nothing else. Brand, interaction, selection, focus — never status.
+    /// Ion Blue — brand, interaction, selection, focus, never status — plus the one interaction
+    /// that is deliberately not the brand: the ground under an act the reader may not want.
     struct InteractionRoles: Sendable {
         /// The brand hue at rest.
         public let accent: ArgoColor
@@ -155,6 +156,15 @@ public extension ArgoPalette {
         public let selectionIndicator: ArgoColor
         /// The keyboard focus ring.
         public let focusRing: ArgoColor
+        /// The GROUND under a control that takes something away — the Archive behind a swiped
+        /// roster row. Red because the reader has to weigh it before letting go, which is not
+        /// something the brand hue can say.
+        ///
+        /// Its own role rather than a borrow from `state.failure`, and held a clear distance from
+        /// it, for the reason `DiffRoles` gives: the two appear inches apart on one roster row, and
+        /// "this will take the Session off the list" and "this Session failed" are not one fact.
+        /// A ground, besides, where `failure` is an ink — deep enough to carry `text.primary`.
+        public let destructive: ArgoColor
 
         public init(
             accent: ArgoColor,
@@ -162,18 +172,21 @@ public extension ArgoPalette {
             accentDeep: ArgoColor,
             selectionIndicator: ArgoColor,
             focusRing: ArgoColor,
+            destructive: ArgoColor,
         ) {
             self.accent = accent
             self.accentBright = accentBright
             self.accentDeep = accentDeep
             self.selectionIndicator = selectionIndicator
             self.focusRing = focusRing
+            self.destructive = destructive
         }
 
         public var all: [(name: String, color: ArgoColor)] {
             [
                 ("accent", accent), ("accentBright", accentBright), ("accentDeep", accentDeep),
                 ("selectionIndicator", selectionIndicator), ("focusRing", focusRing),
+                ("destructive", destructive),
             ]
         }
     }

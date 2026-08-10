@@ -50,6 +50,14 @@ struct RosterSwipe: Equatable {
         travelled(rowID)
     }
 
+    /// How wide the slot holding the MARK is, inside that ground. It grows with the reveal and
+    /// then stops, pinned to the ground's leading edge — so past the reveal the mark keeps its
+    /// place beside the row it is about, rather than drifting into the middle of a block that goes
+    /// on widening all the way to the hard swipe.
+    func markWidth(of rowID: String) -> CGFloat {
+        min(travelled(rowID), ArgoLayout.rosterSwipeRevealWidth)
+    }
+
     /// The gesture moving. `translation` is the drag's own x, so a pull left is negative and a
     /// push back right unwinds an open row towards closed.
     ///

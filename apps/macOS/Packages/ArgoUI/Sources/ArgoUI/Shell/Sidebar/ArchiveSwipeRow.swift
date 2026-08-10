@@ -25,6 +25,11 @@ struct ArchiveSwipeRow: View {
                 .background(isRevealing ? argo.color.surface.raised : .transparent)
                 .offset(x: swipe.offset(of: row.id))
         }
+        // One shape over the pair, and the reason there is a shape at all: a row travelling left
+        // runs its title off the sidebar's own edge, where the window cuts it mid-letter against
+        // the chrome. Clipped, the row ends where the roster's selection capsule ends and the
+        // Archive is the same corner beside it rather than a square block against a round one.
+        .clipShape(.rect(cornerRadius: ArgoRadius.control))
         .argoAnimation(.reveal, value: swipe)
         .gesture(drag)
     }
@@ -35,10 +40,13 @@ struct ArchiveSwipeRow: View {
         if isRevealing {
             Button(action: take) {
                 ArgoGlyph(symbol, .control)
-                    .foregroundStyle(argo.color.text.onAccent)
-                    .frame(width: swipe.revealedWidth(of: row.id), alignment: .center)
+                    // The brightest ink there is, because the ground under it is the darkest
+                    // thing on the roster — `text.onAccent` is a near-black meant for Ion Blue.
+                    .foregroundStyle(argo.color.text.primary)
+                    .frame(width: swipe.markWidth(of: row.id))
+                    .frame(width: swipe.revealedWidth(of: row.id), alignment: .leading)
                     .frame(maxHeight: .infinity)
-                    .background(argo.color.interaction.accent)
+                    .background(argo.color.interaction.destructive)
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)

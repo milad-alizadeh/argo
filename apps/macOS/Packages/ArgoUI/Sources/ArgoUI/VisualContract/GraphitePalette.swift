@@ -53,6 +53,10 @@ public extension ArgoPalette {
             accentDeep: ArgoColor(hex: 0x1E6FD4),
             selectionIndicator: ArgoColor(hex: 0x3E9BFF),
             focusRing: ArgoColor(hex: 0x6FB6FF),
+            // Deeper and duller than the failure ink above it, which is what a GROUND under a
+            // whole block of a row has to be: at the ink's brightness the Archive shouted louder
+            // than every Session on the roster put together.
+            destructive: ArgoColor(hex: 0xB3372F),
         ),
         state: StateRoles(
             running: ArgoColor(hex: 0x46D3A8),

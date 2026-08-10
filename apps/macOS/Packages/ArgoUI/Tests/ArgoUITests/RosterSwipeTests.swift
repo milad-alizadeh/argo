@@ -69,6 +69,21 @@ struct RosterSwipeTests {
         #expect(swipe.revealedWidth(of: "a") == ArgoLayout.rosterSwipeRevealWidth)
     }
 
+    /// The ground goes on widening; the mark does not go with it. Past the reveal it keeps its
+    /// place beside the row it is about rather than drifting into the middle of the block.
+    @Test
+    func `the mark stops growing at the control's own width`() {
+        var swipe = RosterSwipe()
+
+        // Short of the control's own width the mark grows with the ground, one width between them.
+        swipe.drag("a", translation: -ArgoLayout.rosterSwipeSettle)
+        #expect(swipe.markWidth(of: "a") == ArgoLayout.rosterSwipeSettle)
+
+        swipe.drag("a", translation: -ArgoLayout.rosterSwipeCommit)
+        #expect(swipe.markWidth(of: "a") == ArgoLayout.rosterSwipeRevealWidth)
+        #expect(swipe.revealedWidth(of: "a") == ArgoLayout.rosterSwipeCommit)
+    }
+
     @Test
     func `a row at rest is not drawn off its place and reveals nothing`() {
         let swipe = RosterSwipe()

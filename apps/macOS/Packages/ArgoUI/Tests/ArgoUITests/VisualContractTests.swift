@@ -59,6 +59,18 @@ struct VisualContractTests {
         #expect(palette.interaction.focusRing == palette.interaction.accentBright)
     }
 
+    @Test(arguments: palettes)
+    func `the destructive ground is neither the brand nor the failure ink`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        let destructive = appearance.palette.interaction.destructive
+        #expect(destructive.distance(to: appearance.palette.interaction.accent) > 0.25)
+        // Inches apart on one swiped roster row, and two different claims — see `DiffRoles`.
+        #expect(destructive.distance(to: appearance.palette.state.failure) > 0.25)
+        // The mark on it is the row's own brightest ink, not the near-black Ion Blue takes.
+        #expect(appearance.palette.text.primary.contrastRatio(on: destructive) >= 4.5)
+    }
+
     @Test
     func `the selected row's wash is neutral — the brand is the indicator, not the fill`() {
         let wash = palette.surface.selected.composited(over: palette.surface.base)
