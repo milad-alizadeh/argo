@@ -51,7 +51,39 @@ public struct ProjectRegistry: Equatable, Sendable {
     func relocating(id: String, path: String) -> ProjectRegistry {
         guard project(atPath: path).map({ $0.id == id }) ?? true else { return self }
         return ProjectRegistry(
-            projects: projects.map { $0.id == id ? ProjectRecord(id: id, path: path) : $0 },
+            projects: projects.map { $0.id == id ? $0.relocated(to: path) : $0 },
+            activeProjectID: activeProjectID,
+        )
+    }
+
+    /// Which Account a Project reads one port through, if it has chosen one. Absent is a
+    /// first-class answer — an unbound port is "no Work Items", not a failure (CONTEXT.md).
+    public func binding(on port: AccountPort, of projectID: String?) -> ProjectBinding? {
+        project(id: projectID)?.binding(on: port)
+    }
+
+    /// Choose an Account for one port of one Project. Validation happened before this — the
+    /// registry records a decision, and has no way to reach a provider to second-guess it.
+    ///
+    /// An id no record carries is left alone rather than creating one: binding is a choice about a
+    /// Project, and a Project is created by registration and by nothing else.
+    func binding(_ binding: ProjectBinding, to projectID: String) -> ProjectRegistry {
+        mapping(projectID) { $0.binding(binding) }
+    }
+
+    /// Give a port back to unbound. The Account keeps its grant — this says which provider *this*
+    /// Project reads through, and nothing about the identity itself.
+    func unbinding(port: AccountPort, from projectID: String) -> ProjectRegistry {
+        mapping(projectID) { $0.unbinding(port: port) }
+    }
+
+    private func mapping(
+        _ projectID: String,
+        _ transform: (ProjectRecord) -> ProjectRecord,
+    )
+        -> ProjectRegistry {
+        ProjectRegistry(
+            projects: projects.map { $0.id == projectID ? transform($0) : $0 },
             activeProjectID: activeProjectID,
         )
     }

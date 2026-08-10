@@ -21,7 +21,7 @@ public actor AccountRegistryStore {
     public init(
         fileURL: URL = AccountRegistryStore.defaultFileURL,
         grants: AccountGrantStore = KeychainGrantStore(),
-        bindings: AccountBindingIndex = NoAccountBindings(),
+        bindings: AccountBindingIndex = ProjectBindingIndex(),
     ) {
         self.fileURL = fileURL
         self.grants = grants
