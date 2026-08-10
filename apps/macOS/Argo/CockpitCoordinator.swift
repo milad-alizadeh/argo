@@ -40,7 +40,12 @@ final class CockpitCoordinator {
             // The real PTY host is composed in HERE, at the app layer, which is what keeps the
             // engine runnable with no window: `ArgoTerminal` links SwiftTerm and therefore AppKit,
             // and nothing under `ArgoEngine` names either.
-            spawnServices: SpawnServices(host: SwiftTermProcessHost()),
+            spawnServices: SpawnServices(
+                host: SwiftTermProcessHost(),
+                // The one place the real chain file is named. A Hub given none remembers no
+                // handoff, which is what every test and the render harness want.
+                chainFileURL: HandoffChainStore.defaultFileURL,
+            ),
         )
     }
 

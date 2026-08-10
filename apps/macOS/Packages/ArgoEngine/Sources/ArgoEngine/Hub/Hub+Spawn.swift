@@ -8,14 +8,22 @@ import Foundation
 /// silent about the one Session Argo knows for certain (#361).
 @MainActor
 public extension Hub {
-    /// Launch the Project's agent in the Project's own folder, own its PTY, and put it in the
-    /// roster. Returns the claim, which is also the id of the row it just published.
+    /// Launch the Project's agent, own its PTY, and put it in the roster. Returns the claim, which
+    /// is also the id of the row it just published.
+    ///
+    /// The seed is what a handoff adds and a New Session leaves empty (#513): a folder other than
+    /// the Project's, and a prompt to open on. Everything after that is identical, deliberately —
+    /// the second half of handing off calls this path rather than a second one beside it.
     @discardableResult
-    func spawnSession(cli: AgentCLI = .claude) async throws -> SessionOwnership.ClaimID {
+    func spawnSession(
+        cli: AgentCLI = .claude,
+        seed: SessionSeed = .unseeded,
+    ) async throws
+        -> SessionOwnership.ClaimID {
         guard let host = spawnServices.host else {
             throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
         }
-        let cwd = project.url.path
+        let cwd = seed.cwd ?? project.url.path
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: cwd, isDirectory: &isDirectory),
               isDirectory.boolValue
@@ -29,7 +37,10 @@ public extension Hub {
                 cwd: cwd,
                 companion: invitation,
             )
-            let process = try host.start(launch, events: events(for: claim))
+            let process = try host.start(
+                seed.opening.map(launch.opening) ?? launch,
+                events: events(for: claim),
+            )
             terminals.adopt(claim, process: process)
             spawns[claim] = AgentSpawn(
                 claim: claim,
@@ -97,6 +108,10 @@ extension Hub {
                 startedAtMs: session.startedAtMs,
             ) else { continue }
             spawns.removeValue(forKey: claim)
+            // The one moment a written handoff link can stop naming a claim and name a Session
+            // instead. Here rather than in the store, because binding happens once per claim and
+            // this is the call that knows it just did (#513).
+            nameChain(claim: claim, as: session.id)
         }
     }
 

@@ -25,6 +25,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// external Session and for a managed one whose agent has not spoken — which is not a degrade,
     /// only the tier having nothing to say yet.
     public internal(set) var convention: CompanionReport?
+    /// The Session this one handed its work to, where it handed it to one — the row a reader
+    /// follows to find the work continuing. Set by the Hub from its own record of the handoff,
+    /// never read from a transcript: neither CLI knows anything happened, and the fresh agent's own
+    /// record says only that it was opened on a brief.
+    public internal(set) var handedOffTo: String?
     public private(set) var title: String
     public private(set) var cwd: String?
     public private(set) var model: String?

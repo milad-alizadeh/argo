@@ -1,0 +1,136 @@
+import ArgoEngine
+@testable import ArgoUI
+import Testing
+
+/// The chain at the foot of a handed-off reading: where the row goes, what it says, and the two
+/// ways
+/// it is deliberately absent.
+///
+/// Its own suite rather than a case in the projection's, because it is the one input to the feed
+/// that
+/// is not the record — Argo's own memory of a handoff — and every claim here is about honesty
+/// rather
+/// than about reading a transcript.
+@Suite("Feed handoff")
+struct FeedHandoffTests {
+    /// The last row of all, under the spend. Both are facts about the whole Session; of the two
+    /// this
+    /// is the one a reader acts on, so it is the one they end at.
+    @Test
+    func `a handed-off reading ends with the link to the Session that took the work`() throws {
+        let rows = FeedProjection.rows(from: Self.transcript, handedOff: Self.handoff)
+
+        let last = try #require(rows.last)
+        #expect(last.content == .mark(.handedOff(Self.handoff)))
+        #expect(rows.dropLast().last?.content == .mark(.spent(Self.spend)))
+    }
+
+    /// Named, because the whole point of the row is knowing where to go — and named in the roster's
+    /// own words rather than in a sentence written here.
+    @Test
+    func `the link says which Session it leads to`() {
+        #expect(FeedMark.handedOff(Self.handoff).words == "handed off to Continue the shell work")
+        #expect(FeedMark.handedOff(Self.handoff).handoff == Self.handoff)
+    }
+
+    /// The other three marks lead nowhere and must not become pressable: a click that does nothing,
+    /// offered at every turn boundary, is worse than a hairline.
+    @Test
+    func `every other mark leads nowhere`() {
+        #expect(FeedMark.compacted.handoff == nil)
+        #expect(FeedMark.turnEnded(.endTurn).handoff == nil)
+        #expect(FeedMark.spent(Self.spend).handoff == nil)
+    }
+
+    /// A Session that handed nothing over reads exactly as it did before — the row is not an empty
+    /// slot at the foot of every reading in the app.
+    @Test
+    func `a Session that handed nothing over ends where its record does`() {
+        let rows = FeedProjection.rows(from: Self.transcript)
+
+        #expect(rows.last?.content == .mark(.spent(Self.spend)))
+        #expect(!rows.contains { $0.content.isHandoff })
+    }
+
+    /// The link is resolved against the roster it would land in, so it cannot point at a row nobody
+    /// can show. A Session whose successor has left the roster — a Project switch, or a spawn whose
+    /// row stood down without a record — draws no link at all rather than a dead one.
+    @Test
+    func `a chain the roster cannot follow is not drawn`() throws {
+        let fresh = Self.session(id: "fresh", title: "Continue the shell work")
+        let full = Self.session(id: "full", title: "The full Session", handedOffTo: "fresh")
+
+        let followable = try #require(Self.presentation([full, fresh]).handoff(of: "full"))
+        #expect(followable == FeedHandoff(sessionID: "fresh", title: "Continue the shell work"))
+        #expect(Self.presentation([full]).handoff(of: "full") == nil)
+    }
+
+    /// And a Session that handed nothing over resolves to nothing, which is the case every reading
+    /// in
+    /// the app takes.
+    @Test
+    func `a Session with no chain resolves to no link`() {
+        let full = Self.session(id: "full", title: "The full Session")
+
+        #expect(Self.presentation([full]).handoff(of: "full") == nil)
+        #expect(Self.presentation([full]).handoff(of: nil) == nil)
+    }
+
+    private static let handoff = FeedHandoff(
+        sessionID: "fresh",
+        title: "Continue the shell work",
+    )
+
+    private static let spend = Usage(
+        inputTokens: 12,
+        outputTokens: 34,
+        cacheReadTokens: 0,
+        cacheCreationTokens: 0,
+    )
+
+    /// A reading with something in it and a spend under it, so the link's PLACE is asserted against
+    /// the row it has to sit below rather than against an empty list.
+    private static let transcript: [TranscriptEvent] = [
+        .prompt(text: "Take this on", atMs: 1000),
+        .message(markdown: "On it."),
+        .turnEnded(.endTurn),
+        .usage(spend),
+    ]
+
+    private static func session(
+        id: String,
+        title: String,
+        handedOffTo: String? = nil,
+    )
+        -> CockpitPresentation.Session {
+        CockpitPresentation.Session(
+            id: id,
+            title: title,
+            model: "claude-opus-5",
+            workspaceLocation: "/Users/milad/Developer/argo",
+            access: .managed,
+            status: .idle,
+            handedOffTo: handedOffTo,
+        )
+    }
+
+    private static func presentation(
+        _ sessions: [CockpitPresentation.Session],
+    )
+        -> CockpitPresentation {
+        CockpitPresentation(
+            projects: [],
+            activeProjectID: nil,
+            sessions: sessions,
+            checkout: .unavailable,
+            connection: .idle,
+        )
+    }
+}
+
+private extension FeedRow.Content {
+    var isHandoff: Bool {
+        guard case let .mark(mark) = self else { return false }
+        return mark.handoff != nil
+    }
+}

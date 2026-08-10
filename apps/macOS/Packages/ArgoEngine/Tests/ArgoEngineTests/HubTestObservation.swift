@@ -26,6 +26,35 @@ func hubTestObservation(
     )
 }
 
+/// The two records a handoff is read from, in the Project's own folder: the Session being handed
+/// OFF and the one Argo spawned to take it over.
+///
+/// Here rather than in either suite because both read them — a copy per suite is the same eight
+/// lines twice, and the two would drift the first time one of them needed a different event.
+@MainActor
+func handedOffSessionObservation(of fixture: SpawnFixture) -> TranscriptObservation {
+    hubTestObservation(
+        id: "full-session",
+        events: [
+            .cwd(fixture.projectURL.path),
+            .prompt(text: "A long conversation", atMs: Date().epochMs),
+            .turnEnded(.endTurn),
+        ],
+    )
+}
+
+@MainActor
+func spawnedSessionObservation(of fixture: SpawnFixture) -> TranscriptObservation {
+    hubTestObservation(
+        id: "session-from-cli",
+        events: [
+            .cwd(fixture.projectURL.path),
+            .prompt(text: "First prompt", atMs: Date().epochMs),
+            .turnEnded(.endTurn),
+        ],
+    )
+}
+
 /// Observe a finite stream to its end — the shape every test that drives events by hand wants, and
 /// one no caller of the engine has, because a real transcript's stream never ends.
 @MainActor

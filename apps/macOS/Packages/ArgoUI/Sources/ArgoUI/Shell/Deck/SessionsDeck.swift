@@ -13,6 +13,9 @@ struct SessionsDeck: View {
     /// What the top zone names, projected above the deck for the same reason the feed is. Absent
     /// when nothing is selected: the zone keeps its height and says nothing.
     var header: SessionHeaderProjection.Header?
+    /// Hand the shown Session's work to a fresh one — the header's one intent. Inert by default so
+    /// a specimen draws the button without spawning anything.
+    var handOff: () async -> Void = {}
     /// The selected Session's plan, projected above the deck for the same reason the feed is. It
     /// is standing state rather than a row, which is exactly why it arrives beside the rows and
     /// not among them.
@@ -36,7 +39,7 @@ struct SessionsDeck: View {
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            SessionHeader(header: header)
+            SessionHeader(header: header, handOff: handOff)
                 .frame(height: ArgoLayout.deckHeaderHeight)
             SessionTabLine(spend: header?.spend)
                 .frame(height: ArgoLayout.deckTabSlotHeight)

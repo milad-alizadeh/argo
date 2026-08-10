@@ -23,7 +23,7 @@ public struct CockpitView: View {
     /// Hub rebuilds as the transcript grows, so a feed that memoised would be showing the reading
     /// as it was when the user last clicked.
     private var feed: [FeedRow] {
-        FeedProjection.rows(from: events)
+        FeedProjection.rows(from: events, handedOff: presentation.handoff(of: navigation.session))
     }
 
     /// The same Session's plan, off the same stream. Read separately rather than pulled out of the
@@ -44,6 +44,22 @@ public struct CockpitView: View {
         presentation.session(navigation.session)?.events ?? []
     }
 
+    /// The header's one intent, bound to the Session the header is naming — resolved here for the
+    /// same reason the header is: this is the view that knows which Session is selected, and the
+    /// issue it serves. It does nothing when nothing is selected, which is also when there is no
+    /// button to press.
+    /// The fresh Session becomes the selection (story 48). The whole point of handing off is that
+    /// the work continues, and a roster left pointing at the Session that just emptied itself into
+    /// a brief would make the remedy something you then have to go and find.
+    private var handOff: () async -> Void {
+        guard let session = presentation.session(navigation.session) else { return {} }
+        return {
+            guard let fresh = await actions.handOffSession(session.id, session.issue?.number)
+            else { return }
+            navigation.session = fresh
+        }
+    }
+
     public var body: some View {
         @Bindable var navigation = navigation
 
@@ -60,8 +76,13 @@ public struct CockpitView: View {
                 session: navigation.session,
                 feed: feed,
                 header: header,
+                handOff: handOff,
                 showing: showing,
             )
+            // What the chain link at the foot of a handed-off reading does. Injected here because
+            // this is the one view that holds the navigation — the same division the handoff itself
+            // keeps: the app performs, and the shell decides what to point at.
+            .environment(\.argoOpenSession) { fresh in navigation.session = fresh }
             .overlay(alignment: .topLeading) {
                 if presentation.connection != .connected {
                     ConnectionChip(

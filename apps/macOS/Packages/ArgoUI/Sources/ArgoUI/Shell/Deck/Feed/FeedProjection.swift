@@ -10,7 +10,11 @@ enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder — a surface that drew "tool call"
     /// in a box would be claiming a shape the ticket that owns it has not decided.
-    static func rows(from events: [TranscriptEvent]) -> [FeedRow] {
+    /// `handedOff` is the one input that is not the record's. It is Argo's own memory of a handoff
+    /// (`CONTEXT.md` L2) and neither CLI wrote a word about it, so it arrives beside the stream
+    /// rather than being looked for inside it — and is absent for every Session but the few that
+    /// have handed their work over.
+    static func rows(from events: [TranscriptEvent], handedOff: FeedHandoff? = nil) -> [FeedRow] {
         let answered = outcomes(in: events)
         let within = workingDirectory(in: events)
         let read = events.compactMap { content(of: $0, answeredBy: answered, within: within) }
@@ -25,9 +29,18 @@ enum FeedProjection {
                 FeedSurveyFold.folded(toldApart(FeedCallRun.collapsed(read))),
             ),
         )
-        return (work + rolledUp(events)).enumerated().map { position, content in
-            FeedRow(id: position, content: content)
-        }
+        // The link goes BELOW the roll-up, at the very foot. Both are facts about the whole Session
+        // rather than moments in it, and of the two this is the one a reader acts on: what the work
+        // cost is the last thing said about the reading, and where the work went is the way out of
+        // it.
+        return (work + rolledUp(events) + chained(handedOff)).enumerated()
+            .map { position, content in
+                FeedRow(id: position, content: content)
+            }
+    }
+
+    private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {
+        handedOff.map { [.mark(.handedOff($0))] } ?? []
     }
 
     /// What the Session spent, at the foot of the reading.

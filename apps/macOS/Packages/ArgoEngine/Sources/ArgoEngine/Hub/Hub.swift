@@ -86,6 +86,16 @@ public final class Hub {
     /// exists first and survives the reconciliation.
     var companionReports: [SessionOwnership.ClaimID: CompanionReport] = [:]
 
+    /// The handoffs THIS process made, keyed by the Session that handed over and holding the id the
+    /// fresh row was published under — a claim, until its CLI writes a record. Observed, because a
+    /// handoff completing has to reach the reading it is drawn at the foot of.
+    var handoffs: [String: String] = [:]
+
+    /// And the ones any Argo made, read from the chain file at launch. Observed for the same
+    /// reason: a link that gets named at rebind changes what the reading says.
+    var chain = HandoffChain()
+    @ObservationIgnored let chainStore: HandoffChainStore
+
     @ObservationIgnored let spawnServices: SpawnServices
     @ObservationIgnored private(set) var companion: CompanionChannel?
 
@@ -142,6 +152,11 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
+        self.chainStore = HandoffChainStore(fileURL: spawnServices.chainFileURL)
+        // Read at construction, like the companion channel below it: the roster is published before
+        // anything is swept, and a chain loaded a moment later would blank the link on the first
+        // reading of a Session that has one.
+        self.chain = chainStore.load()
         openCompanionChannel()
     }
 

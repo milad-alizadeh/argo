@@ -22,6 +22,9 @@ struct InstrumentDeckShell: View {
     /// What the deck's top zone names, already projected — the Session as an identity rather than
     /// as the identifier above, which nothing draws.
     var header: SessionHeaderProjection.Header?
+    /// Hand the shown Session's work to a fresh one — the header's one intent. Inert by default, so
+    /// a specimen draws the button without spawning anything.
+    var handOff: () async -> Void = {}
     /// The same Session's plan, which is standing state rather than a row and so travels beside
     /// the rows instead of among them.
     var showing = PlanShowing()
@@ -58,6 +61,7 @@ struct InstrumentDeckShell: View {
             SessionsDeck(
                 feed: feed,
                 header: header,
+                handOff: handOff,
                 showing: showing,
                 open: open,
                 lit: lit,

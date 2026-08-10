@@ -14,24 +14,53 @@ import SwiftUI
 /// being read and start being the ground they are drawn on.
 struct FeedMarkLine: View {
     @Environment(\.argo) private var argo
+    /// How this row reaches another Session. From the environment rather than threaded through the
+    /// four views between here and the shell, exactly as `deckIsResizing` is: none of them has any
+    /// business carrying a navigation nothing else in the deck performs.
+    @Environment(\.argoOpenSession) private var openSession
 
     let mark: FeedMark
 
     var body: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
             rule
-            if let words = mark.words {
-                Text(words)
-                    .argoText(ArgoTypography.machineCaption)
-                    .monospacedDigit()
-                    .foregroundStyle(argo.color.text.tertiary)
-                    .lineLimit(1)
-                    .fixedSize()
+            if let handoff = mark.handoff {
+                link(to: handoff)
+                rule
+            } else if let words = mark.words {
+                caption(words)
                 rule
             }
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(mark.spoken)
+    }
+
+    /// The one mark that is a way out of the reading: the same words as any other, made pressable
+    /// and given the ink this app spends on every other link (`FeedProseText`'s markdown links take
+    /// it too, so a reader learns one colour and not two).
+    ///
+    /// A caption-sized arrow rather than an underline: the row is machine type let into a hairline,
+    /// and an underline at this size closes up against the descenders.
+    private func link(to handoff: FeedHandoff) -> some View {
+        Button { openSession(handoff.sessionID) } label: {
+            HStack(spacing: ArgoSpacing.tight) {
+                caption(mark.words ?? handoff.title, in: argo.color.interaction.accent)
+                ArgoGlyph(ArgoSymbol.handedOff, .inline)
+                    .foregroundStyle(argo.color.interaction.accent)
+            }
+        }
+        .buttonStyle(.plain)
+        .help("Open \(handoff.title), the Session this work was handed to")
+    }
+
+    private func caption(_ text: String, in ink: ArgoColor? = nil) -> some View {
+        Text(text)
+            .argoText(ArgoTypography.machineCaption)
+            .monospacedDigit()
+            .foregroundStyle(ink ?? argo.color.text.tertiary)
+            .lineLimit(1)
+            .fixedSize()
     }
 
     private var rule: some View {

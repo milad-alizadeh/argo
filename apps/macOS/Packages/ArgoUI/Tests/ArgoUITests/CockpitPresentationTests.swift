@@ -127,6 +127,25 @@ struct CockpitPresentationTests {
         #expect(session.workspace?.unpushed == nil)
     }
 
+    /// The chain crosses the seam. It is the one Session fact that is Argo's own memory rather than
+    /// a reading of a record, so a projection that dropped it would leave the link drawable only
+    /// from a fixture.
+    @Test
+    @MainActor
+    func `a handed-off Session names its successor on the way to the shell`() async throws {
+        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
+        await observe(hub, id: "full", events: [
+            .cwd("/Users/milad/Developer/argo"),
+            .prompt(text: "A long conversation", atMs: nil),
+            .turnEnded(.endTurn),
+        ], until: { $0.status == .idle })
+
+        #expect(try #require(projection(of: hub).sessions.first).handedOffTo == nil)
+        hub.handedOff(sessionID: "full", to: "fresh")
+
+        #expect(try #require(projection(of: hub).sessions.first).handedOffTo == "fresh")
+    }
+
     /// The Hub half of the projection, which is the half with a derivation in it. The Projects are
     /// the app's own state and are passed straight through.
     @MainActor

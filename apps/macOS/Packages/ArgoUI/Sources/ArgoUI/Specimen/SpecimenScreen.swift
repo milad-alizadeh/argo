@@ -86,6 +86,24 @@ public struct SpecimenScreen: View {
             // are only judgeable as a PAIR — what has to be true is that the shorter line reads as
             // a complete line rather than as one a number fell out of — and a pair is two PNGs.
             SessionHeaderSpecimen(header: spendHeader)
+        case .handoffWithheld, .handoffAtWarn, .handoffAtCrit, .handoffOnReadOnly,
+             .handoffOnOrphaned:
+            // A whole header per state of the offer, because the claim is about a LINE: that the
+            // button is findable beside the reading without competing with the title, that its
+            // urgency reads as the reading's, and — in the first and last two — that a header with
+            // no button on it is still a complete line rather than one a control fell out of.
+            SessionHeaderSpecimen(header: handoffHeader)
+        case .handedOffReading:
+            // The other half of the remedy, which is a pair of claims about one Session and so one
+            // PNG: the header keeps its red reading and has no button left on it, and the reading
+            // ends in the link to the Session the work went to. The link is the only row in the
+            // feed that leads anywhere, and whether it reads as pressable at the foot of a spent
+            // transcript — under a hairline, in machine type — is exactly what no test can say.
+            InstrumentDeckShell(
+                room: .sessions,
+                feed: FeedProjection.previewHandedOffRows,
+                header: handoffHeader,
+            )
         case .contextGuide:
             // The ⓘ panel, stood in a glass of its own — a popover is a window of its own and
             // never lands in a screenshot of this one (`DrawerSpecimen`).
@@ -275,6 +293,12 @@ public struct SpecimenScreen: View {
     /// belongs to, so neither side can be renamed into drawing another tier's reading.
     private var contextHeader: SessionHeaderProjection.Header {
         SessionHeaderFixture.contexts.first { $0.specimen == specimen }?.header
+            ?? SessionHeaderFixture.header(for: .managed)
+    }
+
+    /// The header whose handoff state this case is a render of, keyed the same way the tiers are.
+    private var handoffHeader: SessionHeaderProjection.Header {
+        SessionHeaderFixture.handoffs.first { $0.specimen == specimen }?.header
             ?? SessionHeaderFixture.header(for: .managed)
     }
 

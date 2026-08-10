@@ -72,6 +72,12 @@ struct SpawnFixture {
     /// reason the channel's own default is short: a `sockaddr_un` path is 103 bytes, and a
     /// temp-directory prefix plus a UUID spends them.
     let companionRoot: URL
+    /// The handoff chain's file, under this fixture's own root — never the machine's. Held so a
+    /// test can build a SECOND Hub over it, which is what a restart is for the state that outlives
+    /// one.
+    let chainFileURL: URL
+    private let services: SpawnServices
+    private let engine: Engine
 
     init(liveness: @escaping LivenessRead = noLiveProcesses) throws {
         let token = String(UUID().uuidString.prefix(8))
@@ -87,17 +93,23 @@ struct SpawnFixture {
             )
         }
         try Self.installExecutable(named: "claude", in: binURL)
-        self.hub = Hub(
-            projectURL: projectURL,
-            engine: Engine(readCheckout: CheckoutFixture().read, readLiveness: liveness),
-            spawnServices: SpawnServices(
-                host: host,
-                // A `PATH` the test owns, so the launch resolves against a folder it wrote rather
-                // than against whatever this Mac happens to have installed.
-                launcher: AgentLauncher(run: { _ in "\(binURL.path)\n" }),
-                companionRoot: companionRoot,
-            ),
+        self.chainFileURL = root.appending(path: "chain.json")
+        self.engine = Engine(readCheckout: CheckoutFixture().read, readLiveness: liveness)
+        self.services = SpawnServices(
+            host: host,
+            // A `PATH` the test owns, so the launch resolves against a folder it wrote rather
+            // than against whatever this Mac happens to have installed.
+            launcher: AgentLauncher(run: { _ in "\(binURL.path)\n" }),
+            companionRoot: companionRoot,
+            chainFileURL: chainFileURL,
         )
+        self.hub = Hub(projectURL: projectURL, engine: engine, spawnServices: services)
+    }
+
+    /// A second Hub over the same folders and the same chain file — a restart, for everything that
+    /// is meant to survive one. The claims and the PTYs do not come with it, which is the point.
+    func restarted() -> Hub {
+        Hub(projectURL: projectURL, engine: engine, spawnServices: services)
     }
 
     /// The resolved project path — what a claim is keyed by, and what the CLI would record. The

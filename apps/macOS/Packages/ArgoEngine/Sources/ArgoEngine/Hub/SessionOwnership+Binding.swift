@@ -34,6 +34,21 @@ extension SessionOwnership {
         return id
     }
 
+    /// The row a claim's agent is currently reachable under: the id its CLI picked once a record
+    /// named one, and the claim's own id until then.
+    ///
+    /// What a handoff has to be read through. The fresh Session is published under a claim id and
+    /// re-keyed to the CLI's id the moment its transcript appears (#361), so an edge that stored
+    /// the id it was given would point at a row that stood down minutes ago — the link would go
+    /// nowhere exactly when the work it names started being done.
+    ///
+    /// An id no claim was ever issued for comes back unchanged. Nothing here invents a rebind: a
+    /// host that answers spawns with something other than a claim is one whose ids are already the
+    /// rows they name.
+    func rowID(ofClaim value: String) -> String {
+        claims[ClaimID(value: value)]?.sessionID ?? value
+    }
+
     /// The claim a Session is bound to, live or not.
     ///
     /// Distinct from `ownerOf`, which answers "what can this Session steer": what a claim SAID

@@ -106,6 +106,14 @@ public extension CockpitPresentation {
         /// carry, DERIVED. Absent for a record that reported no spend at all, which the header
         /// draws as `unknown`: unreadable is not an empty context.
         public let contextTokens: Int?
+        /// The Session this one handed its work to, as the id of the row that now carries it
+        /// (`CONTEXT.md` L2 — the resume chain a handoff makes across two Sessions rather than
+        /// within one). Absent for every Session that has not handed off, which is nearly all of
+        /// them.
+        ///
+        /// An id and not the Session, deliberately: the fresh row is in the same roster, and a
+        /// copy of it here would be a second reading of a Session that is already on screen.
+        public let handedOffTo: String?
         /// Everything the Session's transcript said, in order — the feed's whole input.
         ///
         /// The engine's own events rather than a second shape named for the shell: the surface
@@ -129,6 +137,7 @@ public extension CockpitPresentation {
             totalTokens: Int? = nil,
             subagentTokens: Int? = nil,
             contextTokens: Int? = nil,
+            handedOffTo: String? = nil,
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -145,6 +154,7 @@ public extension CockpitPresentation {
             self.totalTokens = totalTokens
             self.subagentTokens = subagentTokens
             self.contextTokens = contextTokens
+            self.handedOffTo = handedOffTo
             self.events = events
         }
     }

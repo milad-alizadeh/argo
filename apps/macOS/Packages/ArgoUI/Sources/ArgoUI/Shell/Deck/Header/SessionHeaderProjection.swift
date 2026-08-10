@@ -90,6 +90,9 @@ enum SessionHeaderProjection {
         /// line's whole content. `nil` for a Session none of those facts could be established
         /// for: the line collapses rather than drawing the separators of facts it does not have.
         let spend: String?
+        /// The remedy, when it is the right move and Argo is the one who can take it. `nil` is the
+        /// common case and the quiet one — see `handoff(from:)` for the two facts that decide it.
+        let handoff: Handoff?
 
         /// `fileprivate`, so `header(from:)` is the only way a header comes into being and no
         /// surface can assemble one that disagrees with what the projection decided.
@@ -102,6 +105,7 @@ enum SessionHeaderProjection {
             issue: IssueLink?,
             context: Context,
             spend: String?,
+            handoff: Handoff?,
         ) {
             self.title = title
             self.access = access
@@ -111,6 +115,7 @@ enum SessionHeaderProjection {
             self.issue = issue
             self.context = context
             self.spend = spend
+            self.handoff = handoff
         }
 
         /// What a screen reader hears of the Session's IDENTITY: the facts on the header's leading
@@ -140,6 +145,7 @@ enum SessionHeaderProjection {
             issue: link(to: session.issue),
             context: context(tokens: session.contextTokens),
             spend: spend(from: session),
+            handoff: handoff(from: session),
         )
     }
 

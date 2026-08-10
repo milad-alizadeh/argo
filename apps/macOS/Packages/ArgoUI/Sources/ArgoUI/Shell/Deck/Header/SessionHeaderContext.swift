@@ -10,10 +10,25 @@ struct SessionHeaderContext: View {
 
     let context: SessionHeaderProjection.Context
 
-    /// The panel is opened by CLICK and never by hover: it is meant to be read, and a legend that
-    /// appears while the pointer crosses the header is a legend nobody finishes. Escape and
-    /// clicking away are `.popover`'s own, which is most of why the surface is one.
+    /// The panel opens on HOVER, and a click still opens it too — the pointer is how it is
+    /// reached, and the keyboard has to keep a way in. Escape and clicking away are `.popover`'s
+    /// own, which is most of why the surface is one.
     @State private var isGuideOpen = false
+    /// Whether the pointer is on the mark or in the panel it opened. One flag for both, because
+    /// the panel is a window of its own: read of the mark alone, the guide would close the moment
+    /// the pointer travelled into the thing it went there to read.
+    @State private var isPointerOn = false
+
+    /// How long the pointer rests on the mark before the panel opens.
+    ///
+    /// Not a motion token: nothing about this is on screen. It is the difference between a legend
+    /// somebody asked for and one that flies open because the pointer crossed the header on its way
+    /// somewhere else — the reason this surface was a click for two tickets.
+    private static let dwell = Duration.milliseconds(280)
+    /// And how long it survives the pointer leaving, so the trip from the mark into the panel does
+    /// not close the panel. Longer than the dwell: leaving by accident costs a reader the paragraph
+    /// they were reading, and arriving by accident costs them nothing but a glance.
+    private static let grace = Duration.milliseconds(420)
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
@@ -39,14 +54,33 @@ struct SessionHeaderContext: View {
     }
 
     private var about: some View {
-        Button { isGuideOpen.toggle() } label: {
+        // Opens, never toggles. A click lands on a mark the pointer is already resting on, so a
+        // toggle would read as "clicking the ⓘ closes the panel" — and it is what would break a
+        // keyboard or a test that clicks the mark to open the thing hover has just opened.
+        Button { isGuideOpen = true } label: {
             ArgoGlyph(ArgoSymbol.about, .inline)
         }
         .buttonStyle(.plain)
         .foregroundStyle(argo.color.text.tertiary)
         .accessibilityLabel("About the context reading")
+        .onHover { isInside in pointer(isInside) }
         .popover(isPresented: $isGuideOpen, arrowEdge: .bottom) {
+            // The panel counts as the mark for the purpose of staying open: a reader inside it is
+            // reading, and the pointer being off the ⓘ is exactly what that looks like.
             SessionContextGuide()
+                .onHover { isInside in pointer(isInside) }
+        }
+    }
+
+    /// Open after the pointer has RESTED, close after it has been gone a moment, and let the state
+    /// at the end of each wait decide — a pointer that came back in the meantime finds the panel
+    /// open, and one that only passed through never opened it.
+    private func pointer(_ isInside: Bool) {
+        isPointerOn = isInside
+        Task {
+            try? await Task.sleep(for: isInside ? Self.dwell : Self.grace)
+            guard isPointerOn == isInside else { return }
+            isGuideOpen = isInside
         }
     }
 
