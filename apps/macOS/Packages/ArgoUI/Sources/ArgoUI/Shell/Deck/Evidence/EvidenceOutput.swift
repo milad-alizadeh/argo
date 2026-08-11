@@ -16,10 +16,32 @@ struct EvidenceOutput: View {
     @Environment(\.argo) private var argo
 
     let output: OutputEvidence
+    /// What the file this call named is written in, where it named a file at all. A read prints the
+    /// file, so the panel draws it as the file — see `listing`, which decides whether the text
+    /// actually is one.
+    var language: EvidenceLanguage?
     /// Whether the call this answered failed. From the outcome, never from the characters.
     var hasFailed = false
 
     var body: some View {
+        if let listing, let language {
+            EvidenceSource(listing: listing, language: language)
+        } else {
+            stream
+        }
+    }
+
+    /// The read's own listing, or `nil` for everything that is not one.
+    ///
+    /// A FAILED call is never one, whatever its text looks like: what a failed read prints is a
+    /// message about the call, and drawing an error under the file's grammar with a gutter beside
+    /// it
+    /// would present Argo's reading of the failure as the file the agent asked for.
+    private var listing: EvidenceListing? {
+        hasFailed ? nil : EvidenceListing(output.text)
+    }
+
+    private var stream: some View {
         Text(output.text)
             .argoMono(.body)
             .foregroundStyle(argo.color.text.secondary)

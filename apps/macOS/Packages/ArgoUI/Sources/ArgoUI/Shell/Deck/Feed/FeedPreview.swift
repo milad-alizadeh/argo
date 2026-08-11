@@ -14,13 +14,14 @@ struct FeedPreview: View {
     /// `SessionsDeck` takes one: the state belongs to the surface, and there is no other way to
     /// reach it without a click.
     @State var open: FeedRow.ID?
+    @State private var step: Int?
     @State private var lit: FeedShot?
     @FocusState private var focus: FeedFocus?
 
     var body: some View {
         FeedView(
             rows: rows,
-            selection: FeedRowSelection(open: $open, lit: $lit, focus: $focus),
+            selection: FeedRowSelection(open: $open, step: $step, lit: $lit, focus: $focus),
         )
         .argoDeckSurface()
         .argoAppearance()

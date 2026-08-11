@@ -49,7 +49,7 @@ struct EvidenceAddressTests {
         let file = FeedCall.FileName(path: "Sources/ArgoUI/Shell/Deck/Feed/FeedRow.swift")
         let call = file.map { Self.call(kind: .read, subject: .file($0)) }
 
-        #expect(call?.address == .named("Sources/ArgoUI/Shell/Deck/Feed/FeedRow.swift"))
+        #expect(call?.address == .filed("Sources/ArgoUI/Shell/Deck/Feed/FeedRow.swift"))
     }
 
     /// The AC that the File's header is UNCHANGED. A path is handed to the layout whole and cut
@@ -135,9 +135,10 @@ struct EvidenceAddressTests {
     @Test
     func `the specimen's command is long enough to be cut`() throws {
         let ran = try #require(EvidenceFixture.ran)
+        let address = try #require(ran.steps.first?.address)
 
-        #expect(ran.address.drawn.contains("…"))
-        #expect(ran.address.text.count
+        #expect(address.drawn.contains("…"))
+        #expect(address.text.count
             > EvidenceAddress.commandLines * EvidenceAddress.commandLineLength)
     }
 

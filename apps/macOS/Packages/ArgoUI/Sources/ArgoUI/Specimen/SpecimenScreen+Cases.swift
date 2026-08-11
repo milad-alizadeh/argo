@@ -36,6 +36,24 @@ extension SpecimenScreen {
         ConnectFixture.states.first { $0.specimen == specimen }?.reading ?? ConnectFixture.fresh
     }
 
+    /// Which result the folded run's pane opens at — the third for the case that is a render of a
+    /// click on a name, and the top for the case that is a render of the row being opened. Keyed
+    /// off the case the way the header fixtures are, so the switch stays a list of states.
+    var surveyStep: Int? {
+        specimen == .feedSurveyEvidenceStep ? 2 : nil
+    }
+
+    /// The folded run of looking, open — and optionally open AT one of the results listed under it,
+    /// which is the state a click on one of those names produces. Spelled here rather than twice in
+    /// the switch: the two cases differ by one argument, and the pane they render is the same pane.
+    func survey(at step: Int? = nil) -> some View {
+        sessions(
+            FeedProjection.previewCallRows,
+            open: FeedProjection.previewSurveyRowID,
+            step: step,
+        )
+    }
+
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is
     /// being judged is the assembled container. Spelled once: most of this catalog is that one
     /// state with a different feed in it, and repeating the call per case made each of them four
@@ -43,6 +61,7 @@ extension SpecimenScreen {
     func sessions(
         _ feed: [FeedRow],
         open: FeedRow.ID? = nil,
+        step: Int? = nil,
         lit: FeedShot? = nil,
         held: FeedRow.ID? = nil,
         composer: SessionComposerProjection.Composer? = nil,
@@ -61,6 +80,7 @@ extension SpecimenScreen {
                 ? SessionHeaderFixture.header(for: .managed)
                 : SessionHeaderFixture.needsInput,
             open: open,
+            step: step,
             lit: lit,
             held: held,
             composer: composer,

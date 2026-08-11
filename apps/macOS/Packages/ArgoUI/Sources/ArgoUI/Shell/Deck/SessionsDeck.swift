@@ -24,6 +24,10 @@ struct SessionsDeck: View {
     /// Which call's evidence the panel is showing, if any. Held by the deck because the panel is a
     /// zone of the deck: the feed cannot own a selection that resizes the row it sits in.
     @State var open: FeedRow.ID?
+    /// Which result inside the open row the panel is showing — see `FeedRowSelection.step`. Held
+    /// beside `open` and for the same reason: the feed cannot own where a column beside it is
+    /// scrolled to.
+    @State var step: Int?
     /// Which picture is open full size. Held HERE and not one level down, because the lightbox
     /// covers the whole deck: a picture opened over the feed column alone would be a screenshot of
     /// a deck shown inside a third of one.
@@ -80,7 +84,7 @@ struct SessionsDeck: View {
     }
 
     private var selection: FeedRowSelection {
-        FeedRowSelection(open: $open, lit: $lit, focus: $focus)
+        FeedRowSelection(open: $open, step: $step, lit: $lit, focus: $focus)
     }
 }
 

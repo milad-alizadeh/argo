@@ -147,10 +147,14 @@ struct DeckContentRow: View {
                     growsRightward: false,
                     isDragging: { isResizing = $0 },
                 )
-                EvidencePanel(evidence: evidence, dismiss: selection.close)
-                    .frame(width: panelBinding(in: deck).wrappedValue)
-                    .focusable()
-                    .focused(selection.focus, equals: .panel)
+                EvidencePanel(
+                    evidence: evidence,
+                    current: selection.step,
+                    dismiss: selection.close,
+                )
+                .frame(width: panelBinding(in: deck).wrappedValue)
+                .focusable()
+                .focused(selection.focus, equals: .panel)
             }
             .transition(.move(edge: .trailing))
         }

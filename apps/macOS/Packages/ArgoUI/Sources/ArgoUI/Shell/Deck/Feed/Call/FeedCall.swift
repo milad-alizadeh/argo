@@ -126,20 +126,27 @@ extension FeedCall {
         /// The shortest parent that tells this file from another of the same name in this feed.
         /// `nil` where the name is already unambiguous, which is the common case.
         let qualifier: String?
+        /// Whether the file lies outside the tree the Session is working in — see
+        /// `FeedPath.isExternal`. Never drawn on the row, which is one line of the shortest thing
+        /// that identifies the call; the panel is where an address is read, so it is the panel that
+        /// says the address is somewhere else.
+        let isExternal: Bool
 
         /// `nil` for a path with nothing in it to name a file by — the caller then says what the
         /// call named some other way rather than drawing a blank subject.
-        init?(path: String) {
+        init?(path: String, isExternal: Bool = false) {
             guard let name = path.split(separator: "/").last else { return nil }
             self.path = path
             self.name = String(name)
             self.qualifier = nil
+            self.isExternal = isExternal
         }
 
-        private init(path: String, name: String, qualifier: String?) {
+        private init(path: String, name: String, qualifier: String?, isExternal: Bool) {
             self.path = path
             self.name = name
             self.qualifier = qualifier
+            self.isExternal = isExternal
         }
 
         /// The shared rule's answer, split back into the two things a row draws: the name, and the
@@ -152,6 +159,7 @@ extension FeedCall {
                 path: path,
                 name: String(name),
                 qualifier: parts.dropLast().isEmpty ? nil : parts.dropLast().joined(separator: "/"),
+                isExternal: isExternal,
             )
         }
     }

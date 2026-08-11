@@ -189,11 +189,16 @@ extension SpecimenScreen {
             // claim of the collapse is that the three moments are still three in the panel — which
             // is a thing to look at rather than to assert.
             sessions(FeedProjection.previewCallRows, open: FeedProjection.previewRunCallID)
-        case .feedSurveyEvidence:
-            // The folded run of looking, open. The line says `Searched 1 · Read 5` and nothing
-            // else; the claim of the fold is that the five files it stopped naming are still all
-            // there, each caption saying which of them the output under it came from.
-            sessions(FeedProjection.previewCallRows, open: FeedProjection.previewSurveyRowID)
+        case .feedSurveyEvidence, .feedSurveyEvidenceStep:
+            // The folded run of looking, open — at the top of the pane, and then after a click on
+            // the THIRD name listed under the row. The first says the five files the line stopped
+            // naming are all still there, each under the address its output came from; the second
+            // says a click on one of those names lands on it, in the pane AND in the feed, which is
+            // what stops a reader who has scrolled from losing which of the five they are in.
+            //
+            // One arm because it is one pane looked at twice. `SpecimenScreen+Cases` decides the
+            // argument, so the two cases differ by where the pane is rather than by what it draws.
+            survey(at: surveyStep)
         case .feedDocumentEvidence:
             // A markdown file the agent wrote, open. It opens as the DOCUMENT and not as the
             // patch — whether an outline reads as an outline once the `##` stops being drawn is

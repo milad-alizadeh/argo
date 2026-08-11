@@ -96,6 +96,14 @@ public enum ArgoSymbol {
     /// Closing the evidence panel.
     public static let dismiss = "xmark"
 
+    /// Taking a step's address to the pasteboard — the one control beside a path in the panel. The
+    /// platform's own copy mark, because a path copied out of Argo is going somewhere else, and a
+    /// reader looking for it is looking for the glyph every other Mac app spends on this.
+    public static let copyAddress = "doc.on.doc"
+    /// A file outside the tree the Session is working in. An arrow leaving the box: what it says is
+    /// WHERE the file is, which is the one thing a path relative to somewhere else cannot.
+    public static let externalFile = "arrow.up.forward.square"
+
     /// Back to the newest thing in the feed, from wherever the reader scrolled to.
     public static let latest = "arrow.down"
 

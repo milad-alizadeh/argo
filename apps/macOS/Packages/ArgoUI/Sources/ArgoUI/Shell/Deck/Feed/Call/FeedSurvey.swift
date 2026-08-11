@@ -73,18 +73,34 @@ struct FeedSurvey: Equatable, Sendable {
         FeedEvidence(
             verb: Self.verb,
             symbol: ArgoSymbol.looked,
-            address: .named(label),
-            language: nil,
+            label: label,
             ending: ending,
-            // The counts ARE the verbs. `Looked at · Searched 1 · Read 5` says the same word twice
-            // over, so the header draws the label alone and the verb survives for the ear.
-            saysVerb: false,
-            steps: calls.flatMap { call in
-                call.evidence.map {
-                    FeedEvidence.Step(address: call.caption, language: call.language, result: $0)
-                }
-            },
+            steps: calls.enumerated().flatMap(steps(of:)),
         )
+    }
+
+    /// Where in the panel a given call's results start — how the names listed under the open row
+    /// point at what they produced. `nil` for a call the record answered with nothing, whose name
+    /// is in the list because it HAPPENED and has no step to aim at.
+    func step(of call: Int) -> Int? {
+        guard calls.indices.contains(call), !calls[call].evidence.isEmpty else { return nil }
+        return calls.prefix(call).reduce(0) { $0 + $1.evidence.count }
+    }
+
+    /// One call's results as panel steps, numbered from where its own results begin so a step's id
+    /// is its position down the whole pane.
+    private func steps(of numbered: (offset: Int, element: FeedCall)) -> [FeedEvidence.Step] {
+        let call = numbered.element
+        let first = step(of: numbered.offset) ?? 0
+        return call.evidence.enumerated().map { position, result in
+            FeedEvidence.Step(
+                id: first + position,
+                address: call.caption,
+                language: call.language,
+                isExternal: call.isExternalSubject,
+                result: result,
+            )
+        }
     }
 }
 
