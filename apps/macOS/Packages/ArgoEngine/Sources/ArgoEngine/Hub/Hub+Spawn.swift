@@ -56,24 +56,36 @@ public extension Hub {
             }
             return claim
         } catch {
-            // Nothing started, so nothing is owned. Releasing keeps the window from covering an
+            // Nothing started, so nothing is owned. Relinquishing keeps the window from covering an
             // agent somebody else starts in this folder a moment later.
-            ownership.release(claim)
-            companion?.withdraw(claim)
-            permissions?.withdraw(claim)
+            relinquish(claim)
             throw error
         }
     }
 
     /// Every PTY this Hub owns, ended, and every channel with them. What window close and app quit
     /// call: an agent Argo started must not outlive the Argo that started it.
+    ///
+    /// The live claims are the whole set to walk: a socket is opened at spawn and closed by
+    /// `relinquish`, which is also the only thing that releases a claim, so no gate can be open
+    /// behind a claim this loop does not reach.
     func endOwnedSessions() {
         terminals.terminateAll()
-        companion?.withdrawAll()
-        permissions?.withdrawAll()
         for claim in ownership.liveClaims {
-            ownership.release(claim)
+            relinquish(claim)
         }
+    }
+
+    /// One claim, given up: Argo's hold on it, the PTY behind it, and both channels it spoke over.
+    ///
+    /// Written once rather than at each of the three sites that gives a claim up — a launch that
+    /// failed, a PTY that exited, and the app quitting — because a site that forgot one of the four
+    /// leaves a socket open on a Session nobody owns.
+    func relinquish(_ claim: SessionOwnership.ClaimID) {
+        ownership.release(claim)
+        terminals.drop(claim)
+        companion?.withdraw(claim)
+        permissions?.withdraw(claim)
     }
 
     private func events(for claim: SessionOwnership.ClaimID) -> AgentProcessEvents {
@@ -87,10 +99,9 @@ public extension Hub {
     /// to `orphaned` — a row still under the claim's own id is one no sweep will ever correct,
     /// because the CLI never wrote a record.
     private func ptyEnded(_ claim: SessionOwnership.ClaimID, exitCode: Int32?) {
-        ownership.release(claim)
-        terminals.drop(claim)
-        companion?.withdraw(claim)
-        permissions?.withdraw(claim)
+        relinquish(claim)
+        // The spawn itself stays: it is a ROW rather than a fact about one, and the exit code is
+        // what this writes into it.
         guard var spawn = spawns[claim] else { return }
         spawn.exit = AgentSpawn.Exit(code: exitCode, atMs: Date().epochMs)
         spawns[claim] = spawn
@@ -114,14 +125,7 @@ extension Hub {
             // The one moment a written handoff link can stop naming a claim and name a Session
             // instead — binding happens once per claim and this is the call that knows it did
             // (#513).
-            nameChain(claim: claim, as: session.id)
+            handoff.name(claim: claim.value, as: session.id)
         }
-    }
-
-    /// Fold one CONVENTION-tier report into what this claim's Session has said.
-    func record(_ fact: CompanionFact, for claim: SessionOwnership.ClaimID) {
-        var report = companionReports[claim] ?? CompanionReport()
-        report.apply(fact)
-        companionReports[claim] = report
     }
 }

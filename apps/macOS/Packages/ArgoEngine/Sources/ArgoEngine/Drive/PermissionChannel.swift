@@ -22,27 +22,19 @@ final class PermissionChannel {
 
     private let root: URL
     private let patience: PermissionPatience
-    private let onChange: (SessionOwnership.ClaimID, [PermissionRequest]) -> Void
-    private let onStanding: (SessionOwnership.ClaimID, [StandingAllow]) -> Void
-    private let onExpired: (SessionOwnership.ClaimID, [PermissionExpiry]) -> Void
+    /// Written into directly rather than mirrored back through callbacks (#634): all three readings
+    /// this channel owns land under one claim key, so there is nothing left for a caller to route.
+    private let ledger: ClaimLedger
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
     private var expired: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
     private var standing = StandingAllowTable()
     private var issued = 0
 
-    init(
-        root: URL,
-        patience: PermissionPatience = .default,
-        onChange: @escaping (SessionOwnership.ClaimID, [PermissionRequest]) -> Void,
-        onStanding: @escaping (SessionOwnership.ClaimID, [StandingAllow]) -> Void,
-        onExpired: @escaping (SessionOwnership.ClaimID, [PermissionExpiry]) -> Void,
-    ) {
+    init(root: URL, patience: PermissionPatience = .default, ledger: ClaimLedger) {
         self.root = root
         self.patience = patience
-        self.onChange = onChange
-        self.onStanding = onStanding
-        self.onExpired = onExpired
+        self.ledger = ledger
     }
 
     /// Open this claim's gate and say where its hook should dial.
@@ -67,28 +59,18 @@ final class PermissionChannel {
     }
 
     /// The PTY is gone: nothing can be waiting, nothing more can ask, no grant holds anything open.
+    /// All three go together, in one write to the ledger, which three separate tables could not do.
+    ///
+    /// The waiting calls go in silence, deliberately: nothing was refused and nothing is left to
+    /// read a refusal. Their clocks are cancelled first, because a day-long `Task` sleeping against
+    /// a torn-down gate is a leak rather than a bug.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         sockets.removeValue(forKey: claim)?.close()
-        if standing.withdraw(claim) {
-            onStanding(claim, [])
-        }
+        _ = standing.withdraw(claim)
         // The expiries go with the claim: they are what happened to THIS Session.
-        if expired.removeValue(forKey: claim) != nil {
-            onExpired(claim, [])
-        }
-        guard let waiting = pending.removeValue(forKey: claim) else { return }
-        // Silence, deliberately: nothing was refused and nothing is left to read a refusal.
-        cancelClocks(of: waiting)
-        onChange(claim, [])
-    }
-
-    /// Over the pending claims as well as the socketed ones, so no armed clock is left sleeping
-    /// against a torn-down gate — a day-long `Task` outliving its channel is a leak rather than a
-    /// bug (`weak self` makes its wake-up a no-op).
-    func withdrawAll() {
-        for claim in Set(sockets.keys).union(pending.keys) {
-            withdraw(claim)
-        }
+        expired.removeValue(forKey: claim)
+        cancelClocks(of: pending.removeValue(forKey: claim) ?? [])
+        ledger.withdraw(claim)
     }
 
     /// Answer the named waiting Permission. `false` when that request is no longer waiting — a
@@ -110,7 +92,7 @@ final class PermissionChannel {
         cancelClocks(of: [answered])
         answered.reply(PermissionReply.line(decision))
         guard decision == .allowAlways else {
-            onChange(claim, waiting.map(\.request))
+            ledger.publish(waiting: waiting.map(\.request), for: claim)
             return true
         }
         stand(answered.request.toolName, for: claim)
@@ -121,7 +103,7 @@ final class PermissionChannel {
     /// touched — the next call to that tool simply asks again. `false` when there was no grant.
     func revoke(_ toolName: String, for claim: SessionOwnership.ClaimID) -> Bool {
         guard standing.revoke(toolName, for: claim) else { return false }
-        onStanding(claim, standing.grants(for: claim))
+        ledger.publish(standing: standing.grants(for: claim), for: claim)
         return true
     }
 
@@ -130,7 +112,7 @@ final class PermissionChannel {
     /// meaning what its label says.
     private func stand(_ toolName: String, for claim: SessionOwnership.ClaimID) {
         if standing.grant(toolName, for: claim) {
-            onStanding(claim, standing.grants(for: claim))
+            ledger.publish(standing: standing.grants(for: claim), for: claim)
         }
         let waiting = pending[claim] ?? []
         let covered = waiting.filter { $0.request.toolName == toolName }
@@ -140,7 +122,7 @@ final class PermissionChannel {
         for one in covered {
             one.reply(PermissionReply.line(.allow))
         }
-        onChange(claim, remaining.map(\.request))
+        ledger.publish(waiting: remaining.map(\.request), for: claim)
     }
 
     /// The gate's clock for one call: it runs out, Argo refuses the call itself, and the Session
@@ -162,8 +144,8 @@ final class PermissionChannel {
         pending[claim] = waiting
         gone.reply(PermissionReply.expired)
         expired[claim, default: []].append(PermissionExpiry(gone.request))
-        onExpired(claim, expired[claim] ?? [])
-        onChange(claim, waiting.map(\.request))
+        ledger.publish(expired: expired[claim] ?? [], for: claim)
+        ledger.publish(waiting: waiting.map(\.request), for: claim)
     }
 
     /// Every way a Permission can end that is not its clock running out stops that clock first — an
@@ -196,7 +178,7 @@ final class PermissionChannel {
             reply: reply,
             clock: arm(request, for: claim),
         ))
-        onChange(claim, pending[claim, default: []].map(\.request))
+        ledger.publish(waiting: pending[claim, default: []].map(\.request), for: claim)
     }
 
     /// The hook went while Argo was still willing to wait, which means the turn it belonged to was
@@ -208,6 +190,6 @@ final class PermissionChannel {
         let remaining = waiting.filter { $0.peer != peer }
         pending[claim] = remaining
         cancelClocks(of: waiting.filter { $0.peer == peer })
-        onChange(claim, remaining.map(\.request))
+        ledger.publish(waiting: remaining.map(\.request), for: claim)
     }
 }

@@ -40,6 +40,12 @@ public final class Hub {
         HubSessionChain.ordered(join.sessions.map(observed) + provisionalSessions)
     }
 
+    /// One Session by id, off that same roster — so a caller reading one row and a caller reading
+    /// the list can never disagree about it.
+    public func session(id: String) -> HubSession? {
+        sessions.first { $0.id == id }
+    }
+
     /// The spawned rows belonging to the Project this Hub is currently on. Spawns outlive a
     /// Project switch and keep their PTYs, so they need scoping the re-pointed join gives the rest.
     private var provisionalSessions: [HubSession] {
@@ -48,9 +54,9 @@ public final class Hub {
             .map { observed(HubSession(spawn: $0)) }
     }
 
-    /// The rung Argo last put each Session on, keyed by claim for the reason `standingAllows` is:
-    /// a set made before the CLI wrote a record has to follow the row when it is re-keyed.
-    var setModes: [SessionOwnership.ClaimID: SessionModeSet] = [:]
+    /// Everything Argo knows per claim: what the agent said, what its gate is holding, and the
+    /// rung Argo put it on (#634). One key and one publish rule, where there were five of each.
+    let claims = ClaimLedger()
 
     /// Which Sessions this Argo process owns a PTY for, and — through its ledger — which ones any
     /// Argo ever did. Empty of claims until something spawns or resumes one.
@@ -63,34 +69,9 @@ public final class Hub {
     /// spawn reaches the roster in the same update that opened its PTY.
     var spawns: [SessionOwnership.ClaimID: AgentSpawn] = [:]
 
-    /// What each claim's agent has said over the companion channel — the CONVENTION tier, and the
-    /// only place it comes from. Keyed by claim: the claim exists first and survives
-    /// reconciliation.
-    var companionReports: [SessionOwnership.ClaimID: CompanionReport] = [:]
-
-    /// The Permissions each claim's agent is blocked on, oldest first — DIRECT, because Argo holds
-    /// the hook that raised them and the channel the answer goes down. Observed, so a prompt
-    /// reaches the cockpit in the update that raised it; keyed by claim.
-    var pendingPermissions: [SessionOwnership.ClaimID: [PermissionRequest]] = [:]
-
-    /// The tools each claim has stopped asking about (#572), in the order they were granted.
-    /// Observed and keyed by claim like the Permissions above.
-    var standingAllows: [SessionOwnership.ClaimID: [StandingAllow]] = [:]
-
-    /// The Permissions each claim's gate ran out of patience for and refused itself (#573), oldest
-    /// first. Kept beside `pendingPermissions` rather than folded in: a prompt still waiting and a
-    /// call already refused are opposite states.
-    var expiredPermissions: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
-
-    /// The handoffs THIS process made, keyed by the Session that handed over and holding the id the
-    /// fresh row was published under — a claim, until its CLI writes a record. Observed, because a
-    /// handoff completing has to reach the reading it is drawn at the foot of.
-    var handoffs: [String: String] = [:]
-
-    /// And the ones any Argo made, read from the chain file at launch. Observed for the same
-    /// reason: a link that gets named at rebind changes what the reading says.
-    var chain = HandoffChain()
-    @ObservationIgnored let chainStore: HandoffChainStore
+    /// Which Session handed its work to which — the ones this process made and the ones any Argo
+    /// did, under one answer (#634).
+    let handoff: HandoffLedger
 
     @ObservationIgnored let spawnServices: SpawnServices
     @ObservationIgnored var companion: CompanionChannel?
@@ -144,14 +125,15 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
-        self.chainStore = HandoffChainStore(fileURL: spawnServices.chainFileURL)
-        self.ownership = SessionOwnership(
-            ledgerStore: SessionOwnershipLedgerStore(fileURL: spawnServices.ownershipFileURL),
-        )
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has
         // one.
-        self.chain = chainStore.load()
+        self.handoff = HandoffLedger(
+            store: HandoffChainStore(fileURL: spawnServices.chainFileURL),
+        )
+        self.ownership = SessionOwnership(
+            ledgerStore: SessionOwnershipLedgerStore(fileURL: spawnServices.ownershipFileURL),
+        )
         openCompanionChannel()
     }
 
