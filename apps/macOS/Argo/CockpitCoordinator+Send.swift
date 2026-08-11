@@ -25,9 +25,13 @@ extension CockpitCoordinator {
         } catch {}
     }
 
-    /// One standing allow taken back (#572). A refusal is dropped for the reason a decision's is:
-    /// both of them mean the grant that chip was drawn for is already gone, and the chip leaving
-    /// the tray says so.
+    /// One standing allow taken back (#572).
+    ///
+    /// The port refuses a grant it does not hold — `noSuchGrant` — and this drops it, which is not
+    /// the contradiction it looks like. The refusal is there so a CALLER cannot revoke into thin
+    /// air and believe it worked; the cockpit is the one caller that already knows, because the
+    /// tray is re-derived from the Session and the chip goes either way. There is no field holding
+    /// words, so there is no seam for a reason to sit on.
     func revokeStandingAllow(_ toolName: String, for sessionID: String) {
         do {
             try hub.driver.revokeStandingAllow(toolName, for: sessionID)

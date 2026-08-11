@@ -146,6 +146,13 @@ anything.
     grant outliving its PTY would be a promise Argo cannot keep. That is why the label can say
     *in this Session* and be exactly true.
 
+    **It composes with `--permission-mode` by not touching it.** #572 asked that the CLI-side
+    baseline be composed with rather than duplicated, and the composition is that they act at
+    different points: the mode decides whether the CLI runs a tool ungated at all, and the gate
+    only ever sees calls the mode already sent to `PreToolUse`. A standing allow answers those
+    without a round trip; it cannot widen what the mode permits, and nothing here writes the
+    mode. A second way to say the same thing is what duplication would have been.
+
 ## Token reconciliation
 
 Everything snapped; **nothing was promoted**, so the contract is unchanged by this screen.

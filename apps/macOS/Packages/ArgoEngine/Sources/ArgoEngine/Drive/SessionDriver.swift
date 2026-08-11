@@ -38,7 +38,7 @@ public protocol SessionDriver {
     /// not a decision a person can make carefully.
     ///
     /// Named by tool because that is what the grant is keyed by, and a grant that was already gone
-    /// raises `nothingPending` rather than passing silently — the user clicked something.
+    /// raises `noSuchGrant` rather than passing silently — the user clicked something.
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws
 }
 
@@ -65,6 +65,11 @@ public enum SessionDriveError: Error, Equatable {
     /// clock, or cancelled with its turn. Said rather than swallowed, because the user pressed
     /// something and nothing happened.
     case nothingPending
+    /// A revocation arrived for a standing allow this Session does not hold — revoked twice, or
+    /// gone with the Session it was granted on. Its own case and not `nothingPending`: no
+    /// Permission is involved on that path, and a refusal that names the wrong thing is worse
+    /// than one that says nothing.
+    case noSuchGrant
 
     /// What the seam says. Verbatim, and short enough to sit on one line above the field.
     public var detail: String {
@@ -72,6 +77,7 @@ public enum SessionDriveError: Error, Equatable {
         case .notDrivable: "Argo no longer holds this Session — nothing was sent"
         case .nothingToSend: "Nothing to send"
         case .nothingPending: "No Permission is waiting on this Session"
+        case .noSuchGrant: "This Session holds no standing allow for that tool"
         }
     }
 }

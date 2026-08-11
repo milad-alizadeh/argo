@@ -161,10 +161,23 @@ final class PermissionChannel {
         onChange(claim, remaining.map(\.request))
     }
 
-    /// The hook's whole reply vocabulary — the two words it has, and no third.
+    /// The hook's whole reply vocabulary — two words, over three answers: what makes `allowAlways`
+    /// standing happens on this side of the socket, and the hook is told the same `allow` either
+    /// way. `ask` is unrepresentable, here and in the type.
+    ///
+    /// Switched exhaustively rather than tested against `.deny`, because the reason is the NEXT
+    /// variant: `allowAlways` was added to this enum and a `!= .deny` fallback took it silently.
     private static func decisionLine(_ decision: PermissionDecision) -> String {
-        let word = decision == .deny ? "deny" : "allow"
-        let reason = decision == .deny ? "Denied in Argo" : "Allowed in Argo"
+        let word: String
+        let reason: String
+        switch decision {
+        case .allow, .allowAlways:
+            word = "allow"
+            reason = "Allowed in Argo"
+        case .deny:
+            word = "deny"
+            reason = "Denied in Argo"
+        }
         return CompanionResponse.line([
             "hookSpecificOutput": [
                 "hookEventName": "PreToolUse",

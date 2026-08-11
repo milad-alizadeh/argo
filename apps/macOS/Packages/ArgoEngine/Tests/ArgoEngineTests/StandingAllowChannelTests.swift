@@ -81,7 +81,7 @@ struct StandingAllowChannelTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
 
-        #expect(throws: SessionDriveError.nothingPending) {
+        #expect(throws: SessionDriveError.noSuchGrant) {
             try fixture.hub.driver.revokeStandingAllow("Bash", for: claim.value)
         }
     }

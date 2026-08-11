@@ -44,7 +44,7 @@ struct ClaudeSessionDriver: SessionDriver {
             throw SessionDriveError.notDrivable
         }
         guard permissions.revoke(toolName, for: claim) else {
-            throw SessionDriveError.nothingPending
+            throw SessionDriveError.noSuchGrant
         }
     }
 }

@@ -17,15 +17,20 @@ struct StandingAllowTray: View {
     /// a specimen with nothing behind it.
     let revoke: (String) -> Void
 
+    /// Wrapped rather than run along one line, because every chip has to stay reachable: a grant
+    /// pushed past the vessel's edge is one the user cannot find or take back, which is the state
+    /// #572 exists to end. The label is the first item in the flow, so it breaks with them.
     var body: some View {
-        HStack(spacing: ArgoSpacing.tight) {
+        WrapFlow(gap: ArgoSpacing.tight) {
             Text(StandingAllowProjection.trayLabel)
                 .argoText(ArgoTypography.rowMeta)
                 .foregroundStyle(argo.color.text.tertiary)
+                // The label rides the chips' own height, so a line holding both sits on one
+                // baseline rather than seating the text at the top of the tallest chip.
+                .frame(height: ArgoComposerVessel.chipHeight)
             ForEach(allows) { allow in
                 StandingAllowChip(toolName: allow.toolName) { revoke(allow.toolName) }
             }
-            Spacer()
         }
         .padding(.bottom, ArgoSpacing.snug)
         .accessibilityElement(children: .contain)
@@ -50,6 +55,14 @@ private struct StandingAllowChip: View {
             Text(toolName)
                 .argoText(ArgoTypography.machineCaption)
                 .foregroundStyle(argo.color.text.secondary)
+                // Truncated in the MIDDLE, and only here: an MCP tool is named
+                // `mcp__server__the_actual_verb`, so a tail ellipsis leaves a row of chips that
+                // all read `mcp__claude-in-…`. The two informative ends survive, and the `help`
+                // and accessibility label below both carry the name in full.
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(maxWidth: ArgoComposerVessel.chipNameCeiling, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
             Button(action: revoke) {
                 ArgoGlyph(ArgoSymbol.dismiss, .inline)
                     .foregroundStyle(argo.color.text.tertiary)
@@ -59,7 +72,7 @@ private struct StandingAllowChip: View {
             .help(StandingAllowProjection.revocation(toolName))
         }
         .padding(.horizontal, ArgoSpacing.snug)
-        .padding(.vertical, ArgoSpacing.hair)
+        .frame(height: ArgoComposerVessel.chipHeight)
         .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
         .overlay {
             RoundedRectangle(cornerRadius: ArgoRadius.control)
@@ -83,6 +96,32 @@ private struct StandingAllowChip: View {
     )
     .padding(ArgoSpacing.section)
     .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Standing allows — more than one line of them") {
+    StandingAllowTray(
+        allows: [
+            "Bash", "Edit", "Write", "Read", "Grep", "Glob", "WebFetch", "WebSearch",
+            "NotebookEdit", "TodoWrite",
+        ].map(StandingAllow.init(toolName:)),
+        revoke: { _ in },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 480)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Standing allows — a narrow vessel and a long tool name") {
+    StandingAllowTray(
+        allows: ["mcp__claude-in-chrome__read_console_messages", "Bash"]
+            .map(StandingAllow.init(toolName:)),
+        revoke: { _ in },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 360)
     .argoDeckSurface()
     .argoAppearance()
 }

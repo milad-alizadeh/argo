@@ -35,6 +35,16 @@ public enum ArgoComposerVessel {
     public static let decisionHeight: CGFloat = 27
     public static let decisionMinimumWidth: CGFloat = 80
 
+    /// How tall a chip above the field stands — an attachment, or a standing allow (#572). Fixed
+    /// rather than left to its content, because the chips wrap: a run seated on its own text
+    /// heights gives every line a different measure, and a label beside them no baseline to take.
+    public static let chipHeight: CGFloat = 20
+
+    /// How wide the NAME on such a chip may get before it truncates. A ceiling and not a width:
+    /// `Bash` takes what it needs. It exists because an MCP tool is named
+    /// `mcp__server__the_verb`, and one of those unchecked is a chip as wide as the vessel.
+    public static let chipNameCeiling: CGFloat = 160
+
     /// How long the accent wash stands over a row the user just sent. A hold, not a motion —
     /// the fade in and out is `ArgoMotion.bloom` — which is why it lives beside the vessel's
     /// measurements rather than on the motion ramp with its half-second ceiling.
