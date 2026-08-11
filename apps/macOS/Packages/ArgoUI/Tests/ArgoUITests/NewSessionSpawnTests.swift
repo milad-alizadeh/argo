@@ -21,6 +21,7 @@ struct NewSessionSpawnTests {
                 locateProject: { _ in },
                 revealProject: { _ in },
                 removeProject: { _ in },
+                openProjectPanel: { _ in },
                 spawnSession: { [self] in
                     requests += 1
                     return answer

@@ -21,7 +21,9 @@ struct TypeAndIconContractTests {
         let machineRoles = ArgoTypography.all
             .filter { $0.style.typeface == .machine }
             .map(\.name)
-        #expect(machineRoles == ["machineBody", "machine", "machineEmphasis", "machineCaption"])
+        #expect(machineRoles == [
+            "machineDisplay", "machineBody", "machine", "machineEmphasis", "machineCaption",
+        ])
     }
 
     /// The machine ladder reaches the body rung, so a machine fact can stand beside the words it

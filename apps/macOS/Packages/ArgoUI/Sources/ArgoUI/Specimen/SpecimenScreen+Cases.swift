@@ -23,6 +23,19 @@ extension SpecimenScreen {
             ?? SessionHeaderFixture.header(for: .managed)
     }
 
+    /// A surface that the app puts over the window rather than into it, rendered where the app
+    /// puts it. A sheet screenshotted in the corner of an empty window is a render of a layout
+    /// nobody is ever shown.
+    func centred(@ViewBuilder _ content: () -> some View) -> some View {
+        content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    /// The reading whose Connect state this case is a render of. Keyed off the case the way the
+    /// header fixtures are, so neither side can be renamed into drawing another state's panel.
+    var connectReading: ConnectReading {
+        ConnectFixture.states.first { $0.specimen == specimen }?.reading ?? ConnectFixture.fresh
+    }
+
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is
     /// being judged is the assembled container. Spelled once: most of this catalog is that one
     /// state with a different feed in it, and repeating the call per case made each of them four

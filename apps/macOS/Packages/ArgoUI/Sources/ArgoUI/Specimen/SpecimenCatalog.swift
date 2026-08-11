@@ -90,4 +90,13 @@ public enum Specimen: String, CaseIterable, Sendable {
     case permissionEdit
     case permissionStanding
     case flatPermission
+    case welcome
+    case connectFresh
+    case connectFolderOnly
+    case connectPartly
+    case connectWired
+    case connectWaiting
+    case connectRefused
+    case connectBroken
+    case projectSettings
 }
