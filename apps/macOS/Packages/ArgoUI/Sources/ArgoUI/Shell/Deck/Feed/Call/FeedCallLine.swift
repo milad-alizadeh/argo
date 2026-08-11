@@ -82,8 +82,8 @@ struct FeedCallLine: View {
         }
     }
 
-    /// How much the command printed, where it printed anything. The line the reader is spared,
-    /// counted — the row's whole account of a stream, with the stream itself behind the chevron.
+    /// How much the command printed, where that is worth saying — the stream itself is behind the
+    /// chevron.
     @ViewBuilder private var printed: some View {
         if let drawn = call.printed?.drawn {
             Text(drawn)

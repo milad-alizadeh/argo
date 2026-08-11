@@ -1,14 +1,12 @@
 import ArgoEngine
 
-/// How much a call printed, counted off the record — what a row can say about a stream without
-/// opening it, the way churn is what it can say about a patch.
+/// How much of a call's output the record kept, counted — what a row can say about a stream
+/// without opening it, the way churn is what it says about a patch.
 ///
-/// The counting is the whole of it. Nothing here reads the characters for MEANING: no signature,
-/// no diagnostic, no account of what the output said. Those are derived elsewhere, or not at all,
-/// and a count that depended on them would stop being a fact the record supports.
+/// Counting only: no signature and no diagnostic is derived here (#381).
 struct EvidenceLength: Equatable, Sendable {
-    /// Lines the call printed. A last line the command left unterminated is one of them — it was
-    /// printed — and a blank line between two others is too.
+    /// Lines of the KEPT output — what the panel can show. Not always what the command printed: a
+    /// CLI that truncated before writing the record leaves nothing behind saying so.
     let lines: Int
 
     /// `nil` for everything a count would be a claim about rather than a reading of: a patch, whose
@@ -31,13 +29,8 @@ struct EvidenceLength: Equatable, Sendable {
         return EvidenceLength(lines: first.lines + second.lines)
     }
 
-    /// What the row and the panel both draw, or `nil` where the count would say nothing the chevron
-    /// beside it does not.
-    ///
-    /// One line is the least a stream can be, so `1 line` warns a reader about nothing while
-    /// spending the same ink as the count that matters — and a token printed on every row is one a
-    /// reader stops seeing. The unit is said in words because there is no mark for it: `+` and `−`
-    /// say added and removed, and nothing says printed.
+    /// What the row and the panel both draw. `nil` at one line, the least a stream can be, which
+    /// the chevron beside it already says.
     var drawn: String? {
         lines > 1 ? "\(lines) lines" : nil
     }
@@ -53,11 +46,8 @@ struct EvidenceLength: Equatable, Sendable {
 }
 
 extension FeedCall {
-    /// What this row's command printed, in lines.
-    ///
-    /// Only a COMMAND is counted. A read's output is the file, which the panel draws under the
-    /// file's own line numbers, and a search's is matches — counting either in printed lines would
-    /// name it as something it is not.
+    /// What this row's command printed, in lines. A read's output is the file, drawn under the
+    /// file's own line numbers, and a search's is matches, so neither is counted in printed lines.
     var printed: EvidenceLength? {
         guard kind == .execute else { return nil }
         return evidence
@@ -66,8 +56,8 @@ extension FeedCall {
 }
 
 extension FeedEvidence.Step {
-    /// What this ONE result printed. Read off the ADDRESS rather than a kind, for the reason the
-    /// step's mark is: inside a folded run, the address is all that says which call this came from.
+    /// What this ONE result printed. Read off the ADDRESS, like the step's mark: a step carries no
+    /// kind.
     var printed: EvidenceLength? {
         guard case .typed = address else { return nil }
         return EvidenceLength(result)

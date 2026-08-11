@@ -92,8 +92,8 @@ struct EvidenceStepHeader: View {
         }
     }
 
-    /// How much this ONE command printed. The header says it because the stream under it does not:
-    /// a reader arriving mid-pane cannot see where the output they are in the middle of ends.
+    /// How much this ONE command printed — a reader landing mid-pane cannot see where the stream
+    /// they are inside ends.
     @ViewBuilder private var printed: some View {
         if let drawn = step.printed?.drawn {
             Text(drawn)

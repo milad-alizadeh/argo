@@ -9,7 +9,6 @@ extension CockpitPresentation.Session {
     ///
     /// Nine commands chosen for the cuts they land on: an assignment, a `cd` prelude, a chain that
     /// must survive whole, a pipeline, a path only a middle cut keeps both ends of, and a failure.
-    /// One of them prints at the length that made #381's count worth drawing.
     static let ranCommands: [TranscriptEvent] = [
         // Outside the tree on purpose: a path under the Session's own cwd is already short, and
         // this exists for the scratchpad no cwd can shorten.
@@ -82,9 +81,8 @@ extension CockpitPresentation.Session {
         ]
     }
 
-    /// A lint over the whole package: the one command here that prints more than a reader would
-    /// take in at a glance, which is what makes the row's count a decision rather than a
-    /// decoration.
+    /// The one command here printing more than a reader takes in at a glance — the length a
+    /// collapsed row is judged at.
     private static let linted = """
     Linting Swift files in Packages/ArgoUI/Sources
     Linting 'CockpitPresentation+PreviewShell.swift' (1/214)
