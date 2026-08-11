@@ -102,6 +102,58 @@ struct FeedWorkingTests {
     /// the thread and a lit row is up.
     @Test
     func `a running Turn draws the thread or a lit call and never both`() {
+        // Thinking, then a call in flight, then the answer, then the next call.
+        for step in Self.turn {
+            let rows = FeedProjection.rows(from: Self.transcript + step, working: true)
+            let at = "\(step.count) event(s) into the Turn"
+            #expect(rows.hasThread != rows.hasCallInFlight, "both or neither, \(at)")
+        }
+    }
+
+    /// What the age of a wait is counted from. Each step is a different wait, so each is a change
+    /// here — and a Turn that runs a command, gets its answer and runs another crosses three of
+    /// them without the reading ever showing two waits at once.
+    @Test
+    func `every handover is a new wait to count from`() {
+        let waits = Self.turn.map { step in
+            FeedWait.showing(in: FeedProjection.rows(from: Self.transcript + step, working: true))
+        }
+
+        #expect(waits[0] == .thinking)
+        #expect(waits[1] != .thinking)
+        #expect(waits[1] != nil)
+        #expect(waits[2] == .thinking)
+        // The second command is its own wait, not a continuation of the first: a call that has run
+        // ninety seconds and the one after it must not share a count.
+        #expect(waits[3] != waits[1])
+    }
+
+    /// A think that says something and goes on thinking is ONE wait. The count is keyed on the
+    /// state and not on the row that draws it, so an arriving row does not hand a six-minute
+    /// think back to the first rung.
+    @Test
+    func `a row arriving mid-think does not restart the wait`() {
+        let before = FeedProjection.rows(from: Self.transcript, working: true)
+        let after = FeedProjection.rows(
+            from: Self.transcript + [.message(markdown: "Still going.")],
+            working: true,
+        )
+
+        #expect(before.count != after.count)
+        #expect(FeedWait.showing(in: before) == FeedWait.showing(in: after))
+    }
+
+    /// Nothing in flight is nothing to count. A reading with no wait must hand the surfaces no
+    /// clock at all — this is the state the timer cost is judged against.
+    @Test
+    func `a reading with nothing in flight shows no wait`() {
+        #expect(FeedWait.showing(in: FeedProjection.rows(from: Self.transcript)) == nil)
+    }
+
+    /// A Turn that runs a command, gets its answer and runs another, one step at a time. Every
+    /// claim about the handover is driven through the same four steps, so no two of them can be
+    /// asserting about different Turns.
+    private static let turn: [[TranscriptEvent]] = {
         let asked = TranscriptEvent.toolCall(ToolCall(
             id: "call-1", name: "shell", kind: .execute, target: "swift test", atMs: nil,
         ))
@@ -111,14 +163,8 @@ struct FeedWorkingTests {
         let again = TranscriptEvent.toolCall(ToolCall(
             id: "call-2", name: "shell", kind: .execute, target: "swift build", atMs: nil,
         ))
-
-        // Thinking, then a call in flight, then the answer, then the next call.
-        for step in [[], [asked], [asked, answered], [asked, answered, again]] {
-            let rows = FeedProjection.rows(from: Self.transcript + step, working: true)
-            let at = "\(step.count) event(s) into the Turn"
-            #expect(rows.hasThread != rows.hasCallInFlight, "both or neither, \(at)")
-        }
-    }
+        return [[], [asked], [asked, answered], [asked, answered, again]]
+    }()
 
     private static let spend = Usage(
         inputTokens: 12,

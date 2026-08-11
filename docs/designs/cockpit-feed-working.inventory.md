@@ -1,4 +1,4 @@
-# A Turn in flight — build inventory (#615, #616)
+# A Turn in flight — build inventory (#615, #616, #617)
 
 What assembling the two live states actually forced out of
 [`cockpit-feed-working.md`](cockpit-feed-working.md), per ticket. Names were frozen at approval;
@@ -18,10 +18,22 @@ one painting surface — a modifier taking the whole sentence is the only shape 
 
 | name | tier | location | props | composed-of | source |
 |---|---|---|---|---|---|
-| `FeedWorkingThread` | organism | `ArgoUI/Shell/Deck/Feed/` — the feed's own row, one caller (`FeedMarkLine`) | none; it reads `\.argoReduceMotion` and the theme | `ArgoPalette.ion.pass` in a capsule, its glow, and the travel modifier | frozen table, `FeedWorkingThread`; [`working/think.png`](working/think.png) |
+| `FeedWorkingThread` | organism | `ArgoUI/Shell/Deck/Feed/` — the feed's own row, one caller (`FeedMarkLine`) | none; it reads the theme, and #617 moved the Reduce Motion read down into `FeedIonLoop` | `ArgoPalette.ion.pass` in a capsule, its glow, and `FeedIonLoop`'s phase | frozen table, `FeedWorkingThread`; [`working/think.png`](working/think.png) |
 
 Extraction evidence: the name is in the design's frozen-names table, and it carries a state the
 happy path never renders — the Reduce Motion still, parked at the centre of the measure.
+
+## Extracted — #617 (the age of the wait)
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `FeedIonLoop` | driver | `ArgoUI/Shell/Deck/Feed/` — two callers (`FeedWorkingThread`, `FeedCallLineIon`) | a content closure taking the pass's phase and its rung | `ArgoWaitAge`, and a `.task` that runs one pass at a time | [`working/aged.png`](working/aged.png) |
+| `FeedWait` | value | `ArgoUI/Shell/Deck/Feed/` — one caller (`FeedView`) | `showing(in: [FeedRow])` | `FeedRow.Content.isCallInFlight`, `FeedMark.working` | — |
+
+Extraction evidence: the ladder applies to BOTH live states, so the second caller existed before
+the first line was written — the alternative was the same clock spelled twice, drifting.
+`FeedWait` is separate because the age is the reading's to hold and not the row's: the feed's
+table recycles cells, so a clock inside a row restarts whenever the reader scrolls it off and back.
 
 ## What stayed inline
 
@@ -44,3 +56,6 @@ Values, not components — settled at approval and promoted rather than inlined.
 | `ArgoElevation.bloom` · `glows` | #616 | a glow is an elevation with no offset; `castsShadow` now asks about the offset |
 | `ArgoFeedRow.workingThreadShare` · `workingThreadTravel` · `workingThreadStillGlow` | #616 | the filament's length as a share of the column, where it enters and leaves, and how it glows parked |
 | `EnvironmentValues.argoStillsMotion` · `argoReduceMotion` | #616 | `accessibilityReduceMotion` cannot be written, so a render of a still needs a door read *beside* it |
+| `ArgoWaitAge` · `all` · `rung(at:)` · `coldest` · `cooling` | #617 | the four rungs a long wait cools through, and the one place a call site asks which it is on |
+| `ArgoMotion.resolvedPass` · `passReentry` | #617 | a loop driven a pass at a time needs one traversal rather than the repeat, and a tick of its own to re-enter on |
+| `EnvironmentValues.argoAgesWait` · `argoWaitStarted` | #617 | a render cannot sit through six minutes, and a recycled cell cannot hold the clock |
