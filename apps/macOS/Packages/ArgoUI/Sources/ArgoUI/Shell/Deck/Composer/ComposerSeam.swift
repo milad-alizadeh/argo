@@ -47,10 +47,10 @@ struct ComposerSeam: View {
     private var ink: ArgoColor {
         switch note {
         case .refusal: argo.color.state.failure
-        // A capability notice is the quietest of the three on purpose: the drop it answers changed
-        // nothing, and a failure ink over "this adapter does not do that" would read as something
-        // having gone wrong with the Session.
-        case .draftKept, .capability: argo.color.text.tertiary
+        // A notice is the quietest of the three on purpose: what it answers is something the reader
+        // just did or just asked for, and a failure ink over "this adapter does not do that" or
+        // "the Turn you stopped is stopped" would read as something having gone wrong.
+        case .draftKept, .notice: argo.color.text.tertiary
         }
     }
 
@@ -58,7 +58,7 @@ struct ComposerSeam: View {
         switch note {
         case .refusal: ArgoSymbol.refused
         case .draftKept: ArgoSymbol.draftKept
-        case .capability: ArgoSymbol.about
+        case .notice: ArgoSymbol.about
         }
     }
 }
@@ -74,7 +74,14 @@ struct ComposerSeam: View {
 }
 
 #Preview("Composer seam — a drop the adapter cannot take") {
-    ComposerSeam(note: .capability(SessionDriveError.cannotAttach.detail), retry: {})
+    ComposerSeam(note: .notice(SessionDriveError.cannotAttach.detail), retry: {})
+        .padding(ArgoSpacing.section)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
+#Preview("Composer seam — what an interrupt cleared") {
+    ComposerSeam(note: .notice(ComposerDraft.cleared), retry: {})
         .padding(ArgoSpacing.section)
         .argoDeckSurface()
         .argoAppearance()

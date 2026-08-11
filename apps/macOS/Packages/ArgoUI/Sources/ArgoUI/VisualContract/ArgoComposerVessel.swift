@@ -8,6 +8,16 @@ public enum ArgoComposerVessel {
     /// The circle the send arrow sits in, and the attach control when an adapter carries one.
     public static let controlDiameter: CGFloat = 26
 
+    /// The stop mark inside that circle while a Turn runs (#541) — a quarter of the disc it sits
+    /// in, measured off `docs/designs/composer/running.png`.
+    ///
+    /// A drawn square rather than a rung of the icon scale, because no rung is this small: `inline`
+    /// (10) is the floor and the study's mark is 7. It is the one mark in the shell that is a SHAPE
+    /// and not a symbol, and that is the honest reading of it — there is nothing to recognise in a
+    /// stop square, only a size. A solid at the send arrow's own rung fills half the disc and reads
+    /// as a second button inside the first.
+    public static let stopMark: CGFloat = 7
+
     /// The field's growth ceiling, in lines — the study's 132pt said in the unit the field
     /// actually grows by. Past it the field scrolls inside itself, so the feed above is never
     /// squeezed.

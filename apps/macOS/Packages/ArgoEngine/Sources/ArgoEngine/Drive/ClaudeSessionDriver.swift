@@ -34,6 +34,17 @@ struct ClaudeSessionDriver: SessionDriver {
         }
     }
 
+    /// One `ESC` at the prompt (#541). It goes through the same claim `send` does — an interrupt
+    /// is a keystroke like any other, and the one thing that can stop it reaching the agent is
+    /// what stops a Turn: no PTY left to write to.
+    func interrupt(_ sessionID: String) throws {
+        guard let claim = ownership.ownerOf(sessionID: sessionID),
+              terminals.write(ClaudeInterrupt.keystroke, to: claim)
+        else {
+            throw SessionDriveError.notDrivable
+        }
+    }
+
     /// Checked against the same live claim `send` is, and before a byte is written: an attachment
     /// given an address for a Session that has already gone is a file left on the machine for a
     /// Turn that can never name it.

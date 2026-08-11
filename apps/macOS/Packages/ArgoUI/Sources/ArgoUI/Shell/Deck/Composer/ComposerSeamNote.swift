@@ -8,18 +8,18 @@ enum ComposerSeamNote: Equatable {
     case refusal(String)
     /// A draft that survived leaving the Session, and the age of the words in it.
     case draftKept(String)
-    /// Something the adapter cannot take, refused with the reason (#540, design decision 9). Its
-    /// own case rather than a `refusal`, because nothing was sent and nothing is at risk: the
-    /// sentence answers a gesture the platform allowed over a control that was never drawn, and
-    /// it takes the quiet ink for saying so.
-    case capability(String)
+    /// Something Argo did to the draft that the reader did not — a drop the adapter cannot take
+    /// (#540, design decision 9), or the clearing an interrupt leaves behind (#541). Its own case
+    /// rather than a `refusal`, because nothing was sent and no unsent words are at risk: it
+    /// reports rather than warns, and takes the quiet ink for saying so.
+    case notice(String)
 
     /// Which of the three is up, for one draft read at one moment — the seam is ONE line, so the
     /// order is the whole of what this decides.
     ///
     /// A refusal outranks everything: it is a thing that went wrong with a send, and the message
-    /// it stands over is still unsent. A capability notice comes next, because it answers a
-    /// gesture the user has just made. The kept note is last and quietest — housekeeping about
+    /// it stands over is still unsent. A notice comes next, because it answers something that has
+    /// just happened to the draft. The kept note is last and quietest — housekeeping about
     /// words the reader left behind, which holds only until their own edit stamps later than the
     /// moment they arrived.
     ///
@@ -30,7 +30,7 @@ enum ComposerSeamNote: Equatable {
             return .refusal(refusal)
         }
         if let notice = draft.notice {
-            return .capability(notice)
+            return .notice(notice)
         }
         guard !draft.text.isEmpty, let editedAtMs = draft.editedAtMs, editedAtMs < enteredAtMs
         else { return nil }
@@ -47,7 +47,7 @@ enum ComposerSeamNote: Equatable {
 
     var detail: String {
         switch self {
-        case let .refusal(detail), let .draftKept(detail), let .capability(detail): detail
+        case let .refusal(detail), let .draftKept(detail), let .notice(detail): detail
         }
     }
 }

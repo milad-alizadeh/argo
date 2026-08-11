@@ -76,6 +76,14 @@ squeezed.
 **The footer row** — `base` (8) gap, `base` (8) top padding. Controls left to right: `+` (26pt),
 spacer, `ModePicker`, `RunFactsButton`, `SendButton` (26pt circle).
 
+**`SendButton`'s Stop state** — the same 26pt circle in the same place, ground `state.attention`,
+and a **7pt square** in `text.onAccent` where the arrow was. Added in build (#541), measured off
+`composer/running.png`: the mark is about a quarter of the disc, which no rung of the icon scale
+reaches — `ArgoIconSize.inline` is 10, and a solid at the arrow's own `control` (13) fills half the
+circle and reads as a second button inside the first. It is therefore the one mark in the shell
+drawn as a **shape rather than a symbol**, and the number lives with the vessel's own measurements
+(`ArgoComposerVessel.stopMark`) rather than on the icon scale.
+
 **No keyboard hint is printed.** `⇧⏎` and `esc` are platform conventions; the controls carry
 them in tooltips rather than the composer explaining itself forever.
 
@@ -113,7 +121,23 @@ anything.
 3. **Acceptance is the echo, not a toast.** The field clears, the words appear in the feed as
    the user's own, the status flips to *Running*. A 1.4s accent wash marks the new row; there is
    no fourth signal.
-4. **A queued follow-up rides above the field**, cancellable, and is sent when the Turn ends.
+4. **A queued follow-up rides above the field**, cancellable, and is sent when the Turn ends —
+   **except when what ended it was the user stopping it** (amended in build, #541). An interrupt
+   empties the whole vessel: the field, the tray and the queue. The queue is the half that would
+   otherwise bite, and it is not a special case so much as the same rule read carefully — a
+   follow-up is released the moment the Turn ends, and an interrupt IS that Turn ending, so the
+   very next thing the Session received would be instructions written for the run somebody had
+   just killed. Stopping and being about to say something else are the same gesture often enough
+   that this cannot be left to the reader to undo in the half-second they have.
+
+   It is **said, not done quietly** — one line on the `ComposerSeam` in the quiet ink, in the slot
+   decision 8's refusal and decision 9's capability notice share. Everywhere else in the composer
+   a message survives what went wrong with it; this is the one act that cannot let it, so a reader
+   who typed something is told where it went rather than finding an empty vessel.
+
+   **A refused interrupt clears nothing**, on decision 8's rule exactly: nothing was stopped, so
+   the reason goes on the seam with a Retry and every character stays where it was typed. The
+   composer must not report a Turn stopped on the strength of having asked.
 5. **A prompt whose hook has gone leaves without a word; a prompt that ran out says so** (#573).
    The two are told apart by making one of them Argo's own act: the gate keeps a clock **shorter
    than the hook's**, so a call nobody answers is refused by Argo — DIRECT, published as a

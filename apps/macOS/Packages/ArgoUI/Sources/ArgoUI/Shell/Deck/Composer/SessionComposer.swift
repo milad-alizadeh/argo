@@ -20,6 +20,10 @@ struct SessionComposer: View {
     let send: ComposerSend
     /// Take back a standing allow, by tool (#572). A closure for the reason `send` is.
     let revoke: (String) -> Void
+    /// Stop the Turn in flight (#541). A closure for the reason `send` is, and THROWING for the
+    /// reason it is: what the port refuses, the seam repeats — and a refused stop must leave the
+    /// vessel exactly as it found it.
+    var stop: () throws -> Void = {}
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
     var isDropTargeted = false
@@ -34,12 +38,14 @@ struct SessionComposer: View {
         composer: SessionComposerProjection.Composer,
         send: @escaping ComposerSend,
         revoke: @escaping (String) -> Void = { _ in },
+        stop: @escaping () throws -> Void = {},
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
         isDropTargeted: Bool = false,
     ) {
         self.composer = composer
         self.send = send
         self.revoke = revoke
+        self.stop = stop
         _draft = draft
         self.isDropTargeted = isDropTargeted
     }
@@ -84,7 +90,9 @@ struct SessionComposer: View {
                 mode: $mode,
                 facts: composer.facts,
                 isSendable: draft.isSendable,
+                isRunning: composer.isRunning,
                 send: submit,
+                stop: interrupt,
                 attach: footerAttach,
             )
         }
@@ -138,6 +146,16 @@ struct SessionComposer: View {
     /// and the send control ask for the same thing.
     private func submit() {
         draft.submit(whileRunning: composer.isRunning, via: send)
+    }
+
+    /// Stop the Turn, and empty the composer behind it (#541, ADR-0024).
+    ///
+    /// The clearing happens HERE rather than off the Session going idle, and the order is what
+    /// makes it work: the queue is emptied at the click, before the record catches up and the
+    /// flush this view watches for fires. Waiting for the status to turn would be waiting for the
+    /// exact moment the queued follow-ups are released.
+    private func interrupt() {
+        draft.stopped(via: stop)
     }
 
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is

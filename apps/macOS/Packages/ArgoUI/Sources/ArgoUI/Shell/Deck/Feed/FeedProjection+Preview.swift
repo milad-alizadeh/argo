@@ -108,7 +108,12 @@ extension FeedProjection {
 
     /// The punctuation on its own, for the same reason — and it is the render that answers whether
     /// the hairlines read as the shape of the reading rather than as rules drawn under rows.
-    static let previewMarkRows = numbered(previewMarks.map(FeedRow.Content.mark))
+    ///
+    /// The interrupt is added rather than found: the shipping preview transcript carries no stopped
+    /// Turn, and this set is the one place the mark is ever looked at (#541).
+    static let previewMarkRows = numbered(
+        (previewMarks + [.interrupted]).map(FeedRow.Content.mark),
+    )
 
     /// Contents taken off the shipping feed, given their places back. Not a second way to build a
     /// row: every one of these came out of `previewRows`, and only the gaps between them are new.

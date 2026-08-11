@@ -64,6 +64,74 @@ struct SessionDriveTests {
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
 
+    /// A bare `ESC` and nothing else (#541). No Return after it: a submit would be a Turn, and what
+    /// this sends is the key that ends one.
+    @Test
+    func `an interrupt reaches the Session's prompt as a bare escape`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        try fixture.hub.driver.interrupt(claim.value)
+
+        #expect(fixture.host.started.last?.written == ["\u{1B}"])
+    }
+
+    /// The interrupt does NOT ask whether a Turn is running, and this is where that shows: two
+    /// stops in a row are two keystrokes rather than a refusal on the second. Whether something was
+    /// running is a DERIVED reading, and refusing on it would report Argo's own lag as user error.
+    @Test
+    func `stopping a Session that is running nothing is harmless`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        try fixture.hub.driver.interrupt(claim.value)
+        try fixture.hub.driver.interrupt(claim.value)
+
+        #expect(fixture.host.started.last?.written == ["\u{1B}", "\u{1B}"])
+    }
+
+    /// The point of `ESC` over anything that ends a process: the Session is still there afterwards.
+    /// A stop that took the agent down with the Turn would be a close with extra steps.
+    @Test
+    func `a Session takes the next Turn after being stopped`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        try fixture.hub.driver.interrupt(claim.value)
+        try fixture.hub.driver.send("Do the other thing instead.", to: claim.value)
+
+        let typed = fixture.host.started.last?.written ?? []
+        #expect(typed.first == "\u{1B}")
+        #expect(typed.last?.contains("Do the other thing instead.") == true)
+        #expect(typed.last?.hasSuffix("\r") == true)
+    }
+
+    @Test
+    func `an orphaned Session refuses the interrupt its live self would have taken`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        fixture.host.endLastProcess(exitCode: 0)
+
+        #expect(throws: SessionDriveError.notDrivable) {
+            try fixture.hub.driver.interrupt(claim.value)
+        }
+    }
+
+    /// The sentence the CLI writes for it, matched whole. A message that merely QUOTES the marker
+    /// is a message: read as the marker it would put a Turn boundary through the middle of what
+    /// somebody said.
+    @Test
+    func `the interrupt marker is recognised only when it is the whole entry`() {
+        #expect(ClaudeInterrupt.isMark(ClaudeInterrupt.mark))
+        #expect(ClaudeInterrupt.isMark("  \(ClaudeInterrupt.mark)\n"))
+        #expect(!ClaudeInterrupt.isMark("Why did \(ClaudeInterrupt.mark) show up twice?"))
+        #expect(!ClaudeInterrupt.isMark("Carry on."))
+    }
+
     /// What a cockpit test drives instead of a CLI. It is here rather than in a test target because
     /// the surfaces that need it are in another module.
     @Test

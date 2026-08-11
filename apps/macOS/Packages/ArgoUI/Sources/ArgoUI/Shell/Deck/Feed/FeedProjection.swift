@@ -126,7 +126,16 @@ enum FeedProjection {
     )
         -> FeedRow.Content? {
         switch event {
-        case let .prompt(text, _): .prompt(text)
+        // An interrupt arrives on the user side of the record, so it is read here and turned into
+        // punctuation rather than drawn as something the reader said (#541). The sentence is the
+        // CLI's, which is why the engine owns it: this is a READING of the record, and a second
+        // spelling of the marker living up here could drift from the keystroke that produces it.
+        case let .prompt(text, _):
+            if ClaudeInterrupt.isMark(text) {
+                .mark(.interrupted)
+            } else {
+                .prompt(text)
+            }
         case let .message(markdown): .message(markdown)
         // A separate case from `.message` on purpose, and it stays separate: the two carry the
         // same words often enough that collapsing them would read a turn's reasoning as its answer.

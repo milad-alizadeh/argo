@@ -16,6 +16,15 @@ extension CockpitCoordinator {
         try hub.driver.send(SessionTurn.text(text, attaching: paths), to: sessionID)
     }
 
+    /// Stop the Turn a Session is running (#541).
+    ///
+    /// A refusal is thrown back rather than dropped, for the reason `send`'s is and `decide`'s is
+    /// not: what the composer does NEXT depends on the answer. A stop that never landed stopped
+    /// nothing, so the field it would otherwise have emptied has to stay where it is.
+    func interrupt(_ sessionID: String) throws {
+        try hub.driver.interrupt(sessionID)
+    }
+
     /// What the composer asks before it draws the `+`. Off the same adapter the send goes through,
     /// so the control and the refusal cannot disagree about what a Session can take.
     ///

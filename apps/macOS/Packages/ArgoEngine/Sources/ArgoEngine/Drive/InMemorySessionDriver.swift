@@ -31,6 +31,17 @@ public final class InMemorySessionDriver: SessionDriver {
 
     public init() {}
 
+    /// Answered and not recorded, unlike every other act here. An interrupt names nothing and
+    /// produces nothing to read back, and no surface yet has a claim to make about one — the port's
+    /// own note says a method specified ahead of its callers is a guess, and a LEDGER kept ahead of
+    /// them is the same guess with state behind it. The refusal is honoured, because the failed
+    /// path is what a caller does have to be able to reach.
+    public func interrupt(_: String) throws {
+        if let refusal {
+            throw refusal
+        }
+    }
+
     public func send(_ text: String, to sessionID: String) throws {
         if let refusal {
             throw refusal
