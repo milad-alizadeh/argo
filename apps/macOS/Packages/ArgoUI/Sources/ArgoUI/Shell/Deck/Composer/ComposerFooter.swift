@@ -11,9 +11,8 @@ import SwiftUI
 struct ComposerFooter: View {
     @Environment(\.argo) private var argo
 
-    /// The Session's stance as Argo can state it, and the rung the user asks for. A reading and a
-    /// closure rather than a binding: what the control shows comes back off the Session, so the
-    /// footer must not hold a value of its own that could disagree with it (#545).
+    /// The Session's stance as Argo can state it (#545). A reading and not a binding: what the
+    /// control shows comes back off the Session, so the footer holds no value of its own.
     let mode: SessionModeReading
     let facts: String?
     let isSendable: Bool

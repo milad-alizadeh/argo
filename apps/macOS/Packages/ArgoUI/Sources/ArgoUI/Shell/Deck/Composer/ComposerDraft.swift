@@ -135,11 +135,8 @@ struct ComposerDraft: Equatable {
     /// asserts the reader was told and the vessel that tells them cannot come to disagree.
     static let cleared = "Turn stopped — the composer was cleared"
 
-    /// A rung asked for, and the port's reason where it refused (#545).
-    ///
-    /// A NOTICE and not a refusal, for the reason `cannotAttach` is one: no words are at risk, so
-    /// there is nothing to keep and nothing for a Retry to put back. The rung simply stayed where
-    /// it was, and the control redraws from the Session's own reading either way.
+    /// A rung asked for, and the port's reason where it refused (#545). A notice rather than a
+    /// refusal: no words are at risk, so there is nothing for the seam's Retry to put back.
     mutating func modeAsked(via setMode: () throws -> Void) {
         do {
             try setMode()

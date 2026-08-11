@@ -20,8 +20,8 @@ struct SessionComposer: View {
     /// reason it is: what the port refuses, the seam repeats — and a refused stop must leave the
     /// vessel exactly as it found it.
     var stop: () throws -> Void = {}
-    /// Put the Session on a rung (#545). A closure for the reason `stop` is, and THROWING for the
-    /// reason it is: a refused rung changed nothing, and the seam is where the port's reason goes.
+    /// Put the Session on a rung (#545). Throwing, like `stop`: a refused rung changed nothing,
+    /// and the seam is where the port's reason goes.
     var setMode: (SessionMode) throws -> Void = { _ in }
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
@@ -156,7 +156,7 @@ struct SessionComposer: View {
     }
 
     /// Ask the Session for a rung. The control shows nothing of its own, so a refusal needs no
-    /// undoing here — it puts the port's reason on the seam and the reading redraws unchanged.
+    /// undoing here.
     private func ask(for mode: SessionMode) {
         draft.modeAsked { try setMode(mode) }
     }

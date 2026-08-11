@@ -36,14 +36,9 @@ public protocol SessionDriver {
         for sessionID: String,
     ) throws
 
-    /// Put the Session on one rung of the autonomy ladder (#545, ADR-0025).
-    ///
-    /// The rung a Session STARTS on rides in on argv; this is the way to move it afterwards, and it
-    /// is a different act rather than the same one repeated: the CLI reads its flag once, so a live
-    /// change has to be made the way a person would make it.
-    ///
-    /// It refuses rather than guessing in two cases, both of which would otherwise widen a boundary
-    /// nobody asked to widen — see the `claude` adapter for what walks the distance.
+    /// Put the Session on one rung of the autonomy ladder (#545, ADR-0025). The rung a Session
+    /// STARTS on rides in on argv; a CLI reads that flag once, so moving it afterwards is a
+    /// different act — see the `claude` adapter for what it takes.
     func setMode(_ mode: SessionMode, for sessionID: String) throws
 
     /// Whether this adapter takes attachments at all (#540) — the composer omits the `+` rather

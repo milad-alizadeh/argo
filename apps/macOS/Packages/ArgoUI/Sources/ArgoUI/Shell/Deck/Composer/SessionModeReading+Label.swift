@@ -1,9 +1,7 @@
 import ArgoEngine
 
 /// What the Mode control says for one reading of a Session's stance (#545, design decision 1).
-///
-/// Here rather than in `ModePicker` so each of the three cases is a claim a test can make. A word
-/// chosen inside a `body` is one only a screenshot can check.
+/// Here rather than in `ModePicker` so each case is a claim a test can make.
 extension SessionModeReading {
     /// The word on the closed control. `≈` goes BEFORE the rung, where it qualifies what follows
     /// rather than reading as a fifth mark.
@@ -17,8 +15,7 @@ extension SessionModeReading {
         rung?.mark ?? ArgoSymbol.modeUnknown
     }
 
-    /// What the CLI's own word adds, verbatim and never reworded — it is what the approximation is
-    /// measured against. `nil` for an exact reading, which is the ladder's own and needs no
+    /// What the CLI's own word adds, verbatim. `nil` for an exact reading, which needs no
     /// footnote.
     var report: String? {
         switch self {

@@ -1,16 +1,11 @@
 /// The Session's standing autonomy stance — a four-rung ladder whose rungs are BOUNDARIES rather
 /// than prompt frequencies: inside a rung the agent acts, at its edge a Permission fires
 /// (`CONTEXT.md` L2 · Autonomy, ADR-0025).
-///
-/// The boundary reading is the one both CLIs can express: Codex substitutes a sandbox for asking
-/// where Claude substitutes asking for a sandbox, so a frequency ladder would have rungs one of
-/// them could not reach.
 public enum SessionMode: CaseIterable, Hashable, Sendable {
     /// No writes are possible.
     case readOnly
     /// Read Only's boundary carrying a deliverable: the agent proposes, then hands off. Shares
-    /// `readOnly`'s permission level and differs by INTENT — the ladder's one deliberate pair, so a
-    /// future edit must not collapse it.
+    /// `readOnly`'s permission level and differs by INTENT, so an edit must not collapse the pair.
     case plan
     /// Writes and runs inside the Workspace, and asks to leave it. The baseline rung, so ungated
     /// tools do not pay a Permission round trip.
@@ -20,12 +15,8 @@ public enum SessionMode: CaseIterable, Hashable, Sendable {
 }
 
 /// A Session's stance as Argo can state it: the rung, whether that rung is the NEAREST rather than
-/// the exact one, and the CLI's own word for it.
-///
-/// The mark is approximation and not a tier — Argo knows the fact exactly and only its own
-/// vocabulary is coarser, so an `≈` reading stays as honest as an exact one. `unknown` is kept for
-/// the case where the fact itself is not established: a stance nobody has observed, or one whose
-/// boundary Argo cannot see at all.
+/// the exact one, and the CLI's own word for it. The mark is approximation and not a tier — an `≈`
+/// reading is still DIRECT, and only `unknown` says the fact itself is not established.
 public enum SessionModeReading: Equatable, Sendable {
     case exactly(SessionMode, cli: String)
     case nearly(SessionMode, cli: String)
@@ -49,8 +40,8 @@ public enum SessionModeReading: Equatable, Sendable {
         }
     }
 
-    /// The CLI's own value, verbatim and never reworded: it is what the approximation is measured
-    /// against, and what a reader hovers to see.
+    /// The CLI's own value, verbatim and never reworded — it is what the approximation is
+    /// measured against.
     public var cliValue: String? {
         switch self {
         case let .exactly(_, cli), let .nearly(_, cli): cli

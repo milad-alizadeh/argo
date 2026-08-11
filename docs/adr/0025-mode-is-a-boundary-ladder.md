@@ -114,9 +114,24 @@ adapter works.
 - **`{"type":"mode","mode":"normal"}` sits beside it and is a different axis.** Never read it as
   the stance.
 - **`--permission-mode acceptEdits` was honoured end to end**: the footer read `accept edits` and
-  the transcript wrote `acceptEdits`.
+  the transcript wrote `acceptEdits`. It is the only rung driven the whole way; `plan` and `auto`
+  are exercised as *values the flag accepts* and as positions on the ring, not as spawns of their
+  own.
 - **Nothing is written until the first prompt**, so a fresh spawn's rung is DIRECT from Argo's own
   record alone.
+
+**A rung cannot be changed while a Turn is in flight.** The ring is walked, not written, so a
+change passes through rungs nobody asked for — `Auto` among them. Idle, that transit is nothing.
+Mid-Turn it is a widened boundary while a tool call is running, so the port refuses instead
+(`SessionDriveError.modeBusy`). It is a rule this ADR did not have and the build needed, and it is
+the ladder's own rule read at the one moment the transit is observable.
+
+**A rung Argo set outranks the record until the record moves.** `claude` writes its stance at Turn
+boundaries, so the last record can predate the last change. A set is Argo's own act and therefore
+DIRECT; it is kept with the value the record carried when it was made, and the moment the record
+carries something else the record is what is true. Without it a second change would count its
+distance from a stale rung and walk too far — landing the Session somewhere nobody asked for, which
+is the same failure `modeBusy` prevents.
 
 ## Consequences
 

@@ -63,11 +63,8 @@ struct ClaudeSessionDriver: SessionDriver {
         }
     }
 
-    /// The rung is walked to, not written: one `shift+tab` per step, in one write.
-    ///
-    /// Both refusals are the same rule — Argo does not widen a boundary nobody asked to widen. A
-    /// stance it cannot establish leaves no honest distance to walk, and a Turn in flight is when
-    /// the rungs passed through on the way could matter.
+    /// The rung is walked to, not written: one `shift+tab` per step, in one write. A stance Argo
+    /// cannot establish leaves no honest distance to walk, so it refuses rather than guessing.
     func setMode(_ mode: SessionMode, for sessionID: String) throws {
         guard let claim = ownership.ownerOf(sessionID: sessionID) else {
             throw SessionDriveError.notDrivable

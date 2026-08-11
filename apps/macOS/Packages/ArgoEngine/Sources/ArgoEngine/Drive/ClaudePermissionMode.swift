@@ -6,10 +6,8 @@
 /// still writes `default`, so both have to read; and `shift+tab` cycles a FOUR-value ring that
 /// `bypassPermissions` and `dontAsk` are not part of.
 enum ClaudePermissionMode {
-    /// What Argo passes to put a Session on this rung.
-    ///
-    /// Read Only and Plan answer the same value, because they are one boundary: the difference is
-    /// the intent Argo holds, and no flag carries an intent.
+    /// What Argo passes to put a Session on this rung. Read Only and Plan answer the same value:
+    /// they are one boundary, and no flag carries the intent that separates them.
     static func value(for mode: SessionMode) -> String {
         switch mode {
         case .readOnly, .plan: "plan"
@@ -18,15 +16,9 @@ enum ClaudePermissionMode {
         }
     }
 
-    /// What an observed value means on the ladder.
-    ///
-    /// `plan` reads as Read Only rather than Plan: the CLI reports the shared boundary either way,
-    /// and Read Only is the half of it that is true without knowing the intent. Plan reaches a
-    /// surface only where Argo itself set it.
-    ///
-    /// Nearest is judged by what the Session does with NOBODY answering prompts, because Mode is a
-    /// standing stance — so `manual` is Read Only's neighbour, not Code's: the writes it can reach
-    /// each need a human, which makes them no part of its standing stance.
+    /// What an observed value means on the ladder. `plan` reads as Read Only, because the CLI
+    /// reports the shared boundary either way. Nearest is judged by what the Session does with
+    /// NOBODY answering prompts — so `manual` is Read Only's neighbour, not Code's.
     static func reading(of observed: String) -> SessionModeReading {
         switch observed {
         case "plan": .exactly(.readOnly, cli: observed)
@@ -45,10 +37,8 @@ enum ClaudePermissionMode {
     static let ring = ["auto", "manual", "acceptEdits", "plan"]
 
     /// How many `shift+tab`s take a Session from `observed` to `target`, and `nil` where the ring
-    /// cannot say — an observed value that is not on it (`dontAsk`), or a target that is not.
-    ///
-    /// Zero is a real answer and means the Session is already there, which is what keeps a picker
-    /// re-selecting its own rung from writing anything.
+    /// cannot say — an observed value that is not on it (`dontAsk`), or a target that is not. Zero
+    /// is a real answer: the Session is already there.
     static func cycles(from observed: String, to target: SessionMode) -> Int? {
         guard let start = ring.firstIndex(of: observed),
               let end = ring.firstIndex(of: value(for: target))

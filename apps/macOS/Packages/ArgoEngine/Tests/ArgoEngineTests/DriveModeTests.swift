@@ -53,7 +53,7 @@ struct DriveModeTests {
     func `a stance Argo cannot establish refuses the change rather than guessing`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
-        let claim = try await fixture.hub.spawnSession()
+        _ = try await fixture.hub.spawnSession()
         await hubObserveToEnd(fixture.hub, hubTestObservation(
             id: "session-from-cli",
             events: [
@@ -67,7 +67,6 @@ struct DriveModeTests {
             try fixture.hub.driver.setMode(.readOnly, for: "session-from-cli")
         }
         #expect(fixture.host.started.last?.written.isEmpty == true)
-        _ = claim
     }
 
     /// The way round the ring passes through rungs the user did not ask for, `Auto` among them.
@@ -99,6 +98,45 @@ struct DriveModeTests {
             try fixture.hub.driver.setMode(.auto, for: "session-from-cli")
         }
         #expect(fixture.host.started.last?.written.isEmpty == true)
+    }
+
+    /// `claude` writes its stance at Turn boundaries, so the record still says what it said before
+    /// the first change. Counting the second change from THAT would walk the ring too far — and the
+    /// rung it lands on can be wider than the one asked for, which is what `modeBusy` exists to
+    /// prevent mid-Turn.
+    @Test
+    func `a second rung is counted from where the first one landed`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        try fixture.hub.setMode(.auto, for: claim.value)
+        try fixture.hub.setMode(.readOnly, for: claim.value)
+
+        // `acceptEdits → auto` is two, and `auto → plan` is three. Counted from the stale record it
+        // would have been one, landing the Session on `manual` — a rung nobody asked for.
+        #expect(fixture.host.started.last?.written == [
+            "\u{1B}[Z\u{1B}[Z",
+            "\u{1B}[Z\u{1B}[Z\u{1B}[Z",
+        ])
+    }
+
+    /// The one rung the CLI cannot report. It answers `plan` for Read Only and Plan alike, so a
+    /// Plan the user picked has to survive the record catching up — or the composer would draw
+    /// Read Only the moment it did.
+    @Test
+    func `Plan survives the record reporting the boundary it shares`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        try fixture.hub.setMode(.plan, for: claim.value)
+        await hubObserveToEnd(fixture.hub, hubTestObservation(
+            id: "session-from-cli",
+            events: [.cwd(fixture.projectURL.path), .mode(cli: "plan")],
+        ))
+
+        #expect(fixture.hub.sessions.first?.mode == .exactly(.plan, cli: "plan"))
     }
 
     @Test

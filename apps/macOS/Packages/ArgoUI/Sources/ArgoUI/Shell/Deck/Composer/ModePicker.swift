@@ -3,16 +3,13 @@ import SwiftUI
 
 /// The `Read Only · Plan · Code · Auto` ladder, as a bespoke `Menu`.
 ///
-/// It draws a READING rather than a choice (#545): the rung comes back off the Session, and a
-/// stance the ladder has no rung for draws the nearest one marked `≈`, or `unknown` where there is
-/// none. Neither ticks a row — a tick says *this is where you are*, and on an approximation that
-/// would be a false DIRECT.
+/// It draws a READING rather than a choice (#545): a stance the ladder has no rung for draws the
+/// nearest one marked `≈`, or `unknown` where there is none, and neither ticks a row.
 struct ModePicker: View {
     @Environment(\.argo) private var argo
 
     let reading: SessionModeReading
-    /// Put the Session on a rung. Answered on the composer's seam where the port refuses, so the
-    /// control itself never reports a change it only asked for.
+    /// Put the Session on a rung. A refusal is answered on the composer's seam.
     var setMode: (SessionMode) -> Void = { _ in }
 
     var body: some View {
@@ -60,8 +57,7 @@ struct ModePicker: View {
         .accessibilityLabel("Mode, \(reading.help)")
     }
 
-    /// All four rungs, always: what Argo can READ and what it can SET are different questions, and
-    /// a Session it cannot place on the ladder can still be put on a rung.
+    /// All four rungs, always — a Session Argo cannot place on the ladder can still be put on one.
     private var rungs: some View {
         // Inline, or the rungs land in a submenu — and it is what ticks the selected one.
         Picker("Mode", selection: selection) {
@@ -73,9 +69,7 @@ struct ModePicker: View {
         .labelsHidden()
     }
 
-    /// Optional on purpose: an inexact reading selects nothing, which is what leaves every row
-    /// unticked. Writing it is always a rung — `nil` reaches the setter only if SwiftUI ever
-    /// deselects, and there is nothing to ask for then.
+    /// Optional on purpose: an inexact reading selects nothing, which leaves every row unticked.
     private var selection: Binding<SessionMode?> {
         Binding(get: { reading.exactRung }, set: { rung in rung.map(setMode) })
     }

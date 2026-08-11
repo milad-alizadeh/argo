@@ -42,12 +42,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var cwd: String?
     public private(set) var model: String?
     public private(set) var branch: String?
-    /// The rung Argo ITSELF put this Session on, set by the Hub off the spawn. It is the only place
-    /// Plan can come from: the CLI reports Read Only's boundary for both, so an observed value can
-    /// never say which of the two was meant (ADR-0025).
-    public internal(set) var setMode: SessionMode?
+    /// The rung Argo ITSELF put this Session on — off the spawn, or off a later set. The only
+    /// place Plan can come from: the CLI reports Read Only's boundary for both (ADR-0025).
+    public internal(set) var modeSet: SessionModeSet?
     /// The CLI's own word for the stance, latest reading and nothing yet where no record said one.
-    private var observedMode: String?
+    private(set) var observedMode: String?
     public private(set) var headLeafUUID: String?
     /// Everything the transcript said, in the order it said it. The facts above are a lossy fold
     /// over this stream, which is why it is retained whole for the surfaces that read it.
@@ -89,17 +88,18 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     }
 
     /// The Session's standing stance, as Argo can state it (ADR-0025).
-    ///
-    /// The rung Argo set wins over the reading of it in exactly one case, and only while the two
-    /// still agree: Plan. `claude` reports `plan` for Read Only and Plan alike, so the intent is
-    /// knowable from the spawn and from nowhere else. The moment the observed value stops being the
-    /// one Argo set, the reading is what is true.
     public var mode: SessionModeReading {
-        guard let observedMode else {
-            return setMode.map { .exactly($0, cli: ClaudePermissionMode.value(for: $0)) }
-                ?? .unknown(cli: nil)
+        guard let modeSet else {
+            return observedMode.map(ClaudePermissionMode.reading(of:)) ?? .unknown(cli: nil)
         }
-        guard setMode == .plan, observedMode == ClaudePermissionMode.value(for: .plan) else {
+        // The record has not moved since Argo set the rung, and `claude` writes its stance only at
+        // Turn boundaries — so the rung Argo put the Session on is the later fact of the two.
+        guard modeSet.observedWhenSet != observedMode, let observedMode else {
+            return .exactly(modeSet.mode, cli: ClaudePermissionMode.value(for: modeSet.mode))
+        }
+        // The record moved, so it is what is true — except for Plan, which no CLI can report: it
+        // reports Read Only's boundary either way, and the intent is knowable only from the set.
+        guard modeSet.mode == .plan, observedMode == ClaudePermissionMode.value(for: .plan) else {
             return ClaudePermissionMode.reading(of: observedMode)
         }
         return .exactly(.plan, cli: observedMode)
@@ -149,7 +149,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // DIRECT: Argo chose this program and started it.
         self.cli = spawn.cli
         // DIRECT for the same reason: the rung went out on argv.
-        self.setMode = spawn.mode
+        self.modeSet = SessionModeSet(mode: spawn.mode)
         self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
         self.startedAtMs = spawn.spawnedAtMs
         self.lastStop = spawn.exit == nil ? .endTurn : .cancelled
@@ -258,7 +258,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         // one
         // — and a file that has not stated one yet does not un-state the root's.
         observedMode = continuation.observedMode ?? observedMode
-        setMode = continuation.setMode ?? setMode
+        modeSet = continuation.modeSet ?? modeSet
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
         observeActivity(continuation.lastActivityAtMs)
         observeActivity(continuation.startedAtMs)

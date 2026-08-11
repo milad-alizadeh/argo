@@ -104,6 +104,10 @@ extension Hub {
         // reason.
         published.expiredPermissions = ownership.boundClaim(ofSessionID: session.id)
             .map { expiredPermissions[$0] ?? [] } ?? []
+        // The rung Argo set, through the same claim. It falls back to the row's own, which is
+        // where a spawn's rung lives until something sets a second one.
+        published.modeSet = ownership.boundClaim(ofSessionID: session.id)
+            .flatMap { setModes[$0] } ?? session.modeSet
         // Read through the claim rather than as recorded: the fresh row is re-keyed to its CLI's
         // own
         // id the moment its record appears, and the link has to follow it there.

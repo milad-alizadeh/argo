@@ -49,14 +49,10 @@ extension CockpitCoordinator {
         } catch {}
     }
 
-    /// One rung of the Mode ladder asked for (#545, ADR-0025).
-    ///
-    /// A refusal is thrown back for the reason `interrupt`'s is: what the composer says next
-    /// depends on the answer. `claude` has no command that SETS a named rung, so the port walks the
-    /// ring from where the Session stands — which it can only do from a stance it can read, and
-    /// only while no Turn is in flight.
+    /// One rung of the Mode ladder asked for (#545, ADR-0025). Through the Hub rather than the
+    /// driver, because the rung has to be remembered where it lands — see `Hub.setMode`.
     func setMode(_ mode: SessionMode, for sessionID: String) throws {
-        try hub.driver.setMode(mode, for: sessionID)
+        try hub.setMode(mode, for: sessionID)
     }
 
     /// One standing allow taken back (#572).

@@ -20,8 +20,7 @@ extension CockpitView {
         return { try actions.interruptTurn(sessionID) }
     }
 
-    /// Putting the composer's Session on a rung (#545), bound the way `stop` is. Throwing for the
-    /// same reason: a refused rung changed nothing, and only the port knows which it was.
+    /// Putting the composer's Session on a rung (#545), bound the way `stop` is.
     var setMode: (SessionMode) throws -> Void {
         guard let composer else { return { _ in } }
         let sessionID = composer.sessionID
