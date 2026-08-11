@@ -84,6 +84,15 @@ circle and reads as a second button inside the first. It is therefore the one ma
 drawn as a **shape rather than a symbol**, and the number lives with the vessel's own measurements
 (`ArgoComposerVessel.stopMark`) rather than on the icon scale.
 
+**The badges** — `PERMISSION` on the prompt's first line and `NEEDS INPUT` on the roster row are
+one mark at one size: uppercase, tracked 0.6, semibold, at **10** (`ArgoTypography.badge`,
+`ArgoBadge`). Measured off `composer/perm.png`, where both draw a 7px cap height at 1x. Ink is the
+state's — `state.attention` for both of these.
+
+> **Corrected in build (#544).** The prompt's `PERMISSION` shipped at `sectionLabel`'s 11 in #542,
+> before the roster's badge gave the pair a second member to disagree with. Both are the same mark
+> naming the same fact, so they now take one role at the size the render sets.
+
 **No keyboard hint is printed.** `⇧⏎` and `esc` are platform conventions; the controls carry
 them in tooltips rather than the composer explaining itself forever.
 

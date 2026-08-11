@@ -27,6 +27,22 @@ struct SessionRosterSpecimenTests {
     }
 
     @Test
+    func `the specimen renders both badge words, so the two are judged side by side`() {
+        #expect(
+            Set(SessionRosterProjection.previewRows.compactMap(\.stateWord))
+                == ["Needs input", "Stopped"],
+        )
+    }
+
+    @Test
+    func `the attention row the specimen renders is a Session held on a Permission`() {
+        // Asserted on the status rather than the `Row`, which keeps only the word: `permission` and
+        // `asking` share it, so a fixture drifting to `asking` would leave the PNG evidence for the
+        // half that blocks nobody.
+        #expect(CockpitPresentation.preview.sessions.contains { $0.status == .permission })
+    }
+
+    @Test
     func `the ghosted roster the specimen renders puts both accesses on one screen`() {
         // The `ghostedRows` PNG is the only evidence whole-row ghosting has, and it is a
         // COMPARISON: a list of nothing but read-only rows would prove nothing about the state.

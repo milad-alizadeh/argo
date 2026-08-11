@@ -165,11 +165,14 @@ struct SessionRow: View {
     /// The word takes the state dot's own ink — every state ink is asserted legible as a word and
     /// not only as a dot. Drawn even under a state with no colour, or it would be announced and
     /// never drawn.
+    ///
+    /// Above the title in priority: a title that gives up characters still reads, and a truncated
+    /// badge says a different state (`composer/perm.png`, where the title is the line that cuts).
     @ViewBuilder private var stateWord: some View {
         if let word = row.stateWord {
-            Text(word)
-                .argoText(ArgoTypography.caption)
+            ArgoStateLabel(word: word)
                 .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
+                .layoutPriority(1)
         }
     }
 

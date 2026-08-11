@@ -16,6 +16,11 @@ public enum ArgoTypography {
     public static let sectionLabel = ArgoTextStyle(
         typeface: .interface, rung: .subheadline, weight: .semibold, tracking: 0.6,
     )
+    /// `ArgoBadge`'s role, at the size `composer/perm.png` sets both of its badges — a 7px cap
+    /// height, so 10 rather than `sectionLabel`'s 11.
+    public static let badge = ArgoTextStyle(
+        typeface: .interface, rung: .caption1, weight: .semibold, tracking: 0.6,
+    )
     /// A Session row's primary line.
     public static let rowTitle = ArgoTextStyle(typeface: .interface, rung: .body, weight: .medium)
     /// The one quiet metadata line under it.
@@ -48,6 +53,7 @@ public enum ArgoTypography {
         ("sessionTitle", sessionTitle),
         ("identityHeading", identityHeading),
         ("sectionLabel", sectionLabel),
+        ("badge", badge),
         ("rowTitle", rowTitle),
         ("rowMeta", rowMeta),
         ("body", body),

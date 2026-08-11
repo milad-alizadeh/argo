@@ -63,7 +63,7 @@ public extension CockpitPresentation {
                 // The Project's own checkout: the one workspace the roster draws no label for.
                 workspaceLocation: "/Users/milad/Experiments/argo",
                 access: .managed,
-                status: .asking,
+                status: .permission,
                 cli: .claude,
                 workspace: .init(kind: .main, branch: "main"),
                 lastSeenAtMs: minutesAgo(4),
