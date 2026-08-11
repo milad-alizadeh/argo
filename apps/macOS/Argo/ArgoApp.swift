@@ -143,6 +143,7 @@ struct ArgoApp: App {
                 Task { await accounts.open(on: id.flatMap(cockpit.registry.project(id:))) }
             },
             spawnSession: { await cockpit.spawnSession() },
+            spawnSessionBeside: { id in await cockpit.spawnSession(beside: id) },
             setSessionArchived: { id, isArchived in
                 Task { await cockpit.setArchived(isArchived, sessionID: id) }
             },

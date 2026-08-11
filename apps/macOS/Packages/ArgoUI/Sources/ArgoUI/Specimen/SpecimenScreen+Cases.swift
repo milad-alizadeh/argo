@@ -84,6 +84,8 @@ extension SpecimenScreen {
         held: FeedRow.ID? = nil,
         composer: SessionComposerProjection.Composer? = nil,
         prompt: PermissionPromptProjection.Prompt? = nil,
+        unavailable: SessionComposerProjection.Unavailable? = nil,
+        access: CockpitPresentation.Session.Access = .managed,
     )
         -> some View {
         // Named, because a deck whose top zone says nothing is the no-Session-selected state, and
@@ -94,13 +96,14 @@ extension SpecimenScreen {
             // A prompt in the composer's slot IS the Session's status, so the band above it is read
             // off the same fact rather than named per case.
             header: prompt == nil
-                ? SessionHeaderFixture.header(for: .managed)
+                ? SessionHeaderFixture.header(for: access)
                 : SessionHeaderFixture.needsInput,
             open: open,
             step: step,
             lit: lit,
             held: held,
             composer: composer,
+            unavailable: unavailable,
             prompt: prompt,
         )
     }

@@ -62,6 +62,19 @@ extension CockpitView {
         }
     }
 
+    /// The exit the undriveable line offers: a fresh Session in the shown one's folder, which then
+    /// becomes the selection — story 48's rule, and for its reason. Inert with nothing selected,
+    /// which is also the state with no line to press.
+    var spawnBeside: () async -> Void {
+        guard let session = presentation.session(navigation.session) else { return {} }
+        let spawn = CockpitSpawn(
+            presentation: presentation,
+            actions: actions,
+            navigation: navigation,
+        )
+        return { await spawn.run(beside: session.id) }
+    }
+
     /// The menu bar's half of the roster's two gestures — `nil` when nothing is selected, which is
     /// what greys the items out. Rename only opens the row's own field: there is one rename in this
     /// app and it happens in the row (`SessionCommands`).

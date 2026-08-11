@@ -30,6 +30,9 @@ struct ComposerSeam: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                // The tint and not a `foregroundStyle` — see `ComposerUnavailable.exit`. This
+                // shipped Ion Blue where `failed.png` draws it neutral.
+                .tint(argo.color.text.secondary)
             }
         }
         // Near-flush with the vessel below rather than indented to its text: the seam is a line
