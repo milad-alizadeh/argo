@@ -53,11 +53,13 @@ struct EvidenceLanguageTests {
         #expect(EvidenceLanguage(path: "") == nil)
     }
 
-    /// No language means no language mark, and the panel falls back to the CALL's own — a command
-    /// takes the terminal it ran in rather than the document that made it look like a file.
+    /// The panel's header is open on what HAPPENED, so it takes the call's own mark whatever the
+    /// subject was. The language's mark belongs to a step, beside the one address it is true of —
+    /// a header carrying it would be claiming a language across four files.
     @Test
-    func `a subject with no language takes the mark of what the call was`() throws {
+    func `the header takes the mark of what the call was, never the language's`() throws {
         #expect(try opened(.read, file: "Makefile").symbol == ArgoSymbol.read)
+        #expect(try opened(.read, file: "FeedCall.swift").symbol == ArgoSymbol.read)
         #expect(opened(.execute, .command("bun run quality")).symbol == ArgoSymbol.ran)
     }
 
@@ -68,12 +70,12 @@ struct EvidenceLanguageTests {
         #expect(opened(.unclassified, .plain("some_tool")).symbol == ArgoSymbol.plainSource)
     }
 
-    /// A command's panel is identified by the command and how it went, so its header keeps the verb
-    /// a file's header drops.
+    /// The language rides on the STEP, which is what lets one panel colour four files by four
+    /// grammars — and lets a command's output stay uncoloured beside them.
     @Test
-    func `a command's panel says the verb a file's panel leaves to its mark`() throws {
-        #expect(opened(.execute, .command("bun run quality")).saysVerb)
-        #expect(try !opened(.edit, file: "a.swift").saysVerb)
+    func `each step carries the language of its own address`() throws {
+        #expect(try opened(.read, file: "FeedCall.swift").steps.map(\.language) == [.swift])
+        #expect(opened(.execute, .command("bun run quality")).steps.map(\.language) == [nil])
     }
 
     private func opened(_ kind: FeedCall.Kind, file path: String) throws -> FeedEvidence {

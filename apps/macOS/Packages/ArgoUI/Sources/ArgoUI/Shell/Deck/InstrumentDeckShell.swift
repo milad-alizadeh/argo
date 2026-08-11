@@ -32,6 +32,10 @@ struct InstrumentDeckShell: View {
     /// Which call's evidence the deck opens with. A parameter so a specimen can render the panel
     /// open — the state is the deck's, and there is no other way to reach it without a click.
     var open: FeedRow.ID?
+    /// Which result inside that row the deck opens AT — what clicking one of the names listed
+    /// under a folded run does. A parameter for the reason `open` is: the state is reached by a
+    /// click, and a screenshot cannot click.
+    var step: Int?
     /// Which picture the deck opens full size, for the same reason `open` is a parameter: the
     /// lightbox is reachable only by clicking a thumbnail, so without this nobody ever looks at it.
     var lit: FeedShot?
@@ -77,6 +81,7 @@ struct InstrumentDeckShell: View {
                 handOff: handOff,
                 showing: showing,
                 open: open,
+                step: step,
                 lit: lit,
                 held: held,
                 composer: composer,

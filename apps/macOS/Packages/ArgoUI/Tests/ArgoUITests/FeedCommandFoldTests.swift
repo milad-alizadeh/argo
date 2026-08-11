@@ -104,7 +104,7 @@ struct FeedCommandFoldTests {
         )
 
         #expect(survey.disclosure == .available)
-        #expect(survey.opened.steps.map(\.address) == ["ls apps", "git status"])
+        #expect(survey.opened.steps.map(\.address.text) == ["ls apps", "git status"])
     }
 
     /// Where the host wrote one, the agent's own account is what the step is addressed by — the
@@ -133,7 +133,7 @@ struct FeedCommandFoldTests {
             FeedFixture.surveys(in: FeedProjection.rows(from: narrated)).first,
         )
 
-        #expect(survey.opened.steps.map(\.address) == [
+        #expect(survey.opened.steps.map(\.address.text) == [
             "Read the call vocabulary", "Check the working tree",
         ])
     }

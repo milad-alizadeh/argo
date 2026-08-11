@@ -23,9 +23,7 @@ extension FeedEvidence {
 
     private var prosePatches: [DiffEvidence] {
         steps.compactMap { step in
-            guard case let .diff(diff) = step.result,
-                  (step.language ?? language) == .markdown
-            else { return nil }
+            guard case let .diff(diff) = step.result, step.language == .markdown else { return nil }
             return diff
         }
     }

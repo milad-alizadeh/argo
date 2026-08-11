@@ -1,15 +1,20 @@
 import ArgoEngine
 import SwiftUI
 
-/// What one call produced, beside the feed that named it.
+/// What a call produced, beside the feed that named it.
 ///
 /// It takes the evidence and the words that addressed it, never a Session or a selection — the
-/// deck owns which row is open, and this draws whatever it is handed. The full path lives here and
-/// only here: the feed shows a filename, and this is where the address it stood for is readable.
+/// deck owns which row is open, and this draws whatever it is handed. A list of results, each under
+/// the address it came from: four reads open as four files down one pane, and the names listed
+/// under
+/// the row in the feed scroll the pane to whichever one was clicked.
 struct EvidencePanel: View {
     @Environment(\.argo) private var argo
 
     let evidence: FeedEvidence
+    /// Which step the feed pointed at, if any. A position rather than a scroll offset: the feed
+    /// says WHICH result it means, and where that lands is the pane's own business.
+    var current: Int?
     let dismiss: () -> Void
 
     /// Which way the patches are being read. Owned here rather than by the row, because it is a
@@ -46,79 +51,65 @@ struct EvidencePanel: View {
         if evidence.steps.isEmpty {
             EvidenceAbsent()
         } else {
-            ScrollView(.vertical) {
-                VStack(alignment: .leading, spacing: ArgoSpacing.section) {
-                    ForEach(Array(evidence.steps.enumerated()), id: \.offset) { position, step in
-                        EvidenceStep(
-                            step: step,
-                            language: step.language ?? evidence.language,
-                            reading: reading,
-                            hasFailed: evidence.ending.hasFailed,
-                            position: position,
-                            count: evidence.steps.count,
-                        )
+            ScrollViewReader { pane in
+                results
+                    // The click lands in the feed and the answer happens here, so the jump is not
+                    // animated: a pane scrolling two thousand points is a smear, and what the
+                    // reader asked for was to be somewhere else.
+                    .onChange(of: current, initial: true) {
+                        guard let current else { return }
+                        pane.scrollTo(current, anchor: .top)
                     }
-                }
-                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .defaultScrollAnchor(.top)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+    }
+
+    /// A plain stack and not a lazy one, deliberately. What the accordion asks for is a jump to the
+    /// nth result, and a lazy stack can only scroll to a row it has built — the ninth file of a run
+    /// is not built until something scrolls near it, which is the thing being asked for.
+    private var results: some View {
+        ScrollView(.vertical) {
+            VStack(alignment: .leading, spacing: ArgoSpacing.section) {
+                ForEach(evidence.steps) { step in
+                    EvidenceStep(
+                        step: step,
+                        reading: reading,
+                        hasFailed: evidence.ending.hasFailed,
+                        isCurrent: step.id == current,
+                    )
+                    .id(step.id)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .defaultScrollAnchor(.top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
-/// One result inside the panel, numbered where there is more than one of it.
-///
-/// The number is what keeps a collapsed run honest: three patches with nothing between them read as
-/// one long diff, and the whole reason the row collapsed is that they were three separate moments.
-/// A folded run of looking adds the file each step came from, because its own line no longer says.
+/// One result inside the panel, under the address it came from.
 private struct EvidenceStep: View {
-    @Environment(\.argo) private var argo
-
     let step: FeedEvidence.Step
-    let language: EvidenceLanguage?
     let reading: EvidenceReading
     /// Whether the CALL failed — a fact about the outcome, which is the only grain at which the
     /// record tells error output apart from ordinary output.
     let hasFailed: Bool
-    let position: Int
-    let count: Int
+    /// Whether this is the result the feed pointed at.
+    let isCurrent: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            caption
+            EvidenceStepHeader(step: step, isCurrent: isCurrent)
             shown(step.result)
-        }
-    }
-
-    /// The step's own header, where it needs one: which of the run this is, and — inside a folded
-    /// run of looking, where the panel's own header carries a count instead — the file it came
-    /// from, under its own mark and cut from the front exactly as the panel's header is.
-    @ViewBuilder private var caption: some View {
-        if count > 1 || step.address != nil {
-            HStack(spacing: ArgoSpacing.snug) {
-                if count > 1 {
-                    Text("\(position + 1) of \(count)")
-                        .monospacedDigit()
-                }
-                if let address = step.address {
-                    ArgoGlyph(language?.symbol ?? ArgoSymbol.plainSource, .inline)
-                    Text(address)
-                        .lineLimit(1)
-                        .truncationMode(.head)
-                        .help(address)
-                }
-            }
-            .argoText(ArgoTypography.sectionLabel)
-            .foregroundStyle(argo.color.text.tertiary)
-            .padding(.horizontal, ArgoSpacing.comfortable)
         }
     }
 
     @ViewBuilder private func shown(_ result: ToolResult) -> some View {
         switch result {
-        case let .output(output): EvidenceOutput(output: output, hasFailed: hasFailed)
-        case let .diff(diff): EvidenceDiff(diff: diff, language: language, reading: reading)
+        case let .output(output):
+            EvidenceOutput(output: output, language: step.language, hasFailed: hasFailed)
+        case let .diff(diff):
+            EvidenceDiff(diff: diff, language: step.language, reading: reading)
         case let .media(media): EvidenceMedia(media: media)
         }
     }
@@ -152,6 +143,12 @@ private struct EvidenceAbsent: View {
 
 #Preview("Evidence — everything a folded run of looking read") {
     EvidenceFixture.surveyed.map { EvidencePanel(evidence: $0, dismiss: {}) }
+        .frame(width: 420, height: 480)
+        .argoAppearance()
+}
+
+#Preview("Evidence — a folded run, scrolled to the file the feed pointed at") {
+    EvidenceFixture.surveyed.map { EvidencePanel(evidence: $0, current: 2, dismiss: {}) }
         .frame(width: 420, height: 480)
         .argoAppearance()
 }
