@@ -13,6 +13,9 @@ apps/macOS/out/
 .build/
 .swiftpm/
 xcuserdata/
+# sourcekit-lsp build server config — absolute DerivedData paths, per-machine.
+# Regenerate: cd apps/macOS && xcode-build-server config -scheme Argo -project Argo.xcodeproj
+apps/macOS/buildServer.json
 
 # Installed skill copies are throwaway outputs of `npx skills add` —
 # skills-lock.json is committed and restores them via `npx skills experimental_install`.
