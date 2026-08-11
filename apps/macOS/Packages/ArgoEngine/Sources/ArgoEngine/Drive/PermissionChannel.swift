@@ -82,12 +82,15 @@ final class PermissionChannel {
         guard let waiting = pending.removeValue(forKey: claim) else { return }
         // Silence, deliberately. The PTY is gone, so nothing was refused and nothing is left to
         // read a refusal — the whole Session left with it.
-        stop(waiting)
+        cancelClocks(of: waiting)
         onChange(claim, [])
     }
 
+    /// Over the pending claims as well as the socketed ones, so no armed clock is left sleeping
+    /// against a gate that is being torn down — a day-long `Task` outliving its channel is a leak
+    /// rather than a bug (`weak self` makes its wake-up a no-op), and the union costs nothing.
     func withdrawAll() {
-        for claim in sockets.keys {
+        for claim in Set(sockets.keys).union(pending.keys) {
             withdraw(claim)
         }
     }
@@ -109,7 +112,7 @@ final class PermissionChannel {
         else { return false }
         let answered = waiting.remove(at: index)
         pending[claim] = waiting
-        stop([answered])
+        cancelClocks(of: [answered])
         answered.reply(PermissionReply.line(decision))
         guard decision == .allowAlways else {
             onChange(claim, waiting.map(\.request))
@@ -140,7 +143,7 @@ final class PermissionChannel {
         let covered = waiting.filter { $0.request.toolName == toolName }
         let remaining = waiting.filter { $0.request.toolName != toolName }
         pending[claim] = remaining
-        stop(covered)
+        cancelClocks(of: covered)
         for one in covered {
             one.reply(PermissionReply.line(.allow))
         }
@@ -173,7 +176,7 @@ final class PermissionChannel {
 
     /// Every way a Permission can end that is not its clock running out stops that clock first — an
     /// answered call whose timer still fires would report an expiry over a decision somebody made.
-    private func stop(_ taken: [Pending]) {
+    private func cancelClocks(of taken: [Pending]) {
         for one in taken {
             one.clock.cancel()
         }
@@ -215,7 +218,7 @@ final class PermissionChannel {
         else { return }
         let remaining = waiting.filter { $0.peer != peer }
         pending[claim] = remaining
-        stop(waiting.filter { $0.peer == peer })
+        cancelClocks(of: waiting.filter { $0.peer == peer })
         onChange(claim, remaining.map(\.request))
     }
 }

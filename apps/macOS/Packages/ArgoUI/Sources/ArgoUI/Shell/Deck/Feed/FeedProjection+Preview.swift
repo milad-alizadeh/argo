@@ -70,12 +70,11 @@ extension FeedProjection {
         handedOff: previewHandoff,
     )
 
-    /// The same reading with a Permission that ran out on it (#573). The whole feed for the reason
-    /// the handed-off one is: what the render settles is that a refusal nobody made reads as a
-    /// departure from the punctuation around it, and that is only visible against punctuation.
-    static let previewExpiredRows = rows(
-        from: CockpitPresentation.Session.previewTranscript,
-        expired: [previewExpiry],
+    /// The punctuation with a Permission that ran out among it (#573) — the marks-only set, for
+    /// `previewMarkRows`'s reason and one more: what the render settles is that a refusal nobody
+    /// made reads as a departure from the marks around it, which needs those marks on one screen.
+    static let previewExpiredMarkRows = numbered(
+        (previewMarks + [.permissionExpired(previewExpiry)]).map(FeedRow.Content.mark),
     )
 
     /// `Bash` deliberately — the tool whose prompt the study's render is drawn over, so the row and

@@ -12,7 +12,7 @@ struct FeedPermissionExpiryTests {
     /// The study's own sentence, both halves of it. `denied` alone would credit a decision nobody
     /// made; `expired` alone would leave what became of the call unsaid.
     @Test
-    func `the row says the call was denied AND that nobody answered`() {
+    func `the row says both halves of what happened, in the study's words`() {
         #expect(
             FeedMark.permissionExpired(Self.expiry).words
                 == "Permission expired — denied, unanswered",

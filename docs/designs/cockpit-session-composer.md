@@ -119,8 +119,15 @@ anything.
    cancelled — and a prompt that vanishes when you cancel the turn it belonged to is the expected
    answer, not something that needs explaining. (Superseded: the earlier reading drew nothing in
    either case, on the argument that decision 6's day-long timeout left cancelling as the only way
-   to reach the state. It is still the only way in practice — the row costs nothing until Argo
-   restarts under a live CLI or the patience comes down.)
+   to reach the state. That is still nearly true — the row costs nothing until the patience comes
+   down, which is now the one number that has to change to make it a live surface.)
+
+   **The restart case #573 names is out of reach, and stays out.** An Argo that restarts under a
+   live CLI did not observe the expiry: the claim, the PTY and the gate all die with the process,
+   so the fresh Argo has no record to draw and the hook's own timeout is what refuses the call.
+   Recording it would need the gate's state persisted, which the same reasoning that makes a
+   standing allow die with its claim rules out. The Session demotes to **orphaned** instead, and
+   that is the honest thing the reader is told.
 
    The row goes at the **foot**, not in place. The hook payload names a tool and its input and
    never the record's own id for the call, so there is no honest position in the stream to put it

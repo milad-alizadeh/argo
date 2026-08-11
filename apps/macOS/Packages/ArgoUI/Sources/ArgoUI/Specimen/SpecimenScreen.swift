@@ -127,14 +127,11 @@ public struct SpecimenScreen: View {
                 header: handoffHeader,
             )
         case .feedPermissionExpired:
-            // A refusal nobody made, at the foot of the reading it interrupted (#573). The whole
-            // deck rather than the row alone, because the claim is about a CONTRAST: the amber has
-            // to read as a departure from the hairlines it sits among without reading as an error
-            // the agent hit — and the punctuation it is judged against is only there in the feed.
-            InstrumentDeckShell(
-                room: .sessions,
-                feed: FeedProjection.previewExpiredRows,
-            )
+            // The same marks as `feedPunctuation`, with the refusal nobody made among them (#573).
+            // Beside them rather than alone, because the claim is a CONTRAST: the amber has to read
+            // as a departure from the hairlines it sits in without reading as an error the agent
+            // hit, and a colour nobody compares reads as loud whatever it is.
+            sessions(FeedProjection.previewExpiredMarkRows)
         case .contextGuide:
             // The ⓘ panel, stood in a glass of its own — a popover is a window of its own and
             // never lands in a screenshot of this one (`DrawerSpecimen`).

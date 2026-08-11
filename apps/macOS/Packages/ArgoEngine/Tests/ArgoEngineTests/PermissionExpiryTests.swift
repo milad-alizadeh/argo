@@ -14,8 +14,7 @@ extension PermissionChannelTests {
     @MainActor
     struct Expiry {
         @Test
-        func `a prompt nobody answers is refused by the gate itself and said to be unanswered`()
-            async throws {
+        func `a prompt nobody answers is refused by the gate itself`() async throws {
             try await PermissionGate.withGate(patience: .immediate) { fixture, _, client in
                 client.sendLine(PermissionGate.bashCall)
                 await settle { fixture.hub.sessions.first?.expiredPermissions.isEmpty == false }
