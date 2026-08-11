@@ -198,17 +198,16 @@ public struct SpecimenScreen: View {
             // claim of the collapse is that the three moments are still three in the panel — which
             // is a thing to look at rather than to assert.
             sessions(FeedProjection.previewCallRows, open: FeedProjection.previewRunCallID)
-        case .feedSurveyEvidence:
-            // The folded run of looking, open. The line says `Searched 1 · Read 5` and nothing
-            // else; the claim of the fold is that the five files it stopped naming are still all
-            // there, each caption saying which of them the output under it came from.
-            survey()
-        case .feedSurveyEvidenceStep:
-            // The same folded run, after a click on the THIRD name listed under it. Two halves of
-            // one act to look at: the pane is at that file rather than at the top, and the name
-            // that sent it there is lit in the feed — which is what stops a reader who has scrolled
-            // the pane from losing which of the five files they are in.
-            survey(at: 2)
+        case .feedSurveyEvidence, .feedSurveyEvidenceStep:
+            // The folded run of looking, open — at the top of the pane, and then after a click on
+            // the THIRD name listed under the row. The first says the five files the line stopped
+            // naming are all still there, each under the address its output came from; the second
+            // says a click on one of those names lands on it, in the pane AND in the feed, which is
+            // what stops a reader who has scrolled from losing which of the five they are in.
+            //
+            // One arm because it is one pane looked at twice. `SpecimenScreen+Cases` decides the
+            // argument, so the two cases differ by where the pane is rather than by what it draws.
+            survey(at: surveyStep)
         case .feedDocumentEvidence:
             // A markdown file the agent wrote, open. It opens as the DOCUMENT and not as the
             // patch — whether an outline reads as an outline once the `##` stops being drawn is
@@ -357,6 +356,20 @@ public struct SpecimenScreen: View {
             // The same shipping gate the composer's glass carries.
             sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
                 .argoWithoutTransparency()
+        case .welcome:
+            // The first thing a new user sees, and the one screen here that asks for nothing. What
+            // it has to settle is that three promises read as promises rather than as a feature
+            // grid, and that nothing on it needs a tier explained first.
+            centred { WelcomeScreen(start: {}) }
+        case .connectFresh, .connectFolderOnly, .connectPartly, .connectWired, .connectWaiting,
+             .connectRefused, .connectBroken, .projectSettings:
+            // One panel per state it can be in, because they are structural rather than a value
+            // changing: nothing set, a folder alone, half connected, both ports on two identities,
+            // a grant mid-flight, a refusal, a Binding that came undone, and the same panel
+            // re-entered as Settings. The claim every one of them carries is that the panel is
+            // still usable — a partly connected Project is a Project, and a refusal is a note on a
+            // row rather than a screen to get out of.
+            centred { ConnectPanel(reading: connectReading, actions: .inert) }
         }
     }
 }

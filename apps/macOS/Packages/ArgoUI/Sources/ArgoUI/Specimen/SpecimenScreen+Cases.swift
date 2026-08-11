@@ -23,6 +23,26 @@ extension SpecimenScreen {
             ?? SessionHeaderFixture.header(for: .managed)
     }
 
+    /// A surface that the app puts over the window rather than into it, rendered where the app
+    /// puts it. A sheet screenshotted in the corner of an empty window is a render of a layout
+    /// nobody is ever shown.
+    func centred(@ViewBuilder _ content: () -> some View) -> some View {
+        content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    /// The reading whose Connect state this case is a render of. Keyed off the case the way the
+    /// header fixtures are, so neither side can be renamed into drawing another state's panel.
+    var connectReading: ConnectReading {
+        ConnectFixture.states.first { $0.specimen == specimen }?.reading ?? ConnectFixture.fresh
+    }
+
+    /// Which result the folded run's pane opens at — the third for the case that is a render of a
+    /// click on a name, and the top for the case that is a render of the row being opened. Keyed
+    /// off the case the way the header fixtures are, so the switch stays a list of states.
+    var surveyStep: Int? {
+        specimen == .feedSurveyEvidenceStep ? 2 : nil
+    }
+
     /// The folded run of looking, open — and optionally open AT one of the results listed under it,
     /// which is the state a click on one of those names produces. Spelled here rather than twice in
     /// the switch: the two cases differ by one argument, and the pane they render is the same pane.

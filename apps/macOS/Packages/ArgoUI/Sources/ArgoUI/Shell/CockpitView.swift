@@ -8,6 +8,9 @@ import SwiftUI
 public struct CockpitView: View {
     private let presentation: CockpitPresentation
     private let actions: CockpitActions
+    /// The Connect panel, when it is up. Closed by default so every preview and specimen of the
+    /// shell renders the shell rather than a sheet nobody asked for.
+    private let connect: ConnectSurface
     @Environment(CockpitNavigationModel.self) private var navigation
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
     /// menu bar reaches it (`sessionCommands` below), and the menu bar is outside the sidebar.
@@ -16,9 +19,11 @@ public struct CockpitView: View {
     public init(
         presentation: CockpitPresentation,
         actions: CockpitActions,
+        connect: ConnectSurface = .closed,
     ) {
         self.presentation = presentation
         self.actions = actions
+        self.connect = connect
     }
 
     /// The selected Session's reading, projected here because this is the one view that knows what
@@ -124,6 +129,19 @@ public struct CockpitView: View {
         )
     }
 
+    /// The sheet is up exactly while there is a reading. Dismissing it — Escape, or the system's
+    /// own gesture — runs the same intent the button does, so the panel has one way to close and
+    /// the app is never left holding a panel the window has already put away.
+    private var isConnecting: Binding<Bool> {
+        Binding(
+            get: { connect.reading != nil },
+            set: { isOpen in
+                guard !isOpen else { return }
+                connect.actions.finish()
+            },
+        )
+    }
+
     public var body: some View {
         @Bindable var navigation = navigation
 
@@ -191,6 +209,15 @@ public struct CockpitView: View {
             minHeight: ArgoLayout.windowMinimumHeight,
         )
         .argoAppearance()
+        .sheet(isPresented: isConnecting) {
+            if let reading = connect.reading {
+                ConnectSheet(
+                    reading: reading,
+                    actions: connect.actions,
+                    startsAtWelcome: connect.startsAtWelcome,
+                )
+            }
+        }
         .focusedValue(\.sessionCommands, sessionCommands)
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in
             navigation.reconcile(against: sessionIDs)
