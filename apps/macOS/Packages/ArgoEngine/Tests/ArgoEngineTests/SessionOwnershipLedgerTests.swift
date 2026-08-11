@@ -69,7 +69,43 @@ struct SessionOwnershipLedgerTests {
         ownership.release(claim)
 
         let written = SessionOwnershipLedgerStore(fileURL: fileURL).load()
-        #expect(written.windows["session-a"] == .init(fromMs: 1000, toMs: 9000))
+        #expect(written.windows["session-a"]?.fromMs == 1000)
+        #expect(written.windows["session-a"]?.toMs == 9000)
+    }
+
+    /// One Argo process runs many cockpit windows, so the pid alone cannot separate two owners —
+    /// and a Session one window is steering must not be resumed by the next, or one chain gets two
+    /// agents writing to it.
+    @Test
+    func `a Session another window of this Argo holds is not ours to resume`() {
+        let fileURL = temporaryFileURL()
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let other = registry(at: fileURL)
+        _ = other.claim(cwd: cwd, resuming: "session-a")
+
+        #expect(registry(at: fileURL).isHeldElsewhere(sessionID: "session-a"))
+        // And the window that opened it is not held by somebody else.
+        #expect(!other.isHeldElsewhere(sessionID: "session-a"))
+    }
+
+    /// The ordinary orphan: the window is open because that Argo was killed before it could close
+    /// it, not because it is still there. Whether the pid is alive is what tells the two apart.
+    @Test
+    func `an open window whose Argo has died is held by nobody`() {
+        let fileURL = temporaryFileURL()
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let dead = SessionOwnership(
+            now: { 1000 },
+            ledgerStore: SessionOwnershipLedgerStore(fileURL: fileURL),
+            // A pid no process can have, so `kill` answers `ESRCH` — as it would for any Argo that
+            // has since exited.
+            owner: .init(pid: .max, registry: "an-argo-that-is-gone"),
+        )
+        _ = dead.claim(cwd: cwd, resuming: "session-a")
+
+        let relaunched = registry(at: fileURL)
+        #expect(!relaunched.isHeldElsewhere(sessionID: "session-a"))
+        #expect(grading(relaunched) == .orphaned)
     }
 
     /// A registry with no file is the render harness and every test that never named one: it must

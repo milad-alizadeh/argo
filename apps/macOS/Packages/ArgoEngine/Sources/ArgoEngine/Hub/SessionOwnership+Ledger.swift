@@ -6,12 +6,12 @@ extension SessionOwnership {
     /// windows spawning at once must not lose each other's ownership.
     func recordOwnership(of sessionID: String) {
         ledger = ledgerStore.update(folding: ledger) {
-            $0.open(sessionID: sessionID, atMs: now())
+            $0.open(sessionID: sessionID, atMs: now(), owner: owner)
         }
     }
 
     /// And no longer does. Written at release rather than left open, so a window closed cleanly
-    /// says so — an open window read back after a relaunch is an Argo that was killed.
+    /// says so — an open window whose owner is gone is an Argo that was killed.
     func recordRelease(of sessionID: String) {
         ledger = ledgerStore.update(folding: ledger) {
             $0.close(sessionID: sessionID, atMs: now())
@@ -22,5 +22,11 @@ extension SessionOwnership {
     /// of what grading asks of the file.
     func hasEverOwned(sessionID: String) -> Bool {
         ledger.hasOwned(sessionID: sessionID)
+    }
+
+    /// Whether another live cockpit window is steering this Session. Read from disk rather than
+    /// from the copy held here: that window opened its claim after this one launched.
+    func isHeldElsewhere(sessionID: String) -> Bool {
+        ledgerStore.load().isHeld(sessionID: sessionID, byAnyoneBut: owner)
     }
 }

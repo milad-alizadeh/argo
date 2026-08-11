@@ -68,8 +68,9 @@ extension CockpitView {
     /// Only a CHOSEN Session, never the one reconciliation lands on — otherwise launch would start
     /// an agent for the first row on the roster, which is the one thing this must not do. Which
     /// selections cost a process is `SessionResumeProjection`'s.
-    func resumeIfSelectionIsDead(_ chosen: CockpitPresentation.Session.ID?) {
-        guard let dead = SessionResumeProjection.resumable(chosen, in: presentation) else { return }
+    func resumeIfSelectionIsDead(_ pick: CockpitNavigationModel.Pick) {
+        guard let dead = SessionResumeProjection.resumable(pick.session, in: presentation)
+        else { return }
         Task { await actions.resumeSession(dead) }
     }
 

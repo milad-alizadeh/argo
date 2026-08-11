@@ -56,11 +56,6 @@ public final class Hub {
     /// Argo ever did. Empty of claims until something spawns or resumes one.
     public let ownership: SessionOwnership
 
-    /// The Sessions a resume is in flight for. Selection is what triggers one (#10), and a click
-    /// answered in the time a `claude` takes to start is a second click: without this, two of them
-    /// are two agents on one chain.
-    var resuming: Set<String> = []
-
     /// The PTYs behind those claims. Held for the life of this process, and ended with it.
     let terminals = AgentTerminals()
 

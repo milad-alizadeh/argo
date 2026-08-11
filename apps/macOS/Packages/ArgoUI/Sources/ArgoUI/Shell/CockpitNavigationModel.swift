@@ -15,14 +15,22 @@ public final class CockpitNavigationModel {
         get { pointedSession }
         set {
             pointedSession = newValue
-            chosenSession = newValue
+            chosenSession = Pick(session: newValue, ordinal: chosenSession.ordinal + 1)
         }
     }
 
-    /// The Session the user PICKED, as opposed to the one reconciliation landed on. Resuming a dead
-    /// Session is an act of theirs (#10), so a roster that repointed itself must start no agent —
-    /// and at launch it repoints itself onto the first row.
-    private(set) var chosenSession: CockpitPresentation.Session.ID?
+    /// One act of picking a row. The ordinal is what makes picking the SAME row twice two events:
+    /// a resume that was refused is retried by clicking again (#10), and on the id alone the second
+    /// click would be no change at all.
+    struct Pick: Equatable {
+        var session: CockpitPresentation.Session.ID?
+        var ordinal = 0
+    }
+
+    /// What the user PICKED, as opposed to what reconciliation landed on. Resuming a dead Session
+    /// is an act of theirs, so a roster that repointed itself must start no agent — and at launch
+    /// it repoints itself onto the first row.
+    private(set) var chosenSession = Pick(session: nil)
 
     private var pointedSession: CockpitPresentation.Session.ID?
 
@@ -35,6 +43,6 @@ public final class CockpitNavigationModel {
             return
         }
         pointedSession = sessionIDs.first
-        chosenSession = nil
+        chosenSession = Pick(session: nil, ordinal: chosenSession.ordinal + 1)
     }
 }

@@ -1,6 +1,4 @@
-/// Which selection costs a process (#10). Selection has always been free, and this is the one case
-/// that is not, so the rule is stated here rather than inside a `CockpitView` `onChange` where
-/// nothing could reach it.
+/// Which selection costs a process (#10). Selection is free everywhere else.
 enum SessionResumeProjection {
     /// The Session a selection should continue, and `nil` where the click spends nothing.
     ///

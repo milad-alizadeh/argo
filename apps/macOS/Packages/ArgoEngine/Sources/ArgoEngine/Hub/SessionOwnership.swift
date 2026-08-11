@@ -37,6 +37,9 @@ public final class SessionOwnership {
     /// What every Argo before this one owned, and the file it came out of.
     var ledger: SessionOwnershipLedger
     let ledgerStore: SessionOwnershipLedgerStore
+    /// Which registry this is, written into every ledger window it opens, so another cockpit window
+    /// reading the file can tell that Session is already being steered.
+    let owner: SessionOwnershipLedger.Owner
     var claims: [ClaimID: Claim] = [:]
     /// The order claims were issued in — "the newest claim still waiting for a Session" is the
     /// tie-break, and a dictionary has no order to ask.
@@ -46,30 +49,32 @@ public final class SessionOwnership {
 
     /// A store with no file remembers nothing, which is the honest default for a test and for the
     /// render harness: neither may read or write the machine's own ledger.
-    public init(
+    init(
         now: @escaping () -> Int = { Date().epochMs },
         ledgerStore: SessionOwnershipLedgerStore = SessionOwnershipLedgerStore(fileURL: nil),
+        owner: SessionOwnershipLedger.Owner = .thisRegistry,
     ) {
         self.now = now
         self.ledgerStore = ledgerStore
+        self.owner = owner
         self.ledger = ledgerStore.load()
     }
 
     /// Argo spawned an agent in this folder and holds its PTY.
-    public func claim(cwd: String) -> ClaimID {
+    func claim(cwd: String) -> ClaimID {
         open(cwd: cwd, resuming: nil)
     }
 
     /// Argo started a CLI on an EXISTING chain, so the claim names its Session from birth rather
     /// than being matched back by folder and start time. The id is known before the process is, so
     /// there is nothing to guess (#10, and it sidesteps #363/#364 entirely).
-    public func claim(cwd: String, resuming sessionID: String) -> ClaimID {
+    func claim(cwd: String, resuming sessionID: String) -> ClaimID {
         open(cwd: cwd, resuming: sessionID)
     }
 
     /// The PTY exited: this claim is over. The ledger keeps the fact that Argo held it, which is
     /// what a later launch grades `orphaned` on.
-    public func release(_ id: ClaimID) {
+    func release(_ id: ClaimID) {
         guard claims[id]?.toMs == nil else { return }
         claims[id]?.toMs = now()
         guard let sessionID = claims[id]?.sessionID else { return }
@@ -88,7 +93,7 @@ public final class SessionOwnership {
     ///
     /// The named Session is tried first, because a resume's claim covers no window a transcript
     /// could be matched against: the chain started long before the claim did.
-    public func provenance(
+    func provenance(
         sessionID: String?,
         cwd: String?,
         startedAtMs: Int?,

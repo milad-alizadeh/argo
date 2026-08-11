@@ -51,7 +51,7 @@ struct CockpitNavigationModelTests {
     func `a selection the user made is a chosen one`() {
         let model = CockpitNavigationModel()
         model.session = "b"
-        #expect(model.chosenSession == "b")
+        #expect(model.chosenSession.session == "b")
     }
 
     @Test
@@ -60,7 +60,7 @@ struct CockpitNavigationModelTests {
         model.session = "b"
         model.reconcile(against: ["a", "c"])
         #expect(model.session == "a")
-        #expect(model.chosenSession == nil)
+        #expect(model.chosenSession.session == nil)
     }
 
     /// Reconciliation that changes nothing is not a repoint, so what the user picked stands.
@@ -69,7 +69,20 @@ struct CockpitNavigationModelTests {
         let model = CockpitNavigationModel()
         model.session = "b"
         model.reconcile(against: ["a", "b"])
-        #expect(model.chosenSession == "b")
+        #expect(model.chosenSession.session == "b")
+    }
+
+    /// Picking the same row twice is two acts, not one. A resume that was refused is retried by
+    /// clicking again, and on the id alone the second click would be no change at all (#10).
+    @Test
+    func `picking the same row twice is two picks`() {
+        let model = CockpitNavigationModel()
+        model.session = "a"
+        let first = model.chosenSession
+        model.session = "a"
+
+        #expect(model.chosenSession != first)
+        #expect(model.chosenSession.session == "a")
     }
 
     @Test

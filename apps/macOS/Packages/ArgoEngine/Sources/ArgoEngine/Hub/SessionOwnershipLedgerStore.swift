@@ -14,13 +14,13 @@ public final class SessionOwnershipLedgerStore {
 
     private let file: OwnedStateFile<SessionOwnershipLedger>
 
-    public init(fileURL: URL?) {
+    init(fileURL: URL?) {
         self.file = OwnedStateFile(fileURL: fileURL)
     }
 
     /// A ledger that cannot be read is an empty one. It grades every Session `external`, which is
     /// the reading Argo had before this file existed.
-    public func load() -> SessionOwnershipLedger {
+    func load() -> SessionOwnershipLedger {
         file.load(orEmpty: SessionOwnershipLedger())
     }
 
@@ -31,7 +31,7 @@ public final class SessionOwnershipLedgerStore {
     /// nothing across launches must still remember within one, or the second Session it is told
     /// about erases the first.
     @discardableResult
-    public func update(
+    func update(
         folding held: SessionOwnershipLedger,
         _ change: (inout SessionOwnershipLedger) -> Bool,
     )

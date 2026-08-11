@@ -96,7 +96,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     ///
     /// Absent for a Session with no record on disk — a spawn whose CLI has written nothing has no
     /// chain to continue.
-    public var resumeID: String? {
+    var resumeID: String? {
         chainTipURL?.deletingPathExtension().lastPathComponent
     }
 

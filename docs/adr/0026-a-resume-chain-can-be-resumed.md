@@ -35,11 +35,16 @@ there is no live channel — but it is not terminal.
 Three things follow.
 
 **A durable ownership ledger.** Per-machine, never committed, keyed by Session id, holding the
-window Argo owned each Session for. Written when a claim binds a Session and when it is released.
-It answers exactly one question — has any Argo held this Session's PTY — and grading has no other
-way to ask it. It is emphatically **not a roster**: it stores no titles, no ordering, no session
-content, and the roster is still rebuilt from the transcripts every launch, which is what ADR-0004
-and ADR-0008 require.
+window Argo owned each Session for and who owned it. Written when a claim binds a Session and when
+it is released. It answers two questions nothing else can — has any Argo held this Session's PTY,
+and is one holding it right now — and grading and the resume gate have no other way to ask them.
+It is emphatically **not a roster**: it stores no titles, no ordering, no session content, and the
+roster is still rebuilt from the transcripts every launch, which is what ADR-0004 and ADR-0008
+require.
+
+The owner is a process id **and** an id for the registry inside it, because one Argo process runs
+many cockpit windows with a registry each: on the pid alone two windows read as one owner, and the
+second would happily resume what the first is steering.
 
 **Resume is the third caller of one spawn path.** `SessionSeed` gains an optional Session id to
 continue; the per-CLI argv builder that emits `--permission-mode` also emits `--resume`. A New
@@ -81,8 +86,12 @@ binding and sidesteps the guessing #363 and #364 describe.
 - **A ledger that cannot be written costs the next launch, not this one.** Grading is right until
   the app quits, and then a Session it owned reads `external` again — the behaviour Argo had before
   this file existed.
-- **An open window read back after a relaunch means the previous Argo was killed** rather than
-  quitting. Nothing reads that yet; it is recorded because the close is written and the open is
-  therefore meaningful.
+- **An open window whose owner is still running is another window's Session, and a resume is
+  refused.** An open window whose owner is gone is the ordinary orphan — that Argo was killed
+  before it could close it — and resumes normally.
+- **The ledger only grows.** One small entry per Session Argo has ever owned, and nothing prunes
+  it: a transcript that has been deleted leaves its window behind. Left as is because the entry is
+  a few dozen bytes and there is no honest signal that a Session is gone for good; if the file
+  ever matters, prune on the transcript's absence rather than on age.
 - **A resume that fails to launch leaves the Session `orphaned` and says why.** It must never draw
   a composer that cannot send, which is #546's rule applied unchanged.

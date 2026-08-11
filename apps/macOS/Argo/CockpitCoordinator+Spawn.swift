@@ -20,11 +20,10 @@ extension CockpitCoordinator {
         return nil
     }
 
-    /// Continue a Session Argo can no longer steer, on the same chain (#10). Raised by selection,
-    /// so it says nothing on success — the composer coming back IS the answer.
+    /// Continue a Session Argo can no longer steer, on the same chain (#10). Silent on success —
+    /// the composer coming back is the answer.
     ///
-    /// A refusal is reported like a spawn's and leaves the Session exactly as it was: read-only,
-    /// with no composer to type into (#546).
+    /// A refusal leaves the Session exactly as it was: read-only, with no composer (#546).
     func resumeSession(sessionID: String) async {
         let title = "Could not continue this session"
         do {

@@ -33,18 +33,35 @@ struct HubResumeTests {
         #expect(Self.resumed(in: fixture) == [sessionID])
     }
 
-    /// The click is the intent, and a click answered while `claude` is still starting is a second
-    /// click — not a second agent.
+    /// The click is the intent, so clicking twice must not be two agents on one chain. The first
+    /// resume's claim is what refuses the second — it opens before the spawn's first `await`.
     @Test
     func `resuming the same Session twice yields one agent`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let relaunched = try await quitWithOneOwnedSession(fixture)
 
-        try await relaunched.resumeSession(sessionID: sessionID)
-        try await relaunched.resumeSession(sessionID: sessionID)
+        async let first: Void = relaunched.resumeSession(sessionID: sessionID)
+        async let second: Void = relaunched.resumeSession(sessionID: sessionID)
+        _ = try await (first, second)
 
         #expect(Self.resumed(in: fixture).count == 1)
+    }
+
+    /// The point of resuming at all: the conversation carries on. A Turn sent afterwards reaches
+    /// the PTY the resume opened, which nothing before it could.
+    @Test
+    func `a Turn sent after a resume reaches the agent`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let relaunched = try await quitWithOneOwnedSession(fixture)
+        #expect(!relaunched.steer(sessionID: sessionID, typing: "before"))
+
+        try await relaunched.resumeSession(sessionID: sessionID)
+
+        #expect(relaunched.steer(sessionID: sessionID, typing: "after"))
+        let resumedProcess = try #require(fixture.host.started.last)
+        #expect(resumedProcess.written.contains { $0.contains("after") })
     }
 
     @Test
@@ -59,6 +76,25 @@ struct HubResumeTests {
 
         #expect(Self.resumed(in: fixture).isEmpty)
         #expect(fixture.host.started.count == 1)
+    }
+
+    /// Two cockpit windows share one ledger, so the Session one is steering must be refused by the
+    /// other. Without this the second agent is invisible — it writes to the same chain.
+    @Test
+    func `a Session another live Argo window holds is refused`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        _ = try await fixture.hub.spawnSession()
+        await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
+
+        // A second window over the same folders, which is what `restarted` builds — except this
+        // one's peer never quit.
+        let other = fixture.restarted()
+        await hubObserveToEnd(other, spawnedSessionObservation(of: fixture))
+
+        await #expect(throws: SessionResumeError.heldByAnotherWindow) {
+            try await other.resumeSession(sessionID: sessionID)
+        }
     }
 
     /// Out of scope by decision: an `external` Session belongs to whoever started it.

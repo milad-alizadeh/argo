@@ -24,10 +24,9 @@ public struct CockpitActions {
     /// Session started; the app performs the spawn, the shell decides what to point at.
     public let spawnSession: () async -> String?
     /// Continue a Session Argo can no longer steer, in a fresh process on the same chain (#10).
+    /// Raised by selection, because the click is the intent.
     ///
-    /// Raised by SELECTION rather than by a control, because the click is the intent: the user
-    /// picked the Session in order to use it. It answers nothing — the composer appearing is the
-    /// answer, and a resume that failed says so in the app's own refusal.
+    /// It answers nothing: the composer appearing is the answer, and a refusal is said by the app.
     public let resumeSession: (String) async -> Void
     /// Clear a Session off the roster, or put one back. The ONLY thing that ever archives one:
     /// nothing derived from a merge, a branch or a transcript reaches this, which is what makes
