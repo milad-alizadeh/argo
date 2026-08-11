@@ -2,6 +2,9 @@ import SwiftUI
 
 /// How far off its ground a surface sits. Almost every rung is flat: depth comes from material,
 /// edges and tone, and a shadow is reserved for surfaces that genuinely float free of the plane.
+///
+/// One rung is a GLOW rather than a shadow. The three numbers describe both — `bloom` is spent as a
+/// blurred copy of what it belongs to, never through `argoShadow`, which paints black.
 public struct ArgoElevation: Sendable {
     public let blur: CGFloat
     public let yOffset: CGFloat
@@ -14,7 +17,13 @@ public struct ArgoElevation: Sendable {
     }
 
     public var castsShadow: Bool {
-        opacity > 0
+        opacity > 0 && yOffset > 0
+    }
+
+    /// Light spreading from a thing rather than dark falling under it. Same three numbers read the
+    /// other way round: no offset, so it sits ON what casts it.
+    public var glows: Bool {
+        opacity > 0 && yOffset == 0
     }
 }
 
@@ -29,10 +38,14 @@ public extension ArgoElevation {
     static let popover = ArgoElevation(blur: 18, yOffset: 8, opacity: 0.34)
     /// Something under the pointer, torn out of its row.
     static let dragged = ArgoElevation(blur: 24, yOffset: 10, opacity: 0.40)
+    /// A glow: the ion's own light, spread around the filament that carries it. The one rung with
+    /// no offset and something to draw — light comes off a thing in every direction, so an offset
+    /// would read as a shadow of it instead.
+    static let bloom = ArgoElevation(blur: 4, yOffset: 0, opacity: 0.60)
 
     static let all: [(name: String, elevation: ArgoElevation)] = [
         ("flat", flat), ("deck", deck), ("vessel", vessel),
-        ("popover", popover), ("dragged", dragged),
+        ("popover", popover), ("dragged", dragged), ("bloom", bloom),
     ]
 
     /// Roles nothing draws yet. See `ArgoMotion.unwired` for why they stay and why they say so.

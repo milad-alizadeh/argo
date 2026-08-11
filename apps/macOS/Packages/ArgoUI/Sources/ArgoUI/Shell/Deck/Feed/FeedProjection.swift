@@ -33,7 +33,7 @@ enum FeedProjection {
             ),
         )
         // The link goes BELOW the roll-up, at the very foot.
-        return (work + inFlight(working) + unanswered(expired) + rolledUp(events) +
+        return (work + inFlight(working, over: work) + unanswered(expired) + rolledUp(events) +
             chained(handedOff)).enumerated()
             .map { position, content in
                 FeedRow(id: position, content: content)
@@ -44,8 +44,14 @@ enum FeedProjection {
     /// it. Those are facts about the whole reading and this is the newest moment of it, so it keeps
     /// the place the next row will take when the record catches up — which is what makes it read as
     /// the reading continuing rather than as a footnote about it.
-    private static func inFlight(_ working: Bool) -> [FeedRow.Content] {
-        working ? [.mark(.working)] : []
+    ///
+    /// A Turn in flight is EITHER running a tool or thinking, never both, so the row stands down
+    /// while a call is pending: the ion crosses that call's own line instead (`FeedCallLineIon`).
+    /// The split is here and nowhere else — a Turn goes pending and resolves many times over, and
+    /// two surfaces each deciding would both draw at some point in the handover.
+    private static func inFlight(_ working: Bool, over rows: [FeedRow.Content])
+        -> [FeedRow.Content] {
+        working && !rows.contains(where: \.isCallInFlight) ? [.mark(.working)] : []
     }
 
     private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {

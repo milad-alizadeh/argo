@@ -73,6 +73,16 @@ public enum ArgoFeedRow {
 
     /// The share of the COLUMN a prompt's bubble may take, as a ceiling.
     public static let bubbleShare: CGFloat = 0.78
+
+    /// The share of the COLUMN the working thread's filament runs. A share and not a length, so the
+    /// ion tracks `column` the way a bubble does instead of freezing at one window's width.
+    public static let workingThreadShare: CGFloat = 0.3
+    /// Where that filament starts and ends, in multiples of its OWN length. Both bounds are clear
+    /// of the lane, so it fades in and out at the measure's edges rather than appearing mid-air.
+    public static let workingThreadTravel: ClosedRange<CGFloat> = -1.05 ... 3.4
+    /// How brightly it glows parked, with movement off. Below `ArgoElevation.bloom` because a still
+    /// has no travel to read the ion by, and at that strength it would read as a drawn rule.
+    public static let workingThreadStillGlow: Double = 0.4
     /// How much of a long prompt stands before it is folded.
     public static let collapsedPromptLines = 6
     /// How much taller than its folded self a prompt must measure before anything is claimed to be

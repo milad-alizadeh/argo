@@ -21,6 +21,20 @@ struct FeedRow: Identifiable, Equatable, Sendable {
         case mark(FeedMark)
         /// A stretch of the record nothing could parse. See `FeedUnreadable`.
         case unreadable(FeedUnreadable)
+
+        /// Whether this row is a call the record has not answered yet — the one the ion crosses.
+        /// Asked by the projection, which draws the working thread only where no row is lit.
+        ///
+        /// A folded run counts: `FeedCallRun` keeps the run pending while any call in it is, so a
+        /// row standing for three edits is in flight exactly when its last edit is.
+        var isCallInFlight: Bool {
+            switch self {
+            case let .call(call): call.ending == .pending
+            // A survey and a gallery are counts rather than lines, and neither draws an ion. A
+            // pending call folded into one is not a lit row, so the thread is what stands over it.
+            case .prompt, .message, .thought, .survey, .gallery, .ask, .mark, .unreadable: false
+            }
+        }
     }
 
     /// The row's place in the feed — position, never the content: a feed keyed by what a row says

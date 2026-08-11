@@ -37,6 +37,48 @@ struct VisualContractRhythmTests {
         #expect(ArgoFeedRow.bubbleShare < 1)
     }
 
+    /// A share and not a length, so the filament tracks the measure the way a bubble does. It is a
+    /// MINORITY of it: a pass that fills most of the column stops reading as one thing travelling.
+    @Test
+    func `the working filament is a fraction of the measure it crosses`() {
+        #expect(ArgoFeedRow.workingThreadShare > 0)
+        #expect(ArgoFeedRow.workingThreadShare < 0.5)
+    }
+
+    /// The travel is stated in the filament's OWN lengths, and both ends have to clear the lane —
+    /// the ion fades in and out at the measure's edges rather than appearing mid-air. The far end
+    /// is measured against the widest lane there is, which is the column over its own length.
+    @Test
+    func `the filament starts and ends entirely outside the lane`() {
+        let travel = ArgoFeedRow.workingThreadTravel
+        let lanesPerFilament = 1 / ArgoFeedRow.workingThreadShare
+
+        // Its leading edge is still short of the lane's start.
+        #expect(travel.lowerBound <= -1)
+        // Its trailing edge is already past the lane's end.
+        #expect(travel.upperBound >= lanesPerFilament)
+    }
+
+    /// Edge to edge is the requirement, not a detail: the thread cancels the row gutter and runs
+    /// the whole column, because a signal about the whole column should touch both of its edges.
+    /// The two numbers are the design's own, so moving either sends you back to it.
+    @Test
+    func `the working thread's lane is the column, not the text column inside it`() {
+        let text = ArgoFeedRow.column - ArgoFeedRow.inset * 2
+
+        #expect(text == 672)
+        #expect(ArgoFeedRow.column == 720)
+        #expect(abs(ArgoFeedRow.column * ArgoFeedRow.workingThreadShare - 216) < 0.001)
+    }
+
+    /// Parked, the ion has no travel to be read by, so it glows lower — at full strength a still
+    /// bar across the measure reads as a rule somebody drew.
+    @Test
+    func `the parked filament glows below the moving one`() {
+        #expect(ArgoFeedRow.workingThreadStillGlow < ArgoElevation.bloom.opacity)
+        #expect(ArgoFeedRow.workingThreadStillGlow > 0)
+    }
+
     /// A run of calls is one piece of work.
     @Test
     func `a run of calls sits closer together than two things the agent said`() {
@@ -69,11 +111,23 @@ struct VisualContractRhythmTests {
         #expect(shadowed == ["popover", "dragged"])
     }
 
+    /// The other way a rung can be worth something. A glow sits ON what casts it, so it is the
+    /// offset that tells the two apart — and a rung must not try to be both.
+    @Test
+    func `a glow is the one rung that draws without floating`() {
+        let glowing = ArgoElevation.all.filter(\.elevation.glows).map(\.name)
+        #expect(glowing == ["bloom"])
+        #expect(ArgoElevation.all.allSatisfy { !($0.elevation.glows && $0.elevation.castsShadow) })
+    }
+
+    /// The cap is on DARKNESS under a surface, so it is the cast shadows it bounds. A glow is the
+    /// ion's own light and reads as absent long before 0.45.
     @Test
     func `the shadows that exist stay soft`() {
         for rung in ArgoElevation.all {
-            #expect(rung.elevation.opacity <= 0.45)
             #expect(rung.elevation.blur <= 28)
+            guard rung.elevation.castsShadow else { continue }
+            #expect(rung.elevation.opacity <= 0.45)
         }
     }
 

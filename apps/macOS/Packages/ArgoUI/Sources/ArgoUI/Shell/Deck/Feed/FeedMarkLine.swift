@@ -15,7 +15,18 @@ struct FeedMarkLine: View {
 
     let mark: FeedMark
 
+    /// `working` is drawn by `FeedWorkingThread` and never as a rule, because a rule with no words
+    /// let into it is already how this view says a Turn ENDED. Routed here rather than at the
+    /// caller, so every path to a mark takes the same fork.
     var body: some View {
+        if case .working = mark {
+            FeedWorkingThread()
+        } else {
+            punctuation
+        }
+    }
+
+    private var punctuation: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
             rule
             if let handoff = mark.handoff {
