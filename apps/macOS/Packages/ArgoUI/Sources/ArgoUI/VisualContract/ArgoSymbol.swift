@@ -108,6 +108,11 @@ public enum ArgoSymbol {
     /// Try the refused send again, with the message exactly where it was typed.
     public static let retry = "arrow.clockwise"
 
+    /// A draft that survived leaving the Session — on the seam, beside how long ago it was
+    /// written. A clock and not a document: what the line reports is the age, and the words
+    /// themselves are already in the field underneath it.
+    public static let draftKept = "clock"
+
     /// A Permission waiting on the user — the prompt's own mark. A lock, not a question mark,
     /// because the agent is not wondering: it is barred until somebody with the key answers.
     public static let permission = "lock.fill"

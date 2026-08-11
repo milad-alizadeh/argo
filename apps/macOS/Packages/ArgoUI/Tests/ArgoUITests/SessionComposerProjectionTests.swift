@@ -8,12 +8,37 @@ struct SessionComposerProjectionTests {
     @Test
     func `a managed live Session gets a composer addressed to its agent`() throws {
         let composer = try #require(
-            SessionComposerProjection.composer(for: session(access: .managed)),
+            SessionComposerProjection.composer(for: session(access: .managed, status: .idle)),
         )
 
         #expect(composer.sessionID == "session-a")
         #expect(composer.placeholder == "Message Claude Code…")
         #expect(composer.facts == "Opus 5")
+        #expect(!composer.isRunning)
+    }
+
+    /// While a Turn is in flight the field says what send will actually do — hold the words —
+    /// rather than going on offering to message an agent that is mid-sentence (decision 4).
+    @Test
+    func `a Session mid-Turn invites a follow-up rather than a message`() throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(for: session(access: .managed, status: .running)),
+        )
+
+        #expect(composer.isRunning)
+        #expect(composer.placeholder == "Queue a follow-up…")
+    }
+
+    /// Blocked is not running. A Session waiting on a Permission or a question has no Turn in
+    /// flight to queue behind, so the next thing typed goes straight to it.
+    @Test(arguments: [SessionStatus.permission, .asking, .idle, .stopped, .unknown])
+    func `a Session that is not mid-Turn takes the next words itself`(
+        status: SessionStatus,
+    ) throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(for: session(access: .managed, status: status)),
+        )
+        #expect(!composer.isRunning)
     }
 
     /// Absent, not disabled: a greyed field invites a click and gives no reason. `external` was
@@ -44,7 +69,9 @@ struct SessionComposerProjectionTests {
     @Test
     func `a Session whose record named no CLI is addressed generically`() throws {
         let composer = try #require(
-            SessionComposerProjection.composer(for: session(access: .managed, cli: nil)),
+            SessionComposerProjection.composer(
+                for: session(access: .managed, status: .idle, cli: nil),
+            ),
         )
         #expect(composer.placeholder == "Message the agent…")
     }

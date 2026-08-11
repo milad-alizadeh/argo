@@ -28,6 +28,9 @@ struct DeckContentRow: View {
     /// Taking back one of the Session's standing allows, by tool (#572). Both vessels draw the
     /// tray, so it goes to whichever one is up.
     var revoke: (String) -> Void = { _ in }
+    /// What the composer is holding, from above the Session identity so it survives a switch
+    /// (#539). See `InstrumentDeckShell.draft`.
+    var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
     let seams: DeckSeams
     /// Whether either seam is under the reader's hand. One flag for both, because only one of them
     /// can be dragged at a time and the zones downstream care that the column is moving, not which
@@ -57,6 +60,7 @@ struct DeckContentRow: View {
                     prompt: prompt,
                     decide: decide,
                     revoke: revoke,
+                    draft: draft,
                 )
                 if !isPanelOpen {
                     DeckSeparator()
@@ -210,6 +214,7 @@ private struct FeedColumn: View {
     var prompt: PermissionPromptProjection.Prompt?
     var decide: (PermissionDecision) -> Void = { _ in }
     var revoke: (String) -> Void = { _ in }
+    var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
 
     var body: some View {
         FeedView(rows: feed, selection: selection, held: held, isUnderComposer: hasVessel)
@@ -250,7 +255,7 @@ private struct FeedColumn: View {
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.bottom, ArgoSpacing.loose)
         } else if let composer {
-            SessionComposer(composer: composer, send: send, revoke: revoke)
+            SessionComposer(composer: composer, send: send, revoke: revoke, draft: draft)
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.bottom, ArgoSpacing.loose)
         }

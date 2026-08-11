@@ -314,27 +314,12 @@ public struct SpecimenScreen: View {
             // claim that a pane's state dies with the Session it belonged to — the place the reader
             // stopped at most of all, which `FeedRow.ID` being a POSITION otherwise carries across.
             RosterSpecimen(presentation: .twoReadings)
-        case .composer:
-            // The composed state, which only the deck can show: the glass vessel against the
-            // reading, the fade letting rows run under it, and the newest line standing clear.
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.composer)
-        case .composerTyping:
-            // A multi-line draft, because the growth past one line is the state — and whether
-            // six lines still leave a vessel rather than a wall is the judgement.
-            ComposerSpecimen(draft: ComposerSpecimen.typing)
-        case .composerRefusal:
-            // A refused send: the message still where it was typed, the reason on the seam
-            // above the vessel, and a way to try again.
-            ComposerSpecimen(draft: ComposerSpecimen.refused)
-        case .flatComposer:
-            // The shipping gate every glass surface carries: legible, findable and pressable
-            // with the optical response taken away.
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.composer)
-                .argoWithoutTransparency()
-        case .composerStanding:
-            // The tray at rest, which is where a standing allow has to be findable: the turn AFTER
-            // the grant, with the prompt that made it long gone (#572).
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.standing)
+        // The vessel's own states, drawn in `SpecimenScreen+Composer.swift`. Grouped rather than
+        // listed here because there are eight of them and one switch arm each is most of this
+        // file — the outer switch still forces a new one to be routed.
+        case .composer, .composerTyping, .composerCeiling, .composerDraftKept, .composerQueued,
+             .composerRefusal, .flatComposer, .composerStanding:
+            composerCase
         case .permission:
             // A gated command holding the composer's slot: the tool and its target verbatim, the
             // amber rim, Allow focused — the state the whole channel exists to raise.

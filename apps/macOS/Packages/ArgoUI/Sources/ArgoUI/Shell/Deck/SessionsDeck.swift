@@ -44,6 +44,9 @@ struct SessionsDeck: View {
     var decide: (PermissionDecision) -> Void = { _ in }
     /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
     var revoke: (String) -> Void = { _ in }
+    /// What the composer is holding — passed through from above the Session identity, so an unsent
+    /// draft survives a switch (#539). See `InstrumentDeckShell.draft`.
+    var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
     /// Where the reader dragged the deck's seams — held above this view, never in it. See
     /// `DeckSeams`.
     var seams = DeckSeams.unheld
@@ -68,6 +71,7 @@ struct SessionsDeck: View {
                 prompt: prompt,
                 decide: decide,
                 revoke: revoke,
+                draft: draft,
                 seams: seams,
             )
         }

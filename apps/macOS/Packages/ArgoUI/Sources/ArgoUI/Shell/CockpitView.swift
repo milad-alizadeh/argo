@@ -12,6 +12,10 @@ public struct CockpitView: View {
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
     /// menu bar reaches it (`sessionCommands` below), and the menu bar is outside the sidebar.
     @State private var renamingSessionID: String?
+    /// Every Session's unsent words. Held at the top of the shell because that is the one place
+    /// above the deck's per-Session identity: the deck is rebuilt whole on a switch, so a draft
+    /// kept any lower would leave with the selection rather than be waiting on the way back (#539).
+    @State private var drafts = ComposerDrafts()
 
     public init(
         presentation: CockpitPresentation,
@@ -64,6 +68,14 @@ public struct CockpitView: View {
         guard let composer else { return { _ in } }
         let sessionID = composer.sessionID
         return { try actions.sendTurn(sessionID, $0) }
+    }
+
+    /// What the selected Session's composer is holding, out of the store that outlives the deck.
+    /// A Session with no composer gets an inert binding — there is no field to type into, so there
+    /// is nothing to keep.
+    private var draft: Binding<ComposerDraft> {
+        guard let composer else { return .constant(ComposerDraft()) }
+        return drafts.binding(for: composer.sessionID)
     }
 
     /// The selected Session's pending Permission, projected here for the reason the composer is:
@@ -153,6 +165,7 @@ public struct CockpitView: View {
                 prompt: prompt,
                 decide: decide,
                 revoke: revoke,
+                draft: draft,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation — the same division the handoff itself

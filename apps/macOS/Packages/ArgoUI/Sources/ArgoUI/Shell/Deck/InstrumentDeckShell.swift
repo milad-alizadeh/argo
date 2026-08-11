@@ -51,6 +51,10 @@ struct InstrumentDeckShell: View {
     var decide: (PermissionDecision) -> Void = { _ in }
     /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
     var revoke: (String) -> Void = { _ in }
+    /// What the shown Session's composer is holding. A binding handed in from ABOVE the identity
+    /// below, for the reason the seams are: `.id(session)` discards everything under it on a
+    /// switch, and an unsent draft is the one thing in the vessel that must survive one (#539).
+    var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below, because a
     /// seam is a preference of the window and not a fact about the Session — keyed with the room it
@@ -84,6 +88,7 @@ struct InstrumentDeckShell: View {
                 prompt: prompt,
                 decide: decide,
                 revoke: revoke,
+                draft: draft,
                 seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
             )
             // The identity, spent. SwiftUI discards a view's whole state when its id changes, which
