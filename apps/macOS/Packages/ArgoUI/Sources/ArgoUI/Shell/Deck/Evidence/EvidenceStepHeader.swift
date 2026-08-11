@@ -17,6 +17,7 @@ struct EvidenceStepHeader: View {
             address
             external
             churn
+            printed
             Spacer(minLength: ArgoSpacing.snug)
             EvidenceCopyButton(text: step.address.text)
         }
@@ -91,11 +92,23 @@ struct EvidenceStepHeader: View {
         }
     }
 
+    /// How much this ONE command printed — a reader landing mid-pane cannot see where the stream
+    /// they are inside ends.
+    @ViewBuilder private var printed: some View {
+        if let drawn = step.printed?.drawn {
+            Text(drawn)
+                .argoMono(.body)
+                .monospacedDigit()
+                .foregroundStyle(argo.color.text.tertiary)
+        }
+    }
+
     private var spoken: String {
         [
             step.address.text,
             step.isExternal ? "outside the working tree" : nil,
             step.churn.map { "\($0.added) added, \($0.removed) removed" },
+            step.printed?.drawn,
         ]
         .compactMap(\.self)
         .joined(separator: ", ")

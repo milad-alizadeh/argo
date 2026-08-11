@@ -37,6 +37,7 @@ struct FeedCallLine: View {
             FeedCallSubject(subject: call.subject, tint: verdict, isOpen: isOpen)
             repeats
             churn
+            printed
             disclosure
         }
         .lineLimit(1)
@@ -78,6 +79,17 @@ struct FeedCallLine: View {
             }
             .argoMono(.body)
             .monospacedDigit()
+        }
+    }
+
+    /// How much the command printed, where that is worth saying — the stream itself is behind the
+    /// chevron.
+    @ViewBuilder private var printed: some View {
+        if let drawn = call.printed?.drawn {
+            Text(drawn)
+                .argoMono(.body)
+                .monospacedDigit()
+                .foregroundStyle(argo.color.text.tertiary)
         }
     }
 
