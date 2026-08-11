@@ -16,13 +16,23 @@ enum ComposerMode: String, CaseIterable, Identifiable {
         self
     }
 
-    /// Where the rung stops. Shown on hover, because `NSPopUpButton` rows take a title alone.
+    /// Where the rung stops. On the control's tooltip, not under each row.
     var boundary: String {
         switch self {
         case .readOnly: "no writes"
         case .plan: "no writes, proposes"
         case .code: "the Workspace"
         case .auto: "no boundary"
+        }
+    }
+
+    /// The rung's mark, frozen by the composer design (#608).
+    var mark: String {
+        switch self {
+        case .readOnly: ArgoSymbol.modeReadOnly
+        case .plan: ArgoSymbol.modePlan
+        case .code: ArgoSymbol.modeCode
+        case .auto: ArgoSymbol.modeAuto
         }
     }
 }

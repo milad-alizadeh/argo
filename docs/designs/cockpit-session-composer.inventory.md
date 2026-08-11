@@ -1,4 +1,4 @@
-# Session composer — build inventory (#538, #539)
+# Session composer — build inventory (#538, #539, #540, #608)
 
 What assembling the composer's send slice actually forced out of
 [`cockpit-session-composer.md`](cockpit-session-composer.md), per ticket. Names were frozen at
@@ -92,6 +92,40 @@ the path is named in a transcript that outlives the Session, so bytes deleted la
 historical Turn pointing at nothing. A refused send is survivable because the address is the
 attachment's own id — pressing Retry rewrites the same file rather than leaving a copy beside it.
 
+## Rewritten — #608 (the Mode menu goes bespoke)
+
+No new name: this ticket **replaces** `ModePicker`'s row rather than adding one. Its
+`composed-of` was *stock `Picker(.menu)`, `.controlSize(.small)`, boundary on `.help`*, and is now:
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `ModePicker` | atom | `ArgoUI/Shell/Deck/Composer/` — unchanged | `mode: Binding<ComposerMode>` — unchanged | bespoke `Menu` holding an inline `Picker`, a `Label` per rung, one drawn `chevron.down` beside it, in a 20pt bordered pill that hugs the rung; boundary still on `.help` | `run-modemenu.png`, `rest.png` |
+
+It is the one control on this screen that is not stock, and the amendment to decision 1 records
+why each of the three departures is worth a hand-rolled control.
+
+`ComposerMode` gains **`mark`** beside `boundary`, and `ArgoSymbol` gains the four names it maps
+to. The mapping sits on the enum rather than in the view because a rung's mark is a fact about the
+rung, exactly as its boundary is — and a `switch` in the view would be a second place to forget a
+rung when the ladder next changes.
+
+### What the render measured, and what moved
+
+Two things only a rendered specimen could catch, both invisible to the suite:
+
+- `.menuStyle(.borderlessButton)` — the `GitVessel` idiom — wraps its label in about **10pt of its
+  own padding**, which put the pill 10 over the width the design measures. `.menuStyle(.button)`
+  with `.buttonStyle(.plain)` draws the same thing at the measured width.
+- A button-styled `Menu` paints its label with the **accent**, and it reads the `tint` rather than
+  a `foregroundStyle` set anywhere around it. Both spellings of `foregroundStyle` were rendered
+  first; the rung came out Ion Blue and read as a link.
+
+The chevron and the rung mark are sized by **font** (`argoIcon(.inline)`, which is what
+`ArgoLabelStyle` already does) rather than framed by `ArgoGlyph`. `ArgoGlyph` frames by ink height,
+and scaling a short wide glyph like `chevron.down` or `</>` up to a 10pt ink height scales its
+**stroke** with it — rendered, the chevron drew a 2pt rule beside the word's 1pt one. What the frame
+buys is several marks measuring alike side by side, and this control shows one rung at a time.
+
 ## View-model, not components
 
 - `SessionComposerProjection` — the pure `derive(facts)`: presence (managed and not ended, else
@@ -104,8 +138,8 @@ attachment's own id — pressing Retry rewrites the same file rather than leavin
 - `ComposerSeamNote` — which of the seam's two sentences is up, and the words of the kept one.
 - `QueuedTurn` — an identified follow-up, so two identical ones are two things the `×` can tell
   apart.
-- `ComposerMode` — the four-rung ladder (ADR-0025) and each rung's `boundary`; local until #545
-  gives it an effect.
+- `ComposerMode` — the four-rung ladder (ADR-0025), each rung's `boundary`, and its `mark` (#608);
+  local until #545 gives it an effect.
 
 ## Stayed inline
 
