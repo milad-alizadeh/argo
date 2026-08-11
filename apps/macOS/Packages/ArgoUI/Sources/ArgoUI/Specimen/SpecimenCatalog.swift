@@ -103,4 +103,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case connectRefused
     case connectBroken
     case projectSettings
+    case connectionStale
+    case connectionsStale
+    case connectionNeedsReconnect
 }

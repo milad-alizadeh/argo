@@ -17,18 +17,25 @@ final class AccountsCoordinator {
     /// "has something to draw" cannot disagree.
     private(set) var reading: ConnectReading?
     private(set) var startsAtWelcome = false
+    /// How the active Project's ports are reading, whether or not the panel is up. The chip is
+    /// chrome on the window and the panel is a sheet over it, so tying this to the panel would hide
+    /// the failure exactly while the user is not looking at the place that reports it.
+    private(set) var connections = ConnectionHealthReading.quiet
 
-    private let accounts: AccountRegistryStore
-    private let bindings: ProjectBindings
-    /// Reached from `AccountsCoordinator+Grant`, which is why these three are not `private`:
-    /// `private` in Swift is file-scoped, and the grant sequence is its own file because it is its
-    /// own subject.
+    /// Reached from `AccountsCoordinator+Grant` and `+Health`, which is why these are not
+    /// `private`: `private` in Swift is file-scoped, and each of those sequences is its own file
+    /// because it is its own subject.
+    let accounts: AccountRegistryStore
+    let bindings: ProjectBindings
     let authorization: GitHubAuthorization
+    /// What Argo has observed about each Binding's connection. Live and unpersisted, so a launch
+    /// opens on what it can see rather than on what yesterday could.
+    let health = ConnectionHealthLedger()
 
     /// Whether the panel is meant to be up. Kept apart from `reading` because every act ends in a
     /// rebuild, and a rebuild that decided for itself would re-open a panel the user just closed.
     private var isOpen = false
-    private var project: ProjectRecord?
+    var project: ProjectRecord?
     private var mode: ConnectPanelMode = .creating
     var challenge: ConnectChallenge?
     private var note: ConnectNote?
@@ -121,12 +128,18 @@ final class AccountsCoordinator {
         await refresh()
     }
 
-    /// Rebuild what the panel draws. Every act ends here rather than editing the reading in place:
-    /// a Binding's health is asked of the registries, and a panel that patched its own row would
-    /// be showing what it hoped had happened.
+    /// Rebuild what the panel draws, and what the connection chip reads. Every act ends here rather
+    /// than editing the reading in place: a Binding's health is asked of the registries, and a
+    /// panel that patched its own row would be showing what it hoped had happened.
+    ///
+    /// One resolution feeds both. The chip is chrome on the window and the panel is a sheet over
+    /// it, so the chip is rebuilt whether or not the panel is up — and the two can never disagree
+    /// about which Account a port reads through, because they are the same read.
     func refresh() async {
+        let ports = await resolvedPorts()
+        connections = await healthReading(over: ports)
         guard isOpen else { return }
-        await show(ports: resolvedPorts())
+        await show(ports: ports)
     }
 
     private func resolvedPorts() async -> [ConnectPort] {

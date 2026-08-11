@@ -141,7 +141,7 @@ enum SessionRosterProjection {
                     branch: session.workspace?.branch,
                     isReadOnly: isReadOnly(session.access),
                     age: session.lastSeenAtMs
-                        .map { SessionAge.phrase(sinceMs: $0, nowMs: nowMs) },
+                        .map { AgePhrase.phrase(sinceMs: $0, nowMs: nowMs) },
                     state: SessionState.role(for: session.status),
                     stateWord: SessionState.word(for: session.status),
                     isArchived: session.isArchived,

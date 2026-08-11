@@ -44,11 +44,15 @@ struct ArgoApp: App {
                         presentation: cockpit.presentation,
                         actions: actions,
                         connect: connectSurface,
+                        health: accounts.connections,
                     )
                     .environment(navigation)
                     .task {
                         cockpit.endOwnedSessionsOnQuit()
                         await cockpit.start()
+                        // The chip reads the Project the window is on, so it is pointed at the
+                        // same one — before the panel, which a started machine never opens.
+                        await accounts.point(at: cockpit.activeRecord)
                         // A machine that has registered nothing has no path forward without
                         // this: the shell it lands in has no Project to act on.
                         await accounts.openIfUnstarted(registry: cockpit.registry)
@@ -120,6 +124,17 @@ struct ArgoApp: App {
         )
     }
 
+    /// Anything that can change which Project the window is on, followed by re-pointing the
+    /// connection reading at whatever it now is.
+    ///
+    /// Connection health is per-project truth surfaced for the active Project only, so every act
+    /// that moves the window has to move it too — a background Project whose provider died stays
+    /// silent, and you learn on switch, which is also the first moment you could act on it.
+    private func pointing(_ act: () async -> Void) async {
+        await act()
+        await accounts.point(at: cockpit.activeRecord)
+    }
+
     /// An unknown name renders the cockpit rather than failing: the harness names the state, and a
     /// typo there should not look like a launch worth screenshotting.
     private var specimen: Specimen? {
@@ -130,11 +145,17 @@ struct ArgoApp: App {
         CockpitActions(
             refreshCheckout: { Task { await cockpit.refreshCheckout() } },
             retryConnection: { Task { await cockpit.retryConnection() } },
-            selectProject: { id in Task { await cockpit.select(projectID: id) } },
-            addProject: { Task { await cockpit.addProject() } },
-            locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
+            selectProject: { id in
+                Task { await pointing { await cockpit.select(projectID: id) } }
+            },
+            addProject: { Task { await pointing { await cockpit.addProject() } } },
+            locateProject: { id in
+                Task { await pointing { await cockpit.locateProject(projectID: id) } }
+            },
             revealProject: { id in cockpit.revealProject(projectID: id) },
-            removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
+            removeProject: { id in
+                Task { await pointing { await cockpit.removeProject(projectID: id) } }
+            },
             openProjectPanel: { id in
                 Task { await accounts.open(on: id.flatMap(cockpit.registry.project(id:))) }
             },

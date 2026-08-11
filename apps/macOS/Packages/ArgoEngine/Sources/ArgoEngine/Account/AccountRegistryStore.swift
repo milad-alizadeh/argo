@@ -62,10 +62,17 @@ public actor AccountRegistryStore {
         try await grants.grant(for: accountID)
     }
 
+    /// Every Binding read through this Account. Two different questions arrive at this one set and
+    /// both are worth naming: what a removal would orphan, and — since a grant is Account-level —
+    /// exactly how far a revoked or expired one reaches (#569).
+    public func bindings(through accountID: String) async -> [AccountBindingReference] {
+        await bindings.bindings(referencing: accountID)
+    }
+
     /// What removing this Account would leave pointing at nothing, without removing it. The
     /// question a confirmation prompt has to answer before the user says yes.
     public func orphans(of accountID: String) async -> [AccountBindingReference] {
-        await bindings.bindings(referencing: accountID)
+        await bindings(through: accountID)
     }
 
     /// Forget an Account and drop its token, reporting the Bindings that named it.

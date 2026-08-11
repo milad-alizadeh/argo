@@ -359,20 +359,13 @@ extension SpecimenScreen {
             // The same shipping gate the composer's glass carries.
             sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
                 .argoWithoutTransparency()
-        case .welcome:
-            // The first thing a new user sees, and the one screen here that asks for nothing. What
-            // it has to settle is that three promises read as promises rather than as a feature
-            // grid, and that nothing on it needs a tier explained first.
-            centred { WelcomeScreen(start: {}) }
-        case .connectFresh, .connectFolderOnly, .connectPartly, .connectWired, .connectWaiting,
-             .connectRefused, .connectBroken, .projectSettings:
-            // One panel per state it can be in, because they are structural rather than a value
-            // changing: nothing set, a folder alone, half connected, both ports on two identities,
-            // a grant mid-flight, a refusal, a Binding that came undone, and the same panel
-            // re-entered as Settings. The claim every one of them carries is that the panel is
-            // still usable — a partly connected Project is a Project, and a refusal is a note on a
-            // row rather than a screen to get out of.
-            centred { ConnectPanel(reading: connectReading, actions: .inert) }
+        // Every state of the Connect flow, drawn in `SpecimenScreen+Connect.swift`. The group left
+        // this switch when the connection chips joined it: a list of states is only readable while
+        // it fits on one screen, and the flow's own states are a subject of their own.
+        case .welcome, .connectFresh, .connectFolderOnly, .connectPartly, .connectWired,
+             .connectWaiting, .connectRefused, .connectBroken, .projectSettings,
+             .connectionStale, .connectionsStale, .connectionNeedsReconnect:
+            connectFlow
         }
     }
 }
