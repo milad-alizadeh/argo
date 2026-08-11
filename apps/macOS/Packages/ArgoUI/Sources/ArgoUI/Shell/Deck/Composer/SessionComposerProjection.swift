@@ -20,11 +20,20 @@ enum SessionComposerProjection {
         /// Session, or into the queue above the field. Read off the status rather than tracked
         /// here, so the composer and the header cannot disagree.
         let isRunning: Bool
+        /// Whether this Session's adapter takes attachments (#540). It comes IN rather than being
+        /// derived from anything observed: a capability is a thing the adapter declares about
+        /// itself, and the Hub's presentation has never heard of the drive port. `false` draws no
+        /// `+` at all and refuses a drop with the reason (design decision 9).
+        let canAttach: Bool
     }
 
     /// A composer only for a Session Argo can put keystrokes to: managed, and not over. Everything
     /// else gets NO composer rather than a disabled one (design decision 7; #546).
-    static func composer(for session: CockpitPresentation.Session?) -> Composer? {
+    static func composer(
+        for session: CockpitPresentation.Session?,
+        canAttach: Bool = false,
+    )
+        -> Composer? {
         guard let session, case .managed = session.access, session.status != .ended else {
             return nil
         }
@@ -35,6 +44,7 @@ enum SessionComposerProjection {
             facts: session.model.map(ReadableModelName.readable),
             standingAllows: StandingAllowProjection.allows(for: session),
             isRunning: isRunning,
+            canAttach: canAttach,
         )
     }
 

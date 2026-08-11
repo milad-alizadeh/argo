@@ -72,6 +72,17 @@ public enum ArgoSymbol {
     /// The composer's send: an arrow and no word.
     public static let send = "arrow.up"
 
+    // The composer's Stop (#541) has no entry: no rung of the icon scale reaches the size it is
+    // drawn at, so it is a drawn square measured in `ArgoComposerVessel.stopMark`.
+
+    /// The composer's attach control (#540) — a `+`, not a paperclip, since drop and paste are the
+    /// same act.
+    public static let attach = "plus"
+
+    /// An attachment chip's mark when the file is not a picture, or the bytes yield no thumbnail.
+    public static let attachedImage = "photo"
+    public static let attachedFile = "doc"
+
     /// A send the Session refused — on the seam, beside the reason. A triangle is earned where the
     /// feed's rows never take one: this failure is Argo's own act, not a reading of the agent's.
     public static let refused = "exclamationmark.triangle"

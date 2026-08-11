@@ -65,7 +65,9 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedAtScale
     case feedAtScaleEvidence
     case feedArriving
+    case feedWorking
     case emptyFeed
+    case startingSpawn
     case feedGallery
     case feedSingleShot
     case feedAbsentShot
@@ -83,9 +85,15 @@ public enum Specimen: String, CaseIterable, Sendable {
     case composerCeiling
     case composerDraftKept
     case composerQueued
+    case composerRunning
+    case composerStopped
     case composerRefusal
     case flatComposer
     case composerStanding
+    case composerAttached
+    case composerPasted
+    case composerDragOver
+    case composerNoAttach
     case permission
     case permissionEdit
     case permissionStanding
@@ -99,4 +107,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case connectRefused
     case connectBroken
     case projectSettings
+    case connectionStale
+    case connectionsStale
+    case connectionNeedsReconnect
 }

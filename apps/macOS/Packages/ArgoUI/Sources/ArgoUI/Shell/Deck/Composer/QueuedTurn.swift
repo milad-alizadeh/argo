@@ -1,3 +1,4 @@
+import ArgoEngine
 import Foundation
 
 /// One follow-up held until the running Turn ends (design decision 4).
@@ -8,9 +9,15 @@ import Foundation
 struct QueuedTurn: Identifiable, Equatable {
     let id: UUID
     let text: String
+    /// What was on the tray when this was queued (#540). It travels WITH the words rather than
+    /// staying behind in the tray: a picture attached to a follow-up and delivered with whatever
+    /// message happened to go next is the file reaching a different question from the one it was
+    /// meant to answer.
+    let attachments: [SessionAttachment]
 
-    init(id: UUID = UUID(), text: String) {
+    init(id: UUID = UUID(), text: String, attachments: [SessionAttachment] = []) {
         self.id = id
         self.text = text
+        self.attachments = attachments
     }
 }

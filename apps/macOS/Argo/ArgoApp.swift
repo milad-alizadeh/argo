@@ -43,6 +43,7 @@ struct ArgoApp: App {
                         presentation: cockpit.presentation,
                         actions: actions,
                         connect: connectSurface,
+                        health: accounts.connections,
                     )
                     .environment(navigation)
                     .task {
@@ -51,6 +52,11 @@ struct ArgoApp: App {
                         // A machine that has registered nothing has no path forward without
                         // this: the shell it lands in has no Project to act on.
                         await accounts.openIfUnstarted(registry: cockpit.registry)
+                    }
+                    // Observed once here because a change of active Project is ONE event:
+                    // registering, switching, relocating and removing all end in it.
+                    .onChange(of: cockpit.activeRecord?.id, initial: true) { _, _ in
+                        Task { await accounts.point(at: cockpit.activeRecord) }
                     }
                     // Every PTY this window owns dies with the window, and the observer above ends
                     // them on ⌘Q too: nothing can re-adopt an agent Argo started, so one that
@@ -144,7 +150,11 @@ struct ArgoApp: App {
                 Task { await cockpit.setName(name, sessionID: id) }
             },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
-            sendTurn: { id, text in try cockpit.send(text, to: id) },
+            sendTurn: { id, text, attachments in
+                try cockpit.send(text, attaching: attachments, to: id)
+            },
+            interruptTurn: { id in try cockpit.interrupt(id) },
+            canAttach: { _ in cockpit.canAttach },
             decidePermission: { id, request, decision in
                 cockpit.decide(decision, answering: request, for: id)
             },

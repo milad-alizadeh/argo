@@ -7,11 +7,13 @@ import ArgoEngine
 enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder.
-    /// `handedOff` and `expired` are the inputs that are not the record's — a handoff
-    /// (`CONTEXT.md` L2) and a Permission Argo's own gate refused (#573). Neither CLI wrote a word
-    /// about either, so they arrive beside the stream rather than being looked for inside it.
+    /// `working`, `handedOff` and `expired` are the inputs that are not the record's — a Turn in
+    /// progress (`FeedWorking`), a handoff (`CONTEXT.md` L2), and a Permission Argo's own gate
+    /// refused (#573). No CLI wrote a word about any of them, so they arrive beside the stream
+    /// rather than being looked for inside it.
     static func rows(
         from events: [TranscriptEvent],
+        working: Bool = false,
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
     )
@@ -31,10 +33,19 @@ enum FeedProjection {
             ),
         )
         // The link goes BELOW the roll-up, at the very foot.
-        return (work + unanswered(expired) + rolledUp(events) + chained(handedOff)).enumerated()
+        return (work + inFlight(working) + unanswered(expired) + rolledUp(events) +
+            chained(handedOff)).enumerated()
             .map { position, content in
                 FeedRow(id: position, content: content)
             }
+    }
+
+    /// The Turn still running, directly under what it has done and ABOVE the three statements below
+    /// it. Those are facts about the whole reading and this is the newest moment of it, so it keeps
+    /// the place the next row will take when the record catches up — which is what makes it read as
+    /// the reading continuing rather than as a footnote about it.
+    private static func inFlight(_ working: Bool) -> [FeedRow.Content] {
+        working ? [.mark(.working)] : []
     }
 
     private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {
@@ -103,7 +114,16 @@ enum FeedProjection {
     )
         -> FeedRow.Content? {
         switch event {
-        case let .prompt(text, _): .prompt(text)
+        // An interrupt arrives on the user side of the record, so it is read here and turned into
+        // punctuation rather than drawn as something the reader said (#541). The sentence is the
+        // CLI's, which is why the engine owns it: this is a READING of the record, and a second
+        // spelling of the marker living up here could drift from the keystroke that produces it.
+        case let .prompt(text, _):
+            if ClaudeInterrupt.isMark(text) {
+                .mark(.interrupted)
+            } else {
+                .prompt(text)
+            }
         case let .message(markdown): .message(markdown)
         // A separate case from `.message` on purpose, and it stays separate: the two carry the
         // same words often enough that collapsing them would read a turn's reasoning as its answer.

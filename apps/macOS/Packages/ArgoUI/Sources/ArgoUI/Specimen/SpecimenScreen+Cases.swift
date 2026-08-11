@@ -49,6 +49,31 @@ extension SpecimenScreen {
         )
     }
 
+    /// The connection reading this case is a render of, keyed the same way. `quiet` is the fallback
+    /// because it is what the chip draws nothing for — a case wired to no fixture renders an empty
+    /// frame rather than somebody else's failure.
+    var connectionHealth: ConnectionHealthReading {
+        ConnectionHealthSpecimen.states.first { $0.specimen == specimen }?.reading ?? .quiet
+    }
+
+    /// The chip stack over a presentation that is CONNECTED, so what is on screen is the provider
+    /// reading alone — a chip about the transcript tail beside it would settle nothing about the
+    /// one being judged.
+    var connectionChips: some View {
+        ConnectionChips(presentation: .preview, health: connectionHealth, actions: .inert)
+    }
+
+    /// The New Session verb mid-spawn. Alone rather than on the bar, because the bar is
+    /// `toolbarScope`'s render and what this settles is a swap inside one container: the wait must
+    /// not resize the circle or move anything beside it.
+    var startingSpawn: some View {
+        NewSessionButton(
+            offer: NewSessionOffer(presentation: .preview),
+            spawn: {},
+            isStarting: true,
+        )
+    }
+
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is
     /// being judged is the assembled container.
     func sessions(

@@ -35,7 +35,7 @@ struct SpawningRosterSpecimen: View {
             setSessionArchived: { _, _ in },
             setSessionName: { _, _ in },
             handOffSession: { _, _ in nil },
-            sendTurn: { _, _ in },
+            sendTurn: { _, _, _ in },
             decidePermission: { _, _, _ in },
             revokeStandingAllow: { _, _ in },
         )

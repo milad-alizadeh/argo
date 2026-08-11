@@ -48,8 +48,12 @@ extension AccountsCoordinator {
                 verificationURL: asked.verificationURL,
             )
             await refresh()
-            _ = try await authorization.complete(asked)
+            let account = try await authorization.complete(asked)
             challenge = nil
+            // The one act, taken. Every Binding naming this Account reads again, across Projects
+            // and both ports — a refusal is recorded once against the identity, so obtaining a
+            // grant for it clears one record and not one per Binding (#569).
+            await health.reconnected(account.id)
             await refresh()
         } catch let failure as GitHubDeviceFlowError {
             challenge = nil

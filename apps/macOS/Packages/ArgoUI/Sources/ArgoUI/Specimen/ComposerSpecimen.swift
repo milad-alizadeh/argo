@@ -14,12 +14,17 @@ struct ComposerSpecimen: View {
     /// The vessel writes through a binding now, so a case that renders one has to hold the value.
     @State private var held: ComposerDraft
 
+    /// Holds the drag-over state open, which no render can reach otherwise (#540).
+    let isDropTargeted: Bool
+
     init(
         composer: SessionComposerProjection.Composer = ComposerSpecimen.composer,
         draft: ComposerDraft = ComposerDraft(),
+        isDropTargeted: Bool = false,
     ) {
         self.composer = composer
         _held = State(initialValue: draft)
+        self.isDropTargeted = isDropTargeted
     }
 
     var body: some View {
@@ -29,9 +34,14 @@ struct ComposerSpecimen: View {
                 .focusable()
                 .focused($parked)
                 .focusEffectDisabled()
-            SessionComposer(composer: composer, send: { _ in }, draft: $held)
-                .padding(.horizontal, ArgoSpacing.section)
-                .padding(.bottom, ArgoSpacing.loose)
+            SessionComposer(
+                composer: composer,
+                send: { _, _ in },
+                draft: $held,
+                isDropTargeted: isDropTargeted,
+            )
+            .padding(.horizontal, ArgoSpacing.section)
+            .padding(.bottom, ArgoSpacing.loose)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .argoDeckSurface()
@@ -39,13 +49,27 @@ struct ComposerSpecimen: View {
     }
 
     /// The one fixture every composer case renders — a managed Claude Session with a model, idle
-    /// enough to take the next thing typed.
+    /// enough to take the next thing typed, on an adapter that takes attachments (which Claude's
+    /// is).
     static let composer = SessionComposerProjection.Composer(
         sessionID: "specimen",
         placeholder: "Message Claude Code…",
         facts: "Opus 5",
         standingAllows: [],
         isRunning: false,
+        canAttach: true,
+    )
+
+    /// The same Session on an adapter that declares no attachments (#540): no `+` on the footer at
+    /// all, and the seam carrying what a drop was refused for. The absence is the state — a greyed
+    /// control would invite a click and give no reason (design decision 9).
+    static let noAttach = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: false,
+        canAttach: false,
     )
 
     /// The same Session mid-Turn: the field invites a follow-up rather than a message, and what is
@@ -56,6 +80,7 @@ struct ComposerSpecimen: View {
         facts: composer.facts,
         standingAllows: [],
         isRunning: true,
+        canAttach: true,
     )
 
     /// The same vessel on a Session that has stopped asking about two tools (#572). Its own state
@@ -66,6 +91,7 @@ struct ComposerSpecimen: View {
         facts: composer.facts,
         standingAllows: ["Bash", "Read"].map(StandingAllow.init(toolName:)),
         isRunning: false,
+        canAttach: true,
     )
 
     /// The typing state's draft: multi-line, because the growth past one line IS the state.
@@ -90,6 +116,33 @@ struct ComposerSpecimen: View {
         Then run the contract suite and tell me what moved.
         """,
     )
+
+    /// Three chips over a message that refers to them — the state a drop and a paste both end in,
+    /// and the one that shows a picture, a source file and a log wearing one chip shape (#540).
+    static var attached: ComposerDraft {
+        ComposerDraft(
+            text: "This is what the roster does after a compaction — see the gap at the top.",
+            attachments: AttachmentFixture.mixed,
+        )
+    }
+
+    /// What ⌘V leaves: one chip, named for the gesture rather than for a file, beside a message
+    /// short enough that the tray is what the render is about.
+    static var pasted: ComposerDraft {
+        ComposerDraft(
+            text: "Same bug, from the other machine.",
+            attachments: [AttachmentFixture.pasted],
+        )
+    }
+
+    /// A drop an adapter would not take, refused on the seam with the reason (design decision 9).
+    static let refusedAttachment = ComposerDraft(notice: SessionDriveError.cannotAttach.detail)
+
+    /// What an interrupt leaves (#541): an empty vessel back at rest, and one quiet line saying
+    /// where the words went. A state of its own because the EMPTINESS is the whole claim — a reader
+    /// who typed a follow-up and stopped the Turn has to find out from the seam rather than from
+    /// noticing their message is gone, and only a render can settle whether the line is enough.
+    static let stopped = ComposerDraft(notice: ComposerDraft.cleared)
 
     /// The refused state's draft: the message still where it was typed, the reason above it —
     /// in the port's own words, so the render and the seam cannot drift apart.
@@ -149,4 +202,31 @@ struct ComposerSpecimen: View {
     ComposerSpecimen(composer: ComposerSpecimen.standing)
         .frame(width: 900, height: 320)
         .argoAppearance()
+}
+
+#Preview("Composer specimen — three attachments") {
+    ComposerSpecimen(draft: ComposerSpecimen.attached)
+        .frame(width: 900, height: 320)
+        .argoAppearance()
+}
+
+#Preview("Composer specimen — a pasted image") {
+    ComposerSpecimen(draft: ComposerSpecimen.pasted)
+        .frame(width: 900, height: 320)
+        .argoAppearance()
+}
+
+#Preview("Composer specimen — a file held over the vessel") {
+    ComposerSpecimen(isDropTargeted: true)
+        .frame(width: 900, height: 320)
+        .argoAppearance()
+}
+
+#Preview("Composer specimen — an adapter that takes no attachments") {
+    ComposerSpecimen(
+        composer: ComposerSpecimen.noAttach,
+        draft: ComposerSpecimen.refusedAttachment,
+    )
+    .frame(width: 900, height: 320)
+    .argoAppearance()
 }

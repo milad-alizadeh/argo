@@ -5,7 +5,10 @@ import Foundation
 /// Enough to say what removing an Account would break: a Binding left pointing at an identity
 /// that no longer exists reads downstream as a provider that 404s, indistinguishable from a
 /// ticket that does not exist (ADR-0018).
-public struct AccountBindingReference: Equatable, Sendable {
+///
+/// `Hashable` because it is also the key connection health is filed under — health is keyed by
+/// Binding and never by Project (#260).
+public struct AccountBindingReference: Hashable, Sendable {
     public let projectID: String
     public let port: AccountPort
 

@@ -6,10 +6,18 @@ import SwiftUI
 
 extension CockpitView {
     /// The composer's one intent, bound to the Session the composer addresses.
-    var send: (String) throws -> Void {
-        guard let composer else { return { _ in } }
+    var send: ComposerSend {
+        guard let composer else { return { _, _ in } }
         let sessionID = composer.sessionID
-        return { try actions.sendTurn(sessionID, $0) }
+        return { try actions.sendTurn(sessionID, $0, $1) }
+    }
+
+    /// Stopping the Turn the composer's Session is running (#541), bound the way `send` is — and
+    /// inert without a composer, which is also the state with no control to press.
+    var stop: () throws -> Void {
+        guard let composer else { return {} }
+        let sessionID = composer.sessionID
+        return { try actions.interruptTurn(sessionID) }
     }
 
     /// What the selected Session's composer is holding, out of the store that outlives the deck.

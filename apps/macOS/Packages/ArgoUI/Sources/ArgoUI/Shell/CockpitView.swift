@@ -12,6 +12,10 @@ public struct CockpitView: View {
     /// The Connect panel, when it is up. Closed by default so every preview and specimen of the
     /// shell renders the shell rather than a sheet nobody asked for.
     private let connect: ConnectSurface
+    /// How the active Project's provider Bindings are reading. Beside the presentation rather than
+    /// inside it because it is not a Hub fact: the cockpit is a projection of the Hub, and Accounts
+    /// and Bindings are registry facts the Hub has never heard of.
+    private let health: ConnectionHealthReading
     @Environment(CockpitNavigationModel.self) var navigation
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
     /// menu bar reaches it (`sessionCommands`), and the menu bar is outside the sidebar.
@@ -25,10 +29,12 @@ public struct CockpitView: View {
         presentation: CockpitPresentation,
         actions: CockpitActions,
         connect: ConnectSurface = .closed,
+        health: ConnectionHealthReading = .quiet,
     ) {
         self.presentation = presentation
         self.actions = actions
         self.connect = connect
+        self.health = health
     }
 
     /// The selected Session's reading. Recomputed on every update rather than cached: the
@@ -37,6 +43,7 @@ public struct CockpitView: View {
     private var feed: [FeedRow] {
         FeedProjection.rows(
             from: events,
+            working: FeedWorking.isWorking(presentation.session(navigation.session)),
             handedOff: presentation.handoff(of: navigation.session),
             expired: presentation.session(navigation.session)?.expiredPermissions ?? [],
         )
@@ -59,7 +66,11 @@ public struct CockpitView: View {
 
     /// The same Session's composer. Absent — no vessel at all — for a Session Argo cannot drive.
     var composer: SessionComposerProjection.Composer? {
-        SessionComposerProjection.composer(for: presentation.session(navigation.session))
+        guard let session = presentation.session(navigation.session) else { return nil }
+        return SessionComposerProjection.composer(
+            for: session,
+            canAttach: actions.canAttach(session.id),
+        )
     }
 
     /// The selected Session's pending Permission. While present it takes the composer's slot.
@@ -109,19 +120,19 @@ public struct CockpitView: View {
                 prompt: prompt,
                 decide: decide,
                 revoke: revoke,
+                stop: stop,
                 draft: draft,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation.
             .environment(\.argoOpenSession) { fresh in navigation.session = fresh }
             .overlay(alignment: .topLeading) {
-                if presentation.connection != .connected {
-                    ConnectionChip(
-                        connection: presentation.connection,
-                        retry: actions.retryConnection,
-                    )
-                    .padding(ArgoSpacing.section)
-                }
+                ConnectionChips(
+                    presentation: presentation,
+                    health: health,
+                    actions: actions,
+                )
+                .padding(ArgoSpacing.section)
             }
             // On the DETAIL pane, not on the split view. A split view divides the bar into a
             // region per column, and a flexible spacer only expands inside its own — declared

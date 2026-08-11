@@ -130,8 +130,19 @@ extension SpecimenScreen {
         case .feedArriving:
             // A row arriving at the end must not move the row somebody is looking at.
             ArrivingFeedSpecimen()
+        case .feedWorking:
+            // A Turn in progress, at the foot of the work it has done so far. The judgement is
+            // whether it reads as the reading CONTINUING while sitting between the last thing the
+            // agent did and the spend below it — in the same tertiary ink as every other mark, so
+            // the ellipsis is doing the whole of the work.
+            sessions(FeedProjection.previewWorkingRows)
         case .emptyFeed:
             sessions([])
+        case .startingSpawn:
+            // The verb while it is being carried out — the first spawn of a window waits on a
+            // login shell reporting a `PATH`, and until this state existed that wait looked
+            // exactly like a press that did nothing.
+            centred { startingSpawn }
         case .feedGallery:
             InstrumentDeckShell(
                 room: .sessions,
@@ -165,45 +176,19 @@ extension SpecimenScreen {
             // A pane's state must die with its Session, which `FeedRow.ID` being a POSITION
             // otherwise carries across.
             RosterSpecimen(presentation: .twoReadings)
-        case .composer:
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.composer)
-        case .composerTyping:
-            ComposerSpecimen(draft: ComposerSpecimen.typing)
-        case .composerCeiling:
-            // Past the six-line ceiling, where the field stops growing and scrolls inside itself.
-            ComposerSpecimen(draft: ComposerSpecimen.ceiling)
-        case .composerDraftKept:
-            // A draft that survived leaving the Session, with no offer to restore it (#539).
-            ComposerSpecimen(draft: ComposerSpecimen.kept)
-        case .composerQueued:
-            // A follow-up held above the field while the Turn it waits on runs.
-            ComposerSpecimen(composer: ComposerSpecimen.running, draft: ComposerSpecimen.queued)
-        case .composerRefusal:
-            ComposerSpecimen(draft: ComposerSpecimen.refused)
-        case .flatComposer:
-            // The shipping gate every glass surface carries.
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.composer)
-                .argoWithoutTransparency()
-        case .composerStanding:
-            // The turn AFTER the grant, with the prompt that made it long gone (#572).
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.standing)
-        case .permission:
-            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
-        case .permissionStanding:
-            // A Session already holding two grants, with the standing offer still on the footer.
-            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.standing)
-        case .permissionEdit:
-            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.edit)
-        case .flatPermission:
-            // The same shipping gate the composer's glass carries.
-            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
-                .argoWithoutTransparency()
-        case .welcome:
-            centred { WelcomeScreen(start: {}) }
-        case .connectFresh, .connectFolderOnly, .connectPartly, .connectWired, .connectWaiting,
-             .connectRefused, .connectBroken, .projectSettings:
-            // One panel per state, decided by `connectReading`.
-            centred { ConnectPanel(reading: connectReading, actions: .inert) }
+        // Every state of the composer and of the prompt that takes its slot, drawn in
+        // `SpecimenScreen+Vessel.swift`.
+        case .composer, .composerTyping, .composerCeiling, .composerDraftKept, .composerQueued,
+             .composerRunning, .composerStopped,
+             .composerRefusal, .flatComposer, .composerStanding, .composerAttached,
+             .composerPasted, .composerDragOver, .composerNoAttach, .permission,
+             .permissionStanding, .permissionEdit, .flatPermission:
+            vessel
+        // Every state of the Connect flow, drawn in `SpecimenScreen+Connect.swift`.
+        case .welcome, .connectFresh, .connectFolderOnly, .connectPartly, .connectWired,
+             .connectWaiting, .connectRefused, .connectBroken, .projectSettings,
+             .connectionStale, .connectionsStale, .connectionNeedsReconnect:
+            connectFlow
         }
     }
 }

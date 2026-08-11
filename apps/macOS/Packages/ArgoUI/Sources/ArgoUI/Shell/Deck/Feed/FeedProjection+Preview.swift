@@ -56,6 +56,14 @@ extension FeedProjection {
         handedOff: previewHandoff,
     )
 
+    /// A reading with the Session still working under it — the whole feed, so the render settles
+    /// the row's place. The commands rather than the shipping transcript: the full reading renders
+    /// as an empty column today (the lazy-height estimates of #473 and #476).
+    static let previewWorkingRows = rows(
+        from: CockpitPresentation.Session.ranCommands,
+        working: true,
+    )
+
     /// The punctuation with a Permission that ran out among it (#573) — the marks-only set, so a
     /// refusal nobody made can be compared against the marks around it on one screen.
     static let previewExpiredMarkRows = numbered(
@@ -77,8 +85,11 @@ extension FeedProjection {
     /// In the full feed the waiting one falls below the fold.
     static let previewAskRows = numbered(previewAsks.map(FeedRow.Content.ask))
 
-    /// The punctuation on its own, for the same reason.
-    static let previewMarkRows = numbered(previewMarks.map(FeedRow.Content.mark))
+    /// The punctuation on its own, for the same reason. The interrupt is added rather than found:
+    /// the shipping preview transcript carries no stopped Turn (#541).
+    static let previewMarkRows = numbered(
+        (previewMarks + [.interrupted]).map(FeedRow.Content.mark),
+    )
 
     /// Contents taken off the shipping feed, given their places back — only the gaps are new.
     private static func numbered(_ contents: [FeedRow.Content]) -> [FeedRow] {

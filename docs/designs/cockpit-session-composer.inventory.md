@@ -33,6 +33,65 @@ would be one line drawn twice, and the two can never be on screen together.
 Extraction evidence: `QueuedTurnChip` is in the design's frozen-names table, and it carries a
 state the happy path never renders — a Session mid-Turn with something waiting on it.
 
+## Extracted — #540 (attach a file or image)
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `AttachButton` | atom | `ArgoUI/Shell/Deck/Composer/` — the footer's own part | `attach: ([SessionAttachment]) -> Void` | `ArgoGlyph` + stock `.fileImporter` | frozen table, `AttachButton` |
+| `AttachmentTray` | molecule | same | `attachments: [SessionAttachment]`, `remove: (SessionAttachment.ID) -> Void` | `WrapFlow` over `AttachmentChip` | frozen table, `AttachmentTray` |
+| `AttachmentChip` | molecule | same | `attachment: SessionAttachment`, `remove: () -> Void` | thumbnail or `ArgoGlyph`, name, mono size, an 18pt `×` | frozen table, `AttachmentChip` |
+| `AttachmentDropTarget` | modifier | same | `canAttach: Bool`, `attach: ([SessionAttachment]) -> Void`, `isHeldOpen: Bool` | the dashed rim, the wash, and *Drop to attach* | `dragover.png` |
+
+Extraction evidence: the first three are in the design's frozen-names table.
+`AttachmentDropTarget` is not a component at all but the drag-over STATE — a whole-vessel rendering
+with no other way to be reached, since only a real drag raises it. `isHeldOpen` is the seam a render
+opens, the same one `PlanPill`'s `isRevealed` opens for a hover.
+
+### What `/pixel-review` measured, and what moved
+
+The chip was seated at `chipHeight` (20) on a reading that a 20pt thumbnail could fill a 20pt chip.
+The approved render measures **28** — the thumbnail with `ArgoSpacing.tight` above and below it,
+which is the row the study's own token reconciliation snapped `3px` to. `attachmentChipHeight` is
+derived from those two rather than restated, and is deliberately NOT `chipHeight`: a standing allow
+holds a word, this holds a picture, and #572's tray was approved at 20.
+
+The drag-over wash was `state.muted` (0.16) and measured ~1.7× the approved lift. `StateRoles`
+gains **`wash(_:)` at 0.1** — the third rung of the `muted`/`rim` family rather than a borrow from
+`DiffRoles.wash`, because a chip's ground carries one word and this one sits under a field, a picker
+and two controls. *Drop to attach* moved from `caption` to `control`, the rung the render sets it at.
+
+**Two divergences left standing, both on a documented rule.** The `×` and the `+` draw their marks
+at `ArgoIconSize.inline` and `.control` where the study drew lighter ones: the scale's own note
+records a chevron shrunk below `inline` becoming "a control nobody could see they were allowed to
+click", and both of these are controls. Adding a rung to that scale is a decision for the contract,
+not a side effect of this ticket.
+
+**A non-image chip takes the evidence panel's language-family mark**, not a second map of its own:
+`AttachmentProjection.glyph(for:)` runs `EvidenceLanguage(declared:).symbol`. The study drew a
+generic `<>` on a `.swift` file because its HTML carried no such map; the token contract does, so a
+Swift file gets the Swift mark. That is drift **toward** the contract, and the one place the build
+knowingly draws a different glyph from `attach.png`.
+
+### The one place the build departs from the ticket
+
+**Pasted bytes land in Argo's own per-machine data, not the Workspace.** #540 asked for the
+Workspace; a screenshot written into the checkout shows up in `git status` and in Argo's own
+`Workspace.dirty` reading, so pasting a picture would report as the user having changed something.
+The handoff brief already establishes that an agent reads an absolute path outside its tree
+(`Hub.handoffRoot`), which was the only thing the Workspace was buying. A **dropped file is not
+copied at all** — it already has an address, and a copy would be a second, staler version of a file
+the Session may be working in. The mechanism the ticket named is untouched: Argo injects a path and
+the agent's own `Read` pulls the bytes in.
+
+The chip's size figure spells its unit the way the platform does — `248 kB` where the study's HTML
+typed `248 KB`. The number matches; the casing is `ByteCountFormatStyle(.binary)`'s, and
+hand-spelling it would be a raw string standing in for a locale-aware value.
+
+**Nothing reaps what lands under `attachments/`**, and that is the choice rather than an oversight:
+the path is named in a transcript that outlives the Session, so bytes deleted later would leave a
+historical Turn pointing at nothing. A refused send is survivable because the address is the
+attachment's own id — pressing Retry rewrites the same file rather than leaving a copy beside it.
+
 ## View-model, not components
 
 - `SessionComposerProjection` — the pure `derive(facts)`: presence (managed and not ended, else
@@ -58,8 +117,7 @@ state the happy path never renders — a Session mid-Turn with something waiting
 
 ## Deliberately absent — owned by sibling tickets
 
-`AttachButton` + tray/chips (#540 — no adapter takes attachments yet; capability is declared,
-decision 9, so the study's `noattach` state is today's honest render) · `RunFactsButton` +
+`RunFactsButton` +
 `RunSettingsPopover` (#558) · `ComposerUnavailable` (#546) · `SendButton`'s **Stop** state, which
 `queued.png` draws and #541 owns — it needs an interrupt on the drive port, and a square that
 stops nothing would be the promise decision 9 refuses to make about attachments.

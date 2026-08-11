@@ -16,12 +16,14 @@ struct DeckContentRow: View {
     var composer: SessionComposerProjection.Composer?
     /// One Turn to the shown Session; refusals are thrown back and the composer's seam repeats
     /// them.
-    var send: (String) throws -> Void = { _ in }
+    var send: ComposerSend = { _, _ in }
     /// The Permission the shown Session is blocked on — it takes the composer's slot.
     var prompt: PermissionPromptProjection.Prompt?
     var decide: (PermissionDecision) -> Void = { _ in }
     /// Taking back one of the Session's standing allows, by tool (#572).
     var revoke: (String) -> Void = { _ in }
+    /// Stopping the Turn in flight (#541); a Session blocked on a Permission has nothing to stop.
+    var stop: () throws -> Void = {}
     /// From above the Session identity so it survives a switch (#539). See
     /// `InstrumentDeckShell.draft`.
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
@@ -52,6 +54,7 @@ struct DeckContentRow: View {
                     prompt: prompt,
                     decide: decide,
                     revoke: revoke,
+                    stop: stop,
                     draft: draft,
                 )
                 if !isPanelOpen {
@@ -173,10 +176,11 @@ private struct FeedColumn: View {
     let selection: FeedRowSelection
     var held: FeedRow.ID?
     var composer: SessionComposerProjection.Composer?
-    var send: (String) throws -> Void = { _ in }
+    var send: ComposerSend = { _, _ in }
     var prompt: PermissionPromptProjection.Prompt?
     var decide: (PermissionDecision) -> Void = { _ in }
     var revoke: (String) -> Void = { _ in }
+    var stop: () throws -> Void = {}
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
 
     var body: some View {
@@ -213,9 +217,15 @@ private struct FeedColumn: View {
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.bottom, ArgoSpacing.loose)
         } else if let composer {
-            SessionComposer(composer: composer, send: send, revoke: revoke, draft: draft)
-                .padding(.horizontal, ArgoSpacing.section)
-                .padding(.bottom, ArgoSpacing.loose)
+            SessionComposer(
+                composer: composer,
+                send: send,
+                revoke: revoke,
+                stop: stop,
+                draft: draft,
+            )
+            .padding(.horizontal, ArgoSpacing.section)
+            .padding(.bottom, ArgoSpacing.loose)
         }
     }
 }

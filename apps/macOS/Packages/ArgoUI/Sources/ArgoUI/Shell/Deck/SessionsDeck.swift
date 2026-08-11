@@ -31,13 +31,15 @@ struct SessionsDeck: View {
     var composer: SessionComposerProjection.Composer?
     /// One Turn to the shown Session. Inert by default so a specimen draws the vessel without
     /// reaching for a terminal.
-    var send: (String) throws -> Void = { _ in }
+    var send: ComposerSend = { _, _ in }
     /// The Permission the shown Session is blocked on. Displaces the composer.
     var prompt: PermissionPromptProjection.Prompt?
     /// The answer to it. Inert by default for the reason `send` is.
     var decide: (PermissionDecision) -> Void = { _ in }
     /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
     var revoke: (String) -> Void = { _ in }
+    /// Stopping the Turn in flight (#541). Inert by default, for the reason `send` is.
+    var stop: () throws -> Void = {}
     /// What the composer is holding — passed through from above the Session identity, so an unsent
     /// draft survives a switch (#539). See `InstrumentDeckShell.draft`.
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
@@ -65,6 +67,7 @@ struct SessionsDeck: View {
                 prompt: prompt,
                 decide: decide,
                 revoke: revoke,
+                stop: stop,
                 draft: draft,
                 seams: seams,
             )

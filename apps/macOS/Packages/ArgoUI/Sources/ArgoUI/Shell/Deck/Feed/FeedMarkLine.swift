@@ -49,7 +49,8 @@ struct FeedMarkLine: View {
 
     /// The roster's attention amber for the one mark that reports an act rather than the shape of
     /// the record — the same colour the row wore while that prompt was waiting. Every other mark
-    /// stays tertiary.
+    /// stays tertiary, `working` included: `cockpit-status-vocabulary.md` carries the state on the
+    /// dot and keeps the word neutral, so the ellipsis is what marks this row as live.
     private var wordInk: ArgoColor? {
         guard case .permissionExpired = mark else { return nil }
         return argo.color.state.attention
