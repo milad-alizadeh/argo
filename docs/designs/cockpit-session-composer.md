@@ -19,6 +19,12 @@ and `orphaned.png` draw no composer at all, so they re-rendered byte-identical. 
 became **`run-auto.png`** — `Ask` is not a rung any more, and `Auto` is the non-default worth
 showing. `run-modemenu.png` is **new**: a menu has an open state that segments never had.
 
+**Re-rendered again for #608**, when the Mode menu became bespoke. Seventeen changed. Every one is
+byte-identical to its predecessor *outside* the Mode control — checked pixel by pixel, which is how
+a re-render proves it changed only what it meant to. `perm.png` and `perm-edit.png` join
+`external.png` and `orphaned.png` in not changing: the prompt takes the composer's slot, so there
+is no footer in them to hold the control.
+
 Two exceptions, named so nothing downstream reads them as drift. `perm.png` and `perm-edit.png`
 still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**, and the standing
 option they draw on the footer's trailing edge reads *Always allow Bash **here***, which
@@ -47,7 +53,7 @@ These become file names and ticket titles; renaming later is a migration.
 | `ComposerFooter` | attach · Mode · run facts · send |
 | `AttachButton` | the leading `+` |
 | `AttachmentTray` / `AttachmentChip` | chips above the field |
-| `ModePicker` | the `Read Only · Plan · Code · Auto` menu picker |
+| `ModePicker` | the `Read Only · Plan · Code · Auto` menu. Bespoke, not a `Picker` (#608) |
 | `RunFactsButton` | the `Opus 5 · Medium` fact line that opens the popover |
 | `RunSettingsPopover` | Model list + Effort scale + reset |
 | `SendButton` | the arrow, and its Stop state |
@@ -81,6 +87,17 @@ squeezed.
 
 **The footer row** — `base` (8) gap, `base` (8) top padding. Controls left to right: `+` (26pt),
 spacer, `ModePicker`, `RunFactsButton`, `SendButton` (26pt circle).
+
+**`ModePicker`'s closed control** — 20pt high, radius `control` (6), `snug` (6) padding each side
+and `snug` (6) between mark, word and chevron. **Mark and chevron both at `ArgoIconSize.inline`
+(10)**: neither is the thing being pointed at, the word is. The chevron takes `text.secondary`
+while the word takes `text.primary`, so it names the gesture without competing with the value.
+Measured off `composer/rest.png`, where the pill is 77pt wide at `Code` against the 88pt the
+pinned width gave it — the 11pt difference is the whitespace decision 1 now refuses.
+
+> The renders draw the four marks at **12**, two over the rung. They are hand-drawn SVG
+> stand-ins, and a multi-element one smudges to a blob at 10 where SF's own small-size variant
+> stays legible. 10 is the number to build to; the render is there to say which mark sits where.
 
 **`SendButton`'s Stop state** — the same 26pt circle in the same place, ground `state.attention`,
 and a **7pt square** in `text.onAccent` where the arrow was. Added in build (#541), measured off
@@ -119,10 +136,15 @@ anything.
 | In the study | In the app |
 |---|---|
 | `.seg` (Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` |
-| Mode | `Picker(…).pickerStyle(.menu).controlSize(.small)` — four rungs do not fit as segments |
+| `.modemenu` (Mode) | **a bespoke `Menu`** — the one control on this screen that is not stock |
 | `.picklist` (Model) | `Picker(…).pickerStyle(.inline)` |
 | `.runpanel` | `.popover(…)` with `.presentationBackground(.regularMaterial)` |
 | the popover's groups | `Form` sections, each with its own header |
+
+**Mode is the exception, and #608 is where it stopped being stock.** It began as
+`Picker(…).pickerStyle(.menu)`, which macOS draws through `NSPopUpButton`. Three things this
+screen wants are things that control cannot do: one chevron instead of the stepper pair, a width
+that follows the selected rung, and a mark in each row. Decision 1 records what each is worth.
 
 ## Decisions the renders encode
 
@@ -135,17 +157,38 @@ anything.
    segments were rendered and measured at 760pt: they ate the footer's width and pushed the run
    facts off the row entirely, which decision 2 does not allow.
 
-   **The control is sized to the widest rung, not the selected one.** `NSPopUpButton` does this
-   for free; the study's stand-in had to be pinned to match it. Without that the footer's whole
-   trailing edge moves every time the rung changes, which is a worse tic than the width it saves.
+   **The control hugs the selected rung** (amended in build, #608). It was sized to the widest
+   rung, `Read Only`, which `NSPopUpButton` does for free and the study's stand-in was pinned to
+   match — on the argument that a trailing edge moving with the rung is a worse tic than the width
+   it saves. Rendered, the reverse is true: at `Code` and `Auto` the pinned width leaves 30-odd
+   points of empty pill to the right of the word, and empty space inside a bordered control reads
+   as a control that failed to draw something. **A moving trailing edge is accepted instead** —
+   and it moves less than the reasoning assumed, because the control is the *leading* item of a
+   trailing-aligned group, so the run facts and send button do not move at all. Only the pill's
+   own left edge does.
 
-   **The menu carries no ink and no per-row caption, and that is a loss taken knowingly.** macOS
-   draws a `.menu` picker through `NSPopUpButton`, which ignores `.tint` and `.foregroundStyle`
-   alike, and whose rows take a title and nothing else. All three were tried against the real
-   control. So a rung is a word, and its **boundary is on the control's tooltip** — `Read Only —
-   no writes`. The thing this costs is loudness on `Auto`, the one rung with no boundary left, and
-   giving it back means a bespoke `Menu` label rather than the stock control. Deferred rather than
-   faked: a rule that does not render is worse than none, because the next reader believes it.
+   **Each rung carries a mark, and the tooltip keeps the boundary** (amended in build, #608). The
+   original loss was threefold — no ink, no mark, no per-row caption — because `NSPopUpButton`
+   ignores `.tint` and `.foregroundStyle` and its rows take a title and nothing else. **The mark
+   half is taken back**; ink and per-row captions stay out. A word alone is what forced the
+   boundary onto a tooltip, and the boundary stays there — `Read Only — no writes` — but a mark
+   gives `Auto` back the loudness it lost as the one rung with no boundary left. The rows draw the
+   selected rung's **checkmark themselves**, since that is the other thing the stock control gave
+   for free.
+
+   | Rung | Mark | Why |
+   |---|---|---|
+   | Read Only | `eye` | already the shell's mark for looking without touching |
+   | Plan | `list.bullet.rectangle` | the rung whose deliverable is a list |
+   | Code | `chevron.left.forwardslash.chevron.right` | `ArgoSymbol.programSource`, the code room's own mark |
+   | Auto | `bolt` | no boundary, so the loudest mark of the four |
+
+   The closed control is **mark · word · one `chevron.down`**, the chevron at
+   `ArgoIconSize.inline` and quieter than the word: it names the gesture, not the value. One
+   chevron rather than the stock pair because this drops a list — the stepper pair says *cycle
+   through values*, which is a different control. It goes **beside** the label and never inside
+   it: a `Menu` re-synthesises its label from icon and title alone, so a chevron in there never
+   draws at all (`GitVessel` learned this first).
 2. **Model and Effort are on the composer too, and the deck header states the CLI alone.** A
    value stated in two places is one you keep in sync by eye. (The rejected alternative put them
    on the header's fact line.)
