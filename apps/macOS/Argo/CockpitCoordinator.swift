@@ -57,6 +57,13 @@ final class CockpitCoordinator {
         )
     }
 
+    /// The active Project as a record, and `nil` where the window points at a folder nobody
+    /// registered. What the Connect panel needs to bind against: an unregistered pointer has no
+    /// record for a Binding to be written into.
+    var activeRecord: ProjectRecord? {
+        registry.project(id: launch.id)
+    }
+
     /// Read the registry, then point the Hub at whatever the launch resolves to. The read comes
     /// first: `--project` overrides the active Project, and the active Project is only knowable
     /// once the file has been read.

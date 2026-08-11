@@ -24,6 +24,16 @@ public enum ArgoLayout {
     /// The Project drawer. Wide enough for a full name over a home-relative path, and no wider —
     /// it hangs off a toolbar control, not over the window.
     public static let projectDrawerWidth: CGFloat = 340
+    /// The Connect panel, which is also Project Settings. Wide enough for a row whose detail names
+    /// a provider, an identity and a scope on one line, and no wider: it is a sheet over the
+    /// window, not a second window, and a setup surface that fills the screen reads as a wizard
+    /// you have to get out of.
+    public static let connectPanelWidth: CGFloat = 560
+    /// The device code's own line. A fixed slot rather than the code's intrinsic width, because
+    /// the card appears and disappears while the user is looking at it and a slot that resized
+    /// with the code would move the button under it.
+    public static let deviceCodeWidth: CGFloat = 200
+
     /// The ⋯ menu's slot in a drawer row. Explicit, because a borderless menu sizes to its own
     /// chrome rather than to its glyph, and that chrome is wider on the trailing side — which put
     /// the mark 4pt further from the panel edge than the icon column is on the other side.

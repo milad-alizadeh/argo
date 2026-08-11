@@ -5,24 +5,32 @@ import SwiftUI
 ///
 /// The one place in the shell that reads the navigation model. Everything below it takes values
 /// and bindings, so each piece still renders from a `#Preview` or a specimen without one.
+/// What the selected Session's controls are bound to lives in `CockpitView+Intents.swift`, which
+/// is why the four below are not `private`: they are the shell's own state, read by that file and
+/// by nothing else (the same division `SpecimenScreen` keeps with its case helpers).
 public struct CockpitView: View {
-    private let presentation: CockpitPresentation
-    private let actions: CockpitActions
-    @Environment(CockpitNavigationModel.self) private var navigation
+    let presentation: CockpitPresentation
+    let actions: CockpitActions
+    /// The Connect panel, when it is up. Closed by default so every preview and specimen of the
+    /// shell renders the shell rather than a sheet nobody asked for.
+    private let connect: ConnectSurface
+    @Environment(CockpitNavigationModel.self) var navigation
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
-    /// menu bar reaches it (`sessionCommands` below), and the menu bar is outside the sidebar.
-    @State private var renamingSessionID: String?
+    /// menu bar reaches it (`sessionCommands`), and the menu bar is outside the sidebar.
+    @State var renamingSessionID: String?
     /// Every Session's unsent words. Held at the top of the shell because that is the one place
     /// above the deck's per-Session identity: the deck is rebuilt whole on a switch, so a draft
     /// kept any lower would leave with the selection rather than be waiting on the way back (#539).
-    @State private var drafts = ComposerDrafts()
+    @State var drafts = ComposerDrafts()
 
     public init(
         presentation: CockpitPresentation,
         actions: CockpitActions,
+        connect: ConnectSurface = .closed,
     ) {
         self.presentation = presentation
         self.actions = actions
+        self.connect = connect
     }
 
     /// The selected Session's reading, projected here because this is the one view that knows what
@@ -58,81 +66,27 @@ public struct CockpitView: View {
     /// The same Session's composer, projected here for the reason the header is: this is the one
     /// view that knows what is selected. Absent — no vessel at all — for a Session Argo cannot
     /// drive.
-    private var composer: SessionComposerProjection.Composer? {
+    var composer: SessionComposerProjection.Composer? {
         SessionComposerProjection.composer(for: presentation.session(navigation.session))
-    }
-
-    /// The composer's one intent, bound to the Session the composer addresses — inert when there
-    /// is no composer, which is also when there is no field to type into.
-    private var send: (String) throws -> Void {
-        guard let composer else { return { _ in } }
-        let sessionID = composer.sessionID
-        return { try actions.sendTurn(sessionID, $0) }
-    }
-
-    /// What the selected Session's composer is holding, out of the store that outlives the deck.
-    /// A Session with no composer gets an inert binding — there is no field to type into, so there
-    /// is nothing to keep.
-    private var draft: Binding<ComposerDraft> {
-        guard let composer else { return .constant(ComposerDraft()) }
-        return drafts.binding(for: composer.sessionID)
     }
 
     /// The selected Session's pending Permission, projected here for the reason the composer is:
     /// this is the one view that knows what is selected. While present it takes the composer's
     /// slot in the deck.
-    private var prompt: PermissionPromptProjection.Prompt? {
+    var prompt: PermissionPromptProjection.Prompt? {
         PermissionPromptProjection.prompt(for: presentation.session(navigation.session))
     }
 
-    /// The prompt's one intent, bound the way `send` is — inert when there is no prompt, which is
-    /// also when there is nothing to answer.
-    private var decide: (PermissionDecision) -> Void {
-        guard let prompt else { return { _ in } }
-        let sessionID = prompt.sessionID
-        // The request is captured with the Session, so the answer names the Permission this
-        // closure was built over rather than whatever is pending by the time it is called.
-        let requestID = prompt.requestID
-        return { actions.decidePermission(sessionID, requestID, $0) }
-    }
-
-    /// Taking a standing allow back, bound to the selected Session. Off the selection rather than
-    /// off the composer, because both vessels draw the tray — the prompt included, and the composer
-    /// is absent while it is up.
-    private var revoke: (String) -> Void {
-        guard let session = presentation.session(navigation.session) else { return { _ in } }
-        return { actions.revokeStandingAllow(session.id, $0) }
-    }
-
-    /// The header's one intent, bound to the Session the header is naming — resolved here for the
-    /// same reason the header is: this is the view that knows which Session is selected, and the
-    /// issue it serves. It does nothing when nothing is selected, which is also when there is no
-    /// button to press.
-    /// The fresh Session becomes the selection (story 48). The whole point of handing off is that
-    /// the work continues, and a roster left pointing at the Session that just emptied itself into
-    /// a brief would make the remedy something you then have to go and find.
-    private var handOff: () async -> Void {
-        guard let session = presentation.session(navigation.session) else { return {} }
-        return {
-            guard let fresh = await actions.handOffSession(session.id, session.issue?.number)
-            else { return }
-            navigation.session = fresh
-        }
-    }
-
-    /// The menu bar's half of the roster's two gestures, addressed at the selected Session — and
-    /// `nil` when nothing is selected, which is what greys the items out rather than leaving a
-    /// command that would act on nobody.
-    ///
-    /// Rename opens the row's own field rather than doing anything itself: there is one rename in
-    /// this app and it happens in the row, so the menu is a way to REACH it (`SessionCommands`).
-    private var sessionCommands: SessionCommands? {
-        guard let session = presentation.session(navigation.session) else { return nil }
-        return SessionCommands(
-            rename: { renamingSessionID = session.id },
-            archive: { actions.setSessionArchived(session.id, !session.isArchived) },
-            renameTitle: SessionRenameProjection.heading,
-            archiveTitle: session.isArchived ? "Put Back on the Roster" : "Archive Session",
+    /// The sheet is up exactly while there is a reading. Dismissing it — Escape, or the system's
+    /// own gesture — runs the same intent the button does, so the panel has one way to close and
+    /// the app is never left holding a panel the window has already put away.
+    private var isConnecting: Binding<Bool> {
+        Binding(
+            get: { connect.reading != nil },
+            set: { isOpen in
+                guard !isOpen else { return }
+                connect.actions.finish()
+            },
         )
     }
 
@@ -204,6 +158,15 @@ public struct CockpitView: View {
             minHeight: ArgoLayout.windowMinimumHeight,
         )
         .argoAppearance()
+        .sheet(isPresented: isConnecting) {
+            if let reading = connect.reading {
+                ConnectSheet(
+                    reading: reading,
+                    actions: connect.actions,
+                    startsAtWelcome: connect.startsAtWelcome,
+                )
+            }
+        }
         .focusedValue(\.sessionCommands, sessionCommands)
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in
             navigation.reconcile(against: sessionIDs)
