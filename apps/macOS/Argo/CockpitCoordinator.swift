@@ -5,26 +5,19 @@ import ArgoUI
 import Foundation
 import Observation
 
-/// What the window is looking at: the registered set, which Project is active, and the Hub pointed
-/// at it.
-///
-/// Registration and the switch live here rather than in `ArgoApp` because both are sequences —
-/// choose a folder, write the registry, re-point the Hub — and the scene should hold state, not run
-/// them.
+/// What the window is looking at: the registered set, the active Project, and the Hub on it.
 @MainActor
 @Observable
 final class CockpitCoordinator {
     private(set) var registry = ProjectRegistry.empty
     private(set) var launch: LaunchProject
 
-    /// What the launch resolved to, kept for the window's life rather than only while it is on
-    /// screen. An unregistered launch target has a mark in the strip, so switching away from it has
-    /// to be reversible without a relaunch — and a named transcript belongs to this target alone.
+    /// What the launch resolved to, kept for the window's life: switching away from an unregistered
+    /// launch target must be reversible without a relaunch.
     private(set) var launchOrigin: LaunchProject?
 
-    /// What the user has said about Sessions themselves, as opposed to what the Hub observed of
-    /// them: which ones they cleared off the roster, and what they named. Per machine and never
-    /// committed, exactly as registration above it is.
+    /// What the user said about Sessions, as opposed to what the Hub observed — archived and named.
+    /// Per machine and never committed.
     private(set) var annotations = SessionAnnotations.empty
 
     let hub: Hub
@@ -45,28 +38,25 @@ final class CockpitCoordinator {
         self.hub = Hub(
             projectURL: configuration.projectURL,
             engine: engine,
-            // The real PTY host is composed in HERE, at the app layer, which is what keeps the
-            // engine runnable with no window: `ArgoTerminal` links SwiftTerm and therefore AppKit,
-            // and nothing under `ArgoEngine` names either.
+            // The real PTY host is composed in at the app layer: `ArgoTerminal` links SwiftTerm and
+            // therefore AppKit, and nothing under `ArgoEngine` may name either.
             spawnServices: SpawnServices(
                 host: SwiftTermProcessHost(),
                 // The one place the real chain file is named. A Hub given none remembers no
-                // handoff, which is what every test and the render harness want.
+                // handoff.
                 chainFileURL: HandoffChainStore.defaultFileURL,
             ),
         )
     }
 
-    /// The active Project as a record, and `nil` where the window points at a folder nobody
-    /// registered. What the Connect panel needs to bind against: an unregistered pointer has no
-    /// record for a Binding to be written into.
+    /// The active Project as a record; `nil` where the window points at an unregistered folder,
+    /// which has no record for a Binding to be written into.
     var activeRecord: ProjectRecord? {
         registry.project(id: launch.id)
     }
 
-    /// Read the registry, then point the Hub at whatever the launch resolves to. The read comes
-    /// first: `--project` overrides the active Project, and the active Project is only knowable
-    /// once the file has been read.
+    /// Read the registry, THEN point the Hub at whatever the launch resolves to: `--project`
+    /// overrides the active Project, which is only knowable once the file has been read.
     func start() async {
         registry = await store.load()
         annotations = await annotationStore.load()
@@ -77,10 +67,7 @@ final class CockpitCoordinator {
     }
 
     /// Switching re-points the Hub, which drops the previous Project's tails, roster, checkout and
-    /// connection before the new one establishes anything (#418). Nothing of the old one survives.
-    ///
-    /// The unregistered launch target is switchable too — its mark is in the strip, and a mark that
-    /// did nothing when clicked would be the only dead one there.
+    /// connection before the new one establishes anything (#418).
     func select(projectID: String) async {
         guard projectID != launch.id else { return }
         if let record = registry.project(id: projectID) {
@@ -91,9 +78,7 @@ final class CockpitCoordinator {
         }
     }
 
-    /// Registration is the act that creates a Project, so it is a folder the user chooses and
-    /// nothing the app infers. The newly registered Project becomes the active one — offering a
-    /// folder and staying where you were would read as the registration not having taken.
+    /// Registration takes a folder the user chooses, never one the app infers, and activates it.
     func addProject() async {
         guard let folderURL = chooseFolder(prompt: "Register") else { return }
         let registered = await store.register(at: folderURL)
@@ -103,8 +88,7 @@ final class CockpitCoordinator {
         await point(at: .registered(record))
     }
 
-    /// Re-point a Project whose folder has moved. Keyed on the id, so this is the same Project it
-    /// was — everything linked to it survives the move.
+    /// Re-point a Project whose folder has moved. Keyed on the id, so everything linked survives.
     func locateProject(projectID: String) async {
         guard registry.project(id: projectID) != nil,
               let folderURL = chooseFolder(prompt: "Locate")
@@ -115,10 +99,8 @@ final class CockpitCoordinator {
         await point(at: .registered(record))
     }
 
-    /// Removing the Project on screen has to land the window somewhere, so the registry's new
-    /// active record is where it goes. Removing the LAST one leaves the cockpit empty and pointed
-    /// at nothing registered: an unregistered pointer at the folder it was on, with the Hub let go,
-    /// rather than a window still tailing a Project the machine no longer knows.
+    /// Removing the Project on screen lands the window on the registry's new active record.
+    /// Removing the LAST one leaves an unregistered pointer at that folder with the Hub let go.
     func removeProject(projectID: String) async {
         guard let record = registry.project(id: projectID) else { return }
         let removed = await store.remove(id: projectID)
@@ -132,44 +114,39 @@ final class CockpitCoordinator {
         await point(at: .registered(landing))
     }
 
-    /// Archive a Session, or put one back. The only path to it, and it is reached from a gesture
-    /// on a row — nothing derived from a merge or a transcript calls this (#502, story 14).
+    /// Archive a Session, or put one back. Only ever a gesture on a row; nothing derived from a
+    /// merge or a transcript calls this (#502, story 14).
     func setArchived(_ isArchived: Bool, sessionID: String) async {
         annotations = await annotationStore.setArchived(isArchived, sessionID: sessionID)
     }
 
-    /// Name a Session, or drop the name it was given. Reached from the dialog a double-click on a
-    /// title opens and from nowhere else: nothing observed names a Session (#502, story 18).
+    /// Name a Session, or drop the name. Only ever the rename dialog: nothing observed names a
+    /// Session (#502, story 18).
     func setName(_ name: String?, sessionID: String) async {
         annotations = await annotationStore.setName(name, sessionID: sessionID)
     }
 
-    /// Show a Project's folder in Finder. An unreachable one has nothing to show, and Finder
-    /// answering with a bounce is a worse reading than the row's own "folder not found".
+    /// Show a Project's folder in Finder. An unreachable one has nothing to show.
     func revealProject(projectID: String) {
         guard let record = registry.project(id: projectID), record.isReachable else { return }
         NSWorkspace.shared.activateFileViewerSelecting([record.url])
     }
 
-    /// The Hub is asked to refresh itself rather than told where to look: it is the one that knows
-    /// which Project it is on, and `launch.url` is the folder the vessel names, not the repo the
-    /// checkout was read from.
+    /// The Hub refreshes itself rather than being told where: `launch.url` is the folder the vessel
+    /// names, not the repo the checkout was read from.
     func refreshCheckout() async {
         await hub.refreshCheckout()
     }
 
-    /// Retrying re-points at the Project already on screen, rather than re-running the launch: what
-    /// failed is this Project's connection, and a retry that quietly moved you would be a worse
-    /// answer than the failure. The Hub holds what it was pointed with, so nothing is rebuilt here
-    /// that could come out different.
+    /// Retrying re-points at the Project on screen rather than re-running the launch: the Hub holds
+    /// what it was pointed with.
     func retryConnection() async {
         await hub.reconnect()
     }
 
-    /// A launch may name, or start in, any folder inside a repository, while the registry holds
-    /// roots — so both are resolved before `LaunchProject` matches them. Without it a launch
-    /// pointed inside a registered repo draws that repo twice, and a bare launch inside one names
-    /// its mark after a subdirectory the Hub is not scoped to.
+    /// A launch may name any folder inside a repository while the registry holds roots, so both are
+    /// resolved to roots before `LaunchProject` matches them. Without it a launch inside a
+    /// registered repo draws that repo twice.
     private func launchConfiguration() async -> LaunchConfiguration {
         var projectOverrideURL: URL?
         if let overrideURL = configuration.projectOverrideURL {
@@ -194,7 +171,6 @@ final class CockpitCoordinator {
         ))
     }
 
-    /// The system panel is the only folder chooser a Mac user should have to learn.
     private func chooseFolder(prompt: String) -> URL? {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true

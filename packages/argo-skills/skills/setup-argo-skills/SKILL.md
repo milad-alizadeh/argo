@@ -6,19 +6,11 @@ disable-model-invocation: true
 
 # Setup Argo Skills
 
-One entry point for setting up a project the Argo way: install the **skills** (so
-every agent has the same toolbox), then install the **infra** the user actually
-wants — each piece delegated to its own `setup-*` skill, so any piece can be re-run
-individually later without going through this wizard again.
-
 ## Phase 1 — install the skill bundle
 
 Run the `argo-skills` scaffolder from the target project's root. It reads Argo's
 `skills-lock.json` manifest and installs every skill it names with one
-`npx skills add` per source — the four third-party sources
-(`mattpocock/skills`, `vercel-labs/skills`, `anthropics/claude-plugins-official`,
-`anthropics/skills`) plus Argo's own skills, installed from GitHub
-(`milad-alizadeh/argo`) like any other source:
+`npx skills add` per source:
 
 ```bash
 npx github:milad-alizadeh/argo    # canonical — installs everything from GitHub
@@ -50,7 +42,7 @@ up?" — with the detected recommendation marked, covering:
 | Choice | Delegates to | Recommend when |
 |---|---|---|
 | House engineering rules | `setup-rules` | always |
-| Terse output style (Claude Code default) | `setup-output-style` | always |
+| Out Loud output style (Claude Code default) | `setup-output-style` | always |
 | Always-on task tracking (TodoWrite / update_plan) | `setup-task-tracking` | always |
 | Pre-commit hooks (format/typecheck/test) | `setup-pre-commit` | package.json exists |
 | Quality gates (caps + duplication, as errors) | `setup-quality-gates` | repo has (or should have) a linter |
@@ -59,6 +51,7 @@ up?" — with the detected recommendation marked, covering:
 | Design infra (tokens, `docs/designs/`, check, render method) | `setup-design-infra` | project has UI |
 | Design foundations (the token *values*, blessed) | `setup-design-foundations` | project has UI and no settled scale |
 | Cross-CLI guardrail hooks (graphify-guard, worktree guard + reaper) | scaffolder `--hooks` | user runs git worktrees / wants graphify-before-grep |
+| Audit what every session loads, and cut it | `audit-agent-context` | always — it reads rather than installs, and this run adds to the bill it measures |
 
 ## Phase 3 — dispatch in order
 
@@ -67,7 +60,7 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
 1. `setup-rules` — the prose contracts; design handoff and studies reference them.
 2. `setup-pre-commit` — husky baseline that later steps append to.
 3. `setup-quality-gates` — the arithmetic half of step 1's rules, as build failures;
-   appends to step 2's hook and lands the caps the rules state in prose.
+   appends to step 2's hook.
 4. `setup-graphify` — appends its refresh block to the pre-commit hook.
 5. `setup-module-boundaries` — lint config + CI gate.
 6. `setup-design-infra` — token contract, `docs/designs/` scaffolding, the
@@ -76,14 +69,17 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
 7. `setup-design-foundations` — the token *values*, designed and blessed. Step 6
    installs the structure; this fills it. Skip only if the project already has a
    settled scale in every family.
-8. `setup-output-style` — Terse output style as the Claude Code session default;
-   independent of the rest, so it can run any time.
+8. `setup-output-style` — the Out Loud output style as the Claude Code session
+   default; independent of the rest, so it can run any time.
 9. `setup-task-tracking` — the "Task tracking" section in the project doc; runs
    after `setup-rules` so it lands beside that skill's Rules pointer rather than
    racing it for the same file.
 10. Guardrail hooks (if chosen) — re-run the scaffolder with `--hooks`
    (`npx github:milad-alizadeh/argo --hooks`); it's idempotent, so running it after
    the Phase-1 skills install just adds the hooks. No separate `setup-*` skill.
+11. `audit-agent-context` — **last**, because every step above adds to what a
+   session loads and this is the one that prices it. Report its before/after totals
+   as the run's closing line.
 
 Run them as skills (each owns its own detection and wizard details); don't
 inline their logic here. Between steps, report one line: what was installed,

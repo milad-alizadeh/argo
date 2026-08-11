@@ -2,15 +2,13 @@ import Foundation
 
 /// GitHub's device flow, in two calls.
 ///
-/// `requestChallenge` returns the code and the URL; `awaitGrant` then waits on them. Splitting it
-/// there is the point: the caller has the code in hand before anything blocks, so the window shows
-/// what the user must type instead of spinning on a secret it is holding (#265).
+/// `requestChallenge` returns the code and the URL; `awaitGrant` then waits on them — so the caller
+/// has the code in hand before anything blocks (#265).
 ///
 /// Nothing here opens a browser. That is the cockpit's half (#C) — the engine builds with no
 /// window server (ADR-0022), and a flow that reached for one could not be run by `swift test`.
 public struct GitHubDeviceFlow: Sendable {
-    /// The wait between polls, injectable because a clock is the one thing a test may replace: the
-    /// real one would make this suite take as long as the grant does.
+    /// The wait between polls, injectable: the real one makes this suite take as long as a grant.
     public typealias Sleeper = @Sendable (Duration) async throws -> Void
 
     private let transport: HTTPTransport

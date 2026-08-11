@@ -25,8 +25,7 @@ struct SessionRosterWorkspaceTests {
             RosterSessionFixture.session(id: "shared", kind: .main),
         ]).first)
 
-        // Absent, not the folder's own name: the shared checkout is where every unisolated
-        // Session sits, so naming it on each row spends a line on a constant.
+        // Absent, not the folder's own name — every unisolated Session sits in that checkout.
         #expect(row.worktree == nil)
         #expect(!row.announcement.contains("argo"))
     }
@@ -48,8 +47,7 @@ struct SessionRosterWorkspaceTests {
             worktreeSession(id: "placeless", at: nil),
         ]).first)
 
-        // Absent, not the roster's `unknown`: a Session whose record never said where it ran
-        // has nothing to say here, and a placeholder would read as a folder nobody can find.
+        // Absent, not the roster's `unknown`: a placeholder reads as a folder nobody can find.
         #expect(row.worktree == nil)
     }
 
@@ -80,9 +78,7 @@ struct SessionRosterWorkspaceTests {
 
     @Test
     func `the branch survives the row for the copy action, and is never announced`() throws {
-        // It belongs to the session header, where there is room to name it. The row keeps it for
-        // the same reason it keeps the full location: dropping the line is a rendering
-        // decision, not a data one.
+        // Dropping the line is a rendering decision, not a data one.
         let row = try #require(SessionRosterProjection.rows(from: [
             RosterSessionFixture.session(id: "one", branch: "argo/#537-session-rail-worktree"),
         ]).first)
@@ -93,8 +89,7 @@ struct SessionRosterWorkspaceTests {
 
     @Test
     func `the full location survives the row even though it never draws on it`() {
-        // The line is a label, but copy-the-location and the row's tooltip still need the whole
-        // path — dropping the workspace identity is a rendering decision, not a data one.
+        // Copy-the-location and the row's tooltip still need the whole path.
         let sessions = [
             RosterSessionFixture.session(id: "one", workspaceLocation: "/Users/milad/Client/argo"),
             RosterSessionFixture.session(id: "two", workspaceLocation: nil),

@@ -3,9 +3,8 @@ import Foundation
 /// One client on the companion socket, speaking newline-delimited JSON-RPC — the framing MCP's
 /// stdio transport uses, which is what lets the plugin reach this server through a plain relay.
 ///
-/// Everything here runs on the main queue, which is affordable precisely because it is not a
-/// terminal: a handful of small JSON lines per Turn, on a non-blocking descriptor. The PTY's
-/// bulk traffic goes nowhere near it.
+/// Everything here runs on the main queue, affordable because it is a handful of small JSON lines
+/// per Turn on a non-blocking descriptor. The PTY's bulk traffic goes nowhere near it.
 @MainActor
 final class CompanionConnection {
     /// A reply owed for one line — callable now for a request answered in place, or held and

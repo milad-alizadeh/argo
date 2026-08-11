@@ -2,11 +2,8 @@
 import Foundation
 
 /// GitHub, recorded. Hands back the queued response for each request in order, and remembers what
-/// was asked and how long the flow waited between asks.
-///
-/// The bodies are GitHub's documented device-flow shapes rather than a convenient subset, so a
-/// field the flow stops reading is a field this stub still sends — the drift the suite would
-/// otherwise hide.
+/// was asked and how long the flow waited between asks. The bodies are GitHub's documented
+/// device-flow shapes rather than a convenient subset.
 actor StubGitHub: HTTPTransport {
     enum Response {
         case deviceCode
@@ -47,9 +44,8 @@ actor StubGitHub: HTTPTransport {
         recordedWaits
     }
 
-    /// What was asked, for the requests that asked with a form — which is every OAuth request the
-    /// device flow makes. Unpacked here rather than exposed on `HTTPRequest`, where a reader of one
-    /// case only would be production surface with a test as its sole caller.
+    /// What was asked, for the requests that asked with a form — every OAuth request the device
+    /// flow makes.
     func forms() -> [[String: String]] {
         requests.compactMap {
             guard case let .form(fields) = $0.body else { return nil }

@@ -2,17 +2,14 @@ import Foundation
 
 /// What the user has to be shown while the grant waits: a code to type and where to type it.
 ///
-/// It exists as a value the flow hands back *before* it starts polling, which is the whole reason
-/// the flow is two calls rather than one. A single blocking `authorize()` would hold the code
-/// inside itself and leave the window spinning blind (#265) — the user cannot complete a device
-/// flow they cannot read.
+/// Handed back *before* the flow starts polling, which is why the flow is two calls rather than
+/// one (#265).
 public struct GitHubDeviceChallenge: Equatable, Sendable {
-    /// The code the user types into GitHub, in GitHub's own formatting (`ABCD-1234`) — rendered
-    /// verbatim, never re-spaced, because what is shown has to match what they must type.
+    /// In GitHub's own formatting (`ABCD-1234`) — rendered verbatim, never re-spaced, because what
+    /// is shown has to match what the user types.
     public let userCode: String
     public let verificationURL: URL
-    /// Argo's half of the exchange. Never shown: it is the secret that pairs this poll with that
-    /// code, and a user has no use for it.
+    /// Argo's half of the exchange, never shown: the secret pairing this poll with that code.
     public let deviceCode: String
     /// How often GitHub permits a poll, and how long the code stays good — both the provider's
     /// numbers, not Argo's.

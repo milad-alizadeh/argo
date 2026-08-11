@@ -4,9 +4,6 @@ import Testing
 
 /// The Hub answering the three acts a handoff is made of — the wiring under `SessionHandoff`, which
 /// asserts the order they go in.
-///
-/// Separate suites because they fail for different reasons: a broken sequence is a logic error, and
-/// a Session Argo cannot reach through `ownerOf` is a claim-registry one.
 @Suite("Hub handoff")
 @MainActor
 struct HubHandoffTests {
@@ -59,8 +56,7 @@ struct HubHandoffTests {
     }
 
     /// Story 48, at the seam that carries it: the fresh Session runs in the folder it was given
-    /// rather than the Project's, and opens on the prompt it was seeded with. This is #412's spawn
-    /// path with two fields filled in — not a second one beside it.
+    /// rather than the Project's, and opens on the prompt it was seeded with.
     @Test
     func `a seeded spawn runs where it is told and opens on what it is given`() async throws {
         let fixture = try SpawnFixture()
@@ -98,10 +94,8 @@ struct HubHandoffTests {
             == ["--mcp-config", launch.arguments[1], "--plugin-dir", launch.arguments[3]])
     }
 
-    /// The chain, as the roster publishes it — and the part of it that is easy to get wrong: the
-    /// fresh row is published under a claim id and re-keyed to the id its CLI picks, so a link that
-    /// held the id it was handed would go nowhere the moment the fresh agent wrote its first
-    /// record.
+    /// The fresh row is published under a claim id and re-keyed to the id its CLI picks, so a link
+    /// holding the id it was handed goes nowhere once the fresh agent writes its first record.
     @Test
     func `the handed-off Session names the fresh row, through the rebind`() async throws {
         let fixture = try SpawnFixture()
@@ -132,8 +126,7 @@ struct HubHandoffTests {
     }
 
     /// Briefs are owned state in application support, beside the Project registry — never in the
-    /// Project. A brief is a working note between two Sessions, and a repo is not where one
-    /// belongs.
+    /// Project.
     @Test
     func `briefs land in Argo's own per-machine data`() {
         #expect(Hub.handoffRoot.lastPathComponent == "handoffs")

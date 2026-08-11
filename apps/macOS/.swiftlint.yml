@@ -10,6 +10,7 @@ included:
   - Packages/ArgoUI/Sources
   - Packages/ArgoEngine/Sources
   - Packages/ArgoEngine/Tests
+  - Packages/ArgoUI/Tests
 
 excluded:
   - build

@@ -4,13 +4,11 @@ import SwiftUI
 /// One port: the Account it reads through, the ones it could read through instead, and the way to
 /// add another identity when neither answer is right.
 ///
-/// Picking an existing Account is one gesture and no OAuth round-trip, which is the whole reason
-/// Accounts and Bindings are two levels (#414). Authorizing is the second item on the same menu
-/// rather than a different screen, because from where the user is standing they are two answers to
-/// one question.
+/// Picking an existing Account is one gesture and no OAuth round-trip (#414), and authorizing is
+/// the second item on the same menu rather than a different screen.
 struct ConnectPortRow: View {
     /// A choice being filled in. It holds the Account and the scope together because a Binding is
-    /// both, and a control that could send one without the other would write half a decision.
+    /// both.
     private struct Draft: Equatable {
         let choice: ConnectPanelProjection.AccountChoice
         var scope: String
@@ -37,7 +35,7 @@ struct ConnectPortRow: View {
     private var menu: some View {
         Menu {
             // The Account already on the row is in this list: rebinding it at another scope is a
-            // move the row has to allow, and it is the same gesture as picking a different one.
+            // move the row has to allow.
             ForEach(row.choices) { choice in
                 Button(choice.title) { open(choice) }
             }
@@ -65,7 +63,7 @@ struct ConnectPortRow: View {
     }
 
     /// The scope, asked for in the provider's own word. It opens on whatever the port already
-    /// reads through, so changing which identity reads a repository is one pick and no retyping.
+    /// reads through.
     private func editor(_ draft: Draft) -> some View {
         HStack(spacing: ArgoSpacing.base) {
             Text(draft.choice.scopeNoun)
@@ -127,8 +125,7 @@ struct ConnectPortRow: View {
     .argoAppearance()
 }
 
-// A Binding whose Account was removed: the row says what came undone, keeps the scope it was on,
-// and is still one pick away from working.
+// A Binding whose Account was removed: the row says what came undone and keeps the scope it was on.
 #Preview("Port row — the account it used is gone") {
     ConnectPortRow(
         row: ConnectPanelProjection.panel(from: ConnectFixture.broken).ports[0],

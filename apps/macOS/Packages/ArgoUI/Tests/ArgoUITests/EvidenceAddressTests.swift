@@ -4,15 +4,12 @@ import Testing
 
 /// What the evidence panel is open ON, per subject.
 ///
-/// The header was designed for a File and a command inherited it — a generic document for a mark,
-/// and one line cut from the front for an address. Both are right for a path and wrong for a
-/// command,
-/// which is identified by its first word and by the arguments in its middle. These are the claims
-/// that keep the two apart without either growing a rule of its own.
+/// The header was designed for a File and a command inherited it: a generic mark, and one line
+/// cut from the front. Both are right for a path and wrong for a command, which is identified by
+/// its first word and by the arguments in its middle.
 @Suite("Evidence address")
 struct EvidenceAddressTests {
-    /// The panel's whole justification is that it says the one thing the row could not. Under
-    /// #468's first ticket the row says the narration, so the header has to say the command.
+    /// The row says the narration (#468), so the header has to say the command.
     @Test
     func `a narrated command opens on the command and not on the sentence`() {
         let call = Self.execute(narrating: "Run the UI package's tests", standingIn: "swift test")
@@ -32,8 +29,8 @@ struct EvidenceAddressTests {
         #expect(call.address == .named("FeedCommandLine"))
     }
 
-    /// The one honest gap: a narrating call that named nothing else. The sentence is all there was,
-    /// and setting it as a command would say the agent's words were something to run.
+    /// A narrating call that named nothing else: the sentence is all there was, and setting it as
+    /// a command would say the agent's words were something to run.
     @Test
     func `a narration standing in for nothing is read as an address`() {
         let call = Self.call(
@@ -52,8 +49,8 @@ struct EvidenceAddressTests {
         #expect(call?.address == .filed("Sources/ArgoUI/Shell/Deck/Feed/FeedRow.swift"))
     }
 
-    /// The AC that the File's header is UNCHANGED. A path is handed to the layout whole and cut
-    /// there, from the front — no rule of this file's touches it, however long it is.
+    /// A path is handed to the layout whole and cut there, from the front — no rule of this file's
+    /// touches it, however long it is.
     @Test
     func `a path is drawn whole, however long, and left to be cut from the front`() {
         let path = String(repeating: "Packages/ArgoUI/Sources/", count: 8) + "FeedRow.swift"
@@ -94,9 +91,8 @@ struct EvidenceAddressTests {
         #expect(drawn.filter { $0 == "…" }.count == 1)
     }
 
-    /// It is the SHARED rule and not a second one, which is a claim about WHERE the ellipsis falls:
-    /// a third of the way in, so the right-hand end keeps the larger share. The row cuts to one
-    /// line's worth and the header to three, and both put it in the same place.
+    /// The SHARED rule: the ellipsis falls a third of the way in, so the right-hand end keeps the
+    /// larger share. The row cuts to one line's worth and the header to three, same place.
     @Test
     func `the header spends its ellipsis where the row does`() {
         let address = String(repeating: "argo-worktrees/", count: 20)
@@ -109,9 +105,8 @@ struct EvidenceAddressTests {
         #expect(header.count > row.count)
     }
 
-    /// The cap is not decoration. Unbounded wrapping grew the header with whatever happened to be
-    /// open and pushed the close control down the pane, which is what the length is bounded for —
-    /// and it has to fit the three lines at the PANEL'S FLOOR, or the layout tail-cuts what the
+    /// Unbounded wrapping grew the header with whatever was open and pushed the close control down
+    /// the pane. It has to fit three lines at the PANEL'S FLOOR, or the layout tail-cuts what the
     /// middle cut kept and the command carries two ellipses.
     @Test
     func `what is drawn fits three lines of the narrowest panel this can open in`() {
@@ -129,9 +124,8 @@ struct EvidenceAddressTests {
         }
     }
 
-    /// The specimen is only evidence about the split if the command in it actually runs to three
-    /// lines. It is taken off the shipping rows, so a change there could quietly leave a screen
-    /// that looks right and shows nothing.
+    /// The specimen is only evidence about the split if its command actually runs to three lines,
+    /// and it is taken off the shipping rows — which a change there could shorten.
     @Test
     func `the specimen's command is long enough to be cut`() throws {
         let ran = try #require(EvidenceFixture.ran)
@@ -142,8 +136,7 @@ struct EvidenceAddressTests {
             > EvidenceAddress.commandLines * EvidenceAddress.commandLineLength)
     }
 
-    /// The ear takes the address whole either way — a cut is a thing about a width, and a listener
-    /// has none.
+    /// A cut is a thing about a width, and a listener has none.
     @Test
     func `the spoken address is never the cut one`() {
         let command = String(repeating: "sh scripts/render.sh ", count: 20)

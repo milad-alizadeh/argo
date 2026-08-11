@@ -7,9 +7,8 @@ import Synchronization
 /// watched for does not exist yet: a Session started while Argo is running is a new file, in a
 /// project directory that may itself be new. Only a recursive watch on the root sees either appear.
 struct RecordDirectoryWatcher: Sendable {
-    /// A working agent writes many records a second and every one of them is a directory change.
-    /// Coalescing turns a burst into one sweep, which is the difference between a quiet observer
-    /// and a busy loop on a laptop.
+    /// A working agent writes many records a second and every one is a directory change; coalescing
+    /// turns a burst into one sweep.
     static let coalesceInterval: TimeInterval = 1
 
     let rootURL: URL
@@ -31,12 +30,9 @@ struct RecordDirectoryWatcher: Sendable {
         }
     }
 
-    /// The nearest ancestor that exists.
-    ///
-    /// `FSEventStreamCreate` accepts a path that is not there and then never reports it appearing,
-    /// so a machine that has never run the CLI would watch nothing and stay that way until Argo was
-    /// relaunched. Watching the nearest real ancestor sees the record directory being created.
-    /// Every event still costs only a sweep, and the sweep is bounded by the real root.
+    /// The nearest ancestor that exists. `FSEventStreamCreate` accepts a path that is not there and
+    /// then never reports it appearing, so a machine that has never run the CLI would watch nothing
+    /// until Argo was relaunched.
     private static func watchable(from url: URL) -> URL {
         var candidate = url.standardizedFileURL
         while !FileManager.default.fileExists(atPath: candidate.path),
@@ -118,9 +114,7 @@ private final class ChangeSink: Sendable {
     private static let queueLabel = "dev.milad.argo.record-directory"
 }
 
-/// Which paths moved is deliberately unread. The sweep is what decides the working set, and it is
-/// cheap enough that answering "something changed" with "sweep again" costs less than keeping a
-/// second, subtly different filter here.
+/// Which paths moved is deliberately unread — the sweep decides the working set.
 private let onRecordDirectoryChange: FSEventStreamCallback = { _, info, _, _, _, _ in
     guard let info else { return }
     Unmanaged<ChangeSink>.fromOpaque(info).takeUnretainedValue().changed()

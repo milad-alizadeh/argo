@@ -3,15 +3,9 @@ import SwiftUI
 /// `flex-wrap: wrap`, spelled as a `Layout`: items run leading-to-trailing with one gap, and break
 /// onto a new line where the measure ends. Each item keeps whatever size it asks for.
 ///
-/// A layout and not a sideways scroller, which is why both of its callers want it. A run that
-/// scrolls hides its tail behind an affordance: in the feed's gallery an `NSScrollView` had to
-/// arbitrate every wheel gesture with the reading behind it, and in the composer's standing-allow
-/// tray a chip past the edge would be a grant the user cannot find — which is the whole of what
-/// #572 is about. Not a `LazyVGrid` either: an adaptive grid re-spaces its columns to justify the
-/// measure, and these items keep their own size and their own gap wherever the line breaks.
-///
-/// It lives above both features rather than inside either: it knows nothing about shots or chips,
-/// and a shared layout named for one caller reads as the wrong thing at the other.
+/// Not a sideways scroller and not a `LazyVGrid` (#572): a nested `NSScrollView` arbitrates every
+/// wheel gesture with the reading behind it, and an adaptive grid re-spaces its columns to justify
+/// the measure.
 struct WrapFlow: Layout {
     var gap: CGFloat
 

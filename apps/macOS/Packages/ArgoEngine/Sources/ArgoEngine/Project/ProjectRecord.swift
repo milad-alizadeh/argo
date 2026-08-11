@@ -8,10 +8,8 @@ import Foundation
 public struct ProjectRecord: Equatable, Sendable, Identifiable {
     public let id: String
     public let path: String
-    /// At most one Binding per port. The invariant is collapsed here rather than checked by callers
-    /// so it also holds for a record that arrived from a hand-edited file, which never went through
-    /// `binding(_:)`; the first entry for a port wins, because a file naming two is a file with no
-    /// way to say which was meant.
+    /// At most one Binding per port, collapsed here rather than checked by callers so it also holds
+    /// for a hand-edited file. The first entry for a port wins.
     public let bindings: [ProjectBinding]
 
     public init(id: String, path: String, bindings: [ProjectBinding] = []) {
@@ -25,8 +23,8 @@ public struct ProjectRecord: Equatable, Sendable, Identifiable {
         bindings.first { $0.port == port }
     }
 
-    /// The same Project at a new path. Everything keyed on the id — the Bindings included — comes
-    /// with it, which is the whole point of the path being an attribute rather than the key.
+    /// The same Project at a new path. Everything keyed on the id, Bindings included, comes with
+    /// it.
     func relocated(to path: String) -> ProjectRecord {
         ProjectRecord(id: id, path: path, bindings: bindings)
     }

@@ -1,10 +1,9 @@
 /// One call as the record left it once its result landed: what was asked, how it ended, and the two
 /// places a result can sit.
 ///
-/// Every reading takes this whole thing rather than the one field it happens to parse, because each
-/// of them also owns the PRECONDITIONS under which its field means anything — and those are stated
-/// in the kind and the status, not in the payload. A caller left to satisfy them itself would be
-/// re-deriving the policy the reading exists to hold.
+/// Every reading takes this whole thing rather than the one field it parses: each also owns the
+/// PRECONDITIONS under which its field means anything, and those are stated in the kind and the
+/// status, not in the payload.
 struct ResolvedCall {
     /// What the call SAYS it did. Which reading answers it is decided from this and never from the
     /// shape of the payload: a record can carry a patch beside any call at all.

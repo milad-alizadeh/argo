@@ -8,8 +8,7 @@ disable-model-invocation: true
 
 Foundations come **before screens**: a scale derived as a by-product of one screen's
 settle inherits that screen's exploration jitter — half-pixel sizes, missing rungs,
-one screen's accidents enshrined as law. Designed deliberately, as its own ceremony,
-it gives every later design something clean to snap to.
+one screen's accidents enshrined as law.
 
 Run it **once per project**, after `setup-design-infra` has installed the token
 *structure* and before the first screen design is approved. Re-run it any time as an
@@ -39,9 +38,8 @@ Five families. Colour — and only colour — gets two layers:
 4. **Shape** — radius steps. One layer.
 5. **Motion** — shared durations + easings. One layer.
 
-The layer rules that keep the contract unmixable: raw values only in core →
-semantic references core only → app components and designs speak only semantic
-(space/radius/motion steps are single-layer and used directly).
+App components and designs speak only semantic; space/radius/motion steps are
+single-layer and used directly.
 
 ## 1. Gather the raw material
 

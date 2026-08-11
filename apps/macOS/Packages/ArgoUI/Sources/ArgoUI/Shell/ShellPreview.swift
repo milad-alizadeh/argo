@@ -3,21 +3,17 @@ import Foundation
 
 extension CockpitPresentation {
     /// Measured back from whenever the preview is read: a fixed stamp would age into `3y ago`
-    /// on every row. Shared with the specimens, which need the same moving `now` for the same
-    /// reason and would otherwise each carry their own copy of this one line.
+    /// on every row. Shared with the specimens, which need the same moving `now`.
     static func minutesAgo(_ minutes: Int) -> Int {
         Date().epochMs - minutes * 60 * 1000
     }
 }
 
 public extension CockpitPresentation {
-    /// Public so the app target can preview against it. Anything the system accent drives —
-    /// the sidebar's selection capsule most of all — renders wrong in a package preview,
-    /// because the `AccentColor` asset lives in the app and a package preview never sees it.
-    /// Three registered Projects, the third of them somewhere it no longer is: the state the strip
-    /// has to draw honestly rather than by dropping a row.
-    /// Only the active Project carries a count: the Hub observes one Project, and the drawer has
-    /// to be looked at with both renderings on screen at once.
+    /// Public so the app target can preview against it: anything the system accent drives renders
+    /// wrong in a package preview, because the `AccentColor` asset lives in the app.
+    /// Three registered Projects, the third of them somewhere it no longer is; only the active
+    /// Project carries a count, since the Hub observes one Project.
     static let previewProjects = [
         Project(
             id: "argo",
@@ -54,11 +50,9 @@ public extension CockpitPresentation {
                     dirty: 3,
                     unpushed: 1,
                 ),
-                // A time it will not draw: the age is suppressed by the status, and a running
-                // Session with none would leave that unrendered.
+                // A time it will not draw: the age is suppressed by the status.
                 lastSeenAtMs: minutesAgo(0),
-                // A real reading off this machine, past the first line — so the roster's own
-                // Session shows the instrument doing something rather than sitting at `unknown`.
+                // A real reading off this machine, past the first line.
                 contextTokens: 216_764,
                 events: CockpitPresentation.Session.previewTranscript,
             ),
@@ -77,9 +71,8 @@ public extension CockpitPresentation {
             ),
             Session(
                 id: "observed",
-                // Long AND read-only, deliberately: whether a title still truncates cleanly on a
-                // row drawn quieter than the ones around it is a rendering only a screenshot
-                // settles. The close read of ghosting is the `ghostedRows` specimen.
+                // Long AND read-only, deliberately — close read of ghosting is the `ghostedRows`
+                // specimen.
                 title: "Review an externally launched Session nobody here started",
                 model: nil,
                 workspaceLocation: "/Users/milad/Developer/cockpit/.claude/worktrees/"
@@ -107,8 +100,8 @@ public extension CockpitPresentation {
                 id: "failed",
                 title: "Repair the failed native build",
                 model: "codex",
-                // Long AND aged, deliberately: whether a real worktree name truncates rather than
-                // pushing the age off the line is the other question only a render settles.
+                // Long AND aged, deliberately: a real worktree name must truncate rather than
+                // push the age off the line.
                 workspaceLocation: "/Users/milad/Developer/argo/.claude/worktrees/"
                     + "ticket-377-session-roster-and-the-header-above-it",
                 access: .managed,
@@ -129,12 +122,7 @@ public extension CockpitPresentation {
         connection: .connected,
     )
 
-    /// Two Sessions with a reading EACH, which the roster above deliberately is not.
-    ///
-    /// Only one Session there carries a transcript, and a switch that lands on an empty feed
-    /// settles nothing about the pane's state dying with the Session it belonged to — the empty
-    /// column draws no way-back control whether the state survived or not. Both here are long
-    /// enough to scroll, so the reader can leave the end of one and be shown the end of the other.
+    /// Two Sessions with a reading EACH, both long enough to scroll.
     static let twoReadings = CockpitPresentation(
         projects: previewProjects,
         activeProjectID: "argo",
@@ -168,8 +156,7 @@ public extension CockpitPresentation {
         connection: .connected,
     )
 
-    /// A machine that has registered nothing: no Project to name, and the checkout unavailable
-    /// with it. The state first launch is in, which the chrome has to render honestly.
+    /// A machine that has registered nothing — the state first launch is in.
     static let unregisteredPreview = CockpitPresentation(
         projects: [],
         activeProjectID: nil,
@@ -178,8 +165,7 @@ public extension CockpitPresentation {
         connection: .idle,
     )
 
-    /// The active Project's folder has moved or gone. Still a Project, and the chrome says so in
-    /// words rather than dropping the name it is scoped to.
+    /// The active Project's folder has moved or gone. Still a Project.
     static let unreachablePreview = CockpitPresentation(
         projects: previewProjects,
         activeProjectID: "moved",
@@ -198,8 +184,7 @@ public extension CockpitPresentation {
 }
 
 public extension CockpitPresentation.Session {
-    /// The Session a detail surface previews against, so no specimen reaches for a subscript on
-    /// a roster whose order is the roster's own business.
+    /// The Session a detail surface previews against, so no specimen subscripts the roster.
     static var preview: Self {
         CockpitPresentation.preview.sessions[0]
     }

@@ -25,9 +25,8 @@ struct SessionRosterProjectionTests {
 
     @Test
     func `every Session status spends the one word it has earned`() {
-        // `Needs input` says what the Session is waiting for rather than who it wants.
-        // `Stopped` says the Turn ended short — which is what the status means, not that
-        // anything crashed; `ended` is a cancelled or exited Session and reads idle.
+        // `Stopped` means the Turn ended short, not that anything crashed; `ended` is a
+        // cancelled or exited Session and reads idle.
         let expected: [(status: SessionStatus, word: String?)] = [
             (.running, nil),
             (.permission, "Needs input"),
@@ -38,16 +37,14 @@ struct SessionRosterProjectionTests {
             (.unknown, nil),
         ]
 
-        // Every status is answered here, in the order the rows come back in, so a status
-        // added to the domain fails rather than quietly inheriting its colour role's word.
+        // Every status is answered here, so one added to the domain fails rather than quietly
+        // inheriting its colour role's word.
         #expect(expected.map(\.status) == SessionStatus.allCases)
         #expect(rows(of: expected.map(\.status)).map(\.stateWord) == expected.map(\.word))
     }
 
     @Test
     func `the announced word is the drawn word, never a second claim beside it`() throws {
-        // The word is one decision made once: a label that said `Failed` while the row read
-        // `Stopped` would be the roster telling a screen reader something else.
         let row = try #require(rows(RosterSessionFixture.session(id: "stopped", status: .stopped))
             .first)
 
@@ -67,16 +64,14 @@ struct SessionRosterProjectionTests {
             )).first,
         )
 
-        // No empty slot where the word would have been, and the read-only fact — which the
-        // lock is allowed to suppress visually — is never suppressed here.
+        // No empty slot where the word would have been.
         #expect(row.announcement == "Session quiet, in tkt-537, last active 2m ago")
     }
 
     @Test
     func `every Session status has one colour role, and unknown has none`() {
-        // `allCases`, so a status added to the domain fails here rather than quietly taking
-        // whichever colour the mapping's last branch happens to be.
-        // A dot is a claim about what the Session is doing; `unknown` makes none.
+        // `allCases`, so a status added to the domain fails here rather than taking whichever
+        // colour the mapping's last branch happens to be.
         #expect(rows(of: SessionStatus.allCases).map(\.state) == [
             .running, .attention, .attention, .idle, .failure, .idle, nil,
         ])
@@ -98,10 +93,7 @@ struct SessionRosterProjectionTests {
         )
 
         #expect(mixed.map(\.isReadOnly) == [false, true])
-        // A roster where every Session is read-only says so on every row. The glyph this
-        // replaced was suppressed here, because a badge repeated down a list distinguishes
-        // nothing — a row drawn quieter than its neighbours carries no such cost, and there
-        // are no neighbours to compare against on a roster of one.
+        // A roster where every Session is read-only says so on every row.
         #expect(uniform.map(\.isReadOnly) == [true, true])
     }
 
@@ -135,8 +127,7 @@ struct SessionRosterProjectionTests {
             lastSeenAtMs: msAgo(120),
         )).first)
 
-        // `ago` and not a bare `2m`, which reads as how long something took rather than as
-        // how long since it happened.
+        // `ago` and not a bare `2m`, which would read as how long something took.
         #expect(row.age == "2m ago")
     }
 
@@ -184,9 +175,7 @@ struct SessionRosterProjectionTests {
             )).first,
         )
 
-        // The age holds the left of the second line: a running row that skipped it left the
-        // worktree beside an empty column, reading as a differently-built row rather than a live
-        // one. The status decides the dot, never whether the line is there.
+        // The status decides the dot, never whether the age line is there.
         #expect(row.age == "2m ago")
     }
 
@@ -195,7 +184,7 @@ struct SessionRosterProjectionTests {
         let row = try #require(rows(RosterSessionFixture.session(id: "timeless", lastSeenAtMs: nil))
             .first)
 
-        // Absence renders as absence. A placeholder would read as a moment nobody observed.
+        // Absence renders as absence.
         #expect(row.age == nil)
     }
 
@@ -206,8 +195,7 @@ struct SessionRosterProjectionTests {
             explicitName: "The overnight run",
         )).first)
 
-        // The name you set is the name you see — on the row above all, since the row is where
-        // you set it (#502, story 19).
+        // The name you set is the name you see (#502, story 19).
         #expect(row.title == "The overnight run")
         #expect(row.announcement.hasPrefix("The overnight run"))
     }
@@ -216,8 +204,7 @@ struct SessionRosterProjectionTests {
         SessionRosterProjection.rows(from: [session], now: now)
     }
 
-    /// One row per status, in the order given, so a per-status mapping is asserted against
-    /// the statuses it was written for rather than against seven anonymous slots.
+    /// One row per status, in the order given.
     private func rows(of statuses: [SessionStatus]) -> [SessionRosterProjection.Row] {
         SessionRosterProjection.rows(
             from: statuses.enumerated()

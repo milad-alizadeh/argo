@@ -2,8 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 
 /// Calls as a transcript writes them — an emitted call, and the outcome that answers it some
-/// records later. Every fixture here is a pair for that reason: a call written as one finished
-/// object would skip the half of the reading that has to find its result at all.
+/// records later. Every fixture here is a pair, so the reading still has to find its result.
 enum FeedFixture {
     static func call(
         _ id: String,
@@ -26,8 +25,7 @@ enum FeedFixture {
         ToolCallOutcome(id: id, status: .completed, result: nil, endedAtMs: nil, usage: usage)
     }
 
-    /// The question tool, carrying a question. Named `ask` because one is all any of these
-    /// fixtures needs, and the id is what the outcome answering it has to quote.
+    /// The question tool, carrying a question. The id `ask` is what an outcome answering it quotes.
     static func asking(_ questions: Ask.Question...) -> ToolCall {
         ToolCall(
             id: "ask",
@@ -49,9 +47,8 @@ enum FeedFixture {
         )
     }
 
-    /// A patch, with a hunk in it unless the fixture is asking for one nothing could read. The hunk
-    /// is what makes it something the panel can show — a change with no readable patch is a row
-    /// that does not open, and half these fixtures are about that difference.
+    /// A patch, with a hunk in it unless the fixture is asking for one nothing could read. A change
+    /// with no readable patch is a row that does not open.
     static func patch(
         _ change: FileChange,
         added: Int = 0,
@@ -103,21 +100,15 @@ enum FeedFixture {
         ]
     }
 
-    /// Every call a stream produced, in order — what the assertions are actually about.
-    ///
-    /// Reaches INSIDE a folded run of looking. What a call says it did is a claim about the call;
-    /// whether it got a line of its own is a claim about the fold, and `surveys(in:)` is where that
-    /// one is made. A helper that stopped at the row would have let the fold quietly empty half the
-    /// vocabulary suite instead of failing it.
+    /// Every call a stream produced, in order. Reaches INSIDE a folded run of looking; whether a
+    /// call got a line of its own is `surveys(in:)`'s claim.
     static func calls(in events: [TranscriptEvent]) -> [FeedCall] {
         FeedProjection.rows(from: events).flatMap { row -> [FeedCall] in
             switch row.content {
             case let .call(call): [call]
             case let .survey(survey): survey.calls
-            // A gallery keeps its pictures and drops the sentence that carried them: a run of six
-            // shots has no line left to make a claim about. `galleries(in:)` is where that half is
-            // asserted — and `asks(in:)`, `marks(in:)` and `unreadable(in:)` are where the other
-            // kinds' are.
+            // A gallery keeps its pictures and drops the sentence that carried them; those are
+            // asserted through `galleries(in:)`, `asks(in:)`, `marks(in:)` and `unreadable(in:)`.
             case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: []
             }
         }

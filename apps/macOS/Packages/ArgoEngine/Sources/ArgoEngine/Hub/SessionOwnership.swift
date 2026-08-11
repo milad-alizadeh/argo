@@ -3,12 +3,11 @@ import Foundation
 /// Which Sessions Argo OWNS, for this Argo process only (CONTEXT.md L2, ADR-0013).
 ///
 /// Managed-ness is not durable: the PTY dies with the owning Argo and cannot be re-adopted, so this
-/// registry is deliberately in-memory. A restart re-observes its own Sessions as `external` rather
-/// than re-claiming an ownership it no longer has.
+/// registry is in-memory. A restart re-observes its own Sessions as `external`.
 ///
 /// A claim is keyed by spawn folder AND the window the PTY was alive for, because a CLI picks its
 /// own session id after the spawn returns: on the folder alone, an agent already running there
-/// would read as ours and earn a posture it has not earned.
+/// would read as ours.
 ///
 /// The folder is held RESOLVED (#363). The two sides spell it differently — Argo claims the path
 /// the user registered, and the CLI records the one it reached through `/var` → `/private/var` —
@@ -16,8 +15,7 @@ import Foundation
 @MainActor
 public final class SessionOwnership {
     /// Handle on one act of ownership. Its `value` is also the id the roster carries for the row
-    /// published at spawn, because until the CLI picks a Session id it is the only handle the
-    /// spawn and the terminal share.
+    /// published at spawn — until the CLI picks a Session id it is the only shared handle.
     public struct ClaimID: Hashable, Sendable {
         public let value: String
     }
@@ -35,8 +33,8 @@ public final class SessionOwnership {
     /// without promising the concurrency checker anything about a value only this actor touches.
     private let now: () -> Int
     var claims: [ClaimID: Claim] = [:]
-    /// The order claims were issued in. Kept beside the table because "the newest claim still
-    /// waiting for a Session" is the tie-break, and a dictionary has no order to ask.
+    /// The order claims were issued in — "the newest claim still waiting for a Session" is the
+    /// tie-break, and a dictionary has no order to ask.
     var issuedOrder: [ClaimID] = []
     var boundSessions: [String: ClaimID] = [:]
     private var issued = 0
@@ -70,21 +68,15 @@ public final class SessionOwnership {
 
     /// `managed` while the covering claim's PTY lives, `orphaned` once it has exited, `external`
     /// for a Session no claim covers — including one already running in a folder Argo later
-    /// spawned into.
-    ///
-    /// A Session Argo cannot place — no working directory read, or no time in its records — is
-    /// external by the same rule the whole registry runs on: an unprovable claim is not a claim.
+    /// spawned into, and one Argo cannot place for want of a cwd or a start time.
     public func provenance(cwd: String?, startedAtMs: Int?) -> SessionProvenance {
         guard let id = claimFor(cwd: cwd, startedAtMs: startedAtMs) else { return .external }
         return claims[id]?.toMs == nil ? .managed : .orphaned
     }
 
-    /// The claim a Session belongs to, or nothing.
-    ///
-    /// The claim still WAITING for a Session wins, and the newest of those: spawning twice in one
-    /// folder opens two claims with overlapping windows, and the older one's window never closes
-    /// while its agent lives — so matching on the window alone would hand both Sessions the same
-    /// agent, whichever end of the list it picked from.
+    /// The claim a Session belongs to, or nothing. The claim still WAITING for a Session wins, and
+    /// the newest of those: spawning twice in one folder opens two claims with overlapping windows,
+    /// so matching on the window alone would hand both Sessions the same agent.
     func claimFor(cwd: String?, startedAtMs: Int?) -> ClaimID? {
         let covering = covering(cwd: cwd, startedAtMs: startedAtMs)
         return covering.last { claims[$0]?.sessionID == nil } ?? covering.last

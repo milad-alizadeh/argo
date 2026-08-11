@@ -4,9 +4,6 @@ import Foundation
 import Testing
 
 /// What archiving does to the roster, as the projection publishes it.
-///
-/// Split from `SessionRosterProjectionTests` on size alone — that suite is the roster's whole
-/// reading and this is one decision made about it, which is the seam already there.
 @Suite("Session roster archive")
 struct SessionRosterArchiveTests {
     /// A fixed clock, for the reason the sibling suite has one: an age is arithmetic against one,
@@ -22,8 +19,7 @@ struct SessionRosterArchiveTests {
 
         let rows = SessionRosterProjection.rows(from: sessions, now: now)
 
-        // Gone from the list, not drawn quieter in it: archiving is how a finished Session
-        // leaves the roster, and a row still on it would be a filter that changed nothing.
+        // Gone from the list, not drawn quieter in it.
         #expect(rows.map(\.id) == ["kept"])
     }
 
@@ -76,8 +72,7 @@ struct SessionRosterArchiveTests {
             now: now,
         ).first)
 
-        // A Session put out of sight is not a Session described differently — the foot draws the
-        // same row the roster would have.
+        // The foot draws the same row the roster would have.
         let kept = try #require(SessionRosterProjection.rows(from: [cleared], now: now).first)
         #expect(row.title == kept.title)
         #expect(row.branch == kept.branch)
@@ -101,9 +96,8 @@ struct SessionRosterArchiveTests {
 
     @Test
     func `the archived roster the specimen renders shows a count and a live cleared Session`() {
-        // The `archivedRoster` PNG is the only evidence the foot has. A fixture with one archived
-        // Session would leave the plural unrendered, and one where everything archived was also
-        // finished would draw a rendering that agreed with the wrong rule.
+        // The `archivedRoster` PNG is the only evidence the foot has: one archived Session would
+        // leave the plural unrendered, and an all-finished set would agree with the wrong rule.
         let archived = ArchivedRosterSpecimen.archived
 
         #expect(archived.count > 1)

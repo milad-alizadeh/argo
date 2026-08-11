@@ -2,15 +2,13 @@ import ArgoEngine
 
 /// What a spend reads as, in words.
 ///
-/// One place, because two surfaces say it — the rail's chips and the reading's own roll-up — and a
-/// figure that meant thousands in one and tokens in the other would be worse than either.
+/// One place, because two surfaces say it — the rail's chips and the reading's own roll-up.
 ///
-/// The UNIT is part of the reading and never dropped. A bare `143.6K` beside a subagent's name is
-/// the shape this exists to prevent: it could be tokens, dollars or lines, and a number nobody can
-/// name is not a fact.
+/// The UNIT is part of the reading and never dropped: a bare `143.6K` could be tokens, dollars or
+/// lines.
 enum FeedSpend {
     /// Every token the record attributed to the work — what was sent, what came back, and the cache
-    /// either way. The whole cost of running it, not the part that is cheapest to defend.
+    /// either way.
     static func total(_ usage: Usage) -> Int {
         usage.inputTokens + usage.outputTokens + usage.cacheReadTokens + usage.cacheCreationTokens
     }

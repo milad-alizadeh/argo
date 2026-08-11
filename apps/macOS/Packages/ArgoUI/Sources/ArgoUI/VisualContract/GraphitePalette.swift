@@ -1,8 +1,5 @@
-/// The one implemented appearance: near-black graphite with Ion Blue.
-///
-/// Every neutral is a true grey with at most a few points of cool lift, so the shell reads
-/// as graphite under glass rather than as navy. The lift is what keeps it from looking like
-/// dead charcoal; anything more and the surfaces start to tint.
+/// The one implemented appearance: near-black graphite with Ion Blue. Every neutral is a true
+/// grey with at most a few points of cool lift — more than that and the surfaces start to tint.
 public extension ArgoPalette {
     static let graphite = ArgoPalette(
         surface: SurfaceRoles(
@@ -22,14 +19,12 @@ public extension ArgoPalette {
             // `AccentColor` asset must carry the same value: the native sidebar capsule
             // reads that, never this.
             selected: ArgoColor(hex: 0xFFFFFF, opacity: 0.058),
-            // Below `sunken` and nearly opaque: a picture opened full size is the only thing
-            // being read, and the graphite left showing through is a frame around it rather
-            // than a deck the eye keeps trying to finish.
+            // Below `sunken` and nearly opaque.
             scrim: ArgoColor(hex: 0x0B0C0E, opacity: 0.90),
             // Above `hover` (0.045) and `selected` (0.058) by a clear margin, so a marked span
-            // never reads as a row that happens to be under the pointer, and quiet enough that a
-            // paragraph carrying several filenames does not come out striped. Resolves to
-            // #2E3033 on the deck and #343638 in a prompt's bubble.
+            // never reads as a row under the pointer, and quiet enough that a paragraph carrying
+            // several filenames does not come out striped. Resolves to #2E3033 on the deck and
+            // #343638 in a prompt's bubble.
             marked: ArgoColor(hex: 0xFFFFFF, opacity: 0.07),
         ),
         text: TextRoles(
@@ -41,8 +36,7 @@ public extension ArgoPalette {
             disabled: ArgoColor(hex: 0x4E545A),
             onAccent: ArgoColor(hex: 0x05070A),
             // There is no `code` ink. A marked span is drawn on `surface.marked` and keeps the
-            // ink of the voice around it (floored by `TextRoles.marked(on:)`) — the ramp above
-            // is the whole of this palette's text, and every rung of it is neutral.
+            // ink of the voice around it, floored by `TextRoles.marked(on:)`.
         ),
         edge: EdgeRoles(
             hairline: ArgoColor(hex: 0xFFFFFF, opacity: 0.08),
@@ -56,9 +50,8 @@ public extension ArgoPalette {
             accentDeep: ArgoColor(hex: 0x1E6FD4),
             selectionIndicator: ArgoColor(hex: 0x3E9BFF),
             focusRing: ArgoColor(hex: 0x6FB6FF),
-            // Deeper and duller than the failure ink above it, which is what a GROUND under a
-            // whole block of a row has to be: at the ink's brightness the Archive shouted louder
-            // than every Session on the roster put together.
+            // Deeper and duller than the failure ink above it: this is a GROUND under a whole
+            // block of a row, not an ink.
             destructive: ArgoColor(hex: 0xB3372F),
         ),
         state: StateRoles(
@@ -67,15 +60,12 @@ public extension ArgoPalette {
             attention: ArgoColor(hex: 0xE8B24A),
             failure: ArgoColor(hex: 0xF2555C),
         ),
-        // The study drew these as the running teal and the failure red, and said so as an open
-        // gap: at a glance a `+8` then read as a live Session. Held apart here — a sage that is
-        // nothing like the running signal, and a rose well off the failure red.
+        // Held clear of `state.running` and `state.failure`, or a `+8` reads as a live Session.
         diff: DiffRoles(
             added: ArgoColor(hex: 0xA9D18E),
             removed: ArgoColor(hex: 0xD98C93),
         ),
-        // Source code takes no ink from this palette. The evidence panel reads a patch in Xcode's
-        // own dark theme (`SyntaxTheme`) — the one surface where matching the editor the reader
-        // already has open beats matching the shell around it.
+        // Source code takes no ink from this palette: the evidence panel reads a patch in Xcode's
+        // own dark theme (`SyntaxTheme`).
     )
 }

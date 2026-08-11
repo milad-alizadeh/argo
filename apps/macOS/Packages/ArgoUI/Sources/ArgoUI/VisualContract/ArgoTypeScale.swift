@@ -1,17 +1,10 @@
 import SwiftUI
 
-/// The type scale, which is Apple's: the macOS text styles from the Human Interface Guidelines,
-/// named exactly as the HIG names them.
-///
-/// Not a ladder of Argo's own. A generic scale is reusable — `body` is `body` on every surface —
-/// and taking the platform's means the sizes, weights and leading are the ones every other Mac app
-/// is built on, and that Accessibility text-size settings already know how to scale. What the app
-/// had instead was eleven sizes, two of them half-points, each named for the one thing that first
-/// needed it.
+/// The type scale, which is Apple's: the macOS HIG text styles under the HIG's own names, so
+/// Accessibility text-size settings already know how to scale them.
 ///
 /// Rendering goes through the SEMANTIC style rather than a number, so a line takes Apple's metrics
-/// and not a copy of them. `size` below is the documented macOS value, and exists only for the
-/// arithmetic a line height has to do and for what the contract asserts.
+/// and not a copy. `size` below is the documented macOS value, for line-height arithmetic only.
 public enum ArgoTypeScale: Sendable, CaseIterable {
     case largeTitle
     case title1
@@ -41,8 +34,7 @@ public enum ArgoTypeScale: Sendable, CaseIterable {
         }
     }
 
-    /// The size the HIG's macOS table gives this style. Read, never set: it is what the platform
-    /// draws, written down so a line height can be computed against it.
+    /// The size the HIG's macOS table gives this style. Read, never set — the platform draws it.
     public var size: CGFloat {
         switch self {
         case .largeTitle: 26
@@ -56,12 +48,9 @@ public enum ArgoTypeScale: Sendable, CaseIterable {
         }
     }
 
-    /// What the system already sets a line at, as a multiple of its point size.
-    ///
-    /// SwiftUI has no line-height modifier: `lineSpacing` is the EXTRA leading on top of the
-    /// font's own, so anything wanting a line to occupy a stated height does the subtraction
-    /// itself. A fact about how the platform draws type, so it sits with the ladder rather than
-    /// with whichever surface first needed it.
+    /// What the system already sets a line at, as a multiple of its point size. SwiftUI has no
+    /// line-height modifier: `lineSpacing` is the EXTRA leading on top of the font's own, so
+    /// anything wanting a line to occupy a stated height does the subtraction itself.
     static let naturalLineHeightRatio: CGFloat = 1.21
 
     /// Every rung, largest first, for the specimen and the contract's assertions.
@@ -75,7 +64,7 @@ public enum ArgoTypeScale: Sendable, CaseIterable {
 
 public extension View {
     /// A rung of the scale in the interface sans. The weight is Apple's unless one is named — a
-    /// `headline` is bold because the HIG says so, and a call site that passes nothing gets that.
+    /// `headline` is bold because the HIG says so.
     func argoText(_ rung: ArgoTypeScale, _ weight: Font.Weight? = nil) -> some View {
         font(.system(rung.style, design: .default, weight: weight))
     }

@@ -1,15 +1,9 @@
 import SwiftUI
 
-/// One picture, opened over the deck at the size it actually is.
-///
-/// It covers the whole deck rather than the feed column, because the column is a reading measure
-/// and a screenshot taken at deck width does not fit in it. Everything is a way out: the scrim is
-/// the button, the picture is inside the button, and Escape answers as well — a reader who opened
-/// this with a click should never have to find a particular pixel to close it.
-///
-/// The caption is the WHOLE path plus the provenance, which is more than the thumbnail said. Down
-/// in the gallery the shot stands beside its neighbours and a filename places it; here it is alone
-/// on the deck, and the address is the only thing that says which of six renders this one was.
+/// One picture, opened over the deck at the size it actually is. It covers the whole deck rather
+/// than the feed column, which is a reading measure a deck-width screenshot does not fit in.
+/// Everything is a way out: the scrim is the button, the picture is inside it, and Escape answers.
+/// The caption is the WHOLE path plus the provenance, which is more than the thumbnail said.
 struct FeedLightbox: View {
     @Environment(\.argo) private var argo
 
@@ -20,13 +14,12 @@ struct FeedLightbox: View {
 
     var body: some View {
         ZStack {
-            // The scrim lands at full dim on the first frame, the way Preview's does. Faded WITH
-            // the picture, the reading stays bright under a half-opaque overlay for the whole way
-            // in — a double exposure over the prose that reads as the entire lightbox flickering.
-            // The way out fades it with the picture: a scrim gone early would float a ghost of
-            // the image over bright text, the same flash mirrored. Independent transitions only
-            // work because the CONTAINER'S transition is `.identity` (see `argoLightbox`) — a
-            // parent opacity would composite both layers into one translucent group again.
+            // The scrim lands at full dim on the first frame; faded WITH the picture, the reading
+            // stays bright under a half-opaque overlay the whole way in and reads as a flicker. On
+            // the way out it fades with the picture, or a ghost of the image floats over bright
+            // text. Independent transitions only work because the CONTAINER'S transition is
+            // `.identity` (see `argoLightbox`) — a parent opacity composites both layers into one
+            // translucent group again.
             Rectangle()
                 .fill(argo.color.surface.scrim)
                 .transition(.asymmetric(insertion: .identity, removal: .opacity))
@@ -50,8 +43,7 @@ struct FeedLightbox: View {
         .accessibilityAction(named: "Close", dismiss)
     }
 
-    /// Full size means as large as the deck allows and never larger than the file: blowing a 64pt
-    /// icon up to fill a window is the surface inventing detail the bytes do not carry.
+    /// Full size means as large as the deck allows and never larger than the file.
     @ViewBuilder private var lit: some View {
         if let picture = showing.picture {
             Image(nsImage: picture.image)
@@ -86,18 +78,11 @@ struct FeedLightbox: View {
 }
 
 extension View {
-    /// The lightbox, laid over whatever it is applied to.
+    /// The lightbox, laid over whatever it is applied to — a modifier rather than a view the deck
+    /// composes, because it has to cover every zone of the deck at once and the only place that is
+    /// one view is the deck's own outermost body.
     ///
-    /// A modifier rather than a view the deck composes, because a picture opened full size has to
-    /// cover every zone of the deck at once — the feed it was clicked in, the panel beside it and
-    /// the rail — and the only place that is one view is the deck's own outermost body.
-    ///
-    /// The fade is `reveal`, so it answers Reduce Motion the way every other disclosure in the
-    /// shell does: the change still registers, it just stops moving.
-    /// A shot with no picture opens nothing, here as well as on the thumbnail that offers no click:
-    /// the gallery is not the only way this can be set, and a scrim over a caption with no image
-    /// under it is the one state the lightbox has no honest reading of.
-    ///
+    /// The fade is `reveal`, so it answers Reduce Motion. A shot with no picture opens nothing.
     /// It takes the feed as well as the selection because closing has to hand the keyboard back to
     /// the gallery the picture came from, and the shot alone does not say which row that was.
     func argoLightbox(_ selection: FeedRowSelection, in feed: [FeedRow]) -> some View {
@@ -109,9 +94,8 @@ extension View {
                     .focusable()
                     .focused(selection.focus, equals: .lightbox)
                     // `.identity`, never `.opacity`: a transition here composites the WHOLE
-                    // lightbox — scrim, picture, caption — into one translucent group, and the
-                    // reading burns through all of it for the length of the fade. The layers
-                    // carry their own transitions instead (see `FeedLightbox.body`).
+                    // lightbox into one translucent group and the reading burns through it for the
+                    // length of the fade. The layers carry their own (see `FeedLightbox.body`).
                     .transition(.identity)
             }
         }

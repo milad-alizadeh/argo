@@ -2,9 +2,8 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// Looking is quiet. A turn that reads nine files before it changes one is nine rows of traffic
-/// above the row worth seeing, so a run of reads and searches folds to a single line of counts —
-/// and the claims here are mostly about where that fold is NOT allowed to reach.
+/// A run of reads and searches folds to a single line of counts — and the claims here are mostly
+/// about where that fold is NOT allowed to reach.
 @Suite("Feed surveys")
 struct FeedSurveyTests {
     @Test
@@ -16,8 +15,8 @@ struct FeedSurveyTests {
         #expect(survey.label == "Searched 1 · Read 3")
     }
 
-    /// The break rule is the whole point: it makes "Edited a file, ran a command, read a file" mush
-    /// structurally impossible rather than merely discouraged.
+    /// The break rule makes "Edited a file, ran a command, read a file" mush structurally
+    /// impossible.
     @Test
     func `a mutation breaks the run, and the reads either side of it are two surveys`() {
         let interrupted = looking(at: ["a.swift", "b.swift"])
@@ -44,7 +43,7 @@ struct FeedSurveyTests {
     }
 
     /// A run of reads sits directly above the message that follows it, and never absorbs the reads
-    /// that came after. Prose is where one piece of work ends and the next begins.
+    /// that came after.
     @Test
     func `prose breaks the run`() {
         let interrupted = looking(at: ["a.swift", "b.swift"])
@@ -54,8 +53,8 @@ struct FeedSurveyTests {
         #expect(FeedProjection.rows(from: interrupted).count == 3)
     }
 
-    /// A failed read is not quiet. It is the one thing on the line worth seeing, and a fold would
-    /// bury it inside a count that says everything went fine.
+    /// A failed read is not quiet: a fold would bury it inside a count that says everything went
+    /// fine.
     @Test
     func `a read that failed stays its own row and breaks the run`() {
         let broken: [TranscriptEvent] = [
@@ -72,10 +71,7 @@ struct FeedSurveyTests {
         #expect(FeedFixture.calls(in: broken).map(\.ending) == [.pending, .failed, .pending])
     }
 
-    /// `isQuiet` is true for `.read`, so a `Read` of a PNG is a read like any other to the fold and
-    /// would vanish into `Read 5` — the one row in the run whose whole content is the thing a count
-    /// cannot say. It leaves the run instead, and the reads either side of it are two counted
-    /// lines.
+    /// `isQuiet` is true for `.read`, so a `Read` of a PNG would otherwise vanish into `Read 5`.
     @Test
     func `a picture breaks the run, and the reads either side of it are two surveys`() {
         let interrupted = looking(at: ["a.swift", "b.swift"])
@@ -90,9 +86,8 @@ struct FeedSurveyTests {
         ])
     }
 
-    /// The other side of the same boundary: the picture is not merely absent from the counts, it is
-    /// on screen as a picture. A fold that dropped it would satisfy the assertion above and lose
-    /// the render the turn was about.
+    /// The other side of the same boundary: a fold that dropped the picture entirely would satisfy
+    /// the assertion above.
     @Test
     func `a picture surrounded by reads is drawn as a gallery rather than counted`() throws {
         let interrupted = looking(at: ["a.swift"])
@@ -105,8 +100,7 @@ struct FeedSurveyTests {
         #expect(gallery.shots.map(\.name) == ["render.png"])
     }
 
-    /// `Read 1` is the same line with the filename taken off it — a fold that loses information and
-    /// saves no room. One quiet call is already as short as it gets.
+    /// `Read 1` is the same line with the filename taken off it — a fold that saves no room.
     @Test
     func `a single read keeps its filename rather than folding to a count of one`() throws {
         let alone: [TranscriptEvent] = [
@@ -123,7 +117,7 @@ struct FeedSurveyTests {
     }
 
     /// Counts follow the CALLS and not the rows: three reads of one file are already one collapsed
-    /// row, and a survey saying `Read 1` about it would be counting lines rather than work.
+    /// row.
     @Test
     func `a collapsed run inside a survey counts every call it stands for`() throws {
         let repeated: [TranscriptEvent] = (0 ..< 3).map { position in
@@ -141,8 +135,8 @@ struct FeedSurveyTests {
         #expect(survey.label == "Read 4")
     }
 
-    /// Folding is not discarding. Everything the run produced is still one click away, and each
-    /// result says which of the files it came from — the one thing the folded line no longer does.
+    /// Folding is not discarding: everything the run produced is still one click away, each result
+    /// saying which file it came from.
     @Test
     func `the fold keeps every result, each addressed by the call that produced it`() throws {
         let survey = try #require(
@@ -154,9 +148,8 @@ struct FeedSurveyTests {
         #expect(survey.opened.steps.map(\.address.text) == ["*Row", "a.swift", "b.swift"])
     }
 
-    /// Nothing above a step says what it is, which makes the step the only place its language can
-    /// come from. One language for the panel would colour every result in the run after whichever
-    /// file happened to be read first.
+    /// Nothing above a step says what it is, so one language for the whole panel would colour every
+    /// result after whichever file happened to be read first.
     @Test
     func `each step of a folded run carries its own language`() throws {
         let survey = try #require(

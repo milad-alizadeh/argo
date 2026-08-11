@@ -4,8 +4,8 @@ import Foundation
 /// the user's answer. DIRECT and managed-only — Argo owns the hook that raised it and the channel
 /// the answer goes back down.
 public struct PermissionRequest: Sendable, Equatable, Identifiable {
-    /// What the gated call would act ON, verbatim and in full: a decision made on a truncated
-    /// command is a guess, which is the thing the prompt exists to prevent.
+    /// What the gated call would act ON, verbatim and in full — a decision made on a truncated
+    /// command is a guess.
     public enum Target: Sendable, Equatable {
         case command(String)
         /// A path and what would be written there, one hunk per edit. All-adds for a file the

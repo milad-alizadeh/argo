@@ -28,7 +28,7 @@ struct EvidenceLanguageTests {
     }
 
     /// A fence with no info string, or one naming something Argo has no grammar for, is drawn as
-    /// it arrived. Guessing at the characters inside it is the thing this whole type refuses.
+    /// it arrived.
     @Test
     func `a fence declaring nothing Argo knows takes no grammar`() {
         #expect(EvidenceLanguage(declared: "") == nil)
@@ -44,8 +44,7 @@ struct EvidenceLanguageTests {
         #expect(EvidenceLanguage.allCases.allSatisfy { !$0.alias.isEmpty })
     }
 
-    /// A file Argo cannot name is drawn plain. Guessing from the contents would be Argo asserting
-    /// a language the record never carried, and the honest answer costs nothing but colour.
+    /// A file Argo cannot name is drawn plain, never guessed at from its contents.
     @Test
     func `a name carrying no extension Argo knows has no language`() {
         #expect(EvidenceLanguage(path: "Makefile") == nil)
@@ -54,8 +53,7 @@ struct EvidenceLanguageTests {
     }
 
     /// The panel's header is open on what HAPPENED, so it takes the call's own mark whatever the
-    /// subject was. The language's mark belongs to a step, beside the one address it is true of —
-    /// a header carrying it would be claiming a language across four files.
+    /// subject was. The language's mark belongs to a step, beside the one address it is true of.
     @Test
     func `the header takes the mark of what the call was, never the language's`() throws {
         #expect(try opened(.read, file: "Makefile").symbol == ArgoSymbol.read)

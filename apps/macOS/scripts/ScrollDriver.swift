@@ -1,10 +1,8 @@
 #!/usr/bin/env swift
-// Scrolls a running Argo's feed at a fixed cadence, so "is scrolling smooth" can be asked of a
-// repeatable input instead of a hand on a trackpad. A hand cannot scroll the same way twice, and a
-// frame-rate number is only worth comparing against another one taken the same way.
+// Scrolls a running Argo's feed at a fixed cadence, so a frame-rate number is taken against a
+// repeatable input rather than a hand on a trackpad.
 //
-// Run as a script rather than built into a target, for the same reason `WindowID.swift` is: nothing
-// that ships in the app should be able to synthesise input events.
+// A script rather than a target: nothing that ships in the app may synthesise input events.
 //
 //   swift ScrollDriver.swift [app] [seconds] [ticksPerSecond] [pixelsPerTick]
 //
@@ -23,12 +21,9 @@ let seconds = Double(arguments.count > 2 ? arguments[2] : "") ?? 8
 let ticksPerSecond = Double(arguments.count > 3 ? arguments[3] : "") ?? 60
 let pixelsPerTick = Int32(arguments.count > 4 ? arguments[4] : "") ?? 12
 
-// Raised before anything is aimed at it, and this is the whole ballgame. A scroll event goes to
-// whatever window is UNDER the pointer, not to the window whose coordinates were used to place it
-// — so a target sitting behind the terminal that launched this receives nothing, and the terminal
-// receives a scroll nobody asked for. That failure looks exactly like a measurement: the driver
-// reports its ticks, the sampler reports an idle app, and the conclusion drawn is about the wrong
-// window entirely.
+// Raised before anything is aimed at it. A scroll event goes to whatever window is UNDER the
+// pointer, not to the window whose coordinates placed it — so a target behind the launching
+// terminal gets nothing and the terminal gets the scroll, which looks exactly like a measurement.
 guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first
     ?? NSWorkspace.shared.runningApplications.first(where: { $0.localizedName == appName })
 else {
@@ -56,16 +51,13 @@ else {
     exit(1)
 }
 
-/// Aimed at the feed rather than at the window's middle. The deck sits right of the sidebar and the
-/// feed is the column left of the minimap, so a little past half way across is inside the reading
-/// at every width the window allows.
+/// Aimed at the feed, not the window's middle: a little past halfway across is inside the reading
+/// at every allowed width.
 let target = CGPoint(x: x + width * 0.55, y: y + height * 0.55)
 
-/// Checked rather than assumed, because activating an app is not the same as clearing the point.
-/// A panel, an overlay or a window the activation did not raise can still be over the pixel this
-/// aims at, and the events would go there instead — silently, and reported as a completed run. The
-/// list is front-to-back, so the first layer-0 window containing the point is the one that gets
-/// them.
+/// Activating an app is not the same as clearing the point: a panel or an unraised window can still
+/// be over the target pixel and would take the events silently. The list is front-to-back, so the
+/// first layer-0 window containing the point is the one that gets them.
 let frontmostAtTarget = windows.first { window in
     guard window[kCGWindowLayer as String] as? Int == 0,
           let frame = window[kCGWindowBounds as String] as? [String: Any],
@@ -91,8 +83,7 @@ guard owner == appName else {
 
 CGWarpMouseCursorPosition(target)
 
-/// Down for the first half and back up for the second. A scroll that only ever ran one way would
-/// measure the cost of realising rows and never the cost of coming back through rows already seen.
+/// Down for the first half and back up for the second, so rows already seen are measured too.
 let ticks = Int(seconds * ticksPerSecond)
 let interval = 1 / ticksPerSecond
 

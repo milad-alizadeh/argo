@@ -8,9 +8,7 @@ import Testing
 ///
 /// Every child here writes and then SLEEPS rather than exiting on its own. SwiftTerm watches for
 /// the exit with a `DispatchSource` process source, and a child that is already dead by the time
-/// that source is armed may never deliver — a race no assertion here could win and none of Argo's
-/// behaviour depends on. What Argo does depend on is `terminate()` ending the agent, so that is
-/// what is asserted.
+/// that source is armed may never deliver. What is asserted instead is `terminate()` ending it.
 @Suite("SwiftTerm process host")
 @MainActor
 struct SwiftTermProcessHostTests {
@@ -20,8 +18,7 @@ struct SwiftTermProcessHostTests {
         var received: [UInt8] = []
         var hasExited = false
 
-        // Held, not discarded: the handle owns the PTY, so dropping it ends the agent. That is why
-        // the Hub adopts every spawn into its terminal registry rather than letting one go.
+        // Held, not discarded: the handle owns the PTY, so dropping it ends the agent.
         let process = try host.start(
             Self.shell("echo argo-companion"),
             events: AgentProcessEvents(
@@ -72,8 +69,7 @@ struct SwiftTermProcessHostTests {
         await Self.settle { Self.text(received).contains("steered") }
         process.terminate()
 
-        // A PTY echoes what is typed at it, so this is the whole steering loop: Argo writes, the
-        // child's terminal answers.
+        // A PTY echoes what is typed at it, so this is the whole steering loop.
         #expect(Self.text(received).contains("steered"))
     }
 
@@ -86,8 +82,8 @@ struct SwiftTermProcessHostTests {
         )
     }
 
-    /// What the PTY carried, read as text. A terminal's bytes are not text in general — that is
-    /// why the port carries bytes — but the one thing these children write is.
+    /// What the PTY carried, read as text. A terminal's bytes are not text in general, but the one
+    /// thing these children write is.
     private static func text(_ bytes: [UInt8]) -> String {
         String(bytes: bytes, encoding: .utf8) ?? ""
     }

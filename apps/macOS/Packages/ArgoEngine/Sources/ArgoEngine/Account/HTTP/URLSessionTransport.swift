@@ -16,9 +16,8 @@ public struct URLSessionTransport: HTTPTransport {
     public func send(_ request: HTTPRequest) async throws -> Data {
         let (data, response) = try await session.data(for: urlRequest(request))
         guard let http = response as? HTTPURLResponse else { return data }
-        // A refused token is its own answer and never a body worth parsing: read as data it would
-        // surface as "the provider said something undocumented", which is the wrong diagnosis for
-        // the likeliest real failure there is — a grant that has been revoked.
+        // A refused token is its own answer and never a body worth parsing — read as data it would
+        // surface as an undocumented reply rather than as the revoked grant it is.
         if http.statusCode == 401 || http.statusCode == 403 {
             throw HTTPTransportError.unauthorized(code: http.statusCode)
         }

@@ -3,11 +3,8 @@ import SwiftUI
 /// The affordance for STARTING a Session: one icon at the leading edge of the bar, in a glass
 /// container of its own, next to the system sidebar toggle.
 ///
-/// The glass is spelled HERE and not left to the toolbar, which is the opposite of what the two
-/// vessels do — and for their own reason. A vessel takes the toolbar's glass so its halves MERGE
-/// into one capsule; this control must not merge with anything, so its item hides the shared
-/// background and carries its own. Between them: one capsule per reading, and a verb is its own
-/// reading, not a fourth fact inside "this Project, on this checkout".
+/// The glass is spelled HERE and not left to the toolbar: this control must not merge with a
+/// neighbour, so its item hides the shared background and carries its own.
 struct NewSessionButton: View {
     /// How far the mark moves right and up to sit centred in its container. One number for both
     /// axes because the symbol's own imbalance is diagonal.
@@ -22,10 +19,8 @@ struct NewSessionButton: View {
 
     let offer: NewSessionOffer
     let spawn: () async -> Void
-    /// Whether a spawn is in flight. A parameter with a `@State` default rather than state alone,
-    /// so a render harness can put the waiting state on screen — the wait is a second or two on the
-    /// first spawn of a window and unreachable by hand, which is the definition of a state nobody
-    /// ever looks at unless it is addressable.
+    /// A parameter with a `@State` default rather than state alone, so a render harness can put the
+    /// waiting state on screen — by hand it lasts a second or two on a window's first spawn only.
     @State var isStarting = false
 
     var body: some View {
@@ -34,8 +29,7 @@ struct NewSessionButton: View {
                 // A SQUARE of the bar's own container height, and not `toolbarSegment()`: that
                 // modifier measures a segment INSIDE a vessel, so it sized this container to one
                 // glyph plus padding — shorter than every other container on the bar, and with
-                // the mark sitting off its centre. A square frame is what centres a lone mark,
-                // and at this height its circle is the shape the platform gives a lone verb.
+                // the mark sitting off its centre.
                 //
                 // On the CONTAINER and not on either mark, so the swap below cannot move the bar.
                 .frame(
@@ -64,10 +58,9 @@ struct NewSessionButton: View {
 
     /// The verb, or the wait in its place.
     ///
-    /// A spinner, which is the one looping thing in this app: `ArgoMotion`'s rule against ambient
-    /// animation is about a cockpit sitting open all day, and this runs for as long as a login
-    /// shell takes to report a `PATH` — not one frame longer. The alternative was a dimmed glyph,
-    /// and a dimmed glyph is what this button already looks like when it is refusing to act.
+    /// A spinner, the one looping thing in this app: `ArgoMotion`'s rule against ambient animation
+    /// is about a cockpit sitting open all day, and this runs only as long as a login shell takes
+    /// to report a `PATH`.
     @ViewBuilder private var mark: some View {
         if isStarting {
             ProgressView()
@@ -77,9 +70,8 @@ struct NewSessionButton: View {
                 .foregroundStyle(ink)
                 // `square.and.pencil` draws its square in the LOWER-LEFT of its own glyph box and
                 // spends the top-right on the pencil, so a box centred in the container leaves the
-                // body of the mark 1.3pt down and left of centre — measured off the render, not
-                // guessed. The correction centres the SQUARE, which is what the eye tracks; it
-                // belongs to this symbol and moves with it.
+                // body of the mark 1.3pt down and left of centre. The correction centres the
+                // SQUARE, and belongs to this symbol.
                 .offset(x: Self.opticalCentring, y: -Self.opticalCentring)
         }
     }
@@ -91,9 +83,8 @@ struct NewSessionButton: View {
         return offer.blocked ?? "\(NewSessionOffer.label) — \(NewSessionOffer.shortcutDescription)"
     }
 
-    /// The flag is raised before the await and lowered after it, whichever way the spawn went: a
-    /// refusal reports itself in an alert the app puts up, and a button still spinning behind that
-    /// alert would be claiming the agent is on its way.
+    /// Lowered after the await whichever way the spawn went: a refusal reports itself in an alert,
+    /// and a button still spinning behind it would be claiming the agent is on its way.
     private func start() {
         isStarting = true
         Task {
@@ -121,9 +112,8 @@ struct NewSessionButton: View {
         .argoAppearance()
 }
 
-// The first spawn of a window shells out to a login shell to find the user's `PATH` before it can
-// start anything, and until this state existed that whole wait looked exactly like a press that
-// did nothing (#361's argument, one layer earlier).
+// The first spawn of a window shells out to a login shell for the user's `PATH` before it can start
+// anything, and that whole wait otherwise looks exactly like a press that did nothing (#361).
 #Preview("New Session button — a spawn in flight") {
     NewSessionButton(
         offer: NewSessionOffer(presentation: .preview),

@@ -3,8 +3,7 @@ import Foundation
 import Testing
 
 /// The second annotation, round-tripped through the same throwaway `userData` location the first
-/// one is. Renaming is only worth doing because the name outlives the launch it was typed in
-/// (#502, story 21), and that claim is a claim about a file.
+/// one is. The name has to outlive the launch it was typed in (#502, story 21).
 @Suite("Session rename store")
 struct SessionRenameStoreTests {
     @Test

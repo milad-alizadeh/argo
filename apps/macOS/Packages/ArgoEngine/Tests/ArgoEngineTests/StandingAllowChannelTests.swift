@@ -61,8 +61,7 @@ struct StandingAllowChannelTests {
         try await PermissionGate.withGate { fixture, claim, client in
             try await Self.stand(on: fixture, claim, answering: client)
 
-            // Taken back without the Session ending, which is the whole of the second complaint
-            // in #572: a standing decision with no way back is not one made carefully.
+            // Taken back without the Session ending (#572).
             try fixture.hub.driver.revokeStandingAllow("Bash", for: claim.value)
             #expect(fixture.hub.sessions.first?.standingAllows.isEmpty == true)
 
@@ -86,8 +85,7 @@ struct StandingAllowChannelTests {
         }
     }
 
-    /// Raise one `Bash` call and answer it `allowAlways` — the only way a grant is ever made, so
-    /// the tests that need one standing start by making it the way a user would.
+    /// Raise one `Bash` call and answer it `allowAlways` — the only way a grant is ever made.
     private static func stand(
         on fixture: SpawnFixture,
         _ claim: SessionOwnership.ClaimID,

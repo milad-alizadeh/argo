@@ -3,11 +3,9 @@ import SwiftUI
 /// A fenced block: the agent's characters, on a ground, at the machine role — under the grammar
 /// the agent named, where it named one Argo can read.
 ///
-/// The language comes from the info string and nowhere else. That is what makes the colours a
-/// reading of the record rather than a guess about it: the agent wrote ```` ```swift ````, and a
-/// fence with no info, or one naming something unknown, is drawn exactly as it arrived. Same
-/// theme as the evidence panel's, because a reader looking at Swift twice in one window should
-/// not be reading two dialects of it.
+/// The language comes from the info string and nowhere else, so the colours are a reading of the
+/// record rather than a guess: a fence with no info, or one naming something unknown, is drawn
+/// exactly as it arrived. Same theme as the evidence panel's.
 struct FeedMarkdownFence: View {
     @Environment(\.argo) private var argo
 

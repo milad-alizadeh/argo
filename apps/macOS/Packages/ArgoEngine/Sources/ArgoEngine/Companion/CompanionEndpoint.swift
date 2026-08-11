@@ -2,9 +2,8 @@ import Foundation
 
 /// The MCP server one managed Session talks to, as a pure function from request to reply.
 ///
-/// Pure on purpose: the socket below it is I/O that a test cannot make claims about, while THIS is
-/// the part where a reported fact becomes a CONVENTION-tier fact — which is the claim worth
-/// proving.
+/// Pure on purpose: the socket below it is I/O a test cannot make claims about, while THIS is where
+/// a reported fact becomes a CONVENTION-tier fact.
 struct CompanionEndpoint {
     /// The version of MCP this server answers with. Stated rather than echoed: answering whatever
     /// the client asked for would claim support for a revision this endpoint has never seen.
@@ -30,8 +29,7 @@ struct CompanionEndpoint {
     }
 
     /// Computed rather than stored: these are `[String: Any]` literals, which no `let` at file
-    /// scope may be under strict concurrency, and rebuilding two small dictionaries per handshake
-    /// costs nothing next to the socket round-trip they answer.
+    /// scope may be under strict concurrency.
     private static var handshake: [String: Any] {
         [
             "protocolVersion": protocolVersion,

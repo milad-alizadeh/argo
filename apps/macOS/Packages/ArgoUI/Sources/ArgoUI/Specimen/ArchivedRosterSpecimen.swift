@@ -1,12 +1,8 @@
 import ArgoEngine
 import SwiftUI
 
-/// A roster with Sessions behind its foot: the kept rows, and `Archived (n)` under them.
-///
-/// The judgement the PNG exists for is how QUIET the foot is. It is the one piece of permanent
-/// chrome archiving adds, it sits under a list that is the window's main subject, and a machine
-/// that has archived nothing must not see it at all — so what has to read here is a count that
-/// is findable when it is wanted and invisible when it is not.
+/// A roster with Sessions behind its foot: the kept rows, and `Archived (n)` under them. The
+/// judgement the PNG exists for is how QUIET the foot is.
 struct ArchivedRosterSpecimen: View {
     var body: some View {
         SessionNavigator(rows: Self.rows, archived: Self.archived, selection: .constant(nil))
@@ -16,13 +12,9 @@ struct ArchivedRosterSpecimen: View {
     static let rows = SessionRosterProjection.rows(from: sessions)
     static let archived = SessionRosterProjection.archivedRows(from: sessions)
 
-    /// Two Sessions cleared away and three kept — a count of more than one, because `Archived (1)`
-    /// would leave the label's plural unrendered.
-    ///
-    /// One of the two archived Sessions is RUNNING and carries the newest activity on this
-    /// roster. That is story 16 made visible: a Session does not come back because something
-    /// moved in it, and a fixture where everything archived was also finished would draw a
-    /// rendering that agreed with the wrong rule.
+    /// Two archived and three kept, because `Archived (1)` would leave the label's plural
+    /// unrendered. One archived Session is RUNNING and carries the newest activity here: story 16,
+    /// that a Session does not come back because something moved in it.
     private static let sessions = [
         CockpitPresentation.Session(
             id: "shell",

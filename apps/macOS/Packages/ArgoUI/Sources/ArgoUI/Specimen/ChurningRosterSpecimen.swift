@@ -3,13 +3,11 @@ import SwiftUI
 /// The shell against a roster whose activity order keeps moving — two agents writing at once,
 /// leapfrogging each other on the sort key, with a third Session arriving and ending as they go.
 ///
-/// Its own case because the claim it carries cannot be photographed: a held order and a settled
-/// one are the same picture, and the difference between them is what happened in the second
-/// between two frames. This is the state somebody — or `RosterOrderE2ETests` — watches over time.
+/// Watched over time rather than photographed — a held order and a settled one are the same
+/// picture. `RosterOrderE2ETests` drives it.
 ///
-/// The beat is deliberately slower than the transcript bursts it stands for. The bug is a row
-/// trading places under a pointer already on it, and a churn faster than a person can react to
-/// would be a blur rather than a swap anyone could catch being refused.
+/// The beat is deliberately slower than the transcript bursts it stands for: a churn faster than a
+/// person can react to would be a blur rather than a swap anyone could catch being refused.
 struct ChurningRosterSpecimen: View {
     private static let beat = Duration.milliseconds(900)
     /// How many beats the arriving Session is absent for, then present for. Long enough either way
@@ -34,8 +32,7 @@ struct ChurningRosterSpecimen: View {
     }
 
     /// The roster the Hub would publish on this beat: newest activity first, recomputed from a
-    /// key that moved. A pure function of the beat so the sequence is the same every launch —
-    /// a specimen that churned randomly would fail differently each run.
+    /// key that moved. A pure function of the beat, so the sequence is the same every launch.
     private static func presentation(at beat: Int) -> CockpitPresentation {
         let settled = CockpitPresentation.preview
         var sessions = settled.sessions
@@ -54,9 +51,8 @@ struct ChurningRosterSpecimen: View {
         )
     }
 
-    /// The Session that starts while the reader is in the list and ends again later. At the front
-    /// because it just wrote: a freeze that let it in at the END would be answering a different
-    /// question from the one the sort key asks.
+    /// The Session that starts while the reader is in the list and ends again later, at the front
+    /// because it just wrote.
     private static let arriving = CockpitPresentation.Session(
         id: "arriving",
         title: "Start a Session while the roster is being read",

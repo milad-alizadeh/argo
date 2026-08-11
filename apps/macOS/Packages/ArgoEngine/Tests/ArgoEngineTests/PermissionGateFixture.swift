@@ -4,19 +4,14 @@ import Testing
 
 /// A spawned Session with a client dialled into its permission gate, and the two readings every
 /// suite over that gate needs: where the socket is, and what came back down it.
-///
-/// Shared by both gate suites rather than copied into each — the two are one channel seen from two
-/// angles (the per-action path, and what standing on one changes), and a fixture that drifted
-/// between them would let a suite pass against a gate the other suite is not testing.
 enum PermissionGate {
     /// One gated `Bash` call, as the hook's relay would put it.
     static let bashCall = """
     {"tool_name":"Bash","tool_input":{"command":"rm -rf build"}}
     """
 
-    /// The gate's patience is a parameter because one suite needs both ends of it: a day for every
-    /// test where the clock must never be what decides, and no time at all for the two that are
-    /// about it running out.
+    /// The patience is a parameter because one suite needs both ends of it: a day where the clock
+    /// must never be what decides, and no time at all for the tests about it running out.
     @MainActor
     static func withGate(
         patience: PermissionPatience = .default,

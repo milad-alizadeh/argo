@@ -1,21 +1,17 @@
 import Foundation
 
 /// The rebuildable projection over the observed working set: which transcripts are in it, which
-/// transcript owns each record, and the Sessions those two facts stitch into.
-///
-/// A value with no tasks in it, so dropping a whole Project's worth is `HubJoin()` — there is no
-/// half-cleared state for a straggling event to land in.
+/// transcript owns each record, and the Sessions those two facts stitch into. A value with no tasks
+/// in it, so dropping a whole Project's worth is `HubJoin()`.
 struct HubJoin {
-    /// Rebuilt on mutation rather than on read: the roster is read once per view update and
-    /// written once per transcript event, and only the write side knows when it changed.
+    /// Rebuilt on mutation rather than on read: only the write side knows when it changed.
     private(set) var sessions: [HubSession] = []
 
     /// In the order they joined the set, which is the order the observation projection renders and
     /// the one record ownership is resolved by.
     private(set) var transcripts: [HubTranscript] = []
-    /// Record uuid → the id of the transcript that owns it. Keyed by id rather than by position,
-    /// because dropping one transcript renumbers every position after it and would silently
-    /// re-point owners at a neighbour.
+    /// Record uuid → the id of the transcript that owns it. Keyed by id and not by position:
+    /// dropping one transcript renumbers every position after it.
     private var recordOwners: [String: String] = [:]
 
     var isEmpty: Bool {
@@ -23,8 +19,8 @@ struct HubJoin {
     }
 
     /// Admit a transcript to the working set, unsettled — present for the records it is about to
-    /// claim, absent from the roster until its file has actually been read. Re-adding one already
-    /// here changes nothing, which is what lets a re-entered Project keep the roster it built.
+    /// claim, absent from the roster until its file has been read. Re-adding one already here
+    /// changes nothing.
     mutating func add(_ observation: TranscriptObservation) {
         guard !transcripts.contains(where: { $0.id == observation.id }) else { return }
         transcripts.append(HubTranscript(observation: observation))
@@ -37,12 +33,8 @@ struct HubJoin {
     }
 
     /// Apply one read's worth of events, rebuilding once for the batch rather than once per event.
-    ///
-    /// Applying is also what SETTLES the transcript, because the first batch a tail delivers is
-    /// the backfill of what its file already held: before it, the row is half-read.
-    ///
-    /// A batch for a transcript no longer in the set applies nothing, which is what makes
-    /// dropping a Project safe against a tail still tearing down.
+    /// Applying also SETTLES the transcript: the first batch a tail delivers is the backfill of
+    /// what its file already held. A batch for a transcript no longer in the set applies nothing.
     mutating func apply(_ events: [TranscriptEvent], to transcriptID: String) {
         guard let index = position(of: transcriptID) else { return }
         for event in events {
@@ -55,9 +47,8 @@ struct HubJoin {
         rebuild()
     }
 
-    /// Settle a transcript whose tail ended without ever delivering a backfill — a file that
-    /// could not be opened, or a tail stopped mid-read. An empty read IS what happened, and
-    /// without it the roster would wait on a transcript that is never going to speak.
+    /// Settle a transcript whose tail ended without ever delivering a backfill — a file that could
+    /// not be opened, or a tail stopped mid-read. Without it the roster waits forever.
     mutating func settle(transcriptID: String) {
         guard let index = position(of: transcriptID), !transcripts[index].isSettled else { return }
         apply([], to: transcriptID)
@@ -77,10 +68,9 @@ struct HubJoin {
         transcripts.firstIndex { $0.id == transcriptID }
     }
 
-    /// Published only once every transcript in the set has settled, so the roster shows the
-    /// finished stitch rather than the reconstruction that produced it. While a sweep admits a
-    /// new transcript the last published roster stands: briefly missing a row, never rewriting
-    /// itself under the reader, and never showing what was not read.
+    /// Published only once every transcript in the set has settled. While a sweep admits a new
+    /// transcript the last published roster stands: briefly missing a row, never rewriting itself
+    /// under the reader.
     private mutating func rebuild() {
         guard transcripts.allSatisfy(\.isSettled) else { return }
         sessions = HubSessionChain.sessions(from: transcripts, owners: recordOwners)

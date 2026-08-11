@@ -2,11 +2,10 @@ import Foundation
 
 /// What one running agent offers the process that owns it.
 ///
-/// Deliberately three verbs: this is a PTY, and a PTY is a thing you type at, size to a viewport,
-/// and end. Anything richer belongs to whatever draws it.
+/// Three verbs: a PTY is a thing you type at, size to a viewport, and end. Anything richer belongs
+/// to whatever draws it.
 @MainActor
 public protocol AgentProcess: AnyObject {
-    /// Keystrokes to the agent — what "you steer by typing at its prompt" means.
     func write(_ text: String)
     /// Match the PTY to the viewport after a fit.
     func resize(columns: Int, rows: Int)
@@ -17,8 +16,7 @@ public protocol AgentProcess: AnyObject {
 /// The two things the owner has to hear about: what the agent said, and that it is gone.
 ///
 /// Bytes, not text. A PTY carries escape sequences and a read boundary can land in the middle of a
-/// UTF-8 sequence, so decoding here would corrupt the very chunk it was trying to be helpful about
-/// — and the terminal that eventually draws this wants the bytes anyway.
+/// UTF-8 sequence, so decoding here would corrupt the chunk.
 ///
 /// `exitCode` is optional because a PTY can also end without the child reporting one — an I/O
 /// failure on the descriptor rather than an exit. Absent is not zero.
@@ -35,10 +33,8 @@ public struct AgentProcessEvents {
     }
 }
 
-/// The port that turns an `AgentLaunch` into a live PTY.
-///
-/// A port rather than a call, for the reason every other engine seam is one: the real host links
-/// SwiftTerm and therefore AppKit, and the Hub's spawn has to be provable without a window.
+/// The port that turns an `AgentLaunch` into a live PTY. A port rather than a call: the real host
+/// links SwiftTerm and therefore AppKit, and the Hub's spawn has to be provable without a window.
 @MainActor
 public protocol AgentProcessHost: AnyObject {
     func start(_ launch: AgentLaunch, events: AgentProcessEvents) throws -> AgentProcess

@@ -5,16 +5,11 @@ import Foundation
 /// Two numbers rather than one, and the order between them is the point: **Argo's runs out first**,
 /// so the hook is always told a decision instead of being killed holding a question. That is what
 /// makes an expiry a fact Argo owns (DIRECT) rather than a peer close it would have to guess at —
-/// and a guess is exactly what the degrade-down rule forbids here, because the two causes of a peer
-/// close mean opposite things to a reader.
-///
-/// Its own value rather than a loose `Int`, so the gate's clock is a seam a test reaches in a
-/// millisecond rather than a rule nothing ever exercises (`HandoffWait`'s reasoning, same shape).
+/// and guessing is what degrade-down forbids, since the two causes of a peer close mean opposite
+/// things to a reader.
 public struct PermissionPatience: Sendable, Equatable {
-    /// What ARGO waits. A prompt waits for the person, not for a clock: nobody is watching the
-    /// cockpit the whole time an agent runs, and a window that answers by expiry answers on its
-    /// own. Long enough that the timeout is never the thing that decides, and no clock is drawn
-    /// because there is none worth reading (decision 6).
+    /// What ARGO waits — long enough that the timeout is never the thing that decides, and no clock
+    /// is drawn because there is none worth reading (decision 6).
     public let seconds: Int
 
     public init(seconds: Int) {

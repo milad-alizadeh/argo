@@ -2,9 +2,6 @@ import SwiftUI
 
 /// The palette half of the contract sheet: every colour role, on the surfaces it is read
 /// against.
-///
-/// Split from the type and motion half because it is the half that grows — a role group gains a
-/// member and this file gains a swatch, while the type ladder is Apple's and does not move.
 extension ContractSpecimen {
     var surfaces: some View {
         section("Surfaces — near-black graphite, depth from tone and edge") {
@@ -118,9 +115,8 @@ extension ContractSpecimen {
         }
     }
 
-    /// Not this palette's, and shown so the exemption is visible rather than a comment nobody
-    /// opens: source is read in Xcode's own dark theme, because the reader has the same files open
-    /// in Xcode all day. It is the one place a hue outside the contract is correct.
+    /// Source is read in Xcode's own dark theme — the one place a hue outside the contract is
+    /// correct, shown here so the exemption is visible.
     var syntax: some View {
         section("Not from this palette — source keeps Xcode's theme (evidence panel only)") {
             Text("SyntaxTheme.colors = .dark(.xcode)")

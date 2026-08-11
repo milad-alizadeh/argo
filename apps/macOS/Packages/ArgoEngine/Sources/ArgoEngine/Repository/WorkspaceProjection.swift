@@ -3,9 +3,8 @@
 /// Distinct from `CheckoutProjection`, which is the ONE checkout the window is pointed at: this is
 /// read per Session cwd, and two Sessions in two worktrees of one repository have two of these.
 public struct WorkspaceProjection: Equatable, Sendable {
-    /// Whether the folder is the repository's own checkout or one it was given
-    /// (`CONTEXT.md` L3). The domain's word, declared once here and aliased by the shell rather
-    /// than restated as a second enum kept in step by hand.
+    /// Whether the folder is the repository's own checkout or one it was given (`CONTEXT.md` L3).
+    /// Declared once here and aliased by the shell, never restated as a second enum.
     public enum Kind: Equatable, Sendable {
         case main
         case worktree

@@ -5,9 +5,6 @@ description: Judge a UI change by its pixels — render the affected states and 
 
 # Pixel Review
 
-`code-review` reads the diff; this reads the pixels — the class of bug where the code looks right
-but the render is wrong (the design says "inline icons with text", the app stacks them).
-
 ## Gate
 
 Applies when the working diff touches anything rendered: components, styles, isolated-state
@@ -79,8 +76,9 @@ commit=$(git commit-tree "$tree" -m "pixel-review: $slug")
 git push --force origin "$commit:refs/pr-screenshots/$slug"
 ```
 
-Embed each with a raw URL pinned to that commit — it renders inline during review and is
-reaped by `worktrees:gc` once the PR closes:
+Embed each with a raw URL pinned to that commit — it renders inline during review, and the ref
+is disposable once the PR closes (reaped by `worktrees:gc` where that hook is installed, and
+safe to delete by hand otherwise):
 
 ```markdown
 ![status-row](https://raw.githubusercontent.com/<owner>/<repo>/<commit>/status-row.png)

@@ -6,11 +6,10 @@ import Foundation
 /// Every answer it sends is `allow` or `deny`, never `ask` — `ask` would fall through to the TUI's
 /// own dialog, which is hidden and has no reader.
 ///
-/// Two ways a prompt ends unanswered, and they are told apart rather than run together (#573). The
-/// gate keeps its OWN clock, shorter than the hook's, so a call nobody answers is refused **by
-/// Argo** and published as a `PermissionExpiry` the feed reports. A peer going before that clock
-/// fires went with the turn it belonged to — the user cancelled — and takes its prompt away in
-/// silence, because a prompt that vanishes when you cancel its turn is the expected answer.
+/// Two ways a prompt ends unanswered, told apart (#573). The gate keeps its OWN clock, shorter
+/// than the hook's, so a call nobody answers is refused **by Argo** and published as a
+/// `PermissionExpiry`. A peer going before that clock fires went with a cancelled turn, and takes
+/// its prompt away in silence.
 @MainActor
 final class PermissionChannel {
     private struct Pending {
@@ -67,28 +66,25 @@ final class PermissionChannel {
         return path
     }
 
-    /// The PTY is gone, so nothing can be waiting, nothing more can ask, and no grant made against
-    /// it has anything left to hold open.
+    /// The PTY is gone: nothing can be waiting, nothing more can ask, no grant holds anything open.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         sockets.removeValue(forKey: claim)?.close()
         if standing.withdraw(claim) {
             onStanding(claim, [])
         }
-        // The expiries go with the claim for the reason the grants do: they are what happened to
-        // THIS Session, and a Session that no longer exists has no reading left to say it in.
+        // The expiries go with the claim: they are what happened to THIS Session.
         if expired.removeValue(forKey: claim) != nil {
             onExpired(claim, [])
         }
         guard let waiting = pending.removeValue(forKey: claim) else { return }
-        // Silence, deliberately. The PTY is gone, so nothing was refused and nothing is left to
-        // read a refusal — the whole Session left with it.
+        // Silence, deliberately: nothing was refused and nothing is left to read a refusal.
         cancelClocks(of: waiting)
         onChange(claim, [])
     }
 
     /// Over the pending claims as well as the socketed ones, so no armed clock is left sleeping
-    /// against a gate that is being torn down — a day-long `Task` outliving its channel is a leak
-    /// rather than a bug (`weak self` makes its wake-up a no-op), and the union costs nothing.
+    /// against a torn-down gate — a day-long `Task` outliving its channel is a leak rather than a
+    /// bug (`weak self` makes its wake-up a no-op).
     func withdrawAll() {
         for claim in Set(sockets.keys).union(pending.keys) {
             withdraw(claim)
@@ -99,8 +95,7 @@ final class PermissionChannel {
     /// decision that raced the hook's own expiry, which the caller reports rather than swallows.
     ///
     /// By id and never by position: a Session can have several calls waiting at once, and a prompt
-    /// that was replaced between the reading and the click would otherwise spend the user's Allow
-    /// on the command underneath it.
+    /// replaced between the reading and the click would spend the Allow on the command underneath.
     func decide(
         _ decision: PermissionDecision,
         answering requestID: String,
@@ -122,10 +117,8 @@ final class PermissionChannel {
         return true
     }
 
-    /// Take a standing allow back, which is the whole reason it is a value the Session publishes
-    /// rather than a set the gate keeps (#572). Nothing in flight is disturbed and the Session is
-    /// not touched — the next call to that tool simply asks again. `false` when there was no such
-    /// grant to take back.
+    /// Take a standing allow back (#572). Nothing in flight is disturbed and the Session is not
+    /// touched — the next call to that tool simply asks again. `false` when there was no grant.
     func revoke(_ toolName: String, for claim: SessionOwnership.ClaimID) -> Bool {
         guard standing.revoke(toolName, for: claim) else { return false }
         onStanding(claim, standing.grants(for: claim))
@@ -151,8 +144,7 @@ final class PermissionChannel {
     }
 
     /// The gate's clock for one call: it runs out, Argo refuses the call itself, and the Session
-    /// publishes what happened. Argo's own act from end to end, which is what lets the feed say a
-    /// tool call was refused by nobody without inventing the claim.
+    /// publishes what happened — DIRECT, Argo's own act from end to end.
     private func arm(_ request: PermissionRequest, for claim: SessionOwnership.ClaimID)
         -> Task<Void, Never> {
         Task { [weak self, patience] in
@@ -194,9 +186,7 @@ final class PermissionChannel {
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
             return reply(PermissionReply.line(.deny))
         }
-        // The standing allow, applied where the round trip would otherwise start: a tool the user
-        // has already ruled on for this Session never becomes a prompt at all. Every other tool
-        // takes the per-action path below, untouched.
+        // A tool the user has already ruled on for this Session never becomes a prompt at all.
         guard !standing.allows(request.toolName, for: claim) else {
             return reply(PermissionReply.line(.allow))
         }
@@ -211,8 +201,7 @@ final class PermissionChannel {
 
     /// The hook went while Argo was still willing to wait, which means the turn it belonged to was
     /// cancelled: Argo's own clock is the shorter of the two, so an expiry can never arrive this
-    /// way. Its questions are over and the prompt goes without a word — cancelling a turn is the
-    /// user answering, and a notice explaining what they just did explains nothing (#573).
+    /// way. The prompt goes without a word (#573).
     private func peerClosed(_ claim: SessionOwnership.ClaimID, peer: Int) {
         guard let waiting = pending[claim], waiting.contains(where: { $0.peer == peer })
         else { return }

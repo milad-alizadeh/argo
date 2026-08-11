@@ -10,10 +10,7 @@ public struct ConnectPanelActions {
     /// Authorize one more identity with a provider. Repeatable by construction: a machine may hold
     /// a personal and a work GitHub, and neither replaces the other.
     public let connectAccount: (AccountProvider) -> Void
-    /// Read one port through one Account, at one scope — which is to say, a `ProjectBinding`. The
-    /// engine's own value rather than its three fields loose, because an act that could set them
-    /// separately could leave two of them pointing somewhere the third does not, and because the
-    /// app would only reassemble them one hop later anyway.
+    /// Read one port through one Account, at one scope — which is to say, a `ProjectBinding`.
     public let bindPort: (ProjectBinding) -> Void
     /// Give one port back to unbound, leaving the other where it is.
     public let unbindPort: (AccountPort) -> Void

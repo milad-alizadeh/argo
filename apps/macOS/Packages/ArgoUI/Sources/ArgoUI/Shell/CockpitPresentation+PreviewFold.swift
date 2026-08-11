@@ -1,8 +1,6 @@
 import ArgoEngine
 
 /// One shell call this fixture writes: what the agent said about it, what ran, and what it printed.
-/// The three travel together — pairing a command with somebody else's output would put a screenshot
-/// on the PR showing the opposite of what its caption claims.
 private struct ShellCall {
     /// `nil` for the host that narrates nothing.
     let said: String?
@@ -12,16 +10,10 @@ private struct ShellCall {
 
 extension CockpitPresentation.Session {
     /// A turn that looked around — at files and through a shell — then changed something, then said
-    /// so.
+    /// so: seven quiet calls, a mutation, and two loud commands after it.
     ///
-    /// The state the fold exists for, and the one a count alone cannot be judged on: seven quiet
-    /// calls, a mutation, and two loud commands after it. What has to read is that the top of the
-    /// turn is ONE line carrying a number, that the line below it is the change the looking was
-    /// for, and that the commit and the push under that are still two rows a reader can see.
-    ///
-    /// Half the commands are narrated and half are not, on purpose. A Claude Code Session and a
-    /// Codex one fold by the same rule — it reads the command text — and a fixture narrating all of
-    /// them would render a claim about descriptions rather than about the fold.
+    /// Half the commands are narrated and half are not, on purpose — the fold reads the command
+    /// text, so a fixture narrating all of them would render a claim about descriptions instead.
     static let foldedLooking: [TranscriptEvent] = [.cwd("/Users/milad/Developer/argo")]
         + observation + [
             .toolCall(ToolCall(
@@ -44,9 +36,10 @@ extension CockpitPresentation.Session {
             )))),
         ] + mutations
 
-    /// The stretch that folds: two files read and five commands that only looked. The commands are
-    /// the ones a real turn opens with rather than five of one shape, because the allowlist is what
-    /// decides which are in the count and a fixture of five `ls` would never exercise it.
+    /// The stretch that folds: two files read and five commands that only looked. Five different
+    /// shapes, because the allowlist decides which are in the count and five `ls` would not
+    /// exercise
+    /// it.
     private static let observation: [TranscriptEvent] = opened + shelled([
         ShellCall(
             said: nil,
@@ -76,9 +69,8 @@ extension CockpitPresentation.Session {
         ),
     ])
 
-    /// What the turn did once it had looked. Neither is in the count above, and that is the claim:
-    /// a chain is unrecognised by construction, and a `git push` is on no allowlist under any
-    /// reading of it.
+    /// What the turn did once it had looked. Neither is in the count above: a chain is unrecognised
+    /// by construction, and a `git push` is on no allowlist.
     private static let mutations: [TranscriptEvent] = shelled([
         ShellCall(
             said: "Stage and commit the fold change",
@@ -92,8 +84,7 @@ extension CockpitPresentation.Session {
         ),
     ])
 
-    /// The two files, read the ordinary way — what makes the folded line say `Read 2 · Ran 5`
-    /// rather than a count of one kind, which is the shape a mixed turn actually produces.
+    /// The two files, read the ordinary way — what makes the folded line say `Read 2 · Ran 5`.
     private static let opened: [TranscriptEvent] = [
         (
             path: "Packages/ArgoUI/Sources/ArgoUI/Shell/Deck/Feed/Call/FeedSurveyFold.swift",

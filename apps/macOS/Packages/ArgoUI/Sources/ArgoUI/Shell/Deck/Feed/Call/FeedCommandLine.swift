@@ -3,10 +3,7 @@ import Foundation
 /// A command as the FEED says it: what was run, without the plumbing that carried its output and
 /// without the preamble that got the shell into position.
 ///
-/// `ARGO_SPECIMEN=feed sh scripts/screenshot.sh 2>&1 | grep -E "Test run with"` is one useful
-/// phrase with a scratchpad in front of it and two clauses about where the text went behind it.
-/// Both ends are real and both are kept — the panel's header shows the command whole — but on a
-/// line whose whole job is to say what happened, they are what pushes the verb off the screen.
+/// Both ends are real and both survive whole in the panel's header; only this line drops them.
 ///
 /// It cuts and never rewrites: every character shown is the agent's own, in its own order, and an
 /// ellipsis says something was left behind — in front where the preamble was, behind where the

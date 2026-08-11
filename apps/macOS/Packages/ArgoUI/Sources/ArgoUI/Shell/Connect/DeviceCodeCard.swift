@@ -3,14 +3,12 @@ import SwiftUI
 
 /// The device flow while it waits: the code to type, where to type it, and a way to stop.
 ///
-/// The panel waits rather than spinning. A device flow the user cannot read is one they cannot
-/// finish, which is why `GitHubDeviceFlow` hands the challenge back before it starts polling and
-/// why this card exists at all.
+/// `GitHubDeviceFlow` hands the challenge back before it starts polling, which is what this card
+/// draws.
 struct DeviceCodeCard: View {
     @Environment(\.argo) private var argo
-    /// Whether the code has just been put on the pasteboard. Local, and it never becomes a fact
-    /// about the flow: copying is something the user did to their clipboard, not a step of the
-    /// grant.
+    /// Whether the code has just been put on the pasteboard. Local, and never a fact about the
+    /// flow: copying is not a step of the grant.
     @State private var hasCopied = false
 
     let challenge: ConnectChallenge
@@ -35,15 +33,13 @@ struct DeviceCodeCard: View {
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(argo.color.text.tertiary)
         }
-        // No ground of its own: it stands in a `Form` section, and the section IS the card. A
-        // second fill inside one would be two materials in the same box.
+        // No ground of its own: it stands in a `Form` section, and the section IS the card.
         .accessibilityElement(children: .contain)
         .accessibilityLabel(spoken)
     }
 
     /// The code in the provider's own formatting, never re-spaced: what is shown has to match what
-    /// is typed. Copying is offered beside it because a hyphenated code is the easiest thing in
-    /// this flow to get wrong by hand.
+    /// is typed.
     private var code: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
             Text(challenge.userCode)

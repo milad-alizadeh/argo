@@ -3,9 +3,7 @@ import SwiftUI
 /// A message's markdown, drawn with the shape the agent gave it.
 ///
 /// The blocks are found by `MarkdownBlock` and drawn here — nothing is reworded on either side of
-/// that line. What changes is that an outline reads as an outline: a heading is a heading rather
-/// than two hashes at paragraph size, and a fenced block sits on a ground instead of between rows
-/// of backticks.
+/// that line.
 struct FeedMarkdown: View {
     @Environment(\.argo) private var argo
 
@@ -35,10 +33,7 @@ private struct FeedMarkdownBlock: View {
                 .fixedSize(horizontal: false, vertical: true)
         case let .heading(level, text):
             // Three rungs for six levels, and the deepest of them is the prose's own size at a
-            // heavier weight. A size per level is how a scale grows six rungs nobody can tell
-            // apart,
-            // and a level-four heading smaller than the paragraph under it would be an outline
-            // upside down.
+            // heavier weight — never smaller than the paragraph under it.
             FeedProseText(text: text, rung: headingRung(level), weight: .semibold)
                 .foregroundStyle(argo.color.text.primary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -61,9 +56,8 @@ private struct FeedMarkdownBlock: View {
         }
     }
 
-    /// A marker in a column of its own, so the words of a list line up whether the markers are
-    /// bullets or numbers — and so a wrapped item stays inside its own words rather than running
-    /// back under its marker.
+    /// A marker in a column of its own, so list words line up and a wrapped item stays inside its
+    /// own words rather than running back under its marker.
     private func item(marker: String, text: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
             Text(marker)

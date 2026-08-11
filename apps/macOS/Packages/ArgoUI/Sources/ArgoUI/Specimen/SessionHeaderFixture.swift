@@ -1,19 +1,13 @@
 import ArgoEngine
 
 /// The Sessions the header specimens are rendered from — one per access posture, plus the one
-/// whose branch does not fit.
-///
-/// A value type beside the view rather than statics inside it, for the reason `PlanFixture` is
-/// one: a fixture is data, and data a test reads has no business needing the main actor. The
-/// headers are projected here exactly as the shell projects them, so a PNG is evidence about the
-/// rendering the app produces rather than about a value a specimen assembled.
+/// whose branch does not fit. Headers are projected here exactly as the shell projects them.
 enum SessionHeaderFixture {
     /// Every posture's header, in `Access.allCases` order — what the catalog is checked against,
-    /// so a posture nothing renders fails a test rather than shipping unlooked-at.
+    /// so a posture nothing renders fails a test.
     static let headers = CockpitPresentation.Session.Access.allCases.map(header(for:))
 
-    /// A real branch name off this machine, long enough that the line cannot hold it — the case
-    /// story 25 is about.
+    /// A real branch name off this machine, long enough that the line cannot hold it.
     static let longBranchName = "worktree-ticket-375-graphite-ion-blue"
 
     /// What the PNG settles is that the cut lands on the BRANCH and that the marks, the model and
@@ -25,8 +19,7 @@ enum SessionHeaderFixture {
     ))
 
     /// A Session whose record carried almost nothing: no CLI, a model nobody's table knows, no
-    /// git read behind it and no issue. The line has to hold its shape with most of it missing,
-    /// which is the state a fixture that filled every field in would never have shown.
+    /// git read behind it and no issue. The line has to hold its shape with most of it missing.
     static let sparse = SessionHeaderProjection.header(from: CockpitPresentation.Session(
         id: "header-sparse",
         title: "Watch a Session read off a record that said very little",
@@ -37,8 +30,8 @@ enum SessionHeaderFixture {
     ))
 
     /// The one Session the band spends a word on: an agent blocked on a Permission. Drawn beside
-    /// the calm postures on purpose — whether the word carries from across the window is a
-    /// question about the headers around it, not about the header it is on.
+    /// the calm postures on purpose — whether the word carries is a question about the headers
+    /// around it.
     static let needsInput = SessionHeaderProjection.header(from: session(
         access: .managed,
         title: "Drive a Session from a composer",
@@ -51,13 +44,9 @@ enum SessionHeaderFixture {
 
     /// One header per context tier, plus the record that carried no usage at all.
     ///
-    /// The numbers are readings off real Sessions on this machine rather than round ones: `67.2k`
-    /// and `216.8k` are what the instrument actually has to fit, and a fixture set to `150000`
-    /// exactly would render the one reading no real Session ever shows.
-    ///
-    /// Each is keyed by the catalog case that renders it, so the tier a PNG is named for and the
-    /// tier it actually draws cannot drift apart — and so a tier with no case of its own fails a
-    /// test rather than shipping unlooked-at.
+    /// The numbers are readings off real Sessions rather than round ones: `67.2k` and `216.8k` are
+    /// what the instrument actually has to fit. Each is keyed by the catalog case that renders it,
+    /// so a tier with no case of its own fails a test.
     static let contexts: [(specimen: Specimen, header: SessionHeaderProjection.Header)] = [
         (.contextOk, header(context: 67175)),
         (.contextWarn, header(context: 216_764)),
@@ -68,14 +57,10 @@ enum SessionHeaderFixture {
     /// Just the readings, for the preview that judges the four side by side.
     static let contextReadings = contexts.map(\.header.context)
 
-    /// Every state the handoff offer has, keyed by the case that renders it.
-    ///
-    /// The first is the one with NOTHING in it, and it is here on purpose: story 44 is a claim
-    /// about an absence, and an absence has to be looked at on the same line as the presence to be
-    /// judged at all. Then the same reading on a Session Argo cannot drive — the warning without
-    /// the button (story 49), which no value test can show is still legible. The last is the fourth
-    /// way the button can be absent: the remedy already taken, at a reading that stays red because
-    /// the context really is that full.
+    /// Every state the handoff offer has, keyed by the case that renders it. The first is the one
+    /// with NOTHING in it; then the same reading on a Session Argo cannot drive — the warning
+    /// without the button (story 49); the last is the remedy already taken, at a reading that
+    /// stays red.
     static let handoffs: [(specimen: Specimen, header: SessionHeaderProjection.Header)] = [
         (.handoffWithheld, header(context: 67175)),
         (.handoffAtWarn, header(context: 216_764)),
@@ -111,8 +96,7 @@ enum SessionHeaderFixture {
     }
 
     /// A Session at a given fullness, with every other fact held still — so a PNG of two tiers
-    /// differs in the one thing the tier decides, and a PNG of two postures at one reading differs
-    /// only in what Argo is allowed to offer.
+    /// differs in the one thing the tier decides.
     static func header(
         context tokens: Int?,
         access: CockpitPresentation.Session.Access = .managed,
@@ -128,12 +112,8 @@ enum SessionHeaderFixture {
         ))
     }
 
-    /// The external posture is given the branch that does not fit, deliberately. The branch sits
-    /// immediately BEFORE the access mark on the line, so a name long enough to eat the width is
-    /// exactly what crowds the mark out — and a mark that survives only beside a short name is a
-    /// mark drawn for fixtures.
-    ///
-    /// A `switch`, so a fourth posture has to choose rather than inheriting the short one.
+    /// The external posture is given the branch that does not fit, deliberately: the branch sits
+    /// immediately BEFORE the access mark on the line, so a long name is what crowds the mark out.
     private static func branch(for access: CockpitPresentation.Session.Access) -> String {
         switch access {
         case .external: longBranchName
@@ -142,8 +122,7 @@ enum SessionHeaderFixture {
     }
 
     /// The Workspace and the issue are drawn on every posture on purpose: whether a read-only
-    /// Session still says what it is working on is exactly what a PNG is for, and a fixture that
-    /// only filled the facts in for the managed one would never have shown it.
+    /// Session still says what it is working on is exactly what a PNG is for.
     private static func session(
         access: CockpitPresentation.Session.Access,
         title: String,
@@ -170,9 +149,8 @@ enum SessionHeaderFixture {
         )
     }
 
-    /// The external one's title is long enough to be CUT at the narrowest deck, deliberately: the
-    /// title has the width to itself now, and what a PNG has to show is that taking all of it
-    /// still leaves it cut at the tail rather than wrapping into the line below.
+    /// The external one's title is long enough to be CUT at the narrowest deck, deliberately: what
+    /// a PNG has to show is that it is cut at the tail rather than wrapping into the line below.
     private static func title(
         for access: CockpitPresentation.Session.Access,
     )

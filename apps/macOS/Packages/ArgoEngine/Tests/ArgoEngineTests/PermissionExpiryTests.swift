@@ -5,10 +5,9 @@ import Testing
 /// What becomes of a Permission nobody answers (#573) — and, just as much, what does NOT become of
 /// one the user cancelled the turn under.
 ///
-/// Nested inside `PermissionChannelTests` rather than standing beside it, and that is not filing:
-/// `.serialized` orders a suite's own tests and nothing else, so two sibling suites of socket waits
-/// would drive one main queue in parallel — the starvation the parent's own note describes,
-/// reappearing between the suites instead of inside one. Nesting puts both under one serial scope.
+/// Nested inside `PermissionChannelTests` rather than standing beside it: `.serialized` orders a
+/// suite's own tests and nothing else, so two sibling suites of socket waits would drive one main
+/// queue in parallel. Nesting puts both under one serial scope.
 extension PermissionChannelTests {
     @Suite("Permission expiry")
     @MainActor
@@ -29,8 +28,7 @@ extension PermissionChannelTests {
                     decision.stringField("permissionDecisionReason")?.contains("expired") == true,
                 )
                 #expect(fixture.hub.sessions.first?.expiredPermissions.map(\.toolName) == ["Bash"])
-                // The prompt goes with it: a call already refused is not one still waiting on
-                // anybody.
+                // The prompt goes with it: a call already refused is not one still waiting.
                 #expect(fixture.hub.sessions.first?.permission == nil)
                 #expect(fixture.hub.sessions.first?.status != .permission)
             }
@@ -47,8 +45,7 @@ extension PermissionChannelTests {
                 client.close()
                 await settle { fixture.hub.sessions.first?.permission == nil }
 
-                // Silence is the answer. Cancelling a turn is the user deciding, and a notice
-                // explaining what they just did explains nothing.
+                // Silence is the answer: cancelling a turn is the user deciding.
                 #expect(fixture.hub.sessions.first?.expiredPermissions.isEmpty == true)
             }
         }

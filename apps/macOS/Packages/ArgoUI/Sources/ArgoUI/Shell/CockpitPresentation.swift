@@ -7,8 +7,7 @@ public struct CockpitPresentation: Equatable, Sendable {
         public let id: String
         public let name: String
         public let location: String
-        /// A registered folder that has moved or been deleted is still a Project. Drawn as such and
-        /// re-pointable, rather than quietly missing from the drawer.
+        /// A registered folder that has moved or been deleted is still a Project.
         public let isReachable: Bool
         /// A launch pointed at a folder nobody registered is drawn where the window points, but it
         /// is not in the registry — so the verbs that read or write a record do not apply to it.
@@ -46,8 +45,7 @@ public struct CockpitPresentation: Equatable, Sendable {
         }
     }
 
-    /// The engine's own enums, named for the shell rather than restated as it. A second copy would
-    /// be two vocabularies for one fact, kept in step by hand.
+    /// The engine's own enums, named for the shell rather than restated as it.
     public typealias Checkout = CheckoutProjection.Head
     public typealias Connection = HubConnection
 
@@ -63,9 +61,8 @@ public struct CockpitPresentation: Equatable, Sendable {
         projects.first { $0.id == activeProjectID }
     }
 
-    /// The Session a selection names, if the roster still holds it. A selection is an id and the
-    /// roster moves under it, so every surface drawing the selected Session asks this rather than
-    /// carrying its own lookup — and gets the same `nil` when the id has aged out.
+    /// The Session a selection names, if the roster still holds it — the roster moves under an id,
+    /// so every surface asks here rather than carrying its own lookup.
     public func session(_ id: Session.ID?) -> Session? {
         guard let id else { return nil }
         return sessions.first { $0.id == id }

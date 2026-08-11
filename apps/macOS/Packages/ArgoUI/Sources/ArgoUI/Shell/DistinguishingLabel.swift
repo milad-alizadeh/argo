@@ -16,10 +16,8 @@ enum DistinguishingLabel {
 
     /// Every DISTINCT path that ends in a given name, indexed by that name.
     ///
-    /// The index is what makes this usable on a real session. Asking each path which of the others
-    /// it has to be told apart from is a scan of the whole list per entry, which is fine for a
-    /// roster of six workspaces and quadratic for a feed of six hundred rows — the same rule,
-    /// answered once per name instead of once per pair.
+    /// Indexed because asking each path which others it must be told apart from is a scan of the
+    /// whole list per entry — quadratic on a feed of six hundred rows.
     ///
     /// Distinct, because an exact twin is not a rival: no label separates two entries on one path.
     private static func rivalry(among paths: [[String]]) -> [String: Set<[String]>] {

@@ -3,13 +3,10 @@ import SwiftUI
 /// A name with the mark that says what KIND of thing it names, drawn as one group.
 ///
 /// Cut in the MIDDLE, always: every name this draws is addressed from both ends — a branch by the
-/// ticket number at its head and the slug at its tail, a worktree by the parent that qualifies it
-/// and the ticket it is for. The middle is the part that repeats, and a tail cut takes the half
-/// that says what the work is.
+/// ticket number at its head and the slug at its tail. The middle is the part that repeats.
 ///
 /// The mark is optional because an absent one is a real rendering: where Argo has not read what
-/// kind of thing this is, drawing the plain mark would claim it is the other kind. Absent, never
-/// substituted — the caller decides, this only agrees to draw nothing.
+/// kind of thing this is, drawing the plain mark would claim it is the other kind.
 ///
 /// Ink is the caller's: the group takes whatever `foregroundStyle` it is placed in, so the mark and
 /// the words can never end up two colours.

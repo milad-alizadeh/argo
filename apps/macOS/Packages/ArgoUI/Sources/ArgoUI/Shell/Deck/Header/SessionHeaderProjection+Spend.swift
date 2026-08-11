@@ -1,12 +1,11 @@
 import ArgoEngine
 
-/// What the Session has spent and how long it has been going — the whole life of the Session, as
-/// against the context reading, which is only what it is holding right now.
+/// What the Session has spent and how long it has been going — the whole life of it, as against the
+/// context reading, which is only what it is holding right now.
 ///
-/// The composition is the rule: the line is built from the facts that are PRESENT, so a fact
-/// nothing reported disappears from it rather than rendering as a zero. Every CLI in use today
-/// reports nothing for subagent spend, and `0 subagents` would claim none ran — which is the one
-/// thing on this line the reader would act on.
+/// The line is built from the facts that are PRESENT, so a fact nothing reported disappears rather
+/// than rendering as a zero. Every CLI in use today reports nothing for subagent spend, and
+/// `0 subagents` would claim none ran.
 extension SessionHeaderProjection {
     enum SpendPolicy {
         /// Longer than this between two moments and nobody was at the keyboard: a gap that size is
@@ -31,19 +30,15 @@ extension SessionHeaderProjection {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    /// A Session every one of whose gaps was too long worked NONE of the time it ran, and that is
-    /// the fact worth reading — `worked under a minute` would spell a Session left alone all day
-    /// exactly like one that has just started.
+    /// A Session every one of whose gaps was too long worked NONE of the time it ran — `worked
+    /// under a minute` would spell that exactly like a Session that has just started.
     private static func worked(for milliseconds: Int) -> String {
         guard milliseconds > 0 else { return "worked none of it" }
         return "worked \(ElapsedTime.phrase(milliseconds: milliseconds))"
     }
 
-    /// Wall-clock: the transcript's first record to its last, which is what the Session has
-    /// spanned.
-    ///
-    /// Both ends or nothing. One moment is not a duration, and taking the clock for the other end
-    /// would report a Session that stopped last Tuesday as still going.
+    /// Wall-clock: the transcript's first record to its last. Both ends or nothing — taking the
+    /// clock for the other end would report a Session that stopped last Tuesday as still going.
     static func ran(from session: CockpitPresentation.Session) -> Int? {
         guard let started = session.startedAtMs, let last = session.lastSeenAtMs else { return nil }
         return max(last - started, 0)
@@ -63,10 +58,8 @@ extension SessionHeaderProjection {
         }
     }
 
-    /// Every moment the transcript can be said to have done something at, in order.
-    ///
-    /// Sorted rather than trusted: a resume chain is stitched from more than one file, and the
-    /// gaps are only gaps if the moments they run between are the ones either side of them.
+    /// Every moment the transcript can be said to have done something at, in order. Sorted rather
+    /// than trusted: a resume chain is stitched from more than one file.
     private static func moments(in events: [TranscriptEvent]) -> [Int] {
         events.compactMap { event in
             switch event {

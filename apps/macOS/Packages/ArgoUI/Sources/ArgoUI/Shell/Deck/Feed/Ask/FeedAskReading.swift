@@ -1,11 +1,8 @@
 import ArgoEngine
 
-/// A question the agent asked, plus whatever answered it, as the row the feed draws.
-///
-/// Paired the same way a call and its outcome are, and for the same reason: the two are separate
-/// records that can sit arbitrarily far apart in the file. What is different is that the absence of
-/// the second one is the point — an unanswered question is the state somebody is being waited on
-/// in, and it is the only thing in the feed entitled to the attention ink.
+/// A question the agent asked, plus whatever answered it, as the row the feed draws. The two are
+/// separate records that can sit arbitrarily far apart in the file, and the absence of the second
+/// is the point — an unanswered question is the only thing in the feed entitled to attention ink.
 enum FeedAskReading {
     /// `nil` where this call put no question, which is every call but one tool's. A call NAMED
     /// `AskUserQuestion` whose input carried nothing readable also lands here: it stays an ordinary
@@ -17,8 +14,7 @@ enum FeedAskReading {
 
     /// Whether the record has answered the question — the result EXISTING and being resolved, not
     /// what it carried. A result still in flight has settled nothing; one that came back holding
-    /// something unreadable has, and reading it as still waiting would keep a question demanding
-    /// attention that somebody has already given.
+    /// something unreadable has.
     private static func hasAnswered(_ outcome: ToolCallOutcome?) -> Bool {
         guard let outcome else { return false }
         return outcome.status != .pending && outcome.status != .inProgress

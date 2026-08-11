@@ -10,10 +10,7 @@ the two artifacts everything downstream needs: an **HTML design** that speaks on
 token contract, and a **render** of it.
 
 Run it **once per screen**. `design-to-code` then runs once per ticket against what
-this produces — that difference in cardinality is why these are two skills.
-
-The validated decision for a UI prototype is **the pixels plus the tokens** — a
-paragraph describing them loses every measurement the prototype settled.
+this produces.
 
 ## Gate
 
@@ -90,8 +87,7 @@ Three values, in order: **`approved`** (agreed, not yet in the app) → **`built
 (`design-to-code` finished the screen) → **`stale`** (the app has since changed this
 screen without coming through here).
 
-**Stale is fine** — it costs nothing until reuse, and labelling it beats pretending.
-The rule is: a stale design is **re-based before it is edited, never after**. Re-basing
+**Stale is fine** — labelling it beats pretending. A stale design is **re-based before it is edited, never after**. Re-basing
 means screenshotting the shipped screen, correcting the design to match, and only then
 exploring. Editing a stale design silently reverts whatever shipped since.
 
@@ -102,7 +98,7 @@ PNG beside the HTML. One per state if the screen has several.
 
 **The PNG is the artifact that gets linked and judged** — tickets link it, `pixel-review`
 judges against it, humans open it. The HTML is there so the screen can be explored
-again later without starting over. Nobody opens a 50KB HTML file to check a margin.
+again later without starting over.
 
 ## 6. Report
 

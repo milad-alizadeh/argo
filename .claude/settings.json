@@ -1,5 +1,5 @@
 {
-  "outputStyle": "Terse",
+  "outputStyle": "Out Loud",
   "hooks": {
     "PreToolUse": [
       {
@@ -12,7 +12,7 @@
         ]
       },
       {
-        "matcher": "Read|Glob",
+        "matcher": "Glob",
         "hooks": [
           {
             "type": "command",

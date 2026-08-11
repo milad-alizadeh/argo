@@ -3,9 +3,7 @@ import SwiftUI
 /// One segment of a toolbar vessel — a room tab, the Project half, the checkout half.
 ///
 /// It is the same control in three places, so the wash, the paddings and the hit shape live here
-/// once. Spelled out per call site they drifted: the rooms drew a capsule while the scope halves
-/// took AppKit's own menu fill, a squarer rectangle running out to the glass, so one bar carried
-/// two ideas of what a segment looks like.
+/// once. Spelled out per call site they drift, and AppKit's own menu fill is not this shape.
 struct ToolbarSegment: ViewModifier {
     @Environment(\.argo) private var argo
 
@@ -21,8 +19,7 @@ struct ToolbarSegment: ViewModifier {
             .contentShape(.capsule)
     }
 
-    /// A capsule, like the vessel it sits in: a rounded rectangle inside a capsule reads as a
-    /// second, squarer control.
+    /// A capsule, like the vessel it sits in — a rounded rectangle reads as a second control.
     private var wash: some View {
         Capsule()
             .fill(argo.color.surface.selected)
@@ -41,8 +38,7 @@ extension View {
     }
 }
 
-// The three segments the bar actually draws, in one place: a selected tab, an unselected one, and
-// a menu half that holds no selection at all.
+// The three segments the bar actually draws: a selected tab, an unselected one, and a menu half.
 #Preview("Toolbar segments") {
     HStack(spacing: ArgoSpacing.hair) {
         Text("Sessions").argoText(ArgoTypography.control).toolbarSegment(isSelected: true)

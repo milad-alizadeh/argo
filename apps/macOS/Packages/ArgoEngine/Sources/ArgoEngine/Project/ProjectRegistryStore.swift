@@ -55,9 +55,9 @@ public actor ProjectRegistryStore {
         return ProjectChange(registry: registry, project: registry.active)
     }
 
-    /// Record a validated Binding. Deliberately **not** `public`: bind-time validation is the whole
-    /// argument for the Binding level, and a door into the registry that skips it would persist a
-    /// Binding that reads empty. `ProjectBindings` is the only caller, and the only public way in.
+    /// Record a validated Binding. Deliberately **not** `public`: a door into the registry that
+    /// skipped bind-time validation would persist a Binding that reads empty. `ProjectBindings`
+    /// is the only caller, and the only public way in.
     @discardableResult
     func bind(_ binding: ProjectBinding, to projectID: String) -> ProjectChange {
         let registry = persist(load().replacingBinding(binding, of: projectID))

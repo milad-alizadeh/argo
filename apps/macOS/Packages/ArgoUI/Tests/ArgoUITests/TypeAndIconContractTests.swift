@@ -1,14 +1,12 @@
 @testable import ArgoUI
 import Testing
 
-/// The two scales a mark and a word are picked from. They used to be one — an icon was a multiple
-/// of its label — and these are the claims that keep them separate without letting them drift.
+/// The two scales a mark and a word are picked from, kept separate without letting them drift.
 @Suite("Type and icon scales")
 struct TypeAndIconContractTests {
     // MARK: - Typography
 
-    /// The identity roles are the two that used to carry a face of their own. They speak in the
-    /// interface sans now: one sans for everything the interface says, one mono for machine facts.
+    /// One sans for everything the interface says, one mono for machine facts.
     @Test
     func `identity lines are set in the interface sans, not a face of their own`() {
         let identityRoles = [ArgoTypography.sessionTitle, ArgoTypography.identityHeading]
@@ -27,19 +25,15 @@ struct TypeAndIconContractTests {
     }
 
     /// The machine ladder reaches the body rung, so a machine fact can stand beside the words it
-    /// annotates at ONE size. It stopped at `callout` and `subheadline`, which put the plan pill's
-    /// counter a rung below the step text next to it — two sizes on one line, asking the reader to
-    /// take the larger as the more important when the smaller is the fact that changes.
+    /// annotates at ONE size.
     @Test
     func `a machine fact can meet the interface's own body size`() {
         #expect(ArgoTypography.machineBody.size == ArgoTypography.body.size)
         #expect(ArgoTypography.machineBody.typeface == .machine)
     }
 
-    /// The scale is Apple's macOS table, not a ladder of Argo's own — which is what makes it
-    /// reusable: `body` means the same thing on every surface and in every other Mac app. Anchored
-    /// on two documented values rather than all eleven, so this fails if the enum stops being the
-    /// HIG's and passes without restating it.
+    /// The scale is Apple's macOS table, not a ladder of Argo's own. Anchored on two documented
+    /// values rather than all eleven, so this fails if the enum stops being the HIG's.
     @Test
     func `the scale is the platform's, at the platform's sizes`() {
         #expect(ArgoTypeScale.allCases.count == 11)
@@ -47,8 +41,6 @@ struct TypeAndIconContractTests {
         #expect(ArgoTypeScale.caption1.size == 10)
     }
 
-    /// Two half-point rungs used to exist — `11.5` and `10.5`. A rung nobody can see is a rung
-    /// nobody chose.
     @Test
     func `every rung is a whole point`() {
         for rung in ArgoTypeScale.allCases {
@@ -56,8 +48,7 @@ struct TypeAndIconContractTests {
         }
     }
 
-    /// A role is a NAME for a rung, never a size of its own. The app had eleven sizes when a role
-    /// could carry a number; it cannot now, and this is the claim that says so out loud.
+    /// A role is a NAME for a rung, never a size of its own.
     @Test
     func `no role carries a size the scale does not have`() {
         let scale = Set(ArgoTypeScale.allCases.map(\.size))
@@ -67,30 +58,24 @@ struct TypeAndIconContractTests {
         }
     }
 
-    /// The feed's body is ONE size. A paragraph set a rung above the call line under it asks the
-    /// reader to take the larger of the two as the more important, when the only difference is that
-    /// one of them is prose. What tells them apart is ink, measure and shape — never size.
+    /// The feed's body is ONE size; prose and call lines are told apart by ink, measure and shape.
     @Test
     func `the feed sets its prose and its call lines on one rung`() {
         #expect(ArgoFeedRow.proseRung.size == ArgoTypography.body.size)
-        // Still opened up: the column is read rather than scanned, and the leading is what carries
-        // that now that the size does not.
+        // Still opened up: the column is read rather than scanned, and the leading carries that.
         #expect(ArgoFeedRow.proseLineSpacing > 0)
     }
 
-    /// Every shape the subject slot of a call line can take. Written once because both rules below
-    /// are claims about the whole set — a shape added to one list and not the other would be a
-    /// shape half the contract never sees.
+    /// Every shape the subject slot of a call line can take — both rules below are claims about
+    /// the whole set, so a shape missing here is one half the contract never sees.
     private static let subjectShapes: [FeedCall.Subject] = [
         .command("swift build"),
         .narration("Build the UI package", standingIn: "swift build"),
         .plain("grill"),
     ] + (FeedCall.FileName(path: "Sources/Feed.swift").map { [FeedCall.Subject.file($0)] } ?? [])
 
-    /// The mono is the claim "this is machine text", and a call line is where it is easiest to make
-    /// by accident: a command and a sentence the agent wrote sit in the SAME slot, one row apart.
-    /// Only the command may take the machine face — a narration set in it would say the agent's
-    /// words were something to run, and a filename is a name rather than a thing to retype.
+    /// A command and a sentence the agent wrote sit in the SAME slot, one row apart; only the
+    /// command may take the machine face.
     @Test
     func `only a command takes the machine face in a call line's subject slot`() {
         for subject in Self.subjectShapes {
@@ -102,8 +87,6 @@ struct TypeAndIconContractTests {
         }
     }
 
-    /// One rung under all of them. A subject a size above its neighbours would be the line's own
-    /// type scale disagreeing with itself about which of two words matters more.
     @Test
     func `every subject shape sits on the feed's one body rung`() {
         for subject in Self.subjectShapes {
@@ -111,8 +94,7 @@ struct TypeAndIconContractTests {
         }
     }
 
-    /// Markup keeps its own steps. An outline the agent wrote has to read as one, so a heading
-    /// stands above the paragraph under it — the exception the one-size rule is stated against.
+    /// Markup keeps its own steps — the one exception the one-size rule is stated against.
     @Test
     func `a heading still stands above the body it belongs to`() {
         #expect(ArgoTypeScale.title3.size > ArgoFeedRow.proseRung.size)
@@ -120,9 +102,7 @@ struct TypeAndIconContractTests {
 
     // MARK: - The icon scale
 
-    /// The whole point of the scale is that it is SHORT. A multiplier on the type ramp produced an
-    /// icon size per role — eleven of them, separated by fractions of a point — and a scale that
-    /// long is picked by proximity rather than by meaning.
+    /// A scale long enough to hold a rung per role is picked by proximity rather than by meaning.
     @Test
     func `the icon scale stays short enough to pick a rung by what it means`() {
         #expect(ArgoIconSize.allCases.count <= 3)
@@ -142,21 +122,17 @@ struct TypeAndIconContractTests {
         }
     }
 
-    /// What the old multiplier bought — a mark never standing proud of its own line — is kept as a
-    /// ceiling instead. The rungs are absolute now, so this is the assertion that stops one being
-    /// raised past the densest text it can sit beside.
+    /// The rungs are absolute, so this is what stops one being raised past the densest text it can
+    /// sit beside.
     @Test
     func `no rung outgrows the densest line of type it can sit on`() {
         let densest = ArgoTypography.all.map(\.style.size).min() ?? 0
 
         #expect(ArgoIconSize.inline.rawValue <= densest)
-        // The control rung is the exception, and deliberately: it marks a control rather than
-        // annotating a word, so it answers to the control's own line and not to a caption's.
+        // The control rung answers to the control's own line, not to a caption's.
         #expect(ArgoIconSize.control.rawValue <= ArgoTypography.control.size + 1)
     }
 
-    /// A chevron is a control, not punctuation. It had a rung of its own at well under label size,
-    /// and what that bought was a disclosure nobody could see they were allowed to click.
     @Test
     func `a pointer is drawn at the same size as the marks it shares a line with`() {
         #expect(ArgoIconSize.allCases.allSatisfy { $0.rawValue >= ArgoIconSize.inline.rawValue })
@@ -165,9 +141,8 @@ struct TypeAndIconContractTests {
     // MARK: - Which mark, in the evidence panel's header
 
     /// A command has no language, and a header that asks for one falls through to the generic
-    /// document — which is a shell call's evidence opening under a page icon. The claim is the
-    /// fall-through itself: the mark is the terminal the command RAN in, and the question about a
-    /// language is one a command is never asked, whatever its own last word happens to end in.
+    /// document — a shell call's evidence opening under a page icon, whatever its last word ends
+    /// in.
     @Test
     func `a command's header takes the terminal, never a language glyph`() {
         let ran = "sh scripts/screenshot.sh out.png && cat notes.md"

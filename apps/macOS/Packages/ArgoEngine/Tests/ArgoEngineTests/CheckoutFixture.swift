@@ -32,14 +32,12 @@ actor CheckoutFixture {
     }
 }
 
-/// A Hub reading its checkout through the fixture adapter rather than through `git`, which is what
-/// keeps a test of the join from spawning a subprocess to be told what it already supplied.
+/// A Hub reading its checkout through the fixture adapter rather than through `git`.
 ///
 /// An empty fixture by default: no repository under any folder, and a read that suspends the way
 /// every real one does, so a test about what `connect` looks like mid-flight has a window to see.
-///
-/// Liveness reads nothing by default for the same reason the checkout does: a suite that asked the
-/// machine's own process table would answer differently depending on what its author had running.
+/// Liveness reads nothing by default — the machine's own process table answers differently
+/// depending on what its author had running.
 @MainActor
 func testHub(
     projectURL: URL,
@@ -50,9 +48,8 @@ func testHub(
     -> Hub {
     Hub(
         projectURL: projectURL,
-        // No git read of any Session's folder: a suite that shelled out per poll would be
-        // asserting what this machine's checkouts happen to be. `HubWorkspaceTests` supplies its
-        // own read where the answer is the point.
+        // No git read of any Session's folder: a suite that shelled out per poll would assert what
+        // this machine's checkouts happen to be. `HubWorkspaceTests` supplies its own read.
         engine: Engine(
             readCheckout: checkout,
             readWorkspace: noWorkspaceRead,

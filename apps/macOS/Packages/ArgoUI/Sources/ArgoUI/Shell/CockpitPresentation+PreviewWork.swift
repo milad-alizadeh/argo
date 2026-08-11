@@ -1,13 +1,11 @@
 import ArgoEngine
 
 extension CockpitPresentation.Session {
-    /// The work itself, between the prose: one call of every kind the feed can name, the two
-    /// same-named files that make the qualifier appear, the run of three edits the feed collapses,
-    /// and the failure the whole line goes red for.
+    /// The work itself: one call of every kind the feed can name, the two same-named files that
+    /// make the qualifier appear, the run of three edits the feed collapses, and a failure.
     ///
-    /// Every one of them is an ENGINE call plus the outcome that answered it, because that pairing
-    /// is what the projection does — a fixture written as finished calls would prove nothing about
-    /// the half of the reading that finds a result two records later.
+    /// Each is an ENGINE call plus the outcome that answered it: a fixture written as finished
+    /// calls would exercise none of the reading that finds a result two records later.
     static let workedOn: [TranscriptEvent] = surveyed + [
         .toolCall(ToolCall(
             id: "edit", name: "Edit", kind: .edit,
@@ -54,8 +52,7 @@ extension CockpitPresentation.Session {
             to: "Sources/ArgoUI/VisualContract/ConnectionTint.swift",
         )))),
         // Narrated, as a Claude Code record writes a command: the sentence is what the row draws
-        // and the command is what the panel opens on, so the fixture has to carry both or the
-        // render is of a feed nobody is shown.
+        // and the command is what the panel opens on, so the fixture carries both.
         .toolCall(ToolCall(
             id: "build", name: "Bash", kind: .execute,
             target: "swift build --package-path Packages/ArgoUI",
@@ -72,9 +69,8 @@ extension CockpitPresentation.Session {
             endedAtMs: nil,
             usage: nil,
         )),
-        // One read between two commands: a quiet call with a loud one either side of it never
-        // folds, so this is the line that still names the file it looked at. Both states are on
-        // screen at once, which is the only way to judge whether the fold reads as the same feed.
+        // One read between two commands: a quiet call with a loud one either side never folds, so
+        // this is the line that still names the file it looked at.
         .toolCall(ToolCall(
             id: "reread", name: "Read", kind: .read,
             target: "Sources/ArgoUI/Shell/Deck/Feed/Call/FeedCallLine.swift", atMs: nil,
@@ -84,10 +80,8 @@ extension CockpitPresentation.Session {
             text: "    88\t        .foregroundStyle(argo.color.diff.added)",
         )))),
         .toolCall(ToolCall(
-            // With a pipeline on it and NO description, deliberately: this is the row that still
-            // draws the command — the 0.03% of Claude Code calls that narrate nothing and every
-            // command on a CLI that never does. The row shows what RAN and the panel keeps the
-            // plumbing, and the render is where that is checked.
+            // With a pipeline and NO description, deliberately: the row that still draws the
+            // command, as every CLI that narrates nothing produces.
             id: "test", name: "Bash", kind: .execute,
             target: "swift test --package-path Packages/ArgoUI 2>&1 | grep -E 'Test run with'",
             atMs: nil,
@@ -130,8 +124,8 @@ extension CockpitPresentation.Session {
             tier: .direct, text: "Adopting Liquid Glass",
         )))),
         .toolCall(ToolCall(
-            // A delegation names itself in the same key a command narrates itself in, so the row
-            // shows the short account and never the brief the agent actually handed over.
+            // A delegation narrates itself in the same key a command does, so the row shows the
+            // short account and never the brief actually handed over.
             id: "delegate", name: "Task", kind: .delegate, target: "Review the feed",
             narration: "Review the feed", atMs: nil,
         )),
@@ -143,16 +137,15 @@ extension CockpitPresentation.Session {
             tier: .direct, text: "12 issues",
         )))),
         .toolCall(ToolCall(
-            // With an argument, deliberately: a kind nobody classified is named by its TOOL, and
-            // the render is where that is checked.
+            // With an argument, deliberately: a kind nobody classified is named by its TOOL.
             id: "strange", name: "custom_tool_v2", kind: .other,
             target: "whatever it does", atMs: nil,
         )),
         .toolCallOutcome(answered("strange", nil)),
     ]
 
-    /// Real markdown, because the whole question the render answers is whether an outline reads as
-    /// an outline once the notation stops being drawn.
+    /// Real markdown: the render has to answer whether an outline still reads as one once the
+    /// notation stops being drawn.
     private static let specification: [DiffLine] = [
         "# Feed command legibility",
         "",
@@ -173,8 +166,8 @@ extension CockpitPresentation.Session {
         ToolCallOutcome(id: id, status: .completed, result: result, endedAtMs: nil, usage: nil)
     }
 
-    /// A patch with a hunk in it, because a mutation whose patch nothing could read is a row that
-    /// does not open — a fixture with no hunks would render a feed whose edits all refuse to.
+    /// A patch with a hunk in it: a mutation whose patch nothing could read is a row that does not
+    /// open.
     private static func patch(_ change: FileChange, added: Int, removed: Int) -> DiffEvidence {
         DiffEvidence(
             tier: .direct,

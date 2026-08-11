@@ -1,13 +1,9 @@
 import ArgoEngine
 import SwiftUI
 
-/// Allow focused, `⏎` allows, `esc` denies — and, on the trailing edge, the quieter third answer
-/// the study drew: stop asking about this tool for the rest of this Session.
-///
-/// Quieter deliberately, and unbound to any key. It is the only answer here that outlives the call
-/// it is given for, so it is the one answer that must not be reachable by muscle memory — and it
-/// says its own scope in full (#572), because the version removed before merge said *here* over a
-/// grant that covered every call to the tool.
+/// Allow focused, `⏎` allows, `esc` denies — and, on the trailing edge, the quieter third answer:
+/// stop asking about this tool for the rest of this Session. The third is bound to no key, being
+/// the only answer that outlives the call it is given for (#572).
 struct PermissionPromptFooter: View {
     let toolName: String
     let decide: (PermissionDecision) -> Void
@@ -23,8 +19,7 @@ struct PermissionPromptFooter: View {
     }
 }
 
-/// The standing answer, as a line of text rather than a third pill: two pills and a third would
-/// read as three equal answers, and this one is not equal to them.
+/// The standing answer, as a line of text rather than a third pill.
 private struct StandingAllowOffer: View {
     @Environment(\.argo) private var argo
 
@@ -42,20 +37,16 @@ private struct StandingAllowOffer: View {
     }
 }
 
-/// One of the two answers, drawn rather than taken from a stock button style.
-///
-/// Not a bespoke control for its own sake: the study's 27pt is taller than any `controlSize` the
-/// platform offers, the ring belongs OUTSIDE the fill rather than on it, and a `.bordered` pill's
-/// own ground resolves to within a couple of points of a glass vessel — which is a control the
-/// reader has to already know is there. `Button` still owns the semantics and the keyboard.
+/// One of the two answers, drawn rather than taken from a stock button style: the study's 27pt is
+/// taller than any `controlSize` the platform offers, the ring belongs OUTSIDE the fill, and a
+/// `.bordered` pill's own ground resolves to within a couple of points of a glass vessel. `Button`
+/// still owns the semantics and the keyboard.
 private struct PermissionDecisionButton: View {
     @Environment(\.argo) private var argo
 
     let answer: Answer
     let act: () -> Void
 
-    /// The two answers as a shape rather than as a pile of parameters, so the pair cannot be
-    /// assembled into a third thing at a call site.
     enum Answer {
         case allow
         case deny
@@ -85,9 +76,8 @@ private struct PermissionDecisionButton: View {
         RoundedRectangle(cornerRadius: ArgoRadius.control)
     }
 
-    /// Drawn on Allow unconditionally, because Allow being focused is the state and not a thing
-    /// that happens once the vessel is clicked: the prompt takes the composer's slot, and the
-    /// reader arriving at it has to be able to answer with `⏎` without hunting for what has focus.
+    /// Drawn on Allow unconditionally: Allow being focused is the state, not something that happens
+    /// once the vessel is clicked, and `⏎` answers from the moment the prompt appears.
     @ViewBuilder private var focusRing: some View {
         if answer == .allow {
             shape
@@ -124,8 +114,7 @@ private struct PermissionDecisionButton: View {
         }
     }
 
-    /// Allow's ground is its own edge; Deny's has to be drawn, or the quieter answer is a word
-    /// floating on the vessel rather than a control beside the loud one.
+    /// Allow's ground is its own edge; Deny's has to be drawn.
     private var border: ArgoColor {
         switch answer {
         case .allow: .transparent
@@ -134,8 +123,8 @@ private struct PermissionDecisionButton: View {
     }
 }
 
-/// The key that answers, raised off the control it sits on rather than dimmed into it: a hint
-/// ghosted to 60% reads as a label that has been disabled, which is the opposite of what it says.
+/// The key that answers, raised off the control it sits on: a hint ghosted to 60% reads as a
+/// disabled label.
 private struct PermissionKeycap: View {
     @Environment(\.argo) private var argo
 
@@ -146,9 +135,8 @@ private struct PermissionKeycap: View {
             .argoText(ArgoTypography.machineCaption)
             .padding(.horizontal, ArgoSpacing.tight)
             .padding(.vertical, ArgoSpacing.hair)
-            // `marked` is the contract's ground for a run of machine text, which is what a key
-            // name is — and it is the one ground specified to keep its lift on whatever it lands
-            // on, here an accent fill and a translucent pill.
+            // `marked` is the one ground specified to keep its lift on whatever it lands on, here
+            // an accent fill and a translucent pill.
             .background(argo.color.surface.marked, in: .rect(cornerRadius: ArgoRadius.marker))
     }
 }

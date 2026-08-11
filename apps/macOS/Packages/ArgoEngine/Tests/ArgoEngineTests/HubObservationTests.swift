@@ -34,9 +34,8 @@ struct HubObservationTests {
     }
 
     /// The event yielded after the stop is buffered against a stream nobody is reading, and the id
-    /// it was read under is then handed to a different transcript. Applying it would be
-    /// indistinguishable from applying the live one's, which is why the stop has to have finished
-    /// the old tail rather than only asked it to end.
+    /// it was read under is then handed to a different transcript — so the stop has to have
+    /// finished the old tail rather than only asked it to end.
     @Test
     @MainActor
     func `a stopped observation applies no further event`() async {

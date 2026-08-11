@@ -5,15 +5,13 @@ struct SessionNavigator: View {
     @Environment(\.argo) private var argo
 
     let rows: [SessionRosterProjection.Row]
-    /// What is behind the foot. Passed in beside the roster rather than filtered here, because
-    /// which list a Session belongs to is the projection's decision and not the list's.
+    /// What is behind the foot. Which list a Session belongs to is the projection's decision.
     var archived: [SessionRosterProjection.Row] = []
     @Binding var selection: CockpitPresentation.Session.ID?
     /// Clear a Session off the roster, or put one back. Inert by default, so every preview and
     /// specimen draws the gesture without wiring a store to it.
     var archive: (String, Bool) -> Void = { _, _ in }
-    /// Name a Session, or — with `nil` — drop the name it has. Inert by default, like the archive
-    /// beside it: a specimen draws the dialog without a store to write to.
+    /// Name a Session, or — with `nil` — drop the name it has. Inert by default, like the archive.
     var rename: (String, String?) -> Void = { _, _ in }
     /// Whether a search is narrowing the two lists above. It changes only what an EMPTY roster
     /// says: "no Sessions" and "none that match what you typed" are different claims, and a
@@ -80,14 +78,9 @@ struct SessionNavigator: View {
         .contentShape(.rect)
     }
 
-    /// Which way the gesture goes is the row's own state and not a second reading of which list
-    /// it was drawn in — two sources for one fact is how they come to disagree.
-    ///
-    /// `.swipeActions` rather than a gesture of Argo's own: the reveal, the spring back, which row
-    /// closes when another opens and the full-swipe commit are all the system's here, which is what
-    /// makes the roster behave like every other macOS sidebar rather than like one list that had to
-    /// be learned. `allowsFullSwipe` is what keeps story 12 — a hard pull still archives outright,
-    /// without a second click.
+    /// `.swipeActions` gives the system's reveal, spring back, close-when-another-opens and
+    /// full-swipe commit. `allowsFullSwipe` is what keeps story 12 — a hard pull still archives
+    /// outright, without a second click.
     private func swipeable(_ row: SessionRosterProjection.Row) -> some View {
         SessionRow(
             row: row,
@@ -111,8 +104,6 @@ struct SessionNavigator: View {
         }
     }
 
-    /// An icon and a label, where the hand-rolled control could only afford the icon: the system's
-    /// control sizes to what is in it, so the verb no longer has to live only in the announcement.
     private func archiveSymbol(_ row: SessionRosterProjection.Row) -> String {
         row.isArchived ? ArgoSymbol.unarchive : ArgoSymbol.archive
     }

@@ -1,7 +1,5 @@
-// What a Tool Call PRODUCED, kinded (CONTEXT.md L3, "Result"). A sum type rather than three loose
-// fields on the call, because the TIER belongs to the payload and not to the call: the same read
-// can yield the agent's own bytes or a weaker re-read from disk, and a fact with two possible
-// provenances needs somewhere to carry which one it was.
+// What a Tool Call PRODUCED, kinded (CONTEXT.md L3, "Result"). The TIER belongs to the payload and
+// not to the call: the same read can yield the agent's own bytes or a weaker re-read from disk.
 
 /// Which side of the change one printed line of a hunk sits on.
 public enum DiffLineSide: String, Sendable, Equatable {

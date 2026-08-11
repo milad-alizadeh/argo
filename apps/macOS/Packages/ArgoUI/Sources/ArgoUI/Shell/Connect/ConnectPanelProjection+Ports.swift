@@ -1,14 +1,11 @@
 import ArgoEngine
 
 /// The two port rows: what each one reads through, what else it could read through, and how a new
-/// identity is added when neither answer is the right one.
-///
-/// This is the half of the panel the account level changed. A single sign-in button was honest
-/// while one grant fed both ports; it is not now (#414), so a row names its Account, offers every
-/// other Account that could fill it, and keeps the way to authorize one more.
+/// identity is added when neither answer is the right one. Each port takes its own Account, so no
+/// row may assume one grant feeds both (#414).
 extension ConnectPanelProjection {
     /// One authorized identity, offered for a port it can fill. Picking one binds with no OAuth
-    /// round-trip, which is the whole point of Accounts and Bindings being two levels.
+    /// round-trip.
     struct AccountChoice: Identifiable, Equatable {
         let id: String
         /// Provider first, then the identity: two Accounts on one provider are told apart by the
@@ -32,12 +29,10 @@ extension ConnectPanelProjection {
         let choices: [AccountChoice]
         let offers: [Offer]
         /// What this port currently reads through, carried apart from the detail line so a rebind
-        /// can open on it. Re-typing a scope to change which identity reads it is the busywork the
-        /// account level exists to remove.
+        /// can open on it.
         let scope: String?
-        /// What has come undone about this row, where something has. It sits on the row rather
-        /// than at the foot of the panel because it is a fact about this port and stays true while
-        /// the user does something else.
+        /// What has come undone about this row. On the row rather than at the foot of the panel:
+        /// it is a fact about this port and stays true while the user does something else.
         let note: ConnectNote?
         let isBound: Bool
     }
@@ -54,10 +49,9 @@ extension ConnectPanelProjection {
                 detail: detail(of: port, in: reading),
                 isMachine: port.accountID != nil,
             ),
-            // A Binding is a fact about a Project, so with no folder yet there is nothing to bind
-            // to and the choices are withheld rather than offered and then refused. Authorizing is
-            // NOT withheld: that is Account-level, it needs no Project, and it is the half of this
-            // row that genuinely completes in any order.
+            // A Binding is a fact about a Project, so with no folder there is nothing to bind to
+            // and the choices are withheld. Authorizing is NOT: that is Account-level and needs
+            // no Project.
             choices: reading.folder == nil ? [] : choices(for: port.port, in: reading),
             offers: offers(for: port.port, in: reading),
             scope: port.scope,
@@ -66,14 +60,12 @@ extension ConnectPanelProjection {
         )
     }
 
-    /// Which Account this port reads through, and through what. A broken row leads with what has
-    /// come undone and keeps the choice underneath it: the Binding is still recorded, and saying
-    /// what it was is what makes it re-bindable rather than a row that quietly emptied itself.
+    /// Which Account this port reads through, and through what. A broken row still names the
+    /// Binding it had, which is what makes it re-bindable rather than quietly empty.
     private static func detail(of port: ConnectPort, in reading: ConnectReading) -> String {
         guard let accountID = port.accountID, let scope = port.scope else {
-            // The one dependency between the rows, said where it applies rather than discovered by
-            // pressing something. Connecting an account still works here; pointing it at a
-            // repository needs a Project to point it FOR.
+            // The one dependency between the rows, said where it applies: connecting an account
+            // works here, but pointing it at a repository needs a Project to point it FOR.
             guard reading.folder != nil else {
                 return "\(port.port.benefit) Choose a folder first to say which one."
             }

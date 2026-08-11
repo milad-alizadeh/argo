@@ -2,29 +2,25 @@ import XCTest
 
 /// The drawer, driven the way a person drives it.
 ///
-/// Every other test in this repo is a package test: it can build a projection and assert on it,
-/// but it cannot launch the app, and it cannot click. So a view that renders correctly in a
-/// specimen and comes apart inside a popover passes all of them — which is exactly what happened.
-/// A click is the only thing that catches that, and this is the only target that can click.
+/// Every other test in this repo is a package test: it cannot launch the app and cannot click, so
+/// a view that renders correctly in a specimen and comes apart inside a popover passes all of
+/// them. This is the only target that can click.
 /// `@MainActor` on the whole case: driving a UI is main-actor work under Swift 6, and
 /// `XCUIApplication()` is isolated to it — a stored default in a nonisolated class does not
 /// compile. The async `setUp`/`tearDown` overrides are what let an isolated case override
 /// XCTest's own nonisolated ones.
 @MainActor
 final class ProjectDrawerE2ETests: XCTestCase {
-    /// Built at init rather than in `setUp`, so it needs no implicit unwrap. `XCUIApplication()`
-    /// only describes the app — nothing launches until `launch()`.
+    /// `XCUIApplication()` only describes the app — nothing launches until `launch()`.
     private let app = XCUIApplication()
 
     override func setUp() async throws {
         try await super.setUp()
         // A crashed app fails the test it crashed in, rather than every one after it.
         continueAfterFailure = false
-        // Launch onto the specimen's fixtures, NOT the machine's registry. Against a real
+        // Launch onto the specimen's fixtures, NOT the machine's registry: against a real
         // registry this asserts whatever that Mac happens to have registered — it passed on one
-        // with three Projects and failed on a clean one, where the drawer correctly showed its
-        // empty state and no row had a menu to find. The state under test has to come from the
-        // test, and that holds on any machine anyone runs this on.
+        // with three Projects and failed on a clean one, where no row had a menu to find.
         app.launchArguments += ["--specimen", "toolbarScope"]
         app.launch()
         // Launch failures report as launch failures. Without this, an app that never came up
@@ -45,8 +41,7 @@ final class ProjectDrawerE2ETests: XCTestCase {
     ///
     /// Each test case here costs a launch, and a terminate-then-relaunch of the same bundle id is
     /// the flakiest moment in the run: on a CI runner the second app came up without an
-    /// addressable accessibility tree, so a suite that was really testing one flow failed on the
-    /// cost of splitting it. A UI test is a walk through the app, and this is the walk.
+    /// addressable accessibility tree.
     func testTheDrawerOpensAndCarriesItsVerbs() throws {
         try scopeVessel().click()
 

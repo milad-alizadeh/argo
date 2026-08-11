@@ -4,8 +4,8 @@ import Testing
 /// The plan, read off a host that writes it ONE ENTRY AT A TIME (`PlanLedger` says why the fold
 /// exists and where it sits).
 ///
-/// Every test here is the same claim said a different way: the fold ends at the reader. What leaves
-/// it is one whole list per write, so nothing downstream can tell which host wrote the record.
+/// The fold ends at the reader: what leaves it is one whole list per write, so nothing downstream
+/// can tell which host wrote the record.
 @Suite("Task plan reading")
 struct TaskPlanReadingTests {
     private func plans() async throws -> [Plan] {
@@ -30,12 +30,11 @@ struct TaskPlanReadingTests {
         #expect(plan.entries.map(\.status) == [.completed, .completed, .pending])
     }
 
-    /// The point of folding in the reader: every write reports the WHOLE list, so the newest plan
-    /// is still the whole of it and `PlanProjection` goes on taking the last one it sees.
+    /// Every write reports the WHOLE list, so `PlanProjection` goes on taking the last one it sees.
     ///
-    /// Six snapshots out of the fixture's eleven writes is the second half of the claim. The five
-    /// that report nothing wrote nothing to this list: a create with no subject, an update naming a
-    /// task nobody created, one that only rewords, a `TaskList`, and a `TaskStop`.
+    /// Six snapshots out of the fixture's eleven writes: the five that report nothing wrote nothing
+    /// to this list — a create with no subject, an update naming a task nobody created, one that
+    /// only rewords, a `TaskList`, and a `TaskStop`.
     @Test
     func `every write reports the whole list, and a write that changes nothing reports none`(
     ) async throws {
@@ -45,8 +44,7 @@ struct TaskPlanReadingTests {
     }
 
     /// The id is joined from the result the create came back with. Read off creation ORDER instead,
-    /// the second entry would have been `2` — and the update naming `7` would have landed on
-    /// nothing, or worse, on somebody else.
+    /// the second entry would have been `2` and the update naming `7` would have landed on nothing.
     @Test
     func `an entry is keyed by the id its result reported, never by its place in the list`(
     ) async throws {
@@ -81,10 +79,8 @@ struct TaskPlanReadingTests {
         #expect(plan.entries.last?.status == .pending)
     }
 
-    /// The pill draws what these calls wrote, so the feed must not draw them too — which is what
-    /// the `plan` kind means (`FeedCallReading` draws no row for one). Only the two that WRITE earn
-    /// it: `TaskList` reads the list and `TaskStop` ends a background agent task, and hiding either
-    /// would take a thing the agent did off the screen without putting it on the pill.
+    /// The `plan` kind means the feed draws no row (`FeedCallReading`), so only the two that WRITE
+    /// earn it: `TaskList` reads the list and `TaskStop` ends a background agent task.
     @Test
     func `only the tools that write the list are read as plan calls`() async throws {
         #expect(try await calls()["create-first"]?.kind == .plan)

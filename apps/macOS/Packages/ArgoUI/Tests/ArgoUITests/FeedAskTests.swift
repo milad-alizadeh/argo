@@ -2,9 +2,8 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// The one row in the feed that is about somebody rather than about the agent. Every claim here is
-/// about the difference between a question still waiting on you and one already settled — which is
-/// the difference between a row that may take the attention ink and one that may not.
+/// The one row in the feed that is about somebody rather than the agent. Every claim here is about
+/// the difference between a question still waiting and one already settled.
 @Suite("Feed ask")
 struct FeedAskTests {
     private static let question = Ask.Question(
@@ -32,8 +31,7 @@ struct FeedAskTests {
         #expect(ask.chosen(in: Self.question) == nil)
     }
 
-    /// Verbatim, and that is the whole claim: what is on screen is what was offered, in the order
-    /// it was offered, because somebody is about to choose between them.
+    /// Verbatim: what is on screen is what was offered, in the order it was offered.
     @Test
     func `a question carries the options exactly as they were offered`() throws {
         let ask = try #require(asked(nil))
@@ -57,8 +55,7 @@ struct FeedAskTests {
         #expect(ask.chosen(in: Self.question) == "The attention ink")
     }
 
-    /// The reading is that the answer NAMES an option. Where it names none, nothing is marked — a
-    /// tick against an option nobody chose is a worse row than a row with no tick on it.
+    /// The reading is that the answer NAMES an option; where it names none, nothing is marked.
     @Test
     func `an answer naming none of the options marks nothing`() throws {
         let ask = try #require(asked("neither, ask me again"))
@@ -66,9 +63,8 @@ struct FeedAskTests {
         #expect(ask.chosen(in: Self.question) == nil)
     }
 
-    /// Somebody replied. What they replied with being unreadable is a different failure from
-    /// nobody having replied at all, and ambiguity resolves toward the quieter state — so the row
-    /// stops asking for attention rather than glowing forever over a settled question.
+    /// Somebody replied, and ambiguity resolves toward the quieter state: an unreadable answer
+    /// still stops the row asking for attention.
     @Test
     func `a question answered with nothing readable has still stopped waiting`() throws {
         let rows = FeedProjection.rows(from: [

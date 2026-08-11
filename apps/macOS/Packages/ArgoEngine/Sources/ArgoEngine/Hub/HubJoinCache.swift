@@ -2,10 +2,10 @@ import Foundation
 
 /// The joins built for Projects this Hub has been pointed at, held across a switch.
 ///
-/// Bounded, because a join holds every Session it read: a window left open all day would
-/// otherwise pin the roster of every Project it ever visited. What the retention buys is a
-/// switch BACK, so the bound is small — a Project untouched for four switches is a re-read
-/// nobody is sitting through.
+/// Bounded, because a join holds every Session it read: a window left open all day would otherwise
+/// pin the roster of every Project it ever visited. What the retention buys is a switch BACK, so
+/// the bound is small — a Project untouched for four switches is a re-read nobody is sitting
+/// through.
 ///
 /// Keyed by the resolved Project path rather than by a Project id, because a path is what the
 /// Hub has: registration lives above it. A Project that MOVES mid-process therefore misses its

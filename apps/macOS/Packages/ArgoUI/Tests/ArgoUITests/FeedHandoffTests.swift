@@ -3,19 +3,11 @@ import ArgoEngine
 import Testing
 
 /// The chain at the foot of a handed-off reading: where the row goes, what it says, and the two
-/// ways
-/// it is deliberately absent.
-///
-/// Its own suite rather than a case in the projection's, because it is the one input to the feed
-/// that
-/// is not the record — Argo's own memory of a handoff — and every claim here is about honesty
-/// rather
-/// than about reading a transcript.
+/// ways it is deliberately absent. The one input to the feed that is not the record — Argo's own
+/// memory of a handoff.
 @Suite("Feed handoff")
 struct FeedHandoffTests {
-    /// The last row of all, under the spend. Both are facts about the whole Session; of the two
-    /// this
-    /// is the one a reader acts on, so it is the one they end at.
+    /// The last row of all, under the spend.
     @Test
     func `a handed-off reading ends with the link to the Session that took the work`() throws {
         let rows = FeedProjection.rows(from: Self.transcript, handedOff: Self.handoff)
@@ -25,16 +17,14 @@ struct FeedHandoffTests {
         #expect(rows.dropLast().last?.content == .mark(.spent(Self.spend)))
     }
 
-    /// Named, because the whole point of the row is knowing where to go — and named in the roster's
-    /// own words rather than in a sentence written here.
+    /// Named in the roster's own words rather than in a sentence written here.
     @Test
     func `the link says which Session it leads to`() {
         #expect(FeedMark.handedOff(Self.handoff).words == "handed off to Continue the shell work")
         #expect(FeedMark.handedOff(Self.handoff).handoff == Self.handoff)
     }
 
-    /// The other three marks lead nowhere and must not become pressable: a click that does nothing,
-    /// offered at every turn boundary, is worse than a hairline.
+    /// The other three marks lead nowhere and must not become pressable.
     @Test
     func `every other mark leads nowhere`() {
         #expect(FeedMark.compacted.handoff == nil)
@@ -42,8 +32,7 @@ struct FeedHandoffTests {
         #expect(FeedMark.spent(Self.spend).handoff == nil)
     }
 
-    /// A Session that handed nothing over reads exactly as it did before — the row is not an empty
-    /// slot at the foot of every reading in the app.
+    /// The row is not an empty slot at the foot of every reading in the app.
     @Test
     func `a Session that handed nothing over ends where its record does`() {
         let rows = FeedProjection.rows(from: Self.transcript)
@@ -65,9 +54,6 @@ struct FeedHandoffTests {
         #expect(Self.presentation([full]).handoff(of: "full") == nil)
     }
 
-    /// And a Session that handed nothing over resolves to nothing, which is the case every reading
-    /// in
-    /// the app takes.
     @Test
     func `a Session with no chain resolves to no link`() {
         let full = Self.session(id: "full", title: "The full Session")
@@ -88,8 +74,8 @@ struct FeedHandoffTests {
         cacheCreationTokens: 0,
     )
 
-    /// A reading with something in it and a spend under it, so the link's PLACE is asserted against
-    /// the row it has to sit below rather than against an empty list.
+    /// A reading with something in it and a spend under it, so the link's PLACE is asserted
+    /// against the row it has to sit below rather than against an empty list.
     private static let transcript: [TranscriptEvent] = [
         .prompt(text: "Take this on", atMs: 1000),
         .message(markdown: "On it."),

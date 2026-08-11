@@ -1,11 +1,8 @@
 import Foundation
 
 /// Everything the process host needs to start one agent: the resolved program, where it runs, what
-/// it is passed, and the environment it inherits.
-///
-/// A value rather than four positionals, so no call site encodes the order — and resolved here
-/// rather than in the host, because whether `claude` is on this Mac's `PATH` is a question with an
-/// answer worth saying out loud rather than a child that silently dies.
+/// it is passed, and the environment it inherits. Resolved here rather than in the host, so a
+/// `claude` missing from this Mac's `PATH` is an answer rather than a child that silently dies.
 public struct AgentLaunch: Sendable, Equatable {
     /// Absolute, because the host `execve`s it: a bare name would be an exec failure inside a
     /// forked child, where there is nobody left to tell.
@@ -32,13 +29,8 @@ public struct AgentLaunch: Sendable, Equatable {
         environment.map { "\($0.key)=\($0.value)" }.sorted()
     }
 
-    /// The same launch, opening on a prompt.
-    ///
-    /// Applied HERE rather than in the launcher: how a CLI is handed an opening prompt is a
-    /// property of the CLI, and the launcher's job is the program and the user's `PATH`.
-    ///
-    /// Last on argv, after the companion's flags — a positional that arrived before a flag's value
-    /// would be read as that value.
+    /// The same launch, opening on a prompt. Last on argv, after the companion's flags — a
+    /// positional arriving before a flag's value would be read as that value.
     func opening(_ prompt: String) -> AgentLaunch {
         AgentLaunch(
             executablePath: executablePath,

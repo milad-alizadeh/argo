@@ -6,38 +6,25 @@ import ArgoEngine
 ///
 ///     handoff(s) = tier(s) ∈ {.warn, .crit} && s.access == .managed && s.handedOffTo == nil
 ///
-/// Three facts and no fourth. It is not offered under the WARN line because a control that is
-/// always there is a control nobody reads by the second Session (#502, story 44) — the remedy
-/// appears at the moment it is the right move and not before. It is not offered on a Session Argo
-/// cannot drive because handing off means TYPING at a prompt, and Argo owns no prompt on an
-/// external or an orphaned Session (story 49): the coloured reading still warns, and the button
-/// that would lie about what Argo can do is simply not drawn.
-///
-/// And it is not offered TWICE. A Session that has already handed its work over keeps its coloured
-/// reading — the context really is that full, and saying otherwise would be a lie about the number
-/// — but the remedy has been taken, and the reading now ends in a link to the Session that took it.
-/// A second press would type `/handoff` at an agent that has already summarised itself and open a
-/// third Session against the same branch, which is not a chain but a fork nobody asked for.
+/// Three facts and no fourth. Handing off means TYPING at a prompt, and Argo owns no prompt on an
+/// external or an orphaned Session (story 49) — the coloured reading still warns, the button is not
+/// drawn. A Session that has already handed over keeps its coloured reading and its link to the
+/// Session that took it; a second press would fork the branch rather than chain it.
 extension SessionHeaderProjection {
     struct Handoff: Equatable, Sendable {
-        /// The verb, and the whole of the control's ink — **no caption** (story 46): the coloured
-        /// reading beside it and the ⓘ above it have already made that argument.
+        /// The verb, and the whole of the control's ink — **no caption** (story 46).
         let label: String
         /// What the control reads while the handoff is running. `/handoff` is a whole turn of an
-        /// agent's work, so the press is answered in minutes rather than instantly — a button that
-        /// looked untouched for that long would be pressed again, and each press starts another
-        /// handoff.
+        /// agent's work, so the press is answered in minutes rather than instantly, and each press
+        /// starts another handoff.
         let runningLabel: String
         /// Which reading the button is standing beside, so its urgency is the same fact as the
-        /// reading's rather than a second one drawn in whatever colour a view picked (story 45).
-        /// Never `.okay` and never absent — a button that exists is a button past a line.
+        /// reading's (story 45). Never `.okay` and never absent.
         let tier: Context.Tier
-        /// One sentence, which is the whole tooltip. What handing off DOES, not why a long context
-        /// is bad — that argument is the ⓘ panel's and is already made there.
+        /// One sentence, which is the whole tooltip: what handing off DOES.
         let detail: String
         /// Why it cannot be launched, or `nil` when it can. Present means the control is drawn and
-        /// DISABLED with this sentence on it: a remedy that silently does nothing is worse than one
-        /// that says what is in its way.
+        /// DISABLED with this sentence on it.
         let blocked: String?
 
         var isLaunchable: Bool {
@@ -65,8 +52,7 @@ extension SessionHeaderProjection {
             tier: tier,
             detail: HandoffWords.detail,
             // The refusal's wording is the ENGINE's, read off the failure the orchestration would
-            // raise. One rule and one sentence: the tooltip that explains a disabled button and the
-            // alert that reports the same refusal cannot drift apart.
+            // raise, so the tooltip and the alert cannot drift apart.
             blocked: session.workspaceLocation == nil
                 ? SessionHandoff.Failure.noFolder.detail
                 : nil,

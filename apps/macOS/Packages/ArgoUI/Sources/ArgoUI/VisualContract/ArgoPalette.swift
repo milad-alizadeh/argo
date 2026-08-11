@@ -1,9 +1,5 @@
-/// Every colour role in the contract, grouped by the question it answers.
-///
-/// Colour is the only family that a future light appearance would change — type, geometry,
-/// elevation and motion are appearance-independent — so it is the only one carried in the
-/// environment rather than exposed as statics. A light appearance is a second `ArgoPalette`
-/// value and an environment write; no call site moves.
+/// Every colour role in the contract, grouped by the question it answers. Carried in the
+/// environment, not as statics: a light appearance is a second value and an environment write.
 public struct ArgoPalette: Sendable {
     public let surface: SurfaceRoles
     public let text: TextRoles
@@ -30,11 +26,8 @@ public struct ArgoPalette: Sendable {
 }
 
 public extension ArgoPalette {
-    /// Every appearance the app ships.
-    ///
-    /// The contract's assertions run over this rather than over `graphite` by name, so a second
-    /// palette inherits every legibility floor and every hue-rationing rule the day it is added
-    /// — rather than the day somebody remembers to copy a test.
+    /// Every appearance the app ships. The contract's assertions run over this rather than over
+    /// `graphite` by name, so a second palette inherits every floor the day it is added.
     static let all: [(name: String, palette: ArgoPalette)] = [("graphite", .graphite)]
 
     /// The neutral ramp, darkest first. Depth is read off tonal separation between these
@@ -53,33 +46,21 @@ public extension ArgoPalette {
         public let glassTint: ArgoColor
         /// A row under the pointer, before selection.
         public let hover: ArgoColor
-        /// The ground under a control that has to read as a control on a surface which is not the
-        /// deck — the Deny pill inside the Permission vessel.
-        ///
-        /// Translucent for the reason `marked` is: the same control is drawn on a glass vessel and
-        /// on the flat fallback under Reduce Transparency, and a ground that composites keeps its
-        /// lift on both, where a step of the opaque ramp would read as a hole in one of them. The
-        /// platform's own bordered fill is what this replaces — on glass it resolves within a
-        /// point or two of the vessel, which is a button nobody can see the edges of.
+        /// The ground under a control on a surface which is not the deck — the Deny pill inside
+        /// the Permission vessel. Translucent by contract: the same control is drawn on a glass
+        /// vessel and on the flat Reduce Transparency fallback, and a step of the opaque ramp
+        /// reads as a hole in one of them. It replaces the platform's own bordered fill, which on
+        /// glass resolves within a point or two of the vessel.
         public let control: ArgoColor
         /// The neutral wash a selected row carries. Selection is neutral here on purpose —
         /// the Ion Blue of selection is the indicator edge, not the fill.
         public let selected: ArgoColor
         /// The ground something laid OVER the deck is read against — a picture opened full size.
-        /// Near-opaque rather than a tint: what is behind it is not being read, and a feed
-        /// half-visible under a photograph is two surfaces competing for the same eye. Not a step
-        /// of the ramp, so it is not in it: depth is read off the ramp, and this covers it.
+        /// Near-opaque, and not a step of the ramp.
         public let scrim: ArgoColor
         /// The ground under a run of text marked as machine text — a `code` span mid-sentence.
-        ///
-        /// A ground rather than an ink, because the span is a KIND of text and not a state, and
-        /// this palette rations hue for meaning: brand, four operational states, two diff inks.
-        /// The mono face already says "machine"; what it cannot do is make the run findable in a
-        /// paragraph, and that is this role's whole job.
-        ///
-        /// Translucent by contract, and that is the load-bearing part: the same span is read on
-        /// the deck AND inside a prompt's raised bubble, so a ground that composites keeps its
-        /// separation on both while an opaque one would vanish on one of them.
+        /// Translucent by contract: the same span is read on the deck AND inside a prompt's
+        /// raised bubble, and an opaque ground would vanish on one of them.
         public let marked: ArgoColor
 
         public init(
@@ -111,8 +92,7 @@ public extension ArgoPalette {
             [sunken, base, raised, overlay]
         }
 
-        /// Every role, for the specimen and the coverage test. Depth order first, then the
-        /// grounds that are not steps of the ramp.
+        /// Every role, depth order first, then the grounds that are not steps of the ramp.
         public var all: [(name: String, color: ArgoColor)] {
             [
                 ("sunken", sunken), ("base", base), ("raised", raised), ("overlay", overlay),
@@ -169,13 +149,9 @@ public extension ArgoPalette {
         /// The keyboard focus ring.
         public let focusRing: ArgoColor
         /// The GROUND under a control that takes something away — the Archive behind a swiped
-        /// roster row. Red because the reader has to weigh it before letting go, which is not
-        /// something the brand hue can say.
-        ///
-        /// Its own role rather than a borrow from `state.failure`, and held a clear distance from
-        /// it, for the reason `DiffRoles` gives: the two appear inches apart on one roster row, and
-        /// "this will take the Session off the list" and "this Session failed" are not one fact.
-        /// A ground, besides, where `failure` is an ink — deep enough to carry `text.primary`.
+        /// roster row. Held a contract-asserted distance from `state.failure`, which it sits
+        /// inches from on one roster row. A ground, not an ink: deep enough to carry
+        /// `text.primary`.
         public let destructive: ArgoColor
 
         public init(
@@ -208,14 +184,11 @@ public extension ArgoPalette {
     struct StateRoles: Sendable {
         /// A turn is in progress.
         public let running: ArgoColor
-        /// Idle, and the completed/quiet end of the vocabulary. Deliberately not green: finished
-        /// work should recede, not celebrate. That holds for a single call as much as for a
-        /// Session — a feed of green ticks is a feed with nothing standing out in it.
+        /// Idle, and the completed/quiet end of the vocabulary. Deliberately not green.
         public let idle: ArgoColor
         /// Needs you — a permission prompt, a question, a reconnecting chip.
         public let attention: ArgoColor
-        /// Failed, refused, errored. The one outcome that gets a colour, because it is the one
-        /// worth finding down a long feed.
+        /// Failed, refused, errored. The only outcome that gets a colour.
         public let failure: ArgoColor
 
         public init(
@@ -243,11 +216,7 @@ public extension ArgoPalette {
         }
 
         /// The same role as the EDGE of a surface rather than as an ink on it: the amber rim a
-        /// Permission vessel wears, the red one the Deny pill does.
-        ///
-        /// Half strength, because an edge states which state a surface is in and the words inside
-        /// it say what the state means — a rim at full ink outshouts its own contents. Louder than
-        /// `muted`, which is a ground a word is read ON and so has to stay under it.
+        /// Permission vessel wears. Half strength — louder than `muted`, which a word is read ON.
         public func rim(_ role: ArgoColor) -> ArgoColor {
             role.opacity(0.5)
         }
@@ -265,11 +234,8 @@ public extension ArgoPalette {
         }
     }
 
-    /// What a change did to a file, as a pair of inks.
-    ///
-    /// Their own roles rather than a borrow from `state`: a diffstat and a running dot sit in the
-    /// same feed, inches apart, and "this line was added" and "this Session is working" are not one
-    /// fact. The contract asserts the distance so the borrow cannot creep back in.
+    /// What a change did to a file, as a pair of inks. The contract asserts their distance from
+    /// `state`, which they share a feed with inches apart.
     struct DiffRoles: Sendable {
         public let added: ArgoColor
         public let removed: ArgoColor
@@ -284,8 +250,7 @@ public extension ArgoPalette {
         }
 
         /// The same role as a GROUND under a whole line of code rather than as an ink on it.
-        /// Weaker than a status chip's tint (`StateRoles.muted`): a chip's ground carries a word
-        /// sized for it, and this one has to sit under source that stays readable on it.
+        /// Weaker than `StateRoles.muted`: source has to stay readable on it.
         public func wash(_ role: ArgoColor) -> ArgoColor {
             role.opacity(0.12)
         }

@@ -8,18 +8,13 @@ import Foundation
 /// `CONTEXT.md` says Argo may store.
 ///
 /// Held as a value with every transition returning a new set, so the store above it does nothing
-/// but read one and write one — which is what keeps the rules below testable with no filesystem
-/// in the way.
+/// but read one and write one.
 public struct SessionAnnotations: Equatable, Sendable {
     /// One Session's annotations.
-    ///
-    /// A struct rather than the bare `Bool` archiving needs today, because a set keyed to one
-    /// fact has to be re-keyed for the second one — and the second one is already spoken for.
     public struct Annotation: Equatable, Sendable {
         public var isArchived: Bool
-        /// The name the user gave this Session, and `nil` for one they never named — which is
-        /// what makes the derived title reachable again: dropping the name IS the reset (#502,
-        /// story 20), so there is no second flag saying whether the name is in force.
+        /// The name the user gave this Session, `nil` for one they never named. Dropping the name
+        /// IS the reset (#502, story 20) — there is no second flag saying whether it is in force.
         public var explicitName: String?
 
         public init(isArchived: Bool = false, explicitName: String? = nil) {
@@ -28,8 +23,7 @@ public struct SessionAnnotations: Equatable, Sendable {
         }
 
         /// An annotation that asserts nothing, which is what every Session has until somebody
-        /// says otherwise. Never written: a record per observed Session would grow this file
-        /// with the machine's whole history of transcripts and say nothing in any of them.
+        /// says otherwise. Never written to disk.
         public var isEmpty: Bool {
             self == Annotation()
         }
@@ -70,10 +64,8 @@ public struct SessionAnnotations: Equatable, Sendable {
 
     /// A name is what somebody typed, trimmed — and blank is not a name.
     ///
-    /// Public because the dialog that raises a rename has to know whether what is in the field IS
-    /// one before it offers to keep it. Two places deciding that is how a confirm button comes to
-    /// disagree with the record it writes — and normalising here rather than at the dialog means a
-    /// name arriving from a hand-edited file obeys the same rule as one that was typed.
+    /// Public so the rename dialog decides it here too. Normalising here rather than at the
+    /// dialog means a name from a hand-edited file obeys the same rule as one that was typed.
     public static func name(from typed: String?) -> String? {
         guard let trimmed = typed?.trimmingCharacters(in: .whitespacesAndNewlines),
               !trimmed.isEmpty
@@ -95,8 +87,8 @@ public struct SessionAnnotations: Equatable, Sendable {
         setting(annotation(for: sessionID).archived(isArchived), for: sessionID)
     }
 
-    /// Name a Session, or drop the name it was given — the reset is `nil` and not a second verb,
-    /// because "no explicit name" is the state every Session starts in (#502, story 20).
+    /// Name a Session, or drop the name it was given — the reset is `nil`, not a second verb
+    /// (#502, story 20).
     func naming(_ name: String?, sessionID: String) -> SessionAnnotations {
         setting(annotation(for: sessionID).named(name), for: sessionID)
     }

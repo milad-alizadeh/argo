@@ -20,9 +20,9 @@ struct CompanionChannelTests {
 
         #expect(FileManager.default.fileExists(atPath: manifest.path))
         #expect(declaration.contains("\(claim.value).sock"))
-        // The relay the declaration names has to BE there. It ships with macOS, which is the whole
-        // reason it is the relay — but a plugin naming a program this Mac does not have would fail
-        // silently, inside the CLI, where Argo would never hear about it.
+        // The relay the declaration names has to BE there. It ships with macOS, which is why it is
+        // the relay — and a plugin naming a program this Mac does not have fails silently inside
+        // the CLI, where Argo never hears about it.
         #expect(FileManager.default.isExecutableFile(atPath: "/usr/bin/nc"))
         #expect(!declaration.contains(CompanionPlugin.socketPlaceholder))
         // On argv as well as on disk: the plugin is loadable today without a marketplace between
@@ -129,8 +129,8 @@ struct CompanionChannelTests {
         #expect(CompanionClient(socketPath: socketPath) == nil)
     }
 
-    /// A spawned Session with a client on its channel, torn down after. A closure rather than five
-    /// copies of the same five lines: `defer` cannot be lifted into a helper that returns.
+    /// A spawned Session with a client on its channel, torn down after. A closure because `defer`
+    /// cannot be lifted into a helper that returns.
     private static func withChannel(
         _ body: (SpawnFixture, CompanionClient) async throws -> Void,
     ) async throws {

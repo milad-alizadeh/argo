@@ -37,8 +37,7 @@ struct FeedAgentsTests {
         #expect(FeedAgents.running(in: FeedProjection.rows(from: looking)) == 0)
     }
 
-    /// Nothing is reported until the delegating call comes back, and a running chip showing a
-    /// figure would be claiming a spend nobody has said yet.
+    /// Nothing is reported until the delegating call comes back.
     @Test
     func `a subagent still working reports no spend`() {
         #expect(agents(in: handedOver()).first?.spend == nil)
@@ -49,9 +48,8 @@ struct FeedAgentsTests {
         #expect(agents(in: handedOver()).last?.spend == Self.reported)
     }
 
-    /// Three edits of one file are one piece of work repeated. Two agents handed the same brief are
-    /// two other agents, and folding them would report a run as finished when only the second had,
-    /// with one child's spend read against both.
+    /// Two agents handed the same brief are two agents: folding them would report a run as finished
+    /// when only the second had, with one child's spend read against both.
     @Test
     func `two subagents handed the same brief are two chips, never one`() {
         #expect(agents(in: sameBrief()).count == 2)
@@ -65,8 +63,8 @@ struct FeedAgentsTests {
         #expect(chips.map(\.spend) == [nil, Self.reported])
     }
 
-    /// The rail reads off the rows, so the rows may not fuse them either — and a line reading
-    /// `Delegated verify ×2` would be the feed reporting one handover where two happened.
+    /// The rail reads off the rows, so the rows may not fuse them either: `Delegated verify ×2`
+    /// would report one handover where two happened.
     @Test
     func `two subagents handed the same brief keep their own rows`() {
         let handovers = FeedFixture.calls(in: sameBrief()).filter { $0.kind == .delegate }

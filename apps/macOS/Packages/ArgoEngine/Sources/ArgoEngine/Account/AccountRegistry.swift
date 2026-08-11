@@ -2,10 +2,6 @@ import Foundation
 
 /// The known set of Accounts on this machine.
 ///
-/// Held as a value with every transition returning a new registry, the same shape as
-/// `ProjectRegistry` and for the same reason: the rules below are testable with no filesystem and
-/// no keychain in the way.
-///
 /// There is deliberately no *active* Account. A Project's use of one is a Binding (#B), so the
 /// choice is per-Project and per-port — a single machine-wide current identity is the thing
 /// ADR-0018's amendment exists to reject.

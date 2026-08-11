@@ -17,27 +17,18 @@ public struct Usage: Sendable, Equatable {
         self.cacheCreationTokens = cacheCreationTokens
     }
 
-    /// How much context ONE request was made against: everything that went into the window plus
-    /// what came back out of it.
+    /// How much context ONE request was made against, all four terms — a cached read is a cheaper
+    /// token, not a smaller one.
     ///
-    /// All four terms, cache included. A cached read is a cheaper token, not a smaller one — the
-    /// model still reads it — so a reading that dropped the cache would report a Session at a
-    /// fraction of the window it is actually filling, which for a long agent run is nearly all of
-    /// it.
-    ///
-    /// Meaningful only on ONE reported spend. Summed `Usage` values are what a Session has BILLED,
-    /// and every request re-sends the conversation, so this taken off a roll-up would count the
-    /// same window once per turn.
+    /// Meaningful only on ONE reported spend: every request re-sends the conversation, so this
+    /// taken off a roll-up would count the same window once per turn.
     public var contextTokens: Int {
         tokens
     }
 
-    /// What a spend COST — the same four terms, answering the other question.
-    ///
-    /// The arithmetic is `contextTokens`'; the READING is its opposite. That one is meaningful
-    /// only on a single reported spend, and this one only on a roll-up: a Session's bill is every
-    /// request it made, conversation re-sent each time and cache included. Two names because a
-    /// number used for the wrong one of those two questions is wrong by a factor of the turn count.
+    /// What a spend COST — the same arithmetic as `contextTokens`, the opposite reading. Meaningful
+    /// only on a ROLL-UP. Two names because a number used for the wrong one of those two questions
+    /// is wrong by a factor of the turn count.
     public var billedTokens: Int {
         tokens
     }
@@ -53,9 +44,7 @@ public struct Usage: Sendable, Equatable {
         inputTokens + outputTokens
     }
 
-    /// The cache half of the same bill — read and written, both cheaper tokens. Split out so a
-    /// roll-up can say `2.1M tokens spent · 73.7M cached` instead of one number read as fresh
-    /// spend.
+    /// The cache half of the same bill — read and written, both cheaper tokens.
     public var cachedTokens: Int {
         cacheReadTokens + cacheCreationTokens
     }

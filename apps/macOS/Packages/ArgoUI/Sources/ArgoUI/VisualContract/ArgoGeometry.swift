@@ -1,13 +1,10 @@
 import SwiftUI
 
-/// Corner radii. Each rung is tied to a kind of surface rather than to a number, so a view picks
-/// the rung by asking what it is.
+/// Corner radii, one rung per kind of surface.
 ///
-/// There is deliberately **no rung for a toolbar vessel.** One existed, at 11pt, and nothing could
-/// ever apply it: a bounded Liquid Glass vessel takes its shape from the toolbar's own material,
-/// and a view that drew this radius would be drawing a second shape inside the system's. A number
-/// that looks like a decision and cannot be honoured is worse than an absence, which is why this
-/// paragraph is here instead of the value.
+/// There is deliberately **no rung for a toolbar vessel**: a bounded Liquid Glass vessel takes its
+/// shape from the toolbar's own material, so a view drawing such a radius draws a second shape
+/// inside the system's.
 public enum ArgoRadius {
     /// A status dot's pill, a keyboard hint, anything small enough that a larger radius
     /// would read as a circle. Also a marked `code` span's ground.
@@ -16,11 +13,8 @@ public enum ArgoRadius {
     public static let control: CGFloat = 6
     /// Popovers and the inspection surface.
     public static let popover: CGFloat = 12
-    /// The Instrument Deck is flush to the window — it is not a floating card.
-    ///
-    /// Worth zero and kept anyway: nothing references it, because the way a view honours it is by
-    /// drawing no corner at all. What it buys is the difference between a deck that is flat
-    /// BECAUSE SOMEBODY DECIDED and a deck that is flat because nobody thought about it.
+    /// The Instrument Deck is flush to the window. Worth zero and referenced by nothing: a view
+    /// honours it by drawing no corner at all.
     public static let deck: CGFloat = 0
 
     /// Every rung, for the specimen and its coverage check.
@@ -39,8 +33,7 @@ public enum ArgoStroke {
     public static let indicator: CGFloat = 2
     /// The keyboard focus ring.
     public static let focus: CGFloat = 2
-    /// The dash a broken edge is drawn with: a Project whose folder is not there. Shape carries
-    /// what the row also says in words, so neither reading stands alone.
+    /// The dash a broken edge is drawn with: a Project whose folder is not there.
     public static let dash: CGFloat = 3
 }
 

@@ -29,9 +29,7 @@ extension GitHubDeviceFlow {
     struct TokenErrorResponse: Decodable {
         let error: String
         let errorDescription: String?
-        /// Present on `slow_down`, where it is the interval GitHub is now asking for. Its own
-        /// number rather than a step Argo picks: a provider that says how slow to go is answering
-        /// the question, and adding five seconds to the old value is guessing over the answer.
+        /// Present on `slow_down`, where it is the interval GitHub is now asking for.
         let interval: Int?
     }
 

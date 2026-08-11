@@ -1,15 +1,10 @@
 import SwiftUI
 
 // The harness views the catalog's cases are drawn through — the stand-ins a state needs when the
-// shipping surface cannot be reached from a screenshot: a list to hold a row, a window to hang a
-// popover off, a container holding the one piece of state its content reads.
-//
-// Split from `SpecimenCatalog` because they answer a different question. That file is the LIST of
-// renderable states, read by `scripts/specimens.sh`; this one is how three of them get on screen.
+// shipping surface cannot be reached from a screenshot.
 
 /// Every operational state a roster row can be in, in one column — the SHIPPING row, over the
-/// sidebar list it ships inside, projected from the same presentation the shell is handed. A
-/// specimen drawing a second row is evidence about a row nobody sees.
+/// sidebar list it ships inside, projected from the same presentation the shell is handed.
 struct SessionRowsSpecimen: View {
     var body: some View {
         List {
@@ -23,12 +18,9 @@ struct SessionRowsSpecimen: View {
 }
 
 /// The shell against a roster that MIXES access — a ghosted row inside the whole window rather
-/// than in a list on its own, which is where a reader actually meets it. `ghostedRows` is the
-/// close read of the same claim.
+/// than in a list on its own. `ghostedRows` is the close read of the same claim.
 struct RosterSpecimen: View {
-    /// Which roster the shell is drawn against. A parameter because a second case wants the same
-    /// shell over a different set of Sessions — switching between two readings is only reachable
-    /// through the real sidebar, and the roster this defaults to has one reading in it.
+    /// Which roster the shell is drawn against.
     var presentation: CockpitPresentation = .preview
 
     @State private var navigation = CockpitNavigationModel()
@@ -39,14 +31,9 @@ struct RosterSpecimen: View {
     }
 }
 
-/// The window chrome alone, against an empty plane. A bare verb beside the toggle, one merged
-/// capsule after it and one pinned to the trailing edge is a claim about the toolbar, which the
-/// shell specimens bury under everything else in the frame.
-///
-/// Both cases carry the New Session button, and the pair is what makes it judgeable: `toolbarScope`
-/// draws it live beside a Project, `emptyToolbarScope` draws the same control disabled on a machine
-/// that has registered nothing — and whether that reads as unavailable rather than as a mark that
-/// failed to draw is not a thing a test can say.
+/// The window chrome alone, against an empty plane. `toolbarScope` draws the New Session button
+/// live beside a Project, `emptyToolbarScope` draws the same control disabled on a machine that has
+/// registered nothing.
 struct ToolbarSpecimen: View {
     let presentation: CockpitPresentation
 
@@ -71,12 +58,9 @@ struct ToolbarSpecimen: View {
     }
 }
 
-/// The drawer in a REAL popover, opened on appear.
-///
-/// `DrawerSpecimen` draws the content directly, which renders it but never puts it in the context
-/// it actually lives in — and that context is where it failed: a popover is its own window with
-/// its own environment, and the row's body came apart inside one while rendering fine outside it.
-/// This case is how that is caught by rendering rather than by a person clicking.
+/// The drawer in a REAL popover, opened on appear. A popover is its own window with its own
+/// environment, and the row's body came apart inside one while rendering fine outside it — which
+/// `DrawerSpecimen`, drawing the content directly, cannot catch.
 struct OpenDrawerSpecimen: View {
     @State private var isOpen = false
 
@@ -99,9 +83,8 @@ struct DrawerSpecimen: View {
     let presentation: CockpitPresentation
 
     var body: some View {
-        // The glass belongs HERE, not in the drawer. In a popover the panel is the system's own
-        // material and the drawer must add nothing; this specimen has no popover to sit in, so it
-        // stands in for one.
+        // In a popover the panel is the system's own material and the drawer must add nothing;
+        // this specimen has no popover to sit in, so it stands in for one.
         ProjectDrawer(presentation: presentation, actions: .inert)
             .glassEffect(in: .rect(cornerRadius: ArgoRadius.popover))
             .padding(ArgoSpacing.region)
@@ -111,16 +94,10 @@ struct DrawerSpecimen: View {
 /// A reading that is still being WRITTEN, for the one claim no stopped fixture can carry: a row
 /// arriving at the end must not drag a reader who has scrolled up away from the line they are on.
 ///
-/// Half the fixture on screen and the rest arriving a few rows at a time. Both halves are
-/// load-bearing — a feed that had finished growing before anything scrolled into it would be a
-/// static specimen with extra steps, and a feed that grew in one jump would never overlap a read.
-///
-/// The two numbers are a pace rather than a rate, and both ends of it are claims. A `step` arrives
-/// as one batch, which is the run of rows in quick succession a feed must follow without easing
-/// once per line. The whole write then runs several SECONDS, because every other claim about a
-/// reading being written is a claim about something the reader DID between two arrivals — and a
-/// fixture that finishes during the launch leaves nothing to do it in, so whatever asserted
-/// against it would be asserting against a stopped reading while reading as though it were live.
+/// Half the fixture on screen, the rest arriving a few rows at a time. The two numbers are a pace:
+/// a `step` arrives as one batch — the run of rows in quick succession a feed must follow without
+/// easing once per line — and the whole write must run several SECONDS, or it finishes during the
+/// launch and leaves the reader nothing to do between two arrivals.
 struct ArrivingFeedSpecimen: View {
     private static let step = 6
     private static let beat = Duration.milliseconds(300)
@@ -143,10 +120,6 @@ struct ArrivingFeedSpecimen: View {
 
 /// The ⓘ panel's content, stood in a glass of its own — the same stand-in `DrawerSpecimen` makes,
 /// because a popover is a window of its own and never lands in a screenshot of this one.
-///
-/// What the PNG has to settle is the thing no value test can: that two coloured thresholds over a
-/// sentence read as a LEGEND — a decoding of the reading on the header — rather than as a warning
-/// about the Session it was opened from.
 struct ContextGuideSpecimen: View {
     var body: some View {
         SessionContextGuide()

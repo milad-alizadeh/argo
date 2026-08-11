@@ -4,8 +4,7 @@ import Foundation
 ///
 /// Each is a fact the Hub already holds and nothing more: which claim owns a Session's PTY, what is
 /// on disk at a path, and how to start an agent. The ORDER they go in is `SessionHandoff`'s and is
-/// asserted there — this file is the wiring, so that the sequence can be proved without a `claude`
-/// and the wiring can be proved without a clock.
+/// asserted there — this file is only the wiring.
 @MainActor
 extension Hub: HandoffHost {
     /// `false` for an external Session, and for an orphaned one whose claim outlived its PTY —
@@ -29,12 +28,10 @@ extension Hub: HandoffHost {
     ///
     /// In memory because what the fresh row is CALLED right now is a claim id, and a claim belongs
     /// to this process (ADR-0013) — the roster reads it back through `rowID(ofClaim:)`. On disk
-    /// because the handoff itself is not a fact about this process: it is what a Session PRODUCED,
-    /// which `CONTEXT.md` keeps as an Outcome, and nothing else on the machine records it.
+    /// because the handoff is what a Session PRODUCED, which `CONTEXT.md` keeps as an Outcome.
     ///
     /// The written link is recorded against the CLAIM and named later, when the fresh agent's first
-    /// record gives it an id — see `HandoffChain`. So a link is durable exactly when it is worth
-    /// following, and a fresh Session that wrote nothing leaves an absence rather than a dead name.
+    /// record gives it an id — see `HandoffChain`.
     public func handedOff(sessionID: String, to fresh: String) {
         handoffs[sessionID] = fresh
         chain = chainStore.update { chain in

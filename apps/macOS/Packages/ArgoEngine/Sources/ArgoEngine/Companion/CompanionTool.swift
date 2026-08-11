@@ -1,23 +1,16 @@
 import Foundation
 
-/// The three things a managed Session may tell Argo, as MCP tools.
-///
-/// Deliberately narrow: the channel exists so the agent can say what a transcript cannot carry —
-/// what it is doing, what it needs from you, and what it produced. Anything it can already be
-/// observed doing stays observed, at the DERIVED tier where it belongs.
+/// The three things a managed Session may tell Argo, as MCP tools — what a transcript cannot
+/// carry. Anything it can already be observed doing stays observed, at the DERIVED tier.
 enum CompanionTool: String, CaseIterable {
     case reportStatus = "report_status"
     case askUser = "ask_user"
     case reportOutcome = "report_outcome"
 
-    /// The status words the channel accepts, and what each one means in the domain.
-    ///
-    /// One table, read both ways: it is the `enum` the tool's schema advertises AND the vocabulary
-    /// the reply is read against, so the two cannot drift into a word the agent is offered and
-    /// Argo then cannot understand.
-    ///
-    /// `unknown` is absent from it deliberately — it is what a word OUTSIDE the vocabulary reads
-    /// as, never something an agent can claim about itself.
+    /// The status words the channel accepts. One table read both ways: the `enum` the tool's
+    /// schema advertises AND the vocabulary the reply is read against, so the two cannot drift.
+    /// `unknown` is absent deliberately — it is what a word OUTSIDE the vocabulary reads as, never
+    /// something an agent can claim about itself.
     static let statuses: KeyValuePairs<String, SessionStatus> = [
         "running": .running,
         "permission": .permission,

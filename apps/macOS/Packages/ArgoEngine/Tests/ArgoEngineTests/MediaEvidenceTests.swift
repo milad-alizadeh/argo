@@ -3,8 +3,7 @@ import Testing
 
 // The whole tier ladder a picture can arrive on, in the order the reading prefers: the transcript's
 // own embedded bytes DIRECT, a re-read of the path DERIVED, and no bytes at all as an absence a row
-// can state. Asserted in one suite because the reading decides them in one place, and read through
-// the reader because the gates that decide WHETHER a path is re-read are half of that decision.
+// can state.
 
 @Suite("Media evidence")
 struct MediaEvidenceTests {
@@ -65,8 +64,8 @@ struct MediaEvidenceTests {
 
     @Test
     func `An embedded result whose bytes were stripped keeps its DIRECT tier`() async throws {
-        // The record named an image and carried no pixels for it. The tier is a claim about WHERE
-        // the fact came from, so it stays `direct` — a row with nothing to show says so instead.
+        // The tier is a claim about WHERE the fact came from, so it stays `direct` even with no
+        // pixels.
         let media = try #require(try await media("mediaTiers", "stripped-1"))
 
         #expect(media.tier == .direct)
@@ -92,9 +91,7 @@ struct MediaEvidenceTests {
     func `An SVG handed back as source stays text, and is not rendered as a picture`() async throws {
         let outcomes = try await Fixture.events("media", readImage: { _ in "FROM-DISK" }).outcomes()
         // `.svg` is in the disk-fallback table, so only the "result carried text of its own" gate
-        // keeps this a read of source rather than a render of the file. It is kept as TEXT — what
-        // the agent read was markup, and a panel drawing it as a picture would be showing something
-        // the agent never saw.
+        // keeps this a read of source rather than a render of the file.
         guard case let .output(output) = try #require(outcomes["vector-1"]).result else {
             Issue.record("source handed back as text stays text")
             return

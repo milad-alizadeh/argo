@@ -2,11 +2,8 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What the plan is, read off a stream that also carries everything else.
-///
-/// The claims here are all one claim said four ways: the plan is STANDING STATE and not an event
-/// (ADR-0020). A projection that treated it as an event would blank the pill on every turn that
-/// did not mention it, and a reader would learn to stop trusting what it says.
+/// What the plan is, read off a stream that also carries everything else. The plan is STANDING
+/// STATE and not an event (ADR-0020).
 @Suite("Plan projection")
 struct PlanProjectionTests {
     private func plan(_ entries: (String, PlanEntryStatus)...) -> TranscriptEvent {
@@ -48,8 +45,6 @@ struct PlanProjectionTests {
         #expect(reading == nil)
     }
 
-    /// An agent that replaced its list with an empty one has no steps to show, and a pill reading
-    /// `0 steps` would be chrome standing for nothing.
     @Test
     func `a plan the agent emptied reads the same as one never reported`() {
         #expect(PlanProjection.reading(from: [plan()]) == nil)
@@ -71,8 +66,7 @@ struct PlanProjectionTests {
         #expect(reading?.count == 4)
     }
 
-    /// The honest answer to "what is it doing" when the list does not say is nothing — never the
-    /// first pending entry, which is the agent's NEXT step and not its current one.
+    /// Never the first pending entry, which is the agent's NEXT step and not its current one.
     @Test
     func `a plan with nothing in progress names no current step`() {
         let reading = PlanProjection.reading(from: [
@@ -94,8 +88,7 @@ struct PlanProjectionTests {
         #expect(reading?.progress == 1)
     }
 
-    /// A list is replaced whole, so a step is WHERE it sits and never what it says. Two entries
-    /// worded the same are two steps, and a reading keyed by text would fuse them.
+    /// A list is replaced whole, so a step is WHERE it sits and never what it says.
     @Test
     func `two steps worded the same stay two steps`() {
         let reading = PlanProjection.reading(from: [
@@ -105,9 +98,7 @@ struct PlanProjectionTests {
         #expect(reading?.steps.map(\.id) == [0, 1])
     }
 
-    /// A plan marking two — which a careless agent does — is still read as being on ONE step. The
-    /// first, because that is the one the list reaches first, and counting them would answer a
-    /// question the pill does not ask.
+    /// A plan marking two is still read as being on ONE step: the first the list reaches.
     @Test
     func `a list marking two in progress reads the first of them`() {
         let reading = PlanProjection.reading(from: [

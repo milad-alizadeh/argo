@@ -4,9 +4,8 @@ import SwiftUI
 ///
 /// Three independent rows in a fixed order, completable in any order, none of them blocking
 /// another: a folder, the two ports, and the companion plugin. The call to action goes live the
-/// moment there is a folder, because a folder is the floor and everything else unlocks rather than
-/// gates (#265). One surface for both lives, because Settings **is** this panel with one word
-/// different on the button, which is what "no app-global Preferences" means in practice.
+/// moment there is a folder — the floor everything else unlocks rather than gates (#265). Settings
+/// **is** this panel with one word different on the button.
 public struct ConnectPanel: View {
     @Environment(\.argo) private var argo
 
@@ -18,9 +17,8 @@ public struct ConnectPanel: View {
         self.actions = actions
     }
 
-    /// A `Form`, which is what a Mac settings surface is. The rows, their ground, their insets and
-    /// the label column all come from the platform, so this panel looks like the rest of macOS and
-    /// keeps looking like it when macOS changes.
+    /// A `Form`: the rows, their ground, their insets and the label column all come from the
+    /// platform.
     public var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             // A sheet has no title bar to hang `navigationTitle` on, so the heading is a line of
@@ -63,12 +61,11 @@ public struct ConnectPanel: View {
         }
     }
 
-    /// One button, and it is the only thing on this panel that is ever disabled. What disables it
-    /// is the absence of a folder and nothing else.
+    /// One button, and the only thing on this panel that is ever disabled — by the absence of a
+    /// folder and nothing else.
     ///
-    /// The one accent-coloured control on the screen, and it is the system's own: a sheet's
-    /// default button is drawn in the accent by macOS, and every other control here takes
-    /// `QuietButtonStyle` so that this one is the only place the eye is sent.
+    /// The one accent-coloured control on the screen: macOS draws a sheet's default button in the
+    /// accent, and every other control here takes `QuietButtonStyle`.
     private var call: some View {
         HStack {
             Spacer(minLength: ArgoSpacing.flush)
@@ -85,8 +82,7 @@ public struct ConnectPanel: View {
         .argoAppearance()
 }
 
-// A folder and nothing else: the observation floor, and a Project that already works. The state
-// the whole "folder, not repository" rule exists for.
+// A folder and nothing else: the observation floor, and a Project that already works.
 #Preview("Connect — a folder and nothing else") {
     ConnectPanel(reading: ConnectFixture.folderOnly, actions: .inert)
         .argoAppearance()

@@ -1,8 +1,5 @@
 /// Everything a Session's status is read from: what its transcript observed, and what Argo knows
 /// about the process behind it.
-///
-/// A value rather than five parameters, so the derivation stays a pure function of what was
-/// observed and a test can vary one signal at a time.
 public struct SessionSignals: Sendable, Equatable {
     /// Which posture of the `managed | external` axis this Session is on. Gates the two statuses a
     /// transcript alone cannot honestly carry.

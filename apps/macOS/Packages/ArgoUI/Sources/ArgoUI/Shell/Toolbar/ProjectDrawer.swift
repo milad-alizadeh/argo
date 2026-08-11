@@ -5,9 +5,8 @@ import SwiftUI
 struct ProjectDrawer: View {
     @Environment(\.argo) private var argo
     @Environment(\.dismiss) private var dismiss
-    /// Drawn here rather than left to the system, for the reason the rows draw their own: the
-    /// default effect is a square-cornered box on the button's own bounds, which cuts across the
-    /// rule above it and the panel's rounded corners below.
+    /// Drawn here, not by the system: the default effect is a square-cornered box on the button's
+    /// own bounds, which cuts across the rule above it and the panel's rounded corners below.
     @FocusState private var isFooterFocused: Bool
 
     let presentation: CockpitPresentation
@@ -24,26 +23,22 @@ struct ProjectDrawer: View {
         .padding(.horizontal, ArgoSpacing.snug)
         .padding(.bottom, ArgoSpacing.snug)
         .frame(width: ArgoLayout.projectDrawerWidth)
-        // NO ground of its own, of any kind. A popover IS the system's glass, and anything drawn
-        // behind this content is a second material inside the same panel: an opaque fill read as
-        // a flat slab, and a `glassEffect` was no better — the popover window is wider than this
-        // content, so its own material showed as a rim around a second sheet of glass. Two tones
-        // either way. The one that carries the panel has to be the only one.
+        // NO ground of its own, of any kind. A popover IS the system's glass, so anything drawn
+        // behind this content is a second material inside the same panel — and the popover window
+        // is wider than this content, so even a `glassEffect` shows as a rim around a second sheet.
     }
 
     private var rows: [ProjectDrawerProjection.Row] {
         ProjectDrawerProjection.rows(from: presentation)
     }
 
-    /// The picker is the app's, and it opens over the window — a drawer left hanging in front of
-    /// it is a second surface between the user and the folder they are choosing.
+    /// The picker opens over the window, so the drawer must not be left hanging in front of it.
     private func addProject() {
         actions.addProject()
         dismiss()
     }
 
-    /// The registry is per machine and never travels — said here rather than left to be discovered
-    /// on the second computer.
+    /// The registry is per machine and never travels, which the label has to say.
     private var header: some View {
         Text("Projects · registered on this Mac")
             .argoText(ArgoTypography.sectionLabel)
@@ -70,8 +65,7 @@ struct ProjectDrawer: View {
         }
     }
 
-    /// **Add Project…**, not "Register a Project": registration is the domain term, and it is not
-    /// the word on the button.
+    /// **Add Project…**, not "Register a Project": registration is the domain term, not the label.
     private var footer: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
             DeckSeparator()

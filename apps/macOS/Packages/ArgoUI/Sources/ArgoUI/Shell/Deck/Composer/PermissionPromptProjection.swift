@@ -15,8 +15,7 @@ enum PermissionPromptProjection {
         let toolName: String
         /// What the tool wants, said after its name: `wants to run a command in this Workspace`.
         let subject: String
-        /// The target, verbatim and in full (design decision: a decision made on a truncated
-        /// command is a guess).
+        /// The target, verbatim and in full — a decision made on a truncated command is a guess.
         let target: PermissionRequest.Target
         /// The quiet line under the target: the Workspace a command runs in, or an edit's
         /// `+1 −1 · 1 hunk`. Absent where neither fact exists.
@@ -27,8 +26,7 @@ enum PermissionPromptProjection {
     }
 
     /// A prompt only while the Session is blocked on one. The composer's slot is singular: the
-    /// vessel holds whichever question is live, and this projection answering is what replaces
-    /// the field.
+    /// vessel holds whichever question is live.
     static func prompt(for session: CockpitPresentation.Session?) -> Prompt? {
         guard let session, let permission = session.permission else { return nil }
         return Prompt(

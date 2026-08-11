@@ -8,9 +8,8 @@ public enum ToolCallKind: String, Sendable, Equatable {
     case fetch
     case delegate
     case plan
-    /// A packaged set of instructions the agent invoked by name. Its own kind rather than an
-    /// `execute`, because the thing worth reading about it is WHICH one — and because what it
-    /// returns is the instructions themselves, which is a body of prose and not a command's output.
+    /// A packaged set of instructions the agent invoked by name. Not an `execute`: what it returns
+    /// is the instructions themselves, a body of prose and not a command's output.
     case skill
     /// A tool the session reached over MCP. Read from the host's own naming convention, never from
     /// what the tool does: a server's tools are arbitrary, and only the name says where they came
@@ -41,16 +40,14 @@ public struct ToolCall: Sendable, Equatable {
     ///
     /// A fact of its own and never the target: the two are read from different keys, so a command
     /// keeps the command AND the sentence about it. DERIVED and held verbatim — the narrations are
-    /// imperative-present and nothing re-tenses them, because rewording is Argo putting words in
-    /// the agent's mouth. `nil` where the host wrote none, which is every call on a CLI that
-    /// narrates nothing.
+    /// imperative-present and nothing re-tenses them. `nil` where the host wrote none, which is
+    /// every call on a CLI that narrates nothing.
     public let narration: String?
     /// When the agent emitted the call.
     public let atMs: Int?
     /// The question this call put, for the one tool whose input IS a question. `nil` for every
-    /// other call, and for an `AskUserQuestion` whose input carried no readable question — a call
-    /// that asked something unreadable is still a call, and inventing a question for it would put
-    /// words in the agent's mouth.
+    /// other call, and for an `AskUserQuestion` whose input carried no readable question — such a
+    /// call is still a call, and no question is invented for it.
     public let ask: Ask?
 
     public init(

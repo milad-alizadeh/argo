@@ -42,16 +42,14 @@ final class FakeHandoffHost: HandoffHost {
     }
 }
 
-/// A clock the test moves by hand. A twenty-minute limit is then reached in as many microseconds as
-/// it takes to loop, which is what makes the timeout a rule rather than one nothing ever exercises.
+/// A clock the test moves by hand, so a twenty-minute limit is reached in as many microseconds as
+/// it takes to loop.
 @MainActor
 final class HandoffTestClock {
     var nowMs = 1_000_000
 }
 
-/// One handoff, wired to the fake host and the hand-moved clock — its own file beside the suites
-/// that use it, exactly as `SpawnFixture` is: two suites read it now, and a fixture nested inside
-/// one of them is a fixture the other has to reach into a suite for.
+/// One handoff, wired to the fake host and the hand-moved clock. Read by two suites.
 @MainActor
 final class HandoffFixture {
     let host: FakeHandoffHost

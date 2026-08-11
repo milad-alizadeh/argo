@@ -1,12 +1,9 @@
 import ArgoEngine
 
-/// The plans every preview and specimen of the pill is looked at through.
-///
-/// Built as ENGINE entries and read through `PlanReading`'s own initialiser — the same one the
-/// projection uses — so no fixture is a second way to build the value the surface draws.
+/// The plans every preview and specimen of the pill is looked at through. Built as ENGINE entries
+/// and read through `PlanReading`'s own initialiser, the same one the projection uses.
 enum PlanFixture {
-    /// A plan with a step under way. The state the pill is designed for, and the one the deck's
-    /// specimen opens on.
+    /// A plan with a step under way — the state the deck's specimen opens on.
     static let working = reading(
         ("Read the anatomy study in full", .completed),
         ("Run the plan projection suite red", .completed),
@@ -15,8 +12,8 @@ enum PlanFixture {
         ("Independent review, then PR", .pending),
     )
 
-    /// A plan the agent wrote and has not started. It marks nothing in progress, and the pill has
-    /// to say so rather than nominate the first pending step.
+    /// A plan the agent wrote and has not started: nothing in progress, and the pill must say so
+    /// rather than nominate the first pending step.
     static let unstarted = reading(
         ("Read the anatomy study in full", .pending),
         ("Implement the projection seam", .pending),
@@ -33,8 +30,7 @@ enum PlanFixture {
     /// One step. The counter has to read `Step 1/1` rather than shrink to nothing.
     static let single = reading(("Wire the pill above the dock", .inProgress))
 
-    /// Steps written the way an agent actually writes them, which is at sentence length. What the
-    /// pill's one line and the list's two have to survive.
+    /// Steps at sentence length — what the pill's one line and the list's two have to survive.
     static let wordy = reading(
         (
             "Read the approved anatomy study end to end before touching a view, then note every "

@@ -28,9 +28,6 @@ func hubTestObservation(
 
 /// The two records a handoff is read from, in the Project's own folder: the Session being handed
 /// OFF and the one Argo spawned to take it over.
-///
-/// Here rather than in either suite because both read them — a copy per suite is the same eight
-/// lines twice, and the two would drift the first time one of them needed a different event.
 @MainActor
 func handedOffSessionObservation(of fixture: SpawnFixture) -> TranscriptObservation {
     hubTestObservation(
@@ -64,14 +61,12 @@ func hubObserveToEnd(_ hub: Hub, _ observation: TranscriptObservation) async {
 }
 
 /// Wait until a transcript's tail is over, read off the Hub's own projection rather than a handle
-/// into its task table: the projection is what a caller can see, so it is what a test asserts on.
+/// into its task table.
 @MainActor
 func hubTailEnded(_ hub: Hub, transcriptID: String) async {
     let ended = await settle {
         hub.observations.contains { $0.id == transcriptID && $0.state == .stopped }
     }
-    // A tail that never ends is its own failure, rather than the assertions after it quietly
-    // reading a roster that is only half-applied.
     #expect(ended, "the tail on \(transcriptID) never ended")
 }
 
@@ -96,9 +91,6 @@ func hubLiveObservation(
 /// Wait until the Hub's roster is standing. A `connect` returns before its file-backed tails have
 /// read anything, and the roster is deliberately held back until they have — so a test asserting on
 /// `sessions` straight after one is reading the emptiness it was given, not the answer.
-///
-/// A roster that never arrives is its own failure, rather than the assertion after it reporting
-/// whatever stale value was there when the wait gave up.
 @MainActor
 func hubSettle(until condition: () -> Bool) async {
     let settled = await settle(until: condition)
@@ -156,9 +148,6 @@ private func openDescriptors() -> [Int32] {
 /// The bound is wall-clock rather than a count of turns, because the whole suite shares one main
 /// actor: a fixed number of yields is spent by whatever else is running, and the wait ends before
 /// the thing being waited for has had a turn at all.
-///
-/// The answer is returned rather than swallowed so that giving up is a caller's failed expectation
-/// — a silent `return` after the bound reads as a settled condition.
 ///
 /// It SLEEPS between checks rather than yielding, and that is load-bearing rather than a rounding
 /// of the same idea. What most of these waits are waiting on is a `DispatchSource` on the main

@@ -3,8 +3,7 @@ import Foundation
 /// What a provider request carries, if anything.
 ///
 /// Two cases because two providers: an OAuth grant is form-encoded by the spec, and Linear's API is
-/// GraphQL, which is JSON or nothing. A caller says which shape it means rather than handing over a
-/// `method` string and a `Data`, so no request can claim a content type its body is not.
+/// GraphQL, which is JSON or nothing.
 public enum HTTPBody: Sendable {
     case form([String: String])
     case json(Data)
@@ -12,8 +11,7 @@ public enum HTTPBody: Sendable {
 
 /// One provider request, described rather than performed.
 ///
-/// A body means POST and its absence means GET, because those are the only two verbs anything
-/// behind this seam uses and a `method` string would let a caller ask for a third.
+/// A body means POST and its absence GET — the only two verbs anything behind this seam uses.
 public struct HTTPRequest: Sendable {
     public let url: String
     public let body: HTTPBody?
@@ -32,9 +30,8 @@ public struct HTTPRequest: Sendable {
 
 /// The seam the provider adapters read through.
 ///
-/// The network is the one dependency the suite has no business reaching: a test that hits GitHub
-/// is a test that fails on a plane, and the grant it would need is the thing being built. Behind
-/// this protocol a test hands back a recorded provider response; in the app it is `URLSession`.
+/// Behind this protocol a test hands back a recorded provider response; in the app it is
+/// `URLSession`.
 public protocol HTTPTransport: Sendable {
     func send(_ request: HTTPRequest) async throws -> Data
 }

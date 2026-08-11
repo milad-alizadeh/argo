@@ -6,11 +6,9 @@ import Testing
 /// raises a Permission in the roster, and the user's answer goes back down the same socket as the
 /// hook's decision.
 ///
-/// Serialized, and not as a flake plaster. Every test here drives a `DispatchSource` on the MAIN
-/// queue — a socket accepting, a connection reading a line — and waits on the main actor for it to
-/// fire. Run in parallel they are a dozen waits sharing one runloop, and a wait long enough to
-/// starve its own event handler fails as "the agent never asked", which is indistinguishable from
-/// the bug these tests are for.
+/// Serialized because every test here drives a `DispatchSource` on the MAIN queue and waits on the
+/// main actor for it to fire; in parallel they are a dozen waits sharing one runloop, and a wait
+/// that starves its own event handler fails as "the agent never asked".
 @Suite("Permission channel", .serialized)
 @MainActor
 struct PermissionChannelTests {
@@ -99,9 +97,8 @@ struct PermissionChannelTests {
             try fixture.hub.driver.decide(.allow, answering: waiting.id, for: claim.value)
             _ = try await PermissionGate.decision(read: client)
 
-            // A plain allow is spent on the call it was given for: nothing about it stands, so the
-            // same command asked again is asked again. The standing answer is `allowAlways`, and
-            // it is a separate control saying a separate sentence (#572).
+            // A plain allow is spent on the call it was given for; the standing answer is
+            // `allowAlways` (#572).
             let second = try PermissionGate.dial(fixture, claim)
             defer { second.close() }
             second.sendLine(PermissionGate.bashCall)
@@ -157,8 +154,7 @@ struct PermissionChannelTests {
             let displayed = try #require(fixture.hub.sessions.first?.permission)
 
             // A second call arrives behind the first, then the first's hook goes with its own
-            // turn — the window in which a positional answer would spend the user's Allow on the
-            // newcomer, which is a command they never read.
+            // turn — the window in which a positional answer would spend Allow on the newcomer.
             let second = try PermissionGate.dial(fixture, claim)
             defer { second.close() }
             second.sendLine(PermissionGate.bashCall)

@@ -1,19 +1,14 @@
 import SwiftUI
 
-/// The menu bar's route into Project Settings, in the slot Preferences would have taken.
+/// The menu bar's route into Project Settings, in the slot Preferences would have taken. It
+/// **replaces** `.appSettings`: there is no app-global Preferences surface (#265). `⌘K` rather than
+/// `⌘,`, since this is not the app's settings.
 ///
-/// It **replaces** `.appSettings` deliberately. There is no app-global Preferences surface (#265):
-/// everything settable is settable about a Project, so the item that would open a window with
-/// nothing in it opens this Project's panel instead. `⌘K` rather than `⌘,` for the same reason —
-/// this is not the app's settings, and taking the system's key for it would say that it was.
-///
-/// Never disabled, and that is the point: with no registered Project the same key opens the same
-/// panel with nothing set, which is the state that CREATES one (ADR-0015). A shortcut that went
-/// dead on the machine with nothing on it would be dead exactly when it is most needed.
+/// Never disabled: with no registered Project the same key opens the same panel with nothing set,
+/// which is the state that CREATES one (ADR-0015).
 public struct ProjectSettingsCommands: Commands {
     public static let label = "Project Settings…"
-    /// What the item reads before there is a Project to have settings about. A different verb,
-    /// because opening this panel then does a different thing.
+    /// What the item reads before there is a Project to have settings about.
     public static let unstartedLabel = "Set Up a Project…"
 
     private let projectID: String?

@@ -2,15 +2,12 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// The panel is a LIST of results, each under the address it came from. These are the claims that
-/// keeps that list navigable: every result carries its own address, its own churn and its own
-/// place,
-/// and the names listed under a folded row point at those places.
+/// The panel is a LIST of results, each under the address it came from: every result carries its
+/// own address, churn and place, and a folded row's names point at those places.
 @Suite("Evidence steps")
 struct EvidenceStepTests {
-    /// Every step captioned, including the three patches of one file a collapsed run leaves. The
-    /// address is where the copy control lives, so a step without one is a patch whose path the
-    /// reader cannot take.
+    /// Every step captioned, including the three patches of one file a collapsed run leaves — the
+    /// address is where the copy control lives.
     @Test
     func `every result carries the address it came from`() throws {
         let call = try Self.edited("Sources/ArgoUI/FeedRow.swift", patches: 3)
@@ -21,8 +18,7 @@ struct EvidenceStepTests {
         })
     }
 
-    /// The panel's count and not the row's: a run of three edits shows what EACH of them did, which
-    /// is the whole reason the three were kept apart behind one line.
+    /// The panel's count and not the row's: a run of edits shows what EACH of them did.
     @Test
     func `churn is read per result, from the patch itself`() throws {
         let call = try Self.edited("a.swift", patches: 2)
@@ -33,8 +29,7 @@ struct EvidenceStepTests {
     }
 
     /// A patch nothing could read counts nothing. `+0 −0` claims an edit that changed nothing,
-    /// which
-    /// is a different statement from a patch that could not be parsed.
+    /// which is a different statement from a patch that could not be parsed.
     @Test
     func `a result with nothing to count carries no churn`() {
         let printed = FeedEvidence.Step(
@@ -58,8 +53,7 @@ struct EvidenceStepTests {
     }
 
     /// A call the record answered with nothing is still listed under the open row — it happened —
-    /// and points at nothing, which is what makes its name inert rather than a click onto a step
-    /// belonging to some other call.
+    /// and points at nothing, so its name is inert rather than a click onto another call's step.
     @Test
     func `a call that produced nothing has no step to point at`() throws {
         let unanswered: [TranscriptEvent] = ["a.swift", "b.swift"].enumerated()

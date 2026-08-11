@@ -2,14 +2,9 @@ import XCTest
 
 /// A reading that is still being written, under a reader who is AT the end of it.
 ///
-/// The inverse of `FeedArrivalE2ETests`, and deliberately the same specimen. That suite's whole
-/// claim is that a reader who scrolled away is not moved, and its vacuity guard — `Newest` on
-/// screen — is satisfied by a feed that dropped out of following when it should not have. Read
-/// alone it makes a broken feed look covered. These cases are the other half: a reader who never
-/// left, and a reader who came back.
-///
-/// The first two scroll nothing before they assert, which is what eight existing suites had no
-/// case for.
+/// The inverse of `FeedArrivalE2ETests`, on the same specimen: that suite's vacuity guard —
+/// `Newest` on screen — is satisfied by a feed that dropped out of following when it should not
+/// have. The first two cases here scroll nothing before they assert.
 @MainActor
 final class FeedOpeningE2ETests: FeedE2ECase {
     override var specimen: String {
@@ -19,9 +14,8 @@ final class FeedOpeningE2ETests: FeedE2ECase {
     /// The last edit of the last turn. It is written only as the specimen finishes, so a feed that
     /// opened six hours upstream and stayed there never shows it.
     ///
-    /// A literal, like every row address in these suites: `FeedProjection.longRows` is generated
-    /// inside `ArgoUI` and a UI test target cannot reach it. Grow the fixture past turn 51 and this
-    /// stops naming the last row — the guard is that it is one number in one place.
+    /// A literal because `FeedProjection.longRows` is generated inside `ArgoUI` and a UI test
+    /// target cannot reach it. Grow the fixture past turn 51 and this stops naming the last row.
     private let newestLine = "FeedView51.swift"
 
     /// The first turn's edit, at the top of the reading.
@@ -47,9 +41,8 @@ final class FeedOpeningE2ETests: FeedE2ECase {
 
     /// And rows arriving under a reader who never left the end bring the reading with them.
     ///
-    /// Still without a scroll of any kind: the newest line has to come to the reader. The row it
-    /// waits for is written only as the specimen finishes, so a feed that stopped following partway
-    /// through never satisfies it.
+    /// Still without a scroll of any kind. The row it waits for is written only as the specimen
+    /// finishes, so a feed that stopped following partway through never satisfies it.
     func testRowsArrivingAtTheEndBringTheReadingWithThem() {
         XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
 
@@ -89,9 +82,7 @@ final class FeedOpeningE2ETests: FeedE2ECase {
 
         // Whether the fixture is still writing by now is a race with the walk above, so the claim
         // is stated the one way that holds either side of it: the reader is at the end and the last
-        // line of the reading is on screen with them, without anything further being scrolled. A
-        // walk that outran the writer proves it of a stopped reading and the common case proves it
-        // of a live one — and a feed that dropped following fails both halves.
+        // line is on screen with them, without anything further being scrolled.
         let arriving = row(naming: newestLine)
         XCTAssertTrue(
             arriving.waitForExistence(timeout: 30),

@@ -8,10 +8,11 @@ Monorepo for the Argo skills/plugin **and** the Argo cockpit app. Read by both C
   `gh` CLI. See `docs/agents/issue-tracker.md`.
 - **Triage labels** — five canonical triage roles, each label string equal to its name. See
   `docs/agents/triage-labels.md`.
-- **Domain docs** — single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See
-  `docs/agents/domain.md`. `CONTEXT.md` is imported below so the model is injected rather than
-  left to a pointer a session may not follow; the reasoning *behind* each term lives in
-  `docs/domain/rationale.md` — read that only when changing a term.
+- **Domain docs** — single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See
+  `docs/agents/domain.md`. The vocabulary is inlined under **Domain model** below. `CONTEXT.md`
+  is now an index and the sections are files under `docs/domain/`, so read the one section you
+  need rather than the whole model. No harness auto-loads any of it. The reasoning *behind* each
+  term lives in `docs/domain/rationale.md` — read that only when changing a term.
 
 ## Task tracking
 
@@ -32,7 +33,9 @@ House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code, any language** — `engineering-principles.md`, `code-style.md`,
-  `comments.md`, `file-structure.md`, `dependencies.md`
+  `comments.md` (a comment is **one line** unless a future edit could make it false;
+  nothing here is published, so `///` earns no more room than `//`),
+  `file-structure.md`, `dependencies.md`
 - **TypeScript** — also `typescript-style.md` (how TS spells `code-style.md`)
 - **Swift** (`apps/macOS`) — also `swift-style.md` (how Swift spells it, SwiftUI included)
 - **Tests** — also `testing.md`
@@ -119,7 +122,13 @@ everything else is reported and left alone. `--dry-run` reports without removing
 `hooks.json` (repo root) is the neutral SSOT for the four guardrail hooks (graphify-before-grep,
 placement write guard, worktree edit guard, worktree-gc), projected per-harness. **Edit
 `hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json` and
-`.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`.
+`.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`,
+and re-scope the edit guard to their own layout with `worktreeGuard.roots` in the same file.
+
+A hook the sync does not recognise as its own is preserved as the consumer's and a fresh copy
+appended, so **a script named in `hooks.json` must also be in `MANAGED_MARKERS`**
+(`hooks-sync.mjs`) or the projection grows a duplicate on every run. `test:hooks` derives that
+requirement rather than restating it.
 
 ## Skill bundle
 
@@ -186,49 +195,26 @@ is in `docs/designs/`, which no portable skill can know. `ask-argo` maps the res
 
 ## Visual verification
 
-There is no automated render check and no pixel-baseline diffing. The Storybook `stories` CI job
-retired with the Electron cockpit (ADR-0023) — Swift has no Storybook, so nothing mounts a view
-on a Linux runner. **Rendering is therefore a thing YOU do**, not something CI catches for you.
-For a pixel- or spec-level check, run `/pixel-review` on demand.
+Nothing renders a view on CI, so **rendering is a thing YOU do**. Run `/pixel-review` for a
+pixel- or spec-level check, and look at the affected states before calling a visual change done.
 
-**Rendering `apps/macOS`.** The render method is the app itself:
-`bun run screenshot --filter=@argo/macos -- <out.png>` builds it, launches it, and captures the
-WINDOW, not the screen. It quits any running Argo first, and that is **load-bearing**: `open` on
-an already-running bundle id activates THAT instance, so a copy left up by another worktree
-yields a plausible-looking screenshot of somebody else's tree. Screen Recording permission is
-required the first time a terminal captures another process's window; without it the PNG is
-blank.
+**Render whole app states** — `bun run screenshot --filter=@argo/macos -- <out.png>`, from the
+repo root. Against an ordinary checkout this shows no Sessions, so it is the wrong tool for
+looking at a surface you are building.
+**Render one state in isolation** — the right one. From `apps/macOS`:
+`ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`, or `--specimen <case>`;
+`sh scripts/specimens.sh <dir> [name …]` for the set, and `ARGO_WINDOW_SIZE=<w>x<h>` when a
+width is part of the state. Cases live in `ArgoUI/Specimen/SpecimenCatalog.swift`.
+**Drive it like a user** — `sh scripts/e2e-test.sh`, also from `apps/macOS`. The only tests here
+that click; every other Swift test builds a projection and asserts on it.
 
-That renders whole app states. For **one state in isolation**, the harness is
-`ArgoUI/Specimen/SpecimenCatalog.swift`: a `Specimen` case per renderable state, launched by name
-(`--specimen <case>`, or `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`), with
-`sh scripts/specimens.sh <dir> [name …]` rendering the set. Adding a case is all it takes to add a
-state; the script reads the names out of the catalog rather than repeating them. A width is part of
-the state for anything laid out in columns, so `ARGO_WINDOW_SIZE=<w>x<h>` renders the same case at
-a chosen size — the narrow case is a render somebody else can repeat, not a window dragged by hand.
+Two things that bite before you have read anything: a screenshot needs Screen Recording
+permission or the PNG is silently blank, and **an e2e run holds the real keyboard and mouse for
+its whole length — say so and wait before starting one**, because it takes the machine out from
+under whoever is at it.
 
-**Use it before claiming a visual change is done.** The app launched against an ordinary checkout
-shows no Sessions, so without a specimen the surface being built is never actually looked at — and
-the design decisions carry no measurements, so `docs/designs/cockpit-sessions-liquid-glass.png` is
-the only source for rhythm, density and type size. Prose in the decision log can be satisfied while
-the approved pixels are not. The rhythm itself lives in `ArgoUI/VisualContract/`, rendered by the
-`foundations` specimen — that, not an HTML page, is the living token contract (`rules/design-system.md`).
-
-**A render is not a click.** `apps/macOS` has one XCUITest target, `ArgoE2ETests` — the only tests
-here that launch Argo and drive it. Every other Swift test is a SwiftPM package test that can build
-a projection and assert on it but cannot click, so a view that renders correctly in a specimen and
-comes apart inside a popover passes all of them. `sh scripts/e2e-test.sh`, from `apps/macOS`.
-
-It is a **local** gate, deliberately not a CI one: driving the real app needs a macOS runner, the
-most expensive minutes GitHub bills, on every push. Run it when you touch a surface that is only
-reachable by clicking. Two things about it that are not obvious — the first run on a machine
-answers a macOS authorisation prompt by hand and a sleeping display fails the same way; and a test
-must launch onto a `--specimen`, never the machine's own registry, or it asserts whatever that Mac
-happens to have on it.
-
-That run drives the **real WindowServer**, so it holds the keyboard and mouse for its whole length,
-and there is no headless XCUITest to switch on. **Say so and wait before starting one** — the run
-takes the machine out from under whoever is at it.
+Everything else — why the script quits a running Argo, what the pixels are judged against, the
+specimen harness in full: `docs/agents/visual-verification.md`.
 
 ## Tooling (RTK)
 
@@ -246,4 +232,63 @@ rtk err  bun run quality:swift      # SwiftFormat --check, SwiftLint, package bo
 There is no `typecheck` script any more — it ran `tsc` over `apps/desktop`, and no workspace
 carries TypeScript sources to check (ADR-0023).
 
-@CONTEXT.md
+## Domain model
+
+The full model lives under `docs/domain/`, one file per section, indexed by `CONTEXT.md` at
+the repo root. None of it is loaded into every session, because the whole model costs about
+8,200 tokens. Read the one section you need when you are changing the model, naming something
+new, or you need the exact rule behind a term. Swift comments cite it by section name, like
+`CONTEXT.md L1 · Binding`, and the index maps every one of those names to its file.
+
+The vocabulary below is the part every session needs. Use these words, never a synonym.
+
+**L1 · Organisation**
+
+- **Project** — one registered git repo, keyed by a stable id. The scope of one cockpit window.
+- **Account** — one authenticated identity with a provider. One grant, one token in the keychain.
+- **Binding** — a Project's use of one Account through one port, plus the provider-side scope.
+- **Work Item** — a ticket owned by a provider. Argo stores the link, never the content.
+- **answer** — the resolved text of a decision ticket, held verbatim.
+- **Delivery** — the product in flight, derived per branch from git plus the code host.
+- **Person** — `me` or `other`.
+
+**L2 · Session**
+
+- **Session** — one logical resume-chain, and the root Agent. Stored as `managed` or `external`.
+- **orphaned** — a managed Session whose owning process is gone. Observation only, never steerable.
+- **Session status** — `running · permission · asking · idle · stopped · ended · unknown`.
+- **Transcript file** — the physical per-file CLI record. Never itself called a Session.
+
+**Honesty tier** — a property of each rendered fact, not of a session.
+
+- **DIRECT** — Argo owns the fact. **DERIVED** — observed from outside Argo. **CONVENTION** —
+  arrived over the companion plugin.
+- **degrade-down** — ambiguity resolves to the lower tier or the quieter state, so Argo never
+  renders a false DIRECT.
+
+**L3 · Runtime tree**
+
+- **Agent** — a node in the execution tree. It is the root when `parentId` is null.
+- **Subagent** — a non-root Agent. **Turn** — one exchange, prompt in to stop reason out.
+- **Message** — what the agent said. **Thought** — what it reasoned. Both sit in one ordered sequence.
+- **Tool Call** — one observable action. Its **Result** is a `diff`, `output` or `media` value.
+- **Plan** — the agent's live to-do list. Session-scoped and replaced whole.
+- **Workspace** — the git working context. It holds `branch`, which is the join key.
+- **Compaction** — a marker where history was condensed. **Usage** — token, cost and context telemetry.
+
+**L4 · Delivery detail**
+
+- **Diff** — a Delivery's change-set, branch against base, addressed by commit SHA.
+- **Review** — one submitted review round. **Finding** — one resolvable issue inside it.
+- **Check** — one CI check, name taken verbatim from the code host.
+- **Outcome** — what a Session produced. Session-keyed and persisted.
+
+**Autonomy** — **Mode** (`Ask | Plan | Code`), **Permission** (a per-action prompt), **Standing
+allow** (one tool that stopped asking), **Permission expiry** (Argo's own clock refused it), and
+**Gate** (Argo's policy on a Delivery step).
+
+**Ports** — **Work Item provider** and **Code host**. An **MCP server** is not a port, because it
+is something an observed Session connects to rather than something Argo reads through.
+
+**Surfaces, not entities** — Cockpit, Roster, Panels, rooms. The **Hub** is the in-memory
+projection that assembles the join.

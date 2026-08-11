@@ -31,12 +31,12 @@ final class FeedKeyboardE2ETests: XCTestCase {
         try await super.tearDown()
     }
 
-    /// One walk, for the reason the other suites here state: each case costs a launch, and
-    /// relaunching the same bundle id back to back is the flakiest moment in the run.
+    /// One walk: each case costs a launch, and relaunching the same bundle id back to back is the
+    /// flakiest moment in the run.
     ///
-    /// The last two presses are the whole point. Escape closes the panel, and the Return that
-    /// follows re-opens it WITHOUT anything being clicked in between — which is only possible if
-    /// the keyboard came back to the row the panel was opened from.
+    /// The last two presses are the point. Escape closes the panel, and the Return after it
+    /// re-opens it with nothing clicked in between — only possible if the keyboard came back to
+    /// the row the panel was opened from.
     func testARowOpensItsEvidenceAndTakesTheKeyboardBack() {
         // The failed command in the preview transcript, addressed by the sentence the row speaks.
         let row = app.descendants(matching: .any)
@@ -67,10 +67,9 @@ final class FeedKeyboardE2ETests: XCTestCase {
 
 /// The feed, scrolled.
 ///
-/// Whether a reading follows the Session or holds the page you scrolled to is a fact about a scroll
-/// offset against a content height, and both of those are decided by a lazy stack at layout — so
-/// there is no value a package test can hold that is the same claim. Only scrolling the real thing
-/// answers it, and the control that says so has to be gone again once it has been used.
+/// Whether a reading follows the Session or holds the page you scrolled to is a scroll offset
+/// against a content height, both decided by a lazy stack at layout — so no value a package test
+/// can hold is the same claim.
 @MainActor
 final class FeedFollowingE2ETests: XCTestCase {
     private let app = XCUIApplication()
@@ -101,9 +100,8 @@ final class FeedFollowingE2ETests: XCTestCase {
 
         let newest = app.buttons["Newest"]
 
-        // The feed opens at the end of the reading, so the control is already absent — and its
-        // absence here is the baseline the two scrolls below are read against rather than a claim
-        // of its own (`FeedOpeningE2ETests` makes that one).
+        // The feed opens at the end of the reading, so the control is already absent — the
+        // baseline the two scrolls below are read against (`FeedOpeningE2ETests` claims it).
         XCTAssertTrue(
             newest.waitForNonExistence(timeout: 10),
             "The way back down was up at the end of the reading.",

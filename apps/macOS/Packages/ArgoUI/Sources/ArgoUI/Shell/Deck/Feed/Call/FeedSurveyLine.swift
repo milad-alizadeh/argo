@@ -2,10 +2,8 @@ import SwiftUI
 
 /// A run of looking, drawn as one quiet line.
 ///
-/// The same anatomy as a call line — a mark, then words, then the chevron — so a folded run reads
-/// as one more thing that happened rather than as a summary bolted over the feed. Quieter than a
-/// call throughout: it is the row you skim past on the way to the work, and the only reason it is
-/// on screen at all is that the work is easier to find with the traffic counted than deleted.
+/// The same anatomy as a call line — a mark, then words, then the chevron — and quieter than one
+/// throughout.
 struct FeedSurveyLine: View {
     @Environment(\.argo) private var argo
 
@@ -16,8 +14,7 @@ struct FeedSurveyLine: View {
     /// specimen draws the list without a panel to send anybody to.
     var look: (Int) -> Void = { _ in }
     /// Which step of the panel is being shown, where this row is the open one. The name that points
-    /// at it is marked, so a reader who has scrolled the pane can still see which of nine files
-    /// they are looking at.
+    /// at it is marked.
     var current: Int?
 
     var body: some View {
@@ -40,11 +37,6 @@ struct FeedSurveyLine: View {
 
     /// What the run actually looked at, listed under the count — but only while this is the row the
     /// panel is open on.
-    ///
-    /// The fold is what the feed is for; the names are what you want the moment you stop skimming
-    /// and pick one line to read. Showing them on every survey would put the nine rows back, and
-    /// showing them on hover would make them a thing you find by accident, so they answer to the
-    /// same state the panel does: one row at a time, the one you chose.
     private var looked: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
             ForEach(Array(survey.calls.enumerated()), id: \.offset) { position, call in
@@ -58,10 +50,8 @@ struct FeedSurveyLine: View {
 
     /// One name in that list, and a way into the pane beside it.
     ///
-    /// A control and not a caption: the panel is a column of files and this list is its contents,
-    /// so the name a reader wants is the thing they press to get there. A call the record answered
-    /// with nothing is still listed — it happened — and is inert, for the reason its own row would
-    /// be: there is nothing behind it to go to.
+    /// A call the record answered with nothing is still listed — it happened — and is inert:
+    /// there is nothing behind it to go to.
     private func name(of call: FeedCall, at position: Int) -> some View {
         Button { look(position) } label: {
             Text(call.subject.captioned)
@@ -76,8 +66,6 @@ struct FeedSurveyLine: View {
         .accessibilityHint(survey.step(of: position) == nil ? "" : "Shows what this call produced")
     }
 
-    /// The name pointing at what the pane is showing is lit, exactly as the row that opened the
-    /// pane is. Everything else stays as quiet as the count above it.
     private func ink(at position: Int) -> ArgoColor {
         isOpen && survey.step(of: position) == current
             ? argo.color.interaction.accentBright
@@ -95,8 +83,7 @@ struct FeedSurveyLine: View {
         .lineLimit(1)
     }
 
-    /// One mark for the run and not one per kind. The line already names the kinds in words, and a
-    /// row that opened with two glyphs would be the only row in the feed that did.
+    /// One mark for the run and not one per kind — the line already names the kinds in words.
     private var mark: some View {
         Color.clear
             .frame(width: ArgoFeedRow.callSymbolWidth, height: ArgoIconSize.inline.rawValue)

@@ -24,19 +24,15 @@ private let kindByName: [String: ToolCallKind] = [
     "Workflow": .delegate,
     planTool: .plan,
     "ExitPlanMode": .plan,
-    // The two that write the same list an entry at a time. `plan` and not `other`: the pill draws
-    // what they wrote, and a feed drawing them too would say it a second time in rows
-    // (`FeedCallReading`). Named by the constants below rather than repeated as strings, so a third
-    // one is added in one place.
+    // The two that write the same list an entry at a time. `plan` and not `other`, because the pill
+    // draws what they wrote and a feed drawing them too would say it twice (`FeedCallReading`).
     //
     // `TaskList` is deliberately NOT here, and neither are `TaskStop`/`TaskOutput`: none of them
-    // writes to the list, and `plan` is not an inert label — it hides the row. A read the agent
-    // performed would disappear from the rendering without joining the pill.
+    // writes to the list, and `plan` is not an inert label — it hides the row.
     taskCreateTool: .plan,
     taskUpdateTool: .plan,
     // Tools that CHANGE something outside the agent, which a feed must not fold away as a look.
-    // `execute` rather than `edit`: none of them produces a patch, and `execute` is precisely the
-    // kind whose effect the record does not describe.
+    // `execute` rather than `edit`: none of them produces a patch.
     "EnterWorktree": .execute,
     "ExitWorktree": .execute,
     "Skill": .skill,
@@ -60,9 +56,8 @@ let taskIDKey = "taskId"
 let taskResultKey = "task"
 let taskResultIDKey = "id"
 
-/// How a host names a tool it reached over MCP: `mcp__<server>__<tool>`. A prefix rather than a
-/// registry, because the tools behind it are arbitrary — the name is the only thing that says where
-/// one came from, and it says it verbatim.
+/// How a host names a tool it reached over MCP: `mcp__<server>__<tool>`. A prefix and not a
+/// registry, because the tools behind it are arbitrary.
 public let mcpToolPrefix = "mcp__"
 
 /// The delimiter the same convention puts between the server and the tool it exposes.
@@ -91,26 +86,20 @@ func toolCallTarget(_ input: JSONValue) -> String? {
 }
 
 /// The key a host asks the agent to narrate its call in. One key rather than a table: every tool
-/// that carries an account of itself carries it under this name, and a tool that carries none is
-/// the honest silence rather than a gap to fill from somewhere else.
+/// carrying an account of itself carries it under this name.
 private let narrationKey = "description"
 
-/// The agent's own account of what a call was for, verbatim, or nothing.
-///
-/// Blank is nothing said rather than an empty thing said — the same reading prose already gets, and
-/// for the same reason: a row whose subject is the empty string is a row that lost its subject.
+/// The agent's own account of what a call was for, verbatim, or nothing. Blank is nothing said
+/// rather than an empty thing said.
 func toolCallNarration(_ input: JSONValue) -> String? {
     guard let written = input.stringField(narrationKey),
           !written.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
     return written
 }
 
-/// A status the record actually wrote, or nothing.
-///
-/// Strict, because an incremental write is only worth folding in where it SAYS something: an update
-/// that carried no status — a rewording — must leave the entry's own status alone rather than reset
-/// it to a default. A whole-list write reads it the other way and falls back to `pending`: that
-/// list is replaced entire, so the entry exists either way and the only question is what it says.
+/// A status the record actually wrote, or nothing. Strict: an update carrying no status — a
+/// rewording — must leave the entry's own status alone rather than reset it to a default. A
+/// whole-list write falls back to `pending` instead, since that list is replaced entire.
 func writtenPlanEntryStatus(_ raw: String?) -> PlanEntryStatus? {
     switch raw {
     case "pending": .pending
@@ -120,9 +109,8 @@ func writtenPlanEntryStatus(_ raw: String?) -> PlanEntryStatus? {
     }
 }
 
-/// `TodoWrite`'s input → the Plan. An entry with no text is dropped rather than shown blank, and a
-/// plan with no readable entries at all is absent rather than empty: the agent replaced its list
-/// with something, and claiming it emptied it would be a different statement.
+/// `TodoWrite`'s input → the Plan. An entry with no text is dropped, and a plan with no readable
+/// entries at all is absent rather than empty.
 func plan(from input: JSONValue) -> Plan? {
     let entries = input["todos"]?.array.compactMap { todo -> PlanEntry? in
         guard let text = todo.stringField("content") else { return nil }

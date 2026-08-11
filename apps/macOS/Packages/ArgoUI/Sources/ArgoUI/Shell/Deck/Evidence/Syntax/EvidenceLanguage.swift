@@ -1,18 +1,14 @@
 /// What a file is written in, read from its own name.
 ///
-/// The extension and nothing else. A transcript records a path, not a language, and sniffing the
-/// contents to guess would be Argo asserting something the record never said — an unrecognised
-/// extension is `nil` here and renders as plain text under the generic mark, which is the honest
-/// answer and also the harmless one.
+/// The extension and nothing else — the contents are never sniffed. An unrecognised extension is
+/// `nil` here and renders as plain text under the generic mark.
 ///
-/// The `alias` is highlight.js's own name for the grammar, handed straight to it. Argo does not
-/// keep a grammar of its own — that is the dependency's whole job.
+/// The `alias` is highlight.js's own name for the grammar, handed straight to it.
 enum EvidenceLanguage: String, CaseIterable, Sendable {
     case swift
     case typescript
     case javascript
-    /// Named for the language and not for its two-letter extension: `go` is under the identifier
-    /// floor the house style sets, and the alias below is what highlight.js is actually handed.
+    /// `go` is under the house style's identifier floor; `alias` is what highlight.js is handed.
     case golang
     case python
     case ruby
@@ -37,10 +33,9 @@ enum EvidenceLanguage: String, CaseIterable, Sendable {
 
     /// The language an agent DECLARED, from the info string on a fenced block.
     ///
-    /// A different source from the path above and a better one: the agent wrote the word, so
-    /// colouring by it is reading the record rather than sniffing it. Both the language's own
-    /// name and the extension people write instead (```` ```ts ````, ```` ```bash ````) resolve;
-    /// a word Argo does not know is `nil` and the block is drawn as it arrived.
+    /// Both the language's own name and the extension people write instead (```` ```ts ````,
+    /// ```` ```bash ````) resolve; a word Argo does not know is `nil` and the block is drawn as
+    /// it arrived.
     init?(declared: String) {
         let word = declared.trimmingCharacters(in: .whitespaces).lowercased()
         guard let language = Self(rawValue: word) ?? Self.byExtension[word] else { return nil }
@@ -52,10 +47,8 @@ enum EvidenceLanguage: String, CaseIterable, Sendable {
         self == .golang ? "go" : rawValue
     }
 
-    /// One mark per language FAMILY rather than per language, because SF Symbols carries a
-    /// trademarked glyph for exactly one of these and inventing the rest as near-identical
-    /// documents would be a column of marks nobody can tell apart. The extension is still in the
-    /// path beside it, which is what actually names the language.
+    /// One mark per language FAMILY: SF Symbols carries a trademarked glyph for exactly one of
+    /// these, and the extension in the path beside it is what actually names the language.
     var symbol: String {
         switch self {
         case .swift: ArgoSymbol.swiftSource

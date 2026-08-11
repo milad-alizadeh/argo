@@ -3,8 +3,7 @@ import ArgoEngine
 import Testing
 
 /// The marks between the work: where history was condensed, where a turn ended and why, and what
-/// the whole reading cost. They are the feed's punctuation, so every claim here is about a mark
-/// saying what the record said and standing where the record put it.
+/// the whole reading cost.
 @Suite("Feed punctuation")
 struct FeedPunctuationTests {
     @Test
@@ -20,8 +19,8 @@ struct FeedPunctuationTests {
         ])
     }
 
-    /// The host's own word for why, carried through. `unknown` is a reason like any other here:
-    /// the turn is over, and the nearest-looking guess is exactly what must not be drawn.
+    /// The host's own word for why, carried through — `unknown` included, since the nearest-looking
+    /// guess is what degrade-down forbids.
     @Test(arguments: [
         StopReason.endTurn, .maxTokens, .maxTurnRequests, .refusal, .cancelled, .unknown,
     ])
@@ -38,16 +37,13 @@ struct FeedPunctuationTests {
         #expect(FeedFixture.marks(in: rows).first?.words == "turn ended · unknown")
     }
 
-    /// The ordinary end is drawn as the rule and nothing else — it closes every turn in the feed,
-    /// so a word on it is the same word once per turn all the way down the reading.
     @Test
     func `a turn that simply ended is the rule alone`() {
         #expect(FeedMark.turnEnded(.endTurn).words == nil)
     }
 
-    /// And every other reason still says itself. This is the claim the silence above must not be
-    /// allowed to grow into: a turn cut off by a ceiling or ended in a refusal is a different event
-    /// from one that finished, and the rule alone cannot tell a reader which they are looking at.
+    /// The bound on the silence above: a turn cut off by a ceiling or ended in a refusal is a
+    /// different event from one that finished.
     @Test(arguments: [
         StopReason.maxTokens, .maxTurnRequests, .refusal, .cancelled, .unknown,
     ])
@@ -55,15 +51,14 @@ struct FeedPunctuationTests {
         #expect(FeedMark.turnEnded(reason).words == "turn ended · \(reason.rawValue)")
     }
 
-    /// Silence on screen is not silence to a screen reader: the hairline is a shape, and a shape is
-    /// what does not carry.
+    /// Silence on screen is not silence to a screen reader: the hairline is a shape, and a shape
+    /// does not carry.
     @Test
     func `the ordinary end is still spoken`() {
         #expect(FeedMark.turnEnded(.endTurn).spoken == "Turn ended")
     }
 
-    /// The one thing in the feed with no chronological position, because it is a fact about the
-    /// whole reading rather than a moment in it.
+    /// The one mark with no chronological position: it is a fact about the whole reading.
     @Test
     func `the session's spend is rolled up at the foot of the reading`() {
         let rows = FeedProjection.rows(from: delegations())
@@ -82,9 +77,7 @@ struct FeedPunctuationTests {
         ))))
     }
 
-    /// A Session's cost is what its own turns spent PLUS what it paid other agents to work. A
-    /// roll-up over one of the two grains, captioned `session`, is a figure claiming to be a total
-    /// it is not.
+    /// A Session's cost is what its own turns spent PLUS what it paid other agents to work.
     @Test
     func `the roll-up sums the turns' own spend and the delegated spend alike`() {
         let rows = FeedProjection.rows(from: delegations() + [
@@ -127,8 +120,8 @@ struct FeedPunctuationTests {
         #expect(mark.words == "session · 143.6K tokens")
     }
 
-    /// Punctuation is loud by construction: a run of reads that reached across a turn boundary
-    /// would put looking from two different turns behind one count.
+    /// A run of reads reaching across a turn boundary would put looking from two different turns
+    /// behind one count.
     @Test
     func `a mark breaks a run of looking`() {
         let rows = FeedProjection.rows(from: [

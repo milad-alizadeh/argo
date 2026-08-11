@@ -2,9 +2,8 @@ import Foundation
 
 /// Can this Linear Account see this team?
 ///
-/// The narrowest possible read — one team's id — and deliberately *only* that. The Linear adapter
-/// is #371's; what is owed here is the bind-time answer, without which a Project bound to a team
-/// this identity cannot see reads empty forever and looks like a team with no work in it.
+/// One team's id and nothing else — the bind-time answer (#371), without which a Project bound to
+/// a team this identity cannot see reads empty forever and looks like a team with no work in it.
 ///
 /// Linear is GraphQL, so every answer is a 200 and the shape decides: a team that cannot be seen
 /// comes back as `errors` with a null `data.team`, not as a status code.

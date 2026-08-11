@@ -5,9 +5,7 @@ import SwiftUI
 ///
 /// The one place in the shell that reads the navigation model. Everything below it takes values
 /// and bindings, so each piece still renders from a `#Preview` or a specimen without one.
-/// What the selected Session's controls are bound to lives in `CockpitView+Intents.swift`, which
-/// is why the four below are not `private`: they are the shell's own state, read by that file and
-/// by nothing else (the same division `SpecimenScreen` keeps with its case helpers).
+/// The non-`private` members below are read by `CockpitView+Intents.swift` and by nothing else.
 public struct CockpitView: View {
     let presentation: CockpitPresentation
     let actions: CockpitActions
@@ -39,10 +37,9 @@ public struct CockpitView: View {
         self.health = health
     }
 
-    /// The selected Session's reading, projected here because this is the one view that knows what
-    /// is selected. Recomputed on every update rather than cached: the presentation is a value the
-    /// Hub rebuilds as the transcript grows, so a feed that memoised would be showing the reading
-    /// as it was when the user last clicked.
+    /// The selected Session's reading. Recomputed on every update rather than cached: the
+    /// presentation is a value the Hub rebuilds as the transcript grows, so a memoised feed would
+    /// show the reading as it was when the user last clicked.
     private var feed: [FeedRow] {
         FeedProjection.rows(
             from: events,
@@ -52,16 +49,13 @@ public struct CockpitView: View {
         )
     }
 
-    /// The same Session's plan, off the same stream. Read separately rather than pulled out of the
-    /// rows, because it is not one: the plan is the standing state a whole transcript resolves to,
-    /// and the feed is the sequence of moments that produced it.
+    /// The same Session's plan, off the same stream — the standing state a whole transcript
+    /// resolves to, not a row in it.
     private var showing: PlanShowing {
         PlanShowing(plan: PlanProjection.reading(from: events))
     }
 
-    /// What the deck's top zone names, projected here for the reason the feed is: this is the one
-    /// view that knows which Session is selected, and a zone that looked one up would be a layout
-    /// choosing its own subject.
+    /// What the deck's top zone names.
     private var header: SessionHeaderProjection.Header? {
         presentation.session(navigation.session).map(SessionHeaderProjection.header(from:))
     }
@@ -70,9 +64,7 @@ public struct CockpitView: View {
         presentation.session(navigation.session)?.events ?? []
     }
 
-    /// The same Session's composer, projected here for the reason the header is: this is the one
-    /// view that knows what is selected. Absent — no vessel at all — for a Session Argo cannot
-    /// drive.
+    /// The same Session's composer. Absent — no vessel at all — for a Session Argo cannot drive.
     var composer: SessionComposerProjection.Composer? {
         guard let session = presentation.session(navigation.session) else { return nil }
         return SessionComposerProjection.composer(
@@ -81,9 +73,7 @@ public struct CockpitView: View {
         )
     }
 
-    /// The selected Session's pending Permission, projected here for the reason the composer is:
-    /// this is the one view that knows what is selected. While present it takes the composer's
-    /// slot in the deck.
+    /// The selected Session's pending Permission. While present it takes the composer's slot.
     var prompt: PermissionPromptProjection.Prompt? {
         PermissionPromptProjection.prompt(for: presentation.session(navigation.session))
     }
@@ -134,8 +124,7 @@ public struct CockpitView: View {
                 draft: draft,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
-            // this is the one view that holds the navigation — the same division the handoff itself
-            // keeps: the app performs, and the shell decides what to point at.
+            // this is the one view that holds the navigation.
             .environment(\.argoOpenSession) { fresh in navigation.session = fresh }
             .overlay(alignment: .topLeading) {
                 ConnectionChips(

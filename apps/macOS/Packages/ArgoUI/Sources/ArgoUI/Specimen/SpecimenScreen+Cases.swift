@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// What the catalog's cases are BUILT from, kept off the switch itself: the switch is a list of
-/// states and reads as one, and a fixture lookup or a four-argument shell call sitting between two
-/// cases turns that list into plumbing.
+/// What the catalog's cases are BUILT from, kept off the switch itself so the switch stays a list
+/// of states.
 extension SpecimenScreen {
     /// The header whose context tier this case is a render of. The fixture set names the case it
     /// belongs to, so neither side can be renamed into drawing another tier's reading.
@@ -23,9 +22,7 @@ extension SpecimenScreen {
             ?? SessionHeaderFixture.header(for: .managed)
     }
 
-    /// A surface that the app puts over the window rather than into it, rendered where the app
-    /// puts it. A sheet screenshotted in the corner of an empty window is a render of a layout
-    /// nobody is ever shown.
+    /// A surface the app puts over the window rather than into it, rendered where the app puts it.
     func centred(@ViewBuilder _ content: () -> some View) -> some View {
         content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
@@ -37,15 +34,13 @@ extension SpecimenScreen {
     }
 
     /// Which result the folded run's pane opens at — the third for the case that is a render of a
-    /// click on a name, and the top for the case that is a render of the row being opened. Keyed
-    /// off the case the way the header fixtures are, so the switch stays a list of states.
+    /// click on a name, and the top for the case that is a render of the row being opened.
     var surveyStep: Int? {
         specimen == .feedSurveyEvidenceStep ? 2 : nil
     }
 
     /// The folded run of looking, open — and optionally open AT one of the results listed under it,
-    /// which is the state a click on one of those names produces. Spelled here rather than twice in
-    /// the switch: the two cases differ by one argument, and the pane they render is the same pane.
+    /// which is the state a click on one of those names produces.
     func survey(at step: Int? = nil) -> some View {
         sessions(
             FeedProjection.previewCallRows,
@@ -80,9 +75,7 @@ extension SpecimenScreen {
     }
 
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is
-    /// being judged is the assembled container. Spelled once: most of this catalog is that one
-    /// state with a different feed in it, and repeating the call per case made each of them four
-    /// lines of plumbing around the one word that differs.
+    /// being judged is the assembled container.
     func sessions(
         _ feed: [FeedRow],
         open: FeedRow.ID? = nil,
@@ -93,14 +86,13 @@ extension SpecimenScreen {
         prompt: PermissionPromptProjection.Prompt? = nil,
     )
         -> some View {
-        // Named, because a reading is always OF something: a deck whose top zone says nothing is
-        // the no-Session-selected state, and every case below has a Session in it.
+        // Named, because a deck whose top zone says nothing is the no-Session-selected state, and
+        // every case below has a Session in it.
         InstrumentDeckShell(
             room: .sessions,
             feed: feed,
-            // A prompt in the composer's slot IS the Session's status, so the band above it is
-            // read off the same fact rather than named per case: a deck that says nothing while a
-            // Permission is pending under it is a contradiction the catalog would be teaching.
+            // A prompt in the composer's slot IS the Session's status, so the band above it is read
+            // off the same fact rather than named per case.
             header: prompt == nil
                 ? SessionHeaderFixture.header(for: .managed)
                 : SessionHeaderFixture.needsInput,

@@ -3,8 +3,7 @@ import ArgoEngine
 import Testing
 
 /// A picture is the one result that gets worse the smaller it is drawn, so a run of them becomes a
-/// row of thumbnails rather than a run of filenames. The claims here are about where that run
-/// starts and stops, and about each shot still saying honestly where its pixels came from.
+/// row of thumbnails rather than a run of filenames.
 @Suite("Feed galleries")
 struct FeedGalleryTests {
     @Test
@@ -16,9 +15,7 @@ struct FeedGalleryTests {
         #expect(gallery.shots.map(\.name) == ["a.png", "b.png", "c.png"])
     }
 
-    /// A gallery of one is still a gallery. `Read 1` loses an address and saves nothing, which is
-    /// why the survey refuses to fold a run of one — but one thumbnail is a picture where there
-    /// was a filename, so the treatment does not change with the count.
+    /// A gallery of one is still a gallery, where the survey refuses to fold a run of one.
     @Test
     func `a single picture gets the same treatment as a set`() throws {
         let gallery = try #require(
@@ -40,8 +37,7 @@ struct FeedGalleryTests {
         #expect(FeedFixture.galleries(in: rows).map(\.shots.count) == [1, 2])
     }
 
-    /// Four provenances, four treatments. Which one a shot gets is derived from the evidence, so
-    /// the frame it is drawn in and the words under it cannot come apart.
+    /// Four provenances, four treatments, each derived from the evidence rather than in the view.
     @Test(arguments: [
         Reading(tier: .direct, hasBytes: true, provenance: .captured),
         Reading(tier: .derived, hasBytes: true, provenance: .current),
@@ -66,9 +62,8 @@ struct FeedGalleryTests {
         let provenance: MediaProvenance
     }
 
-    /// A shot the record kept no bytes for is drawn and is not a control. It is still IN the
-    /// gallery — the call happened, and dropping it would be the fold reporting five renders where
-    /// six were asked for.
+    /// A shot the record kept no bytes for is still IN the gallery — the call happened, and
+    /// dropping it would be the fold reporting five renders where six were asked for.
     @Test
     func `a picture the record kept no bytes for is shown and opens nothing`() throws {
         let rows = FeedProjection.rows(
@@ -94,10 +89,7 @@ struct FeedGalleryTests {
         #expect(shot.isOpenable == false)
     }
 
-    /// The frame is the fact, so it is derived beside the words rather than decided inside the view
-    /// that draws it: a capture bleeds, a re-read and an absence wear the broken edge the shell
-    /// already uses for a weaker claim, and a render sits mounted because it was never captured off
-    /// anything.
+    /// The frame is derived beside the words rather than decided inside the view that draws it.
     @Test(arguments: [
         Framing(provenance: .captured, treatment: .bleeding),
         Framing(provenance: .current, treatment: .broken),
@@ -114,9 +106,8 @@ struct FeedGalleryTests {
         let treatment: MediaProvenance.Treatment
     }
 
-    /// A failed call is the loudest thing in a run and a thumbnail carries no failure ink, so a
-    /// call that came back with a picture AND an error stays a line — in the failure colour, with
-    /// what went wrong behind it. The same reason the survey never folds one.
+    /// A thumbnail carries no failure ink, so a call that came back with a picture AND an error
+    /// stays a line — in the failure colour, with what went wrong behind it.
     @Test
     func `a failed call holding a picture stays a line rather than joining a gallery`() {
         let broken: [TranscriptEvent] = [
@@ -203,9 +194,8 @@ struct FeedGalleryTests {
         #expect(call.evidence.count == 2)
     }
 
-    /// The call that belongs to neither fold: a picture AND a page of output. The gallery will not
-    /// take it, because drawing it would drop the output — and the survey must not take it either,
-    /// because a count would drop the picture. It keeps a row, and the panel keeps both halves.
+    /// The call that belongs to neither fold: a picture AND a page of output. The gallery would
+    /// drop the output and a count would drop the picture, so it keeps a row and the panel both.
     @Test
     func `a run of calls that each produced a picture and output is never folded to a count`() {
         let mixed = (0 ..< 2).flatMap { position -> [TranscriptEvent] in

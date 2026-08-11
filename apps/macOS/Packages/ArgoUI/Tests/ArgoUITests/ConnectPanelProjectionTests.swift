@@ -2,9 +2,7 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What the Connect panel says. Every claim here is one the panel must make in WORDS: an enabled
-/// button, a dimmed row and a coloured edge are not readable by everyone, and none of them is
-/// testable.
+/// What the Connect panel says. Every claim here is one the panel must make in WORDS.
 @Suite("Connect panel projection")
 struct ConnectPanelProjectionTests {
     @Test
@@ -55,8 +53,7 @@ struct ConnectPanelProjectionTests {
         #expect(pulls.row.detail == "GitHub · milad-at-trili · trili/cockpit")
     }
 
-    /// Two identities on one provider, told apart by what is on screen and nothing else. Reading a
-    /// token to know which is which is the thing this rules out.
+    /// Two identities on one provider, told apart by what is on screen and nothing else.
     @Test
     func `two Accounts on one provider are distinguishable in the choices`() throws {
         let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
@@ -68,8 +65,8 @@ struct ConnectPanelProjectionTests {
         ])
     }
 
-    /// Rebinding is picking again, and the Account already on the row is one of the answers: the
-    /// same identity under a different scope is a move a row has to allow.
+    /// Rebinding is picking again: the same identity under a different scope is a move a row
+    /// allows.
     @Test
     func `the Account already bound is still offered`() throws {
         let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
@@ -103,8 +100,8 @@ struct ConnectPanelProjectionTests {
         #expect(pulls.choices.map(\.title) == ["GitHub · milad-alizadeh"])
     }
 
-    /// Authorizing one more identity is always on offer, which is what makes a second Account on a
-    /// provider reachable at all.
+    /// Authorizing one more identity is always on offer, which is what makes a second Account
+    /// reachable at all.
     @Test
     func `every port offers a way to authorize another identity`() {
         let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
@@ -114,8 +111,7 @@ struct ConnectPanelProjectionTests {
         })
     }
 
-    /// A provider with no flow behind it in this build is not offered: a control whose only
-    /// outcome is nothing happening is worse than its absence.
+    /// A provider with no flow behind it in this build is not offered.
     @Test
     func `only a provider Argo can authorize is offered`() {
         #expect(ConnectPanelProjection.panel(from: ConnectFixture.fresh).ports.allSatisfy {
@@ -124,7 +120,7 @@ struct ConnectPanelProjectionTests {
     }
 
     /// The other half of that claim: the list is what the app hands over, not a set this file
-    /// decided. The day Linear's grant lands, nothing here has to change for it to appear.
+    /// decided.
     @Test
     func `the offered set is whatever the app says it can authorize`() throws {
         let reading = ConnectReading(authorizable: [.github, .linear])
@@ -181,8 +177,7 @@ struct ConnectPanelProjectionTests {
         #expect(panel.companion.detail.contains("nothing to install"))
     }
 
-    /// And where even that cannot be established, it falls to the registry's own word for a fact
-    /// nobody can stand behind rather than to the nearest guess.
+    /// Where even that cannot be established it falls to `unknown`, never to the nearest guess.
     @Test
     func `a companion state Argo cannot establish reads unknown`() {
         let panel = ConnectPanelProjection.panel(from: ConnectReading(companion: .unknown))

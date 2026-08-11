@@ -2,17 +2,13 @@
 import Foundation
 import Testing
 
-/// The half of the chain that outlives the process that made it.
-///
-/// Its own suite because it fails for its own reason: everything in `Hub handoff` is about a Hub
-/// that is still running, and every claim here is about what a SECOND Hub can still say — which is
-/// the one thing a fixture holding a live registry cannot accidentally prove.
+/// The half of the chain that outlives the process that made it: every claim here is about what a
+/// SECOND Hub can still say.
 @Suite("Handoff chain")
 @MainActor
 struct HandoffChainTests {
-    /// The point of writing it down. A restart cannot re-adopt the PTY, so the handed-off Session
-    /// comes back read-only — and the link is exactly what makes that recoverable rather than a
-    /// reading that stops with no way on.
+    /// A restart cannot re-adopt the PTY, so the handed-off Session comes back read-only and the
+    /// written link is the only way on.
     @Test
     func `a chain survives a restart, naming the Session the CLI chose`() async throws {
         let fixture = try SpawnFixture()
@@ -29,8 +25,7 @@ struct HandoffChainTests {
         await hubObserveToEnd(restarted, spawnedSessionObservation(of: fixture))
 
         #expect(handedOffTo(in: restarted, from: "full-session") == "session-from-cli")
-        // And nothing about the restart claims the PTY back: both rows are read-only now, which is
-        // why the link matters and why no button is offered on either.
+        // Nothing about the restart claims the PTY back: both rows are read-only now.
         #expect(restarted.sessions.allSatisfy { $0.provenance == .external })
     }
 
@@ -87,9 +82,7 @@ struct HandoffChainTests {
         #expect(SpawnServices.none.chainFileURL == nil)
     }
 
-    /// Where a Session has handed off twice, the reading follows the NEWEST: the earlier link is a
-    /// step in a chain that has already moved on, and a reader sent to it would have to find the
-    /// remedy twice.
+    /// Where a Session has handed off twice, the reading follows the NEWEST link.
     @Test
     func `the newest link is the one the reading follows`() {
         var chain = HandoffChain()

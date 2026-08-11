@@ -1,15 +1,12 @@
 import AppKit
 import SwiftUI
 
-/// The AppKit half of the feed: what the table draws, and how a fresh reading lands on it.
-///
-/// It never decides whether the reading follows — that stays `FeedView`'s — but it is the only
-/// thing that moves the scroll. The split is what killed the old feed's bugs: exactly one
-/// authority over the offset, and it is the one AppKit already runs.
+/// The AppKit half of the feed: what the table draws, and how a fresh reading lands on it. The
+/// only thing that moves the scroll; whether the reading follows stays `FeedView`'s.
 @MainActor final class FeedTableCoordinator: NSObject {
     var model: FeedTableModel?
-    /// What the table currently draws, diffed against each fresh model. The table is not a
-    /// SwiftUI view: nothing re-renders it, so what changed has to be said out loud.
+    /// What the table currently draws, diffed against each fresh model — the table is not a
+    /// SwiftUI view, so nothing re-renders it on a change.
     private(set) var shown: [FeedRow] = []
     private var folds: Set<FeedRow.ID> = []
     /// The open row the visible cells were last drawn against.

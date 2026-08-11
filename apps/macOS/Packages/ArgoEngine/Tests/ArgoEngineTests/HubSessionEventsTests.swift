@@ -2,11 +2,8 @@
 import Foundation
 import Testing
 
-/// What a Session keeps of the stream that built it.
-///
-/// The facts a roster row draws are a fold over the transcript; the feed is the transcript. These
-/// are the assertions that the fold no longer eats what it read, and that a resume chain reads as
-/// one sequence rather than as two files a surface would have to re-join.
+/// What a Session keeps of the stream that built it: the fold does not eat what it read, and a
+/// resume chain reads as one sequence rather than two files a surface has to re-join.
 @Suite("Hub session events")
 struct HubSessionEventsTests {
     private static let projectURL = URL(fileURLWithPath: "/tmp/argo-events")
@@ -34,7 +31,7 @@ struct HubSessionEventsTests {
     }
 
     /// The stitch the roster already does for facts, done for prose: a resumed session is one
-    /// reading, and a feed that started over at the resume would lose everything before it.
+    /// reading.
     @Test
     @MainActor
     func `a resumed chain's events stitch into one sequence, root first`() async throws {
@@ -59,9 +56,8 @@ struct HubSessionEventsTests {
         ])
     }
 
-    /// A tail hands over what a file already held and then keeps handing over what is written to
-    /// it. The second batch has to land behind the first rather than replace it — which is what a
-    /// feed that grows without the user reselecting the Session IS.
+    /// A tail hands over what a file already held and then what is written to it; the second batch
+    /// lands behind the first rather than replacing it.
     @Test
     @MainActor
     func `events written after the backfill land behind it`() async throws {
@@ -81,8 +77,7 @@ struct HubSessionEventsTests {
 }
 
 private extension TranscriptEvent {
-    /// The markdown of a prose event, so an assertion about ORDER reads as the prose it is about
-    /// rather than as a list of cases.
+    /// The markdown of a prose event, so an order assertion reads as prose and not a list of cases.
     var spokenMarkdown: String? {
         switch self {
         case let .message(markdown), let .thought(markdown): markdown

@@ -1,12 +1,8 @@
 @testable import ArgoEngine
 import Testing
 
-/// Driving a Session Argo owns — the other direction from everything else in the Hub, which reads
-/// the world rather than acting on it.
-///
-/// The PTY is the only thing standing in for the world here: the claim, the ownership registry and
-/// the launch are all real, so what these prove is the whole path from a Session id the roster
-/// carries to bytes on a descriptor.
+/// Driving a Session Argo owns. The PTY is the only stand-in here — the claim, the ownership
+/// registry and the launch are real, so the whole path from Session id to bytes is covered.
 @Suite("Session drive")
 @MainActor
 struct SessionDriveTests {
@@ -25,9 +21,8 @@ struct SessionDriveTests {
         #expect(typed.hasSuffix("\r"))
     }
 
-    /// The composer is absent for a Session Argo cannot drive, so reaching this is the race
-    /// between drawing it and the PTY going away — and the answer has to be a refusal the surface
-    /// can repeat, never a write into nothing.
+    /// Reachable only by the race between drawing the composer and the PTY going away: the answer
+    /// is a refusal, never a write into nothing.
     @Test
     func `a Session Argo never spawned refuses the Turn`() throws {
         let fixture = try SpawnFixture()
@@ -50,8 +45,7 @@ struct SessionDriveTests {
         }
     }
 
-    /// Return on an empty field would submit an empty Turn to a live agent, which reads as the user
-    /// having asked for something and is the one keystroke the composer must not be able to leak.
+    /// Return on an empty field would submit an empty Turn to a live agent.
     @Test
     func `whitespace alone is not a Turn`() async throws {
         let fixture = try SpawnFixture()
@@ -64,8 +58,7 @@ struct SessionDriveTests {
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
 
-    /// A bare `ESC` and nothing else (#541). No Return after it: a submit would be a Turn, and what
-    /// this sends is the key that ends one.
+    /// A bare `ESC` and nothing else (#541) — a Return after it would submit a Turn.
     @Test
     func `an interrupt reaches the Session's prompt as a bare escape`() async throws {
         let fixture = try SpawnFixture()
@@ -77,9 +70,8 @@ struct SessionDriveTests {
         #expect(fixture.host.started.last?.written == ["\u{1B}"])
     }
 
-    /// The interrupt does NOT ask whether a Turn is running, and this is where that shows: two
-    /// stops in a row are two keystrokes rather than a refusal on the second. Whether something was
-    /// running is a DERIVED reading, and refusing on it would report Argo's own lag as user error.
+    /// The interrupt does not ask whether a Turn is running: that reading is DERIVED, so refusing
+    /// on it would report Argo's own lag as user error.
     @Test
     func `stopping a Session that is running nothing is harmless`() async throws {
         let fixture = try SpawnFixture()
@@ -93,7 +85,6 @@ struct SessionDriveTests {
     }
 
     /// The point of `ESC` over anything that ends a process: the Session is still there afterwards.
-    /// A stop that took the agent down with the Turn would be a close with extra steps.
     @Test
     func `a Session takes the next Turn after being stopped`() async throws {
         let fixture = try SpawnFixture()
@@ -121,9 +112,8 @@ struct SessionDriveTests {
         }
     }
 
-    /// The sentence the CLI writes for it, matched whole. A message that merely QUOTES the marker
-    /// is a message: read as the marker it would put a Turn boundary through the middle of what
-    /// somebody said.
+    /// The sentence the CLI writes for it, matched whole: a message that merely quotes the marker
+    /// would otherwise put a Turn boundary through what somebody said.
     @Test
     func `the interrupt marker is recognised only when it is the whole entry`() {
         #expect(ClaudeInterrupt.isMark(ClaudeInterrupt.mark))
@@ -132,8 +122,8 @@ struct SessionDriveTests {
         #expect(!ClaudeInterrupt.isMark("Carry on."))
     }
 
-    /// What a cockpit test drives instead of a CLI. It is here rather than in a test target because
-    /// the surfaces that need it are in another module.
+    /// What a cockpit test drives instead of a CLI. Not in a test target: the surfaces that need it
+    /// are in another module.
     @Test
     func `the in-memory driver answers with what it was asked to send`() throws {
         let driver = InMemorySessionDriver()

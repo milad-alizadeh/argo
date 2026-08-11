@@ -4,14 +4,12 @@ import ArgoEngine
 /// whether that choice still reads.
 ///
 /// A state of its own rather than `BindingResolution`, because a resolution carries the grant and
-/// a token has no business crossing into a view. The app converts one into the other, and nothing
-/// on this side of the seam can hold a token even by accident.
+/// no token may cross into a view. The app converts one into the other.
 public enum ConnectPortState: Equatable, Sendable {
     case unbound
     case bound(accountID: String, scope: String)
-    /// Recorded, and no longer readable through. Kept apart from `unbound` for the reason the
-    /// engine keeps them apart: a choice that has come undone is re-bindable, and an absence is a
-    /// different claim about the same row.
+    /// Recorded, and no longer readable through — kept apart from `unbound` because a choice that
+    /// has come undone is re-bindable, and an absence is a different claim about the same row.
     case broken(accountID: String, scope: String, fault: BindingFault)
 }
 
@@ -29,8 +27,7 @@ public struct ConnectPort: Equatable, Sendable, Identifiable {
         port
     }
 
-    /// The Account this row names, whichever way it names it. Bound and broken both point at one,
-    /// and every reader of this type wants the same answer from the two.
+    /// The Account this row names, whichever way it names it — bound and broken both point at one.
     public var accountID: String? {
         switch state {
         case .unbound: nil

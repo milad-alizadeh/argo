@@ -2,13 +2,11 @@ import ArgoEngine
 
 /// An emitted call, plus the outcome that answered it, as the sentence the feed draws.
 ///
-/// The pairing is the reason this is not a `map` over the stream: a call and its result are two
-/// events that can sit arbitrarily far apart, and the row is a reading of both. A call the record
-/// has not answered yet is still a row — it happened — it just has nothing behind it.
+/// Not a `map` over the stream: a call and its result are two events that can sit arbitrarily far
+/// apart, and a call the record has not answered yet is still a row with nothing behind it.
 enum FeedCallReading {
-    /// `nil` where the call is not the feed's news to tell. The plan tool is the case: what it
-    /// wrote is standing state with a surface of its own, and drawing the call as well would say
-    /// the same thing twice.
+    /// `nil` where the call is not the feed's news to tell — the plan tool, whose writes are
+    /// standing state with a surface of their own.
     static func call(
         _ call: ToolCall,
         outcome: ToolCallOutcome?,
@@ -30,17 +28,13 @@ enum FeedCallReading {
 
     /// A result a surface could actually show something for, or `nil`.
     ///
-    /// The filter is here rather than in the panel because it decides whether the ROW opens at all:
-    /// a `Bash` that printed nothing and a patch nothing could parse used to offer a chevron and
-    /// answer it with a line of apology, which is a click the feed asked for and then wasted. The
-    /// call still happened, and the line still says so.
+    /// Here rather than in the panel because it decides whether the ROW opens at all.
     private static func kept(_ result: ToolResult?) -> ToolResult? {
         switch result {
         // Blank output never reaches here — the engine reads whitespace as no output at all.
         case .output: result
         case let .diff(diff): diff.hunks.isEmpty ? nil : result
-        // Kept even with no bytes: an absent picture is drawn as one IN the gallery, beside the
-        // pictures that survived, and it offers no click to waste.
+        // Kept even with no bytes: an absent picture is drawn as one IN the gallery.
         case .media: result
         case nil: nil
         }
@@ -69,9 +63,8 @@ enum FeedCallReading {
     /// Which mutation it was, from the patch rather than from the tool's name — `Write` both
     /// creates and updates, and only the record knows which.
     ///
-    /// With no patch to read it stays `edit`, which is not a guess: `edit` is the ENGINE's kind
-    /// for the tool, read off its name, and it is the least the four verbs can say. What is
-    /// unknown is which mutation it was, and none of the other three is claimed without evidence.
+    /// With no patch it stays `edit`, the engine's kind read off the tool's name: none of the
+    /// other three verbs is claimed without evidence.
     private static func mutation(_ diff: DiffEvidence?) -> FeedCall.Kind {
         switch diff?.change {
         case .create: .create
@@ -84,11 +77,6 @@ enum FeedCallReading {
     /// The agent's own account of the call outranks whatever it named, wherever the row is not
     /// already addressed by a name of its own. Three are: a file, a skill, and an MCP tool whose
     /// name IS its address — those keep the subject that already identifies them.
-    ///
-    /// It is the unclassified call the narration rescues most. The field a target was scraped from
-    /// means nothing without a kind to read it under, so it drew `Called custom_tool_v2` under a
-    /// verb that already admits Argo does not know what happened; a description is not a scraped
-    /// field but the host asking the agent what the call was FOR.
     private static func subject(of call: ToolCall, within path: FeedPath) -> FeedCall.Subject {
         let named = call.target.map(path.shortened)
         let narrated = call.narration.map { FeedCall.Subject.narration($0, standingIn: named) }
@@ -103,24 +91,21 @@ enum FeedCallReading {
         }
     }
 
-    /// A call that named nothing is named by the tool that made it — the local command the CLI ran
-    /// is the shape this exists for: it has a name, and no arguments to show.
+    /// A call that named nothing is named by the tool that made it.
     private static func tool(_ call: ToolCall) -> FeedCall.Subject {
         .plain(call.name)
     }
 
     /// The address is already relative to the Session's cwd by the time it reaches here, so whether
-    /// it is external is a question about what the shortening LEFT — asked once, at the reading,
-    /// and carried on the name from there.
+    /// it is external is a question about what the shortening LEFT.
     private static func file(at named: String?, within path: FeedPath) -> FeedCall.Subject? {
         named
             .flatMap { FeedCall.FileName(path: $0, isExternal: path.isExternal($0)) }
             .map(FeedCall.Subject.file)
     }
 
-    /// `mcp__linear__list_issues` → `linear · list_issues`. Every word is the host's, in its own
-    /// order; what changes is the delimiter it wrote them with, drawn as one. A name that does not
-    /// follow the convention is shown exactly as it stands.
+    /// `mcp__linear__list_issues` → `linear · list_issues`. A name that does not follow the
+    /// convention is shown exactly as it stands.
     private static func mcpAddress(of name: String) -> String {
         let parts = name.dropFirst(mcpToolPrefix.count)
             .components(separatedBy: mcpNameSeparator)
@@ -129,7 +114,7 @@ enum FeedCallReading {
     }
 
     /// How the call ended, from the host's own status and nothing else. A call the record has not
-    /// answered is `pending` — the absence of a result is not a result.
+    /// answered is `pending`.
     private static func ending(of outcome: ToolCallOutcome?) -> FeedCall.Ending {
         guard let outcome, outcome.status != .pending, outcome.status != .inProgress else {
             return .pending

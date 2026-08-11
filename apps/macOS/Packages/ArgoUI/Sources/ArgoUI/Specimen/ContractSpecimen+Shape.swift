@@ -3,12 +3,9 @@ import SwiftUI
 /// The geometry half of the contract sheet: the radius rungs, and how far each elevation rung
 /// stands off its ground.
 ///
-/// Both families are mostly FLAT, and a specimen is the only place that reads as a decision
-/// rather than as an omission — four of five elevation rungs cast nothing, and seeing them cast
-/// nothing side by side is what says so.
+/// Both families are mostly FLAT: four of five elevation rungs cast nothing.
 extension ContractSpecimen {
-    /// The radius rungs, each drawn at its own value so the difference between 3 and 6 is a shape
-    /// rather than a number. `deck` is worth zero and is shown BEING zero.
+    /// The radius rungs, each drawn at its own value. `deck` is worth zero and is shown BEING zero.
     var shape: some View {
         section("Shape — a rung per kind of surface; the deck's flatness is a decision") {
             HStack(alignment: .top, spacing: ArgoSpacing.comfortable) {
@@ -33,9 +30,8 @@ extension ContractSpecimen {
         }
     }
 
-    /// Both presence rungs, on a surface rather than on a word: what ghosting dims is a whole
-    /// row at once, so a swatch of one line would be showing the wrong thing. Side by side is
-    /// the only way to judge it — `ghosted` is a comparison before it is a value.
+    /// Both presence rungs, on a surface rather than on a word: what ghosting dims is a whole row
+    /// at once.
     var presence: some View {
         section("Presence — full, and the rung a surface nobody can drive is drawn at") {
             HStack(alignment: .top, spacing: ArgoSpacing.loose) {
@@ -59,7 +55,7 @@ extension ContractSpecimen {
     }
 
     /// Every elevation rung on a ground it can actually cast onto. Four of the five are flat by
-    /// contract, which is the point: depth here is tone and edge, and a shadow is the exception.
+    /// contract: depth here is tone and edge.
     var depth: some View {
         section("Depth — flat by default; a shadow is reserved for what genuinely floats") {
             HStack(alignment: .top, spacing: ArgoSpacing.loose) {

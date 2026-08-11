@@ -4,19 +4,16 @@ import SwiftUI
 /// A call, drawn as one line of type with a mark on it.
 ///
 /// One line at any window width, and one line WHATEVER happened. How it went is said in the ink of
-/// the whole line and a mark after it — never in words: a feed that prints what a command said
-/// stops being a feed the moment a stack trace lands in it, and "Error" is Argo talking over a
-/// record that already has its own account of the failure. That account is the panel's, whole.
+/// the whole line and a mark after it — never in words. The record's own account of a failure is
+/// the panel's, whole.
 ///
-/// Every part of the sentence is set on ONE rung, interface and mono alike. It was assembled from
-/// four — a 13pt verb, an 11pt qualifier, an 11.5pt command and a 10.5pt outcome — which is a line
-/// that looks made out of leftovers however carefully each piece was chosen.
+/// Every part of the sentence is set on ONE rung, interface and mono alike.
 struct FeedCallLine: View {
     @Environment(\.argo) private var argo
 
     let call: FeedCall
-    /// Whether this row's evidence is what the panel is showing. The row that was opened stays
-    /// marked, or a reader with a panel full of output has nothing saying which line it came from.
+    /// Whether this row's evidence is what the panel is showing. The opened row stays marked, so a
+    /// panel full of output still says which line it came from.
     let isOpen: Bool
     let open: () -> Void
 
@@ -46,8 +43,8 @@ struct FeedCallLine: View {
     }
 
     /// The kind's own mark, always — a failure recolours the line rather than replacing what it
-    /// says happened. The column is drawn as an empty one where there is no mark, not skipped: a
-    /// run of calls reads as one piece of work because every verb starts on the same vertical.
+    /// says happened. The column is drawn empty where there is no mark, not skipped, so every
+    /// verb in a run of calls starts on the same vertical.
     private var mark: some View {
         Color.clear
             .frame(width: ArgoFeedRow.callSymbolWidth, height: ArgoIconSize.inline.rawValue)
@@ -59,8 +56,7 @@ struct FeedCallLine: View {
             .foregroundStyle(verdict ?? argo.color.text.disabled)
     }
 
-    /// How many calls this line stands for, where it stands for more than one. `×3` and not "3
-    /// edits": the verb already said what they were.
+    /// How many calls this line stands for, where it stands for more than one.
     @ViewBuilder private var repeats: some View {
         if call.repeats > 1 {
             Text("×\(call.repeats)")
@@ -94,10 +90,8 @@ struct FeedCallLine: View {
 
     /// The ink the whole line takes, or `nil` for everything that did not fail.
     ///
-    /// A failure is the ONLY outcome with a colour. A tick beside every successful call and a green
-    /// line under it is a feed where the fourteen ordinary rows shout as loudly as the one that
-    /// broke — success is the default a feed can assume, and marking it says nothing. What a
-    /// failure says instead, for a reader who cannot see the red, is its accessibility label.
+    /// A failure is the ONLY outcome with a colour. For a reader who cannot see the red, the
+    /// failure is carried by the accessibility label instead.
     private var verdict: ArgoColor? {
         call.ending.hasFailed ? argo.color.state.failure : nil
     }

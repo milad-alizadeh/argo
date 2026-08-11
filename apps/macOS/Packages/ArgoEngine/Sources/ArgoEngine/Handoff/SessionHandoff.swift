@@ -3,24 +3,15 @@ import Foundation
 /// Handing a full Session's work to a fresh one: type `/handoff`, wait for the brief, open a
 /// Session seeded with it (#513, story 47).
 ///
-/// Three acts in one order, and the order is the point — one click continues the work rather than
-/// saving a keystroke. It lives HERE, in the engine, rather than in the view that carries the
-/// button, for the reason every rule on the header does: a sequence that only exists inside a
-/// button's action is a sequence nothing can assert, and the two ways this goes wrong — a Session
-/// Argo cannot type at, and a brief that never arrives — are exactly the ones a user would
-/// otherwise experience as nothing happening.
-///
-/// **It fabricates nothing.** No brief means no fresh Session and a failure said out loud; the
-/// roster never grows a row for work that was not handed over.
+/// Three acts in that order. **It fabricates nothing** — no brief means no fresh Session and a
+/// failure said out loud; the roster never grows a row for work that was not handed over.
 @MainActor
 public final class SessionHandoff {
     /// Which Session is being handed off, and what the fresh one inherits (story 48).
     ///
     /// `cwd` is the Workspace: the fresh Session runs in the same folder, so it is on the same
     /// branch, and every fact derived from that branch — the Delivery, and the Work Item the
-    /// Delivery serves — derives the same way for both. Inheritance by DERIVATION rather than by
-    /// copying is what keeps the two rows a chain instead of two records that agree until one of
-    /// them is edited.
+    /// Delivery serves — derives the same way for both. Nothing is copied across.
     public struct Request: Sendable, Equatable {
         public let sessionID: String
         public let cwd: String
@@ -42,14 +33,12 @@ public final class SessionHandoff {
     }
 
     /// Why a handoff did not happen, in words fit to repeat to the user — the same contract
-    /// `AgentSpawnError` keeps, and for the same reason (#361): both of these look exactly like
-    /// nothing happening otherwise.
+    /// `AgentSpawnError` keeps (#361).
     public enum Failure: Error, Equatable {
         /// Argo owns no live PTY for that Session, so there is no prompt to type at.
         case notSteerable
         /// There is no folder to start the fresh Session in. The header disables its button on
-        /// this same case, and reads its sentence from HERE — one rule, one wording, so the
-        /// tooltip that explains the refusal and the alert that reports it cannot disagree.
+        /// this same case and reads its tooltip sentence from HERE, so the two cannot disagree.
         case noFolder
         /// `/handoff` was typed and no brief appeared before Argo stopped waiting.
         case briefNeverArrived(afterMs: Int)
@@ -94,17 +83,13 @@ public final class SessionHandoff {
             cwd: request.cwd,
             opening: HandoffScript.opening(fromBriefAt: brief.path, issue: request.issue),
         ))
-        // Last, and only on the path where a fresh Session actually exists: the edge is what makes
-        // the two rows a chain, and one recorded before the spawn returned would name a Session
-        // that a refusal has just prevented from being there.
+        // Last, and only where a fresh Session actually exists: an edge recorded before the spawn
+        // returned would name a Session a refusal has just prevented from being there.
         host.handedOff(sessionID: request.sessionID, to: sessionID)
         return Outcome(briefPath: brief.path, sessionID: sessionID)
     }
 
     /// Poll until the brief is there, or until Argo has waited longer than it said it would.
-    ///
-    /// Polled rather than watched: this is one file at a known path over a bounded window, and a
-    /// directory watcher for it would be machinery whose failure mode is silence.
     private func awaitBrief(at path: String) async throws {
         let deadline = wait.now() + wait.patience.limitMs
         while !hasArrived(at: path) {

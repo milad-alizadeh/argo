@@ -4,12 +4,10 @@ import Testing
 
 /// How a call ended, and what the row is entitled to say about it — which is nothing, in words. The
 /// ending is drawn as the ink of the line and a mark after it; everything the record actually said
-/// is the panel's. These are the claims that keep the two apart.
+/// is the panel's.
 @Suite("Feed call ending")
 struct FeedCallEndingTests {
-    /// Not one line of the output reaches the row any more, the exit line included. Every rule for
-    /// choosing which line stands for a failure was Argo deciding which part of a stack trace
-    /// explains it — and the panel shows all of it, so there was never a reader for the extract.
+    /// Not one line of the output reaches the row, the exit line included.
     @Test
     func `a failed command says so, and none of its output appears on the row`() throws {
         let printed = "Exit code 65\n\nChip.swift:88:7: error: cannot convert value\n"
@@ -29,9 +27,8 @@ struct FeedCallEndingTests {
         #expect(call.evidence == [.output(OutputEvidence(tier: .direct, text: printed))])
     }
 
-    /// A failure that printed nothing is still a failure, and it is now the ROW that says so: the
-    /// line takes the failure ink and a cross. There is no word for Argo to put there instead,
-    /// which is the point — "Error" was Argo talking over a record that said nothing.
+    /// A failure that printed nothing is still a failure, and the ROW says so with ink and a cross.
+    /// There is no word for Argo to put there instead.
     @Test
     func `a failure the host printed nothing for reads as failed and opens onto nothing`() {
         let calls = FeedFixture.calls(in: [
@@ -67,8 +64,8 @@ struct FeedCallEndingTests {
         #expect(calls.first?.disclosure == .available)
     }
 
-    /// A call the record has not answered yet HAPPENED, and it is a row. Reading it as a success
-    /// would be the feed's first lie, and dropping it would hide the work in flight.
+    /// A call the record has not answered yet HAPPENED, and it is a row — never a success, never
+    /// dropped.
     @Test
     func `a call the transcript has not answered is open, not quietly successful`() {
         let calls = FeedFixture.read("Token.swift")
@@ -80,9 +77,7 @@ struct FeedCallEndingTests {
     // MARK: - What opens
 
     /// The marker follows the EVIDENCE and never the kind — two reads of the same file, one
-    /// answered by the record and one not, are two different rows. They are one field now, so the
-    /// marker and what opens behind it cannot disagree: a row advertising evidence it has none of
-    /// is the one failure this surface could not recover from.
+    /// answered by the record and one not, are two different rows.
     @Test
     func `the disclosure marker and what opens behind it are one fact`() {
         let calls = FeedFixture.calls(in: [
@@ -106,8 +101,7 @@ struct FeedCallEndingTests {
         #expect(calls.map { !$0.evidence.isEmpty } == [true, false, false])
     }
 
-    /// A panel that opens onto "nothing was kept of this call" is a click the feed asked for and
-    /// then wasted. A result with nothing in it is no result: the row stays, unopenable.
+    /// A result with nothing in it is no result: the row stays, unopenable.
     @Test
     func `a result with nothing in it is not something to open`() {
         let calls = FeedFixture.calls(in: [
@@ -124,8 +118,8 @@ struct FeedCallEndingTests {
         #expect(calls.first?.disclosure == FeedCall.Disclosure.none)
     }
 
-    /// The panel is where a mutation's patch is read, so a projection that kept only what the ROW
-    /// draws would leave it with a churn count and nothing to show.
+    /// The panel is where a mutation's patch is read, so the projection keeps more than the counts
+    /// the ROW draws.
     @Test
     func `a mutation carries its whole patch through to the panel, not just its counts`() throws {
         let patch = FeedFixture.patch(.modify, added: 1, removed: 1)

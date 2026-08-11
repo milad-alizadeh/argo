@@ -3,21 +3,18 @@ import ArgoEngine
 extension CockpitPresentation.Session {
     /// A stretch of a Codex Session: shell calls, and nothing narrating them.
     ///
-    /// Its own fixture rather than a filter over the preview transcript, because it is a different
-    /// HOST. Across 20 Codex Sessions and 495 shell calls the argument keys are only ever
-    /// `cmd · workdir · yield_time_ms · max_output_tokens · tty` — there is no description and no
-    /// equivalent, ever, so a feed of un-narrated commands is not a slice of a Claude Code feed. It
-    /// is what that CLI actually produces, and Claude Code falls back to it too.
+    /// A different HOST, so its own fixture: across 20 Codex Sessions and 495 shell calls the
+    /// argument keys are only ever `cmd · workdir · yield_time_ms · max_output_tokens · tty` — no
+    /// description, ever.
     ///
-    /// Eight commands that would all have opened on the same scratchpad path, chosen for the cuts
-    /// they land on: an assignment, a `cd` prelude, a chain that must survive whole, a pipeline, a
-    /// path only a middle cut can keep both ends of, and a failure.
+    /// Eight commands chosen for the cuts they land on: an assignment, a `cd` prelude, a chain that
+    /// must survive whole, a pipeline, a path only a middle cut keeps both ends of, and a failure.
     static let ranCommands: [TranscriptEvent] = [
-        // Outside the tree on purpose: a path under the Session's own cwd is already short, and the
-        // one this exists for is the scratchpad on another volume that no cwd can shorten.
+        // Outside the tree on purpose: a path under the Session's own cwd is already short, and
+        // this exists for the scratchpad no cwd can shorten.
         .cwd("/Users/milad/Developer/argo"),
     ] + printed + [
-        // The one that failed, last, so the ink it takes is judged against seven rows that did not.
+        // The one that failed, last, beside seven rows that did not.
         .toolCall(ToolCall(
             id: "ran-failed", name: "shell", kind: .execute,
             target: "swiftformat --lint Packages/ArgoUI/Sources", atMs: nil,
@@ -36,8 +33,8 @@ extension CockpitPresentation.Session {
         )),
     ]
 
-    /// Each command with what it printed, written as the pair a transcript writes — an emitted
-    /// call, and the outcome that answers it some records later.
+    /// Each command with what it printed, as the pair a transcript writes — a call, and the outcome
+    /// that answers it some records later.
     private static let printed: [TranscriptEvent] = [
         (
             ran: "ARGO_SPECIMEN=feedCommands ARGO_WINDOW_SIZE=960x600 sh scripts/screenshot.sh "

@@ -4,10 +4,8 @@ import HighlightSwift
 
 /// A hunk's lines, coloured — each SIDE of it read as its own program.
 ///
-/// The reason this is not one call to the highlighter. A hunk with both sides in it is not source
-/// in any language: a modified declaration appears twice, an `if` that gained a condition has two
-/// heads and one body, and a brace removed on one line is added back on the next. The grammar will
-/// colour that happily and wrongly, and wrongly-coloured code looks exactly like code.
+/// Not one call to the highlighter: a hunk with both sides in it is not source in any language —
+/// a modified declaration appears twice, and a brace removed on one line is added back on the next.
 ///
 /// So it is parsed twice — once as the file BEFORE (context + removed) and once as the file AFTER
 /// (context + added) — and each line takes the colours from the program it was actually part of.

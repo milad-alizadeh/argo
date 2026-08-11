@@ -6,8 +6,7 @@ disable-model-invocation: true
 
 # Ship
 
-The end of an implement run: turn a reviewed diff into a PR. Never merge — that stays with the
-human.
+Never merge — that stays with the human.
 
 ## Before you start
 

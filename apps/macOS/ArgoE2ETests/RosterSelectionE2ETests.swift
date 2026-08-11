@@ -4,9 +4,7 @@ import XCTest
 ///
 /// The row's title carried a SwiftUI double-click for renaming, and a tap gesture on a subview of a
 /// `List` row hit-tests ahead of the row and swallows the click the `List` needed to select with —
-/// so most of the roster stopped selecting, because the title is most of the row. Nothing else here
-/// could have caught it: the projection has no pointer, and a still render of a selected row is a
-/// render of the state that never arrived.
+/// so most of the roster stopped selecting, because the title is most of the row.
 @MainActor
 final class RosterSelectionE2ETests: RosterE2ECase {
     /// The second row of `RosterSpecimen`, which the shell does NOT open on — so a row that reads
@@ -65,8 +63,7 @@ final class RosterSelectionE2ETests: RosterE2ECase {
     }
 
     /// The menu is the only home story 20's Reset has, and it sits UNDER the clear layer that
-    /// answers the double-click — so a layer that took right-click as well would take the way back
-    /// to a Session's derived title with it.
+    /// answers the double-click — a layer that took right-click too would take the Reset with it.
     func testTheRowsMenuIsStillReachableUnderTheClickLayer() {
         let row = row(titled: Self.target)
         XCTAssertTrue(row.waitForExistence(timeout: 20), "The sidebar drew no roster.")

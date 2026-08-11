@@ -21,8 +21,7 @@ read before the first move.
 
 ## 1. Pick the file to wire
 
-Same choice `setup-rules` makes for its Rules pointer, for the same reason —
-write to **the project docs that already exist**:
+Write to **the project docs that already exist**:
 
 - Both `CLAUDE.md` and `AGENTS.md` present, and `CLAUDE.md` merely imports
   `AGENTS.md` (its whole body is `@AGENTS.md`)? Wire `AGENTS.md` only — wiring

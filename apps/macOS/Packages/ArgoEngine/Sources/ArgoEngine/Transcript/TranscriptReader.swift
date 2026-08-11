@@ -6,12 +6,10 @@ private let continuingStopReason = "tool_use"
 /// One transcript's lines → the events they mean.
 ///
 /// Stateful, and only just: a `tool_result` is read against the call it answers, which was declared
-/// in an earlier record, so the reader remembers what it has opened. That is the whole of its
-/// memory — no turns, no agents, no session. Feeding it lines in order is the contract.
+/// in an earlier record. Feeding it lines in order is the contract.
 ///
-/// An `actor` rather than a `class`: a live reader is fed from a file-watching stream while a
-/// caller consumes its output, and under Swift 6 that shared mutable state is a compile error
-/// unless something serialises it. An actor is that something.
+/// An `actor` because a live reader is fed from a file-watching stream while a caller consumes its
+/// output, which under Swift 6 is a compile error unless something serialises it.
 public actor TranscriptReader {
     /// What a call needs to be remembered by until its result lands: the kind decides which
     /// evidence its result is read as, and the target is the path a disk fallback would re-read.
@@ -99,8 +97,7 @@ public actor TranscriptReader {
     /// A prompt, or the local command whose output this record IS.
     ///
     /// The output comes back as a Tool Call rather than as prose: a command ran and printed
-    /// something, which is exactly what a Tool Call is, and filing it as a message would put the
-    /// CLI's words in the agent's mouth.
+    /// something, which is exactly what a Tool Call is.
     private func promptEvents(_ message: MessageRecord) -> [TranscriptEvent] {
         if let printed = localCommandOutput(message.content) {
             let id = message.uuid ?? "local-command"
@@ -147,9 +144,7 @@ public actor TranscriptReader {
     /// `tool_use` is the reason a working agent stops to call something, and every call carries it
     /// — so it is the one word that must NOT be read as an end. A subagent's record is skipped for
     /// the same reason one level up: its turn is the child's, and closing the root's on it would
-    /// report a Session as quiet while its delegate is still working. A reason outside the
-    /// vocabulary is `unknown` rather than the nearest guess: the turn is over, and why is not
-    /// ours to invent.
+    /// report a Session as quiet while its delegate is still working.
     private func turnEnd(of message: MessageRecord) -> [TranscriptEvent] {
         guard !message.isSidechain else { return [] }
         guard let reported = message.stopReason, reported != continuingStopReason else { return [] }
@@ -194,7 +189,6 @@ public actor TranscriptReader {
             // question that BLOCKS from one the agent merely typed into a message.
             ask: use.name == ToolCall.askUserQuestion ? ask(from: use.input) : nil,
         )
-        // A call that wrote to the plan and the list it left behind are one record's worth of news.
         // Both are emitted: the call is what happened, the plan is what it said.
         guard let written = planWritten(by: use, in: message) else { return [.toolCall(call)] }
         return [.toolCall(call), .plan(written)]

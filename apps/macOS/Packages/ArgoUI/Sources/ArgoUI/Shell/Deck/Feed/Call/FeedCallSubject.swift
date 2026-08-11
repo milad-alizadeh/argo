@@ -9,11 +9,10 @@ struct FeedCallSubject: View {
     @Environment(\.argo) private var argo
 
     let subject: FeedCall.Subject
-    /// The ink the whole line is taking, where it has claimed one — a command that passed, a call
-    /// that failed. The line owns that claim, so the subject is told it rather than deciding it.
+    /// The ink the whole line has claimed, where it has. The line owns that claim, so the subject
+    /// is told it rather than deciding it.
     var tint: ArgoColor?
-    /// Whether this row's evidence is the panel's content. The subject is what carries it, because
-    /// the subject is what the panel is showing.
+    /// Whether this row's evidence is the panel's content.
     var isOpen = false
 
     var body: some View {
@@ -27,13 +26,8 @@ struct FeedCallSubject: View {
         }
     }
 
-    /// The filename, and nothing after it.
-    ///
-    /// No parent folder trailing the name, and no destination trailing a move. Both put a word
-    /// after every such filename that the reader has to discard — a name followed by `Shell` reads
-    /// as two things until you know it is one, and `→ VisualCont…` is a second cut address on the
-    /// one row that already had one. What a reader who needs them goes to is the panel: it opens on
-    /// the whole path, and a move's patch says where the file landed.
+    /// The filename, and nothing after it: no trailing parent folder, and no destination trailing
+    /// a move. The panel is where a reader gets the whole path and where a move's patch landed.
     private func named(_ file: FeedCall.FileName) -> some View {
         Text(file.name)
             .argoText(subject.style)
@@ -64,26 +58,19 @@ struct FeedCallSubject: View {
 }
 
 extension FeedCall.Subject {
-    /// Which of the two faces the subject sets in — the one rule about a call line a hurried view
-    /// is most likely to break, so it is a value the contract can hold rather than a modifier three
-    /// branches spell for themselves.
-    ///
-    /// The mono is for the one subject a reader might retype. Everything else is the interface
-    /// sans, a narration emphatically included: it is a sentence somebody wrote, and prose set in
-    /// machine type reads as something to run.
+    /// Which of the two faces the subject sets in. Mono is for the one subject a reader might
+    /// retype; everything else is the interface sans, a narration included.
     var style: ArgoTextStyle {
         switch self {
-        // On the same rung as the words around it: the face already tells them apart, and a second
-        // size was the line's own type scale disagreeing with itself.
+        // On the same rung as the words around it: the face already tells them apart.
         case .command: ArgoTextStyle(typeface: .machine, rung: ArgoTypography.body.rung)
         case .file, .plain, .narration: ArgoTypography.body
         }
     }
 }
 
-// Every shape a subject takes — a filename, a sentence the agent wrote, a command on its own
-// ground, a plain address. Taken from the shipping projection rather than written here, so no
-// preview can show a shape the shared rule would never produce.
+// Taken from the shipping projection rather than written here, so no preview can show a shape the
+// shared rule would never produce.
 #Preview("Call subject — every shape a call can name") {
     VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
         ForEach(FeedProjection.previewCallRows) { row in

@@ -24,9 +24,8 @@ struct FeedCallRunTests {
         #expect(rows.map(\.id) == [0])
     }
 
-    /// The hard limit. Fusing two edits with other work between them would put one line in the feed
-    /// standing for two moments, and the order things happened in is the only thing the feed
-    /// guarantees.
+    /// The hard limit: fusing two edits with other work between them would put one line in the feed
+    /// standing for two moments.
     @Test
     func `two edits with other work between them stay two rows`() {
         let interrupted: [TranscriptEvent] = [
@@ -40,8 +39,7 @@ struct FeedCallRunTests {
         #expect(FeedFixture.calls(in: interrupted).map(\.repeats) == [1, 1, 1])
     }
 
-    /// Same file, different verb: a create and an edit are two claims about what happened, and one
-    /// row saying `Created ×2` would be the collapse inventing a history.
+    /// Same file, different verb: a create and an edit are two claims about what happened.
     @Test
     func `a create and an edit of one file are not the same work`() {
         let mixed: [TranscriptEvent] = [

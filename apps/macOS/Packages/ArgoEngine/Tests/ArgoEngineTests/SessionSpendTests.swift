@@ -4,8 +4,7 @@ import Testing
 
 /// What a Session has SPENT, folded out of the same records the context reading is taken from.
 ///
-/// Its own suite beside `SessionContextTests` because the two are the pair most easily confused:
-/// the context is the LATEST reading and the spend is every reading SUMMED, and a fold that mixed
+/// The context is the LATEST reading and the spend is every reading SUMMED — a fold that mixed
 /// them would report a Session as either forty times over its window or as having cost one turn.
 @Suite("Session spend")
 struct SessionSpendTests {
@@ -38,8 +37,8 @@ struct SessionSpendTests {
         #expect(session.contextTokens == 52000)
     }
 
-    /// The honest gap the header renders by leaving the fact off the line altogether. A Session
-    /// whose records priced nothing has not spent nothing.
+    /// A Session whose records priced nothing has not spent nothing — the header leaves the fact
+    /// off the line altogether.
     @Test
     @MainActor
     func `a Session nothing priced carries no spend at all`() async throws {

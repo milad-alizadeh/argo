@@ -1,48 +1,38 @@
 import ArgoEngine
 import SwiftUI
 
-/// The Sessions room's zone layout, stacked flush.
-///
-/// It paints no background: `InstrumentDeckShell` is the opaque plane, and a second fill here would
-/// be a second surface where the contract allows one. The separators sit where the approved study
-/// puts them and nowhere else — the header and its tabs read as one region, so nothing is drawn
-/// between them.
+/// The Sessions room's zone layout, stacked flush. It paints no background: `InstrumentDeckShell`
+/// is the opaque plane, and a second fill here would be a second surface where the contract allows
+/// one. Nothing is drawn between the header and its tabs — they read as one region.
 struct SessionsDeck: View {
-    /// The selected Session's reading. Projected above the deck rather than here — the deck is a
-    /// layout, and a zone that looked a Session up would be the layout choosing what to draw.
+    /// The selected Session's reading, projected above the deck.
     let feed: [FeedRow]
-    /// What the top zone names, projected above the deck for the same reason the feed is. Absent
-    /// when nothing is selected: the zone keeps its height and says nothing.
+    /// What the top zone names. Absent when nothing is selected: the zone keeps its height and
+    /// says nothing.
     var header: SessionHeaderProjection.Header?
-    /// Hand the shown Session's work to a fresh one — the header's one intent. Inert by default so
-    /// a specimen draws the button without spawning anything.
+    /// Hand the shown Session's work to a fresh one. Inert by default so a specimen draws the
+    /// button without spawning anything.
     var handOff: () async -> Void = {}
-    /// The selected Session's plan, projected above the deck for the same reason the feed is. It
-    /// is standing state rather than a row, which is exactly why it arrives beside the rows and
-    /// not among them.
+    /// The selected Session's plan — standing state rather than a row, so it arrives beside the
+    /// rows and not among them.
     var showing = PlanShowing()
-    /// Which call's evidence the panel is showing, if any. Held by the deck because the panel is a
-    /// zone of the deck: the feed cannot own a selection that resizes the row it sits in.
+    /// Which call's evidence the panel is showing, if any. Held by the deck: the feed cannot own a
+    /// selection that resizes the row it sits in.
     @State var open: FeedRow.ID?
-    /// Which result inside the open row the panel is showing — see `FeedRowSelection.step`. Held
-    /// beside `open` and for the same reason: the feed cannot own where a column beside it is
-    /// scrolled to.
+    /// Which result inside the open row the panel is showing — see `FeedRowSelection.step`.
     @State var step: Int?
-    /// Which picture is open full size. Held HERE and not one level down, because the lightbox
-    /// covers the whole deck: a picture opened over the feed column alone would be a screenshot of
-    /// a deck shown inside a third of one.
+    /// Which picture is open full size. Held HERE because the lightbox covers the whole deck.
     @State var lit: FeedShot?
-    /// Which row the reading opens held at — see `FeedView.held`. Passed straight through rather
-    /// than held as state: it is where the reading STARTS, and the scroll owns it from there.
+    /// Which row the reading opens held at — see `FeedView.held`. Where the reading STARTS; the
+    /// scroll owns it from there.
     var held: FeedRow.ID?
-    /// The shown Session's composer, projected above the deck for the reason the feed is — and
-    /// absent for a Session Argo cannot drive, which draws nothing rather than a disabled field.
+    /// The shown Session's composer. Absent for a Session Argo cannot drive, which draws nothing
+    /// rather than a disabled field.
     var composer: SessionComposerProjection.Composer?
     /// One Turn to the shown Session. Inert by default so a specimen draws the vessel without
     /// reaching for a terminal.
     var send: ComposerSend = { _, _ in }
-    /// The Permission the shown Session is blocked on, projected above the deck like the composer
-    /// it displaces.
+    /// The Permission the shown Session is blocked on. Displaces the composer.
     var prompt: PermissionPromptProjection.Prompt?
     /// The answer to it. Inert by default for the reason `send` is.
     var decide: (PermissionDecision) -> Void = { _ in }

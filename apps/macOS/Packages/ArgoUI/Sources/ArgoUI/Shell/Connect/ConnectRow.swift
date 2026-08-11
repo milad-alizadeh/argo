@@ -3,13 +3,12 @@ import SwiftUI
 /// One labelled line of the Connect panel: what it is, what it currently says, and the control
 /// that changes it.
 ///
-/// `LabeledContent` inside a `Form`, not a box of its own. The platform already draws a settings
-/// row — its ground, its inset, its label column and its alignment with every other row — and a
-/// hand-rolled rectangle is a version of that which loses all of it and drifts from the system the
-/// first time macOS changes (`ui-components.md`, "don't hand-roll what the platform provides").
+/// `LabeledContent` inside a `Form`, not a box of its own: the platform already draws the ground,
+/// the inset, the label column and the alignment with every other settings row
+/// (`ui-components.md`, "don't hand-roll what the platform provides").
 ///
 /// The three rows are independent and completable in any order (#265), so they are peers in one
-/// section rather than steps: no numbering, no chevrons, nothing that says one waits on another.
+/// section rather than steps: no numbering, no chevrons.
 struct ConnectRow<Trailing: View>: View {
     @Environment(\.argo) private var argo
 
@@ -53,8 +52,7 @@ struct ConnectRow<Trailing: View>: View {
     .argoAppearance()
 }
 
-// The other half of the pair: a row explaining what it would buy you, with nothing set on it. The
-// detail runs to a sentence, and the row still has to read as one row.
+// Nothing set on the row: the detail runs to a sentence and must still read as one row.
 #Preview("Connect row — nothing set yet") {
     Form {
         ConnectRow(row: ConnectPanelProjection.row(
