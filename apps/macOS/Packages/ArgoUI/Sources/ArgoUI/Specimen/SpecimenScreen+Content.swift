@@ -243,11 +243,25 @@ extension SpecimenScreen {
             // stopped, and the claim this one carries is about a reading that has not: a row
             // arriving at the end must not move the row somebody is looking at.
             ArrivingFeedSpecimen()
+        case .feedWorking:
+            // A Turn in progress, at the foot of the work it has done so far. The judgement is
+            // whether it reads as the reading CONTINUING while sitting between the last thing the
+            // agent did and the spend below it — in the same tertiary ink as every other mark, so
+            // the ellipsis is doing the whole of the work.
+            sessions(FeedProjection.previewWorkingRows)
         case .emptyFeed:
             // A Session that has said nothing. The empty column has to SAY so — a blank zone is
             // indistinguishable from one that failed to draw, and it is the state every change to
             // how the feed holds its place is most likely to break.
+            // Beside `feedWorking` it is also the pair that settles the other claim: a Session at
+            // its prompt says this and NOT that it is starting, which is all Argo can honestly
+            // observe of one whose CLI has written no record.
             sessions([])
+        case .startingSpawn:
+            // The verb while it is being carried out — the first spawn of a window waits on a
+            // login shell reporting a `PATH`, and until this state existed that wait looked
+            // exactly like a press that did nothing.
+            centred { startingSpawn }
         case .feedGallery:
             // The run of pictures, in the feed it folds inside. Four provenances in one row, and
             // the judgement is whether they read as four different claims without the captions

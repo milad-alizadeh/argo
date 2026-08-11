@@ -69,7 +69,9 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedAtScale
     case feedAtScaleEvidence
     case feedArriving
+    case feedWorking
     case emptyFeed
+    case startingSpawn
     case feedGallery
     case feedSingleShot
     case feedAbsentShot
