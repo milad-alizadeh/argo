@@ -7,8 +7,10 @@ import SwiftUI
 /// still has to send. The slot is the one the standing-allow tray and the attachment chips take,
 /// for the same reason: it is where the vessel says what is attached to the next turn.
 ///
-/// It is a full-width row rather than a chip in a flow, because what it holds is a sentence. A
-/// follow-up truncated to fit beside its neighbours is one the user cannot check before it goes.
+/// It runs the vessel's full width rather than sitting in a flow with its neighbours, because what
+/// it holds is a sentence: a follow-up truncated to fit beside two others is one the user cannot
+/// check before it goes. It keeps the chip's HEIGHT all the same — the slot has one rhythm whether
+/// it is holding attachments, standing allows or this.
 struct QueuedTurnChip: View {
     @Environment(\.argo) private var argo
 

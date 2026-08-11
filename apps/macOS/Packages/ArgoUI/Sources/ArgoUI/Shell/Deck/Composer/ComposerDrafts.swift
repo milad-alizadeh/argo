@@ -20,7 +20,7 @@ final class ComposerDrafts {
 
     init(
         drafts: [String: ComposerDraft] = [:],
-        now: @escaping () -> Int = { Int(Date().timeIntervalSince1970 * 1000) },
+        now: @escaping () -> Int = WallClock.nowMs,
     ) {
         self.drafts = drafts
         self.now = now
@@ -31,7 +31,19 @@ final class ComposerDrafts {
     /// would be asking a different question.
     subscript(sessionID: String) -> ComposerDraft {
         get { drafts[sessionID] ?? ComposerDraft() }
-        set { drafts[sessionID] = stamped(newValue, against: drafts[sessionID]) }
+        // A draft holding nothing is dropped rather than kept as an entry, so the store grows with
+        // what people actually typed and not with every Session they clicked on. Reading one back
+        // gives an empty draft either way, which is why the absence costs nothing.
+        set {
+            let stamped = stamped(newValue, against: drafts[sessionID])
+            drafts[sessionID] = stamped.isEmpty ? nil : stamped
+        }
+    }
+
+    /// Whether any Session is holding anything at all. Read by the tests that prove an empty draft
+    /// leaves no entry behind — the store keeps what people typed, not every Session they clicked.
+    var isEmpty: Bool {
+        drafts.isEmpty
     }
 
     /// The binding the vessel writes through, so the store is the only thing that stamps a time.
@@ -39,10 +51,13 @@ final class ComposerDrafts {
         Binding(get: { self[sessionID] }, set: { self[sessionID] = $0 })
     }
 
-    /// Stamp the moment the TEXT changed, and only that. A draft rewritten by a send, a queued
-    /// follow-up or a refusal is not the user typing, so it must not restart the clock the seam
-    /// counts back from — otherwise a draft the user left an hour ago reads as one they just wrote
-    /// the instant anything else about it moves.
+    /// The stamp follows the TEXT, and nothing else about the draft.
+    ///
+    /// What this exists for is the refusal: a failed send leaves every character where it was
+    /// typed (design decision 8), and moving the clock for it would make an hour-old draft read as
+    /// one written just now, on the strength of an attempt that changed nothing. A send or a queue
+    /// that goes through DOES move it, because clearing the field is a change to the text — and
+    /// harmlessly, since the seam only ever speaks over a draft with words still in it.
     private func stamped(_ draft: ComposerDraft, against was: ComposerDraft?) -> ComposerDraft {
         guard draft.text != (was?.text ?? "") else { return draft }
         var stamped = draft

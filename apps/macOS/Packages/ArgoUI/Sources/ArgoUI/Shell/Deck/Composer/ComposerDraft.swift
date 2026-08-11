@@ -43,18 +43,19 @@ struct ComposerDraft: Equatable {
         SessionTurn.isSendable(text)
     }
 
+    /// Whether this draft is holding anything at all — words, a follow-up, or a reason the reader
+    /// has not seen yet. What the store keys eviction on, so a Session clicked through and never
+    /// typed into leaves nothing behind.
+    var isEmpty: Bool {
+        text.isEmpty && queued.isEmpty && refusal == nil
+    }
+
     /// Put the draft to the Session through `deliver`. A refusal keeps every character where it
     /// was typed and says why — a failed send must never clear the field.
     mutating func send(via deliver: (String) throws -> Void) {
-        do {
-            try deliver(text)
-            text = ""
-            refusal = nil
-        } catch let refused as SessionDriveError {
-            refusal = refused.detail
-        } catch {
-            refusal = error.localizedDescription
-        }
+        refusal = Self.refusal(putting: text, via: deliver)
+        guard refusal == nil else { return }
+        text = ""
     }
 
     /// The one way a Turn leaves the field. It goes now if the Session is free and waits if it is
@@ -78,9 +79,9 @@ struct ComposerDraft: Equatable {
     mutating func flush(via deliver: (String) throws -> Void) {
         guard !queued.isEmpty else { return }
         while let next = queued.first {
-            var attempt = ComposerDraft(text: next.text)
-            attempt.send(via: deliver)
-            guard attempt.refusal == nil else { return refusal = attempt.refusal }
+            if let refused = Self.refusal(putting: next.text, via: deliver) {
+                return refusal = refused
+            }
             queued.removeFirst()
             refusal = nil
         }
@@ -90,5 +91,35 @@ struct ComposerDraft: Equatable {
     /// follow-ups are two things, and the one the user pointed at is the one that goes.
     mutating func cancel(_ turn: QueuedTurn.ID) {
         queued.removeAll { $0.id == turn }
+    }
+
+    /// What the seam's Retry puts back: whatever the standing refusal actually stopped.
+    ///
+    /// The QUEUE first, because a refused flush is the one way a refusal comes to stand over an
+    /// EMPTY field — the words went into the queue before they were ever put to the Session. A
+    /// Retry that only ever read the field would be a remedy that does nothing in exactly the
+    /// state that produced it.
+    mutating func retry(via deliver: (String) throws -> Void) {
+        guard queued.isEmpty else { return flush(via: deliver) }
+        guard isSendable else { return }
+        send(via: deliver)
+    }
+
+    /// Why `deliver` would not take these words, in the seam's terms — and `nil` when it did. The
+    /// one place a thrown error becomes a sentence, so a turn sent from the field and one released
+    /// from the queue cannot report the same failure two different ways.
+    private static func refusal(
+        putting text: String,
+        via deliver: (String) throws -> Void,
+    )
+        -> String? {
+        do {
+            try deliver(text)
+            return nil
+        } catch let refused as SessionDriveError {
+            return refused.detail
+        } catch {
+            return error.localizedDescription
+        }
     }
 }

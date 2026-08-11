@@ -109,7 +109,7 @@ struct ComposerSpecimen: View {
     /// case is rendered rather than stamped once, for the reason the roster's ages are: a fixed
     /// millisecond would age into `3y ago` in the render it is meant to prove.
     static var kept: ComposerDraft {
-        let anHourAgo = Int(Date().timeIntervalSince1970 * 1000) - 51 * 60 * 1000
+        let anHourAgo = WallClock.nowMs() - 51 * 60 * 1000
         return ComposerDraft(
             text: "Before the PR: check that the scroll anchor survives a compaction. I think it",
             editedAtMs: anHourAgo,

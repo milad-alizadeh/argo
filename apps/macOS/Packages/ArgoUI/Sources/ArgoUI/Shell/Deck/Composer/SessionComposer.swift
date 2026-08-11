@@ -42,17 +42,22 @@ struct SessionComposer: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
             if let note = seamNote {
-                ComposerSeam(note: note, retry: submit)
+                ComposerSeam(note: note, retry: retry)
             }
             vessel
         }
         .onChange(of: composer.sessionID, initial: true) { _, _ in
-            enteredAtMs = Int(Date().timeIntervalSince1970 * 1000)
+            enteredAtMs = WallClock.nowMs()
         }
         // The Turn the queue was waiting on has ended, so what was held goes — in the order it was
         // typed. Keyed on the fact rather than on a timer, because the only thing that releases a
         // follow-up is the Session becoming free.
-        .onChange(of: composer.isRunning) { _, isRunning in
+        //
+        // `initial` is what makes it survive a switch: the composer is only on screen for the
+        // SELECTED Session, so a Turn that ends while the reader is looking somewhere else changes
+        // nothing here. Flushing on arrival as well means coming back delivers what was waiting,
+        // rather than leaving it queued against a Session that has been idle for an hour.
+        .onChange(of: composer.isRunning, initial: true) { _, isRunning in
             guard !isRunning else { return }
             draft.flush(via: send)
         }
@@ -112,6 +117,12 @@ struct SessionComposer: View {
     /// and the send control ask for the same thing.
     private func submit() {
         draft.submit(whileRunning: composer.isRunning, via: send)
+    }
+
+    /// The seam's remedy, which is not the same act as pressing send: what it puts back is
+    /// whatever the refusal stopped, and after a refused flush that is the queue, not the field.
+    private func retry() {
+        draft.retry(via: send)
     }
 }
 

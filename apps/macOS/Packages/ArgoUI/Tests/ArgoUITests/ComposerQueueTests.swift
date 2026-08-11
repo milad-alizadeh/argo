@@ -92,6 +92,44 @@ struct ComposerQueueTests {
         #expect(draft.refusal == "Argo no longer holds this Session")
     }
 
+    /// The seam's Retry after a refused flush. The words went into the queue before they were ever
+    /// put to the Session, so the field is empty — and a Retry reading the field there would draw
+    /// a remedy that does nothing in exactly the state that produced it.
+    @Test
+    func `retrying a refused flush puts the queue back, not the empty field`() {
+        let driver = InMemorySessionDriver()
+        var draft = ComposerDraft()
+        for text in ["First", "Second"] {
+            draft.text = text
+            draft.submit(whileRunning: true) { try driver.send($0, to: "session-a") }
+        }
+        driver.refusal = .notDrivable
+        draft.flush { try driver.send($0, to: "session-a") }
+        driver.refusal = nil
+
+        draft.retry { try driver.send($0, to: "session-a") }
+
+        #expect(driver.sent(to: "session-a") == ["First", "Second"])
+        #expect(draft.queued.isEmpty)
+        #expect(draft.refusal == nil)
+    }
+
+    /// With nothing queued, Retry is the field's own second attempt — design decision 8's remedy
+    /// for a send that was refused where it was typed.
+    @Test
+    func `retrying a refused send puts the field back`() {
+        let driver = InMemorySessionDriver()
+        driver.refusal = .notDrivable
+        var draft = ComposerDraft(text: "Carry on with the plan.")
+        draft.send { try driver.send($0, to: "session-a") }
+        driver.refusal = nil
+
+        draft.retry { try driver.send($0, to: "session-a") }
+
+        #expect(driver.sent(to: "session-a") == ["Carry on with the plan."])
+        #expect(draft.text.isEmpty)
+    }
+
     /// The same guard `send` carries, at the other entry point: a bare Return at a live prompt
     /// must not queue an empty follow-up any more than it may send one.
     @Test
