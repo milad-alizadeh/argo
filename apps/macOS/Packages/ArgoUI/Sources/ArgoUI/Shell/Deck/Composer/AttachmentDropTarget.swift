@@ -41,9 +41,13 @@ struct AttachmentDropTarget: ViewModifier {
     @ViewBuilder private var invitation: some View {
         if isInvited {
             ZStack {
-                argo.color.state.muted(argo.color.interaction.accent).color
+                argo.color.state.wash(argo.color.interaction.accent).color
+                // At the vessel-control rung rather than the seam's caption: this is an
+                // instruction ON the surface it is about, read at arm's length by somebody whose
+                // hand is holding a file, and the approved render sets it a rung above the lines
+                // that merely report.
                 Text(AttachmentProjection.dropTarget)
-                    .argoText(ArgoTypography.caption)
+                    .argoText(ArgoTypography.control)
                     .foregroundStyle(argo.color.interaction.accent)
             }
             .clipShape(.rect(cornerRadius: ArgoRadius.popover))

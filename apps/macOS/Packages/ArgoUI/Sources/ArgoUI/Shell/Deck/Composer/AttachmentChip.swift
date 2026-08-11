@@ -33,8 +33,9 @@ struct AttachmentChip: View {
             }
             dismiss
         }
+        .padding(.leading, ArgoSpacing.tight)
         .padding(.trailing, ArgoSpacing.tight)
-        .frame(height: ArgoComposerVessel.chipHeight)
+        .frame(height: ArgoComposerVessel.attachmentChipHeight)
         .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
         .overlay {
             RoundedRectangle(cornerRadius: ArgoRadius.control)
@@ -44,23 +45,27 @@ struct AttachmentChip: View {
         .help(attachment.name)
     }
 
-    /// The picture itself where the bytes yield one, and the kind otherwise. Flush to the chip's
-    /// leading edge and clipped to its corner, which is what lets a 20pt thumbnail live inside a
-    /// 20pt chip: the image IS that edge rather than something inset from it.
+    /// The picture itself where the bytes yield one, and the kind otherwise — 20pt either way, with
+    /// the chip's own `tight` padding around it rather than flush to its edges. A thumbnail seated
+    /// at the chip's full height reads as an image that overflowed its container, which is what the
+    /// approved render's 28pt chip exists to prevent.
     @ViewBuilder private var mark: some View {
         if let thumbnail {
             thumbnail
                 .resizable()
                 .scaledToFill()
                 .frame(
-                    width: ArgoComposerVessel.chipHeight,
-                    height: ArgoComposerVessel.chipHeight,
+                    width: ArgoComposerVessel.attachmentThumbnail,
+                    height: ArgoComposerVessel.attachmentThumbnail,
                 )
                 .clipShape(.rect(cornerRadius: ArgoRadius.control))
         } else {
+            // At `.inline` and not smaller, though the study drew a lighter mark: the scale's own
+            // note records a chevron shrunk below this rung becoming a control nobody could see
+            // they were allowed to click, and every mark on this chip sits beside one.
             ArgoGlyph(AttachmentProjection.glyph(for: attachment), .inline)
                 .foregroundStyle(argo.color.text.tertiary)
-                .frame(width: ArgoComposerVessel.chipHeight)
+                .frame(width: ArgoComposerVessel.attachmentThumbnail)
         }
     }
 

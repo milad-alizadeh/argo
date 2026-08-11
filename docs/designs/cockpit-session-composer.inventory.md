@@ -47,6 +47,25 @@ Extraction evidence: the first three are in the design's frozen-names table.
 with no other way to be reached, since only a real drag raises it. `isHeldOpen` is the seam a render
 opens, the same one `PlanPill`'s `isRevealed` opens for a hover.
 
+### What `/pixel-review` measured, and what moved
+
+The chip was seated at `chipHeight` (20) on a reading that a 20pt thumbnail could fill a 20pt chip.
+The approved render measures **28** — the thumbnail with `ArgoSpacing.tight` above and below it,
+which is the row the study's own token reconciliation snapped `3px` to. `attachmentChipHeight` is
+derived from those two rather than restated, and is deliberately NOT `chipHeight`: a standing allow
+holds a word, this holds a picture, and #572's tray was approved at 20.
+
+The drag-over wash was `state.muted` (0.16) and measured ~1.7× the approved lift. `StateRoles`
+gains **`wash(_:)` at 0.1** — the third rung of the `muted`/`rim` family rather than a borrow from
+`DiffRoles.wash`, because a chip's ground carries one word and this one sits under a field, a picker
+and two controls. *Drop to attach* moved from `caption` to `control`, the rung the render sets it at.
+
+**Two divergences left standing, both on a documented rule.** The `×` and the `+` draw their marks
+at `ArgoIconSize.inline` and `.control` where the study drew lighter ones: the scale's own note
+records a chevron shrunk below `inline` becoming "a control nobody could see they were allowed to
+click", and both of these are controls. Adding a rung to that scale is a decision for the contract,
+not a side effect of this ticket.
+
 **A non-image chip takes the evidence panel's language-family mark**, not a second map of its own:
 `AttachmentProjection.glyph(for:)` runs `EvidenceLanguage(declared:).symbol`. The study drew a
 generic `<>` on a `.swift` file because its HTML carried no such map; the token contract does, so a
