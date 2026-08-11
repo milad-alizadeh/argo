@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The line above the vessel: what happened to the last send, or that the draft under it was kept.
@@ -46,7 +47,10 @@ struct ComposerSeam: View {
     private var ink: ArgoColor {
         switch note {
         case .refusal: argo.color.state.failure
-        case .draftKept: argo.color.text.tertiary
+        // A capability notice is the quietest of the three on purpose: the drop it answers changed
+        // nothing, and a failure ink over "this adapter does not do that" would read as something
+        // having gone wrong with the Session.
+        case .draftKept, .capability: argo.color.text.tertiary
         }
     }
 
@@ -54,6 +58,7 @@ struct ComposerSeam: View {
         switch note {
         case .refusal: ArgoSymbol.refused
         case .draftKept: ArgoSymbol.draftKept
+        case .capability: ArgoSymbol.about
         }
     }
 }
@@ -66,6 +71,13 @@ struct ComposerSeam: View {
     .padding(ArgoSpacing.section)
     .argoDeckSurface()
     .argoAppearance()
+}
+
+#Preview("Composer seam — a drop the adapter cannot take") {
+    ComposerSeam(note: .capability(SessionDriveError.cannotAttach.detail), retry: {})
+        .padding(ArgoSpacing.section)
+        .argoDeckSurface()
+        .argoAppearance()
 }
 
 #Preview("Composer seam — a draft that was kept") {

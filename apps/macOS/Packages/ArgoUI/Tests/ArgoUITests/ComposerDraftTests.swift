@@ -12,7 +12,7 @@ struct ComposerDraftTests {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft(text: "Fix the caption, not the sort.")
 
-        draft.send { try driver.send($0, to: "session-a") }
+        draft.send { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(driver.sent(to: "session-a") == ["Fix the caption, not the sort."])
         #expect(draft.text.isEmpty)
@@ -24,7 +24,7 @@ struct ComposerDraftTests {
         let driver = InMemorySessionDriver()
         var draft = ComposerDraft(text: "Fix the caption.\nThe sort is right.")
 
-        draft.send { try driver.send($0, to: "session-a") }
+        draft.send { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(driver.sent(to: "session-a") == ["Fix the caption.\nThe sort is right."])
     }
@@ -37,7 +37,7 @@ struct ComposerDraftTests {
         driver.refusal = .notDrivable
         var draft = ComposerDraft(text: "Carry on with the plan.")
 
-        draft.send { try driver.send($0, to: "session-a") }
+        draft.send { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(draft.text == "Carry on with the plan.")
         #expect(draft.refusal == SessionDriveError.notDrivable.detail)
@@ -51,10 +51,10 @@ struct ComposerDraftTests {
         let driver = InMemorySessionDriver()
         driver.refusal = .notDrivable
         var draft = ComposerDraft(text: "Are you there")
-        draft.send { try driver.send($0, to: "session-a") }
+        draft.send { text, _ in try driver.send(text, to: "session-a") }
         driver.refusal = nil
 
-        draft.send { try driver.send($0, to: "session-a") }
+        draft.send { text, _ in try driver.send(text, to: "session-a") }
 
         #expect(draft.refusal == nil)
         #expect(draft.text.isEmpty)

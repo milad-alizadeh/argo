@@ -45,6 +45,12 @@ public enum ArgoComposerVessel {
     /// heights gives every line a different measure, and a label beside them no baseline to take.
     public static let chipHeight: CGFloat = 20
 
+    /// The `×` on an attachment's chip — the study's 18pt (#540). A target and not a mark: the
+    /// glyph inside it rides the icon scale, and this is the box a pointer has to find. Larger than
+    /// the chip it sits in is impossible and smaller than a finger's worth is useless, which is the
+    /// whole range the number lives in.
+    public static let chipDismissDiameter: CGFloat = 18
+
     /// How wide the NAME on such a chip may get before it truncates. A ceiling and not a width:
     /// `Bash` takes what it needs. It exists because an MCP tool is named
     /// `mcp__server__the_verb`, and one of those unchecked is a chip as wide as the vessel.

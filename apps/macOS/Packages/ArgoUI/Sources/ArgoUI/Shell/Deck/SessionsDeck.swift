@@ -40,7 +40,7 @@ struct SessionsDeck: View {
     var composer: SessionComposerProjection.Composer?
     /// One Turn to the shown Session. Inert by default so a specimen draws the vessel without
     /// reaching for a terminal.
-    var send: (String) throws -> Void = { _ in }
+    var send: ComposerSend = { _, _ in }
     /// The Permission the shown Session is blocked on, projected above the deck like the composer
     /// it displaces.
     var prompt: PermissionPromptProjection.Prompt?

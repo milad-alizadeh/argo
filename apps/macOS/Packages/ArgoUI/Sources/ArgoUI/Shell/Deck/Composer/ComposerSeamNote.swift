@@ -8,6 +8,11 @@ enum ComposerSeamNote: Equatable {
     case refusal(String)
     /// A draft that survived leaving the Session, and the age of the words in it.
     case draftKept(String)
+    /// Something the adapter cannot take, refused with the reason (#540, design decision 9). Its
+    /// own case rather than a `refusal`, because nothing was sent and nothing is at risk: the
+    /// sentence answers a gesture the platform allowed over a control that was never drawn, and
+    /// it takes the quiet ink for saying so.
+    case capability(String)
 
     /// The kept note's sentence. Under a minute it is worded rather than counted: a reader who
     /// stepped away for forty seconds is told their words were kept, not handed a stopwatch.
@@ -19,7 +24,7 @@ enum ComposerSeamNote: Equatable {
 
     var detail: String {
         switch self {
-        case let .refusal(detail), let .draftKept(detail): detail
+        case let .refusal(detail), let .draftKept(detail), let .capability(detail): detail
         }
     }
 }

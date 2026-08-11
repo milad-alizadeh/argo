@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The glass vessel the user speaks to a Session through — the field, what is waiting above it,
@@ -16,10 +17,12 @@ struct SessionComposer: View {
     let composer: SessionComposerProjection.Composer
     /// One Turn to the Session, or a thrown `SessionDriveError` the seam repeats. A closure and
     /// not a driver, so the vessel renders from a preview or a specimen with nothing behind it.
-    let send: (String) throws -> Void
+    let send: ComposerSend
     /// Take back a standing allow, by tool (#572). A closure for the reason `send` is.
     let revoke: (String) -> Void
     @Binding var draft: ComposerDraft
+    /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
+    var isDropTargeted = false
 
     @State private var mode: ComposerMode = .code
     /// When this Session's composer came on screen — both the moment a restored draft's age is
@@ -29,14 +32,16 @@ struct SessionComposer: View {
 
     init(
         composer: SessionComposerProjection.Composer,
-        send: @escaping (String) throws -> Void,
+        send: @escaping ComposerSend,
         revoke: @escaping (String) -> Void = { _ in },
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
+        isDropTargeted: Bool = false,
     ) {
         self.composer = composer
         self.send = send
         self.revoke = revoke
         _draft = draft
+        self.isDropTargeted = isDropTargeted
     }
 
     var body: some View {
@@ -70,6 +75,9 @@ struct SessionComposer: View {
             if !composer.standingAllows.isEmpty {
                 StandingAllowTray(allows: composer.standingAllows, revoke: revoke)
             }
+            if !draft.attachments.isEmpty {
+                AttachmentTray(attachments: draft.attachments) { draft.remove($0) }
+            }
             queue
             ComposerField(text: $draft.text, placeholder: composer.placeholder, submit: submit)
             ComposerFooter(
@@ -77,6 +85,7 @@ struct SessionComposer: View {
                 facts: composer.facts,
                 isSendable: draft.isSendable,
                 send: submit,
+                attach: footerAttach,
             )
         }
         // Asymmetric on purpose: the trailing edge ends in a 26pt control and the leading edge
@@ -86,6 +95,25 @@ struct SessionComposer: View {
         .padding(.trailing, ArgoSpacing.base)
         .padding(.bottom, ArgoSpacing.base)
         .argoFloatingGlass(in: RoundedRectangle(cornerRadius: ArgoRadius.popover))
+        .modifier(AttachmentDropTarget(
+            canAttach: composer.canAttach,
+            attach: take,
+            isHeldOpen: isDropTargeted,
+        ))
+    }
+
+    /// The footer's `+`, and `nil` where the adapter takes nothing — which is what takes the
+    /// control off the row rather than greying it (design decision 9).
+    private var footerAttach: (([SessionAttachment]) -> Void)? {
+        guard composer.canAttach else { return nil }
+        return { incoming in take(incoming) }
+    }
+
+    /// What a drop, a paste and the `+` all end in — one act, so the three gestures cannot come to
+    /// mean three different things. The capability is answered inside the draft rather than at each
+    /// gesture, which is what lets a refused drop say why.
+    private func take(_ incoming: [SessionAttachment]) {
+        draft.attach(incoming, canAttach: composer.canAttach)
     }
 
     /// What is waiting on the running Turn, oldest at the top — the order they will go in, drawn
@@ -104,9 +132,15 @@ struct SessionComposer: View {
     /// A refusal outranks a kept draft: one is a thing that went wrong and the other is a thing
     /// that went right, and the seam is one line. The kept note holds only until the user types —
     /// their own edit stamps later than the moment they arrived, which is what takes it away.
+    /// A capability notice sits between them: it answers a gesture the user just made, which
+    /// outranks housekeeping about a draft they left behind — and is outranked in turn by a send
+    /// that actually failed.
     private var seamNote: ComposerSeamNote? {
         if let refusal = draft.refusal {
             return .refusal(refusal)
+        }
+        if let notice = draft.notice {
+            return .capability(notice)
         }
         guard !draft.text.isEmpty, let editedAtMs = draft.editedAtMs, editedAtMs < enteredAtMs
         else { return nil }
@@ -159,7 +193,7 @@ struct SessionComposer: View {
 #Preview("Composer — the Reduce Transparency fallback") {
     @Previewable @State var draft = ComposerDraft()
 
-    SessionComposer(composer: ComposerSpecimen.composer, send: { _ in }, draft: $draft)
+    SessionComposer(composer: ComposerSpecimen.composer, send: { _, _ in }, draft: $draft)
         .padding(ArgoSpacing.section)
         .frame(width: 760)
         .argoWithoutTransparency()
@@ -174,7 +208,7 @@ private struct ComposerPreview: View {
     @Binding var draft: ComposerDraft
 
     var body: some View {
-        SessionComposer(composer: composer, send: { _ in }, draft: $draft)
+        SessionComposer(composer: composer, send: { _, _ in }, draft: $draft)
             .padding(ArgoSpacing.section)
             .frame(width: 760)
             .argoDeckSurface()

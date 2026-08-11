@@ -41,7 +41,7 @@ struct ComposerDraftsTests {
     func `a draft holding only a refusal is still held`() {
         let drafts = ComposerDrafts(now: { 0 })
         var draft = ComposerDraft(text: "Carry on.")
-        draft.send { _ in throw SessionDriveError.notDrivable }
+        draft.send { _, _ in throw SessionDriveError.notDrivable }
         draft.text = ""
 
         drafts["session-a"] = draft
@@ -70,7 +70,7 @@ struct ComposerDraftsTests {
 
         // The same words, refused — the shape a failed send leaves behind (design decision 8).
         var draft = drafts["session-a"]
-        draft.send { _ in throw SessionDriveError.notDrivable }
+        draft.send { _, _ in throw SessionDriveError.notDrivable }
         drafts["session-a"] = draft
 
         #expect(drafts["session-a"].text == "Fix the caption.")

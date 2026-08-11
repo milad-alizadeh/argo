@@ -33,6 +33,36 @@ would be one line drawn twice, and the two can never be on screen together.
 Extraction evidence: `QueuedTurnChip` is in the design's frozen-names table, and it carries a
 state the happy path never renders — a Session mid-Turn with something waiting on it.
 
+## Extracted — #540 (attach a file or image)
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `AttachButton` | atom | `ArgoUI/Shell/Deck/Composer/` — the footer's own part | `attach: ([SessionAttachment]) -> Void` | `ArgoGlyph` + stock `.fileImporter` | frozen table, `AttachButton` |
+| `AttachmentTray` | molecule | same | `attachments: [SessionAttachment]`, `remove: (SessionAttachment.ID) -> Void` | `WrapFlow` over `AttachmentChip` | frozen table, `AttachmentTray` |
+| `AttachmentChip` | molecule | same, `private` to the tray | `attachment: SessionAttachment`, `remove: () -> Void` | thumbnail or `ArgoGlyph`, name, mono size, an 18pt `×` | frozen table, `AttachmentChip` |
+| `AttachmentDropTarget` | modifier | same | `canAttach: Bool`, `attach: ([SessionAttachment]) -> Void`, `isHeldOpen: Bool` | the dashed rim, the wash, and *Drop to attach* | `dragover.png` |
+
+Extraction evidence: the first three are in the design's frozen-names table. `AttachmentChip` is
+`private` to its tray rather than a file of its own — the tray is its only caller and the pair is
+one subject — and `AttachmentDropTarget` is not a component at all but the drag-over STATE, which
+is a whole-vessel rendering with no other way to be reached: only a real drag raises it, so
+`isHeldOpen` is the seam a render opens (the same one `PlanPill`'s `isRevealed` opens for a hover).
+
+### The one place the build departs from the ticket
+
+**Pasted bytes land in Argo's own per-machine data, not the Workspace.** #540 asked for the
+Workspace; a screenshot written into the checkout shows up in `git status` and in Argo's own
+`Workspace.dirty` reading, so pasting a picture would report as the user having changed something.
+The handoff brief already establishes that an agent reads an absolute path outside its tree
+(`Hub.handoffRoot`), which was the only thing the Workspace was buying. A **dropped file is not
+copied at all** — it already has an address, and a copy would be a second, staler version of a file
+the Session may be working in. The mechanism the ticket named is untouched: Argo injects a path and
+the agent's own `Read` pulls the bytes in.
+
+The chip's size figure spells its unit the way the platform does — `248 kB` where the study's HTML
+typed `248 KB`. The number matches; the casing is `ByteCountFormatStyle(.binary)`'s, and
+hand-spelling it would be a raw string standing in for a locale-aware value.
+
 ## View-model, not components
 
 - `SessionComposerProjection` — the pure `derive(facts)`: presence (managed and not ended, else
@@ -58,8 +88,7 @@ state the happy path never renders — a Session mid-Turn with something waiting
 
 ## Deliberately absent — owned by sibling tickets
 
-`AttachButton` + tray/chips (#540 — no adapter takes attachments yet; capability is declared,
-decision 9, so the study's `noattach` state is today's honest render) · `RunFactsButton` +
+`RunFactsButton` +
 `RunSettingsPopover` (#558) · `ComposerUnavailable` (#546) · `SendButton`'s **Stop** state, which
 `queued.png` draws and #541 owns — it needs an interrupt on the drive port, and a square that
 stops nothing would be the promise decision 9 refuses to make about attachments.

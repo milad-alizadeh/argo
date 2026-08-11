@@ -67,7 +67,14 @@ public struct CockpitActions {
     /// Throwing rather than answered, and the thrown `SessionDriveError` is repeated on the
     /// composer's seam: a refusal keeps the message where it was typed, which only the raising
     /// surface can do.
-    public let sendTurn: (String, String) throws -> Void
+    /// The attachments travel WITH the words rather than through an intent of their own: the paths
+    /// are named inside the Turn the message is in (#540), so an attach that went and a send that
+    /// did not would leave files written for a message nobody sent.
+    public let sendTurn: (String, String, [SessionAttachment]) throws -> Void
+    /// Whether a Session's adapter takes attachments at all — declared, not discovered (#540). A
+    /// question rather than a fact on the presentation, because the answer belongs to the drive
+    /// port and the Hub's projection has never heard of it.
+    public let canAttach: (String) -> Bool
     /// Answer the named Permission on a Session (#542) — `(sessionID, requestID, decision)`. The
     /// request is named because the answer must reach the prompt the user was reading and no
     /// other; the Session alone does not say that when two calls are waiting.
@@ -99,7 +106,8 @@ public struct CockpitActions {
         setSessionArchived: { _, _ in },
         setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
-        sendTurn: { _, _ in },
+        sendTurn: { _, _, _ in },
+        canAttach: { _ in false },
         decidePermission: { _, _, _ in },
         revokeStandingAllow: { _, _ in },
     )
@@ -117,7 +125,8 @@ public struct CockpitActions {
         setSessionArchived: @escaping (String, Bool) -> Void,
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
-        sendTurn: @escaping (String, String) throws -> Void,
+        sendTurn: @escaping (String, String, [SessionAttachment]) throws -> Void,
+        canAttach: @escaping (String) -> Bool = { _ in false },
         decidePermission: @escaping (String, String, PermissionDecision) -> Void,
         revokeStandingAllow: @escaping (String, String) -> Void,
     ) {
@@ -134,6 +143,7 @@ public struct CockpitActions {
         self.setSessionName = setSessionName
         self.handOffSession = handOffSession
         self.sendTurn = sendTurn
+        self.canAttach = canAttach
         self.decidePermission = decidePermission
         self.revokeStandingAllow = revokeStandingAllow
     }

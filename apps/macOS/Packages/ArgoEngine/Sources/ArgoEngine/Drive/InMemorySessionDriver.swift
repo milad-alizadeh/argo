@@ -13,8 +13,17 @@ public final class InMemorySessionDriver: SessionDriver {
     /// What every send is answered with while it is set. The failure path is a designed state — a
     /// failed send keeps the text where it was typed and says why — so it needs a way to happen.
     public var refusal: SessionDriveError?
+    /// What this fake DECLARES about attachments (#540). Settable because the absence of the `+`
+    /// is a designed state with a render of its own, and a fake that could only say `true` would
+    /// leave the one state the capability exists to produce unreachable from a test.
+    public var canAttach = true
+    /// Where `attach` says it put things, keyed by attachment id. A test that has to assert what
+    /// the Turn NAMED sets these; left empty, a path is invented from the id, which is enough for
+    /// the far commoner claim that the paths reached the Turn at all.
+    public var attachmentPaths: [UUID: URL] = [:]
 
     private var turns: [String: [String]] = [:]
+    private var attachments: [String: [SessionAttachment]] = [:]
     /// The answers, each still naming the request it answered — the pairing is the thing a caller
     /// most needs to assert, since the bug it guards against is an answer meeting the wrong one.
     private var decisions: [String: [(request: String, decision: PermissionDecision)]] = [:]
@@ -28,6 +37,17 @@ public final class InMemorySessionDriver: SessionDriver {
         }
         guard SessionTurn.isSendable(text) else { throw SessionDriveError.nothingToSend }
         turns[sessionID, default: []].append(text)
+    }
+
+    /// Records what it was given and answers an address for each, without writing anything. A fake
+    /// of the PORT: where bytes actually land is `AttachmentStore`'s claim and is asserted there.
+    public func attach(_ attachments: [SessionAttachment], to sessionID: String) throws -> [URL] {
+        guard canAttach else { throw SessionDriveError.cannotAttach }
+        if let refusal {
+            throw refusal
+        }
+        self.attachments[sessionID, default: []].append(contentsOf: attachments)
+        return attachments.map { attachmentPaths[$0.id] ?? URL(filePath: "/tmp/\($0.name)") }
     }
 
     public func decide(
@@ -65,6 +85,11 @@ public final class InMemorySessionDriver: SessionDriver {
     /// answer reached the Permission the user was reading.
     public func decidedRequests(for sessionID: String) -> [String] {
         (decisions[sessionID] ?? []).map(\.request)
+    }
+
+    /// What was attached to one Session, in the order it was given.
+    public func attached(to sessionID: String) -> [SessionAttachment] {
+        attachments[sessionID] ?? []
     }
 
     /// The standing allows taken back on one Session, in the order they were revoked.

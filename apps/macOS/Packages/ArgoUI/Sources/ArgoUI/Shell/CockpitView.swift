@@ -73,7 +73,11 @@ public struct CockpitView: View {
     /// view that knows what is selected. Absent — no vessel at all — for a Session Argo cannot
     /// drive.
     var composer: SessionComposerProjection.Composer? {
-        SessionComposerProjection.composer(for: presentation.session(navigation.session))
+        guard let session = presentation.session(navigation.session) else { return nil }
+        return SessionComposerProjection.composer(
+            for: session,
+            canAttach: actions.canAttach(session.id),
+        )
     }
 
     /// The selected Session's pending Permission, projected here for the reason the composer is:
