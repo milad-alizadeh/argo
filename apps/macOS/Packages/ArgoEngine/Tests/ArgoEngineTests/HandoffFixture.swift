@@ -83,11 +83,11 @@ final class HandoffFixture {
         )
     }
 
-    /// The brief `/handoff` was asked to write, at the path Argo named in the command.
+    /// The brief `/handoff` was asked to write, at the path Argo named in the command. Read as its
+    /// last word, which is where the command puts the address so a sentence cannot swallow it.
     func writeBrief(_ text: String) {
-        guard let typed = host.typed.last?.text else { return }
-        host.briefs[String(typed.dropFirst("/handoff ".count)
-                .trimmingCharacters(in: .whitespacesAndNewlines))] = text
+        guard let path = host.typed.last?.text.split(separator: " ").last else { return }
+        host.briefs[String(path)] = text
     }
 
     func writeBriefOnce() {

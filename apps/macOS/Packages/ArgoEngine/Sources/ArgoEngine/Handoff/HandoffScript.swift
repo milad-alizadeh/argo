@@ -3,9 +3,9 @@ import Foundation
 /// The words one handoff is made of: what Argo types at the full Session's prompt, where the brief
 /// it asks for lands, and what the fresh Session opens on.
 ///
-/// **Argo names the address.** `/handoff` is a skill the CLI carries, not something this repo owns,
-/// so its default write path is unknown here. Passing the path makes the wait answerable: either
-/// that file is there or the handoff did not happen.
+/// The `handoff` skill is installed from `mattpocock/skills` (`skills-lock.json`) and tells its
+/// agent to save to the OS temp directory and to read an argument as a topic, so a bare path is
+/// read as a subject to go looking for rather than an address to write to (#628).
 ///
 /// The brief lives in Argo's own per-machine data and never in the Project.
 enum HandoffScript {
@@ -21,10 +21,13 @@ enum HandoffScript {
         return kept.isEmpty ? "session" : String(kept.suffix(24))
     }
 
-    /// What is typed at the full Session's prompt. The newline is the Return that submits it — a
-    /// line left sitting in the composer is a handoff nobody started.
+    /// What is typed at the prompt, with no terminator: `ClaudeTurn` spells the Return.
+    ///
+    /// The path goes last so the sentence cannot swallow it.
     static func command(writingBriefTo path: String) -> String {
-        "/handoff \(path)\n"
+        "/handoff Write the handoff document to this exact absolute path, "
+            + "creating any missing parent directories. Do not choose a folder or a filename of "
+            + "your own, and do not write it anywhere else. The path is: \(path)"
     }
 
     /// What the fresh Session opens on. It points at the brief rather than pasting it, or the new

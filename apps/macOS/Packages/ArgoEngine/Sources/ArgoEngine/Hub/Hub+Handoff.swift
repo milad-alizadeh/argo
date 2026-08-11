@@ -7,11 +7,13 @@ import Foundation
 /// asserted there — this file is only the wiring.
 @MainActor
 extension Hub: HandoffHost {
-    /// `false` for an external Session, and for an orphaned one whose claim outlived its PTY —
-    /// which is the same answer `ownerOf` gives, from the same fact.
+    /// Typing at a prompt is what a Turn IS, so it goes through the driver rather than writing the
+    /// PTY itself — one spelling of Return reaches the CLI, not two that can drift (#628).
+    ///
+    /// `false` wherever the driver refuses, which for a non-empty command means Argo owns no live
+    /// PTY: an external Session, or an orphaned one whose claim outlived its own.
     public func steer(sessionID: String, typing text: String) -> Bool {
-        guard let claim = ownership.ownerOf(sessionID: sessionID) else { return false }
-        return terminals.write(text, to: claim)
+        (try? driver.send(text, to: sessionID)) != nil
     }
 
     /// Whatever is at the path, verbatim. Whether what is there COUNTS as a brief is the

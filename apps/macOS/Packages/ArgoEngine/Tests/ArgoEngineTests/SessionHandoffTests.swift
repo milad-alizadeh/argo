@@ -22,10 +22,10 @@ struct SessionHandoffTests {
         #expect(fixture.host.typed.count == 1)
         #expect(typed.sessionID == "full-session")
         #expect(typed.text.hasPrefix("/handoff "))
-        // The newline is the Return that submits it: a line left in the composer is a handoff
-        // nobody started.
-        #expect(typed.text.hasSuffix("\n"))
-        #expect(typed.text.contains(outcome.briefPath))
+        // The address is the last word of the command, and is stated as somewhere to WRITE. A bare
+        // path is read as a topic by a skill whose own default is to name the file itself (#628).
+        #expect(typed.text.hasSuffix(outcome.briefPath))
+        #expect(typed.text.lowercased().contains("write"))
         #expect(outcome.sessionID == "fresh-session")
     }
 
