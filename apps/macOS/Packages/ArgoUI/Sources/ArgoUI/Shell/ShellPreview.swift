@@ -63,7 +63,10 @@ public extension CockpitPresentation {
                 // The Project's own checkout: the one workspace the roster draws no label for.
                 workspaceLocation: "/Users/milad/Experiments/argo",
                 access: .managed,
-                status: .asking,
+                // Held on a Permission, which is the DIRECT half of the pair that shares this one
+                // word (`SessionState`) and the half the roster's badge was settled for (#544).
+                // `asking` keeps its rendering on the ghosted roster.
+                status: .permission,
                 cli: .claude,
                 workspace: .init(kind: .main, branch: "main"),
                 lastSeenAtMs: minutesAgo(4),

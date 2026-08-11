@@ -16,6 +16,14 @@ public enum ArgoTypography {
     public static let sectionLabel = ArgoTextStyle(
         typeface: .interface, rung: .subheadline, weight: .semibold, tracking: 0.6,
     )
+    /// A state said as a mark rather than as prose: the roster row's `NEEDS INPUT`, the Permission
+    /// prompt's own `PERMISSION`. `sectionLabel`'s treatment a rung down — a badge names a column's
+    /// worth of rows and must not rival the title beside it (`composer/perm.png`, where both
+    /// measure 10). Always drawn uppercase by its caller; the case belongs to the words, not here,
+    /// because a role that forced it could not be read back off a `Text`.
+    public static let badge = ArgoTextStyle(
+        typeface: .interface, rung: .caption1, weight: .semibold, tracking: 0.6,
+    )
     /// A Session row's primary line.
     public static let rowTitle = ArgoTextStyle(typeface: .interface, rung: .body, weight: .medium)
     /// The one quiet metadata line under it.
@@ -48,6 +56,7 @@ public enum ArgoTypography {
         ("sessionTitle", sessionTitle),
         ("identityHeading", identityHeading),
         ("sectionLabel", sectionLabel),
+        ("badge", badge),
         ("rowTitle", rowTitle),
         ("rowMeta", rowMeta),
         ("body", body),

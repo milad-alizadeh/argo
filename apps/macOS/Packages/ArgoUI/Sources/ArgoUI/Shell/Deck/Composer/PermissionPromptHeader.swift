@@ -9,7 +9,7 @@ struct PermissionPromptHeader: View {
         HStack(spacing: ArgoSpacing.tight) {
             ArgoGlyph(ArgoSymbol.permission, .control)
             Text("Permission")
-                .argoText(ArgoTypography.sectionLabel)
+                .argoText(ArgoTypography.badge)
                 .textCase(.uppercase)
             Spacer()
         }

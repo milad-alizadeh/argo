@@ -43,8 +43,21 @@ Who gets to *name* a state depends on who *derives* it:
 
 ## Session status (Argo-owned)
 
-State carried by the **dot colour** (#164 / session-interior B4); the word stays
-neutral dim text — no coloured words, no double-encoding.
+State carried by the **dot colour** (#164 / session-interior B4), and on the roster row
+by a **badge** beside the title: the word uppercase and tracked at `ArgoTypography.badge`
+(10, semibold), in the dot's own ink. One treatment for that slot, so `NEEDS INPUT` and
+`STOPPED` are the same size of claim — and the same role the Permission prompt's own
+`PERMISSION` takes, which is the size both measure in `composer/perm.png`
+(`cockpit-session-composer.md`, decision 10).
+
+The **deck header says the same word in sentence case**, because it is a line of the
+header's own prose rather than a mark in a column.
+
+> Corrected in build (#544). This read *the word stays neutral dim text — no coloured
+> words, no double-encoding*. Both approved renders draw the word in the state's ink, and
+> #502 shipped it that way: the roster's amber row is the one thing on the surface asking
+> to be looked at, and a dot alone at 6pt is not legible enough to carry it. The dot and
+> the word are one claim in two channels, not two claims.
 
 | State | Word | Dot | Notes |
 |---|---|---|---|

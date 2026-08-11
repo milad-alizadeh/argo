@@ -12,6 +12,9 @@ struct SessionRosterSpecimenTests {
         let rows = SessionRosterProjection.previewRows
 
         #expect(Set(rows.map(\.state)) == [.running, .attention, .idle, .failure, nil])
+        // Both badge words, which is what the slot's one treatment is judged on: an amber claim
+        // and a red one at the same size, side by side down the column (#544).
+        #expect(Set(rows.compactMap(\.stateWord)) == ["Needs input", "Stopped"])
         // The ghosted row is also the long one: a title truncating on a quieter row.
         #expect(rows.contains { $0.isReadOnly && $0.title.count > 40 })
         // Both worktree renderings, so a one-line row sits between two-line ones.
@@ -24,6 +27,15 @@ struct SessionRosterSpecimenTests {
         #expect(rows.contains { $0.branch == nil && $0.worktree != nil })
         // A row with no age that is not the running one, which would satisfy a bare `age == nil`.
         #expect(rows.contains { $0.age == nil && $0.state != .running })
+    }
+
+    @Test
+    func `the amber row the specimen renders is a Session held on a Permission`() {
+        // The `Row` carries the word and not the status behind it, so the claim is made where the
+        // status still exists. Asserted because `permission` and `asking` render identically and
+        // #544's badge is evidence for the blocking one — a fixture that drifted to `asking` would
+        // leave the PNG proving the other.
+        #expect(CockpitPresentation.preview.sessions.contains { $0.status == .permission })
     }
 
     @Test
