@@ -26,8 +26,6 @@ projects that do have a browser.
   one, delete the stale file in the same change — don't accumulate v1…v7. A reader opening the
   directory should see the current direction, not the archaeology.
 - Keep the `docs/designs/README.md` index current: one row per file (screen · what it is).
-- `docs/` is excluded from the code knowledge graph (`.graphifyignore`), so nothing committed
-  here pollutes the graph.
 
 ## Foundations before screens
 

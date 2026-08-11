@@ -175,12 +175,6 @@
       "skillPath": "packages/argo-skills/skills/setup-design-infra/SKILL.md",
       "computedHash": "608b161f5b987d09217e18e32e751d33328a676f5c116f5aca38ec9cee246e61"
     },
-    "setup-graphify": {
-      "source": "milad-alizadeh/argo",
-      "sourceType": "github",
-      "skillPath": "packages/argo-skills/skills/setup-graphify/SKILL.md",
-      "computedHash": "fbc56d12609309b6e6ecf35a9101079d8a0d5e37373000fa1555cb244e06edf0"
-    },
     "setup-matt-pocock-skills": {
       "source": "mattpocock/skills",
       "sourceType": "github",

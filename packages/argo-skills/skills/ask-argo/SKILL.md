@@ -79,7 +79,6 @@ just that piece. Order matters only where noted.
 - **`/setup-quality-gates`** — lint, duplication, per-file caps, as errors not warnings.
 - **`/setup-module-boundaries`** — public-entry-only import rules and folder placement
   gates.
-- **`/setup-graphify`** — the knowledge graph, and the hook that keeps it fresh.
 - **`/setup-task-tracking`** — the live to-do list convention.
 - **`/setup-output-style`** — how the agent talks back.
 

@@ -31,7 +31,7 @@ recommendation instead of a blank menu:
 
 - Language/UI: `.ts/.tsx` present? A components dir? Tailwind/Tamagui in
   package.json? → informs rules + design handoff.
-- Scale: monorepo workspaces? >~30 source files? → informs graphify + boundaries.
+- Scale: monorepo workspaces? >~30 source files? → informs boundaries.
 - Git hygiene: `.husky/` or hooks already present? CI workflows?
 - Linter: a `biome.json`, `eslint.config.*`, `.oxlintrc.json`, `ruff.toml`? → informs
   quality gates (the existing linter is the one that gets the caps; never add a second).
@@ -46,11 +46,10 @@ up?" — with the detected recommendation marked, covering:
 | Always-on task tracking (TodoWrite / update_plan) | `setup-task-tracking` | always |
 | Pre-commit hooks (format/typecheck/test) | `setup-pre-commit` | package.json exists |
 | Quality gates (caps + duplication, as errors) | `setup-quality-gates` | repo has (or should have) a linter |
-| Knowledge graph (committed, hook-refreshed) | `setup-graphify` | repo beyond trivial size |
 | Module boundaries (dependency-cruiser) | `setup-module-boundaries` | monorepo / layered app |
 | Design infra (tokens, `docs/designs/`, check, render method) | `setup-design-infra` | project has UI |
 | Design foundations (the token *values*, blessed) | `setup-design-foundations` | project has UI and no settled scale |
-| Cross-CLI guardrail hooks (graphify-guard, worktree guard + reaper) | scaffolder `--hooks` | user runs git worktrees / wants graphify-before-grep |
+| Cross-CLI guardrail hooks (placement + worktree guard, reaper) | scaffolder `--hooks` | user runs git worktrees |
 | Audit what every session loads, and cut it | `audit-agent-context` | always — it reads rather than installs, and this run adds to the bill it measures |
 
 ## Phase 3 — dispatch in order
@@ -61,23 +60,22 @@ Run each chosen skill **in this order** (later ones build on earlier ones):
 2. `setup-pre-commit` — husky baseline that later steps append to.
 3. `setup-quality-gates` — the arithmetic half of step 1's rules, as build failures;
    appends to step 2's hook.
-4. `setup-graphify` — appends its refresh block to the pre-commit hook.
-5. `setup-module-boundaries` — lint config + CI gate.
-6. `setup-design-infra` — token contract, `docs/designs/` scaffolding, the
+4. `setup-module-boundaries` — lint config + CI gate.
+5. `setup-design-infra` — token contract, `docs/designs/` scaffolding, the
    no-raw-values check, the render method, and `stack.md`; depends on the rules
    from step 1.
-7. `setup-design-foundations` — the token *values*, designed and blessed. Step 6
+6. `setup-design-foundations` — the token *values*, designed and blessed. Step 5
    installs the structure; this fills it. Skip only if the project already has a
    settled scale in every family.
-8. `setup-output-style` — the Out Loud output style as the Claude Code session
+7. `setup-output-style` — the Out Loud output style as the Claude Code session
    default; independent of the rest, so it can run any time.
-9. `setup-task-tracking` — the "Task tracking" section in the project doc; runs
+8. `setup-task-tracking` — the "Task tracking" section in the project doc; runs
    after `setup-rules` so it lands beside that skill's Rules pointer rather than
    racing it for the same file.
-10. Guardrail hooks (if chosen) — re-run the scaffolder with `--hooks`
+9. Guardrail hooks (if chosen) — re-run the scaffolder with `--hooks`
    (`npx github:milad-alizadeh/argo --hooks`); it's idempotent, so running it after
    the Phase-1 skills install just adds the hooks. No separate `setup-*` skill.
-11. `audit-agent-context` — **last**, because every step above adds to what a
+10. `audit-agent-context` — **last**, because every step above adds to what a
    session loads and this is the one that prices it. Report its before/after totals
    as the run's closing line.
 

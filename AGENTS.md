@@ -119,8 +119,8 @@ everything else is reported and left alone. `--dry-run` reports without removing
 
 ## Cross-CLI guardrail hooks
 
-`hooks.json` (repo root) is the neutral SSOT for the four guardrail hooks (graphify-before-grep,
-placement write guard, worktree edit guard, worktree-gc), projected per-harness. **Edit
+`hooks.json` (repo root) is the neutral SSOT for the three guardrail hooks (placement write
+guard, worktree edit guard, worktree-gc), projected per-harness. **Edit
 `hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json` and
 `.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`,
 and re-scope the edit guard to their own layout with `worktreeGuard.roots` in the same file.
@@ -161,22 +161,6 @@ session over the diff.
 If no independent fresh context is reachable, **stop and report that** — do not run the axes
 yourself and present it as a review. Claude Code trap: agents spawned inside a `Workflow` have
 no `Agent` tool, so run implement directly, not nested in a Workflow.
-
-## graphify
-
-Knowledge graph at `graphify-out/` with god nodes, community structure, and cross-file
-relationships.
-
-- For codebase questions, first run `graphify query "<question>"` when `graphify-out/graph.json`
-  exists. `graphify path "<A>" "<B>"` for relationships, `graphify explain "<concept>"` for
-  focused concepts. These return a scoped subgraph, far smaller than `GRAPH_REPORT.md` or grep.
-- If `graphify-out/wiki/index.md` exists, use it for broad navigation over raw source browsing.
-- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review.
-
-The graph is **code-only** (markdown excluded via `.graphifyignore`), committed, and refreshed
-by the pre-commit hook — **never run `graphify update` by hand**, and **never run
-`graphify label`** for upkeep (it re-clusters and drops dated backups). Wiring lives in the
-`setup-graphify` skill.
 
 ## Design work
 
@@ -219,7 +203,7 @@ global Bash hook (rtk ≥ 0.45) auto-wraps `git`, `grep`, `gh`, `ls`, `find` and
 rewrites inside compound commands too — `cd apps/macOS && swift test` is caught. This repo's own
 noisy entrypoints are covered by **`.rtk/filters.toml`** at the root: `swift test` (passes and
 build noise out, failures and the summary kept), `bun run test|quality|…` (turbo cache noise
-out), `graphify query` (stdlib nodes out), and `sh scripts/e2e-test.sh` (xcodebuild phases out).
+out), and `sh scripts/e2e-test.sh` (xcodebuild phases out).
 
 The filters are inert until trusted: **run `rtk trust --yes` once per checkout**, and again after
 any edit to the file — trust is keyed to its hash. `rtk verify` runs the filters' inline tests.

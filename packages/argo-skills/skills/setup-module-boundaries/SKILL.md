@@ -38,11 +38,6 @@ Read these off the repo, not from memory:
   there). In a monorepo the checker runs **per workspace**, each with its own tsconfig —
   install one map + config per workspace that has real internal structure, not one at the
   root spanning everything.
-- **Seed from graphify if present** — if `graphify-out/graph.json` exists, its detected
-  communities are a strong first draft of the module list. Run `graphify query "what are
-  the top-level modules and their entry points"` (or read the community report) and use it
-  to propose modules. The graph is a hint; you still decide the public entry for each.
-
 ## 2. Build the module map (the LLM step — this is the whole point)
 
 Produce `module-boundaries.json` from the
