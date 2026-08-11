@@ -75,10 +75,8 @@ public enum ArgoComposerVessel {
     /// `mcp__server__the_verb`, and one of those unchecked is a chip as wide as the vessel.
     public static let chipNameCeiling: CGFloat = 160
 
-    /// How tall the Mode control stands, measured off `docs/designs/composer/rest.png` (#608).
-    /// Its WIDTH is deliberately not here: the control hugs the selected rung, which is the whole
-    /// amendment. Deliberately not `chipHeight` either, though the two agree today — a chip above
-    /// the field and a control on the footer answer to different renders.
+    /// How tall the Mode control stands, measured off `docs/designs/composer/rest.png`. It has no
+    /// width: the control hugs the selected rung. Not `chipHeight`, though the two agree today.
     public static let modeHeight: CGFloat = 20
 
     /// How long the accent wash stands over a row the user just sent. A hold, not a motion — the

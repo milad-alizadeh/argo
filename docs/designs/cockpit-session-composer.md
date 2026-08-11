@@ -160,9 +160,9 @@ that follows the selected rung, and a mark in each row. Decision 1 records what 
    **The control hugs the selected rung** (amended in build, #608). It was sized to the widest
    rung, `Read Only`, which `NSPopUpButton` does for free and the study's stand-in was pinned to
    match — on the argument that a trailing edge moving with the rung is a worse tic than the width
-   it saves. Rendered, the reverse is true: at `Code` and `Auto` the pinned width leaves 30-odd
-   points of empty pill to the right of the word, and empty space inside a bordered control reads
-   as a control that failed to draw something. **A moving trailing edge is accepted instead** —
+   it saves. Rendered, the reverse is true: at `Code` the pinned width leaves 11pt of empty pill to
+   the right of the word, and empty space inside a bordered control reads as a control that failed
+   to draw something. **A moving trailing edge is accepted instead** —
    and it moves less than the reasoning assumed, because the control is the *leading* item of a
    trailing-aligned group, so the run facts and send button do not move at all. Only the pill's
    own left edge does.

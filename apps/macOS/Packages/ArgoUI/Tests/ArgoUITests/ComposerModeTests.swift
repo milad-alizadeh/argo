@@ -5,18 +5,14 @@ import Testing
 /// the design says is the `composer` render's question.
 @Suite("A rung of the Mode ladder")
 struct ComposerModeTests {
-    @Test
-    func `every rung names where it stops`() {
-        for mode in ComposerMode.allCases {
-            #expect(!mode.boundary.isEmpty)
-        }
+    @Test(arguments: ComposerMode.allCases)
+    func `a rung names where it stops`(mode: ComposerMode) {
+        #expect(!mode.boundary.isEmpty)
     }
 
-    @Test
-    func `every rung carries a mark`() {
-        for mode in ComposerMode.allCases {
-            #expect(!mode.mark.isEmpty)
-        }
+    @Test(arguments: ComposerMode.allCases)
+    func `a rung carries a mark`(mode: ComposerMode) {
+        #expect(!mode.mark.isEmpty)
     }
 
     /// Two rungs on one mark would leave the ladder carrying its reading in the word alone, which
@@ -27,17 +23,20 @@ struct ComposerModeTests {
         #expect(Set(marks).count == marks.count)
     }
 
-    /// The rung and the code room name one thing, so they take one mark.
     @Test
     func `the Code rung takes the code room's own mark`() {
         #expect(ComposerMode.code.mark == ArgoSymbol.programSource)
     }
 
-    /// The pair ADR-0025 kept deliberately: same boundary, different intent. A future edit that
-    /// collapses them has to fail something.
+    /// The pair ADR-0025 kept deliberately: same boundary, different intent.
     @Test
-    func `the Plan rung shares Read Only's boundary and not its mark`() {
+    func `the Plan rung shares Read Only's boundary`() {
         #expect(ComposerMode.plan.boundary.hasPrefix(ComposerMode.readOnly.boundary))
+    }
+
+    /// Which is why the mark is what tells them apart.
+    @Test
+    func `the Plan rung takes a mark of its own`() {
         #expect(ComposerMode.plan.mark != ComposerMode.readOnly.mark)
     }
 }

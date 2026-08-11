@@ -16,8 +16,7 @@ enum ComposerMode: String, CaseIterable, Identifiable {
         self
     }
 
-    /// Where the rung stops. On the control's tooltip rather than under each row: #608 took back
-    /// the mark half of what the stock picker cost, and left per-row captions out of scope.
+    /// Where the rung stops. On the control's tooltip, not under each row.
     var boundary: String {
         switch self {
         case .readOnly: "no writes"
@@ -27,8 +26,7 @@ enum ComposerMode: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The rung's mark, frozen by the composer design. A word alone is what put `boundary` on a
-    /// tooltip, and the mark is how `Auto` gets back the loudness it lost as the rung with none.
+    /// The rung's mark, frozen by the composer design (#608).
     var mark: String {
         switch self {
         case .readOnly: ArgoSymbol.modeReadOnly

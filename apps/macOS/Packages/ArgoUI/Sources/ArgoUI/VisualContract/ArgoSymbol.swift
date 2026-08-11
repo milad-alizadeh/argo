@@ -97,13 +97,9 @@ public enum ArgoSymbol {
     /// wondering.
     public static let permission = "lock.fill"
 
-    /// One mark per rung of the composer's Mode ladder (#608), frozen by the composer design.
-    /// A word alone is what forced a rung's boundary onto a tooltip, and the mark is how `Auto`
-    /// gets back the loudness it lost as the one rung with no boundary. `ComposerMode.mark` is
-    /// what maps a rung to its mark; these are the names.
+    /// One mark per rung of the composer's Mode ladder, frozen by the composer design (#608).
     public static let modeReadOnly = looked
     public static let modePlan = "list.bullet.rectangle"
-    /// The rung and the code room name one thing, so they take one mark.
     public static let modeCode = programSource
     public static let modeAuto = "bolt"
 
