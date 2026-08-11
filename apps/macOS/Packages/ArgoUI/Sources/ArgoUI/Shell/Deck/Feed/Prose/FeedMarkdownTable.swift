@@ -55,6 +55,10 @@ struct FeedMarkdownTable: View {
                         .fill(argo.color.edge.hairline)
                         .frame(width: ArgoFeedRow.ruleWidth)
                         .frame(maxHeight: .infinity)
+                        // The rule stretches to the row, but must never ASK for a height: a
+                        // flexible grid cell takes the whole vertical proposal, and the feed
+                        // measures rows with an unbounded one.
+                        .gridCellUnsizedAxes(.vertical)
                 }
             }
         }

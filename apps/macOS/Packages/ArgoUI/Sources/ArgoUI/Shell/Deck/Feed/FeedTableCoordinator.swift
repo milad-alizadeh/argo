@@ -53,7 +53,23 @@ import SwiftUI
     /// What an unmeasured row is assumed to stand at — a few lines of prose. An estimate close
     /// to the truth keeps the table from speculatively realising twice the rows a wheel tick
     /// will actually show, which is work thrown away at frame rate.
-    static let estimatedRowHeight: CGFloat = ArgoFeedRow.lineHeight * 3
+    nonisolated static let estimatedRowHeight: CGFloat = ArgoFeedRow.lineHeight * 3
+
+    /// The tallest a single row may claim to be. Far above any real one, and far below AppKit's
+    /// ±2^45 geometry window, which `NSTableView` leaves once summed origins pass it.
+    nonisolated static let maxRowHeight: CGFloat = 100_000
+
+    /// A measured height, or the estimate when it is one no row could truly stand at.
+    ///
+    /// Row content that flexes vertically takes the whole proposal, and the ruler proposes an
+    /// unbounded one — a row measured at 1.2e308 turns the table's origin arithmetic into NaN and
+    /// kills the window.
+    nonisolated static func usableHeight(_ height: CGFloat) -> CGFloat {
+        guard height.isFinite, height >= 0, height <= maxRowHeight else {
+            return estimatedRowHeight
+        }
+        return height
+    }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
@@ -103,9 +119,9 @@ import SwiftUI
         ruler.rootView = model.content(at: index)
         // Rounded UP to a whole point: a non-integral row height still blurs baselines on
         // current macOS, and up rather than to-nearest so text is never clipped by rounding.
-        let height = ceil(ruler.sizeThatFits(
+        let height = Self.usableHeight(ceil(ruler.sizeThatFits(
             in: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude),
-        ).height)
+        ).height))
         heights[index] = height
         // The ruler would otherwise keep the row's live view graph — tasks included — alive
         // in a controller no window ever shows.
