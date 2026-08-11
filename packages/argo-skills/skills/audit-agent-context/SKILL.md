@@ -32,8 +32,11 @@ receives before the user types:
 | Skill frontmatter | The `name` + `description` of every installed skill, in each skills directory. Dedupe by skill name — a `.claude/skills/<n>` symlink into `.agents/skills/<n>` is one skill loaded once |
 | Memory index | The always-on index file, not the memories it points at |
 
-Report bytes per source, the total, and tokens at roughly 3.5 bytes per token. Say which
-divisor you used, because the number is an estimate and the user may re-derive it.
+Report bytes per source, then convert to tokens. **Prefer a count the harness itself
+reports** over any divisor — several expose one, and it is the number the user is billed on.
+Falling back to bytes ÷ divisor, use **2.7**, not the 3.5 that suits prose: agent files are
+dense in tables, backticks and paths, and 3.5 under-reports them by about a third. Say which
+figure you used and where it came from, because the user may re-derive it.
 
 Then price the total twice.
 
@@ -66,7 +69,10 @@ Six checks. Each one ends in a byte count and a named file, or it did not run.
 3. **Rules and skills with no subject.** A rule about a language the tree does not contain,
    a skill for a framework nothing imports. Check each rule's `paths:` frontmatter against
    the working tree, and each skill's subject against the manifest — a rule matching zero
-   files can only misfire. Verify by globbing before claiming absence.
+   files can only misfire. Verify before claiming absence, and search **tracked files on the
+   current branch** — `git grep -l <subject> -- . ':(exclude).claude/worktrees'` — never a
+   bare recursive grep of the working directory. Sibling worktrees, build output and vendored
+   copies all hold stale mentions, and one hit in any of them clears a dead subject as live.
 4. **Inlined runbooks.** Step-by-step procedures, command sequences, and troubleshooting in
    an always-on file. These are read once a task starts, which makes them pull material.
 5. **Per-tool-call hook injection.** Read the harness's hook config for hooks that return
