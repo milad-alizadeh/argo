@@ -144,6 +144,7 @@ struct ArgoApp: App {
             },
             spawnSession: { await cockpit.spawnSession() },
             resumeSession: { id in await cockpit.resumeSession(sessionID: id) },
+            spawnSessionBeside: { id in await cockpit.spawnSession(beside: id) },
             setSessionArchived: { id, isArchived in
                 Task { await cockpit.setArchived(isArchived, sessionID: id) }
             },

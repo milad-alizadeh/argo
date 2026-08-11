@@ -28,6 +28,13 @@ public struct CockpitActions {
     ///
     /// It answers nothing: the composer appearing is the answer, and a refusal is said by the app.
     public let resumeSession: (String) async -> Void
+    /// Start an agent in the folder ANOTHER Session was running in — the act available on a Session
+    /// that cannot be driven and cannot be continued either (#546). Keyed by that Session's id and
+    /// not by a path, because the folder is the engine's to read: the shell knows which Session the
+    /// reader is looking at and nothing about where it lives.
+    ///
+    /// Answers the way `spawnSession` does, and for the same reason.
+    public let spawnSessionBeside: (String) async -> String?
     /// Clear a Session off the roster, or put one back. The ONLY thing that ever archives one:
     /// nothing derived from a merge, a branch or a transcript reaches this, which is what makes
     /// archiving a decision rather than a status transition (#502, story 14).
@@ -95,6 +102,7 @@ public struct CockpitActions {
         openProjectPanel: { _ in },
         spawnSession: { nil },
         resumeSession: { _ in },
+        spawnSessionBeside: { _ in nil },
         setSessionArchived: { _, _ in },
         setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
@@ -117,6 +125,7 @@ public struct CockpitActions {
         openProjectPanel: @escaping (String?) -> Void,
         spawnSession: @escaping () async -> String?,
         resumeSession: @escaping (String) async -> Void = { _ in },
+        spawnSessionBeside: @escaping (String) async -> String? = { _ in nil },
         setSessionArchived: @escaping (String, Bool) -> Void,
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
@@ -137,6 +146,7 @@ public struct CockpitActions {
         self.openProjectPanel = openProjectPanel
         self.spawnSession = spawnSession
         self.resumeSession = resumeSession
+        self.spawnSessionBeside = spawnSessionBeside
         self.setSessionArchived = setSessionArchived
         self.setSessionName = setSessionName
         self.handOffSession = handOffSession

@@ -126,6 +126,10 @@ enum SessionHeaderProjection {
 
     /// Access → the mark the header spends on it, if any. `external` and `orphaned` differ: both
     /// are undriveable, but only one was ever Argo's.
+    ///
+    /// The WORD comes from `SessionComposerProjection.Unavailable`, which is the one home for it
+    /// (#546); the sentence stays the header's own, because the band names a posture where the
+    /// deck's foot answers a reader looking for the field.
     private static func mark(
         for access: CockpitPresentation.Session.Access,
     )
@@ -135,7 +139,7 @@ enum SessionHeaderProjection {
             nil
         case .external:
             Header.AccessMark(
-                word: "Read-only",
+                word: SessionComposerProjection.Unavailable.external.word,
                 detail: "Argo never owned this Session's terminal, "
                     + "so it cannot be driven from here.",
                 // No colour: a tint on every external header trains the reader past the other one.
@@ -143,7 +147,7 @@ enum SessionHeaderProjection {
             )
         case .orphaned:
             Header.AccessMark(
-                word: "Orphaned",
+                word: SessionComposerProjection.Unavailable.orphaned.word,
                 detail: "Argo owned this Session; its terminal died with the process, "
                     + "so it cannot be driven from here.",
                 tone: .attention,

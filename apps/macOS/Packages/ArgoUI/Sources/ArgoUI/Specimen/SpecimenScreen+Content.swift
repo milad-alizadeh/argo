@@ -154,6 +154,19 @@ extension SpecimenScreen {
             // The same row with no pass over it: the rest ink alone has to separate the live
             // command from the dead ones, which is the whole of what Reduce Motion leaves it.
             sessions(FeedProjection.previewPendingCallRows).environment(\.argoStillsMotion, true)
+        case .feedWorkingAged:
+            // Ninety seconds in: the third rung. Judged against `feedWorking` beside it — the same
+            // thread, dimmer, on a wait that has stopped being part of the interaction.
+            sessions(FeedProjection.previewWorkingRows).environment(\.argoAgesWait, 90)
+        case .feedWorkingCooled:
+            // Past five minutes, the coldest rung there is. Nothing here warms toward
+            // `state.attention`: a long think needs nothing, so it must not read as an alarm.
+            sessions(FeedProjection.previewWorkingRows).environment(\.argoAgesWait, 360)
+        case .feedCallInFlightCooled:
+            // The other live state at the same rung. The wash cools by the ladder's proportion
+            // rather than to its number, so the judgement is whether the command still reads as
+            // the live one against the finished rows above it.
+            sessions(FeedProjection.previewPendingCallRows).environment(\.argoAgesWait, 360)
         case .emptyFeed:
             sessions([])
         case .startingSpawn:
@@ -200,7 +213,8 @@ extension SpecimenScreen {
              .composerRunning, .composerStopped,
              .composerRefusal, .flatComposer, .composerStanding, .composerAttached,
              .composerPasted, .composerDragOver, .composerNoAttach,
-             .composerModeNearly, .composerModeUnknown, .permission,
+             .composerModeNearly, .composerModeUnknown, .composerExternal, .composerOrphaned,
+             .composerEnded, .permission,
              .permissionStanding, .permissionEdit, .flatPermission:
             vessel
         // Every state of the Connect flow, drawn in `SpecimenScreen+Connect.swift`.

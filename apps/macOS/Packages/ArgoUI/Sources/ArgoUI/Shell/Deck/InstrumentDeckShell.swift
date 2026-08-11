@@ -32,6 +32,11 @@ struct InstrumentDeckShell: View {
     var held: FeedRow.ID?
     /// The shown Session's composer, already projected — absent for one Argo cannot drive.
     var composer: SessionComposerProjection.Composer?
+    /// Why it is absent, for the Sessions it is absent for (#546). Never present beside `composer`.
+    var unavailable: SessionComposerProjection.Unavailable?
+    /// The exit that line offers: a fresh Session in the shown one's folder. Inert by default, for
+    /// the reason `send` is.
+    var spawnBeside: () async -> Void = {}
     /// One Turn to the shown Session. Inert by default, so a specimen renders the vessel with
     /// nothing behind it.
     var send: ComposerSend = { _, _ in }
@@ -80,6 +85,8 @@ struct InstrumentDeckShell: View {
                 lit: lit,
                 held: held,
                 composer: composer,
+                unavailable: unavailable,
+                spawnBeside: spawnBeside,
                 send: send,
                 prompt: prompt,
                 decide: decide,

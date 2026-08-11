@@ -275,8 +275,25 @@ that follows the selected rung, and a mark in each row. Decision 1 records what 
 7. **A degraded composer is absent, not disabled.** A greyed field invites a click and gives no
    reason; one line saying *read-only — Argo did not spawn this Session* answers the question the
    field would have raised. Orphaned additionally offers a fresh Session on the same branch.
+
+   **There is a third reason, and the study drew neither of the two it resembles** (added in build,
+   #546). A **managed** Session whose companion reported itself `ended` has lost nothing: Argo still
+   holds its PTY, so *orphaned*'s sentence would claim a death that did not happen, and *read-only*
+   would deny an ownership Argo has. It is `Ended — this Session is over, so there is nothing left
+   to send to.`, and it takes the quiet `info.circle` rather than a triangle, because nothing here
+   went wrong. Before this it drew nothing at all, which is the blank foot this decision exists to
+   stop.
+
+   **The exit belongs to both of the reasons that were Argo's**, orphaned and ended, and to neither
+   external one. Argo never owned an external Session, so a fresh Session beside it is a guess about
+   what the reader wanted rather than the way on from where they are.
 8. **A failed send does not clear the field.** The message stays where it was typed, with the
    reason and a Retry on the seam.
+
+   **The Retry is neutral, not accented** (corrected in build, #546). It shipped Ion Blue in #538
+   and read as a link on a line whose other half is already the failure ink. `failed.png` draws it
+   in the quiet ink and always did; a `.bordered` button takes its label from the `tint` and ignores
+   a `foregroundStyle` set anywhere around it, which is the same trap decision 1's Mode menu hit.
 9. **Capability is declared, not discovered.** An adapter that cannot take attachments has **no
    `+`**, and a drop is refused with the reason.
 10. **The roster row carries *Needs input*** with an amber dot while a Permission is pending, so

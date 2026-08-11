@@ -41,6 +41,11 @@ struct FeedView: View {
     @State var washed: FeedRow.ID?
     /// The table's imperative verbs — see `FeedTableHandle`.
     @State private var table = FeedTableHandle()
+    /// When the wait this reading is showing began, or `nil` while it is showing none. Held here
+    /// and not in the row that draws it, because the table recycles cells: a clock kept in a row
+    /// would restart every time the reader scrolled it off and back, and a six-minute wait would
+    /// come back reading as a fresh one.
+    @State private var waitStarted: Date?
 
     init(
         rows: [FeedRow],
@@ -80,6 +85,12 @@ struct FeedView: View {
         .onChange(of: rows.count) { was, now in
             washArrived(between: was, and: now)
         }
+        // The age of the wait is counted from here. Stamped on the CHANGE, so a row arriving
+        // mid-think does not restart a wait that never stopped.
+        .onChange(of: FeedWait.showing(in: rows), initial: true) { _, wait in
+            waitStarted = wait == nil ? nil : Date()
+        }
+        .environment(\.argoWaitStarted, waitStarted)
         // Cancellation IS the reset: a second send while the first wash stands re-keys
         // the task, and the fresh one times the fresh row.
         .task(id: washed) { await washExpired() }

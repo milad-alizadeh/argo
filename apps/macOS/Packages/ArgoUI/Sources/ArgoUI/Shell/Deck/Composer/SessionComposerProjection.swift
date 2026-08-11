@@ -32,14 +32,16 @@ enum SessionComposerProjection {
 
     /// A composer only for a Session Argo can put keystrokes to: managed, and not over. Everything
     /// else gets NO composer rather than a disabled one (design decision 7; #546).
+    ///
+    /// Refused through `unavailable(for:)` rather than by a guard of its own, so the vessel and the
+    /// line that replaces it cannot come to disagree about who can be driven — one of them is on
+    /// screen for every Session, and never both.
     static func composer(
         for session: CockpitPresentation.Session?,
         canAttach: Bool = false,
     )
         -> Composer? {
-        guard let session, case .managed = session.access, session.status != .ended else {
-            return nil
-        }
+        guard let session, unavailable(for: session) == nil else { return nil }
         let isRunning = session.status == .running
         return Composer(
             sessionID: session.id,

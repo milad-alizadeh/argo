@@ -73,6 +73,11 @@ public struct CockpitView: View {
         )
     }
 
+    /// Why the same Session has none — the line that stands in the composer's place (#546).
+    var unavailable: SessionComposerProjection.Unavailable? {
+        SessionComposerProjection.unavailable(for: presentation.session(navigation.session))
+    }
+
     /// The selected Session's pending Permission. While present it takes the composer's slot.
     var prompt: PermissionPromptProjection.Prompt? {
         PermissionPromptProjection.prompt(for: presentation.session(navigation.session))
@@ -116,6 +121,8 @@ public struct CockpitView: View {
                 handOff: handOff,
                 showing: showing,
                 composer: composer,
+                unavailable: unavailable,
+                spawnBeside: spawnBeside,
                 send: send,
                 prompt: prompt,
                 decide: decide,

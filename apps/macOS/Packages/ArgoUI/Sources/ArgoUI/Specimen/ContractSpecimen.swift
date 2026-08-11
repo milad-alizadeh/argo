@@ -172,12 +172,14 @@ struct ContractSpecimen: View {
     }
 
     /// A loop is read differently from a transition, so it is said differently: its number is a
-    /// period rather than a wait, and Reduce Motion stops it rather than shortening it.
+    /// period rather than a wait, it cools as the wait it reports ages, and Reduce Motion stops it
+    /// rather than shortening it.
     private func duration(_ motion: ArgoMotion) -> String {
         let reduced = motion.reducedDuration.map { "\(Int($0 * 1000))ms fade" } ?? "instant"
         let pass = "\(Int(motion.duration * 1000))ms"
+        let coldest = Int(ArgoWaitAge.coldest.period * 1000)
         return motion.repeats
-            ? "\(pass) per pass, repeating · reduce motion: stopped"
+            ? "\(pass) per pass, cooling to \(coldest)ms · reduce motion: stopped"
             : "\(pass) · reduce motion: \(reduced)"
     }
 }

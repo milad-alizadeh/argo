@@ -26,9 +26,15 @@ struct SessionsDeck: View {
     /// Which row the reading opens held at — see `FeedView.held`. Where the reading STARTS; the
     /// scroll owns it from there.
     var held: FeedRow.ID?
-    /// The shown Session's composer. Absent for a Session Argo cannot drive, which draws nothing
-    /// rather than a disabled field.
+    /// The shown Session's composer. Absent for a Session Argo cannot drive, which draws the line
+    /// below rather than a disabled field.
     var composer: SessionComposerProjection.Composer?
+    /// Why there is no composer, for the Sessions that have none (#546). Exactly one of this and
+    /// `composer` is ever present — see `SessionComposerProjection.unavailable(for:)`.
+    var unavailable: SessionComposerProjection.Unavailable?
+    /// Start a fresh Session in the shown one's folder — the exit that line offers. Inert by
+    /// default so a specimen draws the offer without spawning anything.
+    var spawnBeside: () async -> Void = {}
     /// One Turn to the shown Session. Inert by default so a specimen draws the vessel without
     /// reaching for a terminal.
     var send: ComposerSend = { _, _ in }
@@ -74,6 +80,12 @@ struct SessionsDeck: View {
                 draft: draft,
                 seams: seams,
             )
+            // A ROW and not an overlay, unlike the vessel above: the feed runs under a composer and
+            // stays readable through the glass, where this replaces the reading's end. It spans the
+            // whole deck for the same reason — the rail and the panel cannot be driven either.
+            if let unavailable {
+                ComposerUnavailable(reason: unavailable, spawn: spawnBeside)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoLightbox(selection, in: feed)

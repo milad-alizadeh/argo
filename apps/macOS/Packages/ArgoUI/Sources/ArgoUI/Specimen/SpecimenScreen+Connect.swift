@@ -44,7 +44,8 @@ extension SpecimenScreen {
              .feedDocumentEvidence, .evidenceAddresses,
              .feedAttention, .feedPunctuation, .feedPermissionExpired, .feedAgents, .feedAtScale,
              .feedAtScaleEvidence, .feedArriving, .feedWorking, .feedCallInFlight,
-             .feedWorkingStill, .feedCallInFlightStill, .emptyFeed,
+             .feedWorkingStill, .feedCallInFlightStill,
+             .feedWorkingAged, .feedWorkingCooled, .feedCallInFlightCooled, .emptyFeed,
              .startingSpawn,
              .feedGallery, .feedSingleShot,
              .feedAbsentShot, .feedLightbox, .planPill, .openPlanPill, .unstartedPlanPill,
@@ -53,7 +54,8 @@ extension SpecimenScreen {
              .composerStanding, .composerCeiling, .composerDraftKept, .composerQueued,
              .composerRunning, .composerStopped,
              .composerAttached, .composerPasted, .composerDragOver, .composerNoAttach,
-             .composerModeNearly, .composerModeUnknown,
+             .composerModeNearly, .composerModeUnknown, .composerExternal, .composerOrphaned,
+             .composerEnded,
              .permission, .permissionEdit, .permissionStanding, .flatPermission:
             EmptyView()
         }

@@ -79,6 +79,11 @@ public enum ArgoComposerVessel {
     /// width: the control hugs the selected rung. Not `chipHeight`, though the two agree today.
     public static let modeHeight: CGFloat = 20
 
+    /// How tall the line standing in for a composer that cannot reach anything is (#546), measured
+    /// off `docs/designs/composer/orphaned.png`. A row at the deck's foot rather than a vessel over
+    /// the feed: nothing floats here, because there is nothing under it to look through to.
+    public static let unavailableHeight: CGFloat = 48
+
     /// How long the accent wash stands over a row the user just sent. A hold, not a motion — the
     /// fade in and out is `ArgoMotion.bloom`, whose ramp has a half-second ceiling.
     public static let washHold: TimeInterval = 1.4

@@ -62,6 +62,23 @@ public struct ArgoMotion: Sendable {
     public func resolved(reduceMotion: Bool) -> Animation? {
         reduceMotion ? reducedAnimation : animation
     }
+
+    /// The same answer as ONE traversal, never repeated. A loop is driven through this rather than
+    /// through `resolved` — see `FeedIonLoop`.
+    public func resolvedPass(reduceMotion: Bool) -> Animation? {
+        reduceMotion ? reducedAnimation : pass
+    }
+
+    /// The same role over another period. Only a LOOP has one: a non-repeating role's duration is a
+    /// wait `durationCeiling` bounds, and nothing may stretch it.
+    public func over(_ period: TimeInterval) -> ArgoMotion {
+        ArgoMotion(
+            duration: period,
+            curve: curve,
+            reducedDuration: reducedDuration,
+            repeats: repeats,
+        )
+    }
 }
 
 public extension ArgoMotion {
@@ -83,8 +100,9 @@ public extension ArgoMotion {
 
     /// The one loop: a Turn in flight, reported by an ion crossing what it is working on. The
     /// period is what a wait FEELS like rather than what it costs, so it is the value a longer wait
-    /// slows down. `nil` under Reduce Motion because a loop has no shorter answer — it stops, and
-    /// the surface holds a still that still reads as live.
+    /// slows down — this is the FIRST rung of `ArgoWaitAge`, not the only one. `nil` under Reduce
+    /// Motion because a loop has no shorter answer: it stops, and the surface holds a still that
+    /// still reads as live.
     static let working = ArgoMotion(
         duration: 1.9,
         curve: .linear,
@@ -108,6 +126,12 @@ public extension ArgoMotion {
     /// ceiling measures how long a reader waits for a change to finish, and a loop never finishes:
     /// its `duration` is a period the reader watches, not a wait.
     static let durationCeiling: TimeInterval = 0.5
+
+    /// The gap a loop driven one pass at a time leaves between two passes. SwiftUI folds every
+    /// change in a tick into the last value, so putting the ion back at its start has to be a tick
+    /// of its own or the next pass animates from nowhere. One frame, and spent entirely off the
+    /// surface — both ends of the travel already clear it.
+    static let passReentry: TimeInterval = 1.0 / 60
 }
 
 extension EnvironmentValues {

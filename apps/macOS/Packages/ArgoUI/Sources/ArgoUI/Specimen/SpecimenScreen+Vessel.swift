@@ -90,6 +90,21 @@ extension SpecimenScreen {
             // where a rung would, so what has to be true is that the footer still reads as a
             // footer with a control on it rather than one that failed to load a value.
             ComposerSpecimen(composer: ComposerSpecimen.unknownMode)
+        case .composerExternal:
+            // A Session Argo never spawned: no vessel at all, and one line where it would have been
+            // (#546, design decision 7). What the render has to settle is that the deck reads as
+            // FINISHED rather than as one whose composer failed to draw.
+            sessions(FeedProjection.previewRows, unavailable: .external, access: .external)
+        case .composerOrphaned:
+            // The same absence on a Session that WAS Argo's, with the one act still available on
+            // it. The claim is that the exit reads as an offer rather than as a retry of the
+            // steering that just died.
+            sessions(FeedProjection.previewRows, unavailable: .orphaned, access: .orphaned)
+        case .composerEnded:
+            // Neither of those two: the agent reported itself over while Argo still held its PTY,
+            // so the line takes the quiet mark. Its own case because the judgement is that it does
+            // NOT read as a failure — nothing here went wrong.
+            sessions(FeedProjection.previewRows, unavailable: .ended)
         case .permission:
             // A gated command holding the composer's slot: the tool and its target verbatim, the
             // amber rim, Allow focused — the state the whole channel exists to raise.
@@ -122,7 +137,8 @@ extension SpecimenScreen {
              .feedDocumentEvidence, .evidenceAddresses,
              .feedAttention, .feedPunctuation, .feedPermissionExpired, .feedAgents, .feedAtScale,
              .feedAtScaleEvidence, .feedArriving, .feedWorking, .feedCallInFlight,
-             .feedWorkingStill, .feedCallInFlightStill, .emptyFeed,
+             .feedWorkingStill, .feedCallInFlightStill,
+             .feedWorkingAged, .feedWorkingCooled, .feedCallInFlightCooled, .emptyFeed,
              .startingSpawn,
              .feedGallery, .feedSingleShot,
              .feedAbsentShot, .feedLightbox, .planPill, .openPlanPill, .unstartedPlanPill,
