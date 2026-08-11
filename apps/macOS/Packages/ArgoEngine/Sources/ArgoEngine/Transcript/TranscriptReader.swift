@@ -24,6 +24,9 @@ public actor TranscriptReader {
     }
 
     private var openCalls: [String: OpenCall] = [:]
+    /// The reader's second memory, and for the same reason as its first: a host that writes its
+    /// plan one entry at a time leaves the list itself nowhere in the record.
+    private var planLedger = PlanLedger()
     private var context = TranscriptContextCursor()
     private let readImage: ImageReader
 
@@ -187,12 +190,20 @@ public actor TranscriptReader {
             // question that BLOCKS from one the agent merely typed into a message.
             ask: use.name == ToolCall.askUserQuestion ? ask(from: use.input) : nil,
         )
-        // The plan tool's input IS the plan, so the call and the list it wrote are one record's
-        // worth of news. Both are emitted: the call is what happened, the plan is what it said.
-        guard use.name == planTool, let written = plan(from: use.input) else {
-            return [.toolCall(call)]
-        }
+        // A call that wrote to the plan and the list it left behind are one record's worth of news.
+        // Both are emitted: the call is what happened, the plan is what it said.
+        guard let written = planWritten(by: use) else { return [.toolCall(call)] }
         return [.toolCall(call), .plan(written)]
+    }
+
+    /// The whole list after this call, whichever way the host writes one — `TodoWrite` hands it
+    /// over
+    /// entire, and the `Task` tools write an entry at a time into the ledger. Either way what
+    /// leaves
+    /// here is one whole list, so nothing downstream knows which host it was reading.
+    private func planWritten(by use: ToolUseBlock) -> Plan? {
+        guard use.name != planTool else { return plan(from: use.input) }
+        return planLedger.written(by: use)
     }
 
     /// The record is passed whole rather than its timestamp and usage separately, because the third
@@ -200,6 +211,10 @@ public actor TranscriptReader {
     /// object shared by every result part the record carried, which is the host's shape.
     private func outcome(of result: ToolResultBlock, in message: MessageRecord) -> ToolCallOutcome {
         let status: ToolCallStatus = result.isError ? .failed : .completed
+        // A created task's id is reported HERE and nowhere else, so the ledger is fed on the way
+        // past. No event of its own: an entry learning the name updates will address it by is not
+        // a change to the list anybody is reading.
+        planLedger.identify(call: result.toolUseId, from: message.toolUseResult)
         return ToolCallOutcome(
             id: result.toolUseId,
             status: status,
