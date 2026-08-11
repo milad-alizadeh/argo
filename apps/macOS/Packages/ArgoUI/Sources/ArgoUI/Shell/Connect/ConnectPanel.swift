@@ -18,37 +18,48 @@ public struct ConnectPanel: View {
         self.actions = actions
     }
 
+    /// A `Form`, which is what a Mac settings surface is. The rows, their ground, their insets and
+    /// the label column all come from the platform, so this panel looks like the rest of macOS and
+    /// keeps looking like it when macOS changes.
     public var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.section) {
+        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
+            // A sheet has no title bar to hang `navigationTitle` on, so the heading is a line of
+            // its own, set at the identity rung and inset to the Form's own gutter.
             Text(panel.heading)
                 .argoText(ArgoTypography.identityHeading)
                 .foregroundStyle(argo.color.text.primary)
-            rows
-            if let challenge = panel.challenge {
-                DeviceCodeCard(challenge: challenge, stopWaiting: actions.stopWaiting)
+                .padding(.horizontal, ArgoSpacing.section)
+                .padding(.top, ArgoSpacing.section)
+            Form {
+                Section { rows }
+                if let challenge = panel.challenge {
+                    Section {
+                        DeviceCodeCard(challenge: challenge, stopWaiting: actions.stopWaiting)
+                    }
+                }
+                if let note = panel.note {
+                    Section { ConnectNoteView(note: note) }
+                }
             }
-            if let note = panel.note {
-                ConnectNoteView(note: note)
-            }
+            .formStyle(.grouped)
             call
+                .padding(.horizontal, ArgoSpacing.section)
+                .padding(.bottom, ArgoSpacing.section)
         }
-        .padding(ArgoSpacing.region)
         .frame(width: ArgoLayout.connectPanelWidth, alignment: .leading)
     }
 
-    private var rows: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-            ConnectRow(row: panel.folder, isDetailMachine: true) {
-                Button(panel.folderCall, action: actions.chooseFolder)
-                    .buttonStyle(.quiet)
-            }
-            ForEach(panel.ports) { port in
-                ConnectPortRow(row: port, actions: actions)
-            }
-            ConnectRow(row: panel.companion, isDetailMachine: false) { EmptyView() }
-            if let agent = panel.agent {
-                ConnectRow(row: agent, isDetailMachine: false) { EmptyView() }
-            }
+    @ViewBuilder private var rows: some View {
+        ConnectRow(row: panel.folder) {
+            Button(panel.folderCall, action: actions.chooseFolder)
+                .buttonStyle(.quiet)
+        }
+        ForEach(panel.ports) { port in
+            ConnectPortRow(row: port, actions: actions)
+        }
+        ConnectRow(row: panel.companion) { EmptyView() }
+        if let agent = panel.agent {
+            ConnectRow(row: agent) { EmptyView() }
         }
     }
 

@@ -49,8 +49,16 @@ extension ConnectPanelProjection {
     private static func portRow(_ port: ConnectPort, in reading: ConnectReading) -> PortRow {
         PortRow(
             id: port.port,
-            row: row(title: port.port.readableName, detail: detail(of: port, in: reading)),
-            choices: choices(for: port.port, in: reading),
+            row: row(
+                title: port.port.readableName,
+                detail: detail(of: port, in: reading),
+                isMachine: port.accountID != nil,
+            ),
+            // A Binding is a fact about a Project, so with no folder yet there is nothing to bind
+            // to and the choices are withheld rather than offered and then refused. Authorizing is
+            // NOT withheld: that is Account-level, it needs no Project, and it is the half of this
+            // row that genuinely completes in any order.
+            choices: reading.folder == nil ? [] : choices(for: port.port, in: reading),
             offers: offers(for: port.port, in: reading),
             scope: port.scope,
             note: fault(of: port).map(ConnectNote.init(fault:)),
@@ -63,6 +71,12 @@ extension ConnectPanelProjection {
     /// what it was is what makes it re-bindable rather than a row that quietly emptied itself.
     private static func detail(of port: ConnectPort, in reading: ConnectReading) -> String {
         guard let accountID = port.accountID, let scope = port.scope else {
+            // The one dependency between the rows, said where it applies rather than discovered by
+            // pressing something. Connecting an account still works here; pointing it at a
+            // repository needs a Project to point it FOR.
+            guard reading.folder != nil else {
+                return "\(port.port.benefit) Choose a folder first to say which one."
+            }
             return port.port.benefit
         }
         guard let account = reading.account(accountID) else {

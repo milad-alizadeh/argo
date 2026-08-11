@@ -16,6 +16,11 @@ enum ConnectPanelProjection {
         let title: String
         let detail: String
         let spoken: String
+        /// A path, a scope and an identity are machine facts and read as them; a sentence about
+        /// what a row buys you is prose. It lives on the row rather than at the call site because
+        /// the row already carries every other word it draws, and a flag passed in beside it would
+        /// let one caller set a folder in prose and another in the mono.
+        let isDetailMachine: Bool
     }
 
     struct Panel: Equatable {
@@ -53,8 +58,13 @@ enum ConnectPanelProjection {
         )
     }
 
-    static func row(title: String, detail: String) -> Row {
-        Row(title: title, detail: detail, spoken: "\(title), \(detail)")
+    static func row(title: String, detail: String, isMachine: Bool = false) -> Row {
+        Row(
+            title: title,
+            detail: detail,
+            spoken: "\(title), \(detail)",
+            isDetailMachine: isMachine,
+        )
     }
 
     private static func heading(of mode: ConnectPanelMode) -> String {
@@ -75,10 +85,13 @@ enum ConnectPanelProjection {
     /// discovered: the failure this panel exists to avoid is a setup that refuses to start until
     /// you have a repository and an organisation.
     private static func folderRow(from reading: ConnectReading) -> Row {
-        row(
-            title: "Folder",
-            detail: reading.folder ?? "Choose a folder to work in. Git is not required.",
-        )
+        guard let folder = reading.folder else {
+            return row(
+                title: "Folder",
+                detail: "Choose a folder to work in. Git is not required.",
+            )
+        }
+        return row(title: "Folder", detail: folder, isMachine: true)
     }
 
     /// Argo writes the plugin for every Session it starts, so this row has nothing to ask for. The

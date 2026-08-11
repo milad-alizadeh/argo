@@ -18,7 +18,7 @@ struct DeviceCodeCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-            Text("Type this code at \(challenge.provider.readableName)")
+            Text(DeviceCodeCopy.heading(for: challenge.provider))
                 .argoText(ArgoTypography.rowTitle)
                 .foregroundStyle(argo.color.text.primary)
             code
@@ -28,18 +28,15 @@ struct DeviceCodeCard: View {
                         .argoText(ArgoTypography.machineCaption)
                 }
                 Spacer(minLength: ArgoSpacing.base)
-                Button("Stop waiting", action: stopWaiting)
+                Button(DeviceCodeCopy.stop, action: stopWaiting)
                     .buttonStyle(.quiet)
             }
-            Text("Argo is waiting for you to finish in the browser.")
+            Text(DeviceCodeCopy.waiting)
                 .argoText(ArgoTypography.caption)
                 .foregroundStyle(argo.color.text.tertiary)
         }
-        .padding(ArgoSpacing.comfortable)
-        .background {
-            RoundedRectangle(cornerRadius: ArgoRadius.control)
-                .fill(argo.color.surface.raised)
-        }
+        // No ground of its own: it stands in a `Form` section, and the section IS the card. A
+        // second fill inside one would be two materials in the same box.
         .accessibilityElement(children: .contain)
         .accessibilityLabel(spoken)
     }
@@ -54,7 +51,7 @@ struct DeviceCodeCard: View {
                 .foregroundStyle(argo.color.text.primary)
                 .textSelection(.enabled)
                 .frame(width: ArgoLayout.deviceCodeWidth, alignment: .leading)
-            Button(hasCopied ? "Copied" : "Copy code", action: copy)
+            Button(hasCopied ? DeviceCodeCopy.copied : DeviceCodeCopy.copy, action: copy)
                 .buttonStyle(.quiet)
         }
     }
@@ -76,16 +73,12 @@ struct DeviceCodeCard: View {
 }
 
 #Preview("Device code — waiting on the browser") {
-    DeviceCodeCard(
-        challenge: ConnectChallenge(
-            provider: .github,
-            userCode: "WDJB-MJHT",
-            verificationURL: URL(string: "https://github.com/login/device")
-                ?? URL(fileURLWithPath: "/"),
-        ),
-        stopWaiting: {},
-    )
+    Form {
+        Section {
+            DeviceCodeCard(challenge: ConnectFixture.challenge, stopWaiting: {})
+        }
+    }
+    .formStyle(.grouped)
     .frame(width: ArgoLayout.connectPanelWidth)
-    .padding(ArgoSpacing.region)
     .argoAppearance()
 }

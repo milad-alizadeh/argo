@@ -91,6 +91,19 @@ public extension ConnectNote {
     }
 }
 
+public extension ConnectNote {
+    /// A provider Argo cannot sign in to yet. It lives here rather than at the one call site so
+    /// the copy sweep can see it: the panel never offers Linear, so this is reachable only if
+    /// something else asks, and unswept copy is copy the next edit can break.
+    static func notYetAuthorizable(_ provider: AccountProvider) -> ConnectNote {
+        ConnectNote(
+            what: "Argo cannot sign in to \(provider.readableName) yet.",
+            why: "That connection is still being built.",
+            fix: "Use a GitHub account for now.",
+        )
+    }
+}
+
 /// A Binding on disk that no longer reads, said the same way. Separate from the refusals because
 /// the two are answered at different moments: a refusal is a bind that never happened, and this is
 /// a choice already made that has come undone — so every fix here is about the row as it stands.

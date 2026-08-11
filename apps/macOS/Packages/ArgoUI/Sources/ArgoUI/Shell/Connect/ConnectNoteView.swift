@@ -40,10 +40,14 @@ struct ConnectNoteView: View {
 }
 
 #Preview("Connect note — a bind the provider refused") {
-    ConnectNoteView(note: ConnectNote(refusal: .scopeNotVisible("milad-alizadeh/argo")))
-        .frame(width: ArgoLayout.connectPanelWidth)
-        .padding(ArgoSpacing.region)
-        .argoAppearance()
+    Form {
+        Section {
+            ConnectNoteView(note: ConnectNote(refusal: .scopeNotVisible("milad-alizadeh/argo")))
+        }
+    }
+    .formStyle(.grouped)
+    .frame(width: ArgoLayout.connectPanelWidth)
+    .argoAppearance()
 }
 
 // The other shape the same value takes: a provider's own sentence in the middle line, which is

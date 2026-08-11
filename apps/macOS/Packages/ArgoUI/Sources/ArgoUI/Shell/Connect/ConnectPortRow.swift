@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// One port: the Account it reads through, the ones it could read through instead, and the way to
@@ -23,7 +24,7 @@ struct ConnectPortRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-            ConnectRow(row: row.row, isDetailMachine: row.isBound) { menu }
+            ConnectRow(row: row.row) { menu }
             if let note = row.note {
                 ConnectNoteView(note: note)
             }
@@ -97,7 +98,11 @@ struct ConnectPortRow: View {
 
     private func bind(_ draft: Draft) {
         guard !draft.scope.isEmpty else { return }
-        actions.bindPort(row.id, draft.choice.id, draft.scope)
+        actions.bindPort(ProjectBinding(
+            port: row.id,
+            accountID: draft.choice.id,
+            scope: draft.scope,
+        ))
         self.draft = nil
     }
 }

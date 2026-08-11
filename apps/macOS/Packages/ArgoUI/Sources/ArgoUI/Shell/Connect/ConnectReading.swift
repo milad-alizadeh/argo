@@ -22,11 +22,17 @@ public struct ConnectReading: Equatable, Sendable {
     /// The last thing that did not work. Cleared by the app the moment the user acts again, so a
     /// note never outlives the attempt it belongs to.
     public let note: ConnectNote?
-    /// The providers this build can actually start a grant with. Passed in rather than derived
-    /// from `AccountProvider.allCases`, because a provider with no flow behind it would be a
-    /// control that does nothing when pressed: Linear's grant is #371's, and until it lands
-    /// nothing here may offer it.
+    /// The providers this build can actually start a grant with — never `AccountProvider.allCases`,
+    /// because a provider with no flow behind it would be a control that does nothing when
+    /// pressed: Linear's grant is #371's, and until it lands nothing here may offer it.
+    ///
+    /// Injectable so a test can render the day Linear arrives, and defaulted to `authorizableToday`
+    /// so the list exists as ONE literal rather than one per caller.
     public let authorizable: [AccountProvider]
+
+    /// What this build can authorize, in one place. Beside the panel's own value rather than in the
+    /// app, because it is the answer every construction of this type defaults to.
+    public static let authorizableToday: [AccountProvider] = [.github]
     public let mode: ConnectPanelMode
 
     public init(
@@ -36,7 +42,7 @@ public struct ConnectReading: Equatable, Sendable {
         companion: ConnectCompanion = .includedWithSpawns,
         challenge: ConnectChallenge? = nil,
         note: ConnectNote? = nil,
-        authorizable: [AccountProvider] = [.github],
+        authorizable: [AccountProvider] = ConnectReading.authorizableToday,
         mode: ConnectPanelMode = .creating,
     ) {
         self.folder = folder

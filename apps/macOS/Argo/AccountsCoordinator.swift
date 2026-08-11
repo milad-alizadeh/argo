@@ -45,13 +45,17 @@ final class AccountsCoordinator {
 
     /// Open the panel on a Project, or on none: onboarding IS creating a Project (ADR-0015), so
     /// the panel with no Project is not an error state — it is the state that produces one.
-    func open(
-        on project: ProjectRecord?,
-        mode: ConnectPanelMode = .creating,
-        welcoming: Bool = false,
-    ) async {
+    ///
+    /// Which of the panel's two lives it opens in is not a caller's choice: a Project that exists
+    /// has settings and one that does not is about to be made, and letting a caller say otherwise
+    /// would let `Done` appear over a Project there is no record of.
+    ///
+    /// The Agent is `.claude` because that is the only one Argo can launch (`AgentCLI`), and
+    /// nothing stores a per-Project choice yet. The row states the fact; it does not offer a pick
+    /// between one option.
+    func open(on project: ProjectRecord?, welcoming: Bool = false) async {
         self.project = project
-        self.mode = mode
+        mode = project == nil ? .creating : .settings(agent: .claude)
         startsAtWelcome = welcoming
         note = nil
         isOpen = true
@@ -67,7 +71,7 @@ final class AccountsCoordinator {
     }
 
     func close() {
-        stopWaiting()
+        cancelWait()
         isOpen = false
         reading = nil
         startsAtWelcome = false
@@ -77,21 +81,30 @@ final class AccountsCoordinator {
     /// The folder was chosen and the Project registered, so the panel now has something to bind
     /// against. Registering on the pick rather than on `Create project` is what ADR-0015 means:
     /// the folder IS the Project, and the button below it only closes the panel.
+    ///
+    /// The mode deliberately does NOT move here. A panel that flipped to `Done` the moment a
+    /// folder was picked would rename its own button under the user's cursor mid-setup; `Create
+    /// project` stays until this panel closes, and the next opening is the one that reads
+    /// `Done`.
     func pointed(at project: ProjectRecord?) async {
         guard isOpen else { return }
         self.project = project
         await refresh()
     }
 
-    func bind(port: AccountPort, accountID: String, scope: String) async {
+    /// A folder has to exist first, and the panel says so on the row rather than offering the
+    /// choice and then refusing it — so this guard is the second line of that defence, not the
+    /// first, and it names the real cause rather than a registration that went missing.
+    func bind(_ binding: ProjectBinding) async {
         guard let project else {
-            return await report(ConnectNote(refusal: .noSuchProject))
+            return await report(ConnectNote(
+                what: "There is no project to connect this to yet.",
+                why: "A connection is a fact about one project, and none has been created.",
+                fix: "Choose a folder first, then pick an account for this row.",
+            ))
         }
         do {
-            try await bindings.bind(
-                ProjectBinding(port: port, accountID: accountID, scope: scope),
-                to: project.id,
-            )
+            try await bindings.bind(binding, to: project.id)
             note = nil
         } catch let refusal as BindingRefusal {
             note = ConnectNote(refusal: refusal)
@@ -138,9 +151,7 @@ final class AccountsCoordinator {
             companion: .includedWithSpawns,
             challenge: challenge,
             note: note,
-            // GitHub alone: Linear's grant is #371's, and a control with no flow behind it would
-            // do nothing when pressed.
-            authorizable: [.github],
+            authorizable: ConnectReading.authorizableToday,
             mode: mode,
         )
     }
@@ -148,5 +159,9 @@ final class AccountsCoordinator {
     func report(_ note: ConnectNote) async {
         self.note = note
         await refresh()
+    }
+
+    func clearNote() {
+        note = nil
     }
 }

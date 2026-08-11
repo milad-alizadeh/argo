@@ -26,7 +26,7 @@ struct ProjectRowMenu: View {
             // the app menu because these are settings about a PROJECT, and the row is where a
             // Project is addressed.
             Button(ProjectSettingsCommands.label, systemImage: ArgoSymbol.projectSettings) {
-                actions.openProjectSettings(row.id)
+                actions.openProjectPanel(row.id)
                 dismiss()
             }
             Divider()

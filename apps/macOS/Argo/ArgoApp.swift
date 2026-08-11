@@ -113,11 +113,9 @@ struct ArgoApp: App {
                 }
             },
             connectAccount: { provider in accounts.connect(provider) },
-            bindPort: { port, accountID, scope in
-                Task { await accounts.bind(port: port, accountID: accountID, scope: scope) }
-            },
+            bindPort: { binding in Task { await accounts.bind(binding) } },
             unbindPort: { port in Task { await accounts.unbind(port) } },
-            stopWaiting: { accounts.stopWaiting() },
+            stopWaiting: { Task { await accounts.stopWaiting() } },
             finish: { accounts.close() },
         )
     }
@@ -137,13 +135,8 @@ struct ArgoApp: App {
             locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
             revealProject: { id in cockpit.revealProject(projectID: id) },
             removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
-            openProjectSettings: { id in
-                Task {
-                    await accounts.open(
-                        on: cockpit.registry.project(id: id),
-                        mode: .settings(agent: .claude),
-                    )
-                }
+            openProjectPanel: { id in
+                Task { await accounts.open(on: id.flatMap(cockpit.registry.project(id:))) }
             },
             spawnSession: { await cockpit.spawnSession() },
             setSessionArchived: { id, isArchived in

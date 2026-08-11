@@ -117,19 +117,24 @@ struct ConnectPanelProjectionTests {
     /// A provider with no flow behind it in this build is not offered: a control whose only
     /// outcome is nothing happening is worse than its absence.
     @Test
-    func `a provider Argo cannot authorize yet is not offered`() throws {
-        let reading = ConnectReading(authorizable: [.github, .linear])
-        let panel = ConnectPanelProjection.panel(from: reading)
-        let issues = try #require(panel.ports.first)
-
-        #expect(issues.offers.map(\.id) == [.github, .linear])
+    func `only a provider Argo can authorize is offered`() {
         #expect(ConnectPanelProjection.panel(from: ConnectFixture.fresh).ports.allSatisfy {
             $0.offers.map(\.id) == [.github]
         })
     }
 
+    /// The other half of that claim: the list is what the app hands over, not a set this file
+    /// decided. The day Linear's grant lands, nothing here has to change for it to appear.
     @Test
-    func `a Binding whose Account was removed says so and stays re-bindable`() throws {
+    func `the offered set is whatever the app says it can authorize`() throws {
+        let reading = ConnectReading(authorizable: [.github, .linear])
+        let issues = try #require(ConnectPanelProjection.panel(from: reading).ports.first)
+
+        #expect(issues.offers.map(\.id) == [.github, .linear])
+    }
+
+    @Test
+    func `a Binding whose Account was removed keeps its place and says what went`() throws {
         let reading = ConnectReading(
             folder: ConnectFixture.folder,
             accounts: [ConnectFixture.personal],
@@ -148,7 +153,7 @@ struct ConnectPanelProjectionTests {
     }
 
     @Test
-    func `settings is the same panel with one word and one row more`() {
+    func `settings is the same panel, one word and one row further on`() {
         let reading = ConnectReading(
             folder: ConnectFixture.folder,
             accounts: [ConnectFixture.personal],
@@ -168,17 +173,21 @@ struct ConnectPanelProjectionTests {
         #expect(ConnectPanelProjection.panel(from: ConnectFixture.wired).agent == nil)
     }
 
-    /// #570 owns this row's states. Until it lands, the panel says the one thing already true and
-    /// falls to the registry's own word for a fact nobody can stand behind.
+    /// #570 owns this row's states. Until it lands, the panel says the one thing already true.
     @Test
-    func `the companion row states what ships and reads unknown otherwise`() {
-        let known = ConnectPanelProjection.panel(from: ConnectFixture.wired)
-        let unknown = ConnectPanelProjection.panel(
-            from: ConnectReading(companion: .unknown),
-        )
+    func `the companion row states the one thing that already ships`() {
+        let panel = ConnectPanelProjection.panel(from: ConnectFixture.wired)
 
-        #expect(known.companion.detail.contains("nothing to install"))
-        #expect(unknown.companion.detail == "unknown")
+        #expect(panel.companion.detail.contains("nothing to install"))
+    }
+
+    /// And where even that cannot be established, it falls to the registry's own word for a fact
+    /// nobody can stand behind rather than to the nearest guess.
+    @Test
+    func `a companion state Argo cannot establish reads unknown`() {
+        let panel = ConnectPanelProjection.panel(from: ConnectReading(companion: .unknown))
+
+        #expect(panel.companion.detail == "unknown")
     }
 
     @Test

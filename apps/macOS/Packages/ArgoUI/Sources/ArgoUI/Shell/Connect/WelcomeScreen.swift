@@ -8,54 +8,35 @@ import SwiftUI
 struct WelcomeScreen: View {
     @Environment(\.argo) private var argo
 
-    /// One promise, said once. A value rather than three copies of a `VStack`, because the three
-    /// differ in their words and in nothing else.
-    private struct Benefit: Identifiable {
-        let id: String
-        let detail: String
-    }
-
-    private static let benefits = [
-        Benefit(
-            id: "Every session in one window",
-            detail: "See what each agent is doing, and step in when one needs you.",
-        ),
-        Benefit(
-            id: "Read the work, not just the result",
-            detail: "Follow what an agent changed, ran and asked, as it happens.",
-        ),
-        Benefit(
-            id: "Your issues and pull requests beside it",
-            detail: "Connect an account and the backlog, reviews and checks come with it.",
-        ),
-    ]
-
     let start: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.section) {
             VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-                Text("Argo watches the agents you run.")
+                Text(WelcomeCopy.heading)
                     .argoText(ArgoTypography.identityHeading)
                     .foregroundStyle(argo.color.text.primary)
-                Text("Point it at a folder and it starts there. Everything else is optional.")
+                Text(WelcomeCopy.subheading)
                     .argoText(ArgoTypography.body)
                     .foregroundStyle(argo.color.text.secondary)
             }
-            VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-                ForEach(Self.benefits) { benefit in
-                    ConnectRow(
-                        row: ConnectPanelProjection.row(
-                            title: benefit.id,
-                            detail: benefit.detail,
-                        ),
-                        isDetailMachine: false,
-                    ) { EmptyView() }
+            // Not the Form the Connect half is: nothing here is settable, and a settings surface
+            // whose rows do nothing when clicked is a promise the screen cannot keep.
+            VStack(alignment: .leading, spacing: ArgoSpacing.loose) {
+                ForEach(WelcomeCopy.benefits) { benefit in
+                    VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
+                        Text(benefit.title)
+                            .argoText(ArgoTypography.rowTitle)
+                            .foregroundStyle(argo.color.text.primary)
+                        Text(benefit.detail)
+                            .argoText(ArgoTypography.rowMeta)
+                            .foregroundStyle(argo.color.text.secondary)
+                    }
                 }
             }
             HStack {
                 Spacer(minLength: ArgoSpacing.flush)
-                Button("Get started", action: start)
+                Button(WelcomeCopy.start, action: start)
                     .argoText(ArgoTypography.control)
                     .keyboardShortcut(.defaultAction)
             }

@@ -35,6 +35,7 @@ struct ConnectCopyTests {
             .malformedResponse,
             .refused(code: "device_flow_disabled", description: ""),
         ].map { ConnectNote(deviceFlow: $0, provider: .github) }
+        + AccountProvider.allCases.map(ConnectNote.notYetAuthorizable)
 
     static let panels: [ConnectPanelProjection.Panel] = [
         ConnectFixture.fresh,
@@ -45,9 +46,18 @@ struct ConnectCopyTests {
         ConnectReading(folder: ConnectFixture.folder, mode: .settings(agent: .claude)),
     ].map(ConnectPanelProjection.panel(from:))
 
-    /// Every string the panel and its failures can render, flattened once.
+    /// Every string this flow can render, flattened once: the panel's rows, its failures, the
+    /// Welcome screen, the device-code card, and the two labels the menu bar carries.
+    ///
+    /// The screens that are not projections keep their words as values (`WelcomeScreen.Copy`,
+    /// `DeviceCodeCard.Copy`) precisely so they can be swept here. A rule proved on the strings
+    /// somebody remembered is a rule the next string breaks.
     static var words: [String] {
-        panels.flatMap(strings(of:)) + notes.flatMap { [$0.what, $0.why, $0.fix] }
+        panels.flatMap(strings(of:))
+            + notes.flatMap { [$0.what, $0.why, $0.fix] }
+            + WelcomeCopy.all
+            + DeviceCodeCopy.all
+            + [ProjectSettingsCommands.label, ProjectSettingsCommands.unstartedLabel]
     }
 
     @Test

@@ -35,7 +35,7 @@ struct ConnectPortResolutionTests {
     /// Never collapsed into `unbound`: a port whose choice has come undone is re-bindable, and
     /// saying so is what makes it so.
     @Test
-    func `a broken port keeps what it was pointing at, and says what went wrong`() {
+    func `a broken port keeps what it was pointing at, under the reason it broke`() {
         let binding = ProjectBinding(
             port: .workItem,
             accountID: ConnectFixture.work.id,
