@@ -24,6 +24,9 @@ public actor TranscriptReader {
     }
 
     private var openCalls: [String: OpenCall] = [:]
+    /// The reader's second memory, and for the same reason as its first: a host that writes its
+    /// plan one entry at a time leaves the list itself nowhere in the record.
+    private var planLedger = PlanLedger()
     private var context = TranscriptContextCursor()
     private let readImage: ImageReader
 
@@ -79,6 +82,10 @@ public actor TranscriptReader {
 
         let results = message.content.compactMap { block -> TranscriptEvent? in
             guard case let .toolResult(result) = block else { return nil }
+            // A created task's id is reported HERE and nowhere else, so the ledger is fed as the
+            // result goes past. No event of its own: an entry learning the name updates will
+            // address it by is not a change to the list anybody is reading.
+            planLedger.identify(call: result.toolUseId, from: message.toolUseResult)
             return .toolCallOutcome(outcome(of: result, in: message))
         }
         // A record carrying results is the tool answering, never the user asking.
@@ -157,7 +164,7 @@ public actor TranscriptReader {
             case let .thinking(text):
                 return said(text).map { [.thought(markdown: $0)] } ?? []
             case let .toolUse(use):
-                return callEvents(use, atMs: message.timestampMs)
+                return callEvents(use, in: message)
             case .toolResult, .image, .unreadable:
                 return []
             }
@@ -173,7 +180,7 @@ public actor TranscriptReader {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : text
     }
 
-    private func callEvents(_ use: ToolUseBlock, atMs: Int?) -> [TranscriptEvent] {
+    private func callEvents(_ use: ToolUseBlock, in message: MessageRecord) -> [TranscriptEvent] {
         let kind = toolCallKind(use.name)
         openCalls[use.id] = OpenCall(kind: kind, name: use.name, target: toolCallTarget(use.input))
         let call = ToolCall(
@@ -182,17 +189,29 @@ public actor TranscriptReader {
             kind: kind,
             target: toolCallTarget(use.input),
             narration: toolCallNarration(use.input),
-            atMs: atMs,
+            atMs: message.timestampMs,
             // Gated on the tool's own name: `AskUserQuestion` is how a record distinguishes a
             // question that BLOCKS from one the agent merely typed into a message.
             ask: use.name == ToolCall.askUserQuestion ? ask(from: use.input) : nil,
         )
-        // The plan tool's input IS the plan, so the call and the list it wrote are one record's
-        // worth of news. Both are emitted: the call is what happened, the plan is what it said.
-        guard use.name == planTool, let written = plan(from: use.input) else {
-            return [.toolCall(call)]
-        }
+        // A call that wrote to the plan and the list it left behind are one record's worth of news.
+        // Both are emitted: the call is what happened, the plan is what it said.
+        guard let written = planWritten(by: use, in: message) else { return [.toolCall(call)] }
         return [.toolCall(call), .plan(written)]
+    }
+
+    /// The whole list after this call, whichever way the host writes one — `TodoWrite` hands it
+    /// over entire, and the `Task` tools write an entry at a time into the ledger. Either way what
+    /// leaves here is one whole list, so nothing downstream knows which host it was reading.
+    ///
+    /// A SIDECHAIN record writes nothing, the same guard `.usage` and the turn end already carry:
+    /// the Plan is Session-scoped (ADR-0020), and a delegate's own to-do list folded into its
+    /// parent's would put a subagent's steps on the Session's pill — permanently, since an
+    /// incremental list is never replaced whole by the next write.
+    private func planWritten(by use: ToolUseBlock, in message: MessageRecord) -> Plan? {
+        guard !message.isSidechain else { return nil }
+        guard use.name != planTool else { return plan(from: use.input) }
+        return planLedger.written(by: use)
     }
 
     /// The record is passed whole rather than its timestamp and usage separately, because the third

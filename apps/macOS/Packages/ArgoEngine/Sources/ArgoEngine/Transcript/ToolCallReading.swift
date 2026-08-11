@@ -22,8 +22,18 @@ private let kindByName: [String: ToolCallKind] = [
     "Task": .delegate,
     "Agent": .delegate,
     "Workflow": .delegate,
-    "TodoWrite": .plan,
+    planTool: .plan,
     "ExitPlanMode": .plan,
+    // The two that write the same list an entry at a time. `plan` and not `other`: the pill draws
+    // what they wrote, and a feed drawing them too would say it a second time in rows
+    // (`FeedCallReading`). Named by the constants below rather than repeated as strings, so a third
+    // one is added in one place.
+    //
+    // `TaskList` is deliberately NOT here, and neither are `TaskStop`/`TaskOutput`: none of them
+    // writes to the list, and `plan` is not an inert label — it hides the row. A read the agent
+    // performed would disappear from the rendering without joining the pill.
+    taskCreateTool: .plan,
+    taskUpdateTool: .plan,
     // Tools that CHANGE something outside the agent, which a feed must not fold away as a look.
     // `execute` rather than `edit`: none of them produces a patch, and `execute` is precisely the
     // kind whose effect the record does not describe.
@@ -32,8 +42,23 @@ private let kindByName: [String: ToolCallKind] = [
     "Skill": .skill,
 ]
 
-/// The tool whose input IS the Plan.
+/// The tool whose input IS the whole Plan.
 let planTool = "TodoWrite"
+
+/// The two that write it one entry at a time instead, folded into a list by `PlanLedger`.
+let taskCreateTool = "TaskCreate"
+let taskUpdateTool = "TaskUpdate"
+
+/// The fields those two write it in. `taskId` is camel-cased where the background-task tools spell
+/// the same idea `task_id` — which is the host telling two vocabularies apart, not a typo, and the
+/// reason `TaskStop` is not read as a write to this list.
+let taskSubjectKey = "subject"
+let taskStatusKey = "status"
+let taskIDKey = "taskId"
+
+/// Where a create's RESULT reports the id updates will name it by — the only place it is written.
+let taskResultKey = "task"
+let taskResultIDKey = "id"
 
 /// How a host names a tool it reached over MCP: `mcp__<server>__<tool>`. A prefix rather than a
 /// registry, because the tools behind it are arbitrary — the name is the only thing that says where
@@ -80,11 +105,18 @@ func toolCallNarration(_ input: JSONValue) -> String? {
     return written
 }
 
-private func planEntryStatus(_ raw: String?) -> PlanEntryStatus {
+/// A status the record actually wrote, or nothing.
+///
+/// Strict, because an incremental write is only worth folding in where it SAYS something: an update
+/// that carried no status — a rewording — must leave the entry's own status alone rather than reset
+/// it to a default. A whole-list write reads it the other way and falls back to `pending`: that
+/// list is replaced entire, so the entry exists either way and the only question is what it says.
+func writtenPlanEntryStatus(_ raw: String?) -> PlanEntryStatus? {
     switch raw {
+    case "pending": .pending
     case "in_progress": .inProgress
     case "completed": .completed
-    default: .pending
+    default: nil
     }
 }
 
@@ -94,7 +126,8 @@ private func planEntryStatus(_ raw: String?) -> PlanEntryStatus {
 func plan(from input: JSONValue) -> Plan? {
     let entries = input["todos"]?.array.compactMap { todo -> PlanEntry? in
         guard let text = todo.stringField("content") else { return nil }
-        return PlanEntry(text: text, status: planEntryStatus(todo.stringField("status")))
+        let written = writtenPlanEntryStatus(todo.stringField(taskStatusKey))
+        return PlanEntry(text: text, status: written ?? .pending)
     } ?? []
     return entries.isEmpty ? nil : Plan(entries: entries)
 }
