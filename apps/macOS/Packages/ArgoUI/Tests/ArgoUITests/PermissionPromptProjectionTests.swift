@@ -10,6 +10,7 @@ struct PermissionPromptProjectionTests {
     private func session(
         permission: PermissionRequest?,
         location: String? = "/Users/someone/repo",
+        standing: [String] = [],
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -20,6 +21,7 @@ struct PermissionPromptProjectionTests {
             access: .managed,
             status: permission == nil ? .idle : .permission,
             permission: permission,
+            standingAllows: standing.map(StandingAllow.init(toolName:)),
         )
     }
 
@@ -71,5 +73,15 @@ struct PermissionPromptProjectionTests {
 
         #expect(prompt.subject == "wants to write to a file")
         #expect(prompt.caption == "+2 −1 · 2 hunks")
+    }
+
+    @Test
+    func `a prompt carries what the Session has already stopped asking about`() throws {
+        let request = request(.command("ls"), tool: "Bash")
+        let prompt = try #require(PermissionPromptProjection.prompt(
+            for: session(permission: request, standing: ["Read", "Grep"]),
+        ))
+
+        #expect(prompt.standingAllows.map(\.toolName) == ["Read", "Grep"])
     }
 }

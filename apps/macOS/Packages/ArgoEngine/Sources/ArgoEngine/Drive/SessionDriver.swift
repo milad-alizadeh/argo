@@ -32,6 +32,14 @@ public protocol SessionDriver {
         answering requestID: String,
         for sessionID: String,
     ) throws
+
+    /// Take back one standing allow (#572). The way OUT of `allowAlways`, and on the port for the
+    /// same reason `decide` is: it reaches into the gate Argo owns, and a grant with no way back is
+    /// not a decision a person can make carefully.
+    ///
+    /// Named by tool because that is what the grant is keyed by, and a grant that was already gone
+    /// raises `nothingPending` rather than passing silently — the user clicked something.
+    func revokeStandingAllow(_ toolName: String, for sessionID: String) throws
 }
 
 /// Whether there is a Turn in the text at all. On the port rather than in an adapter — it is the

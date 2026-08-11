@@ -13,6 +13,10 @@ enum SessionComposerProjection {
         /// #558 moves it off the header (design decision 2). Effort joins it there too, when it
         /// is a value something actually holds.
         let facts: String?
+        /// What this Session has stopped asking about (#572). On the composer because that is the
+        /// surface a user is in front of every turn — a standing decision has to be findable
+        /// without being looked for. Empty for a Session holding none, which draws no tray.
+        let standingAllows: [StandingAllow]
     }
 
     /// A composer only for a Session Argo can put keystrokes to: managed, and not over. Everything
@@ -26,6 +30,7 @@ enum SessionComposerProjection {
             sessionID: session.id,
             placeholder: placeholder(addressing: session.cli),
             facts: session.model.map(ReadableModelName.readable),
+            standingAllows: StandingAllowProjection.allows(for: session),
         )
     }
 

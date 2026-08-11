@@ -77,14 +77,17 @@ extension PermissionRequest.Target {
     }
 }
 
-/// The user's answer to a pending Permission — the composer's other intent, and both of the words
-/// the hook's reply vocabulary has room for. `ask` is deliberately unrepresentable: it would fall
-/// through to the hidden TUI dialog, which has no reader.
+/// The user's answer to a pending Permission — the composer's other intent. `ask` is deliberately
+/// unrepresentable: it would fall through to the hidden TUI dialog, which has no reader.
 ///
-/// There is no standing "allow this tool from now on" here either, and its absence is a decision
-/// (#572): the version that shipped first was a set of tool names nobody could see or revoke, and
-/// a grant that cannot be found later is the thing this prompt exists to prevent.
+/// Three answers here and still two words on the wire. `allowAlways` is an allow like any other as
+/// far as the hook is concerned; what makes it standing happens on Argo's side of the socket, as a
+/// `StandingAllow` the Session publishes and the user can take back (#572).
 public enum PermissionDecision: Sendable, Equatable {
     case allow
+    /// Allow this call, and stop asking about this tool in this Session — exactly that scope, which
+    /// is what the control that raises it says. It ends when the grant is revoked or the Session
+    /// does, and it survives no restart: the gate that would honour it is per-claim.
+    case allowAlways
     case deny
 }

@@ -21,6 +21,9 @@ enum PermissionPromptProjection {
         /// The quiet line under the target: the Workspace a command runs in, or an edit's
         /// `+1 −1 · 1 hunk`. Absent where neither fact exists.
         let caption: String?
+        /// What this Session has already stopped asking about (#572) — on the prompt because the
+        /// prompt is where those grants get made, and empty for a Session holding none.
+        let standingAllows: [StandingAllow]
     }
 
     /// A prompt only while the Session is blocked on one. The composer's slot is singular: the
@@ -35,6 +38,7 @@ enum PermissionPromptProjection {
             subject: subject(of: permission.target),
             target: permission.target,
             caption: caption(of: permission.target, in: session),
+            standingAllows: StandingAllowProjection.allows(for: session),
         )
     }
 

@@ -49,6 +49,8 @@ struct InstrumentDeckShell: View {
     var prompt: PermissionPromptProjection.Prompt?
     /// The answer to it. Inert by default, for the reason `send` is.
     var decide: (PermissionDecision) -> Void = { _ in }
+    /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
+    var revoke: (String) -> Void = { _ in }
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below, because a
     /// seam is a preference of the window and not a fact about the Session — keyed with the room it
@@ -81,6 +83,7 @@ struct InstrumentDeckShell: View {
                 send: send,
                 prompt: prompt,
                 decide: decide,
+                revoke: revoke,
                 seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
             )
             // The identity, spent. SwiftUI discards a view's whole state when its id changes, which

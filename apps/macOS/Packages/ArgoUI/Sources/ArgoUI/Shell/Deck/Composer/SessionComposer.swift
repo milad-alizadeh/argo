@@ -13,6 +13,8 @@ struct SessionComposer: View {
     /// One Turn to the Session, or a thrown `SessionDriveError` the seam repeats. A closure and
     /// not a driver, so the vessel renders from a preview or a specimen with nothing behind it.
     let send: (String) throws -> Void
+    /// Take back a standing allow, by tool (#572). A closure for the reason `send` is.
+    let revoke: (String) -> Void
 
     @State private var draft: ComposerDraft
     @State private var mode: ComposerMode = .code
@@ -20,10 +22,12 @@ struct SessionComposer: View {
     init(
         composer: SessionComposerProjection.Composer,
         send: @escaping (String) throws -> Void,
+        revoke: @escaping (String) -> Void = { _ in },
         draft: ComposerDraft = ComposerDraft(),
     ) {
         self.composer = composer
         self.send = send
+        self.revoke = revoke
         _draft = State(initialValue: draft)
     }
 
@@ -40,6 +44,9 @@ struct SessionComposer: View {
 
     private var vessel: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
+            if !composer.standingAllows.isEmpty {
+                StandingAllowTray(allows: composer.standingAllows, revoke: revoke)
+            }
             ComposerField(text: $draft.text, placeholder: composer.placeholder, submit: submit)
             ComposerFooter(
                 mode: $mode,
@@ -66,34 +73,18 @@ struct SessionComposer: View {
 }
 
 #Preview("Composer — at rest") {
-    SessionComposer(
-        composer: SessionComposerProjection.Composer(
-            sessionID: "session",
-            placeholder: "Message Claude Code…",
-            facts: "Opus 5",
-        ),
-        send: { _ in },
-    )
-    .padding(ArgoSpacing.section)
-    .frame(width: 760)
-    .argoDeckSurface()
-    .argoAppearance()
+    SessionComposer(composer: ComposerSpecimen.composer, send: { _ in })
+        .padding(ArgoSpacing.section)
+        .frame(width: 760)
+        .argoDeckSurface()
+        .argoAppearance()
 }
 
 #Preview("Composer — holding a draft") {
     SessionComposer(
-        composer: SessionComposerProjection.Composer(
-            sessionID: "session",
-            placeholder: "Message Claude Code…",
-            facts: "Opus 5",
-        ),
+        composer: ComposerSpecimen.composer,
         send: { _ in },
-        draft: ComposerDraft(
-            text: """
-            The roster sorts on last activity, but the caption still says "by name".
-            Fix the caption, not the sort: the sort is right.
-            """,
-        ),
+        draft: ComposerSpecimen.typing,
     )
     .padding(ArgoSpacing.section)
     .frame(width: 760)
@@ -103,16 +94,9 @@ struct SessionComposer: View {
 
 #Preview("Composer — a send the Session refused") {
     SessionComposer(
-        composer: SessionComposerProjection.Composer(
-            sessionID: "session",
-            placeholder: "Message Claude Code…",
-            facts: "Opus 5",
-        ),
+        composer: ComposerSpecimen.composer,
         send: { _ in },
-        draft: ComposerDraft(
-            text: "Carry on with the plan.",
-            refusal: "Argo no longer holds this Session — nothing was sent",
-        ),
+        draft: ComposerSpecimen.refused,
     )
     .padding(ArgoSpacing.section)
     .frame(width: 760)
@@ -120,18 +104,19 @@ struct SessionComposer: View {
     .argoAppearance()
 }
 
+#Preview("Composer — holding standing allows") {
+    SessionComposer(composer: ComposerSpecimen.standing, send: { _ in })
+        .padding(ArgoSpacing.section)
+        .frame(width: 760)
+        .argoDeckSurface()
+        .argoAppearance()
+}
+
 #Preview("Composer — the Reduce Transparency fallback") {
-    SessionComposer(
-        composer: SessionComposerProjection.Composer(
-            sessionID: "session",
-            placeholder: "Message Claude Code…",
-            facts: "Opus 5",
-        ),
-        send: { _ in },
-    )
-    .padding(ArgoSpacing.section)
-    .frame(width: 760)
-    .argoWithoutTransparency()
-    .argoDeckSurface()
-    .argoAppearance()
+    SessionComposer(composer: ComposerSpecimen.composer, send: { _ in })
+        .padding(ArgoSpacing.section)
+        .frame(width: 760)
+        .argoWithoutTransparency()
+        .argoDeckSurface()
+        .argoAppearance()
 }

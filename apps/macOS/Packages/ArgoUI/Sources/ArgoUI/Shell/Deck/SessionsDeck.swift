@@ -42,6 +42,8 @@ struct SessionsDeck: View {
     var prompt: PermissionPromptProjection.Prompt?
     /// The answer to it. Inert by default for the reason `send` is.
     var decide: (PermissionDecision) -> Void = { _ in }
+    /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
+    var revoke: (String) -> Void = { _ in }
     /// Where the reader dragged the deck's seams — held above this view, never in it. See
     /// `DeckSeams`.
     var seams = DeckSeams.unheld
@@ -65,6 +67,7 @@ struct SessionsDeck: View {
                 send: send,
                 prompt: prompt,
                 decide: decide,
+                revoke: revoke,
                 seams: seams,
             )
         }

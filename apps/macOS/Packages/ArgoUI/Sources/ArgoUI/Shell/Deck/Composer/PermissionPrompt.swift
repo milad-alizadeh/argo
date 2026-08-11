@@ -11,9 +11,16 @@ struct PermissionPrompt: View {
     /// The user's answer. A closure and not a driver, so the vessel renders from a preview or a
     /// specimen with nothing behind it. Never `ask` by construction — the type has no case for it.
     let decide: (PermissionDecision) -> Void
+    /// Take back a standing allow this Session already holds, by tool. Here as well as on the
+    /// composer because the prompt is where grants are MADE: a reader ruling on one tool should be
+    /// able to see, and undo, what they have already blessed.
+    var revoke: (String) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
+            if !prompt.standingAllows.isEmpty {
+                StandingAllowTray(allows: prompt.standingAllows, revoke: revoke)
+            }
             PermissionPromptHeader()
             subject
             PermissionPromptTarget(target: prompt.target)
@@ -22,7 +29,7 @@ struct PermissionPrompt: View {
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(argo.color.text.tertiary)
             }
-            PermissionPromptFooter(decide: decide)
+            PermissionPromptFooter(toolName: prompt.toolName, decide: decide)
         }
         .padding(.top, ArgoSpacing.comfortable)
         .padding(.leading, ArgoSpacing.loose)

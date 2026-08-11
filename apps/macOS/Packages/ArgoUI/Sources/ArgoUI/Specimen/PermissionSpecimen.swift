@@ -24,6 +24,18 @@ enum PermissionSpecimen {
         caption: "+1 −1 · 1 hunk",
     )
 
+    /// The same command prompt on a Session that has already stopped asking about two other tools
+    /// (#572) — the state where the grant made here is a thing on screen rather than a memory.
+    static let standing = PermissionPromptProjection.Prompt(
+        sessionID: command.sessionID,
+        requestID: command.requestID,
+        toolName: command.toolName,
+        subject: command.subject,
+        target: command.target,
+        caption: command.caption,
+        standingAllows: ["Read", "Grep"].map(StandingAllow.init(toolName:)),
+    )
+
     private static func prompt(
         toolName: String,
         subject: String,
@@ -38,6 +50,7 @@ enum PermissionSpecimen {
             subject: subject,
             target: target,
             caption: caption,
+            standingAllows: [],
         )
     }
 }

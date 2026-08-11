@@ -24,4 +24,13 @@ extension CockpitCoordinator {
             try hub.driver.decide(decision, answering: requestID, for: sessionID)
         } catch {}
     }
+
+    /// One standing allow taken back (#572). A refusal is dropped for the reason a decision's is:
+    /// both of them mean the grant that chip was drawn for is already gone, and the chip leaving
+    /// the tray says so.
+    func revokeStandingAllow(_ toolName: String, for sessionID: String) {
+        do {
+            try hub.driver.revokeStandingAllow(toolName, for: sessionID)
+        } catch {}
+    }
 }
