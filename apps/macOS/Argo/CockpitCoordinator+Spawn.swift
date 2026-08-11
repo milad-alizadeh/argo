@@ -20,12 +20,8 @@ extension CockpitCoordinator {
         return nil
     }
 
-    /// The same spawn in another Session's folder (#546) — the one act the line on an undriveable
-    /// Session offers. Seeded with that Session's cwd and nothing else: this is a fresh start on
-    /// the same branch, not a handoff, so it carries no brief and no opening prompt.
-    ///
-    /// A Session the Hub no longer holds, or one that never had a folder, is refused where the
-    /// spawn's own refusals are — the reader gets a sentence rather than a press that did nothing.
+    /// The same spawn in another Session's folder (#546). Seeded with that Session's cwd and
+    /// nothing else: a fresh start on the same branch, not a handoff, so no brief and no prompt.
     func spawnSession(beside sessionID: String) async -> String? {
         do {
             guard let cwd = hub.sessions.first(where: { $0.id == sessionID })?.cwd else {

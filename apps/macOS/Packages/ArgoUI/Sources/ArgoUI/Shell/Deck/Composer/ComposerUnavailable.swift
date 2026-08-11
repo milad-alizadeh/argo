@@ -3,12 +3,8 @@ import SwiftUI
 /// What stands where the composer would be for a Session that cannot be driven (#546, design
 /// decision 7): a mark, the reading, and the sentence saying why in one line.
 ///
-/// A row at the deck's foot rather than a vessel floating over the feed. The composer floats
-/// because the reading runs under it and stays legible through the glass; this replaces the
-/// reading's end rather than covering it, so it takes its own height and the feed stops above it.
-///
-/// The one control it ever carries is the exit — a fresh Session in the same folder — and only
-/// where that act is real.
+/// A ROW at the deck's foot and not a vessel over the feed — it replaces the reading's end rather
+/// than letting it run underneath, so it takes its own height.
 struct ComposerUnavailable: View {
     @Environment(\.argo) private var argo
 
@@ -59,9 +55,8 @@ struct ComposerUnavailable: View {
             .foregroundStyle(argo.color.text.secondary)
     }
 
-    /// The one act available on a Session past steering. Its own words rather than the toolbar's
-    /// `New Session`: what makes this offer worth pressing is that it lands on the SAME branch, and
-    /// the verb alone would read as the button already on the bar.
+    /// The one act available on a Session past steering. Named for the branch rather than spelled
+    /// `New Session`, which is the button already on the toolbar.
     private var exit: some View {
         Button(action: start) {
             if isStarting {
@@ -80,7 +75,7 @@ struct ComposerUnavailable: View {
         .accessibilityHint("Starts an agent in the folder this Session was running in")
     }
 
-    static let exitLabel = "New Session on this branch"
+    private static let exitLabel = "New Session on this branch"
 
     /// Lowered whichever way the spawn went, for `NewSessionButton.start`'s reason: a refusal
     /// reports itself in an alert, and a control still spinning behind it claims otherwise.

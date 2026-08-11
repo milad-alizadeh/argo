@@ -1,22 +1,22 @@
 /// Why a Session has no composer, and what the line in its place says (#546, design decision 7).
 ///
-/// A degraded composer is ABSENT, not disabled: a greyed field invites a click and gives no reason,
-/// where one line answers the question the field would have raised.
-///
-/// The words live on the reason rather than in the view, for `SessionMode+Rung`'s reason — which
-/// sentence a case carries is a fact about the case, and a `switch` in the view would be a second
-/// place to forget one when the ladder next grows.
+/// The words live on the reason rather than in the view, for `SessionMode+Rung`'s reason: which
+/// sentence a case carries is a fact about the case.
 extension SessionComposerProjection {
     enum Unavailable: CaseIterable, Equatable {
         /// Never Argo's. Read-only from the first observation, and staying that way.
         case external
         /// Was Argo's: the PTY died and ownership cannot be re-adopted (`CONTEXT.md` L2).
         case orphaned
-        /// Still Argo's, and over — an agent that reported `ended` while Argo held its PTY. Neither
-        /// of the two above: nothing died and nothing was refused, so it takes the quiet mark.
+        /// Still Argo's, and over — an agent that reported `ended` while Argo held its PTY.
         case ended
 
         /// The bold half of the line, which is the reading itself.
+        ///
+        /// The one home for these words: the HEADER names the same two postures and reads them
+        /// from here (`SessionHeaderProjection.mark(for:)`), so a copy edit cannot leave the band
+        /// and the deck's foot disagreeing about what a Session is. This way round because this
+        /// enum is TOTAL — `Access` has a fourth state, `managed`, with nothing to say of itself.
         var word: String {
             switch self {
             case .external: "Read-only"
@@ -25,9 +25,12 @@ extension SessionComposerProjection {
             }
         }
 
-        /// The sentence after it. The second clause of `external` is the one that has to be there:
-        /// Argo holds no gate on a Session it did not spawn, so a reader told only *read-only*
-        /// reads the silence where the Permissions would be as consent.
+        /// The sentence after it, addressed to a reader looking for the field. Its own words rather
+        /// than the header's shorter ones: the band names a posture, this answers a question.
+        ///
+        /// The second clause of `external` is the one that has to be there. Argo holds no gate on a
+        /// Session it did not spawn, so a reader told only *read-only* reads the silence where the
+        /// Permissions would be as consent.
         var detail: String {
             switch self {
             case .external:
@@ -54,8 +57,13 @@ extension SessionComposerProjection {
         /// Whether the line offers a fresh Session in the same folder — the one act that is
         /// actually available. `external` gets none: Argo never owned it, so starting something
         /// beside it is a guess about what the reader wanted rather than the way on.
+        ///
+        /// Exhaustive rather than `!= .external`, so a fourth reason cannot inherit an offer.
         var offersFreshSession: Bool {
-            self != .external
+            switch self {
+            case .orphaned, .ended: true
+            case .external: false
+            }
         }
 
         /// What a screen reader hears, since the mark carries no words and the two halves of the
@@ -68,8 +76,8 @@ extension SessionComposerProjection {
     /// Why the selected Session has no composer, or `nil` when it has one. `nil` for no Session at
     /// all, which is the empty deck rather than a degraded one.
     ///
-    /// The order is the order the facts outrank each other: access first, because what Argo may DO
-    /// with a Session does not depend on what its transcript last said.
+    /// Access outranks status: what Argo may DO with a Session does not depend on what its
+    /// transcript last said.
     static func unavailable(for session: CockpitPresentation.Session?) -> Unavailable? {
         guard let session else { return nil }
         switch session.access {

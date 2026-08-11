@@ -27,8 +27,16 @@ enum PermissionPromptProjection {
 
     /// A prompt only while the Session is blocked on one. The composer's slot is singular: the
     /// vessel holds whichever question is live.
+    ///
+    /// And only for a Session that can be driven (#546). An Allow whose gate died with the PTY
+    /// answers nothing, so a prompt on an undriveable Session is exactly the affordance that cannot
+    /// work — the slot takes `ComposerUnavailable` instead. The engine already withdraws a claim's
+    /// pending Permissions when its PTY exits; this is the same refusal said where it is DRAWN, so
+    /// the slot's contents are one decision rather than an ordering two files have to agree on.
     static func prompt(for session: CockpitPresentation.Session?) -> Prompt? {
-        guard let session, let permission = session.permission else { return nil }
+        guard let session, let permission = session.permission,
+              SessionComposerProjection.unavailable(for: session) == nil
+        else { return nil }
         return Prompt(
             sessionID: session.id,
             requestID: permission.id,

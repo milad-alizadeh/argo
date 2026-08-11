@@ -106,16 +106,34 @@ a second place to forget one.
 Extraction evidence: the name is in the design's frozen-names table, and it carries three states
 the happy path never renders — no composer is ever on screen at the same time as one.
 
-**Nothing else was extracted, and two criteria needed no code at all.** A failed send already keeps
-the message with the reason and a `Retry` on the seam (`ComposerSeamNote.refusal`, #538), and the
-composer already asks the adapter about attachments and omits the `+` (`canAttach`, #540).
+**Nothing else was extracted, and three criteria needed no code at all.** A failed send already
+keeps the message with the reason and a `Retry` on the seam (`ComposerSeamNote.refusal`, #538), and
+the composer already asks the adapter about attachments and omits the `+` (`canAttach`, #540).
+
+The third is **"Permission on an external Session renders `unknown` rather than
+absent-as-approved"**, and it is answered by the sentence rather than by a control, because no
+surface renders a Permission as a per-Session fact to begin with. What could have claimed consent
+is the STATUS, and it cannot: `permission` is DIRECT and managed-only, unreachable from a record by
+construction (`SessionStatus.read`'s own doc comment says so), so an external Session reads `idle`
+or `unknown` off its transcript and never *approved*. What was left was the reader's inference from
+an empty deck foot — which is what `external`'s second clause now answers in words. The criterion
+is a copy requirement, and the test asserting the clause is `ComposerUnavailableTests`.
 
 ### A row, not an overlay
 
 The composer is an overlay because the feed runs under it and stays readable through the glass.
 This replaces the reading's end rather than covering it, so it is a **row in `SessionsDeck` under
-`DeckContentRow`** and takes its own height — which is also what makes it span the rail and the
-panel, neither of which can be driven either.
+`DeckContentRow`** and takes its own height — the deck's full width, above the rail, the feed and
+the panel alike, since none of the three can be driven either.
+
+### The prompt is refused on the same fact
+
+`PermissionPromptProjection.prompt(for:)` guarded only on a Permission being present, so an
+undriveable Session holding one would have drawn an Allow/Deny vessel over the line — the exact
+affordance that cannot work. It now refuses on `unavailable(for:)`, which makes the slot's contents
+ONE decision. The engine already withdraws a claim's pending Permissions when its PTY exits
+(`PermissionChannel.withdraw`), so this is not a live bug being fixed; it is the same refusal said
+where it is drawn rather than left as an ordering two files have to keep agreeing on.
 
 ### What the renders measured
 
@@ -128,6 +146,11 @@ panel, neither of which can be driven either.
 - **A `.bordered` button paints its label with the ACCENT**, and reads the `tint` rather than any
   `foregroundStyle` around it — #608's `Menu` trap, on a second control. Both buttons came out Ion
   Blue and read as links.
+- **The two words the header also names come from here.** `Read-only` and `Orphaned` were about to
+  live in two files — `SessionHeaderProjection.mark(for:)` and this — so the header reads them off
+  `Unavailable`. This way round because the enum is TOTAL where `Access` has a fourth state with
+  nothing to say. Only the WORDS are shared: the band names a posture in one clause, and the deck's
+  foot answers a reader looking for the field, which is a longer sentence.
 
 ### The one thing this ticket changed outside its own component
 

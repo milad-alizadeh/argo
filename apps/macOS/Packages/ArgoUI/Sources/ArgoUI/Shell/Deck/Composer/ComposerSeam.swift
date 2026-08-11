@@ -30,9 +30,8 @@ struct ComposerSeam: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                // The tint and not a `foregroundStyle`, for `ComposerUnavailable`'s reason: this
-                // shipped Ion Blue where `failed.png` draws it neutral, which read as a link on a
-                // line whose other half is already the failure ink.
+                // The tint and not a `foregroundStyle` — see `ComposerUnavailable.exit`. This
+                // shipped Ion Blue where `failed.png` draws it neutral.
                 .tint(argo.color.text.secondary)
             }
         }

@@ -82,20 +82,63 @@ struct ComposerUnavailableTests {
         #expect(reason.offersFreshSession == offersFreshSession)
     }
 
-    /// Every reason is a sentence somebody has to read, so none of them may be empty and none may
-    /// borrow another's mark — the mark is what tells them apart at a glance.
+    /// The reading is what a glance takes off the line, so two of them may never read alike.
     @Test
-    func `every reason carries its own word, sentence and mark`() {
+    func `no two reasons share a word`() {
         let reasons = SessionComposerProjection.Unavailable.allCases
 
         #expect(Set(reasons.map(\.word)).count == reasons.count)
-        #expect(reasons.allSatisfy { !$0.detail.isEmpty })
+    }
+
+    /// The mark is what tells them apart before the sentence is read at all.
+    @Test
+    func `no two reasons share a mark`() {
+        let reasons = SessionComposerProjection.Unavailable.allCases
+
         #expect(Set(reasons.map(\.mark)).count == reasons.count)
     }
+
+    /// A reason with no sentence is the blank foot this whole line exists to replace.
+    @Test
+    func `every reason says why in words`() {
+        #expect(SessionComposerProjection.Unavailable.allCases.allSatisfy { !$0.detail.isEmpty })
+    }
+
+    /// An Allow answers a gate, and an undriveable Session has none left to answer — so the slot
+    /// takes the line rather than a decision that cannot land. The engine already withdraws a
+    /// claim's pending Permissions when its PTY exits; this is that refusal said where it is DRAWN.
+    @Test(arguments: [
+        CockpitPresentation.Session.Access.external,
+        CockpitPresentation.Session.Access.orphaned,
+    ])
+    func `a Session Argo cannot drive raises no prompt either`(
+        access: CockpitPresentation.Session.Access,
+    ) {
+        let blocked = session(access: access, permission: waiting)
+
+        #expect(PermissionPromptProjection.prompt(for: blocked) == nil)
+        #expect(SessionComposerProjection.unavailable(for: blocked) != nil)
+    }
+
+    /// The same Permission on a Session Argo DOES hold, so the guard above is a claim about access
+    /// rather than a prompt that stopped working.
+    @Test
+    func `the same Permission on a managed Session still raises one`() {
+        let blocked = session(access: .managed, permission: waiting)
+
+        #expect(PermissionPromptProjection.prompt(for: blocked) != nil)
+    }
+
+    private let waiting = PermissionRequest(
+        id: "permission-1",
+        toolName: "Bash",
+        target: .command("rm -rf build"),
+    )
 
     private func session(
         access: CockpitPresentation.Session.Access,
         status: SessionStatus = .idle,
+        permission: PermissionRequest? = nil,
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -106,6 +149,7 @@ struct ComposerUnavailableTests {
             access: access,
             status: status,
             cli: .claude,
+            permission: permission,
         )
     }
 }
