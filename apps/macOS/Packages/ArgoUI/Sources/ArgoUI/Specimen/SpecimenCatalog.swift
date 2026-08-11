@@ -73,6 +73,12 @@ public enum Specimen: String, CaseIterable, Sendable {
     // can judge on its own.
     case feedWorkingStill
     case feedCallInFlightStill
+    // The cooled end of `ArgoWaitAge`, forced. A period is not a thing a PNG can carry, but the
+    // glow falling away is — and these are the two rungs nobody would otherwise see without
+    // sitting through the wait that produces them.
+    case feedWorkingAged
+    case feedWorkingCooled
+    case feedCallInFlightCooled
     case emptyFeed
     case startingSpawn
     case feedGallery

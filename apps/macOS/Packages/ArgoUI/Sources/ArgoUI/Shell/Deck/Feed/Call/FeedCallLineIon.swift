@@ -16,11 +16,12 @@ struct FeedCallLineIon: ViewModifier {
     let isRunning: Bool
 
     /// The ROLE answers Reduce Motion, not this call site: `working` resolves to `nil` when
-    /// movement is off, and a pass with no animation behind it should not be drawn at all.
+    /// movement is off, and a pass with no animation behind it should not be drawn at all. Asked of
+    /// the role rather than of a rung, because every rung of `ArgoWaitAge` gives the same answer.
     func body(content: Content) -> some View {
         content.overlay {
-            if isRunning, let pass = ArgoMotion.working.resolved(reduceMotion: reduceMotion) {
-                IonWash(pass: pass).mask { content.environment(\.isIonMask, true) }
+            if isRunning, ArgoMotion.working.resolved(reduceMotion: reduceMotion) != nil {
+                IonWash().mask { content.environment(\.isIonMask, true) }
             }
         }
     }
@@ -48,19 +49,24 @@ extension View {
 private struct IonWash: View {
     @Environment(\.argo) private var argo
 
-    /// The role's own answer, already resolved against Reduce Motion by the caller.
-    let pass: Animation
-
-    /// Where the pass sits, as a multiple of the line's own width. It starts and ends entirely off
-    /// the line, so the ion enters and leaves rather than appearing mid-word.
-    @State private var phase: CGFloat = -1
-
     var body: some View {
         GeometryReader { proxy in
-            argo.color.ion.pass
-                .frame(width: proxy.size.width)
-                .offset(x: phase * proxy.size.width)
-                .onAppear { withAnimation(pass) { phase = 1 } }
+            FeedIonLoop { phase, aged in
+                argo.color.ion.pass
+                    .frame(width: proxy.size.width)
+                    .offset(x: offset(at: phase, over: proxy.size.width))
+                    // The row's wash paints TYPE rather than casting light, so it cools by the
+                    // ladder's proportion. Dimming it to the thread's own number would take a
+                    // three-second call below what #616 approved.
+                    .opacity(aged.cooling)
+            }
         }
+    }
+
+    /// Where the pass sits, as a multiple of the line's own width. Both ends are entirely off the
+    /// line, so the ion enters and leaves rather than appearing mid-word — which is also the right
+    /// answer for the `nil` phase the modifier above never lets through.
+    private func offset(at phase: Double?, over width: CGFloat) -> CGFloat {
+        ((phase ?? 0) * 2 - 1) * width
     }
 }

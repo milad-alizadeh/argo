@@ -9,8 +9,6 @@ import SwiftUI
 /// The lane cancels `ArgoFeedRow.inset` and runs the full `ArgoFeedRow.column` — the one row in
 /// the feed that ignores the gutter. It clips, so the ion never spills into the deck beyond it.
 struct FeedWorkingThread: View {
-    @Environment(\.argoReduceMotion) private var reduceMotion
-
     var body: some View {
         GeometryReader { proxy in
             // Centred in the lane rather than at its head: a `GeometryReader` aligns its content
@@ -33,18 +31,25 @@ struct FeedWorkingThread: View {
     /// frame of a loop that never ends.
     private func filament(across lane: CGFloat) -> some View {
         let length = lane * ArgoFeedRow.workingThreadShare
-        return Filament(length: length, glow: glow)
-            .modifier(Travel(
-                pass: ArgoMotion.working.resolved(reduceMotion: reduceMotion),
-                length: length,
-                parked: (lane - length) / 2,
-            ))
+        let parked = (lane - length) / 2
+        return FeedIonLoop { phase, aged in
+            Filament(length: length, glow: glow(at: phase, aged: aged))
+                .offset(x: phase.map { travelled(to: $0, at: length) } ?? parked)
+        }
+    }
+
+    /// Where along the lane the pass sits at this point in it. Stated in the filament's OWN
+    /// lengths, so both ends clear the measure whatever the window is doing.
+    private func travelled(to phase: Double, at length: CGFloat) -> CGFloat {
+        let travel = ArgoFeedRow.workingThreadTravel
+        return (travel.lowerBound + (travel.upperBound - travel.lowerBound) * phase) * length
     }
 
     /// With movement off the filament parks, so it glows a step lower — at full strength a still
-    /// bar across the measure reads as a rule somebody drew rather than as work in flight.
-    private var glow: Double {
-        reduceMotion ? ArgoFeedRow.workingThreadStillGlow : ArgoElevation.bloom.opacity
+    /// bar across the measure reads as a rule somebody drew rather than as work in flight. The
+    /// still does NOT vary by age: a parked bar is no reading of how long the wait has run.
+    private func glow(at phase: Double?, aged: ArgoWaitAge) -> Double {
+        phase == nil ? ArgoFeedRow.workingThreadStillGlow : aged.glow
     }
 }
 
@@ -72,37 +77,6 @@ private struct Filament: View {
     }
 }
 
-/// Where the pass sits along the lane, and what moves it there.
-///
-/// A modifier rather than state on the view: `onAppear` has to fire against a width the geometry
-/// has already settled, and the offset is the one thing being animated.
-private struct Travel: ViewModifier {
-    /// The role's own answer, already resolved against Reduce Motion. `nil` means the loop is off
-    /// and the filament holds `parked`.
-    let pass: Animation?
-    /// The filament's own length — the unit `ArgoFeedRow.workingThreadTravel` is stated in.
-    let length: CGFloat
-    /// Where it rests when nothing moves: the centre of the measure.
-    let parked: CGFloat
-
-    @State private var travelled = false
-
-    func body(content: Content) -> some View {
-        content
-            .offset(x: offset)
-            .onAppear {
-                guard let pass else { return }
-                withAnimation(pass) { travelled = true }
-            }
-    }
-
-    private var offset: CGFloat {
-        guard pass != nil else { return parked }
-        let travel = ArgoFeedRow.workingThreadTravel
-        return (travelled ? travel.upperBound : travel.lowerBound) * length
-    }
-}
-
 // The state a still cannot prove, here to be WATCHED: the ion has to cross the full 720 and fade
 // out past both edges, with nothing left behind it.
 #Preview("Working — the thread crossing the measure") {
@@ -111,6 +85,20 @@ private struct Travel: ViewModifier {
         .frame(width: ArgoFeedRow.column)
         .argoDeckSurface()
         .argoAppearance()
+}
+
+// The other thing a still cannot prove: the period. Three ages at once, so the slowing is watchable
+// side by side instead of over six minutes.
+#Preview("Working — the same thread at three ages") {
+    VStack(spacing: ArgoFeedRow.gap) {
+        ForEach([0.0, 90.0, 360.0], id: \.self) { age in
+            FeedWorkingThread().environment(\.argoAgesWait, age)
+        }
+    }
+    .padding(ArgoFeedRow.inset)
+    .frame(width: ArgoFeedRow.column)
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 // The whole of Reduce Motion: parked at the centre, dimmer, and still reading as live.
