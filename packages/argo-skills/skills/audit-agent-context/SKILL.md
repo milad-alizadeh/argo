@@ -34,6 +34,9 @@ receives before the user types:
 
 Report bytes per source, then convert to tokens. **Prefer a count the harness itself
 reports** over any divisor — several expose one, and it is the number the user is billed on.
+Take its per-source figures, never its grouping: a harness bucket named for the vendor can
+hold project-owned content, and an output style commonly lands in one. Total the sources in
+the table above yourself, and say which bucket each came from.
 Falling back to bytes ÷ divisor, use **2.7**, not the 3.5 that suits prose: agent files are
 dense in tables, backticks and paths, and 3.5 under-reports them by about a third. Say which
 figure you used and where it came from, because the user may re-derive it.
