@@ -3,10 +3,8 @@ import SwiftUI
 /// The cockpit's one disclosure chevron: one symbol, one rung, and the direction it opens taken by
 /// ROTATION rather than by a second symbol.
 ///
-/// One shape because the scale constrains a mark's HEIGHT (`ArgoGlyph`): `chevron.down` held to a
-/// rung is that tall and half again as wide, so a down-chevron drawn as its own symbol came out the
-/// widest mark on a line meant to be quiet. Rotated, every chevron in the app is the same ink, and
-/// a control that reports its state by angle animates rather than swapping symbols mid-turn.
+/// One shape because `ArgoGlyph` constrains a mark's HEIGHT, so `chevron.down` at a rung is wider
+/// than `chevron.right` turned — and a rotation can animate where a swap cannot.
 struct ArgoDisclosure: View {
     /// Where what it opens lands, which is the only thing that turns the mark.
     enum Opens {
@@ -32,6 +30,9 @@ struct ArgoDisclosure: View {
     var body: some View {
         ArgoGlyph(ArgoSymbol.disclosure, .chevron)
             .rotationEffect(opens.angle)
+            // A rotation does not resize the box, so a turned mark paints its HEIGHT sideways and
+            // overflows the narrow width the glyph reserved. Squared to the rung, it fits.
+            .frame(width: ArgoIconSize.chevron.rawValue, height: ArgoIconSize.chevron.rawValue)
     }
 }
 

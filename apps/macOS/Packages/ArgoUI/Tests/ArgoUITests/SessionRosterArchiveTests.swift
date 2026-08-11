@@ -80,33 +80,31 @@ struct SessionRosterArchiveTests {
         #expect(row.announcement == kept.announcement)
     }
 
-    @Test
-    func `the foot names how many Sessions are behind it, and is absent when none are`() {
-        let sessions = [
-            RosterSessionFixture.session(id: "a", isArchived: true),
-            RosterSessionFixture.session(id: "b", isArchived: true),
-        ]
+    /// The heard reading is not the read one: a screen reader would say the label's own "(2)" as
+    /// punctuation, so the count is spelled out in words.
+    @Test(arguments: [
+        (count: 1, label: "Archived (1)", announcement: "Archived, 1 Session"),
+        (count: 2, label: "Archived (2)", announcement: "Archived, 2 Sessions"),
+    ])
+    func `the foot names how many Sessions are behind it`(
+        count: Int, label: String, announcement: String,
+    ) throws {
+        let sessions = (0 ..< count).map {
+            RosterSessionFixture.session(id: "archived-\($0)", isArchived: true)
+        }
 
-        let archived = SessionRosterProjection.archivedRows(from: sessions, now: now)
+        let foot = try #require(SessionRosterProjection.archivedFoot(
+            SessionRosterProjection.archivedRows(from: sessions, now: now),
+        ))
 
-        #expect(SessionRosterProjection.archivedFoot(archived)?.label == "Archived (2)")
-        #expect(SessionRosterProjection.archivedFoot(archived)?.announcement
-            == "Archived, 2 Sessions")
-        // A machine that has archived nothing pays no permanent chrome for the fact.
-        #expect(SessionRosterProjection.archivedFoot([]) == nil)
+        #expect(foot.label == label)
+        #expect(foot.announcement == announcement)
     }
 
     @Test
-    func `the foot is announced as a count of Sessions, not as its own parenthesis`() throws {
-        let one = try #require(SessionRosterProjection.archivedFoot(
-            SessionRosterProjection.archivedRows(
-                from: [RosterSessionFixture.session(id: "a", isArchived: true)], now: now,
-            ),
-        ))
-
-        // A screen reader reads the words, so the label's own "(1)" would come out as punctuation.
-        #expect(one.label == "Archived (1)")
-        #expect(one.announcement == "Archived, 1 Session")
+    func `there is no foot at all when nothing has been archived`() {
+        // A machine that has archived nothing pays no permanent chrome for the fact.
+        #expect(SessionRosterProjection.archivedFoot([]) == nil)
     }
 
     @Test

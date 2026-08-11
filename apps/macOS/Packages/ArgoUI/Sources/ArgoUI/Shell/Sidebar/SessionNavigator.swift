@@ -22,10 +22,8 @@ struct SessionNavigator: View {
     /// the row that owns it.
     var renamingRowID: Binding<String?> = .constant(nil)
 
-    /// Opens the foot without a click, for the render harness — a click is the only other way in,
-    /// and it does not reach a screenshot. It out-ranks the state while set, so the foot cannot be
-    /// shut under it: a render is not a click (`PlanPill.isRevealed` holds its list open the same
-    /// way, and `docs/agents/visual-verification.md` says why the two are not each other's proof).
+    /// Opens the foot for the render harness, out-ranking the state so it cannot be shut under it —
+    /// as `PlanPill.isRevealed` does, and for the same reason.
     var isArchiveRevealed = false
 
     /// Shut on launch. Going back to an archived Session is deliberate (story 15), and a foot
@@ -72,8 +70,7 @@ struct SessionNavigator: View {
                 }
             } header: {
                 RosterArchiveFoot(
-                    label: foot.label,
-                    announcement: foot.announcement,
+                    foot: foot,
                     isShowing: isArchiveOpen,
                     toggle: { isArchiveShowing.toggle() },
                 )

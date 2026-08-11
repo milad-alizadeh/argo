@@ -4,25 +4,17 @@ The design for the disclosure at the foot of the Sessions roster — the row rea
 and the archived rows behind it. One surface, one control.
 
 Subject: `RosterArchiveFoot` and `SessionNavigator.archivedFoot`
-(`apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/`). Before this change the header was
-`SessionNavigator.footHeader`, which the next section is about.
+(`apps/macOS/Packages/ArgoUI/Sources/ArgoUI/Shell/Sidebar/`).
 Behaviour lineage: `cockpit-spec.md` §4.1, and B5 in `cockpit-session-interior-decisions.md`.
 
-## What is wrong with the built one
+**The two rules the built version broke**, kept here because they are what the design has to hold and
+each is easy to break again:
 
-Two chevrons, and the one you reach for is inert.
-
-`Section(isExpanded:)` under `.listStyle(.sidebar)` draws **the system's own** disclosure control in
-the header, revealed under the pointer at the trailing edge. `footHeader` then draws a **second**
-chevron at the leading edge, and that one is inert by construction — its own comment says so
-(`SessionNavigator.swift:64`). So the visible, persistent chevron does nothing, and the one that
-toggles only exists while the pointer is over the header. Every part of the report follows from
-that: two marks, only the right one works.
-
-The drawn chevron is also the loudest thing in a row meant to be quiet. It is `ArgoIconSize.inline`
-(10pt) beside `ArgoTypography.caption` (caption1), and both take `text.tertiary`, so a 10pt filled
-glyph outweighs the words it is a note on. That half of the defect was never only this foot's — see
-**The chevron rung** below.
+1. **One chevron.** A sidebar `Section` given an `isExpanded:` binding draws the system's own
+   disclosure in its header, revealed under the pointer. A header that also draws its own then
+   carries two, and only the system's toggles.
+2. **A chevron is quieter than its label.** See **The chevron rung** below; that half was never only
+   this foot's.
 
 ## What Apple's guidance settles
 
@@ -116,9 +108,9 @@ composes it, and the count is how many are behind the row.
 | State | Chevron | What is below |
 |---|---|---|
 | Nothing archived | — | The foot is absent entirely, header and all |
-| Shut (launch, and whenever the archive comes back) | `chevron.right`, 0° | Nothing |
-| Open | `chevron.right`, rotated 90° | The archived rows |
-| Pointer over the header | either, ink `text.secondary` | Unchanged |
+| Shut (launch, and whenever the archive comes back) | `ArgoDisclosure(.beside)`, 0° | Nothing |
+| Open | `ArgoDisclosure(.below)`, rotated 90° | The archived rows |
+| Pointer over the header | either, ink `text.secondary` over `ArgoMotion.stateChange` | Unchanged |
 
 **Motion.** `ArgoMotion.reveal` (0.22s easeOut) drives the rotation and the rows arriving, one
 animation over the open value so they move together. It sits on the whole `List`, because dropping
@@ -128,16 +120,18 @@ quick rather than absent; it is not a fade, whatever the role's reduced arm does
 elsewhere. The chevron must be **one symbol rotated**, not a second symbol swapped in — a swap
 cannot animate, which is why the built version's state change was a jump.
 
-**Gestures and keyboard.** The header is a `Button`, so it is one click anywhere on its row, and
-Space or Return when it holds keyboard focus. It never takes list selection: it is not a Session, and
-a highlight on it would claim it was.
+**Gestures.** The header is a `Button`, so it is one click anywhere on its row. It never takes list
+selection: it is not a Session, and a highlight on it would claim it was.
 
-**No ⌘→ / ⌘←, decided during the build.** The pair comes from the older
-[Disclosure Triangles guidance](https://dev.os9.ca/techpubs/mac/HIGOS8Guide/thig-24.html) and the
-current HIG is silent on it. Reaching it needs `.focusable()` on the header, which makes a section
-header a Tab stop inside `List(selection:)` — Apple's own sidebar headers are not one, and the cost
-lands on every reader who tabs through the roster. The `Button`'s own Space and Return are the
-keyboard path.
+**Pointer-only, decided during the build, and the one thing here worth revisiting.** The keyboard
+does not reach the foot. Any route to it — the `Button`'s own Space and Return, or the ⌘→ / ⌘← that
+the older
+[Disclosure Triangles guidance](https://dev.os9.ca/techpubs/mac/HIGOS8Guide/thig-24.html) gives and
+the current HIG is silent on — needs `.focusable()` on the header, because a `.plain` `Button` in a
+sidebar section header takes no key focus under default macOS settings. That makes a section header a
+Tab stop inside `List(selection:)`, which Apple's own sidebar headers are not, and the cost lands on
+every reader who tabs the roster. So the archive is pointer-and-VoiceOver only for now. Adding the
+Tab stop is a deliberate change, not a fix to fold in quietly.
 
 **Accessibility.** Label `"Archived, n Sessions"`; value `"Expanded"` / `"Collapsed"`; hint
 `"Shows the Sessions you archived"`. The button trait comes from the `Button`. The archived rows
@@ -149,9 +143,9 @@ content is emitted conditionally from our own state:
 
 ```swift
 Section {
-    if isArchiveShowing { ForEach(archived) { swipeable($0) } }
+    if isArchiveOpen { ForEach(archived) { swipeable($0) } }
 } header: {
-    footHeader(label)   // a Button now, not an inert HStack
+    RosterArchiveFoot(foot: foot, isShowing: isArchiveOpen, toggle: { ... })
 }
 ```
 
@@ -177,4 +171,10 @@ Built, in `RosterArchiveFoot.swift` and `SessionNavigator.archivedFoot`:
 4. The two existing rules stand: shut on launch, and shut again whenever the archive is emptied and
    refilled (`SessionNavigator.onChange`).
 5. `Specimen.openArchivedRoster` renders the open state, since a click cannot reach a screenshot.
-   Both PNGs are in `renders/` as `roster-archive-shut.png` and `roster-archive-open.png`.
+   Both PNGs are in `renders/` as `roster-archive-shut.png` and `roster-archive-open.png`, with
+   `toolbar-chevron-rung.png` as the evidence for the rung away from this surface.
+6. `RosterArchiveE2ETests` is what proves the click, because no projection test can: it opens on the
+   shut specimen and presses the label rather than the mark.
+7. Every chevron went onto the rung, including the ones no `ArgoGlyph` call site owned:
+   `ConnectPortRow`'s menu was drawing the system's indicator at the system's size, so it now hides
+   it and draws `ArgoDisclosure` beside the menu the way `GitVessel` does.

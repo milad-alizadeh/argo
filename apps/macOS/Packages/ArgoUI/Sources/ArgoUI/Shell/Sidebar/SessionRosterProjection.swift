@@ -95,8 +95,8 @@ enum SessionRosterProjection {
         rows(from: sessions, archived: true, now: now)
     }
 
-    /// What the foot of the roster says, read and heard. One value rather than two functions over
-    /// the same array, so nothing has to guard the same emptiness twice.
+    /// What the foot of the roster says, read and heard — one value, so nothing guards the same
+    /// emptiness twice.
     struct Foot: Equatable {
         let label: String
         let announcement: String

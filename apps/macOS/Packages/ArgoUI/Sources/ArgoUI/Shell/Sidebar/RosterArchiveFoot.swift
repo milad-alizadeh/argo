@@ -8,27 +8,23 @@ struct RosterArchiveFoot: View {
 
     @Environment(\.argo) private var argo
 
-    let label: String
-    /// The same fact in words, because a screen reader reads `(2)` as punctuation.
-    let announcement: String
-    /// A value, not a binding: what "open" means is the roster's answer, and a control that wrote
-    /// its own copy of it could draw an angle the rows below disagree with.
+    let foot: SessionRosterProjection.Foot
+    /// A value, not a binding: the roster answers what "open" means, for the rows and the chevron
+    /// alike.
     let isShowing: Bool
     let toggle: () -> Void
-    /// Draws the pointer state without a pointer, for the render harness — hover is the only ink
-    /// change there is here, and a state with no render is one nobody has looked at.
-    var isPointedAtForRender = false
+    /// Draws the pointer state without a pointer, for the render harness.
+    var isPointedAt = false
 
-    @State private var isPointedAt = false
+    @State private var isPointerInside = false
 
     var body: some View {
         Button(action: toggle) { row }
             .buttonStyle(.plain)
-            .onHover { isPointedAt = $0 }
-            // The gap is padding OUTSIDE the button, so what separates the foot from the last kept
-            // row is not also a strip of it that answers clicks.
+            .onHover { isPointerInside = $0 }
+            // Padding OUTSIDE the button, so the gap above the foot answers no clicks.
             .padding(.top, ArgoSpacing.base)
-            .accessibilityLabel(announcement)
+            .accessibilityLabel(foot.announcement)
             .accessibilityValue(isShowing ? "Expanded" : "Collapsed")
             .accessibilityHint("Shows the Sessions you archived")
     }
@@ -36,12 +32,12 @@ struct RosterArchiveFoot: View {
     private var row: some View {
         HStack(spacing: ArgoSpacing.snug) {
             chevron
-            Text(label)
+            Text(foot.label)
                 .argoText(ArgoTypography.caption)
             Spacer(minLength: ArgoSpacing.flush)
         }
-        // The only hover feedback there is: the sidebar's system material owns the row grounds
-        // (D2, D3), so a wash here would read as a selection.
+        // The only hover feedback there is: the sidebar's material owns the row grounds (D2, D3),
+        // so a wash here would read as a selection.
         .foregroundStyle(isLit ? argo.color.text.secondary : argo.color.text.tertiary)
         .padding(.vertical, ArgoSpacing.tight)
         .frame(minHeight: ArgoLayout.rosterFootMinimumHeight)
@@ -50,11 +46,10 @@ struct RosterArchiveFoot: View {
     }
 
     private var isLit: Bool {
-        isPointedAt || isPointedAtForRender
+        isPointedAt || isPointerInside
     }
 
-    /// The contract's chevron, turned by what it opens onto — the angle is what reports the state,
-    /// and `ArgoDisclosure` is one symbol rotated so it can animate between the two.
+    /// The contract's chevron, turned by what it opens onto — the angle is what reports the state.
     private var chevron: some View {
         ArgoDisclosure(isShowing ? .below : .beside)
             .frame(width: Self.gutter, alignment: .leading)
@@ -62,19 +57,14 @@ struct RosterArchiveFoot: View {
 }
 
 #Preview("Archive foot — shut, open, and under the pointer") {
+    let foot = SessionRosterProjection.Foot(
+        label: "Archived (2)", announcement: "Archived, 2 Sessions",
+    )
+
     VStack(alignment: .leading, spacing: ArgoSpacing.section) {
-        RosterArchiveFoot(
-            label: "Archived (2)", announcement: "Archived, 2 Sessions",
-            isShowing: false, toggle: {},
-        )
-        RosterArchiveFoot(
-            label: "Archived (2)", announcement: "Archived, 2 Sessions",
-            isShowing: true, toggle: {},
-        )
-        RosterArchiveFoot(
-            label: "Archived (2)", announcement: "Archived, 2 Sessions",
-            isShowing: false, toggle: {}, isPointedAtForRender: true,
-        )
+        RosterArchiveFoot(foot: foot, isShowing: false, toggle: {})
+        RosterArchiveFoot(foot: foot, isShowing: true, toggle: {})
+        RosterArchiveFoot(foot: foot, isShowing: false, toggle: {}, isPointedAt: true)
     }
     .padding(ArgoSpacing.loose)
     .frame(width: 280)

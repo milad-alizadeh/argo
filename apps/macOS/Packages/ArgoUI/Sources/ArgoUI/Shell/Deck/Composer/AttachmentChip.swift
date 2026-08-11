@@ -60,9 +60,8 @@ struct AttachmentChip: View {
                 )
                 .clipShape(.rect(cornerRadius: ArgoRadius.control))
         } else {
-            // At `.inline` and not smaller, though the study drew a lighter mark: the scale's own
-            // note records a chevron shrunk below this rung becoming a control nobody could see
-            // they were allowed to click, and every mark on this chip sits beside one.
+            // At `.inline` and not `.chevron`, though the study drew a lighter mark: this one names
+            // what the attachment IS, and the rung below it is a chevron's alone.
             ArgoGlyph(AttachmentProjection.glyph(for: attachment), .inline)
                 .foregroundStyle(argo.color.text.tertiary)
                 .frame(width: ArgoComposerVessel.attachmentThumbnail)

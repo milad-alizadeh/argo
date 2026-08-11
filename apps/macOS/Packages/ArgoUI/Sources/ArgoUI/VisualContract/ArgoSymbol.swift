@@ -25,8 +25,8 @@ public enum ArgoSymbol {
     /// The work carried on in a fresh Session, on the link at the foot of the reading it came from.
     public static let handedOff = "arrow.right.circle"
     /// The one disclosure chevron. Which way it points is `ArgoDisclosure`'s rotation, never a
-    /// second symbol: the scale holds a mark's height, so `chevron.down` at the same rung is half
-    /// again as wide and reads as a louder mark than this one turned.
+    /// second symbol — the scale holds a mark's HEIGHT, so `chevron.down` is wider at the same
+    /// rung.
     public static let disclosure = "chevron.right"
 
     /// One mark per kind of call the feed can name. A call whose kind Argo could not read carries
