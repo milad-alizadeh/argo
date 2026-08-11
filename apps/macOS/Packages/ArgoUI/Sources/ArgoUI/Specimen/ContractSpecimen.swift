@@ -20,6 +20,7 @@ struct ContractSpecimen: View {
                 edges
                 states
                 diff
+                ion
                 brand
                 scale
                 type
@@ -170,9 +171,14 @@ struct ContractSpecimen: View {
         }
     }
 
+    /// A loop is read differently from a transition, so it is said differently: its number is a
+    /// period rather than a wait, and Reduce Motion stops it rather than shortening it.
     private func duration(_ motion: ArgoMotion) -> String {
         let reduced = motion.reducedDuration.map { "\(Int($0 * 1000))ms fade" } ?? "instant"
-        return "\(Int(motion.duration * 1000))ms · reduce motion: \(reduced)"
+        let pass = "\(Int(motion.duration * 1000))ms"
+        return motion.repeats
+            ? "\(pass) per pass, repeating · reduce motion: stopped"
+            : "\(pass) · reduce motion: \(reduced)"
     }
 }
 

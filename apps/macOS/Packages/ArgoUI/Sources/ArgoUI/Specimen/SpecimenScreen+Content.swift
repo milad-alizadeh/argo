@@ -139,6 +139,12 @@ extension SpecimenScreen {
             // agent did and the spend below it — in the same tertiary ink as every other mark, so
             // the ellipsis is doing the whole of the work.
             sessions(FeedProjection.previewWorkingRows)
+        case .feedCallInFlight:
+            // The command the agent is running RIGHT NOW, under the ones that finished and the one
+            // that failed. Two judgements a still can make: whether the live row separates from the
+            // dead ones at rest, and whether the failure keeps its ink while the ion crosses the
+            // row above it. The pass itself only shows in motion.
+            sessions(FeedProjection.previewPendingCallRows)
         case .emptyFeed:
             sessions([])
         case .startingSpawn:

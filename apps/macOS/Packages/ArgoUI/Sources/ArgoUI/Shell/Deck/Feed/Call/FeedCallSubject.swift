@@ -7,6 +7,8 @@ import SwiftUI
 /// line at any window width, and what leaves the full path to the evidence panel.
 struct FeedCallSubject: View {
     @Environment(\.argo) private var argo
+    /// Whether this drawing is the ion's mask rather than the row — see `isIonMask`.
+    @Environment(\.isIonMask) private var isIonMask
 
     let subject: FeedCall.Subject
     /// The ink the whole line has claimed, where it has. The line owns that claim, so the subject
@@ -36,12 +38,18 @@ struct FeedCallSubject: View {
 
     /// A command takes a ground of its own as well as the machine face — it is the one subject a
     /// reader might retype, and the chip is what says where it starts and ends.
+    ///
+    /// The ground is the one part of the row an ion mask must not see, or the pass lights the whole
+    /// chip instead of the command on it.
     private func typed(_ command: String) -> some View {
         Text(FeedCommandLine.head(of: command))
             .argoText(subject.style)
             .foregroundStyle(ink)
             .padding(.horizontal, ArgoSpacing.tight)
-            .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.marker))
+            .background(
+                isIonMask ? ArgoColor.transparent : argo.color.surface.raised,
+                in: .rect(cornerRadius: ArgoRadius.marker),
+            )
     }
 
     private func plain(_ text: String) -> some View {

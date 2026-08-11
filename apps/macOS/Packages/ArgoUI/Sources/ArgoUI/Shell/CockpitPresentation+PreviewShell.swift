@@ -33,6 +33,17 @@ extension CockpitPresentation.Session {
         )),
     ]
 
+    /// The same stretch with one more command still running. A transcript mid-Turn ends exactly
+    /// here — a call the record has not answered yet — so the pending row is DERIVED by the shared
+    /// reading rather than assembled, and a render of it cannot show a shape the projection would
+    /// never produce.
+    static let runningCommand: [TranscriptEvent] = ranCommands + [
+        .toolCall(ToolCall(
+            id: "ran-running", name: "shell", kind: .execute,
+            target: "rtk err bun run quality:swift", atMs: nil,
+        )),
+    ]
+
     /// Each command with what it printed, as the pair a transcript writes — a call, and the outcome
     /// that answers it some records later.
     private static let printed: [TranscriptEvent] = [
