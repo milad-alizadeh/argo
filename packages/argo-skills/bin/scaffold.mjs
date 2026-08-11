@@ -51,6 +51,9 @@ const HOOK_ASSETS = [
   'scripts/module-map.mjs',
   'docs/agents/worktrees.md',
 ]
+// Seeded once, never overwritten: the consumer owns the file after the first copy, and a
+// re-run of the scaffold must not clobber filters they have edited and re-trusted.
+const SEED_ASSETS = ['.rtk/filters.toml']
 // A lock has no scope field: `skills add --global` writes a different lock format in a
 // different place, which is a second install path rather than an option on this one.
 const SCOPE_FLAGS = ['--global', '-g', '--project', '-p']
@@ -58,6 +61,22 @@ const SCOPE_FLAGS = ['--global', '-g', '--project', '-p']
 function fail(message) {
   console.error(`✗ ${message}`)
   process.exit(1)
+}
+
+// Seed-only copies: the consumer owns each file after the first run, so an existing copy is
+// kept, not overwritten. RTK filters stay inert until the consumer runs `rtk trust --yes`.
+function seedAssets(target, dryRun) {
+  for (const rel of SEED_ASSETS.filter((r) => existsSync(resolve(SOURCE_ROOT, r)))) {
+    if (existsSync(resolve(target, rel))) {
+      console.log(`  kept existing ${rel}`)
+      continue
+    }
+    console.log(`  ${dryRun ? 'would seed' : 'seeded'} ${rel} — enable with \`rtk trust --yes\``)
+    if (!dryRun) {
+      mkdirSync(dirname(resolve(target, rel)), { recursive: true })
+      copyFileSync(resolve(SOURCE_ROOT, rel), resolve(target, rel))
+    }
+  }
 }
 
 // Copy the guardrail-hook assets from the Argo checkout into the target project, then
@@ -84,6 +103,7 @@ function installHooks(cwd, dryRun) {
         copyFileSync(resolve(SOURCE_ROOT, rel), resolve(target, rel))
       }
     }
+    seedAssets(target, dryRun)
   }
 
   // Real run leaves hooks.json at the target; a dry run hasn't copied it, so read source.
