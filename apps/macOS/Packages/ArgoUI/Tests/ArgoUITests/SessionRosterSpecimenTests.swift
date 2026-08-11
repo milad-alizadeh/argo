@@ -12,9 +12,6 @@ struct SessionRosterSpecimenTests {
         let rows = SessionRosterProjection.previewRows
 
         #expect(Set(rows.map(\.state)) == [.running, .attention, .idle, .failure, nil])
-        // Both badge words, which is what the slot's one treatment is judged on: an amber claim
-        // and a red one at the same size, side by side down the column (#544).
-        #expect(Set(rows.compactMap(\.stateWord)) == ["Needs input", "Stopped"])
         // The ghosted row is also the long one: a title truncating on a quieter row.
         #expect(rows.contains { $0.isReadOnly && $0.title.count > 40 })
         // Both worktree renderings, so a one-line row sits between two-line ones.
@@ -30,11 +27,18 @@ struct SessionRosterSpecimenTests {
     }
 
     @Test
-    func `the amber row the specimen renders is a Session held on a Permission`() {
-        // The `Row` carries the word and not the status behind it, so the claim is made where the
-        // status still exists. Asserted because `permission` and `asking` render identically and
-        // #544's badge is evidence for the blocking one — a fixture that drifted to `asking` would
-        // leave the PNG proving the other.
+    func `the specimen renders both badge words, so the two are judged side by side`() {
+        #expect(
+            Set(SessionRosterProjection.previewRows.compactMap(\.stateWord))
+                == ["Needs input", "Stopped"],
+        )
+    }
+
+    @Test
+    func `the attention row the specimen renders is a Session held on a Permission`() {
+        // Asserted on the status rather than the `Row`, which keeps only the word: `permission` and
+        // `asking` share it, so a fixture drifting to `asking` would leave the PNG evidence for the
+        // half that blocks nobody.
         #expect(CockpitPresentation.preview.sessions.contains { $0.status == .permission })
     }
 

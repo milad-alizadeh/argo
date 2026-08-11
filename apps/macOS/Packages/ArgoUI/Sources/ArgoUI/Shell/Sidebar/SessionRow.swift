@@ -166,19 +166,12 @@ struct SessionRow: View {
     /// not only as a dot. Drawn even under a state with no colour, or it would be announced and
     /// never drawn.
     ///
-    /// Set as a badge — uppercase and tracked, the same role the Permission prompt's own
-    /// `PERMISSION` label takes. One treatment for the slot rather than one per word: amber and red
-    /// are the same kind of claim, and typography that separated them would rank them.
-    ///
-    /// Above the title in priority, because a truncated badge says a different thing — the title is
-    /// what gives up the width, which is what the render at 1440 shows.
+    /// Above the title in priority: a title that gives up characters still reads, and a truncated
+    /// badge says a different state (`composer/perm.png`, where the title is the line that cuts).
     @ViewBuilder private var stateWord: some View {
         if let word = row.stateWord {
-            Text(word)
-                .argoText(ArgoTypography.badge)
-                .textCase(.uppercase)
+            ArgoStateLabel(word: word)
                 .foregroundStyle(row.state?.tint(in: argo.color) ?? argo.color.text.tertiary)
-                .lineLimit(1)
                 .layoutPriority(1)
         }
     }

@@ -44,11 +44,9 @@ Who gets to *name* a state depends on who *derives* it:
 ## Session status (Argo-owned)
 
 State carried by the **dot colour** (#164 / session-interior B4), and on the roster row
-by a **badge** beside the title: the word uppercase and tracked at `ArgoTypography.badge`
-(10, semibold), in the dot's own ink. One treatment for that slot, so `NEEDS INPUT` and
-`STOPPED` are the same size of claim — and the same role the Permission prompt's own
-`PERMISSION` takes, which is the size both measure in `composer/perm.png`
-(`cockpit-session-composer.md`, decision 10).
+by a **badge** beside the title (`ArgoBadge`), in the dot's own ink. One treatment for that
+slot, so `NEEDS INPUT` and `STOPPED` are the same size of claim. Its measurements live with
+the mark's other use, on the prompt: `cockpit-session-composer.md` → **The badges**.
 
 The **deck header says the same word in sentence case**, because it is a line of the
 header's own prose rather than a mark in a column.
