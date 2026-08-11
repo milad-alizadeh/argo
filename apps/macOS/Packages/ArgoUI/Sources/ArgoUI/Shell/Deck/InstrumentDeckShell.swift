@@ -55,6 +55,9 @@ struct InstrumentDeckShell: View {
     var decide: (PermissionDecision) -> Void = { _ in }
     /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
     var revoke: (String) -> Void = { _ in }
+    /// Stopping the Turn the shown Session is running (#541). Inert by default, for the reason
+    /// `send` is.
+    var stop: () -> Void = {}
     /// What the shown Session's composer is holding. A binding handed in from ABOVE the identity
     /// below, for the reason the seams are: `.id(session)` discards everything under it on a
     /// switch, and an unsent draft is the one thing in the vessel that must survive one (#539).
@@ -93,6 +96,7 @@ struct InstrumentDeckShell: View {
                 prompt: prompt,
                 decide: decide,
                 revoke: revoke,
+                stop: stop,
                 draft: draft,
                 seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
             )

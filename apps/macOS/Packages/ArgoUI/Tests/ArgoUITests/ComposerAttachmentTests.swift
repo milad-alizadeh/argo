@@ -147,7 +147,7 @@ struct ComposerAttachmentTests {
             notice: SessionDriveError.cannotAttach.detail,
         )
         #expect(ComposerSeamNote.note(for: noticeAndKept, enteredAtMs: 60000)
-            == .capability(SessionDriveError.cannotAttach.detail))
+            == .notice(SessionDriveError.cannotAttach.detail))
 
         // Nothing went wrong at all — only the words that were waiting.
         let keptOnly = ComposerDraft(text: "Carry on.", editedAtMs: 0)

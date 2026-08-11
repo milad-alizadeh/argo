@@ -17,6 +17,14 @@ extension CockpitView {
         return { try actions.sendTurn(sessionID, $0, $1) }
     }
 
+    /// Stopping the Turn the composer's Session is running (#541), bound the way `send` is — and
+    /// inert without a composer, which is also the state with no control to press.
+    var stop: () -> Void {
+        guard let composer else { return {} }
+        let sessionID = composer.sessionID
+        return { actions.interruptTurn(sessionID) }
+    }
+
     /// What the selected Session's composer is holding, out of the store that outlives the deck.
     /// A Session with no composer gets an inert binding — there is no field to type into, so there
     /// is nothing to keep.

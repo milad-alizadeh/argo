@@ -71,6 +71,12 @@ public struct CockpitActions {
     /// are named inside the Turn the message is in (#540), so an attach that went and a send that
     /// did not would leave files written for a message nobody sent.
     public let sendTurn: (String, String, [SessionAttachment]) throws -> Void
+    /// Stop the Turn a Session is running (#541) — the composer's second act on the world.
+    ///
+    /// Not throwing, unlike `sendTurn`, and for the reason `decidePermission` is not: the one
+    /// refusal the port raises is the Session having gone, which takes the composer off the screen
+    /// by itself. There is no field holding words for a seam to explain.
+    public let interruptTurn: (String) -> Void
     /// Whether a Session's adapter takes attachments at all — declared, not discovered (#540). A
     /// question rather than a fact on the presentation, because the answer belongs to the drive
     /// port and the Hub's projection has never heard of it.
@@ -107,6 +113,7 @@ public struct CockpitActions {
         setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
         sendTurn: { _, _, _ in },
+        interruptTurn: { _ in },
         canAttach: { _ in false },
         decidePermission: { _, _, _ in },
         revokeStandingAllow: { _, _ in },
@@ -126,6 +133,7 @@ public struct CockpitActions {
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
         sendTurn: @escaping (String, String, [SessionAttachment]) throws -> Void,
+        interruptTurn: @escaping (String) -> Void = { _ in },
         canAttach: @escaping (String) -> Bool = { _ in false },
         decidePermission: @escaping (String, String, PermissionDecision) -> Void,
         revokeStandingAllow: @escaping (String, String) -> Void,
@@ -143,6 +151,7 @@ public struct CockpitActions {
         self.setSessionName = setSessionName
         self.handOffSession = handOffSession
         self.sendTurn = sendTurn
+        self.interruptTurn = interruptTurn
         self.canAttach = canAttach
         self.decidePermission = decidePermission
         self.revokeStandingAllow = revokeStandingAllow

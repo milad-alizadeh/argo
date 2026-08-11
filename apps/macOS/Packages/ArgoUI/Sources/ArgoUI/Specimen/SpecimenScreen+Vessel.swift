@@ -33,6 +33,12 @@ extension SpecimenScreen {
             // A follow-up held above the field while the Turn it waits on runs, cancellable where
             // it stands, and a field inviting the next one rather than a message.
             ComposerSpecimen(composer: ComposerSpecimen.running, draft: ComposerSpecimen.queued)
+        case .composerRunning:
+            // The Turn in flight, composed against a live reading (#541): the send arrow become
+            // Stop in the same circle and the same place, and a field still inviting the next thing
+            // rather than shut. Over the working feed and not the vessel alone, because what the
+            // render has to settle is whether the amber reads as the one live thing on the screen.
+            sessions(FeedProjection.previewWorkingRows, composer: ComposerSpecimen.running)
         case .composerRefusal:
             // A refused send: the message still where it was typed, the reason on the seam
             // above the vessel, and a way to try again.
@@ -99,7 +105,8 @@ extension SpecimenScreen {
              .feedRunEvidence, .feedSurveyEvidence, .feedSurveyEvidenceStep,
              .feedDocumentEvidence, .evidenceAddresses,
              .feedAttention, .feedPunctuation, .feedPermissionExpired, .feedAgents, .feedAtScale,
-             .feedAtScaleEvidence, .feedArriving, .emptyFeed, .feedGallery, .feedSingleShot,
+             .feedAtScaleEvidence, .feedArriving, .feedWorking, .emptyFeed, .startingSpawn,
+             .feedGallery, .feedSingleShot,
              .feedAbsentShot, .feedLightbox, .planPill, .openPlanPill, .unstartedPlanPill,
              .floatingControls, .flatFloatingControls, .feedLeftBehind, .feedLeftBehindInSilence,
              .twoReadings, .welcome, .connectFresh, .connectFolderOnly, .connectPartly,

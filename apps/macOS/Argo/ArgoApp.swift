@@ -158,6 +158,7 @@ struct ArgoApp: App {
             sendTurn: { id, text, attachments in
                 try cockpit.send(text, attaching: attachments, to: id)
             },
+            interruptTurn: { id in cockpit.interrupt(id) },
             canAttach: { _ in cockpit.canAttach },
             decidePermission: { id, request, decision in
                 cockpit.decide(decision, answering: request, for: id)

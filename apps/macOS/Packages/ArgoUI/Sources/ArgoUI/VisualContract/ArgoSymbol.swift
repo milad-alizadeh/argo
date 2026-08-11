@@ -111,6 +111,10 @@ public enum ArgoSymbol {
     /// hint is one instruction three times.
     public static let send = "arrow.up"
 
+    // The composer's Stop (#541) has no entry here, and the absence is the point: it is a drawn
+    // square rather than a symbol, because no rung of the icon scale reaches the size the study
+    // draws it at. The measurement lives with the vessel's own (`ArgoComposerVessel.stopMark`).
+
     /// The composer's attach control (#540). A `+` and deliberately not a paperclip: what it opens
     /// is "give the agent something", which is the same act as a drop and a paste, and a paperclip
     /// would name only one of the three.

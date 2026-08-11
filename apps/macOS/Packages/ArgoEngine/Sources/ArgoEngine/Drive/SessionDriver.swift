@@ -19,6 +19,17 @@ public protocol SessionDriver {
     /// wait for in between.
     func send(_ text: String, to sessionID: String) throws
 
+    /// Stop the Turn a Session is running (#541). Keyed by Session like `send`, and with nothing
+    /// else to name: there is one Turn in flight at a time, so an interrupt has no second thing it
+    /// could have meant.
+    ///
+    /// It does NOT refuse a Session that is running nothing. Whether a Turn is in flight is a
+    /// DERIVED reading off the record, and the moment between that reading and the click is exactly
+    /// where a Turn ends on its own — a refusal there would report Argo's own lag as something the
+    /// user did wrong. The keystroke lands at an idle prompt and changes nothing, so the honest
+    /// answer to "stop what was already stopped" is silence.
+    func interrupt(_ sessionID: String) throws
+
     /// Answer ONE pending Permission, named (#542, under #535 / ADR-0024). Keyed by Session like
     /// `send`, and by the request's own id besides, because a Session can have more than one call
     /// waiting: answering "whatever is pending" would let a prompt that left the screen between

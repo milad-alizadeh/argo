@@ -14,7 +14,11 @@ struct ComposerFooter: View {
     @Binding var mode: ComposerMode
     let facts: String?
     let isSendable: Bool
+    /// Whether a Turn is in flight, which is what turns the trailing control into Stop (#541).
+    var isRunning = false
     let send: () -> Void
+    /// Stop that Turn. Inert by default, for the reason `attach` is absent by default.
+    var stop: () -> Void = {}
     /// What the `+` does, and `nil` for a Session whose adapter declares no attachments — which is
     /// what takes the control off the row entirely.
     var attach: (([SessionAttachment]) -> Void)?
@@ -31,7 +35,7 @@ struct ComposerFooter: View {
                     .argoText(ArgoTypography.rowMeta)
                     .foregroundStyle(argo.color.text.secondary)
             }
-            SendButton(isSendable: isSendable, send: send)
+            SendButton(isSendable: isSendable, isRunning: isRunning, send: send, stop: stop)
         }
         .padding(.top, ArgoSpacing.base)
     }
@@ -71,4 +75,19 @@ struct ComposerFooter: View {
         .frame(width: 640)
         .argoDeckSurface()
         .argoAppearance()
+}
+
+#Preview("Composer footer — a Turn in flight") {
+    ComposerFooter(
+        mode: .constant(.code),
+        facts: "Opus 5",
+        isSendable: false,
+        isRunning: true,
+        send: {},
+        attach: { _ in },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
 }

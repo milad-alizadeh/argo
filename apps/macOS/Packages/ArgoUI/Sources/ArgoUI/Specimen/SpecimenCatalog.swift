@@ -89,6 +89,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case composerCeiling
     case composerDraftKept
     case composerQueued
+    case composerRunning
     case composerRefusal
     case flatComposer
     case composerStanding

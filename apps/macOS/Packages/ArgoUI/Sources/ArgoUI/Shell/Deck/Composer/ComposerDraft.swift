@@ -26,9 +26,10 @@ struct ComposerDraft: Equatable {
     /// `ComposerDraft+Attachments.swift`, and Swift's `private` is file-scoped — the two halves of
     /// one value are in two files because one file would be over the house line ceiling.
     var attachments: [SessionAttachment]
-    /// What Argo would not take, in the seam's words — a drop on an adapter that declares no
-    /// attachments. Quieter than `refusal` and outranked by it: nothing was sent, and nothing the
-    /// user typed is at risk.
+    /// What Argo did to this draft that the reader did not do themselves, in the seam's words — a
+    /// drop the adapter would not take (#540), or the clearing an interrupt leaves behind (#541).
+    /// Quieter than `refusal` and outranked by it: neither is a send that failed, and the words the
+    /// reader is looking at are not at risk from either.
     var notice: String?
     /// Why the last send was refused, in the seam's words — and `nil` the moment one goes
     /// through, because a reason standing over a message that was delivered is a warning about
@@ -120,6 +121,30 @@ struct ComposerDraft: Equatable {
             refusal = nil
         }
     }
+
+    /// What an interrupt leaves in the composer: nothing (#541, ADR-0024). The field, the tray and
+    /// the queue all go, so no leftover word can concatenate onto the next Turn.
+    ///
+    /// The QUEUE is the half a reader would not think to ask about, and the half that would bite.
+    /// A follow-up typed while the Turn ran is released the moment that Turn ends — and an
+    /// interrupt IS it ending, so without this the very next thing the Session received would be
+    /// instructions written for the run somebody had just killed.
+    ///
+    /// It says what it did rather than clearing quietly. Everywhere else here the rule is that a
+    /// message survives what went wrong with it; this is the one act that cannot let it, so the
+    /// reader is told instead of finding an empty vessel and having to guess.
+    mutating func stopped() {
+        guard !isEmpty else { return }
+        text = ""
+        attachments = []
+        queued = []
+        refusal = nil
+        notice = Self.cleared
+    }
+
+    /// The seam's sentence for it. Named rather than written at the call site, so the test that
+    /// asserts the reader was told and the vessel that tells them cannot come to disagree.
+    static let cleared = "Turn stopped — the composer was cleared"
 
     /// Take one waiting follow-up back — the chip's `×`. By id and never by text: two identical
     /// follow-ups are two things, and the one the user pointed at is the one that goes.

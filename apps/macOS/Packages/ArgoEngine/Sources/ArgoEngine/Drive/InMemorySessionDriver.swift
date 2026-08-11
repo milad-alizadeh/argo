@@ -28,8 +28,16 @@ public final class InMemorySessionDriver: SessionDriver {
     /// most needs to assert, since the bug it guards against is an answer meeting the wrong one.
     private var decisions: [String: [(request: String, decision: PermissionDecision)]] = [:]
     private var revocations: [String: [String]] = [:]
+    private var interrupts: [String: Int] = [:]
 
     public init() {}
+
+    public func interrupt(_ sessionID: String) throws {
+        if let refusal {
+            throw refusal
+        }
+        interrupts[sessionID, default: 0] += 1
+    }
 
     public func send(_ text: String, to sessionID: String) throws {
         if let refusal {
@@ -95,5 +103,11 @@ public final class InMemorySessionDriver: SessionDriver {
     /// The standing allows taken back on one Session, in the order they were revoked.
     public func revoked(for sessionID: String) -> [String] {
         revocations[sessionID] ?? []
+    }
+
+    /// How many times one Session was stopped. A COUNT and not a list, because an interrupt names
+    /// nothing: what a caller has a claim about is that the stop reached the port, and how often.
+    public func interrupted(_ sessionID: String) -> Int {
+        interrupts[sessionID] ?? 0
     }
 }

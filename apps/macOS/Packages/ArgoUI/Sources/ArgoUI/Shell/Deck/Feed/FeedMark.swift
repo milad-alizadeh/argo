@@ -16,6 +16,14 @@ enum FeedMark: Equatable, Sendable {
     /// The work left here for a fresh Session, and where it went. The feed's one row that is a way
     /// out of the reading rather than a part of it — see `FeedHandoff`.
     case handedOff(FeedHandoff)
+    /// A Turn somebody stopped (#541), read off the entry the CLI writes for it. A mark and not a
+    /// prompt, which is the whole reason this case exists: the record files the sentence on the
+    /// USER side, so drawn as written it would be a row in the reader's own voice saying
+    /// something the reader never typed.
+    ///
+    /// It says nothing about WHO — the record does not, and the composer's Stop and an `ESC` typed
+    /// into the terminal are the same keystroke by the time it is written down.
+    case interrupted
     /// A Permission the gate ran out of patience for and refused itself (#573). A mark because it
     /// is drawn as one and is not something the agent said or did — but the only one that reports
     /// an ACT rather than the shape of the record, which is why it alone takes attention ink.
@@ -43,6 +51,11 @@ extension FeedMark {
         // cannot get anywhere else.
         case let .turnEnded(reason): "turn ended · \(reason.rawValue)"
         case let .spent(usage): "session · \(FeedSpend.words(usage))"
+        // One word where the record has five. The record's sentence is a marker rather than prose —
+        // it is there to be recognised, not read — and the rule it is let into already says a turn
+        // ended here, so `[Request interrupted by user]` across the column would spend the feed's
+        // loudest row restating its own punctuation.
+        case .interrupted: "interrupted"
         // Named, rather than "handed off" alone. The whole of what this row is for is the reader
         // knowing where to go next, and the destination's own title is what the roster will show
         // them when they get there.
@@ -73,6 +86,9 @@ extension FeedMark {
     var spoken: String {
         switch self {
         case .compacted, .turnEnded, .spent, .handedOff: words ?? "Turn ended"
+        // A sentence rather than the caption: "interrupted" alone read out is an adjective with
+        // nothing to attach to, and what a listener needs is which thing it happened to.
+        case .interrupted: "The Turn was interrupted"
         // The tool is named here and nowhere else. On the rule it would be the one mark carrying a
         // proper noun and would push the sentence past the column at any real width; spoken, it is
         // the difference between "a Permission expired" and knowing WHICH call went unanswered.
