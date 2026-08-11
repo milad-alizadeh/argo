@@ -16,6 +16,22 @@ The study lives on the throwaway branch `worktree-prototype-working-motion`
 switchable, and its render harness (`working-motion-render.html`) is what produced the PNGs here.
 It is there to be re-explored, not built from.
 
+## Why this is allowed to loop
+
+This is a **live operational signal**, which
+[D12](cockpit-visual-identity-decisions.md#d12--motion-responds-it-never-performs-ambiently) lets
+loop for exactly as long as its operation lasts. Read D12 for the bound and the test; the operation
+here is the Turn, and the event that ends it is the Turn ending. A pass still running after that is
+a defect, not a flourish.
+
+**This is not `Ion Trace`.**
+[D13](cockpit-visual-identity-decisions.md#d13--delight-has-an-optical-mechanical-character)'s
+`Ion Trace` is a delight moment — one brief charge along the canopy/deck seam when the active
+Session changes — deferred by D41. This is a loop inside the Instrument Deck reporting live work.
+They share the palette's word for Argo's accent and nothing else, so
+[#383](https://github.com/milad-alizadeh/argo/issues/383)'s *"No Ion Trace"* and *"never loops"* do
+not reach this design.
+
 ## The two states are exclusive
 
 A Turn in flight is **either** running a tool **or** thinking. Never both, and never neither.
