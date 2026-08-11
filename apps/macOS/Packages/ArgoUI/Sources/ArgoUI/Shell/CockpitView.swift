@@ -69,7 +69,7 @@ public struct CockpitView: View {
         guard let session = presentation.session(navigation.session) else { return nil }
         return SessionComposerProjection.composer(
             for: session,
-            canAttach: actions.canAttach(session.id),
+            canAttach: actions.drive.canAttach,
         )
     }
 

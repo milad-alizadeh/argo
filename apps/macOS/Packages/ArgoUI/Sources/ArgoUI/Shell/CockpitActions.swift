@@ -52,42 +52,10 @@ public struct CockpitActions {
     /// Answers with the fresh Session's id, `nil` where no handoff happened — the app performs
     /// and the shell decides what to point at (`CockpitNavigationModel.session` is not public).
     public let handOffSession: (String, Int?) async -> String?
-    /// Put one Turn to a Session, as though the user had typed it at that CLI's own prompt —
-    /// the composer's whole intent (#538, under #535 / ADR-0024).
-    ///
-    /// Throwing rather than answered, and the thrown `SessionDriveError` is repeated on the
-    /// composer's seam: a refusal keeps the message where it was typed, which only the raising
-    /// surface can do.
-    /// The attachments travel WITH the words rather than through an intent of their own: the paths
-    /// are named inside the Turn the message is in (#540), so an attach that went and a send that
-    /// did not would leave files written for a message nobody sent.
-    public let sendTurn: (String, String, [SessionAttachment]) throws -> Void
-    /// Stop the Turn a Session is running (#541) — the composer's second act on the world.
-    ///
-    /// Throwing, like `sendTurn` and unlike `decidePermission`, and the field is the reason. A
-    /// stop that was refused stopped nothing, so nothing may be cleared behind it — and only the
-    /// port knows which it was. Leaving the refusal unsaid would empty a composer on the strength
-    /// of having asked, and post a line claiming a Turn was stopped that was not.
-    public let interruptTurn: (String) throws -> Void
-    /// Whether a Session's adapter takes attachments at all — declared, not discovered (#540). A
-    /// question rather than a fact on the presentation, because the answer belongs to the drive
-    /// port and the Hub's projection has never heard of it.
-    public let canAttach: (String) -> Bool
-    /// Answer the named Permission on a Session (#542) — `(sessionID, requestID, decision)`. The
-    /// request is named because the answer must reach the prompt the user was reading and no
-    /// other; the Session alone does not say that when two calls are waiting.
-    ///
-    /// Not throwing, unlike `sendTurn`: the one refusal — the Permission already gone — is
-    /// answered by the prompt leaving the screen.
-    public let decidePermission: (String, String, PermissionDecision) -> Void
-    /// Put a Session on a rung of the Mode ladder (#545) — `(sessionID, mode)`. Throwing: the port
-    /// refuses a rung it cannot reach from the stance it can read, and refuses one mid-Turn, and
-    /// both reasons belong on the composer's seam.
-    public let setSessionMode: (String, SessionMode) throws -> Void
-    /// Take back a standing allow on a Session (#572) — `(sessionID, toolName)`. Keyed by tool
-    /// because the tool IS the grant, and it answers no blocked call: it changes what the Session
-    /// will ask about next.
-    public let revokeStandingAllow: (String, String) -> Void
+    /// Everything the shell asks a Session to DO, through the engine's port (ADR-0024, #633).
+    /// Unlike the Project intents above, none of it is the app layer's to perform — it reaches no
+    /// panel and no Finder, so there is nothing here for a closure to stand in front of.
+    public let drive: any SessionDriver
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor`
     /// because every action here is called from a view.
@@ -106,13 +74,16 @@ public struct CockpitActions {
         setSessionArchived: { _, _ in },
         setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
-        sendTurn: { _, _, _ in },
-        interruptTurn: { _ in },
-        canAttach: { _ in false },
-        decidePermission: { _, _, _ in },
-        setSessionMode: { _, _ in },
-        revokeStandingAllow: { _, _ in },
+        drive: inertDriver,
     )
+
+    /// What `inert` drives. It declares NO attachments, which is what keeps the `+` off every
+    /// preview and specimen that renders a composer.
+    @MainActor private static var inertDriver: InMemorySessionDriver {
+        let driver = InMemorySessionDriver()
+        driver.canAttach = false
+        return driver
+    }
 
     public init(
         refreshCheckout: @escaping () -> Void,
@@ -129,12 +100,7 @@ public struct CockpitActions {
         setSessionArchived: @escaping (String, Bool) -> Void,
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
-        sendTurn: @escaping (String, String, [SessionAttachment]) throws -> Void,
-        interruptTurn: @escaping (String) throws -> Void = { _ in },
-        canAttach: @escaping (String) -> Bool = { _ in false },
-        decidePermission: @escaping (String, String, PermissionDecision) -> Void,
-        setSessionMode: @escaping (String, SessionMode) throws -> Void = { _, _ in },
-        revokeStandingAllow: @escaping (String, String) -> Void,
+        drive: any SessionDriver,
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
@@ -150,11 +116,6 @@ public struct CockpitActions {
         self.setSessionArchived = setSessionArchived
         self.setSessionName = setSessionName
         self.handOffSession = handOffSession
-        self.sendTurn = sendTurn
-        self.interruptTurn = interruptTurn
-        self.canAttach = canAttach
-        self.decidePermission = decidePermission
-        self.setSessionMode = setSessionMode
-        self.revokeStandingAllow = revokeStandingAllow
+        self.drive = drive
     }
 }
