@@ -7,14 +7,15 @@ extension CockpitPresentation.Session {
     /// argument keys are only ever `cmd · workdir · yield_time_ms · max_output_tokens · tty` — no
     /// description, ever.
     ///
-    /// Eight commands chosen for the cuts they land on: an assignment, a `cd` prelude, a chain that
+    /// Nine commands chosen for the cuts they land on: an assignment, a `cd` prelude, a chain that
     /// must survive whole, a pipeline, a path only a middle cut keeps both ends of, and a failure.
+    /// One of them prints at the length that made #381's count worth drawing.
     static let ranCommands: [TranscriptEvent] = [
         // Outside the tree on purpose: a path under the Session's own cwd is already short, and
         // this exists for the scratchpad no cwd can shorten.
         .cwd("/Users/milad/Developer/argo"),
     ] + printed + [
-        // The one that failed, last, beside seven rows that did not.
+        // The one that failed, last, beside eight rows that did not.
         .toolCall(ToolCall(
             id: "ran-failed", name: "shell", kind: .execute,
             target: "swiftformat --lint Packages/ArgoUI/Sources", atMs: nil,
@@ -66,6 +67,7 @@ extension CockpitPresentation.Session {
             ran: "git add -A && git commit -m 'A command with no narration is still readable'",
             said: "[argo/#470 4f2a1c9] A command with no narration is still readable",
         ),
+        (ran: "swiftlint lint --strict Packages/ArgoUI/Sources", said: linted),
     ].enumerated().flatMap { position, call -> [TranscriptEvent] in
         let id = "ran-\(position)"
         return [
@@ -79,4 +81,24 @@ extension CockpitPresentation.Session {
             )),
         ]
     }
+
+    /// A lint over the whole package: the one command here that prints more than a reader would
+    /// take in at a glance, which is what makes the row's count a decision rather than a
+    /// decoration.
+    private static let linted = """
+    Linting Swift files in Packages/ArgoUI/Sources
+    Linting 'CockpitPresentation+PreviewShell.swift' (1/214)
+    Linting 'EvidenceLength.swift' (2/214)
+    Linting 'EvidencePanel.swift' (3/214)
+    Linting 'EvidenceStepHeader.swift' (4/214)
+    Linting 'FeedCall.swift' (5/214)
+    Linting 'FeedCallLine.swift' (6/214)
+    Linting 'FeedCallReading.swift' (7/214)
+    Linting 'FeedCommandLine.swift' (8/214)
+    Linting 'FeedGallery.swift' (9/214)
+    Linting 'FeedShotView.swift' (10/214)
+    EvidencePanel.swift:52:9: error: File Length Violation: File should contain 175 lines
+    FeedCallLine.swift:31:5: error: Closure Body Length Violation: Closure body should span 50
+    Done linting! Found 2 violations, 2 serious in 214 files.
+    """
 }

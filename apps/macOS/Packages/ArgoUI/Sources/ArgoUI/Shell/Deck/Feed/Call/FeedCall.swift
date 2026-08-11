@@ -36,6 +36,7 @@ struct FeedCall: Equatable, Sendable {
             kind.verb,
             subject.captioned,
             repeats > 1 ? "\(repeats) times" : nil,
+            printed?.drawn,
             ending.spoken,
         ]
         .compactMap(\.self)
