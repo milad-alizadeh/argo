@@ -55,43 +55,15 @@ cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-
 
 ### Quality gates
 
-The arithmetic half of those rules is a build failure, not a review note — `bun run quality`
-(biome + duplication + Swift), and every rule in it is an **error, never a warning**. Biome
-carries every per-file cap (50 lines per function, cognitive complexity 15, 3 parameters, a
-150-line file ceiling counting code lines only) and the escape-hatch bans (`any`, `@ts-ignore`,
-`!`, nested ternaries); `jscpd` gates whole-tree duplication at 1% across Swift and JS alike.
-`bun run quality:swift` (SwiftFormat in check mode, SwiftLint, package boundaries) needs a macOS
-runner and so lives on the `macos` CI job rather than the default Linux ones, alongside the
-build and the swift-testing suites. On Linux, CI runs biome, duplication and `test:hooks` —
-which is now the only executable suite there. Pre-commit runs lint-staged: biome, then
-SwiftFormat/SwiftLint/boundaries and the design-token gate over staged Swift.
-
-`scripts/placement-guard.mjs` is a `PreToolUse(Write)` hook that DENIES an agent creating a new
-file loose at a module root, before it exists. It guards the way IN only (`Write`, new files,
-module roots) — a refactor moving files OUT of a root never trips it — and fails open on error.
-It finds its map by walking ancestors, so with no module map in this tree it simply permits;
-it stays wired because it is what consumers get.
-
-Two caps have **no rule to enforce them here** and live in `rules/` prose only: `as`
-assertions and exhaustive `switch` over a union.
+The arithmetic half of those rules is a build failure, not a review note, and every rule in
+`bun run quality` is an **error, never a warning**. Write to the caps rather than waiting to
+be told: 50 lines per function, cognitive complexity 15, 3 parameters, a 150-line file ceiling
+counting code lines only, and whole-tree duplication under 1%.
 
 When a gate fires, fix it or ratchet it — **never suppress it inline and never raise a global
-cap.** Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule
-doesn't apply to that category) or **RATCHET** (debt; the list may only shrink):
-
-| File | Covers |
-|---|---|
-| `biome.jsonc` `overrides` | every lint cap, the line ceiling included |
-| `.jscpd.json` `ignore` | duplication — reasons in `scripts/jscpd-ignore-reasons.txt`, one per glob |
-| the map's `placement` block | the folder rules — `allow`/`ratchet`/`exclude`, each value its own reason |
-
-The placement gates fail on a **stale** exemption too: an entry naming no file is deleted, not
-left to re-authorise a future breach.
-
-Two of these configs **fail open when commented**, which is why the reasons sit in sidecars and
-why `quality:duplication` passes `--config .jscpd.json` explicitly — **keep that flag on the
-command.** Never prove a change to either config by exit code alone. Details and the
-verification recipe: `docs/agents/quality-gates.md`.
+cap.** Two of the configs fail open when commented, so `quality:duplication` keeps its explicit
+`--config .jscpd.json` and neither is ever proved by exit code alone. What runs on which CI
+job, where an exemption goes, and the verification recipe: `docs/agents/quality-gates.md`.
 
 ## Session isolation
 
@@ -100,18 +72,13 @@ builds, any multi-file change) must **never** run in the shared main checkout: i
 the repo root rather than a path under `.claude/worktrees/`, enter a worktree first (Claude
 Code: the `EnterWorktree` tool — this section is your standing instruction to use it,
 **unprompted**; other harnesses: `git worktree add`) and commit to a ticket branch there.
-Read-only work (review, triage, Q&A) may stay in the main checkout. Enforced mechanically: a
-`CLAUDECODE`-gated `PreToolUse` hook (`scripts/worktree-guard.mjs`) blocks agent `Edit`/`Write`
-to `apps/**` or `packages/**` from outside a worktree — doc, memory, and config edits stay free,
-and the human workflow is never touched.
+Read-only work (review, triage, Q&A) may stay in the main checkout. `scripts/worktree-guard.mjs`
+enforces this on agent `Edit`/`Write` to `apps/**` and `packages/**`; doc, memory and config
+edits stay free.
 
-Everything else about worktrees — naming format, resuming an interrupted worktree, recovering a
-deleted one, and the sub-agent-in-parent-worktree rule — lives in `docs/agents/worktrees.md` and
-applies to **all** implementation work, not just `/implement` runs.
-
-Landed worktrees are reaped by `bun run worktrees:gc` (`scripts/worktree-gc.sh`). It removes
-only what is provably safe (PR merged, tree clean, nothing unpushed, untouched for 30 minutes);
-everything else is reported and left alone. `--dry-run` reports without removing.
+Everything else about worktrees — naming, resuming, recovery, the sub-agent rule, and reaping
+landed ones with `bun run worktrees:gc` — is in `docs/agents/worktrees.md`, and applies to
+**all** implementation work, not just `/implement` runs.
 
 ## Cross-CLI guardrail hooks
 
@@ -121,10 +88,8 @@ guard, worktree edit guard, worktree-gc), projected per-harness. **Edit
 `.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`,
 and re-scope the edit guard to their own layout with `worktreeGuard.roots` in the same file.
 
-A hook the sync does not recognise as its own is preserved as the consumer's and a fresh copy
-appended, so **a script named in `hooks.json` must also be in `MANAGED_MARKERS`**
-(`hooks-sync.mjs`) or the projection grows a duplicate on every run. `test:hooks` derives that
-requirement rather than restating it.
+A script named in `hooks.json` must also be in `MANAGED_MARKERS` (`hooks-sync.mjs`) or the
+projection grows a duplicate on every run. `test:hooks` fails when it isn't.
 
 ## Skill bundle
 

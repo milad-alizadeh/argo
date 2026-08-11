@@ -81,3 +81,9 @@ checkouts, separate branches, and confusion over which one a dev server is servi
 worktree already provides the isolation from the shared main checkout. The **one** exception is
 an explicit instruction from the parent to give a sub-agent its own worktree — a parent decision,
 never something a sub-agent takes on its own.
+
+## Reaping landed worktrees
+
+`bun run worktrees:gc` (`scripts/worktree-gc.sh`) removes only what is provably safe: PR merged,
+tree clean, nothing unpushed, and untouched for 30 minutes. Everything else is reported and left
+alone. `--dry-run` reports without removing.
