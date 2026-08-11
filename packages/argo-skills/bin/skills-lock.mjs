@@ -1,6 +1,5 @@
-// Where the bundle manifest lives and how its entries group by source. Both `scaffold.mjs`
-// (installs from it) and `skills-drift.mjs` (watches the sources it pins) need each, so
-// neither re-derives them.
+// Where the bundle manifest lives and how its entries group by source, so `scaffold.mjs`
+// (installs from it) doesn't re-derive them.
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
