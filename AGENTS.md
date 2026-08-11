@@ -8,10 +8,11 @@ Monorepo for the Argo skills/plugin **and** the Argo cockpit app. Read by both C
   `gh` CLI. See `docs/agents/issue-tracker.md`.
 - **Triage labels** — five canonical triage roles, each label string equal to its name. See
   `docs/agents/triage-labels.md`.
-- **Domain docs** — single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See
-  `docs/agents/domain.md`. `CONTEXT.md` is imported below so the model is injected rather than
-  left to a pointer a session may not follow; the reasoning *behind* each term lives in
-  `docs/domain/rationale.md` — read that only when changing a term.
+- **Domain docs** — single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See
+  `docs/agents/domain.md`. The vocabulary is inlined under **Domain model** below. `CONTEXT.md`
+  is now an index and the sections are files under `docs/domain/`, so read the one section you
+  need rather than the whole model. No harness auto-loads any of it. The reasoning *behind* each
+  term lives in `docs/domain/rationale.md` — read that only when changing a term.
 
 ## Task tracking
 
@@ -231,4 +232,63 @@ rtk err  bun run quality:swift      # SwiftFormat --check, SwiftLint, package bo
 There is no `typecheck` script any more — it ran `tsc` over `apps/desktop`, and no workspace
 carries TypeScript sources to check (ADR-0023).
 
-@CONTEXT.md
+## Domain model
+
+The full model lives under `docs/domain/`, one file per section, indexed by `CONTEXT.md` at
+the repo root. None of it is loaded into every session, because the whole model costs about
+8,200 tokens. Read the one section you need when you are changing the model, naming something
+new, or you need the exact rule behind a term. Swift comments cite it by section name, like
+`CONTEXT.md L1 · Binding`, and the index maps every one of those names to its file.
+
+The vocabulary below is the part every session needs. Use these words, never a synonym.
+
+**L1 · Organisation**
+
+- **Project** — one registered git repo, keyed by a stable id. The scope of one cockpit window.
+- **Account** — one authenticated identity with a provider. One grant, one token in the keychain.
+- **Binding** — a Project's use of one Account through one port, plus the provider-side scope.
+- **Work Item** — a ticket owned by a provider. Argo stores the link, never the content.
+- **answer** — the resolved text of a decision ticket, held verbatim.
+- **Delivery** — the product in flight, derived per branch from git plus the code host.
+- **Person** — `me` or `other`.
+
+**L2 · Session**
+
+- **Session** — one logical resume-chain, and the root Agent. Stored as `managed` or `external`.
+- **orphaned** — a managed Session whose owning process is gone. Observation only, never steerable.
+- **Session status** — `running · permission · asking · idle · stopped · ended · unknown`.
+- **Transcript file** — the physical per-file CLI record. Never itself called a Session.
+
+**Honesty tier** — a property of each rendered fact, not of a session.
+
+- **DIRECT** — Argo owns the fact. **DERIVED** — observed from outside Argo. **CONVENTION** —
+  arrived over the companion plugin.
+- **degrade-down** — ambiguity resolves to the lower tier or the quieter state, so Argo never
+  renders a false DIRECT.
+
+**L3 · Runtime tree**
+
+- **Agent** — a node in the execution tree. It is the root when `parentId` is null.
+- **Subagent** — a non-root Agent. **Turn** — one exchange, prompt in to stop reason out.
+- **Message** — what the agent said. **Thought** — what it reasoned. Both sit in one ordered sequence.
+- **Tool Call** — one observable action. Its **Result** is a `diff`, `output` or `media` value.
+- **Plan** — the agent's live to-do list. Session-scoped and replaced whole.
+- **Workspace** — the git working context. It holds `branch`, which is the join key.
+- **Compaction** — a marker where history was condensed. **Usage** — token, cost and context telemetry.
+
+**L4 · Delivery detail**
+
+- **Diff** — a Delivery's change-set, branch against base, addressed by commit SHA.
+- **Review** — one submitted review round. **Finding** — one resolvable issue inside it.
+- **Check** — one CI check, name taken verbatim from the code host.
+- **Outcome** — what a Session produced. Session-keyed and persisted.
+
+**Autonomy** — **Mode** (`Ask | Plan | Code`), **Permission** (a per-action prompt), **Standing
+allow** (one tool that stopped asking), **Permission expiry** (Argo's own clock refused it), and
+**Gate** (Argo's policy on a Delivery step).
+
+**Ports** — **Work Item provider** and **Code host**. An **MCP server** is not a port, because it
+is something an observed Session connects to rather than something Argo reads through.
+
+**Surfaces, not entities** — Cockpit, Roster, Panels, rooms. The **Hub** is the in-memory
+projection that assembles the join.
