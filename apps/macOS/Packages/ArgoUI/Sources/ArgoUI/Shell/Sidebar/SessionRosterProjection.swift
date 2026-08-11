@@ -95,10 +95,23 @@ enum SessionRosterProjection {
         rows(from: sessions, archived: true, now: now)
     }
 
-    /// The foot's own label, and `nil` where there is nothing behind it
-    /// (`cockpit-spec.md` §4.1).
-    static func archivedFoot(_ archived: [Row]) -> String? {
-        archived.isEmpty ? nil : "Archived (\(archived.count))"
+    /// What the foot of the roster says, read and heard. One value rather than two functions over
+    /// the same array, so nothing has to guard the same emptiness twice.
+    struct Foot: Equatable {
+        let label: String
+        let announcement: String
+    }
+
+    /// The foot, and `nil` where there is nothing behind it (`cockpit-spec.md` §4.1).
+    static func archivedFoot(_ archived: [Row]) -> Foot? {
+        guard archived.isEmpty == false else { return nil }
+        let count = archived.count
+        return Foot(
+            label: "Archived (\(count))",
+            // Said in words for the reader who is hearing it, because `(2)` reads out as
+            // punctuation.
+            announcement: "Archived, \(count) Session\(count == 1 ? "" : "s")",
+        )
     }
 
     private static func rows(

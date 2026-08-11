@@ -39,6 +39,11 @@ public enum ArgoLayout {
     /// the mark 4pt further from the panel edge than the icon column is on the other side.
     public static let rowMenuWidth: CGFloat = 16
 
+    /// The roster's archive header. A FLOOR, not a height: macOS scales sidebar row height with the
+    /// reader's own sidebar size setting, and a frame here would refuse it
+    /// (`docs/designs/cockpit-roster-archive-foot.md`).
+    public static let rosterFootMinimumHeight: CGFloat = 22
+
     // The Instrument Deck's zones, measured off the approved study
     // (`docs/designs/cockpit-sessions-liquid-glass.png`) — the decision log carries no
     // measurements, so the pixels are the only source for these.

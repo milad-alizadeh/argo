@@ -17,6 +17,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     // No swiped-row case: `.swipeActions` opens only from a real gesture, so there is no state to
     // hand the harness. It is an XCUITest claim (`ArgoE2ETests`), not a PNG.
     case archivedRoster
+    case openArchivedRoster
     case spawningRoster
     case renamedRoster
     case editingRow

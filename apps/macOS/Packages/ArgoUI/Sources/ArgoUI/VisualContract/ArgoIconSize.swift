@@ -6,9 +6,13 @@ import SwiftUI
 /// wherever it appears. The contract asserts the ceiling that keeps one from standing proud of its
 /// line: no rung outgrows the densest text role it may sit next to.
 public enum ArgoIconSize: CGFloat, Sendable, CaseIterable {
-    /// A mark on a line of text — a feed row's kind, a disclosure chevron, a lock on a roster row,
-    /// a branch beside its name. The right answer unless the mark IS the control. A chevron sits
-    /// here too: at 6pt it was a control nobody could see they were allowed to click.
+    /// A disclosure chevron, and nothing else: the roster's archive foot, the toolbar vessels, a
+    /// feed row that opens onto evidence. Below the `inline` floor deliberately — a chevron is a
+    /// note on a control the reader has already found by its label, so at `inline` it was the
+    /// loudest thing in every quiet row it sat in. Its own rung so all of them agree.
+    case chevron = 8
+    /// A mark on a line of text — a feed row's kind, a lock on a roster row, a branch beside its
+    /// name. The right answer unless the mark IS the control, or it is a chevron.
     case inline = 10
     /// A control's own mark, where the mark is the thing being pointed at rather than a note beside
     /// something else: a toolbar vessel, an icon-only button.
@@ -20,7 +24,7 @@ public enum ArgoIconSize: CGFloat, Sendable, CaseIterable {
 
     /// The rungs in order, for the contract's assertions and the specimen.
     public static let ladder: [(name: String, size: ArgoIconSize)] = [
-        ("inline", .inline), ("control", .control),
+        ("chevron", .chevron), ("inline", .inline), ("control", .control),
     ]
 }
 

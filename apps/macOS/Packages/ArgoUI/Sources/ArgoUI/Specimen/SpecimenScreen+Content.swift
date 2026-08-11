@@ -21,6 +21,9 @@ extension SpecimenScreen {
             ChurningRosterSpecimen()
         case .archivedRoster:
             ArchivedRosterSpecimen()
+        case .openArchivedRoster:
+            // Reachable only by clicking the foot.
+            ArchivedRosterSpecimen(isRevealed: true)
         case .spawningRoster:
             // The one case whose point is the CLICK: driven, so New Session must land a row.
             SpawningRosterSpecimen()
