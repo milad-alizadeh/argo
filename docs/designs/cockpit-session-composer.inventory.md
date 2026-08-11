@@ -1,4 +1,4 @@
-# Session composer — build inventory (#538, #539, #540, #608)
+# Session composer — build inventory (#538, #539, #540, #546, #608)
 
 What assembling the composer's send slice actually forced out of
 [`cockpit-session-composer.md`](cockpit-session-composer.md), per ticket. Names were frozen at
@@ -92,6 +92,58 @@ the path is named in a transcript that outlives the Session, so bytes deleted la
 historical Turn pointing at nothing. A refused send is survivable because the address is the
 attachment's own id — pressing Retry rewrites the same file rather than leaving a copy beside it.
 
+## Extracted — #546 (a Session that cannot be driven)
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `ComposerUnavailable` | molecule | `ArgoUI/Shell/Deck/Composer/` — beside the vessel it replaces | `reason: SessionComposerProjection.Unavailable`, `spawn: () async -> Void`, `isStarting: Bool` (render seam, as `NewSessionButton`'s) | `DeckSeparator` + `ArgoGlyph` + one `Text`, and a stock `.bordered` `.controlSize(.small)` button | frozen table, `ComposerUnavailable`; `external.png` · `orphaned.png` |
+
+One row. Its mark, word, sentence and whether it offers a fresh Session live on
+**`SessionComposerProjection.Unavailable`** rather than in the view, for `SessionMode+Rung`'s
+reason: which sentence a case carries is a fact about the case, and a `switch` in the view would be
+a second place to forget one.
+
+Extraction evidence: the name is in the design's frozen-names table, and it carries three states
+the happy path never renders — no composer is ever on screen at the same time as one.
+
+**Nothing else was extracted, and two criteria needed no code at all.** A failed send already keeps
+the message with the reason and a `Retry` on the seam (`ComposerSeamNote.refusal`, #538), and the
+composer already asks the adapter about attachments and omits the `+` (`canAttach`, #540).
+
+### A row, not an overlay
+
+The composer is an overlay because the feed runs under it and stays readable through the glass.
+This replaces the reading's end rather than covering it, so it is a **row in `SessionsDeck` under
+`DeckContentRow`** and takes its own height — which is also what makes it span the rail and the
+panel, neither of which can be driven either.
+
+### What the renders measured
+
+- **48pt, `surface.sunken`, a `DeckSeparator` on top**, `section` (24) inset both edges, mark at
+  `ArgoIconSize.inline`. Word at `body` semibold in `text.secondary`, sentence at `body` in
+  `text.tertiary` — measured against the feed's own message rows in `orphaned.png`, which share
+  its ink span exactly. `ArgoComposerVessel.unavailableHeight` holds the one number.
+- **The word and the sentence are ONE `Text`**, concatenated rather than two in an `HStack`: at the
+  narrowest deck the pair breaks at the dash and leaves the reading stranded on a line of its own.
+- **A `.bordered` button paints its label with the ACCENT**, and reads the `tint` rather than any
+  `foregroundStyle` around it — #608's `Menu` trap, on a second control. Both buttons came out Ion
+  Blue and read as links.
+
+### The one thing this ticket changed outside its own component
+
+`ComposerSeam`'s **Retry shipped Ion Blue** on the same trap, where `failed.png` draws it neutral.
+It is fixed here rather than left for a follow-up because #546 owns the acceptance criterion the
+render belongs to, and a second control landing beside it with the fault already applied would have
+made the divergence look deliberate.
+
+### The third reason the study does not draw
+
+The design draws `external` and `orphaned`. A **managed Session whose companion reported `ended`**
+is neither — nothing died and Argo still holds the PTY — and it is reachable (`CompanionTool` maps
+`"ended"`, at the CONVENTION tier). Before this ticket it drew a blank deck foot, which is the exact
+state decision 7 exists to stop. It gets its own sentence, the quiet `about` mark rather than a
+triangle, and the same exit. The amendment is recorded on decision 7 in the design.
+
 ## Rewritten — #608 (the Mode menu goes bespoke)
 
 No new name: this ticket **replaces** `ModePicker`'s row rather than adding one. Its
@@ -177,6 +229,6 @@ edge and nothing else. Specimens `composerModeNearly` and `composerModeUnknown`.
 ## Deliberately absent — owned by sibling tickets
 
 `RunFactsButton` +
-`RunSettingsPopover` (#558) · `ComposerUnavailable` (#546) · `SendButton`'s **Stop** state, which
+`RunSettingsPopover` (#558) · `SendButton`'s **Stop** state, which
 `queued.png` draws and #541 owns — it needs an interrupt on the drive port, and a square that
 stops nothing would be the promise decision 9 refuses to make about attachments.

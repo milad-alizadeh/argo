@@ -95,6 +95,13 @@ public enum ArgoSymbol {
     /// wondering.
     public static let permission = "lock.fill"
 
+    /// A Session that cannot be driven (#546). The lock is OUTLINED where a waiting Permission's is
+    /// filled: this one bars nobody, it reports a Session Argo never had the keys to. The triangle
+    /// is `refused`'s and earned for the same reason — an orphaned Session is Argo's own act
+    /// failing, not a reading of the agent's.
+    public static let readOnlySession = "lock"
+    public static let orphanedSession = refused
+
     /// One mark per rung of the composer's Mode ladder, frozen by the composer design (#608).
     public static let modeReadOnly = looked
     public static let modePlan = "list.bullet.rectangle"

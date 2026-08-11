@@ -29,4 +29,12 @@ struct CockpitSpawn {
         guard offer.isLaunchable, let fresh = await actions.spawnSession() else { return }
         navigation.session = fresh
     }
+
+    /// The same act in another Session's folder — what the line on an undriveable Session offers
+    /// (#546). `offer` is not consulted: what that check refuses is a spawn with no reachable
+    /// Project folder to run in, and this one brings its own.
+    func run(beside sessionID: String) async {
+        guard let fresh = await actions.spawnSessionBeside(sessionID) else { return }
+        navigation.session = fresh
+    }
 }

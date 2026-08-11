@@ -20,6 +20,28 @@ extension CockpitCoordinator {
         return nil
     }
 
+    /// The same spawn in another Session's folder (#546) — the one act the line on an undriveable
+    /// Session offers. Seeded with that Session's cwd and nothing else: this is a fresh start on
+    /// the same branch, not a handoff, so it carries no brief and no opening prompt.
+    ///
+    /// A Session the Hub no longer holds, or one that never had a folder, is refused where the
+    /// spawn's own refusals are — the reader gets a sentence rather than a press that did nothing.
+    func spawnSession(beside sessionID: String) async -> String? {
+        do {
+            guard let cwd = hub.sessions.first(where: { $0.id == sessionID })?.cwd else {
+                throw AgentSpawnError.hostRefused(
+                    detail: "Argo does not know which folder that Session was running in",
+                )
+            }
+            return try await hub.spawnSession(seed: SessionSeed(cwd: cwd)).value
+        } catch let failure as AgentSpawnError {
+            report(detail: failure.detail)
+        } catch {
+            report(detail: error.localizedDescription)
+        }
+        return nil
+    }
+
     /// Hand a full Session's work to a fresh one (#513): `/handoff` in its own terminal, the wait
     /// for the brief, then #412's spawn path seeded with it and the folder it was running in.
     ///

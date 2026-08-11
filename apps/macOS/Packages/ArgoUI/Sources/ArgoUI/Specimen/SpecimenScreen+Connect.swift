@@ -52,7 +52,8 @@ extension SpecimenScreen {
              .composerStanding, .composerCeiling, .composerDraftKept, .composerQueued,
              .composerRunning, .composerStopped,
              .composerAttached, .composerPasted, .composerDragOver, .composerNoAttach,
-             .composerModeNearly, .composerModeUnknown,
+             .composerModeNearly, .composerModeUnknown, .composerExternal, .composerOrphaned,
+             .composerEnded,
              .permission, .permissionEdit, .permissionStanding, .flatPermission:
             EmptyView()
         }
