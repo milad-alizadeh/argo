@@ -10,14 +10,15 @@
 /// newest plan is still the whole of it, `PlanProjection` still takes the last one it sees, and
 /// nothing past this type knows which host wrote it.
 struct PlanLedger {
-    /// One entry, plus the two names it answers to. `id` is what an update addresses, and it is
-    /// absent between a create and its result — and stays absent for a create the record never
-    /// answered. That entry is on the list and nothing can move it, which is the honest reading:
-    /// the ids run in creation order, and taking that for a rule would address it by a guess.
+    /// One entry, plus the two names it answers to: `callID` is Argo's own id for the call that
+    /// wrote it, and `taskID` is the host's, which is what an update addresses. The host's is
+    /// absent between a create and its result — and stays absent for a create nothing answered.
+    /// That entry is on the list and nothing can move it, which is the honest reading: the ids run
+    /// in creation order, and taking that for a rule would address it by a guess.
     private struct Entry {
         let callID: String
         let text: String
-        var id: String?
+        var taskID: String?
         var status: PlanEntryStatus
     }
 
@@ -39,16 +40,16 @@ struct PlanLedger {
     /// The only place an id is ever written. A result quoting a call this ledger never made — a
     /// resumed chain, or any other tool's result — matches nothing and is left alone.
     mutating func identify(call callID: String, from toolUseResult: JSONValue?) {
-        guard let id = toolUseResult?["task"]?.stringField("id"),
+        guard let id = toolUseResult?[taskResultKey]?.stringField(taskResultIDKey),
               let index = entries.firstIndex(where: { $0.callID == callID }) else { return }
-        entries[index].id = id
+        entries[index].taskID = id
     }
 
     /// An entry with no subject is dropped rather than shown blank — the same reading a `TodoWrite`
     /// entry with no `content` already gets, and for the same reason.
     private mutating func created(by use: ToolUseBlock) -> Plan? {
         guard let text = use.input.stringField(taskSubjectKey) else { return nil }
-        entries.append(Entry(callID: use.id, text: text, id: nil, status: .pending))
+        entries.append(Entry(callID: use.id, text: text, taskID: nil, status: .pending))
         return plan()
     }
 
@@ -58,7 +59,7 @@ struct PlanLedger {
     private mutating func updated(by use: ToolUseBlock) -> Plan? {
         guard let status = writtenPlanEntryStatus(use.input.stringField(taskStatusKey)),
               let named = use.input.stringField(taskIDKey),
-              let index = entries.firstIndex(where: { $0.id == named }) else { return nil }
+              let index = entries.firstIndex(where: { $0.taskID == named }) else { return nil }
         entries[index].status = status
         return plan()
     }

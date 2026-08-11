@@ -1,13 +1,11 @@
 @testable import ArgoEngine
 import Testing
 
-/// The plan, read off a host that writes it ONE ENTRY AT A TIME.
+/// The plan, read off a host that writes it ONE ENTRY AT A TIME (`PlanLedger` says why the fold
+/// exists and where it sits).
 ///
-/// `TodoWrite` handed the whole list over on every write, which is the shape ADR-0020 was written
-/// against. Claude Code writes `TaskCreate`/`TaskUpdate` instead, so the list only exists as the
-/// fold of every write before it — and the claim every test here makes is that the fold happens in
-/// the reader, so what leaves it is still one whole list per write and nothing downstream can tell
-/// which host wrote it.
+/// Every test here is the same claim said a different way: the fold ends at the reader. What leaves
+/// it is one whole list per write, so nothing downstream can tell which host wrote the record.
 @Suite("Task plan reading")
 struct TaskPlanReadingTests {
     private func plans() async throws -> [Plan] {
@@ -34,8 +32,13 @@ struct TaskPlanReadingTests {
 
     /// The point of folding in the reader: every write reports the WHOLE list, so the newest plan
     /// is still the whole of it and `PlanProjection` goes on taking the last one it sees.
+    ///
+    /// Six snapshots out of the fixture's eleven writes is the second half of the claim. The five
+    /// that report nothing wrote nothing to this list: a create with no subject, an update naming a
+    /// task nobody created, one that only rewords, a `TaskList`, and a `TaskStop`.
     @Test
-    func `every write reports the whole list, not the entry it changed`() async throws {
+    func `every write reports the whole list, and a write that changes nothing reports none`(
+    ) async throws {
         let plans = try await plans()
 
         #expect(plans.map(\.entries.count) == [1, 2, 2, 2, 3, 3])
@@ -52,21 +55,20 @@ struct TaskPlanReadingTests {
         #expect(afterSecondUpdate.entries.map(\.status) == [.inProgress, .completed])
     }
 
-    /// Three writes that change nothing sit in the fixture between the ones that do — an update
-    /// naming a task nobody created, one that only rewords, and a `TaskStop`, which belongs to a
-    /// background agent task and not to this list at all. Six plans out of nine writes is the
-    /// claim.
-    @Test
-    func `a write that changes nothing reports nothing`() async throws {
-        #expect(try await plans().count == 6)
-    }
-
     /// An entry with no subject is dropped rather than shown blank — the same reading a `TodoWrite`
     /// entry with no `content` already gets.
     @Test
     func `a task with nothing on it never joins the list`() async throws {
         #expect(try await plans().allSatisfy { !$0.entries.contains { $0.text.isEmpty } })
-        #expect(try await plans().last?.entries.count == 3)
+    }
+
+    /// The Plan is Session-scoped (ADR-0020), and an incremental list is never replaced whole by
+    /// the next write — so a delegate's step folded in here would sit on the pill for good.
+    @Test
+    func `a subagent's own list is not folded into the Session's`() async throws {
+        let plan = try #require(await plans().last)
+
+        #expect(!plan.entries.contains { $0.text == "A delegate's own step" })
     }
 
     /// A create whose result never landed has no id, so nothing can address it. It is still ON the
@@ -79,13 +81,15 @@ struct TaskPlanReadingTests {
         #expect(plan.entries.last?.status == .pending)
     }
 
-    /// The pill draws what these calls wrote, so the feed must not draw them as well — which is
-    /// what the `plan` kind means (`FeedCallReading`). `TaskStop` is not one of them: stopping a
-    /// background task is news, and it keeps whatever kind its own name earns.
+    /// The pill draws what these calls wrote, so the feed must not draw them too — which is what
+    /// the `plan` kind means (`FeedCallReading` draws no row for one). Only the two that WRITE earn
+    /// it: `TaskList` reads the list and `TaskStop` ends a background agent task, and hiding either
+    /// would take a thing the agent did off the screen without putting it on the pill.
     @Test
-    func `the tools that write the list are read as plan calls, and TaskStop is not`() async throws {
+    func `only the tools that write the list are read as plan calls`() async throws {
         #expect(try await calls()["create-first"]?.kind == .plan)
         #expect(try await calls()["update-first"]?.kind == .plan)
+        #expect(try await calls()["list-read"]?.kind == .other)
         #expect(try await calls()["stop-background"]?.kind == .other)
     }
 }
