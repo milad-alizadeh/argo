@@ -55,25 +55,15 @@ cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-
 
 ### Quality gates
 
-The arithmetic half of those rules is a build failure, not a review note — `bun run quality`
-(biome + duplication + Swift), and every rule in it is an **error, never a warning**. Biome
-carries every per-file cap (50 lines per function, cognitive complexity 15, 3 parameters, a
-150-line file ceiling counting code lines only) and the escape-hatch bans (`any`, `@ts-ignore`,
-`!`, nested ternaries); `jscpd` gates whole-tree duplication at 1% across Swift and JS alike.
-`bun run quality:swift` (SwiftFormat in check mode, SwiftLint, package boundaries) needs a macOS
-runner and so lives on the `macos` CI job rather than the default Linux ones, alongside the
-build and the swift-testing suites. On Linux, CI runs biome, duplication and `test:hooks` —
-which is now the only executable suite there. Pre-commit runs lint-staged: biome, then
-SwiftFormat/SwiftLint/boundaries and the design-token gate over staged Swift.
-
-`scripts/placement-guard.mjs` is a `PreToolUse(Write)` hook that DENIES an agent creating a new
-file loose at a module root. With no module map in this tree it simply permits; it stays wired
-because it is what consumers get.
+The arithmetic half of those rules is a build failure, not a review note, and every rule in
+`bun run quality` is an **error, never a warning**. Write to the caps rather than waiting to
+be told: 50 lines per function, cognitive complexity 15, 3 parameters, a 150-line file ceiling
+counting code lines only, and whole-tree duplication under 1%.
 
 When a gate fires, fix it or ratchet it — **never suppress it inline and never raise a global
-cap.** Two of the configs **fail open when commented**, so `quality:duplication` must keep its
-explicit `--config .jscpd.json`, and no change to either is ever proved by exit code alone.
-Where an exemption goes, and the verification recipe: `docs/agents/quality-gates.md`.
+cap.** Two of the configs fail open when commented, so `quality:duplication` keeps its explicit
+`--config .jscpd.json` and neither is ever proved by exit code alone. What runs on which CI
+job, where an exemption goes, and the verification recipe: `docs/agents/quality-gates.md`.
 
 ## Session isolation
 

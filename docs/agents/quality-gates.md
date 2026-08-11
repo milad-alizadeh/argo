@@ -4,6 +4,18 @@ Companion to `AGENTS.md` → *Quality gates*. That section carries the rule; thi
 an exemption goes, the forensics behind the two configs that **fail silently open**, and how to
 prove a change to them.
 
+## What runs where
+
+`bun run quality` is biome, duplication and Swift. `quality:swift` (SwiftFormat in check mode,
+SwiftLint, package boundaries) needs a macOS runner, so it sits on the `macos` CI job alongside
+the build and the swift-testing suites. Linux CI runs biome, duplication and `test:hooks` — the
+only executable suite there. Pre-commit runs lint-staged: biome, then SwiftFormat, SwiftLint,
+boundaries and the design-token gate over staged Swift.
+
+Biome's escape-hatch bans (`any`, `@ts-ignore`, `!`, nested ternaries) are TypeScript-only and
+so have no subject since ADR-0023. Dormant, like the boundary gates — the per-file caps still
+apply to every tracked `.mjs`.
+
 ## Where an exemption goes
 
 Exemptions live in **three** files, each entry labelled **KIND** (permanent — the rule doesn't
