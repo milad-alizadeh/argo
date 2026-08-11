@@ -7,10 +7,10 @@ import SwiftUI
 /// still has to send. The slot is the one the standing-allow tray and the attachment chips take,
 /// for the same reason: it is where the vessel says what is attached to the next turn.
 ///
-/// It runs the vessel's full width rather than sitting in a flow with its neighbours, because what
-/// it holds is a sentence: a follow-up truncated to fit beside two others is one the user cannot
-/// check before it goes. It keeps the chip's HEIGHT all the same — the slot has one rhythm whether
-/// it is holding attachments, standing allows or this.
+/// It runs the vessel's full width rather than sitting in a flow with its neighbours, and stands
+/// taller than a chip does, because what it holds is a SENTENCE. A follow-up truncated to fit
+/// beside two others is one the user cannot check before it goes, and one squeezed to a chip's
+/// 20pt reads as a token that overflowed rather than as a message waiting to go.
 struct QueuedTurnChip: View {
     @Environment(\.argo) private var argo
 
@@ -38,13 +38,17 @@ struct QueuedTurnChip: View {
             .help("Cancel the queued follow-up")
         }
         .padding(.horizontal, ArgoSpacing.snug)
-        .frame(height: ArgoComposerVessel.chipHeight)
+        .frame(height: ArgoComposerVessel.queuedTurnHeight)
         .background(argo.color.surface.control, in: .rect(cornerRadius: ArgoRadius.control))
         // The accent rule on the leading edge, not a tinted fill: the row has to read as WAITING
         // against a field that is live, and a wash across it at that contrast would read as the
         // selected thing instead.
+        //
+        // A capsule and not a rectangle, because the row's corners are rounded: a square rule
+        // clipped to them loses its ends and stops reading as the row's edge — at which point it
+        // is a text cursor sitting in front of a sentence.
         .overlay(alignment: .leading) {
-            Rectangle()
+            Capsule()
                 .fill(argo.color.interaction.accent)
                 .frame(width: ArgoStroke.indicator)
         }

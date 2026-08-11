@@ -13,6 +13,11 @@ public enum ArgoComposerVessel {
     /// squeezed.
     public static let fieldLineCeiling = 6
 
+    /// How tall a queued follow-up stands — the study's 30pt, and deliberately NOT `chipHeight`.
+    /// A chip holds a name and this holds a sentence: at 20pt the row reads as a token that
+    /// overflowed rather than as a message waiting to go.
+    public static let queuedTurnHeight: CGFloat = 30
+
     /// The scroll room under the feed's last row, so a reading never ends underneath the vessel.
     public static let feedClearance: CGFloat = 128
 

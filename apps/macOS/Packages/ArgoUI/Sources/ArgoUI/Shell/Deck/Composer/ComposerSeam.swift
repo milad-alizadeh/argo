@@ -33,7 +33,10 @@ struct ComposerSeam: View {
                 .controlSize(.small)
             }
         }
-        .padding(.horizontal, ArgoSpacing.loose)
+        // Near-flush with the vessel below rather than indented to its text: the seam is a line
+        // ABOUT the vessel, and one stepped in to the field's own leading reads as the first line
+        // of what is in it (the study's `draft.png` and `failed.png` both).
+        .padding(.horizontal, ArgoSpacing.snug)
         .accessibilityElement(children: .combine)
     }
 

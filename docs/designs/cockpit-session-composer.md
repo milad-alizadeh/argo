@@ -61,8 +61,17 @@ highlight along the top is the depth cue (`ArgoElevation`'s bounded-glass rung).
 **The feed under it** — 128pt bottom padding and a mask fading from opaque at `100% − 108pt` to
 clear at `100% − 28pt`. The feed runs *under* the vessel; it is never clipped by it.
 
-**The field** — `body` (13) at 1.5 line height. Grows with content to a **132pt ceiling** — six
-lines — then scrolls inside itself. The feed above is never squeezed.
+**The field** — `body` (13). Grows with content to a **six-line ceiling** — the study's 132pt said
+in the unit the field actually grows by — then scrolls inside itself. The feed above is never
+squeezed.
+
+> **Corrected in build (#539).** This read *`body` (13) at 1.5 line height* and *a 132pt ceiling*.
+> Both were unbuildable together with the control the table below names: a stock `TextField` is
+> `NSTextField` underneath, draws the face's own leading (≈18pt at 13), and silently ignores
+> `lineSpacing` — so 19.5pt is only reachable by replacing the control this same study says not to
+> replace. The ceiling is therefore held in LINES, which is what the field grows by and what a
+> reader counts; 132pt was the same number measured off the study's HTML, where the leading was
+> CSS's to set.
 
 **The footer row** — `base` (8) gap, `base` (8) top padding. Controls left to right: `+` (26pt),
 spacer, `ModePicker`, `RunFactsButton`, `SendButton` (26pt circle).
