@@ -7,11 +7,15 @@ import Foundation
 /// asserted there — this file is only the wiring.
 @MainActor
 extension Hub: HandoffHost {
+    /// Typing at a prompt is what a Turn IS, so it goes through the driver rather than writing the
+    /// PTY itself. A second path would be a second spelling of Return, and #628 is what that costs:
+    /// the handoff's own newline left the command sitting in the composer, because a TUI waiting on
+    /// the Return key does not hear a line feed.
+    ///
     /// `false` for an external Session, and for an orphaned one whose claim outlived its PTY —
-    /// which is the same answer `ownerOf` gives, from the same fact.
+    /// which is the refusal `send` already raises, from the same fact.
     public func steer(sessionID: String, typing text: String) -> Bool {
-        guard let claim = ownership.ownerOf(sessionID: sessionID) else { return false }
-        return terminals.write(text, to: claim)
+        (try? driver.send(text, to: sessionID)) != nil
     }
 
     /// Whatever is at the path, verbatim. Whether what is there COUNTS as a brief is the

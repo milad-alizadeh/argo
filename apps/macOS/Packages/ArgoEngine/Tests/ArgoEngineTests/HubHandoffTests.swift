@@ -7,18 +7,23 @@ import Testing
 @Suite("Hub handoff")
 @MainActor
 struct HubHandoffTests {
-    /// What typing `/handoff` actually is: bytes down the PTY of the claim that owns this Session,
-    /// with nothing attached to it. The header's button is not a terminal pane.
+    /// What typing `/handoff` actually is: the keystrokes of a Turn, down the PTY of the claim that
+    /// owns this Session. The header's button is not a terminal pane.
+    ///
+    /// #628 is why the assertion is an equality against `ClaudeTurn` rather than a substring: the
+    /// handoff wrote the PTY itself and spelled its own Return as a line feed, which a TUI waiting
+    /// on the Return key does not hear, so the command sat unsubmitted in the composer.
     @Test
-    func `steering a managed Session types at its own PTY`() async throws {
+    func `steering a managed Session types a submitted Turn at its own PTY`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         _ = try await fixture.hub.spawnSession()
         await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
 
-        #expect(fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff /tmp/b.md\n"))
+        #expect(fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff /tmp/b.md"))
 
-        #expect(fixture.host.started.last?.written == ["/handoff /tmp/b.md\n"])
+        #expect(fixture.host.started.last?.written
+            == [ClaudeTurn.keystrokes(for: "/handoff /tmp/b.md")])
     }
 
     /// Story 49 in the engine's own terms. An orphaned Session's claim outlived its PTY, so there
@@ -31,7 +36,7 @@ struct HubHandoffTests {
         await hubObserveToEnd(fixture.hub, spawnedSessionObservation(of: fixture))
         fixture.host.endLastProcess(exitCode: 0)
 
-        #expect(!fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff\n"))
+        #expect(!fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff"))
     }
 
     @Test
@@ -39,7 +44,7 @@ struct HubHandoffTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
 
-        #expect(!fixture.hub.steer(sessionID: "somebody-elses-session", typing: "/handoff\n"))
+        #expect(!fixture.hub.steer(sessionID: "somebody-elses-session", typing: "/handoff"))
     }
 
     /// The brief comes back verbatim, and a path with nothing at it comes back absent. What counts

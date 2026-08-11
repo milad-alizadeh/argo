@@ -51,8 +51,9 @@ final class LiveClaudeFixture {
     let hub: Hub
     let claim: SessionOwnership.ClaimID
     let host: RecordingProcessHost
+    /// The Project the Session runs in, and the only folder these tests write to.
+    let root: URL
 
-    private let root: URL
     private let companionRoot: URL
 
     private init(
@@ -73,7 +74,14 @@ final class LiveClaudeFixture {
 
     /// A spawned Session with its folder trusted, ready to be asked something. The patience is
     /// the gate's; the day-long default everywhere but a test waiting for its far end (#543).
-    static func spawned(patience: PermissionPatience = .default) async throws
+    ///
+    /// `carryingSkills` puts this repo's own skills in the Project before the CLI starts, which is
+    /// the only moment `claude` reads them. A handoff test needs it and a permission test must not
+    /// have it: a skill in scope is one more thing the agent under test can decide to do.
+    static func spawned(
+        patience: PermissionPatience = .default,
+        carryingSkills skills: [String] = [],
+    ) async throws
         -> LiveClaudeFixture {
         let token = String(UUID().uuidString.prefix(8))
         let root = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -86,6 +94,7 @@ final class LiveClaudeFixture {
                 withIntermediateDirectories: true,
             )
         }
+        try Self.install(skills: skills, into: root)
         let host = RecordingProcessHost()
         let hub = Hub(
             projectURL: root,

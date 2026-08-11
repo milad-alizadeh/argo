@@ -3,9 +3,10 @@ import Foundation
 /// The words one handoff is made of: what Argo types at the full Session's prompt, where the brief
 /// it asks for lands, and what the fresh Session opens on.
 ///
-/// **Argo names the address.** `/handoff` is a skill the CLI carries, not something this repo owns,
-/// so its default write path is unknown here. Passing the path makes the wait answerable: either
-/// that file is there or the handoff did not happen.
+/// **Argo names the address, in words.** `/handoff` is installed from `mattpocock/skills` and is
+/// not this repo's to edit, so the contract can only be spelled from this side. Its instructions
+/// say to save to the OS temp directory and to read an argument as a topic — a bare path is
+/// therefore read as a subject to go looking for, which #628 watched an agent do.
 ///
 /// The brief lives in Argo's own per-machine data and never in the Project.
 enum HandoffScript {
@@ -21,10 +22,17 @@ enum HandoffScript {
         return kept.isEmpty ? "session" : String(kept.suffix(24))
     }
 
-    /// What is typed at the full Session's prompt. The newline is the Return that submits it — a
-    /// line left sitting in the composer is a handoff nobody started.
+    /// What is typed at the full Session's prompt, and only that. Submitting it is the terminal's
+    /// business and `ClaudeTurn` already spells it — a terminator written here would be a second
+    /// Return, which is #628.
+    ///
+    /// The address is an instruction rather than a bare argument, and the path goes last so the
+    /// sentence cannot swallow it. Both halves are what the skill's own default would otherwise
+    /// win: it is told to pick a folder and a name, and only being told not to stops it.
     static func command(writingBriefTo path: String) -> String {
-        "/handoff \(path)\n"
+        "/handoff Write the handoff document to this exact absolute path, "
+            + "creating any missing parent directories. Do not choose a folder or a filename of "
+            + "your own, and do not write it anywhere else. The path is: \(path)"
     }
 
     /// What the fresh Session opens on. It points at the brief rather than pasting it, or the new
