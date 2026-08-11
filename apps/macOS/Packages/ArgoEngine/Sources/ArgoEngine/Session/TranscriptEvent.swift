@@ -16,6 +16,10 @@ public enum TranscriptEvent: Sendable, Equatable {
     case model(String)
     /// The branch the records report. Latest reading wins: a run can switch branch mid-session.
     case branch(String)
+    /// The standing autonomy stance the records report, in the CLI's OWN word for it and unread —
+    /// what it means on Argo's ladder is `ClaudePermissionMode`'s to say (ADR-0025). Latest reading
+    /// wins: the stance can be cycled mid-session, and the file keeps both.
+    case mode(cli: String)
     /// What someone asked for, verbatim and unclamped. Steering text typed mid-run arrives here
     /// too: a steer is a prompt into the same sequence.
     case prompt(text: String, atMs: Int?)

@@ -20,6 +20,13 @@ extension CockpitView {
         return { try actions.interruptTurn(sessionID) }
     }
 
+    /// Putting the composer's Session on a rung (#545), bound the way `stop` is.
+    var setMode: (SessionMode) throws -> Void {
+        guard let composer else { return { _ in } }
+        let sessionID = composer.sessionID
+        return { try actions.setSessionMode(sessionID, $0) }
+    }
+
     /// What the selected Session's composer is holding, out of the store that outlives the deck.
     /// A Session with no composer gets an inert binding.
     var draft: Binding<ComposerDraft> {

@@ -24,6 +24,8 @@ struct DeckContentRow: View {
     var revoke: (String) -> Void = { _ in }
     /// Stopping the Turn in flight (#541); a Session blocked on a Permission has nothing to stop.
     var stop: () throws -> Void = {}
+    /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
+    var setMode: (SessionMode) throws -> Void = { _ in }
     /// From above the Session identity so it survives a switch (#539). See
     /// `InstrumentDeckShell.draft`.
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
@@ -55,6 +57,7 @@ struct DeckContentRow: View {
                     decide: decide,
                     revoke: revoke,
                     stop: stop,
+                    setMode: setMode,
                     draft: draft,
                 )
                 if !isPanelOpen {
@@ -181,6 +184,7 @@ private struct FeedColumn: View {
     var decide: (PermissionDecision) -> Void = { _ in }
     var revoke: (String) -> Void = { _ in }
     var stop: () throws -> Void = {}
+    var setMode: (SessionMode) throws -> Void = { _ in }
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
 
     var body: some View {
@@ -222,6 +226,7 @@ private struct FeedColumn: View {
                 send: send,
                 revoke: revoke,
                 stop: stop,
+                setMode: setMode,
                 draft: draft,
             )
             .padding(.horizontal, ArgoSpacing.section)

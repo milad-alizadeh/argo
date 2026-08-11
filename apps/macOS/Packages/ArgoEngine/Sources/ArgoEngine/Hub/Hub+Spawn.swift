@@ -31,6 +31,7 @@ public extension Hub {
                 cwd: cwd,
                 companion: invitation,
             )
+            .adding(cli.arguments(standingOn: seed.mode))
             let process = try host.start(
                 seed.opening.map(launch.opening) ?? launch,
                 events: events(for: claim),
@@ -41,6 +42,7 @@ public extension Hub {
                 cli: cli,
                 cwd: cwd,
                 spawnedAtMs: Date().epochMs,
+                mode: seed.mode,
             )
             return claim
         } catch {

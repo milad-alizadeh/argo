@@ -15,6 +15,10 @@ struct ClaudeSessionDriver: SessionDriver {
     let terminals: AgentTerminals
     let permissions: PermissionChannel?
     let attachments: AttachmentStore
+    /// Where the Session stands right now, read at the moment a rung is asked for rather than held:
+    /// the distance to walk is counted from it, and a copy of it here would be the second answer to
+    /// a question the roster already answers.
+    let stance: (String) -> SessionStance
 
     /// Claude reads a path it is handed, which is the whole mechanism (#540). Declared here rather
     /// than asked of the CLI at run time: the composer has to know whether to draw the `+` before
@@ -56,6 +60,24 @@ struct ClaudeSessionDriver: SessionDriver {
             return try self.attachments.address(attachments, of: sessionID)
         } catch {
             throw SessionDriveError.attachmentUnwritable
+        }
+    }
+
+    /// The rung is walked to, not written: one `shift+tab` per step, in one write. A stance Argo
+    /// cannot establish leaves no honest distance to walk, so it refuses rather than guessing.
+    func setMode(_ mode: SessionMode, for sessionID: String) throws {
+        guard let claim = ownership.ownerOf(sessionID: sessionID) else {
+            throw SessionDriveError.notDrivable
+        }
+        let standing = stance(sessionID)
+        guard !standing.isRunning else { throw SessionDriveError.modeBusy }
+        guard let observed = standing.mode.cliValue,
+              let keystrokes = ClaudeModeCycle.keystrokes(from: observed, to: mode)
+        else { throw SessionDriveError.modeUnreachable }
+        // Already there. Writing the whole ring round would be a no-op that passed through `Auto`.
+        guard !keystrokes.isEmpty else { return }
+        guard terminals.write(keystrokes, to: claim) else {
+            throw SessionDriveError.notDrivable
         }
     }
 

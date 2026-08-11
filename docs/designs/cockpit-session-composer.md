@@ -189,6 +189,30 @@ that follows the selected rung, and a mark in each row. Decision 1 records what 
    through values*, which is a different control. It goes **beside** the label and never inside
    it: a `Menu` re-synthesises its label from icon and title alone, so a chevron in there never
    draws at all (`GitVessel` learned this first).
+
+   **A reading that is not an exact rung ticks nothing** (amended in build, #545). The study drew
+   one selected rung and no other case, because it was drawn before the control had a Session
+   behind it. It has one now, and a CLI can sit where the ladder has no rung: `claude` `default`
+   is `Read Only ≈`, and `dontAsk` is `unknown` (ADR-0025). Neither is a rung the user chose, so
+   neither may carry the checkmark — a tick is the control saying *this is where you are*, and on
+   an approximation it would be the one lie the honesty tiers exist to stop.
+
+   - `≈` goes **before the word** on the closed control, `≈ Read Only`, where it reads as a
+     qualifier on what follows rather than a fifth mark. The rung keeps its own mark.
+   - `unknown` draws the word `unknown` and `questionmark`. It is not a rung, so it never appears
+     among them and takes no place in the mark table above.
+   - **The CLI's own value is on the tooltip, verbatim** — `≈ Read Only — no writes · reported as
+     default`. The tooltip already carried the boundary, and this is the same reader asking the
+     same question one step further. The sentence does not name the CLI, because the control
+     cannot: the reading carries the value and not who said it.
+   - **The menu names it too, as one section header above the rungs**, so the fact survives a
+     reader who opens the control instead of hovering it. It is one header and not a per-row
+     caption, so the rule above stands: the rows are still a word and a mark. An exact reading has
+     nothing to footnote and gets no header.
+
+   The four rungs are always all offered, in both cases. What Argo can *read* and what it can
+   *set* are different questions, and a Session Argo cannot place on the ladder can still be put
+   on a rung.
 2. **Model and Effort are on the composer too, and the deck header states the CLI alone.** A
    value stated in two places is one you keep in sync by eye. (The rejected alternative put them
    on the header's fact line.)

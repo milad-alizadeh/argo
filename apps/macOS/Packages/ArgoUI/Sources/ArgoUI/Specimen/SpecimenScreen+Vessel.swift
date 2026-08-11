@@ -80,6 +80,16 @@ extension SpecimenScreen {
                 composer: ComposerSpecimen.noAttach,
                 draft: ComposerSpecimen.refusedAttachment,
             )
+        case .composerModeNearly:
+            // A Session where the ladder has no rung: `claude` in `default`, which unattended reads
+            // and nothing else. The claim is that `≈ Read Only` reads as a REPORT about where the
+            // Session is rather than as a rung somebody chose (#545, ADR-0025).
+            ComposerSpecimen(composer: ComposerSpecimen.nearly)
+        case .composerModeUnknown:
+            // `dontAsk`, whose boundary is an allowlist Argo cannot see. The word `unknown` sits
+            // where a rung would, so what has to be true is that the footer still reads as a
+            // footer with a control on it rather than one that failed to load a value.
+            ComposerSpecimen(composer: ComposerSpecimen.unknownMode)
         case .permission:
             // A gated command holding the composer's slot: the tool and its target verbatim, the
             // amber rim, Allow focused — the state the whole channel exists to raise.

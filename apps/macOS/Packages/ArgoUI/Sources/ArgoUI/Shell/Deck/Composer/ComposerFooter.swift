@@ -11,7 +11,9 @@ import SwiftUI
 struct ComposerFooter: View {
     @Environment(\.argo) private var argo
 
-    @Binding var mode: ComposerMode
+    /// The Session's stance as Argo can state it (#545). A reading and not a binding: what the
+    /// control shows comes back off the Session, so the footer holds no value of its own.
+    let mode: SessionModeReading
     let facts: String?
     let isSendable: Bool
     /// Whether a Turn is in flight, which is what turns the trailing control into Stop (#541).
@@ -22,6 +24,8 @@ struct ComposerFooter: View {
     /// What the `+` does, and `nil` for a Session whose adapter declares no attachments — which is
     /// what takes the control off the row entirely.
     var attach: (([SessionAttachment]) -> Void)?
+    /// Put the Session on a rung. Inert by default, for the reason `stop` is.
+    var setMode: (SessionMode) -> Void = { _ in }
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
@@ -29,7 +33,7 @@ struct ComposerFooter: View {
                 AttachButton(attach: attach)
             }
             Spacer()
-            ModePicker(mode: $mode)
+            ModePicker(reading: mode, setMode: setMode)
             if let facts {
                 Text(facts)
                     .argoText(ArgoTypography.rowMeta)
@@ -43,7 +47,7 @@ struct ComposerFooter: View {
 
 #Preview("Composer footer") {
     ComposerFooter(
-        mode: .constant(.code),
+        mode: .exactly(.code, cli: "acceptEdits"),
         facts: "Opus 5",
         isSendable: true,
         send: {},
@@ -57,7 +61,7 @@ struct ComposerFooter: View {
 
 #Preview("Composer footer — a Session whose record named no model") {
     ComposerFooter(
-        mode: .constant(.code),
+        mode: .exactly(.code, cli: "acceptEdits"),
         facts: nil,
         isSendable: false,
         send: {},
@@ -70,19 +74,38 @@ struct ComposerFooter: View {
 }
 
 #Preview("Composer footer — an adapter that takes no attachments") {
-    ComposerFooter(mode: .constant(.code), facts: "Opus 5", isSendable: true, send: {})
-        .padding(ArgoSpacing.section)
-        .frame(width: 640)
-        .argoDeckSurface()
-        .argoAppearance()
+    ComposerFooter(
+        mode: .exactly(.code, cli: "acceptEdits"),
+        facts: "Opus 5",
+        isSendable: true,
+        send: {},
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 #Preview("Composer footer — a Turn in flight") {
     ComposerFooter(
-        mode: .constant(.code),
+        mode: .exactly(.code, cli: "acceptEdits"),
         facts: "Opus 5",
         isSendable: false,
         isRunning: true,
+        send: {},
+        attach: { _ in },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Composer footer — a stance the ladder has no rung for") {
+    ComposerFooter(
+        mode: .nearly(.readOnly, cli: "default"),
+        facts: "Opus 5",
+        isSendable: true,
         send: {},
         attach: { _ in },
     )

@@ -126,6 +126,28 @@ and scaling a short wide glyph like `chevron.down` or `</>` up to a 10pt ink hei
 **stroke** with it — rendered, the chevron drew a 2pt rule beside the word's 1pt one. What the frame
 buys is several marks measuring alike side by side, and this control shows one rung at a time.
 
+## Rewritten — #545 (the ladder reaches a Session)
+
+No new name again: `ModePicker` stops holding a choice and starts drawing a reading.
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `ModePicker` | atom | `ArgoUI/Shell/Deck/Composer/` — unchanged | `reading: SessionModeReading`, `setMode: (SessionMode) -> Void` — was `mode: Binding<ComposerMode>` | unchanged, plus a section header naming what the CLI reported and an unticked menu wherever the reading is not exact | `run-modemenu.png`, `rest.png`, amendment to decision 1 |
+
+`ComposerMode` is **deleted**. Its four rungs were a second spelling of `ArgoEngine`'s
+`SessionMode`, which is what the drive port takes — two enums for one ladder is the drift the
+frozen names exist to stop. The words, boundaries and marks move to `SessionMode+Rung`.
+
+The binding goes with it. A control that held the rung could show one the Session was never put
+on, so the value comes off the Session and the change goes out as a closure — the same shape
+`send` and `stop` already have, and for the same reason: only the port knows whether it landed.
+
+### What the render measured
+
+`≈ Read Only` and `unknown` both leave the footer's trailing group where `rest.png` measures it,
+because the Mode pill is the group's LEADING item — the widest word to date moves its own left
+edge and nothing else. Specimens `composerModeNearly` and `composerModeUnknown`.
+
 ## View-model, not components
 
 - `SessionComposerProjection` — the pure `derive(facts)`: presence (managed and not ended, else
@@ -138,8 +160,10 @@ buys is several marks measuring alike side by side, and this control shows one r
 - `ComposerSeamNote` — which of the seam's two sentences is up, and the words of the kept one.
 - `QueuedTurn` — an identified follow-up, so two identical ones are two things the `×` can tell
   apart.
-- `ComposerMode` — the four-rung ladder (ADR-0025), each rung's `boundary`, and its `mark` (#608);
-  local until #545 gives it an effect.
+- `SessionMode+Rung` — each rung's `label`, `boundary` and `mark` (#608, #545). The rungs
+  themselves are `ArgoEngine`'s `SessionMode`; only the words and marks are the composer's.
+- `SessionModeReading+Label` — what the control SAYS for one reading: the word (with `≈`), the
+  mark, the CLI's own value, and which rung — if any — may be ticked (#545).
 
 ## Stayed inline
 

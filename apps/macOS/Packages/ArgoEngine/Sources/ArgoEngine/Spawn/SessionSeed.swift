@@ -10,10 +10,15 @@ public struct SessionSeed: Sendable, Equatable {
     /// The prompt the agent opens on. Argo owns no more of the fresh Session than this — after the
     /// first turn it is an agent like any other.
     public let opening: String?
+    /// The rung the Session stands on (`CONTEXT.md` L2 · Autonomy, ADR-0025). `Code` by default,
+    /// which is the baseline the ladder is built around: ungated tools inside the Workspace should
+    /// not pay a Permission round trip.
+    public let mode: SessionMode
 
-    public init(cwd: String? = nil, opening: String? = nil) {
+    public init(cwd: String? = nil, opening: String? = nil, mode: SessionMode = .code) {
         self.cwd = cwd
         self.opening = opening
+        self.mode = mode
     }
 
     /// A New Session: the Project's folder, and nothing said yet.

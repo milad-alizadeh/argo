@@ -54,12 +54,12 @@ a rung the agent acts; at its edge Permission fires.
 | **Code** | writes and runs inside the Workspace, asks to leave it | `acceptEdits` | Auto preset |
 | **Auto** | no boundary, asks nothing | `auto` | Full Access |
 
-The `claude` column is read from
-[the permission-modes reference](https://code.claude.com/docs/en/permission-modes) as of
-2026-08-11; the `codex` column from
-[Codex's approvals doc](https://learn.chatgpt.com/docs/agent-approvals-security). Neither was
-exercised against a live CLI here — #535's "Verified on 2026-08-10 against `claude` 2.1.226" is
-the standard this table has **not** yet met, and #545 is where it must.
+The `claude` column was read from
+[the permission-modes reference](https://code.claude.com/docs/en/permission-modes) and then
+exercised against a live CLI — see **Verification** below, which corrected two things the
+reference alone did not give. The `codex` column is read from
+[Codex's approvals doc](https://learn.chatgpt.com/docs/agent-approvals-security) and stays paper
+only, for the reason #535 already gives.
 
 The boundary reading is taken because it is the one **both** CLIs can express. A frequency ladder
 has rungs Codex cannot reach: it substitutes a sandbox for asking, where Claude substitutes asking
@@ -92,6 +92,46 @@ something plainly observed, which is the opposite failure from the one degrade-d
 `dontAsk` is `unknown` for the ordinary reason instead, that the fact itself is not established.
 
 `unknown` also survives for its own case: a stance Argo cannot establish at all.
+
+## Verification
+
+Verified against `claude` 2.1.227 on 2026-08-11, by driving a real TUI in a PTY and reading both
+its footer and the transcripts it wrote. Codex is not verified and #535's finding stands: no Codex
+approval round trip could be observed at all, so its column must not be cited as evidence the
+adapter works.
+
+- **`--permission-mode` accepts `acceptEdits · auto · bypassPermissions · manual · dontAsk ·
+  plan`.** The flag spells the manual rung **`manual`**; the transcript still writes **`default`**.
+  Both have to read as the same rung, because a reader sees the transcript and a writer sees the
+  flag.
+- **`shift+tab` cycles a four-value ring**, `auto → manual → acceptEdits → plan → auto`. It is the
+  TUI's `chat:cycleMode`, and no command sets a named rung. `bypassPermissions` and `dontAsk` are
+  not on the ring, so a Session already in one of them cannot be moved by cycling and Argo refuses
+  rather than guessing a distance.
+- **The stance reads back off `{"type":"permission-mode","permissionMode":…}`**, written at every
+  Turn boundary and after a change. Latest wins. Writes coalesce at boundaries, so an intermediate
+  cycle can be missing from the record.
+- **`{"type":"mode","mode":"normal"}` sits beside it and is a different axis.** Never read it as
+  the stance.
+- **`--permission-mode acceptEdits` was honoured end to end**: the footer read `accept edits` and
+  the transcript wrote `acceptEdits`. It is the only rung driven the whole way; `plan` and `auto`
+  are exercised as *values the flag accepts* and as positions on the ring, not as spawns of their
+  own.
+- **Nothing is written until the first prompt**, so a fresh spawn's rung is DIRECT from Argo's own
+  record alone.
+
+**A rung cannot be changed while a Turn is in flight.** The ring is walked, not written, so a
+change passes through rungs nobody asked for — `Auto` among them. Idle, that transit is nothing.
+Mid-Turn it is a widened boundary while a tool call is running, so the port refuses instead
+(`SessionDriveError.modeBusy`). It is a rule this ADR did not have and the build needed, and it is
+the ladder's own rule read at the one moment the transit is observable.
+
+**A rung Argo set outranks the record until the record moves.** `claude` writes its stance at Turn
+boundaries, so the last record can predate the last change. A set is Argo's own act and therefore
+DIRECT; it is kept with the value the record carried when it was made, and the moment the record
+carries something else the record is what is true. Without it a second change would count its
+distance from a stale rung and walk too far — landing the Session somewhere nobody asked for, which
+is the same failure `modeBusy` prevents.
 
 ## Consequences
 

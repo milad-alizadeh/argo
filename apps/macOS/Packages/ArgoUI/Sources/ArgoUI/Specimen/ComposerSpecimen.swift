@@ -48,52 +48,6 @@ struct ComposerSpecimen: View {
         .defaultFocus($parked, true)
     }
 
-    /// The one fixture every composer case renders — a managed Claude Session with a model, idle
-    /// enough to take the next thing typed, on an adapter that takes attachments (which Claude's
-    /// is).
-    static let composer = SessionComposerProjection.Composer(
-        sessionID: "specimen",
-        placeholder: "Message Claude Code…",
-        facts: "Opus 5",
-        standingAllows: [],
-        isRunning: false,
-        canAttach: true,
-    )
-
-    /// The same Session on an adapter that declares no attachments (#540): no `+` on the footer at
-    /// all, and the seam carrying what a drop was refused for. The absence is the state — a greyed
-    /// control would invite a click and give no reason (design decision 9).
-    static let noAttach = SessionComposerProjection.Composer(
-        sessionID: composer.sessionID,
-        placeholder: composer.placeholder,
-        facts: composer.facts,
-        standingAllows: [],
-        isRunning: false,
-        canAttach: false,
-    )
-
-    /// The same Session mid-Turn: the field invites a follow-up rather than a message, and what is
-    /// typed waits above it instead of going.
-    static let running = SessionComposerProjection.Composer(
-        sessionID: composer.sessionID,
-        placeholder: SessionComposerProjection.queuePlaceholder,
-        facts: composer.facts,
-        standingAllows: [],
-        isRunning: true,
-        canAttach: true,
-    )
-
-    /// The same vessel on a Session that has stopped asking about two tools (#572). Its own state
-    /// because the tray is only ever seen at rest, the turn AFTER the grant.
-    static let standing = SessionComposerProjection.Composer(
-        sessionID: composer.sessionID,
-        placeholder: composer.placeholder,
-        facts: composer.facts,
-        standingAllows: ["Bash", "Read"].map(StandingAllow.init(toolName:)),
-        isRunning: false,
-        canAttach: true,
-    )
-
     /// The typing state's draft: multi-line, because the growth past one line IS the state.
     static let typing = ComposerDraft(
         text: """
@@ -229,4 +183,16 @@ struct ComposerSpecimen: View {
     )
     .frame(width: 900, height: 320)
     .argoAppearance()
+}
+
+#Preview("Composer specimen — a stance the ladder has no rung for") {
+    ComposerSpecimen(composer: ComposerSpecimen.nearly)
+        .frame(width: 900, height: 320)
+        .argoAppearance()
+}
+
+#Preview("Composer specimen — a stance Argo cannot establish") {
+    ComposerSpecimen(composer: ComposerSpecimen.unknownMode)
+        .frame(width: 900, height: 320)
+        .argoAppearance()
 }

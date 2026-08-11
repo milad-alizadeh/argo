@@ -56,6 +56,8 @@ public actor TranscriptReader {
             return [.headLeaf(uuid: leafUuid)]
         case .queueOperation:
             return [.queued]
+        case let .permissionMode(observed):
+            return [.mode(cli: observed)]
         case .unknown:
             return []
         }

@@ -45,6 +45,8 @@ struct InstrumentDeckShell: View {
     /// Stopping the Turn the shown Session is running (#541). Inert by default, for the reason
     /// `send` is.
     var stop: () throws -> Void = {}
+    /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
+    var setMode: (SessionMode) throws -> Void = { _ in }
     /// What the shown Session's composer is holding. A binding handed in from ABOVE the identity
     /// below: `.id(session)` discards everything under it on a switch, and an unsent draft must
     /// survive one (#539).
@@ -83,6 +85,7 @@ struct InstrumentDeckShell: View {
                 decide: decide,
                 revoke: revoke,
                 stop: stop,
+                setMode: setMode,
                 draft: draft,
                 seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
             )

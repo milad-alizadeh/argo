@@ -48,6 +48,10 @@ public final class Hub {
             .map { observed(HubSession(spawn: $0)) }
     }
 
+    /// The rung Argo last put each Session on, keyed by claim for the reason `standingAllows` is:
+    /// a set made before the CLI wrote a record has to follow the row when it is re-keyed.
+    var setModes: [SessionOwnership.ClaimID: SessionModeSet] = [:]
+
     /// Which Sessions this Argo process owns a PTY for. Empty until something spawns one, which is
     /// what makes every discovered Session `external`.
     public let ownership = SessionOwnership()

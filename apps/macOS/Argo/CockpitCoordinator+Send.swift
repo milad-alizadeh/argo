@@ -49,6 +49,12 @@ extension CockpitCoordinator {
         } catch {}
     }
 
+    /// One rung of the Mode ladder asked for (#545, ADR-0025). Through the Hub rather than the
+    /// driver, because the rung has to be remembered where it lands — see `Hub.setMode`.
+    func setMode(_ mode: SessionMode, for sessionID: String) throws {
+        try hub.setMode(mode, for: sessionID)
+    }
+
     /// One standing allow taken back (#572).
     ///
     /// The port refuses a grant it does not hold — `noSuchGrant` — and this drops it, which is not

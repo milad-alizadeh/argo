@@ -36,6 +36,11 @@ public protocol SessionDriver {
         for sessionID: String,
     ) throws
 
+    /// Put the Session on one rung of the autonomy ladder (#545, ADR-0025). The rung a Session
+    /// STARTS on rides in on argv; a CLI reads that flag once, so moving it afterwards is a
+    /// different act — see the `claude` adapter for what it takes.
+    func setMode(_ mode: SessionMode, for sessionID: String) throws
+
     /// Whether this adapter takes attachments at all (#540) — the composer omits the `+` rather
     /// than disabling it, and a drop is refused with the reason.
     var canAttach: Bool { get }
@@ -94,6 +99,16 @@ public enum SessionDriveError: Error, Equatable {
     /// way to reach this is a gesture the platform allows over any window, and a gesture that
     /// appears to work and does nothing is the one outcome design decision 9 rules out.
     case cannotAttach
+    /// A rung was asked for from a stance Argo cannot establish — `claude`'s `dontAsk`, or a
+    /// Session
+    /// whose records have not stated one yet. The distance to walk is counted from where the
+    /// Session
+    /// stands, so an unknown start leaves no honest number of keystrokes to send.
+    case modeUnreachable
+    /// A rung was asked for mid-Turn. The way round the ring passes through rungs nobody asked for,
+    /// `Auto` among them, which is nothing at an idle prompt and a widened boundary while a tool
+    /// call is in flight.
+    case modeBusy
     /// An attachment could not be written down, so no path could be named. The message stays where
     /// it was typed and the chips stay where they were, for the reason a refused send does: what
     /// failed is Argo's own act, and nothing about the Turn has happened yet.
@@ -106,6 +121,8 @@ public enum SessionDriveError: Error, Equatable {
         case .nothingToSend: "Nothing to send"
         case .nothingPending: "No Permission is waiting on this Session"
         case .noSuchGrant: "This Session holds no standing allow for that tool"
+        case .modeUnreachable: "Argo cannot say which rung this Session is on — Mode is unchanged"
+        case .modeBusy: "The Mode stays where it is while a Turn is running — stop it first"
         case .cannotAttach:
             "This adapter takes no attachments — dropped files are refused rather than "
                 + "silently dropped."

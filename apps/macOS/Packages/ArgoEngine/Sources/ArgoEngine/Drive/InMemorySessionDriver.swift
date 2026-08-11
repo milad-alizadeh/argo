@@ -22,6 +22,7 @@ public final class InMemorySessionDriver: SessionDriver {
     /// The answers, each still naming the request it answered.
     private var decisions: [String: [(request: String, decision: PermissionDecision)]] = [:]
     private var revocations: [String: [String]] = [:]
+    private var modes: [String: [SessionMode]] = [:]
 
     public init() {}
 
@@ -66,6 +67,15 @@ public final class InMemorySessionDriver: SessionDriver {
         decisions[sessionID, default: []].append((request: requestID, decision: decision))
     }
 
+    /// Records the rung it was asked for, which is what a surface has to be able to assert: the
+    /// keystrokes that walk there are the `claude` adapter's own claim and are asserted with it.
+    public func setMode(_ mode: SessionMode, for sessionID: String) throws {
+        if let refusal {
+            throw refusal
+        }
+        modes[sessionID, default: []].append(mode)
+    }
+
     public func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
         if let refusal {
             throw refusal
@@ -97,5 +107,10 @@ public final class InMemorySessionDriver: SessionDriver {
     /// The standing allows taken back on one Session, in the order they were revoked.
     public func revoked(for sessionID: String) -> [String] {
         revocations[sessionID] ?? []
+    }
+
+    /// The rungs one Session was put on, in the order they were asked for.
+    public func rungs(for sessionID: String) -> [SessionMode] {
+        modes[sessionID] ?? []
     }
 }
