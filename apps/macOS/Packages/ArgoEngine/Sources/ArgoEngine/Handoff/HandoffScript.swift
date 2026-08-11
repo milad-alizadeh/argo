@@ -3,10 +3,9 @@ import Foundation
 /// The words one handoff is made of: what Argo types at the full Session's prompt, where the brief
 /// it asks for lands, and what the fresh Session opens on.
 ///
-/// **Argo names the address, in words.** `/handoff` is installed from `mattpocock/skills` and is
-/// not this repo's to edit, so the contract can only be spelled from this side. Its instructions
-/// say to save to the OS temp directory and to read an argument as a topic — a bare path is
-/// therefore read as a subject to go looking for, which #628 watched an agent do.
+/// The `handoff` skill is installed from `mattpocock/skills` (`skills-lock.json`) and tells its
+/// agent to save to the OS temp directory and to read an argument as a topic, so a bare path is
+/// read as a subject to go looking for rather than an address to write to (#628).
 ///
 /// The brief lives in Argo's own per-machine data and never in the Project.
 enum HandoffScript {
@@ -22,13 +21,9 @@ enum HandoffScript {
         return kept.isEmpty ? "session" : String(kept.suffix(24))
     }
 
-    /// What is typed at the full Session's prompt, and only that. Submitting it is the terminal's
-    /// business and `ClaudeTurn` already spells it — a terminator written here would be a second
-    /// Return, which is #628.
+    /// What is typed at the prompt, with no terminator: `ClaudeTurn` spells the Return.
     ///
-    /// The address is an instruction rather than a bare argument, and the path goes last so the
-    /// sentence cannot swallow it. Both halves are what the skill's own default would otherwise
-    /// win: it is told to pick a folder and a name, and only being told not to stops it.
+    /// The path goes last so the sentence cannot swallow it.
     static func command(writingBriefTo path: String) -> String {
         "/handoff Write the handoff document to this exact absolute path, "
             + "creating any missing parent directories. Do not choose a folder or a filename of "

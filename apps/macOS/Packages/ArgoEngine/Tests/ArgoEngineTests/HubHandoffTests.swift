@@ -7,12 +7,12 @@ import Testing
 @Suite("Hub handoff")
 @MainActor
 struct HubHandoffTests {
-    /// What typing `/handoff` actually is: the keystrokes of a Turn, down the PTY of the claim that
-    /// owns this Session. The header's button is not a terminal pane.
+    /// What typing `/handoff` actually is: the keystrokes of a submitted Turn, down the PTY of the
+    /// claim that owns this Session. The header's button is not a terminal pane.
     ///
-    /// #628 is why the assertion is an equality against `ClaudeTurn` rather than a substring: the
-    /// handoff wrote the PTY itself and spelled its own Return as a line feed, which a TUI waiting
-    /// on the Return key does not hear, so the command sat unsubmitted in the composer.
+    /// The Return is asserted as the literal CR rather than against `ClaudeTurn`'s own spelling,
+    /// which would be the code under test computing its own expectation — green whatever byte it
+    /// chose, including the line feed of #628 that left the command sitting in the composer.
     @Test
     func `steering a managed Session types a submitted Turn at its own PTY`() async throws {
         let fixture = try SpawnFixture()
@@ -22,8 +22,10 @@ struct HubHandoffTests {
 
         #expect(fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff /tmp/b.md"))
 
-        #expect(fixture.host.started.last?.written
-            == [ClaudeTurn.keystrokes(for: "/handoff /tmp/b.md")])
+        let written = try #require(fixture.host.started.last?.written.last)
+        #expect(fixture.host.started.last?.written.count == 1)
+        #expect(written.contains("/handoff /tmp/b.md"))
+        #expect(written.hasSuffix("\r"))
     }
 
     /// Story 49 in the engine's own terms. An orphaned Session's claim outlived its PTY, so there

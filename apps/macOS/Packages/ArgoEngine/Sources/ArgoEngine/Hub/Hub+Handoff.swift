@@ -8,12 +8,10 @@ import Foundation
 @MainActor
 extension Hub: HandoffHost {
     /// Typing at a prompt is what a Turn IS, so it goes through the driver rather than writing the
-    /// PTY itself. A second path would be a second spelling of Return, and #628 is what that costs:
-    /// the handoff's own newline left the command sitting in the composer, because a TUI waiting on
-    /// the Return key does not hear a line feed.
+    /// PTY itself — one spelling of Return reaches the CLI, not two that can drift (#628).
     ///
-    /// `false` for an external Session, and for an orphaned one whose claim outlived its PTY —
-    /// which is the refusal `send` already raises, from the same fact.
+    /// `false` wherever the driver refuses, which for a non-empty command means Argo owns no live
+    /// PTY: an external Session, or an orphaned one whose claim outlived its own.
     public func steer(sessionID: String, typing text: String) -> Bool {
         (try? driver.send(text, to: sessionID)) != nil
     }

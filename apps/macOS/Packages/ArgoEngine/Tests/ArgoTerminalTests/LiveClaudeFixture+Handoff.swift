@@ -1,32 +1,47 @@
 @testable import ArgoEngine
 import Foundation
 
-/// What a live handoff needs on top of a live Session: this repo's own skill in the Project, a
-/// place for the brief, and a wait that keeps the permission gate serviced while the agent works.
+/// What a live handoff needs on top of a live Session: the machine's `handoff` skill in the
+/// Project, a place for the brief, and waits that keep the permission gate serviced meanwhile.
 @MainActor
 extension LiveClaudeFixture {
+    /// How long a Turn of real work is given. A real agent answers when it answers.
+    static let turnSeconds = 300
+
     /// Where briefs land in a live run: the fixture's own folder, standing in for `Hub.handoffRoot`
     /// so a test never writes to the machine's real application support.
     var briefRoot: URL {
         root.appending(path: "handoffs", directoryHint: .isDirectory)
     }
 
-    /// The roster's id for the Session under test. It is the claim's own until the CLI writes a
+    /// What the roster calls this fixture's Session. The claim's own id until the CLI writes a
     /// record and the row is re-keyed, which is why it is read at the moment it is used.
-    var sessionID: String? {
-        hub.sessions.first?.id
+    var sessionID: String {
+        hub.ownership.rowID(ofClaim: claim.value)
+    }
+
+    /// A Session with one trivial Turn behind it, so a handoff has something to summarise. The
+    /// caller still owns `end()`.
+    static func primed(
+        saying prompt: String = "Reply with just OK.",
+        carryingSkills skills: [String] = [],
+    ) async throws
+        -> LiveClaudeFixture {
+        let live = try await spawned(carryingSkills: skills)
+        try await live.askAndSettle(prompt)
+        return live
     }
 
     /// A handoff whose wait yields instead of sleeping, and answers the gate while it waits.
     ///
     /// Both halves are the same fact: the gate's socket is read by a dispatch source on the main
     /// queue (see `settle`), so `HandoffWait`'s own `Task.sleep` would leave the CLI blocked on a
-    /// permission nobody can hear. Allowing what is pending is the person at the cockpit — writing
-    /// the brief is a Write outside the Project and the agent asks before it does it.
+    /// permission nobody can hear. Writing the brief is a Write outside the Project, so the agent
+    /// does ask.
     ///
     /// `namingTheBriefAtMs` fixes the ONE reading of the clock the brief's filename is taken from,
-    /// so a test can put a file at that address before the agent gets there. Every later reading is
-    /// the real clock, or the deadline would never be reached and the wait would never end.
+    /// so a test can put a file at that address first. Every later reading is the real clock, or
+    /// the deadline would never be reached and the wait would never end.
     func handoff(patience: HandoffPatience, namingTheBriefAtMs fixed: Int? = nil)
         -> SessionHandoff {
         var readings = 0
@@ -62,25 +77,22 @@ extension LiveClaudeFixture {
         }
     }
 
-    /// One Turn put to the Session and seen through to the CLI's answer.
-    ///
-    /// The wait is on the CLI's own record and not on the roster's status, because the two failure
-    /// modes both read as "ready". A row that has not started yet is already `idle`, and a row the
-    /// Hub has not observed yet is not there at all — either way a status-only wait returns the
-    /// instant the bytes are written, the next thing typed joins the same composer line, and two
-    /// Turns arrive as one. An answer that is ON DISK happened.
+    /// One Turn put to this fixture's own Session and seen through to the CLI's answer.
     func askAndSettle(_ prompt: String) async throws {
-        let before = recordSize(of: nil)
-        try ask(prompt)
-        await settleAllowing(seconds: 300) { self.recordSize(of: nil) > before }
-        await settleTurn(of: nil)
+        try await sendAndSettle(prompt, to: sessionID)
     }
 
-    /// The same, put to a Session by name rather than to this fixture's own claim.
+    /// One Turn put to a named Session and seen through to the CLI's answer.
+    ///
+    /// The wait is on the CLI's own record and not on the roster's status, because both failure
+    /// modes read as "ready" there: a row that has not started yet is already `idle`, and a row
+    /// the Hub has not observed is not there at all. Either way a status-only wait returns the
+    /// instant the bytes are written, the next prompt joins the same composer line, and two Turns
+    /// arrive as one. A record that GREW is a Turn that reached the CLI.
     func sendAndSettle(_ prompt: String, to sessionID: String) async throws {
         let before = recordSize(of: sessionID)
         try hub.driver.send(prompt, to: sessionID)
-        await settleAllowing(seconds: 300) { self.recordSize(of: sessionID) > before }
+        await settleAllowing(seconds: Self.turnSeconds) { self.recordSize(of: sessionID) > before }
         await settleTurn(of: sessionID)
     }
 
@@ -89,25 +101,9 @@ extension LiveClaudeFixture {
     /// A seeded spawn is already answering when it is handed back — its opening prompt was a
     /// launch argument — so anything typed at it before this lands INSIDE that turn as keystrokes
     /// rather than arriving as a Turn of its own.
-    func settleTurn(of sessionID: String?) async {
+    func settleTurn(of sessionID: String) async {
         await settleAllowing(seconds: 60) { self.row(sessionID)?.status == .running }
-        await settleAllowing(seconds: 300) { self.row(sessionID)?.status == .idle }
-    }
-
-    /// How much record the CLI has written for a Session. Zero before its first prompt — the file
-    /// does not exist until then — and larger after every Turn it takes.
-    private func recordSize(of sessionID: String?) -> Int {
-        guard let url = row(sessionID)?.sourceURL,
-              let size = try? FileManager.default
-              .attributesOfItem(atPath: url.path)[.size] as? Int
-        else { return 0 }
-        return size
-    }
-
-    /// A named row, or this fixture's own Session when no name is given.
-    private func row(_ sessionID: String?) -> HubSession? {
-        guard let sessionID else { return hub.sessions.first }
-        return hub.sessions.first { $0.id == sessionID }
+        await settleAllowing(seconds: Self.turnSeconds) { self.row(sessionID)?.status == .idle }
     }
 
     /// Say yes to every Permission any Session of this fixture is blocked on.
@@ -127,12 +123,25 @@ extension LiveClaudeFixture {
         }
     }
 
-    /// This repo's skills, copied into the Project's own `.claude/skills`. Copied rather than
-    /// symlinked because the CLI resolves the folder it is given, and a test that followed a link
-    /// out of its temp Project would be reading the developer's checkout at run time.
+    /// How much record the CLI has written for a Session. Zero before its first prompt — the file
+    /// does not exist until then — and larger after every Turn it takes.
+    private func recordSize(of sessionID: String) -> Int {
+        guard let url = row(sessionID)?.sourceURL,
+              let size = try? FileManager.default
+              .attributesOfItem(atPath: url.path)[.size] as? Int
+        else { return 0 }
+        return size
+    }
+
+    private func row(_ sessionID: String) -> HubSession? {
+        hub.sessions.first { $0.id == sessionID }
+    }
+
+    /// This machine's installed skills, copied into the Project's own `.claude/skills`. Copied
+    /// rather than symlinked because the CLI resolves the folder it is given.
     static func install(skills: [String], into root: URL) throws {
         guard !skills.isEmpty else { return }
-        let source = try repositoryRoot().appending(path: ".agents/skills")
+        let source = installedSkills()
         let destination = root.appending(path: ".claude/skills", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
         for skill in skills {
@@ -143,21 +152,35 @@ extension LiveClaudeFixture {
         }
     }
 
-    /// The checkout this test file is part of, found by walking up from it. Located by a folder
-    /// only the root has, so a file moved between targets does not silently read the wrong tree
-    /// the way a fixed number of `..` would.
-    private static func repositoryRoot(from file: String = #filePath) throws -> URL {
+    /// Where `skills add` put this machine's skills, which is the MAIN checkout and nowhere else:
+    /// `.agents/` is gitignored, so a linked worktree has no copy of its own.
+    ///
+    /// Reached through git rather than by walking up for `.agents`, which from a worktree climbs
+    /// past the worktree's own root and lands in whatever tree happens to sit above it. A missing
+    /// skill then fails at the copy, naming the path it looked in.
+    private static func installedSkills(from file: String = #filePath) -> URL {
         var directory = URL(fileURLWithPath: file).deletingLastPathComponent()
         while directory.path != "/" {
-            if FileManager.default.fileExists(atPath: directory.appending(path: ".agents").path) {
-                return directory
+            let git = directory.appending(path: ".git")
+            if FileManager.default.fileExists(atPath: git.path) {
+                return checkout(holding: git).appending(path: ".agents/skills")
             }
             directory = directory.deletingLastPathComponent()
         }
-        throw LiveFixtureError.noRepositoryRoot(from: file)
+        return URL(fileURLWithPath: file).deletingLastPathComponent()
     }
-}
 
-enum LiveFixtureError: Error {
-    case noRepositoryRoot(from: String)
+    /// The checkout a `.git` belongs to. A worktree's `.git` is a FILE holding
+    /// `gitdir: <main>/.git/worktrees/<name>`, so the main checkout is three components above it.
+    private static func checkout(holding git: URL) -> URL {
+        guard let pointer = try? String(contentsOf: git, encoding: .utf8),
+              let gitDir = pointer.split(separator: " ").last?
+              .trimmingCharacters(in: .whitespacesAndNewlines),
+              gitDir.contains("/worktrees/")
+        else { return git.deletingLastPathComponent() }
+        return URL(fileURLWithPath: gitDir)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+    }
 }

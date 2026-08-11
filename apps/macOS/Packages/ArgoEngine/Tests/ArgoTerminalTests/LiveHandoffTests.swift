@@ -2,39 +2,40 @@
 import Foundation
 import Testing
 
-/// A handoff against the CLI it exists for (#628). Excluded from the default run for the reason the
-/// permission suite is: a real `claude`, real tokens, and as long as an agent takes.
+/// A handoff against the CLI it exists for (#628). Excluded from the default run for the reason
+/// the permission suite is: a real `claude`, real tokens, and as long as an agent takes.
 ///
 /// What no fake host can show: that the command Argo types is SUBMITTED. A double records the
 /// string and asserts on its content, so a line feed where a carriage return belongs is invisible
-/// to it — and a line feed leaves `/handoff` unsent in the composer while the wait runs out.
-/// `notSteerable` and `noFolder` are decided before any CLI is involved and stay with the fake.
-/// Serialized, unlike the permission suite: every wait here spins the main actor, and a handoff is
-/// several turns of real work rather than one gated call. Run side by side, three of these starve
-/// the queue the Hub reads its sockets on, and the agent that suffers is not the one under test.
+/// to it. `notSteerable` and `noFolder` are decided before any CLI is involved and stay with the
+/// fake.
+///
+/// Serialized: every wait here spins the main actor, and run side by side these starve the queue
+/// the Hub reads its gate socket on.
 @Suite("Live handoff", .enabled(if: LiveCLI.isEnabled), .serialized)
 @MainActor
 struct LiveHandoffTests {
-    /// The whole of story 47 against a real CLI, and the fresh Session proven to have READ what it
-    /// was pointed at: the codename exists nowhere in its context except inside the brief.
-    @Test(.timeLimit(.minutes(60)))
-    func `a handoff writes a brief the fresh Session reads and continues from`() async throws {
-        let live = try await LiveClaudeFixture.spawned(carryingSkills: ["handoff"])
-        defer { live.end() }
-        let codename = "ARGO-\(UUID().uuidString.prefix(6))"
-        try await live.askAndSettle("Reply with just OK. The release codename is \(codename).")
-        let source = try #require(live.sessionID, "\(live.host.lastScreens)")
+    /// Longer than a handoff off a small Session takes, so the bound is never what ends the wait.
+    private static let patience = HandoffPatience(pollMs: 500, limitMs: 30 * 60 * 1000)
 
-        let outcome = try await live.handoff(patience: HandoffPatience(
-            pollMs: 500,
-            limitMs: 30 * 60 * 1000,
-        )).run(SessionHandoff.Request(sessionID: source, cwd: live.root.path, issue: 628))
+    /// Story 47 against a real CLI, with the fresh Session proven to have READ what it was pointed
+    /// at: the codename exists nowhere in its context except inside the brief.
+    @Test(.timeLimit(.minutes(60)))
+    func `a handoff hands the work over in a brief the fresh Session reads`() async throws {
+        let codename = "ARGO-\(UUID().uuidString.prefix(6))"
+        let live = try await LiveClaudeFixture.primed(
+            saying: "Reply with just OK. The release codename is \(codename).",
+            carryingSkills: ["handoff"],
+        )
+        defer { live.end() }
+
+        let outcome = try await live.handoff(patience: Self.patience).run(
+            SessionHandoff.Request(sessionID: live.sessionID, cwd: live.root.path, issue: 628),
+        )
 
         let brief = try #require(live.hub.brief(at: outcome.briefPath), "\(live.host.lastScreens)")
         #expect(!brief.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-        // The fresh Session is asked for a fact only its brief carries. Its own context holds the
-        // opening prompt and nothing else, so the file can only be right if it read the document.
         // Its opening turn is let finish first, or the question joins that turn's keystrokes.
         await live.settleTurn(of: outcome.sessionID)
         let proof = live.root.appending(path: "codename-from-the-brief.txt")
@@ -43,7 +44,7 @@ struct LiveHandoffTests {
                 + "on one line and with nothing else in the file.",
             to: outcome.sessionID,
         )
-        await live.settleAllowing(seconds: 300) {
+        await live.settleAllowing(seconds: LiveClaudeFixture.turnSeconds) {
             FileManager.default.fileExists(atPath: proof.path)
         }
 
@@ -57,22 +58,19 @@ struct LiveHandoffTests {
     /// The edge is recorded against the claim the spawn published, then named with the id the CLI
     /// picks — so a roster that reloads after the fresh agent's first record still follows it.
     @Test(.timeLimit(.minutes(60)))
-    func `the chain edge is recorded, then named with the CLI's own id`() async throws {
-        let live = try await LiveClaudeFixture.spawned(carryingSkills: ["handoff"])
+    func `the chain edge ends up naming the fresh Session by its CLI's own id`() async throws {
+        let live = try await LiveClaudeFixture.primed(carryingSkills: ["handoff"])
         defer { live.end() }
-        try await live.askAndSettle("Reply with just OK.")
-        let source = try #require(live.sessionID, "\(live.host.lastScreens)")
+        let source = live.sessionID
 
-        let outcome = try await live.handoff(patience: HandoffPatience(
-            pollMs: 500,
-            limitMs: 30 * 60 * 1000,
-        )).run(SessionHandoff.Request(sessionID: source, cwd: live.root.path))
-
+        let outcome = try await live.handoff(patience: Self.patience).run(
+            SessionHandoff.Request(sessionID: source, cwd: live.root.path),
+        )
         #expect(Self.handedOff(from: source, in: live) == outcome.sessionID)
 
-        // The naming is asserted only once the fresh agent has WRITTEN its first record, because
-        // that record is what gives its claim the CLI's id. Waiting on the link itself would be
-        // waiting on the thing under test, and would pass by timing out.
+        // Asserted only once the fresh agent has WRITTEN the record that gives its claim the CLI's
+        // id. Waiting on the link itself would be waiting on the thing under test, and would pass
+        // by timing out.
         await live.settleTurn(of: outcome.sessionID)
         await live.settleAllowing(seconds: 120) {
             Self.handedOff(from: source, in: live) != outcome.sessionID
@@ -83,34 +81,38 @@ struct LiveHandoffTests {
         #expect(live.hub.sessions.contains { $0.id == named }, "\(live.hub.sessions.map(\.id))")
     }
 
-    /// The wait is bounded and the bound is honoured, and the Session it typed at is still a
-    /// Session afterwards.
-    ///
-    /// Two seconds, not twenty: a handoff off a one-Turn Session is quick enough to beat twenty,
-    /// which it did, and a bound the work can win is not a bound under test. Nothing an agent can
-    /// do fits inside two, so the wait's end is the wait's own rule and not a race.
+    /// Two seconds, not twenty: a handoff off a one-Turn Session finished inside twenty when this
+    /// was first run, and a bound the work can win is not a bound under test.
     @Test(.timeLimit(.minutes(30)))
-    func `a brief that does not arrive in time ends the wait and leaves the Session usable`(
-    ) async throws {
-        let live = try await LiveClaudeFixture.spawned(carryingSkills: ["handoff"])
+    func `a brief that does not arrive ends the wait at its stated bound`() async throws {
+        let live = try await LiveClaudeFixture.primed(carryingSkills: ["handoff"])
         defer { live.end() }
-        try await live.askAndSettle("Reply with just OK.")
-        let source = try #require(live.sessionID, "\(live.host.lastScreens)")
 
-        let patience = HandoffPatience(pollMs: 500, limitMs: 2000)
         await #expect(throws: SessionHandoff.Failure.briefNeverArrived(afterMs: 2000)) {
-            try await live.handoff(patience: patience)
-                .run(SessionHandoff.Request(sessionID: source, cwd: live.root.path))
+            try await live
+                .handoff(patience: HandoffPatience(pollMs: 500, limitMs: 2000))
+                .run(SessionHandoff.Request(sessionID: live.sessionID, cwd: live.root.path))
         }
+    }
 
-        // Not wedged: the same Session hears a second Turn and acts on it. An interrupt first,
-        // because `/handoff` is still running and a prompt into a running turn is a keystroke.
-        try live.hub.driver.interrupt(source)
+    /// A handoff Argo gave up on left `/handoff` running, and the Session has to survive that: the
+    /// button is offered again on the same row, and a wedged Session would answer nothing.
+    @Test(.timeLimit(.minutes(30)))
+    func `a Session whose handoff timed out still takes the next Turn`() async throws {
+        let live = try await LiveClaudeFixture.primed(carryingSkills: ["handoff"])
+        defer { live.end() }
+        _ = try? await live
+            .handoff(patience: HandoffPatience(pollMs: 500, limitMs: 2000))
+            .run(SessionHandoff.Request(sessionID: live.sessionID, cwd: live.root.path))
+
+        // An interrupt first, because `/handoff` is still running and a prompt into a running turn
+        // is a keystroke.
+        try live.hub.driver.interrupt(live.sessionID)
         await live.settleAllowing(seconds: 120) { live.hub.sessions.first?.status == .idle }
         try await live.askAndSettle(
             "Run this command with the Bash tool and nothing else: touch \(live.markerURL.path)",
         )
-        await live.settleAllowing(seconds: 300) { live.hasMarkerFile() }
+        await live.settleAllowing(seconds: LiveClaudeFixture.turnSeconds) { live.hasMarkerFile() }
 
         #expect(live.hasMarkerFile(), "\(live.host.lastScreens)")
     }
@@ -120,15 +122,13 @@ struct LiveHandoffTests {
     /// would look like success.
     @Test(.timeLimit(.minutes(30)))
     func `a brief holding only whitespace does not end the wait`() async throws {
-        let live = try await LiveClaudeFixture.spawned()
+        let live = try await LiveClaudeFixture.primed()
         defer { live.end() }
-        try await live.askAndSettle("Reply with just OK.")
-        let source = try #require(live.sessionID, "\(live.host.lastScreens)")
 
         // The address is fixed so the file can be put there first, and the Hub reads it the way it
         // reads any brief. No skill is installed: what is under test is the rule about the bytes.
         let atMs = 1_700_000_000_000
-        let brief = live.briefURL(forSessionID: source, atMs: atMs)
+        let brief = live.briefURL(forSessionID: live.sessionID, atMs: atMs)
         try FileManager.default.createDirectory(
             at: live.briefRoot,
             withIntermediateDirectories: true,
@@ -142,7 +142,7 @@ struct LiveHandoffTests {
                     patience: HandoffPatience(pollMs: 500, limitMs: 30 * 1000),
                     namingTheBriefAtMs: atMs,
                 )
-                .run(SessionHandoff.Request(sessionID: source, cwd: live.root.path))
+                .run(SessionHandoff.Request(sessionID: live.sessionID, cwd: live.root.path))
         }
     }
 
