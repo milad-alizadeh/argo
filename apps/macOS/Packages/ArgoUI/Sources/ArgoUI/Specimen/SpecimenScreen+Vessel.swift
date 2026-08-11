@@ -16,7 +16,7 @@ extension SpecimenScreen {
         case .composer:
             // The composed state, which only the deck can show: the glass vessel against the
             // reading, the fade letting rows run under it, and the newest line standing clear.
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.composer)
+            sessions(FeedProjection.previewRows, vessel: .composer(ComposerSpecimen.composer))
         case .composerTyping:
             // A multi-line draft, because the growth past one line is the state — and whether
             // six lines still leave a vessel rather than a wall is the judgement.
@@ -38,7 +38,7 @@ extension SpecimenScreen {
             // Stop in the same circle and the same place, and a field still inviting the next thing
             // rather than shut. Over the working feed and not the vessel alone, because what the
             // render has to settle is whether the amber reads as the one live thing on the screen.
-            sessions(FeedProjection.previewWorkingRows, composer: ComposerSpecimen.running)
+            sessions(FeedProjection.previewWorkingRows, vessel: .composer(ComposerSpecimen.running))
         case .composerStopped:
             // The other half of #541: the vessel a moment after Stop, empty and back at rest, with
             // the one line saying what went. The claim is that the line is quiet enough not to read
@@ -51,12 +51,12 @@ extension SpecimenScreen {
         case .flatComposer:
             // The shipping gate every glass surface carries: legible, findable and pressable
             // with the optical response taken away.
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.composer)
+            sessions(FeedProjection.previewRows, vessel: .composer(ComposerSpecimen.composer))
                 .argoWithoutTransparency()
         case .composerStanding:
             // The tray at rest, which is where a standing allow has to be findable: the turn AFTER
             // the grant, with the prompt that made it long gone (#572).
-            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.standing)
+            sessions(FeedProjection.previewRows, vessel: .composer(ComposerSpecimen.standing))
         case .composerAttached:
             // Three chips over a message that refers to them (#540). A picture, a source file and
             // a log in one tray, because "one chip shape for every source" is a claim about the
@@ -94,32 +94,32 @@ extension SpecimenScreen {
             // A Session Argo never spawned: no vessel at all, and one line where it would have been
             // (#546, design decision 7). What the render has to settle is that the deck reads as
             // FINISHED rather than as one whose composer failed to draw.
-            sessions(FeedProjection.previewRows, unavailable: .external, access: .external)
+            sessions(FeedProjection.previewRows, vessel: .unavailable(.external), access: .external)
         case .composerOrphaned:
             // The same absence on a Session that WAS Argo's, with the one act still available on
             // it. The claim is that the exit reads as an offer rather than as a retry of the
             // steering that just died.
-            sessions(FeedProjection.previewRows, unavailable: .orphaned, access: .orphaned)
+            sessions(FeedProjection.previewRows, vessel: .unavailable(.orphaned), access: .orphaned)
         case .composerEnded:
             // Neither of those two: the agent reported itself over while Argo still held its PTY,
             // so the line takes the quiet mark. Its own case because the judgement is that it does
             // NOT read as a failure — nothing here went wrong.
-            sessions(FeedProjection.previewRows, unavailable: .ended)
+            sessions(FeedProjection.previewRows, vessel: .unavailable(.ended))
         case .permission:
             // A gated command holding the composer's slot: the tool and its target verbatim, the
             // amber rim, Allow focused — the state the whole channel exists to raise.
-            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
+            sessions(FeedProjection.previewRows, vessel: .prompt(PermissionSpecimen.command))
         case .permissionStanding:
             // The same prompt on a Session that already holds two grants: the standing offer on
             // the footer's trailing edge, and above it the record of what it makes.
-            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.standing)
+            sessions(FeedProjection.previewRows, vessel: .prompt(PermissionSpecimen.standing))
         case .permissionEdit:
             // The other tool kind the prompt renders: a path and the hunk it would write, with
             // the counts said under the block rather than inside it.
-            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.edit)
+            sessions(FeedProjection.previewRows, vessel: .prompt(PermissionSpecimen.edit))
         case .flatPermission:
             // The same shipping gate the composer's glass carries.
-            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
+            sessions(FeedProjection.previewRows, vessel: .prompt(PermissionSpecimen.command))
                 .argoWithoutTransparency()
         // Drawn by the catalog's own switch, or by the Connect flow's. Named rather than
         // defaulted, so the day one of them belongs to this vessel the compiler is what says so.

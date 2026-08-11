@@ -5,40 +5,53 @@ import SwiftUI
 // back a closure that is inert when nothing is selected.
 
 extension CockpitView {
+    /// Everything the deck's vessel can do, bound to the Session it addresses. Assembled once
+    /// rather than per control, so the deck takes one member where it used to take seven.
+    var intents: DeckIntents {
+        DeckIntents(
+            send: send,
+            decide: decide,
+            revoke: revoke,
+            stop: stop,
+            setMode: setMode,
+            spawnBeside: spawnBeside,
+            draft: draft,
+        )
+    }
+
     /// The composer's one intent, bound to the Session the composer addresses.
     var send: ComposerSend {
-        guard let composer else { return { _, _ in } }
-        let sessionID = composer.sessionID
+        guard let sessionID = vessel.composer?.sessionID else { return { _, _ in } }
         return { try actions.drive.send($0, attaching: $1, to: sessionID) }
     }
 
     /// Stopping the Turn the composer's Session is running (#541), bound the way `send` is — and
     /// inert without a composer, which is also the state with no control to press.
     var stop: () throws -> Void {
-        guard let composer else { return {} }
-        let sessionID = composer.sessionID
+        guard let sessionID = vessel.composer?.sessionID else { return {} }
         return { try actions.drive.interrupt(sessionID) }
     }
 
     /// Putting the composer's Session on a rung (#545), bound the way `stop` is.
     var setMode: (SessionMode) throws -> Void {
-        guard let composer else { return { _ in } }
-        let sessionID = composer.sessionID
+        guard let sessionID = vessel.composer?.sessionID else { return { _ in } }
         return { try actions.drive.setMode($0, for: sessionID) }
     }
 
     /// What the selected Session's composer is holding, out of the store that outlives the deck.
     /// A Session with no composer gets an inert binding.
     var draft: Binding<ComposerDraft> {
-        guard let composer else { return .constant(ComposerDraft()) }
-        return drafts.binding(for: composer.sessionID)
+        guard let sessionID = vessel.composer?.sessionID else {
+            return .constant(ComposerDraft())
+        }
+        return drafts.binding(for: sessionID)
     }
 
     /// The prompt's one intent, bound the way `send` is. The refusal is dropped because both of
     /// the port's mean the same thing here — the Permission is gone — and the prompt leaving the
     /// screen already says so.
     var decide: (PermissionDecision) -> Void {
-        guard let prompt else { return { _ in } }
+        guard let prompt = vessel.prompt else { return { _ in } }
         let sessionID = prompt.sessionID
         // The request is captured with the Session, so the answer names the Permission this
         // closure was built over rather than whatever is pending by the time it is called.
@@ -46,7 +59,7 @@ extension CockpitView {
         return { try? actions.drive.decide($0, answering: requestID, for: sessionID) }
     }
 
-    /// Taking a standing allow back. Off the selection, not the composer: the prompt draws the tray
+    /// Taking a standing allow back. Off the selection, not the vessel: the prompt draws the tray
     /// too, and the composer is absent while it is up. `noSuchGrant` is dropped because the tray is
     /// re-derived from the Session, so the chip goes either way.
     var revoke: (String) -> Void {

@@ -26,31 +26,11 @@ struct SessionsDeck: View {
     /// Which row the reading opens held at — see `FeedView.held`. Where the reading STARTS; the
     /// scroll owns it from there.
     var held: FeedRow.ID?
-    /// The shown Session's composer. Absent for a Session Argo cannot drive, which draws the line
-    /// below rather than a disabled field.
-    var composer: SessionComposerProjection.Composer?
-    /// Why there is no composer, for the Sessions that have none (#546). Exactly one of this and
-    /// `composer` is ever present — see `SessionComposerProjection.unavailable(for:)`.
-    var unavailable: SessionComposerProjection.Unavailable?
-    /// Start a fresh Session in the shown one's folder — the exit that line offers. Inert by
-    /// default so a specimen draws the offer without spawning anything.
-    var spawnBeside: () async -> Void = {}
-    /// One Turn to the shown Session. Inert by default so a specimen draws the vessel without
+    /// What is in the deck's one slot below the reading — see `DeckVessel`.
+    var vessel = DeckVessel.none
+    /// What that vessel's controls do. Inert by default, so a specimen draws them without
     /// reaching for a terminal.
-    var send: ComposerSend = { _, _ in }
-    /// The Permission the shown Session is blocked on. Displaces the composer.
-    var prompt: PermissionPromptProjection.Prompt?
-    /// The answer to it. Inert by default for the reason `send` is.
-    var decide: (PermissionDecision) -> Void = { _ in }
-    /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
-    var revoke: (String) -> Void = { _ in }
-    /// Stopping the Turn in flight (#541). Inert by default, for the reason `send` is.
-    var stop: () throws -> Void = {}
-    /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
-    var setMode: (SessionMode) throws -> Void = { _ in }
-    /// What the composer is holding — passed through from above the Session identity, so an unsent
-    /// draft survives a switch (#539). See `InstrumentDeckShell.draft`.
-    var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
+    var intents = DeckIntents.inert
     /// Where the reader dragged the deck's seams — held above this view, never in it. See
     /// `DeckSeams`.
     var seams = DeckSeams.unheld
@@ -70,21 +50,15 @@ struct SessionsDeck: View {
                 showing: showing,
                 selection: selection,
                 held: held,
-                composer: composer,
-                send: send,
-                prompt: prompt,
-                decide: decide,
-                revoke: revoke,
-                stop: stop,
-                setMode: setMode,
-                draft: draft,
+                vessel: vessel,
+                intents: intents,
                 seams: seams,
             )
             // A ROW and not an overlay, unlike the vessel above: the feed runs under a composer and
             // stays readable through the glass, where this replaces the reading's end. It spans the
             // whole deck for the same reason — the rail and the panel cannot be driven either.
-            if let unavailable {
-                ComposerUnavailable(reason: unavailable, spawn: spawnBeside)
+            if let unavailable = vessel.unavailable {
+                ComposerUnavailable(reason: unavailable, spawn: intents.spawnBeside)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

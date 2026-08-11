@@ -30,32 +30,12 @@ struct InstrumentDeckShell: View {
     /// Which row the reading opens held at — see `FeedView.held`. A parameter because a screenshot
     /// cannot scroll.
     var held: FeedRow.ID?
-    /// The shown Session's composer, already projected — absent for one Argo cannot drive.
-    var composer: SessionComposerProjection.Composer?
-    /// Why it is absent, for the Sessions it is absent for (#546). Never present beside `composer`.
-    var unavailable: SessionComposerProjection.Unavailable?
-    /// The exit that line offers: a fresh Session in the shown one's folder. Inert by default, for
-    /// the reason `send` is.
-    var spawnBeside: () async -> Void = {}
-    /// One Turn to the shown Session. Inert by default, so a specimen renders the vessel with
+    /// What is in the deck's one slot below the reading, already resolved — see `DeckVessel`. A
+    /// VALUE, so a specimen builds one from a fixture rather than from a live Hub.
+    var vessel = DeckVessel.none
+    /// What that vessel's controls do. Inert by default, so a specimen renders the vessel with
     /// nothing behind it.
-    var send: ComposerSend = { _, _ in }
-    /// The Permission the shown Session is blocked on — it takes the composer's slot while present
-    /// (design decision 6).
-    var prompt: PermissionPromptProjection.Prompt?
-    /// The answer to it. Inert by default, for the reason `send` is.
-    var decide: (PermissionDecision) -> Void = { _ in }
-    /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
-    var revoke: (String) -> Void = { _ in }
-    /// Stopping the Turn the shown Session is running (#541). Inert by default, for the reason
-    /// `send` is.
-    var stop: () throws -> Void = {}
-    /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
-    var setMode: (SessionMode) throws -> Void = { _ in }
-    /// What the shown Session's composer is holding. A binding handed in from ABOVE the identity
-    /// below: `.id(session)` discards everything under it on a switch, and an unsent draft must
-    /// survive one (#539).
-    var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
+    var intents = DeckIntents.inert
 
     /// Where the reader dragged the deck's seams. Owned HERE, above the identity below — keyed with
     /// the room it would snap back to its opening width on every Session switch.
@@ -84,16 +64,8 @@ struct InstrumentDeckShell: View {
                 step: step,
                 lit: lit,
                 held: held,
-                composer: composer,
-                unavailable: unavailable,
-                spawnBeside: spawnBeside,
-                send: send,
-                prompt: prompt,
-                decide: decide,
-                revoke: revoke,
-                stop: stop,
-                setMode: setMode,
-                draft: draft,
+                vessel: vessel,
+                intents: intents,
                 seams: DeckSeams(rail: $railWidth, panel: $panelWidth),
             )
             // SwiftUI discards a view's whole state when its id changes. On the DECK and not the

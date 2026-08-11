@@ -25,24 +25,19 @@ struct ShellSidebar: View {
     /// entirely (`SessionCommands`).
     var renamingSessionID: Binding<String?> = .constant(nil)
 
-    @State private var order = RosterOrder()
+    /// The pipeline and the order it publishes in, in one value. Which step comes before which is
+    /// `RosterListing`'s and no longer this body's — see the invariants stated there.
+    @State private var roster = RosterListing()
     /// The sidebar's own, not the presentation's: a restart mid-search comes back to the whole
     /// list.
     @State private var query = ""
 
     var body: some View {
-        // Filtered AFTER the order is published, so searching cannot re-order what is left, and so
-        // the held order covers the WHOLE roster rather than only the rows a query kept.
-        let ordered = order.published(SessionRosterProjection.rows(from: presentation.sessions))
-        let rows = RosterSearch.matching(query, in: ordered)
+        let reading = roster.reading(of: presentation.sessions, matching: query)
 
         SessionNavigator(
-            rows: rows,
-            // Not held by the order above, and filtered by the same query as the roster: a search
-            // that stopped at the fold would answer "no Sessions" about a list it never looked in.
-            archived: RosterSearch.matching(
-                query, in: SessionRosterProjection.archivedRows(from: presentation.sessions),
-            ),
+            rows: reading.rows,
+            archived: reading.archived,
             selection: $selection,
             archive: archive,
             rename: rename,
@@ -50,20 +45,20 @@ struct ShellSidebar: View {
             renamingRowID: renamingSessionID,
         )
         .searchable(text: $query, placement: .sidebar, prompt: "Search Sessions")
-        .argoAnimation(.resettle, value: rows.map(\.id))
-        // Read off the PUBLISHED rows, which is what makes this a fixed point rather than a
+        .argoAnimation(.resettle, value: reading.rows.map(\.id))
+        // Read off the PUBLISHED roster, which is what makes this a fixed point rather than a
         // second placement decision: a row admitted once stays where it was put.
-        .onChange(of: ordered.map(\.id)) { _, ids in
-            order.admit(ids)
+        .onChange(of: reading.ids) { _, _ in
+            roster.admit(reading)
         }
         .onChange(of: activeState, initial: true) { previous, state in
             // A window is not reported active for the first moments of its life, and those are
             // exactly the moments the roster was reshuffling in.
             let isFirstDraw = previous == state
             if state == .inactive, !isFirstDraw {
-                order.release()
+                roster.release()
             } else {
-                order.hold(ordered.map(\.id))
+                roster.hold(reading)
             }
         }
     }
