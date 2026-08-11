@@ -1,0 +1,159 @@
+# Project RTK filters — trusted per checkout with `rtk trust --yes` (trust is keyed to
+# this file's hash, so re-run after any edit). The Bash hook rewrites matching commands
+# through these; see AGENTS.md "Tooling (RTK)".
+schema_version = 1
+
+# swift-testing prints one line per passing test; only failures, skips and the final
+# summary carry information. rtk ships swift-build but no swift-test filter.
+# filter_stderr: swift's build phase (Building/Build complete!) arrives on stderr.
+[filters.swift-test]
+description = "Compact swift test output — strip passes and build noise, keep failures and the summary"
+match_command = "^swift\\s+test\\b"
+strip_ansi = true
+filter_stderr = true
+strip_lines_matching = [
+  "^\\s*$",
+  "^Building for debugging",
+  "^\\[\\d+/\\d+\\]",
+  "^Build complete!",
+  "^Compiling ",
+  "^Linking ",
+  "(Test|Suite) [\"“].*[\"”].* passed after",
+  "started\\.$",
+  "^[􀟈◇] ",
+  "Testing Library Version",
+  "Target Platform:",
+  "^Test Suite '.*' (started|passed)",
+  "^\\s*Executed \\d+ tests?, with 0 failures",
+]
+max_lines = 120
+
+[[tests.swift-test]]
+name = "passing run collapses to the summary line"
+input = """
+Building for debugging...
+[8/8] Linking ArgoEnginePackageTests
+Build complete! (2.1s)
+􀟈  Test run started.
+􀟈  Testing Library Version: 6.3
+􁁛  Test "a moved Project keeps its id" passed after 0.2 seconds.
+􁁛  Test "a head git answered for" with 4 test cases passed after 0.2 seconds.
+􁁛  Suite "Project registry" passed after 0.3 seconds.
+􁁛  Test run with 433 tests in 68 suites passed after 1.6 seconds.
+"""
+expected = "􁁛  Test run with 433 tests in 68 suites passed after 1.6 seconds."
+
+[[tests.swift-test]]
+name = "failures survive with their location"
+input = """
+􁁛  Test "healthy case" passed after 0.1 seconds.
+􀢄  Test "broken case" recorded an issue at FooTests.swift:42:9: Expectation failed: x == 2
+􀢄  Test "broken case" failed after 0.1 seconds with 1 issue.
+􀢄  Test run with 2 tests in 1 suite failed after 0.2 seconds with 1 issue.
+"""
+expected = "􀢄  Test \"broken case\" recorded an issue at FooTests.swift:42:9: Expectation failed: x == 2\n􀢄  Test \"broken case\" failed after 0.1 seconds with 1 issue.\n􀢄  Test run with 2 tests in 1 suite failed after 0.2 seconds with 1 issue."
+
+# `bun run <task>` fronts turbo, so rtk's built-in ^turbo filter never matches it.
+# Same idea: cache noise and per-test pass lines out, failures and summaries kept.
+# turbo's own `Tasks:` count line is kept — on a failing run it is the headline.
+[filters.bun-run]
+description = "Compact bun run output — strip turbo cache noise and per-test pass lines, keep failures"
+match_command = "^bun run (test|quality|format-and-lint|lint|build)\\b"
+strip_ansi = true
+filter_stderr = true
+strip_lines_matching = [
+  "^\\s*$",
+  "cache (hit|miss|bypass)",
+  "[Pp]ackages? in scope",
+  "Running \\w+ in \\d+ packages",
+  "^\\s*Duration:\\s+",
+  "Remote caching (enabled|disabled)",
+  "^Building for debugging",
+  "^\\[\\d+/\\d+\\]",
+  "^Build complete!",
+  "(Test|Suite) [\"“].*[\"”].* passed after",
+  "started\\.$",
+  "^[􀟈◇] ",
+  "Testing Library Version",
+  "Target Platform:",
+]
+max_lines = 120
+on_empty = "ok"
+
+[[tests.bun-run]]
+name = "turbo noise stripped, summaries kept"
+input = """
+• Packages in scope: @argo/macos
+ cache bypass, force executing abc123
+
+@argo/macos:test: swift-test: ArgoEngine
+􁁛  Test "case" passed after 0.1 seconds.
+􁁛  Test run with 10 tests in 2 suites passed after 0.5 seconds.
+
+ Tasks:    1 successful, 1 total
+Duration: 6s
+"""
+expected = "@argo/macos:test: swift-test: ArgoEngine\n􁁛  Test run with 10 tests in 2 suites passed after 0.5 seconds.\n Tasks:    1 successful, 1 total"
+
+# graphify query output is already scoped, but stdlib/external nodes (src= loc= with no
+# path) and the legacy node-ID banner (stderr) are pure noise. src= paths on real nodes
+# are load-bearing — they say where to read next — so only pathless nodes are dropped.
+[filters.graphify]
+description = "Compact graphify output — drop stdlib nodes and the legacy-ID banner, keep real nodes and edges"
+match_command = "^graphify (query|path|explain)\\b"
+strip_ansi = true
+filter_stderr = true
+strip_lines_matching = [
+  "src= loc=",
+  "pre-#1504 node-ID scheme",
+]
+max_lines = 200
+
+[[tests.graphify]]
+name = "stdlib nodes and banner dropped, real nodes kept"
+input = """
+warning: graph uses the pre-#1504 node-ID scheme, re-extract to upgrade
+NODE Hub kind=class src=apps/macOS/Packages/ArgoEngine/Sources/Hub.swift loc=120
+NODE Sendable kind=protocol src= loc=
+EDGE Hub -> Sendable conforms
+"""
+expected = "NODE Hub kind=class src=apps/macOS/Packages/ArgoEngine/Sources/Hub.swift loc=120\nEDGE Hub -> Sendable conforms"
+
+# The e2e suite runs xcodebuild test through a shell script the hook cannot see into,
+# and xcodebuild's per-phase and per-test-pass lines are tens of KB a run. XCTest
+# failure lines ("error:", "failed") and the result summary don't match any strip.
+[filters.e2e-test]
+description = "Compact e2e-test.sh output — strip xcodebuild phases and XCTest pass lines, keep failures"
+match_command = "^sh scripts/e2e-test\\.sh\\b"
+strip_ansi = true
+filter_stderr = true
+strip_lines_matching = [
+  "^\\s*$",
+  "^(CompileC|CompileSwift|Ld|CreateBuildDirectory|MkDir|ProcessInfoPlistFile|CopySwiftLibs|CodeSign|Touch|Validate|RegisterWithLaunchServices|ProcessProductPackaging|LinkStoryboards|WriteAuxiliaryFile|PhaseScriptExecution|ClangStatCache|ExtractAppIntentsMetadata|GenerateDSYMFile|RegisterExecutionPolicyException|Copy|CpResource|SwiftDriver|SwiftCompile|SwiftEmitModule|SwiftMergeGeneratedHeaders)\\b",
+  "^    cd ",
+  "^    builtin-",
+  "^    export ",
+  "^Test Suite '.*' (started|passed)",
+  "^Test Case '.*' (started|passed)",
+  "^\\s*Executed \\d+ tests?, with 0 failures",
+  "^Build settings from command line",
+  "^note: ",
+  "^Writing result bundle",
+  "^Resolve Package Graph",
+  "^Resolved source packages",
+]
+max_lines = 150
+
+[[tests.e2e-test]]
+name = "phases and passes stripped, failure kept"
+input = """
+CompileSwift normal arm64 FeedE2ETests.swift
+Test Suite 'FeedE2ETests' started at 2026-08-11
+Test Case '-[FeedE2ETests testScroll]' started.
+Test Case '-[FeedE2ETests testScroll]' passed (2.1 seconds).
+Test Case '-[FeedE2ETests testSeam]' started.
+/repo/FeedE2ETests.swift:30: error: -[FeedE2ETests testSeam] : XCTAssertTrue failed
+Test Case '-[FeedE2ETests testSeam]' failed (1.4 seconds).
+Executed 2 tests, with 1 failure (0 unexpected) in 3.5 (3.6) seconds
+"""
+expected = "/repo/FeedE2ETests.swift:30: error: -[FeedE2ETests testSeam] : XCTAssertTrue failed\nTest Case '-[FeedE2ETests testSeam]' failed (1.4 seconds).\nExecuted 2 tests, with 1 failure (0 unexpected) in 3.5 (3.6) seconds"

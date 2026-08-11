@@ -215,14 +215,19 @@ specimen harness in full: `docs/agents/visual-verification.md`.
 ## Tooling (RTK)
 
 **Always prefix shell commands with `rtk`** so output is filtered before it reaches context. The
-global Bash hook auto-wraps `git`, `grep`, `gh`, `vitest`, `tsc`, `ls`, `find` and similar — but
-there is **no `bun` or `turbo` proxy**, so this repo's canonical entrypoints leak full output
-unless wrapped explicitly:
+global Bash hook (rtk ≥ 0.45) auto-wraps `git`, `grep`, `gh`, `ls`, `find` and similar, and it
+rewrites inside compound commands too — `cd apps/macOS && swift test` is caught. This repo's own
+noisy entrypoints are covered by **`.rtk/filters.toml`** at the root: `swift test` (passes and
+build noise out, failures and the summary kept), `bun run test|quality|…` (turbo cache noise
+out), `graphify query` (stdlib nodes out), and `sh scripts/e2e-test.sh` (xcodebuild phases out).
+
+The filters are inert until trusted: **run `rtk trust --yes` once per checkout**, and again after
+any edit to the file — trust is keyed to its hash. `rtk verify` runs the filters' inline tests.
 
 ```bash
-rtk test bun run test               # turbo → swift-testing, failures only
-rtk err  bun run format-and-lint    # biome at repo root (whole monorepo), errors only
-rtk err  bun run quality:swift      # SwiftFormat --check, SwiftLint, package boundaries
+rtk err bun run quality:swift       # SwiftFormat --check, SwiftLint, package boundaries
+RTK_DISABLED=1 git diff             # exemption: a review's input diff must be complete —
+                                    # never let a filter truncate what /code-review reads
 ```
 
 There is no `typecheck` script any more — it ran `tsc` over `apps/desktop`, and no workspace
