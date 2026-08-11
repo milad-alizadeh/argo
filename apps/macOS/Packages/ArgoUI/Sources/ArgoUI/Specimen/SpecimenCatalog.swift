@@ -59,6 +59,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedEvidence
     case feedRunEvidence
     case feedSurveyEvidence
+    case feedSurveyEvidenceStep
     case feedDocumentEvidence
     case evidenceAddresses
     case feedAttention

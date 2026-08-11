@@ -1,8 +1,13 @@
 import ArgoEngine
 import SwiftUI
 
-/// What the panel is open ON: a mark for what kind of thing it was, the address the feed was
-/// standing in for, and — for a subject that is not a file — the verb and how it went.
+/// What the panel is open ON: a mark for the kind of thing that happened, the verb the row said,
+/// what it counted where it counted, and how it went.
+///
+/// No address. The panel shows one result or eight, from one file or four, and a path up here is a
+/// claim about all of them that is true of at most one — every address is drawn in the body, over
+/// the result it actually belongs to (`EvidenceStepHeader`). What is left is exactly what the ROW
+/// said, which is what a reader clicked, plus the two controls that act on the pane as a whole.
 struct EvidenceHeader: View {
     @Environment(\.argo) private var argo
 
@@ -13,18 +18,13 @@ struct EvidenceHeader: View {
     let dismiss: () -> Void
 
     var body: some View {
-        // On the first baseline, not centred: everything beside a three-line command belongs to the
-        // line it opens on, and centred, the close control drifts down with the length of whatever
-        // was run.
         HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.snug) {
             ArgoGlyph(evidence.symbol, .inline)
                 .foregroundStyle(argo.color.text.tertiary)
-            if evidence.saysVerb {
-                Text(evidence.verb)
-                    .argoText(ArgoTypography.body)
-                    .foregroundStyle(argo.color.text.tertiary)
-            }
-            address
+            Text(evidence.verb)
+                .argoText(ArgoTypography.body)
+                .foregroundStyle(argo.color.text.primary)
+            count
             Spacer(minLength: ArgoSpacing.snug)
             outcome
             readingToggle
@@ -35,51 +35,21 @@ struct EvidenceHeader: View {
             .foregroundStyle(argo.color.text.tertiary)
             .accessibilityLabel("Close evidence")
         }
+        .lineLimit(1)
         .padding(.horizontal, ArgoSpacing.comfortable)
         .padding(.vertical, ArgoSpacing.base)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(spoken)
     }
 
-    /// The address, in the shape its own subject is identified by — see `EvidenceAddress`.
-    @ViewBuilder private var address: some View {
-        switch evidence.address {
-        case let .named(path): named(path)
-        case let .typed(command): typed(command)
+    /// What a folded run counted, quieter than the verb it qualifies. A single call counts nothing
+    /// and draws nothing — its addresses are in the body, one per result.
+    @ViewBuilder private var count: some View {
+        if let label = evidence.label {
+            Text(label)
+                .argoText(ArgoTypography.body)
+                .foregroundStyle(argo.color.text.tertiary)
         }
-    }
-
-    /// A path, on ONE line, cut from the FRONT where it does not fit. A path is identified by its
-    /// right-hand end, so those are the characters to keep; wrapping it instead pushed the close
-    /// control down and grew the header with the depth of whatever happened to be open.
-    private func named(_ path: String) -> some View {
-        drawn(path)
-            .lineLimit(1)
-            .truncationMode(.head)
-            .help(path)
-    }
-
-    /// A command, from its beginning, wrapped and capped — and cut in its middle by the shared rule
-    /// where three lines still cannot hold it, so the verb at the front and the file at the end
-    /// both survive. The tooltip carries what was typed, uncut.
-    private func typed(_ command: String) -> some View {
-        drawn(EvidenceAddress.typed(command).drawn)
-            .lineLimit(EvidenceAddress.commandLines)
-            .multilineTextAlignment(.leading)
-            // A wrapped line has to be told it may claim the height it needs; without this the row
-            // it sits in gives it one line's worth and truncates the other two.
-            .fixedSize(horizontal: false, vertical: true)
-            .help(command)
-    }
-
-    /// What both shapes share: the machine face, and the selection that lets a command be copied
-    /// out and run again — the one thing a reader does with this header that they never do with the
-    /// row above it.
-    private func drawn(_ text: String) -> some View {
-        Text(text)
-            .argoMono(.body)
-            .foregroundStyle(argo.color.text.primary)
-            .textSelection(.enabled)
     }
 
     /// How it went, in a word, and only where there is anything to say. Success is silent here for
@@ -116,70 +86,48 @@ struct EvidenceHeader: View {
         reading == .prose ? .source : .prose
     }
 
-    /// The verb is spoken even where it is not drawn: a mark says "Swift file" to somebody looking
-    /// at it and nothing at all to somebody listening.
     private var spoken: String {
-        [evidence.verb, evidence.address.text, evidence.ending.spoken]
+        [evidence.verb, evidence.label, evidence.ending.spoken]
             .compactMap(\.self)
             .joined(separator: " ")
     }
 }
 
-/// The header's states, side by side: a file (mark, no verb, nothing to say about how it went), a
-/// command that failed (verb drawn, outcome in the failure ink, and long enough to run to the three
-/// lines it is capped at), and a markdown patch, which is the only one carrying the reading
-/// control.
+/// The header's states, side by side: a call that succeeded, a command that failed, and a folded
+/// run of looking, which is the only one carrying a count.
 private struct EvidenceHeaderSpecimen: View {
     @State private var reading = EvidenceReading.source
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.base) {
-            EvidenceHeader(evidence: file, reading: $reading, dismiss: {})
-            EvidenceHeader(evidence: command, reading: $reading, dismiss: {})
-            EvidenceHeader(evidence: document, reading: $reading, dismiss: {})
+            EvidenceHeader(evidence: edited, reading: $reading, dismiss: {})
+            EvidenceHeader(evidence: ran, reading: $reading, dismiss: {})
+            EvidenceHeader(evidence: looked, reading: $reading, dismiss: {})
         }
     }
 
-    private var file: FeedEvidence {
+    private var edited: FeedEvidence {
         FeedEvidence(
-            verb: "Edited", symbol: ArgoSymbol.swiftSource,
-            address: .named("Sources/ArgoUI/Shell/Deck/Feed/FeedView.swift"),
-            language: .swift, ending: .succeeded, saysVerb: false, steps: [],
+            verb: "Edited", symbol: ArgoSymbol.edited, label: nil,
+            ending: .succeeded, steps: [],
         )
     }
 
-    private var command: FeedEvidence {
+    private var ran: FeedEvidence {
         FeedEvidence(
-            verb: "Ran", symbol: ArgoSymbol.ran,
-            address: .typed(
-                "swift test --package-path Packages/ArgoUI --filter EvidenceAddressTests "
-                    + "2>&1 | tee /private/tmp/claude-501/-Users-milad-Developer-argo/tests.log",
-            ),
-            language: nil, ending: .failed, saysVerb: true, steps: [],
+            verb: "Ran", symbol: ArgoSymbol.ran, label: nil, ending: .failed, steps: [],
         )
     }
 
-    private var document: FeedEvidence {
+    private var looked: FeedEvidence {
         FeedEvidence(
-            verb: "Wrote", symbol: ArgoSymbol.proseSource,
-            address: .named("docs/designs/feed-command-legibility-spec.md"),
-            language: .markdown, ending: .succeeded, saysVerb: false,
-            steps: [FeedEvidence.Step(
-                address: nil, language: nil,
-                result: .diff(DiffEvidence(
-                    tier: .direct, change: .create, destination: nil,
-                    added: 1, removed: 0,
-                    hunks: [DiffHunk(
-                        oldStart: 0, newStart: 1,
-                        lines: [DiffLine(side: .add, text: "# Feed command legibility")],
-                    )],
-                )),
-            )],
+            verb: "Looked at", symbol: ArgoSymbol.looked, label: "Searched 1 · Read 5",
+            ending: .succeeded, steps: [],
         )
     }
 }
 
-#Preview("Evidence header — a file, a failed command, and a document") {
+#Preview("Evidence header — a call, a failed command, and a folded run") {
     EvidenceHeaderSpecimen()
         .frame(width: 480)
         .background(ArgoPalette.graphite.surface.sunken)

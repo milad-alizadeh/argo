@@ -202,7 +202,13 @@ public struct SpecimenScreen: View {
             // The folded run of looking, open. The line says `Searched 1 · Read 5` and nothing
             // else; the claim of the fold is that the five files it stopped naming are still all
             // there, each caption saying which of them the output under it came from.
-            sessions(FeedProjection.previewCallRows, open: FeedProjection.previewSurveyRowID)
+            survey()
+        case .feedSurveyEvidenceStep:
+            // The same folded run, after a click on the THIRD name listed under it. Two halves of
+            // one act to look at: the pane is at that file rather than at the top, and the name
+            // that sent it there is lit in the feed — which is what stops a reader who has scrolled
+            // the pane from losing which of the five files they are in.
+            survey(at: 2)
         case .feedDocumentEvidence:
             // A markdown file the agent wrote, open. It opens as the DOCUMENT and not as the
             // patch — whether an outline reads as an outline once the `##` stops being drawn is

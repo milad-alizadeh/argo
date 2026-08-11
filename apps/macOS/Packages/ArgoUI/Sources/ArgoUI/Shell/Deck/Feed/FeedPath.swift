@@ -30,6 +30,20 @@ struct FeedPath: Equatable, Sendable {
         return shortened.replacingOccurrences(of: FeedPath.home, with: "~")
     }
 
+    /// Whether an address this already shortened names somewhere OUTSIDE the Session's own tree.
+    ///
+    /// Read off what survived the shortening rather than compared again: a path under the cwd comes
+    /// back relative, so one that still opens on a root, on a home, or on a step upwards is one the
+    /// cwd could not account for. That is the whole test, and it is why it runs on the output.
+    ///
+    /// A Session that never said where it was working marks nothing. There is nothing to be outside
+    /// OF, and every address in such a feed is absolute — the marker would land on all of them and
+    /// say something about the record rather than about the file (`CONTEXT.md`, degrade-down).
+    func isExternal(_ shortened: String) -> Bool {
+        guard let cwd, !cwd.isEmpty else { return false }
+        return shortened.hasPrefix("/") || shortened.hasPrefix("~") || shortened.hasPrefix("..")
+    }
+
     /// This machine's home, so a path OUTSIDE the Session's tree still loses the part of itself
     /// that is about the machine rather than about the file.
     private static let home = FileManager.default.homeDirectoryForCurrentUser.path

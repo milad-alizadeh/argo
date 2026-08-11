@@ -8,6 +8,11 @@ import SwiftUI
 /// what Escape means.
 struct FeedRowSelection {
     @Binding var open: FeedRow.ID?
+    /// Which result inside the open row the reader asked for, where they asked for one — the
+    /// position of a step down the panel. Beside `open` rather than inside it because the two are
+    /// answered by different clicks: the row opens the panel, and a name listed under the row says
+    /// where in it to be.
+    @Binding var step: Int?
     @Binding var lit: FeedShot?
     /// Where the keyboard is. A `FocusState` binding rather than an ordinary one: focus is the
     /// system's to move, and a plain copy of it goes stale the moment a click lands somewhere else.
@@ -22,7 +27,20 @@ struct FeedRowSelection {
     /// find, and the way back is `close()`.
     func openEvidence(of row: FeedRow.ID) {
         open = row
+        step = nil
         focus.wrappedValue = .panel
+    }
+
+    /// Open a row's evidence AT one of its results — what a name listed under a folded run does.
+    ///
+    /// The panel is left where it is if it is already open on this row: reopening it would re-seed
+    /// the reading and hand the keyboard over a second time, when what the reader asked for was to
+    /// be further down a pane they are already looking at.
+    func openEvidence(of row: FeedRow.ID, at result: Int) {
+        if open != row {
+            openEvidence(of: row)
+        }
+        step = result
     }
 
     /// Close the panel and hand the keyboard back to the row that opened it.
@@ -35,6 +53,7 @@ struct FeedRowSelection {
             hand(back: open)
         }
         open = nil
+        step = nil
     }
 
     /// Open a picture full size and go there. Same bargain as the panel's, and for a stronger

@@ -95,7 +95,7 @@ enum FeedCallReading {
         return switch call.kind {
         case .mcp: FeedCall.Subject.plain(mcpAddress(of: call.name))
         case .other: narrated ?? tool(call)
-        case .read, .edit: file(at: named) ?? tool(call)
+        case .read, .edit: file(at: named, within: path) ?? tool(call)
         case .skill: named.map(FeedCall.Subject.plain) ?? tool(call)
         case .execute: narrated ?? named.map(FeedCall.Subject.command) ?? tool(call)
         case .search, .fetch, .delegate, .plan:
@@ -109,8 +109,13 @@ enum FeedCallReading {
         .plain(call.name)
     }
 
-    private static func file(at path: String?) -> FeedCall.Subject? {
-        path.flatMap(FeedCall.FileName.init(path:)).map(FeedCall.Subject.file)
+    /// The address is already relative to the Session's cwd by the time it reaches here, so whether
+    /// it is external is a question about what the shortening LEFT — asked once, at the reading,
+    /// and carried on the name from there.
+    private static func file(at named: String?, within path: FeedPath) -> FeedCall.Subject? {
+        named
+            .flatMap { FeedCall.FileName(path: $0, isExternal: path.isExternal($0)) }
+            .map(FeedCall.Subject.file)
     }
 
     /// `mcp__linear__list_issues` → `linear · list_issues`. Every word is the host's, in its own

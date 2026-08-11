@@ -6,43 +6,50 @@ import ArgoEngine
 /// header names the one thing it did, and a folded run of looking, whose header names a count and
 /// leaves every step to say which file it came from. A panel taking a `FeedCall` would have left
 /// the survey to grow a second panel.
+///
+/// The ADDRESS is the step's and not this header's, which is the one structural thing to know about
+/// the type. A panel showing four files under one path in its header is a panel where three of the
+/// four are mislabelled, and the header cannot say which — so the panel says what the ROW said (a
+/// verb, a count, how it went) and every result underneath carries the address it actually came
+/// from, with the copy control that address needs beside it.
 struct FeedEvidence: Equatable, Sendable {
-    /// One result inside the panel, with whatever the header could not say about it.
-    struct Step: Equatable, Sendable {
-        /// Which call produced this, where the header does not already say it — the same address
-        /// the header would have carried. `nil` for an ordinary row: repeating one path above each
-        /// of three patches is the header, three times.
-        let address: String?
-        /// What that step's own file is written in. Held per step rather than taken from the
-        /// header, because a folded run of looking has no one language.
+    /// One result inside the panel, under the address it came from.
+    struct Step: Equatable, Sendable, Identifiable {
+        /// Where in the panel this step is — its position, which is also how the feed points at it.
+        /// Assigned by the panel's projection rather than carried from the record: what the
+        /// accordion scrolls to is the nth thing down the pane, and there is nothing else stable to
+        /// aim at while a live transcript grows.
+        let id: Int
+        /// What produced this — a path, a command as typed, whatever the call named.
+        let address: EvidenceAddress
+        /// What that step's own file is written in. Held per step rather than on the panel, because
+        /// a folded run of looking has no one language.
         let language: EvidenceLanguage?
+        /// Whether the address lies outside the Session's tree — see `FeedPath.isExternal`.
+        let isExternal: Bool
         let result: ToolResult
+
+        /// What this step did in lines, from the patch itself. Absent for a result that changed
+        /// nothing and for a patch nothing could read: `+0 −0` claims an edit that did nothing.
+        var churn: FeedCall.Churn? {
+            guard case let .diff(diff) = result else { return nil }
+            let churn = FeedCall.Churn(added: diff.added, removed: diff.removed)
+            return churn.isSilent ? nil : churn
+        }
     }
 
-    /// What the row said the agent did. Drawn only where `saysVerb`; spoken always, because a mark
-    /// says "Swift file" to somebody looking at it and nothing at all to somebody listening.
+    /// What the row said the agent did — drawn and spoken, because a mark says "Swift file" to
+    /// somebody looking at it and nothing at all to somebody listening.
     let verb: String
-    /// The mark the header carries: a file's language, a command's terminal, a folded run's eye.
-    /// Never a guessed language — a subject that is not a file takes the mark of what it WAS.
+    /// The mark the header carries: the kind's own, or a folded run's eye. Never a language — the
+    /// languages are the steps', one per address.
     let symbol: String
-    /// The address the feed was standing in for — the path from the Session's cwd forward, a
-    /// command as typed, a count. Relative and never absolute: thirty characters of this machine
-    /// in front of the first character about the work is the half worth cutting, and the feed
-    /// already says everything relative to the same place.
-    let address: EvidenceAddress
-    /// What the file is written in, where the address is a file with an extension Argo knows.
-    /// Decides the grammar a patch under this header is coloured against.
-    let language: EvidenceLanguage?
-    /// How the call ended. Part of what the panel is open ON for a command, which is identified by
-    /// what it was and how it went; a file's header says neither and draws nothing for it.
+    /// What the row counted, where it counted rather than named — `Searched 1 · Read 5`. `nil` for
+    /// a single call, whose addresses are all in the body.
+    let label: String?
+    /// How the call ended. The panel is open on what happened AND on how it went, and the outcome
+    /// belongs beside the verb rather than beside any one of the results.
     let ending: FeedCall.Ending
-    /// Whether the verb is drawn as well as spoken.
-    ///
-    /// A file's header is its mark and its path: the mark already says the one thing the row could
-    /// not, and `EDITED` above it spends the first line restating the line that was clicked. A
-    /// command has no such mark, so its header keeps the word — without it, a terminal glyph and a
-    /// command line say nothing about whether the thing was run, and its outcome has nowhere to go.
-    let saysVerb: Bool
     /// Everything the row stands for, in the order it happened.
     let steps: [Step]
 }
@@ -57,7 +64,11 @@ struct FeedEvidence: Equatable, Sendable {
 /// one
 /// of them — which is what a header designed for a File and inherited by a command was.
 enum EvidenceAddress: Equatable, Sendable {
-    /// A path, a pattern, a tool's own name, a count — whatever named the subject.
+    /// A path in the working tree. Told apart from every other name because it is the one that has
+    /// a shape: the parent is context and the filename is the answer, so a header draws them in two
+    /// inks rather than as one grey run the eye has to find the end of.
+    case filed(String)
+    /// A pattern, a URL, a tool's own name, a count — whatever else named the subject.
     case named(String)
     /// A command as the agent typed it, whole.
     case typed(String)
@@ -84,7 +95,7 @@ enum EvidenceAddress: Equatable, Sendable {
     /// and neither has a width to be cut to.
     var text: String {
         switch self {
-        case let .named(text), let .typed(text): text
+        case let .filed(text), let .named(text), let .typed(text): text
         }
     }
 
@@ -97,26 +108,52 @@ enum EvidenceAddress: Equatable, Sendable {
     /// once, at the length three lines of it can hold.
     var drawn: String {
         switch self {
-        case let .named(text): text
+        case let .filed(text), let .named(text): text
         case let .typed(command):
             DeckMiddleCut.applied(to: command, keeping: Self.commandLines * Self.commandLineLength)
         }
     }
+
+    /// A path split where the eye splits it: everything up to the last separator, and the filename.
+    /// The parent comes back empty for a name with no parent in it, which is drawn as no parent
+    /// rather than as a lone slash.
+    var parted: (parent: String, name: String) {
+        guard case let .filed(path) = self, let cut = path.lastIndex(of: "/") else {
+            return ("", drawn)
+        }
+        return (String(path[path.startIndex ... cut]), String(path[path.index(after: cut)...]))
+    }
 }
 
 extension FeedCall {
-    /// What the panel shows for one call. Every step uncaptioned: the header names the subject
-    /// already, and a run of three edits is three patches of the SAME file.
+    /// What the panel shows for one call: its results, each under the address it came from.
+    ///
+    /// Every step captioned, including the three patches of one file a collapsed run leaves — the
+    /// address is where the copy control lives, and a run whose second patch had no header would be
+    /// a patch of a file the reader cannot copy the path of.
     var opened: FeedEvidence {
         FeedEvidence(
             verb: kind.verb,
             symbol: symbol,
-            address: address,
-            language: language,
+            label: nil,
             ending: ending,
-            saysVerb: language == nil,
-            steps: evidence.map { FeedEvidence.Step(address: nil, language: nil, result: $0) },
+            steps: evidence.enumerated().map { position, result in
+                FeedEvidence.Step(
+                    id: position,
+                    address: address,
+                    language: language,
+                    isExternal: isExternalSubject,
+                    result: result,
+                )
+            },
         )
+    }
+
+    /// Whether what the call named lies outside the Session's tree. Only a file can be: a command
+    /// is not anywhere, and a pattern names no one place.
+    var isExternalSubject: Bool {
+        guard case let .file(file) = subject else { return false }
+        return file.isExternal
     }
 
     /// Only a FILE has a language. A command's own words end in `.sh` often enough that reading
@@ -135,7 +172,7 @@ extension FeedCall {
     /// command, and a pattern or a URL standing behind a narration is an address like any other.
     var address: EvidenceAddress {
         switch subject {
-        case let .file(file): .named(file.path)
+        case let .file(file): .filed(file.path)
         case let .command(command): .typed(command)
         case let .plain(text): .named(text)
         // The command, not the sentence the row drew. The panel's whole justification is that it
@@ -150,18 +187,18 @@ extension FeedCall {
     /// How a step inside a FOLDED run names the call that produced it.
     ///
     /// The address, except where the agent wrote its own account of the call — then that, which is
-    /// the sentence the unfolded row would have drawn. The reasoning that keeps a narration OFF a
-    /// single call's header does not reach here: that header is a second look at a row still on
-    /// screen saying the sentence, and a folded run left no such row behind.
-    var caption: String {
-        guard case let .narration(said, _) = subject else { return address.text }
-        return said
+    /// the sentence the unfolded row would have drawn, and prose rather than an address because
+    /// nobody copies a sentence into a terminal. The reasoning that keeps a narration off a single
+    /// call's own step does not reach here: that step sits under a row still on screen saying the
+    /// sentence, and a folded run left no such row behind.
+    var caption: EvidenceAddress {
+        guard case let .narration(said, _) = subject else { return address }
+        return .named(said)
     }
 
-    /// The language's mark for a file, and the CALL's own for everything else — a command takes
-    /// the terminal it was run in, not the generic document that would have made it look like one.
-    /// The plain document survives for the one honest gap: a subject Argo could name neither way.
+    /// The kind's own mark, which is what the panel's header is now open ON — the verb and how it
+    /// went. The LANGUAGE's mark belongs to a step, beside the one address it is true of.
     private var symbol: String {
-        language?.symbol ?? kind.symbol ?? ArgoSymbol.plainSource
+        kind.symbol ?? ArgoSymbol.plainSource
     }
 }

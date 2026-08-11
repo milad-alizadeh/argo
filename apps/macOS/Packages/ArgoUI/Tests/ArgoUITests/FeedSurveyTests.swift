@@ -151,12 +151,12 @@ struct FeedSurveyTests {
         )
 
         #expect(survey.disclosure == .available)
-        #expect(survey.opened.steps.map(\.address) == ["*Row", "a.swift", "b.swift"])
+        #expect(survey.opened.steps.map(\.address.text) == ["*Row", "a.swift", "b.swift"])
     }
 
-    /// The header of a folded run stands for a count, so nothing above a step says what it is —
-    /// which makes the step the only place its language can come from. Taking the panel's own
-    /// would colour every patch in the run after whichever file happened to be read first.
+    /// Nothing above a step says what it is, which makes the step the only place its language can
+    /// come from. One language for the panel would colour every result in the run after whichever
+    /// file happened to be read first.
     @Test
     func `each step of a folded run carries its own language`() throws {
         let survey = try #require(
@@ -164,7 +164,6 @@ struct FeedSurveyTests {
                 .first,
         )
 
-        #expect(survey.opened.language == nil)
         #expect(survey.opened.steps.map(\.language) == [nil, .swift, .markdown])
     }
 

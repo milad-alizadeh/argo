@@ -18,7 +18,13 @@ struct FeedRowView: View {
         case let .call(call):
             FeedCallLine(call: call, isOpen: isOpen, open: openEvidence)
         case let .survey(survey):
-            FeedSurveyLine(survey: survey, isOpen: isOpen, open: openEvidence)
+            FeedSurveyLine(
+                survey: survey,
+                isOpen: isOpen,
+                open: openEvidence,
+                look: { look(at: $0, in: survey) },
+                current: isOpen ? selection.step : nil,
+            )
         // A gallery opens no panel — what a shot produced IS the shot, so the click goes straight
         // to the picture.
         case let .gallery(gallery):
@@ -36,6 +42,14 @@ struct FeedRowView: View {
 
     private func openEvidence() {
         row.openEvidence(with: selection)
+    }
+
+    /// Open the panel at what one of a folded run's calls produced. A call the record answered with
+    /// nothing has no step to go to and the press does nothing — the control is disabled anyway,
+    /// and this is the same fact answered in the one place that can be wrong.
+    private func look(at call: Int, in survey: FeedSurvey) {
+        guard let step = survey.step(of: call) else { return }
+        selection.openEvidence(of: row.id, at: step)
     }
 }
 

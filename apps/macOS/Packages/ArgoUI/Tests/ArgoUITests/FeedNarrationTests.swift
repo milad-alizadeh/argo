@@ -42,7 +42,10 @@ struct FeedNarrationTests {
     func `the panel behind a described row opens on the command and not the sentence`() throws {
         let call = try #require(ran(saying: "List open issues").first)
 
-        #expect(call.opened.address == .typed("gh issue list --limit 20"))
+        // The address, which is what every step of that panel is drawn under — asked of the call
+        // rather than through `opened`, because a call the record never answered has no steps to
+        // carry it and does not open a panel at all.
+        #expect(call.address == .typed("gh issue list --limit 20"))
     }
 
     /// A CLI that narrates nothing — Codex's shell call carries a command and never a description.
