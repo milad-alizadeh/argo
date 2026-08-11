@@ -6,8 +6,7 @@ disable-model-invocation: true
 
 # Setup Graphify
 
-One command to make graphify **committed, self-naming, and forget-about-it** in any repo,
-under whatever coding agent is running it. graphify's own tooling does the heavy lifting
+graphify's own tooling does the heavy lifting
 through its official channels; this skill adds exactly one custom piece — a worktree-guarded
 pre-commit refresh — and wires graphify's union merge driver so the committed graph never
 conflicts.
@@ -98,8 +97,7 @@ would register it (git config + `.gitattributes`), but §3 skips that installer 
 driver with the dead post-commit hooks), so wire the driver standalone instead.
 
 Copy the `graphify-out/graph.json merge=graphify` line into `.gitattributes` (committed), and set
-the driver in each clone's git config (setup does this; the git-config half doesn't travel with the
-repo, so the skill notes it for teammates):
+the driver in each clone's git config (run these now — the git-config half doesn't travel with the repo):
 
 ```bash
 git config merge.graphify.name   "graphify union merge"
@@ -120,7 +118,7 @@ graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 graphify-out/.graphify_analysis.json
 ```
 
-The last two patterns catch the extract-only artifacts §7's `graphify extract` creates. Commit
+Commit
 everything else in `graphify-out/` — `graph.json`, `graph.html`, `GRAPH_REPORT.md`,
 `manifest.json`, `.graphify_labels.json` (plus its `.graphify_labels.json.sig` and the
 `.graphify_root` marker).
@@ -128,8 +126,7 @@ everything else in `graphify-out/` — `graph.json`, `graph.html`, `GRAPH_REPORT
 ## 7. Seed the graph once, then commit
 
 The pre-commit only acts once a graph exists, so build it a first time with graphify's own
-commands (never hand-edit `graphify-out/`) — `extract` builds it respecting the ignore, `update`
-names communities from their dominant node and writes `GRAPH_REPORT.md`:
+commands (never hand-edit `graphify-out/`):
 
 ```bash
 graphify extract . --code-only   # AST-only, no key; .graphifyignore prunes non-code

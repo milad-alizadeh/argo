@@ -58,8 +58,10 @@ function.
 
 A file owns exactly one thing — one component, one class, one state machine, one
 top-level function — named by what it owns. Soft ceiling of **~150 lines of code** — this
-file is where that number lives. Blank and comment lines do not count: the ceiling is about
-the code you must hold in your head, so explaining yourself is never what breaks it.
+file is where that number lives. Blank and comment lines do not count toward it, because
+the linter measures what you must hold in your head — but that is a statement about the
+linter and not a budget, and `comments.md` sets the budget. A 60-line file that is 40
+lines of prose still reads as a 100-line file to the next person.
 Pure-data files and declarative catalogs are exempt, and `file-structure.md` covers where
 the pieces go when a file outgrows it.
 

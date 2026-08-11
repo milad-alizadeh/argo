@@ -1,33 +1,23 @@
 ---
 name: setup-output-style
-description: Install Argo's Terse output style as the Claude Code session default.
+description: Install Argo's Out Loud output style as the Claude Code session default.
 disable-model-invocation: true
 ---
 
 # Setup Output Style
 
-Install the **Terse** output style — answer-first ordering, hard caps on prose,
-zero filler — so every Claude Code session in the project defaults to concise
-output.
+Install the **Out Loud** output style, so every Claude Code session in the project
+defaults to prose a reader can follow at speed.
 
 This is a Claude Code feature; other agents (Codex, Cursor) ignore
 `.claude/output-styles/` — their conciseness comes from AGENTS.md instructions.
 
-## 1. Copy the style
-
-Copy `<this-skill-dir>/output-styles/terse.md` (colocated next to this `SKILL.md`)
-to `.claude/output-styles/terse.md` at the project root (create the directory).
-Copy verbatim — project-specific instructions belong in CLAUDE.md/AGENTS.md, not
-the style file.
-
-## 2. Set it as the default
-
-Merge `"outputStyle": "Terse"` into `.claude/settings.json`, preserving existing
-keys (create the file if absent). Use `.claude/settings.local.json` instead only
-if the user wants it personal rather than repo-wide.
-
-## 3. Report
-
-Tell the user: the style takes effect on the next session or `/clear`, not
-mid-session, and they can switch back any time via `/config` → Output style →
-Default.
+1. Copy `<this-skill-dir>/output-styles/out-loud.md` to
+   `.claude/output-styles/out-loud.md` at the project root, verbatim. Create the
+   directory if absent. Project-specific instructions belong in CLAUDE.md/AGENTS.md,
+   never in the style file.
+2. Merge `"outputStyle": "Out Loud"` into `.claude/settings.json`, preserving
+   existing keys. Use `.claude/settings.local.json` instead if the user wants it
+   personal rather than repo-wide.
+3. Tell the user it takes effect on the next session or `/clear`, and that
+   `/config` → Output style switches back.

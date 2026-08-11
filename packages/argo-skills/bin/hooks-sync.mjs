@@ -24,7 +24,15 @@ const HARNESSES = {
 
 // A group in an existing config is one of ours (regenerated on every sync) if its command
 // invokes one of these; anything else is the consumer's own hook and is preserved.
-const MANAGED_MARKERS = ['hook-guard', 'worktree-guard.mjs', 'worktree-gc.sh']
+// Every script hooks.json names belongs here: one missing entry reads our own hook as the
+// consumer's, so the sync preserves it AND appends a fresh copy, and the file grows a
+// duplicate per run. `scripts/hooks-sync.test.mjs` derives this list from hooks.json.
+const MANAGED_MARKERS = [
+  'hook-guard',
+  'worktree-guard.mjs',
+  'placement-guard.mjs',
+  'worktree-gc.sh',
+]
 
 /**
  * Build one harness's hook block from the neutral descriptor. Pure — no IO.
@@ -119,10 +127,17 @@ export function sync({ root, descriptor, agents, dryRun = false, log = console.l
     const abs = path.resolve(root, target)
     let file = {}
     if (existsSync(abs)) {
+      // Throw rather than start from {}: the next statements rewrite this path in full, so
+      // treating an unparseable config as absent deletes whatever it held — a consumer's
+      // permissions, env and model pin, silently, on a file this tool only meant to add to.
+      // A trailing comma is a fixable typo; losing the file is not.
       try {
         file = JSON.parse(readFileSync(abs, 'utf8'))
-      } catch {
-        file = {}
+      } catch (err) {
+        throw new Error(
+          `${target} is not valid JSON and would be overwritten: ${err.message}\n` +
+            `  Fix or move ${abs}, then re-run. Nothing was written.`,
+        )
       }
     }
     file.hooks = mergeHooks(file.hooks, hooksBlock)

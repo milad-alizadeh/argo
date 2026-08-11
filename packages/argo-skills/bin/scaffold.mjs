@@ -9,13 +9,22 @@
 // nothing. Passing `--agent` here is the only way to reach it (see AGENTS.md "Skill bundle").
 
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync } from 'node:fs'
+import {
+  appendFileSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+} from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gitRoot, hookAgents, sync as syncHooks } from './hooks-sync.mjs'
 import {
   describeRestore,
   restoreOwnedSkills,
+  SKILL_DIRS,
   snapshotOwnedSkills,
 } from './protect-owned-skills.mjs'
 import { contradictoryNames, describeRetired, retireSkills } from './retire-skills.mjs'
@@ -87,6 +96,74 @@ function installHooks(cwd, dryRun) {
   syncHooks({ root: target, descriptor, agents: hookAgents(descriptor), dryRun })
 }
 
+// The install writes ~1 MB of skill payload plus a symlink farm per harness, none of it the
+// consumer's work and none of it theirs to review. Left out of .gitignore it lands as a wall of
+// untracked files on their next `git status`, so the ignore lines go in with the payload.
+// Scoped to the skills subdirectory: `.agents/` would also swallow a consumer's own
+// `.agents/rules/`, which this install neither wrote nor knows about.
+const IGNORE_LINES = SKILL_DIRS.map((dir) => `${dir}/`)
+
+// Skipped entirely for a repo that commits its skills. The test is whether git tracks any of
+// them, not whether the ignore line is absent — a consumer who deliberately commits
+// `.claude/skills/` has no such line, which is exactly the state a naive check would treat as
+// permission to add one, hiding every file they add there afterwards.
+function ignoreSkillPayload(root, owned, dryRun) {
+  if (owned.length) {
+    console.log(
+      `\n.gitignore: unchanged — this repo tracks ${owned.length} skill file(s) of its own`,
+    )
+    return
+  }
+  const abs = resolve(root, '.gitignore')
+  const current = existsSync(abs) ? readFileSync(abs, 'utf8') : ''
+  const lines = new Set(current.split('\n').map((line) => line.trim()))
+  const missing = IGNORE_LINES.filter((line) => !lines.has(line))
+  if (!missing.length) return
+  console.log(`\n${dryRun ? 'would add' : 'added'} to .gitignore: ${missing.join(' ')}`)
+  if (dryRun) return
+  const lead = current === '' || current.endsWith('\n') ? '' : '\n'
+  appendFileSync(abs, `${lead}# Agent skills, installed by argo-skills\n${missing.join('\n')}\n`)
+}
+
+// Only `name` and `description` load into a session; the rest of the frontmatter does not, so
+// summing the whole block over-reports the bill by ~10%.
+function frontmatterCost(file) {
+  const [, frontmatter] = readFileSync(file, 'utf8').split('---')
+  if (frontmatter == null) return 0
+  const billed = frontmatter
+    .split('\n')
+    .filter((line) => /^(name|description):/.test(line))
+    .join('\n')
+  return Buffer.byteLength(billed)
+}
+
+// Every installed skill's name and description is loaded into every session, whether or not the
+// skill is ever used — so the bundle has an always-on price and the installer is the only thing
+// that knows it. Reported rather than capped: which skills earn it is the consumer's call.
+function reportAlwaysOnCost(root) {
+  let bytes = 0
+  const seen = new Set()
+  // Deduped across harnesses: `.claude/skills/<n>` is a symlink to `.agents/skills/<n>`, and a
+  // session loads that skill once.
+  for (const dir of SKILL_DIRS) {
+    const abs = resolve(root, dir)
+    if (!existsSync(abs)) continue
+    for (const name of readdirSync(abs)) {
+      if (seen.has(name)) continue
+      const skill = resolve(abs, name, 'SKILL.md')
+      if (!existsSync(skill)) continue
+      seen.add(name)
+      bytes += frontmatterCost(skill)
+    }
+  }
+  if (!seen.size) return
+  console.log(
+    `\nalways-on cost: ${bytes} B of skill name+description across ${seen.size} skill(s), ` +
+      `re-sent every turn — roughly ${Math.round(bytes / 3.5)} tokens at 3.5 B/token.` +
+      `\n  Install a subset with --skill a,b to lower it.`,
+  )
+}
+
 // `--skill a b` / `--skill a,b` — the subset to install. Absent means the whole manifest.
 function parseSelection(argv) {
   const flagIndex = argv.indexOf('--skill')
@@ -154,8 +231,10 @@ console.log(`manifest: ${LOCK_PATH}\ninstalling into: ${process.cwd()}\n`)
 
 // Taken before the first source installs: `skills add` replaces a colliding skill directory
 // with a symlink into its own payload, deleting whatever the repo had there.
+// Read-only, so a dry run takes it too — retirement reports against it, and a dry run that
+// reported deleting the consumer's own skill would be lying about the run it previews.
 const projectRoot = gitRoot(process.cwd())
-const ownedSkills = dryRun ? [] : snapshotOwnedSkills(projectRoot)
+const ownedSkills = snapshotOwnedSkills(projectRoot)
 
 const failed = []
 for (const [source, names] of bySource) {
@@ -170,8 +249,10 @@ const restored = restoreOwnedSkills(projectRoot, ownedSkills)
 if (restored.length) console.log(describeRestore(restored))
 
 // After the adds, so a source that still ships a retired name cannot leave it behind.
+// `ownedSkills` is the same snapshot the restore used: a retired name the consumer tracks in
+// git is their skill, not a leftover of ours, and deleting it is unrecoverable.
 const retirement = describeRetired(
-  retireSkills(projectRoot, retired, dryRun),
+  retireSkills(projectRoot, retired, { dryRun, owned: ownedSkills }),
   retired.length,
   dryRun,
 )
@@ -188,7 +269,13 @@ if (wantHooks) {
 }
 
 console.log('')
+// Both after the failure check: an install where every source failed has no payload to ignore
+// and no bill to report, and editing .gitignore on the way out would be a change the run
+// otherwise says it did not make.
 if (failed.length) fail(`${failed.length} source(s) failed: ${failed.join(', ')}`)
+ignoreSkillPayload(projectRoot, ownedSkills, dryRun)
+if (!dryRun) reportAlwaysOnCost(projectRoot)
+
 console.log(
   dryRun
     ? '✓ Dry run complete — no changes made.'

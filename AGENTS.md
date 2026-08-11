@@ -32,7 +32,9 @@ House engineering rules live in `rules/`. Load the ones matching the files you
 touch (each rule's `paths:` frontmatter states its scope):
 
 - **All code, any language** — `engineering-principles.md`, `code-style.md`,
-  `comments.md`, `file-structure.md`, `dependencies.md`
+  `comments.md` (a comment is **one line** unless a future edit could make it false;
+  nothing here is published, so `///` earns no more room than `//`),
+  `file-structure.md`, `dependencies.md`
 - **TypeScript** — also `typescript-style.md` (how TS spells `code-style.md`)
 - **Swift** (`apps/macOS`) — also `swift-style.md` (how Swift spells it, SwiftUI included)
 - **Tests** — also `testing.md`
@@ -119,7 +121,13 @@ everything else is reported and left alone. `--dry-run` reports without removing
 `hooks.json` (repo root) is the neutral SSOT for the four guardrail hooks (graphify-before-grep,
 placement write guard, worktree edit guard, worktree-gc), projected per-harness. **Edit
 `hooks.json`, then run `bun run hooks:sync`** — it regenerates `.claude/settings.json` and
-`.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`.
+`.codex/hooks.json`; never hand-edit those blocks. Consumers opt in via `scaffold.mjs --hooks`,
+and re-scope the edit guard to their own layout with `worktreeGuard.roots` in the same file.
+
+A hook the sync does not recognise as its own is preserved as the consumer's and a fresh copy
+appended, so **a script named in `hooks.json` must also be in `MANAGED_MARKERS`**
+(`hooks-sync.mjs`) or the projection grows a duplicate on every run. `test:hooks` derives that
+requirement rather than restating it.
 
 ## Skill bundle
 
@@ -186,49 +194,26 @@ is in `docs/designs/`, which no portable skill can know. `ask-argo` maps the res
 
 ## Visual verification
 
-There is no automated render check and no pixel-baseline diffing. The Storybook `stories` CI job
-retired with the Electron cockpit (ADR-0023) — Swift has no Storybook, so nothing mounts a view
-on a Linux runner. **Rendering is therefore a thing YOU do**, not something CI catches for you.
-For a pixel- or spec-level check, run `/pixel-review` on demand.
+Nothing renders a view on CI, so **rendering is a thing YOU do**. Run `/pixel-review` for a
+pixel- or spec-level check, and look at the affected states before calling a visual change done.
 
-**Rendering `apps/macOS`.** The render method is the app itself:
-`bun run screenshot --filter=@argo/macos -- <out.png>` builds it, launches it, and captures the
-WINDOW, not the screen. It quits any running Argo first, and that is **load-bearing**: `open` on
-an already-running bundle id activates THAT instance, so a copy left up by another worktree
-yields a plausible-looking screenshot of somebody else's tree. Screen Recording permission is
-required the first time a terminal captures another process's window; without it the PNG is
-blank.
+**Render whole app states** — `bun run screenshot --filter=@argo/macos -- <out.png>`, from the
+repo root. Against an ordinary checkout this shows no Sessions, so it is the wrong tool for
+looking at a surface you are building.
+**Render one state in isolation** — the right one. From `apps/macOS`:
+`ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`, or `--specimen <case>`;
+`sh scripts/specimens.sh <dir> [name …]` for the set, and `ARGO_WINDOW_SIZE=<w>x<h>` when a
+width is part of the state. Cases live in `ArgoUI/Specimen/SpecimenCatalog.swift`.
+**Drive it like a user** — `sh scripts/e2e-test.sh`, also from `apps/macOS`. The only tests here
+that click; every other Swift test builds a projection and asserts on it.
 
-That renders whole app states. For **one state in isolation**, the harness is
-`ArgoUI/Specimen/SpecimenCatalog.swift`: a `Specimen` case per renderable state, launched by name
-(`--specimen <case>`, or `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`), with
-`sh scripts/specimens.sh <dir> [name …]` rendering the set. Adding a case is all it takes to add a
-state; the script reads the names out of the catalog rather than repeating them. A width is part of
-the state for anything laid out in columns, so `ARGO_WINDOW_SIZE=<w>x<h>` renders the same case at
-a chosen size — the narrow case is a render somebody else can repeat, not a window dragged by hand.
+Two things that bite before you have read anything: a screenshot needs Screen Recording
+permission or the PNG is silently blank, and **an e2e run holds the real keyboard and mouse for
+its whole length — say so and wait before starting one**, because it takes the machine out from
+under whoever is at it.
 
-**Use it before claiming a visual change is done.** The app launched against an ordinary checkout
-shows no Sessions, so without a specimen the surface being built is never actually looked at — and
-the design decisions carry no measurements, so `docs/designs/cockpit-sessions-liquid-glass.png` is
-the only source for rhythm, density and type size. Prose in the decision log can be satisfied while
-the approved pixels are not. The rhythm itself lives in `ArgoUI/VisualContract/`, rendered by the
-`foundations` specimen — that, not an HTML page, is the living token contract (`rules/design-system.md`).
-
-**A render is not a click.** `apps/macOS` has one XCUITest target, `ArgoE2ETests` — the only tests
-here that launch Argo and drive it. Every other Swift test is a SwiftPM package test that can build
-a projection and assert on it but cannot click, so a view that renders correctly in a specimen and
-comes apart inside a popover passes all of them. `sh scripts/e2e-test.sh`, from `apps/macOS`.
-
-It is a **local** gate, deliberately not a CI one: driving the real app needs a macOS runner, the
-most expensive minutes GitHub bills, on every push. Run it when you touch a surface that is only
-reachable by clicking. Two things about it that are not obvious — the first run on a machine
-answers a macOS authorisation prompt by hand and a sleeping display fails the same way; and a test
-must launch onto a `--specimen`, never the machine's own registry, or it asserts whatever that Mac
-happens to have on it.
-
-That run drives the **real WindowServer**, so it holds the keyboard and mouse for its whole length,
-and there is no headless XCUITest to switch on. **Say so and wait before starting one** — the run
-takes the machine out from under whoever is at it.
+Everything else — why the script quits a running Argo, what the pixels are judged against, the
+specimen harness in full: `docs/agents/visual-verification.md`.
 
 ## Tooling (RTK)
 

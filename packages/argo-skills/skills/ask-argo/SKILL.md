@@ -5,9 +5,9 @@ description: Router for Argo's own skills, and for the design route ask-matt has
 
 # Ask Argo
 
-`ask-matt` maps the engineering flow: idea → ship. It has **no design stage**, because
-it is an engineering map. This is the other half — Argo's own skills, and the one place
-they change the shape of that flow rather than sitting beside it.
+`ask-matt` maps the engineering flow: idea → ship. It has **no design stage**. This is
+the other half — Argo's own skills, and the one place they change the shape of that
+flow rather than sitting beside it.
 
 Read `ask-matt` for the main flow. Read this for where design fits and what to run.
 
@@ -85,6 +85,9 @@ just that piece. Order matters only where noted.
 
 ## Standalone
 
+- **`/audit-agent-context`** — the only one that reads instead of installing: what a
+  session loads before the first prompt, priced, with the cuts. Run it when context feels
+  expensive, and after a setup run, since installing skills adds to that bill.
 - **`/scaffold-project`** — a new project of any stack, from the ecosystem's own
   generator, with the language server wired into whichever agent is running.
 - **`/ship`** — get finished work out.

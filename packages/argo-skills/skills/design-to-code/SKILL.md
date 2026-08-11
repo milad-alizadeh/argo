@@ -18,11 +18,6 @@ only its decisions survive, as tokens and inventory rows.
 
 Run it **once per ticket**. Several tickets against one design is normal and expected.
 
-**This screen-first order is for building application screens.** If the deliverable is
-a reusable cross-app component library, or the inventory is already empirically known,
-or multiple teams need frozen contracts before building, build inventory-first
-bottom-up instead.
-
 ## 0. Read the stack
 
 `docs/designs/stack.md` answers, for this repo: where the token contract lives, where

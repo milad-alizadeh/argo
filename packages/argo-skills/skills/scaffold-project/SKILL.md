@@ -5,9 +5,7 @@ description: Scaffold a new project of any stack from the ecosystem's own genera
 
 # Scaffold Project
 
-A small, generic scaffolder for any stack: run the wizard, look up the current tools online,
-generate with the official CLIs, then prove it works. Don't hardcode ecosystems or hand-author
-config a generator can produce.
+For any stack — don't hardcode ecosystems.
 
 **Golden rule: reach for a CLI, not your memory.** Every tool you add — the framework, *and* each
 piece of tooling on top of it (formatter, linter, test runner, component library, Storybook, …) —

@@ -17,8 +17,6 @@ Two rules bind every step:
 - **Resolve rule names against the installed tool (§3), never from memory.** Linters
   rename, promote and retire rules between minor versions.
 
-Templates ship at `templates/`: `file-length-check.mjs` and `quality-gates.yml`.
-
 ## 1. Detect the toolchain
 
 Read each off the repo:
@@ -64,7 +62,7 @@ defaults — a repo may land looser ones (§5), never at the cost of dropping th
 
 Intents 1–9 are ordinary lint rules in most ecosystems. 10–14 usually are not — they get
 their own tools in §4. 15 is an ordinary rule but lives in a test plugin most repos haven't
-installed. 16 belongs to `setup-module-boundaries` (§4, *The import graph*) because it compiles
+installed. 16 belongs to `setup-module-boundaries` (§4, *Placement*) because it compiles
 from that skill's map — wire its scripts into `quality` here, but do not reimplement them.
 
 **9 and 12 are two intents, not one, and conflating them is the most common overclaim in
@@ -191,8 +189,7 @@ they are what turn `file-structure.md` from prose into a gate: `dependency-cruis
 on the JVM. Two things to get right:
 
 - **Circular imports may already be impossible.** Go's compiler rejects an import cycle
-  outright, so intent 14 is **n/a** there, for free — the distinction §2 draws between *n/a*
-  and *prose-only*, and the reason to check before installing a tool to find zero of them.
+  outright, so intent 14 is **n/a** there, for free — the reason to check before installing a tool to find zero of them.
 - **On TypeScript, make the cruiser see type-only imports.** dependency-cruiser's
   `tsPreCompilationDeps` defaults to **false**, and compilation erases `import type` — so
   both the boundary rule and `no-circular` are blind to every type-level edge, and a deep
@@ -255,10 +252,8 @@ wrote it and finish or revert it. Never layer a second parallel install beside i
 ### Exemptions that actually ratchet
 
 An exemption written wider than its debt is a permanent allowlist wearing a ratchet's
-label, and four specific ways that happens have each shipped — unanchored patterns,
-message-scoping mistaken for instance-scoping, count-based baselines, and category
-exclusions that turn off more than the category. Before writing the first entry, read
-`references/exemptions.md`: it carries those four, the rule that an exemption is proved
+label, and every way that happens has shipped. Before writing the first entry, read
+`references/exemptions.md`: it carries them, the rule that an exemption is proved
 with a **new and different** violation rather than a copy, and where the reasons have to
 live when the linter's config format forbids comments.
 
@@ -316,15 +311,13 @@ which is the one outcome this skill exists to prevent.
    still pass, still report. Only the linter invoked as `.` follows the repo. So invoke each
    gate at the repo root with ignores, rather than at an allowlist of paths; where a tool
    forces you to enumerate, the enumerated scope goes in the §6.4 "what this does not catch"
-   list by name. Two of three gates silently narrowing is the difference between a gate and a
-   habit.
+   list by name.
 
    Finally: **run the wired command yourself, exactly as written, in a clean shell**, and
    record the exit code in the report. Not the underlying tool — the command. A gate that
    calls a linter installed into a user-global bin dies with exit 127 wherever that bin isn't
    on `PATH`, including CI, so pin such a tool into the repo and invoke it by path or through
-   the package manager's runner. "The linter passes" and "the gate runs" are different claims,
-   and only the second one is the gate.
+   the package manager's runner.
 2. **Pre-commit** — if the repo has hooks (the `setup-pre-commit` skill installs
    them), append the gate to the existing hook rather than adding a second one, and
    keep it staged-files-only so committing stays fast. A staged-files invocation runs from
@@ -416,8 +409,7 @@ not about the gate, and §6.4 must not write it.
 
 The rules in `rules/` were written before this config existed, so some of them now describe a
 world the gate contradicts. Re-read every installed rule against what you just landed and fix
-the mismatches **in the same commit**. §1 already says the config wins where the two disagree
-— this is the step where that gets applied rather than assumed.
+the mismatches **in the same commit**.
 
 The mismatch that matters most is a **prose-sanctioned escape the gate forbids**: a rule
 saying "an assertion is allowed at a documented boundary" while the linter makes every
@@ -461,8 +453,7 @@ Five lines that are easy to omit and are the whole point of the run:
   narrows the day a directory is added, the second the day a binary goes stale.
 - **Is `quality` green right now?** If not, say what's red and why it was left that way.
 - **Which exemptions are blanket rather than scoped**, and for any tool that ratchets by
-  count, that magnitude in those files is ungated. This is the sentence a reader most needs
-  and is least likely to derive on their own.
+  count, that magnitude in those files is ungated.
 
 Point the user at the one file to edit when a cap needs to change — and remind them that
 the matching `rules/` prose changes in the same commit.

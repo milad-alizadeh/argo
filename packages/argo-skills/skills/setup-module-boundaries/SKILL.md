@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Setup Module Boundaries
 
-Make information hiding **enforced, not aspirational**. The rule this installs:
+The rule this installs:
 
 > A file outside module M may import M **only through M's public entry** (its barrel).
 > M's internal files are private to M. A module's own files import each other freely.
@@ -17,7 +17,7 @@ in a map file; turning that map into lint rules is deterministic. Keep that seam
 **edit the map, never the generated config.**
 
 The map also carries a second half — **where a file may live**, which no import linter can see
-(§5). Both compile from the one map, which is why they ship together.
+(§5).
 
 Templates ship inside this skill at `templates/` (next to this `SKILL.md`):
 `module-boundaries.json` (the map, annotated), `dependency-cruiser.cjs` (the generator —
@@ -45,7 +45,7 @@ Read these off the repo, not from memory:
 
 ## 2. Build the module map (the LLM step — this is the whole point)
 
-This is the part a linter can't do for you. Produce `module-boundaries.json` from the
+Produce `module-boundaries.json` from the
 template by reasoning about *this* repo:
 
 1. **Enumerate modules.** A module is a folder that owns one domain and exposes an API —
@@ -74,7 +74,7 @@ checker that can never fire.
 ## 3. Materialize the checker
 
 The config lives in a **`scripts/` folder inside the workspace** (`<workspace>/scripts/`), not
-at the workspace root — the boundary map is tooling, and tooling shouldn't clutter the root.
+at the workspace root.
 Per workspace being protected:
 
 1. Create `<workspace>/scripts/` if absent. Copy `templates/module-boundaries.json` →
@@ -157,7 +157,7 @@ opposite answer: each domain owns its own bridge and the root holds the entry al
 first shape into the second module *without its reason* is a documented way to flatten a root.
 
 **2. Kind folders (`placement.kindFolders`).** `utils/`, `types/`, `helpers/` and their kin,
-banned by name. Cheapest gate here and the one most often left as prose.
+banned by name.
 
 **3. Earned shared (`placement.earnedShared`).** A symbol in the domain-aware shared tier that
 only one module imports has not earned the tier. Counted per **symbol**, never per file — see the
@@ -188,10 +188,6 @@ Copy `templates/module-boundaries.yml` → `.github/workflows/module-boundaries.
 single-package repo), and scope it with `paths:` if only one workspace is covered. A leak
 then fails the check on every PR.
 
-**No separate Node runtime is needed** — bun provides the Node 22/24/26 semantics depcruise's
-engine check wants, via the `bun --bun x` runtime invocation §3 step 5 sets up. CI just installs
-bun and runs `<pm> run boundaries`.
-
 Add the three placement gates as steps in the same job — they need no toolchain beyond the
 Node/bun already there, and each must be its own step so a failure names which gate fired.
 
@@ -199,12 +195,11 @@ Optionally add both halves to a pre-commit hook (if the repo uses husky/lint-sta
 `setup-pre-commit` skill) so leaks are caught before push — but CI is the backstop that
 can't be skipped.
 
-For **placement specifically, pre-commit is worth more than it looks**, and the usual reasoning
-("whole-tree gates belong in CI") gets the trade backwards. The cost is not comparable to a
+For **placement specifically, pre-commit is worth more than it looks**. The cost is not comparable to a
 duplication detector: these glob `src/**` and compare basenames, well under a second. And the
 timing is the substance — a misplaced file caught in CI becomes a follow-up ticket written after
 the session that produced it has ended, while the same file caught at commit is fixed by whoever
-still holds the context that produced it. Placement debt accumulates at exactly that delay.
+still holds the context that produced it.
 
 ## 7. Maintain the map (the "LLM maintains it" contract)
 
@@ -221,12 +216,10 @@ State this explicitly in the repo so future agents do it:
   the fix is to add it to the map, not to disable the rule.
 - **Say why a new module fails the placement gate before it has any files**, or the next agent
   will read that failure as a bug and "fix" it by making the default permissive. Adding a module
-  costs one key; that is the deal, and it is the whole reason the map cannot rot silently.
+  costs one key.
 
-**Do not write a rule in prose that one of these gates now enforces.** The house rules were
-written before the config existed, and prose that duplicates a gate is prose competing for
-attention with every other line an agent reads — while changing nothing, because it was already
-being read and ignored before the gate existed. Cut the enforced paragraphs to a pointer naming
+**Do not write a rule in prose that one of these gates now enforces.** Prose that duplicates a gate competes for attention with every other line an agent reads,
+while changing nothing — it was already being read and ignored before the gate existed. Cut the enforced paragraphs to a pointer naming
 the gate, and move the reasoning into the gate's own failure message, where it is read at the
 moment it applies rather than on every file touch. Keep in prose only what no glob can count:
 which sub-domain a file belongs to, and why a wiring answer that is right for one module is
@@ -242,7 +235,7 @@ file path), the package script name, and that the CI job now gates PRs. Point th
 For the placement half (§5), four more, and the last two are the ones a reader cannot derive:
 
 - **The starting breach count per gate**, which is the ratchet's baseline.
-- **Whether you landed it red first** and it fired. A gate that has never failed is unproven.
+- **Whether you landed it red first** and it fired.
 - **Which modules got an empty `rootFiles` entry because they have no files yet** — they are
   guarded from their first file, which is the point, and reads as an oversight if unstated.
 - **Every ratchet entry whose stated destination was a guess.** Writing "belongs in `top-bar/`"

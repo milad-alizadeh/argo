@@ -62,7 +62,8 @@
         // The 150-line per-file ceiling (rules/file-structure.md). Counts LINES OF CODE:
         // blank lines are skipped by the option, and comment lines are not counted by the
         // rule at all — a heavily-commented file is judged on the code you must hold in
-        // your head, not on how far it scrolls.
+        // your head, not on how far it scrolls. That is a statement about this linter, not
+        // a comment budget; rules/comments.md sets that.
         "noExcessiveLinesPerFile": {
           "level": "error",
           "options": {

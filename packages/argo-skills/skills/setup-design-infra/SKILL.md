@@ -11,9 +11,7 @@ idea: **the contract is a set of named design decisions** (tokens + component
 names). Designs, apps, and every framework rendering of them speak only in those
 names.
 
-This skill installs the five mechanical pieces that hold the contract — the token
-layer, the `docs/designs/` scaffolding, the no-raw-values check, the render method,
-and the `stack.md` that makes the other skills framework-agnostic. The *prose* rules
+The *prose* rules
 (`design-system.md`, `designs.md`, `ui-components.md`) come from `setup-rules`
 — run that first if the repo has no `rules/` yet. The token *values* come from
 `setup-design-foundations` — run that next.
@@ -53,8 +51,7 @@ only colors:
 4. **Radii / durations / opacity** as used.
 
 This skill installs the *structure*; the values are design work. When families are
-missing, run `setup-design-foundations` next — the moodboard→contract ceremony that
-designs the ramps deliberately and lands them only behind a user bless. Never derive
+missing, run `setup-design-foundations` next. Never derive
 a scale inline here.
 
 ## 3. Install the design scaffolding
@@ -134,8 +131,7 @@ otherwise), animations disabled, dynamic regions masked.
 ## 6. Write `stack.md` — the file that makes the other skills portable
 
 `docs/designs/stack.md`. Five questions, answered for this repo, and nothing else.
-Every later design skill reads it instead of hardcoding a framework — this file is
-the reason `design-to-code` does not have to say "Storybook".
+Every later design skill reads it instead of hardcoding a framework.
 
 ```markdown
 # Design stack

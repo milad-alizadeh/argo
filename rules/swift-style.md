@@ -59,6 +59,13 @@ Swift has no barrel file because it does not need one: the target is the module,
   `internal` symbols through `@testable import`.
 - `private` for a type's own helpers, `fileprivate` only when two types in one file
   genuinely share state (and that is usually a sign they are two files).
+- **`///` is not a licence.** `public` here means "another target in this repo calls it",
+  never "someone outside this repo reads it" — nothing ships these symbols anywhere, and
+  `swift-boundaries.sh` exists because the boundary is internal. Xcode's Quick Help does
+  render a `///`, but to a reader who already has the file open, so it buys no room the
+  file itself does not. A `///` above any declaration here is therefore an ordinary
+  comment on `comments.md`'s one-line budget. Only a docs build lifts that, and there
+  isn't one.
 
 ## Parse at the boundary with `Codable`, never a cast
 

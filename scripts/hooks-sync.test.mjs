@@ -89,6 +89,13 @@ check('graphify command is byte-identical across harnesses', () => {
 check('projects PascalCase event keys with the right group shapes', () => {
   const b = project(descriptor, 'codex').hooksBlock
   assert.equal(b.PreToolUse.length, 4)
+  // Matchers, not just the count: widening one is what a token-cost regression looks like,
+  // and every count-based assertion here stays green through it. The read guard bills its
+  // payload once per matching call, so `Read` belongs to no hook by default.
+  assert.deepEqual(
+    b.PreToolUse.map((g) => g.matcher),
+    ['Bash', 'Glob', 'Edit|Write', 'Write'],
+  )
   assert.equal(b.SessionEnd.length, 1)
   const end = b.SessionEnd[0]
   assert.equal(end.matcher, undefined)
@@ -120,6 +127,41 @@ check('mergeHooks keeps foreign groups, replaces managed ones', () => {
     g.hooks[0].command.includes('hook-guard search'),
   )
   assert.equal(graphifyGroups.length, 1, 'ours replaced, not duplicated')
+})
+
+// The assertions above read `project()`, which is pure and cannot see a merge fault. A hook
+// whose script is missing from MANAGED_MARKERS reads as the consumer's own, so mergeHooks
+// keeps it AND appends the new copy — the projection stays correct while the written file
+// grows a duplicate per sync. Re-merging our own output is the only place that shows up.
+check('re-syncing our own output is idempotent (every hook is recognised as ours)', () => {
+  const ours = project(descriptor, 'claude-code').hooksBlock
+  const once = mergeHooks({}, ours)
+  const twice = mergeHooks(once, ours)
+  assert.deepEqual(
+    twice.PreToolUse.map((g) => g.matcher),
+    once.PreToolUse.map((g) => g.matcher),
+    'a second sync duplicated a group — its script is missing from MANAGED_MARKERS',
+  )
+  assert.equal(twice.SessionEnd.length, once.SessionEnd.length)
+})
+
+// Derive the requirement rather than trusting the list: every script hooks.json invokes must
+// be a managed marker, or the check above only catches the ones somebody remembered.
+check('every script hooks.json invokes is a managed marker', () => {
+  const source = readFileSync(
+    path.join(HERE, '..', 'packages/argo-skills/bin/hooks-sync.mjs'),
+    'utf8',
+  )
+  const block = source.match(/const MANAGED_MARKERS = \[(.*?)\]/s)
+  assert.ok(block, 'MANAGED_MARKERS not found — this check has gone blind')
+  const markers = [...block[1].matchAll(/'([^']+)'/g)].map(([, m]) => m)
+
+  for (const hook of descriptor.hooks) {
+    assert.ok(
+      markers.some((m) => hook.command.includes(m)),
+      `no MANAGED_MARKERS entry matches "${hook.command}" — it would duplicate on re-sync`,
+    )
+  }
 })
 
 if (failures > 0) {
