@@ -204,6 +204,19 @@ its approved study are authoritative for the replacement look and feel.
 - **Why:** A few repeatable, meaningful responses make the cockpit feel crafted. Continuous liquid
   animation would tax attention, cheapen the native material, and compete with genuinely live
   operational signals.
+- **What may loop — [#614](https://github.com/milad-alizadeh/argo/issues/614) — 2026-08-11:** a
+  **live operational signal** may loop for exactly as long as the operation it reports lasts, and it
+  must stop when the operation stops. Nothing else loops. Two signals qualify today: what the feed
+  draws while a Turn is in flight ([`cockpit-feed-working.md`](cockpit-feed-working.md)), and the
+  system spinner while a spawning Session's login shell reports its `PATH`.
+- **Why that is this rule, not a hole in it:** the reason above bans continuous animation because it
+  would *compete with genuinely live operational signals*. A Turn in flight **is** that signal, so a
+  loop reporting it competes with nothing — it is the thing the ban was protecting. What D12 forbids
+  is ambient motion: motion with no operation under it, and therefore no moment it is obliged to
+  end.
+- **How to test a proposed loop:** name the operation, and name the event that ends it. A loop that
+  cannot name both is ambient and D12 refuses it. A loop that outlives its operation is a defect
+  rather than a style choice, because it goes on reporting work that has stopped.
 
 ## D13 — Delight has an optical-mechanical character
 
@@ -226,6 +239,13 @@ its approved study are authoritative for the replacement look and feel.
 - **Boundary:** These are candidates for the Sessions study, not permission to animate every call
   site. A moment ships only if it remains clear at normal working speed and degrades cleanly under
   Reduced Motion.
+- **`Ion Trace` is not the feed's ion — [#614](https://github.com/milad-alizadeh/argo/issues/614) —
+  2026-08-11:** `Ion Trace` is one of the delight moments above — a single charge along the
+  canopy/deck seam when the active Session changes, deferred by D41. The feed's **ion** is a live
+  operational signal, looping inside the Instrument Deck for as long as a Turn is in flight
+  ([`cockpit-feed-working.md`](cockpit-feed-working.md), under D12's bound). They share the
+  palette's word for Argo's accent and nothing else. Deferring or dropping `Ion Trace` says nothing
+  about the feed's ion, and shipping the feed's ion does not un-defer `Ion Trace`.
 
 ## D14 — Glass is rationed by surface hierarchy
 
@@ -726,6 +746,9 @@ its approved study are authoritative for the replacement look and feel.
 - **Why:** These five moments cover window, keyboard, system attention, workspace mechanism, and
   global invocation without repeating the same flourish everywhere. Deferring the two seam-tracing
   effects protects the direction from becoming a light show before its restraint can be evaluated.
+- **Scope — [#614](https://github.com/milad-alizadeh/argo/issues/614) — 2026-08-11:** every clause
+  here binds **delight moments** only. For what "Nothing moves ambiently" leaves out, see D12's
+  bound; for what deferring `Ion Trace` does not defer, see D13.
 
 ## D42 — Prove the native-material composition first
 
