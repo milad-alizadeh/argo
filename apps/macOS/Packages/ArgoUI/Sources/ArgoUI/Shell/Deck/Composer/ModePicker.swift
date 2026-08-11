@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// The `Ask · Plan · Code` stance, as the stock segmented control — restyled through nothing but
-/// its tint, because the platform's own picker is the one macOS users already know how to read
-/// and drive.
+/// The `Read Only · Plan · Code · Auto` stance, as the stock menu picker.
+///
+/// The menu carries no tint and no per-row caption: macOS draws it through `NSPopUpButton`, whose
+/// rows take a title and nothing else, and which ignores `.tint` and `.foregroundStyle` alike. So
+/// a rung is a word on the footer, and its boundary is on hover.
 struct ModePicker: View {
-    @Environment(\.argo) private var argo
-
     @Binding var mode: ComposerMode
 
     var body: some View {
@@ -14,23 +14,11 @@ struct ModePicker: View {
                 Text(mode.rawValue).tag(mode)
             }
         }
-        .pickerStyle(.segmented)
+        .pickerStyle(.menu)
         .controlSize(.small)
         .labelsHidden()
         .fixedSize()
-        .tint(selectedInk)
-    }
-
-    /// What the selected segment is filled with. `Ask` takes the attention ink and `Plan` the
-    /// accent — both departures from acting autonomously — and `Code` stays neutral (design
-    /// decision 1): without this the window's own Ion Blue tint paints the DEFAULT stance as
-    /// the loud one.
-    private var selectedInk: Color {
-        switch mode {
-        case .ask: argo.color.state.attention.color
-        case .plan: argo.color.interaction.accent.color
-        case .code: argo.color.surface.selected.color
-        }
+        .help("\(mode.rawValue) — \(mode.boundary)")
     }
 }
 

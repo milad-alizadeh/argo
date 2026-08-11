@@ -146,6 +146,23 @@ existed in a transcript (ADR-0008) — there is nothing to re-derive it from.
 
 ## Autonomy
 
-**`Ask | Plan | Code` is Argo's own triplet** — informed by ACP's illustrative example
+**`Read Only | Plan | Code | Auto` is Argo's own ladder** — informed by ACP's illustrative example
 (`ask/architect/code`) and CC's `plan` mode, but **not an ACP term**; ACP is sunsetting dedicated
 mode methods.
+
+**The rungs are boundaries because Codex's are** (ADR-0025). Codex's `Read Only` and `Auto`
+presets share one `approval_policy` (`on-request`) and differ only in `sandbox_mode`, so a rung
+there says *how far a non-asking action reaches*, and asking is what happens at the edge of it.
+Claude cuts the same space by prompt frequency instead, splitting `default` from `acceptEdits` at
+one boundary. Argo takes the boundary reading because it is the one both CLIs can express: a
+frequency ladder has rungs Codex cannot reach at all.
+
+**`Ask` was dropped for colliding with the field's meaning.** Cursor, Zed and Copilot all use
+`Ask` for the read-only chat mode — Argo's `Plan`, not Argo's old `Ask`. A label that names the
+wrong sibling is worse than a longer one, and Claude Code hit the same hazard and renamed its
+`default` to **Manual** across every UI surface.
+
+**The superseded triplet was `Ask | Plan | Code`.** It laid one dial across two axes — `Ask` and
+`Code` are endpoints of how often you are asked, `Plan` is a point on what may be touched — and
+had no rung between gating everything and acting freely, which is where most sessions actually
+sit.

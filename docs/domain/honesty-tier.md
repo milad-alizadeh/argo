@@ -18,6 +18,18 @@ never renders a false DIRECT** (ADR-0008). Every tier-gated enum (Mode, status, 
 carries an explicit **`unknown`/absent** rendering; a fact that can't be established honestly is
 shown as unknown, never defaulted.
 
+**The `≈` mark is approximation, not a tier.** A fact Argo owns whose value has no exact rung in
+Argo's own enum — a `claude` in `default` — is rendered as the **nearest rung marked `≈`**, with
+the CLI's own value stated verbatim on hover. The tier stays DIRECT, because Argo knows the fact
+exactly and only its vocabulary is coarser. Degrading it to `unknown` would discard something
+plainly observed, which is the opposite failure from the one the rule above prevents (ADR-0025).
+
+**Nearest is judged by what happens without further user input**, which is the tiebreak a
+standing stance needs: `default` reads and nothing else while nobody is answering prompts, so it
+is `Read Only ≈` rather than the `Code` its approvals could eventually reach. Where even that is
+undecidable the ordinary rule applies and the value is `unknown` — `claude` `dontAsk` is the
+case, because its boundary is an allowlist Argo cannot see.
+
 Two DERIVED soft-spots to render honestly, not hide: external liveness (process-match on `cwd` +
 mtime is **not a unique key** — two `claude` in one repo can mis-match, and mtime goes stale
 during long "thinking", so it can read live-as-idle); and `~n%` context (the window denominator

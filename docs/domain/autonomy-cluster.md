@@ -1,10 +1,22 @@
 ## Autonomy cluster (cross-cutting)
 
-- **Mode** — the **Session's** *standing* autonomy stance (root-Agent fact, not per-Subagent):
-  **`Ask | Plan | Code`** (Ask = gate every action; Plan = read + propose, no edits; Code = act
-  autonomously within permissions), plus **`unknown`** when unobservable. DIRECT for managed,
-  tier-gated for external. Mode sets how often Permission fires. The `Plan` **mode** value ≠ the
-  `Plan` **entity** (L3 to-do list) — distinct senses, never in one clause.
+- **Mode** — the **Session's** *standing* autonomy stance (root-Agent fact, not per-Subagent): a
+  four-rung ladder **`Read Only | Plan | Code | Auto`**, plus **`unknown`** when unobservable.
+  DIRECT for managed, tier-gated for external. Each rung is a **boundary**, not a prompt
+  frequency: inside it the agent acts, at it Permission fires (ADR-0025).
+  - **Read Only** — no writes are possible.
+  - **Plan** — Read Only's boundary carrying a deliverable: the agent proposes, then hands off.
+    Same permission level as Read Only, different **intent**. This is the one place on the ladder
+    where two rungs share a boundary, and it is deliberate rather than an oversight. Argo can
+    **set** Plan but cannot **read it back** — a CLI reports the shared boundary either way, so an
+    observed Session renders `Read Only`, and Plan appears only where Argo set it.
+  - **Code** — writes and runs inside the **Workspace**, and asks to leave it.
+  - **Auto** — no boundary, asks nothing.
+
+  A CLI value with no exact rung renders as the **nearest rung marked `≈`**, nearest being judged
+  by what happens **without further user input** — see the Honesty tier section, which also names
+  the one value that stays `unknown`. The `Plan` **mode** value ≠ the `Plan` **entity** (L3 to-do
+  list) — distinct senses, never in one clause.
 - **Permission** — a *per-action* prompt the **agent** raises ("may I run this tool?"; options
   `allow_once · allow_always · reject_once · reject_always`). DIRECT, managed-only; drives the
   `permission` session-status.

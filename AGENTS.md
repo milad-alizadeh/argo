@@ -217,7 +217,8 @@ The vocabulary below is the part every session needs. Use these words, never a s
 - **Check** — one CI check, name taken verbatim from the code host.
 - **Outcome** — what a Session produced. Session-keyed and persisted.
 
-**Autonomy** — **Mode** (`Ask | Plan | Code`), **Permission** (a per-action prompt), **Standing
+**Autonomy** — **Mode** (`Read Only | Plan | Code | Auto`, each rung a boundary the agent asks to
+cross), **Permission** (a per-action prompt), **Standing
 allow** (one tool that stopped asking), **Permission expiry** (Argo's own clock refused it), and
 **Gate** (Argo's policy on a Delivery step).
 

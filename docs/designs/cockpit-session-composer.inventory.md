@@ -13,7 +13,7 @@ here rather than starting a second inventory.
 | `ComposerField` | molecule | same | `text: Binding<String>`, `placeholder: String`, `submit: () -> Void` | stock `TextField(axis: .vertical)` | frozen table, `ComposerField` |
 | `ComposerFooter` | molecule | same | `mode: Binding<ComposerMode>`, `facts: String?`, `isSendable: Bool`, `send: () -> Void` | `ModePicker` · `SendButton` | frozen table, `ComposerFooter` |
 | `SendButton` | atom | same | `isSendable: Bool`, `send: () -> Void` | `ArgoGlyph` in a 26pt circle | frozen table, `SendButton` |
-| `ModePicker` | atom | same | `mode: Binding<ComposerMode>` | stock `Picker(.segmented)`, `.controlSize(.small)` | frozen table, `ModePicker` |
+| `ModePicker` | atom | same | `mode: Binding<ComposerMode>` | stock `Picker(.menu)`, `.controlSize(.small)`, boundary on `.help` | frozen table, `ModePicker` |
 | `ComposerSeam` | molecule | same | `detail: String`, `retry: () -> Void` | text + retry, above the vessel | frozen table, `ComposerSeam` |
 
 Extraction evidence: every name above is in the design's frozen-names table — a cross-screen
@@ -104,7 +104,8 @@ attachment's own id — pressing Retry rewrites the same file rather than leavin
 - `ComposerSeamNote` — which of the seam's two sentences is up, and the words of the kept one.
 - `QueuedTurn` — an identified follow-up, so two identical ones are two things the `×` can tell
   apart.
-- `ComposerMode` — the stance vocabulary; local until #545 gives it an effect.
+- `ComposerMode` — the four-rung ladder (ADR-0025) and each rung's `boundary`; local until #545
+  gives it an effect.
 
 ## Stayed inline
 

@@ -13,6 +13,12 @@ Session experience; this replaces it.
 from the study with its switcher hidden. The measurements below are the numbers a ticket must
 carry — prose that omits them cannot be failed for getting them wrong.
 
+**Re-rendered on 2026-08-11 for ADR-0025**, because the Mode control went from a three-segment
+`Ask · Plan · Code` picker to a four-rung menu. Nineteen of the twenty-one changed; `external.png`
+and `orphaned.png` draw no composer at all, so they re-rendered byte-identical. `run-ask.png`
+became **`run-auto.png`** — `Ask` is not a rung any more, and `Auto` is the non-default worth
+showing. `run-modemenu.png` is **new**: a menu has an open state that segments never had.
+
 Two exceptions, named so nothing downstream reads them as drift. `perm.png` and `perm-edit.png`
 still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**, and the standing
 option they draw on the footer's trailing edge reads *Always allow Bash **here***, which
@@ -41,7 +47,7 @@ These become file names and ticket titles; renaming later is a migration.
 | `ComposerFooter` | attach · Mode · run facts · send |
 | `AttachButton` | the leading `+` |
 | `AttachmentTray` / `AttachmentChip` | chips above the field |
-| `ModePicker` | the `Ask · Plan · Code` segmented picker |
+| `ModePicker` | the `Read Only · Plan · Code · Auto` menu picker |
 | `RunFactsButton` | the `Opus 5 · Medium` fact line that opens the popover |
 | `RunSettingsPopover` | Model list + Effort scale + reset |
 | `SendButton` | the arrow, and its Stop state |
@@ -112,7 +118,8 @@ anything.
 
 | In the study | In the app |
 |---|---|
-| `.seg` (Mode, Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` |
+| `.seg` (Effort) | `Picker(…).pickerStyle(.segmented).controlSize(.small)` |
+| Mode | `Picker(…).pickerStyle(.menu).controlSize(.small)` — four rungs do not fit as segments |
 | `.picklist` (Model) | `Picker(…).pickerStyle(.inline)` |
 | `.runpanel` | `.popover(…)` with `.presentationBackground(.regularMaterial)` |
 | the popover's groups | `Form` sections, each with its own header |
@@ -120,10 +127,25 @@ anything.
 ## Decisions the renders encode
 
 1. **Mode is on the composer and never in the popover it opens.** Mode is Argo's standing
-   autonomy stance and the one setting that decides how often the agent stops to ask you
-   something, so it must be readable without opening anything — and once it is on the footer,
-   restating it inside reads as two controls for one value. `Ask` takes the attention ink,
-   `Plan` the accent: both are departures from acting autonomously.
+   autonomy stance — how far the agent may act before it stops (ADR-0025) — so it must be
+   readable without opening anything, and once it is on the footer, restating it inside reads as
+   two controls for one value.
+
+   **Mode is a menu picker, not segments** (`Picker(…).pickerStyle(.menu)`). Four rungs of
+   segments were rendered and measured at 760pt: they ate the footer's width and pushed the run
+   facts off the row entirely, which decision 2 does not allow.
+
+   **The control is sized to the widest rung, not the selected one.** `NSPopUpButton` does this
+   for free; the study's stand-in had to be pinned to match it. Without that the footer's whole
+   trailing edge moves every time the rung changes, which is a worse tic than the width it saves.
+
+   **The menu carries no ink and no per-row caption, and that is a loss taken knowingly.** macOS
+   draws a `.menu` picker through `NSPopUpButton`, which ignores `.tint` and `.foregroundStyle`
+   alike, and whose rows take a title and nothing else. All three were tried against the real
+   control. So a rung is a word, and its **boundary is on the control's tooltip** — `Read Only —
+   no writes`. The thing this costs is loudness on `Auto`, the one rung with no boundary left, and
+   giving it back means a bespoke `Menu` label rather than the stock control. Deferred rather than
+   faked: a rule that does not render is worse than none, because the next reader believes it.
 2. **Model and Effort are on the composer too, and the deck header states the CLI alone.** A
    value stated in two places is one you keep in sync by eye. (The rejected alternative put them
    on the header's fact line.)
