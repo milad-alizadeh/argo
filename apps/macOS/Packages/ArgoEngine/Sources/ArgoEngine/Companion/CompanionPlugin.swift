@@ -47,7 +47,8 @@ enum CompanionPlugin {
     }
 
     /// The hook and the plugin's own `hooks/hooks.json` that installs it. The hook's `timeout` is
-    /// `PermissionChannel.patienceSeconds`, the one number the gate's patience is written in.
+    /// `PermissionPatience.hookTimeoutSeconds` — the gate's own patience with a margin on top, so
+    /// Argo's answer always arrives before the hook's clock could kill it (#573).
     private static func gate(in pluginRoot: URL, socket: String) throws -> String {
         let hook = pluginRoot.appending(path: "permission-hook.sh")
         try write(
@@ -64,7 +65,7 @@ enum CompanionPlugin {
         let hooks = hooksDirectory.appending(path: "hooks.json")
         try write(resource: "hooks", to: hooks, substituting: [
             "__ARGO_PERMISSION_HOOK__": hook.path,
-            "__ARGO_PERMISSION_TIMEOUT__": String(PermissionChannel.patienceSeconds),
+            "__ARGO_PERMISSION_TIMEOUT__": String(PermissionPatience.hookTimeoutSeconds),
         ])
         return hooks.path
     }

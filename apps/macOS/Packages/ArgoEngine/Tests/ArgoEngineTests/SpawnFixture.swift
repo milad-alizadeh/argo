@@ -79,7 +79,10 @@ struct SpawnFixture {
     private let services: SpawnServices
     private let engine: Engine
 
-    init(liveness: @escaping LivenessRead = noLiveProcesses) throws {
+    init(
+        liveness: @escaping LivenessRead = noLiveProcesses,
+        permissionPatience: PermissionPatience = .default,
+    ) throws {
         let token = String(UUID().uuidString.prefix(8))
         self.root = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-spawn-\(token)", directoryHint: .isDirectory)
@@ -102,6 +105,7 @@ struct SpawnFixture {
             launcher: AgentLauncher(run: { _ in "\(binURL.path)\n" }),
             companionRoot: companionRoot,
             chainFileURL: chainFileURL,
+            permissionPatience: permissionPatience,
         )
         self.hub = Hub(projectURL: projectURL, engine: engine, spawnServices: services)
     }

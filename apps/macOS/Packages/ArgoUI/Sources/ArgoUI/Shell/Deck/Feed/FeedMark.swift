@@ -16,6 +16,10 @@ enum FeedMark: Equatable, Sendable {
     /// The work left here for a fresh Session, and where it went. The feed's one row that is a way
     /// out of the reading rather than a part of it — see `FeedHandoff`.
     case handedOff(FeedHandoff)
+    /// A Permission the gate ran out of patience for and refused itself (#573). Punctuation like
+    /// the rest of these: it is what happened to the reading — a call the agent made that never got
+    /// an answer — rather than something the agent said or did.
+    case permissionExpired(PermissionExpiry)
 }
 
 extension FeedMark {
@@ -39,6 +43,10 @@ extension FeedMark {
         // knowing where to go next, and the destination's own title is what the roster will show
         // them when they get there.
         case let .handedOff(handoff): "handed off to \(handoff.title)"
+        // The study's own sentence, unshortened. `denied` alone would credit a decision nobody
+        // made, and `expired` alone would leave what became of the tool call unsaid — the row is
+        // both halves or it is a worse row than silence (#573).
+        case .permissionExpired: "Permission expired — denied, unanswered"
         }
     }
 
@@ -54,6 +62,10 @@ extension FeedMark {
     /// exactly what does not carry — so the end a sighted reader takes from the hairline is spoken
     /// here rather than passed over in silence.
     var spoken: String {
-        words ?? "Turn ended"
+        // The tool is named here and nowhere else. On the rule it would be the one mark carrying a
+        // proper noun and would push the sentence past the column at any real width; spoken, it is
+        // the difference between "a Permission expired" and knowing WHICH call went unanswered.
+        guard case let .permissionExpired(expiry) = self else { return words ?? "Turn ended" }
+        return "Permission for \(expiry.toolName) expired — denied, unanswered"
     }
 }

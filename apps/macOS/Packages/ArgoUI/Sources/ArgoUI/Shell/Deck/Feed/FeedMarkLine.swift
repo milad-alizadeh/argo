@@ -28,7 +28,7 @@ struct FeedMarkLine: View {
                 link(to: handoff)
                 rule
             } else if let words = mark.words {
-                caption(words)
+                caption(words, in: wordInk)
                 rule
             }
         }
@@ -52,6 +52,15 @@ struct FeedMarkLine: View {
         }
         .buttonStyle(.plain)
         .help("Open \(handoff.title), the Session this work was handed to")
+    }
+
+    /// The roster's attention amber for the one mark that is not punctuation — a tool call refused
+    /// with nobody having refused it. It is the same colour the row wore while that prompt was
+    /// waiting, carried through to what became of it; every other mark stays tertiary, because a
+    /// turn ending and a token count are the ground this reading is drawn on.
+    private var wordInk: ArgoColor? {
+        guard case .permissionExpired = mark else { return nil }
+        return argo.color.state.attention
     }
 
     private func caption(_ text: String, in ink: ArgoColor? = nil) -> some View {

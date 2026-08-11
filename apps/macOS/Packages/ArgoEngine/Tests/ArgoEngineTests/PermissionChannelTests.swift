@@ -35,7 +35,7 @@ struct PermissionChannelTests {
         // is never registered, and an unregistered gate fails silently open.
         #expect(launch.arguments.contains("--plugin-dir"))
         #expect(hooks.contains("permission-hook.sh"))
-        #expect(hooks.contains("\"timeout\": \(PermissionChannel.patienceSeconds)"))
+        #expect(hooks.contains("\"timeout\": \(PermissionPatience.hookTimeoutSeconds)"))
         #expect(hook.contains("\(claim.value).gate.sock"))
         #expect(!hook.contains("__ARGO_PERMISSION_SOCKET__"))
     }
@@ -113,7 +113,7 @@ struct PermissionChannelTests {
     }
 
     @Test
-    func `a hook that expires unanswered takes its prompt with it`() async throws {
+    func `a hook that goes unanswered takes its prompt with it`() async throws {
         try await PermissionGate.withGate { fixture, _, client in
             client.sendLine(PermissionGate.bashCall)
             await settle { fixture.hub.sessions.first?.permission != nil }

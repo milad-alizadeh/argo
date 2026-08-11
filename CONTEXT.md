@@ -331,6 +331,13 @@ renamed or normalized).
   ending the Session**; a grant nobody can find or take back is the thing the Permission prompt
   exists to prevent (#572). The **Gate**'s per-tool sibling on the Session, as Gate is Argo's own
   policy on a Delivery step — both are Argo's automation of its own asking, not an agent prompt.
+- **Permission expiry** — a Permission that ended because **Argo's own patience ran out**, not
+  because anyone answered it (#573). DIRECT and managed-only: the gate's clock is deliberately
+  **shorter than the hook's**, so the call is refused by Argo rather than by a hook being killed —
+  which is what makes the cause knowable at all. Rendered as a mark on the Session's reading saying
+  *denied* **and** *unanswered*, because either word alone is a different and untrue claim. A prompt
+  that goes because the user cancelled its turn produces none: that is the user answering, and it
+  is indistinguishable from a hook simply going, so both stay silent under the degrade-down rule.
 - **Gate** — **Argo's own** policy on automating *Delivery* steps (create-PR, merge,
   push-after-PR), each `ask | auto`. Argo-owned automation, **not** an agent prompt — a
   different actor and axis from Permission.
@@ -429,5 +436,6 @@ ADR-0023/0017) and the **transcript-tailing parser** are runtime *mechanisms*.
 - **Honesty tier** — an attribute on *every* rendered fact (DIRECT / DERIVED / CONVENTION), not
   an entity.
 - **Autonomy** — **Mode** (standing stance) + **Permission** (per-action prompt) + `0—N`
-  **Standing allow** (one per tool that has stopped asking) sit on the **Session**; **Gate**
-  (delivery automation) sits on the **Delivery**. Distinct axes.
+  **Standing allow** (one per tool that has stopped asking) + `0—N` **Permission expiry** (one per
+  Permission Argo's own clock refused) sit on the **Session**; **Gate** (delivery automation) sits
+  on the **Delivery**. Distinct axes.

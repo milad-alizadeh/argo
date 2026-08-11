@@ -34,6 +34,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// Permission above is, and empty rather than absent because "no standing allow" is a state
     /// every Session is honestly in, external ones included.
     public internal(set) var standingAllows: [StandingAllow] = []
+    /// The Permissions this Session's gate ran out of patience for and refused itself (#573) —
+    /// DIRECT, because Argo held the clock as well as the socket. Empty rather than absent, for the
+    /// reason the grants above are: "nothing expired" is the state every Session is honestly in.
+    public internal(set) var expiredPermissions: [PermissionExpiry] = []
     /// The Session this one handed its work to, where it handed it to one — the row a reader
     /// follows to find the work continuing. Set by the Hub from its own record of the handoff,
     /// never read from a transcript: neither CLI knows anything happened, and the fresh agent's own

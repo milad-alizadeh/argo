@@ -138,6 +138,11 @@ public extension CockpitPresentation {
         /// the order they were granted. Empty for a Session that has granted none, which is every
         /// Session until somebody says otherwise.
         public let standingAllows: [StandingAllow]
+        /// The Permissions this Session's gate refused when nobody answered them (#573), verbatim
+        /// from the engine and in the order they expired. Empty for every Session whose prompts
+        /// were all answered, cancelled, or are still waiting — which is every Session in practice,
+        /// since the gate waits a day.
+        public let expiredPermissions: [PermissionExpiry]
         /// Everything the Session's transcript said, in order — the feed's whole input.
         ///
         /// The engine's own events rather than a second shape named for the shell: the surface
@@ -167,6 +172,7 @@ public extension CockpitPresentation {
             explicitName: String? = nil,
             permission: PermissionRequest? = nil,
             standingAllows: [StandingAllow] = [],
+            expiredPermissions: [PermissionExpiry] = [],
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -189,6 +195,7 @@ public extension CockpitPresentation {
             self.explicitName = explicitName
             self.permission = permission
             self.standingAllows = standingAllows
+            self.expiredPermissions = expiredPermissions
             self.events = events
         }
     }

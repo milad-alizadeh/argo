@@ -104,6 +104,10 @@ extension Hub {
         // wrote a record has to follow the row when it is re-keyed to the id the CLI picks.
         published.standingAllows = ownership.boundClaim(ofSessionID: session.id)
             .map { standingAllows[$0] ?? [] } ?? []
+        // And what its gate refused on its own (#573), through the same claim and for the same
+        // reason: the record has to follow the row when the CLI's id replaces the claim's.
+        published.expiredPermissions = ownership.boundClaim(ofSessionID: session.id)
+            .map { expiredPermissions[$0] ?? [] } ?? []
         // Read through the claim rather than published as it was recorded: the fresh row is
         // re-keyed to its CLI's own id the moment its record appears, and the link has to follow it
         // there.

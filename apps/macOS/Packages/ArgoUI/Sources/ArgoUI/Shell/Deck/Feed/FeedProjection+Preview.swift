@@ -70,6 +70,18 @@ extension FeedProjection {
         handedOff: previewHandoff,
     )
 
+    /// The same reading with a Permission that ran out on it (#573). The whole feed for the reason
+    /// the handed-off one is: what the render settles is that a refusal nobody made reads as a
+    /// departure from the punctuation around it, and that is only visible against punctuation.
+    static let previewExpiredRows = rows(
+        from: CockpitPresentation.Session.previewTranscript,
+        expired: [previewExpiry],
+    )
+
+    /// `Bash` deliberately — the tool whose prompt the study's render is drawn over, so the row and
+    /// the prompt it is the end of name the same call.
+    static let previewExpiry = PermissionExpiry(id: "permission-1", toolName: "Bash")
+
     /// The Session the preview reading was handed to. Titled like a real one, because the link is
     /// only judgeable at the length a title actually reaches.
     static let previewHandoff = FeedHandoff(
