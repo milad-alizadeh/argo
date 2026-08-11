@@ -14,7 +14,7 @@ enum ComposerSeamNote: Equatable {
     static func kept(sinceMs: Int, nowMs: Int) -> Self {
         let seconds = max((nowMs - sinceMs) / 1000, 0)
         guard seconds >= 60 else { return .draftKept("Draft kept from a moment ago") }
-        return .draftKept("Draft kept from \(SessionAge.phrase(sinceMs: sinceMs, nowMs: nowMs))")
+        return .draftKept("Draft kept from \(AgePhrase.phrase(sinceMs: sinceMs, nowMs: nowMs))")
     }
 
     var detail: String {

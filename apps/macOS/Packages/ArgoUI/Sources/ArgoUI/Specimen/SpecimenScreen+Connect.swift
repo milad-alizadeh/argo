@@ -7,6 +7,9 @@ import SwiftUI
 /// states reads as a list only while it fits on a screen. The split is by subject and not by size:
 /// these are the states of getting and keeping a connection, and the switch above is everything a
 /// Session is rendered as.
+///
+/// Every case of the catalog is named, the ones drawn elsewhere included. A `default` here would
+/// compile the next Connect-flow case into silently rendering the panel.
 extension SpecimenScreen {
     @ViewBuilder var connectFlow: some View {
         switch specimen {
@@ -19,18 +22,33 @@ extension SpecimenScreen {
             // One chip per level a connection fails at: a provider waited out, two rolled up to a
             // count, and a grant that needs obtaining again — named, and with the one act on it.
             centred { connectionChips }
-        // One panel per state it can be in, because they are structural rather than a value
-        // changing: nothing set, a folder alone, half connected, both ports on two identities, a
-        // grant mid-flight, a refusal, a Binding that came undone, and the same panel re-entered as
-        // Settings. The claim every one of them carries is that the panel is still usable — a
-        // partly connected Project is a Project, and a refusal is a note on a row rather than a
-        // screen to get out of.
-        //
-        // Written as the fallback rather than as a named list: it is the state every OTHER case in
-        // the flow is a departure from, and a second list of the same names would be a thing to
-        // keep in step with the switch above.
-        default:
+        // One panel per state it can be in: nothing set, a folder alone, half connected, both
+        // ports on two identities, a grant mid-flight, a refusal, a Binding that came undone, and
+        // the same panel re-entered as Settings.
+        case .connectFresh, .connectFolderOnly, .connectPartly, .connectWired, .connectWaiting,
+             .connectRefused, .connectBroken, .projectSettings:
             centred { ConnectPanel(reading: connectReading, actions: .inert) }
+        // Drawn by the catalog's own switch. Named rather than defaulted, so the day one of them
+        // belongs to this flow the compiler is what says so.
+        case .foundations, .contract, .sessionRows, .ghostedRows, .roster, .churningRoster,
+             .archivedRoster, .spawningRoster, .renamedRoster, .editingRow, .toolbarScope,
+             .emptyToolbarScope, .projectDrawer, .unreachableProjectDrawer, .emptyProjectDrawer,
+             .openProjectDrawer, .deck, .sessionsDeck, .sessionHeader, .externalSessionHeader,
+             .orphanedSessionHeader, .longBranchSessionHeader, .contextOk, .contextWarn,
+             .contextCrit, .contextUnknown, .contextGuide, .handoffWithheld, .handoffAtWarn,
+             .handoffAtCrit, .handoffOnReadOnly, .handoffOnOrphaned, .handedOffReading,
+             .sessionSpend, .sessionSpendUnreported, .feed, .feedCalls, .feedNarration,
+             .feedCommands, .feedCommandFold, .feedProse, .feedMarkdown, .feedEvidence,
+             .feedRunEvidence, .feedSurveyEvidence, .feedSurveyEvidenceStep,
+             .feedDocumentEvidence, .evidenceAddresses,
+             .feedAttention, .feedPunctuation, .feedPermissionExpired, .feedAgents, .feedAtScale,
+             .feedAtScaleEvidence, .feedArriving, .emptyFeed, .feedGallery, .feedSingleShot,
+             .feedAbsentShot, .feedLightbox, .planPill, .openPlanPill, .unstartedPlanPill,
+             .floatingControls, .flatFloatingControls, .feedLeftBehind, .feedLeftBehindInSilence,
+             .twoReadings, .composer, .composerTyping, .composerRefusal, .flatComposer,
+             .composerStanding, .composerCeiling, .composerDraftKept, .composerQueued,
+             .permission, .permissionEdit, .permissionStanding, .flatPermission:
+            EmptyView()
         }
     }
 }

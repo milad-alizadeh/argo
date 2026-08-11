@@ -17,7 +17,7 @@ import Foundation
 /// is derived by every Binding that names it asking. Fanning a refusal out into N records would
 /// leave one act of reconnecting with N records to find and clear.
 public actor ConnectionHealthLedger {
-    private var reads: [AccountBindingReference: Reading] = [:]
+    private var reads: [Key: Reading] = [:]
     private var refused: Set<String> = []
 
     public init() {}
@@ -44,12 +44,12 @@ public actor ConnectionHealthLedger {
         refused.insert(accountID)
     }
 
-    /// The grant is good again. One act, and every Binding that named this Account reads again —
-    /// there is one record to clear because there was one to write.
+    /// The user obtained a grant for this Account again. One act, and every Binding that named it
+    /// reads again — there is one record to clear because there was one to write.
     ///
-    /// Raised both by the user obtaining a grant and by a resolution finding the one on file
-    /// present and unexpired. The two are the same claim about the same fact, and a record only the
-    /// first could clear would leave the chip lit over a connection that had started working.
+    /// Only an act clears it, never an observation of the registry. A token sitting in the keychain
+    /// unexpired is exactly what a grant revoked at the provider looks like from this machine, so
+    /// clearing on "the grant is on file" would wipe the very refusal this records.
     public func reconnected(_ accountID: String) {
         refused.remove(accountID)
     }
@@ -74,8 +74,23 @@ public actor ConnectionHealthLedger {
         _ binding: ProjectBinding,
         _ projectID: String,
     )
-        -> AccountBindingReference {
-        AccountBindingReference(projectID: projectID, port: binding.port)
+        -> Key {
+        Key(
+            reference: AccountBindingReference(projectID: projectID, port: binding.port),
+            accountID: binding.accountID,
+        )
+    }
+
+    /// What a read history is filed under: the Binding's address, **and the Account it was read
+    /// through**.
+    ///
+    /// The Account is part of the key and not a detail of the value. A port rebound to a second
+    /// identity is a different connection entirely — different token, different visibility — so
+    /// without it a fresh Binding opens reading `stale · 4m ago` off the one it replaced, which is
+    /// a claim about a read that never happened.
+    private struct Key: Hashable {
+        let reference: AccountBindingReference
+        let accountID: String
     }
 
     /// One Binding's read history, which is two facts that outlive each other in opposite

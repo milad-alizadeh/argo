@@ -50,12 +50,17 @@ struct ArgoApp: App {
                     .task {
                         cockpit.endOwnedSessionsOnQuit()
                         await cockpit.start()
-                        // The chip reads the Project the window is on, so it is pointed at the
-                        // same one — before the panel, which a started machine never opens.
-                        await accounts.point(at: cockpit.activeRecord)
                         // A machine that has registered nothing has no path forward without
                         // this: the shell it lands in has no Project to act on.
                         await accounts.openIfUnstarted(registry: cockpit.registry)
+                    }
+                    // Connection health is per-project truth surfaced for the active Project only,
+                    // so the chip follows the window rather than each act that moves it. Observed
+                    // once here because a change of active Project is ONE event: registering,
+                    // switching, relocating and removing all end in it, and a list of acts to
+                    // remember is a list the next one is left off.
+                    .onChange(of: cockpit.activeRecord?.id, initial: true) { _, _ in
+                        Task { await accounts.point(at: cockpit.activeRecord) }
                     }
                     // Every PTY this window owns dies with the window, and the observer above
                     // ends them on ⌘Q too. An agent Argo started must not outlive the Argo that
@@ -124,17 +129,6 @@ struct ArgoApp: App {
         )
     }
 
-    /// Anything that can change which Project the window is on, followed by re-pointing the
-    /// connection reading at whatever it now is.
-    ///
-    /// Connection health is per-project truth surfaced for the active Project only, so every act
-    /// that moves the window has to move it too — a background Project whose provider died stays
-    /// silent, and you learn on switch, which is also the first moment you could act on it.
-    private func pointing(_ act: () async -> Void) async {
-        await act()
-        await accounts.point(at: cockpit.activeRecord)
-    }
-
     /// An unknown name renders the cockpit rather than failing: the harness names the state, and a
     /// typo there should not look like a launch worth screenshotting.
     private var specimen: Specimen? {
@@ -145,17 +139,11 @@ struct ArgoApp: App {
         CockpitActions(
             refreshCheckout: { Task { await cockpit.refreshCheckout() } },
             retryConnection: { Task { await cockpit.retryConnection() } },
-            selectProject: { id in
-                Task { await pointing { await cockpit.select(projectID: id) } }
-            },
-            addProject: { Task { await pointing { await cockpit.addProject() } } },
-            locateProject: { id in
-                Task { await pointing { await cockpit.locateProject(projectID: id) } }
-            },
+            selectProject: { id in Task { await cockpit.select(projectID: id) } },
+            addProject: { Task { await cockpit.addProject() } },
+            locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
             revealProject: { id in cockpit.revealProject(projectID: id) },
-            removeProject: { id in
-                Task { await pointing { await cockpit.removeProject(projectID: id) } }
-            },
+            removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
             openProjectPanel: { id in
                 Task { await accounts.open(on: id.flatMap(cockpit.registry.project(id:))) }
             },

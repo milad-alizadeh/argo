@@ -170,6 +170,29 @@ struct ConnectionHealthProjectionTests {
             .action == "Retry")
     }
 
+    /// The channel separation #260 locks: connection health never enters the one the session dot
+    /// carries. Asserted over the projection rather than by reading the wiring — the roster is
+    /// built from `CockpitPresentation`, which has no connection in it at all, so a change that
+    /// piped health into a row would have to break this to compile.
+    ///
+    /// It cannot prove a dot will never change; it pins the seam that would have to move first.
+    /// The reason is the dot's one channel says "your agent is waiting on you" — something to act
+    /// on this second — and spending it on "GitHub is unreachable" trains the reader to distrust
+    /// the loudest signal in the app.
+    @Test
+    func `connection health reaches no session's state`() {
+        let sessions = [RosterSessionFixture.session(id: "a", status: .running)]
+        let rows = SessionRosterProjection.rows(from: sessions)
+
+        #expect(rows.map(\.state) == [SessionState.role(for: .running)])
+        // The failing connection is a value beside the presentation, never inside it, so there is
+        // nothing here for it to have changed.
+        #expect(ConnectionHealthProjection.chip(
+            from: stale(.offline, lastSuccess: now),
+            asOf: now,
+        ) != nil)
+    }
+
     private func stale(_ cause: ConnectionCause, lastSuccess: Date?) -> ConnectionHealthReading {
         ConnectionHealthReading(connections: [
             PortConnection(

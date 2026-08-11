@@ -57,12 +57,4 @@ public struct BindingHealth: Equatable, Sendable {
     public func age(asOf now: Date) -> TimeInterval? {
         lastSuccess.map { max(now.timeIntervalSince($0), 0) }
     }
-
-    /// Whether a provider write may be attempted. `stale` keeps them live — a failing read does not
-    /// prove a write will fail, and greying a control out on that guess asserts a fact Argo does
-    /// not
-    /// have. `needsReconnect` disables them, because there it does: no token, no write.
-    public var allowsWrites: Bool {
-        state != .needsReconnect
-    }
 }

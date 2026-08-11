@@ -9,13 +9,18 @@ import Foundation
 /// resolution — one pass over the ports answers both, so the panel and the chip can never disagree
 /// about which Account a port reads through.
 ///
-/// Nothing here polls. A grant that has expired or gone from the keychain is observable from the
-/// registries alone, which is why the chip is right about the account level before any read has
-/// been attempted — and the binding level's causes arrive the day the ports read (#260).
+/// Two sources meet here, and the split is what keeps each honest:
+///
+/// - **Derived, per refresh** — a grant that has expired or gone from the keychain is visible in
+///   the registries alone, so it is read off the resolution every time and never written down.
+///   That is why the chip is right about the account level before anything has polled, and why it
+///   goes quiet the moment the grant is obtained again.
+/// - **Recorded, in the ledger** — what a read actually reported. Nothing produces these yet: the
+///   ports read in #260, and the three cause words arrive with them.
 extension AccountsCoordinator {
-    /// Point the reading at a Project, or at none. Raised on launch and on every switch, because
-    /// connection health is per-project truth surfaced for the active Project only: a background
-    /// Project whose provider died stays silent, and you learn on switch.
+    /// Point the reading at a Project, or at none. Raised on every change of active Project,
+    /// because connection health is per-project truth surfaced for the active Project only: a
+    /// background Project whose provider died stays silent, and you learn on switch.
     func point(at project: ProjectRecord?) async {
         self.project = project
         await refresh()
@@ -33,7 +38,7 @@ extension AccountsCoordinator {
         return ConnectionHealthReading(connections: connections)
     }
 
-    /// One port, with what the resolution proved about its grant filed as it goes.
+    /// One port, folded from what the registries show and what the ledger has been told.
     ///
     /// A row whose Account is gone, or whose provider cannot fill the port, produces nothing here:
     /// it is a decision to remake and the panel's own row says so with a fix. Two voices for one
@@ -45,25 +50,21 @@ extension AccountsCoordinator {
         -> PortConnection? {
         guard let projectID = project?.id, let accountID = port.accountID, let scope = port.scope,
               let account = registry.account(id: accountID) else { return nil }
-        await file(port.state, of: accountID)
         let binding = ProjectBinding(port: port.port, accountID: accountID, scope: scope)
-        return await PortConnection(
+        let observed = await health.health(of: binding, in: projectID)
+        return PortConnection(
             port: port.port,
             account: account,
-            health: health.health(of: binding, in: projectID),
+            // The derived fault wins where there is one. It is account-level, and an account-level
+            // failure is the prerequisite of every other: there is no token to read a scope with.
+            health: derived(from: port.state).map {
+                BindingHealth(fault: $0, lastSuccess: observed.lastSuccess)
+            } ?? observed,
         )
     }
 
-    private func file(_ state: ConnectPortState, of accountID: String) async {
-        switch state {
-        // The grant is on file and unexpired, so nothing needs reconnecting — said out loud rather
-        // than left implied, or a record written once would outlive the failure it recorded.
-        case .bound:
-            await health.reconnected(accountID)
-        case let .broken(_, _, fault) where fault.connectionFault == .grantRefused:
-            await health.grantRefused(accountID)
-        case .unbound, .broken:
-            break
-        }
+    private func derived(from state: ConnectPortState) -> ConnectionFault? {
+        guard case let .broken(_, _, fault) = state else { return nil }
+        return fault.connectionFault
     }
 }

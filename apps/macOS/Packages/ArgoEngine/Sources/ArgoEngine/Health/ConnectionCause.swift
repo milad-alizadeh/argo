@@ -9,7 +9,7 @@ import Foundation
 /// **`folder not found` is deliberately absent.** A missing folder is project integrity, not a
 /// connection — the project is disabled whole and repaired by relocating it, and nothing about a
 /// provider changed. Admitting it here would give one repair two vocabularies.
-public enum ConnectionCause: String, Equatable, Sendable, CaseIterable, Codable {
+public enum ConnectionCause: Equatable, Sendable, CaseIterable {
     /// This Mac has no network. Nothing was asked, so nothing was refused.
     case offline
     /// The provider was asked and did not answer — down, or the scope no longer resolves.

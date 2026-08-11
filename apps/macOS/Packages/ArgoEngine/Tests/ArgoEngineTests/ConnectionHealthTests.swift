@@ -32,7 +32,6 @@ struct ConnectionHealthTests {
 
         #expect(health.state == .stale(.rateLimited))
         #expect(health.level == .binding)
-        #expect(health.allowsWrites)
     }
 
     @Test
@@ -44,7 +43,6 @@ struct ConnectionHealthTests {
 
         #expect(health.state == .needsReconnect)
         #expect(health.level == .account)
-        #expect(!health.allowsWrites)
     }
 
     /// The correction the account level carries. Two Accounts of one provider are two grants, so a
@@ -132,10 +130,34 @@ struct ConnectionHealthTests {
     /// vocabularies is the thing this list is short to prevent.
     @Test
     func `the cause vocabulary is the three words the spec settled`() {
-        #expect(ConnectionCause.allCases.map(\.rawValue) == [
-            "offline",
-            "unreachable",
-            "rateLimited",
-        ])
+        #expect(ConnectionCause.allCases == [.offline, .unreachable, .rateLimited])
+    }
+
+    /// A refused grant is what a revocation looks like from this machine, and the token is still
+    /// sitting in the keychain unexpired while it is true. Only the act of obtaining a grant lifts
+    /// it — anything read off the registries would wipe the very refusal this records.
+    @Test
+    func `a grant on file does not lift a refusal by itself`() async {
+        let ledger = ConnectionHealthLedger()
+        await ledger.grantRefused("github:1")
+
+        #expect(await ledger.health(of: work, in: "P1").state == .needsReconnect)
+        await ledger.reconnected("github:1")
+        #expect(await ledger.health(of: work, in: "P1").state == .healthy)
+    }
+
+    /// A port rebound to a second identity is a different connection — different token, different
+    /// visibility — so it opens on nothing rather than on what the Binding it replaced was reading.
+    @Test
+    func `rebinding a port to another account does not inherit its staleness`() async {
+        let ledger = ConnectionHealthLedger()
+        await ledger.succeeded(work, in: "P1", at: now)
+        await ledger.failed(work, in: "P1", cause: .unreachable)
+
+        let rebound = ProjectBinding(port: .workItem, accountID: "github:2", scope: "acme/api")
+
+        let health = await ledger.health(of: rebound, in: "P1")
+        #expect(health.state == .healthy)
+        #expect(health.lastSuccess == nil)
     }
 }

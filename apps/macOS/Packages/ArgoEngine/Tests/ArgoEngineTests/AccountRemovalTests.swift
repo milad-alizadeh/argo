@@ -58,7 +58,7 @@ struct AccountRemovalTests {
         let store = fixture.store()
         try await store.authorizeGitHub(id: "1")
 
-        let orphans = await store.orphans(of: "github:1")
+        let orphans = await store.bindings(through: "github:1")
 
         #expect(orphans.map(\.port) == [.workItem])
         #expect(await store.load().accounts.map(\.id) == ["github:1"])
