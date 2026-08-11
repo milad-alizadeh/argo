@@ -1,14 +1,11 @@
 import Foundation
 
-/// How the one loop reads as the wait it reports gets older. A rung of the ladder `ArgoMotion
-/// .working` cools down, and the reason that role's period is a feeling rather than a cost.
+/// One rung of the ladder `ArgoMotion.working` cools down as the wait it reports gets older. Past
+/// roughly 10s a wait stops being part of the interaction, so a Turn six minutes in must not draw
+/// like one three seconds in.
 ///
-/// Past roughly 10s a wait stops being part of the interaction, so a Turn six minutes in must not
-/// draw like one three seconds in.
-///
-/// It cools; it never warms. Claude Code warms its spinner to amber at 10s and Argo must not:
-/// `state.attention` means something needs YOU, and a long wait needs nothing. Warming would render
-/// a false call for attention, which is what degrade-down exists to prevent.
+/// It cools and never warms: `state.attention` means something needs you, and a long wait needs
+/// nothing.
 public struct ArgoWaitAge: Sendable, Equatable {
     /// How long the wait has to have run for this rung to take over.
     public let after: TimeInterval
@@ -20,30 +17,22 @@ public struct ArgoWaitAge: Sendable, Equatable {
     public let glow: Double
 
     /// The same fall-off as a share of the first rung, for a surface whose full strength is not the
-    /// thread's. The row's wash paints type rather than casting light, so it cools by this
-    /// PROPORTION — taking the thread's own numbers there would dim a three-second call.
+    /// thread's. The row's wash paints type rather than casting light, so taking the thread's own
+    /// numbers there would dim a three-second call below what the design approved for it.
     public var cooling: Double {
-        glow / ArgoWaitAge.all[0].glow
+        glow / ArgoWaitAge.freshest.glow
     }
 
-    /// The loop at this rung: `ArgoMotion.working`'s own curve and Reduce Motion answer, over this
-    /// period. The role still answers Reduce Motion, because an aged wait has no still of its own —
-    /// the stills do not vary by age.
+    /// The loop at this rung — the role's own curve and Reduce Motion answer, over this period. It
+    /// still stops for Reduce Motion, because an aged wait has no still of its own.
     public var motion: ArgoMotion {
-        let role = ArgoMotion.working
-        return ArgoMotion(
-            duration: period,
-            curve: role.curve,
-            reducedDuration: role.reducedDuration,
-            repeats: role.repeats,
-        )
+        ArgoMotion.working.over(period)
     }
 }
 
 public extension ArgoWaitAge {
     /// The ladder, youngest first. The first rung is what `ArgoMotion.working` and
-    /// `ArgoElevation.bloom` already say, so a short wait draws exactly as it did and every other
-    /// rung is a step down from a state somebody approved.
+    /// `ArgoElevation.bloom` already say, so a short wait draws exactly as it did.
     static let all: [ArgoWaitAge] = [
         ArgoWaitAge(after: 0, period: 1.9, glow: 0.60),
         ArgoWaitAge(after: 10, period: 2.8, glow: 0.49),
@@ -52,15 +41,19 @@ public extension ArgoWaitAge {
     ]
 
     /// The rung a wait of this age reads at. The threshold belongs to the COLDER rung, and an age
-    /// below the ladder reads as the first: a clock that has not started must not draw a wait
+    /// below the ladder reads as `freshest`: a clock that has not started must not draw a wait
     /// colder than a fresh one.
     static func rung(at age: TimeInterval) -> ArgoWaitAge {
-        all.last { age >= $0.after } ?? all[0]
+        all.last { age >= $0.after } ?? freshest
+    }
+
+    /// Where a wait starts.
+    static var freshest: ArgoWaitAge {
+        all[0]
     }
 
     /// Where a wait ends up and stays. The ladder has a floor on purpose: a pass slow enough to
-    /// stop reading as travel would say the Turn had stopped, which is the one thing it must not
-    /// say.
+    /// stop reading as travel would say the Turn had stopped.
     static var coldest: ArgoWaitAge {
         rung(at: .infinity)
     }

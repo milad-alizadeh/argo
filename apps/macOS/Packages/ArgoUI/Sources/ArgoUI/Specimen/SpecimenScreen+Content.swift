@@ -162,6 +162,11 @@ extension SpecimenScreen {
             // Past five minutes, the coldest rung there is. Nothing here warms toward
             // `state.attention`: a long think needs nothing, so it must not read as an alarm.
             sessions(FeedProjection.previewWorkingRows).environment(\.argoAgesWait, 360)
+        case .feedCallInFlightCooled:
+            // The other live state at the same rung. The wash cools by the ladder's proportion
+            // rather than to its number, so the judgement is whether the command still reads as
+            // the live one against the finished rows above it.
+            sessions(FeedProjection.previewPendingCallRows).environment(\.argoAgesWait, 360)
         case .emptyFeed:
             sessions([])
         case .startingSpawn:

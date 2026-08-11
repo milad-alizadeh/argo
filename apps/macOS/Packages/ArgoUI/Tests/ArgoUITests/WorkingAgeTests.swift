@@ -14,10 +14,10 @@ struct WorkingAgeTests {
         #expect(ArgoWaitAge.all.map(\.glow) == [0.60, 0.49, 0.40, 0.30])
     }
 
-    /// The whole point. A wait that has gone on longer is SLOWER and DIMMER at every step, and
-    /// no step anywhere on the ladder is faster or brighter than the one before it.
+    /// The whole point: no step anywhere on the ladder is faster or brighter than the one before
+    /// it, so a wait that has gone on longer can only read as more settled.
     @Test
-    func `it only ever cools and slows`() {
+    func `no rung is warmer or quicker than the one above it`() {
         for (younger, older) in zip(ArgoWaitAge.all, ArgoWaitAge.all.dropFirst()) {
             #expect(older.after > younger.after)
             #expect(older.period > younger.period)
@@ -50,7 +50,7 @@ struct WorkingAgeTests {
     /// because a forced age and a measured one meet at the same lookup.
     @Test
     func `an age below the ladder reads as the first rung`() {
-        #expect(ArgoWaitAge.rung(at: -1) == ArgoWaitAge.all[0])
+        #expect(ArgoWaitAge.rung(at: -1) == ArgoWaitAge.freshest)
     }
 
     /// The ladder has a floor as well as a ceiling: an hour and six minutes read the same, because
@@ -59,6 +59,7 @@ struct WorkingAgeTests {
     func `the ladder bottoms out rather than running on`() {
         #expect(ArgoWaitAge.coldest == ArgoWaitAge.rung(at: 3600))
         #expect(ArgoWaitAge.coldest == ArgoWaitAge.all[3])
+        #expect(ArgoWaitAge.freshest == ArgoWaitAge.all[0])
     }
 
     /// The row's wash paints type rather than casting light, so it starts at full opacity and cools
@@ -69,20 +70,25 @@ struct WorkingAgeTests {
         let cooling = ArgoWaitAge.all.map(\.cooling)
 
         #expect(cooling.first == 1)
-        #expect(cooling.last == ArgoWaitAge.all[3].glow / ArgoWaitAge.all[0].glow)
+        #expect(cooling.last == ArgoWaitAge.coldest.glow / ArgoWaitAge.freshest.glow)
         for (younger, older) in zip(cooling, cooling.dropFirst()) {
             #expect(older < younger)
         }
     }
 
-    /// An aged wait is the same ROLE at another period — a loop, linear, with no shorter answer
-    /// under Reduce Motion. The stills of #615 and #616 do not vary by age, and this is what says
-    /// so: every rung resolves to nothing at all when movement is off.
+    /// An aged wait is the same ROLE at another period: a loop, at that rung's period, keeping the
+    /// role's Reduce Motion answer.
     @Test(arguments: ArgoWaitAge.all)
-    func `every rung is the one loop, and every rung stops for Reduce Motion`(rung: ArgoWaitAge) {
+    func `every rung is the one loop over its own period`(rung: ArgoWaitAge) {
         #expect(rung.motion.repeats)
         #expect(rung.motion.duration == rung.period)
         #expect(rung.motion.reducedDuration == ArgoMotion.working.reducedDuration)
+    }
+
+    /// The stills of #615 and #616 do not vary by age, and this is what says so: no rung of the
+    /// ladder resolves to anything at all when movement is off.
+    @Test(arguments: ArgoWaitAge.all)
+    func `no rung animates under Reduce Motion`(rung: ArgoWaitAge) {
         #expect(rung.motion.resolved(reduceMotion: true) == nil)
         #expect(rung.motion.resolvedPass(reduceMotion: true) == nil)
         #expect(rung.motion.resolvedPass(reduceMotion: false) != nil)
@@ -94,6 +100,6 @@ struct WorkingAgeTests {
     @Test
     func `the gap between two passes is a frame, not a pause`() {
         #expect(ArgoMotion.passReentry > 0)
-        #expect(ArgoMotion.passReentry < ArgoWaitAge.all[0].period / 10)
+        #expect(ArgoMotion.passReentry < ArgoWaitAge.freshest.period / 10)
     }
 }

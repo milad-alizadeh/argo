@@ -78,6 +78,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     // sitting through the wait that produces them.
     case feedWorkingAged
     case feedWorkingCooled
+    case feedCallInFlightCooled
     case emptyFeed
     case startingSpawn
     case feedGallery

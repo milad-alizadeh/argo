@@ -45,7 +45,7 @@ extension SpecimenScreen {
              .feedAttention, .feedPunctuation, .feedPermissionExpired, .feedAgents, .feedAtScale,
              .feedAtScaleEvidence, .feedArriving, .feedWorking, .feedCallInFlight,
              .feedWorkingStill, .feedCallInFlightStill,
-             .feedWorkingAged, .feedWorkingCooled, .emptyFeed,
+             .feedWorkingAged, .feedWorkingCooled, .feedCallInFlightCooled, .emptyFeed,
              .startingSpawn,
              .feedGallery, .feedSingleShot,
              .feedAbsentShot, .feedLightbox, .planPill, .openPlanPill, .unstartedPlanPill,

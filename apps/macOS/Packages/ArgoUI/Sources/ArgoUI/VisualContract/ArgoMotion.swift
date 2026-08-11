@@ -64,10 +64,20 @@ public struct ArgoMotion: Sendable {
     }
 
     /// The same answer as ONE traversal, never repeated. A loop is driven through this rather than
-    /// through `resolved`, because re-issuing a pass at a time is what lets its period change at a
-    /// pass boundary without the pass on screen restarting (`FeedIonLoop`).
+    /// through `resolved` — see `FeedIonLoop`.
     public func resolvedPass(reduceMotion: Bool) -> Animation? {
         reduceMotion ? reducedAnimation : pass
+    }
+
+    /// The same role over another period. Only a LOOP has one: a non-repeating role's duration is a
+    /// wait `durationCeiling` bounds, and nothing may stretch it.
+    public func over(_ period: TimeInterval) -> ArgoMotion {
+        ArgoMotion(
+            duration: period,
+            curve: curve,
+            reducedDuration: reducedDuration,
+            repeats: repeats,
+        )
     }
 }
 

@@ -63,9 +63,9 @@ private struct IonWash: View {
         }
     }
 
-    /// Where the pass sits, as a multiple of the line's own width. It starts and ends entirely off
-    /// the line, so the ion enters and leaves rather than appearing mid-word. Movement off never
-    /// reaches here — the modifier above draws no wash at all then.
+    /// Where the pass sits, as a multiple of the line's own width. Both ends are entirely off the
+    /// line, so the ion enters and leaves rather than appearing mid-word — which is also the right
+    /// answer for the `nil` phase the modifier above never lets through.
     private func offset(at phase: Double?, over width: CGFloat) -> CGFloat {
         ((phase ?? 0) * 2 - 1) * width
     }
