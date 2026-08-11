@@ -62,15 +62,52 @@ extension LiveClaudeFixture {
         }
     }
 
-    /// One Turn put to the Session and seen through to its answer.
+    /// One Turn put to the Session and seen through to the CLI's answer.
     ///
-    /// Waiting only for `idle` is not waiting at all: a row that has not started yet IS idle, so
-    /// the wait returns the instant the bytes are written and the next thing typed lands in the
-    /// same composer line. The Turn has to be seen STARTING before its end means anything.
+    /// The wait is on the CLI's own record and not on the roster's status, because the two failure
+    /// modes both read as "ready". A row that has not started yet is already `idle`, and a row the
+    /// Hub has not observed yet is not there at all — either way a status-only wait returns the
+    /// instant the bytes are written, the next thing typed joins the same composer line, and two
+    /// Turns arrive as one. An answer that is ON DISK happened.
     func askAndSettle(_ prompt: String) async throws {
+        let before = recordSize(of: nil)
         try ask(prompt)
-        await settleAllowing(seconds: 30) { hub.sessions.first?.status == .running }
-        await settleAllowing(seconds: 300) { hub.sessions.first?.status == .idle }
+        await settleAllowing(seconds: 300) { self.recordSize(of: nil) > before }
+        await settleTurn(of: nil)
+    }
+
+    /// The same, put to a Session by name rather than to this fixture's own claim.
+    func sendAndSettle(_ prompt: String, to sessionID: String) async throws {
+        let before = recordSize(of: sessionID)
+        try hub.driver.send(prompt, to: sessionID)
+        await settleAllowing(seconds: 300) { self.recordSize(of: sessionID) > before }
+        await settleTurn(of: sessionID)
+    }
+
+    /// Wait out the Turn a Session is in the middle of.
+    ///
+    /// A seeded spawn is already answering when it is handed back — its opening prompt was a
+    /// launch argument — so anything typed at it before this lands INSIDE that turn as keystrokes
+    /// rather than arriving as a Turn of its own.
+    func settleTurn(of sessionID: String?) async {
+        await settleAllowing(seconds: 60) { self.row(sessionID)?.status == .running }
+        await settleAllowing(seconds: 300) { self.row(sessionID)?.status == .idle }
+    }
+
+    /// How much record the CLI has written for a Session. Zero before its first prompt — the file
+    /// does not exist until then — and larger after every Turn it takes.
+    private func recordSize(of sessionID: String?) -> Int {
+        guard let url = row(sessionID)?.sourceURL,
+              let size = try? FileManager.default
+              .attributesOfItem(atPath: url.path)[.size] as? Int
+        else { return 0 }
+        return size
+    }
+
+    /// A named row, or this fixture's own Session when no name is given.
+    private func row(_ sessionID: String?) -> HubSession? {
+        guard let sessionID else { return hub.sessions.first }
+        return hub.sessions.first { $0.id == sessionID }
     }
 
     /// Say yes to every Permission any Session of this fixture is blocked on.

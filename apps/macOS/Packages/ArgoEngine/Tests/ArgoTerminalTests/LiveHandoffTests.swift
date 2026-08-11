@@ -9,7 +9,10 @@ import Testing
 /// string and asserts on its content, so a line feed where a carriage return belongs is invisible
 /// to it — and a line feed leaves `/handoff` unsent in the composer while the wait runs out.
 /// `notSteerable` and `noFolder` are decided before any CLI is involved and stay with the fake.
-@Suite("Live handoff", .enabled(if: LiveCLI.isEnabled))
+/// Serialized, unlike the permission suite: every wait here spins the main actor, and a handoff is
+/// several turns of real work rather than one gated call. Run side by side, three of these starve
+/// the queue the Hub reads its sockets on, and the agent that suffers is not the one under test.
+@Suite("Live handoff", .enabled(if: LiveCLI.isEnabled), .serialized)
 @MainActor
 struct LiveHandoffTests {
     /// The whole of story 47 against a real CLI, and the fresh Session proven to have READ what it
@@ -32,8 +35,10 @@ struct LiveHandoffTests {
 
         // The fresh Session is asked for a fact only its brief carries. Its own context holds the
         // opening prompt and nothing else, so the file can only be right if it read the document.
+        // Its opening turn is let finish first, or the question joins that turn's keystrokes.
+        await live.settleTurn(of: outcome.sessionID)
         let proof = live.root.appending(path: "codename-from-the-brief.txt")
-        try live.hub.driver.send(
+        try await live.sendAndSettle(
             "Write the release codename named in your handoff brief into \(proof.path), "
                 + "on one line and with nothing else in the file.",
             to: outcome.sessionID,
@@ -42,7 +47,10 @@ struct LiveHandoffTests {
             FileManager.default.fileExists(atPath: proof.path)
         }
 
-        let read = try String(contentsOf: proof, encoding: .utf8)
+        let read = try #require(
+            try? String(contentsOf: proof, encoding: .utf8),
+            "\(live.host.lastScreens)",
+        )
         #expect(read.contains(codename), "\(live.host.lastScreens)")
     }
 
@@ -62,18 +70,25 @@ struct LiveHandoffTests {
 
         #expect(Self.handedOff(from: source, in: live) == outcome.sessionID)
 
-        // The fresh agent writes its first record and its row takes the id the CLI chose. The link
-        // has to arrive at the same place, or it points at a row that no longer exists.
-        await live.settleAllowing(seconds: 300) {
-            Self.handedOff(from: source, in: live).map { $0 != outcome.sessionID } == true
+        // The naming is asserted only once the fresh agent has WRITTEN its first record, because
+        // that record is what gives its claim the CLI's id. Waiting on the link itself would be
+        // waiting on the thing under test, and would pass by timing out.
+        await live.settleTurn(of: outcome.sessionID)
+        await live.settleAllowing(seconds: 120) {
+            Self.handedOff(from: source, in: live) != outcome.sessionID
         }
+
         let named = try #require(Self.handedOff(from: source, in: live), "\(live.host.lastScreens)")
-        #expect(named != outcome.sessionID)
-        #expect(live.hub.sessions.contains { $0.id == named }, "\(live.host.lastScreens)")
+        #expect(named != outcome.sessionID, "\(live.hub.sessions.map(\.id))")
+        #expect(live.hub.sessions.contains { $0.id == named }, "\(live.hub.sessions.map(\.id))")
     }
 
-    /// The wait is bounded and the bound is honoured. A patience far shorter than a turn of real
-    /// work ends where it said it would, and the Session it typed at is still a Session.
+    /// The wait is bounded and the bound is honoured, and the Session it typed at is still a
+    /// Session afterwards.
+    ///
+    /// Two seconds, not twenty: a handoff off a one-Turn Session is quick enough to beat twenty,
+    /// which it did, and a bound the work can win is not a bound under test. Nothing an agent can
+    /// do fits inside two, so the wait's end is the wait's own rule and not a race.
     @Test(.timeLimit(.minutes(30)))
     func `a brief that does not arrive in time ends the wait and leaves the Session usable`(
     ) async throws {
@@ -82,8 +97,8 @@ struct LiveHandoffTests {
         try await live.askAndSettle("Reply with just OK.")
         let source = try #require(live.sessionID, "\(live.host.lastScreens)")
 
-        let patience = HandoffPatience(pollMs: 500, limitMs: 20 * 1000)
-        await #expect(throws: SessionHandoff.Failure.briefNeverArrived(afterMs: 20 * 1000)) {
+        let patience = HandoffPatience(pollMs: 500, limitMs: 2000)
+        await #expect(throws: SessionHandoff.Failure.briefNeverArrived(afterMs: 2000)) {
             try await live.handoff(patience: patience)
                 .run(SessionHandoff.Request(sessionID: source, cwd: live.root.path))
         }
@@ -92,9 +107,8 @@ struct LiveHandoffTests {
         // because `/handoff` is still running and a prompt into a running turn is a keystroke.
         try live.hub.driver.interrupt(source)
         await live.settleAllowing(seconds: 120) { live.hub.sessions.first?.status == .idle }
-        try live.hub.driver.send(
+        try await live.askAndSettle(
             "Run this command with the Bash tool and nothing else: touch \(live.markerURL.path)",
-            to: source,
         )
         await live.settleAllowing(seconds: 300) { live.hasMarkerFile() }
 
