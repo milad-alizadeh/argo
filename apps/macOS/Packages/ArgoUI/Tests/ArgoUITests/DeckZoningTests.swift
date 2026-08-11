@@ -5,8 +5,7 @@ import SwiftUI
 import Testing
 
 /// Which zones exist on the deck and how wide they open. `ArgoLayout` keeps the tokens; these are
-/// the decisions MADE from them, which used to live in a `View` body nothing could reach —
-/// `SessionsDeckTests` is named for the deck and re-derives the arithmetic by hand instead.
+/// the decisions made from them, checked against a real deck width.
 @Suite("Deck zoning")
 struct DeckZoningTests {
     /// The narrowest deck the window can produce: the sidebar at its minimum still leaves this.

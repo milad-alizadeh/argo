@@ -5,53 +5,57 @@ import SwiftUI
 // back a closure that is inert when nothing is selected.
 
 extension CockpitView {
-    /// Everything the deck's vessel can do, bound to the Session it addresses. Assembled once
-    /// rather than per control, so the deck takes one member where it used to take seven.
-    var intents: DeckIntents {
-        DeckIntents(
-            send: send,
-            decide: decide,
+    /// Everything the deck's vessel can do, bound to the Session it addresses.
+    ///
+    /// Takes the vessel rather than reading `CockpitView.vessel` back: that property resolves the
+    /// selection and up to three projections on every read, and this needs the answer five times.
+    func intents(for vessel: DeckVessel) -> DeckIntents {
+        // The Session the FIELD addresses, resolved once. A prompt in the slot means there is no
+        // composer, which is also the state with no field, no Stop and no rung to press.
+        let driven = vessel.composer?.sessionID
+        return DeckIntents(
+            send: send(to: driven),
+            decide: decide(answering: vessel.prompt),
             revoke: revoke,
-            stop: stop,
-            setMode: setMode,
+            stop: stop(driven),
+            setMode: setMode(driven),
             spawnBeside: spawnBeside,
-            draft: draft,
+            draft: draft(for: driven),
         )
     }
 
     /// The composer's one intent, bound to the Session the composer addresses.
-    var send: ComposerSend {
-        guard let sessionID = vessel.composer?.sessionID else { return { _, _ in } }
+    private func send(to sessionID: String?) -> ComposerSend {
+        guard let sessionID else { return { _, _ in } }
         return { try actions.drive.send($0, attaching: $1, to: sessionID) }
     }
 
-    /// Stopping the Turn the composer's Session is running (#541), bound the way `send` is — and
-    /// inert without a composer, which is also the state with no control to press.
-    var stop: () throws -> Void {
-        guard let sessionID = vessel.composer?.sessionID else { return {} }
+    /// Stopping the Turn that Session is running (#541), bound the way `send` is.
+    private func stop(_ sessionID: String?) -> () throws -> Void {
+        guard let sessionID else { return {} }
         return { try actions.drive.interrupt(sessionID) }
     }
 
-    /// Putting the composer's Session on a rung (#545), bound the way `stop` is.
-    var setMode: (SessionMode) throws -> Void {
-        guard let sessionID = vessel.composer?.sessionID else { return { _ in } }
+    /// Putting that Session on a rung (#545), bound the way `stop` is.
+    private func setMode(_ sessionID: String?) -> (SessionMode) throws -> Void {
+        guard let sessionID else { return { _ in } }
         return { try actions.drive.setMode($0, for: sessionID) }
     }
 
-    /// What the selected Session's composer is holding, out of the store that outlives the deck.
-    /// A Session with no composer gets an inert binding.
-    var draft: Binding<ComposerDraft> {
-        guard let sessionID = vessel.composer?.sessionID else {
-            return .constant(ComposerDraft())
-        }
+    /// What the composer is holding, out of the store that outlives the deck.
+    private func draft(for sessionID: String?) -> Binding<ComposerDraft> {
+        guard let sessionID else { return .constant(ComposerDraft()) }
         return drafts.binding(for: sessionID)
     }
 
     /// The prompt's one intent, bound the way `send` is. The refusal is dropped because both of
     /// the port's mean the same thing here — the Permission is gone — and the prompt leaving the
     /// screen already says so.
-    var decide: (PermissionDecision) -> Void {
-        guard let prompt = vessel.prompt else { return { _ in } }
+    private func decide(
+        answering prompt: PermissionPromptProjection.Prompt?,
+    )
+        -> (PermissionDecision) -> Void {
+        guard let prompt else { return { _ in } }
         let sessionID = prompt.sessionID
         // The request is captured with the Session, so the answer names the Permission this
         // closure was built over rather than whatever is pending by the time it is called.

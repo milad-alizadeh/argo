@@ -1,14 +1,8 @@
-/// What is in the deck's one slot below the reading.
+/// What is in the deck's one slot below the reading. The slot is SINGULAR — one vessel, holding
+/// whichever question is live (design decision 6), which is why this is an enum.
 ///
-/// The slot is SINGULAR — one vessel, holding whichever question is live (design decision 6) — and
-/// this is the type that says so. A composer beside a Permission prompt used to be a state five
-/// files described in prose and one view body ruled out; here it is unrepresentable, and the rule
-/// that decides between them is `resolve(for:canAttach:)`.
-///
-/// A pure value with no closures in it, on purpose: eight of the deck's nine call sites are
-/// specimens and previews driving it with hand-built fixtures, and a vessel that could only be
-/// built from a live Hub projection would mean fabricating a whole Hub to render one composer
-/// state. What the controls DO travels beside it, in `DeckIntents`.
+/// Carries no closures: a specimen builds one from a fixture, with no Hub behind it. What the
+/// controls DO is `DeckIntents`.
 enum DeckVessel: Equatable {
     /// A Session Argo can put keystrokes to, with nothing blocking it.
     case composer(SessionComposerProjection.Composer)

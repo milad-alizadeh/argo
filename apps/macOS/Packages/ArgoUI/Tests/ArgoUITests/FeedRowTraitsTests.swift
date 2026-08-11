@@ -2,9 +2,9 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What each kind of row IS, asked once. The feed's spacing, its two filtered renders, the accent
-/// on a just-sent echo, the working thread and the evidence panel each act on one of these answers,
-/// so a kind that answers wrong is wrong in five places at once.
+/// What each kind of row IS. The feed's spacing, its two filtered renders, the accent on a
+/// just-sent echo, the working thread and the evidence panel each act on one of these answers, so
+/// a kind that answers wrong is wrong in five places at once.
 @Suite("Feed row traits")
 struct FeedRowTraitsTests {
     /// Work and prose are the two halves the feed spaces differently, so nothing may be both.

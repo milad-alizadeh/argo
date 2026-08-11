@@ -35,36 +35,31 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     let id: Int
     let content: Content
 
-    /// What this row IS — see `Content.Traits`, which answers all of it in one `switch`.
-    var traits: Content.Traits {
-        content.traits
-    }
-
     /// Whether this row is a piece of work rather than a piece of prose. Asked by the feed's own
     /// spacing and by the render that shows the calls alone.
     var isCall: Bool {
-        traits.isCall
+        content.traits.isCall
     }
 
     /// Whether this row is something somebody SAID — neither the work nor the punctuation around
     /// it. Asked by the render that shows the reading with the work taken out.
     var isProse: Bool {
-        traits.isProse
+        content.traits.isProse
     }
 
     /// Whether this row is something the AGENT said. Asked by the count on the way-back control.
     var isMessage: Bool {
-        traits.isMessage
+        content.traits.isMessage
     }
 
     /// Whether this row is something the USER asked for. Asked by the accent wash that marks a
     /// just-sent Turn's echo.
     var isPrompt: Bool {
-        traits.isPrompt
+        content.traits.isPrompt
     }
 
     /// Whether this row has anything for the evidence panel to show.
     var opensEvidence: Bool {
-        traits.opensEvidence
+        content.traits.opensEvidence
     }
 }

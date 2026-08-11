@@ -47,7 +47,9 @@ struct ShellSidebar: View {
         .searchable(text: $query, placement: .sidebar, prompt: "Search Sessions")
         .argoAnimation(.resettle, value: reading.rows.map(\.id))
         // Read off the PUBLISHED roster, which is what makes this a fixed point rather than a
-        // second placement decision: a row admitted once stays where it was put.
+        // second placement decision: a row admitted once stays where it was put. The captured
+        // `reading` IS the new value — SwiftUI runs the action closure installed by the body pass
+        // that produced the change, so `reading.ids` here equals the ids it fired on.
         .onChange(of: reading.ids) { _, _ in
             roster.admit(reading)
         }

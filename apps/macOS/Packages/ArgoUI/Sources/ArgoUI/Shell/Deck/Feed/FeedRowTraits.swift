@@ -1,8 +1,7 @@
 extension FeedRow.Content {
     /// What a row IS, answered for every kind in one place. The feed's spacing, its two filtered
     /// renders, the accent on a just-sent echo, the working thread and the evidence panel each
-    /// read one of these. Each used to ask with a `switch` of its own, so learning what a
-    /// `.gallery` is meant reading six of them.
+    /// read one of these.
     struct Traits: Equatable, Sendable {
         /// A piece of work rather than a piece of prose. The feed welds a run of these together
         /// with a tighter step than prose gets.

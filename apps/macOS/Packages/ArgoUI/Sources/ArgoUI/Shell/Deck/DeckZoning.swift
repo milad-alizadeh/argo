@@ -1,13 +1,9 @@
 import SwiftUI
 
-/// Which zones the deck has at a given width, and how wide each one opens.
+/// Which zones the deck has at a given width, and how wide each one opens. `ArgoLayout` keeps the
+/// tokens; this makes the decisions from them.
 ///
-/// The other half of the deck's measures. `ArgoLayout` keeps the TOKENS — the floors, the ceilings,
-/// the share — and this makes the decisions from them: whether the rail is on screen at all,
-/// whether the panel is up, and what the two movable seams may be dragged between. Both halves used
-/// to be measures, but only `ArgoLayout`'s half was reachable by a test.
-///
-/// A value built per layout pass from the width `GeometryReader` reports, so nothing here is state.
+/// Built per layout pass from the width `GeometryReader` reports, so nothing here is state.
 struct DeckZoning {
     /// What the row has to divide up.
     let deck: CGFloat

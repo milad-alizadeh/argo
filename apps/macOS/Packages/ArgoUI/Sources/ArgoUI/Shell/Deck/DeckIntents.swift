@@ -2,11 +2,8 @@ import ArgoEngine
 import SwiftUI
 
 /// What the deck's one vessel DOES — the closures that reach the selected Session, beside the
-/// value that says what is drawn.
-///
-/// Beside `DeckVessel` rather than inside it, the way `DeckSeams` sits beside the zones it sizes.
-/// Every intent is inert by default, so a specimen renders the vessel without a terminal behind
-/// it and a `#Preview` needs no shell above it.
+/// `DeckVessel` value that says what is drawn. Every intent is inert by default, so a specimen
+/// renders the vessel without a terminal behind it.
 struct DeckIntents {
     /// One Turn to the shown Session; refusals are thrown back and the composer's seam repeats
     /// them.

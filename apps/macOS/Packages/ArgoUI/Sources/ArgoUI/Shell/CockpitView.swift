@@ -104,6 +104,10 @@ public struct CockpitView: View {
                 max: ArgoLayout.sidebarMaximumWidth,
             )
         } detail: {
+            // Resolved once and handed to both: reading it a second time re-runs the selection
+            // lookup and every projection behind it.
+            let vessel = vessel
+
             InstrumentDeckShell(
                 room: navigation.room,
                 session: navigation.session,
@@ -112,7 +116,7 @@ public struct CockpitView: View {
                 handOff: handOff,
                 showing: showing,
                 vessel: vessel,
-                intents: intents,
+                intents: intents(for: vessel),
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation.

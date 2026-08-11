@@ -2,13 +2,12 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
-/// What is in the deck's one slot, and which fact decides it. The rule used to be stated in prose
-/// in five files and carried out in a view body nothing could reach; this is the whole of it.
+/// What is in the deck's one slot, and which fact decides it.
 @Suite("Deck vessel")
 struct DeckVesselTests {
     @Test
     func `a driveable Session with nothing pending gets the composer`() throws {
-        let vessel = DeckVessel.resolve(for: session(), canAttach: false)
+        let vessel = DeckVessel.resolve(for: Self.driveable, canAttach: false)
         let composer = try #require(vessel.composer)
 
         #expect(composer.sessionID == "session")
@@ -19,7 +18,7 @@ struct DeckVesselTests {
     /// deck must not be able to hold.
     @Test
     func `a Permission displaces the composer rather than joining it`() throws {
-        let vessel = DeckVessel.resolve(for: session(permission: request), canAttach: false)
+        let vessel = DeckVessel.resolve(for: Self.blocked, canAttach: false)
 
         #expect(try #require(vessel.prompt).requestID == "permission-1")
         #expect(vessel.composer == nil)
@@ -34,7 +33,7 @@ struct DeckVesselTests {
     func `a Session Argo cannot drive gets the line even while a Permission is pending`(
         access: CockpitPresentation.Session.Access,
     ) {
-        let blocked = session(access: access, permission: request)
+        let blocked = Self.session(access: access, permission: Self.request)
         let vessel = DeckVessel.resolve(for: blocked, canAttach: false)
 
         #expect(vessel.unavailable != nil)
@@ -46,7 +45,7 @@ struct DeckVesselTests {
     /// send to.
     @Test
     func `a Session that is over gets the line rather than a field`() {
-        let vessel = DeckVessel.resolve(for: session(status: .ended), canAttach: false)
+        let vessel = DeckVessel.resolve(for: Self.over, canAttach: false)
 
         #expect(vessel.unavailable == .ended)
         #expect(vessel.composer == nil)
@@ -63,30 +62,46 @@ struct DeckVesselTests {
 
     /// The composer and the prompt float over the reading; the line is a ROW that replaces the
     /// reading's end, so the feed's clearance is read off this and not off the slot being filled.
-    @Test
-    func `only the composer and the prompt float over the reading`() {
-        #expect(DeckVessel.resolve(for: session(), canAttach: false).isFloating)
-        #expect(DeckVessel.resolve(for: session(permission: request), canAttach: false).isFloating)
-        #expect(!DeckVessel.resolve(for: session(status: .ended), canAttach: false).isFloating)
-        #expect(!DeckVessel.resolve(for: nil, canAttach: false).isFloating)
+    @Test(arguments: [
+        (vessel: DeckVessel.resolve(for: driveable, canAttach: false), floats: true),
+        (vessel: .resolve(for: blocked, canAttach: false), floats: true),
+        (vessel: .resolve(for: over, canAttach: false), floats: false),
+        (vessel: .resolve(for: nil, canAttach: false), floats: false),
+    ])
+    func `only the composer and the prompt float over the reading`(
+        vessel: DeckVessel,
+        floats: Bool,
+    ) {
+        #expect(vessel.isFloating == floats)
     }
 
     /// A capability the adapter declares about itself, which the Hub's presentation has never
     /// heard of — so it comes in rather than being derived.
     @Test
     func `whether the adapter takes attachments reaches the composer`() throws {
-        let vessel = DeckVessel.resolve(for: session(), canAttach: true)
+        let vessel = DeckVessel.resolve(for: Self.driveable, canAttach: true)
 
         #expect(try #require(vessel.composer).canAttach)
     }
 
-    private let request = PermissionRequest(
+    // MARK: - Fixtures
+    //
+    // Static, because a `@Test(arguments:)` table is built outside the suite instance.
+
+    private static let request = PermissionRequest(
         id: "permission-1",
         toolName: "Bash",
         target: .command("ls"),
     )
 
-    private func session(
+    /// Managed, and blocked on nothing — the Session that gets a field.
+    private static let driveable = session()
+    /// The same Session with a Permission pending.
+    private static let blocked = session(permission: request)
+    /// Managed and over, which is the line rather than a field.
+    private static let over = session(status: .ended)
+
+    private static func session(
         access: CockpitPresentation.Session.Access = .managed,
         status: SessionStatus? = nil,
         permission: PermissionRequest? = nil,

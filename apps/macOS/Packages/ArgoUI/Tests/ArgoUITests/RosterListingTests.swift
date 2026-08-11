@@ -1,9 +1,9 @@
 @testable import ArgoUI
 import Testing
 
-/// The roster pipeline: project, hold, search — in that order, which is the whole of it. Every
-/// invariant here used to live in the ORDER three calls were written in inside a `View` body, and a
-/// pipeline reordered by accident produces a roster that still renders.
+/// The roster pipeline: project, hold, search — in that order, which is the whole of it. A
+/// pipeline reordered by accident produces a roster that still renders, so these are the claims
+/// that catch it.
 @Suite("Roster listing")
 struct RosterListingTests {
     // MARK: - Order before search
@@ -93,13 +93,19 @@ struct RosterListingTests {
     }
 
     @Test
-    func `an archived Session is not on the roster, and a kept one is not behind the fold`() {
+    func `an archived Session is not on the roster`() {
         let roster = RosterListing()
         let mixed = sessions(named: "kept") + archived(named: "gone")
-        let reading = roster.reading(of: mixed, matching: "")
 
-        #expect(reading.rows.map(\.id) == ["kept"])
-        #expect(reading.archived.map(\.id) == ["gone"])
+        #expect(roster.reading(of: mixed, matching: "").rows.map(\.id) == ["kept"])
+    }
+
+    @Test
+    func `a Session still on the roster is not behind the fold`() {
+        let roster = RosterListing()
+        let mixed = sessions(named: "kept") + archived(named: "gone")
+
+        #expect(roster.reading(of: mixed, matching: "").archived.map(\.id) == ["gone"])
     }
 
     // MARK: - What a hold is taken over

@@ -3,9 +3,7 @@ import Foundation
 /// The roster pipeline, whole: project the Sessions into rows, publish them in the order the
 /// sidebar is holding, then filter by what was typed.
 ///
-/// The ORDER of those three steps is the whole design, and it used to live only in the order three
-/// calls were written in inside `ShellSidebar.body` — where a reordering still renders a roster and
-/// no test could tell. Filtering after the publish is what stops a query re-ordering what it
+/// That order is the design. Filtering after the publish is what stops a query re-ordering what it
 /// leaves; holding over the whole projection rather than the filtered rows is what stops a search
 /// shrinking the freeze to the rows it kept.
 ///
