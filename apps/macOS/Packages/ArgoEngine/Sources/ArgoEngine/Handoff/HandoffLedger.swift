@@ -14,7 +14,7 @@ import Observation
 final class HandoffLedger {
     /// The handoffs this process made: the Session that handed over → the claim the fresh row was
     /// published under.
-    private var live: [String: String] = [:]
+    private var live: [String: SessionOwnership.ClaimID] = [:]
     private var chain: HandoffChain
     @ObservationIgnored private let store: HandoffChainStore
 
@@ -32,16 +32,16 @@ final class HandoffLedger {
     /// The live half wins where both have something to say: it is the same handoff, held under the
     /// claim that is still the row's id until the rebind happens.
     func edge(of sessionID: String) -> String? {
-        live[sessionID] ?? chain.resolved[sessionID]
+        live[sessionID]?.value ?? chain.resolved[sessionID]
     }
 
     /// The edge, held in memory and written down. In memory because what the fresh row is CALLED
     /// right now is a claim; on disk because the handoff is what a Session PRODUCED, which
     /// `CONTEXT.md` keeps as an Outcome.
-    func record(from sessionID: String, claim: String, atMs: Int) {
+    func record(from sessionID: String, claim: SessionOwnership.ClaimID, atMs: Int) {
         live[sessionID] = claim
         chain = store.update { chain in
-            chain.record(from: sessionID, claim: claim, atMs: atMs)
+            chain.record(from: sessionID, claim: claim.value, atMs: atMs)
             return true
         }
     }
@@ -50,8 +50,9 @@ final class HandoffLedger {
     /// the moment the written link stops being about a claim, so it is the moment it is named.
     ///
     /// Called on every observation batch and writes nothing when there is nothing to name.
-    func name(claim: String, as sessionID: String) {
-        guard chain.links.contains(where: { $0.claim == claim && $0.to == nil }) else { return }
-        chain = store.update { chain in chain.name(claim: claim, as: sessionID) }
+    func name(claim: SessionOwnership.ClaimID, as sessionID: String) {
+        guard chain.links.contains(where: { $0.claim == claim.value && $0.to == nil })
+        else { return }
+        chain = store.update { chain in chain.name(claim: claim.value, as: sessionID) }
     }
 }

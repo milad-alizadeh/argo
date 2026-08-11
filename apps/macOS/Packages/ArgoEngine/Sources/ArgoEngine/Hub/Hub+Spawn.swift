@@ -77,11 +77,9 @@ public extension Hub {
     }
 
     /// One claim, given up: Argo's hold on it, the PTY behind it, and both channels it spoke over.
-    ///
-    /// Written once rather than at each of the three sites that gives a claim up — a launch that
-    /// failed, a PTY that exited, and the app quitting — because a site that forgot one of the four
-    /// leaves a socket open on a Session nobody owns.
-    func relinquish(_ claim: SessionOwnership.ClaimID) {
+    /// The three sites that give a claim up are a launch that failed, a PTY that exited, and the
+    /// app quitting.
+    private func relinquish(_ claim: SessionOwnership.ClaimID) {
         ownership.release(claim)
         terminals.drop(claim)
         companion?.withdraw(claim)
@@ -125,7 +123,7 @@ extension Hub {
             // The one moment a written handoff link can stop naming a claim and name a Session
             // instead — binding happens once per claim and this is the call that knows it did
             // (#513).
-            handoff.name(claim: claim.value, as: session.id)
+            handoff.name(claim: claim, as: session.id)
         }
     }
 }

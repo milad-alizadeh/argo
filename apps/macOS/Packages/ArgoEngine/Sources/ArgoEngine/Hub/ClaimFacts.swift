@@ -5,10 +5,6 @@ import Foundation
 /// Claim-keyed rather than Session-keyed for the reason every field here is: a claim exists before
 /// the CLI has picked a Session id, and it outlives the reconciliation that gives the row one. A
 /// fact filed under the id would be lost at the re-key.
-///
-/// Two kinds sit here together. The first three are the gate's, and die with the PTY behind it. The
-/// last two are the record — what the agent said, and the rung Argo put it on — which outlive the
-/// gate, so an orphaned Session still reads as what it was.
 struct ClaimFacts: Equatable {
     /// The CONVENTION tier, and the only place it comes from.
     var report: CompanionReport?

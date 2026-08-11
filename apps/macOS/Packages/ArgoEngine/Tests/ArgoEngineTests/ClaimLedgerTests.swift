@@ -23,11 +23,11 @@ struct ClaimLedgerTests {
     }
 
     @Test
-    func `a claim with nothing left to say drops out of the ledger`() {
+    func `answering the last waiting Permission leaves the claim knowing nothing`() {
         let ledger = ClaimLedger()
         ledger.publish(waiting: [asking("Bash")], for: claim)
         ledger.publish(waiting: [], for: claim)
-        #expect(ledger.isEmpty)
+        #expect(ledger.facts(for: claim) == ClaimFacts())
     }
 
     /// Three tables until #634, so no test could name this: answering the last prompt left the
@@ -45,19 +45,27 @@ struct ClaimLedgerTests {
     }
 
     /// The gate is what died with the PTY. What the agent SAID happened, so an orphaned Session
-    /// keeps its CONVENTION reading and the rung Argo put it on.
+    /// keeps its CONVENTION reading.
     @Test
-    func `withdrawing a claim keeps what its agent said and the rung Argo set`() {
+    func `withdrawing a claim keeps what its agent said`() {
         let ledger = ClaimLedger()
         ledger.record(.status(.running), for: claim)
-        ledger.setMode(SessionModeSet(mode: .plan), for: claim)
         ledger.publish(waiting: [asking("Bash")], for: claim)
 
         ledger.withdraw(claim)
 
         #expect(ledger.facts(for: claim).report?.status == .running)
+    }
+
+    @Test
+    func `withdrawing a claim keeps the rung Argo put it on`() {
+        let ledger = ClaimLedger()
+        ledger.setMode(SessionModeSet(mode: .plan), for: claim)
+        ledger.publish(waiting: [asking("Bash")], for: claim)
+
+        ledger.withdraw(claim)
+
         #expect(ledger.facts(for: claim).modeSet?.mode == .plan)
-        #expect(ledger.facts(for: claim).waiting.isEmpty)
     }
 
     /// One report per claim, folded rather than replaced — two facts arrive as two messages.

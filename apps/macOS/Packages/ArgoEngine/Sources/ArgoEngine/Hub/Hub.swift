@@ -42,7 +42,7 @@ public final class Hub {
 
     /// One Session by id, off that same roster — so a caller reading one row and a caller reading
     /// the list can never disagree about it.
-    public func session(id: String) -> HubSession? {
+    func session(id: String) -> HubSession? {
         sessions.first { $0.id == id }
     }
 

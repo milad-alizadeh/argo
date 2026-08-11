@@ -29,7 +29,11 @@ extension Hub: HandoffHost {
     /// The edge, recorded against the CLAIM the fresh row was published under and named later, when
     /// the fresh agent's first record gives it an id — see `HandoffLedger`.
     public func handedOff(sessionID: String, to fresh: String) {
-        handoff.record(from: sessionID, claim: fresh, atMs: Date().epochMs)
+        handoff.record(
+            from: sessionID,
+            claim: SessionOwnership.ClaimID(value: fresh),
+            atMs: Date().epochMs,
+        )
     }
 
     /// The address `HandoffScript` explains, made concrete: Argo's own per-machine data, beside the

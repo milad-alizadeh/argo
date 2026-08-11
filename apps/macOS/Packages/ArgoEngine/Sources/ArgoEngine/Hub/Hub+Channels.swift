@@ -18,8 +18,8 @@ extension Hub {
         )
     }
 
-    /// What is known about one claim. The accessor a caller outside the engine reads through, so
-    /// no surface has to know the ledger holds five facts rather than five tables.
+    /// What is known about one claim, in one reading — the accessor the suites assert through, in
+    /// place of the five dictionaries they reached into before #634.
     func facts(forClaim claim: SessionOwnership.ClaimID) -> ClaimFacts {
         claims.facts(for: claim)
     }

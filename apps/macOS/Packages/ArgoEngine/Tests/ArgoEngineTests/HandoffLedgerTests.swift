@@ -10,6 +10,10 @@ struct HandoffLedgerTests {
         HandoffLedger(store: HandoffChainStore(fileURL: file))
     }
 
+    private func claimed(_ value: String) -> SessionOwnership.ClaimID {
+        SessionOwnership.ClaimID(value: value)
+    }
+
     @Test
     func `a Session that handed nothing over has no edge`() {
         #expect(ledger().edge(of: "session-1") == nil)
@@ -20,15 +24,15 @@ struct HandoffLedgerTests {
     @Test
     func `a handoff points at the claim until the fresh agent writes a record`() {
         let handoff = ledger()
-        handoff.record(from: "session-1", claim: "claim-7", atMs: 100)
+        handoff.record(from: "session-1", claim: claimed("claim-7"), atMs: 100)
         #expect(handoff.edge(of: "session-1") == "claim-7")
     }
 
     @Test
     func `naming a claim leaves the edge pointing at the same row`() {
         let handoff = ledger()
-        handoff.record(from: "session-1", claim: "claim-7", atMs: 100)
-        handoff.name(claim: "claim-7", as: "session-2")
+        handoff.record(from: "session-1", claim: claimed("claim-7"), atMs: 100)
+        handoff.name(claim: claimed("claim-7"), as: "session-2")
         #expect(handoff.edge(of: "session-1") == "claim-7")
     }
 
@@ -39,8 +43,8 @@ struct HandoffLedgerTests {
         let file = try temporaryChainFile()
         defer { try? FileManager.default.removeItem(at: file) }
         let handoff = ledger(file)
-        handoff.record(from: "session-1", claim: "claim-7", atMs: 100)
-        handoff.name(claim: "claim-7", as: "session-2")
+        handoff.record(from: "session-1", claim: claimed("claim-7"), atMs: 100)
+        handoff.name(claim: claimed("claim-7"), as: "session-2")
 
         #expect(ledger(file).edge(of: "session-1") == "session-2")
     }
@@ -52,7 +56,7 @@ struct HandoffLedgerTests {
         let file = try temporaryChainFile()
         defer { try? FileManager.default.removeItem(at: file) }
         let handoff = ledger(file)
-        handoff.record(from: "session-1", claim: "claim-7", atMs: 100)
+        handoff.record(from: "session-1", claim: claimed("claim-7"), atMs: 100)
 
         #expect(ledger(file).edge(of: "session-1") == nil)
     }
@@ -64,11 +68,11 @@ struct HandoffLedgerTests {
         let file = try temporaryChainFile()
         defer { try? FileManager.default.removeItem(at: file) }
         let first = ledger(file)
-        first.record(from: "session-1", claim: "claim-7", atMs: 100)
-        first.name(claim: "claim-7", as: "session-2")
+        first.record(from: "session-1", claim: claimed("claim-7"), atMs: 100)
+        first.name(claim: claimed("claim-7"), as: "session-2")
 
         // A second handoff off the SAME Session, made by this process and not yet named.
-        first.record(from: "session-1", claim: "claim-9", atMs: 200)
+        first.record(from: "session-1", claim: claimed("claim-9"), atMs: 200)
 
         #expect(first.edge(of: "session-1") == "claim-9")
     }
