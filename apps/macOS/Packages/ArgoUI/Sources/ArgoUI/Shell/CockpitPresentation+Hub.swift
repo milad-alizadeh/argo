@@ -82,6 +82,9 @@ extension CockpitPresentation.Session {
             permission: session.permission,
             standingAllows: session.standingAllows,
             expiredPermissions: session.expiredPermissions,
+            // The Hub's own reading, carried whole rather than reduced to a rung: the `≈` and the
+            // CLI's word are what the composer renders, and a rung alone cannot say either.
+            mode: session.mode,
             events: session.events,
         )
     }

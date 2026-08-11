@@ -135,6 +135,22 @@ struct ComposerDraft: Equatable {
     /// asserts the reader was told and the vessel that tells them cannot come to disagree.
     static let cleared = "Turn stopped — the composer was cleared"
 
+    /// A rung asked for, and the port's reason where it refused (#545).
+    ///
+    /// A NOTICE and not a refusal, for the reason `cannotAttach` is one: no words are at risk, so
+    /// there is nothing to keep and nothing for a Retry to put back. The rung simply stayed where
+    /// it was, and the control redraws from the Session's own reading either way.
+    mutating func modeAsked(via setMode: () throws -> Void) {
+        do {
+            try setMode()
+            notice = nil
+        } catch let refused as SessionDriveError {
+            notice = refused.detail
+        } catch {
+            notice = error.localizedDescription
+        }
+    }
+
     /// Take one waiting follow-up back — the chip's `×`. By id and never by text: two identical
     /// follow-ups are two things.
     mutating func cancel(_ turn: QueuedTurn.ID) {

@@ -158,6 +158,7 @@ struct ArgoApp: App {
             decidePermission: { id, request, decision in
                 cockpit.decide(decision, answering: request, for: id)
             },
+            setSessionMode: { id, mode in try cockpit.setMode(mode, for: id) },
             revokeStandingAllow: { id, tool in cockpit.revokeStandingAllow(tool, for: id) },
         )
     }

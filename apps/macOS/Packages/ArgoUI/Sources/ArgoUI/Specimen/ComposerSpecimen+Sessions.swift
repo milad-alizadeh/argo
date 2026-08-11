@@ -1,0 +1,81 @@
+import ArgoEngine
+
+/// The Sessions the composer's cases are drawn against — one managed Claude Session, varied by the
+/// one fact each case is about. Beside the specimen rather than in it: the view is a view, and a
+/// catalogue of fixtures grew past the file ceiling sitting inside one.
+extension ComposerSpecimen {
+    /// The one fixture every composer case renders — a managed Claude Session with a model, idle
+    /// enough to take the next thing typed, on an adapter that takes attachments (which Claude's
+    /// is).
+    static let composer = SessionComposerProjection.Composer(
+        sessionID: "specimen",
+        placeholder: "Message Claude Code…",
+        facts: "Opus 5",
+        standingAllows: [],
+        isRunning: false,
+        mode: .exactly(.code, cli: "acceptEdits"),
+        canAttach: true,
+    )
+
+    /// The same Session on an adapter that declares no attachments (#540): no `+` on the footer at
+    /// all, and the seam carrying what a drop was refused for. The absence is the state — a greyed
+    /// control would invite a click and give no reason (design decision 9).
+    static let noAttach = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: false,
+        mode: composer.mode,
+        canAttach: false,
+    )
+
+    /// The same Session mid-Turn: the field invites a follow-up rather than a message, and what is
+    /// typed waits above it instead of going.
+    static let running = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: SessionComposerProjection.queuePlaceholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: true,
+        mode: composer.mode,
+        canAttach: true,
+    )
+
+    /// The same vessel on a Session that has stopped asking about two tools (#572). Its own state
+    /// because the tray is only ever seen at rest, the turn AFTER the grant.
+    static let standing = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: ["Bash", "Read"].map(StandingAllow.init(toolName:)),
+        isRunning: false,
+        mode: composer.mode,
+        canAttach: true,
+    )
+
+    /// The same Session sitting where the ladder has no rung — `claude` in `default`, which
+    /// unattended reads and nothing else, so it draws as `≈ Read Only` (#545, ADR-0025). Its own
+    /// case because the `≈` and the unticked menu are the whole claim.
+    static let nearly = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: false,
+        mode: .nearly(.readOnly, cli: "default"),
+        canAttach: true,
+    )
+
+    /// The same Session in `dontAsk`, whose boundary is an allowlist Argo cannot see — so no rung
+    /// is honest and the control says `unknown`.
+    static let unknownMode = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: false,
+        mode: .unknown(cli: "dontAsk"),
+        canAttach: true,
+    )
+}

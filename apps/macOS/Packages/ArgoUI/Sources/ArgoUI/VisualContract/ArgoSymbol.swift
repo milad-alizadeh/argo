@@ -100,6 +100,8 @@ public enum ArgoSymbol {
     public static let modePlan = "list.bullet.rectangle"
     public static let modeCode = programSource
     public static let modeAuto = "bolt"
+    /// A stance Argo cannot place on the ladder — not a rung, so it is never offered as one.
+    public static let modeUnknown = "questionmark"
 
     /// What a file the panel is open on is written in — one mark per language FAMILY, since the
     /// extension beside it is what names the language. Markup has none on purpose: the nearest

@@ -20,11 +20,13 @@ struct SessionComposer: View {
     /// reason it is: what the port refuses, the seam repeats — and a refused stop must leave the
     /// vessel exactly as it found it.
     var stop: () throws -> Void = {}
+    /// Put the Session on a rung (#545). A closure for the reason `stop` is, and THROWING for the
+    /// reason it is: a refused rung changed nothing, and the seam is where the port's reason goes.
+    var setMode: (SessionMode) throws -> Void = { _ in }
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
     var isDropTargeted = false
 
-    @State private var mode: ComposerMode = .code
     /// When this Session's composer came on screen — both the moment a restored draft's age is
     /// measured against and the test for whether it IS restored. Anything the user has typed since
     /// stamps later than this and takes the seam away.
@@ -35,6 +37,7 @@ struct SessionComposer: View {
         send: @escaping ComposerSend,
         revoke: @escaping (String) -> Void = { _ in },
         stop: @escaping () throws -> Void = {},
+        setMode: @escaping (SessionMode) throws -> Void = { _ in },
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
         isDropTargeted: Bool = false,
     ) {
@@ -42,6 +45,7 @@ struct SessionComposer: View {
         self.send = send
         self.revoke = revoke
         self.stop = stop
+        self.setMode = setMode
         _draft = draft
         self.isDropTargeted = isDropTargeted
     }
@@ -79,13 +83,14 @@ struct SessionComposer: View {
             queue
             ComposerField(text: $draft.text, placeholder: composer.placeholder, submit: submit)
             ComposerFooter(
-                mode: $mode,
+                mode: composer.mode,
                 facts: composer.facts,
                 isSendable: draft.isSendable,
                 isRunning: composer.isRunning,
                 send: submit,
                 stop: interrupt,
                 attach: footerAttach,
+                setMode: ask,
             )
         }
         // Asymmetric on purpose: the trailing edge ends in a 26pt control and the leading edge
@@ -148,6 +153,12 @@ struct SessionComposer: View {
     /// exact moment the queued follow-ups are released.
     private func interrupt() {
         draft.stopped(via: stop)
+    }
+
+    /// Ask the Session for a rung. The control shows nothing of its own, so a refusal needs no
+    /// undoing here — it puts the port's reason on the seam and the reading redraws unchanged.
+    private func ask(for mode: SessionMode) {
+        draft.modeAsked { try setMode(mode) }
     }
 
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is

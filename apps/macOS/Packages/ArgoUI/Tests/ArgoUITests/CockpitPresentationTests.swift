@@ -57,6 +57,25 @@ struct CockpitPresentationTests {
         #expect(session.status == .idle)
     }
 
+    /// The stance crosses the seam as the Hub read it (#545). `default` is the case worth the
+    /// test: it is a value the ladder has no rung for, so anything that reduced the reading to a
+    /// rung on the way through would render it as a rung the user chose.
+    @Test
+    @MainActor
+    func `an observed stance reaches the shell with its approximation intact`() async throws {
+        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/project"))
+        await observe(
+            hub,
+            id: "observed",
+            events: [.mode(cli: "default")],
+            until: { $0.mode != .unknown(cli: nil) },
+        )
+
+        let session = try #require(projection(of: hub).sessions.first)
+
+        #expect(session.mode == .nearly(.readOnly, cli: "default"))
+    }
+
     @Test
     @MainActor
     func `a Session with no turn boundary reads unknown, never idle`() async throws {

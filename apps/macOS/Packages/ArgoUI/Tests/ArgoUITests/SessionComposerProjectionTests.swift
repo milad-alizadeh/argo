@@ -98,11 +98,29 @@ struct SessionComposerProjectionTests {
         #expect(composer.facts == "brand-new-model")
     }
 
+    /// The stance is carried WHOLE rather than reduced to a rung: the `≈` and the CLI's own word
+    /// are both things the control draws, and a rung alone cannot say either (#545).
+    @Test(arguments: [
+        SessionModeReading.exactly(.code, cli: "acceptEdits"),
+        SessionModeReading.nearly(.readOnly, cli: "default"),
+        SessionModeReading.unknown(cli: "dontAsk"),
+        SessionModeReading.unknown(cli: nil),
+    ])
+    func `the composer carries the Session's stance as the Hub read it`(
+        mode: SessionModeReading,
+    ) throws {
+        let composer = try #require(
+            SessionComposerProjection.composer(for: session(access: .managed, mode: mode)),
+        )
+        #expect(composer.mode == mode)
+    }
+
     private func session(
         access: CockpitPresentation.Session.Access,
         status: SessionStatus = .running,
         cli: AgentCLI? = .claude,
         model: String? = "claude-opus-5",
+        mode: SessionModeReading = .unknown(cli: nil),
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -113,6 +131,7 @@ struct SessionComposerProjectionTests {
             access: access,
             status: status,
             cli: cli,
+            mode: mode,
         )
     }
 }

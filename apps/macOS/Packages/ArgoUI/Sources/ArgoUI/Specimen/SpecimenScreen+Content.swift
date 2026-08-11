@@ -184,7 +184,8 @@ extension SpecimenScreen {
         case .composer, .composerTyping, .composerCeiling, .composerDraftKept, .composerQueued,
              .composerRunning, .composerStopped,
              .composerRefusal, .flatComposer, .composerStanding, .composerAttached,
-             .composerPasted, .composerDragOver, .composerNoAttach, .permission,
+             .composerPasted, .composerDragOver, .composerNoAttach,
+             .composerModeNearly, .composerModeUnknown, .permission,
              .permissionStanding, .permissionEdit, .flatPermission:
             vessel
         // Every state of the Connect flow, drawn in `SpecimenScreen+Connect.swift`.

@@ -40,6 +40,8 @@ struct SessionsDeck: View {
     var revoke: (String) -> Void = { _ in }
     /// Stopping the Turn in flight (#541). Inert by default, for the reason `send` is.
     var stop: () throws -> Void = {}
+    /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
+    var setMode: (SessionMode) throws -> Void = { _ in }
     /// What the composer is holding — passed through from above the Session identity, so an unsent
     /// draft survives a switch (#539). See `InstrumentDeckShell.draft`.
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
@@ -68,6 +70,7 @@ struct SessionsDeck: View {
                 decide: decide,
                 revoke: revoke,
                 stop: stop,
+                setMode: setMode,
                 draft: draft,
                 seams: seams,
             )

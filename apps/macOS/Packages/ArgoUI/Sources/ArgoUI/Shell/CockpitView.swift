@@ -121,6 +121,7 @@ public struct CockpitView: View {
                 decide: decide,
                 revoke: revoke,
                 stop: stop,
+                setMode: setMode,
                 draft: draft,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because

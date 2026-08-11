@@ -124,6 +124,11 @@ public extension CockpitPresentation {
         /// were all answered, cancelled, or are still waiting — which is every Session in practice,
         /// since the gate waits a day.
         public let expiredPermissions: [PermissionExpiry]
+        /// The Session's standing autonomy stance, as Argo can state it (ADR-0025) — the rung,
+        /// whether it is the nearest rather than the exact one, and the CLI's own word for it.
+        /// `unknown` covers both the Session nobody has read a stance off and the one whose
+        /// boundary Argo cannot see.
+        public let mode: SessionModeReading
         /// Everything the Session's transcript said, in order — the feed's whole input. The
         /// engine's own events, undigested; `FeedProjection` is what draws them.
         public let events: [TranscriptEvent]
@@ -150,6 +155,7 @@ public extension CockpitPresentation {
             permission: PermissionRequest? = nil,
             standingAllows: [StandingAllow] = [],
             expiredPermissions: [PermissionExpiry] = [],
+            mode: SessionModeReading = .unknown(cli: nil),
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -173,6 +179,7 @@ public extension CockpitPresentation {
             self.permission = permission
             self.standingAllows = standingAllows
             self.expiredPermissions = expiredPermissions
+            self.mode = mode
             self.events = events
         }
     }

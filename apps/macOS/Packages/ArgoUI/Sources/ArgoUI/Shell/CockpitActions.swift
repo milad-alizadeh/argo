@@ -68,6 +68,13 @@ public struct CockpitActions {
     /// Not throwing, unlike `sendTurn`: the one refusal — the Permission already gone — is
     /// answered by the prompt leaving the screen.
     public let decidePermission: (String, String, PermissionDecision) -> Void
+    /// Put a Session on a rung of the Mode ladder (#545) — `(sessionID, mode)`.
+    ///
+    /// Throwing, like `sendTurn` and `interruptTurn`: the port refuses a rung it cannot reach from
+    /// the stance it can read, and refuses one mid-Turn, and both reasons belong on the composer's
+    /// seam. A control that reported a rung it only asked for would be the false DIRECT the ladder
+    /// exists to prevent.
+    public let setSessionMode: (String, SessionMode) throws -> Void
     /// Take back a standing allow on a Session (#572) — `(sessionID, toolName)`. Keyed by tool
     /// because the tool IS the grant, and it answers no blocked call: it changes what the Session
     /// will ask about next.
@@ -92,6 +99,7 @@ public struct CockpitActions {
         interruptTurn: { _ in },
         canAttach: { _ in false },
         decidePermission: { _, _, _ in },
+        setSessionMode: { _, _ in },
         revokeStandingAllow: { _, _ in },
     )
 
@@ -112,6 +120,7 @@ public struct CockpitActions {
         interruptTurn: @escaping (String) throws -> Void = { _ in },
         canAttach: @escaping (String) -> Bool = { _ in false },
         decidePermission: @escaping (String, String, PermissionDecision) -> Void,
+        setSessionMode: @escaping (String, SessionMode) throws -> Void = { _, _ in },
         revokeStandingAllow: @escaping (String, String) -> Void,
     ) {
         self.refreshCheckout = refreshCheckout
@@ -130,6 +139,7 @@ public struct CockpitActions {
         self.interruptTurn = interruptTurn
         self.canAttach = canAttach
         self.decidePermission = decidePermission
+        self.setSessionMode = setSessionMode
         self.revokeStandingAllow = revokeStandingAllow
     }
 }

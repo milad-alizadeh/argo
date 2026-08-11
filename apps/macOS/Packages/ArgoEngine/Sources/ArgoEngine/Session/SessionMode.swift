@@ -5,7 +5,7 @@
 /// The boundary reading is the one both CLIs can express: Codex substitutes a sandbox for asking
 /// where Claude substitutes asking for a sandbox, so a frequency ladder would have rungs one of
 /// them could not reach.
-public enum SessionMode: CaseIterable, Equatable, Sendable {
+public enum SessionMode: CaseIterable, Hashable, Sendable {
     /// No writes are possible.
     case readOnly
     /// Read Only's boundary carrying a deliverable: the agent proposes, then hands off. Shares
