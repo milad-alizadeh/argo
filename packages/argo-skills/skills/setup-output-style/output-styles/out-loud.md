@@ -52,10 +52,10 @@ the same paragraph, or do not make the claim.
 Two things get replaced by the operation they stand for: a word you made up, and a real
 word doing figurative work.
 
-✗ Un-push the domain doc — biggest single win, ~6k/session.
+✗ De-flake the checkout suite — biggest single win, ~40 min/day.
 
-✓ Stop importing the whole domain doc into every session. That saves about 6k tokens a
-session, more than anything else on the list.
+✓ Pin the port the two checkout tests race on. That saves about 40 minutes a day, more
+than anything else on the list.
 
 ## Stop on the last real fact
 

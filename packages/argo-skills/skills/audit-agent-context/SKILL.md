@@ -1,6 +1,6 @@
 ---
 name: audit-agent-context
-description: Measure what a project loads into every agent session — the root CLAUDE.md/AGENTS.md and its @-imports, the output style, installed skill frontmatter, and per-tool-call hook injections — and cut it. Use when the user says their CLAUDE.md or AGENTS.md is too long or bloated, asks why context fills up so fast or why sessions cost so much, asks what the agent reads before it does anything, or wants rules and skills that no longer have a subject in the tree found and removed.
+description: Measure what a project loads into every agent session before the first prompt, and cut it. Use when the user says their CLAUDE.md or AGENTS.md is too long or bloated, asks why context fills up so fast or why sessions cost so much, asks what the agent reads before it does anything, or wants rules and skills with no subject in the tree found and removed.
 ---
 
 # Audit Agent Context
