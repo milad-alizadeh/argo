@@ -54,9 +54,9 @@ extension FeedMark {
         // Both halves, unshortened: `denied` alone would credit a decision nobody made, and
         // `expired` alone would leave what became of the tool call unsaid (#573).
         case .permissionExpired: "Permission expired — denied, unanswered"
-        // The only mark whose words are about the present tense, and the only one whose absence a
-        // moment later is not a bug (`FeedWorking`).
-        case .working: FeedWorking.words
+        // The one live mark, and the one with nothing to say: `FeedWorkingThread` draws it as an
+        // ion crossing the measure rather than as a caption let into a rule.
+        case .working: nil
         }
     }
 

@@ -10,7 +10,7 @@ import SwiftUI
 ///
 /// The kind's glyph shares the one mask, because a mask is taken from what is drawn.
 struct FeedCallLineIon: ViewModifier {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.argoReduceMotion) private var reduceMotion
 
     /// Whether this call is the one in flight.
     let isRunning: Bool

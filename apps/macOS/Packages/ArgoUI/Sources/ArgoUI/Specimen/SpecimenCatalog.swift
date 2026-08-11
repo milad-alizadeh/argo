@@ -68,6 +68,11 @@ public enum Specimen: String, CaseIterable, Sendable {
     case feedArriving
     case feedWorking
     case feedCallInFlight
+    // Both live states again with movement off. A loop has no shorter answer, so Reduce Motion
+    // gets a STILL rather than a faster pass — and a still is the only half of this design a PNG
+    // can judge on its own.
+    case feedWorkingStill
+    case feedCallInFlightStill
     case emptyFeed
     case startingSpawn
     case feedGallery

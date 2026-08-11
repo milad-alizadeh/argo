@@ -15,7 +15,18 @@ struct FeedMarkLine: View {
 
     let mark: FeedMark
 
+    /// `working` is drawn by `FeedWorkingThread` and never as a rule, because a rule with no words
+    /// let into it is already how this view says a Turn ENDED. Routed here rather than at the
+    /// caller, so every path to a mark takes the same fork.
     var body: some View {
+        switch mark {
+        case .working: FeedWorkingThread()
+        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .permissionExpired:
+            punctuation
+        }
+    }
+
+    private var punctuation: some View {
         HStack(spacing: ArgoSpacing.comfortable) {
             rule
             if let handoff = mark.handoff {
@@ -49,8 +60,8 @@ struct FeedMarkLine: View {
 
     /// The roster's attention amber for the one mark that reports an act rather than the shape of
     /// the record — the same colour the row wore while that prompt was waiting. Every other mark
-    /// stays tertiary, `working` included: `cockpit-status-vocabulary.md` carries the state on the
-    /// dot and keeps the word neutral, so the ellipsis is what marks this row as live.
+    /// stays tertiary: `cockpit-status-vocabulary.md` carries the state on the dot and keeps the
+    /// word neutral.
     private var wordInk: ArgoColor? {
         guard case .permissionExpired = mark else { return nil }
         return argo.color.state.attention

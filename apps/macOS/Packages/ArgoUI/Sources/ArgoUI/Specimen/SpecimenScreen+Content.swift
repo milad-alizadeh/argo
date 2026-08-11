@@ -145,6 +145,15 @@ extension SpecimenScreen {
             // dead ones at rest, and whether the failure keeps its ink while the ion crosses the
             // row above it. The pass itself only shows in motion.
             sessions(FeedProjection.previewPendingCallRows)
+        case .feedWorkingStill:
+            // The thread parked at the centre of the measure, dimmer. The judgement is whether it
+            // still reads as LIVE with nothing moving — and whether a bar across the column reads
+            // as work rather than as the hairline that means a Turn ended.
+            sessions(FeedProjection.previewWorkingRows).environment(\.argoStillsMotion, true)
+        case .feedCallInFlightStill:
+            // The same row with no pass over it: the rest ink alone has to separate the live
+            // command from the dead ones, which is the whole of what Reduce Motion leaves it.
+            sessions(FeedProjection.previewPendingCallRows).environment(\.argoStillsMotion, true)
         case .emptyFeed:
             sessions([])
         case .startingSpawn:

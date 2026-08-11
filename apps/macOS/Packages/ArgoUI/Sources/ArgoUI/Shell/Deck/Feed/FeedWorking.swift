@@ -23,12 +23,8 @@ enum FeedWorking {
         session?.status == .running
     }
 
-    /// `working` and never `thinking`: the record cannot tell reasoning from a command running, and
-    /// to whoever is watching the column they are the same wait. The ellipsis is the whole claim —
-    /// something is in flight, and the next thing here has not arrived.
-    static let words = "working…"
-
-    /// A sentence rather than the caption. A hairline with a word let into it is a shape, and the
-    /// ellipsis carrying the meaning is exactly what a screen reader drops.
+    /// A sentence, and the only words this state has left: `FeedWorkingThread` says it on screen
+    /// with an ion and no caption, and a shape crossing the column is exactly what a screen reader
+    /// gets nothing from.
     static let spoken = "The agent is working"
 }

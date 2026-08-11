@@ -110,6 +110,15 @@ public extension ArgoMotion {
     static let durationCeiling: TimeInterval = 0.5
 }
 
+extension EnvironmentValues {
+    /// Reduce Motion, forced on for a RENDER. `accessibilityReduceMotion` mirrors a system setting
+    /// and cannot be written, so a specimen of a still has no other way onto a screenshot.
+    ///
+    /// Read BESIDE the real setting and never instead of it — a surface that answered this alone
+    /// would ignore a reader who actually turned movement off.
+    @Entry var argoStillsMotion: Bool = false
+}
+
 public extension View {
     /// Animates `value` with a contract role, resolving Reduce Motion from the environment.
     func argoAnimation(_ motion: ArgoMotion, value: some Equatable) -> some View {
@@ -118,12 +127,21 @@ public extension View {
 }
 
 private struct ArgoAnimationModifier<Value: Equatable>: ViewModifier {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.argoReduceMotion) private var reduceMotion
 
     let motion: ArgoMotion
     let value: Value
 
     func body(content: Content) -> some View {
         content.animation(motion.resolved(reduceMotion: reduceMotion), value: value)
+    }
+}
+
+extension EnvironmentValues {
+    /// Whether movement is off — the reader's own setting, or a render asking for the still. The
+    /// one thing a surface reads, so neither answer can be honoured in one place and missed in
+    /// another.
+    var argoReduceMotion: Bool {
+        accessibilityReduceMotion || argoStillsMotion
     }
 }

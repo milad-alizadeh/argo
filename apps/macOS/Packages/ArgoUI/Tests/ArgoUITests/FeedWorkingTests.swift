@@ -63,14 +63,14 @@ struct FeedWorkingTests {
         #expect(!FeedWorking.isWorking(nil))
     }
 
-    /// `working`, never `thinking`: the record cannot tell reasoning from a command running.
+    /// The thread says it now, and it says it with no words at all. A caption here would sit in a
+    /// hairline, and a hairline with nothing in it already means a Turn ENDED.
     @Test
-    func `the words name the wait and never what the agent is doing in it`() {
-        #expect(FeedMark.working.words == "working…")
+    func `the state has no words on screen`() {
+        #expect(FeedMark.working.words == nil)
     }
 
-    /// A caption let into a hairline is a shape, and the ellipsis carrying the whole meaning is
-    /// exactly what a screen reader drops.
+    /// Taking the word off the screen must not take it off the screen reader.
     @Test
     func `the state is spoken as a sentence rather than as its caption`() {
         #expect(FeedMark.working.spoken == "The agent is working")
@@ -96,6 +96,30 @@ struct FeedWorkingTests {
         #expect(rows.allSatisfy { $0.content != .mark(.working) })
     }
 
+    /// The two live states are EXCLUSIVE, driven through the swap in both directions. Drawing both
+    /// would claim two waits where the record has one, and drawing neither would lose the Turn: at
+    /// every step of a Turn that runs a command, gets its answer, and runs another, exactly one of
+    /// the thread and a lit row is up.
+    @Test
+    func `a running Turn draws the thread or a lit call and never both`() {
+        let asked = TranscriptEvent.toolCall(ToolCall(
+            id: "call-1", name: "shell", kind: .execute, target: "swift test", atMs: nil,
+        ))
+        let answered = TranscriptEvent.toolCallOutcome(ToolCallOutcome(
+            id: "call-1", status: .completed, result: nil, endedAtMs: nil, usage: nil,
+        ))
+        let again = TranscriptEvent.toolCall(ToolCall(
+            id: "call-2", name: "shell", kind: .execute, target: "swift build", atMs: nil,
+        ))
+
+        // Thinking, then a call in flight, then the answer, then the next call.
+        for step in [[], [asked], [asked, answered], [asked, answered, again]] {
+            let rows = FeedProjection.rows(from: Self.transcript + step, working: true)
+            let at = "\(step.count) event(s) into the Turn"
+            #expect(rows.hasThread != rows.hasCallInFlight, "both or neither, \(at)")
+        }
+    }
+
     private static let spend = Usage(
         inputTokens: 12,
         outputTokens: 34,
@@ -108,4 +132,19 @@ struct FeedWorkingTests {
         .message(markdown: "Running that now."),
         .usage(spend),
     ]
+}
+
+private extension [FeedRow] {
+    /// The thread's row — the whole-measure signal that stands when nothing is pending.
+    var hasThread: Bool {
+        contains { $0.content == .mark(.working) }
+    }
+
+    /// A row the ion crosses, which is any call the record has not answered yet.
+    var hasCallInFlight: Bool {
+        contains { row in
+            guard case let .call(call) = row.content else { return false }
+            return call.ending == .pending
+        }
+    }
 }
