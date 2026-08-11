@@ -20,10 +20,10 @@ public extension Hub {
         else { throw SessionResumeError.noChainToResume }
         try await spawnSession(cli: cli, seed: SessionSeed(
             cwd: cwd,
-            // The rung the record last stated, and the same baseline a New Session takes where it
-            // stated none (ADR-0025). Nothing is recorded as a set: Argo is matching what it read
+            // The rung the record last stated, and the rung a New Session takes where it stated
+            // none (ADR-0025, #629). Nothing is recorded as a set: Argo is matching what it read
             // rather than moving the Session.
-            mode: session.mode.rung ?? .code,
+            mode: session.mode.rung,
             resuming: resumeID,
         ))
     }

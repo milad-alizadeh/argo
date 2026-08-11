@@ -225,7 +225,8 @@ extension SpecimenScreen {
              .composerRunning, .composerStopped,
              .composerRefusal, .flatComposer, .composerStanding, .composerAttached,
              .composerPasted, .composerDragOver, .composerNoAttach,
-             .composerModeNearly, .composerModeUnknown, .composerExternal, .composerOrphaned,
+             .composerModeNearly, .composerModeUnknown, .composerModeRefused,
+             .composerExternal, .composerOrphaned,
              .composerEnded, .permission,
              .permissionStanding, .permissionEdit, .flatPermission:
             vessel

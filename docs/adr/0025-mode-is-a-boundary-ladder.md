@@ -114,11 +114,46 @@ adapter works.
 - **`{"type":"mode","mode":"normal"}` sits beside it and is a different axis.** Never read it as
   the stance.
 - **`--permission-mode acceptEdits` was honoured end to end**: the footer read `accept edits` and
-  the transcript wrote `acceptEdits`. It is the only rung driven the whole way; `plan` and `auto`
-  are exercised as *values the flag accepts* and as positions on the ring, not as spawns of their
-  own.
+  the transcript wrote `acceptEdits`. It was the only rung driven the whole way at the time; the
+  section below drives the rest.
 - **Nothing is written until the first prompt**, so a fresh spawn's rung is DIRECT from Argo's own
   record alone.
+
+## Verification · all four rungs, 2.1.228, 2026-08-12 (#629)
+
+Every rung is now driven by a **test** rather than by hand — `LiveModeTests`, on the live fixture
+the permission suite already uses: a real PTY, a real Hub, a temp Project, folder trust handled.
+Each claim is made against the CLI's own record or against the filesystem, never against the
+argument Argo sent, because an adapter that agrees with itself proves nothing.
+
+| Rung | Flag | What the live run established |
+|---|---|---|
+| **Auto** | `auto` | Spawned on it, the transcript reports `auto`; a gated `Bash` call runs, the file appears, and **no Permission is ever raised**. This is #629's reported bug and the test that closes it. |
+| **Code** | `acceptEdits` | Spawned on it, a gated `Bash` call still raises a Permission — the rung accepts edits, not commands. Unchanged from 2.1.227. |
+| **Read Only** | `plan` | Spawned on it, the agent does not write and the file it was asked for is never created. |
+| **Plan** | `plan` | The same value and the same observed behaviour as Read Only. Its intent is unobservable by construction, which is what this ADR already says. |
+
+So the `≈` rules stand against values the CLI still accepts: `manual` and `default` both read as
+`Read Only ≈`, `bypassPermissions` as `Auto ≈`, and `dontAsk` as `unknown`. Nothing in the
+2.1.227 → 2.1.228 step moved any of them.
+
+**`--permission-mode` is honoured for every rung. `shift+tab` no longer moves a running Session.**
+Driven twice on 2.1.228, a Session set from `Code` to `Auto` while idle stayed on `acceptEdits`:
+the next gated call raised a Permission and the file was never written. The keystroke Argo sends
+is unchanged and 2.1.227 accepted it, so this is a change in the CLI rather than in Argo.
+
+**Argo degrades rather than pretends, and the mechanism is #653's to find.** The rung is still
+asked for — it costs nothing and it worked one version ago. When the record contradicts it the
+reading snaps back to the rung the CLI reports and the composer says which rung did not take. The
+live test asserts that degrade and marks the change itself a known issue, so the day a
+mid-Session change lands again the suite says so rather than quietly starting to pass.
+
+**A set outranks the record until a record is written AFTER it — counted, not compared.** The
+earlier rule compared the CLI value seen when the rung was set, which cannot tell a record that
+has not caught up from one that has spoken and repeated the old value. That is precisely the case
+a CLI ignoring the change produces, so Argo went on drawing a rung nobody was standing on. Counting
+the Session's stance records makes silence and disagreement two different facts, which is what
+lets the snap-back exist at all.
 
 **A rung cannot be changed while a Turn is in flight.** The ring is walked, not written, so a
 change passes through rungs nobody asked for — `Auto` among them. Idle, that transit is nothing.
@@ -128,10 +163,14 @@ the ladder's own rule read at the one moment the transit is observable.
 
 **A rung Argo set outranks the record until the record moves.** `claude` writes its stance at Turn
 boundaries, so the last record can predate the last change. A set is Argo's own act and therefore
-DIRECT; it is kept with the value the record carried when it was made, and the moment the record
-carries something else the record is what is true. Without it a second change would count its
-distance from a stale rung and walk too far — landing the Session somewhere nobody asked for, which
-is the same failure `modeBusy` prevents.
+DIRECT; it is kept with how many stance records the Session had written when it was made, and the
+moment one is written after that the record is what is true. Without it a second change would count
+its distance from a stale rung and walk too far — landing the Session somewhere nobody asked for,
+which is the same failure `modeBusy` prevents.
+
+*(Amended by #629: the set was originally kept with the record's VALUE. See the 2.1.228
+verification above for why counting is the only version of this rule that can notice a change the
+CLI ignored.)*
 
 ## Consequences
 

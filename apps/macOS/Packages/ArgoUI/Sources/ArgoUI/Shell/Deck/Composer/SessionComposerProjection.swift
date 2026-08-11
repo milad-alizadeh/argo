@@ -23,6 +23,10 @@ enum SessionComposerProjection {
         /// The Session's standing stance as Argo can state it (#545, ADR-0025). The whole reading,
         /// because the `≈` and the CLI's own word are both things the control says.
         let mode: SessionModeReading
+        /// The rung the user picked that the CLI then contradicted (#629). The seam says so, and
+        /// `mode` above is already back on the real rung — a picker showing a rung nobody is
+        /// standing on would be a false DIRECT.
+        let modeDidNotTake: SessionMode?
         /// Whether this Session's adapter takes attachments (#540). It comes IN rather than being
         /// derived from anything observed: a capability is a thing the adapter declares about
         /// itself, and the Hub's presentation has never heard of the drive port. `false` draws no
@@ -50,6 +54,7 @@ enum SessionComposerProjection {
             standingAllows: StandingAllowProjection.allows(for: session),
             isRunning: isRunning,
             mode: session.mode,
+            modeDidNotTake: session.modeDidNotTake,
             canAttach: canAttach,
         )
     }

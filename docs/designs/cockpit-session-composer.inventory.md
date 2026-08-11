@@ -223,6 +223,21 @@ on, so the value comes off the Session and the change goes out as a closure — 
 because the Mode pill is the group's LEADING item — the widest word to date moves its own left
 edge and nothing else. Specimens `composerModeNearly` and `composerModeUnknown`.
 
+## Amended — #629 (a rung that did not land)
+
+No new component. The picker gains no state and the seam gains no case: a rung the CLI
+contradicted is a **notice**, which is the case the seam already has for something Argo did to the
+composer that the reader did not.
+
+`ComposerSeamNote.note` takes one more input, `modeDidNotTake`, and ranks it under a refusal and
+over the draft's own notice. The precedence is where it already lived, so the whole order stays a
+claim one test can make rather than a `private var` on a View.
+
+The pair is the point and the specimen is drawn as a pair: `composerModeRefused` shows the picker
+back on the rung the record reports **and** the line above it naming the rung that was asked for.
+A control that moved back on its own with no sentence beside it reads as a bug, which is the one
+thing this state must not look like.
+
 ## View-model, not components
 
 - `SessionComposerProjection` — the pure `derive(facts)`: presence (managed and not ended, else

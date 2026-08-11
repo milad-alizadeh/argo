@@ -136,7 +136,11 @@ struct SessionComposer: View {
 
     /// Which of the seam's three sentences is up. The order is `ComposerSeamNote`'s.
     private var seamNote: ComposerSeamNote? {
-        ComposerSeamNote.note(for: draft, enteredAtMs: enteredAtMs)
+        ComposerSeamNote.note(
+            for: draft,
+            enteredAtMs: enteredAtMs,
+            modeDidNotTake: composer.modeDidNotTake,
+        )
     }
 
     /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field

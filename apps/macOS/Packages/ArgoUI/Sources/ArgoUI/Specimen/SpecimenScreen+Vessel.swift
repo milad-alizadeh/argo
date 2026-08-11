@@ -90,6 +90,11 @@ extension SpecimenScreen {
             // where a rung would, so what has to be true is that the footer still reads as a
             // footer with a control on it rather than one that failed to load a value.
             ComposerSpecimen(composer: ComposerSpecimen.unknownMode)
+        case .composerModeRefused:
+            // A rung the CLI did not take (#629). The picker is back on the rung the record
+            // reports, and the seam says which one was asked for. What has to be true is that the
+            // pair reads as ONE correction rather than as a control that lost the click.
+            ComposerSpecimen(composer: ComposerSpecimen.modeRefused)
         case .composerExternal:
             // A Session Argo never spawned: no vessel at all, and one line where it would have been
             // (#546, design decision 7). What the render has to settle is that the deck reads as

@@ -73,6 +73,11 @@ public final class Hub {
     /// did, under one answer (#634).
     let handoff: HandoffLedger
 
+    /// The rung a spawn opens on where its seed names none (#629). Read at the spawn rather than
+    /// held as a value: another window may have picked since this one launched, and the file is the
+    /// only place the two of them meet.
+    @ObservationIgnored let modeStore: SessionModeStore
+
     @ObservationIgnored let spawnServices: SpawnServices
     @ObservationIgnored var companion: CompanionChannel?
     @ObservationIgnored var permissions: PermissionChannel?
@@ -125,6 +130,7 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
+        self.modeStore = SessionModeStore(fileURL: spawnServices.modeFileURL)
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has
         // one.

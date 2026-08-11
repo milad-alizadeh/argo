@@ -27,6 +27,9 @@ public extension Hub {
               isDirectory.boolValue
         else { throw AgentSpawnError.unreachableWorkingDirectory(path: cwd) }
 
+        // The seed's rung, or the one the user last picked (#629) — resolved once, so the argv the
+        // CLI is launched with and the rung the row publishes cannot be two different answers.
+        let mode = seed.mode ?? modeStore.lastPicked()
         let claim = seed.resuming.map { ownership.claim(cwd: cwd, resuming: $0) }
             ?? ownership.claim(cwd: cwd)
         do {
@@ -36,7 +39,7 @@ public extension Hub {
                 cwd: cwd,
                 companion: invitation,
             )
-            .adding(cli.arguments(standingOn: seed.mode))
+            .adding(cli.arguments(standingOn: mode))
             .adding(seed.resuming.map(cli.arguments(resuming:)) ?? [])
             let process = try host.start(
                 seed.opening.map(launch.opening) ?? launch,
@@ -51,7 +54,7 @@ public extension Hub {
                     cli: cli,
                     cwd: cwd,
                     spawnedAtMs: Date().epochMs,
-                    mode: seed.mode,
+                    mode: mode,
                 )
             }
             return claim

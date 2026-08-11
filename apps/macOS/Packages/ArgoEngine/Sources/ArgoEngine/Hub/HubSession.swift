@@ -50,6 +50,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public internal(set) var modeSet: SessionModeSet?
     /// The CLI's own word for the stance, latest reading and nothing yet where no record said one.
     private(set) var observedMode: String?
+    /// How many stance records the Session has written. A rung Argo set stands until this moves
+    /// past what it was when the set was made — see `SessionModeSet` for why it is counted rather
+    /// than compared.
+    private(set) var observedModeCount = 0
     public private(set) var headLeafUUID: String?
     /// Everything the transcript said, in the order it said it. The facts above are a lossy fold
     /// over this stream, which is why it is retained whole for the surfaces that read it.
@@ -170,7 +174,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case let .branch(observedBranch):
             branch = Self.branchName(observedBranch)
         case let .mode(cli):
-            observedMode = cli
+            observe(mode: cli)
         case let .prompt(text, atMs):
             name.observe(prompt: text)
             turnOpen = true
@@ -208,6 +212,13 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         case .unreadableLine:
             break
         }
+    }
+
+    /// The value and the count move together, always: a rung Argo set stands until the count moves
+    /// past what it was, so a value written without one would freeze the reading on the set.
+    private mutating func observe(mode cli: String) {
+        observedMode = cli
+        observedModeCount += 1
     }
 
     /// A delegating call's result carries the subagent's whole spend, so it counts twice: the

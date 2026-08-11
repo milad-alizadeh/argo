@@ -15,6 +15,10 @@ public struct SpawnServices {
     /// nothing, for the reason `chainFileURL` does — and then every Session grades `external`
     /// after a relaunch, which is the reading Argo had before the file existed.
     public let ownershipFileURL: URL?
+    /// Where the rung the user last picked is remembered (#629). `nil` remembers nothing, for the
+    /// reason `chainFileURL` does — and then every New Session opens on `Code`, which is the
+    /// baseline Argo spawned on before this file existed.
+    public let modeFileURL: URL?
     /// How long the permission gate waits for a person before refusing the call itself (#573).
     /// Live everywhere but a test that has to reach the far end of a day-long wait.
     public let permissionPatience: PermissionPatience
@@ -25,6 +29,7 @@ public struct SpawnServices {
         companionRoot: URL = CompanionChannel.defaultRoot,
         chainFileURL: URL? = nil,
         ownershipFileURL: URL? = nil,
+        modeFileURL: URL? = nil,
         permissionPatience: PermissionPatience = .default,
     ) {
         self.host = host
@@ -32,6 +37,7 @@ public struct SpawnServices {
         self.companionRoot = companionRoot
         self.chainFileURL = chainFileURL
         self.ownershipFileURL = ownershipFileURL
+        self.modeFileURL = modeFileURL
         self.permissionPatience = permissionPatience
     }
 

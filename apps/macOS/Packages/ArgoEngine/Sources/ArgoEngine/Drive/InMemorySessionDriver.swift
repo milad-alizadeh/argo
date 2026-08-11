@@ -16,6 +16,9 @@ public final class InMemorySessionDriver: SessionDriver {
     /// the Turn NAMED sets these; left empty, a path is invented from the id, which is enough for
     /// the far commoner claim that the paths reached the Turn at all.
     public var attachmentPaths: [UUID: URL] = [:]
+    /// Run in the middle of `setMode`, so a test can move the world the way a real walk's gaps let
+    /// it move — the ring is walked a keystroke at a time now, not in one write (#653).
+    public var duringSetMode: (() -> Void)?
 
     private var turns: [String: [String]] = [:]
     private var attachments: [String: [SessionAttachment]] = [:]
@@ -73,6 +76,7 @@ public final class InMemorySessionDriver: SessionDriver {
         if let refusal {
             throw refusal
         }
+        duringSetMode?()
         modes[sessionID, default: []].append(mode)
     }
 

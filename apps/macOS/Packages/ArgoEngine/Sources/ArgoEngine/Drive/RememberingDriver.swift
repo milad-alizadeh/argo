@@ -6,11 +6,20 @@ import Foundation
 @MainActor
 struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     private let base: Base
+    /// How many stance records the Session has written, read BEFORE the walk: the ring is walked a
+    /// keystroke at a time with the roster live in between, so a count read afterwards could
+    /// already include a record the walk itself provoked (#653).
+    private let records: (String) -> Int
     /// Handed the rung only once it landed. A refusal filed as a set is the same stale count.
-    private let remember: (SessionMode, String) -> Void
+    private let remember: (SessionModeSet, String) -> Void
 
-    init(base: Base, remember: @escaping (SessionMode, String) -> Void) {
+    init(
+        base: Base,
+        records: @escaping (String) -> Int,
+        remember: @escaping (SessionModeSet, String) -> Void,
+    ) {
         self.base = base
+        self.records = records
         self.remember = remember
     }
 
@@ -39,8 +48,9 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
     }
 
     func setMode(_ mode: SessionMode, for sessionID: String) throws {
+        let before = records(sessionID)
         try base.setMode(mode, for: sessionID)
-        remember(mode, sessionID)
+        remember(SessionModeSet(mode: mode, recordsWhenSet: before), sessionID)
     }
 
     func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
