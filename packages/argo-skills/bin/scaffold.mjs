@@ -27,7 +27,6 @@ import {
   SKILL_DIRS,
   snapshotOwnedSkills,
 } from './protect-owned-skills.mjs'
-import { contradictoryNames, describeRetired, retireSkills } from './retire-skills.mjs'
 import { groupBySource, LOCK_PATH } from './skills-lock.mjs'
 
 const STARTER_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -213,14 +212,6 @@ try {
 }
 if (!manifest.skills) fail(`${LOCK_PATH} has no "skills" map — it is not a skills lock.`)
 
-const retired = manifest.retired ?? []
-const contradictory = contradictoryNames(manifest)
-if (contradictory.length) {
-  fail(
-    `${LOCK_PATH} lists these as both installed and retired: ${contradictory.join(', ')}\n  Remove them from one list.`,
-  )
-}
-
 const selection = parseSelection(argv)
 const bySource = groupBySource(manifest, selectedNames(manifest, selection))
 const total = [...bySource.values()].reduce((count, names) => count + names.length, 0)
@@ -231,8 +222,7 @@ console.log(`manifest: ${LOCK_PATH}\ninstalling into: ${process.cwd()}\n`)
 
 // Taken before the first source installs: `skills add` replaces a colliding skill directory
 // with a symlink into its own payload, deleting whatever the repo had there.
-// Read-only, so a dry run takes it too — retirement reports against it, and a dry run that
-// reported deleting the consumer's own skill would be lying about the run it previews.
+// Read-only, so a dry run takes it too.
 const projectRoot = gitRoot(process.cwd())
 const ownedSkills = snapshotOwnedSkills(projectRoot)
 
@@ -247,16 +237,6 @@ for (const [source, names] of bySource) {
 
 const restored = restoreOwnedSkills(projectRoot, ownedSkills)
 if (restored.length) console.log(describeRestore(restored))
-
-// After the adds, so a source that still ships a retired name cannot leave it behind.
-// `ownedSkills` is the same snapshot the restore used: a retired name the consumer tracks in
-// git is their skill, not a leftover of ours, and deleting it is unrecoverable.
-const retirement = describeRetired(
-  retireSkills(projectRoot, retired, { dryRun, owned: ownedSkills }),
-  retired.length,
-  dryRun,
-)
-if (retirement) console.log(retirement)
 
 if (wantHooks) {
   try {
