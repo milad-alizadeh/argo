@@ -45,6 +45,25 @@ public enum ArgoComposerVessel {
     /// heights gives every line a different measure, and a label beside them no baseline to take.
     public static let chipHeight: CGFloat = 20
 
+    /// The `×` on an attachment's chip — the study's 18pt (#540). A target and not a mark: the
+    /// glyph inside it rides the icon scale, and this is the box a pointer has to find. Larger than
+    /// the chip it sits in is impossible and smaller than a finger's worth is useless, which is the
+    /// whole range the number lives in.
+    public static let chipDismissDiameter: CGFloat = 18
+
+    /// The picture on an attachment's chip — the study's "20pt leading thumbnail (images)" (#540).
+    public static let attachmentThumbnail: CGFloat = 20
+
+    /// How tall an attachment's chip stands: the thumbnail with `ArgoSpacing.tight` above and below
+    /// it, which is the study's 28 and the row its token reconciliation snapped `3px` to.
+    ///
+    /// Derived rather than restated, because the derivation is the whole reason for the number — a
+    /// chip seated at the thumbnail's own height (which this was, until `/pixel-review` measured
+    /// the approved render) draws a picture flush to three of its edges and reads as an image that
+    /// overflowed its container. Deliberately NOT `chipHeight`: a standing allow holds a word and
+    /// this holds a picture, and #572's tray was approved at 20.
+    public static let attachmentChipHeight = attachmentThumbnail + ArgoSpacing.tight * 2
+
     /// How wide the NAME on such a chip may get before it truncates. A ceiling and not a width:
     /// `Bash` takes what it needs. It exists because an MCP tool is named
     /// `mcp__server__the_verb`, and one of those unchecked is a chip as wide as the vessel.

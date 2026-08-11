@@ -92,6 +92,10 @@ public enum Specimen: String, CaseIterable, Sendable {
     case composerRefusal
     case flatComposer
     case composerStanding
+    case composerAttached
+    case composerPasted
+    case composerDragOver
+    case composerNoAttach
     case permission
     case permissionEdit
     case permissionStanding

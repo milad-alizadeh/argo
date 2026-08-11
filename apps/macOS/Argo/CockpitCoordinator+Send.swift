@@ -6,8 +6,24 @@ import ArgoEngine
 extension CockpitCoordinator {
     /// One Turn through the drive port. A refusal is thrown back rather than alerted: the words
     /// are still in the field, and the composer's own seam is where the reason belongs (#538).
-    func send(_ text: String, to sessionID: String) throws {
-        try hub.driver.send(text, to: sessionID)
+    /// The attachments go first and the Turn NAMES what they became (#540) — one Turn carrying the
+    /// message and the paths, so the agent's own `Read` is what pulls the bytes in. Both halves are
+    /// on the same throwing path: a write that failed must not be followed by a message pointing at
+    /// a file that is not there.
+    func send(_ text: String, attaching attachments: [SessionAttachment], to sessionID: String)
+        throws {
+        let paths = try hub.driver.attach(attachments, to: sessionID)
+        try hub.driver.send(SessionTurn.text(text, attaching: paths), to: sessionID)
+    }
+
+    /// What the composer asks before it draws the `+`. Off the same adapter the send goes through,
+    /// so the control and the refusal cannot disagree about what a Session can take.
+    ///
+    /// Not keyed by Session, because the Hub has ONE adapter — `AgentCLI` has one case, and the
+    /// day a second CLI can be spawned this becomes a read of the Session's own `cli` in the same
+    /// place `Hub.driver` becomes a choice, rather than in two.
+    var canAttach: Bool {
+        hub.driver.canAttach
     }
 
     /// One named Permission answered through the same port. A refusal is dropped rather than

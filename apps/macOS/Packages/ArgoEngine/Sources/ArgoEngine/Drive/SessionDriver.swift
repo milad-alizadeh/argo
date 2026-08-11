@@ -33,6 +33,25 @@ public protocol SessionDriver {
         for sessionID: String,
     ) throws
 
+    /// Whether this adapter takes attachments at all (#540).
+    ///
+    /// **Declared, never discovered.** The composer draws no `+` for an adapter that answers
+    /// `false` and refuses a drop with the reason, rather than accepting one it would then fail to
+    /// deliver — absent, never disabled and never silently dropped (design decision 9). A
+    /// capability decides whether an affordance EXISTS, which is a thing a surface has to know
+    /// before any act rather than after one.
+    var canAttach: Bool { get }
+
+    /// Put the user's attachments where this Session's agent can read them, and answer their
+    /// absolute paths — in the order they were given, because that is the order the Turn names
+    /// them in.
+    ///
+    /// It does not send. The Turn that NAMES these paths is `send`'s, so a message and the files
+    /// that came with it arrive as one Turn rather than as two things the agent has to associate —
+    /// and Argo never reads the file itself, so the bytes enter the transcript at the point the
+    /// agent's own `Read` actually looked.
+    func attach(_ attachments: [SessionAttachment], to sessionID: String) throws -> [URL]
+
     /// Take back one standing allow (#572). The way OUT of `allowAlways`, and on the port for the
     /// same reason `decide` is: it reaches into the gate Argo owns, and a grant with no way back is
     /// not a decision a person can make carefully.
@@ -48,6 +67,22 @@ public protocol SessionDriver {
 public enum SessionTurn {
     public static func isSendable(_ text: String) -> Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// The one Turn a message with attachments becomes: the words, then each path on its own line.
+    ///
+    /// The paths are INJECTED and the files are not read — the agent's own `Read` pulls them in,
+    /// which is what puts the bytes in the transcript at the point it actually looked (#540). On
+    /// the port beside `isSendable` for the same reason that is: the composer's sendability and the
+    /// text that finally goes must not be able to disagree about what an attachment adds.
+    ///
+    /// A message of nothing but attachments is a Turn — the paths are the whole of what was said —
+    /// which is why the empty case answers the paths rather than a blank line above them.
+    public static func text(_ message: String, attaching paths: [URL]) -> String {
+        let words = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !paths.isEmpty else { return message }
+        let named = paths.map(\.path).joined(separator: "\n")
+        return words.isEmpty ? named : "\(words)\n\n\(named)"
     }
 }
 
@@ -70,6 +105,15 @@ public enum SessionDriveError: Error, Equatable {
     /// Permission is involved on that path, and a refusal that names the wrong thing is worse
     /// than one that says nothing.
     case noSuchGrant
+    /// Something was dropped on a Session whose adapter takes no attachments (#540). A refusal
+    /// with a reason rather than a drop that lands nowhere: the affordance is absent, so the only
+    /// way to reach this is a gesture the platform allows over any window, and a gesture that
+    /// appears to work and does nothing is the one outcome design decision 9 rules out.
+    case cannotAttach
+    /// An attachment could not be written down, so no path could be named. The message stays where
+    /// it was typed and the chips stay where they were, for the reason a refused send does: what
+    /// failed is Argo's own act, and nothing about the Turn has happened yet.
+    case attachmentUnwritable
 
     /// What the seam says. Verbatim, and short enough to sit on one line above the field.
     public var detail: String {
@@ -78,6 +122,10 @@ public enum SessionDriveError: Error, Equatable {
         case .nothingToSend: "Nothing to send"
         case .nothingPending: "No Permission is waiting on this Session"
         case .noSuchGrant: "This Session holds no standing allow for that tool"
+        case .cannotAttach:
+            "This adapter takes no attachments — dropped files are refused rather than "
+                + "silently dropped."
+        case .attachmentUnwritable: "Argo could not write that attachment down — nothing was sent"
         }
     }
 }

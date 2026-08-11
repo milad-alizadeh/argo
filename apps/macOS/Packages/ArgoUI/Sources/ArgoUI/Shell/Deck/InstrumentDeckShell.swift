@@ -47,7 +47,7 @@ struct InstrumentDeckShell: View {
     var composer: SessionComposerProjection.Composer?
     /// One Turn to the shown Session. Inert by default, so a specimen renders the vessel with
     /// nothing behind it.
-    var send: (String) throws -> Void = { _ in }
+    var send: ComposerSend = { _, _ in }
     /// The Permission the shown Session is blocked on, already projected — it takes the
     /// composer's slot while present (design decision 6).
     var prompt: PermissionPromptProjection.Prompt?

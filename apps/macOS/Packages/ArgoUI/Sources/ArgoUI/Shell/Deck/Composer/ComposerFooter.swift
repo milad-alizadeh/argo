@@ -1,11 +1,13 @@
+import ArgoEngine
 import SwiftUI
 
-/// The control row under the field: the stance, what the Session runs at, and send.
+/// The control row under the field: attach, the stance, what the Session runs at, and send.
 ///
-/// There is no attach control yet, deliberately — capability is declared, not discovered (design
-/// decision 9), and no adapter takes an attachment until #540. The run facts are words rather
-/// than a control for the same reason: #558 is where Model and Effort become choices, and a
-/// popover that opened onto nothing would be a promise this footer cannot keep.
+/// The `+` is ABSENT rather than disabled for an adapter that takes no attachments — capability is
+/// declared, not discovered (design decision 9), and a greyed control gives no reason. The run
+/// facts are words rather than a control for a different reason: #558 is where Model and Effort
+/// become choices, and a popover that opened onto nothing would be a promise this footer cannot
+/// keep.
 struct ComposerFooter: View {
     @Environment(\.argo) private var argo
 
@@ -13,9 +15,15 @@ struct ComposerFooter: View {
     let facts: String?
     let isSendable: Bool
     let send: () -> Void
+    /// What the `+` does, and `nil` for a Session whose adapter declares no attachments — which is
+    /// what takes the control off the row entirely.
+    var attach: (([SessionAttachment]) -> Void)?
 
     var body: some View {
         HStack(spacing: ArgoSpacing.base) {
+            if let attach {
+                AttachButton(attach: attach)
+            }
             Spacer()
             ModePicker(mode: $mode)
             if let facts {
@@ -30,15 +38,35 @@ struct ComposerFooter: View {
 }
 
 #Preview("Composer footer") {
-    ComposerFooter(mode: .constant(.code), facts: "Opus 5", isSendable: true, send: {})
-        .padding(ArgoSpacing.section)
-        .frame(width: 640)
-        .argoDeckSurface()
-        .argoAppearance()
+    ComposerFooter(
+        mode: .constant(.code),
+        facts: "Opus 5",
+        isSendable: true,
+        send: {},
+        attach: { _ in },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
 }
 
 #Preview("Composer footer — a Session whose record named no model") {
-    ComposerFooter(mode: .constant(.code), facts: nil, isSendable: false, send: {})
+    ComposerFooter(
+        mode: .constant(.code),
+        facts: nil,
+        isSendable: false,
+        send: {},
+        attach: { _ in },
+    )
+    .padding(ArgoSpacing.section)
+    .frame(width: 640)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+#Preview("Composer footer — an adapter that takes no attachments") {
+    ComposerFooter(mode: .constant(.code), facts: "Opus 5", isSendable: true, send: {})
         .padding(ArgoSpacing.section)
         .frame(width: 640)
         .argoDeckSurface()

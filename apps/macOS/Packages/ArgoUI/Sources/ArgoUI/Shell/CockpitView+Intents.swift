@@ -11,10 +11,10 @@ import SwiftUI
 extension CockpitView {
     /// The composer's one intent, bound to the Session the composer addresses — inert when there
     /// is no composer, which is also when there is no field to type into.
-    var send: (String) throws -> Void {
-        guard let composer else { return { _ in } }
+    var send: ComposerSend {
+        guard let composer else { return { _, _ in } }
         let sessionID = composer.sessionID
-        return { try actions.sendTurn(sessionID, $0) }
+        return { try actions.sendTurn(sessionID, $0, $1) }
     }
 
     /// What the selected Session's composer is holding, out of the store that outlives the deck.

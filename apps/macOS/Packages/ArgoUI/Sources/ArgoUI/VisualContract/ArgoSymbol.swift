@@ -111,6 +111,22 @@ public enum ArgoSymbol {
     /// hint is one instruction three times.
     public static let send = "arrow.up"
 
+    /// The composer's attach control (#540). A `+` and deliberately not a paperclip: what it opens
+    /// is "give the agent something", which is the same act as a drop and a paste, and a paperclip
+    /// would name only one of the three.
+    ///
+    /// The same mark the drawer spends on registering a Project, which the `newSession` note above
+    /// argues against — and earned here, because these two are the same verb at two altitudes
+    /// rather than two different new things: both add one item to the list beside them.
+    public static let attach = "plus"
+
+    /// What an attachment's chip shows when it is not a picture, or when the bytes yield no
+    /// thumbnail. Two marks only — a picture and everything else — because the chip already carries
+    /// the file's name, and a mark per file type would be a second, worse spelling of the
+    /// extension.
+    public static let attachedImage = "photo"
+    public static let attachedFile = "doc"
+
     /// A send the Session refused — on the seam, beside the reason. A triangle is earned here
     /// where the feed's rows never take one: this failure is Argo's to report about its own act,
     /// not a reading of the agent's work.

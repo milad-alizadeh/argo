@@ -251,6 +251,18 @@ public extension ArgoPalette {
         public func rim(_ role: ArgoColor) -> ArgoColor {
             role.opacity(0.5)
         }
+
+        /// The same role laid over a WHOLE surface while it invites something — the accent the
+        /// composer takes with a file held over it (#540).
+        ///
+        /// Weaker than `muted`, and the third rung of the same family rather than a borrow from
+        /// `DiffRoles.wash`: a chip's ground carries one word sized for it, and this one has to sit
+        /// under a field, a picker and two controls that all stay readable through it. Measured
+        /// against the approved render, `muted` at this size read as a panel laid over the vessel
+        /// rather than as the vessel lit up.
+        public func wash(_ role: ArgoColor) -> ArgoColor {
+            role.opacity(0.1)
+        }
     }
 
     /// What a change did to a file, as a pair of inks.
