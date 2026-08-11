@@ -41,13 +41,18 @@ public struct URLSessionTransport: HTTPTransport {
         if let token = request.bearerToken {
             urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        if let form = request.form {
-            urlRequest.httpMethod = "POST"
+        guard let body = request.body else { return urlRequest }
+        urlRequest.httpMethod = "POST"
+        switch body {
+        case let .form(fields):
             urlRequest.setValue(
                 "application/x-www-form-urlencoded",
                 forHTTPHeaderField: "Content-Type",
             )
-            urlRequest.httpBody = Data(Self.encoded(form).utf8)
+            urlRequest.httpBody = Data(Self.encoded(fields).utf8)
+        case let .json(data):
+            urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            urlRequest.httpBody = data
         }
         return urlRequest
     }

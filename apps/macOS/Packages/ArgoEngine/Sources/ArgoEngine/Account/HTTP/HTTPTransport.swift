@@ -1,18 +1,32 @@
 import Foundation
 
+/// What a provider request carries, if anything.
+///
+/// Two cases because two providers: an OAuth grant is form-encoded by the spec, and Linear's API is
+/// GraphQL, which is JSON or nothing. A caller says which shape it means rather than handing over a
+/// `method` string and a `Data`, so no request can claim a content type its body is not.
+public enum HTTPBody: Sendable {
+    case form([String: String])
+    case json(Data)
+}
+
 /// One provider request, described rather than performed.
 ///
-/// A form body means POST and its absence means GET, because those are the only two shapes any
-/// OAuth grant has and a `method` string would let a caller ask for a third.
+/// A body means POST and its absence means GET, because those are the only two verbs anything
+/// behind this seam uses and a `method` string would let a caller ask for a third.
 public struct HTTPRequest: Sendable {
     public let url: String
-    public let form: [String: String]?
+    public let body: HTTPBody?
     public let bearerToken: String?
 
-    public init(url: String, form: [String: String]? = nil, bearerToken: String? = nil) {
+    public init(url: String, body: HTTPBody? = nil, bearerToken: String? = nil) {
         self.url = url
-        self.form = form
+        self.body = body
         self.bearerToken = bearerToken
+    }
+
+    public init(url: String, form: [String: String], bearerToken: String? = nil) {
+        self.init(url: url, body: .form(form), bearerToken: bearerToken)
     }
 }
 

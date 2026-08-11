@@ -13,7 +13,7 @@ struct AccountFixture {
     let grants = RecordingGrantStore()
     private let bindings: AccountBindingIndex
 
-    init(bindings: AccountBindingIndex = NoAccountBindings()) throws {
+    init(bindings: AccountBindingIndex = StubBindingIndex(bindings: [:])) throws {
         self.bindings = bindings
         self.rootURL = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-accounts-\(UUID().uuidString)", directoryHint: .isDirectory)

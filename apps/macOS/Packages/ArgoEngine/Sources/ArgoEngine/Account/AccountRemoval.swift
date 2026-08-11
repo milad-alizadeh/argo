@@ -18,21 +18,9 @@ public struct AccountBindingReference: Equatable, Sendable {
 
 /// Who is using an Account. One method, because one question is all the Account level has to ask
 /// of the Binding level, and the arrow points this way so `AccountRegistryStore` never has to know
-/// how Bindings are stored.
+/// how Bindings are stored. `ProjectBindingIndex` is the answer.
 public protocol AccountBindingIndex: Sendable {
     func bindings(referencing accountID: String) async -> [AccountBindingReference]
-}
-
-/// The answer until #B lands: nothing binds anything, so nothing is orphaned.
-///
-/// A real empty answer rather than a stub — no Bindings exist on this machine yet, so this is the
-/// truth, and it stops being the truth by being replaced rather than by being corrected.
-public struct NoAccountBindings: AccountBindingIndex {
-    public init() {}
-
-    public func bindings(referencing _: String) async -> [AccountBindingReference] {
-        []
-    }
 }
 
 /// The registry after a removal, what was removed, and what it left pointing at nothing.
