@@ -20,6 +20,24 @@ extension CockpitCoordinator {
         return nil
     }
 
+    /// Continue a Session Argo can no longer steer, on the same chain (#10). Raised by selection,
+    /// so it says nothing on success — the composer coming back IS the answer.
+    ///
+    /// A refusal is reported like a spawn's and leaves the Session exactly as it was: read-only,
+    /// with no composer to type into (#546).
+    func resumeSession(sessionID: String) async {
+        let title = "Could not continue this session"
+        do {
+            try await hub.resumeSession(sessionID: sessionID)
+        } catch let failure as SessionResumeError {
+            report(detail: failure.detail, title: title)
+        } catch let failure as AgentSpawnError {
+            report(detail: failure.detail, title: title)
+        } catch {
+            report(detail: error.localizedDescription, title: title)
+        }
+    }
+
     /// Hand a full Session's work to a fresh one (#513): `/handoff` in its own terminal, the wait
     /// for the brief, then #412's spawn path seeded with it and the folder it was running in.
     ///
@@ -61,11 +79,11 @@ extension CockpitCoordinator {
         }
     }
 
-    /// One title for every refusal; the sentence under it is the tool's own.
-    private func report(detail: String) {
+    /// One shape for every refusal; the sentence under the title is the tool's own.
+    private func report(detail: String, title: String = "Could not start a session") {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "Could not start a session"
+        alert.messageText = title
         alert.informativeText = detail
         alert.runModal()
     }

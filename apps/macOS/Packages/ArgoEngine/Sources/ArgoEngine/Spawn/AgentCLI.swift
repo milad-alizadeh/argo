@@ -22,4 +22,13 @@ public enum AgentCLI: String, Sendable, CaseIterable {
         case .claude: ["--permission-mode", ClaudePermissionMode.value(for: mode)]
         }
     }
+
+    /// The flags that start this CLI on an EXISTING chain rather than a fresh one (#10). `claude`
+    /// continues the chain in a new process and writes a new transcript file whose head leaf points
+    /// into the old one, which is what stitches the two halves back into one Session.
+    func arguments(resuming sessionID: String) -> [String] {
+        switch self {
+        case .claude: ["--resume", sessionID]
+        }
+    }
 }

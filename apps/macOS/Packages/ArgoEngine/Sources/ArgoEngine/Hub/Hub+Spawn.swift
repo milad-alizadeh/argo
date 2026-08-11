@@ -8,6 +8,10 @@ public extension Hub {
     /// Launch the Project's agent, own its PTY, and put it in the roster. Returns the claim, which
     /// is also the id of the row it just published. The seed is what a handoff adds and a New
     /// Session leaves empty (#513): a folder other than the Project's, and a prompt to open on.
+    ///
+    /// A seed naming a chain to resume takes the same path (#10). Two things differ, and both
+    /// follow from the Session already existing: the claim is bound to its id rather than matched
+    /// back by folder and time, and no provisional row is published because there is one already.
     @discardableResult
     func spawnSession(
         cli: AgentCLI = .claude,
@@ -23,7 +27,8 @@ public extension Hub {
               isDirectory.boolValue
         else { throw AgentSpawnError.unreachableWorkingDirectory(path: cwd) }
 
-        let claim = ownership.claim(cwd: cwd)
+        let claim = seed.resuming.map { ownership.claim(cwd: cwd, resuming: $0) }
+            ?? ownership.claim(cwd: cwd)
         do {
             let invitation = try companion?.invite(claim, gatedBy: permissions?.grant(claim))
             let launch = try await spawnServices.launcher.launch(
@@ -32,18 +37,23 @@ public extension Hub {
                 companion: invitation,
             )
             .adding(cli.arguments(standingOn: seed.mode))
+            .adding(seed.resuming.map(cli.arguments(resuming:)) ?? [])
             let process = try host.start(
                 seed.opening.map(launch.opening) ?? launch,
                 events: events(for: claim),
             )
             terminals.adopt(claim, process: process)
-            spawns[claim] = AgentSpawn(
-                claim: claim,
-                cli: cli,
-                cwd: cwd,
-                spawnedAtMs: Date().epochMs,
-                mode: seed.mode,
-            )
+            // A resume already has its row — the Session it continues — so publishing a second one
+            // would draw that Session twice until the CLI wrote a record.
+            if seed.resuming == nil {
+                spawns[claim] = AgentSpawn(
+                    claim: claim,
+                    cli: cli,
+                    cwd: cwd,
+                    spawnedAtMs: Date().epochMs,
+                    mode: seed.mode,
+                )
+            }
             return claim
         } catch {
             // Nothing started, so nothing is owned. Releasing keeps the window from covering an

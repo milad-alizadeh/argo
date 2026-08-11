@@ -62,6 +62,17 @@ extension CockpitView {
         }
     }
 
+    /// Picking a Session Argo can no longer steer resumes it (#10). There is no button and no
+    /// prompt: the click is the intent, because the user selected the row in order to use it.
+    ///
+    /// Only a CHOSEN Session, never the one reconciliation lands on — otherwise launch would start
+    /// an agent for the first row on the roster, which is the one thing this must not do. Which
+    /// selections cost a process is `SessionResumeProjection`'s.
+    func resumeIfSelectionIsDead(_ chosen: CockpitPresentation.Session.ID?) {
+        guard let dead = SessionResumeProjection.resumable(chosen, in: presentation) else { return }
+        Task { await actions.resumeSession(dead) }
+    }
+
     /// The menu bar's half of the roster's two gestures — `nil` when nothing is selected, which is
     /// what greys the items out. Rename only opens the row's own field: there is one rename in this
     /// app and it happens in the row (`SessionCommands`).

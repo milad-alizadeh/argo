@@ -5,6 +5,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public let id: String
     /// Absent for a Session Argo just spawned: the CLI writes no record until its first prompt.
     public let sourceURL: URL?
+    /// The file of the chain's LATEST link. `sourceURL` is the root's and stays the root's, because
+    /// the id everything links against must not move when the chain grows.
+    private var chainTipURL: URL?
     /// Set by the Hub off the ownership registry, never asserted here: a transcript file says
     /// nothing about who spawned the CLI that wrote it.
     public internal(set) var provenance: SessionProvenance = .external
@@ -87,22 +90,14 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         lastActivityAtMs ?? recordedAtMs
     }
 
-    /// The Session's standing stance, as Argo can state it (ADR-0025).
-    public var mode: SessionModeReading {
-        guard let modeSet else {
-            return observedMode.map(ClaudePermissionMode.reading(of:)) ?? .unknown(cli: nil)
-        }
-        // The record has not moved since Argo set the rung, and `claude` writes its stance only at
-        // Turn boundaries — so the rung Argo put the Session on is the later fact of the two.
-        guard modeSet.observedWhenSet != observedMode, let observedMode else {
-            return .exactly(modeSet.mode, cli: ClaudePermissionMode.value(for: modeSet.mode))
-        }
-        // The record moved, so it is what is true — except for Plan, which no CLI can report: it
-        // reports Read Only's boundary either way, and the intent is knowable only from the set.
-        guard modeSet.mode == .plan, observedMode == ClaudePermissionMode.value(for: .plan) else {
-            return ClaudePermissionMode.reading(of: observedMode)
-        }
-        return .exactly(.plan, cli: observedMode)
+    /// What `--resume` is given to continue this Session (#10): the CLI's own id for the chain's
+    /// latest link, which `claude` writes the transcript file under. Resuming the ROOT instead
+    /// would fork the chain at the point its first continuation left it.
+    ///
+    /// Absent for a Session with no record on disk — a spawn whose CLI has written nothing has no
+    /// chain to continue.
+    public var resumeID: String? {
+        chainTipURL?.deletingPathExtension().lastPathComponent
     }
 
     /// What the Session has SPENT across its whole life, cache excluded (that is `cachedTokens`).
@@ -126,6 +121,7 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public init(observation: TranscriptObservation) {
         self.id = observation.id
         self.sourceURL = observation.sourceURL
+        self.chainTipURL = observation.sourceURL
         self.name = SessionTitle(
             startingWith: observation.sourceURL.deletingPathExtension().lastPathComponent,
         )
@@ -260,6 +256,9 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         observedMode = continuation.observedMode ?? observedMode
         modeSet = continuation.modeSet ?? modeSet
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
+        // The tip moves with the chain, unlike `sourceURL`: a resume continues the last link, and
+        // the last link is whatever was merged in most recently.
+        chainTipURL = continuation.chainTipURL ?? chainTipURL
         observeActivity(continuation.lastActivityAtMs)
         observeActivity(continuation.startedAtMs)
         recordedAtMs = continuation.recordedAtMs.map { max(recordedAtMs ?? $0, $0) } ?? recordedAtMs

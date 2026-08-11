@@ -14,11 +14,20 @@ public struct SessionSeed: Sendable, Equatable {
     /// which is the baseline the ladder is built around: ungated tools inside the Workspace should
     /// not pay a Permission round trip.
     public let mode: SessionMode
+    /// The chain to CONTINUE rather than start — the CLI's own id for its latest link. Absent is
+    /// the plain New Session; present makes this the third caller of one spawn path (#10).
+    public let resuming: String?
 
-    public init(cwd: String? = nil, opening: String? = nil, mode: SessionMode = .code) {
+    public init(
+        cwd: String? = nil,
+        opening: String? = nil,
+        mode: SessionMode = .code,
+        resuming: String? = nil,
+    ) {
         self.cwd = cwd
         self.opening = opening
         self.mode = mode
+        self.resuming = resuming
     }
 
     /// A New Session: the Project's folder, and nothing said yet.

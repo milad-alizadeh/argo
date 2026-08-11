@@ -23,6 +23,12 @@ public struct CockpitActions {
     /// fresh Session's id — the claim the roster publishes its row under — and `nil` where no
     /// Session started; the app performs the spawn, the shell decides what to point at.
     public let spawnSession: () async -> String?
+    /// Continue a Session Argo can no longer steer, in a fresh process on the same chain (#10).
+    ///
+    /// Raised by SELECTION rather than by a control, because the click is the intent: the user
+    /// picked the Session in order to use it. It answers nothing — the composer appearing is the
+    /// answer, and a resume that failed says so in the app's own refusal.
+    public let resumeSession: (String) async -> Void
     /// Clear a Session off the roster, or put one back. The ONLY thing that ever archives one:
     /// nothing derived from a merge, a branch or a transcript reaches this, which is what makes
     /// archiving a decision rather than a status transition (#502, story 14).
@@ -89,6 +95,7 @@ public struct CockpitActions {
         removeProject: { _ in },
         openProjectPanel: { _ in },
         spawnSession: { nil },
+        resumeSession: { _ in },
         setSessionArchived: { _, _ in },
         setSessionName: { _, _ in },
         handOffSession: { _, _ in nil },
@@ -110,6 +117,7 @@ public struct CockpitActions {
         removeProject: @escaping (String) -> Void,
         openProjectPanel: @escaping (String?) -> Void,
         spawnSession: @escaping () async -> String?,
+        resumeSession: @escaping (String) async -> Void = { _ in },
         setSessionArchived: @escaping (String, Bool) -> Void,
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
@@ -129,6 +137,7 @@ public struct CockpitActions {
         self.removeProject = removeProject
         self.openProjectPanel = openProjectPanel
         self.spawnSession = spawnSession
+        self.resumeSession = resumeSession
         self.setSessionArchived = setSessionArchived
         self.setSessionName = setSessionName
         self.handOffSession = handOffSession

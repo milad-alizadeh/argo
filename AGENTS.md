@@ -189,7 +189,8 @@ The vocabulary below is the part every session needs. Use these words, never a s
 **L2 · Session**
 
 - **Session** — one logical resume-chain, and the root Agent. Stored as `managed` or `external`.
-- **orphaned** — a managed Session whose owning process is gone. Observation only, never steerable.
+- **orphaned** — a managed Session whose owning process is gone. Read-only until selected, which
+  resumes the chain in a fresh process and makes it `managed` again (ADR-0026).
 - **Session status** — `running · permission · asking · idle · stopped · ended · unknown`.
 - **Transcript file** — the physical per-file CLI record. Never itself called a Session.
 
