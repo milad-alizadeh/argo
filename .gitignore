@@ -13,6 +13,9 @@ apps/macOS/out/
 .build/
 .swiftpm/
 xcuserdata/
+# sourcekit-lsp build server config — absolute DerivedData paths, per-machine.
+# Regenerate: cd apps/macOS && xcode-build-server config -scheme Argo -project Argo.xcodeproj
+apps/macOS/buildServer.json
 
 # Installed skill copies are throwaway outputs of `npx skills add` —
 # skills-lock.json is committed and restores them via `npx skills experimental_install`.
@@ -22,16 +25,6 @@ xcuserdata/
 .claude/*
 !.claude/settings.json
 !.claude/output-styles/
-
-# graphify: commit the graph outputs (graph.json, graph.html, report, labels, manifest).
-# Ignore only what the pre-commit `update` never maintains — it would churn or go stale.
-# (Patterns only — .gitignore has no inline comments.)
-# regenerable rebuild cache:
-graphify-out/cache/
-# dated backup snapshots (created by extract/label, never by update):
-graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
-# extract-only analysis; the pre-commit update never refreshes it:
-graphify-out/.graphify_analysis.json
 # Agent skills, installed by argo-skills
 .claude/skills/
 .agents/skills/

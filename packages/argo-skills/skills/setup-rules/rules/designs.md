@@ -38,8 +38,6 @@ can't run (`setup-rules` §5a: a rule naming a thing that doesn't exist here).
   reader opening the directory should see the current direction, not the archaeology.
 - Keep a `docs/designs/README.md` index: one row per file (screen · what it is). Update
   it whenever you add or prune a study.
-- `docs/` is excluded from the code knowledge graph (`.graphifyignore`), so committing
-  HTML studies here never pollutes the graph.
 
 ## Component-first authoring — designs must transfer
 

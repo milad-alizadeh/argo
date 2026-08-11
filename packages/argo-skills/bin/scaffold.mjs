@@ -51,6 +51,14 @@ const HOOK_ASSETS = [
   'scripts/module-map.mjs',
   'docs/agents/worktrees.md',
 ]
+// Seeded on every install (not only --hooks: RTK filters are inert until the consumer runs
+// `rtk trust --yes`, so the hooks' opt-in rationale doesn't apply) and never overwritten —
+// the consumer owns the file after the first copy, and a re-run must not clobber filters
+// they have edited and re-trusted. Source differs from target: the template omits filters
+// that only make sense in the Argo repo itself (the e2e script).
+const SEED_ASSETS = [
+  { from: 'packages/argo-skills/assets/rtk-filters.toml', to: '.rtk/filters.toml' },
+]
 // A lock has no scope field: `skills add --global` writes a different lock format in a
 // different place, which is a second install path rather than an option on this one.
 const SCOPE_FLAGS = ['--global', '-g', '--project', '-p']
@@ -58,6 +66,28 @@ const SCOPE_FLAGS = ['--global', '-g', '--project', '-p']
 function fail(message) {
   console.error(`✗ ${message}`)
   process.exit(1)
+}
+
+function seedAssets(target, dryRun) {
+  for (const { from, to } of SEED_ASSETS) {
+    const source = resolve(SOURCE_ROOT, from)
+    const dest = resolve(target, to)
+    if (!existsSync(source)) {
+      console.log(`\n⚠ seed asset absent from this install (${from}) — skipping`)
+      continue
+    }
+    if (existsSync(dest)) {
+      console.log(`\nrtk filters: kept existing ${to}`)
+      continue
+    }
+    console.log(
+      `\nrtk filters: ${dryRun ? 'would seed' : 'seeded'} ${to} — enable with \`rtk trust --yes\``,
+    )
+    if (!dryRun) {
+      mkdirSync(dirname(dest), { recursive: true })
+      copyFileSync(source, dest)
+    }
+  }
 }
 
 // Copy the guardrail-hook assets from the Argo checkout into the target project, then
@@ -237,6 +267,9 @@ for (const [source, names] of bySource) {
 
 const restored = restoreOwnedSkills(projectRoot, ownedSkills)
 if (restored.length) console.log(describeRestore(restored))
+
+// Skipped for Argo itself, which owns the template's source and its own .rtk/filters.toml.
+if (realpathSync(SOURCE_ROOT) !== realpathSync(projectRoot)) seedAssets(projectRoot, dryRun)
 
 if (wantHooks) {
   try {

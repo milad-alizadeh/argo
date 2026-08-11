@@ -15,7 +15,6 @@
     // a number goes, which is not JSON until it is written out.
     "includes": [
       "**",
-      "!graphify-out",
       "!docs",
       "!**/*.xcodeproj",
       "!**/*.xcassets",
