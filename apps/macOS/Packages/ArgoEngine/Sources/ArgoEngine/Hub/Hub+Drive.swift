@@ -36,15 +36,15 @@ public extension Hub {
     private func rememberMode(_ mode: SessionMode, for sessionID: String) {
         // Read after the keystrokes rather than before: the roster moves only on an observation,
         // and nothing observes inside a synchronous write.
-        let observed = sessions.first { $0.id == sessionID }?.observedMode
+        let observed = session(id: sessionID)?.observedMode
         guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
-        setModes[claim] = SessionModeSet(mode: mode, observedWhenSet: observed)
+        claims.setMode(SessionModeSet(mode: mode, observedWhenSet: observed), for: claim)
     }
 
     /// Where one Session stands, off the roster. It is the same reading every surface draws, so the
     /// rung a change is counted from cannot disagree with the rung the footer states.
     private func stance(of sessionID: String) -> SessionStance {
-        guard let session = sessions.first(where: { $0.id == sessionID }) else { return .unknown }
+        guard let session = session(id: sessionID) else { return .unknown }
         return SessionStance(mode: session.mode, isRunning: session.status == .running)
     }
 

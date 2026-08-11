@@ -78,7 +78,7 @@ extension PermissionChannelTests {
                 await settle { fixture.hub.sessions.first?.expiredPermissions.isEmpty == false }
 
                 fixture.host.endLastProcess(exitCode: 0)
-                await settle { fixture.hub.expiredPermissions[claim] == nil }
+                await settle { fixture.hub.facts(forClaim: claim).expiries.isEmpty }
 
                 #expect(fixture.hub.sessions.first?.expiredPermissions.isEmpty == true)
             }

@@ -68,11 +68,4 @@ public final class CompanionChannel {
         sockets.removeValue(forKey: claim)?.close()
         CompanionPlugin.remove(forClaim: claim, under: root)
     }
-
-    /// Every channel, closed. What app quit calls, beside the PTYs themselves.
-    func withdrawAll() {
-        for claim in sockets.keys {
-            withdraw(claim)
-        }
-    }
 }
