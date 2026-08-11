@@ -46,6 +46,8 @@ final class LiveClaudeFixture {
     /// echoed by the TUI whatever is decided, so only the filesystem tells a call that ran from
     /// one that was refused.
     let markerURL: URL
+    /// A second marker for a second Turn — proof the Session outlived whatever ended the first.
+    let followUpMarkerURL: URL
     let hub: Hub
     let claim: SessionOwnership.ClaimID
     let host: RecordingProcessHost
@@ -66,10 +68,13 @@ final class LiveClaudeFixture {
         self.claim = claim
         self.host = host
         self.markerURL = root.appending(path: "the-agent-was-here")
+        self.followUpMarkerURL = root.appending(path: "the-agent-came-back")
     }
 
-    /// A spawned Session with its folder trusted, ready to be asked something.
-    static func spawned() async throws -> LiveClaudeFixture {
+    /// A spawned Session with its folder trusted, ready to be asked something. The patience is
+    /// the gate's; the day-long default everywhere but a test waiting for its far end (#543).
+    static func spawned(patience: PermissionPatience = .default) async throws
+        -> LiveClaudeFixture {
         let token = String(UUID().uuidString.prefix(8))
         let root = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-live-\(token)", directoryHint: .isDirectory)
@@ -84,7 +89,11 @@ final class LiveClaudeFixture {
         let host = RecordingProcessHost()
         let hub = Hub(
             projectURL: root,
-            spawnServices: SpawnServices(host: host, companionRoot: companionRoot),
+            spawnServices: SpawnServices(
+                host: host,
+                companionRoot: companionRoot,
+                permissionPatience: patience,
+            ),
         )
         let claim = try await hub.spawnSession()
         let fixture = LiveClaudeFixture(
@@ -112,6 +121,10 @@ final class LiveClaudeFixture {
 
     func hasMarkerFile() -> Bool {
         FileManager.default.fileExists(atPath: markerURL.path)
+    }
+
+    func hasFollowUpMarker() -> Bool {
+        FileManager.default.fileExists(atPath: followUpMarkerURL.path)
     }
 
     func end() {
