@@ -1,12 +1,10 @@
 import SwiftUI
 
-/// The `Read Only · Plan · Code · Auto` stance, as the stock menu picker, because the platform's
-/// own picker is the one macOS users already know how to read and drive.
+/// The `Read Only · Plan · Code · Auto` stance, as the stock menu picker.
 ///
-/// A menu rather than segments (design decision 1): four rungs of segments ate the footer's width
-/// and pushed the run facts off the row entirely at the composer's narrow sizes. The menu carries
-/// no tint — macOS draws it through `NSPopUpButton`, which ignores both `.tint` and
-/// `.foregroundStyle`, so a rung is read from its word alone.
+/// The menu carries no tint and no per-row caption: macOS draws it through `NSPopUpButton`, whose
+/// rows take a title and nothing else, and which ignores `.tint` and `.foregroundStyle` alike. So
+/// a rung is a word on the footer, and its boundary is on hover.
 struct ModePicker: View {
     @Binding var mode: ComposerMode
 
@@ -20,6 +18,7 @@ struct ModePicker: View {
         .controlSize(.small)
         .labelsHidden()
         .fixedSize()
+        .help("\(mode.rawValue) — \(mode.boundary)")
     }
 }
 
