@@ -41,11 +41,12 @@ Then price the total twice.
 tokens of re-sent context.
 
 **Headroom** — always-on tokens as a share of the *working region*, not of the advertised
-window. The window is the hard limit; the working region is the span the project actually
-wants to stay inside, and it is the smaller number. Ask the user for theirs; absent an
-answer use 120k, name the figure in the report, and invite them to replace it. A 20k
-preamble against a 120k region is 17% spent before the first prompt, on every session
-including the ones that never touch its subject.
+window. The window is the hard limit. The working region is the span a model still reasons
+well across, and across current models it runs to roughly 100–140k tokens whatever the
+window says. **Compute against 120k.** This is a property of the models, so do not ask the
+user for a figure and do not scale it to the advertised window — a 1M window has the same
+working region as a 200k one. A 20k preamble against it is 17% spent before the first
+prompt, on every session including the ones that never touch its subject.
 
 Report the headroom share beside the byte counts.
 
