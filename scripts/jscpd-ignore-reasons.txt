@@ -13,7 +13,7 @@
 # `jscpd … -t 0` exits 1 whether the config loaded or not. Check the analysed file
 # count, or plant a clone pair in an ignored path and one outside it. See AGENTS.md.
 
-  **/node_modules/**, **/dist/**, **/out/**, **/graphify-out/**
+  **/node_modules/**, **/dist/**, **/out/**
     KIND: not our source. Vendored and generated output.
   **/*.stories.tsx
     KIND: declarative story catalogs — the duplication between stories IS the

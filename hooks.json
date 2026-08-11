@@ -1,18 +1,7 @@
 {
-  "$comment": "Neutral guardrail-hook SSOT for this repo — the hooks half of Argo's cross-CLI setup (skills are skills-lock.json's half). One entry per behavior; `packages/argo-skills/bin/hooks-sync.mjs` projects them into each harness named in `agents` below: claude-code -> .claude/settings.json, codex -> .codex/hooks.json. Never hand-edit those generated blocks — edit here and run `bun run hooks:sync`. Commands are harness-neutral: bare `graphify` (on PATH) and `$(git rev-parse --show-toplevel)/scripts/*` (no $CLAUDE_PROJECT_DIR). The commands invoke this repo's scripts/ via git-toplevel; scaffold.mjs can copy this file AND those scripts into a consumer before projecting, but only opt-in (`--hooks`) since the guard imposes Argo's worktree discipline. Optional top-level `worktreeGuard.roots` re-scopes the worktree edit guard (default `[\"apps\", \"packages\"]`) for a project whose code lives elsewhere. See AGENTS.md \"Cross-CLI guardrail hooks\".",
+  "$comment": "Neutral guardrail-hook SSOT for this repo — the hooks half of Argo's cross-CLI setup (skills are skills-lock.json's half). One entry per behavior; `packages/argo-skills/bin/hooks-sync.mjs` projects them into each harness named in `agents` below: claude-code -> .claude/settings.json, codex -> .codex/hooks.json. Never hand-edit those generated blocks — edit here and run `bun run hooks:sync`. Commands are harness-neutral: `$(git rev-parse --show-toplevel)/scripts/*` (no $CLAUDE_PROJECT_DIR). The commands invoke this repo's scripts/ via git-toplevel; scaffold.mjs can copy this file AND those scripts into a consumer before projecting, but only opt-in (`--hooks`) since the guard imposes Argo's worktree discipline. Optional top-level `worktreeGuard.roots` re-scopes the worktree edit guard (default `[\"apps\", \"packages\"]`) for a project whose code lives elsewhere. See AGENTS.md \"Cross-CLI guardrail hooks\".",
   "agents": ["claude-code", "codex"],
   "hooks": [
-    {
-      "event": "pre-tool",
-      "matcher": "Bash",
-      "command": "graphify hook-guard search"
-    },
-    {
-      "$comment": "Glob, not Read|Glob. The guard emits ~400 B of context per fire, and it fires on any file newer than the graph — so in a linked worktree, where the pre-commit `graphify update` is skipped and the graph is stale against everything, matching Read billed roughly every file a session opened. Glob is the verb the orientation rule is actually about (orient before you sweep), and keeping it there preserves the staleness warning, which inside a worktree is the only signal the graph is out of date at all.",
-      "event": "pre-tool",
-      "matcher": "Glob",
-      "command": "graphify hook-guard read"
-    },
     {
       "event": "pre-tool",
       "matcher": "Edit|Write",

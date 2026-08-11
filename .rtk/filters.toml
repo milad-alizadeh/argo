@@ -95,30 +95,6 @@ Duration: 6s
 """
 expected = "@argo/macos:test: swift-test: ArgoEngine\n􁁛  Test run with 10 tests in 2 suites passed after 0.5 seconds.\n Tasks:    1 successful, 1 total"
 
-# graphify query output is already scoped, but stdlib/external nodes (src= loc= with no
-# path) and the legacy node-ID banner (stderr) are pure noise. src= paths on real nodes
-# are load-bearing — they say where to read next — so only pathless nodes are dropped.
-[filters.graphify]
-description = "Compact graphify output — drop stdlib nodes and the legacy-ID banner, keep real nodes and edges"
-match_command = "^graphify (query|path|explain)\\b"
-strip_ansi = true
-filter_stderr = true
-strip_lines_matching = [
-  "src= loc=",
-  "pre-#1504 node-ID scheme",
-]
-max_lines = 200
-
-[[tests.graphify]]
-name = "stdlib nodes and banner dropped, real nodes kept"
-input = """
-warning: graph uses the pre-#1504 node-ID scheme, re-extract to upgrade
-NODE Hub kind=class src=apps/macOS/Packages/ArgoEngine/Sources/Hub.swift loc=120
-NODE Sendable kind=protocol src= loc=
-EDGE Hub -> Sendable conforms
-"""
-expected = "NODE Hub kind=class src=apps/macOS/Packages/ArgoEngine/Sources/Hub.swift loc=120\nEDGE Hub -> Sendable conforms"
-
 # The e2e suite runs xcodebuild test through a shell script the hook cannot see into,
 # and xcodebuild's per-phase and per-test-pass lines are tens of KB a run. XCTest
 # failure lines ("error:", "failed") and the result summary don't match any strip.

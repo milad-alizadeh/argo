@@ -70,8 +70,6 @@ a scale inline here.
 - Seed a `design-template.html` that imports `tokens.css`, styles only via
   `var(--token)`, and shows the `data-component="PascalCaseName"` region-naming
   convention inline as a worked example.
-- If the repo ignores docs in a knowledge graph (`.graphifyignore`), confirm
-  `docs/designs/` is covered.
 
 ## 4. Install the no-raw-values check
 

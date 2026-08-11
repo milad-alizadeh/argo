@@ -76,25 +76,26 @@ check('codex DOES inject ARGO_HOOK_AGENT (no native marker)', () => {
   assert.match(guardCmd(project(descriptor, 'codex').hooksBlock), /^ARGO_HOOK_AGENT=1 /)
 })
 
-// Non-agentGated commands are never prefixed, on any harness.
-check('graphify command is byte-identical across harnesses', () => {
-  const c = project(descriptor, 'claude-code').hooksBlock.PreToolUse[0].hooks[0].command
-  const x = project(descriptor, 'codex').hooksBlock.PreToolUse[0].hooks[0].command
+// Non-agentGated commands are never prefixed, on any harness. The reaper is the only one
+// left, so it is the sole subject of this property.
+check('non-agentGated command is byte-identical across harnesses', () => {
+  const c = project(descriptor, 'claude-code').hooksBlock.SessionEnd[0].hooks[0].command
+  const x = project(descriptor, 'codex').hooksBlock.SessionEnd[0].hooks[0].command
   assert.equal(c, x)
-  assert.equal(c, 'graphify hook-guard search')
+  assert.doesNotMatch(c, /ARGO_HOOK_AGENT/)
+  assert.match(c, /worktree-gc\.sh/)
 })
 
 // Shape: neutral events map to Codex-compatible PascalCase keys; groups preserve
 // matcher / timeout / statusMessage; session-end carries no matcher.
 check('projects PascalCase event keys with the right group shapes', () => {
   const b = project(descriptor, 'codex').hooksBlock
-  assert.equal(b.PreToolUse.length, 4)
+  assert.equal(b.PreToolUse.length, 2)
   // Matchers, not just the count: widening one is what a token-cost regression looks like,
-  // and every count-based assertion here stays green through it. The read guard bills its
-  // payload once per matching call, so `Read` belongs to no hook by default.
+  // and every count-based assertion here stays green through it.
   assert.deepEqual(
     b.PreToolUse.map((g) => g.matcher),
-    ['Bash', 'Glob', 'Edit|Write', 'Write'],
+    ['Edit|Write', 'Write'],
   )
   assert.equal(b.SessionEnd.length, 1)
   const end = b.SessionEnd[0]
@@ -114,8 +115,8 @@ check('unknown event -> warning, skipped', () => {
 check('mergeHooks keeps foreign groups, replaces managed ones', () => {
   const foreign = { matcher: 'Bash', hooks: [{ type: 'command', command: 'my-own-linter' }] }
   const ourOld = {
-    matcher: 'Bash',
-    hooks: [{ type: 'command', command: 'graphify hook-guard search' }],
+    matcher: 'Edit|Write',
+    hooks: [{ type: 'command', command: 'node /old/path/scripts/worktree-guard.mjs' }],
   }
   const ours = project(descriptor, 'claude-code').hooksBlock
   const merged = mergeHooks({ PreToolUse: [foreign, ourOld] }, ours)
@@ -123,10 +124,10 @@ check('mergeHooks keeps foreign groups, replaces managed ones', () => {
     merged.PreToolUse.some((g) => g.hooks[0].command === 'my-own-linter'),
     'foreign kept',
   )
-  const graphifyGroups = merged.PreToolUse.filter((g) =>
-    g.hooks[0].command.includes('hook-guard search'),
+  const guardGroups = merged.PreToolUse.filter((g) =>
+    g.hooks[0].command.includes('worktree-guard.mjs'),
   )
-  assert.equal(graphifyGroups.length, 1, 'ours replaced, not duplicated')
+  assert.equal(guardGroups.length, 1, 'ours replaced, not duplicated')
 })
 
 // The assertions above read `project()`, which is pure and cannot see a merge fault. A hook
