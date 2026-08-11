@@ -33,6 +33,15 @@ extension CockpitPresentation.Session {
         )),
     ]
 
+    /// The same stretch with one more command still running: a call the record has not answered
+    /// yet, which is exactly how a transcript mid-Turn ends.
+    static let runningCommand: [TranscriptEvent] = ranCommands + [
+        .toolCall(ToolCall(
+            id: "ran-running", name: "shell", kind: .execute,
+            target: "rtk err bun run quality:swift", atMs: nil,
+        )),
+    ]
+
     /// Each command with what it printed, as the pair a transcript writes — a call, and the outcome
     /// that answers it some records later.
     private static let printed: [TranscriptEvent] = [

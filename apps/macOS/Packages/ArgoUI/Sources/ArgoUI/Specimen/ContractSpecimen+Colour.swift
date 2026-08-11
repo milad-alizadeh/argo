@@ -79,6 +79,30 @@ extension ContractSpecimen {
         }
     }
 
+    /// Every ramp, at both lengths one is spent at — as a band, and masked to the type it actually
+    /// crosses. A band alone cannot judge a ramp: what it has to answer is whether the head still
+    /// reads as the head once it is only as wide as a letter.
+    ///
+    /// Read off `ramps` rather than naming the ion, so adding a ramp adds a row here.
+    var ramps: some View {
+        section("Ramps — transparent at both ends, a blue tail into a mint head") {
+            ForEach(argo.color.ramps, id: \.name) { role in
+                VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
+                    label(role.name)
+                    role.ramp.pass.frame(height: ArgoIconSize.inline.rawValue)
+                    rampSample
+                        .foregroundStyle(argo.color.text.secondary)
+                        .overlay { role.ramp.pass.mask { rampSample } }
+                }
+            }
+        }
+    }
+
+    /// The sentence a ramp is spent on, at the rung it is spent at.
+    private var rampSample: some View {
+        Text("Ran rtk err bun run quality:swift").argoText(ArgoTypography.body)
+    }
+
     var edges: some View {
         section("Edges — the primary depth device, every one of them translucent") {
             HStack(spacing: ArgoSpacing.comfortable) {

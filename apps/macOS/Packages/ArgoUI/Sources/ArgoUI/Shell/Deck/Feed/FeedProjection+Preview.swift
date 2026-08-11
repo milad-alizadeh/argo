@@ -64,6 +64,14 @@ extension FeedProjection {
         working: true,
     )
 
+    /// The same reading with its last command still in flight. `working: true` because the two are
+    /// one fact: a call is pending only while the Turn that made it is running. The failed row sits
+    /// four above it on purpose — the ion and the one outcome with a colour are judged together.
+    static let previewPendingCallRows = rows(
+        from: CockpitPresentation.Session.runningCommand,
+        working: true,
+    )
+
     /// The punctuation with a Permission that ran out among it (#573) — the marks-only set, so a
     /// refusal nobody made can be compared against the marks around it on one screen.
     static let previewExpiredMarkRows = numbered(

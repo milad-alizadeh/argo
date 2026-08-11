@@ -74,6 +74,21 @@ struct FeedCallEndingTests {
         #expect(calls.first?.ending.spoken == "still running")
     }
 
+    /// The specimen's own fixture, checked rather than assumed. A render of the call in flight is
+    /// worth nothing if the reading stopped producing a pending row — the case would still draw,
+    /// and it would draw three finished calls.
+    @Test
+    func `the in-flight fixture ends on a call still running, under one that failed`() {
+        let calls = FeedProjection.previewPendingCallRows.compactMap { row -> FeedCall? in
+            guard case let .call(call) = row.content else { return nil }
+            return call
+        }
+
+        #expect(calls.last?.ending == .pending)
+        #expect(calls.dropLast().contains { $0.ending.hasFailed })
+        #expect(calls.filter { $0.ending == .pending }.count == 1)
+    }
+
     // MARK: - What opens
 
     /// The marker follows the EVIDENCE and never the kind — two reads of the same file, one

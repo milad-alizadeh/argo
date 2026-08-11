@@ -28,19 +28,30 @@ struct FeedCallLine: View {
         .accessibilityHint(call.disclosure == .available ? "Opens what this call produced" : "")
     }
 
+    /// The chevron sits OUTSIDE the lit run: it says the row can be opened, which is as true of a
+    /// call still running as of one that finished, so the ion has no business crossing it.
     private var sentence: some View {
+        HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.callGap) {
+            lit
+            disclosure
+        }
+        .lineLimit(1)
+    }
+
+    /// Everything the ion crosses, as one run of type — see `FeedCallLineIon` for why it is one
+    /// surface and not six.
+    private var lit: some View {
         HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.callGap) {
             mark
             Text(call.kind.verb)
                 .argoText(ArgoTypography.body)
-                .foregroundStyle(verdict ?? argo.color.text.tertiary)
+                .foregroundStyle(verdict ?? restInk)
             FeedCallSubject(subject: call.subject, tint: verdict, isOpen: isOpen)
             repeats
             churn
             printed
-            disclosure
         }
-        .lineLimit(1)
+        .feedCallLineIon(isRunning: isRunning)
     }
 
     /// The kind's own mark, always — a failure recolours the line rather than replacing what it
@@ -54,7 +65,7 @@ struct FeedCallLine: View {
                     ArgoGlyph(symbol, .inline)
                 }
             }
-            .foregroundStyle(verdict ?? argo.color.text.disabled)
+            .foregroundStyle(verdict ?? markInk)
     }
 
     /// How many calls this line stands for, where it stands for more than one.
@@ -63,7 +74,7 @@ struct FeedCallLine: View {
             Text("×\(call.repeats)")
                 .argoMono(.body)
                 .monospacedDigit()
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(restInk)
         }
     }
 
@@ -89,7 +100,7 @@ struct FeedCallLine: View {
             Text(drawn)
                 .argoMono(.body)
                 .monospacedDigit()
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(restInk)
         }
     }
 
@@ -107,11 +118,46 @@ struct FeedCallLine: View {
     private var verdict: ArgoColor? {
         call.ending.hasFailed ? argo.color.state.failure : nil
     }
+
+    /// Whether this is the call the agent is running right now.
+    private var isRunning: Bool {
+        call.ending == .pending
+    }
+
+    /// What the WHOLE line rests at — the verb, the count and what it printed alike. A call still
+    /// running sits one step above the ones that finished, and that step IS the Reduce Motion
+    /// state: with nothing moving, the row still reads as the live one.
+    ///
+    /// The churn keeps its diff inks through it, because those are a meaning rather than a rung.
+    private var restInk: ArgoColor {
+        isRunning ? argo.color.text.secondary : argo.color.text.tertiary
+    }
+
+    /// The glyph is the one part of the row carrying the accent at rest.
+    private var markInk: ArgoColor {
+        isRunning ? argo.color.interaction.accent : argo.color.text.disabled
+    }
 }
 
 #Preview("Call lines — every kind the preview transcript makes") {
     VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
         ForEach(FeedProjection.previewCallRows) { row in
+            if case let .call(call) = row.content {
+                FeedCallLine(call: call, isOpen: false, open: {})
+            }
+        }
+    }
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 720)
+    .argoDeckSurface()
+    .argoAppearance()
+}
+
+// The one state a still cannot prove, so it is here to be WATCHED: the pass has to cross the whole
+// sentence as one piece, with no seam where a word ends.
+#Preview("Call lines — the one still running, under the ones that finished") {
+    VStack(alignment: .leading, spacing: ArgoFeedRow.callStep) {
+        ForEach(FeedProjection.previewPendingCallRows) { row in
             if case let .call(call) = row.content {
                 FeedCallLine(call: call, isOpen: false, open: {})
             }

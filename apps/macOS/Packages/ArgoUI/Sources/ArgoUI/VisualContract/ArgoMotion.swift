@@ -3,11 +3,16 @@ import SwiftUI
 /// A motion role: what it does at full strength, and what it does instead under Reduce Motion.
 /// The Reduce Motion answer belongs to the role, never to the call site.
 ///
-/// Every role is brief and event-driven; nothing in the contract loops.
+/// Every role is brief and event-driven, with exactly one exception. `working` loops, because a
+/// live operational signal may repeat for as long as its operation lasts (D12) — the Turn is the
+/// operation, and the Turn ending is the event that stops it. Nothing else in the contract repeats.
 public struct ArgoMotion: Sendable {
     public enum Curve: Sendable {
         case easeOut
         case easeInOut
+        /// A pass at constant speed. Only a loop uses it: an eased sweep slows at each end, which
+        /// over a repeat reads as a stutter rather than as travel.
+        case linear
         /// `response` and `dampingFraction` as SwiftUI spells them.
         case spring(damping: Double)
     }
@@ -17,17 +22,32 @@ public struct ArgoMotion: Sendable {
     /// The Reduce Motion variant. `nil` means the change lands instantly — correct when the
     /// role's whole content is movement.
     public let reducedDuration: TimeInterval?
+    /// Whether the role runs until something stops it. `duration` is then a PERIOD rather than a
+    /// wait, which is why the ceiling below does not reach it.
+    public let repeats: Bool
 
-    public init(duration: TimeInterval, curve: Curve, reducedDuration: TimeInterval?) {
+    public init(
+        duration: TimeInterval,
+        curve: Curve,
+        reducedDuration: TimeInterval?,
+        repeats: Bool = false,
+    ) {
         self.duration = duration
         self.curve = curve
         self.reducedDuration = reducedDuration
+        self.repeats = repeats
     }
 
     public var animation: Animation {
+        repeats ? pass.repeatForever(autoreverses: false) : pass
+    }
+
+    /// One traversal of the role, before any decision about repeating it.
+    private var pass: Animation {
         switch curve {
         case .easeOut: .easeOut(duration: duration)
         case .easeInOut: .easeInOut(duration: duration)
+        case .linear: .linear(duration: duration)
         case let .spring(damping): .spring(response: duration, dampingFraction: damping)
         }
     }
@@ -61,9 +81,20 @@ public extension ArgoMotion {
     /// movement is off.
     static let resettle = ArgoMotion(duration: 0.28, curve: .easeOut, reducedDuration: nil)
 
+    /// The one loop: a Turn in flight, reported by an ion crossing what it is working on. The
+    /// period is what a wait FEELS like rather than what it costs, so it is the value a longer wait
+    /// slows down. `nil` under Reduce Motion because a loop has no shorter answer — it stops, and
+    /// the surface holds a still that still reads as live.
+    static let working = ArgoMotion(
+        duration: 1.9,
+        curve: .linear,
+        reducedDuration: nil,
+        repeats: true,
+    )
+
     static let all: [(name: String, motion: ArgoMotion)] = [
         ("stateChange", stateChange), ("selection", selection), ("reveal", reveal),
-        ("bloom", bloom), ("resettle", resettle),
+        ("bloom", bloom), ("resettle", resettle), ("working", working),
     ]
 
     /// Roles nothing draws yet, and what each is waiting on. A role is kept only while the decision
@@ -72,8 +103,10 @@ public extension ArgoMotion {
     /// draws a kept role as unjudged.
     static let unwired: [String: String] = [:]
 
-    /// No role may run longer than this. Past it a transition stops reading as feedback and
-    /// starts reading as latency.
+    /// No NON-REPEATING role may run longer than this. Past it a transition stops reading as
+    /// feedback and starts reading as latency. A repeating role is outside the cap because the
+    /// ceiling measures how long a reader waits for a change to finish, and a loop never finishes:
+    /// its `duration` is a period the reader watches, not a wait.
     static let durationCeiling: TimeInterval = 0.5
 }
 
