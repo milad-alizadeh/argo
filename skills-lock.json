@@ -1,15 +1,5 @@
 {
   "version": 1,
-  "retired": [
-    "design-an-interface",
-    "edit-article",
-    "migrate-to-shoehorn",
-    "obsidian-vault",
-    "qa",
-    "request-refactor-plan",
-    "scaffold-exercises",
-    "ubiquitous-language"
-  ],
   "skills": {
     "ask-argo": {
       "source": "milad-alizadeh/argo",
