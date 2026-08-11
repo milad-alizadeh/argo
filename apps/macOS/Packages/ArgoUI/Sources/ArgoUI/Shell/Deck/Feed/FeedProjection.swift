@@ -10,12 +10,14 @@ enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder — a surface that drew "tool call"
     /// in a box would be claiming a shape the ticket that owns it has not decided.
-    /// `handedOff` and `expired` are the inputs that are not the record's. Both are Argo's own
-    /// memory — a handoff (`CONTEXT.md` L2) and a Permission Argo's own gate refused when its
-    /// patience ran out (#573) — and neither CLI wrote a word about either, so they arrive beside
-    /// the stream rather than being looked for inside it. Both are absent for almost every Session.
+    /// `working`, `handedOff` and `expired` are the inputs that are not the record's. All three are
+    /// Argo's own reading: a Turn in progress (`FeedWorking`), a handoff (`CONTEXT.md` L2), and a
+    /// Permission Argo's gate refused when its patience ran out (#573). No CLI wrote a word about
+    /// any of them, so they arrive beside the stream rather than being looked for inside it. All
+    /// three are absent for almost every Session.
     static func rows(
         from events: [TranscriptEvent],
+        working: Bool = false,
         handedOff: FeedHandoff? = nil,
         expired: [PermissionExpiry] = [],
     )
@@ -38,10 +40,19 @@ enum FeedProjection {
         // rather than moments in it, and of the two this is the one a reader acts on: what the work
         // cost is the last thing said about the reading, and where the work went is the way out of
         // it.
-        return (work + unanswered(expired) + rolledUp(events) + chained(handedOff)).enumerated()
+        return (work + inFlight(working) + unanswered(expired) + rolledUp(events) +
+            chained(handedOff)).enumerated()
             .map { position, content in
                 FeedRow(id: position, content: content)
             }
+    }
+
+    /// The Turn still running, directly under what it has done and ABOVE the three statements below
+    /// it. Those are facts about the whole reading and this is the newest moment of it, so it keeps
+    /// the place the next row will take when the record catches up — which is what makes it read as
+    /// the reading continuing rather than as a footnote about it.
+    private static func inFlight(_ working: Bool) -> [FeedRow.Content] {
+        working ? [.mark(.working)] : []
     }
 
     private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {

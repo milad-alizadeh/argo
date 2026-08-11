@@ -68,6 +68,17 @@ extension SpecimenScreen {
         ConnectionChips(presentation: .preview, health: connectionHealth, actions: .inert)
     }
 
+    /// The New Session verb mid-spawn. Alone rather than on the bar, because the bar is
+    /// `toolbarScope`'s render and what this settles is a swap inside one container: the wait must
+    /// not resize the circle or move anything beside it.
+    var startingSpawn: some View {
+        NewSessionButton(
+            offer: NewSessionOffer(presentation: .preview),
+            spawn: {},
+            isStarting: true,
+        )
+    }
+
     /// The Sessions room with a reading in it — the shell and not `SessionsDeck`, because what is
     /// being judged is the assembled container. Spelled once: most of this catalog is that one
     /// state with a different feed in it, and repeating the call per case made each of them four

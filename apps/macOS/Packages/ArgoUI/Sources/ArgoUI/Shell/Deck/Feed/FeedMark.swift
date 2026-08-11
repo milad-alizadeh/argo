@@ -20,6 +20,10 @@ enum FeedMark: Equatable, Sendable {
     /// is drawn as one and is not something the agent said or did — but the only one that reports
     /// an ACT rather than the shape of the record, which is why it alone takes attention ink.
     case permissionExpired(PermissionExpiry)
+    /// A Turn in progress (`FeedWorking`). The one mark that is not about something that has
+    /// already happened, which is also why it is the one that comes and goes: it stands at the foot
+    /// of the reading while the wait lasts and is gone the moment the record answers.
+    case working
 }
 
 extension FeedMark {
@@ -47,6 +51,9 @@ extension FeedMark {
         // made, and `expired` alone would leave what became of the tool call unsaid — the row is
         // both halves or it is a worse row than silence (#573).
         case .permissionExpired: "Permission expired — denied, unanswered"
+        // The only mark whose words are about the present tense, and the only one whose absence a
+        // moment later is not a bug (`FeedWorking`).
+        case .working: FeedWorking.words
         }
     }
 
@@ -71,6 +78,9 @@ extension FeedMark {
         // the difference between "a Permission expired" and knowing WHICH call went unanswered.
         case let .permissionExpired(expiry):
             "Permission for \(expiry.toolName) expired — denied, unanswered"
+        // A sentence rather than the caption, for the reason the expiry gets one: "working…" read
+        // out is a word and an ellipsis, and the ellipsis is where the whole meaning was.
+        case .working: FeedWorking.spoken
         }
     }
 }

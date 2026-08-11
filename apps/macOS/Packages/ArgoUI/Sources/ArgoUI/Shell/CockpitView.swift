@@ -46,6 +46,7 @@ public struct CockpitView: View {
     private var feed: [FeedRow] {
         FeedProjection.rows(
             from: events,
+            working: FeedWorking.isWorking(presentation.session(navigation.session)),
             handedOff: presentation.handoff(of: navigation.session),
             expired: presentation.session(navigation.session)?.expiredPermissions ?? [],
         )

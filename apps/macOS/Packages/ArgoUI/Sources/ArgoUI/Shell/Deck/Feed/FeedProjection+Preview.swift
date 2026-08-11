@@ -70,6 +70,19 @@ extension FeedProjection {
         handedOff: previewHandoff,
     )
 
+    /// A reading with the Session still working under it. A whole feed and not the mark alone, for
+    /// `previewHandedOffRows`'s reason: what the render settles is the row's PLACE — the work above
+    /// it, the spend below it, and whether a live state reads as the reading continuing rather than
+    /// as a footnote about it.
+    ///
+    /// The commands rather than the shipping transcript, and that is a limit rather than a choice:
+    /// the full reading renders as an empty column today (the same lazy-height estimates #473 and
+    /// #476 are about), so a render drawn from it would settle nothing about a row at its foot.
+    static let previewWorkingRows = rows(
+        from: CockpitPresentation.Session.ranCommands,
+        working: true,
+    )
+
     /// The punctuation with a Permission that ran out among it (#573) — the marks-only set, for
     /// `previewMarkRows`'s reason and one more: what the render settles is that a refusal nobody
     /// made reads as a departure from the marks around it, which needs those marks on one screen.

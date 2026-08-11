@@ -58,6 +58,10 @@ struct FeedMarkLine: View {
     /// the record — a tool call refused with nobody having refused it. It is the same colour the
     /// row wore while that prompt was waiting, carried through to what became of it; every other
     /// mark stays tertiary, because a turn ending and a token count are the ground it is drawn on.
+    ///
+    /// `working` stays tertiary WITH them, and that is the design's call rather than this file's:
+    /// `cockpit-status-vocabulary.md` carries the state on the dot and keeps the word neutral —
+    /// "no coloured words, no double-encoding". The ellipsis is what marks this row as live.
     private var wordInk: ArgoColor? {
         guard case .permissionExpired = mark else { return nil }
         return argo.color.state.attention
