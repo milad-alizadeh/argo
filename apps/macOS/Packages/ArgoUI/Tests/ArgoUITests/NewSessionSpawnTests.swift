@@ -1,3 +1,4 @@
+import ArgoEngine
 @testable import ArgoUI
 import Testing
 
@@ -8,7 +9,7 @@ import Testing
 struct NewSessionSpawnTests {
     /// How many spawns were asked for, and what the shell was told each answered with. A class
     /// because `CockpitActions` holds closures and a struct captured by one cannot be written back.
-    private final class SpawnRecorder {
+    @MainActor private final class SpawnRecorder {
         var requests = 0
         var answer: String?
 
@@ -29,9 +30,7 @@ struct NewSessionSpawnTests {
                 setSessionArchived: { _, _ in },
                 setSessionName: { _, _ in },
                 handOffSession: { _, _ in nil },
-                sendTurn: { _, _, _ in },
-                decidePermission: { _, _, _ in },
-                revokeStandingAllow: { _, _ in },
+                drive: InMemorySessionDriver(),
             )
         }
     }

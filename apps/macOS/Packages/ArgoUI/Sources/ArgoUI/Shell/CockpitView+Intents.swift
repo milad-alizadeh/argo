@@ -9,7 +9,7 @@ extension CockpitView {
     var send: ComposerSend {
         guard let composer else { return { _, _ in } }
         let sessionID = composer.sessionID
-        return { try actions.sendTurn(sessionID, $0, $1) }
+        return { try actions.drive.send($0, attaching: $1, to: sessionID) }
     }
 
     /// Stopping the Turn the composer's Session is running (#541), bound the way `send` is — and
@@ -17,14 +17,14 @@ extension CockpitView {
     var stop: () throws -> Void {
         guard let composer else { return {} }
         let sessionID = composer.sessionID
-        return { try actions.interruptTurn(sessionID) }
+        return { try actions.drive.interrupt(sessionID) }
     }
 
     /// Putting the composer's Session on a rung (#545), bound the way `stop` is.
     var setMode: (SessionMode) throws -> Void {
         guard let composer else { return { _ in } }
         let sessionID = composer.sessionID
-        return { try actions.setSessionMode(sessionID, $0) }
+        return { try actions.drive.setMode($0, for: sessionID) }
     }
 
     /// What the selected Session's composer is holding, out of the store that outlives the deck.
@@ -34,21 +34,24 @@ extension CockpitView {
         return drafts.binding(for: composer.sessionID)
     }
 
-    /// The prompt's one intent, bound the way `send` is.
+    /// The prompt's one intent, bound the way `send` is. The refusal is dropped because both of
+    /// the port's mean the same thing here — the Permission is gone — and the prompt leaving the
+    /// screen already says so.
     var decide: (PermissionDecision) -> Void {
         guard let prompt else { return { _ in } }
         let sessionID = prompt.sessionID
         // The request is captured with the Session, so the answer names the Permission this
         // closure was built over rather than whatever is pending by the time it is called.
         let requestID = prompt.requestID
-        return { actions.decidePermission(sessionID, requestID, $0) }
+        return { try? actions.drive.decide($0, answering: requestID, for: sessionID) }
     }
 
     /// Taking a standing allow back. Off the selection, not the composer: the prompt draws the tray
-    /// too, and the composer is absent while it is up.
+    /// too, and the composer is absent while it is up. `noSuchGrant` is dropped because the tray is
+    /// re-derived from the Session, so the chip goes either way.
     var revoke: (String) -> Void {
         guard let session = presentation.session(navigation.session) else { return { _ in } }
-        return { actions.revokeStandingAllow(session.id, $0) }
+        return { try? actions.drive.revokeStandingAllow($0, for: session.id) }
     }
 
     /// The header's one intent, bound to the Session the header is naming and the issue it serves.

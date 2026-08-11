@@ -1,3 +1,4 @@
+import ArgoEngine
 import SwiftUI
 
 /// The whole shell over a Project with nothing started in it, and a spawn that PUBLISHES.
@@ -35,9 +36,7 @@ struct SpawningRosterSpecimen: View {
             setSessionArchived: { _, _ in },
             setSessionName: { _, _ in },
             handOffSession: { _, _ in nil },
-            sendTurn: { _, _, _ in },
-            decidePermission: { _, _, _ in },
-            revokeStandingAllow: { _, _ in },
+            drive: InMemorySessionDriver(),
         )
     }
 

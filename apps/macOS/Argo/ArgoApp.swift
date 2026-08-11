@@ -152,16 +152,7 @@ struct ArgoApp: App {
                 Task { await cockpit.setName(name, sessionID: id) }
             },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
-            sendTurn: { id, text, attachments in
-                try cockpit.send(text, attaching: attachments, to: id)
-            },
-            interruptTurn: { id in try cockpit.interrupt(id) },
-            canAttach: { _ in cockpit.canAttach },
-            decidePermission: { id, request, decision in
-                cockpit.decide(decision, answering: request, for: id)
-            },
-            setSessionMode: { id, mode in try cockpit.setMode(mode, for: id) },
-            revokeStandingAllow: { id, tool in cockpit.revokeStandingAllow(tool, for: id) },
+            drive: cockpit.hub.driver,
         )
     }
 }

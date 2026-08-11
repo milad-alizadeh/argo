@@ -110,8 +110,8 @@ struct DriveModeTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
 
-        try fixture.hub.setMode(.auto, for: claim.value)
-        try fixture.hub.setMode(.readOnly, for: claim.value)
+        try fixture.hub.driver.setMode(.auto, for: claim.value)
+        try fixture.hub.driver.setMode(.readOnly, for: claim.value)
 
         // `acceptEdits → auto` is two, and `auto → plan` is three. Counted from the stale record it
         // would have been one, landing the Session on `manual` — a rung nobody asked for.
@@ -130,7 +130,7 @@ struct DriveModeTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
 
-        try fixture.hub.setMode(.plan, for: claim.value)
+        try fixture.hub.driver.setMode(.plan, for: claim.value)
         await hubObserveToEnd(fixture.hub, hubTestObservation(
             id: "session-from-cli",
             events: [.cwd(fixture.projectURL.path), .mode(cli: "plan")],
