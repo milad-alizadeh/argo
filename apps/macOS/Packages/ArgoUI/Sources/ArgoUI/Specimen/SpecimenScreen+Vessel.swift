@@ -99,7 +99,8 @@ extension SpecimenScreen {
         // Drawn by the catalog's own switch, or by the Connect flow's. Named rather than
         // defaulted, so the day one of them belongs to this vessel the compiler is what says so.
         case .foundations, .contract, .sessionRows, .ghostedRows, .roster, .churningRoster,
-             .archivedRoster, .spawningRoster, .renamedRoster, .editingRow, .toolbarScope,
+             .archivedRoster, .openArchivedRoster, .spawningRoster, .renamedRoster, .editingRow,
+             .toolbarScope,
              .emptyToolbarScope, .projectDrawer, .unreachableProjectDrawer, .emptyProjectDrawer,
              .openProjectDrawer, .deck, .sessionsDeck, .sessionHeader, .externalSessionHeader,
              .orphanedSessionHeader, .longBranchSessionHeader, .contextOk, .contextWarn,
