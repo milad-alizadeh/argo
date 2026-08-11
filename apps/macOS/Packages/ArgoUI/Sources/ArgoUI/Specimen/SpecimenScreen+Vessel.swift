@@ -39,6 +39,11 @@ extension SpecimenScreen {
             // rather than shut. Over the working feed and not the vessel alone, because what the
             // render has to settle is whether the amber reads as the one live thing on the screen.
             sessions(FeedProjection.previewWorkingRows, composer: ComposerSpecimen.running)
+        case .composerStopped:
+            // The other half of #541: the vessel a moment after Stop, empty and back at rest, with
+            // the one line saying what went. The claim is that the line is quiet enough not to read
+            // as a failure and loud enough that nobody has to work out where their words went.
+            ComposerSpecimen(draft: ComposerSpecimen.stopped)
         case .composerRefusal:
             // A refused send: the message still where it was typed, the reason on the seam
             // above the vessel, and a way to try again.

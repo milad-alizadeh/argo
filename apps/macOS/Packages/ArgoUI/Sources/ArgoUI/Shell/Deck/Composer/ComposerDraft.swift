@@ -133,7 +133,19 @@ struct ComposerDraft: Equatable {
     /// It says what it did rather than clearing quietly. Everywhere else here the rule is that a
     /// message survives what went wrong with it; this is the one act that cannot let it, so the
     /// reader is told instead of finding an empty vessel and having to guess.
-    mutating func stopped() {
+    /// A refusal clears NOTHING, which is decision 8's rule read at this act: nothing was stopped,
+    /// so the reason goes on the seam and every character stays where it was typed. The composer
+    /// must never report a Turn stopped on the strength of having asked — the port is the only
+    /// thing that knows whether the keystroke landed, and the Session's own status is a DERIVED
+    /// reading that has not caught up yet.
+    mutating func stopped(via interrupt: () throws -> Void) {
+        do {
+            try interrupt()
+        } catch let refused as SessionDriveError {
+            return refusal = refused.detail
+        } catch {
+            return refusal = error.localizedDescription
+        }
         guard !isEmpty else { return }
         text = ""
         attachments = []

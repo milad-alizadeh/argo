@@ -20,10 +20,10 @@ struct SessionComposer: View {
     let send: ComposerSend
     /// Take back a standing allow, by tool (#572). A closure for the reason `send` is.
     let revoke: (String) -> Void
-    /// Stop the Turn in flight (#541). A closure for the reason `send` is, and it throws nothing:
-    /// the one refusal the port raises is the Session already gone, which is also the state that
-    /// takes this whole vessel off the screen.
-    var stop: () -> Void = {}
+    /// Stop the Turn in flight (#541). A closure for the reason `send` is, and THROWING for the
+    /// reason it is: what the port refuses, the seam repeats — and a refused stop must leave the
+    /// vessel exactly as it found it.
+    var stop: () throws -> Void = {}
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
     var isDropTargeted = false
@@ -38,7 +38,7 @@ struct SessionComposer: View {
         composer: SessionComposerProjection.Composer,
         send: @escaping ComposerSend,
         revoke: @escaping (String) -> Void = { _ in },
-        stop: @escaping () -> Void = {},
+        stop: @escaping () throws -> Void = {},
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
         isDropTargeted: Bool = false,
     ) {
@@ -155,8 +155,7 @@ struct SessionComposer: View {
     /// flush this view watches for fires. Waiting for the status to turn would be waiting for the
     /// exact moment the queued follow-ups are released.
     private func interrupt() {
-        stop()
-        draft.stopped()
+        draft.stopped(via: stop)
     }
 
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is

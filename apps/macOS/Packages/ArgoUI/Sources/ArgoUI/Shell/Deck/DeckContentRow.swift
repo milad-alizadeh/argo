@@ -30,7 +30,7 @@ struct DeckContentRow: View {
     var revoke: (String) -> Void = { _ in }
     /// Stopping the Turn in flight (#541). The composer's, not the prompt's: a Session blocked on a
     /// Permission is waiting on the reader, and there is nothing running to stop.
-    var stop: () -> Void = {}
+    var stop: () throws -> Void = {}
     /// What the composer is holding, from above the Session identity so it survives a switch
     /// (#539). See `InstrumentDeckShell.draft`.
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
@@ -222,7 +222,7 @@ private struct FeedColumn: View {
     var prompt: PermissionPromptProjection.Prompt?
     var decide: (PermissionDecision) -> Void = { _ in }
     var revoke: (String) -> Void = { _ in }
-    var stop: () -> Void = {}
+    var stop: () throws -> Void = {}
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
 
     var body: some View {

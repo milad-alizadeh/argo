@@ -139,6 +139,12 @@ struct ComposerSpecimen: View {
     /// A drop an adapter would not take, refused on the seam with the reason (design decision 9).
     static let refusedAttachment = ComposerDraft(notice: SessionDriveError.cannotAttach.detail)
 
+    /// What an interrupt leaves (#541): an empty vessel back at rest, and one quiet line saying
+    /// where the words went. A state of its own because the EMPTINESS is the whole claim — a reader
+    /// who typed a follow-up and stopped the Turn has to find out from the seam rather than from
+    /// noticing their message is gone, and only a render can settle whether the line is enough.
+    static let stopped = ComposerDraft(notice: ComposerDraft.cleared)
+
     /// The refused state's draft: the message still where it was typed, the reason above it —
     /// in the port's own words, so the render and the seam cannot drift apart.
     static let refused = ComposerDraft(

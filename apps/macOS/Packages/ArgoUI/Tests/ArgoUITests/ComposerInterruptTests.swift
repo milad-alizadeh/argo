@@ -19,7 +19,7 @@ struct ComposerInterruptTests {
             draft.submit(whileRunning: true) { text, _ in try driver.send(text, to: "session-a") }
         }
 
-        draft.stopped()
+        draft.stopped {}
         // The flush the vessel runs when the Session goes idle, which is what the clearing has to
         // get in front of.
         draft.flush { text, _ in try driver.send(text, to: "session-a") }
@@ -35,7 +35,7 @@ struct ComposerInterruptTests {
             attachments: [AttachmentFixture.pasted],
         )
 
-        draft.stopped()
+        draft.stopped {}
 
         #expect(draft.text.isEmpty)
         #expect(draft.attachments.isEmpty)
@@ -48,7 +48,7 @@ struct ComposerInterruptTests {
     func `what the interrupt cleared is reported on the seam`() {
         var draft = ComposerDraft(text: "No, not that file —")
 
-        draft.stopped()
+        draft.stopped {}
 
         #expect(draft.notice == ComposerDraft.cleared)
         #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0)
@@ -62,7 +62,7 @@ struct ComposerInterruptTests {
     func `stopping an empty composer leaves no note`() {
         var draft = ComposerDraft()
 
-        draft.stopped()
+        draft.stopped {}
 
         #expect(draft.notice == nil)
         #expect(draft.isEmpty)
@@ -77,10 +77,29 @@ struct ComposerInterruptTests {
             refusal: SessionDriveError.notDrivable.detail,
         )
 
-        draft.stopped()
+        draft.stopped {}
 
         #expect(draft.refusal == nil)
         #expect(draft.notice == ComposerDraft.cleared)
+    }
+
+    /// A stop that never landed stopped nothing, so it may clear nothing. The vessel would
+    /// otherwise empty itself on the strength of having ASKED, and post a line claiming a Turn was
+    /// stopped that is still running — decision 8's rule, at the other act.
+    @Test
+    func `a refused interrupt clears nothing and says why`() {
+        let driver = InMemorySessionDriver()
+        driver.refusal = .notDrivable
+        var draft = ComposerDraft(text: "No, not that file —")
+        draft.submit(whileRunning: true) { _, _ in }
+        draft.text = "Stop, stop."
+
+        draft.stopped { try driver.interrupt("session-a") }
+
+        #expect(draft.text == "Stop, stop.")
+        #expect(draft.queued.map(\.text) == ["No, not that file —"])
+        #expect(draft.refusal == SessionDriveError.notDrivable.detail)
+        #expect(draft.notice == nil)
     }
 
     /// The record files the interrupt on the USER side, so read as written it would be a row in the

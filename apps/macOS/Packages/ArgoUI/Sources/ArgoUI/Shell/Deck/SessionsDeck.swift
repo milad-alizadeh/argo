@@ -49,7 +49,7 @@ struct SessionsDeck: View {
     /// Taking back one of the Session's standing allows, by tool (#572). Inert by default too.
     var revoke: (String) -> Void = { _ in }
     /// Stopping the Turn in flight (#541). Inert by default, for the reason `send` is.
-    var stop: () -> Void = {}
+    var stop: () throws -> Void = {}
     /// What the composer is holding — passed through from above the Session identity, so an unsent
     /// draft survives a switch (#539). See `InstrumentDeckShell.draft`.
     var draft: Binding<ComposerDraft> = .constant(ComposerDraft())

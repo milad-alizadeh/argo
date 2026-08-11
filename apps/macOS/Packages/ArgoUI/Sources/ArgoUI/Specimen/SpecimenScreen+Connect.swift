@@ -48,7 +48,7 @@ extension SpecimenScreen {
              .floatingControls, .flatFloatingControls, .feedLeftBehind, .feedLeftBehindInSilence,
              .twoReadings, .composer, .composerTyping, .composerRefusal, .flatComposer,
              .composerStanding, .composerCeiling, .composerDraftKept, .composerQueued,
-             .composerRunning,
+             .composerRunning, .composerStopped,
              .composerAttached, .composerPasted, .composerDragOver, .composerNoAttach,
              .permission, .permissionEdit, .permissionStanding, .flatPermission:
             EmptyView()

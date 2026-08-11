@@ -73,10 +73,11 @@ public struct CockpitActions {
     public let sendTurn: (String, String, [SessionAttachment]) throws -> Void
     /// Stop the Turn a Session is running (#541) — the composer's second act on the world.
     ///
-    /// Not throwing, unlike `sendTurn`, and for the reason `decidePermission` is not: the one
-    /// refusal the port raises is the Session having gone, which takes the composer off the screen
-    /// by itself. There is no field holding words for a seam to explain.
-    public let interruptTurn: (String) -> Void
+    /// Throwing, like `sendTurn` and unlike `decidePermission`, and the field is the reason. A
+    /// stop that was refused stopped nothing, so nothing may be cleared behind it — and only the
+    /// port knows which it was. Leaving the refusal unsaid would empty a composer on the strength
+    /// of having asked, and post a line claiming a Turn was stopped that was not.
+    public let interruptTurn: (String) throws -> Void
     /// Whether a Session's adapter takes attachments at all — declared, not discovered (#540). A
     /// question rather than a fact on the presentation, because the answer belongs to the drive
     /// port and the Hub's projection has never heard of it.
@@ -133,7 +134,7 @@ public struct CockpitActions {
         setSessionName: @escaping (String, String?) -> Void,
         handOffSession: @escaping (String, Int?) async -> String?,
         sendTurn: @escaping (String, String, [SessionAttachment]) throws -> Void,
-        interruptTurn: @escaping (String) -> Void = { _ in },
+        interruptTurn: @escaping (String) throws -> Void = { _ in },
         canAttach: @escaping (String) -> Bool = { _ in false },
         decidePermission: @escaping (String, String, PermissionDecision) -> Void,
         revokeStandingAllow: @escaping (String, String) -> Void,

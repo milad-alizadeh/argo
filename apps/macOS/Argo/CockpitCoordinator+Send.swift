@@ -18,13 +18,11 @@ extension CockpitCoordinator {
 
     /// Stop the Turn a Session is running (#541).
     ///
-    /// A refusal is dropped rather than alerted, for the reason `decide`'s is: the only one the
-    /// port raises is the Session having gone, and a Session that has gone takes its whole
-    /// composer off the screen — the answer is already on the way, in the control disappearing.
-    func interrupt(_ sessionID: String) {
-        do {
-            try hub.driver.interrupt(sessionID)
-        } catch {}
+    /// A refusal is thrown back rather than dropped, for the reason `send`'s is and `decide`'s is
+    /// not: what the composer does NEXT depends on the answer. A stop that never landed stopped
+    /// nothing, so the field it would otherwise have emptied has to stay where it is.
+    func interrupt(_ sessionID: String) throws {
+        try hub.driver.interrupt(sessionID)
     }
 
     /// What the composer asks before it draws the `+`. Off the same adapter the send goes through,

@@ -329,7 +329,7 @@ extension SpecimenScreen {
         // joined it, for the reason the Connect flow's did: a list of states reads as a list only
         // while it fits on one screen.
         case .composer, .composerTyping, .composerCeiling, .composerDraftKept, .composerQueued,
-             .composerRunning,
+             .composerRunning, .composerStopped,
              .composerRefusal, .flatComposer, .composerStanding, .composerAttached,
              .composerPasted, .composerDragOver, .composerNoAttach, .permission,
              .permissionStanding, .permissionEdit, .flatPermission:

@@ -92,6 +92,23 @@ struct SessionDriveTests {
         #expect(fixture.host.started.last?.written == ["\u{1B}", "\u{1B}"])
     }
 
+    /// The point of `ESC` over anything that ends a process: the Session is still there afterwards.
+    /// A stop that took the agent down with the Turn would be a close with extra steps.
+    @Test
+    func `a Session takes the next Turn after being stopped`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        try fixture.hub.driver.interrupt(claim.value)
+        try fixture.hub.driver.send("Do the other thing instead.", to: claim.value)
+
+        let typed = fixture.host.started.last?.written ?? []
+        #expect(typed.first == "\u{1B}")
+        #expect(typed.last?.contains("Do the other thing instead.") == true)
+        #expect(typed.last?.hasSuffix("\r") == true)
+    }
+
     @Test
     func `an orphaned Session refuses the interrupt its live self would have taken`() async throws {
         let fixture = try SpawnFixture()
@@ -127,17 +144,6 @@ struct SessionDriveTests {
 
         #expect(driver.sent(to: "session-a") == ["First", "Second"])
         #expect(driver.sent(to: "session-b") == ["Elsewhere"])
-    }
-
-    @Test
-    func `the in-memory driver counts the Sessions it was asked to stop`() throws {
-        let driver = InMemorySessionDriver()
-
-        try driver.interrupt("session-a")
-        try driver.interrupt("session-a")
-
-        #expect(driver.interrupted("session-a") == 2)
-        #expect(driver.interrupted("session-b") == 0)
     }
 
     @Test
