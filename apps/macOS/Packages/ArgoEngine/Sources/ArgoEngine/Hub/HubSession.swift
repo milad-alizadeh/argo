@@ -30,6 +30,10 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// external Session (the fact is unobservable there, per ADR-0024) and for a managed one with
     /// nothing gated in flight.
     public internal(set) var permission: PermissionRequest?
+    /// The tools this Session has stopped asking about (#572) — DIRECT for the same reason the
+    /// Permission above is, and empty rather than absent because "no standing allow" is a state
+    /// every Session is honestly in, external ones included.
+    public internal(set) var standingAllows: [StandingAllow] = []
     /// The Session this one handed its work to, where it handed it to one — the row a reader
     /// follows to find the work continuing. Set by the Hub from its own record of the handoff,
     /// never read from a transcript: neither CLI knows anything happened, and the fresh agent's own

@@ -92,6 +92,11 @@ public final class Hub {
     /// reports above are.
     var pendingPermissions: [SessionOwnership.ClaimID: [PermissionRequest]] = [:]
 
+    /// The tools each claim has stopped asking about (#572), in the order they were granted.
+    /// Observed and keyed by claim for the same reasons the Permissions above are — and published
+    /// at all because that is what separates a standing allow from the invisible set it replaces.
+    var standingAllows: [SessionOwnership.ClaimID: [StandingAllow]] = [:]
+
     /// The handoffs THIS process made, keyed by the Session that handed over and holding the id the
     /// fresh row was published under — a claim, until its CLI writes a record. Observed, because a
     /// handoff completing has to reach the reading it is drawn at the foot of.
@@ -167,7 +172,7 @@ public final class Hub {
         openCompanionChannel()
     }
 
-    /// Opened at construction, not lazily: it closes over `self`, and a channel that came into
+    /// Opened at construction, not lazily: they close over `self`, and a channel that came into
     /// being on the first spawn would be a second thing that could fail at the moment an agent
     /// starts — which is the one moment there is nothing useful to say about it.
     private func openCompanionChannel() {
@@ -175,14 +180,13 @@ public final class Hub {
         companion = CompanionChannel(root: root) { [weak self] claim, fact in
             self?.record(fact, for: claim)
         }
-        permissions = PermissionChannel(root: root) { [weak self] claim, waiting in
-            guard let self else { return }
-            if waiting.isEmpty {
-                pendingPermissions.removeValue(forKey: claim)
-            } else {
-                pendingPermissions[claim] = waiting
-            }
-        }
+        permissions = PermissionChannel(
+            root: root,
+            onChange: { [weak self] claim, waiting in self?.publish(waiting, for: claim) },
+            onStanding: { [weak self] claim, standing in
+                self?.publish(standing: standing, for: claim)
+            },
+        )
     }
 
     /// Point the Hub at a Project. Everything the previous one established is cancelled and

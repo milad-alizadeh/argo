@@ -134,6 +134,10 @@ public extension CockpitPresentation {
         /// because Argo holds the blocked hook itself. Absent for every Session that is not
         /// waiting on one, which is what returns the composer to its slot.
         public let permission: PermissionRequest?
+        /// The tools this Session has stopped asking about (#572), verbatim from the engine and in
+        /// the order they were granted. Empty for a Session that has granted none, which is every
+        /// Session until somebody says otherwise.
+        public let standingAllows: [StandingAllow]
         /// Everything the Session's transcript said, in order — the feed's whole input.
         ///
         /// The engine's own events rather than a second shape named for the shell: the surface
@@ -162,6 +166,7 @@ public extension CockpitPresentation {
             isArchived: Bool = false,
             explicitName: String? = nil,
             permission: PermissionRequest? = nil,
+            standingAllows: [StandingAllow] = [],
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -183,6 +188,7 @@ public extension CockpitPresentation {
             self.isArchived = isArchived
             self.explicitName = explicitName
             self.permission = permission
+            self.standingAllows = standingAllows
             self.events = events
         }
     }

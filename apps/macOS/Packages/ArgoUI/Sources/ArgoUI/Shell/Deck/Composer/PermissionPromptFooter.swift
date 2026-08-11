@@ -1,10 +1,15 @@
 import ArgoEngine
 import SwiftUI
 
-/// Allow focused, `⏎` allows, `esc` denies. Two answers and no third: a standing "always allow
-/// this tool" was drawn here and removed (#572), because the grant it made was a set of tool names
-/// nobody could see afterwards or take back.
+/// Allow focused, `⏎` allows, `esc` denies — and, on the trailing edge, the quieter third answer
+/// the study drew: stop asking about this tool for the rest of this Session.
+///
+/// Quieter deliberately, and unbound to any key. It is the only answer here that outlives the call
+/// it is given for, so it is the one answer that must not be reachable by muscle memory — and it
+/// says its own scope in full (#572), because the version removed before merge said *here* over a
+/// grant that covered every call to the tool.
 struct PermissionPromptFooter: View {
+    let toolName: String
     let decide: (PermissionDecision) -> Void
 
     var body: some View {
@@ -12,8 +17,28 @@ struct PermissionPromptFooter: View {
             PermissionDecisionButton(answer: .allow) { decide(.allow) }
             PermissionDecisionButton(answer: .deny) { decide(.deny) }
             Spacer()
+            StandingAllowOffer(toolName: toolName) { decide(.allowAlways) }
         }
         .argoText(ArgoTypography.control)
+    }
+}
+
+/// The standing answer, as a line of text rather than a third pill: two pills and a third would
+/// read as three equal answers, and this one is not equal to them.
+private struct StandingAllowOffer: View {
+    @Environment(\.argo) private var argo
+
+    let toolName: String
+    let stand: () -> Void
+
+    var body: some View {
+        Button(action: stand) {
+            Text(StandingAllowProjection.offer(toolName))
+                .argoText(ArgoTypography.rowMeta)
+                .foregroundStyle(argo.color.text.tertiary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(StandingAllowProjection.offer(toolName))
     }
 }
 
@@ -128,8 +153,8 @@ private struct PermissionKeycap: View {
     }
 }
 
-#Preview("Permission footer — the two answers") {
-    PermissionPromptFooter(decide: { _ in })
+#Preview("Permission footer — the two answers and the standing one") {
+    PermissionPromptFooter(toolName: "Bash", decide: { _ in })
         .padding(ArgoSpacing.section)
         .frame(width: 480)
         .argoDeckSurface()

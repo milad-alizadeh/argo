@@ -5,6 +5,7 @@ import SwiftUI
 /// the vessel. The composed state (glass over a real reading, the fade under it) is the deck's
 /// case; what these add is what only the vessel itself can show.
 struct ComposerSpecimen: View {
+    var composer = ComposerSpecimen.composer
     var draft = ComposerDraft()
 
     /// Where the window's opening focus is parked. Left to itself the field is the first key
@@ -19,7 +20,7 @@ struct ComposerSpecimen: View {
                 .focusable()
                 .focused($parked)
                 .focusEffectDisabled()
-            SessionComposer(composer: Self.composer, send: { _ in }, draft: draft)
+            SessionComposer(composer: composer, send: { _ in }, draft: draft)
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.bottom, ArgoSpacing.loose)
         }
@@ -33,6 +34,17 @@ struct ComposerSpecimen: View {
         sessionID: "specimen",
         placeholder: "Message Claude Code…",
         facts: "Opus 5",
+        standingAllows: [],
+    )
+
+    /// The same vessel on a Session that has stopped asking about two tools (#572). A state of its
+    /// own because the tray is only ever seen at rest — the moment it matters is the turn AFTER
+    /// the grant, when the prompt that made it is long gone.
+    static let standing = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: ["Bash", "Read"].map(StandingAllow.init(toolName:)),
     )
 
     /// The typing state's draft: multi-line, because the growth past one line IS the state.
@@ -61,6 +73,12 @@ struct ComposerSpecimen: View {
 
 #Preview("Composer specimen — a refused send") {
     ComposerSpecimen(draft: ComposerSpecimen.refused)
+        .frame(width: 900, height: 320)
+        .argoAppearance()
+}
+
+#Preview("Composer specimen — standing allows") {
+    ComposerSpecimen(composer: ComposerSpecimen.standing)
         .frame(width: 900, height: 320)
         .argoAppearance()
 }

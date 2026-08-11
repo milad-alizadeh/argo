@@ -32,6 +32,14 @@ public protocol SessionDriver {
         answering requestID: String,
         for sessionID: String,
     ) throws
+
+    /// Take back one standing allow (#572). The way OUT of `allowAlways`, and on the port for the
+    /// same reason `decide` is: it reaches into the gate Argo owns, and a grant with no way back is
+    /// not a decision a person can make carefully.
+    ///
+    /// Named by tool because that is what the grant is keyed by, and a grant that was already gone
+    /// raises `noSuchGrant` rather than passing silently — the user clicked something.
+    func revokeStandingAllow(_ toolName: String, for sessionID: String) throws
 }
 
 /// Whether there is a Turn in the text at all. On the port rather than in an adapter — it is the
@@ -57,6 +65,11 @@ public enum SessionDriveError: Error, Equatable {
     /// clock, or cancelled with its turn. Said rather than swallowed, because the user pressed
     /// something and nothing happened.
     case nothingPending
+    /// A revocation arrived for a standing allow this Session does not hold — revoked twice, or
+    /// gone with the Session it was granted on. Its own case and not `nothingPending`: no
+    /// Permission is involved on that path, and a refusal that names the wrong thing is worse
+    /// than one that says nothing.
+    case noSuchGrant
 
     /// What the seam says. Verbatim, and short enough to sit on one line above the field.
     public var detail: String {
@@ -64,6 +77,7 @@ public enum SessionDriveError: Error, Equatable {
         case .notDrivable: "Argo no longer holds this Session — nothing was sent"
         case .nothingToSend: "Nothing to send"
         case .nothingPending: "No Permission is waiting on this Session"
+        case .noSuchGrant: "This Session holds no standing allow for that tool"
         }
     }
 }

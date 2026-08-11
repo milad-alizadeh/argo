@@ -68,6 +68,13 @@ public struct CockpitActions {
     /// answered by the prompt leaving the screen, and there is no field holding words that need a
     /// seam to explain them.
     public let decidePermission: (String, String, PermissionDecision) -> Void
+    /// Take back a standing allow on a Session (#572) — `(sessionID, toolName)`. Keyed by tool
+    /// because the tool IS the grant.
+    ///
+    /// Its own intent rather than a fourth `PermissionDecision`, because the two are not the same
+    /// gesture: a decision answers a call the agent is blocked on, and this answers nothing — it
+    /// changes what the Session will ask about next.
+    public let revokeStandingAllow: (String, String) -> Void
 
     /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for
     /// the same reason every action here is: they are called from a view.
@@ -85,6 +92,7 @@ public struct CockpitActions {
         handOffSession: { _, _ in nil },
         sendTurn: { _, _ in },
         decidePermission: { _, _, _ in },
+        revokeStandingAllow: { _, _ in },
     )
 
     public init(
@@ -101,6 +109,7 @@ public struct CockpitActions {
         handOffSession: @escaping (String, Int?) async -> String?,
         sendTurn: @escaping (String, String) throws -> Void,
         decidePermission: @escaping (String, String, PermissionDecision) -> Void,
+        revokeStandingAllow: @escaping (String, String) -> Void,
     ) {
         self.refreshCheckout = refreshCheckout
         self.retryConnection = retryConnection
@@ -115,5 +124,6 @@ public struct CockpitActions {
         self.handOffSession = handOffSession
         self.sendTurn = sendTurn
         self.decidePermission = decidePermission
+        self.revokeStandingAllow = revokeStandingAllow
     }
 }

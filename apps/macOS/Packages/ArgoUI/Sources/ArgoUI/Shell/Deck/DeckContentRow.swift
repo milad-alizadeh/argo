@@ -25,6 +25,9 @@ struct DeckContentRow: View {
     var prompt: PermissionPromptProjection.Prompt?
     /// The answer to it, inert by default for the reason `send` is.
     var decide: (PermissionDecision) -> Void = { _ in }
+    /// Taking back one of the Session's standing allows, by tool (#572). Both vessels draw the
+    /// tray, so it goes to whichever one is up.
+    var revoke: (String) -> Void = { _ in }
     let seams: DeckSeams
     /// Whether either seam is under the reader's hand. One flag for both, because only one of them
     /// can be dragged at a time and the zones downstream care that the column is moving, not which
@@ -53,6 +56,7 @@ struct DeckContentRow: View {
                     send: send,
                     prompt: prompt,
                     decide: decide,
+                    revoke: revoke,
                 )
                 if !isPanelOpen {
                     DeckSeparator()
@@ -205,6 +209,7 @@ private struct FeedColumn: View {
     var send: (String) throws -> Void = { _ in }
     var prompt: PermissionPromptProjection.Prompt?
     var decide: (PermissionDecision) -> Void = { _ in }
+    var revoke: (String) -> Void = { _ in }
 
     var body: some View {
         FeedView(rows: feed, selection: selection, held: held, isUnderComposer: hasVessel)
@@ -241,11 +246,11 @@ private struct FeedColumn: View {
     /// The field is replaced, not disabled — there is nothing to type into while the agent waits.
     @ViewBuilder private var vessel: some View {
         if let prompt {
-            PermissionPrompt(prompt: prompt, decide: decide)
+            PermissionPrompt(prompt: prompt, decide: decide, revoke: revoke)
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.bottom, ArgoSpacing.loose)
         } else if let composer {
-            SessionComposer(composer: composer, send: send)
+            SessionComposer(composer: composer, send: send, revoke: revoke)
                 .padding(.horizontal, ArgoSpacing.section)
                 .padding(.bottom, ArgoSpacing.loose)
         }

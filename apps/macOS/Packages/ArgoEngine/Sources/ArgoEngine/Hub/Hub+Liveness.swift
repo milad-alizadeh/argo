@@ -100,6 +100,10 @@ extension Hub {
         // time, and the first one raised is the one the agent is blocked on.
         published.permission = ownership.boundClaim(ofSessionID: session.id)
             .flatMap { pendingPermissions[$0]?.first }
+        // And what it has stopped asking about, through the same claim: a grant made before the CLI
+        // wrote a record has to follow the row when it is re-keyed to the id the CLI picks.
+        published.standingAllows = ownership.boundClaim(ofSessionID: session.id)
+            .map { standingAllows[$0] ?? [] } ?? []
         // Read through the claim rather than published as it was recorded: the fresh row is
         // re-keyed to its CLI's own id the moment its record appears, and the link has to follow it
         // there.

@@ -38,4 +38,13 @@ struct ClaudeSessionDriver: SessionDriver {
             throw SessionDriveError.nothingPending
         }
     }
+
+    func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
+        guard let permissions, let claim = ownership.ownerOf(sessionID: sessionID) else {
+            throw SessionDriveError.notDrivable
+        }
+        guard permissions.revoke(toolName, for: claim) else {
+            throw SessionDriveError.noSuchGrant
+        }
+    }
 }

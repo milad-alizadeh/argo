@@ -88,6 +88,7 @@ extension CockpitPresentation.Session {
             // than over it: the derived one is what Reset goes back to (#502, story 20).
             explicitName: annotations.explicitName(session.id),
             permission: session.permission,
+            standingAllows: session.standingAllows,
             events: session.events,
         )
     }

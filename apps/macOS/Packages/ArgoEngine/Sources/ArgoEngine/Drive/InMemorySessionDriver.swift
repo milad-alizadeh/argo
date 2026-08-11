@@ -18,6 +18,7 @@ public final class InMemorySessionDriver: SessionDriver {
     /// The answers, each still naming the request it answered — the pairing is the thing a caller
     /// most needs to assert, since the bug it guards against is an answer meeting the wrong one.
     private var decisions: [String: [(request: String, decision: PermissionDecision)]] = [:]
+    private var revocations: [String: [String]] = [:]
 
     public init() {}
 
@@ -40,6 +41,13 @@ public final class InMemorySessionDriver: SessionDriver {
         decisions[sessionID, default: []].append((request: requestID, decision: decision))
     }
 
+    public func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
+        if let refusal {
+            throw refusal
+        }
+        revocations[sessionID, default: []].append(toolName)
+    }
+
     /// The Turns put to one Session, in the order they were sent.
     ///
     /// The text as the user typed it, not the keystrokes it would have become: what a cockpit test
@@ -57,5 +65,10 @@ public final class InMemorySessionDriver: SessionDriver {
     /// answer reached the Permission the user was reading.
     public func decidedRequests(for sessionID: String) -> [String] {
         (decisions[sessionID] ?? []).map(\.request)
+    }
+
+    /// The standing allows taken back on one Session, in the order they were revoked.
+    public func revoked(for sessionID: String) -> [String] {
+        revocations[sessionID] ?? []
     }
 }

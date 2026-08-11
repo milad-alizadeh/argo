@@ -14,11 +14,10 @@ from the study with its switcher hidden. The measurements below are the numbers 
 carry — prose that omits them cannot be failed for getting them wrong.
 
 Two exceptions, named so nothing downstream reads them as drift. `perm.png` and `perm-edit.png`
-still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**, and they still
-draw the *Always allow Bash here* option on the footer's trailing edge, which **#542 removed and
-#572 will bring back properly**: the grant it made was a set of tool names nobody could see or
-undo, which is the class of thing this prompt exists to prevent. Everything else in those two
-renders stands.
+still draw the fuse and `denies in 0:43` that **decision 6 has since dropped**, and the standing
+option they draw on the footer's trailing edge reads *Always allow Bash **here***, which
+**decision 11 has since rewritten** — the option is back, saying its scope in full. Everything
+else in those two renders stands.
 
 The study itself lives on the throwaway branch `prototype/536-composer`
 (`docs/designs/prototypes/composer-permission-prototype.html`), where every state is reachable
@@ -128,6 +127,31 @@ anything.
    `+`**, and a drop is refused with the reason.
 10. **The roster row carries *Needs input*** with an amber dot while a Permission is pending, so
     a blocking Session is visible without opening it (#502's row, one addition).
+11. **A standing allow is a thing on the screen, not a thing the gate remembers** (#572). The
+    quiet third answer returns to the footer's trailing edge as *Always allow **Bash** in this
+    Session* — the tool named, and the scope said in full rather than as *here*, which reads as
+    the Workspace or the kind of call and was neither. Unbound to any key, because it is the one
+    answer that outlives the call it is given for and so must not be reachable by muscle memory.
+    What it makes is drawn: a **`StandingAllowTray`** above the field, in the slot decision 4
+    gives a queued turn and the chips give an attachment, reading *Always allowed in this
+    Session* over one chip per tool, each with an `×`. Scope stated once over the row rather than
+    on each chip — a label repeated per chip is a label that gets shortened.
+
+    The tray rides on the **prompt as well as the composer**: the prompt is where grants are
+    made, and a reader ruling on the next tool should see what they already blessed. It is
+    **absent, not empty**, for a Session holding none.
+
+    **The grant ends with the Session and survives no restart.** The gate that would honour it is
+    the per-claim socket, and managed-ness is not durable across a restart (`CONTEXT.md`) — a
+    grant outliving its PTY would be a promise Argo cannot keep. That is why the label can say
+    *in this Session* and be exactly true.
+
+    **It composes with `--permission-mode` by not touching it.** #572 asked that the CLI-side
+    baseline be composed with rather than duplicated, and the composition is that they act at
+    different points: the mode decides whether the CLI runs a tool ungated at all, and the gate
+    only ever sees calls the mode already sent to `PreToolUse`. A standing allow answers those
+    without a round trip; it cannot widen what the mode permits, and nothing here writes the
+    mode. A second way to say the same thing is what duplication would have been.
 
 ## Token reconciliation
 

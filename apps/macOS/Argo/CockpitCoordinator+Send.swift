@@ -24,4 +24,17 @@ extension CockpitCoordinator {
             try hub.driver.decide(decision, answering: requestID, for: sessionID)
         } catch {}
     }
+
+    /// One standing allow taken back (#572).
+    ///
+    /// The port refuses a grant it does not hold — `noSuchGrant` — and this drops it, which is not
+    /// the contradiction it looks like. The refusal is there so a CALLER cannot revoke into thin
+    /// air and believe it worked; the cockpit is the one caller that already knows, because the
+    /// tray is re-derived from the Session and the chip goes either way. There is no field holding
+    /// words, so there is no seam for a reason to sit on.
+    func revokeStandingAllow(_ toolName: String, for sessionID: String) {
+        do {
+            try hub.driver.revokeStandingAllow(toolName, for: sessionID)
+        } catch {}
+    }
 }

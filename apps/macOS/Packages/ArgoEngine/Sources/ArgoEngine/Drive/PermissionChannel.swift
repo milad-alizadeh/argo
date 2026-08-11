@@ -23,16 +23,20 @@ final class PermissionChannel {
 
     private let root: URL
     private let onChange: (SessionOwnership.ClaimID, [PermissionRequest]) -> Void
+    private let onStanding: (SessionOwnership.ClaimID, [StandingAllow]) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
+    private var standing = StandingAllowTable()
     private var issued = 0
 
     init(
         root: URL,
         onChange: @escaping (SessionOwnership.ClaimID, [PermissionRequest]) -> Void,
+        onStanding: @escaping (SessionOwnership.ClaimID, [StandingAllow]) -> Void,
     ) {
         self.root = root
         self.onChange = onChange
+        self.onStanding = onStanding
     }
 
     /// Open this claim's gate and say where its hook should dial.
@@ -56,9 +60,13 @@ final class PermissionChannel {
         return path
     }
 
-    /// The PTY is gone, so nothing can be waiting and nothing more can ask.
+    /// The PTY is gone, so nothing can be waiting, nothing more can ask, and no grant made against
+    /// it has anything left to hold open.
     func withdraw(_ claim: SessionOwnership.ClaimID) {
         sockets.removeValue(forKey: claim)?.close()
+        if standing.withdraw(claim) {
+            onStanding(claim, [])
+        }
         guard pending.removeValue(forKey: claim) != nil else { return }
         onChange(claim, [])
     }
@@ -87,8 +95,38 @@ final class PermissionChannel {
         let answered = waiting.remove(at: index)
         pending[claim] = waiting
         answered.reply(Self.decisionLine(decision))
-        onChange(claim, waiting.map(\.request))
+        guard decision == .allowAlways else {
+            onChange(claim, waiting.map(\.request))
+            return true
+        }
+        stand(answered.request.toolName, for: claim)
         return true
+    }
+
+    /// Take a standing allow back, which is the whole reason it is a value the Session publishes
+    /// rather than a set the gate keeps (#572). Nothing in flight is disturbed and the Session is
+    /// not touched — the next call to that tool simply asks again. `false` when there was no such
+    /// grant to take back.
+    func revoke(_ toolName: String, for claim: SessionOwnership.ClaimID) -> Bool {
+        guard standing.revoke(toolName, for: claim) else { return false }
+        onStanding(claim, standing.grants(for: claim))
+        return true
+    }
+
+    /// Record the grant, and let every OTHER call to that tool already waiting through on the same
+    /// word. A prompt still sitting there for a tool that has stopped asking would be the grant not
+    /// meaning what its label says.
+    private func stand(_ toolName: String, for claim: SessionOwnership.ClaimID) {
+        if standing.grant(toolName, for: claim) {
+            onStanding(claim, standing.grants(for: claim))
+        }
+        let waiting = pending[claim] ?? []
+        for covered in waiting where covered.request.toolName == toolName {
+            covered.reply(Self.decisionLine(.allow))
+        }
+        let remaining = waiting.filter { $0.request.toolName != toolName }
+        pending[claim] = remaining
+        onChange(claim, remaining.map(\.request))
     }
 
     private func asked(
@@ -102,6 +140,12 @@ final class PermissionChannel {
             // Fail closed, and fast: a request Argo could not read is not one the user can be
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
             return reply(Self.decisionLine(.deny))
+        }
+        // The standing allow, applied where the round trip would otherwise start: a tool the user
+        // has already ruled on for this Session never becomes a prompt at all. Every other tool
+        // takes the per-action path below, untouched.
+        guard !standing.allows(request.toolName, for: claim) else {
+            return reply(Self.decisionLine(.allow))
         }
         pending[claim, default: []].append(Pending(request: request, peer: peer, reply: reply))
         onChange(claim, pending[claim, default: []].map(\.request))
@@ -117,10 +161,23 @@ final class PermissionChannel {
         onChange(claim, remaining.map(\.request))
     }
 
-    /// The hook's whole reply vocabulary — the two words it has, and no third.
+    /// The hook's whole reply vocabulary — two words, over three answers: what makes `allowAlways`
+    /// standing happens on this side of the socket, and the hook is told the same `allow` either
+    /// way. `ask` is unrepresentable, here and in the type.
+    ///
+    /// Switched exhaustively rather than tested against `.deny`, because the reason is the NEXT
+    /// variant: `allowAlways` was added to this enum and a `!= .deny` fallback took it silently.
     private static func decisionLine(_ decision: PermissionDecision) -> String {
-        let word = decision == .deny ? "deny" : "allow"
-        let reason = decision == .deny ? "Denied in Argo" : "Allowed in Argo"
+        let word: String
+        let reason: String
+        switch decision {
+        case .allow, .allowAlways:
+            word = "allow"
+            reason = "Allowed in Argo"
+        case .deny:
+            word = "deny"
+            reason = "Denied in Argo"
+        }
         return CompanionResponse.line([
             "hookSpecificOutput": [
                 "hookEventName": "PreToolUse",

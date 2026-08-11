@@ -11,7 +11,7 @@ struct FeedGalleryRow: View {
     let open: (FeedShot) -> Void
 
     var body: some View {
-        FeedShotFlow(gap: ArgoFeedRow.shotGap) {
+        WrapFlow(gap: ArgoFeedRow.shotGap) {
             ForEach(Array(gallery.shots.enumerated()), id: \.offset) { _, shot in
                 FeedShotView(shot: shot, open: open)
             }

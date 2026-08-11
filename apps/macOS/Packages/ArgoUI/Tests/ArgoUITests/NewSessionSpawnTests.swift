@@ -30,6 +30,7 @@ struct NewSessionSpawnTests {
                 handOffSession: { _, _ in nil },
                 sendTurn: { _, _ in },
                 decidePermission: { _, _, _ in },
+                revokeStandingAllow: { _, _ in },
             )
         }
     }

@@ -323,6 +323,14 @@ renamed or normalized).
 - **Permission** — a *per-action* prompt the **agent** raises ("may I run this tool?"; options
   `allow_once · allow_always · reject_once · reject_always`). DIRECT, managed-only; drives the
   `permission` session-status.
+- **Standing allow** — one **tool** a Session has stopped raising Permissions for, made by
+  answering a Permission with *always*. DIRECT and managed-only, keyed by the CLI's tool name
+  verbatim, and **scoped to the Session's claim**: it covers every call to that tool, ends when
+  it is revoked or the Session does, and **survives no restart** — the per-claim gate that would
+  honour it dies with the PTY. It is **rendered wherever it holds** and **revocable without
+  ending the Session**; a grant nobody can find or take back is the thing the Permission prompt
+  exists to prevent (#572). The **Gate**'s per-tool sibling on the Session, as Gate is Argo's own
+  policy on a Delivery step — both are Argo's automation of its own asking, not an agent prompt.
 - **Gate** — **Argo's own** policy on automating *Delivery* steps (create-PR, merge,
   push-after-PR), each `ask | auto`. Argo-owned automation, **not** an agent prompt — a
   different actor and axis from Permission.
@@ -420,5 +428,6 @@ ADR-0023/0017) and the **transcript-tailing parser** are runtime *mechanisms*.
   **Delivery**; drives "needs-you" attention.
 - **Honesty tier** — an attribute on *every* rendered fact (DIRECT / DERIVED / CONVENTION), not
   an entity.
-- **Autonomy** — **Mode** (standing stance) + **Permission** (per-action prompt) sit on the
-  **Session**; **Gate** (delivery automation) sits on the **Delivery**. Distinct axes.
+- **Autonomy** — **Mode** (standing stance) + **Permission** (per-action prompt) + `0—N`
+  **Standing allow** (one per tool that has stopped asking) sit on the **Session**; **Gate**
+  (delivery automation) sits on the **Delivery**. Distinct axes.

@@ -159,6 +159,12 @@ private func openDescriptors() -> [Int32] {
 ///
 /// The answer is returned rather than swallowed so that giving up is a caller's failed expectation
 /// — a silent `return` after the bound reads as a settled condition.
+///
+/// It SLEEPS between checks rather than yielding, and that is load-bearing rather than a rounding
+/// of the same idea. What most of these waits are waiting on is a `DispatchSource` on the main
+/// QUEUE — a socket accepting a connection, a connection reading a line. `Task.yield()` re-enqueues
+/// on the main actor without ever leaving it, so a tight yield loop can spin out the whole bound
+/// while the queue's event handler never runs and the thing being waited for never happens.
 @MainActor
 @discardableResult
 func settle(until condition: () -> Bool) async -> Bool {
@@ -167,7 +173,7 @@ func settle(until condition: () -> Bool) async -> Bool {
         if condition() {
             return true
         }
-        await Task.yield()
+        try? await Task.sleep(for: .milliseconds(1))
     }
     return condition()
 }

@@ -325,10 +325,18 @@ public struct SpecimenScreen: View {
             // with the optical response taken away.
             sessions(FeedProjection.previewRows, composer: ComposerSpecimen.composer)
                 .argoWithoutTransparency()
+        case .composerStanding:
+            // The tray at rest, which is where a standing allow has to be findable: the turn AFTER
+            // the grant, with the prompt that made it long gone (#572).
+            sessions(FeedProjection.previewRows, composer: ComposerSpecimen.standing)
         case .permission:
             // A gated command holding the composer's slot: the tool and its target verbatim, the
             // amber rim, Allow focused — the state the whole channel exists to raise.
             sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.command)
+        case .permissionStanding:
+            // The same prompt on a Session that already holds two grants: the standing offer on the
+            // footer's trailing edge, and above it the record of what it makes.
+            sessions(FeedProjection.previewRows, prompt: PermissionSpecimen.standing)
         case .permissionEdit:
             // The other tool kind the prompt renders: a path and the hunk it would write, with
             // the counts said under the block rather than inside it.

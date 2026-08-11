@@ -80,6 +80,14 @@ public struct CockpitView: View {
         return { actions.decidePermission(sessionID, requestID, $0) }
     }
 
+    /// Taking a standing allow back, bound to the selected Session. Off the selection rather than
+    /// off the composer, because both vessels draw the tray — the prompt included, and the composer
+    /// is absent while it is up.
+    private var revoke: (String) -> Void {
+        guard let session = presentation.session(navigation.session) else { return { _ in } }
+        return { actions.revokeStandingAllow(session.id, $0) }
+    }
+
     /// The header's one intent, bound to the Session the header is naming — resolved here for the
     /// same reason the header is: this is the view that knows which Session is selected, and the
     /// issue it serves. It does nothing when nothing is selected, which is also when there is no
@@ -140,6 +148,7 @@ public struct CockpitView: View {
                 send: send,
                 prompt: prompt,
                 decide: decide,
+                revoke: revoke,
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation — the same division the handoff itself
