@@ -93,7 +93,7 @@ struct FeedSurveyLine: View {
 
     @ViewBuilder private var disclosure: some View {
         if survey.disclosure == .available {
-            ArgoGlyph(ArgoSymbol.disclosureTrailing, .inline)
+            ArgoDisclosure(.beside)
                 .foregroundStyle(isOpen ? argo.color.interaction.accent : argo.color.text.disabled)
         }
     }

@@ -4,9 +4,18 @@ import SwiftUI
 /// A roster with Sessions behind its foot: the kept rows, and `Archived (n)` under them. The
 /// judgement the PNG exists for is how QUIET the foot is.
 struct ArchivedRosterSpecimen: View {
+    /// Whether the foot is drawn open. Reachable only by clicking it, so the open state needs a way
+    /// in that is not a pointer.
+    var isRevealed = false
+
     var body: some View {
-        SessionNavigator(rows: Self.rows, archived: Self.archived, selection: .constant(nil))
-            .frame(width: ArgoLayout.sidebarIdealWidth)
+        SessionNavigator(
+            rows: Self.rows,
+            archived: Self.archived,
+            selection: .constant(nil),
+            isArchiveRevealed: isRevealed,
+        )
+        .frame(width: ArgoLayout.sidebarIdealWidth)
     }
 
     static let rows = SessionRosterProjection.rows(from: sessions)
@@ -74,6 +83,12 @@ struct ArchivedRosterSpecimen: View {
 
 #Preview("Archived roster — three kept, two behind the foot") {
     ArchivedRosterSpecimen()
+        .frame(height: 420)
+        .argoAppearance()
+}
+
+#Preview("Archived roster — the foot open") {
+    ArchivedRosterSpecimen(isRevealed: true)
         .frame(height: 420)
         .argoAppearance()
 }

@@ -133,9 +133,15 @@ struct TypeAndIconContractTests {
         #expect(ArgoIconSize.control.rawValue <= ArgoTypography.control.size + 1)
     }
 
+    /// `inline` is the floor for a mark that carries meaning of its own. The chevron rung sits
+    /// below it deliberately, and is the ONLY rung allowed to: a chevron is a note on a control
+    /// the reader found by its label, so at `inline` it outweighed every quiet row it sat in.
     @Test
-    func `a pointer is drawn at the same size as the marks it shares a line with`() {
-        #expect(ArgoIconSize.allCases.allSatisfy { $0.rawValue >= ArgoIconSize.inline.rawValue })
+    func `only the chevron is drawn smaller than the marks that share a line with type`() {
+        let belowInline = ArgoIconSize.allCases
+            .filter { $0.rawValue < ArgoIconSize.inline.rawValue }
+
+        #expect(belowInline == [.chevron])
     }
 
     // MARK: - Which mark, in the evidence panel's header

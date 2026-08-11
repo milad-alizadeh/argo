@@ -24,12 +24,10 @@ public enum ArgoSymbol {
     public static let about = "info.circle"
     /// The work carried on in a fresh Session, on the link at the foot of the reading it came from.
     public static let handedOff = "arrow.right.circle"
-    /// The disclosure on a control that opens something BELOW it — a menu, a drawer under its
-    /// vessel.
-    public static let disclosure = "chevron.down"
-    /// The disclosure on a control that opens something BESIDE it — a feed row's evidence lands in
-    /// the panel to its right.
-    public static let disclosureTrailing = "chevron.right"
+    /// The one disclosure chevron. Which way it points is `ArgoDisclosure`'s rotation, never a
+    /// second symbol — the scale holds a mark's HEIGHT, so `chevron.down` is wider at the same
+    /// rung.
+    public static let disclosure = "chevron.right"
 
     /// One mark per kind of call the feed can name. A call whose kind Argo could not read carries
     /// NO mark, deliberately — a mark is a claim about what happened.

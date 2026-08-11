@@ -41,7 +41,7 @@ struct ArgoGlyph: View {
     HStack(spacing: ArgoSpacing.base) {
         ArgoGlyph(ArgoSymbol.project, .control)
         ArgoGlyph(ArgoSymbol.branch, .control)
-        ArgoGlyph(ArgoSymbol.disclosure, .inline)
+        ArgoGlyph(ArgoSymbol.disclosure, .chevron)
         Text("argo · main")
             .argoText(ArgoTypography.control)
     }

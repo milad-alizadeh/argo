@@ -34,7 +34,7 @@ struct GitVessel: View {
             // BESIDE the menu, not inside it. A menu re-synthesises its label from the icon and
             // title alone, so a chevron in there never drew at all — and the system's own comes
             // out a different mark from the Project half's, on what is meant to be one vessel.
-            ArgoGlyph(ArgoSymbol.disclosure, .inline)
+            ArgoDisclosure(.below)
         }
         .foregroundStyle(argo.color.text.secondary)
         .toolbarSegment()

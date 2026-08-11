@@ -22,6 +22,10 @@ struct SessionNavigator: View {
     /// the row that owns it.
     var renamingRowID: Binding<String?> = .constant(nil)
 
+    /// Opens the foot for the render harness, out-ranking the state so it cannot be shut under it —
+    /// as `PlanPill.isRevealed` does, and for the same reason.
+    var isArchiveRevealed = false
+
     /// Shut on launch. Going back to an archived Session is deliberate (story 15), and a foot
     /// that opened itself would put the cleared rows back under the ones that were kept.
     @State private var isArchiveShowing = false
@@ -41,6 +45,9 @@ struct SessionNavigator: View {
         // it for a styled list. Selection is that style's own capsule, coloured from the
         // `AccentColor` asset — SwiftUI's `.tint` does not reach it (D30).
         .listStyle(.sidebar)
+        // Over the whole list, not the chevron alone: dropping the section's `isExpanded:` gave up
+        // the system's own expansion, so the rows arrive on this instead of in the click's frame.
+        .argoAnimation(.reveal, value: isArchiveOpen)
         // The foot is shut whenever it comes back, not left open from the last time it existed.
         .onChange(of: archived.isEmpty) { _, isEmpty in
             isArchiveShowing = isArchiveShowing && !isEmpty
@@ -49,33 +56,32 @@ struct SessionNavigator: View {
 
     /// The archived Sessions, behind a count and shut by default. Absent entirely when nothing
     /// has been archived: a one-time state costs no permanent chrome (`cockpit-spec.md` §4.1).
+    ///
+    /// The section takes NO `isExpanded:` binding, deliberately: given one, a sidebar section draws
+    /// the system's own disclosure under the pointer, and the foot then carries two chevrons with
+    /// only that one live. The header owns the gesture instead (`RosterArchiveFoot`).
     @ViewBuilder private var archivedFoot: some View {
-        if let label = SessionRosterProjection.archivedFoot(archived) {
-            Section(isExpanded: $isArchiveShowing) {
-                ForEach(archived) { row in
-                    swipeable(row)
+        if let foot = SessionRosterProjection.archivedFoot(archived) {
+            Section {
+                if isArchiveOpen {
+                    ForEach(archived) { row in
+                        swipeable(row)
+                    }
                 }
             } header: {
-                footHeader(label)
+                RosterArchiveFoot(
+                    foot: foot,
+                    isShowing: isArchiveOpen,
+                    toggle: { isArchiveShowing.toggle() },
+                )
             }
         }
     }
 
-    /// The chevron is drawn rather than left to the section, which shows one only under the
-    /// pointer: a foot nobody knows opens is a foot nobody opens. Inert — the section's own header
-    /// takes the click, and a second control on top of it would toggle twice.
-    private func footHeader(_ label: String) -> some View {
-        HStack(spacing: ArgoSpacing.snug) {
-            ArgoGlyph(
-                isArchiveShowing ? ArgoSymbol.disclosure : ArgoSymbol.disclosureTrailing, .inline,
-            )
-            Text(label)
-                .argoText(ArgoTypography.caption)
-            Spacer(minLength: ArgoSpacing.flush)
-        }
-        .foregroundStyle(argo.color.text.tertiary)
-        .padding(.vertical, ArgoSpacing.tight)
-        .contentShape(.rect)
+    /// The one answer to "is the foot open", read by the rows and by the chevron alike — a mark
+    /// drawn from a second reading can report the wrong state.
+    private var isArchiveOpen: Bool {
+        isArchiveShowing || isArchiveRevealed
     }
 
     /// `.swipeActions` gives the system's reveal, spring back, close-when-another-opens and

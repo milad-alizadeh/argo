@@ -94,6 +94,7 @@ under `docs/adr/`.
 | `cockpit-surface-matrix.md` | The surface × state matrix | Every cockpit surface and the states it must render — the testable spec the app is checked against |
 | `cockpit-session-composer.md` + `composer/` | **Approved composer design** (#536, under #535 / ADR-0024) | The composer that replaces the Session terminal, its attachment chips, the run-settings popover and the Permission prompt. Twenty-one state renders in `composer/` are the spec; the doc carries the measurements and the frozen component names |
 | `cockpit-session-composer.inventory.md` | Composer build inventory | What each ticket's build actually extracted from the design, one row per component, appended per ticket — #538 (send) so far |
+| `cockpit-roster-archive-foot.md` | **The roster's `Archived (n)` foot** | The one disclosure at the foot of the Sessions roster: anatomy, states, motion, keyboard, and the SwiftUI mechanic that stops the sidebar `Section` drawing a second chevron |
 | `cockpit-session-interior-decisions.md` | Session-interior decision log | Roster rows, dot-carries-state, zero-state, panel natures. Behaviour lineage; its master–detail *layout* was superseded by the single feed |
 
 ## `renders/` — what the app actually drew

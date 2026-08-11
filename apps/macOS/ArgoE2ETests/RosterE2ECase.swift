@@ -50,6 +50,12 @@ class RosterE2ECase: XCTestCase {
         row.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.35))
     }
 
+    /// Where a row's own label is drawn, past any mark in its leading gutter. Geometric for the
+    /// reason `titleArea(of:)` is.
+    func labelArea(of row: XCUIElement) -> XCUICoordinate {
+        row.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
+    }
+
     /// Waits on a change of STATE on an element that already exists, which no existence
     /// expectation can ask about.
     func expect(_ predicate: String, of element: XCUIElement, timeout: TimeInterval = 10) -> Bool {

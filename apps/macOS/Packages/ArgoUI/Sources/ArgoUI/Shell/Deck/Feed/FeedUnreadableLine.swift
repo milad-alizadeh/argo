@@ -36,7 +36,7 @@ struct FeedUnreadableLine: View {
             Text(unreadable.label)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(argo.color.text.tertiary)
-            ArgoGlyph(ArgoSymbol.disclosureTrailing, .inline)
+            ArgoDisclosure(.beside)
                 .foregroundStyle(
                     isExpanded ? argo.color.interaction.accent : argo.color.text.disabled,
                 )

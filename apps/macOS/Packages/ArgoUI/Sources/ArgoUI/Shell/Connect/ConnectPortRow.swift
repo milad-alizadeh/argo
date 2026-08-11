@@ -33,6 +33,15 @@ struct ConnectPortRow: View {
     }
 
     private var menu: some View {
+        HStack(spacing: ArgoSpacing.snug) {
+            chooser
+            // BESIDE the menu, for the reason `GitVessel` gives: a menu re-synthesises its
+            // label, so a chevron inside it never draws at all.
+            ArgoDisclosure(.below)
+        }
+    }
+
+    private var chooser: some View {
         Menu {
             // The Account already on the row is in this list: rebinding it at another scope is a
             // move the row has to allow.
@@ -58,6 +67,8 @@ struct ConnectPortRow: View {
         // call to action.
         .tint(argo.color.text.primary)
         .menuStyle(.borderlessButton)
+        // The system's own indicator is drawn at its size, not the contract's chevron rung.
+        .menuIndicator(.hidden)
         .fixedSize()
         .accessibilityLabel("Choose what \(row.row.title.lowercased()) reads through")
     }
