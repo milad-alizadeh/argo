@@ -5,7 +5,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/ask-argo/SKILL.md",
-      "computedHash": "1aa20eda9a8d6dc4737b8778c756dd8f425c7c9e1049bbc894549aee5615bae0"
+      "computedHash": "4a61723a9d0181d8c18ae9adde1e85f35c220bd60cd0535e0821435600e23b0e"
     },
     "ask-matt": {
       "source": "mattpocock/skills",
@@ -17,7 +17,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/audit-agent-context/SKILL.md",
-      "computedHash": "9719bb5512dba7f3f3854aaf379245906b060550c246390fc4a81b5e8b5fb233"
+      "computedHash": "a2afdc82649b2ed4847af2ea7297fd76e111f9e9b12f6edfb1eb4c7d83666b31"
     },
     "claude-handoff": {
       "source": "mattpocock/skills",
@@ -143,7 +143,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-argo-skills/SKILL.md",
-      "computedHash": "6302616023fea0bdfb84137a7ad5153eb5fd3508012723740eb59b2591f806c2"
+      "computedHash": "a02f9dcac8a0ef338d9d40834f89363889c190284169eeb1cffaf37f03793573"
     },
     "setup-design-foundations": {
       "source": "milad-alizadeh/argo",
@@ -155,13 +155,13 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-design-infra/SKILL.md",
-      "computedHash": "608b161f5b987d09217e18e32e751d33328a676f5c116f5aca38ec9cee246e61"
+      "computedHash": "bcb6ba40d31cd783319f227af9e503d312dd0c734be9829943656b7357a2575b"
     },
     "setup-module-boundaries": {
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-module-boundaries/SKILL.md",
-      "computedHash": "73de48c036e0636b458f976d29f7d6989dab8b519fb2e315a20ddff2b1dc0a48"
+      "computedHash": "6e1bb5111374b95b94d3c36d840e1531917937268d1d858876c79dd3738fbbff"
     },
     "setup-output-style": {
       "source": "milad-alizadeh/argo",
@@ -179,7 +179,7 @@
       "source": "milad-alizadeh/argo",
       "sourceType": "github",
       "skillPath": "packages/argo-skills/skills/setup-rules/SKILL.md",
-      "computedHash": "2184a30e4ba753f37e362cc5e631be840b8164fdb1e85a51a46424533aa930bf"
+      "computedHash": "4020870a700d1b6bd236de6543d255e004dc469f418a162653eb10ea077d2bf8"
     },
     "setup-task-tracking": {
       "source": "milad-alizadeh/argo",
