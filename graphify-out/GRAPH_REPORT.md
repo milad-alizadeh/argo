@@ -1,16 +1,16 @@
 # Graph Report - argo  (2026-08-11)
 
 ## Corpus Check
-- 638 files · ~266,131 words
+- 638 files · ~266,134 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4693 nodes · 9072 edges · 342 communities (309 shown, 33 thin omitted)
+- 4693 nodes · 9072 edges · 343 communities (309 shown, 34 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 453 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4fea135e`
+- Built from commit: `c42971f2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -283,6 +283,8 @@
 - SessionRosterProjectionTests.swift
 - NarrationReadingTests.swift
 - ArgoSymbol.swift
+- ClaudeSessionDriver
+- ProjectRecord
 - ComposerDraft
 - .attachments
 - PermissionPromptFooter.swift
@@ -326,7 +328,6 @@
 - AccountProvider
 - ProjectBinding
 - .keystrokes
-- probe
 - .phrase
 - .heading
 - AttachmentChip
@@ -384,7 +385,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (342 total, 33 thin omitted)
+## Communities (343 total, 34 thin omitted)
 
 ### Community 0 - "App Startup & Transcript Engine"
 Cohesion: 0.11
@@ -452,7 +453,7 @@ Nodes (20): AccountGrant, AccountGrantLifetime, expiring, nonExpiring, String, A
 
 ### Community 16 - "Cockpit Shell View Scaffolding"
 Cohesion: 0.04
-Nodes (33): AppKit, View, Void, WelcomeScreen, PermissionPromptHeader, EvidenceCopyButton, EvidenceStepHeader, FeedEvidence (+25 more)
+Nodes (30): AppKit, View, PermissionPromptHeader, EvidenceCopyButton, EvidenceStepHeader, FeedEvidence, String, HighlightColors (+22 more)
 
 ### Community 17 - "Turbo Task Config"
 Cohesion: 0.13
@@ -467,8 +468,8 @@ Cohesion: 0.14
 Nodes (9): CockpitNavigationModel, CockpitPresentation, CockpitSpawn, CockpitPresentation, NewSessionCommands, CockpitPresentation, SpawningRosterSpecimen, String (+1 more)
 
 ### Community 20 - "Sessions Deck UI"
-Cohesion: 0.06
-Nodes (34): ConnectNoteView, ConnectNote, DeckSeparator, FeedAskLine, FeedAskQuestion, ArgoColor, String, FeedCallSubject (+26 more)
+Cohesion: 0.05
+Nodes (38): ConnectNoteView, ConnectNote, Void, WelcomeScreen, DeckSeparator, FeedAskLine, FeedAskQuestion, ArgoColor (+30 more)
 
 ### Community 21 - "Specimen Deck Fixtures"
 Cohesion: 0.43
@@ -487,8 +488,8 @@ Cohesion: 0.11
 Nodes (15): ProjectBindingIndex, Refused, AccountRegistryStore, BindingFixture, ProjectBinding, ProjectMissing, Question, RecordingScopeCheck (+7 more)
 
 ### Community 25 - "Connection Status Chip"
-Cohesion: 0.11
-Nodes (20): HTTPTransport, BindingProbe, BindingScopeCheck, ProviderScopeCheck, ScopeVisibility, notVisible, unauthorized, unreadable (+12 more)
+Cohesion: 0.09
+Nodes (17): GitHubDeviceFlow, GitHubDeviceChallenge, String, GitHubDeviceFlow, Data, GitHubDeviceChallenge, GitHubOAuthApp, HTTPTransport (+9 more)
 
 ### Community 26 - "Contract Specimen"
 Cohesion: 0.20
@@ -511,8 +512,8 @@ Cohesion: 0.13
 Nodes (13): SessionNavigator, Binding, Bool, CockpitPresentation, SessionRosterProjection, String, Void, SessionRow (+5 more)
 
 ### Community 32 - "Shell Sidebar UI"
-Cohesion: 0.11
-Nodes (20): GitHubDeviceFlow, GitHubDeviceChallenge, String, DeviceCodeResponse, PollOutcome, pending, slowDown, Duration (+12 more)
+Cohesion: 0.09
+Nodes (22): BindingFault, accountRemoved, grantExpired, grantMissing, portNotServedByProvider, BindingRefusal, grantExpired, noGrant (+14 more)
 
 ### Community 33 - "Layout Constants"
 Cohesion: 0.31
@@ -671,8 +672,8 @@ Cohesion: 0.11
 Nodes (17): Int, ArgoTypeScale, body, callout, caption1, caption2, footnote, headline (+9 more)
 
 ### Community 72 - "FeedFixture"
-Cohesion: 0.09
-Nodes (22): BindingFault, accountRemoved, grantExpired, grantMissing, portNotServedByProvider, BindingRefusal, grantExpired, noGrant (+14 more)
+Cohesion: 0.19
+Nodes (12): Pending, PermissionChannel, Bool, Int, Never, SessionOwnership, String, Task (+4 more)
 
 ### Community 73 - ".run"
 Cohesion: 0.21
@@ -683,8 +684,8 @@ Cohesion: 0.06
 Nodes (33): CockpitCoordinator, Bool, Hub, ProjectRecord, SessionAnnotationStore, String, URL, LaunchConfiguration (+25 more)
 
 ### Community 75 - "ProjectRegistryStore"
-Cohesion: 0.19
-Nodes (12): Pending, PermissionChannel, Bool, Int, Never, SessionOwnership, String, Task (+4 more)
+Cohesion: 0.13
+Nodes (17): HTTPBody, form, json, HTTPRequest, HTTPTransportError, malformedURL, status, unauthorized (+9 more)
 
 ### Community 76 - "ToolCallOutcome"
 Cohesion: 0.11
@@ -736,7 +737,7 @@ Nodes (11): ArgoIconSize, control, inline, Font, String, View, ArgoLabelStyle, L
 
 ### Community 88 - "XCTestCase"
 Cohesion: 0.16
-Nodes (4): ContextGuideE2ETests, FeedFollowingE2ETests, FeedKeyboardE2ETests, XCTestCase
+Nodes (4): FeedGalleryE2ETests, FeedFollowingE2ETests, FeedKeyboardE2ETests, XCTestCase
 
 ### Community 89 - "CompanionFact"
 Cohesion: 0.21
@@ -771,8 +772,8 @@ Cohesion: 0.18
 Nodes (11): Position, access, agent, checkout, issue, SessionHeaderFacts, SessionHeaderFactsGallery, Bool (+3 more)
 
 ### Community 97 - "XCTest"
-Cohesion: 0.11
-Nodes (7): FeedArrivalE2ETests, String, FeedGalleryE2ETests, FeedSilenceE2ETests, String, SessionRenameStrings, XCTest
+Cohesion: 0.15
+Nodes (6): FeedArrivalE2ETests, String, FeedSilenceE2ETests, String, SessionRenameStrings, XCTest
 
 ### Community 98 - "CompanionOutcome"
 Cohesion: 0.26
@@ -819,20 +820,20 @@ Cohesion: 0.13
 Nodes (14): CockpitView, Binding, ComposerDraft, ComposerSend, String, Void, SessionCommandItems, FocusedValues (+6 more)
 
 ### Community 109 - "ArgoColor"
-Cohesion: 0.13
-Nodes (17): HTTPBody, form, json, HTTPRequest, HTTPTransportError, malformedURL, status, unauthorized (+9 more)
+Cohesion: 0.10
+Nodes (18): GitHubDeviceChallenge, Response, declined, deviceCode, nonsense, pending, refused, revoked (+10 more)
 
 ### Community 110 - ".session"
 Cohesion: 0.17
 Nodes (11): RosterSessionFixture, Bool, CockpitPresentation, Int, String, rows(), CockpitPresentation, SessionRosterProjection (+3 more)
 
 ### Community 111 - "LaunchConfiguration"
-Cohesion: 0.10
-Nodes (18): GitHubDeviceChallenge, Response, declined, deviceCode, nonsense, pending, refused, revoked (+10 more)
+Cohesion: 0.14
+Nodes (16): FeedTableCoordinator, AnyView, Bool, CGFloat, EnvironmentValues, FeedRow, Int, Never (+8 more)
 
 ### Community 112 - "SessionAnnotationStore"
-Cohesion: 0.20
-Nodes (9): GitHubDeviceFlow, Data, GitHubDeviceChallenge, SessionAnnotationStore, Bool, SessionAnnotations, String, URL (+1 more)
+Cohesion: 0.35
+Nodes (5): SessionAnnotationStore, Bool, SessionAnnotations, String, URL
 
 ### Community 113 - "ProcessLivenessReader"
 Cohesion: 0.31
@@ -847,8 +848,8 @@ Cohesion: 0.15
 Nodes (13): ToolCallKind, delegate, edit, execute, fetch, mcp, other, plan (+5 more)
 
 ### Community 116 - "AgentSpawnError"
-Cohesion: 0.14
-Nodes (16): FeedTableCoordinator, AnyView, Bool, CGFloat, EnvironmentValues, FeedRow, Int, Never (+8 more)
+Cohesion: 0.15
+Nodes (12): AccountsCoordinator, AccountPort, AccountRegistryStore, Bool, ConnectNote, ConnectPort, Never, ProjectBinding (+4 more)
 
 ### Community 117 - "AgentProcessEvents"
 Cohesion: 0.09
@@ -891,8 +892,8 @@ Cohesion: 0.16
 Nodes (10): RosterOrder, Bool, Row, String, ShellSidebar, Binding, Bool, CockpitPresentation (+2 more)
 
 ### Community 127 - "SessionRow"
-Cohesion: 0.15
-Nodes (12): AccountsCoordinator, AccountPort, AccountRegistryStore, Bool, ConnectNote, ConnectPort, Never, ProjectBinding (+4 more)
+Cohesion: 0.13
+Nodes (10): AccountRecord, AccountProvider, String, AccountRegistry, AccountRegistry, LenientRecord, Decoder, Encoder (+2 more)
 
 ### Community 128 - "ProjectDrawerProjection"
 Cohesion: 0.14
@@ -931,8 +932,8 @@ Cohesion: 0.32
 Nodes (11): raw, count(), declaredChange(), declaredDestination(), diffEvidence(), diffLine(), fileChange(), hunk() (+3 more)
 
 ### Community 137 - "firstLines"
-Cohesion: 0.13
-Nodes (10): AccountRecord, AccountProvider, String, AccountRegistry, AccountRegistry, LenientRecord, Decoder, Encoder (+2 more)
+Cohesion: 0.14
+Nodes (16): PermissionRequest, read(), String, PermissionPrompt, String, Void, PermissionPromptProjection, Prompt (+8 more)
 
 ### Community 138 - "CockpitView"
 Cohesion: 0.18
@@ -947,8 +948,8 @@ Cohesion: 0.31
 Nodes (8): EvidenceDiffLine, EvidenceHunk, EvidenceHunkProse, EvidenceUnreadablePatch, ArgoColor, AttributedString, Int, String
 
 ### Community 141 - "EvidenceHeader"
-Cohesion: 0.14
-Nodes (16): PermissionRequest, read(), String, PermissionPrompt, String, Void, PermissionPromptProjection, Prompt (+8 more)
+Cohesion: 0.12
+Nodes (17): BindingProbe, BindingScopeCheck, ProviderScopeCheck, ScopeVisibility, notVisible, unauthorized, unreadable, visible (+9 more)
 
 ### Community 142 - "FeedCallSubject"
 Cohesion: 0.17
@@ -1027,12 +1028,12 @@ Cohesion: 0.29
 Nodes (4): AnnotationFile, SessionAnnotationStore, String, URL
 
 ### Community 161 - "rosterOf"
-Cohesion: 0.12
-Nodes (14): SessionDriveError, attachmentUnwritable, cannotAttach, noSuchGrant, notDrivable, nothingPending, nothingToSend, SessionDriver (+6 more)
+Cohesion: 0.20
+Nodes (15): DeviceCodeResponse, PollOutcome, pending, slowDown, Duration, Int, String, TokenErrorResponse (+7 more)
 
 ### Community 162 - ".showed"
-Cohesion: 0.20
-Nodes (9): LiveClaudeFixture, RecordingProcessHost, Bool, Hub, Int, SessionOwnership, String, UInt8 (+1 more)
+Cohesion: 0.12
+Nodes (14): SessionDriveError, attachmentUnwritable, cannotAttach, noSuchGrant, notDrivable, nothingPending, nothingToSend, SessionDriver (+6 more)
 
 ### Community 163 - "DeckZone"
 Cohesion: 0.20
@@ -1071,24 +1072,24 @@ Cohesion: 0.29
 Nodes (4): Never, Void, TestGate, CheckedContinuation
 
 ### Community 174 - "CockpitPresentation.Session"
-Cohesion: 0.12
-Nodes (13): AccountPort, codeHost, workItem, AccountProvider, github, linear, ConnectionCause, offline (+5 more)
+Cohesion: 0.20
+Nodes (9): LiveClaudeFixture, RecordingProcessHost, Bool, Hub, Int, SessionOwnership, String, UInt8 (+1 more)
 
 ### Community 175 - ".folded"
 Cohesion: 0.52
 Nodes (3): FeedSurveyFold, FeedCall, FeedRow
 
 ### Community 176 - ".pin"
-Cohesion: 0.15
-Nodes (12): GitHubDeviceChallenge, GitHubDeviceFlowError, declined, expired, malformedResponse, refused, Duration, String (+4 more)
+Cohesion: 0.12
+Nodes (13): AccountPort, codeHost, workItem, AccountProvider, github, linear, ConnectionCause, offline (+5 more)
 
 ### Community 177 - "FeedUnreadable"
 Cohesion: 0.22
 Nodes (7): FeedUnreadable, FeedUnreadableRun, FeedRow, Int, String, FeedUnreadableLine, Bool
 
 ### Community 178 - "SessionHeader"
-Cohesion: 0.18
-Nodes (13): BindingHealth, ConnectionState, healthy, needsReconnect, stale, ConnectionCause, ConnectionHealthReading, PortConnection (+5 more)
+Cohesion: 0.32
+Nodes (5): SessionHeader, SessionHeaderGallery, CGFloat, SessionHeaderProjection, Void
 
 ### Community 179 - "NewSessionOffer"
 Cohesion: 0.43
@@ -1115,8 +1116,8 @@ Cohesion: 0.60
 Nodes (3): Entry, HubJoinCache, String
 
 ### Community 187 - "LaunchProject"
-Cohesion: 0.16
-Nodes (10): Void, ComposerPreview, SessionComposer, Binding, Bool, ComposerDraft, ComposerSend, SessionAttachment (+2 more)
+Cohesion: 0.15
+Nodes (12): GitHubDeviceChallenge, GitHubDeviceFlowError, declined, expired, malformedResponse, refused, Duration, String (+4 more)
 
 ### Community 188 - ".read"
 Cohesion: 0.53
@@ -1151,8 +1152,8 @@ Cohesion: 0.33
 Nodes (5): FeedShotView, Bool, CGFloat, String, Void
 
 ### Community 196 - "ContextBar"
-Cohesion: 0.47
-Nodes (3): ContextBar, CGFloat, SessionHeaderProjection
+Cohesion: 0.18
+Nodes (13): BindingHealth, ConnectionState, healthy, needsReconnect, stale, ConnectionCause, ConnectionHealthReading, PortConnection (+5 more)
 
 ### Community 197 - "SessionHeaderProjection.Context.Tier"
 Cohesion: 0.53
@@ -1163,8 +1164,8 @@ Cohesion: 0.60
 Nodes (3): RosterSearch, SessionRosterProjection, String
 
 ### Community 199 - ".swatches"
-Cohesion: 0.29
-Nodes (9): granted, StandingAllow, StandingAllowTable, Bool, SessionOwnership, String, session(), CockpitPresentation (+1 more)
+Cohesion: 0.16
+Nodes (10): Void, ComposerPreview, SessionComposer, Binding, Bool, ComposerDraft, ComposerSend, SessionAttachment (+2 more)
 
 ### Community 200 - "FeedNewMessagesTests.swift"
 Cohesion: 0.40
@@ -1186,21 +1187,17 @@ Nodes (5): header(), AgentCLI, CockpitPresentation, SessionHeaderProjection, Str
 Cohesion: 0.33
 Nodes (5): header(), CockpitPresentation, Int, SessionHeaderProjection, String
 
-### Community 205 - "ContextGuideE2ETests"
-Cohesion: 0.28
-Nodes (8): ConnectionHealthLedger, Key, Reading, ConnectionCause, ProjectBinding, Set, String, Reading
-
 ### Community 207 - ".beginDiscovery"
-Cohesion: 0.17
-Nodes (10): FeedTableCoordinator, Bool, CGFloat, FeedRow, Int, NSTableView, NSTableColumn, NSTableViewDataSource (+2 more)
+Cohesion: 0.29
+Nodes (9): granted, StandingAllow, StandingAllowTable, Bool, SessionOwnership, String, session(), CockpitPresentation (+1 more)
 
 ### Community 208 - "Tier"
 Cohesion: 0.40
 Nodes (4): Tier, convention, derived, direct
 
 ### Community 209 - "AgentLaunch"
-Cohesion: 0.25
-Nodes (6): FeedTableCoordinator, Bool, CGFloat, Int, TimeInterval, Notification
+Cohesion: 0.28
+Nodes (8): ConnectionHealthLedger, Key, Reading, ConnectionCause, ProjectBinding, Set, String, Reading
 
 ### Community 210 - "SessionAnnotationStoreTests.swift"
 Cohesion: 0.40
@@ -1211,32 +1208,32 @@ Cohesion: 0.40
 Nodes (3): CockpitPresentation.Session, String, TranscriptEvent
 
 ### Community 212 - "ComposerFooter"
-Cohesion: 0.28
-Nodes (7): CompanionSocket, Bool, DispatchSourceRead, Int, Int32, String, Void
+Cohesion: 0.17
+Nodes (10): FeedTableCoordinator, Bool, CGFloat, FeedRow, Int, NSTableView, NSTableColumn, NSTableViewDataSource (+2 more)
 
 ### Community 213 - "SendButton"
 Cohesion: 0.40
 Nodes (4): SendButton, ArgoColor, Bool, Void
 
 ### Community 214 - "FeedAskQuestion"
-Cohesion: 0.19
-Nodes (9): SessionTitle, Standing, explicit, placeholder, prompt, provisional, Bool, String (+1 more)
+Cohesion: 0.25
+Nodes (6): FeedTableCoordinator, Bool, CGFloat, Int, TimeInterval, Notification
 
 ### Community 215 - ".latch"
-Cohesion: 0.30
-Nodes (7): KeychainGrantError, keychain, KeychainGrantStore, Any, String, OSStatus, Security
+Cohesion: 0.28
+Nodes (7): CompanionSocket, Bool, DispatchSourceRead, Int, Int32, String, Void
 
 ### Community 216 - ".move"
-Cohesion: 0.18
-Nodes (10): BindingResolution, broken, ready, unbound, ResolvedBinding, AccountProvider, BindingFault, ProjectBinding (+2 more)
+Cohesion: 0.19
+Nodes (9): SessionTitle, Standing, explicit, placeholder, prompt, provisional, Bool, String (+1 more)
 
 ### Community 217 - "PlanStepLine"
 Cohesion: 0.14
 Nodes (12): PlanProjection, TranscriptEvent, PlanReading, Step, Double, Int, String, PlanStepLine (+4 more)
 
 ### Community 218 - ".phrase"
-Cohesion: 0.24
-Nodes (6): PermissionRequest.Target, Self, String, Target, command, edit
+Cohesion: 0.30
+Nodes (7): KeychainGrantError, keychain, KeychainGrantStore, Any, String, OSStatus, Security
 
 ### Community 219 - "NewSessionButton"
 Cohesion: 0.29
@@ -1263,8 +1260,8 @@ Cohesion: 0.60
 Nodes (4): call(), execute(), FeedCall, String
 
 ### Community 225 - "MarkedProseTests.swift"
-Cohesion: 0.25
-Nodes (10): SessionAttachment, Source, bytes, file, Bool, Data, Int, String (+2 more)
+Cohesion: 0.18
+Nodes (10): BindingResolution, broken, ready, unbound, ResolvedBinding, AccountProvider, BindingFault, ProjectBinding (+2 more)
 
 ### Community 226 - "RosterSearchTests.swift"
 Cohesion: 0.40
@@ -1295,8 +1292,8 @@ Cohesion: 0.50
 Nodes (3): handedOffTo(), Hub, String
 
 ### Community 235 - "answer"
-Cohesion: 0.21
-Nodes (8): CockpitPresentation, CockpitPresentation.Session, CockpitPresentation.Session.Access, CockpitPresentation.Session.Workspace, Bool, Hub, HubSession, SessionAnnotations
+Cohesion: 0.24
+Nodes (6): PermissionRequest.Target, Self, String, Target, command, edit
 
 ### Community 236 - "HubHandoffTests.swift"
 Cohesion: 0.50
@@ -1319,28 +1316,28 @@ Cohesion: 0.40
 Nodes (4): ComposerSeam, ArgoColor, String, Void
 
 ### Community 241 - "Hashable"
-Cohesion: 0.22
-Nodes (9): ConnectCompanion, includedWithSpawns, unknown, ConnectReading, AccountPort, AccountProvider, ConnectNote, ConnectPort (+1 more)
+Cohesion: 0.25
+Nodes (10): SessionAttachment, Source, bytes, file, Bool, Data, Int, String (+2 more)
 
 ### Community 242 - "FeedTailButton"
-Cohesion: 0.21
-Nodes (6): FeedTailButton, String, Void, ArgoBadge, CGFloat, Int
+Cohesion: 0.50
+Nodes (3): FeedTailButton, String, Void
 
 ### Community 243 - "SessionHeaderContext"
 Cohesion: 0.33
 Nodes (4): SessionHeaderContext, ArgoColor, Bool, SessionHeaderProjection
 
 ### Community 244 - "ProjectVessel"
-Cohesion: 0.22
-Nodes (9): ConnectPanel, ConnectPanelProjection, ConnectPanelActions, AccountPort, AccountProvider, ProjectBinding, Void, ConnectSheet (+1 more)
+Cohesion: 0.21
+Nodes (8): CockpitPresentation, CockpitPresentation.Session, CockpitPresentation.Session.Access, CockpitPresentation.Session.Workspace, Bool, Hub, HubSession, SessionAnnotations
 
 ### Community 245 - "SpawningRosterSpecimen"
-Cohesion: 0.31
-Nodes (7): AttributedString, Bool, HighlightColors, String, SyntaxHighlight, highlighted(), String
+Cohesion: 0.22
+Nodes (9): ConnectCompanion, includedWithSpawns, unknown, ConnectReading, AccountPort, AccountProvider, ConnectNote, ConnectPort (+1 more)
 
 ### Community 246 - "ArgoBadge"
-Cohesion: 0.21
-Nodes (10): FeedTableModel, AnyView, Binding, Bool, CGFloat, EnvironmentValues, FeedRow, Int (+2 more)
+Cohesion: 0.22
+Nodes (9): ConnectPanel, ConnectPanelProjection, ConnectPanelActions, AccountPort, AccountProvider, ProjectBinding, Void, ConnectSheet (+1 more)
 
 ### Community 247 - "ArgoOpacity"
 Cohesion: 0.50
@@ -1359,278 +1356,282 @@ Cohesion: 0.67
 Nodes (3): session(), CockpitPresentation, String
 
 ### Community 253 - ".liveCwds"
+Cohesion: 0.31
+Nodes (7): AttributedString, Bool, HighlightColors, String, SyntaxHighlight, highlighted(), String
+
+### Community 258 - "AgentChip"
+Cohesion: 0.21
+Nodes (10): FeedTableModel, AnyView, Binding, Bool, CGFloat, EnvironmentValues, FeedRow, Int (+2 more)
+
+### Community 259 - "FeedGalleryRow"
 Cohesion: 0.18
 Nodes (9): CodingKeys, bindings, id, path, LenientBinding, ProjectRecord, Decoder, Encoder (+1 more)
 
-### Community 258 - "AgentChip"
+### Community 260 - "Usage"
 Cohesion: 0.18
 Nodes (8): AttachmentDropTarget, Bool, SessionAttachment, View, Void, ComposerDraft, Bool, SessionAttachment
 
-### Community 259 - "FeedGalleryRow"
-Cohesion: 0.26
-Nodes (12): EvidenceAddress, filed, named, typed, FeedCall, FeedEvidence, Step, Bool (+4 more)
-
-### Community 260 - "Usage"
-Cohesion: 0.23
-Nodes (6): ClaudeSessionDriver, Bool, SessionAttachment, SessionOwnership, String, URL
-
 ### Community 262 - "ArgoMarkedName"
 Cohesion: 0.26
-Nodes (6): ProjectRecord, AccountPort, Bool, ProjectBinding, String, URL
+Nodes (12): EvidenceAddress, filed, named, typed, FeedCall, FeedEvidence, Step, Bool (+4 more)
 
 ### Community 263 - "presentation"
 Cohesion: 0.67
 Nodes (3): presentation(), CockpitPresentation, String
 
-### Community 269 - "ComposerDraft"
+### Community 269 - "ClaudeSessionDriver"
+Cohesion: 0.23
+Nodes (6): ClaudeSessionDriver, Bool, SessionAttachment, SessionOwnership, String, URL
+
+### Community 270 - "ProjectRecord"
+Cohesion: 0.26
+Nodes (6): ProjectRecord, AccountPort, Bool, ProjectBinding, String, URL
+
+### Community 271 - "ComposerDraft"
 Cohesion: 0.39
 Nodes (6): ComposerDraft, Bool, ComposerSend, Int, SessionAttachment, String
 
-### Community 270 - ".attachments"
+### Community 272 - ".attachments"
 Cohesion: 0.23
 Nodes (8): ComposerPasteboard, Data, NSPasteboard, SessionAttachment, AttachmentFixture, Data, SessionAttachment, UTType
 
-### Community 271 - "PermissionPromptFooter.swift"
+### Community 273 - "PermissionPromptFooter.swift"
 Cohesion: 0.26
 Nodes (11): Answer, allow, deny, PermissionDecisionButton, PermissionKeycap, PermissionPromptFooter, StandingAllowOffer, ArgoColor (+3 more)
 
-### Community 272 - "WrapFlow"
+### Community 274 - "WrapFlow"
 Cohesion: 0.33
 Nodes (7): CGFloat, CGRect, CGSize, WrapFlow, Layout, ProposedViewSize, Subviews
 
-### Community 273 - "ArgoFloatingGlass"
+### Community 275 - "ArgoFloatingGlass"
 Cohesion: 0.23
 Nodes (8): ArgoFloatingGlass, EnvironmentValues, ArgoColor, Bool, View, View, InsettableShape, Vessel
 
-### Community 274 - "ConnectionFault"
+### Community 276 - "ConnectionFault"
 Cohesion: 0.20
 Nodes (8): BindingFault, ConnectionFault, grantRefused, read, ConnectionLevel, account, binding, ConnectionCause
 
-### Community 275 - "RecordDirectoryFixture"
+### Community 277 - "RecordDirectoryFixture"
 Cohesion: 0.33
 Nodes (5): FixtureTranscript, RecordDirectoryFixture, String, TimeInterval, URL
 
-### Community 276 - "ComposerSeamNote"
+### Community 278 - "ComposerSeamNote"
 Cohesion: 0.24
 Nodes (8): ComposerSeamNote, draftKept, notice, refusal, ComposerDraft, Int, Self, String
 
-### Community 277 - "AccountBindingReference"
+### Community 279 - "AccountBindingReference"
 Cohesion: 0.31
 Nodes (6): AccountBindingReference, AccountRemoval, AccountPort, AccountRegistry, String, String
 
-### Community 278 - "AttachmentStore"
+### Community 280 - "AttachmentStore"
 Cohesion: 0.31
 Nodes (6): AttachmentStore, SessionAttachment, Bool, SessionAttachment, String, URL
 
-### Community 279 - "PermissionExpiry"
+### Community 281 - "PermissionExpiry"
 Cohesion: 0.24
 Nodes (5): PermissionExpiry, String, Hub, SessionOwnership, FeedRow.Content
 
-### Community 280 - "ConnectChallenge"
+### Community 282 - "ConnectChallenge"
 Cohesion: 0.27
 Nodes (8): ConnectChallenge, AccountProvider, String, URL, DeviceCodeCard, String, Void, ConnectFixture
 
-### Community 281 - "ConnectPortState"
+### Community 283 - "ConnectPortState"
 Cohesion: 0.29
 Nodes (8): ConnectPort, ConnectPortState, bound, broken, unbound, AccountPort, BindingFault, String
 
-### Community 282 - ".decode"
+### Community 284 - ".decode"
 Cohesion: 0.29
 Nodes (6): AttachmentThumbnail, Image, SessionAttachment, CGImage, CGImageSource, ImageIO
 
-### Community 283 - "ComposerDrafts"
+### Community 285 - "ComposerDrafts"
 Cohesion: 0.38
 Nodes (6): ComposerDrafts, Binding, Bool, ComposerDraft, Int, String
 
-### Community 284 - "SessionsDeck"
+### Community 286 - "SessionsDeck"
 Cohesion: 0.20
 Nodes (9): SessionsDeck, Binding, ComposerDraft, ComposerSend, FeedRow, Int, SessionHeaderProjection, String (+1 more)
 
-### Community 286 - "AttachedTerminal"
+### Community 288 - "AttachedTerminal"
 Cohesion: 0.25
 Nodes (4): AttachedTerminal, Int, String, Void
 
-### Community 287 - "ConnectPortRow"
+### Community 289 - "ConnectPortRow"
 Cohesion: 0.44
 Nodes (5): ConnectPortRow, Draft, Binding, ConnectPanelProjection, String
 
-### Community 288 - "QueuedTurn"
+### Community 290 - "QueuedTurn"
 Cohesion: 0.31
 Nodes (6): QueuedTurn, SessionAttachment, String, UUID, QueuedTurnChip, Void
 
-### Community 289 - "EvidenceListing"
+### Community 291 - "EvidenceListing"
 Cohesion: 0.42
 Nodes (5): EvidenceListing, Line, Bool, Int, String
 
-### Community 290 - "FeedTableView"
+### Community 292 - "FeedTableView"
 Cohesion: 0.31
 Nodes (6): FeedTableView, Bool, Int, Void, NSEvent, NSTableView
 
-### Community 291 - ".sessions"
+### Community 293 - ".sessions"
 Cohesion: 0.39
 Nodes (5): SpecimenScreen, FeedRow, Int, SessionHeaderProjection, View
 
-### Community 292 - ".connection"
+### Community 294 - ".connection"
 Cohesion: 0.36
 Nodes (4): AccountsCoordinator, AccountRegistry, ConnectPort, ProjectRecord
 
-### Community 293 - "GitHubAuthorization"
+### Community 295 - "GitHubAuthorization"
 Cohesion: 0.36
 Nodes (4): GitHubAuthorization, AccountRegistryStore, GitHubDeviceChallenge, GitHubDeviceFlow
 
-### Community 294 - "resolvedPath"
+### Community 296 - "resolvedPath"
 Cohesion: 0.25
 Nodes (5): resolvedPath(), String, HubSession, Bool, Int
 
-### Community 295 - "FeedTableDelta"
+### Community 297 - "FeedTableDelta"
 Cohesion: 0.25
 Nodes (6): FeedTableDelta, append, reload, FeedRow, Int, Range
 
-### Community 296 - ".contains"
+### Community 298 - ".contains"
 Cohesion: 0.43
 Nodes (4): ProjectScope, Bool, String, URL
 
-### Community 297 - "PermissionPromptTarget"
+### Community 299 - "PermissionPromptTarget"
 Cohesion: 0.33
 Nodes (4): PermissionPromptHunk, PermissionPromptTarget, CGFloat, String
 
-### Community 298 - ".allows"
+### Community 300 - ".allows"
 Cohesion: 0.33
 Nodes (3): StandingAllowProjection, CockpitPresentation, String
 
-### Community 299 - "FeedTableHandle"
+### Community 301 - "FeedTableHandle"
 Cohesion: 0.29
 Nodes (4): FeedTableHandle, FeedRow, FeedTableCoordinator, TimeInterval
 
-### Community 300 - "SessionState"
+### Community 302 - "SessionState"
 Cohesion: 0.48
 Nodes (3): Reading, SessionState, String
 
-### Community 301 - "ToolbarSegment"
+### Community 303 - "ToolbarSegment"
 Cohesion: 0.43
 Nodes (4): Bool, View, ToolbarSegment, View
 
-### Community 302 - "ProjectSettingsCommands"
+### Community 304 - "ProjectSettingsCommands"
 Cohesion: 0.33
 Nodes (4): ProjectSettingsCommands, CockpitPresentation, String, Void
 
-### Community 303 - "AttachButton.swift"
+### Community 305 - "AttachButton.swift"
 Cohesion: 0.33
 Nodes (4): AttachButton, SessionAttachment, Void, UniformTypeIdentifiers
 
-### Community 304 - "AttachmentProjection"
+### Community 306 - "AttachmentProjection"
 Cohesion: 0.60
 Nodes (3): AttachmentProjection, SessionAttachment, String
 
-### Community 305 - "EvidenceSource"
+### Community 307 - "EvidenceSource"
 Cohesion: 0.40
 Nodes (4): EvidenceSource, EvidenceSourceLine, AttributedString, String
 
-### Community 306 - "FeedRowCell"
+### Community 308 - "FeedRowCell"
 Cohesion: 0.47
 Nodes (5): FeedRowCell, AnyView, NSCoder, NSHostingView, NSTableCellView
 
-### Community 307 - ".makeScrollView"
+### Community 309 - ".makeScrollView"
 Cohesion: 0.40
 Nodes (3): FeedTableCoordinator, NSScrollView, NSScrollView
 
-### Community 308 - ".rename"
+### Community 310 - ".rename"
 Cohesion: 0.33
 Nodes (3): Rename, CockpitPresentation, String
 
-### Community 309 - "AccountProvider"
+### Community 311 - "AccountProvider"
 Cohesion: 0.50
 Nodes (3): AccountProvider, AccountPort, Bool
 
-### Community 310 - "ProjectBinding"
+### Community 312 - "ProjectBinding"
 Cohesion: 0.60
 Nodes (3): ProjectBinding, AccountPort, String
 
-### Community 312 - "probe"
-Cohesion: 0.40
-Nodes (5): LinearRequest, probe(), AccountPort, AccountProvider, String
-
-### Community 313 - ".phrase"
+### Community 314 - ".phrase"
 Cohesion: 0.40
 Nodes (3): AgePhrase, Int, String
 
-### Community 314 - ".heading"
+### Community 315 - ".heading"
 Cohesion: 0.40
 Nodes (3): DeviceCodeCopy, AccountProvider, String
 
-### Community 315 - "AttachmentChip"
+### Community 316 - "AttachmentChip"
 Cohesion: 0.40
 Nodes (4): AttachmentChip, Image, SessionAttachment, Void
 
-### Community 316 - "StandingAllowTray"
+### Community 317 - "StandingAllowTray"
 Cohesion: 0.60
 Nodes (4): StandingAllowChip, StandingAllowTray, String, Void
 
-### Community 317 - ".isWorking"
+### Community 318 - ".isWorking"
 Cohesion: 0.40
 Nodes (3): FeedWorking, Bool, CockpitPresentation
 
-### Community 318 - "FeedLightbox"
+### Community 319 - "FeedLightbox"
 Cohesion: 0.40
 Nodes (4): FeedLightbox, String, Void, View
 
-### Community 319 - "FeedMarkdownFence"
+### Community 320 - "FeedMarkdownFence"
 Cohesion: 0.40
 Nodes (3): FeedMarkdownFence, AttributedString, String
 
-### Community 320 - "SessionHandoffButton"
+### Community 321 - "SessionHandoffButton"
 Cohesion: 0.40
 Nodes (4): SessionHandoffButton, ArgoColor, SessionHeaderProjection, Void
 
-### Community 321 - "GuideLine"
+### Community 322 - "GuideLine"
 Cohesion: 0.50
 Nodes (4): GuideLine, SessionHeaderProjection.Context, String, Tier
 
-### Community 322 - "EvidenceStepTests.swift"
+### Community 323 - "EvidenceStepTests.swift"
 Cohesion: 0.40
 Nodes (4): edited(), FeedCall, Int, String
 
-### Community 324 - "LivePermissionTests.swift"
+### Community 325 - "LivePermissionTests.swift"
 Cohesion: 0.67
 Nodes (3): command(), prompt(), String
 
-### Community 326 - "ConnectRow"
+### Community 327 - "ConnectRow"
 Cohesion: 0.50
 Nodes (3): ConnectRow, ConnectPanelProjection, Trailing
 
-### Community 327 - "Benefit"
+### Community 328 - "Benefit"
 Cohesion: 0.50
 Nodes (3): Benefit, String, WelcomeCopy
 
-### Community 328 - "AttachmentTray"
+### Community 329 - "AttachmentTray"
 Cohesion: 0.50
 Nodes (3): AttachmentTray, SessionAttachment, Void
 
-### Community 330 - "ConnectCopyTests.swift"
+### Community 331 - "ConnectCopyTests.swift"
 Cohesion: 0.50
 Nodes (3): strings(), ConnectPanelProjection, String
 
-### Community 331 - "Row"
+### Community 332 - "Row"
 Cohesion: 0.50
 Nodes (4): Row, Bool, CGFloat, String
 
-### Community 340 - "session"
+### Community 341 - "session"
 Cohesion: 0.67
 Nodes (3): session(), CockpitPresentation, TranscriptEvent
 
 ## Knowledge Gaps
 - **505 isolated node(s):** `SessionRenameStrings`, `nonExpiring`, `expiring`, `workItem`, `codeHost` (+500 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **33 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **34 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ArgoEngine` connect `Project Strip UI` to `Transcript Event Description & Errors`, `Diff Evidence Model`, `Agent Plan & Tool Reading`, `Cockpit Shell View Scaffolding`, `Sessions Deck UI`, `Elevation & Shadow Tokens`, `Testing`, `Session`, `MediaProvenance`, `.call`, `FeedCall`, `Equatable`, `.rows`, `CockpitCoordinator.swift`, `.spend`, `SessionComposerProjection`, `EvidenceReading`, `HubTestObservation.swift`, `FeedCallReading`, `ToolCallOutcome`, `CockpitActions`, `CockpitPresentation.Session`, `.header`, `DeckContentRow`, `Identifiable`, `FeedShot`, `FeedView`, `Ask`, `ToolCall`, `FeedCallRun.swift`, `SessionCommands`, `AgentProcessEvents`, `Project`, `.figure`, `CockpitView`, `EvidenceHunk`, `EvidenceHeader`, `FeedProjection`, `.step`, `CockpitCoordinator`, `Data`, `SessionProvenance`, `FeedAgents`, `InstrumentDeckShell`, `describe`, `HubConnection`, `.pin`, `SessionHeader`, `NewSessionOffer`, `SessionSpendFixture`, `FeedHandoffTests.swift`, `LaunchProjectTests.swift`, `LaunchProject`, `ComposerMode`, `FeedCallLine`, `FeedShotView`, `ProjectProjectionTests.swift`, `header`, `header`, `SessionAnnotationStoreTests.swift`, `CockpitPresentation.Session`, `.move`, `PlanStepLine`, `RosterSearchTests.swift`, `SessionRenameProjectionTests.swift`, `CockpitCoordinator+Send.swift`, `AgentLauncherTests.swift`, `CheckoutReaderTests.swift`, `HandoffChainTests.swift`, `answer`, `HubHandoffTests.swift`, `ProcessLivenessReaderTests.swift`, `SessionOwnershipTests.swift`, `ComposerSeam`, `Hashable`, `EvidenceSyntaxTests.swift`, `SessionSpendTests.swift`, `AgentCLI+ReadableName.swift`, `CockpitPresentation+PreviewFanout.swift`, `CockpitPresentation+PreviewTranscript.swift`, `AgentChip`, `FeedGalleryRow`, `SessionRosterArchiveTests.swift`, `SessionRosterProjectionTests.swift`, `NarrationReadingTests.swift`, `PermissionPromptFooter.swift`, `ConnectPortState`, `.decode`, `SessionsDeck`, `ConnectPortRow`, `PermissionPromptTarget`, `.allows`, `SessionState`, `AttachButton.swift`, `.heading`, `AttachmentChip`, `StandingAllowTray`, `.isWorking`, `EvidenceStepTests.swift`, `SessionAttachmentTests.swift`, `LivePermissionTests.swift`, `AttachmentTray`, `ConnectCopyTests.swift`, `HubSessionEventsTests.swift`, `LaunchProjectTests.swift`, `SessionContextTests.swift`, `AccountPort+ReadableName.swift`, `AccountProvider+ReadableName.swift`, `ConnectionCause+ReadableName.swift`, `ComposerPasteboardTests.swift`, `EvidenceLanguageTests.swift`?**
+- **Why does `ArgoEngine` connect `Project Strip UI` to `Transcript Event Description & Errors`, `Diff Evidence Model`, `Agent Plan & Tool Reading`, `Cockpit Shell View Scaffolding`, `Sessions Deck UI`, `Elevation & Shadow Tokens`, `Testing`, `Session`, `MediaProvenance`, `.call`, `FeedCall`, `Equatable`, `.rows`, `CockpitCoordinator.swift`, `.spend`, `SessionComposerProjection`, `EvidenceReading`, `HubTestObservation.swift`, `FeedCallReading`, `ToolCallOutcome`, `CockpitActions`, `CockpitPresentation.Session`, `.header`, `DeckContentRow`, `Identifiable`, `FeedShot`, `FeedView`, `Ask`, `ToolCall`, `FeedCallRun.swift`, `SessionCommands`, `AgentProcessEvents`, `Project`, `.figure`, `firstLines`, `CockpitView`, `EvidenceHunk`, `FeedProjection`, `.step`, `CockpitCoordinator`, `Data`, `SessionProvenance`, `FeedAgents`, `InstrumentDeckShell`, `describe`, `HubConnection`, `NewSessionOffer`, `SessionSpendFixture`, `FeedHandoffTests.swift`, `LaunchProjectTests.swift`, `LaunchProject`, `ComposerMode`, `FeedCallLine`, `FeedShotView`, `ContextBar`, `.swatches`, `ProjectProjectionTests.swift`, `header`, `header`, `SessionAnnotationStoreTests.swift`, `CockpitPresentation.Session`, `PlanStepLine`, `MarkedProseTests.swift`, `RosterSearchTests.swift`, `SessionRenameProjectionTests.swift`, `CockpitCoordinator+Send.swift`, `AgentLauncherTests.swift`, `CheckoutReaderTests.swift`, `HandoffChainTests.swift`, `HubHandoffTests.swift`, `ProcessLivenessReaderTests.swift`, `SessionOwnershipTests.swift`, `ComposerSeam`, `ProjectVessel`, `SpawningRosterSpecimen`, `EvidenceSyntaxTests.swift`, `SessionSpendTests.swift`, `AgentCLI+ReadableName.swift`, `CockpitPresentation+PreviewFanout.swift`, `CockpitPresentation+PreviewTranscript.swift`, `Usage`, `ArgoMarkedName`, `SessionRosterArchiveTests.swift`, `SessionRosterProjectionTests.swift`, `NarrationReadingTests.swift`, `PermissionPromptFooter.swift`, `ConnectPortState`, `.decode`, `SessionsDeck`, `ConnectPortRow`, `PermissionPromptTarget`, `.allows`, `SessionState`, `AttachButton.swift`, `.heading`, `AttachmentChip`, `StandingAllowTray`, `.isWorking`, `EvidenceStepTests.swift`, `SessionAttachmentTests.swift`, `LivePermissionTests.swift`, `AttachmentTray`, `ConnectCopyTests.swift`, `HubSessionEventsTests.swift`, `LaunchProjectTests.swift`, `SessionContextTests.swift`, `AccountPort+ReadableName.swift`, `AccountProvider+ReadableName.swift`, `ConnectionCause+ReadableName.swift`, `ComposerPasteboardTests.swift`, `EvidenceLanguageTests.swift`?**
   _High betweenness centrality (0.159) - this node is a cross-community bridge._
-- **Why does `Foundation` connect `Project Strip UI` to `App Startup & Transcript Engine`, `Transcript Content Blocks`, `Transcript Record Parsing`, `Transcript Event Description & Errors`, `Cockpit Rooms & Deck Zones`, `File Tailing & Watching`, `Agent Plan & Tool Reading`, `Git Checkout Projection`, `Cockpit Shell View Scaffolding`, `Elevation & Shadow Tokens`, `Connection Status Chip`, `Shell Sidebar UI`, `Testing`, `AgentTerminals`, `MarkdownBlock`, `SessionDiscovery`, `CompanionConnection`, `ClaimID`, `observe`, `HubJoin`, `WorkspaceProjection`, `String`, `.rows`, `CockpitCoordinator.swift`, `.spend`, `.invite`, `Context`, `Sendable`, `ChangeSink`, `ResolvedCall`, `HubTestObservation.swift`, `FeedCallReading`, `FeedFixture`, `.run`, `CockpitCoordinator`, `ProjectRegistryStore`, `AgentLauncher`, `HandoffChain`, `HubSession`, `SpawnFixture`, `SessionAnnotations`, `CheckoutFixture`, `CompanionFact`, `Engine`, `ProjectRecord`, `TranscriptObservation`, `CompanionOutcome`, `FeedView`, `ArgoColor`, `SessionAnnotationStore`, `Hub`, `AgentProcessEvents`, `Codable`, `.spawnSession`, `AgentSpawn`, `ProjectDrawerProjection`, `HandoffWait`, `.briefURL`, `ProjectRegistry+Codable.swift`, `.promptEvents`, `firstLines`, `FeedCallSubject`, `FeedQuietCommand`, `CompanionChannel`, `.materialize`, `HubObservation`, `CheckoutReader`, `rosterOf`, `CockpitPresentation.Session`, `.pin`, `SessionHeader`, `LaunchProjectTests.swift`, `Hub`, `Entry`, `.read`, `RosterSearch`, `.swatches`, `ProjectProjectionTests.swift`, `ContextGuideE2ETests`, `SessionAnnotationStoreTests.swift`, `ComposerFooter`, `FeedAskQuestion`, `.latch`, `.move`, `.phrase`, `EvidenceAddressTests.swift`, `MarkedProseTests.swift`, `RosterSearchTests.swift`, `AgentLauncherTests.swift`, `CheckoutReaderTests.swift`, `HandoffChainTests.swift`, `HubHandoffTests.swift`, `EvidenceSyntaxTests.swift`, `FeedScaleTests.swift`, `.liveCwds`, `SessionSpendTests.swift`, `Usage`, `ArgoMarkedName`, `SessionRosterArchiveTests.swift`, `SessionRosterProjectionTests.swift`, `ConnectionFault`, `AccountBindingReference`, `AttachmentStore`, `PermissionExpiry`, `AttachedTerminal`, `EvidenceListing`, `GitHubAuthorization`, `resolvedPath`, `FeedTableDelta`, `.contains`, `AccountProvider`, `ProjectBinding`, `.keystrokes`, `SessionAttachmentTests.swift`, `LivePermissionTests.swift`, `WallClock.swift`, `HubSessionEventsTests.swift`, `LaunchProjectTests.swift`, `SessionContextTests.swift`?**
+- **Why does `Foundation` connect `Project Strip UI` to `App Startup & Transcript Engine`, `Transcript Content Blocks`, `Transcript Record Parsing`, `Transcript Event Description & Errors`, `Cockpit Rooms & Deck Zones`, `File Tailing & Watching`, `Agent Plan & Tool Reading`, `Git Checkout Projection`, `Cockpit Shell View Scaffolding`, `Elevation & Shadow Tokens`, `Connection Status Chip`, `Shell Sidebar UI`, `Testing`, `AgentTerminals`, `MarkdownBlock`, `SessionDiscovery`, `CompanionConnection`, `ClaimID`, `observe`, `HubJoin`, `WorkspaceProjection`, `String`, `.rows`, `CockpitCoordinator.swift`, `.spend`, `.invite`, `Context`, `Sendable`, `ChangeSink`, `ResolvedCall`, `HubTestObservation.swift`, `FeedCallReading`, `FeedFixture`, `.run`, `CockpitCoordinator`, `ProjectRegistryStore`, `AgentLauncher`, `HandoffChain`, `HubSession`, `SpawnFixture`, `SessionAnnotations`, `CheckoutFixture`, `CompanionFact`, `Engine`, `ProjectRecord`, `TranscriptObservation`, `CompanionOutcome`, `FeedView`, `SessionAnnotationStore`, `Hub`, `AgentProcessEvents`, `Codable`, `.spawnSession`, `AgentSpawn`, `SessionRow`, `ProjectDrawerProjection`, `HandoffWait`, `.briefURL`, `ProjectRegistry+Codable.swift`, `.promptEvents`, `EvidenceHeader`, `FeedCallSubject`, `FeedQuietCommand`, `CompanionChannel`, `.materialize`, `HubObservation`, `CheckoutReader`, `rosterOf`, `.showed`, `.pin`, `LaunchProjectTests.swift`, `Hub`, `Entry`, `LaunchProject`, `.read`, `ContextBar`, `RosterSearch`, `ProjectProjectionTests.swift`, `.beginDiscovery`, `AgentLaunch`, `SessionAnnotationStoreTests.swift`, `.latch`, `.move`, `.phrase`, `EvidenceAddressTests.swift`, `MarkedProseTests.swift`, `RosterSearchTests.swift`, `AgentLauncherTests.swift`, `CheckoutReaderTests.swift`, `HandoffChainTests.swift`, `answer`, `HubHandoffTests.swift`, `Hashable`, `EvidenceSyntaxTests.swift`, `FeedScaleTests.swift`, `SessionSpendTests.swift`, `FeedGalleryRow`, `SessionRosterArchiveTests.swift`, `SessionRosterProjectionTests.swift`, `ClaudeSessionDriver`, `ProjectRecord`, `ConnectionFault`, `AccountBindingReference`, `AttachmentStore`, `PermissionExpiry`, `AttachedTerminal`, `EvidenceListing`, `GitHubAuthorization`, `resolvedPath`, `FeedTableDelta`, `.contains`, `AccountProvider`, `ProjectBinding`, `.keystrokes`, `SessionAttachmentTests.swift`, `LivePermissionTests.swift`, `WallClock.swift`, `HubSessionEventsTests.swift`, `LaunchProjectTests.swift`, `SessionContextTests.swift`?**
   _High betweenness centrality (0.157) - this node is a cross-community bridge._
-- **Why does `SwiftUI` connect `Cockpit Shell View Scaffolding` to `Hub Connection & Usage State`, `Motion & Animation Tokens`, `Typography Tokens`, `Cockpit View & Actions`, `Sessions Deck UI`, `Specimen Deck Fixtures`, `Contract Specimen`, `Geometry & Spacing Tokens`, `Git Status Vessel`, `Project Strip UI`, `Session Navigator UI`, `Layout Constants`, `Testing`, `MarkdownBlock`, `MediaProvenance`, `ProseLinkRun`, `FeedRowSelection`, `CockpitCoordinator.swift`, `FeedProseText`, `SessionComposerProjection`, `EvidenceReading`, `ChangeSink`, `ArgoTypeScale`, `CockpitActions`, `ArgoIconSize`, `DeckContentRow`, `Identifiable`, `FeedShot`, `Position`, `FeedView`, `CockpitRoom`, `SessionsDeck`, `SessionCommands`, `ArgoGlyph`, `FeedMarkdownTable`, `RosterOrder`, `ProjectDrawerProjection`, `ArgoTheme`, `CockpitView`, `DeckSeam`, `EvidenceHunk`, `EvidenceHeader`, `FeedSurvey`, `FeedRowButtonStyle`, `FeedTail`, `.step`, `PlanPill`, `DeckZone`, `FeedProse`, `InstrumentDeckShell`, `HubConnection`, `FeedUnreadable`, `LaunchProject`, `ComposerMode`, `FeedAskOption`, `FeedCallLine`, `FeedView`, `FeedShotView`, `ContextBar`, `SessionHeaderProjection.Context.Tier`, `SendButton`, `PlanStepLine`, `NewSessionButton`, `ChurningRosterSpecimen`, `FoundationSpecimen`, `SessionHeaderSpecimen`, `ArgoFeedRow.swift`, `ComposerField`, `ComposerSeam`, `FeedTailButton`, `SessionHeaderContext`, `ProjectVessel`, `ArgoBadge`, `EvidenceSyntaxTests.swift`, `AgentChip`, `SpecimenScreen`, `PermissionPromptFooter.swift`, `WrapFlow`, `ArgoFloatingGlass`, `.decode`, `SessionsDeck`, `ConnectPortRow`, `QueuedTurn`, `.sessions`, `PermissionPromptTarget`, `FeedTableHandle`, `ToolbarSegment`, `ProjectSettingsCommands`, `AttachButton.swift`, `EvidenceSource`, `AttachmentChip`, `StandingAllowTray`, `FeedLightbox`, `FeedMarkdownFence`, `SessionHandoffButton`, `ConnectRow`, `AttachmentTray`?**
+- **Why does `SwiftUI` connect `Cockpit Shell View Scaffolding` to `Hub Connection & Usage State`, `Motion & Animation Tokens`, `Typography Tokens`, `Cockpit View & Actions`, `Sessions Deck UI`, `Specimen Deck Fixtures`, `Contract Specimen`, `Geometry & Spacing Tokens`, `Git Status Vessel`, `Project Strip UI`, `Session Navigator UI`, `Layout Constants`, `Testing`, `MarkdownBlock`, `MediaProvenance`, `ProseLinkRun`, `FeedRowSelection`, `CockpitCoordinator.swift`, `FeedProseText`, `SessionComposerProjection`, `EvidenceReading`, `ChangeSink`, `ArgoTypeScale`, `CockpitActions`, `ArgoIconSize`, `DeckContentRow`, `Identifiable`, `FeedShot`, `Position`, `FeedView`, `CockpitRoom`, `SessionsDeck`, `SessionCommands`, `ArgoGlyph`, `FeedMarkdownTable`, `RosterOrder`, `ProjectDrawerProjection`, `ArgoTheme`, `firstLines`, `CockpitView`, `DeckSeam`, `EvidenceHunk`, `FeedSurvey`, `FeedRowButtonStyle`, `FeedTail`, `.step`, `PlanPill`, `DeckZone`, `FeedProse`, `InstrumentDeckShell`, `HubConnection`, `FeedUnreadable`, `SessionHeader`, `ComposerMode`, `FeedAskOption`, `FeedCallLine`, `FeedView`, `FeedShotView`, `SessionHeaderProjection.Context.Tier`, `.swatches`, `SendButton`, `PlanStepLine`, `NewSessionButton`, `ChurningRosterSpecimen`, `FoundationSpecimen`, `SessionHeaderSpecimen`, `ArgoFeedRow.swift`, `ComposerField`, `ComposerSeam`, `FeedTailButton`, `SessionHeaderContext`, `ArgoBadge`, `EvidenceSyntaxTests.swift`, `AgentChip`, `Usage`, `SpecimenScreen`, `PermissionPromptFooter.swift`, `WrapFlow`, `ArgoFloatingGlass`, `.decode`, `SessionsDeck`, `ConnectPortRow`, `QueuedTurn`, `.sessions`, `PermissionPromptTarget`, `FeedTableHandle`, `ToolbarSegment`, `ProjectSettingsCommands`, `AttachButton.swift`, `EvidenceSource`, `AttachmentChip`, `StandingAllowTray`, `FeedLightbox`, `FeedMarkdownFence`, `SessionHandoffButton`, `ConnectRow`, `AttachmentTray`?**
   _High betweenness centrality (0.093) - this node is a cross-community bridge._
 - **What connects `SessionRenameStrings`, `nonExpiring`, `expiring` to the rest of the system?**
   _505 weakly-connected nodes found - possible documentation gaps or missing edges._

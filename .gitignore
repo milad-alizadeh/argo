@@ -35,3 +35,8 @@ graphify-out/cache/
 graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 # extract-only analysis; the pre-commit update never refreshes it:
 graphify-out/.graphify_analysis.json
+# Agent skills, installed by argo-skills
+.claude/skills/
+.agents/skills/
+.cursor/skills/
+.codex/skills/
