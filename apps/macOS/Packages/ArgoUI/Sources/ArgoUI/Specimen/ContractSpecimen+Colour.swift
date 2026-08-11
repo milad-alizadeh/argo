@@ -79,31 +79,27 @@ extension ContractSpecimen {
         }
     }
 
-    /// The one ramp in the contract, at both lengths it is spent at — as a band, and masked to the
-    /// type it actually crosses. A swatch strip cannot judge a ramp: what it has to answer is
-    /// whether the head still reads as the head once it is only as wide as a letter.
-    var ion: some View {
-        section("The ion — one ramp, transparent at both ends, blue tail into a mint head") {
-            VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
-                ionPass.frame(height: 24)
-                ionSample
-                    .foregroundStyle(argo.color.text.secondary)
-                    .overlay { ionPass.mask { ionSample } }
+    /// Every ramp, at both lengths one is spent at — as a band, and masked to the type it actually
+    /// crosses. A band alone cannot judge a ramp: what it has to answer is whether the head still
+    /// reads as the head once it is only as wide as a letter.
+    ///
+    /// Read off `ramps` rather than naming the ion, so adding a ramp adds a row here.
+    var ramps: some View {
+        section("Ramps — transparent at both ends, a blue tail into a mint head") {
+            ForEach(argo.color.ramps, id: \.name) { role in
+                VStack(alignment: .leading, spacing: ArgoSpacing.comfortable) {
+                    label(role.name)
+                    role.ramp.pass.frame(height: ArgoIconSize.inline.rawValue)
+                    rampSample
+                        .foregroundStyle(argo.color.text.secondary)
+                        .overlay { role.ramp.pass.mask { rampSample } }
+                }
             }
         }
     }
 
-    private var ionPass: LinearGradient {
-        LinearGradient(
-            gradient: argo.color.ion.gradient,
-            startPoint: .leading,
-            endPoint: .trailing,
-        )
-    }
-
-    /// The sentence the ion is spent on, at the rung it is spent at — a ramp judged on a 24pt band
-    /// is a ramp judged nowhere near where it has to work.
-    private var ionSample: some View {
+    /// The sentence a ramp is spent on, at the rung it is spent at.
+    private var rampSample: some View {
         Text("Ran rtk err bun run quality:swift").argoText(ArgoTypography.body)
     }
 

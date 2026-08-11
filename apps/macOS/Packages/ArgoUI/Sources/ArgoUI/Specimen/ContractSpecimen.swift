@@ -20,7 +20,7 @@ struct ContractSpecimen: View {
                 edges
                 states
                 diff
-                ion
+                ramps
                 brand
                 scale
                 type

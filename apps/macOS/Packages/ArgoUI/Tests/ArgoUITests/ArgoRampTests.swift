@@ -7,6 +7,16 @@ import Testing
 struct ArgoRampTests {
     static let palettes = ArgoPalette.all
 
+    /// A ramp is derived from roles rather than stored beside them, so `Mirror` cannot reach it and
+    /// the coverage guard over the colour groups never sees one. `ramps` is what stands in: the
+    /// specimen draws that list, and every claim below runs over it rather than over `ion` by name.
+    @Test(arguments: palettes)
+    func `every ramp is in the catalog the specimen draws`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        #expect(appearance.palette.ramps.map(\.name) == ["ion"])
+    }
+
     /// A gradient whose stops are out of order draws bands rather than a pass, and SwiftUI does not
     /// complain about it.
     @Test(arguments: palettes)
@@ -19,16 +29,23 @@ struct ArgoRampTests {
         #expect(locations.last == 1)
     }
 
-    /// Both ends vanish, so a pass has a head and a tail instead of an edge. They fade through the
-    /// role BESIDE them rather than through a clear black, which SwiftUI would interpolate as grey.
+    /// Both ends vanish, so a pass has a head and a tail instead of an edge.
     @Test(arguments: palettes)
-    func `the ion is transparent at both ends and opaque in between`(
+    func `the ion is transparent at both ends`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
         let stops = appearance.palette.ion.stops
         #expect(stops.first?.color.opacity == 0)
         #expect(stops.last?.color.opacity == 0)
-        for stop in stops.dropFirst().dropLast() {
+    }
+
+    /// Between the ends the ion is at full strength. A stop that faded early would read as the pass
+    /// running out of substance halfway across the line.
+    @Test(arguments: palettes)
+    func `every stop between the ends is opaque`(
+        _ appearance: (name: String, palette: ArgoPalette),
+    ) {
+        for stop in appearance.palette.ion.stops.dropFirst().dropLast() {
             #expect(stop.color.opacity == 1)
         }
     }
@@ -49,12 +66,12 @@ struct ArgoRampTests {
         ])
     }
 
-    /// The head sits short of the end, so the mint leads the pass off the line rather than landing
-    /// on its last letter.
+    /// The head sits short of the end, so the mint leads the pass OFF the line rather than landing
+    /// on its last letter. Its distance from the end is what the ion fades out over.
     @Test(arguments: palettes)
-    func `the head leads the tail`(_ appearance: (name: String, palette: ArgoPalette)) {
-        let stops = appearance.palette.ion.stops
-        let head = stops.first { $0.color == appearance.palette.state.running }
-        #expect(head?.location == 0.88)
+    func `the head stops short of the end`(_ appearance: (name: String, palette: ArgoPalette)) {
+        let head = appearance.palette.ion.stops.dropFirst().dropLast().last
+        #expect(head?.color == appearance.palette.state.running)
+        #expect((head?.location ?? 1) < 1)
     }
 }

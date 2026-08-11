@@ -45,13 +45,13 @@ struct FeedCallLine: View {
             mark
             Text(call.kind.verb)
                 .argoText(ArgoTypography.body)
-                .foregroundStyle(verdict ?? verbInk)
+                .foregroundStyle(verdict ?? restInk)
             FeedCallSubject(subject: call.subject, tint: verdict, isOpen: isOpen)
             repeats
             churn
             printed
         }
-        .feedCallLineIon(isRunning: call.ending == .pending)
+        .feedCallLineIon(isRunning: isRunning)
     }
 
     /// The kind's own mark, always — a failure recolours the line rather than replacing what it
@@ -74,7 +74,7 @@ struct FeedCallLine: View {
             Text("×\(call.repeats)")
                 .argoMono(.body)
                 .monospacedDigit()
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(restInk)
         }
     }
 
@@ -100,7 +100,7 @@ struct FeedCallLine: View {
             Text(drawn)
                 .argoMono(.body)
                 .monospacedDigit()
-                .foregroundStyle(argo.color.text.tertiary)
+                .foregroundStyle(restInk)
         }
     }
 
@@ -119,17 +119,23 @@ struct FeedCallLine: View {
         call.ending.hasFailed ? argo.color.state.failure : nil
     }
 
-    /// A call still running rests one step above the ones that finished. That step is doing two
-    /// jobs: it separates the live row from the dead ones, and it IS the Reduce Motion state — with
-    /// nothing moving, the row still reads as the live one.
-    private var verbInk: ArgoColor {
-        call.ending == .pending ? argo.color.text.secondary : argo.color.text.tertiary
+    /// Whether this is the call the agent is running right now.
+    private var isRunning: Bool {
+        call.ending == .pending
     }
 
-    /// The glyph is the one part of the row that carries the accent at rest, because the ion
-    /// reaches it first and it is what a still has left to say the row is live.
+    /// What the WHOLE line rests at — the verb, the count and what it printed alike. A call still
+    /// running sits one step above the ones that finished, and that step IS the Reduce Motion
+    /// state: with nothing moving, the row still reads as the live one.
+    ///
+    /// The churn keeps its diff inks through it, because those are a meaning rather than a rung.
+    private var restInk: ArgoColor {
+        isRunning ? argo.color.text.secondary : argo.color.text.tertiary
+    }
+
+    /// The glyph is the one part of the row carrying the accent at rest.
     private var markInk: ArgoColor {
-        call.ending == .pending ? argo.color.interaction.accent : argo.color.text.disabled
+        isRunning ? argo.color.interaction.accent : argo.color.text.disabled
     }
 }
 

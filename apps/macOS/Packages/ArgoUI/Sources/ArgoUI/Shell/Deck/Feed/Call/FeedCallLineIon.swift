@@ -8,17 +8,19 @@ import SwiftUI
 /// wrong in motion, which is why a still cannot catch it and why this modifier takes the whole
 /// sentence rather than being applied inside it.
 ///
-/// The kind's glyph shares the one mask for free, because a mask is taken from what is drawn.
+/// The kind's glyph shares the one mask, because a mask is taken from what is drawn.
 struct FeedCallLineIon: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Whether this call is the one in flight.
     let isRunning: Bool
 
+    /// The ROLE answers Reduce Motion, not this call site: `working` resolves to `nil` when
+    /// movement is off, and a pass with no animation behind it should not be drawn at all.
     func body(content: Content) -> some View {
         content.overlay {
-            if isRunning, !reduceMotion {
-                IonWash().mask { content.environment(\.isIonMask, true) }
+            if isRunning, let pass = ArgoMotion.working.resolved(reduceMotion: reduceMotion) {
+                IonWash(pass: pass).mask { content.environment(\.isIonMask, true) }
             }
         }
     }
@@ -27,10 +29,7 @@ struct FeedCallLineIon: ViewModifier {
 extension EnvironmentValues {
     /// True while a row is drawing itself AS its own ion mask. A mask is taken from what is drawn,
     /// so a ground under a run of type masks as solid and lights the whole chip rather than the
-    /// letters on it — the one thing in the row that must not answer the mask.
-    ///
-    /// The mask is the row itself and not a second copy of it, because a copy is a layout that can
-    /// drift from the one it is masking.
+    /// letters on it.
     @Entry var isIonMask: Bool = false
 }
 
@@ -46,12 +45,11 @@ extension View {
 ///
 /// Only the TRANSFORM animates. A translating element is compositor-owned; moving a gradient's own
 /// stops is not, and repaints every frame of a loop that never ends.
-///
-/// It exists only while the call is running, so its loop starts on appear and is torn down with the
-/// view — a failure arriving mid-pass takes the wash off the row with it rather than being
-/// swallowed by a mask that outlived the state it drew.
 private struct IonWash: View {
     @Environment(\.argo) private var argo
+
+    /// The role's own answer, already resolved against Reduce Motion by the caller.
+    let pass: Animation
 
     /// Where the pass sits, as a multiple of the line's own width. It starts and ends entirely off
     /// the line, so the ion enters and leaves rather than appearing mid-word.
@@ -59,16 +57,10 @@ private struct IonWash: View {
 
     var body: some View {
         GeometryReader { proxy in
-            LinearGradient(
-                gradient: argo.color.ion.gradient,
-                startPoint: .leading,
-                endPoint: .trailing,
-            )
-            .frame(width: proxy.size.width)
-            .offset(x: phase * proxy.size.width)
-            .onAppear {
-                withAnimation(ArgoMotion.working.animation) { phase = 1 }
-            }
+            argo.color.ion.pass
+                .frame(width: proxy.size.width)
+                .offset(x: phase * proxy.size.width)
+                .onAppear { withAnimation(pass) { phase = 1 } }
         }
     }
 }
