@@ -39,14 +39,19 @@ state the happy path never renders — a Session mid-Turn with something waiting
 |---|---|---|---|---|---|
 | `AttachButton` | atom | `ArgoUI/Shell/Deck/Composer/` — the footer's own part | `attach: ([SessionAttachment]) -> Void` | `ArgoGlyph` + stock `.fileImporter` | frozen table, `AttachButton` |
 | `AttachmentTray` | molecule | same | `attachments: [SessionAttachment]`, `remove: (SessionAttachment.ID) -> Void` | `WrapFlow` over `AttachmentChip` | frozen table, `AttachmentTray` |
-| `AttachmentChip` | molecule | same, `private` to the tray | `attachment: SessionAttachment`, `remove: () -> Void` | thumbnail or `ArgoGlyph`, name, mono size, an 18pt `×` | frozen table, `AttachmentChip` |
+| `AttachmentChip` | molecule | same | `attachment: SessionAttachment`, `remove: () -> Void` | thumbnail or `ArgoGlyph`, name, mono size, an 18pt `×` | frozen table, `AttachmentChip` |
 | `AttachmentDropTarget` | modifier | same | `canAttach: Bool`, `attach: ([SessionAttachment]) -> Void`, `isHeldOpen: Bool` | the dashed rim, the wash, and *Drop to attach* | `dragover.png` |
 
-Extraction evidence: the first three are in the design's frozen-names table. `AttachmentChip` is
-`private` to its tray rather than a file of its own — the tray is its only caller and the pair is
-one subject — and `AttachmentDropTarget` is not a component at all but the drag-over STATE, which
-is a whole-vessel rendering with no other way to be reached: only a real drag raises it, so
-`isHeldOpen` is the seam a render opens (the same one `PlanPill`'s `isRevealed` opens for a hover).
+Extraction evidence: the first three are in the design's frozen-names table.
+`AttachmentDropTarget` is not a component at all but the drag-over STATE — a whole-vessel rendering
+with no other way to be reached, since only a real drag raises it. `isHeldOpen` is the seam a render
+opens, the same one `PlanPill`'s `isRevealed` opens for a hover.
+
+**A non-image chip takes the evidence panel's language-family mark**, not a second map of its own:
+`AttachmentProjection.glyph(for:)` runs `EvidenceLanguage(declared:).symbol`. The study drew a
+generic `<>` on a `.swift` file because its HTML carried no such map; the token contract does, so a
+Swift file gets the Swift mark. That is drift **toward** the contract, and the one place the build
+knowingly draws a different glyph from `attach.png`.
 
 ### The one place the build departs from the ticket
 
@@ -62,6 +67,11 @@ the agent's own `Read` pulls the bytes in.
 The chip's size figure spells its unit the way the platform does — `248 kB` where the study's HTML
 typed `248 KB`. The number matches; the casing is `ByteCountFormatStyle(.binary)`'s, and
 hand-spelling it would be a raw string standing in for a locale-aware value.
+
+**Nothing reaps what lands under `attachments/`**, and that is the choice rather than an oversight:
+the path is named in a transcript that outlives the Session, so bytes deleted later would leave a
+historical Turn pointing at nothing. A refused send is survivable because the address is the
+attachment's own id — pressing Retry rewrites the same file rather than leaving a copy beside it.
 
 ## View-model, not components
 

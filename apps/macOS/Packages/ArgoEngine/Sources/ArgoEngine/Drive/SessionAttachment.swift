@@ -27,8 +27,10 @@ public struct SessionAttachment: Identifiable, Equatable, Sendable {
     /// How big it is, for the chip's mono figure. Zero where the size could not be read, which
     /// renders as an absent figure rather than as `0 bytes`.
     public let byteCount: Int
-    /// Whether the chip draws the picture itself rather than a kind glyph. Read off the declared
-    /// TYPE and never off the extension alone, for the reason the feed's media results are.
+    /// Whether the chip draws the picture itself rather than a kind glyph. Read off the file's own
+    /// declared TYPE rather than off its extension, for the reason the feed's media results are: a
+    /// screenshot saved without one is still a picture, and the extension is a guess about a fact
+    /// the file system already holds.
     public let isImage: Bool
     public let source: Source
 
@@ -52,10 +54,11 @@ public struct SessionAttachment: Identifiable, Equatable, Sendable {
     /// path Argo cannot stat is still a path the agent can be pointed at, so the chip loses its
     /// figure and keeps its name.
     public static func file(at url: URL) -> SessionAttachment {
-        SessionAttachment(
+        let read = try? url.resourceValues(forKeys: [.fileSizeKey, .contentTypeKey])
+        return SessionAttachment(
             name: url.lastPathComponent,
-            byteCount: (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0,
-            isImage: UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) ?? false,
+            byteCount: read?.fileSize ?? 0,
+            isImage: read?.contentType?.conforms(to: .image) ?? false,
             source: .file(url),
         )
     }

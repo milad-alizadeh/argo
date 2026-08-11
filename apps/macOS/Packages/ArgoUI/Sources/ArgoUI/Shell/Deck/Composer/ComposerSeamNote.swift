@@ -14,6 +14,29 @@ enum ComposerSeamNote: Equatable {
     /// it takes the quiet ink for saying so.
     case capability(String)
 
+    /// Which of the three is up, for one draft read at one moment — the seam is ONE line, so the
+    /// order is the whole of what this decides.
+    ///
+    /// A refusal outranks everything: it is a thing that went wrong with a send, and the message
+    /// it stands over is still unsent. A capability notice comes next, because it answers a
+    /// gesture the user has just made. The kept note is last and quietest — housekeeping about
+    /// words the reader left behind, which holds only until their own edit stamps later than the
+    /// moment they arrived.
+    ///
+    /// Here rather than in the vessel so the order is a claim a test can make. A precedence living
+    /// in a `private var` on a View is one only a screenshot can check.
+    static func note(for draft: ComposerDraft, enteredAtMs: Int) -> Self? {
+        if let refusal = draft.refusal {
+            return .refusal(refusal)
+        }
+        if let notice = draft.notice {
+            return .capability(notice)
+        }
+        guard !draft.text.isEmpty, let editedAtMs = draft.editedAtMs, editedAtMs < enteredAtMs
+        else { return nil }
+        return kept(sinceMs: editedAtMs, nowMs: enteredAtMs)
+    }
+
     /// The kept note's sentence. Under a minute it is worded rather than counted: a reader who
     /// stepped away for forty seconds is told their words were kept, not handed a stopwatch.
     static func kept(sinceMs: Int, nowMs: Int) -> Self {

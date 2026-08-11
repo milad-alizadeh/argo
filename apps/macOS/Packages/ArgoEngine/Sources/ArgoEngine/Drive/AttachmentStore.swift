@@ -18,13 +18,21 @@ public struct AttachmentStore {
         self.root = root
     }
 
-    /// Where each attachment can be READ from, in the order they were given — which is the order
-    /// the Turn names them in.
+    /// Give every attachment an address the agent can read, and answer them in the order they were
+    /// given — which is the order the Turn names them in.
     ///
-    /// A file keeps its own path: there is nothing to write, and a copy would be the second version
-    /// of it. Only bytes get an address made for them, and the folder is created only when there
-    /// are some — a Session that has only ever had files dropped on it leaves nothing behind.
-    public func paths(for attachments: [SessionAttachment], of sessionID: String) throws -> [URL] {
+    /// A verb and not a noun: this WRITES. A file keeps its own path — there is nothing to write,
+    /// and a copy would be the second version of it — so only bytes get an address made for them,
+    /// and the folder is created only when there are some. A Session that has only ever had files
+    /// dropped on it leaves nothing behind.
+    ///
+    /// Addressed by the attachment's own id, which is what makes a retry after a refused send
+    /// rewrite the same file rather than leave a fresh copy beside the last one. Nothing reaps what
+    /// lands here, and that is the choice rather than an oversight: the path is named in a
+    /// transcript that outlives the Session, so bytes deleted later would leave a historical Turn
+    /// pointing at nothing.
+    @discardableResult
+    public func address(_ attachments: [SessionAttachment], of sessionID: String) throws -> [URL] {
         let folder = root.appending(path: sessionID, directoryHint: .isDirectory)
         if attachments.contains(where: \.needsWriting) {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

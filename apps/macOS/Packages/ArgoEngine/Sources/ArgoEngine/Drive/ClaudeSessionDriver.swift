@@ -42,7 +42,7 @@ struct ClaudeSessionDriver: SessionDriver {
             throw SessionDriveError.notDrivable
         }
         do {
-            return try self.attachments.paths(for: attachments, of: sessionID)
+            return try self.attachments.address(attachments, of: sessionID)
         } catch {
             throw SessionDriveError.attachmentUnwritable
         }

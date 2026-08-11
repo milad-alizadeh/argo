@@ -53,7 +53,7 @@ struct SessionAttachmentTests {
         let store = AttachmentStore(root: root.url)
         let dropped = SessionAttachment.file(at: URL(filePath: "/argo/notes.md"))
 
-        let paths = try store.paths(for: [dropped], of: "session-a")
+        let paths = try store.address([dropped], of: "session-a")
 
         #expect(paths == [URL(filePath: "/argo/notes.md")])
         #expect(!FileManager.default.fileExists(atPath: root.url.appending(path: "session-a").path))
@@ -68,7 +68,7 @@ struct SessionAttachmentTests {
         let bytes = Data([0x89, 0x50, 0x4E, 0x47])
         let pasted = SessionAttachment.pastedImage(bytes, fileExtension: "png")
 
-        let paths = try store.paths(for: [pasted], of: "session-a")
+        let paths = try store.address([pasted], of: "session-a")
 
         let written = try #require(paths.first)
         #expect(written.pathExtension == "png")
@@ -84,7 +84,7 @@ struct SessionAttachmentTests {
         let first = SessionAttachment.pastedImage(Data([0x01]), fileExtension: "png")
         let second = SessionAttachment.pastedImage(Data([0x02]), fileExtension: "png")
 
-        let paths = try store.paths(for: [first, second], of: "session-a")
+        let paths = try store.address([first, second], of: "session-a")
 
         #expect(paths.count == 2)
         #expect(paths[0] != paths[1])
@@ -99,14 +99,31 @@ struct SessionAttachmentTests {
         let root = try TemporaryFolder()
         let store = AttachmentStore(root: root.url)
 
-        let paths = try store.paths(
-            for: [SessionAttachment.pastedImage(Data([0x01]), fileExtension: "png")],
+        let paths = try store.address(
+            [SessionAttachment.pastedImage(Data([0x01]), fileExtension: "png")],
             of: "session-b",
         )
 
         let written = try #require(paths.first)
         #expect(written.deletingLastPathComponent().lastPathComponent == "session-b")
         #expect(written.path.hasPrefix(root.url.path))
+    }
+
+    /// What makes a refused send survivable: the address is the attachment's own id, so pressing
+    /// Retry rewrites the same file rather than leaving a fresh copy beside the last one.
+    @Test
+    func `addressing the same attachment twice writes the same file`() throws {
+        let root = try TemporaryFolder()
+        let store = AttachmentStore(root: root.url)
+        let pasted = SessionAttachment.pastedImage(Data([0x01]), fileExtension: "png")
+
+        let first = try store.address([pasted], of: "session-a")
+        let again = try store.address([pasted], of: "session-a")
+
+        #expect(first == again)
+        let folder = root.url.appending(path: "session-a")
+        let written = try FileManager.default.contentsOfDirectory(atPath: folder.path)
+        #expect(written.count == 1)
     }
 }
 

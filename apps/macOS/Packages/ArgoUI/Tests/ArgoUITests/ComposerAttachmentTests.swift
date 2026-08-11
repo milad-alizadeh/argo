@@ -111,15 +111,6 @@ struct ComposerAttachmentTests {
         #expect(draft.notice == SessionDriveError.cannotAttach.detail)
     }
 
-    /// A refusal is a thing that went wrong with a send and outranks a notice about a drop that
-    /// changed nothing; the kept-draft line is quieter than both.
-    @Test
-    func `the seam prefers a refusal to a capability notice`() {
-        let note = ComposerSeamNote.capability(SessionDriveError.cannotAttach.detail)
-
-        #expect(note.detail == SessionDriveError.cannotAttach.detail)
-    }
-
     /// A chip whose size could not be read shows no figure at all — `Zero KB` would report Argo's
     /// own gap as a fact about the file.
     @Test
@@ -133,6 +124,47 @@ struct ComposerAttachmentTests {
 
         #expect(AttachmentProjection.size(unsized) == nil)
         #expect(AttachmentProjection.size(Self.dropped) != nil)
+    }
+
+    /// The seam is one line, so the order IS the behaviour: a refused send outranks a refused drop,
+    /// and both outrank housekeeping about a draft that was kept.
+    @Test
+    func `a refusal outranks a capability notice, and both outrank a kept draft`() {
+        // All three true at once: the refusal is the one that speaks.
+        let allThree = ComposerDraft(
+            text: "Carry on.",
+            refusal: SessionDriveError.notDrivable.detail,
+            editedAtMs: 0,
+            notice: SessionDriveError.cannotAttach.detail,
+        )
+        #expect(ComposerSeamNote.note(for: allThree, enteredAtMs: 60000)
+            == .refusal(SessionDriveError.notDrivable.detail))
+
+        // The send that failed is answered; the drop that was refused is not.
+        let noticeAndKept = ComposerDraft(
+            text: "Carry on.",
+            editedAtMs: 0,
+            notice: SessionDriveError.cannotAttach.detail,
+        )
+        #expect(ComposerSeamNote.note(for: noticeAndKept, enteredAtMs: 60000)
+            == .capability(SessionDriveError.cannotAttach.detail))
+
+        // Nothing went wrong at all — only the words that were waiting.
+        let keptOnly = ComposerDraft(text: "Carry on.", editedAtMs: 0)
+        #expect(ComposerSeamNote.note(for: keptOnly, enteredAtMs: 60000)
+            == ComposerSeamNote.kept(sinceMs: 0, nowMs: 60000))
+    }
+
+    /// A drop that landed answers the notice the last one raised — the sentence is about the
+    /// gesture, and a new gesture is a new answer.
+    @Test
+    func `an accepted drop takes the refusal notice away`() {
+        var draft = ComposerDraft()
+        draft.attach([Self.dropped], canAttach: false)
+
+        draft.attach([Self.dropped], canAttach: true)
+
+        #expect(draft.notice == nil)
     }
 
     private static var dropped: SessionAttachment {

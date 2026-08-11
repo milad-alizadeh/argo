@@ -68,8 +68,7 @@ enum AttachmentFixture {
             return true
         }
         guard let tiff = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiff),
-              let png = bitmap.representation(using: .png, properties: [:])
+              let png = ComposerPasteboard.png(fromTIFF: tiff)
         else { return Data() }
         return png
     }

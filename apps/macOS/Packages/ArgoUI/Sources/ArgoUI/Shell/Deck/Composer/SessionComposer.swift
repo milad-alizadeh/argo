@@ -129,22 +129,9 @@ struct SessionComposer: View {
         }
     }
 
-    /// A refusal outranks a kept draft: one is a thing that went wrong and the other is a thing
-    /// that went right, and the seam is one line. The kept note holds only until the user types —
-    /// their own edit stamps later than the moment they arrived, which is what takes it away.
-    /// A capability notice sits between them: it answers a gesture the user just made, which
-    /// outranks housekeeping about a draft they left behind — and is outranked in turn by a send
-    /// that actually failed.
+    /// Which of the seam's three sentences is up. The order is `ComposerSeamNote`'s.
     private var seamNote: ComposerSeamNote? {
-        if let refusal = draft.refusal {
-            return .refusal(refusal)
-        }
-        if let notice = draft.notice {
-            return .capability(notice)
-        }
-        guard !draft.text.isEmpty, let editedAtMs = draft.editedAtMs, editedAtMs < enteredAtMs
-        else { return nil }
-        return ComposerSeamNote.kept(sinceMs: editedAtMs, nowMs: enteredAtMs)
+        ComposerSeamNote.note(for: draft, enteredAtMs: enteredAtMs)
     }
 
     /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field
