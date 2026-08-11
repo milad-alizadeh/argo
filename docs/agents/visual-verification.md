@@ -1,7 +1,21 @@
 # Visual verification — the detail
 
-AGENTS.md carries the commands and the two warnings that must bind without opening a file.
+AGENTS.md carries the directive and the two warnings that must bind without opening a file.
 This is everything a session needs only once it is actually rendering something.
+
+## The commands
+
+**Render whole app states** — `bun run screenshot --filter=@argo/macos -- <out.png>`, from the
+repo root. Against an ordinary checkout this shows no Sessions, so it is the wrong tool for
+looking at a surface you are building.
+
+**Render one state in isolation** — the right one. From `apps/macOS`:
+`ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`, or `--specimen <case>`;
+`sh scripts/specimens.sh <dir> [name …]` for the set, and `ARGO_WINDOW_SIZE=<w>x<h>` when a
+width is part of the state. Cases live in `ArgoUI/Specimen/SpecimenCatalog.swift`.
+
+**Drive it like a user** — `sh scripts/e2e-test.sh`, also from `apps/macOS`. The only tests here
+that click; every other Swift test builds a projection and asserts on it.
 
 ## Why the screenshot script quits a running Argo
 

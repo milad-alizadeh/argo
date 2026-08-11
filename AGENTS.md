@@ -50,12 +50,8 @@ Each edge is ADR-0022's layering and is checkable from imports and declarations 
 why they are gates rather than review notes. The sharpest one: **exactly one file in `ArgoUI`
 may read live Hub state** — the Hub → cockpit projection. Everything else takes a value.
 
-The JS/TS half of this — an LLM-maintained `<workspace>/scripts/module-boundaries.json`
-compiled by `dependency-cruiser.cjs` into public-entry-only rules, plus a `placement` block
-driving three folder gates (ADR-0021) — **has no subject here since ADR-0023 retired the
-Electron cockpit.** Its scripts stay in `scripts/`, ship to consumer projects via
-`scaffold.mjs --hooks` and the `setup-module-boundaries` skill, and get rewired into `quality`
-the day a TypeScript workspace returns. Dormant, not withdrawn.
+The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
+cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.
 
 ### Quality gates
 
@@ -144,11 +140,8 @@ The repo-root `skills-lock.json` is the bundle manifest **and** this repo's own 
 by hand** — dropping the `skills` entry uninstalls nothing, and the stale copy goes on
 advertising itself, two skills competing for the same prompts.
 
-The set is **deliberate** — a lock has no `"*"` wildcard. Add a skill with
-`npx skills add <source> --skill <name>` and commit the lock; sweep a source with `--skill '*'`
-and review the diff. Nothing appears on its own; the weekly `skills-drift` workflow reports what
-showed up upstream. Editing one of Argo's own skills needs a push to `main` before a reinstall
-sees it — the manifest installs from GitHub, not your checkout. Full workflow in
+The set is **deliberate** — a lock has no `"*"` wildcard, and editing one of Argo's own skills
+needs a push to `main` before a reinstall sees it. Add/sweep/drift workflow:
 `packages/argo-skills/README.md`.
 
 ## Code review
@@ -194,23 +187,14 @@ is in `docs/designs/`, which no portable skill can know. `ask-argo` maps the res
 Nothing renders a view on CI, so **rendering is a thing YOU do**. Run `/pixel-review` for a
 pixel- or spec-level check, and look at the affected states before calling a visual change done.
 
-**Render whole app states** — `bun run screenshot --filter=@argo/macos -- <out.png>`, from the
-repo root. Against an ordinary checkout this shows no Sessions, so it is the wrong tool for
-looking at a surface you are building.
-**Render one state in isolation** — the right one. From `apps/macOS`:
-`ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`, or `--specimen <case>`;
-`sh scripts/specimens.sh <dir> [name …]` for the set, and `ARGO_WINDOW_SIZE=<w>x<h>` when a
-width is part of the state. Cases live in `ArgoUI/Specimen/SpecimenCatalog.swift`.
-**Drive it like a user** — `sh scripts/e2e-test.sh`, also from `apps/macOS`. The only tests here
-that click; every other Swift test builds a projection and asserts on it.
-
 Two things that bite before you have read anything: a screenshot needs Screen Recording
 permission or the PNG is silently blank, and **an e2e run holds the real keyboard and mouse for
 its whole length — say so and wait before starting one**, because it takes the machine out from
 under whoever is at it.
 
-Everything else — why the script quits a running Argo, what the pixels are judged against, the
-specimen harness in full: `docs/agents/visual-verification.md`.
+The commands (whole-app, one specimen, e2e) and everything else — why the script quits a
+running Argo, what the pixels are judged against, the specimen harness in full:
+`docs/agents/visual-verification.md`.
 
 ## Tooling (RTK)
 
