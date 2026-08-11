@@ -85,8 +85,7 @@ struct CockpitPresentationTests {
 
         let session = try #require(projection(of: hub).sessions.first)
 
-        // Verbatim to the shell: the prompt's own whitespace survives the crossing, because the
-        // presentation is a hand-over and not a reading.
+        // Verbatim to the shell: the prompt's own whitespace survives the crossing.
         #expect(session.events == [
             .prompt(text: "  Read it  ", atMs: 1000),
             .thought(markdown: "Start at the contract."),
@@ -127,9 +126,8 @@ struct CockpitPresentationTests {
         #expect(session.workspace?.unpushed == nil)
     }
 
-    /// The chain crosses the seam. It is the one Session fact that is Argo's own memory rather than
-    /// a reading of a record, so a projection that dropped it would leave the link drawable only
-    /// from a fixture.
+    /// The chain crosses the seam: the one Session fact that is Argo's own memory rather than a
+    /// reading of a record.
     @Test
     @MainActor
     func `a handed-off Session names its successor on the way to the shell`() async throws {
@@ -182,51 +180,5 @@ struct CockpitPresentationTests {
         let session = try #require(projection(of: hub).sessions.first)
 
         #expect(session.isArchived == false)
-    }
-
-    /// The Hub half of the projection, which is the half with a derivation in it. The Projects are
-    /// the app's own state and are passed straight through.
-    @MainActor
-    private func projection(
-        of hub: Hub,
-        projects: [CockpitPresentation.Project] = [],
-        annotations: SessionAnnotations = .empty,
-    )
-        -> CockpitPresentation {
-        CockpitPresentation(
-            projects: projects,
-            activeProjectID: projects.first?.id,
-            hub: hub,
-            annotations: annotations,
-        )
-    }
-
-    /// Drive a finite stream into the Hub and yield until the roster has read all of it.
-    ///
-    /// Yielding rather than awaiting the tail: the tail is the Hub's own task and nothing public
-    /// hands it back, so the observable end is the roster the events land in.
-    @MainActor
-    private func observe(
-        _ hub: Hub,
-        id: String,
-        events: [TranscriptEvent],
-        until applied: (CockpitPresentation.Session) -> Bool,
-    ) async {
-        // One batch, which is how a tail hands over a file it has finished reading.
-        let stream = AsyncStream<[TranscriptEvent]> { continuation in
-            continuation.yield(events)
-            continuation.finish()
-        }
-        await hub.startObserving(TranscriptObservation(
-            id: id,
-            sourceURL: URL(fileURLWithPath: "/tmp/\(id).jsonl"),
-            events: stream,
-        ))
-        for _ in 0 ..< 200 {
-            if let session = projection(of: hub).sessions.first, applied(session) {
-                return
-            }
-            await Task.yield()
-        }
     }
 }

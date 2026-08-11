@@ -1,45 +1,34 @@
 @testable import ArgoUI
 import Testing
 
-/// The guard that makes every other colour claim reachable by a human.
-///
-/// A palette role is only as reviewed as the place it can be looked at, and `ContractSpecimen`
-/// is that place. This suite proves the specimen is COMPLETE — not by a count somebody maintains,
-/// but by reflecting the role groups themselves.
+/// The guard that makes every other colour claim reachable by a human: it proves
+/// `ContractSpecimen` is COMPLETE by reflecting the role groups rather than by a maintained count.
 @Suite("Visual contract — nothing is invisible")
 struct VisualContractCoverageTests {
     static let palettes = ArgoPalette.all
 
-    /// An `unwired` entry naming no role is deleted, not left to excuse a future one.
-    ///
-    /// Same shape as the placement gates' rule about stale exemptions, and for the same reason: a
-    /// list of known gaps that nobody prunes stops being a list of known gaps and becomes noise
-    /// that hides the next one. The day a surface lands, its entry has to go — and if the role is
-    /// renamed instead, this fails rather than silently marking nothing.
+    /// An `unwired` entry naming no role is deleted, not left to excuse a future one. A renamed
+    /// role fails here rather than silently marking nothing.
     @Test
     func `every unwired note names a role that exists`() {
-        let lists: [(String, [String: String], [String])] = [
-            ("ArgoTypography", ArgoTypography.unwired, ArgoTypography.all.map(\.name)),
-            ("ArgoMotion", ArgoMotion.unwired, ArgoMotion.all.map(\.name)),
-            ("ArgoElevation", ArgoElevation.unwired, ArgoElevation.all.map(\.name)),
+        let families = [
+            Family("ArgoTypography", ArgoTypography.unwired, ArgoTypography.all.map(\.name)),
+            Family("ArgoMotion", ArgoMotion.unwired, ArgoMotion.all.map(\.name)),
+            Family("ArgoElevation", ArgoElevation.unwired, ArgoElevation.all.map(\.name)),
         ]
-        for (family, unwired, roles) in lists {
-            for name in unwired.keys {
+        for family in families {
+            for name in family.unwired.keys {
                 #expect(
-                    roles.contains(name),
-                    "\(family).unwired names \(name), which is not a role",
+                    family.roles.contains(name),
+                    "\(family.name).unwired names \(name), which is not a role",
                 )
             }
         }
     }
 
-    /// Every role reaches the specimen, proved by reflection rather than by remembering.
-    ///
-    /// The `all` arrays are what `ContractSpecimen` renders, so a role missing from one is a
-    /// colour that ships without ever being looked at — which is exactly how the lavender lasted:
-    /// the specimen drew four of six groups and none of the text inks, so there was nowhere the
-    /// mistake could be seen. `Mirror` reads the stored properties, so the check cannot be
-    /// satisfied by updating a count.
+    /// Every role reaches the specimen. The `all` arrays are what `ContractSpecimen` renders, so a
+    /// role missing from one is a colour that ships without ever being looked at. `Mirror` reads
+    /// the stored properties, so the check cannot be satisfied by updating a count.
     @Test(arguments: palettes)
     func `every colour role appears in its group's catalog`(
         _ appearance: (name: String, palette: ArgoPalette),
@@ -66,6 +55,18 @@ struct VisualContractCoverageTests {
     }
 
     /// One role group, paired with the catalog that is supposed to enumerate it.
+    private struct Family {
+        let name: String
+        let unwired: [String: String]
+        let roles: [String]
+
+        init(_ name: String, _ unwired: [String: String], _ roles: [String]) {
+            self.name = name
+            self.unwired = unwired
+            self.roles = roles
+        }
+    }
+
     private struct Group {
         let name: String
         let roles: Any
