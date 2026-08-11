@@ -33,6 +33,7 @@ struct SpawningRosterSpecimen: View {
             locateProject: { _ in },
             revealProject: { _ in },
             removeProject: { _ in },
+            openProjectSettings: { _ in },
             spawnSession: publish,
             setSessionArchived: { _, _ in },
             setSessionName: { _, _ in },

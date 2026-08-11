@@ -16,6 +16,9 @@ public struct CockpitActions {
     public let revealProject: (String) -> Void
     /// Forget a Project — `ProjectRegistry.removing(id:)` is what that means.
     public let removeProject: (String) -> Void
+    /// Re-enter the Connect panel on a Project that exists (#265). Named for the surface rather
+    /// than for "settings" in general, because there is no app-global one to be confused with.
+    public let openProjectSettings: (String) -> Void
     /// Start an agent in the active Project's folder, with Argo owning its PTY. The one intent here
     /// that acts on the world rather than on Argo's own record of it.
     ///
@@ -86,6 +89,7 @@ public struct CockpitActions {
         locateProject: { _ in },
         revealProject: { _ in },
         removeProject: { _ in },
+        openProjectSettings: { _ in },
         spawnSession: { nil },
         setSessionArchived: { _, _ in },
         setSessionName: { _, _ in },
@@ -103,6 +107,7 @@ public struct CockpitActions {
         locateProject: @escaping (String) -> Void,
         revealProject: @escaping (String) -> Void,
         removeProject: @escaping (String) -> Void,
+        openProjectSettings: @escaping (String) -> Void,
         spawnSession: @escaping () async -> String?,
         setSessionArchived: @escaping (String, Bool) -> Void,
         setSessionName: @escaping (String, String?) -> Void,
@@ -118,6 +123,7 @@ public struct CockpitActions {
         self.locateProject = locateProject
         self.revealProject = revealProject
         self.removeProject = removeProject
+        self.openProjectSettings = openProjectSettings
         self.spawnSession = spawnSession
         self.setSessionArchived = setSessionArchived
         self.setSessionName = setSessionName

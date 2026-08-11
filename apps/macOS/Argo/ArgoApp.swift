@@ -7,6 +7,10 @@ import SwiftUI
 @main
 struct ArgoApp: App {
     @State private var cockpit: CockpitCoordinator
+    /// The Accounts and Bindings half, over the SAME Project registry the cockpit reads. One store
+    /// for both: a Binding is written into `projects.json`, so two stores would be two answers to
+    /// where this Project's ports point.
+    @State private var accounts: AccountsCoordinator
     @State private var navigation = CockpitNavigationModel()
     /// What the Session menu acts on, published by the shell — absent when nothing is selected.
     @FocusedValue(\.sessionCommands) private var sessionCommands
@@ -22,7 +26,12 @@ struct ArgoApp: App {
             currentDirectoryURL: currentDirectoryURL,
         )
         self.specimenName = configuration.specimenName
-        _cockpit = State(initialValue: CockpitCoordinator(configuration: configuration))
+        let projects = ProjectRegistryStore()
+        _cockpit = State(initialValue: CockpitCoordinator(
+            configuration: configuration,
+            store: projects,
+        ))
+        _accounts = State(initialValue: AccountsCoordinator(projects: projects))
     }
 
     var body: some Scene {
@@ -31,17 +40,24 @@ struct ArgoApp: App {
                 if let specimen {
                     SpecimenScreen(specimen: specimen)
                 } else {
-                    CockpitView(presentation: cockpit.presentation, actions: actions)
-                        .environment(navigation)
-                        .task {
-                            cockpit.endOwnedSessionsOnQuit()
-                            await cockpit.start()
-                        }
-                        // Every PTY this window owns dies with the window, and the observer above
-                        // ends them on ⌘Q too. An agent Argo started must not outlive the Argo that
-                        // started it: nothing can re-adopt it, so it would be a process nobody is
-                        // left to steer or stop.
-                        .onDisappear { cockpit.endOwnedSessions() }
+                    CockpitView(
+                        presentation: cockpit.presentation,
+                        actions: actions,
+                        connect: connectSurface,
+                    )
+                    .environment(navigation)
+                    .task {
+                        cockpit.endOwnedSessionsOnQuit()
+                        await cockpit.start()
+                        // A machine that has registered nothing has no path forward without
+                        // this: the shell it lands in has no Project to act on.
+                        await accounts.openIfUnstarted(registry: cockpit.registry)
+                    }
+                    // Every PTY this window owns dies with the window, and the observer above
+                    // ends them on ⌘Q too. An agent Argo started must not outlive the Argo that
+                    // started it: nothing can re-adopt it, so it would be a process nobody is
+                    // left to steer or stop.
+                    .onDisappear { cockpit.endOwnedSessions() }
                 }
             }
             // The system focus ring, off for the whole window.
@@ -71,7 +87,39 @@ struct ArgoApp: App {
                 }
             }
             CommandMenu("Session") { SessionCommandItems(commands: sessionCommands) }
+            // In the slot Preferences would have taken, because there is no app-global one.
+            ProjectSettingsCommands(presentation: cockpit.presentation, actions: actions)
         }
+    }
+
+    private var connectSurface: ConnectSurface {
+        ConnectSurface(
+            reading: accounts.reading,
+            startsAtWelcome: accounts.startsAtWelcome,
+            actions: connectActions,
+        )
+    }
+
+    /// The panel's intents, split across the two coordinators that own them: the folder is a
+    /// Project act and belongs to the cockpit, and everything else is an Account or a Binding.
+    private var connectActions: ConnectPanelActions {
+        ConnectPanelActions(
+            // Registering IS the folder being chosen (ADR-0015), so the panel is handed the
+            // Project the pick produced and the button below only closes it.
+            chooseFolder: {
+                Task {
+                    await cockpit.addProject()
+                    await accounts.pointed(at: cockpit.activeRecord)
+                }
+            },
+            connectAccount: { provider in accounts.connect(provider) },
+            bindPort: { port, accountID, scope in
+                Task { await accounts.bind(port: port, accountID: accountID, scope: scope) }
+            },
+            unbindPort: { port in Task { await accounts.unbind(port) } },
+            stopWaiting: { accounts.stopWaiting() },
+            finish: { accounts.close() },
+        )
     }
 
     /// An unknown name renders the cockpit rather than failing: the harness names the state, and a
@@ -89,6 +137,14 @@ struct ArgoApp: App {
             locateProject: { id in Task { await cockpit.locateProject(projectID: id) } },
             revealProject: { id in cockpit.revealProject(projectID: id) },
             removeProject: { id in Task { await cockpit.removeProject(projectID: id) } },
+            openProjectSettings: { id in
+                Task {
+                    await accounts.open(
+                        on: cockpit.registry.project(id: id),
+                        mode: .settings(agent: .claude),
+                    )
+                }
+            },
             spawnSession: { await cockpit.spawnSession() },
             setSessionArchived: { id, isArchived in
                 Task { await cockpit.setArchived(isArchived, sessionID: id) }

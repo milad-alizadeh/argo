@@ -105,21 +105,11 @@ struct ProjectDrawerRow: View {
 
     /// Prominent by placement and weight, not by hue: a stock tinted button would put the only
     /// accent-coloured control in the shell on the one row that must not read as selected, and the
-    /// contract reserves that hue for selection and focus.
+    /// contract reserves that hue for selection and focus. That rule is `QuietButtonStyle` now,
+    /// because the Connect panel needs the same shape and two copies of it would drift.
     private var locateButton: some View {
-        Button(action: locate) {
-            Text("Locate…")
-                .argoText(ArgoTypography.control)
-                .foregroundStyle(argo.color.text.primary)
-                .padding(.horizontal, ArgoSpacing.base)
-                .padding(.vertical, ArgoSpacing.tight)
-                .background(
-                    RoundedRectangle(cornerRadius: ArgoRadius.control)
-                        .fill(argo.color.surface.raised),
-                )
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
+        Button("Locate…", action: locate)
+            .buttonStyle(.quiet)
     }
 
     /// Two independent readings on one shape: which Project the window is on, and whether its

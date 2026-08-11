@@ -22,6 +22,13 @@ struct ProjectRowMenu: View {
                 actions.locateProject(row.id)
                 dismiss()
             }
+            // The other route to the same panel, `⌘K` being the first. On the row rather than in
+            // the app menu because these are settings about a PROJECT, and the row is where a
+            // Project is addressed.
+            Button(ProjectSettingsCommands.label, systemImage: ArgoSymbol.projectSettings) {
+                actions.openProjectSettings(row.id)
+                dismiss()
+            }
             Divider()
             Button("Remove from Argo", systemImage: ArgoSymbol.removeProject) {
                 actions.removeProject(row.id)
