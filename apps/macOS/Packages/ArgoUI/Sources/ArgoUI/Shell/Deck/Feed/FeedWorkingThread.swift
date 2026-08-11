@@ -6,26 +6,25 @@ import SwiftUI
 /// flourish: `FeedMark.turnEnded(.endTurn)` already draws as a full-width hairline with no words,
 /// so a resting track under this would read as the mark meaning the opposite.
 ///
-/// **Edge to edge is the point.** The lane cancels `ArgoFeedRow.inset` and runs the full
-/// `ArgoFeedRow.column`, because a signal about the whole column should touch both of its edges. It
-/// is the one row in the feed that ignores the gutter. The lane clips, so the ion never spills into
-/// the deck beyond the measure.
+/// The lane cancels `ArgoFeedRow.inset` and runs the full `ArgoFeedRow.column` — the one row in
+/// the feed that ignores the gutter. It clips, so the ion never spills into the deck beyond it.
 struct FeedWorkingThread: View {
-    @Environment(\.argo) private var argo
     @Environment(\.argoReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { proxy in
+            // Centred in the lane rather than at its head: a `GeometryReader` aligns its content
+            // top-leading, which would sit a 2pt filament on the ceiling of a 20pt row.
             filament(across: proxy.size.width)
+                .frame(maxHeight: .infinity, alignment: .center)
         }
         .frame(height: ArgoFeedRow.lineHeight)
         .clipped()
         .padding(.horizontal, -ArgoFeedRow.inset)
         .accessibilityElement()
         .accessibilityLabel(FeedMark.working.spoken)
-        // The word left the screen; it must not leave the screen reader. A status region rather
-        // than a live one: the claim stands for the whole wait instead of being announced again
-        // each time the ion comes round.
+        // The word left the screen; it must not leave the screen reader. The trait says the row
+        // changes under its own steam, so the label is not re-announced each pass.
         .accessibilityAddTraits(.updatesFrequently)
     }
 
@@ -34,7 +33,7 @@ struct FeedWorkingThread: View {
     /// frame of a loop that never ends.
     private func filament(across lane: CGFloat) -> some View {
         let length = lane * ArgoFeedRow.workingThreadShare
-        return Pass(length: length, glow: glow)
+        return Filament(length: length, glow: glow)
             .modifier(Travel(
                 pass: ArgoMotion.working.resolved(reduceMotion: reduceMotion),
                 length: length,
@@ -51,7 +50,7 @@ struct FeedWorkingThread: View {
 
 /// The filament and its glow as one piece, so both take the same transform. The glow is a second
 /// copy blurred ONCE rather than a filter over a moving element.
-private struct Pass: View {
+private struct Filament: View {
     @Environment(\.argo) private var argo
 
     let length: CGFloat
