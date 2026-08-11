@@ -11,13 +11,7 @@ prices it, and proposes cuts. Report first, edit only what the user accepts.
 **The case is spend and headroom, never adherence.** Never tell the user a smaller context
 file makes the agent follow instructions better — the largest study to test that directly
 (1,650 sessions) returned affirmative-null Bayes factors for context-file size against
-compliance. Two other claims are true and checkable, and they are enough:
-
-- **Spend.** Always-on tokens are re-sent every turn, so they are billed every turn.
-- **Headroom.** They occupy the working region for the whole session, and nothing evicts
-  them, so the session reaches degraded ground sooner.
-
-Neither says the file itself is read worse.
+compliance. **Spend** and **headroom** are true, checkable, and enough. §1 prices both.
 
 ## 1. Measure what loads before the first prompt
 
@@ -32,29 +26,44 @@ receives before the user types:
 | Skill frontmatter | The `name` + `description` of every installed skill, in each skills directory. Dedupe by skill name — a `.claude/skills/<n>` symlink into `.agents/skills/<n>` is one skill loaded once |
 | Memory index | The always-on index file, not the memories it points at |
 
-Report bytes per source, then convert to tokens. **Prefer a count the harness itself
-reports** over any divisor — several expose one, and it is the number the user is billed on.
-Take its per-source figures, never its grouping: a harness bucket named for the vendor can
-hold project-owned content, and an output style commonly lands in one. Total the sources in
-the table above yourself, and say which bucket each came from.
-Falling back to bytes ÷ divisor, use **2.7**, not the 3.5 that suits prose: agent files are
-dense in tables, backticks and paths, and 3.5 under-reports them by about a third. Say which
-figure you used and where it came from, because the user may re-derive it.
+Report bytes per source, then convert to tokens. Three ways, best first.
 
-Then price the total twice.
+**Weigh each source by difference.** Most agent CLIs have a headless mode that reports token
+usage for one exchange. Run a trivial prompt twice against a scratch copy of the project —
+once whole, once with a single source removed — and the drop is that source's real cost, in
+the harness's own accounting. Claude Code:
 
-**Spend** — tokens × turns per session. A 20k always-on file over a 40-turn session is 800k
-tokens of re-sent context.
+```bash
+cd <scratch-copy> && claude -p "Reply with exactly: ok" --output-format json
+# cost = input_tokens + cache_creation_input_tokens + cache_read_input_tokens
+```
 
-**Headroom** — always-on tokens as a share of the *working region*, not of the advertised
-window. The window is the hard limit. The working region is the span a model still reasons
-well across, and across current models it runs to roughly 100–140k tokens whatever the
-window says. **Compute against 120k.** This is a property of the models, so do not ask the
-user for a figure and do not scale it to the advertised window — a 1M window has the same
-working region as a 200k one. A 20k preamble against it is 17% spent before the first
-prompt, on every session including the ones that never touch its subject.
+Copy the project to a scratch directory and remove sources there. Never measure by deleting
+from the real tree. Reproduce the **whole import chain** in the copy — a root file that is
+only loaded because another file imports it costs nothing on its own, and you will measure a
+confident zero. Each probe is a paid API call, so weigh the few sources that dominate rather
+than all of them.
 
-Report the headroom share beside the byte counts.
+**A count the harness reports.** Cheaper, and it is what the user is billed on. Take its
+per-source figures, never its grouping: a bucket named for the vendor can hold project-owned
+content, and an output style commonly lands in one, so total the table's sources yourself.
+
+**Bytes ÷ 2.6**, when neither is available. Agent files are dense in tables, backticks and
+paths; the 3.5 that suits prose under-reports them by a quarter. Say which of the three you
+used.
+
+Then price that total twice, and report both beside the bytes.
+
+**Spend** — tokens × turns per session, because always-on content is re-sent every turn. A
+20k file over a 40-turn session is 800k tokens of re-sent context.
+
+**Headroom** — the same tokens as a share of the *working region*, because they sit there for
+the whole session and nothing evicts them. The window is the hard limit; the working region
+is the span a model still reasons well across, roughly 100–140k tokens whatever the window
+says. **Compute against 120k.** That is a property of the models, so do not ask the user for
+a figure and do not scale it to the advertised window — a 1M window has the same working
+region as a 200k one. A 20k preamble against it is 17% gone before the first prompt, on every
+session including the ones that never touch its subject.
 
 Do not rank the project against other repos. A percentile needs a corpus the user cannot
 see, ages the moment it ships, and implies a better and worse end of a distribution — which
