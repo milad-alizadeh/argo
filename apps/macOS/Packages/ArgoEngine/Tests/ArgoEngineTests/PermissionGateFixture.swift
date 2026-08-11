@@ -14,11 +14,15 @@ enum PermissionGate {
     {"tool_name":"Bash","tool_input":{"command":"rm -rf build"}}
     """
 
+    /// The gate's patience is a parameter because one suite needs both ends of it: a day for every
+    /// test where the clock must never be what decides, and no time at all for the two that are
+    /// about it running out.
     @MainActor
     static func withGate(
+        patience: PermissionPatience = .default,
         _ body: (SpawnFixture, SessionOwnership.ClaimID, CompanionClient) async throws -> Void,
     ) async throws {
-        let fixture = try SpawnFixture()
+        let fixture = try SpawnFixture(permissionPatience: patience)
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
         let client = try #require(CompanionClient(socketPath: path(fixture, claim)))

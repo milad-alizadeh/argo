@@ -10,11 +10,16 @@ enum FeedProjection {
     /// Rows in the stream's own order. Nothing is sorted, nothing is promoted, and an event kind
     /// with no row yet contributes none rather than a placeholder — a surface that drew "tool call"
     /// in a box would be claiming a shape the ticket that owns it has not decided.
-    /// `handedOff` is the one input that is not the record's. It is Argo's own memory of a handoff
-    /// (`CONTEXT.md` L2) and neither CLI wrote a word about it, so it arrives beside the stream
-    /// rather than being looked for inside it — and is absent for every Session but the few that
-    /// have handed their work over.
-    static func rows(from events: [TranscriptEvent], handedOff: FeedHandoff? = nil) -> [FeedRow] {
+    /// `handedOff` and `expired` are the inputs that are not the record's. Both are Argo's own
+    /// memory — a handoff (`CONTEXT.md` L2) and a Permission Argo's own gate refused when its
+    /// patience ran out (#573) — and neither CLI wrote a word about either, so they arrive beside
+    /// the stream rather than being looked for inside it. Both are absent for almost every Session.
+    static func rows(
+        from events: [TranscriptEvent],
+        handedOff: FeedHandoff? = nil,
+        expired: [PermissionExpiry] = [],
+    )
+        -> [FeedRow] {
         let answered = outcomes(in: events)
         let within = workingDirectory(in: events)
         let read = events.compactMap { content(of: $0, answeredBy: answered, within: within) }
@@ -33,7 +38,7 @@ enum FeedProjection {
         // rather than moments in it, and of the two this is the one a reader acts on: what the work
         // cost is the last thing said about the reading, and where the work went is the way out of
         // it.
-        return (work + rolledUp(events) + chained(handedOff)).enumerated()
+        return (work + unanswered(expired) + rolledUp(events) + chained(handedOff)).enumerated()
             .map { position, content in
                 FeedRow(id: position, content: content)
             }
@@ -41,6 +46,18 @@ enum FeedProjection {
 
     private static func chained(_ handedOff: FeedHandoff?) -> [FeedRow.Content] {
         handedOff.map { [.mark(.handedOff($0))] } ?? []
+    }
+
+    /// The calls the gate refused because nobody answered, at the foot of the work they interrupted
+    /// and above the roll-up, in the order they expired.
+    ///
+    /// At the foot rather than in place, and that is a limit rather than a preference: the hook
+    /// payload names a tool and its input, never the record's own id for the call, so there is no
+    /// honest position in the stream to put the row at. What there IS is a true statement about the
+    /// Session, and the feed already ends with two of those. A Session with a live gate is a live
+    /// Session, so the foot is also where its reader is looking.
+    private static func unanswered(_ expired: [PermissionExpiry]) -> [FeedRow.Content] {
+        expired.map { .mark(.permissionExpired($0)) }
     }
 
     /// What the Session spent, at the foot of the reading.

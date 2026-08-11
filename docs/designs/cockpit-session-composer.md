@@ -105,17 +105,40 @@ anything.
    the user's own, the status flips to *Running*. A 1.4s accent wash marks the new row; there is
    no fourth signal.
 4. **A queued follow-up rides above the field**, cancellable, and is sent when the Turn ends.
-5. **A prompt whose hook has gone leaves without a word.** Decision 6 moved the timeout a day out,
-   which leaves cancelling the turn as the only way anyone reaches this in practice — and a prompt
-   that vanishes when you cancel the turn it belonged to is the expected answer, not a silence
-   that needs explaining. (Superseded: the earlier reading rendered
-   `Permission expired — denied, unanswered`, on the argument that *denied* alone would claim a
-   decision nobody made. That argument still holds for a real expiry; #573 is where it goes if
-   the timeout ever comes back down.)
+5. **A prompt whose hook has gone leaves without a word; a prompt that ran out says so** (#573).
+   The two are told apart by making one of them Argo's own act: the gate keeps a clock **shorter
+   than the hook's**, so a call nobody answers is refused by Argo — DIRECT, published as a
+   `PermissionExpiry`, and drawn at the foot of the reading as
+   `Permission expired — denied, unanswered` in the roster's attention amber. *Denied* alone would
+   claim a decision nobody made and *expired* alone would leave the tool call unaccounted for, so
+   the row is both halves or it is worse than silence. The tool is named to a screen reader only —
+   on the rule it would push the sentence past the column.
+
+   The hook simply going stays silent, and that is now a *sound* silence rather than an accepted
+   one: Argo's clock is the shorter of the two, so a peer close can only mean the turn was
+   cancelled — and a prompt that vanishes when you cancel the turn it belonged to is the expected
+   answer, not something that needs explaining. (Superseded: the earlier reading drew nothing in
+   either case, on the argument that decision 6's day-long timeout left cancelling as the only way
+   to reach the state. That is still nearly true — the row costs nothing until the patience comes
+   down, which is now the one number that has to change to make it a live surface.)
+
+   **The restart case #573 names is out of reach, and stays out.** An Argo that restarts under a
+   live CLI did not observe the expiry: the claim, the PTY and the gate all die with the process,
+   so the fresh Argo has no record to draw and the hook's own timeout is what refuses the call.
+   Recording it would need the gate's state persisted, which the same reasoning that makes a
+   standing allow die with its claim rules out. The Session demotes to **orphaned** instead, and
+   that is the honest thing the reader is told.
+
+   The row goes at the **foot**, not in place. The hook payload names a tool and its input and
+   never the record's own id for the call, so there is no honest position in the stream to put it
+   at — and the foot is where a live Session's reader is looking anyway.
 6. **No clock is drawn — the prompt waits for the person.** The `PreToolUse` hook's `timeout` is
    set a day out, so expiry is never the thing that decides: nobody watches the cockpit for the
    whole of an agent's run, and a countdown on an unwatched surface only asks to be beaten. The
    prompt holds where it is until it is answered. Allow is focused, `⏎` allows, `esc` denies.
+   Two clocks, a minute apart, and the order is load-bearing: **Argo's** is the day, and the
+   **hook's** is the day plus a margin, so the gate always answers before the hook could be killed
+   holding the question. That is what makes decision 5's expiry a fact rather than a guess.
    (Superseded: the earlier reading drew the window as a fuse and `denies in m:ss`, on the
    argument that walking away otherwise looks free. It is free — that is the point.)
 7. **A degraded composer is absent, not disabled.** A greyed field invites a click and gives no

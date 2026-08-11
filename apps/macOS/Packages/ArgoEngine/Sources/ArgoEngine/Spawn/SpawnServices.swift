@@ -17,17 +17,23 @@ public struct SpawnServices {
     /// and a test or a render harness that named no folder must not read or write the machine's own
     /// file.
     public let chainFileURL: URL?
+    /// How long the permission gate waits for a person before refusing the call itself (#573).
+    /// Live everywhere but a test: the app has never any reason to name it, and a suite that must
+    /// reach the far end of a day-long wait has no other way to.
+    public let permissionPatience: PermissionPatience
 
     public init(
         host: AgentProcessHost?,
         launcher: AgentLauncher = AgentLauncher(),
         companionRoot: URL = CompanionChannel.defaultRoot,
         chainFileURL: URL? = nil,
+        permissionPatience: PermissionPatience = .default,
     ) {
         self.host = host
         self.launcher = launcher
         self.companionRoot = companionRoot
         self.chainFileURL = chainFileURL
+        self.permissionPatience = permissionPatience
     }
 
     /// A Hub that observes and never spawns.

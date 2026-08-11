@@ -26,7 +26,11 @@ public struct CockpitView: View {
     /// Hub rebuilds as the transcript grows, so a feed that memoised would be showing the reading
     /// as it was when the user last clicked.
     private var feed: [FeedRow] {
-        FeedProjection.rows(from: events, handedOff: presentation.handoff(of: navigation.session))
+        FeedProjection.rows(
+            from: events,
+            handedOff: presentation.handoff(of: navigation.session),
+            expired: presentation.session(navigation.session)?.expiredPermissions ?? [],
+        )
     }
 
     /// The same Session's plan, off the same stream. Read separately rather than pulled out of the

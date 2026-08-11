@@ -70,6 +70,17 @@ extension FeedProjection {
         handedOff: previewHandoff,
     )
 
+    /// The punctuation with a Permission that ran out among it (#573) — the marks-only set, for
+    /// `previewMarkRows`'s reason and one more: what the render settles is that a refusal nobody
+    /// made reads as a departure from the marks around it, which needs those marks on one screen.
+    static let previewExpiredMarkRows = numbered(
+        (previewMarks + [.permissionExpired(previewExpiry)]).map(FeedRow.Content.mark),
+    )
+
+    /// `Bash` deliberately — the tool whose prompt the study's render is drawn over, so the row and
+    /// the prompt it is the end of name the same call.
+    static let previewExpiry = PermissionExpiry(id: "permission-1", toolName: "Bash")
+
     /// The Session the preview reading was handed to. Titled like a real one, because the link is
     /// only judgeable at the length a title actually reaches.
     static let previewHandoff = FeedHandoff(

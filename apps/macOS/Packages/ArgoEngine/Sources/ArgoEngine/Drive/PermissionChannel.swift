@@ -4,39 +4,46 @@ import Foundation
 /// session's `PreToolUse` hook dials, blocks on, and takes its decision back down.
 ///
 /// Every answer it sends is `allow` or `deny`, never `ask` — `ask` would fall through to the TUI's
-/// own dialog, which is hidden and has no reader. A hook whose peer goes before an answer was sent
-/// is over either way — its turn was cancelled, or the day-long `timeout` finally ran out; this
-/// end only has to stop showing a prompt nobody can answer any more.
+/// own dialog, which is hidden and has no reader.
+///
+/// Two ways a prompt ends unanswered, and they are told apart rather than run together (#573). The
+/// gate keeps its OWN clock, shorter than the hook's, so a call nobody answers is refused **by
+/// Argo** and published as a `PermissionExpiry` the feed reports. A peer going before that clock
+/// fires went with the turn it belonged to — the user cancelled — and takes its prompt away in
+/// silence, because a prompt that vanishes when you cancel its turn is the expected answer.
 @MainActor
 final class PermissionChannel {
-    /// The hook's `timeout`, a day long. A prompt waits for the person, not for a clock: nobody
-    /// is watching the cockpit the whole time an agent runs, and a window that answers by expiry
-    /// answers on its own. Long enough that the timeout is never the thing that decides, and no
-    /// clock is drawn because there is none worth reading.
-    nonisolated static let patienceSeconds = 86400
-
     private struct Pending {
         let request: PermissionRequest
         let peer: Int
         let reply: CompanionConnection.Reply
+        /// The gate's own clock for this one call, cancelled by every other way it can end.
+        let clock: Task<Void, Never>
     }
 
     private let root: URL
+    private let patience: PermissionPatience
     private let onChange: (SessionOwnership.ClaimID, [PermissionRequest]) -> Void
     private let onStanding: (SessionOwnership.ClaimID, [StandingAllow]) -> Void
+    private let onExpired: (SessionOwnership.ClaimID, [PermissionExpiry]) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
+    private var expired: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
     private var standing = StandingAllowTable()
     private var issued = 0
 
     init(
         root: URL,
+        patience: PermissionPatience = .default,
         onChange: @escaping (SessionOwnership.ClaimID, [PermissionRequest]) -> Void,
         onStanding: @escaping (SessionOwnership.ClaimID, [StandingAllow]) -> Void,
+        onExpired: @escaping (SessionOwnership.ClaimID, [PermissionExpiry]) -> Void,
     ) {
         self.root = root
+        self.patience = patience
         self.onChange = onChange
         self.onStanding = onStanding
+        self.onExpired = onExpired
     }
 
     /// Open this claim's gate and say where its hook should dial.
@@ -67,12 +74,23 @@ final class PermissionChannel {
         if standing.withdraw(claim) {
             onStanding(claim, [])
         }
-        guard pending.removeValue(forKey: claim) != nil else { return }
+        // The expiries go with the claim for the reason the grants do: they are what happened to
+        // THIS Session, and a Session that no longer exists has no reading left to say it in.
+        if expired.removeValue(forKey: claim) != nil {
+            onExpired(claim, [])
+        }
+        guard let waiting = pending.removeValue(forKey: claim) else { return }
+        // Silence, deliberately. The PTY is gone, so nothing was refused and nothing is left to
+        // read a refusal — the whole Session left with it.
+        cancelClocks(of: waiting)
         onChange(claim, [])
     }
 
+    /// Over the pending claims as well as the socketed ones, so no armed clock is left sleeping
+    /// against a gate that is being torn down — a day-long `Task` outliving its channel is a leak
+    /// rather than a bug (`weak self` makes its wake-up a no-op), and the union costs nothing.
     func withdrawAll() {
-        for claim in sockets.keys {
+        for claim in Set(sockets.keys).union(pending.keys) {
             withdraw(claim)
         }
     }
@@ -94,7 +112,8 @@ final class PermissionChannel {
         else { return false }
         let answered = waiting.remove(at: index)
         pending[claim] = waiting
-        answered.reply(Self.decisionLine(decision))
+        cancelClocks(of: [answered])
+        answered.reply(PermissionReply.line(decision))
         guard decision == .allowAlways else {
             onChange(claim, waiting.map(\.request))
             return true
@@ -121,12 +140,46 @@ final class PermissionChannel {
             onStanding(claim, standing.grants(for: claim))
         }
         let waiting = pending[claim] ?? []
-        for covered in waiting where covered.request.toolName == toolName {
-            covered.reply(Self.decisionLine(.allow))
-        }
+        let covered = waiting.filter { $0.request.toolName == toolName }
         let remaining = waiting.filter { $0.request.toolName != toolName }
         pending[claim] = remaining
+        cancelClocks(of: covered)
+        for one in covered {
+            one.reply(PermissionReply.line(.allow))
+        }
         onChange(claim, remaining.map(\.request))
+    }
+
+    /// The gate's clock for one call: it runs out, Argo refuses the call itself, and the Session
+    /// publishes what happened. Argo's own act from end to end, which is what lets the feed say a
+    /// tool call was refused by nobody without inventing the claim.
+    private func arm(_ request: PermissionRequest, for claim: SessionOwnership.ClaimID)
+        -> Task<Void, Never> {
+        Task { [weak self, patience] in
+            try? await Task.sleep(for: .seconds(patience.seconds))
+            guard !Task.isCancelled else { return }
+            self?.expire(request.id, for: claim)
+        }
+    }
+
+    private func expire(_ requestID: String, for claim: SessionOwnership.ClaimID) {
+        guard var waiting = pending[claim],
+              let index = waiting.firstIndex(where: { $0.request.id == requestID })
+        else { return }
+        let gone = waiting.remove(at: index)
+        pending[claim] = waiting
+        gone.reply(PermissionReply.expired)
+        expired[claim, default: []].append(PermissionExpiry(gone.request))
+        onExpired(claim, expired[claim] ?? [])
+        onChange(claim, waiting.map(\.request))
+    }
+
+    /// Every way a Permission can end that is not its clock running out stops that clock first — an
+    /// answered call whose timer still fires would report an expiry over a decision somebody made.
+    private func cancelClocks(of taken: [Pending]) {
+        for one in taken {
+            one.clock.cancel()
+        }
     }
 
     private func asked(
@@ -139,51 +192,33 @@ final class PermissionChannel {
         guard let request = PermissionRequest(line: line, id: "permission-\(issued)") else {
             // Fail closed, and fast: a request Argo could not read is not one the user can be
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
-            return reply(Self.decisionLine(.deny))
+            return reply(PermissionReply.line(.deny))
         }
         // The standing allow, applied where the round trip would otherwise start: a tool the user
         // has already ruled on for this Session never becomes a prompt at all. Every other tool
         // takes the per-action path below, untouched.
         guard !standing.allows(request.toolName, for: claim) else {
-            return reply(Self.decisionLine(.allow))
+            return reply(PermissionReply.line(.allow))
         }
-        pending[claim, default: []].append(Pending(request: request, peer: peer, reply: reply))
+        pending[claim, default: []].append(Pending(
+            request: request,
+            peer: peer,
+            reply: reply,
+            clock: arm(request, for: claim),
+        ))
         onChange(claim, pending[claim, default: []].map(\.request))
     }
 
-    /// The hook went — its own timeout denied it, or the turn it belonged to was cancelled.
-    /// Either way its questions are over, answered by nobody.
+    /// The hook went while Argo was still willing to wait, which means the turn it belonged to was
+    /// cancelled: Argo's own clock is the shorter of the two, so an expiry can never arrive this
+    /// way. Its questions are over and the prompt goes without a word — cancelling a turn is the
+    /// user answering, and a notice explaining what they just did explains nothing (#573).
     private func peerClosed(_ claim: SessionOwnership.ClaimID, peer: Int) {
         guard let waiting = pending[claim], waiting.contains(where: { $0.peer == peer })
         else { return }
         let remaining = waiting.filter { $0.peer != peer }
         pending[claim] = remaining
+        cancelClocks(of: waiting.filter { $0.peer == peer })
         onChange(claim, remaining.map(\.request))
-    }
-
-    /// The hook's whole reply vocabulary — two words, over three answers: what makes `allowAlways`
-    /// standing happens on this side of the socket, and the hook is told the same `allow` either
-    /// way. `ask` is unrepresentable, here and in the type.
-    ///
-    /// Switched exhaustively rather than tested against `.deny`, because the reason is the NEXT
-    /// variant: `allowAlways` was added to this enum and a `!= .deny` fallback took it silently.
-    private static func decisionLine(_ decision: PermissionDecision) -> String {
-        let word: String
-        let reason: String
-        switch decision {
-        case .allow, .allowAlways:
-            word = "allow"
-            reason = "Allowed in Argo"
-        case .deny:
-            word = "deny"
-            reason = "Denied in Argo"
-        }
-        return CompanionResponse.line([
-            "hookSpecificOutput": [
-                "hookEventName": "PreToolUse",
-                "permissionDecision": word,
-                "permissionDecisionReason": reason,
-            ],
-        ]) ?? ""
     }
 }

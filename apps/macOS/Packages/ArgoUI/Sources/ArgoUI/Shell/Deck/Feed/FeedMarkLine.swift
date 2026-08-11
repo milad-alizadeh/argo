@@ -28,7 +28,7 @@ struct FeedMarkLine: View {
                 link(to: handoff)
                 rule
             } else if let words = mark.words {
-                caption(words)
+                caption(words, in: wordInk)
                 rule
             }
         }
@@ -52,6 +52,15 @@ struct FeedMarkLine: View {
         }
         .buttonStyle(.plain)
         .help("Open \(handoff.title), the Session this work was handed to")
+    }
+
+    /// The roster's attention amber for the one mark that reports an act rather than the shape of
+    /// the record — a tool call refused with nobody having refused it. It is the same colour the
+    /// row wore while that prompt was waiting, carried through to what became of it; every other
+    /// mark stays tertiary, because a turn ending and a token count are the ground it is drawn on.
+    private var wordInk: ArgoColor? {
+        guard case .permissionExpired = mark else { return nil }
+        return argo.color.state.attention
     }
 
     private func caption(_ text: String, in ink: ArgoColor? = nil) -> some View {
@@ -90,4 +99,18 @@ struct FeedMarkLine: View {
         .frame(width: 720)
         .argoDeckSurface()
         .argoAppearance()
+}
+
+// The expiry, against an ordinary mark rather than alone: the whole claim about the amber is that
+// it reads as a departure, and a departure is only visible beside what it departs from. The
+// preview transcript carries no expiry, so this is the only place the two ever meet.
+#Preview("Marks — a Permission the gate refused because nobody answered") {
+    VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
+        FeedMarkLine(mark: .turnEnded(.endTurn))
+        FeedMarkLine(mark: .permissionExpired(FeedProjection.previewExpiry))
+    }
+    .padding(ArgoFeedRow.inset)
+    .frame(width: 720)
+    .argoDeckSurface()
+    .argoAppearance()
 }

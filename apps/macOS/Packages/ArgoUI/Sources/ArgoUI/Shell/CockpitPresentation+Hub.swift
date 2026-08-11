@@ -89,6 +89,7 @@ extension CockpitPresentation.Session {
             explicitName: annotations.explicitName(session.id),
             permission: session.permission,
             standingAllows: session.standingAllows,
+            expiredPermissions: session.expiredPermissions,
             events: session.events,
         )
     }

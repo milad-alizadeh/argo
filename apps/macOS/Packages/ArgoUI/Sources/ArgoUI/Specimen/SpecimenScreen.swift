@@ -126,6 +126,12 @@ public struct SpecimenScreen: View {
                 feed: FeedProjection.previewHandedOffRows,
                 header: handoffHeader,
             )
+        case .feedPermissionExpired:
+            // The same marks as `feedPunctuation`, with the refusal nobody made among them (#573).
+            // Beside them rather than alone, because the claim is a CONTRAST: the amber has to read
+            // as a departure from the hairlines it sits in without reading as an error the agent
+            // hit, and a colour nobody compares reads as loud whatever it is.
+            sessions(FeedProjection.previewExpiredMarkRows)
         case .contextGuide:
             // The ⓘ panel, stood in a glass of its own — a popover is a window of its own and
             // never lands in a screenshot of this one (`DrawerSpecimen`).

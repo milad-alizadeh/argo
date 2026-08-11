@@ -16,6 +16,10 @@ enum FeedMark: Equatable, Sendable {
     /// The work left here for a fresh Session, and where it went. The feed's one row that is a way
     /// out of the reading rather than a part of it — see `FeedHandoff`.
     case handedOff(FeedHandoff)
+    /// A Permission the gate ran out of patience for and refused itself (#573). A mark because it
+    /// is drawn as one and is not something the agent said or did — but the only one that reports
+    /// an ACT rather than the shape of the record, which is why it alone takes attention ink.
+    case permissionExpired(PermissionExpiry)
 }
 
 extension FeedMark {
@@ -39,12 +43,16 @@ extension FeedMark {
         // knowing where to go next, and the destination's own title is what the roster will show
         // them when they get there.
         case let .handedOff(handoff): "handed off to \(handoff.title)"
+        // The study's own sentence, unshortened. `denied` alone would credit a decision nobody
+        // made, and `expired` alone would leave what became of the tool call unsaid — the row is
+        // both halves or it is a worse row than silence (#573).
+        case .permissionExpired: "Permission expired — denied, unanswered"
         }
     }
 
     /// Where this mark leads, for the one kind that leads anywhere. `nil` for the rest, which is
-    /// what keeps a hairline a hairline: three of these four rows are punctuation, and a renderer
-    /// that made all of them pressable would offer a click that does nothing three times a turn.
+    /// what keeps a hairline a hairline: every other mark is a statement rather than a way out, and
+    /// a renderer that made them all pressable would offer a click that does nothing every turn.
     var handoff: FeedHandoff? {
         guard case let .handedOff(handoff) = self else { return nil }
         return handoff
@@ -53,7 +61,16 @@ extension FeedMark {
     /// What a screen reader is told the mark is. A rule with no words is a shape, and a shape is
     /// exactly what does not carry — so the end a sighted reader takes from the hairline is spoken
     /// here rather than passed over in silence.
+    /// Switched exhaustively with no `default`, so a mark added to this enum has to say what it
+    /// SOUNDS like rather than inheriting a fallback written for turn boundaries.
     var spoken: String {
-        words ?? "Turn ended"
+        switch self {
+        case .compacted, .turnEnded, .spent, .handedOff: words ?? "Turn ended"
+        // The tool is named here and nowhere else. On the rule it would be the one mark carrying a
+        // proper noun and would push the sentence past the column at any real width; spoken, it is
+        // the difference between "a Permission expired" and knowing WHICH call went unanswered.
+        case let .permissionExpired(expiry):
+            "Permission for \(expiry.toolName) expired — denied, unanswered"
+        }
     }
 }

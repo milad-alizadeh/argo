@@ -97,6 +97,12 @@ public final class Hub {
     /// at all because that is what separates a standing allow from the invisible set it replaces.
     var standingAllows: [SessionOwnership.ClaimID: [StandingAllow]] = [:]
 
+    /// The Permissions each claim's gate ran out of patience for and refused itself (#573), oldest
+    /// first. Observed and keyed by claim like the two above, and kept beside them rather than
+    /// folded into `pendingPermissions`: a prompt still waiting and a call already refused are
+    /// opposite states, and the reading that says so is the whole of what this ticket asked for.
+    var expiredPermissions: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
+
     /// The handoffs THIS process made, keyed by the Session that handed over and holding the id the
     /// fresh row was published under — a claim, until its CLI writes a record. Observed, because a
     /// handoff completing has to reach the reading it is drawn at the foot of.
@@ -108,8 +114,8 @@ public final class Hub {
     @ObservationIgnored let chainStore: HandoffChainStore
 
     @ObservationIgnored let spawnServices: SpawnServices
-    @ObservationIgnored private(set) var companion: CompanionChannel?
-    @ObservationIgnored private(set) var permissions: PermissionChannel?
+    @ObservationIgnored var companion: CompanionChannel?
+    @ObservationIgnored var permissions: PermissionChannel?
 
     /// The working directories a live CLI was running in when the process table was last read, and
     /// when that was. Absent until a read has happened, so an unread liveness resolves down to
@@ -170,23 +176,6 @@ public final class Hub {
         // reading of a Session that has one.
         self.chain = chainStore.load()
         openCompanionChannel()
-    }
-
-    /// Opened at construction, not lazily: they close over `self`, and a channel that came into
-    /// being on the first spawn would be a second thing that could fail at the moment an agent
-    /// starts — which is the one moment there is nothing useful to say about it.
-    private func openCompanionChannel() {
-        let root = spawnServices.companionRoot
-        companion = CompanionChannel(root: root) { [weak self] claim, fact in
-            self?.record(fact, for: claim)
-        }
-        permissions = PermissionChannel(
-            root: root,
-            onChange: { [weak self] claim, waiting in self?.publish(waiting, for: claim) },
-            onStanding: { [weak self] claim, standing in
-                self?.publish(standing: standing, for: claim)
-            },
-        )
     }
 
     /// Point the Hub at a Project. Everything the previous one established is cancelled and
