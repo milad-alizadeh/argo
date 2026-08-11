@@ -45,6 +45,9 @@ final class CockpitCoordinator {
                 // The one place the real chain file is named. A Hub given none remembers no
                 // handoff.
                 chainFileURL: HandoffChainStore.defaultFileURL,
+                // And the one place the real ownership ledger is. A Hub given none grades every
+                // Session it spawned `external` after a relaunch (ADR-0026).
+                ownershipFileURL: SessionOwnershipLedgerStore.defaultFileURL,
             ),
         )
     }

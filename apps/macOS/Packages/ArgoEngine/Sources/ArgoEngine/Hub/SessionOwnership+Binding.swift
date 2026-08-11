@@ -19,6 +19,9 @@ extension SessionOwnership {
         else { return nil }
         claims[id]?.sessionID = sessionID
         boundSessions[sessionID] = id
+        // The first moment the durable record CAN be written: until now Argo owned an agent, not a
+        // Session, and the ledger is keyed by the id a later launch will see (ADR-0026).
+        recordOwnership(of: sessionID)
         return id
     }
 

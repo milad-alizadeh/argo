@@ -8,11 +8,17 @@
   floor); managed is *external + PTY steering + CONVENTION channel* layered on top. v1 ranks
   external lower (read-only awareness), ships managed-first.
 
-  **Managed-ness is not durable across an Argo restart**: the PTY/steering channel dies with the
-  owning process and cannot be re-adopted, so a `managed` session whose owner is gone demotes to
-  **orphaned** — observation-only, steering unrecoverable (CONVENTION may re-establish only if
-  the plugin re-dials CLI-side). Orphaned is a third posture of the `managed | external` axis,
-  not a fourth stored kind.
+  **A PTY is not durable across an Argo restart; a Session is** (ADR-0026). The PTY/steering
+  channel dies with the owning process and cannot be re-adopted, so a `managed` session whose owner
+  is gone demotes to **orphaned** — read-only *now*, because there is no live channel. It is not
+  read-only forever: a Session is a resume-chain, and `claude --resume` continues one in a fresh
+  process, so the channel is **re-opened rather than re-adopted**. Selecting an orphaned Session
+  resumes it and it is `managed` again; CONVENTION comes back with the plugin the resume loads.
+  Orphaned is a third posture of the `managed | external` axis, not a fourth stored kind.
+
+  Telling `orphaned` from `external` after a relaunch needs a durable record of past ownership —
+  Session id and the window Argo held it for, per-machine and never committed. That record is not
+  a roster: the roster is still rebuilt from the transcripts every launch (ADR-0004, ADR-0008).
 
   A Session **is the root Agent** (`parentId: null`). Key attributes: **`cli`**
   (`claude | codex | …`), **`cwd`** (**DIRECT for managed / DERIVED for external** — the root of

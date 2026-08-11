@@ -179,6 +179,9 @@ public struct CockpitView: View {
         .onChange(of: presentation.sessions.map(\.id), initial: true) { _, sessionIDs in
             navigation.reconcile(against: sessionIDs)
         }
+        .onChange(of: navigation.chosenSession) { _, pick in
+            resumeIfSelectionIsDead(pick)
+        }
     }
 }
 

@@ -2,12 +2,14 @@ import Foundation
 
 /// Which Sessions Argo OWNS, for this Argo process only (CONTEXT.md L2, ADR-0013).
 ///
-/// Managed-ness is not durable: the PTY dies with the owning Argo and cannot be re-adopted, so this
-/// registry is in-memory. A restart re-observes its own Sessions as `external`.
+/// The PTY dies with the owning Argo and cannot be re-adopted, so the claims are in-memory. What a
+/// restart keeps is the LEDGER beside them: a Session this Argo never claimed but a previous one
+/// did grades `orphaned` rather than `external`, and can be resumed (ADR-0026).
 ///
 /// A claim is keyed by spawn folder AND the window the PTY was alive for, because a CLI picks its
 /// own session id after the spawn returns: on the folder alone, an agent already running there
-/// would read as ours.
+/// would read as ours. A RESUME needs neither key — it knows the Session before the process
+/// exists, so its claim is bound to that id from birth.
 ///
 /// The folder is held RESOLVED (#363). The two sides spell it differently — Argo claims the path
 /// the user registered, and the CLI records the one it reached through `/var` → `/private/var` —
@@ -31,7 +33,13 @@ public final class SessionOwnership {
 
     /// Main-actor isolated like the registry itself, so a test can hand it a clock it moves by hand
     /// without promising the concurrency checker anything about a value only this actor touches.
-    private let now: () -> Int
+    let now: () -> Int
+    /// What every Argo before this one owned, and the file it came out of.
+    var ledger: SessionOwnershipLedger
+    let ledgerStore: SessionOwnershipLedgerStore
+    /// Which registry this is, written into every ledger window it opens, so another cockpit window
+    /// reading the file can tell that Session is already being steered.
+    let owner: SessionOwnershipLedger.Owner
     var claims: [ClaimID: Claim] = [:]
     /// The order claims were issued in — "the newest claim still waiting for a Session" is the
     /// tie-break, and a dictionary has no order to ask.
@@ -39,26 +47,38 @@ public final class SessionOwnership {
     var boundSessions: [String: ClaimID] = [:]
     private var issued = 0
 
-    public init(now: @escaping () -> Int = { Date().epochMs }) {
+    /// A store with no file remembers nothing, which is the honest default for a test and for the
+    /// render harness: neither may read or write the machine's own ledger.
+    init(
+        now: @escaping () -> Int = { Date().epochMs },
+        ledgerStore: SessionOwnershipLedgerStore = SessionOwnershipLedgerStore(fileURL: nil),
+        owner: SessionOwnershipLedger.Owner = .thisRegistry,
+    ) {
         self.now = now
+        self.ledgerStore = ledgerStore
+        self.owner = owner
+        self.ledger = ledgerStore.load()
     }
 
     /// Argo spawned an agent in this folder and holds its PTY.
-    public func claim(cwd: String) -> ClaimID {
-        issued += 1
-        let id = ClaimID(value: "claim-\(issued)")
-        claims[id] = Claim(cwd: resolvedPath(cwd), fromMs: now(), toMs: nil, sessionID: nil)
-        issuedOrder.append(id)
-        // Reachable under its own id from birth: the roster carries a row for this agent before the
-        // CLI has picked a Session id (#361), and that row's terminal is looked up the same way.
-        boundSessions[id.value] = id
-        return id
+    func claim(cwd: String) -> ClaimID {
+        open(cwd: cwd, resuming: nil)
     }
 
-    /// The PTY exited: ownership is gone and cannot come back.
-    public func release(_ id: ClaimID) {
+    /// Argo started a CLI on an EXISTING chain, so the claim names its Session from birth rather
+    /// than being matched back by folder and start time. The id is known before the process is, so
+    /// there is nothing to guess (#10, and it sidesteps #363/#364 entirely).
+    func claim(cwd: String, resuming sessionID: String) -> ClaimID {
+        open(cwd: cwd, resuming: sessionID)
+    }
+
+    /// The PTY exited: this claim is over. The ledger keeps the fact that Argo held it, which is
+    /// what a later launch grades `orphaned` on.
+    func release(_ id: ClaimID) {
         guard claims[id]?.toMs == nil else { return }
         claims[id]?.toMs = now()
+        guard let sessionID = claims[id]?.sessionID else { return }
+        recordRelease(of: sessionID)
     }
 
     /// Every claim whose PTY is still alive, oldest first — what app quit has to shut down.
@@ -66,12 +86,29 @@ public final class SessionOwnership {
         issuedOrder.filter { claims[$0]?.toMs == nil }
     }
 
-    /// `managed` while the covering claim's PTY lives, `orphaned` once it has exited, `external`
-    /// for a Session no claim covers — including one already running in a folder Argo later
-    /// spawned into, and one Argo cannot place for want of a cwd or a start time.
-    public func provenance(cwd: String?, startedAtMs: Int?) -> SessionProvenance {
-        guard let id = claimFor(cwd: cwd, startedAtMs: startedAtMs) else { return .external }
-        return claims[id]?.toMs == nil ? .managed : .orphaned
+    /// `managed` while the claim's PTY lives, `orphaned` once it has exited or once the Argo that
+    /// held it is gone, `external` for a Session no Argo ever owned — including one already running
+    /// in a folder Argo later spawned into, and one Argo cannot place for want of a cwd or a start
+    /// time.
+    ///
+    /// The named Session is tried first, because a resume's claim covers no window a transcript
+    /// could be matched against: the chain started long before the claim did.
+    func provenance(
+        sessionID: String?,
+        cwd: String?,
+        startedAtMs: Int?,
+    )
+        -> SessionProvenance {
+        if let bound = sessionID.flatMap({ boundSessions[$0] }) ?? claimFor(
+            cwd: cwd,
+            startedAtMs: startedAtMs,
+        ) {
+            return claims[bound]?.toMs == nil ? .managed : .orphaned
+        }
+        // No claim in THIS process, so the ledger is the only witness left. `external` means never
+        // Argo's, which would be a false claim about a Session it spawned before the last quit.
+        guard let sessionID, hasEverOwned(sessionID: sessionID) else { return .external }
+        return .orphaned
     }
 
     /// The claim a Session belongs to, or nothing. The claim still WAITING for a Session wins, and
@@ -80,6 +117,20 @@ public final class SessionOwnership {
     func claimFor(cwd: String?, startedAtMs: Int?) -> ClaimID? {
         let covering = covering(cwd: cwd, startedAtMs: startedAtMs)
         return covering.last { claims[$0]?.sessionID == nil } ?? covering.last
+    }
+
+    private func open(cwd: String, resuming sessionID: String?) -> ClaimID {
+        issued += 1
+        let id = ClaimID(value: "claim-\(issued)")
+        claims[id] = Claim(cwd: resolvedPath(cwd), fromMs: now(), toMs: nil, sessionID: sessionID)
+        issuedOrder.append(id)
+        // Reachable under its own id from birth: the roster carries a row for this agent before the
+        // CLI has picked a Session id (#361), and that row's terminal is looked up the same way.
+        boundSessions[id.value] = id
+        guard let sessionID else { return id }
+        boundSessions[sessionID] = id
+        recordOwnership(of: sessionID)
+        return id
     }
 
     private func covering(cwd: String?, startedAtMs: Int?) -> [ClaimID] {

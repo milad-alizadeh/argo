@@ -62,6 +62,18 @@ extension CockpitView {
         }
     }
 
+    /// Picking a Session Argo can no longer steer resumes it (#10). There is no button and no
+    /// prompt: the click is the intent, because the user selected the row in order to use it.
+    ///
+    /// Only a CHOSEN Session, never the one reconciliation lands on — otherwise launch would start
+    /// an agent for the first row on the roster, which is the one thing this must not do. Which
+    /// selections cost a process is `SessionResumeProjection`'s.
+    func resumeIfSelectionIsDead(_ pick: CockpitNavigationModel.Pick) {
+        guard let dead = SessionResumeProjection.resumable(pick.session, in: presentation)
+        else { return }
+        Task { await actions.resumeSession(dead) }
+    }
+
     /// The exit the undriveable line offers: a fresh Session in the shown one's folder, which then
     /// becomes the selection — story 48's rule, and for its reason. Inert with nothing selected,
     /// which is also the state with no line to press.

@@ -52,9 +52,9 @@ public final class Hub {
     /// a set made before the CLI wrote a record has to follow the row when it is re-keyed.
     var setModes: [SessionOwnership.ClaimID: SessionModeSet] = [:]
 
-    /// Which Sessions this Argo process owns a PTY for. Empty until something spawns one, which is
-    /// what makes every discovered Session `external`.
-    public let ownership = SessionOwnership()
+    /// Which Sessions this Argo process owns a PTY for, and — through its ledger — which ones any
+    /// Argo ever did. Empty of claims until something spawns or resumes one.
+    public let ownership: SessionOwnership
 
     /// The PTYs behind those claims. Held for the life of this process, and ended with it.
     let terminals = AgentTerminals()
@@ -145,6 +145,9 @@ public final class Hub {
         self.discovery = discovery
         self.spawnServices = spawnServices
         self.chainStore = HandoffChainStore(fileURL: spawnServices.chainFileURL)
+        self.ownership = SessionOwnership(
+            ledgerStore: SessionOwnershipLedgerStore(fileURL: spawnServices.ownershipFileURL),
+        )
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has
         // one.

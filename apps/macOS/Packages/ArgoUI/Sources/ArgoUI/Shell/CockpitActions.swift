@@ -23,10 +23,15 @@ public struct CockpitActions {
     /// fresh Session's id — the claim the roster publishes its row under — and `nil` where no
     /// Session started; the app performs the spawn, the shell decides what to point at.
     public let spawnSession: () async -> String?
-    /// Start an agent in the folder ANOTHER Session was running in — the one act available on a
-    /// Session that cannot be driven (#546). Keyed by that Session's id and not by a path, because
-    /// the folder is the engine's to read: the shell knows which Session the reader is looking at
-    /// and nothing about where it lives.
+    /// Continue a Session Argo can no longer steer, in a fresh process on the same chain (#10).
+    /// Raised by selection, because the click is the intent.
+    ///
+    /// It answers nothing: the composer appearing is the answer, and a refusal is said by the app.
+    public let resumeSession: (String) async -> Void
+    /// Start an agent in the folder ANOTHER Session was running in — the act available on a Session
+    /// that cannot be driven and cannot be continued either (#546). Keyed by that Session's id and
+    /// not by a path, because the folder is the engine's to read: the shell knows which Session the
+    /// reader is looking at and nothing about where it lives.
     ///
     /// Answers the way `spawnSession` does, and for the same reason.
     public let spawnSessionBeside: (String) async -> String?
@@ -96,6 +101,7 @@ public struct CockpitActions {
         removeProject: { _ in },
         openProjectPanel: { _ in },
         spawnSession: { nil },
+        resumeSession: { _ in },
         spawnSessionBeside: { _ in nil },
         setSessionArchived: { _, _ in },
         setSessionName: { _, _ in },
@@ -118,6 +124,7 @@ public struct CockpitActions {
         removeProject: @escaping (String) -> Void,
         openProjectPanel: @escaping (String?) -> Void,
         spawnSession: @escaping () async -> String?,
+        resumeSession: @escaping (String) async -> Void = { _ in },
         spawnSessionBeside: @escaping (String) async -> String? = { _ in nil },
         setSessionArchived: @escaping (String, Bool) -> Void,
         setSessionName: @escaping (String, String?) -> Void,
@@ -138,6 +145,7 @@ public struct CockpitActions {
         self.removeProject = removeProject
         self.openProjectPanel = openProjectPanel
         self.spawnSession = spawnSession
+        self.resumeSession = resumeSession
         self.spawnSessionBeside = spawnSessionBeside
         self.setSessionArchived = setSessionArchived
         self.setSessionName = setSessionName

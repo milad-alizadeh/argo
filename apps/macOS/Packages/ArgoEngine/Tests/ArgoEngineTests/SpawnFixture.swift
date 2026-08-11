@@ -76,6 +76,9 @@ struct SpawnFixture {
     /// test can build a SECOND Hub over it, which is what a restart is for the state that outlives
     /// one.
     let chainFileURL: URL
+    /// The ownership ledger's file, under this fixture's root for the reason the chain's is: a
+    /// restart has to read back what the launch before it owned, and never the machine's own.
+    let ownershipFileURL: URL
     private let services: SpawnServices
     private let engine: Engine
 
@@ -97,6 +100,7 @@ struct SpawnFixture {
         }
         try Self.installExecutable(named: "claude", in: binURL)
         self.chainFileURL = root.appending(path: "chain.json")
+        self.ownershipFileURL = root.appending(path: "ownership.json")
         self.engine = Engine(readCheckout: CheckoutFixture().read, readLiveness: liveness)
         self.services = SpawnServices(
             host: host,
@@ -105,6 +109,7 @@ struct SpawnFixture {
             launcher: AgentLauncher(run: { _ in "\(binURL.path)\n" }),
             companionRoot: companionRoot,
             chainFileURL: chainFileURL,
+            ownershipFileURL: ownershipFileURL,
             permissionPatience: permissionPatience,
         )
         self.hub = Hub(projectURL: projectURL, engine: engine, spawnServices: services)

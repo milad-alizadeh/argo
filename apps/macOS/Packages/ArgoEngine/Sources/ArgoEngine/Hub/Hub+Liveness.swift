@@ -81,6 +81,7 @@ extension Hub {
             nowMs: livenessReadAtMs,
         )
         published.provenance = ownership.provenance(
+            sessionID: session.id,
             cwd: session.cwd,
             startedAtMs: session.startedAtMs,
         )

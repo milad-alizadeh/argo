@@ -18,11 +18,17 @@ struct SessionOwnershipTests {
         return (SessionOwnership(now: { clock.nowMs }), clock)
     }
 
+    /// The grading of one Session in this suite's folder. Named even where the test is about the
+    /// folder window, because the id is what the durable half is keyed by.
+    private func grading(_ ownership: SessionOwnership, startedAtMs: Int?) -> SessionProvenance {
+        ownership.provenance(sessionID: "session-a", cwd: cwd, startedAtMs: startedAtMs)
+    }
+
     @Test
     func `a Session nothing claimed is external`() {
         let (ownership, _) = registry()
 
-        #expect(ownership.provenance(cwd: cwd, startedAtMs: 2000) == .external)
+        #expect(grading(ownership, startedAtMs: 2000) == .external)
     }
 
     @Test
@@ -31,7 +37,7 @@ struct SessionOwnershipTests {
         _ = ownership.claim(cwd: cwd)
         clock.nowMs = 2000
 
-        #expect(ownership.provenance(cwd: cwd, startedAtMs: clock.nowMs) == .managed)
+        #expect(grading(ownership, startedAtMs: clock.nowMs) == .managed)
     }
 
     @Test
@@ -42,8 +48,8 @@ struct SessionOwnershipTests {
         ownership.release(claim)
         clock.nowMs = 3000
 
-        // Observation survives the PTY; steering does not — and neither does `managed`.
-        #expect(ownership.provenance(cwd: cwd, startedAtMs: 2000) == .orphaned)
+        // Observation survives the PTY; steering does not — until the chain is resumed (#10).
+        #expect(grading(ownership, startedAtMs: 2000) == .orphaned)
     }
 
     @Test
@@ -53,7 +59,7 @@ struct SessionOwnershipTests {
         _ = ownership.claim(cwd: cwd)
 
         // Started before the claim opened, so no claim covers it: the folder alone is not a key.
-        #expect(ownership.provenance(cwd: cwd, startedAtMs: 4000) == .external)
+        #expect(grading(ownership, startedAtMs: 4000) == .external)
     }
 
     @Test
@@ -61,7 +67,12 @@ struct SessionOwnershipTests {
         let (ownership, _) = registry()
         _ = ownership.claim(cwd: cwd)
 
-        #expect(ownership.provenance(cwd: "/tmp/argo-elsewhere", startedAtMs: 2000) == .external)
+        let elsewhere = ownership.provenance(
+            sessionID: "session-a",
+            cwd: "/tmp/argo-elsewhere",
+            startedAtMs: 2000,
+        )
+        #expect(elsewhere == .external)
     }
 
     @Test
@@ -70,7 +81,20 @@ struct SessionOwnershipTests {
         _ = ownership.claim(cwd: cwd)
 
         // No working directory read, or no time in its records: an unprovable claim is not a claim.
-        #expect(ownership.provenance(cwd: nil, startedAtMs: 2000) == .external)
-        #expect(ownership.provenance(cwd: cwd, startedAtMs: nil) == .external)
+        #expect(ownership.provenance(sessionID: "s", cwd: nil, startedAtMs: 2000) == .external)
+        #expect(grading(ownership, startedAtMs: nil) == .external)
+    }
+
+    /// A resume knows the Session before the process exists, so it needs neither half of the key a
+    /// cold spawn is matched back by (#10).
+    @Test
+    func `a resume claims the Session it names, whatever the window says`() {
+        let (ownership, clock) = registry()
+        clock.nowMs = 5000
+        let claim = ownership.claim(cwd: cwd, resuming: "session-a")
+
+        // The chain started long before the claim did, and it is managed all the same.
+        #expect(grading(ownership, startedAtMs: 100) == .managed)
+        #expect(ownership.ownerOf(sessionID: "session-a") == claim)
     }
 }

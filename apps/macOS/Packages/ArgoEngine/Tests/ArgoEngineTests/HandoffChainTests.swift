@@ -7,8 +7,8 @@ import Testing
 @Suite("Handoff chain")
 @MainActor
 struct HandoffChainTests {
-    /// A restart cannot re-adopt the PTY, so the handed-off Session comes back read-only and the
-    /// written link is the only way on.
+    /// A restart cannot re-adopt either PTY, so both Sessions come back read-only and the written
+    /// link is the only way on.
     @Test
     func `a chain survives a restart, naming the Session the CLI chose`() async throws {
         let fixture = try SpawnFixture()
@@ -25,8 +25,12 @@ struct HandoffChainTests {
         await hubObserveToEnd(restarted, spawnedSessionObservation(of: fixture))
 
         #expect(handedOffTo(in: restarted, from: "full-session") == "session-from-cli")
-        // Nothing about the restart claims the PTY back: both rows are read-only now.
-        #expect(restarted.sessions.allSatisfy { $0.provenance == .external })
+        // Nothing about the restart claims a PTY back, and the two rows say WHY differently: Argo
+        // spawned the fresh one, so it is `orphaned` and resumable, and it only ever observed the
+        // one that handed over (#10).
+        let byID = Dictionary(uniqueKeysWithValues: restarted.sessions.map { ($0.id, $0) })
+        #expect(byID["full-session"]?.provenance == .external)
+        #expect(byID["session-from-cli"]?.provenance == .orphaned)
     }
 
     /// A handoff whose fresh agent never wrote a record leaves an ABSENCE. The claim it was
