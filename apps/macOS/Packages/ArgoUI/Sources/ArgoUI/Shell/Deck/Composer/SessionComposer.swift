@@ -1,13 +1,17 @@
 import SwiftUI
 
-/// The glass vessel the user speaks to a Session through — the field, the footer, and the seam
-/// that carries a refusal.
+/// The glass vessel the user speaks to a Session through — the field, what is waiting above it,
+/// the footer, and the seam that carries a refusal or says the draft was kept.
 ///
-/// It floats over the feed rather than sitting in an attached seam: the deck's bottom edge
-/// belongs to the reading, and the vessel is a state the reader is in — there is something to
-/// say — which is exactly what `ArgoFloatingGlass` spells. Acceptance is the echo, not a toast:
-/// the field clears and the words come back as the user's own row in the feed, so success draws
-/// nothing here at all.
+/// It floats over the feed rather than sitting in an attached seam: the deck's bottom edge belongs
+/// to the reading, and the vessel is a state the reader is in — there is something to say — which
+/// is exactly what `ArgoFloatingGlass` spells. Acceptance is the echo, not a toast: the field
+/// clears and the words come back as the user's own row in the feed, so success draws nothing here
+/// at all.
+///
+/// The draft is a BINDING and not state of its own, because a composer is a place to think and
+/// thinking survives being interrupted: what the user typed lives in `ComposerDrafts`, keyed by
+/// Session, so leaving and coming back finds it where it was.
 struct SessionComposer: View {
     let composer: SessionComposerProjection.Composer
     /// One Turn to the Session, or a thrown `SessionDriveError` the seam repeats. A closure and
@@ -15,28 +19,47 @@ struct SessionComposer: View {
     let send: (String) throws -> Void
     /// Take back a standing allow, by tool (#572). A closure for the reason `send` is.
     let revoke: (String) -> Void
+    @Binding var draft: ComposerDraft
 
-    @State private var draft: ComposerDraft
     @State private var mode: ComposerMode = .code
+    /// When this Session's composer came on screen — both the moment a restored draft's age is
+    /// measured against and the test for whether it IS restored. Anything the user has typed since
+    /// stamps later than this and takes the seam away.
+    @State private var enteredAtMs = 0
 
     init(
         composer: SessionComposerProjection.Composer,
         send: @escaping (String) throws -> Void,
         revoke: @escaping (String) -> Void = { _ in },
-        draft: ComposerDraft = ComposerDraft(),
+        draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
     ) {
         self.composer = composer
         self.send = send
         self.revoke = revoke
-        _draft = State(initialValue: draft)
+        _draft = draft
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            if let refusal = draft.refusal {
-                ComposerSeam(detail: refusal, retry: submit)
+            if let note = seamNote {
+                ComposerSeam(note: note, retry: retry)
             }
             vessel
+        }
+        .onChange(of: composer.sessionID, initial: true) { _, _ in
+            enteredAtMs = WallClock.nowMs()
+        }
+        // The Turn the queue was waiting on has ended, so what was held goes — in the order it was
+        // typed. Keyed on the fact rather than on a timer, because the only thing that releases a
+        // follow-up is the Session becoming free.
+        //
+        // `initial` is what makes it survive a switch: the composer is only on screen for the
+        // SELECTED Session, so a Turn that ends while the reader is looking somewhere else changes
+        // nothing here. Flushing on arrival as well means coming back delivers what was waiting,
+        // rather than leaving it queued against a Session that has been idle for an hour.
+        .onChange(of: composer.isRunning, initial: true) { _, isRunning in
+            guard !isRunning else { return }
+            draft.flush(via: send)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Composer")
@@ -47,6 +70,7 @@ struct SessionComposer: View {
             if !composer.standingAllows.isEmpty {
                 StandingAllowTray(allows: composer.standingAllows, revoke: revoke)
             }
+            queue
             ComposerField(text: $draft.text, placeholder: composer.placeholder, submit: submit)
             ComposerFooter(
                 mode: $mode,
@@ -64,59 +88,96 @@ struct SessionComposer: View {
         .argoFloatingGlass(in: RoundedRectangle(cornerRadius: ArgoRadius.popover))
     }
 
-    /// Guarded rather than left to the driver's refusal: Return lands here from an empty field
-    /// too, and a bare Return at a live prompt is the one keystroke the composer must never leak.
+    /// What is waiting on the running Turn, oldest at the top — the order they will go in, drawn
+    /// as the order they are read in.
+    @ViewBuilder private var queue: some View {
+        if !draft.queued.isEmpty {
+            VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+                ForEach(draft.queued) { turn in
+                    QueuedTurnChip(turn: turn) { draft.cancel(turn.id) }
+                }
+            }
+            .padding(.bottom, ArgoSpacing.snug)
+        }
+    }
+
+    /// A refusal outranks a kept draft: one is a thing that went wrong and the other is a thing
+    /// that went right, and the seam is one line. The kept note holds only until the user types —
+    /// their own edit stamps later than the moment they arrived, which is what takes it away.
+    private var seamNote: ComposerSeamNote? {
+        if let refusal = draft.refusal {
+            return .refusal(refusal)
+        }
+        guard !draft.text.isEmpty, let editedAtMs = draft.editedAtMs, editedAtMs < enteredAtMs
+        else { return nil }
+        return ComposerSeamNote.kept(sinceMs: editedAtMs, nowMs: enteredAtMs)
+    }
+
+    /// Sent now, or queued behind the Turn in flight — `ComposerDraft` owns which, so the field
+    /// and the send control ask for the same thing.
     private func submit() {
-        guard draft.isSendable else { return }
-        draft.send(via: send)
+        draft.submit(whileRunning: composer.isRunning, via: send)
+    }
+
+    /// The seam's remedy, which is not the same act as pressing send: what it puts back is
+    /// whatever the refusal stopped, and after a refused flush that is the queue, not the field.
+    private func retry() {
+        draft.retry(via: send)
     }
 }
 
 #Preview("Composer — at rest") {
-    SessionComposer(composer: ComposerSpecimen.composer, send: { _ in })
-        .padding(ArgoSpacing.section)
-        .frame(width: 760)
-        .argoDeckSurface()
-        .argoAppearance()
+    @Previewable @State var draft = ComposerDraft()
+
+    ComposerPreview(composer: ComposerSpecimen.composer, draft: $draft)
 }
 
 #Preview("Composer — holding a draft") {
-    SessionComposer(
-        composer: ComposerSpecimen.composer,
-        send: { _ in },
-        draft: ComposerSpecimen.typing,
-    )
-    .padding(ArgoSpacing.section)
-    .frame(width: 760)
-    .argoDeckSurface()
-    .argoAppearance()
+    @Previewable @State var draft = ComposerSpecimen.typing
+
+    ComposerPreview(composer: ComposerSpecimen.composer, draft: $draft)
 }
 
 #Preview("Composer — a send the Session refused") {
-    SessionComposer(
-        composer: ComposerSpecimen.composer,
-        send: { _ in },
-        draft: ComposerSpecimen.refused,
-    )
-    .padding(ArgoSpacing.section)
-    .frame(width: 760)
-    .argoDeckSurface()
-    .argoAppearance()
+    @Previewable @State var draft = ComposerSpecimen.refused
+
+    ComposerPreview(composer: ComposerSpecimen.composer, draft: $draft)
+}
+
+#Preview("Composer — a follow-up queued behind a running Turn") {
+    @Previewable @State var draft = ComposerSpecimen.queued
+
+    ComposerPreview(composer: ComposerSpecimen.running, draft: $draft)
 }
 
 #Preview("Composer — holding standing allows") {
-    SessionComposer(composer: ComposerSpecimen.standing, send: { _ in })
-        .padding(ArgoSpacing.section)
-        .frame(width: 760)
-        .argoDeckSurface()
-        .argoAppearance()
+    @Previewable @State var draft = ComposerDraft()
+
+    ComposerPreview(composer: ComposerSpecimen.standing, draft: $draft)
 }
 
 #Preview("Composer — the Reduce Transparency fallback") {
-    SessionComposer(composer: ComposerSpecimen.composer, send: { _ in })
+    @Previewable @State var draft = ComposerDraft()
+
+    SessionComposer(composer: ComposerSpecimen.composer, send: { _ in }, draft: $draft)
         .padding(ArgoSpacing.section)
         .frame(width: 760)
         .argoWithoutTransparency()
         .argoDeckSurface()
         .argoAppearance()
+}
+
+/// The frame every composer preview draws in. One place, because what each of them is about is the
+/// vessel's state — and five copies of the same padding is five chances for one to drift.
+private struct ComposerPreview: View {
+    let composer: SessionComposerProjection.Composer
+    @Binding var draft: ComposerDraft
+
+    var body: some View {
+        SessionComposer(composer: composer, send: { _ in }, draft: $draft)
+            .padding(ArgoSpacing.section)
+            .frame(width: 760)
+            .argoDeckSurface()
+            .argoAppearance()
+    }
 }

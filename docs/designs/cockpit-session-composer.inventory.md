@@ -1,4 +1,4 @@
-# Session composer — build inventory (#538)
+# Session composer — build inventory (#538, #539)
 
 What assembling the composer's send slice actually forced out of
 [`cockpit-session-composer.md`](cockpit-session-composer.md), per ticket. Names were frozen at
@@ -20,12 +20,31 @@ Extraction evidence: every name above is in the design's frozen-names table — 
 contract settled at approval — and two carry unexercised states the happy path never renders
 (`ComposerSeam` exists only on a refused send; `SendButton` has a no-draft side).
 
+## Extracted — #539 (multi-line, drafts, a queued follow-up)
+
+| name | tier | location | props | composed-of | source |
+|---|---|---|---|---|---|
+| `QueuedTurnChip` | molecule | `ArgoUI/Shell/Deck/Composer/` — the vessel's own part | `turn: QueuedTurn`, `cancel: () -> Void` | `ArgoGlyph` + an accent rule, in the chip shape | frozen table, `QueuedTurnChip` |
+
+One row, because #538 already extracted `ComposerSeam` — this ticket gave it its **second note**
+rather than a second component. A seam that said only *refused* and a seam that said only *kept*
+would be one line drawn twice, and the two can never be on screen together.
+
+Extraction evidence: `QueuedTurnChip` is in the design's frozen-names table, and it carries a
+state the happy path never renders — a Session mid-Turn with something waiting on it.
+
 ## View-model, not components
 
 - `SessionComposerProjection` — the pure `derive(facts)`: presence (managed and not ended, else
   no composer at all), the placeholder addressed to the CLI, the run facts.
-- `ComposerDraft` — region-local state with the two send rules (sent clears; refused keeps the
-  text and the reason), testable against the port's in-memory fake.
+- `ComposerDraft` — the composer's whole memory, with the send rules (sent clears; refused keeps
+  the text and the reason; submitted mid-Turn queues), testable against the port's in-memory fake.
+- `ComposerDrafts` — the per-Session store, held in `CockpitView` because that is the one place
+  above the deck's `.id(session)`, which discards everything under it on a switch. In memory only
+  (#539).
+- `ComposerSeamNote` — which of the seam's two sentences is up, and the words of the kept one.
+- `QueuedTurn` — an identified follow-up, so two identical ones are two things the `×` can tell
+  apart.
 - `ComposerMode` — the stance vocabulary; local until #545 gives it an effect.
 
 ## Stayed inline
@@ -41,5 +60,6 @@ contract settled at approval — and two carry unexercised states the happy path
 
 `AttachButton` + tray/chips (#540 — no adapter takes attachments yet; capability is declared,
 decision 9, so the study's `noattach` state is today's honest render) · `RunFactsButton` +
-`RunSettingsPopover` (#558) · `QueuedTurnChip` (#539) · `PermissionPrompt` (#542/#543) ·
-`ComposerUnavailable` (#546).
+`RunSettingsPopover` (#558) · `ComposerUnavailable` (#546) · `SendButton`'s **Stop** state, which
+`queued.png` draws and #541 owns — it needs an interrupt on the drive port, and a square that
+stops nothing would be the promise decision 9 refuses to make about attachments.

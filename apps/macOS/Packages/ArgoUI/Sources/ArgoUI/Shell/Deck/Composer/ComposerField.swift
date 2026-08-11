@@ -23,6 +23,10 @@ struct ComposerField: View {
         .textFieldStyle(.plain)
         .lineLimit(1 ... ArgoComposerVessel.fieldLineCeiling)
         .argoText(ArgoTypography.body)
+        // No `lineSpacing` here, and not an omission: a stock `TextField` is `NSTextField`
+        // underneath and draws the face's own leading, so the modifier is silently ignored. The
+        // study's 1.5 line height is unreachable without replacing the control the same study says
+        // to use — see its "Controls are stock, not bespoke" table and the note under it.
         .foregroundStyle(argo.color.text.primary)
         .onSubmit(submit)
         .accessibilityLabel(placeholder)

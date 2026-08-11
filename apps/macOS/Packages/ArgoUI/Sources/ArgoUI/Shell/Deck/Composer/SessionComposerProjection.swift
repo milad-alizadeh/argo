@@ -17,6 +17,10 @@ enum SessionComposerProjection {
         /// surface a user is in front of every turn — a standing decision has to be findable
         /// without being looked for. Empty for a Session holding none, which draws no tray.
         let standingAllows: [StandingAllow]
+        /// Whether a Turn is in flight, which is what decides where the next one goes: straight to
+        /// the Session, or into the queue above the field. Read off the status rather than tracked
+        /// here, so what the composer believes and what the header states cannot disagree.
+        let isRunning: Bool
     }
 
     /// A composer only for a Session Argo can put keystrokes to: managed, and not over. Everything
@@ -26,13 +30,20 @@ enum SessionComposerProjection {
         guard let session, case .managed = session.access, session.status != .ended else {
             return nil
         }
+        let isRunning = session.status == .running
         return Composer(
             sessionID: session.id,
-            placeholder: placeholder(addressing: session.cli),
+            placeholder: isRunning ? queuePlaceholder : placeholder(addressing: session.cli),
             facts: session.model.map(ReadableModelName.readable),
             standingAllows: StandingAllowProjection.allows(for: session),
+            isRunning: isRunning,
         )
     }
+
+    /// What the field invites while a Turn is running. It says what pressing send will actually do
+    /// — hold the words until the Turn ends — rather than going on offering to message an agent
+    /// that is mid-sentence, which is the promise the queue exists because Argo cannot keep.
+    static let queuePlaceholder = "Queue a follow-up…"
 
     /// Addressed to the agent when the record has named one, and to the role when it has not: a
     /// managed Session's first moments are a claim without a CLI's own record behind it.
