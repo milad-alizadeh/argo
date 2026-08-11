@@ -62,9 +62,14 @@ public actor AccountRegistryStore {
         try await grants.grant(for: accountID)
     }
 
-    /// What removing this Account would leave pointing at nothing, without removing it. The
-    /// question a confirmation prompt has to answer before the user says yes.
-    public func orphans(of accountID: String) async -> [AccountBindingReference] {
+    /// Every Binding read through this Account. Two questions arrive at this one set: what removing
+    /// the Account would leave pointing at nothing — which a confirmation prompt has to answer
+    /// before the user says yes — and, since a grant is Account-level, exactly how far a revoked or
+    /// expired one reaches (#569).
+    ///
+    /// One method and not one per question. The set is identical, and a second name would be two
+    /// public ways to ask the same thing kept in step by hand.
+    public func bindings(through accountID: String) async -> [AccountBindingReference] {
         await bindings.bindings(referencing: accountID)
     }
 
@@ -76,7 +81,7 @@ public actor AccountRegistryStore {
     @discardableResult
     public func remove(id accountID: String) async throws -> AccountRemoval {
         let removed = load().account(id: accountID)
-        let orphaned = await orphans(of: accountID)
+        let orphaned = await bindings(through: accountID)
         try await grants.removeGrant(for: accountID)
         return AccountRemoval(
             registry: persist(load().removing(id: accountID)),

@@ -6,7 +6,10 @@ import Foundation
 /// Account would break, because the alternative is a Binding left pointing at an identity that no
 /// longer exists — which reads downstream as a provider that 404s, indistinguishable from a ticket
 /// that does not exist (ADR-0018).
-public struct AccountBindingReference: Equatable, Sendable {
+///
+/// `Hashable` because it is also the key connection health is filed under: a Project and a port
+/// address one Binding, and health is keyed by Binding and never by Project (#260).
+public struct AccountBindingReference: Hashable, Sendable {
     public let projectID: String
     public let port: AccountPort
 

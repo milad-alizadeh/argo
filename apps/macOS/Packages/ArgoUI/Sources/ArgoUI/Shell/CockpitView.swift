@@ -14,6 +14,10 @@ public struct CockpitView: View {
     /// The Connect panel, when it is up. Closed by default so every preview and specimen of the
     /// shell renders the shell rather than a sheet nobody asked for.
     private let connect: ConnectSurface
+    /// How the active Project's provider Bindings are reading. Beside the presentation rather than
+    /// inside it because it is not a Hub fact: the cockpit is a projection of the Hub, and Accounts
+    /// and Bindings are registry facts the Hub has never heard of.
+    private let health: ConnectionHealthReading
     @Environment(CockpitNavigationModel.self) var navigation
     /// Which roster row has its name field open. Held here rather than in the sidebar because the
     /// menu bar reaches it (`sessionCommands`), and the menu bar is outside the sidebar.
@@ -27,10 +31,12 @@ public struct CockpitView: View {
         presentation: CockpitPresentation,
         actions: CockpitActions,
         connect: ConnectSurface = .closed,
+        health: ConnectionHealthReading = .quiet,
     ) {
         self.presentation = presentation
         self.actions = actions
         self.connect = connect
+        self.health = health
     }
 
     /// The selected Session's reading, projected here because this is the one view that knows what
@@ -126,13 +132,12 @@ public struct CockpitView: View {
             // keeps: the app performs, and the shell decides what to point at.
             .environment(\.argoOpenSession) { fresh in navigation.session = fresh }
             .overlay(alignment: .topLeading) {
-                if presentation.connection != .connected {
-                    ConnectionChip(
-                        connection: presentation.connection,
-                        retry: actions.retryConnection,
-                    )
-                    .padding(ArgoSpacing.section)
-                }
+                ConnectionChips(
+                    presentation: presentation,
+                    health: health,
+                    actions: actions,
+                )
+                .padding(ArgoSpacing.section)
             }
             // On the DETAIL pane, not on the split view. A split view divides the bar into a
             // region per column, and a flexible spacer only expands inside its own — declared

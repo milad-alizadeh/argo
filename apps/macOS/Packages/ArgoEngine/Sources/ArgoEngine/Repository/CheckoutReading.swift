@@ -21,6 +21,16 @@ public let gitCheckoutRead: CheckoutRead = { url in
 private let gitCheckoutReader = CheckoutReader()
 
 /// The real command.
+///
+/// The read is `readToEnd()` and not `readDataToEndOfFile()`, which is the same read with a
+/// different failure mode: the older one answers a descriptor that has gone bad underneath it by
+/// RAISING `NSFileHandleOperationException`, an Objective-C exception no Swift `catch` can see, so
+/// it takes the whole process down. The throwing spelling hands back an error, and a read that
+/// produced nothing is exactly the `nil` this signature already carries for "git answered nothing".
+///
+/// This is a degrade, not a repair. Something in this process closes a descriptor it does not own —
+/// rarely, under concurrency, and not yet found — and until it is, this decides whether that lands
+/// as one unreadable answer or as a crash in whatever happened to be reading (#588).
 let gitCommand: GitCommand = { arguments, directoryURL in
     let process = Process()
     let output = Pipe()
@@ -29,7 +39,10 @@ let gitCommand: GitCommand = { arguments, directoryURL in
     process.standardOutput = output
     process.standardError = FileHandle.nullDevice
     guard (try? process.run()) != nil else { return nil }
-    let data = output.fileHandleForReading.readDataToEndOfFile()
+    guard let data = try? output.fileHandleForReading.readToEnd() else {
+        process.waitUntilExit()
+        return nil
+    }
     process.waitUntilExit()
     guard process.terminationStatus == 0 else { return nil }
     return String(data: data, encoding: .utf8)

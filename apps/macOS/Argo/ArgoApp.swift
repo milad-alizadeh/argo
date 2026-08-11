@@ -44,6 +44,7 @@ struct ArgoApp: App {
                         presentation: cockpit.presentation,
                         actions: actions,
                         connect: connectSurface,
+                        health: accounts.connections,
                     )
                     .environment(navigation)
                     .task {
@@ -52,6 +53,14 @@ struct ArgoApp: App {
                         // A machine that has registered nothing has no path forward without
                         // this: the shell it lands in has no Project to act on.
                         await accounts.openIfUnstarted(registry: cockpit.registry)
+                    }
+                    // Connection health is per-project truth surfaced for the active Project only,
+                    // so the chip follows the window rather than each act that moves it. Observed
+                    // once here because a change of active Project is ONE event: registering,
+                    // switching, relocating and removing all end in it, and a list of acts to
+                    // remember is a list the next one is left off.
+                    .onChange(of: cockpit.activeRecord?.id, initial: true) { _, _ in
+                        Task { await accounts.point(at: cockpit.activeRecord) }
                     }
                     // Every PTY this window owns dies with the window, and the observer above
                     // ends them on ⌘Q too. An agent Argo started must not outlive the Argo that

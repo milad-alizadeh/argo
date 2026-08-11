@@ -5,6 +5,10 @@ import Foundation
 typealias ShellCommand = @Sendable ([String]) -> String?
 
 /// The real command. Blocking, so every caller of it is an actor that expects to wait.
+///
+/// `readToEnd()` rather than `readDataToEndOfFile()`, for the reason `gitCommand` spells out: the
+/// older read raises an uncatchable Objective-C exception on a descriptor that has gone bad, and
+/// this one hands back an error that becomes the `nil` this signature already carries.
 let shellCommand: ShellCommand = { arguments in
     let process = Process()
     let output = Pipe()
@@ -13,7 +17,10 @@ let shellCommand: ShellCommand = { arguments in
     process.standardOutput = output
     process.standardError = FileHandle.nullDevice
     guard (try? process.run()) != nil else { return nil }
-    let data = output.fileHandleForReading.readDataToEndOfFile()
+    guard let data = try? output.fileHandleForReading.readToEnd() else {
+        process.waitUntilExit()
+        return nil
+    }
     process.waitUntilExit()
     guard process.terminationStatus == 0 else { return nil }
     return String(data: data, encoding: .utf8)
