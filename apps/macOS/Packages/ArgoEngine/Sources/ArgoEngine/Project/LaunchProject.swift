@@ -1,21 +1,16 @@
 import Foundation
 
-/// Which Project a launch opens into, and whether the registry knows it.
-///
-/// The two cases exist because pointing the Hub is not registration: `--project` survives as the
-/// launch/harness override and a bare launch still has to reach a usable cockpit, but neither adds
-/// a Project to the machine's known set — that is a deliberate act.
+/// Which Project a launch opens into, and whether the registry knows it. Pointing the Hub is not
+/// registration: neither `--project` nor a bare launch adds a Project to the machine's known set.
 public enum LaunchProject: Equatable, Sendable {
     case registered(ProjectRecord)
     case unregistered(URL)
 
     /// The override wins, then the active registered Project, then where the process was started.
-    ///
-    /// An override naming a folder the registry already knows resolves to that record rather
-    /// than to a second, unregistered spelling of it — otherwise the strip would draw the same
-    /// repository twice, once selected and once not. The match is on the path, so the caller
-    /// passes an override already resolved to its git root: the registry holds roots, and
-    /// `--project` may name any folder inside one.
+    /// An override naming a folder the registry already knows resolves to that record, so the strip
+    /// does not draw the same repository twice. The match is on the path, so the caller passes an
+    /// override already resolved to its git root — the registry holds roots, and `--project` may
+    /// name any folder inside one.
     public static func resolve(
         configuration: LaunchConfiguration,
         registry: ProjectRegistry,

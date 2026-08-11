@@ -1,12 +1,9 @@
 import ArgoEngine
 import SwiftUI
 
-/// What a call SHOWED — the bytes the agent actually looked at.
-///
-/// The tier is drawn, not just held: `direct` is the transcript's own embedded block, which a
-/// later edit to the file cannot invalidate, and `derived` is a re-read of the path NOW. After
-/// three renders to one path in a turn those are very often not the same picture, so a panel that
-/// showed them alike would be silently wrong in exactly the loop inline media exists to support.
+/// What a call SHOWED — the bytes the agent actually looked at. The tier is drawn, not just held:
+/// `direct` is the transcript's own embedded block, `derived` is a re-read of the path NOW, and
+/// after three renders to one path in a turn those are very often not the same picture.
 struct EvidenceMedia: View {
     @Environment(\.argo) private var argo
 
@@ -20,15 +17,15 @@ struct EvidenceMedia: View {
             caption
         }
         .padding(ArgoSpacing.comfortable)
-        // The same breath the feed's gallery takes: a picture seated at the text rhythm reads as
-        // jammed against whatever the panel sets above and below it.
+        // The same breath the feed's gallery takes, over the panel's own text rhythm.
         .padding(.vertical, ArgoFeedRow.shotBreath)
         .frame(maxWidth: .infinity, alignment: .leading)
         .showing(media, in: $showing)
     }
 
-    /// A row with no bytes says so. It never draws a broken-image glyph, which is the system
-    /// claiming a failure to LOAD where what happened is that nothing was ever recorded.
+    /// A row with no bytes says so, never with a broken-image glyph: nothing failed to load,
+    /// nothing
+    /// was ever recorded.
     @ViewBuilder private var picture: some View {
         if let image = showing.picture?.image {
             Image(nsImage: image)
@@ -43,10 +40,8 @@ struct EvidenceMedia: View {
         }
     }
 
-    /// Named in words rather than left to a tier badge nobody can read: one of these is what the
-    /// agent saw, the other is what is on disk now. The words themselves are `MediaProvenance`'s,
-    /// because the feed's gallery says the same thing about the same picture and two surfaces
-    /// wording one provenance twice is two claims that only agree until one of them is edited.
+    /// Named in words rather than a tier badge: one of these is what the agent saw, the other is
+    /// what is on disk now. The words are `MediaProvenance`'s, shared with the feed's gallery.
     private var caption: some View {
         HStack(spacing: ArgoSpacing.snug) {
             Text(media.mediaType)

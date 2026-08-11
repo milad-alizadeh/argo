@@ -4,10 +4,8 @@ import SwiftUI
 /// A media result as a surface actually shows it: the picture that decoded, and the claim the
 /// surface is entitled to make about it.
 ///
-/// One value rather than a `MediaPicture?` held beside a `MediaProvenance`, because the whole point
-/// of the pair is that both answer to the SAME decode. Kept apart, a view can draw an absence and
-/// caption it "as the agent saw it", or offer a click onto a picture it never got — which is the
-/// exact pair of mistakes the `absent` case exists to make unreachable.
+/// One value rather than a `MediaPicture?` beside a `MediaProvenance`: both must answer to the SAME
+/// decode, or a view can caption an absence "as the agent saw it".
 struct MediaShowing {
     let picture: MediaPicture?
     let provenance: MediaProvenance

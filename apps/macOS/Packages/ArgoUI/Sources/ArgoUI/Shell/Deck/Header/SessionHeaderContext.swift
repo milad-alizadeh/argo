@@ -3,31 +3,25 @@ import SwiftUI
 /// The one instrument on the header: how full the Session's context is, on the trailing edge.
 ///
 /// It draws a reading it was handed and judges nothing — which line the Session is past, and
-/// whether it can be said at all, are `SessionHeaderProjection`'s. What lives here is the ink each
-/// answer wears and the bar that puts the reading in reach of a glance.
+/// whether it can be said at all, are `SessionHeaderProjection`'s.
 struct SessionHeaderContext: View {
     @Environment(\.argo) private var argo
 
     let context: SessionHeaderProjection.Context
 
-    /// The panel opens on HOVER, and a click still opens it too — the pointer is how it is
-    /// reached, and the keyboard has to keep a way in. Escape and clicking away are `.popover`'s
-    /// own, which is most of why the surface is one.
+    /// The panel opens on HOVER, and a click still opens it too, so the keyboard keeps a way in.
+    /// Escape and clicking away are `.popover`'s own.
     @State private var isGuideOpen = false
-    /// Whether the pointer is on the mark or in the panel it opened. One flag for both, because
-    /// the panel is a window of its own: read of the mark alone, the guide would close the moment
-    /// the pointer travelled into the thing it went there to read.
+    /// Whether the pointer is on the mark or in the panel it opened. One flag for both: the panel
+    /// is a window of its own, so read of the mark alone the guide would close the moment the
+    /// pointer travelled into it.
     @State private var isPointerOn = false
 
-    /// How long the pointer rests on the mark before the panel opens.
-    ///
-    /// Not a motion token: nothing about this is on screen. It is the difference between a legend
-    /// somebody asked for and one that flies open because the pointer crossed the header on its way
-    /// somewhere else — the reason this surface was a click for two tickets.
+    /// How long the pointer rests on the mark before the panel opens. Not a motion token: nothing
+    /// about this is on screen.
     private static let dwell = Duration.milliseconds(280)
     /// And how long it survives the pointer leaving, so the trip from the mark into the panel does
-    /// not close the panel. Longer than the dwell: leaving by accident costs a reader the paragraph
-    /// they were reading, and arriving by accident costs them nothing but a glance.
+    /// not close it. Must stay longer than the dwell.
     private static let grace = Duration.milliseconds(420)
 
     var body: some View {
@@ -54,9 +48,8 @@ struct SessionHeaderContext: View {
     }
 
     private var about: some View {
-        // Opens, never toggles. A click lands on a mark the pointer is already resting on, so a
-        // toggle would read as "clicking the ⓘ closes the panel" — and it is what would break a
-        // keyboard or a test that clicks the mark to open the thing hover has just opened.
+        // Opens, never toggles: a click lands on a mark the pointer is already resting on, so a
+        // toggle would close the panel hover has just opened.
         Button { isGuideOpen = true } label: {
             ArgoGlyph(ArgoSymbol.about, .inline)
         }

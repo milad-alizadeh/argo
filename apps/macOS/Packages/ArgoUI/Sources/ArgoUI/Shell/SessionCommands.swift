@@ -3,21 +3,17 @@ import SwiftUI
 /// What the menu bar can do to the SELECTED Session, published by the shell and read by the app's
 /// `commands` block.
 ///
-/// A focused value rather than an action on `CockpitActions`, because these two are not intents the
-/// app performs — they are the roster's own gestures, addressed at whichever Session is selected.
-/// Only the shell knows which that is, and only the shell can open a field inside a row; the menu
-/// bar is a second way to reach them, never a second implementation of them.
+/// A focused value rather than an action on `CockpitActions`: only the shell knows which Session is
+/// selected, and only the shell can open a field inside a row.
 ///
-/// Absent when nothing is selected, which is what greys the items out: a menu that offered Rename
-/// with no Session under it would be a command with nothing to name.
+/// Absent when nothing is selected, which is what greys the items out.
 public struct SessionCommands: Equatable, Sendable {
     /// Open the selected row's name field — the same field a double-click opens, in the same row.
     public let rename: @MainActor () -> Void
     /// Clear the selected Session off the roster, or put it back if it is already behind the foot.
     public let archive: @MainActor () -> Void
-    /// What the two items are CALLED. Carried here rather than spelled in the menu, because the
-    /// Archive's word depends on which way it goes for this Session and the Rename's is already
-    /// spelled in the row's own context menu — one wording, one place.
+    /// What the two items are CALLED. Carried here because the Archive's word depends on which way
+    /// it goes for this Session, and the Rename's is already spelled in the row's context menu.
     public let renameTitle: String
     public let archiveTitle: String
 

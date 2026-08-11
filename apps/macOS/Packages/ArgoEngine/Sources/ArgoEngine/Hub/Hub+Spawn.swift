@@ -1,19 +1,13 @@
 import Foundation
 
-/// Argo starting a Session of its own — the one case where it is not observing.
-///
-/// Everything else in the Hub reads the world; this acts on it. What comes back is DIRECT: Argo
-/// holds the claim and the PTY, and that is exactly why the row is published here rather than
-/// waited for. `claude` writes no record until its first prompt, so waiting would leave the roster
-/// silent about the one Session Argo knows for certain (#361).
+/// Argo starting a Session of its own — the one case where it is not observing. DIRECT: Argo holds
+/// the claim and the PTY, which is why the row is published here rather than waited for — `claude`
+/// writes no record until its first prompt (#361).
 @MainActor
 public extension Hub {
     /// Launch the Project's agent, own its PTY, and put it in the roster. Returns the claim, which
-    /// is also the id of the row it just published.
-    ///
-    /// The seed is what a handoff adds and a New Session leaves empty (#513): a folder other than
-    /// the Project's, and a prompt to open on. Everything after that is identical, deliberately —
-    /// the second half of handing off calls this path rather than a second one beside it.
+    /// is also the id of the row it just published. The seed is what a handoff adds and a New
+    /// Session leaves empty (#513): a folder other than the Project's, and a prompt to open on.
     @discardableResult
     func spawnSession(
         cli: AgentCLI = .claude,
@@ -78,12 +72,8 @@ public extension Hub {
     }
 
     /// The PTY is gone. Ownership cannot be re-adopted, so the claim closes and the Session demotes
-    /// to `orphaned` — observation-only, steering unrecoverable — rather than standing managed over
-    /// a PTY that is not there.
-    ///
-    /// A row still standing under the claim's own id is the one no observation can ever reach: the
-    /// CLI never wrote a record, so no sweep will correct it. It says which way it went and ends,
-    /// rather than sitting managed-and-idle forever.
+    /// to `orphaned` — a row still under the claim's own id is one no sweep will ever correct,
+    /// because the CLI never wrote a record.
     private func ptyEnded(_ claim: SessionOwnership.ClaimID, exitCode: Int32?) {
         ownership.release(claim)
         terminals.drop(claim)
@@ -98,11 +88,9 @@ public extension Hub {
 @MainActor
 extension Hub {
     /// Retire the row a spawn published, now that the record it turned out to be has appeared.
-    ///
-    /// The binding is what makes this safe to call on every batch: a Session binds to at most one
-    /// claim, once, so a re-observation reports nothing and the row cannot be retired twice — nor
-    /// can the observed Session be re-keyed to the claim's id, which would break every link made
-    /// against the id the CLI chose.
+    /// Safe on every batch: a Session binds to at most one claim, once, so a re-observation reports
+    /// nothing and the row cannot be retired twice. The observed Session is never re-keyed to the
+    /// claim's id — that would break every link made against the id the CLI chose.
     func reconcileSpawns() {
         for session in join.sessions {
             guard let claim = ownership.bind(
@@ -112,8 +100,8 @@ extension Hub {
             ) else { continue }
             spawns.removeValue(forKey: claim)
             // The one moment a written handoff link can stop naming a claim and name a Session
-            // instead. Here rather than in the store, because binding happens once per claim and
-            // this is the call that knows it just did (#513).
+            // instead — binding happens once per claim and this is the call that knows it did
+            // (#513).
             nameChain(claim: claim, as: session.id)
         }
     }

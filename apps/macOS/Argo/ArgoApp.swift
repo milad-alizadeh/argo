@@ -7,9 +7,8 @@ import SwiftUI
 @main
 struct ArgoApp: App {
     @State private var cockpit: CockpitCoordinator
-    /// The Accounts and Bindings half, over the SAME Project registry the cockpit reads. One store
-    /// for both: a Binding is written into `projects.json`, so two stores would be two answers to
-    /// where this Project's ports point.
+    /// The Accounts and Bindings half, over the SAME Project registry the cockpit reads: a Binding
+    /// is written into `projects.json`, so a second store would be a second answer.
     @State private var accounts: AccountsCoordinator
     @State private var navigation = CockpitNavigationModel()
     /// What the Session menu acts on, published by the shell — absent when nothing is selected.
@@ -53,10 +52,9 @@ struct ArgoApp: App {
                         // this: the shell it lands in has no Project to act on.
                         await accounts.openIfUnstarted(registry: cockpit.registry)
                     }
-                    // Every PTY this window owns dies with the window, and the observer above
-                    // ends them on ⌘Q too. An agent Argo started must not outlive the Argo that
-                    // started it: nothing can re-adopt it, so it would be a process nobody is
-                    // left to steer or stop.
+                    // Every PTY this window owns dies with the window, and the observer above ends
+                    // them on ⌘Q too: nothing can re-adopt an agent Argo started, so one that
+                    // outlived Argo would be a process nobody is left to steer or stop.
                     .onDisappear { cockpit.endOwnedSessions() }
                 }
             }

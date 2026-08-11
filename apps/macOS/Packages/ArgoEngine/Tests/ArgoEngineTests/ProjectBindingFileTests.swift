@@ -21,9 +21,7 @@ struct ProjectBindingFileTests {
         #expect(binding.scope == "milad/argo")
     }
 
-    /// The registry file holds the Account's id and nothing else about it. The token is the
-    /// keychain's, and a file in application support that carried one would undo the reason the
-    /// two are separate.
+    /// The registry file holds the Account's id and nothing else: the token is the keychain's.
     @Test
     func `the registry file records the Account id and no token`() async throws {
         let fixture = try BindingFixture()
@@ -56,8 +54,7 @@ struct ProjectBindingFileTests {
     }
 
     /// The same bargain the registry strikes for a record: one unreadable Binding leaves its port
-    /// unbound — a state the cockpit already renders and the user can bind again — rather than
-    /// costing the Project every Binding it had.
+    /// unbound rather than costing the Project every Binding it had.
     @Test
     func `an unreadable Binding leaves its own port unbound`() async throws {
         let registry = try await Self.halfUnreadableRegistry()

@@ -15,8 +15,8 @@ struct HubRosterTests {
         let (observation, continuation) = hubLiveObservation(id: "session")
 
         await hub.startObserving(observation)
-        // Tailed, but nothing read yet — and the row it would draw here is titled with the file's
-        // own UUID and knows no model, which is the rename-and-fill-in the reader used to see.
+        // Tailed, but nothing read yet — the row it would draw here is titled with the file's own
+        // UUID and knows no model.
         #expect(hub.sessions.isEmpty)
 
         continuation.yield([.title("Read whole"), .model("claude-opus-5")])

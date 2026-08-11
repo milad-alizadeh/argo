@@ -44,9 +44,8 @@ struct FeedCallSubjectTests {
         #expect(calls.map(\.subject) == [.command("swift build"), .plain("local command")])
     }
 
-    /// The one thing worth saying about a skill is WHICH one. Named by its tool it read "Ran Skill"
-    /// on every row, which is the mechanism, and the same words whether the agent invoked `grill`
-    /// or `implement`. The panel behind it is the instructions the skill handed back.
+    /// The one thing worth saying about a skill is WHICH one: named by its tool, every row reads
+    /// "Ran Skill" whether the agent invoked `grill` or `implement`.
     @Test
     func `a skill is named by the skill, never by the tool that loaded it`() {
         let calls = FeedFixture.calls(in: [
@@ -90,8 +89,7 @@ struct FeedCallSubjectTests {
     // MARK: - Addresses, said from where the Session is standing
 
     /// Inside a Session everything is relative to that Session's cwd, so the prefix is thirty
-    /// characters of this machine before the first character about the work — and it is the half
-    /// that pushes the informative end of a long address off the edge of the panel.
+    /// characters of this machine before the first character about the work.
     @Test
     func `an address inside the Session's own tree is said relative to it`() {
         let calls = FeedFixture.calls(in: [

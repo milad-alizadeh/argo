@@ -4,14 +4,14 @@ import SwiftUI
 /// The patch one edit made, at the moment it made it.
 ///
 /// Point-in-time and never re-read from disk: this is what that ONE call changed, so a later edit
-/// to the same file does not touch it and the line numbers are the host's own. That is what
-/// separates it from a branch-vs-base Diff, which is current by definition (CONTEXT.md, L3).
+/// to the same file does not touch it and the line numbers are the host's own — unlike a
+/// branch-vs-base Diff, which is current by definition (CONTEXT.md, L3).
 struct EvidenceDiff: View {
     @Environment(\.argo) private var argo
 
     let diff: DiffEvidence
-    /// What the file is written in, or `nil` for a path whose extension Argo does not know. The
-    /// patch is then drawn in one ink, which is what an unrecognised file honestly gets.
+    /// What the file is written in, or `nil` for a path whose extension Argo does not know — the
+    /// patch is then drawn in one ink.
     var language: EvidenceLanguage?
     /// Whether the patch is drawn as a patch or as the document it made. Only markdown is ever
     /// asked in `prose`; every other language IS its source.
@@ -37,10 +37,8 @@ struct EvidenceDiff: View {
 
 /// A markdown hunk read as the document it made, rather than as the patch that made it.
 ///
-/// The AFTER side, which is the whole of the file for something the agent just wrote. A removed
-/// line is not in that document any more and a rendered page has nowhere to put one — that is the
-/// honest cost of this reading, and the reason the patch stays one control away rather than being
-/// replaced by it.
+/// The AFTER side only: a removed line is not in that document any more and a rendered page has
+/// nowhere to put one, which is why the patch stays one control away.
 private struct EvidenceHunkProse: View {
     let hunk: DiffHunk
 
@@ -62,8 +60,7 @@ private struct EvidenceHunk: View {
     let language: EvidenceLanguage?
 
     /// The hunk's lines, coloured. Empty until the highlighter answers and empty again if it
-    /// cannot: the patch draws PLAIN in both cases rather than waiting on a colour, so the record
-    /// is on screen from the first frame and the grammar catches up to it.
+    /// cannot: the patch draws PLAIN in both cases rather than waiting on a colour.
     @State private var coloured: [AttributedString?] = []
 
     var body: some View {
@@ -81,10 +78,9 @@ private struct EvidenceHunk: View {
 
     /// What a highlight would be OF: the grammar, and the characters themselves.
     ///
-    /// The TEXT and not the hunk's position, which is the whole point. A lazy stack recycles a row
-    /// view by its offset, so a second hunk that matched on language, start line and line count
-    /// inherited the first one's `coloured` array — colours drawn over different characters, and no
-    /// way for a reader to know. Two hunks with the same key are now two hunks with the same words.
+    /// The TEXT and not the hunk's position: a lazy stack recycles a row view by its offset, so a
+    /// second hunk matching on language, start line and line count inherited the first one's
+    /// `coloured` array — colours drawn over different characters.
     private var highlightRequest: String {
         "\(language?.alias ?? "")\n\(hunk.lines.map(\.text).joined(separator: "\n"))"
     }
@@ -101,9 +97,8 @@ private struct EvidenceHunk: View {
         )
     }
 
-    /// A line's number in the file it ended up in. A removed line has none — it is not in that
-    /// file — and the gutter is left empty rather than given the number of the line that replaced
-    /// it, which is a different line.
+    /// A line's number in the file it ended up in. A removed line has none, and the gutter is left
+    /// empty rather than given the number of the line that replaced it.
     private var numbered: [(line: DiffLine, number: Int?)] {
         var next = hunk.newStart
         return hunk.lines.map { line in
@@ -119,8 +114,8 @@ private struct EvidenceDiffLine: View {
 
     let line: DiffLine
     let number: Int?
-    /// This line under the grammar, where the highlighter reached it. `nil` is not a failure state
-    /// to render — it is the line before the colours arrive, and after they could not.
+    /// This line under the grammar. `nil` is not a failure state to render — it is the line before
+    /// the colours arrive, and after they could not.
     let coloured: AttributedString?
 
     var body: some View {
@@ -146,8 +141,7 @@ private struct EvidenceDiffLine: View {
     ///
     /// EVERY line once the colours arrive, context included: which side a line is on is said by
     /// the wash under it, and colouring only the changed lines left the context around them
-    /// reading as a different file. What the patch still owns is the uncoloured case — a context
-    /// line with no grammar behind it stays quieter than a changed one.
+    /// reading as a different file.
     @ViewBuilder private var words: some View {
         if let coloured {
             Text(coloured)
@@ -157,8 +151,7 @@ private struct EvidenceDiffLine: View {
     }
 
     /// A wash for the changed sides and nothing for context, at the same strength a status chip
-    /// takes — enough to find the run of changed lines down the panel, not enough to fight the
-    /// characters sitting on it.
+    /// takes.
     private var ground: ArgoColor {
         switch line.side {
         case .add: argo.color.diff.wash(argo.color.diff.added)
@@ -176,8 +169,7 @@ private struct EvidenceDiffLine: View {
 }
 
 /// A mutation whose patch nothing could read — a binary file, a shape the reader does not parse.
-/// It says so: the change HAPPENED, and a panel that drew an empty block would read as an edit
-/// that changed nothing.
+/// It says so, because an empty block would read as an edit that changed nothing.
 private struct EvidenceUnreadablePatch: View {
     @Environment(\.argo) private var argo
 

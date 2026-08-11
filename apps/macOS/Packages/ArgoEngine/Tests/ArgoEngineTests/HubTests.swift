@@ -105,9 +105,8 @@ struct HubTests {
         #expect(hub.sessions[0].branch == "feature")
     }
 
-    /// A refresh is a refresh OF something, and the Hub is the only thing that knows what: it was
-    /// made pointed at one folder, pointed at another, and the checkout read then resolved that one
-    /// to its repository root. All three used to be supplyable, and the caller picked.
+    /// Three URLs are in play: the one the Hub was made with, the one it was pointed at, and the
+    /// repository root the checkout read resolved that to. A refresh follows the last.
     @Test
     @MainActor
     func `a refresh follows the Project the Hub is on`() async throws {
@@ -130,15 +129,11 @@ struct HubTests {
         await checkout.forget(packageURL)
         await hub.refreshCheckout()
 
-        // Not `elsewhere`, which is what it was made with, and not `packageURL`, which is what it
-        // was pointed with — the refresh reads the one repository the Hub settled on.
         #expect(hub.project.url == repositoryURL)
         await hub.disconnect()
     }
 
-    /// Every head a repository can be on reaches the projection the shell renders. Only the
-    /// unreadable one used to: the read was a subprocess against a folder that never existed, so
-    /// failure was the only answer a test could get.
+    /// Every head a repository can be on reaches the projection the shell renders.
     @Test(arguments: [CheckoutProjection.Head.branch("main"), .detached(shortSHA: "95a8d79")])
     @MainActor
     func `the head the checkout read answers with is the head of the Project`(

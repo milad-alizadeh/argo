@@ -5,13 +5,9 @@ import Testing
 /// The copy rules the ticket carries, asserted over every word this panel can put on screen: the
 /// error pattern is three parts, no honesty tier reaches the user, no status word is invented, and
 /// there are no em dashes.
-///
-/// Swept rather than spot-checked. A rule proved on the one string somebody remembered is a rule
-/// the next string breaks.
 @Suite("Connect panel copy")
 struct ConnectCopyTests {
-    /// Every failure the panel can report, in one list, so the sweeps below cover the set rather
-    /// than a sample of it.
+    /// Every failure the panel can report, so the sweeps below cover the set rather than a sample.
     static let notes: [ConnectNote] =
         [
             .noSuchProject,
@@ -47,11 +43,8 @@ struct ConnectCopyTests {
     ].map(ConnectPanelProjection.panel(from:))
 
     /// Every string this flow can render, flattened once: the panel's rows, its failures, the
-    /// Welcome screen, the device-code card, and the two labels the menu bar carries.
-    ///
-    /// The screens that are not projections keep their words as values (`WelcomeScreen.Copy`,
-    /// `DeviceCodeCard.Copy`) precisely so they can be swept here. A rule proved on the strings
-    /// somebody remembered is a rule the next string breaks.
+    /// Welcome screen, the device-code card, and the two labels the menu bar carries. The screens
+    /// that are not projections keep their words as values so they can be swept here.
     static var words: [String] {
         panels.flatMap(strings(of:))
             + notes.flatMap { [$0.what, $0.why, $0.fix] }
@@ -65,8 +58,6 @@ struct ConnectCopyTests {
         #expect(Self.words.allSatisfy { !$0.contains("—") })
     }
 
-    /// The ladder onboarding cut. A provenance tier is an internal attribute, and a user should
-    /// never have to learn one to finish setting up a project.
     @Test
     func `no honesty tier appears anywhere in the flow`() {
         let tiers = ["DIRECT", "DERIVED", "CONVENTION", "honesty", "tier", "provenance"]
@@ -76,13 +67,11 @@ struct ConnectCopyTests {
         })
     }
 
-    /// The registry's words name Session liveness, Delivery and connection health. None of those
-    /// is what this panel is about, and borrowing one here would be the same word meaning two
-    /// things in two places.
+    /// The borrowed words name Session liveness, Delivery and connection health — none of which
+    /// this panel is about.
     ///
     /// A whole rendered line, not a substring: "the provider stopped accepting its token" is a
-    /// sentence about what happened, and a line that reads only `stopped` is a status claim. The
-    /// difference is whether the word stands alone, which is exactly what this compares.
+    /// sentence about what happened, while a line reading only `stopped` is a status claim.
     @Test
     func `no status word is borrowed from another surface`() {
         let borrowed = ["running", "idle", "stopped", "ended", "stale", "needs input", "passing"]

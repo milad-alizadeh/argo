@@ -1,16 +1,9 @@
 import SwiftUI
 
-/// A motion role: what it does at full strength, and what it does instead under Reduce
-/// Motion.
+/// A motion role: what it does at full strength, and what it does instead under Reduce Motion.
+/// The Reduce Motion answer belongs to the role, never to the call site.
 ///
-/// The Reduce Motion answer belongs here, not at the call site. A view that has to decide
-/// for itself is a view that will forget, and the accessible variant of a role is a property
-/// of the role — a state change still needs to register when movement is off, so it
-/// cross-fades rather than vanishing.
-///
-/// Every role is brief and event-driven. Nothing in the contract loops: an ambient
-/// animation would burn a cockpit that is meant to sit open all day, and it would make
-/// "something changed" unreadable.
+/// Every role is brief and event-driven; nothing in the contract loops.
 public struct ArgoMotion: Sendable {
     public enum Curve: Sendable {
         case easeOut
@@ -39,9 +32,9 @@ public struct ArgoMotion: Sendable {
         }
     }
 
-    /// Under Reduce Motion a role either fades over its reduced duration or does not
-    /// animate at all. Either way the result is interruptible: SwiftUI retargets a running
-    /// animation when the value changes again.
+    /// Under Reduce Motion a role either fades over its reduced duration or does not animate at
+    /// all. Either way it stays interruptible: SwiftUI retargets a running animation on a new
+    /// value.
     public var reducedAnimation: Animation? {
         reducedDuration.map { .linear(duration: $0) }
     }
@@ -64,9 +57,8 @@ public extension ArgoMotion {
     static let bloom = ArgoMotion(duration: 0.42, curve: .easeInOut, reducedDuration: 0.14)
 
     /// A list re-settling into a new order once the reader has left it. Slower than `selection`
-    /// on purpose: that role moves one indicator the eye is already on, and this one moves rows
-    /// nobody asked to move — it has to be watchable, or it is a teleport with a delay in front of
-    /// it. Pure movement, so it lands instantly when movement is off.
+    /// because it moves rows nobody asked to move. Pure movement, so it lands instantly when
+    /// movement is off.
     static let resettle = ArgoMotion(duration: 0.28, curve: .easeOut, reducedDuration: nil)
 
     static let all: [(name: String, motion: ArgoMotion)] = [
@@ -74,14 +66,10 @@ public extension ArgoMotion {
         ("bloom", bloom), ("resettle", resettle),
     ]
 
-    /// Roles nothing draws yet, and what each is waiting on.
-    ///
-    /// A role is kept while the decision behind it still has a surface coming — `latch` left with
-    /// the Dock it timed (#536 closed on the floating composer), because a duration whose surface
-    /// is cancelled is not waiting, it is dead. The specimen has to SAY a kept role is unjudged: a
-    /// duration that has never moved a surface drawn exactly like a live role is how an unjudged
-    /// value passes for a settled one. A key naming no role fails the contract suite, so this
-    /// list shrinks as surfaces land and cannot rot.
+    /// Roles nothing draws yet, and what each is waiting on. A role is kept only while the decision
+    /// behind it still has a surface coming — `latch` left with the Dock it timed (#536 closed on
+    /// the floating composer). A key naming no role fails the contract suite, and the specimen
+    /// draws a kept role as unjudged.
     static let unwired: [String: String] = [:]
 
     /// No role may run longer than this. Past it a transition stops reading as feedback and
@@ -90,8 +78,7 @@ public extension ArgoMotion {
 }
 
 public extension View {
-    /// Animates `value` with a contract role, resolving Reduce Motion from the environment
-    /// so no call site has to remember it.
+    /// Animates `value` with a contract role, resolving Reduce Motion from the environment.
     func argoAnimation(_ motion: ArgoMotion, value: some Equatable) -> some View {
         modifier(ArgoAnimationModifier(motion: motion, value: value))
     }

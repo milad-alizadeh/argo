@@ -1,14 +1,7 @@
 import ArgoEngine
 
-/// A run of calls that did the same thing to the same subject, read as one line.
-///
-/// Three edits of one file are one piece of work and three patches. Drawn as three rows they push
-/// everything else off the screen and say nothing the first row did not; drawn as one row with the
-/// patches behind it, the feed keeps its shape and the record keeps all three.
-///
-/// CONSECUTIVE runs only, and that is a hard limit rather than a first cut: fusing two edits that
-/// had other work between them would put a line in the feed standing for two moments, and the one
-/// thing the feed guarantees is that it shows what happened in the order it happened.
+/// A run of calls that did the same thing to the same subject, read as one line. CONSECUTIVE only:
+/// fusing two edits with other work between them would make one line stand for two moments.
 enum FeedCallRun {
     static func collapsed(_ contents: [FeedRow.Content]) -> [FeedRow.Content] {
         contents.reduce(into: []) { rows, content in
@@ -25,15 +18,9 @@ enum FeedCallRun {
 }
 
 extension FeedCall {
-    /// Whether another call is the same work on the same subject — the same verb AND the same
-    /// thing named. A create followed by an edit of one file is two different claims and stays two
-    /// rows; the destination a move carries is part of the verb here, for the same reason.
-    ///
-    /// A DELEGATION never stands for another, however alike the two look. Three edits of one file
-    /// are one piece of work repeated; three subagents handed the same brief are three other
-    /// agents, each with its own life, its own ending and its own spend — collapsed, one line would
-    /// report a run that finished when only the last of them had, and the rail reading off it would
-    /// show one agent's figure against every chip.
+    /// Whether another call is the same work on the same subject. A DELEGATION never stands for
+    /// another: each subagent has its own ending and spend, so a collapsed run would report
+    /// finished when only the last of them had.
     func stands(for other: FeedCall) -> Bool {
         kind != .delegate && kind == other.kind && subject == other.subject
     }
@@ -65,11 +52,8 @@ extension FeedCall.Churn {
 }
 
 extension FeedCall.Ending {
-    /// How a run of calls ended.
-    ///
-    /// A failure anywhere in it wins: it happened, and a row reading green because the two edits
-    /// after the failed one worked would hide the only thing on the line worth seeing. A run still
-    /// waiting on one of its calls has not succeeded yet either.
+    /// How a run of calls ended. A failure anywhere in it wins, and a run still waiting on one of
+    /// its calls has not succeeded yet either.
     func overtaken(by next: FeedCall.Ending) -> FeedCall.Ending {
         if self == .failed || next == .failed {
             return .failed

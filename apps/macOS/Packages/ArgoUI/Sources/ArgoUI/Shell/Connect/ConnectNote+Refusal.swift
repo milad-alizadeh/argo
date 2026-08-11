@@ -1,11 +1,7 @@
 import ArgoEngine
 
-/// Every way connecting can fail, said in the user's words.
-///
-/// The engine's refusals are the authority on WHICH failure happened and carry no copy at all,
-/// which is the division that lets a provider's own words through untouched: `unreadable` and
-/// `refused` put the provider's sentence in the `why` verbatim rather than rewording it into
-/// Argo's voice, because that sentence is usually the only thing that says how to fix it.
+/// Every way connecting can fail, said in the user's words. The engine's refusals carry no copy at
+/// all; `unreadable` and `refused` put the provider's own sentence in the `why` verbatim.
 public extension ConnectNote {
     init(refusal: BindingRefusal) {
         switch refusal {
@@ -92,9 +88,8 @@ public extension ConnectNote {
 }
 
 public extension ConnectNote {
-    /// A provider Argo cannot sign in to yet. It lives here rather than at the one call site so
-    /// the copy sweep can see it: the panel never offers Linear, so this is reachable only if
-    /// something else asks, and unswept copy is copy the next edit can break.
+    /// A provider Argo cannot sign in to yet. Here rather than at its one call site so the copy
+    /// sweep can see it.
     static func notYetAuthorizable(_ provider: AccountProvider) -> ConnectNote {
         ConnectNote(
             what: "Argo cannot sign in to \(provider.readableName) yet.",
@@ -104,9 +99,8 @@ public extension ConnectNote {
     }
 }
 
-/// A Binding on disk that no longer reads, said the same way. Separate from the refusals because
-/// the two are answered at different moments: a refusal is a bind that never happened, and this is
-/// a choice already made that has come undone — so every fix here is about the row as it stands.
+/// A Binding on disk that no longer reads. Separate from the refusals, which are binds that never
+/// happened.
 public extension ConnectNote {
     init(fault: BindingFault) {
         switch fault {

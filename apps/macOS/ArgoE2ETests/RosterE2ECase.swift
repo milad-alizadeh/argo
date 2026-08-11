@@ -2,15 +2,10 @@ import XCTest
 
 /// The launch every roster case shares, and the ways all of them address a row.
 ///
-/// One class rather than a copy per suite, for the reason `FeedE2ECase` is one: these cases differ
-/// in which named state the app opens on, and how a roster row is addressed is not per-suite
-/// knowledge.
-///
 /// `@MainActor` because driving a UI is main-actor work under Swift 6.
 @MainActor
 class RosterE2ECase: XCTestCase {
-    /// Which named state the app opens on. Every case answers it and the base answers it for none
-    /// of them — a default here would be one suite's reading standing in for another's.
+    /// Which named state the app opens on. Every case answers it; the base deliberately does not.
     var specimen: String {
         preconditionFailure("A roster case must name the specimen it opens on.")
     }
@@ -48,11 +43,9 @@ class RosterE2ECase: XCTestCase {
             .firstMatch
     }
 
-    /// Where the title is drawn inside a row — the leading part of its upper line.
-    ///
-    /// Geometric because the row is deliberately ONE accessibility element: the projection decides
-    /// what a row announces, so the title is not separately addressable, and a click meant for the
-    /// title has nowhere else to be aimed.
+    /// Where the title is drawn inside a row — the leading part of its upper line. Geometric
+    /// because the row is deliberately ONE accessibility element, so the title is not separately
+    /// addressable.
     func titleArea(of row: XCUIElement) -> XCUICoordinate {
         row.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.35))
     }

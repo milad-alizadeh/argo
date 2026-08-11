@@ -5,12 +5,11 @@ import Testing
 /// What the feed says about a Permission the gate refused when nobody answered it (#573).
 ///
 /// Its own suite for `FeedHandoffTests`'s reason: this is the second input to the feed that is not
-/// the record, and every claim here is about saying honestly what Argo did rather than about
-/// reading a transcript.
+/// the record.
 @Suite("Feed permission expiry")
 struct FeedPermissionExpiryTests {
-    /// The study's own sentence, both halves of it. `denied` alone would credit a decision nobody
-    /// made; `expired` alone would leave what became of the call unsaid.
+    /// The study's own sentence, both halves of it: `denied` alone would credit a decision nobody
+    /// made.
     @Test
     func `the row says both halves of what happened, in the study's words`() {
         #expect(
@@ -20,8 +19,7 @@ struct FeedPermissionExpiryTests {
     }
 
     /// The tool is named to a screen reader and nowhere else: on the rule it would push the
-    /// sentence past the column, and spoken it is the difference between "a Permission expired" and
-    /// knowing which call went unanswered.
+    /// sentence past the column.
     @Test
     func `a screen reader is told which call it was`() {
         #expect(
@@ -30,9 +28,8 @@ struct FeedPermissionExpiryTests {
         )
     }
 
-    /// Above the roll-up and below the work, and it leads nowhere — the handoff link is the one row
-    /// in the feed that is pressable, and a second one that did nothing would teach a reader to
-    /// stop trying the first.
+    /// Above the roll-up and below the work, and it leads nowhere — the handoff link stays the one
+    /// pressable row in the feed.
     @Test
     func `the row sits under the work and above what the Session spent`() {
         let rows = FeedProjection.rows(from: Self.transcript, expired: [Self.expiry])
@@ -42,8 +39,7 @@ struct FeedPermissionExpiryTests {
         #expect(FeedMark.permissionExpired(Self.expiry).handoff == nil)
     }
 
-    /// One row per expiry, in the order they ran out. A Session that lost two calls lost two calls,
-    /// and a single row saying so would be a count nobody can act on.
+    /// One row per expiry, in the order they ran out — never a count.
     @Test
     func `two calls that expired are two rows, oldest first`() {
         let second = PermissionExpiry(id: "permission-2", toolName: "Write")
@@ -53,8 +49,7 @@ struct FeedPermissionExpiryTests {
     }
 
     /// The empty case is every Session in the app: the gate waits a day, so nothing expires unless
-    /// somebody walked away from a running agent for one. The row must not be a slot at the foot of
-    /// every reading.
+    /// somebody walked away from a running agent for one.
     @Test
     func `a Session that lost no call reads exactly as it did before`() {
         let rows = FeedProjection.rows(from: Self.transcript)

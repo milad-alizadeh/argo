@@ -2,13 +2,9 @@
 import Foundation
 import Testing
 
-/// What a transcript has to carry before it is a Session anybody is shown.
-///
-/// Built from the shape the real files have. The CLI opens a transcript the moment a prompt is
-/// QUEUED, so a Session that queued several leaves several files, each holding two
-/// `queue-operation` records, one copy of the same prompt, a handful of attachments — and no agent
-/// output at all. The roster drew that Session once per file, every copy carrying the same title
-/// derived from the same words.
+/// What a transcript has to carry before it is a Session anybody is shown. The CLI opens a
+/// transcript the moment a prompt is QUEUED, so a Session that queued several leaves several files
+/// holding a prompt and no agent output — and the roster drew one row per file.
 @Suite("Queued prompts are not Sessions")
 struct QueuedPromptTests {
     private static let projectURL = URL(fileURLWithPath: "/tmp/argo-queued")
@@ -44,8 +40,8 @@ struct QueuedPromptTests {
         #expect(hub.sessions.isEmpty)
     }
 
-    /// The half that stops this from hiding live work: a Session that has only just started has a
-    /// prompt and no answer yet, and it is perfectly real.
+    /// The half that stops this hiding live work: a Session that just started has a prompt and no
+    /// answer yet, and it is real.
     @Test
     @MainActor
     func `a Session whose agent has not answered yet is still a Session`() async throws {

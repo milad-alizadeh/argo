@@ -1,11 +1,9 @@
 import Foundation
 
-// The untrusted-input primitive. A model wrote the transcript, so no line is trusted to have the
-// shape it should, and `Codable`'s strictness is the wrong tool at this boundary: a struct with a
-// `String` field throws on `{"type": "text", "text": 12}` and takes the whole record down with it.
-// So the JSON is decoded WITHOUT a schema first, and every typed reading is a total function over
-// the result — a value is a string only when it is one, and anything else reads as absent rather
-// than as a default or a thrown error.
+// The untrusted-input primitive. `Codable`'s strictness is the wrong tool at this boundary: a
+// struct with a `String` field throws on `{"type": "text", "text": 12}` and takes the whole record
+// down with it. So the JSON is decoded WITHOUT a schema, and every typed reading is a total
+// function over the result — anything of the wrong type reads as absent, never as a default.
 
 /// One JSON value, decoded without knowing its shape.
 public enum JSONValue: Sendable, Equatable {
@@ -64,11 +62,9 @@ public extension JSONValue {
 }
 
 public extension JSONValue {
-    /// One line of a `.jsonl` transcript, or `nil` where it is not a JSON object.
-    ///
-    /// An object specifically, not any JSON: the fixtures carry `[]`, `"a string"`, `null` and a
-    /// truncated `{"type":"user"` on their own lines, and none of those is a record. A malformed
-    /// line is never thrown on — the caller decides what to do with a line it could not read.
+    /// One line of a `.jsonl` transcript, or `nil` where it is not a JSON object. An object
+    /// specifically: `[]`, `"a string"`, `null` and a truncated `{"type":"user"` are all lines a
+    /// transcript carries and none is a record. A malformed line is never thrown on.
     static func record(fromLine line: String) -> JSONValue? {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else { return nil }

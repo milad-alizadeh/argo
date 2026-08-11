@@ -1,12 +1,9 @@
 import SwiftUI
 
-/// Everything the AppKit half of the feed needs from the SwiftUI half, taken as one value.
-///
-/// A value and not a set of coordinator properties, because it changes as one thing: every
-/// `updateNSView` hands the coordinator a fresh copy, and a field read from a stale one is the
-/// class of bug this table exists to end. The environment rides along because an `NSHostingView`
-/// inherits nothing from the hierarchy above it — a cell drawn without it would render the theme's
-/// defaults rather than the cockpit's.
+/// Everything the AppKit half of the feed needs from the SwiftUI half, taken as one value: every
+/// `updateNSView` hands the coordinator a fresh copy, so no field can be read from a stale one.
+/// The environment rides along because an `NSHostingView` inherits nothing from the hierarchy
+/// above it — a cell drawn without it renders the theme's defaults rather than the cockpit's.
 @MainActor struct FeedTableModel {
     var rows: [FeedRow]
     var selection: FeedRowSelection
@@ -32,8 +29,7 @@ import SwiftUI
     var environment: EnvironmentValues
 
     /// One row of the reading, dressed as the column drew it: its step from the row above, the
-    /// feed's gutters, and the measure — per cell now, which lands the same place it did on the
-    /// stack, because every cell is the column's full width.
+    /// feed's gutters, and the measure — per cell, since every cell is the column's full width.
     func content(at index: Int) -> AnyView {
         let row = rows[index]
         return AnyView(

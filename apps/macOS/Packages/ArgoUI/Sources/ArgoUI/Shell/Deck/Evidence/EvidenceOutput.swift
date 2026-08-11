@@ -6,12 +6,9 @@ import SwiftUI
 /// No line numbers, because this is a stream and not a file — numbering it would claim an address
 /// for lines the command never gave one.
 ///
-/// Error output is told apart at the grain the RECORD tells it apart at, which is the whole
-/// result: a transcript carries one `is_error` on the answer and nothing per line. So a failed
-/// call's stream is marked as a stream, by a rule down its edge in the failure ink. Picking out
-/// the lines inside it that look like errors would be Argo reading the output — the one thing a
-/// panel that exists to show the record verbatim must not do — and `error:` is a word that
-/// appears in plenty of output from commands that worked.
+/// Error output is told apart at the grain the RECORD tells it apart at: a transcript carries one
+/// `is_error` on the whole answer and nothing per line, so a failed call's stream is marked whole,
+/// by a rule down its edge. Never per line — `error:` appears in plenty of output that worked.
 struct EvidenceOutput: View {
     @Environment(\.argo) private var argo
 
@@ -31,12 +28,8 @@ struct EvidenceOutput: View {
         }
     }
 
-    /// The read's own listing, or `nil` for everything that is not one.
-    ///
-    /// A FAILED call is never one, whatever its text looks like: what a failed read prints is a
-    /// message about the call, and drawing an error under the file's grammar with a gutter beside
-    /// it
-    /// would present Argo's reading of the failure as the file the agent asked for.
+    /// The read's own listing, or `nil` for everything that is not one. A FAILED call is never one,
+    /// whatever its text looks like: what it printed is a message about the call, not the file.
     private var listing: EvidenceListing? {
         hasFailed ? nil : EvidenceListing(output.text)
     }

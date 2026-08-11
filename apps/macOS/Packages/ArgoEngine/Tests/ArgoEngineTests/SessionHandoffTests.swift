@@ -5,9 +5,8 @@ import Testing
 @Suite("Session handoff")
 @MainActor
 struct SessionHandoffTests {
-    /// Story 47's whole sequence: type `/handoff`, wait for what it writes, open a Session seeded
-    /// with it. Asserted as an order and not as three calls, because the order IS the feature — a
-    /// spawn that ran before the brief landed would open a fresh Session on nothing.
+    /// Story 47's whole sequence, asserted as an order: a spawn that ran before the brief landed
+    /// would open a fresh Session on nothing.
     @Test
     func `a handoff types the command, waits for the brief, then opens a Session on it`(
     ) async throws {
@@ -30,8 +29,7 @@ struct SessionHandoffTests {
         #expect(outcome.sessionID == "fresh-session")
     }
 
-    /// Story 48. The fresh Session runs in the SAME folder, which is what makes it the same branch
-    /// — and everything derived from a branch derives the same way for both rows.
+    /// Story 48. The fresh Session runs in the SAME folder, which is what makes it the same branch.
     @Test
     func `the fresh Session inherits the folder and is opened on the brief and the issue`(
     ) async throws {
@@ -48,8 +46,7 @@ struct SessionHandoffTests {
         #expect(opening.contains("#513"))
     }
 
-    /// The edge that makes the two rows a chain. Recorded by the sequence that produced it, so a
-    /// handoff cannot succeed and leave the link to whoever remembered to ask for one.
+    /// The edge that makes the two rows a chain, recorded by the sequence that produced it.
     @Test
     func `a completed handoff records which Session the work went to`() async throws {
         let fixture = HandoffFixture()
@@ -64,9 +61,7 @@ struct SessionHandoffTests {
         #expect(chained.fresh == outcome.sessionID)
     }
 
-    /// And a handoff that did not happen records nothing. A link naming a Session no refusal ever
-    /// opened would point at a row that does not exist — the fabrication the whole orchestration is
-    /// built to refuse.
+    /// A link naming a Session no refusal ever opened would point at a row that does not exist.
     @Test
     func `a refused handoff records no chain at all`() async throws {
         let fixture = HandoffFixture(patience: HandoffPatience(pollMs: 100, limitMs: 300))
@@ -97,9 +92,8 @@ struct SessionHandoffTests {
         #expect(opening.contains("Continue the work"))
     }
 
-    /// The refusal that must never read as nothing happening: Argo owns no prompt on this Session,
-    /// so it types nothing and says so. The button is not offered here at all (story 49) — this is
-    /// the belt to that view-level brace.
+    /// Argo owns no prompt on this Session, so it types nothing and says so. The button is not
+    /// offered here at all (story 49); this is the belt to that view-level brace.
     @Test
     func `a Session Argo cannot type at is refused rather than half-run`() async throws {
         let fixture = HandoffFixture()
@@ -113,8 +107,7 @@ struct SessionHandoffTests {
         #expect(fixture.host.seeds.isEmpty)
     }
 
-    /// The other one. No brief means no fresh Session: the roster never grows a row for work that
-    /// was not handed over, and the reason is said in the tool's own terms.
+    /// No brief means no fresh Session, and the reason is said in the tool's own terms.
     @Test
     func `a brief that never arrives ends the handoff and spawns nothing`() async throws {
         let fixture = HandoffFixture(patience: HandoffPatience(pollMs: 100, limitMs: 300))
@@ -165,10 +158,8 @@ struct SessionHandoffTests {
         #expect(first.briefPath != second.briefPath)
     }
 
-    /// The path is Argo's own and is passed TO the command, so the wait is a question with an
-    /// answer rather than a guess at where a skill this repo does not own would have written. A CLI
-    /// picks its own Session id, so that id is cut to what a filename can hold rather than trusted
-    /// into a path.
+    /// The path is Argo's own and is passed TO the command. A CLI picks its own Session id, so that
+    /// id is cut to what a filename can hold rather than trusted into a path.
     @Test
     func `the brief lands in Argo's own data under a name the Session cannot break`() {
         let url = HandoffScript.briefURL(

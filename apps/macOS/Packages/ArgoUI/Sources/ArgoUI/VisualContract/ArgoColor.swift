@@ -1,10 +1,7 @@
 import SwiftUI
 
-/// A colour in the contract, held as sRGB components rather than as an opaque `Color`.
-///
-/// `Color` is a black box: nothing can ask it what it is, so nothing can assert that the
-/// graphite ramp stayed neutral or that Ion Blue never leaked into a status role. Holding
-/// the components keeps those claims testable without AppKit and without a running app.
+/// A colour in the contract, held as sRGB components rather than as an opaque `Color` — nothing can
+/// ask a `Color` what it is, so the contract's claims would not be assertable without AppKit.
 public struct ArgoColor: Sendable, Hashable {
     public let red: Double
     public let green: Double
@@ -36,8 +33,7 @@ public struct ArgoColor: Sendable, Hashable {
         ArgoColor(red: red, green: green, blue: blue, opacity: opacity)
     }
 
-    /// No ground at all. A role's absence, spelled once, so a view choosing between a wash and
-    /// nothing stays in the contract's own type instead of dropping to `Color.clear` for one arm.
+    /// No ground at all — a role's absence, spelled once and in the contract's own type.
     public static let transparent = ArgoColor(hex: 0x000000, opacity: 0)
 }
 

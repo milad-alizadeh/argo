@@ -1,11 +1,8 @@
 import SwiftUI
 
 /// The bar under the reading: how much of the window is held, with both policy lines standing in
-/// it.
-///
-/// The ticks are what make the bar worth drawing. A fill on its own says how full the Session is
-/// against a million, which is a number nobody has a feel for; the two lines say which threshold
-/// is coming, so the reading can be judged BEFORE it changes colour rather than after.
+/// it. The ticks say which threshold is coming, so the reading can be judged BEFORE it changes
+/// colour.
 struct ContextBar: View {
     @Environment(\.argo) private var argo
 
@@ -28,9 +25,8 @@ struct ContextBar: View {
         .accessibilityHidden(true)
     }
 
-    /// Nothing at all when the context could not be read. An empty track is the honest drawing of
-    /// an absent fact, and a zero-width fill would be indistinguishable from a Session that has
-    /// said nothing yet — which is a claim about the Session rather than about Argo's reading.
+    /// Nothing at all when the context could not be read: a zero-width fill would be a claim about
+    /// the Session rather than about Argo's reading.
     @ViewBuilder private func fill(in width: CGFloat) -> some View {
         if let filled = context.fill {
             Capsule()

@@ -54,8 +54,7 @@ struct WorkspaceReaderTests {
     @Test
     func `a branch with no upstream is absent, never zero`() async {
         // git exits non-zero for a branch with nothing to be ahead OF, and "nothing to compare
-        // against" is a different fact from "level with it". Asked of a folder that answered
-        // everything else, so the absence is the upstream's and not the read's.
+        // against" is a different fact from "level with it".
         let projection = await read([status: " M README.md\n", branch: "main\n"])
 
         #expect(projection?.dirty == 1)

@@ -3,18 +3,16 @@ import Foundation
 /// The companion-plugin channel (CONTEXT.md, "Companion plugin"): one in-process MCP server per
 /// managed Session, and the plugin that points its CLI at it.
 ///
-/// This is the only source of the CONVENTION tier. It is also, deliberately, optional: a spawn
-/// whose channel never gets a client is still `managed` — Argo owns its PTY, which is what the
-/// posture is about — and simply has nothing at that tier to show.
+/// This is the only source of the CONVENTION tier, and it is optional: a spawn whose channel never
+/// gets a client is still `managed` — Argo owns its PTY — with nothing at that tier to show.
 @MainActor
 public final class CompanionChannel {
     /// Where the per-claim sockets and plugin directories live.
     ///
-    /// Short and under `/tmp`, not in Application Support with the Project registry, because a
-    /// `sockaddr_un` path is 103 bytes and "Library/Application Support/Argo/companion" plus a home
-    /// directory spends most of them. This is runtime state that dies with the PTY, not owned state
-    /// worth keeping, so the tighter place is also the right one. The directory is the user's alone
-    /// (0700) and each socket inside it is theirs (0600).
+    /// Short and under `/tmp`, not in Application Support, because a `sockaddr_un` path is 103
+    /// bytes
+    /// and "Library/Application Support/Argo/companion" plus a home directory spends most of them.
+    /// The directory is the user's alone (0700) and each socket inside it is theirs (0600).
     public static let defaultRoot = URL(
         fileURLWithPath: "/tmp/argo-companion-\(getuid())",
         isDirectory: true,

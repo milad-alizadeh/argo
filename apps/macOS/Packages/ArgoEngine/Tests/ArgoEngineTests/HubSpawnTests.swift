@@ -91,8 +91,7 @@ struct HubSpawnTests {
         #expect(fixture.hub.terminals.attach(to: .init(value: "claim-1")) { _ in } == nil)
     }
 
-    /// The one row no observation can reach: the CLI never wrote a record, so no sweep will ever
-    /// correct it. It has to say which way it went and end itself.
+    /// The one row no observation can reach: the CLI never wrote a record, so no sweep corrects it.
     @Test
     func `a spawn whose PTY dies before any record says so and ends`() async throws {
         let fixture = try SpawnFixture()
@@ -117,13 +116,11 @@ struct HubSpawnTests {
         }
 
         #expect(fixture.hub.sessions.isEmpty)
-        // The claim is released, so an agent somebody starts here a moment later is not covered by
-        // a window Argo opened and never used.
+        // The claim is released.
         #expect(fixture.hub.ownership.liveClaims.isEmpty)
     }
 
-    /// The spawns outlive a Project switch and their PTYs are meant to — what they must not do is
-    /// follow you into a Project they do not belong to.
+    /// The spawns outlive a Project switch; what they must not do is follow you into another one.
     @Test
     func `a spawned row does not follow the window into another Project`() async throws {
         let fixture = try SpawnFixture()

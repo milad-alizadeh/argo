@@ -27,16 +27,14 @@ public enum ArgoTypography {
     )
     public static let caption = ArgoTextStyle(typeface: .interface, rung: .caption1)
 
-    /// The one machine string a person has to TRANSCRIBE: the device flow's user code. It is set
-    /// at the title rung because it is read off one screen and typed into another, and every
-    /// smaller rung in this family is sized to be glanced at beside prose rather than copied out.
+    /// The one machine string a person has to TRANSCRIBE: the device flow's user code, at the title
+    /// rung because it is read off one screen and typed into another.
     public static let machineDisplay = ArgoTextStyle(
         typeface: .machine, rung: .title2, weight: .semibold, tracking: 0.6,
     )
     /// A machine fact set beside the words it belongs to, at the size those words are set at — the
-    /// plan pill's `Step 3/5` against the step it names. Monospaced deliberately: a counter that
-    /// changes while the reader watches it re-measures the surface around it on every step in a
-    /// proportional face, shifting the sentence beside it.
+    /// plan pill's `Step 3/5`. Monospaced: in a proportional face a counter that changes while the
+    /// reader watches re-measures on every step, shifting the sentence beside it.
     public static let machineBody = ArgoTextStyle(typeface: .machine, rung: .body)
     /// Branch, HEAD, elapsed, token counts.
     public static let machine = ArgoTextStyle(typeface: .machine, rung: .callout)

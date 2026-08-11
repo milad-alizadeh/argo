@@ -58,9 +58,8 @@ struct ComposerSpecimen: View {
         isRunning: true,
     )
 
-    /// The same vessel on a Session that has stopped asking about two tools (#572). A state of its
-    /// own because the tray is only ever seen at rest — the moment it matters is the turn AFTER
-    /// the grant, when the prompt that made it is long gone.
+    /// The same vessel on a Session that has stopped asking about two tools (#572). Its own state
+    /// because the tray is only ever seen at rest, the turn AFTER the grant.
     static let standing = SessionComposerProjection.Composer(
         sessionID: composer.sessionID,
         placeholder: composer.placeholder,
@@ -99,8 +98,7 @@ struct ComposerSpecimen: View {
         refusal: SessionDriveError.notDrivable.detail,
     )
 
-    /// A follow-up waiting on the Turn in flight, drawn above an empty field: the words have left
-    /// the draft, and the only question left about them is when they go.
+    /// A follow-up waiting on the Turn in flight, drawn above an empty field.
     static let queued = ComposerDraft(
         queued: [QueuedTurn(text: "And when that is green, open the PR against main.")],
     )

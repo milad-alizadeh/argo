@@ -22,14 +22,11 @@ public enum SessionStatus: Sendable, Equatable, CaseIterable {
 public extension SessionStatus {
     /// The Session's status, honesty-gated by posture and corroborated by liveness.
     ///
-    /// The tier is DERIVED for every posture, managed included. Argo may own the PTY, but it does
-    /// not own the link from that PTY to a transcript file — the match is a working directory plus
-    /// a time window, which is not a unique key. Grading this DIRECT off ownership alone would be
-    /// exactly the false DIRECT the degrade-down rule exists to prevent.
+    /// DERIVED for every posture, managed included: Argo owns the PTY but not the link from it to a
+    /// transcript file, which is a working directory plus a time window and not a unique key.
     ///
-    /// `permission` is unreachable here by construction: it belongs to the channels Argo owns —
-    /// the permission gate first, the companion's report behind it — and a transcript that cannot
-    /// carry it must not be read as though it had.
+    /// `permission` is unreachable here by construction — it belongs to the channels Argo owns (the
+    /// permission gate, then the companion's report).
     static func read(_ signals: SessionSignals) -> SessionStatusReading {
         SessionStatusReading(tier: .derived, status: status(signals))
     }
@@ -46,12 +43,8 @@ public extension SessionStatus {
         return signals.turnOpen || !signals.hasTurns ? .running : boundary(signals)
     }
 
-    /// A Session nothing corroborates as working.
-    ///
-    /// `ended` needs a process exit Argo WITNESSED, and the one it witnesses is its own PTY dying —
-    /// which is precisely the `orphaned` posture. Everything else falls back to what the record's
-    /// last boundary said: a Session Argo never owned may simply be sitting quiet, and calling that
-    /// a shutdown observes nothing.
+    /// A Session nothing corroborates as working. `ended` needs a process exit Argo WITNESSED,
+    /// which is exactly the `orphaned` posture; everything else falls back to the last boundary.
     private static func quiet(_ signals: SessionSignals) -> SessionStatus {
         signals.provenance == .orphaned ? .ended : boundary(signals)
     }

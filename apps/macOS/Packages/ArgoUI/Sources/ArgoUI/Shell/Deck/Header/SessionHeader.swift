@@ -4,34 +4,25 @@ import SwiftUI
 /// default, and the facts that say what it is working on and with — its branch and that branch's
 /// state, its CLI and model, and the issue it serves.
 ///
-/// It draws no ground and no rule of its own. The deck is one opaque plane and the header reads as
-/// one region with the tabs beneath it, which is why the approved study puts no separator between
-/// the two.
+/// It draws no ground and no rule of its own — the deck is one opaque plane, and the approved study
+/// puts no separator between the header and the tabs beneath it.
 ///
-/// The facts sit UNDER the title, not beside it, which is what the approved study draws
-/// (`docs/designs/prototypes/roster-header-prototype.html`, variant A). Beside it, the title and
-/// the facts compete for one line's width at every window size, and the title — the largest line
-/// in the cockpit and the thing the zone exists to say — is the one that loses. Stacked, the title
-/// gets the whole width and the facts get their own.
+/// The facts sit UNDER the title, not beside it
+/// (`docs/designs/prototypes/roster-header-prototype.html`, variant A).
 struct SessionHeader: View {
     @Environment(\.argo) private var argo
 
     /// Absent when nothing is selected. The zone still holds its height: the deck's rhythm is the
     /// plane's, not the Session's, and a header collapsing would move every zone under it.
     let header: SessionHeaderProjection.Header?
-    /// Hand this Session's work to a fresh one. A closure and not a whole action set, for the
-    /// reason `GitVessel` takes `refresh:` — the header raises one intent, and the sequence behind
-    /// it is `SessionHandoff`'s. Inert by default, which is what a specimen and a `#Preview` want:
-    /// the button is drawn and nothing is spawned.
-    ///
-    /// `async` because it is answered in minutes rather than instantly, and the control has to hold
-    /// itself for exactly as long as that takes.
+    /// Hand this Session's work to a fresh one; the sequence behind it is `SessionHandoff`'s. Inert
+    /// by default, so a specimen draws the button and spawns nothing. `async` because it is
+    /// answered in minutes and the control has to hold itself for that long.
     var handOff: () async -> Void = {}
 
     var body: some View {
-        // Centred rather than baseline-aligned, because only one half of this line is type: the
-        // instrument on the trailing edge is a reading over a bar, and a bar has no baseline to
-        // sit on. The identity beside it is two stacked lines, which has no one baseline either.
+        // Centred rather than baseline-aligned: the instrument on the trailing edge is a bar with
+        // no baseline, and the identity beside it is two stacked lines with no single one.
         HStack(alignment: .center, spacing: ArgoSpacing.comfortable) {
             identity
                 // Combined here and NOT over the whole header: combining over the instrument would
@@ -59,8 +50,7 @@ struct SessionHeader: View {
         .accessibilityElement(children: .contain)
     }
 
-    /// Tight on purpose: the title and the line under it are ONE identity, and a step of the
-    /// ordinary rhythm between them would read as two stacked regions.
+    /// Tight on purpose: the title and the line under it are ONE identity.
     private var identity: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
             if let header {
@@ -70,13 +60,8 @@ struct SessionHeader: View {
         }
     }
 
-    /// What the Session is waiting for, on the band's trailing side and level with the title —
-    /// where the approved render puts it (`docs/designs/composer/perm.png`), and outside the
-    /// identity element so a screen reader hears it as the separate claim it is rather than as a
-    /// second reading of the title's own line.
-    ///
-    /// The word takes the state's own ink, as the roster row's does: `Needs input` is a "come
-    /// here", and the amber is what makes it one from across the window.
+    /// What the Session is waiting for, level with the title (`docs/designs/composer/perm.png`),
+    /// and outside the identity element so a screen reader hears it as a separate claim.
     private func stateWord(_ state: SessionState.Reading) -> some View {
         Text(state.word)
             .argoText(ArgoTypography.rowMeta)
@@ -84,9 +69,8 @@ struct SessionHeader: View {
             .lineLimit(1)
     }
 
-    /// The largest interface line in the cockpit, and the one thing on the header that is allowed
-    /// to take the room it needs — cut at the tail, because a Session's title is written subject
-    /// first and the front of it is what tells two of them apart.
+    /// Cut at the TAIL: a Session's title is written subject first, so its front tells two of them
+    /// apart.
     private func title(_ header: SessionHeaderProjection.Header) -> some View {
         Text(header.title)
             .argoText(ArgoTypography.sessionTitle)
@@ -96,10 +80,8 @@ struct SessionHeader: View {
     }
 }
 
-/// Every posture in one gallery — the silent one included, which is why nothing selected is drawn
-/// under them: an empty zone and a zone with no mark on it are two different absences. The Session
-/// blocked on a Permission closes the set: its word is the only one the band ever spends, and a
-/// word that only reads as loud on its own is not the signal the render was approved for.
+/// Every posture in one gallery, with nothing-selected drawn under them: an empty zone and a zone
+/// with no mark on it are two different absences.
 private struct SessionHeaderGallery: View {
     let width: CGFloat
 
@@ -126,8 +108,7 @@ private struct SessionHeaderGallery: View {
     SessionHeaderGallery(width: 900)
 }
 
-// The width real titles are cut at: a mark that survives only in a wide window is a mark drawn
-// for fixtures.
+// The width real titles are cut at.
 #Preview("Session header — at the narrowest deck the window allows") {
     SessionHeaderGallery(width: ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth)
 }

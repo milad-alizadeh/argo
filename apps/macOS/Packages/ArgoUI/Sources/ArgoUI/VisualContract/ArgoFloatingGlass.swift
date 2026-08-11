@@ -3,15 +3,11 @@ import SwiftUI
 /// The material a surface takes when it floats over the deck because of a state the reader is in.
 ///
 /// D14's transient-surfaces clause, spelled once. A surface qualifies when it is present because
-/// the reader is in a state — a reading that has stopped following, a plan being pointed at — and
-/// absent otherwise; the furniture of the deck stays flat. One recipe rather than three call sites
-/// agreeing by hand: the clause admits a category, so whatever floats over the deck next takes
-/// this and no new decision is made in a view.
+/// the reader is in a state and absent otherwise; the furniture of the deck stays flat.
 ///
-/// Two settings take the material away, and the surface has to survive both. Reduce Transparency
-/// is the one D21 names; Increased Contrast lands here too, because a translucent ground refracting
-/// the reading behind it is a contrast problem however restrained the tint is. Neither changes the
-/// control's shape, hit area, semantics or keyboard behaviour — nothing here is load-bearing.
+/// Two settings take the material away and the surface has to survive both: Reduce Transparency
+/// (D21) and Increased Contrast. Neither changes the control's shape, hit area, semantics or
+/// keyboard behaviour.
 struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
     @Environment(\.argo) private var argo
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -19,10 +15,9 @@ struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
     @Environment(\.argoSuppressesTransparency) private var isSuppressed
 
     let vessel: Vessel
-    /// The state the surface is present BECAUSE of, when it is one worth wearing on the edge — the
-    /// amber a Permission vessel takes. A parameter and not a second modifier at the call site, so
-    /// the flat fallback swaps its neutral edge for this one instead of stacking two strokes on
-    /// one boundary.
+    /// The state the surface is present BECAUSE of, worn on the edge — the amber a Permission
+    /// vessel takes. A parameter rather than a second modifier, so the flat fallback swaps its
+    /// neutral edge for this one instead of stacking two strokes on one boundary.
     let rim: ArgoColor?
 
     func body(content: Content) -> some View {
@@ -53,12 +48,10 @@ struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
 }
 
 extension EnvironmentValues {
-    /// Reduce Transparency, forced on from inside the app.
-    ///
-    /// The system's own flag is read-only, so the fallback every glass surface has to prove would
-    /// otherwise be reachable only by changing System Settings on whichever machine took the
-    /// screenshot. This is what makes it a rendered state with a name. One direction only: nothing
-    /// here can force transparency BACK on over a reader who asked for none.
+    /// Reduce Transparency, forced on from inside the app: the system's own flag is read-only, so
+    /// the flat fallback would otherwise be renderable only by changing System Settings. One
+    /// direction only — nothing here can force transparency BACK on over a reader who asked for
+    /// none.
     @Entry var argoSuppressesTransparency: Bool = false
 }
 

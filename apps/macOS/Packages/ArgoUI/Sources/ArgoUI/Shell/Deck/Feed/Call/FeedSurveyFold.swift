@@ -1,10 +1,5 @@
-/// Where a run of looking starts and, more importantly, where it stops.
-///
-/// The break rule is the whole point. A fold that reached across a mutation would put "Edited a
-/// file, ran a command, read a file" behind one count and call it observation; breaking at every
-/// loud row makes that mush structurally impossible rather than merely discouraged, and it welds a
-/// run of reads to the paragraph directly beneath it — which is the evidence-then-conclusion
-/// reading the feed exists to give.
+/// Where a run of looking starts and, more importantly, where it stops. The run breaks at every
+/// loud row, so no fold ever reaches across a mutation.
 enum FeedSurveyFold {
     static func folded(_ contents: [FeedRow.Content]) -> [FeedRow.Content] {
         var rows: [FeedRow.Content] = []
@@ -21,8 +16,7 @@ enum FeedSurveyFold {
         return rows + surveyed(run)
     }
 
-    /// A run of one is not a fold. `Read 1` is the same line with the filename taken off it — it
-    /// loses the only address the row had and saves no room at all.
+    /// A run of one is not a fold: `Read 1` loses the only address the row had and saves no room.
     private static func surveyed(_ run: [FeedCall]) -> [FeedRow.Content] {
         run.count > 1 ? [.survey(FeedSurvey(calls: run))] : run.map(FeedRow.Content.call)
     }
@@ -30,18 +24,15 @@ enum FeedSurveyFold {
     /// A call that only looked, that the record did not answer with a failure, and that did not
     /// come back holding a picture.
     ///
-    /// A failed read is loud: it is the one thing in the run worth seeing, and a count saying three
-    /// reads happened would be the fold reporting that everything went fine.
+    /// A failed read is loud: a count saying three reads happened would report that everything
+    /// went fine.
     ///
-    /// A picture is loud for the opposite reason. `onlyLooks` is true for `.read`, so a `Read` of a
-    /// PNG is a read like any other to this rule and would disappear into `Read 6` — the one row
-    /// in the run whose whole content is the thing a count cannot say. Named here rather than left
-    /// to the pass order: the gallery fold runs after this one, so the precedence between the two
-    /// folds is stated in one place and asserted from both sides.
+    /// `onlyLooks` is true for `.read`, so a `Read` of a PNG would otherwise disappear into
+    /// `Read 6`. Named here rather than left to the pass order, since the gallery fold runs after
+    /// this one.
     ///
-    /// Broken on `carriesMedia` and not on the gallery's own `showsMedia`, which is the stricter
-    /// of the two: a call that came back with a picture AND a page of output belongs to neither
-    /// fold, and the wider rule here is what leaves it a row of its own instead of a count.
+    /// Broken on `carriesMedia` and not on the gallery's own `showsMedia`, which is the stricter of
+    /// the two: a call that came back with a picture AND a page of output belongs to neither fold.
     private static func quiet(_ content: FeedRow.Content) -> FeedCall? {
         guard case let .call(call) = content, call.onlyLooks, !call.ending.hasFailed,
               !call.carriesMedia

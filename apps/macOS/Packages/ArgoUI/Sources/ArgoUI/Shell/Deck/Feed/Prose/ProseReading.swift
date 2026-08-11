@@ -1,18 +1,13 @@
 import SwiftUI
 
-/// How a string of the record was read, kept so it is read once.
-///
-/// A body is not a place to parse. Both readings of a message — the inline marks and the blocks —
-/// used to run on every evaluation of the view that drew them, and a view body is evaluated far
-/// more often than its text changes: a seam under the reader's finger invalidates every visible row
-/// 60–120 times a second, and a prompt draws its prose three times over, the visible copy plus the
+/// How a string of the record was read, kept so it is read once. A view body is evaluated far more
+/// often than its text changes: a seam under the reader's finger invalidates every visible row
+/// 60–120 times a second, and a prompt draws its prose three times over — the visible copy plus the
 /// two rulers that decide its fold.
 ///
-/// Keyed by the text and nothing else, because the text is the whole of what a reading depends on.
-/// This is a cache in the strict sense — rebuildable from the string alone, bounded, and correct to
-/// drop at any moment — and it is deliberately NOT a field on `FeedRow`: how markdown is read is a
-/// fact about drawing the words, never about what the agent said, and the projection stays
-/// verbatim.
+/// Keyed by the text and nothing else. A cache in the strict sense — rebuildable from the string
+/// alone, bounded, correct to drop at any moment — and NOT a field on `FeedRow`, whose projection
+/// stays verbatim.
 @MainActor
 enum ProseReading {
     private static var marks = ProseCache<AttributedString>()

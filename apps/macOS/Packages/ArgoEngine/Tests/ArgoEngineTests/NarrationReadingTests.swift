@@ -1,9 +1,8 @@
 @testable import ArgoEngine
 import Testing
 
-/// The agent's own account of what a call was for. A Claude Code host requires one on every command
-/// it runs, and the claim under all of these is that Argo reads it as a fact of its OWN — beside
-/// the target rather than instead of it, verbatim, and absent wherever the host wrote nothing.
+/// The agent's own account of what a call was for, read as a fact of its OWN — beside the target
+/// rather than instead of it, verbatim, and absent wherever the host wrote nothing.
 @Suite("Narration reading")
 struct NarrationReadingTests {
     private func calls() async throws -> [String: ToolCall] {
@@ -18,9 +17,8 @@ struct NarrationReadingTests {
         #expect(try await calls()["call-described"]?.narration == "List open issues")
     }
 
-    /// The two must not compete for one slot: the row wants the sentence and the evidence panel
-    /// wants the command, and a reading that put the description in `target` would have taken the
-    /// command off the only surface that shows it.
+    /// The two must not compete for one slot: a description written into `target` would take the
+    /// command off the evidence panel.
     @Test
     func `the command survives the reading beside the sentence about it`() async throws {
         let described = try await calls()["call-described"]
@@ -28,8 +26,7 @@ struct NarrationReadingTests {
     }
 
     /// The shape a CLI that narrates nothing writes — Codex's shell call carries a command and no
-    /// description, ever. Absent rather than empty, so "the agent said nothing" and "the agent said
-    /// the empty thing" stay two different readings.
+    /// description, ever. Absent rather than empty: two different readings.
     @Test
     func `a host that wrote no description yields no narration`() async throws {
         #expect(try await calls()["call-bare"]?.narration == nil)
@@ -42,9 +39,7 @@ struct NarrationReadingTests {
         #expect(try await calls()["call-blank"]?.narration == nil)
     }
 
-    /// The rule is "prefer the agent's own account of what this call was for", which is not a fact
-    /// about `Bash`. Every tool whose input carries a description is read the same way — and the
-    /// delegating one is why it matters most: its other input is the whole brief.
+    /// The rule is not a fact about `Bash`.
     @Test
     func `every tool that carries a description is read the same way`() async throws {
         let calls = try await calls()
@@ -56,8 +51,8 @@ struct NarrationReadingTests {
             == "Read the host's description as a fact on the Tool Call")
     }
 
-    /// A delegation's brief is a paragraph and its description is a line. Neither is read as the
-    /// other: the narration is the line, and the paragraph is not something the reading lifts.
+    /// A delegation's brief is a paragraph and its description is a line; the narration is the
+    /// line.
     @Test
     func `a delegation's narration is the short description and never the brief`() async throws {
         let delegated = try await calls()["call-agent"]
@@ -66,8 +61,7 @@ struct NarrationReadingTests {
         #expect(delegated?.narration?.contains("Read every file under") == false)
     }
 
-    /// `Artifact` names a file AND says what it was for, which is the pair that proves the two are
-    /// read from different keys rather than from whichever one the table reached first.
+    /// `Artifact` names a file AND says what it was for: the two are read from different keys.
     @Test
     func `a call that names a file keeps the file as its target`() async throws {
         #expect(try await calls()["call-artifact"]?.target == "scratchpad/feed-report.html")

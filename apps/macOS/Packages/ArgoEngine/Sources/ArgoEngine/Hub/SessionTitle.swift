@@ -2,11 +2,9 @@ import Foundation
 
 /// What a roster row is called, and how firmly.
 ///
-/// The word alone cannot answer "may this be replaced", and every rule about a Session's name is a
-/// rule about exactly that: an explicit title is final, the first real prompt is nearly so, a bare
-/// `/clear` stands in until something better arrives, and a filename is what is left when nothing
-/// has spoken. Holding the word beside its standing keeps those four cases in one place rather than
-/// as flags read in pairs wherever a title is set.
+/// The word alone cannot answer "may this be replaced": an explicit title is final, the first real
+/// prompt is nearly so, a bare `/clear` stands in until something better arrives, and a filename is
+/// what is left when nothing has spoken.
 struct SessionTitle: Equatable, Sendable {
     /// How much of a claim the current name has. Ordered: a name is only ever overwritten by one
     /// that outranks what would replace it.

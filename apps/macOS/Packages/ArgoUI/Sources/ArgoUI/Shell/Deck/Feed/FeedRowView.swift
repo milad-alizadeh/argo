@@ -46,7 +46,7 @@ struct FeedRowView: View {
 
     /// Open the panel at what one of a folded run's calls produced. A call the record answered with
     /// nothing has no step to go to and the press does nothing — the control is disabled anyway,
-    /// and this is the same fact answered in the one place that can be wrong.
+    /// and this guard is the same fact answered where it cannot be wrong.
     private func look(at call: Int, in survey: FeedSurvey) {
         guard let step = survey.step(of: call) else { return }
         selection.openEvidence(of: row.id, at: step)
@@ -56,13 +56,12 @@ struct FeedRowView: View {
 extension FeedRow {
     /// What Return or Space does to this row, which is exactly what a click on it does.
     ///
-    /// A gallery opens the FIRST picture there is anything behind. Its shots are each a control of
-    /// their own, so a reader who wants the fourth reaches it the same way they reach any button;
-    /// what the row-level key gets them is the common case in one press.
+    /// A gallery opens the FIRST picture there is anything behind; its shots are each a control of
+    /// their own.
     ///
     /// A row with nothing to open answers `false` rather than swallowing the key — prose, a
     /// gallery of absences, and a call the record never answered alike. Taking the key on an inert
-    /// row spends it on nothing AND takes it away from the feed, which is where scrolling lives.
+    /// row takes it away from the feed, which is where scrolling lives.
     @discardableResult
     func activate(selection: FeedRowSelection, isExpanded: Binding<Bool>) -> Bool {
         switch content {
@@ -77,16 +76,13 @@ extension FeedRow {
         case .prompt, .unreadable:
             isExpanded.wrappedValue.toggle()
             return true
-        // A question and a mark open nothing — one is somebody being waited on, the other is the
-        // shape of the record — so the key falls through to the feed, where scrolling lives.
+        // A question and a mark open nothing, so the key falls through to the feed.
         case .message, .thought, .ask, .mark:
             return false
         }
     }
 
-    /// A second press on the open row closes it. The row is the control, so it is also the way
-    /// back out — a panel whose only exit is its own ✕ makes the reader aim at the far side of the
-    /// deck to undo an action they took on this one.
+    /// A second press on the open row closes it: the row is the control, so it is also the way out.
     ///
     /// A row with nothing behind it opens nothing at all, rather than marking itself as the open
     /// row over a panel that has nothing to show.

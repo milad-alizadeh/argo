@@ -3,10 +3,8 @@ import Foundation
 /// A read's output, read as the numbered listing of a file.
 ///
 /// What comes back from a read is the file with the host's own line numbers written into the text
-/// (`     12→import Foundation`). Drawn as a stream, that is a page of source with a column of
-/// digits glued to the front: the numbers cannot be lined up, nothing can be coloured without
-/// colouring them too, and the reader gets the one thing in the panel that does not look like the
-/// file it is.
+/// (`     12→import Foundation`). Drawn as a stream those digits cannot be lined up, and nothing
+/// can be coloured without colouring them too.
 ///
 /// So the gutter is taken off — and taken off ONLY when every line has one and the numbers run
 /// consecutively. That pair of conditions is what keeps this a reading rather than a guess: output

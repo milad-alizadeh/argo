@@ -1,26 +1,19 @@
 import ArgoEngine
 
 /// One picture in the preview transcript, before it is written out as the pair of events a CLI
-/// actually emits. At file scope rather than nested inside the extension below, because three
-/// levels of type is one more than the house allows.
+/// actually emits. At file scope because three levels of type is one more than the house allows.
 private struct PreviewShot {
     let id: String
     let path: String
     let tier: Tier
-    /// Base64, wrapped across source lines. `nil` for the call the record answered without any —
-    /// the honest absence the gallery has to draw, and the one shot that opens nothing.
+    /// Base64, wrapped across source lines. `nil` for the call the record answered without any.
     let bytes: String?
 }
 
 extension CockpitPresentation.Session {
     /// What a turn that rendered something produced: four pictures back to back, and one call the
-    /// record answered with no bytes at all.
-    ///
-    /// Every provenance the cockpit can tell apart is in here, because they are told apart by how
-    /// they are DRAWN and there is no other way to look at that: two captures the agent made, a
-    /// re-read of a path that says so, an artifact the plugin rendered rather than captured, and
-    /// the absence. A fixture of four identical screenshots would render a gallery that proves
-    /// only that thumbnails appear.
+    /// record answered with no bytes at all. Every provenance the cockpit can tell apart is in
+    /// here, because they are told apart by how they are DRAWN.
     static let shotsTaken: [TranscriptEvent] = [
         PreviewShot(
             id: "shot-rest", path: "docs/designs/renders/feed-at-rest.png",
@@ -64,8 +57,8 @@ extension CockpitPresentation.Session {
     }
 
     /// A transcript writes base64 as one unbroken run; source cannot hold a 1000-character line.
-    /// The wrapping is this file's, so it is taken back off here rather than by loosening what the
-    /// decoder accepts — production bytes have no newlines in them and nothing should tolerate any.
+    /// The wrapping is this file's, so it comes off here rather than in the decoder: production
+    /// bytes have no newlines and nothing should tolerate any.
     private static func unwrapped(_ wrapped: String) -> String {
         wrapped.replacingOccurrences(of: "\n", with: "")
     }
@@ -86,8 +79,7 @@ extension CockpitPresentation.Session {
     JYABFsAASwADLAEMsASwBDDAEsAASwADLIABlgAGWAIYYAlggAUwwNLnah+Lc2HXnYThAAAAAElFTkSuQmCC
     """
 
-    /// The same shell a moment later, one row selected — two captures of the same surface, which
-    /// is what a gallery is actually FOR.
+    /// The same shell a moment later, one row selected — two captures of the same surface.
     private static let selectionCapture = """
     iVBORw0KGgoAAAANSUhEUgAAAUAAAADICAIAAAAWZq/8AAACzElEQVR42u3csQmAMBRF0UwiFoqIKNhYOp6d
     nZ3DaqlgK2KSA3eChNN9XhjGSVKkBU8gASwJYEkASwBLAlgSwJIAlgCWBLAkgCWAJQEsCWBJAEsASwJYEsCS
@@ -104,8 +96,7 @@ extension CockpitPresentation.Session {
     2Oh4vwkAAAAASUVORK5CYII=
     """
 
-    /// Not a screenshot: an artifact the companion plugin drew and reported. A gallery that showed
-    /// it like a capture would be claiming somebody looked at a screen that never existed.
+    /// Not a screenshot: an artifact the companion plugin drew and reported.
     private static let renderedChart = """
     iVBORw0KGgoAAAANSUhEUgAAASwAAAC0CAIAAAChXYa4AAAC0UlEQVR42u3TwQ2AIBBFQXry4gkKtU1DuEEL
     miDBzSSvgv076TjL3O7aJD0vQShBKEEIoQShBCGEEoQShBBKEEoQQihBKEEIoQShBCGEEoQShBBKEEoQQihB
@@ -122,8 +113,8 @@ extension CockpitPresentation.Session {
     4wAAAABJRU5ErkJggg==
     """
 
-    /// A re-read of a path that has already moved on. Its own picture, deliberately unlike the two
-    /// captures: the reader has to be able to see at a glance that it is not one of them.
+    /// A re-read of a path that has already moved on. Its own picture, visibly unlike the two
+    /// captures.
     private static let diskPlate = """
     iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAIAAACxN37FAAACKElEQVR42u3csQkAIAxFwayh4EpWVu4/SMBa
     xE6Qg5sgefWPUht8I5wAQYOgQdAgaAQNggZBg6BB0AgaBA2CBkGDoBE0CBoEDYIGQSNoEDQIGgQNgkbQIGgQ

@@ -1,19 +1,14 @@
 import SwiftUI
 
 /// The plan, as one line floating above the dock: where the agent says it is, and how far along.
-///
-/// It is not in the feed on purpose (#425). A to-do list interleaved with the work is noise — the
-/// agent replaces the list whole every time it moves, so a feed that drew each one would carry
-/// four near-identical copies of it between what the agent actually said. Standing state gets a
-/// standing surface, and this is it.
+/// Standing state on a standing surface, not in the feed (#425) — the agent replaces the list
+/// whole every time it moves.
 struct PlanPill: View {
     @Environment(\.argo) private var argo
 
     let plan: PlanReading
-    /// Whether the list is showing before anything is pointed at or focused.
-    ///
-    /// A specimen's seam. Hover cannot be reached from a screenshot, and the revealed list is
-    /// half of what this surface IS — without a way in, it is a state nobody ever looks at.
+    /// Whether the list is showing before anything is pointed at or focused — a specimen's seam,
+    /// since hover cannot be reached from a screenshot.
     var isRevealed = false
 
     @State private var isPointedAt = false
@@ -30,8 +25,8 @@ struct PlanPill: View {
     }
 
     /// The list, standing on the pill's own top edge — the gap between them is padding INSIDE this
-    /// view rather than space outside it, so the two hover regions meet. Pointed at across a gap
-    /// that belonged to neither, the list closed itself the moment the reader reached for it.
+    /// view rather than space outside it, so the two hover regions meet. Across a gap belonging to
+    /// neither, the list closed itself the moment the reader reached for it.
     private var list: some View {
         PlanStepList(plan: plan)
             .padding(.bottom, ArgoPlanPill.listGap)
@@ -44,10 +39,8 @@ struct PlanPill: View {
             .accessibilityHidden(!showsList)
     }
 
-    /// Revealed by any way in. Hover is the one a pointer finds and focus the one a keyboard does
-    /// — the pill is focusable for exactly that reason, since a surface reachable only by hovering
-    /// is one half the readers never open. The list keeps ITSELF open once it is: a reader who
-    /// moves onto what they opened has not stopped reading it.
+    /// Revealed by any way in — hover for a pointer, focus for a keyboard, and the list keeps
+    /// itself open once it is.
     private var showsList: Bool {
         isRevealed || isPointedAt || isPointedAtList || isFocused
     }
@@ -75,13 +68,10 @@ struct PlanPill: View {
     }
 
     /// Where the agent is in the list — or, when the list names no step in progress, how much of
-    /// it is behind it. Never a position for a step that was not marked: the first pending entry
-    /// is what the agent will do next, and reading it out as the current one would be the pill
-    /// inventing the one fact it exists to report.
+    /// it is behind it. Never a position for a step that was not marked.
     ///
     /// Both readings come out together — what it says now, and the longest it can say it for this
-    /// plan. Two properties deriving them apart would be one shape decided in two places, and the
-    /// pair is the whole reason the pill can hold still.
+    /// plan — because the pair is what lets the pill hold still.
     private var counter: PlanCounter.Reading {
         guard let position = plan.position else {
             return PlanCounter.Reading(
@@ -99,7 +89,7 @@ struct PlanPill: View {
         plan.current?.text ?? "No step in progress"
     }
 
-    /// The absence is set in the quiet ink, because it is a statement about the record rather than
+    /// The absence is set in the quiet ink: it is a statement about the record rather than
     /// something the agent said.
     private var currentStepInk: ArgoColor {
         plan.current == nil ? argo.color.text.tertiary : argo.color.text.primary
@@ -112,11 +102,10 @@ struct PlanPill: View {
 
 /// How far along the plan is, in words, holding still while it changes.
 ///
-/// The one string in the pill that moves while the reader watches it, so it is the one that decides
-/// whether the sentence beside it moves too. Two things keep it still, and neither is enough alone:
-/// the machine face, which makes every digit the same width, and a lane sized to the longest the
-/// counter can get for THIS plan, which absorbs `9/12` becoming `10/12`. Leading-aligned in that
-/// lane, because a number that slid right as it grew would be the shift moved rather than removed.
+/// Two things keep it still, and neither is enough alone: the machine face, which makes every digit
+/// the same width, and a lane sized to the longest the counter can get for THIS plan, which absorbs
+/// `9/12` becoming `10/12`. Leading-aligned in that lane, so a number does not slide right as it
+/// grows.
 private struct PlanCounter: View {
     /// What it says now, and the longest it can say it before the plan itself changes.
     struct Reading {
@@ -144,12 +133,8 @@ private struct PlanCounter: View {
     }
 }
 
-/// How far the plan has got, as an arc.
-///
-/// A ring rather than a second number: the pill already carries the count in words, and this is
-/// the reading you take without reading. It is drawn from what is COMPLETED, so it stays honest on
-/// a plan that marks no current step — a finished list is full and an untouched one is empty,
-/// neither of which needs a step in progress to say.
+/// How far the plan has got, as an arc. Drawn from what is COMPLETED, so it stays honest on a plan
+/// that marks no current step.
 private struct PlanRing: View {
     @Environment(\.argo) private var argo
 

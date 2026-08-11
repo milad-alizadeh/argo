@@ -1,14 +1,11 @@
 /// The order the sidebar PUBLISHES, which is the activity order held still while somebody is
 /// reading it.
 ///
-/// The Hub's ordering stays what it is — newest activity first, the honest "what moved last"
-/// signal — and this holds a snapshot of it rather than re-sorting: "is the reader looking at
-/// this" is a UI fact the engine has no business knowing, and a second sort here would be a
-/// second opinion about what newest means.
+/// The Hub's ordering stays what it is — newest activity first — and this holds a snapshot of it
+/// rather than re-sorting.
 ///
 /// Holding is not stopping. A held order still admits Sessions that arrive and drops the ones
-/// that end; what it refuses is a SWAP — two rows trading places under a pointer that is already
-/// on one of them.
+/// that end; what it refuses is a SWAP — two rows trading places under the pointer.
 struct RosterOrder: Equatable, Sendable {
     /// The ids in the order that was on screen when the reader arrived. `nil` while nothing holds
     /// it, which is when the activity order simply IS the published one.
@@ -18,9 +15,8 @@ struct RosterOrder: Equatable, Sendable {
         held != nil
     }
 
-    /// Takes the freeze at the order on screen now. Idempotent on purpose: engagement is reported
-    /// by more than one signal, and a second arrival must not re-snapshot an order the first is
-    /// already holding still — that would let one reshuffle through per signal.
+    /// Takes the freeze at the order on screen now. Idempotent: engagement is reported by more than
+    /// one signal, and re-snapshotting would let one reshuffle through per signal.
     mutating func hold(_ ids: [String]) {
         guard held == nil else { return }
         held = ids
@@ -30,11 +26,8 @@ struct RosterOrder: Equatable, Sendable {
         held = nil
     }
 
-    /// Records the membership a held order has already absorbed.
-    ///
-    /// Without this a newly admitted row is re-placed from scratch on every publish, and its
-    /// place is derived from an activity order that keeps moving — so the one row the freeze let
-    /// in would be the one row that drifts. Nothing to record when unheld.
+    /// Records the membership a held order has already absorbed. Without this a newly admitted row
+    /// is re-placed from scratch on every publish, against an activity order that keeps moving.
     mutating func admit(_ ids: [String]) {
         guard held != nil else { return }
         held = merged(ids)
@@ -52,9 +45,7 @@ struct RosterOrder: Equatable, Sendable {
     }
 
     /// The held order minus what has gone, plus what has arrived — each new id at the place the
-    /// activity order puts it, never appended at the end. A Session that starts while the order is
-    /// held is the newest thing there is, and a roster that showed it last would be answering a
-    /// different question from the one the sort key asks.
+    /// activity order puts it, never appended at the end.
     private func merged(_ ids: [String]) -> [String] {
         guard let held else { return ids }
         let present = Set(ids)

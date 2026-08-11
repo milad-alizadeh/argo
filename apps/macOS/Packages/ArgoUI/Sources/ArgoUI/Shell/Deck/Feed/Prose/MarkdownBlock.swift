@@ -1,14 +1,8 @@
 import Foundation
 
-/// One block of the markdown a CLI writes.
-///
-/// The feed used to read only the INLINE marks, which meant a turn's structure arrived as
-/// punctuation: `## What I found` and `- three of them` sat on the screen as those characters, at
-/// paragraph size, and a long answer read as one flat slab whatever shape the agent gave it.
-///
-/// Nothing here rewrites the words. A block is the same characters with the marker taken off and a
-/// role attached, and a line this does not recognise is a paragraph — which is what markdown says
-/// it is.
+/// One block of the markdown a CLI writes. Nothing here rewrites the words: a block is the same
+/// characters with the marker taken off and a role attached, and a line this does not recognise is
+/// a paragraph.
 enum MarkdownBlock: Equatable {
     /// `#` through `######`. The level is kept rather than flattened: it is the agent's own
     /// outline.
@@ -35,9 +29,7 @@ enum MarkdownBlock: Equatable {
     }
 }
 
-/// The line-by-line read. A type rather than one long function because the state IS the parse — a
-/// fence that is open, a paragraph that has not ended yet — and threading three `inout`s through
-/// helpers hides that.
+/// The line-by-line read. The state IS the parse: a fence that is open, a paragraph not yet ended.
 private struct MarkdownScan {
     private var blocks: [MarkdownBlock] = []
     private var paragraph: [String] = []
@@ -60,8 +52,7 @@ private struct MarkdownScan {
         }
     }
 
-    /// An unterminated fence still closes here. The agent's turn ended mid-block — the text is
-    /// theirs either way, and dropping it because no third backtick arrived would lose it.
+    /// An unterminated fence still closes here — a turn that ended mid-block keeps its text.
     mutating func finished() -> [MarkdownBlock] {
         closeParagraph()
         closeFence()

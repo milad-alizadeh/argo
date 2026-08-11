@@ -1,11 +1,8 @@
 import ArgoEngine
 import SwiftUI
 
-/// The whole plan, revealed over the pill.
-///
-/// Every step, in the agent's own order, each marked with where it has got to. It is the second
-/// half of one surface rather than a panel of its own: the pill answers "where is it", and this
-/// answers the only follow-up worth a gesture — "out of what".
+/// The whole plan, revealed over the pill: every step in the agent's own order, each marked with
+/// where it has got to.
 struct PlanStepList: View {
     @Environment(\.argo) private var argo
 
@@ -45,8 +42,7 @@ private struct PlanStepLine: View {
             Text(step.text)
                 .argoText(ArgoTypography.body)
                 .foregroundStyle(ink)
-                // The EDGE ink, so the rule reads as a mark over the words rather than as a
-                // second, louder line of them.
+                // The EDGE ink, so the rule reads as a mark over the words and not a second line.
                 .strikethrough(step.status == .completed, color: argo.color.edge.strong.color)
                 .lineLimit(ArgoPlanPill.stepLines)
                 .fixedSize(horizontal: false, vertical: true)
@@ -57,8 +53,8 @@ private struct PlanStepLine: View {
         .accessibilityLabel("\(step.text), \(reading.spoken)")
     }
 
-    /// The three-state table, in ONE place. What the status looks like and what it is called are
-    /// the same fact twice, and two switches over one enum drift apart a case at a time.
+    /// The three-state table, in ONE place: two switches over one enum drift apart a case at a
+    /// time.
     private var reading: (mark: String, spoken: String) {
         switch step.status {
         case .pending: (ArgoSymbol.stepPending, "pending")
@@ -67,8 +63,7 @@ private struct PlanStepLine: View {
         }
     }
 
-    /// Only the step under way is tinted. A tick per finished step in the state ink would put four
-    /// greens on a list whose one interesting line is the fifth.
+    /// Only the step under way is tinted.
     private var markInk: ArgoColor {
         step.status == .inProgress ? argo.color.state.running : argo.color.text.tertiary
     }

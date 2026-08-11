@@ -1,14 +1,10 @@
 import Foundation
 
-/// Argo's own table of model ids to the names people use for them.
+/// Argo's own table of model ids to the names people use for them. Staleable by construction: the
+/// ids belong to the providers, so the lookup's fallback is the id VERBATIM rather than a family
+/// guessed off its prefix.
 ///
-/// Owned state, and staleable by construction: the ids belong to the providers, and a model
-/// shipped after this table was written is not in it. That is why the lookup's fallback is the id
-/// VERBATIM rather than a family guessed off its prefix — a wrong name is a fact Argo asserted,
-/// and an ugly one is a fact it read.
-///
-/// A pure data catalog, which is the one file shape `code-style.md` exempts from the line ceiling
-/// — every entry is one row and there is nothing here to factor.
+/// A pure data catalog, the one file shape `code-style.md` exempts from the line ceiling.
 enum ReadableModelName {
     /// Provider ids, exactly as a transcript spells them, without any date suffix — see
     /// `undated(_:)`, which strips one before the second lookup.
@@ -34,21 +30,16 @@ enum ReadableModelName {
         "claude-3-haiku": "Haiku 3",
     ]
 
-    /// An id the table knows, said the way a person says it; an id it does not, VERBATIM.
-    ///
-    /// Ugly-but-true beats invisible and beats the nearest guess: a model released this morning
-    /// renders as its own id rather than as the closest name Argo happens to hold, or as nothing
-    /// at all. The date suffix a provider pins a snapshot with is dropped before the lookup, so a
-    /// dated id of a model the table DOES know still reads as that model.
+    /// An id the table knows, said the way a person says it; an id it does not, VERBATIM. The date
+    /// suffix a provider pins a snapshot with is dropped before the second lookup, so a dated id of
+    /// a model the table DOES know still reads as that model.
     static func readable(_ id: String) -> String {
         table[id] ?? table[undated(id)] ?? id
     }
 
     /// The id with a provider's pinned-snapshot date taken off the end: `claude-opus-4-1-20250805`
-    /// is the same model as `claude-opus-4-1`, and a table that had to carry every snapshot of
-    /// every model would be stale the day after each one ships.
-    ///
-    /// Exactly eight digits at the end, after a hyphen — anything else is part of the name.
+    /// is the same model as `claude-opus-4-1`. Exactly eight digits at the end, after a hyphen —
+    /// anything else is part of the name.
     static func undated(_ id: String) -> String {
         guard let separator = id.lastIndex(of: "-") else { return id }
         let tail = id[id.index(after: separator)...]

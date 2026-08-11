@@ -1,9 +1,7 @@
-/// What the world OUTSIDE the transcript says about the CLI behind a Session.
-///
-/// Two signals, neither of them a key. A `claude` matched on a working directory could be a second
-/// agent in the same repo, and a transcript's last write goes stale while an agent thinks — which
-/// is why every status read through this one is DERIVED, and why the two have to agree before
-/// anything is called live.
+/// What the world OUTSIDE the transcript says about the CLI behind a Session. Two signals, neither
+/// of them a key: a `claude` matched on a working directory could be a second agent in the same
+/// repo, and a transcript's last write goes stale while an agent thinks. Every status read through
+/// this one is DERIVED, and both have to agree before anything is called live.
 public enum SessionLiveness: Sendable, Equatable {
     /// A process matched, and the record corroborates it with a recent write.
     case live
@@ -20,9 +18,8 @@ public extension SessionLiveness {
     /// Both signals, or quiet. A match with no recent write is the long-think case read down; a
     /// recent write with no process is a Session whose CLI has since gone.
     ///
-    /// `nowMs` is the moment the process table was read, and is absent until one has been: a match
-    /// against a clock nobody has looked at is not a match, and defaulting that clock to the epoch
-    /// would make every window arithmetic below it pass.
+    /// `nowMs` is the moment the process table was read, and is absent until one has been —
+    /// defaulting it to the epoch would make every window comparison below pass.
     static func read(processMatch: Bool, lastActivityAtMs: Int?, nowMs: Int?) -> SessionLiveness {
         guard processMatch, let nowMs, let lastActivityAtMs else { return .quiet }
         return nowMs - lastActivityAtMs <= recentActivityWindowMs ? .live : .quiet

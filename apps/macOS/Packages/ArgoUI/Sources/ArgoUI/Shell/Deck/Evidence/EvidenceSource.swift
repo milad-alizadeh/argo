@@ -4,9 +4,7 @@ import SwiftUI
 /// under its own grammar.
 ///
 /// The same anatomy a patch's hunk has, minus the wash — nothing here changed, so nothing takes a
-/// side's ink. That shared shape is the point: a read and an edit of one file are the same document
-/// looked at two ways, and until now one of them arrived coloured and the other as a wall of grey
-/// mono with a column of digits stuck to the front.
+/// side's ink.
 ///
 /// The colours are decoration over a record. They arrive after the characters and may never arrive
 /// at all; both cases draw the line plain, which is what an unrecognised file honestly gets.

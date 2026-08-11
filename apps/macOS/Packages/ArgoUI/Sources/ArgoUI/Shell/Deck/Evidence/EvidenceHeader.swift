@@ -4,16 +4,14 @@ import SwiftUI
 /// What the panel is open ON: a mark for the kind of thing that happened, the verb the row said,
 /// what it counted where it counted, and how it went.
 ///
-/// No address. The panel shows one result or eight, from one file or four, and a path up here is a
-/// claim about all of them that is true of at most one — every address is drawn in the body, over
-/// the result it actually belongs to (`EvidenceStepHeader`). What is left is exactly what the ROW
-/// said, which is what a reader clicked, plus the two controls that act on the pane as a whole.
+/// No address: the panel shows one result or eight, from one file or four, so a path up here is a
+/// claim true of at most one. Addresses are drawn in the body (`EvidenceStepHeader`).
 struct EvidenceHeader: View {
     @Environment(\.argo) private var argo
 
     let evidence: FeedEvidence
-    /// How the panel is reading its patches, where there are two ways to read them. Bound rather
-    /// than owned: the control lives up here and what it changes is drawn below the separator.
+    /// How the panel is reading its patches. Bound rather than owned: the control lives up here
+    /// and what it changes is drawn below the separator.
     @Binding var reading: EvidenceReading
     let dismiss: () -> Void
 
@@ -52,9 +50,8 @@ struct EvidenceHeader: View {
         }
     }
 
-    /// How it went, in a word, and only where there is anything to say. Success is silent here for
-    /// the same reason it is silent on the row: the panel below is the outcome, at length, and
-    /// `succeeded` over a stream of output the reader is already looking at says nothing twice.
+    /// How it went, in a word, and only where there is anything to say — success is silent, as on
+    /// the row.
     @ViewBuilder private var outcome: some View {
         if let spoken = evidence.ending.spoken {
             Text(spoken)
@@ -67,9 +64,8 @@ struct EvidenceHeader: View {
         }
     }
 
-    /// The one control, and only for the one language that has two readings. It carries the mark of
-    /// where it GOES rather than of where it is — a toggle showing its own state is a control the
-    /// reader has to press to find out what it does.
+    /// The one control, and only for the one language that has two readings. It carries the mark
+    /// of where it GOES rather than of where it is.
     @ViewBuilder private var readingToggle: some View {
         if evidence.offersProse {
             Button { reading = reading == .prose ? .source : .prose } label: {

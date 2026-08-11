@@ -3,8 +3,7 @@ import Foundation
 struct HubTranscript {
     let id: String
     /// The file, held here rather than read back off the Session: a Session Argo spawned has no
-    /// transcript yet, so its own answer is absent — and a transcript in the working set always
-    /// has one.
+    /// transcript yet, so its own answer is absent.
     let sourceURL: URL
     var session: HubSession
     /// Whether the tail has delivered what the file already held. Until it has, this transcript is
@@ -59,22 +58,17 @@ enum HubSessionChain {
         // queued prompt, so a Session queued several leaves several files, each holding one copy of
         // the same words and no agent output — which the roster drew as that Session once per file.
         //
-        // Both halves are load-bearing. Queued alone is an ordinary Session whose prompt arrived
-        // through the queue; unanswered alone is a Session that has only just started, and
-        // hiding those would be the roster missing live work. Only the pair is a file nothing will
-        // ever write to again.
+        // Both halves are load-bearing: queued alone is an ordinary Session whose prompt arrived
+        // through the queue, unanswered alone is one that has only just started. Only the pair is a
+        // file nothing will ever write to again.
         //
         // Dropped at publication rather than at discovery: the file is still tailed, so if an agent
         // does pick the prompt up, its row appears without another sweep having to find it.
         return ordered(sessions.filter { !$0.isQueued || $0.hasAgentActivity })
     }
 
-    /// Newest activity first, with the id breaking a tie.
-    ///
-    /// A sort key rather than the order the tails happened to start in: the working set is
-    /// swept again on every burst of writes, and a row that moved because one file was opened
-    /// a moment sooner is a reshuffle the reader has to re-read. A Session that can say nothing
-    /// about when it ran sorts behind every one that can, never in front on a guessed zero.
+    /// Newest activity first, with the id breaking a tie. A Session that can say nothing about when
+    /// it ran sorts behind every one that can, never in front on a guessed zero.
     static func ordered(_ sessions: [HubSession]) -> [HubSession] {
         sessions.sorted { first, second in
             guard first.lastSeenAtMs != second.lastSeenAtMs else { return first.id < second.id }

@@ -3,15 +3,11 @@ import SwiftUI
 /// The glass vessel the user speaks to a Session through — the field, what is waiting above it,
 /// the footer, and the seam that carries a refusal or says the draft was kept.
 ///
-/// It floats over the feed rather than sitting in an attached seam: the deck's bottom edge belongs
-/// to the reading, and the vessel is a state the reader is in — there is something to say — which
-/// is exactly what `ArgoFloatingGlass` spells. Acceptance is the echo, not a toast: the field
-/// clears and the words come back as the user's own row in the feed, so success draws nothing here
-/// at all.
+/// Acceptance is the echo, not a toast: the field clears and the words come back as the user's own
+/// row in the feed, so success draws nothing here at all.
 ///
-/// The draft is a BINDING and not state of its own, because a composer is a place to think and
-/// thinking survives being interrupted: what the user typed lives in `ComposerDrafts`, keyed by
-/// Session, so leaving and coming back finds it where it was.
+/// The draft is a BINDING and not state of its own: what the user typed lives in `ComposerDrafts`,
+/// keyed by Session, so leaving and coming back finds it where it was.
 struct SessionComposer: View {
     let composer: SessionComposerProjection.Composer
     /// One Turn to the Session, or a thrown `SessionDriveError` the seam repeats. A closure and
@@ -49,14 +45,10 @@ struct SessionComposer: View {
         .onChange(of: composer.sessionID, initial: true) { _, _ in
             enteredAtMs = WallClock.nowMs()
         }
-        // The Turn the queue was waiting on has ended, so what was held goes — in the order it was
-        // typed. Keyed on the fact rather than on a timer, because the only thing that releases a
-        // follow-up is the Session becoming free.
-        //
-        // `initial` is what makes it survive a switch: the composer is only on screen for the
-        // SELECTED Session, so a Turn that ends while the reader is looking somewhere else changes
-        // nothing here. Flushing on arrival as well means coming back delivers what was waiting,
-        // rather than leaving it queued against a Session that has been idle for an hour.
+        // The Turn the queue was waiting on has ended, so what was held goes, in the order it was
+        // typed. `initial` is what makes it survive a switch: the composer is only on screen for
+        // the SELECTED Session, so a Turn that ends while the reader is looking elsewhere changes
+        // nothing here, and flushing on arrival delivers what was waiting.
         .onChange(of: composer.isRunning, initial: true) { _, isRunning in
             guard !isRunning else { return }
             draft.flush(via: send)
@@ -101,9 +93,8 @@ struct SessionComposer: View {
         }
     }
 
-    /// A refusal outranks a kept draft: one is a thing that went wrong and the other is a thing
-    /// that went right, and the seam is one line. The kept note holds only until the user types —
-    /// their own edit stamps later than the moment they arrived, which is what takes it away.
+    /// A refusal outranks a kept draft — the seam is one line. The kept note holds only until the
+    /// user types: their own edit stamps later than the moment they arrived.
     private var seamNote: ComposerSeamNote? {
         if let refusal = draft.refusal {
             return .refusal(refusal)
@@ -167,8 +158,7 @@ struct SessionComposer: View {
         .argoAppearance()
 }
 
-/// The frame every composer preview draws in. One place, because what each of them is about is the
-/// vessel's state — and five copies of the same padding is five chances for one to drift.
+/// The frame every composer preview draws in.
 private struct ComposerPreview: View {
     let composer: SessionComposerProjection.Composer
     @Binding var draft: ComposerDraft

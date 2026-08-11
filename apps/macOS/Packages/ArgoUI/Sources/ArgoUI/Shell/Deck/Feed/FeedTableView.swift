@@ -1,18 +1,15 @@
 import AppKit
 import SwiftUI
 
-/// The feed's table — `NSTableView` plus the keyboard verbs the reading answers to.
-///
-/// Closures rather than a delegate, because the coordinator is already both of the delegates a
-/// table has and these are not table questions: which row the keyboard is on is a fact about the
-/// READING, held where the rows are.
+/// The feed's table — `NSTableView` plus the keyboard verbs the reading answers to. Closures
+/// rather than a delegate: the coordinator is already both of the delegates a table has.
 final class FeedTableView: NSTableView {
     /// One row up or down. Consumes the arrows whether or not a row is focused yet — the move
     /// itself scrolls the landing row into view, so the keys still move the reading.
     var stepFocus: ((Int) -> Void)?
-    /// Return and Space, both — what a focused control answers to on this platform, and a reader
-    /// should not have to learn which one this surface chose. Answers whether the row took it;
-    /// a key an inert row refused falls through to the table's own handling.
+    /// Return and Space, both — what a focused control answers to on this platform. Answers
+    /// whether the row took it; a key an inert row refused falls through to the table's own
+    /// handling.
     var activateFocused: (() -> Bool)?
     /// A key the table's own handling scrolled by — Space paging, Home, End. Reported so the
     /// follow latch reads the landing; a paged scroll is the reader's as much as a wheel's.

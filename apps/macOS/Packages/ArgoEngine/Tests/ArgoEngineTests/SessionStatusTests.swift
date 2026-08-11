@@ -2,8 +2,8 @@
 import Foundation
 import Testing
 
-/// One quiet external Session, varied one signal at a time — which is the point of the derivation
-/// taking a value: every case below differs from the default in exactly the fact it is about.
+/// One quiet external Session, varied one signal at a time: every case below differs from the
+/// default in exactly the fact it is about.
 private func signals(
     provenance: SessionProvenance = .external,
     liveness: SessionLiveness = .live,
@@ -152,8 +152,8 @@ struct SessionStatusHonestyTests {
         #expect(tiers.allSatisfy { $0 == .derived })
     }
 
-    /// Every combination of signals a posture can be observed in — the sweep that says a claim
-    /// about what it "never" reaches is about the whole space rather than the cases remembered.
+    /// Every combination of signals a posture can be observed in, so a claim about what it
+    /// "never" reaches is about the whole space rather than the cases remembered.
     private static func everyReading(of provenance: SessionProvenance) -> [SessionStatusReading] {
         let stops: [StopReason?] = [nil, .endTurn, .cancelled, .unknown] + halts
         return stops.flatMap { stop in

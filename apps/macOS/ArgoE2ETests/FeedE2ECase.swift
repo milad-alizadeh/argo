@@ -1,19 +1,11 @@
 import XCTest
 
-/// The launch every feed case shares, and the gestures all of them drive it with.
-///
-/// One class rather than a copy per suite, because these cases differ in exactly one thing — which
-/// named state the app opens on. What sits under that is not per-suite knowledge: how a row is
-/// addressed, how long a seam has to be held before a drag is a drag rather than a click, and why a
-/// lazy column is walked a screenful at a time are facts about driving THIS feed, and a second copy
-/// of any of them is a second thing to correct when the surface moves.
-///
-/// `@MainActor` for the reason every case here carries it: driving a UI is main-actor work under
-/// Swift 6, and `XCUIApplication()` is isolated to it.
+/// The launch every feed case shares, and the gestures all of them drive it with. Cases differ in
+/// exactly one thing — which named state the app opens on. `@MainActor` because `XCUIApplication()`
+/// is isolated to it under Swift 6.
 @MainActor
 class FeedE2ECase: XCTestCase {
-    /// Which named state the app opens on. Every case answers it, and the base answers it for none
-    /// of them — a default here would be one suite's reading silently standing in for another's.
+    /// Which named state the app opens on. Every case answers it; the base answers it for none.
     var specimen: String {
         preconditionFailure("A feed case must name the specimen it opens on.")
     }
@@ -48,8 +40,8 @@ class FeedE2ECase: XCTestCase {
             .firstMatch
     }
 
-    /// A call row, addressed by the file its edit names. The long fixture numbers those, so this is
-    /// one row rather than one of fifty that read alike.
+    /// A call row, addressed by the file its edit names — the long fixture numbers those, so this
+    /// matches one row rather than one of fifty that read alike.
     func row(naming file: String) -> XCUIElement {
         app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", file))
@@ -58,11 +50,8 @@ class FeedE2ECase: XCTestCase {
 
     /// A screenful at a time until the row is reachable. In screenfuls rather than one throw
     /// because the reading is lazy: a row is realised by the scroll that reaches it, and a single
-    /// large delta lands past it on estimated heights.
-    ///
-    /// Upwards by default, because that is the direction a feed is walked in: it opens on its
-    /// newest line, so everything already written is above the reader. A row that arrives after
-    /// they have gone looking is the case that passes the delta the other way.
+    /// large delta lands past it on estimated heights. Upwards by default — the feed opens on its
+    /// newest line, so everything already written is above the reader.
     func scroll(until row: XCUIElement, by delta: CGFloat = 400, steps: Int = 30) {
         let column = feed
         for _ in 0 ..< steps where !row.exists || !row.isHittable {
@@ -70,8 +59,7 @@ class FeedE2ECase: XCTestCase {
         }
     }
 
-    /// A screenful at a time for a fixed number of them, for the walks that are going somewhere
-    /// there is no row to name — the end of the reading, or the start of it.
+    /// A screenful at a time, a fixed number of times, where there is no row to name.
     func walk(by delta: CGFloat, times steps: Int) {
         let column = feed
         for _ in 0 ..< steps {
@@ -82,7 +70,7 @@ class FeedE2ECase: XCTestCase {
     /// Down until the way back down is gone, which is the only thing that says the end was reached
     /// — there is no row to name there, and on a reading still being written the place moves while
     /// the walk is happening. A wide throw because the column is at its tallest with the panel
-    /// open, and it stops as soon as the control does rather than walking a fixed count past it.
+    /// open.
     func walkToEnd() {
         let newest = app.buttons["Newest"]
         let column = feed

@@ -3,12 +3,10 @@ import ArgoEngine
 import Testing
 
 /// Which way the panel reads a patch it could read two ways. Only markdown has two: every other
-/// language IS its source, and a document written in a notation is the one case where the notation
-/// is the part the reader mostly does not want.
+/// language IS its source.
 @Suite("Evidence reading")
 struct EvidenceReadingTests {
-    /// A file the agent WROTE has no change in it to read — every line is an addition — so the
-    /// panel opens on the document rather than on 161 lines of markup under a gutter.
+    /// A file the agent WROTE has no change in it to read — every line is an addition.
     @Test
     func `a markdown file the agent wrote opens as the document`() throws {
         let evidence = try opened("docs/spec.md", .create)
@@ -17,8 +15,7 @@ struct EvidenceReadingTests {
         #expect(evidence.opening == .prose)
     }
 
-    /// A modification is a claim about what CHANGED, and the rendered document has nowhere to put
-    /// the half that was taken out. It opens as the patch, with the other reading one control away.
+    /// The rendered document has nowhere to put the half a modification took out.
     @Test
     func `a markdown file the agent changed opens as the patch`() throws {
         let evidence = try opened("docs/spec.md", .modify)
@@ -27,8 +24,6 @@ struct EvidenceReadingTests {
         #expect(evidence.opening == .source)
     }
 
-    /// A rendered Swift file is a Swift file. There is no second reading to offer, so no control
-    /// appears for one.
     @Test
     func `a patch in any other language has only the one reading`() throws {
         let evidence = try opened("Sources/FeedCall.swift", .create)

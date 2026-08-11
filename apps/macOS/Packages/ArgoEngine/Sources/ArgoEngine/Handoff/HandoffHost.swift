@@ -1,11 +1,7 @@
 import Foundation
 
-/// The three acts a handoff is made of, as a port.
-///
-/// A port rather than three calls into the Hub, for the reason every other engine seam is one: two
-/// of these touch a real PTY and a real CLI, and the ORDER they happen in — type, wait, spawn — is
-/// the whole of what this ticket decides. An orchestration provable only by starting `claude` is an
-/// orchestration nothing holds to.
+/// The three acts a handoff is made of, as a port. Two touch a real PTY and a real CLI, and the
+/// ORDER they happen in — type, wait, spawn — is what the port exists to make provable.
 @MainActor
 public protocol HandoffHost: AnyObject {
     /// Type at a Session's own prompt. `false` where Argo owns no live PTY for it, which is the one
@@ -16,21 +12,14 @@ public protocol HandoffHost: AnyObject {
     func brief(at path: String) -> String?
     /// Start a fresh Session, seeded. Returns the id of the row it published.
     func spawn(_ seed: SessionSeed) async throws -> String
-    /// Remember that one Session's work now belongs to another.
-    ///
-    /// The fourth act, and the only one that happens after the handoff has succeeded: without it
-    /// the two rows are two Sessions that happen to share a folder, and the chain the remedy was
-    /// for exists nowhere but in the memory of whoever pressed the button. Told to the host rather
-    /// than returned to the caller, so the sequence that PRODUCED the edge is the sequence that
-    /// records it — a caller that forgot to would leave a handoff no surface could show.
+    /// Remember that one Session's work now belongs to another — the fourth act, and the only one
+    /// after the handoff has succeeded. Told to the host rather than returned to the caller, so the
+    /// sequence that PRODUCED the edge is the sequence that records it.
     func handedOff(sessionID: String, to fresh: String)
 }
 
-/// How long Argo waits for a brief, and how often it looks.
-///
-/// The limit is generous on purpose. `/handoff` is a whole turn of real work — an agent reading its
-/// own history back and writing a summary of it — and a Session full enough to need handing off is
-/// the slowest one there is. Giving up early reports a failure that was only impatience.
+/// How long Argo waits for a brief, and how often it looks. The limit is generous because
+/// `/handoff` is a whole turn of real work on the fullest Session there is.
 public struct HandoffPatience: Sendable, Equatable {
     public let pollMs: Int
     public let limitMs: Int
@@ -43,11 +32,9 @@ public struct HandoffPatience: Sendable, Equatable {
     public static let `default` = HandoffPatience(pollMs: 500, limitMs: 20 * 60 * 1000)
 }
 
-/// The clock and the pause, as a seam — so the timeout is a rule a test can reach in a millisecond
-/// rather than one nothing ever exercises.
-///
-/// Its own value rather than two more initialiser parameters, which is also what keeps
-/// `SessionHandoff`'s initialiser inside the house's parameter cap.
+/// The clock and the pause, as a seam — so the timeout is a rule a test can reach in a millisecond.
+/// One value rather than two more parameters, which keeps `SessionHandoff`'s initialiser inside the
+/// house's parameter cap.
 @MainActor
 public struct HandoffWait {
     public let patience: HandoffPatience

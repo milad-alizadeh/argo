@@ -1,34 +1,24 @@
 import XCTest
 
-/// The plan's list, opened by the keyboard.
+/// The plan's list, opened by the keyboard. Nothing else in this repo reaches it.
 ///
-/// Nothing else in this repo reaches it. It is not a row, so no projection test sees it; it is not
-/// on screen at rest, so the pill's specimen renders it only because a specimen is allowed to force
-/// it open. What stays unproven either way is that a reader can get there — and the ticket asks for
-/// the keyboard specifically, because a surface openable only by hovering is one half the readers
-/// never open.
+/// The POINTER is deliberately not asserted here: `XCUIElement.hover()` warps the cursor without
+/// producing the tracking-area crossing SwiftUI's `.onHover` answers to, so a hover assertion fails
+/// against a pill that opens perfectly by hand. Hover is covered by the `openPlanPill` render.
 ///
-/// The POINTER is deliberately not asserted here. `XCUIElement.hover()` warps the cursor without
-/// producing the tracking-area crossing SwiftUI's `.onHover` answers to, so a hover assertion in
-/// this target fails against a pill that opens perfectly by hand — a red test that proves nothing
-/// is worse than none. Hover is covered by the `openPlanPill` render instead.
-///
-/// `@MainActor` for the reason the other cases carry it: driving a UI is main-actor work under
-/// Swift 6 and `XCUIApplication()` is isolated to it.
+/// `@MainActor` because `XCUIApplication()` is isolated to it under Swift 6.
 @MainActor
 final class PlanPillE2ETests: XCTestCase {
     private let app = XCUIApplication()
 
-    /// How many stops the keyboard is given to reach the pill. A bound rather than a count: the
-    /// deck's focusable rows come first and how many there are is the feed's business, not this
-    /// test's.
+    /// How many stops the keyboard is given to reach the pill. A bound, not a count: the deck's
+    /// focusable rows come first and how many there are is the feed's business.
     private let focusStops = 40
 
     override func setUp() async throws {
         try await super.setUp()
         continueAfterFailure = false
-        // The pill at REST — the specimen whose list is closed. The one with `isRevealed` set
-        // would pass this suite without the gesture working at all.
+        // The pill at REST: the `isRevealed` specimen would pass without the gesture working.
         app.launchArguments += ["--specimen", "planPill"]
         app.launch()
         XCTAssertTrue(
@@ -55,8 +45,8 @@ final class PlanPillE2ETests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground)
     }
 
-    /// Tab until the list appears. The pill is focusable for exactly this — the reveal cannot
-    /// belong to hover alone.
+    /// Tab until the list appears. The pill is focusable so the reveal cannot belong to hover
+    /// alone.
     private func tabbedToTheList(_ pending: XCUIElement) -> Bool {
         for _ in 0 ..< focusStops {
             app.typeKey(.tab, modifierFlags: [])

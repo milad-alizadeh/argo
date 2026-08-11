@@ -2,13 +2,8 @@ import ArgoEngine
 import SwiftUI
 
 /// What this Session has stopped asking about, at the top of the vessel — the record half of #572.
-///
-/// It rides above the field, in the slot the design gives `AttachmentTray`, because that is the
-/// surface the reader is in front of on every turn: a standing decision has to be findable without
-/// being looked for, and the composer is the one place a user of a Session always ends up.
-///
-/// Drawn on the prompt as well as on the composer at rest. The prompt is where a grant gets made,
-/// and a reader deciding on the next tool should be able to see what they already blessed.
+/// It rides above the field, in the slot the design gives `AttachmentTray`, and is drawn on the
+/// prompt as well as on the composer at rest.
 struct StandingAllowTray: View {
     @Environment(\.argo) private var argo
 
@@ -17,9 +12,9 @@ struct StandingAllowTray: View {
     /// a specimen with nothing behind it.
     let revoke: (String) -> Void
 
-    /// Wrapped rather than run along one line, because every chip has to stay reachable: a grant
-    /// pushed past the vessel's edge is one the user cannot find or take back, which is the state
-    /// #572 exists to end. The label is the first item in the flow, so it breaks with them.
+    /// Wrapped rather than run along one line: a grant pushed past the vessel's edge is one the
+    /// user cannot find or take back. The label is the first item in the flow, so it breaks with
+    /// them.
     var body: some View {
         WrapFlow(gap: ArgoSpacing.tight) {
             Text(StandingAllowProjection.trayLabel)
@@ -40,10 +35,6 @@ struct StandingAllowTray: View {
 
 /// One granted tool, in the chip shape the design froze for an attachment: radius `control`, the
 /// name, and an `×` that undoes it.
-///
-/// The `×` is the point of the chip. A grant that can only be undone by ending the Session is not
-/// a decision a person can make carefully, so the way back sits ON the record of it rather than
-/// behind a menu somewhere else.
 private struct StandingAllowChip: View {
     @Environment(\.argo) private var argo
 

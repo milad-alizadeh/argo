@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// Which of the two system families a role is set in. Named rather than inlined as a
-/// `Font.Design` so the contract can assert where each family is allowed to appear — the
-/// sans/mono split is the rule most easily broken by a hurried view.
+/// Which of the two system families a role is set in. Named rather than inlined as a `Font.Design`
+/// so the contract can assert where each family is allowed to appear.
 public enum ArgoTypeface: Sendable, CaseIterable {
     /// SF Pro. Everything the interface says in its own voice, identity lines included.
     case interface
@@ -17,13 +16,9 @@ public enum ArgoTypeface: Sendable, CaseIterable {
     }
 }
 
-/// A named combination of face, rung and weight, for the lines of the shell that recur — a Session
-/// row's title, a toolbar control, a group label.
-///
-/// A convenience over `ArgoTypeScale` and never a second scale: it cannot hold a size the HIG's
-/// ladder does not have. Reach for the rung directly (`argoText(.body)`) unless the combination is
-/// one that several surfaces have to agree on; a role per thing being drawn is how an app ends up
-/// unable to say what size anything is.
+/// A named combination of face, rung and weight, for the lines of the shell that recur. A
+/// convenience over `ArgoTypeScale` and never a second scale: it cannot hold a size the HIG's
+/// ladder does not have.
 public struct ArgoTextStyle: Sendable {
     public let typeface: ArgoTypeface
     public let rung: ArgoTypeScale
@@ -48,13 +43,7 @@ public struct ArgoTextStyle: Sendable {
         rung.size
     }
 
-    /// What one line of this role actually occupies, before any leading is added to it.
-    ///
-    /// A property of TYPE and of nothing else, which is why it is here. Two surfaces size
-    /// themselves to a line: the feed's prose spends the difference as leading, and a badge
-    /// spends it as a height. It lived on `ArgoFeedRow` while the feed was the only one asking,
-    /// which made a contract-level primitive reach into a per-surface measure to find out how
-    /// tall a line of type is.
+    /// What one line of this role occupies, before any leading is added to it.
     public var lineBox: CGFloat {
         rung.size * ArgoTypeScale.naturalLineHeightRatio
     }

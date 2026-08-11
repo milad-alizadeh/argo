@@ -2,10 +2,9 @@ import Foundation
 
 /// A Binding that names an Account, addressed by the Project it belongs to and the port it fills.
 ///
-/// The Binding entity itself is #B's. What is owed *here* is the ability to say what removing an
-/// Account would break, because the alternative is a Binding left pointing at an identity that no
-/// longer exists — which reads downstream as a provider that 404s, indistinguishable from a ticket
-/// that does not exist (ADR-0018).
+/// Enough to say what removing an Account would break: a Binding left pointing at an identity
+/// that no longer exists reads downstream as a provider that 404s, indistinguishable from a
+/// ticket that does not exist (ADR-0018).
 public struct AccountBindingReference: Equatable, Sendable {
     public let projectID: String
     public let port: AccountPort
@@ -16,9 +15,8 @@ public struct AccountBindingReference: Equatable, Sendable {
     }
 }
 
-/// Who is using an Account. One method, because one question is all the Account level has to ask
-/// of the Binding level, and the arrow points this way so `AccountRegistryStore` never has to know
-/// how Bindings are stored. `ProjectBindingIndex` is the answer.
+/// Who is using an Account. The arrow points this way so `AccountRegistryStore` never has to know
+/// how Bindings are stored; `ProjectBindingIndex` is the answer.
 public protocol AccountBindingIndex: Sendable {
     func bindings(referencing accountID: String) async -> [AccountBindingReference]
 }

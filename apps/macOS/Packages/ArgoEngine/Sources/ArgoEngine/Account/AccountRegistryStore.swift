@@ -3,9 +3,8 @@ import Foundation
 /// The per-machine Account registry file, and the only thing that writes it.
 ///
 /// Owned state, never committed — a grant is per machine, so this sits beside `projects.json` in
-/// application support rather than anywhere under a repository. Every mutation reads, transitions
-/// and writes in one hop on the actor, so two windows completing a grant at once cannot lose one
-/// another's Account.
+/// application support. Every mutation reads, transitions and writes in one hop on the actor, so
+/// two windows completing a grant at once cannot lose one another's Account.
 ///
 /// The file holds **no token**. The grant goes to `AccountGrantStore`, keyed by the same
 /// `AccountRecord.id` this file records, and the two are kept in step by this type alone.
@@ -18,10 +17,9 @@ public actor AccountRegistryStore {
     private let grants: AccountGrantStore
     private let bindings: AccountBindingIndex
 
-    /// `bindings` carries no default on purpose. It is the *other* registry — the Project one — and
-    /// a default would quietly reach for the machine's real `projects.json` however this store was
-    /// pointed, so a store built against a temporary file would report orphans from somewhere else
-    /// entirely. Which registry answers is a decision the composition root makes out loud.
+    /// `bindings` carries no default on purpose: it is the Project registry, and a default would
+    /// reach for the machine's real `projects.json` however this store was pointed — a store built
+    /// against a temporary file would then report orphans from somewhere else entirely.
     public init(
         fileURL: URL = AccountRegistryStore.defaultFileURL,
         grants: AccountGrantStore = KeychainGrantStore(),
@@ -32,9 +30,8 @@ public actor AccountRegistryStore {
         self.bindings = bindings
     }
 
-    /// A registry that cannot be read is an empty one: a machine that never authorized, a
-    /// half-written file, a hand-edit gone wrong. Launching unconnected is recoverable — it is the
-    /// state before onboarding — while refusing to launch is not.
+    /// A registry that cannot be read is an empty one — a half-written file or a hand-edit gone
+    /// wrong launches unconnected, which is recoverable where refusing to launch is not.
     public func load() -> AccountRegistry {
         guard let data = try? Data(contentsOf: fileURL),
               let registry = try? JSONDecoder().decode(AccountRegistry.self, from: data)

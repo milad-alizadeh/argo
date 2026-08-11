@@ -62,10 +62,8 @@ struct PermissionPromptTarget: View {
 /// sides apart.
 ///
 /// The markers are drawn here, once — the domain keeps them off the text so no consumer strips
-/// them back off. The ink stays neutral because this block is the VERBATIM target of a decision:
-/// what the reader is being asked to weigh is the whole of it, and a line washed green while its
-/// neighbour is washed red spends the feed's diff inks on saying what two characters already say.
-/// The diffstat under the block is where a side gets a colour.
+/// them back off. The ink stays neutral: this block is the VERBATIM target of a decision, and the
+/// diffstat under it is where a side gets a colour.
 private struct PermissionPromptHunk: View {
     @Environment(\.argo) private var argo
 

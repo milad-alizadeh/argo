@@ -2,21 +2,15 @@ import SwiftUI
 
 /// A mark, drawn as a rule with its words let into it.
 ///
-/// The only hairlines in the feed are here. A rule under an ordinary row is a box being drawn round
-/// something that is already a paragraph in a column; a rule ACROSS the column says the reading
-/// changed shape at this point, which is the one thing these three rows have in common.
+/// The only hairlines in the feed are here: a rule ACROSS the column says the reading changed
+/// shape at this point.
 ///
-/// The words are machine type for the same reason: they are the record talking about itself — a
-/// stop reason is the host's own word, and a token count is a number — not the agent talking.
-///
-/// A mark with nothing to say is the rule alone, running the whole column. That is the ordinary end
-/// of a turn: it happens at every turn boundary in the feed, and words repeated that often stop
-/// being read and start being the ground they are drawn on.
+/// The words are machine type — the record talking about itself, not the agent. A mark with
+/// nothing to say is the rule alone, running the whole column.
 struct FeedMarkLine: View {
     @Environment(\.argo) private var argo
     /// How this row reaches another Session. From the environment rather than threaded through the
-    /// four views between here and the shell, exactly as `deckIsResizing` is: none of them has any
-    /// business carrying a navigation nothing else in the deck performs.
+    /// four views between here and the shell, exactly as `deckIsResizing` is.
     @Environment(\.argoOpenSession) private var openSession
 
     let mark: FeedMark
@@ -36,12 +30,11 @@ struct FeedMarkLine: View {
         .accessibilityLabel(mark.spoken)
     }
 
-    /// The one mark that is a way out of the reading: the same words as any other, made pressable
-    /// and given the ink this app spends on every other link (`FeedProseText`'s markdown links take
-    /// it too, so a reader learns one colour and not two).
+    /// The one mark that is a way out of the reading, in the ink this app spends on every other
+    /// link (`FeedProseText`'s markdown links take it too).
     ///
-    /// A caption-sized arrow rather than an underline: the row is machine type let into a hairline,
-    /// and an underline at this size closes up against the descenders.
+    /// A caption-sized arrow rather than an underline: an underline at this size closes up against
+    /// the descenders.
     private func link(to handoff: FeedHandoff) -> some View {
         Button { openSession(handoff.sessionID) } label: {
             HStack(spacing: ArgoSpacing.tight) {
@@ -55,9 +48,8 @@ struct FeedMarkLine: View {
     }
 
     /// The roster's attention amber for the one mark that reports an act rather than the shape of
-    /// the record — a tool call refused with nobody having refused it. It is the same colour the
-    /// row wore while that prompt was waiting, carried through to what became of it; every other
-    /// mark stays tertiary, because a turn ending and a token count are the ground it is drawn on.
+    /// the record — the same colour the row wore while that prompt was waiting. Every other mark
+    /// stays tertiary.
     private var wordInk: ArgoColor? {
         guard case .permissionExpired = mark else { return nil }
         return argo.color.state.attention
@@ -91,8 +83,7 @@ struct FeedMarkLine: View {
     .argoAppearance()
 }
 
-// A stop reason outside the vocabulary reads `unknown` rather than the nearest guess, and that is
-// the one mark a real transcript is least likely to carry — so it gets a render of its own.
+// A stop reason outside the vocabulary reads `unknown` rather than the nearest guess.
 #Preview("Marks — a turn that ended for a reason nothing could read") {
     FeedMarkLine(mark: .turnEnded(.unknown))
         .padding(ArgoFeedRow.inset)
@@ -101,9 +92,8 @@ struct FeedMarkLine: View {
         .argoAppearance()
 }
 
-// The expiry, against an ordinary mark rather than alone: the whole claim about the amber is that
-// it reads as a departure, and a departure is only visible beside what it departs from. The
-// preview transcript carries no expiry, so this is the only place the two ever meet.
+// The expiry against an ordinary mark rather than alone — the preview transcript carries no
+// expiry, so this is the only place the two ever meet.
 #Preview("Marks — a Permission the gate refused because nobody answered") {
     VStack(alignment: .leading, spacing: ArgoFeedRow.gap) {
         FeedMarkLine(mark: .turnEnded(.endTurn))

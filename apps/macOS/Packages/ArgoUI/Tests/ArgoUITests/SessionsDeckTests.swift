@@ -2,12 +2,8 @@
 import CoreGraphics
 import Testing
 
-/// What the deck's zone measures claim about each other.
-///
-/// They guard the tokens, not the pixels: whether the zones are drawn where these say is a
-/// question only the `sessionsDeck` specimen render answers, which is why the ticket demands
-/// one. What a token invariant does catch is the next surface ticket widening its own zone
-/// until the feed is no longer the surface the deck exists for.
+/// What the deck's zone measures claim about each other. They guard the tokens, not the pixels —
+/// where the zones actually land is the `sessionsDeck` specimen render's question.
 @Suite("Sessions deck measures")
 struct SessionsDeckTests {
     /// The narrowest deck the window can produce: the sidebar at its minimum still leaves this.
@@ -31,9 +27,7 @@ struct SessionsDeckTests {
         #expect(DeckZone.allCases.allSatisfy { !$0.title.isEmpty })
     }
 
-    /// The list is what is still UNBUILT, so a surface shipping means a case leaves it. Asserted
-    /// rather than left to review: a placeholder standing behind a real view is a second reading
-    /// of the same zone, and the one a screen reader would find first.
+    /// The list is what is still UNBUILT, so a surface shipping means a case leaves it.
     @Test
     func `the feed is no longer a placeholder`() {
         #expect(!DeckZone.allCases.map(\.title).contains("Feed"))
@@ -52,9 +46,7 @@ struct SessionsDeckTests {
         #expect(feed > ArgoLayout.minimapLaneWidth)
     }
 
-    /// The panel-open half of the same invariant, and the one a long feed actually meets: a reader
-    /// at the narrowest window who opens a call's evidence is reading BOTH columns at once, and a
-    /// panel dragged to its ceiling must still leave the feed a column rather than a gutter.
+    /// The panel-open half of the same invariant.
     @Test
     func `the feed keeps its floor at the narrowest deck with the panel at its widest`() {
         let limits = ArgoLayout.evidencePanelLimits(in: narrowestDeckWidth)
@@ -62,8 +54,7 @@ struct SessionsDeckTests {
         #expect(narrowestDeckWidth - limits.upperBound >= ArgoLayout.feedMinimumWidth)
     }
 
-    /// The panel opens at its share before anybody drags it, and that opening width is the one
-    /// nobody chose — so it is the one that can quietly sit outside the limits the drag respects.
+    /// The opening width is the one nobody chose, so it can sit outside the drag's limits.
     @Test
     func `the panel opens inside its own limits at the narrowest deck`() {
         let limits = ArgoLayout.evidencePanelLimits(in: narrowestDeckWidth)
@@ -72,9 +63,8 @@ struct SessionsDeckTests {
         #expect(limits.contains(opening))
     }
 
-    /// A seam is dragged by a pointer that answers in fractions of a point, and what it sizes is a
-    /// column of prose: a width between two points re-typesets every line in it, which is the
-    /// shimmer a reader sees for as long as the seam is held.
+    /// A pointer answers in fractions of a point, and a column of prose at a width between two
+    /// points re-typesets every line in it — the shimmer a reader sees while the seam is held.
     @Test
     func `a width dragged to a fraction is seated on a whole point`() {
         let seated = ArgoLayout.seated(263.4177, in: ArgoLayout.railWidths)
@@ -92,9 +82,8 @@ struct SessionsDeckTests {
         #expect(ArgoLayout.seated(limits.upperBound + 40, in: limits) == limits.upperBound)
     }
 
-    /// A deck measured in fractions is the ordinary case, not the edge one — a window is resized to
-    /// whatever a pointer leaves it, and the panel's ceiling is derived from that width. Seating
-    /// the limits inward is what keeps a panel dragged to its ceiling on a whole point too.
+    /// A fractional deck is the ordinary case, and the panel's ceiling is derived from that width —
+    /// seating the limits inward is what keeps a panel at its ceiling on a whole point too.
     @Test
     func `a fractional deck cannot put the panel back on a fraction`() {
         let deck = narrowestDeckWidth + 0.5137
@@ -106,9 +95,7 @@ struct SessionsDeckTests {
         #expect(deck - widest >= ArgoLayout.feedMinimumWidth)
     }
 
-    /// The reading measure is a ceiling, never a floor. A column that insisted on its own width
-    /// would overflow the feed zone at the narrowest deck instead of narrowing with it, and the
-    /// panel this ticket puts beside it is what makes that reachable rather than theoretical.
+    /// The reading measure is a ceiling, never a floor.
     @Test
     func `the reading measure is wider than any deck can force the column to be`() {
         let openPanelFeed = narrowestDeckWidth - ArgoLayout.evidencePanelMinimumWidth
@@ -127,9 +114,7 @@ struct SessionsDeckTests {
         #expect(contentRowHeight > ArgoLayout.windowMinimumHeight / 2)
     }
 
-    /// The composer floats over the reading rather than taking a row from it, so what it may
-    /// cost the feed is scroll room, and even that must leave the reading most of the column at
-    /// the shortest window.
+    /// The composer floats over the reading, so what it costs the feed is scroll room.
     @Test
     func `the composer's clearance leaves the feed most of its column`() {
         #expect(contentRowHeight - ArgoComposerVessel.feedClearance > contentRowHeight / 2)

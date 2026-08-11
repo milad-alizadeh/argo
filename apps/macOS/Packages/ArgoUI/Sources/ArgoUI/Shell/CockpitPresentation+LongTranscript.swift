@@ -5,16 +5,10 @@ extension CockpitPresentation.Session {
     /// has — something asked, sometimes some reasoning, a stretch of looking, the work that came
     /// out of it, and usually an answer.
     ///
-    /// Generated rather than written out, because what it is evidence about is LENGTH: whether
-    /// hundreds of rows stay smooth, whether the reader keeps their place, whether a fold still
-    /// reads as a fold at the bottom of a long scroll.
-    ///
-    /// But generated with the variety a session has, which is the part a template gets wrong. A
-    /// fixture of forty identical turns wraps identically forty times and stands every row at the
-    /// same height — so it proves nothing about rhythm, and a render of it is a wall rather than
-    /// something worth judging. Here the prose is ragged (`LongProse`), some turns answer with one
+    /// Generated, but with variety: the prose is ragged (`LongProse`), some turns answer with one
     /// word and some say nothing at all, the looking runs two to five files deep, and the work is
-    /// a different shape every few turns.
+    /// a different shape every few turns. Identical turns wrap identically and stand every row at
+    /// the same height, which proves nothing about rhythm.
     static let longTranscript: [TranscriptEvent] = (0 ..< longTurns).flatMap(turn(_:))
 
     /// Enough turns to put hundreds of events through the projection, which is where "a six-hour
@@ -29,19 +23,14 @@ extension CockpitPresentation.Session {
             + answered(number)
     }
 
-    /// Not every turn reasons out loud, and a feed where every single turn opens in the quieter ink
-    /// makes that ink the ground rather than a distinction.
+    /// Not every turn reasons out loud.
     private static func reasoned(_ number: Int) -> [TranscriptEvent] {
         guard number % 3 != 1 else { return [] }
         return [.thought(markdown: LongProse.thoughts[number % LongProse.thoughts.count])]
     }
 
     /// The reconnaissance a turn opens with, which the feed folds to one line of counts. Two to
-    /// five files deep, so the counts on the folded line differ down the length of the feed rather
-    /// than reading as one repeated row.
-    ///
-    /// The same two same-named files recur, which is what makes a qualifier appear somewhere in
-    /// the middle of a long scroll rather than only at the top.
+    /// five files deep, and the same two same-named files recur so a qualifier appears mid-scroll.
     private static func surveyed(_ number: Int) -> [TranscriptEvent] {
         let looked = [
             "cockpit/Feed.swift",
@@ -57,9 +46,8 @@ extension CockpitPresentation.Session {
             }
     }
 
-    /// What the turn changed. Three shapes in rotation — a turn that only looked, a turn that
-    /// edited one file, and a turn that edited one and ran something after it — because a feed
-    /// where every turn has the same anatomy hides whether the rhythm survives one that does not.
+    /// What the turn changed. Three shapes in rotation: a turn that only looked, one that edited
+    /// one file, and one that edited and then ran something.
     private static func worked(_ number: Int) -> [TranscriptEvent] {
         switch number % 4 {
         case 0: []
@@ -68,8 +56,7 @@ extension CockpitPresentation.Session {
         }
     }
 
-    /// Some turns end without a word. An agent that hands back silently is a real state, and a
-    /// fixture where every turn signs off makes the feed's spacing look more regular than it is.
+    /// Some turns end without a word — an agent that hands back silently is a real state.
     private static func answered(_ number: Int) -> [TranscriptEvent] {
         guard number % 7 != 5 else { return [.turnEnded(.endTurn)] }
         return [
@@ -109,8 +96,7 @@ extension CockpitPresentation.Session {
         ]
     }
 
-    /// Every fourth command fails, so the one row worth seeing recurs down a long scroll rather
-    /// than appearing once at a place nobody scrolls to.
+    /// Every fourth command fails, so the failed row recurs down a long scroll.
     private static func ran(_ number: Int) -> [TranscriptEvent] {
         let id = "run-\(number)"
         let broke = number % 4 == 3

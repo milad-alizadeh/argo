@@ -3,11 +3,9 @@ import Foundation
 /// Choosing which Account a Project reads each port through — the only public way a Binding is
 /// made, unmade, or read.
 ///
-/// It holds both registries because the two acts they own are different and both are needed here:
-/// **authorizing** is Account-level and happened once per identity per machine, **choosing** is
-/// Binding-level and happens per Project. Which is why nothing in this type can reach a grant flow
-/// — a second Project on an already-authorized provider binds with no OAuth round-trip because
-/// there is no round-trip in the code path at all, not because one is skipped.
+/// Both registries, because the two acts differ: **authorizing** is Account-level and happened once
+/// per identity per machine, **choosing** is Binding-level and happens per Project. Nothing here
+/// can reach a grant flow, so binding a second Project performs no OAuth round-trip at all.
 public actor ProjectBindings {
     private let projects: ProjectRegistryStore
     private let accounts: AccountRegistryStore
@@ -23,12 +21,8 @@ public actor ProjectBindings {
         self.scopeCheck = scopeCheck
     }
 
-    /// Bind a port, having first asked the provider whether this Account can see the scope.
-    ///
-    /// Nothing is written unless the answer is yes. An Account that cannot see the scope, a token
-    /// that has been revoked and a provider that is unreachable are three different refusals and
-    /// none of them leaves a Binding behind — after this moment they all read as a scope with
-    /// nothing in it.
+    /// Bind a port, having first asked the provider whether this Account can see the scope. Nothing
+    /// is written unless the answer is yes, so no refusal leaves a Binding behind.
     @discardableResult
     public func bind(_ binding: ProjectBinding, to projectID: String) async throws
         -> ProjectBinding {
@@ -64,8 +58,7 @@ public actor ProjectBindings {
         guard let account = await accounts.load().account(id: binding.accountID) else {
             return .broken(binding, .accountRemoved)
         }
-        // `bind` refuses this, so reaching it means the file was written by something else — a hand
-        // edit, or a build that once allowed it. Re-asked here because the registry is not a
+        // `bind` refuses this, so reaching it means the file was hand-edited: the registry is not a
         // trusted input, and the alternative is reading Delivery truth off a Work Item provider.
         guard account.provider.serves(port) else {
             return .broken(binding, .portNotServedByProvider)
@@ -88,9 +81,8 @@ public actor ProjectBindings {
         return account
     }
 
-    /// The token, or the refusal that a listed Account with no usable one is. A keychain that
-    /// cannot be read is `noGrant` rather than a thrown keychain error: from here both mean the
-    /// same thing, that there is nothing to bind with.
+    /// The token, or the refusal that a listed Account with no usable one is. An unreadable
+    /// keychain is `noGrant` rather than a thrown error — either way there is nothing to bind with.
     private func grant(for account: AccountRecord) async throws -> AccountGrant {
         guard let grant = try? await accounts.grant(for: account.id) else {
             throw BindingRefusal.noGrant

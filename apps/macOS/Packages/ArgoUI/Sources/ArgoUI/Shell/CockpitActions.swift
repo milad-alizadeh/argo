@@ -17,49 +17,28 @@ public struct CockpitActions {
     /// Forget a Project — `ProjectRegistry.removing(id:)` is what that means.
     public let removeProject: (String) -> Void
     /// Open the Connect panel on a Project — or, with `nil`, on none, which is the state that
-    /// creates one (ADR-0015). One intent for both, because they are one surface: Project Settings
-    /// IS this panel re-entered, and a pair would let a machine with nothing registered reach the
-    /// half that needs a Project and not the half that makes one.
-    ///
-    /// Named for the panel rather than for "settings" in general, because there is no app-global
-    /// settings surface to be confused with.
+    /// creates one (ADR-0015).
     public let openProjectPanel: (String?) -> Void
-    /// Start an agent in the active Project's folder, with Argo owning its PTY. The one intent here
-    /// that acts on the world rather than on Argo's own record of it.
-    ///
-    /// It ANSWERS with the fresh Session's id — the claim the roster publishes its row under — and
-    /// `nil` where no Session started. The selection is the shell's own business for the reason
-    /// `handOffSession` is: the app performs the spawn, the shell decides what to point at.
+    /// Start an agent in the active Project's folder, with Argo owning its PTY. Answers with the
+    /// fresh Session's id — the claim the roster publishes its row under — and `nil` where no
+    /// Session started; the app performs the spawn, the shell decides what to point at.
     public let spawnSession: () async -> String?
     /// Clear a Session off the roster, or put one back. The ONLY thing that ever archives one:
     /// nothing derived from a merge, a branch or a transcript reaches this, which is what makes
     /// archiving a decision rather than a status transition (#502, story 14).
-    ///
-    /// One intent with a direction rather than two, because it is one gesture on one row — a
-    /// pair would let a surface offer the way in without the way out.
     public let setSessionArchived: (String, Bool) -> Void
     /// Give a Session a name of the user's own, or — with `nil` — drop it and let the derived
     /// title come back (#502, stories 18 and 20).
-    ///
-    /// One intent with a nullable name rather than a rename and a reset, for the reason archiving
-    /// is one intent with a direction: resetting is not a second decision, it is this one unmade,
-    /// and a pair would let a surface offer the way in without the way out.
     public let setSessionName: (String, String?) -> Void
     /// Hand a full Session's work to a fresh one: run `/handoff` in it, wait for the brief, and
     /// start a Session seeded with it in the same folder and against the same issue (#513).
     ///
-    /// One intent and not three, deliberately — the sequence is `SessionHandoff`'s, and a view that
-    /// could raise the three halves separately could raise the third without the first.
-    ///
     /// The only `async` action here, because it is the only one answered in minutes: the control
-    /// that raises it has to hold itself for as long as it runs, and a fire-and-forget closure
-    /// gives it nothing to hold itself against. The issue travels WITH the id because the view is
-    /// where the link is known — the engine carries no Work Item today, so a fresh Session would
-    /// otherwise open against no intent at all.
+    /// that raises it holds itself for as long as it runs. The issue travels WITH the id because
+    /// the engine carries no Work Item, so the view is where the link is known.
     ///
-    /// It ANSWERS with the fresh Session's id, and `nil` where no handoff happened. The selection
-    /// is the shell's own business (`CockpitNavigationModel.session` is deliberately not public),
-    /// so the app performs the handoff and the shell decides what to point at.
+    /// Answers with the fresh Session's id, `nil` where no handoff happened — the app performs
+    /// and the shell decides what to point at (`CockpitNavigationModel.session` is not public).
     public let handOffSession: (String, Int?) async -> String?
     /// Put one Turn to a Session, as though the user had typed it at that CLI's own prompt —
     /// the composer's whole intent (#538, under #535 / ADR-0024).
@@ -73,19 +52,15 @@ public struct CockpitActions {
     /// other; the Session alone does not say that when two calls are waiting.
     ///
     /// Not throwing, unlike `sendTurn`: the one refusal — the Permission already gone — is
-    /// answered by the prompt leaving the screen, and there is no field holding words that need a
-    /// seam to explain them.
+    /// answered by the prompt leaving the screen.
     public let decidePermission: (String, String, PermissionDecision) -> Void
     /// Take back a standing allow on a Session (#572) — `(sessionID, toolName)`. Keyed by tool
-    /// because the tool IS the grant.
-    ///
-    /// Its own intent rather than a fourth `PermissionDecision`, because the two are not the same
-    /// gesture: a decision answers a call the agent is blocked on, and this answers nothing — it
-    /// changes what the Session will ask about next.
+    /// because the tool IS the grant, and it answers no blocked call: it changes what the Session
+    /// will ask about next.
     public let revokeStandingAllow: (String, String) -> Void
 
-    /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor` for
-    /// the same reason every action here is: they are called from a view.
+    /// For previews and specimens, where nothing is wired and nothing should be. `@MainActor`
+    /// because every action here is called from a view.
     @MainActor public static let inert = CockpitActions(
         refreshCheckout: {},
         retryConnection: {},

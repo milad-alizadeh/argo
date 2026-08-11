@@ -3,8 +3,8 @@ import Foundation
 /// Turns "run this CLI in this folder" into a launch the process host can execute.
 ///
 /// An actor because it shells out to the user's login shell to find out what their `PATH` really
-/// is, and that read must not happen on the main actor. It happens once: a `PATH` is not something
-/// that changes while a window is open, and paying for it per spawn would be felt.
+/// is, and that read must not happen on the main actor. It happens once: a `PATH` does not change
+/// while a window is open.
 public actor AgentLauncher {
     private let run: ShellCommand
     private let inherited: [String: String]
@@ -15,9 +15,8 @@ public actor AgentLauncher {
         self.inherited = ProcessInfo.processInfo.environment
     }
 
-    /// The shell is a seam so a test can answer for it: what the user's `PATH` is cannot be
-    /// asserted about the machine running the suite. The environment is one for the same reason —
-    /// what this process was started with is a property of whoever launched Argo.
+    /// The shell and the environment are seams so a test can answer for them: neither the user's
+    /// `PATH` nor what this process was started with is assertable about the machine running it.
     init(run: @escaping ShellCommand, inherited: [String: String] = [:]) {
         self.run = run
         self.inherited = inherited
@@ -66,9 +65,6 @@ public actor AgentLauncher {
     /// variables. Inherited rather than built: an agent needs the user's whole environment —
     /// credentials, proxies, `mise` shims — and a hand-picked subset would break a machine at a
     /// time.
-    ///
-    /// Scrubbed, therefore, rather than filtered: everything comes through except the variables
-    /// that describe the process ARGO is, which are never true of the child it starts.
     private func environment(
         searchPath: String,
         companion: CompanionInvitation?,

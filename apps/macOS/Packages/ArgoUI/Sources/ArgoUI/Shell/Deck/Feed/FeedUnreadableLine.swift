@@ -2,14 +2,11 @@ import SwiftUI
 
 /// A stretch of the record nothing could parse, drawn as one quiet line the reader can open.
 ///
-/// The same anatomy as a call and a survey — a mark, then words — because it is one more thing that
-/// happened in the same stream. Quiet like a survey rather than loud like a failure: the agent's
-/// work did not go wrong here, the READING did, and a row in the failure ink would report Argo's
-/// own gap as the Session's.
+/// The same anatomy as a call and a survey — a mark, then words. Quiet rather than loud: the
+/// agent's work did not go wrong here, the READING did.
 ///
-/// The raw text is behind a disclosure rather than on the line. It is the only thing that lets a
-/// reader check the claim, and it is also malformed JSON — worth keeping, never worth reading by
-/// accident.
+/// The raw text is behind a disclosure rather than on the line — it is malformed JSON, worth
+/// keeping and never worth reading by accident.
 struct FeedUnreadableLine: View {
     @Environment(\.argo) private var argo
 
@@ -54,8 +51,7 @@ struct FeedUnreadableLine: View {
             .foregroundStyle(argo.color.text.disabled)
     }
 
-    /// Verbatim, selectable, and wrapped rather than cut — a reader opening this is going to paste
-    /// it somewhere, and half a malformed line diagnoses nothing.
+    /// Verbatim, selectable, and wrapped rather than cut — half a malformed line diagnoses nothing.
     private var raw: some View {
         Text(unreadable.raw)
             .argoMono(.body)

@@ -2,10 +2,9 @@ import SwiftUI
 
 /// Where the links in a paragraph actually landed on the screen.
 ///
-/// SwiftUI draws a link run inside a `Text` and stops there: no pointer over it, and the pointer
-/// is most of what tells a reader a word is pressable before they press it. `pointerStyle` is a
-/// modifier on a VIEW, and a run inside a paragraph is not one — so the run's rectangle has to
-/// come out of the type-setter, which is the only thing that knows where the words ended up after
+/// SwiftUI draws a link run inside a `Text` and stops there: no pointer over it. `pointerStyle` is
+/// a modifier on a VIEW and a run inside a paragraph is not one, so the run's rectangle has to come
+/// out of the type-setter, which is the only thing that knows where the words landed after
 /// wrapping.
 ///
 /// Nothing here reads the prose. It reads the marks the agent's own `[text](url)` already made.
@@ -27,9 +26,8 @@ struct ProseCode: TextAttribute {}
 /// Draws the paragraph — grounds under its code spans, glyphs on top — and reports where its link
 /// runs ended up.
 ///
-/// A renderer rather than a measurement pass because wrapping is the whole question: the same
-/// paragraph at two widths puts its links and its spans in different places, and only the thing
-/// that broke the lines knows where.
+/// A renderer rather than a measurement pass: the same paragraph at two widths puts its links and
+/// spans in different places, and only the thing that broke the lines knows where.
 ///
 /// Both jobs live in ONE renderer because `textRenderer` is last-one-wins — a second renderer for
 /// the spans would silently drop the link reporting, and the links would stop being pressable
@@ -73,11 +71,9 @@ struct ProseRenderer: TextRenderer {
 }
 
 extension View {
-    /// The pointer, and the press, over each rectangle a link ended up occupying.
-    ///
-    /// The press is here too rather than left to SwiftUI's own: a transparent target that took the
-    /// pointer and passed the click through to the text under it would be a word that looks
-    /// pressable, feels pressable, and does nothing.
+    /// The pointer, and the press, over each rectangle a link ended up occupying. The press is here
+    /// too: a transparent target taking the pointer swallows the click SwiftUI's own link would
+    /// get.
     func proseLinks(_ runs: [ProseLinkRun]) -> some View {
         overlay {
             ForEach(Array(runs.enumerated()), id: \.offset) { _, run in

@@ -2,9 +2,8 @@ import Foundation
 
 /// The known set of Projects and which one the cockpit opens into.
 ///
-/// Held as a value with every transition returning a new registry, so the store above it does
-/// nothing but read one and write one — which is what keeps the rules below testable without a
-/// filesystem in the way.
+/// Held as a value: every transition returns a new registry, so the store above it does nothing
+/// but read one and write one.
 public struct ProjectRegistry: Equatable, Sendable {
     public let projects: [ProjectRecord]
     public let activeProjectID: String?

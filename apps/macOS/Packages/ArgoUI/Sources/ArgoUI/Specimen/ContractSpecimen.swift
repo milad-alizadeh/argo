@@ -4,14 +4,11 @@ import SwiftUI
 /// cannot give you: whether two states are still telling apart at a glance, and whether the
 /// sans and the mono are still doing two different jobs.
 ///
-/// **Every role in the palette appears here**, and `VisualContractTests` proves it by reflection —
-/// a role that reaches the app without reaching this sheet is a colour nobody ever looked at,
-/// which is exactly how a lavender `code` ink once got in and stayed. The swatches read their
-/// names and values off the `all` arrays rather than repeating them, so adding a role adds a
-/// swatch.
+/// **Every role in the palette appears here**, and `VisualContractTests` proves it by reflection.
+/// The swatches read their names and values off the `all` arrays rather than repeating them, so
+/// adding a role adds a swatch.
 ///
-/// It renders whatever appearance is in the environment, so a second palette is judged by
-/// pointing this at it — nothing here knows it is dark.
+/// It renders whatever appearance is in the environment — nothing here knows it is dark.
 struct ContractSpecimen: View {
     @Environment(\.argo) var argo
 
@@ -47,9 +44,7 @@ struct ContractSpecimen: View {
     }
 
     /// What a role is waiting on, when nothing draws it yet — drawn in the attention ink so an
-    /// unjudged value cannot be mistaken for a settled one at a glance. This is the whole reason
-    /// the `unwired` maps exist; a specimen that renders every role identically is a specimen that
-    /// says every role has been looked at.
+    /// unjudged value cannot be mistaken for a settled one at a glance.
     @ViewBuilder func unwired(_ note: String?) -> some View {
         if let note {
             Text("unwired · waits on \(note)")
@@ -99,7 +94,7 @@ struct ContractSpecimen: View {
     }
 
     /// The scale itself, every rung at its own size. Named as the HIG names them, because it IS the
-    /// HIG's scale — this is where a rung is judged against the one above it rather than asserted.
+    /// HIG's scale.
     private var scale: some View {
         section("Type scale — the platform's own, from largeTitle to caption2") {
             VStack(alignment: .leading, spacing: ArgoSpacing.snug) {
@@ -164,8 +159,8 @@ struct ContractSpecimen: View {
         }
     }
 
-    /// The words the roster actually spends, so the legibility specimen proves the ink on the
-    /// text it is drawn under rather than on a vocabulary the cockpit has stopped using.
+    /// The words the roster actually spends, so the legibility specimen proves the ink on the text
+    /// it is drawn under.
     private let stateWords = ["running", "idle", "Needs input", "Stopped"]
 
     private func sample(for typeface: ArgoTypeface) -> String {

@@ -8,8 +8,7 @@ import Testing
 /// something was left behind, so a whole command and a shortened one can be told apart.
 @Suite("Feed command line")
 struct FeedCommandLineTests {
-    /// The pipeline is real and the panel shows it whole. On the row it is two clauses about where
-    /// the text went, in front of the verb that says what happened.
+    /// The pipeline is real and the panel shows it whole; only the row cuts it.
     @Test
     func `a command is shown as what ran, not as where its output went`() {
         #expect(FeedCommandLine.head(of: "bun run test 2>&1 | tail -4") == "bun run test …")
@@ -81,8 +80,7 @@ struct FeedCommandLineTests {
         #expect(FeedCommandLine.head(of: command) == "tail -f /private/t…eloper-argo/render.sh")
     }
 
-    /// One rule, not two: the evidence panel cuts the same kind of thing and reaches the same rule
-    /// rather than growing a second answer for one address.
+    /// One rule, not two: the evidence panel reaches the same cut for an address.
     @Test
     func `the middle-elision rule cuts a bare address the same way`() {
         let address = "/private/tmp/claude-501/-Users-milad-Developer-argo/render.sh"

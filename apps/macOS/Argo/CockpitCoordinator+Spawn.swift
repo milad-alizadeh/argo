@@ -1,11 +1,9 @@
 import AppKit
 import ArgoEngine
 
-/// Starting an agent, and saying so when it does not start.
-///
-/// A refusal is surfaced in the tool's OWN words rather than swallowed. Both real ones — no
-/// reachable folder, and `claude` missing from the `PATH` a Finder-launched app inherits — look
-/// exactly like success otherwise: nothing happens (#361).
+/// Starting an agent, and saying so when it does not start. Both real refusals — no reachable
+/// folder, and `claude` missing from the `PATH` a Finder-launched app inherits — look exactly like
+/// success otherwise: nothing happens (#361).
 @MainActor
 extension CockpitCoordinator {
     /// Returns the id the roster publishes the provisional row under — the claim's own, until the
@@ -26,10 +24,8 @@ extension CockpitCoordinator {
     /// for the brief, then #412's spawn path seeded with it and the folder it was running in.
     ///
     /// Returns the fresh Session's id so the caller can put the roster on it, and `nil` when the
-    /// handoff did not happen. Every refusal is reported for exactly the reason a failed spawn is:
-    /// a remedy that types at a terminal Argo does not own, or waits for a brief that never comes,
-    /// is otherwise a click that did nothing — and the one thing it must never do instead is
-    /// publish a Session row for work nobody handed over.
+    /// handoff did not happen. Every refusal is reported; no Session row is published for work
+    /// nobody handed over.
     func handOff(sessionID: String, issue: Int?) async -> String? {
         do {
             guard let cwd = hub.sessions.first(where: { $0.id == sessionID })?.cwd else {
@@ -53,11 +49,8 @@ extension CockpitCoordinator {
         hub.endOwnedSessions()
     }
 
-    /// End them on quit as well as on window close.
-    ///
-    /// ⌘Q with the window still open never runs the view's `onDisappear`, so without this the only
-    /// thing ending those PTYs is the kernel hanging up their side of the terminal as the process
-    /// dies — which is a thing that probably happens rather than a thing Argo did.
+    /// End them on quit as well as on window close: ⌘Q with the window still open never runs the
+    /// view's `onDisappear`, leaving those PTYs to the kernel's hang-up as the process dies.
     func endOwnedSessionsOnQuit() {
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification,
@@ -68,8 +61,7 @@ extension CockpitCoordinator {
         }
     }
 
-    /// The title is the same for both because the outcome is: a Session that was going to exist and
-    /// does not. What differs is the sentence under it, which is the tool's own.
+    /// One title for every refusal; the sentence under it is the tool's own.
     private func report(detail: String) {
         let alert = NSAlert()
         alert.alertStyle = .warning

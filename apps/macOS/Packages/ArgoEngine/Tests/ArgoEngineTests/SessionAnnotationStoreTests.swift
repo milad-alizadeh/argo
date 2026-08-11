@@ -27,9 +27,8 @@ struct SessionAnnotationStoreTests {
         let store = file.store()
         await store.setArchived(true, sessionID: "chain-a")
 
-        // What a stray tail on an archived Session's transcript amounts to here: the Hub reads
-        // its annotations again, and another Session's row moves under it. Neither is a
-        // decision, and only a decision may put a row back (#502, story 16).
+        // A stray tail: the Hub re-reads its annotations and another Session's row moves under it.
+        // Neither is a decision, and only a decision may put a row back (#502, story 16).
         _ = await store.load()
         await store.setArchived(true, sessionID: "chain-b")
         let annotations = await store.load()
@@ -56,8 +55,7 @@ struct SessionAnnotationStoreTests {
 
         let annotations = await file.store().load()
 
-        // An empty annotation, never a `nil` the caller has to answer for: absence here is the
-        // answer rather than a gap in it.
+        // An empty annotation, never a `nil` the caller has to answer for.
         #expect(annotations.annotation(for: "chain-a") == SessionAnnotations.Annotation())
         #expect(annotations.isArchived("chain-a") == false)
     }
@@ -88,8 +86,6 @@ struct SessionAnnotationStoreTests {
         #expect(try file.read().contains("chain-a") == false)
     }
 
-    /// Archiving is a decision about a Session and nothing about a Project, so it is written
-    /// beside registration rather than into it.
     @Test
     func `annotations are written to per-machine application support`() {
         let path = SessionAnnotationStore.defaultFileURL.path

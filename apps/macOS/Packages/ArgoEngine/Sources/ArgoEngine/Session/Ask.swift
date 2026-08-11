@@ -1,12 +1,7 @@
 /// A structured question the agent put to somebody, as the record carried it.
 ///
-/// Held apart from the call's `target` because a question is not addressed the way a file or a
-/// command is: what matters about it is the words it asked and the options it offered, and both are
-/// carried VERBATIM. A surface that reworded either would be showing somebody a choice they were
-/// never given.
-///
-/// A list, because one call can put more than one question. Reading only the first would drop the
-/// rest silently, which is the shape of dishonesty this model exists to prevent.
+/// Held apart from the call's `target`: the words asked and the options offered are both carried
+/// VERBATIM. A list, because one call can put more than one question.
 public struct Ask: Sendable, Equatable {
     public struct Question: Sendable, Equatable {
         /// What was asked, verbatim.

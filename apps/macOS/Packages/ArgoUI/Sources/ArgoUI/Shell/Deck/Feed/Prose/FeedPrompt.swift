@@ -1,15 +1,9 @@
 import SwiftUI
 
-/// What was asked, as a bubble on the trailing edge.
+/// What was asked, as a bubble on the trailing edge — the one row in the feed that is not the agent
+/// speaking. Steering typed mid-run lands here too: a steer is a prompt.
 ///
-/// The one row in the feed that is not the agent speaking, so it is the one row drawn as an
-/// object rather than as prose on the ground — a reader scrolling a long session finds where each
-/// turn began by shape alone. Steering typed mid-run lands here too: a steer is a prompt.
-///
-/// Unlabelled: the shape already says it. A bubble on the trailing edge, against a feed where
-/// everything else is prose on the ground, is the whole distinction — and a word over every one of
-/// them repeats it once per turn. The label survives for screen readers, where the shape does not
-/// carry.
+/// Unlabelled, because the shape says it; the label survives for screen readers, where it does not.
 struct FeedPrompt: View {
     @Environment(\.argo) private var argo
 
@@ -18,16 +12,13 @@ struct FeedPrompt: View {
     /// transcript grows, and a fold that lived in the row would quietly re-close behind the reader.
     @Binding var isExpanded: Bool
 
-    /// What the prompt is worth folded and unfolded. Both are measured rather than estimated,
-    /// because whether a prompt is long is a question about the column it landed in, not about
-    /// how many characters it has.
+    /// What the prompt is worth folded and unfolded. Both MEASURED, not estimated: whether a prompt
+    /// is long is a question about the column it landed in, not about its character count.
     @State private var foldedHeight: CGFloat = 0
     @State private var wholeHeight: CGFloat = 0
-    /// The column the bubble landed in, which is what its ceiling is a share of. Measured rather
-    /// than taken from the contract: the reader drags the seam, and a ceiling off a constant left
-    /// the two sides of one conversation sized against two different things — the bubble a narrow
-    /// strip beside paragraphs running the full width. `nil` until the first layout answers, which
-    /// is one frame of an unbounded bubble rather than one frame of a bubble sized to a guess.
+    /// The column the bubble landed in, which its ceiling is a share of. Measured rather than taken
+    /// from the contract, because the reader drags the seam. `nil` until the first layout answers,
+    /// which is one frame of an unbounded bubble rather than one sized to a guess.
     @State private var column: CGFloat?
 
     var body: some View {

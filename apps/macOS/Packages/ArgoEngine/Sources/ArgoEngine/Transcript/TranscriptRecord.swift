@@ -6,9 +6,8 @@ public struct MessageRecord: Sendable, Equatable {
     public let gitBranch: String?
     public let timestampMs: Int?
     /// The host talking to ITSELF. Claude Code's own flag, taken at face value rather than inferred
-    /// from the text: it is the one signal that separates plumbing from a prompt, and sniffing for
-    /// a sentence instead would mean pattern-matching something the user could have typed. A host
-    /// that sets no such flag simply has no meta records, which is the honest degradation.
+    /// from the text: it is the one signal that separates plumbing from a prompt. A host that sets
+    /// no such flag simply has no meta records, which is the honest degradation.
     public let isMeta: Bool
     /// This record IS the condensed history, not a prompt in front of it.
     public let isCompactSummary: Bool
@@ -26,10 +25,9 @@ public struct MessageRecord: Sendable, Equatable {
 
 /// One line of a transcript, typed.
 ///
-/// The `unknown` case is the ticket's honesty requirement expressed in the type system rather than
-/// in a convention: a line this reader does not recognise is a VALUE carrying its own raw bytes,
-/// not a thrown error and not a silent skip. Nothing downstream can forget to handle it, because
-/// `switch` over an enum is checked for exhaustiveness by the compiler.
+/// A line this reader does not recognise is a VALUE carrying its own raw bytes, not a thrown error
+/// and not a silent skip. Nothing downstream can forget to handle it: `switch` over an enum is
+/// checked for exhaustiveness by the compiler.
 public enum TranscriptRecord: Sendable, Equatable {
     case user(MessageRecord)
     case assistant(MessageRecord)

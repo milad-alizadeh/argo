@@ -4,9 +4,7 @@ import SwiftUI
 ///
 /// A `Grid` and not a stack of rows: a column is only a column if every cell in it is the same
 /// width, and the width that works is the widest cell's — which nothing knows until all of them
-/// have been measured. The header is told apart by weight and a rule under it rather than by a
-/// fill, because the feed's ground already carries the block and a second one inside it reads as
-/// a panel.
+/// have been measured. The header is told apart by weight and a rule under it, never by a fill.
 struct FeedMarkdownTable: View {
     @Environment(\.argo) private var argo
 
@@ -34,9 +32,8 @@ struct FeedMarkdownTable: View {
             RoundedRectangle(cornerRadius: ArgoRadius.control)
                 .strokeBorder(argo.color.edge.hairline)
         }
-        // The border hugs the table and the table sits at the column's leading edge. Stretching it
-        // to the measure would put the border out past the last column, which is the dead space
-        // the content-width columns exist to get rid of.
+        // The border hugs the table and the table sits at the column's leading edge; stretching to
+        // the measure would put the border out past the last column.
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -44,8 +41,7 @@ struct FeedMarkdownTable: View {
     ///
     /// The rules are grid CELLS of their own, interleaved into the row, which is what makes them
     /// line up down the table: a column of rules is a column like any other, so every row's rule
-    /// sits at the same x whatever its cells wrapped to. Drawing them as a per-cell trailing edge
-    /// instead would put them wherever each row happened to end.
+    /// sits at the same x whatever its cells wrapped to.
     private func row(_ cells: [String], weight: Font.Weight?) -> some View {
         GridRow {
             ForEach(interleaved(cells)) { slot in
@@ -74,20 +70,16 @@ struct FeedMarkdownTable: View {
         }
     }
 
-    /// The header's rule is the stronger one. Between two body rows a hairline is enough to say
-    /// where a wrapped cell ended; under the header it is saying which row was the header.
+    /// The header's rule is the stronger one; between two body rows a hairline is enough.
     private func rule(_ ink: ArgoColor) -> some View {
         Divider()
             .overlay(ink)
             .gridCellUnsizedAxes(.horizontal)
     }
 
-    /// A cell wraps rather than truncating, and asks for no more width than its words need.
-    ///
-    /// The second half is the load-bearing one. Every cell claiming an equal share made a column
-    /// of `—` as wide as a column of sentences, so the sentences wrapped three lines early to pay
-    /// for whitespace nothing was in. A `Grid` column is as wide as its widest cell wants to be,
-    /// and what is left over goes to the column that can use it.
+    /// A cell wraps rather than truncating, and asks for no more width than its words need — a
+    /// `Grid` column is as wide as its widest cell wants to be, and the rest goes to the column
+    /// that can use it.
     private func cell(_ text: String, weight: Font.Weight?) -> some View {
         FeedProseText(text: text, rung: ArgoFeedRow.proseRung, weight: weight)
             .fixedSize(horizontal: false, vertical: true)

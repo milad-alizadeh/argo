@@ -10,13 +10,9 @@ enum ProjectScope {
     /// through their symlinks first, because the CLI records the path it was launched at and the
     /// Project was registered at whatever the user typed; `/tmp` and `/private/tmp` are the same
     /// directory and must not read as two Projects.
-    /// The filesystem root scopes to NOTHING, rather than to everything.
-    ///
-    /// It is what a Project falls back to when there is no working directory to take one from — an
-    /// app launched from Finder has no cwd — and every path on the machine is under it. Reading
-    /// that prefix literally would put every Session of every repo in one roster, which is the
-    /// loudest possible way to render a Project that was never established. An empty roster is the
-    /// honest answer until one is.
+    /// The filesystem root scopes to NOTHING, rather than to everything. It is what a Project falls
+    /// back to when there is no working directory to take one from — an app launched from Finder
+    /// has no cwd — and reading that prefix literally would put every Session in one roster.
     static func contains(cwd: String, projectURL: URL) -> Bool {
         let root = components(of: projectURL)
         guard root.count > 1 else { return false }

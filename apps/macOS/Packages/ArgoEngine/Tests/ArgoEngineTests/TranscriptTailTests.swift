@@ -2,9 +2,8 @@
 import Foundation
 import Testing
 
-// Following a file that is still being written. These exercise the two hazards a whole-file re-read
-// never had: a record can be half-written when the watcher fires, and a file can be replaced under
-// an open handle.
+// Following a file that is still being written. These exercise the two hazards: a record can be
+// half-written when the watcher fires, and a file can be replaced under an open handle.
 
 @Suite("Transcript tail")
 struct TranscriptTailTests {
@@ -68,9 +67,8 @@ struct TranscriptTailTests {
         #expect(lines == ["{\"type\": \"ai-title\", \"aiTitle\": \"first\"}"])
     }
 
-    /// The backfill batch is what tells a consumer the file has been READ, so a file with
-    /// nothing in it has to deliver one too — otherwise a Session whose transcript is a moment
-    /// old is a roster row nobody is ever allowed to draw.
+    /// The backfill batch is what tells a consumer the file has been READ, so an empty file has to
+    /// deliver one too, or its Session is a roster row nobody may draw.
     @Test(.timeLimit(.minutes(1)))
     func `An empty transcript still reports that it has been read`() async throws {
         let file = try ScratchFile()

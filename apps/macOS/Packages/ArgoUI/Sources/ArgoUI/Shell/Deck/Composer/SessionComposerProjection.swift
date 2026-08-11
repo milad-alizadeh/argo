@@ -13,19 +13,17 @@ enum SessionComposerProjection {
         /// #558 moves it off the header (design decision 2). Effort joins it there too, when it
         /// is a value something actually holds.
         let facts: String?
-        /// What this Session has stopped asking about (#572). On the composer because that is the
-        /// surface a user is in front of every turn — a standing decision has to be findable
-        /// without being looked for. Empty for a Session holding none, which draws no tray.
+        /// What this Session has stopped asking about (#572). Empty for a Session holding none,
+        /// which draws no tray.
         let standingAllows: [StandingAllow]
-        /// Whether a Turn is in flight, which is what decides where the next one goes: straight to
-        /// the Session, or into the queue above the field. Read off the status rather than tracked
-        /// here, so what the composer believes and what the header states cannot disagree.
+        /// Whether a Turn is in flight, which decides where the next one goes: straight to the
+        /// Session, or into the queue above the field. Read off the status rather than tracked
+        /// here, so the composer and the header cannot disagree.
         let isRunning: Bool
     }
 
     /// A composer only for a Session Argo can put keystrokes to: managed, and not over. Everything
-    /// else gets NO composer rather than a disabled one — a greyed field invites a click and gives
-    /// no reason (design decision 7); #546 gives the absence its words.
+    /// else gets NO composer rather than a disabled one (design decision 7; #546).
     static func composer(for session: CockpitPresentation.Session?) -> Composer? {
         guard let session, case .managed = session.access, session.status != .ended else {
             return nil
@@ -40,9 +38,7 @@ enum SessionComposerProjection {
         )
     }
 
-    /// What the field invites while a Turn is running. It says what pressing send will actually do
-    /// — hold the words until the Turn ends — rather than going on offering to message an agent
-    /// that is mid-sentence, which is the promise the queue exists because Argo cannot keep.
+    /// What the field invites while a Turn is running: send holds the words until the Turn ends.
     static let queuePlaceholder = "Queue a follow-up…"
 
     /// Addressed to the agent when the record has named one, and to the role when it has not: a

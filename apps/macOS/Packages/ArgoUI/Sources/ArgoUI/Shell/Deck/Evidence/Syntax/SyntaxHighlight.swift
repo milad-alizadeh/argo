@@ -5,21 +5,17 @@ import SwiftUI
 
 /// The patch's lines, coloured — or `nil`, and drawn plain.
 ///
-/// A hunk is highlighted WHOLE and then cut back into lines, rather than a line at a time. A line
-/// on its own is not a parse: the middle of a block comment reads as code, and the second line of
-/// a multi-line string reads as whatever its characters happen to look like. Handing the grammar
-/// the whole hunk is the only way the colours mean anything.
+/// A hunk is highlighted WHOLE and then cut back into lines, never a line at a time: a line on its
+/// own is not a parse — the middle of a block comment reads as code, and the second line of a
+/// multi-line string reads as whatever its characters look like.
 ///
-/// Every failure here returns `nil` and the caller draws the characters as they arrived. That is
-/// the important property: highlighting is decoration over a record, and a record that cannot be
-/// decorated is still the record.
+/// Every failure here returns `nil` and the caller draws the characters as they arrived.
 enum SyntaxHighlight {
     /// One engine for the app. Building it loads highlight.js into a JavaScript context, which is
     /// not work to repeat per hunk on a panel the reader is scrolling.
     private static let engine = Highlight()
 
-    /// A whole block, coloured — the shape a fenced block is read in, where there is no gutter to
-    /// line anything up against and the block is one run of text on the screen.
+    /// A whole block, coloured — the shape a fenced block is read in: no gutter, one run of text.
     static func block(
         _ code: String,
         in language: EvidenceLanguage,
@@ -51,12 +47,9 @@ enum SyntaxHighlight {
         return aligned(readable(highlighted), to: code)
     }
 
-    /// The same colours, moved into the scope the view can see.
-    ///
-    /// The highlighter builds its result by importing HTML, so every colour lands in the AppKit
-    /// attribute scope — and SwiftUI's `Text` reads the SwiftUI one and silently ignores the rest.
-    /// Nothing about that is visible at the call site: the patch simply renders in one ink, which
-    /// is exactly what an unhighlightable file is supposed to look like.
+    /// The same colours, moved into the scope the view can see. The highlighter builds its result
+    /// by importing HTML, so every colour lands in the AppKit attribute scope — and SwiftUI's
+    /// `Text` reads the SwiftUI one and silently ignores the rest.
     private static func readable(_ attributed: AttributedString) -> AttributedString {
         var readable = attributed
         for run in attributed.runs {
@@ -68,15 +61,11 @@ enum SyntaxHighlight {
 
     /// The highlighted run, split on its newlines and put back against the lines it was made from.
     ///
-    /// The repair is why this exists. The highlighter trims whitespace and newlines off both ends
-    /// of what it is handed — which is right for a whole file and wrong for a hunk, whose first
-    /// line is usually indented and whose last lines may be blank. Nothing INSIDE the run is
-    /// touched, so exactly two things have to be given back: the blank lines either end, and the
-    /// indent on the first line that has anything on it.
-    ///
-    /// A count that still does not match is `nil` rather than a best effort. Colours drawn against
-    /// the wrong numbers in the gutter is a worse patch than an uncoloured one, and it is the
-    /// failure a reader would never notice.
+    /// The highlighter trims whitespace and newlines off both ends of what it is handed and
+    /// touches nothing inside, so exactly two things have to be given back: the blank lines either
+    /// end, and the indent on the first line that has anything on it. A count that still does not
+    /// match is `nil` rather than a best effort — colours drawn against the wrong gutter numbers
+    /// is a failure a reader would never notice.
     private static func aligned(
         _ highlighted: AttributedString,
         to code: [String],

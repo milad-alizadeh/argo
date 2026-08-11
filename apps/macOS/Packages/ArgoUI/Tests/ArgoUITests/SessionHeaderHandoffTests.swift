@@ -3,13 +3,7 @@ import ArgoEngine
 import Testing
 
 /// Whether the header offers to hand a Session off — the eligibility rule, asserted where it is
-/// made.
-///
-/// Its own suite beside the context one because it is a DIFFERENT rule over the same reading: the
-/// tier decides ink, and this decides whether a control exists at all. #502 asks for exactly one
-/// assertion by name — handing off is offered for managed-and-past-WARN and withheld for external
-/// and orphaned at the same reading — and a rule with two inputs is only proved by holding one of
-/// them still.
+/// made (#502). The tier decides ink; this decides whether a control exists at all.
 @Suite("Session header handoff")
 struct SessionHeaderHandoffTests {
     private static let pastWarn = 216_764
@@ -24,14 +18,12 @@ struct SessionHeaderHandoffTests {
         #expect(handoff.isLaunchable)
     }
 
-    /// Story 44. A permanent control trains you to ignore it, so under the line there is no button
-    /// at all — not a disabled one, which is still a control on every header.
+    /// Story 44. Under the line there is no button at all, not a disabled one.
     @Test
     func `under the warning line there is no button of any kind`() {
         #expect(header(tokens: 67175).handoff == nil)
         #expect(header(tokens: 149_999).handoff == nil)
-        // Exactly at the line it appears, which is the same boundary the reading changes on: a
-        // button that arrived a token later would be amber ink beside no remedy.
+        // Exactly at the line it appears — the same boundary the reading changes on.
         #expect(header(tokens: 150_000).handoff != nil)
     }
 
@@ -43,23 +35,21 @@ struct SessionHeaderHandoffTests {
     }
 
     /// Story 49, and the assertion #502 names. Both read-only postures, at a reading that WOULD
-    /// have earned the button on a managed Session — so what is being proved is the access half of
-    /// the rule and not the tier half.
+    /// have earned the button on a managed Session.
     @Test
     func `an external or orphaned Session gets the warning and no button`() {
         for access in [CockpitPresentation.Session.Access.external, .orphaned] {
             let header = header(tokens: Self.pastWarn, access: access)
 
-            // The warning is still there: Argo cannot type into this terminal, which is a fact
-            // about the remedy and not about how full the Session is.
+            // The warning is still there: read-only is a fact about the remedy, not about how full
+            // the Session is.
             #expect(header.context.tier == .warn)
             #expect(header.handoff == nil)
         }
     }
 
-    /// The remedy is offered once. A Session that has already handed its work over keeps the
-    /// coloured reading — the context really is that full — and loses the button, because a second
-    /// press would open a third Session on the same branch.
+    /// The remedy is offered once. A Session that has already handed off keeps the coloured reading
+    /// and loses the button — a second press would open a third Session on the same branch.
     @Test
     func `a Session that has handed off keeps the reading and loses the button`() {
         let header = header(tokens: Self.pastCrit, handedOffTo: "fresh-session")
@@ -68,8 +58,7 @@ struct SessionHeaderHandoffTests {
         #expect(header.handoff == nil)
     }
 
-    /// The whole rule in one table, over both axes at once — so a posture added to the access enum
-    /// or a tier added to the reading has to answer here rather than inheriting a branch.
+    /// The whole rule in one table, over both axes at once.
     @Test
     func `the offer is exactly managed-and-past-a-line`() {
         let offered = CockpitPresentation.Session.Access.allCases.map { access in
@@ -85,8 +74,7 @@ struct SessionHeaderHandoffTests {
         ])
     }
 
-    /// Story 45. The button's urgency is the READING's tier and not a second judgement, so the two
-    /// cannot drift into two alarms about one number.
+    /// Story 45. The button's urgency is the READING's tier and not a second judgement.
     @Test
     func `the button wears the tier of the reading beside it`() throws {
         let warned = try #require(header(tokens: Self.pastWarn).handoff)
@@ -98,8 +86,7 @@ struct SessionHeaderHandoffTests {
         #expect(critical.tier == header(tokens: Self.pastCrit).context.tier)
     }
 
-    /// Story 46. One sentence, saying what the control DOES — the argument for handing off is the
-    /// ⓘ panel's and is already made there.
+    /// Story 46. One sentence, saying what the control DOES.
     @Test
     func `the button carries one sentence and no caption`() throws {
         let handoff = try #require(header(tokens: Self.pastWarn).handoff)
@@ -107,14 +94,12 @@ struct SessionHeaderHandoffTests {
         #expect(handoff.detail.split(separator: ".").count == 1)
         #expect(handoff.detail.contains("/handoff"))
         #expect(handoff.detail.contains("same branch and issue"))
-        // The label is the verb and nothing else: a caption under a button is the third telling of
-        // a fact the reading and the panel have already made.
+        // The label is the verb and nothing else.
         #expect(handoff.label.count < 12)
     }
 
     /// The press is answered in minutes, so the control has a second word for the time it is
-    /// running. Decided here rather than in the view, and distinct from the resting one — a button
-    /// that read the same either way is a button somebody presses twice.
+    /// running, distinct from the resting one.
     @Test
     func `the button has a word for the minutes it is running`() throws {
         let handoff = try #require(header(tokens: Self.pastWarn).handoff)
@@ -123,9 +108,8 @@ struct SessionHeaderHandoffTests {
         #expect(handoff.runningLabel == "Handing off…")
     }
 
-    /// The AC that says a handoff which cannot be launched is DISABLED with a reason rather than
-    /// silently nothing. The reachable value-level case is a Session with no folder to start one
-    /// beside — Argo would have to invent a working directory, and it does not.
+    /// A handoff that cannot be launched is DISABLED with a reason rather than silently nothing.
+    /// The reachable value-level case is a Session with no folder to start one beside.
     @Test
     func `a Session with no folder shows the button disabled and says why`() throws {
         let handoff = try #require(
@@ -141,13 +125,12 @@ struct SessionHeaderHandoffTests {
         )
 
         #expect(!handoff.isLaunchable)
-        // The engine's own sentence, not a second one written beside it: the tooltip that explains
-        // the disabled button and the alert that reports the same refusal are one string.
+        // The tooltip on the disabled button and the alert reporting the same refusal are one
+        // string.
         #expect(handoff.blocked == SessionHandoff.Failure.noFolder.detail)
     }
 
-    /// The PNGs are the only evidence these renderings have, and a state with no case in the
-    /// catalog is a state that ships without anybody looking at it.
+    /// The PNGs are the only evidence these renderings have.
     @Test
     func `every state of the offer has a specimen of its own`() {
         let drawn = SessionHeaderFixture.handoffs

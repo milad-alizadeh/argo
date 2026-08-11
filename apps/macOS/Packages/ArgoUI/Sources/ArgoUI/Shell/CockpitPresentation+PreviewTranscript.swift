@@ -4,14 +4,13 @@ extension CockpitPresentation.Session {
     /// A turn as a transcript actually writes one, for the surfaces that read a Session rather
     /// than count one.
     ///
-    /// Written as ENGINE events, not as rows: a fixture shaped like a row would be a second way
-    /// to build one, and the projection that turns a stream into rows is exactly what the feed's
-    /// previews and specimen exist to look at. The kinds this feed does not draw yet are in here
-    /// on purpose — a specimen where every event is drawable proves nothing about ignoring one.
+    /// Written as ENGINE events, not as rows, so the projection that turns a stream into rows is
+    /// what the feed's previews and specimen look at. The kinds this feed does not draw yet are in
+    /// here on purpose: a specimen where every event is drawable proves nothing about ignoring
+    /// one.
     ///
-    /// The unreadable line is in here for the opposite reason: it IS drawn, and it is the one row
-    /// nobody would ever reach on purpose — a record has to be truncated or corrupt to produce
-    /// one, so without it in the shipping fixture the surface is never looked at.
+    /// The unreadable line is in here for the opposite reason: it IS drawn, and a record has to be
+    /// truncated or corrupt to produce one, so without it the surface is never looked at.
     static let previewTranscript: [TranscriptEvent] = [
         .prompt(
             text: "Read the anatomy study before you start, then wire the feed's prose through "
@@ -46,8 +45,7 @@ extension CockpitPresentation.Session {
         + shotsTaken
         + [
             // Written with the shape a CLI actually writes in — a heading, a list, a fenced block,
-            // a pipe table, a link and the `code` spans a sentence is half made of. A fixture of
-            // flat paragraphs would prove nothing about reading an agent's markdown.
+            // a pipe table, a link and the `code` spans a sentence is half made of.
             .message(
                 markdown: """
                 ## Landed

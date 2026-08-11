@@ -22,9 +22,7 @@ struct ProjectRowMenu: View {
                 actions.locateProject(row.id)
                 dismiss()
             }
-            // The other route to the same panel, `⌘K` being the first. On the row rather than in
-            // the app menu because these are settings about a PROJECT, and the row is where a
-            // Project is addressed.
+            // The other route to the same panel, `⌘K` being the first.
             Button(ProjectSettingsCommands.label, systemImage: ArgoSymbol.projectSettings) {
                 actions.openProjectPanel(row.id)
                 dismiss()
@@ -62,7 +60,6 @@ private struct ProjectRowMenuPreview: View {
     }
 }
 
-// The menu on its own, opened by the ⋯ — the one place Reveal, Locate and Remove are spelled out.
 #Preview("Project row menu") {
     ProjectRowMenuPreview()
         .padding(ArgoSpacing.region)

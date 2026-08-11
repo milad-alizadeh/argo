@@ -2,21 +2,12 @@ import ArgoEngine
 
 public extension CockpitPresentation {
     /// One Session as the cockpit renders it — the value every surface below the shell takes.
-    ///
-    /// Its own file rather than a member of `CockpitPresentation`'s: the presentation is a
-    /// window's whole input and the Session is the thing the window is mostly about, so the two
-    /// grow at different rates and only one of them has to be re-read to answer a question about
-    /// a row or a header.
     struct Session: Equatable, Identifiable, Sendable {
-        /// What the user can DO with a Session, which is the shell's question. Derived from
-        /// provenance — see `Access(provenance:)` — and never asserted beside it.
+        /// What the user can DO with a Session. Derived from provenance — see
+        /// `Access(provenance:)` — and never asserted beside it.
         ///
-        /// Three postures rather than "managed and the rest", because the rest is two facts:
-        /// `external` was never Argo's, and `orphaned` was — Argo spawned it and then lost the
-        /// PTY with the process that owned it (`CONTEXT.md` L2). Both are read-only, which is
-        /// why that is a DERIVED property of a posture here and not a case beside them: a surface
-        /// asking "can this be driven" gets one answer, and a surface naming what it is looking
-        /// at gets the honest one.
+        /// `external` was never Argo's; `orphaned` was — Argo spawned it and then lost the PTY
+        /// with the process that owned it (`CONTEXT.md` L2). Both are read-only.
         public enum Access: CaseIterable, Equatable, Sendable {
             case managed
             case external
@@ -24,16 +15,13 @@ public extension CockpitPresentation {
         }
 
         /// Whether the Session's checkout is the Project's own or one it was given — the
-        /// engine's own enum, named for the shell rather than restated as it. A second copy
-        /// would be two vocabularies for one fact, kept in step by hand.
+        /// engine's own enum, aliased rather than restated.
         public typealias WorkspaceKind = WorkspaceProjection.Kind
 
         /// The git working context the Session is running in (`CONTEXT.md` L3).
         ///
-        /// Four facts and no more: `sharedCount` and `headSha` are real Workspace attributes and
-        /// belong to surfaces that address a commit, which the header does not. Every count is
-        /// OPTIONAL because Argo may not have read git yet, and an unread count is a different
-        /// claim from a clean tree.
+        /// Every count is OPTIONAL because Argo may not have read git yet, and an unread count is
+        /// a different claim from a clean tree.
         public struct Workspace: Equatable, Sendable {
             public let kind: WorkspaceKind?
             /// The join key (`CONTEXT.md` L3) — and the header's own subject line. Absent for a
@@ -86,9 +74,8 @@ public extension CockpitPresentation {
         /// difference belongs to a provider surface, and neither renders a link here.
         public let issue: Issue?
         /// When this Session was last seen to run, in milliseconds since the epoch. The Hub's own
-        /// sort key rather than a second reading of it, so the roster's order and what the roster
-        /// says about that order cannot disagree. Absent where neither the records nor the file
-        /// behind them could say — which is a gap, never a moment to stand in for one.
+        /// sort key rather than a second reading of it. Absent where neither the records nor the
+        /// file behind them could say — a gap, never a moment standing in for one.
         public let lastSeenAtMs: Int?
         /// When this Session first did anything, in milliseconds since the epoch — the oldest
         /// moment its records report. With `lastSeenAtMs` above it, the pair IS the Session's
@@ -113,9 +100,6 @@ public extension CockpitPresentation {
         /// (`CONTEXT.md` L2 — the resume chain a handoff makes across two Sessions rather than
         /// within one). Absent for every Session that has not handed off, which is nearly all of
         /// them.
-        ///
-        /// An id and not the Session, deliberately: the fresh row is in the same roster, and a
-        /// copy of it here would be a second reading of a Session that is already on screen.
         public let handedOffTo: String?
         /// Whether the user cleared this Session off the roster. Argo's own fact and not a
         /// reading of anything (`CONTEXT.md` "Storage & ownership"): nothing observed sets it,
@@ -124,11 +108,8 @@ public extension CockpitPresentation {
         public let isArchived: Bool
         /// The name the user gave this Session, beside — never instead of — the `title` above:
         /// the derived one has to survive being overridden, or the Reset in the rename dialog
-        /// would have nothing to go back to (#502, story 20). Argo's own fact, like `isArchived`
-        /// beside it, and absent for a Session nobody renamed.
-        ///
-        /// Which of the two the surfaces DRAW is not decided here — that is the fallback chain,
-        /// and it lives in the projections where it can be asserted (`SessionTitle`).
+        /// would have nothing to go back to (#502, story 20). Argo's own fact, and absent for a
+        /// Session nobody renamed. Which of the two the surfaces DRAW is `SessionTitle`'s.
         public let explicitName: String?
         /// The Permission the Session's agent is blocked on, verbatim from the engine — DIRECT,
         /// because Argo holds the blocked hook itself. Absent for every Session that is not
@@ -143,12 +124,8 @@ public extension CockpitPresentation {
         /// were all answered, cancelled, or are still waiting — which is every Session in practice,
         /// since the gate waits a day.
         public let expiredPermissions: [PermissionExpiry]
-        /// Everything the Session's transcript said, in order — the feed's whole input.
-        ///
-        /// The engine's own events rather than a second shape named for the shell: the surface
-        /// that draws them is `FeedProjection`, and a presentation that pre-digested the stream
-        /// would put the reading decisions somewhere no test can reach them. Empty by default, so
-        /// a Session named for a fact about the roster does not have to invent a transcript.
+        /// Everything the Session's transcript said, in order — the feed's whole input. The
+        /// engine's own events, undigested; `FeedProjection` is what draws them.
         public let events: [TranscriptEvent]
 
         public init(

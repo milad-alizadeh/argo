@@ -2,13 +2,9 @@ import Foundation
 
 /// Paths as the feed says them: relative to where the Session is working.
 ///
-/// `/Users/milad/Developer/argo/.claude/worktrees/ticket-421/apps/macOS/…` is thirty characters of
-/// this machine before the first character about the work. Inside a Session everything is relative
-/// to that Session's own cwd, so the prefix says nothing a reader does not already know — and it is
-/// the part that pushes the informative half of an address off the edge of the panel.
-///
-/// It shortens whatever it is given rather than parsing a path out of it, because a command line
-/// carries paths too, in the middle of its own words.
+/// Inside a Session everything is relative to that Session's own cwd, so the prefix says nothing a
+/// reader does not already know. It shortens whatever it is given rather than parsing a path out of
+/// it, because a command line carries paths too, in the middle of its own words.
 struct FeedPath: Equatable, Sendable {
     /// Where the Session is working. `nil` for a record that never said, which is a real case: a
     /// transcript is read from the first line and the cwd may not have arrived yet.
@@ -31,14 +27,12 @@ struct FeedPath: Equatable, Sendable {
     }
 
     /// Whether an address this already shortened names somewhere OUTSIDE the Session's own tree.
+    /// Read off what survived the shortening: a path under the cwd comes back relative, so one that
+    /// still opens on a root, a home, or a step upwards is one the cwd could not account for.
     ///
-    /// Read off what survived the shortening rather than compared again: a path under the cwd comes
-    /// back relative, so one that still opens on a root, on a home, or on a step upwards is one the
-    /// cwd could not account for. That is the whole test, and it is why it runs on the output.
-    ///
-    /// A Session that never said where it was working marks nothing. There is nothing to be outside
-    /// OF, and every address in such a feed is absolute — the marker would land on all of them and
-    /// say something about the record rather than about the file (`CONTEXT.md`, degrade-down).
+    /// A Session that never said where it was working marks nothing — every address in such a feed
+    /// is absolute, so the marker would say something about the record rather than about the file
+    /// (`CONTEXT.md`, degrade-down).
     func isExternal(_ shortened: String) -> Bool {
         guard let cwd, !cwd.isEmpty else { return false }
         return shortened.hasPrefix("/") || shortened.hasPrefix("~") || shortened.hasPrefix("..")

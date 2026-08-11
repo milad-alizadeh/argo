@@ -3,10 +3,8 @@ import SwiftUI
 
 // Where the reading sits and who moved it — the half of the coordinator that touches the offset.
 //
-// Three sources of movement, each with its own honest witness. The reader's hand posts
-// live-scroll notifications; their keyboard reports through the table's own key handling; the
-// pane changing shape posts a frame change. This object's own scrolls are the only other calls
-// in the file.
+// Three witnesses to movement: the hand posts live-scroll notifications, the keyboard reports
+// through the table's own key handling, and the pane changing shape posts a frame change.
 
 extension FeedTableCoordinator {
     func watch(_ scroller: NSScrollView) {
@@ -48,9 +46,7 @@ extension FeedTableCoordinator {
     /// The opening scroll, once per reading. Deferred a runloop turn so the first layout exists
     /// to be scrolled, and re-aimed across a few more: the rows a scroll realises on its way to
     /// the landing replace their lazy heights on the NEXT turn, so a single pass lands a line or
-    /// two short of the end it was aiming at. Each pass is one frame; the run is invisible —
-    /// unless the reader scrolls inside it, which retires the remaining passes (`opening`):
-    /// an open must never out-scroll a hand.
+    /// two short. A reader scrolling inside the run retires the remaining passes (`opening`).
     func place() {
         guard !shown.isEmpty else {
             placed = false
@@ -112,26 +108,21 @@ extension FeedTableCoordinator {
         paneWidth = width
         if width != known, width > 0, !shown.isEmpty {
             if known == 0 {
-                // The FIRST real width. Everything so far was answered with the estimate —
-                // rows created before layout have no width to be measured against — and the
-                // table has those answers cached. A reload retires them all at once, lazily
-                // re-asked; left alone, every row stands at the estimate forever, short rows
-                // over a gap and long ones clipped. The measured cache goes with it: a row
+                // The FIRST real width. Rows created before layout had no width to measure
+                // against, and the table has those estimates cached; left alone every row
+                // stands at the estimate forever. The measured cache goes with them — a row
                 // measured against an interim launch width is cached too tall, and a reload
-                // that re-asks the same cache re-seats every row on the stale answer — content
-                // at the top, a blank gulf, the tail pinned below it.
+                // re-asking that cache re-seats every row on the stale answer.
                 dropMeasuredHeights()
                 table?.reloadData()
                 if model?.isFollowing == true {
                     scrollToEnd(over: nil)
                 }
             } else {
-                // Degraded FIRST, squared up later — never trusting the flag alone. A width
-                // change is usually one frame of many, and only the seam's own drag carries
-                // `isResizing`: the panel's reveal ANIMATES the feed's width with no flag at
-                // all, and a full re-measure of the whole transcript on each of those frames
-                // was the jitter the panel had that the bare seam did not. Visible rows
-                // re-measure now; the full pass waits for the burst to go quiet.
+                // Degraded FIRST, squared up later — never trusting the flag alone: only the
+                // seam's own drag carries `isResizing`, while the panel's reveal ANIMATES the
+                // feed's width with no flag at all. Visible rows re-measure now; the full pass
+                // waits for the burst to go quiet.
                 rewrap(fully: false)
                 settleSoon()
             }
@@ -141,13 +132,11 @@ extension FeedTableCoordinator {
     }
 
     /// One settle per burst: each width frame pushes the full pass back, and only the quiet
-    /// after the last one runs it. The seam's own end-of-drag settle still lands first when the
-    /// flag path is live — `settleAfterResize` retires this timer.
+    /// after the last one runs it. `settleAfterResize` retires this timer.
     ///
-    /// Quiet is not enough on its own: a hand pauses mid-drag longer than any debounce, and a
-    /// full re-measure fired into that pause lands UNDER the hand — hundreds of ms of freeze the
-    /// moment it moves again. So a live drag defers the settle for as long as it is live, and
-    /// the end-of-drag edge (`apply`) or the timer finally finding quiet runs it.
+    /// Quiet alone is not enough — a hand pauses mid-drag longer than any debounce, and a full
+    /// re-measure fired into that pause lands UNDER the hand as hundreds of ms of freeze. So a
+    /// live drag defers the settle for as long as it is live.
     private func settleSoon() {
         settling?.cancel()
         settling = Task { [weak self] in
@@ -165,9 +154,8 @@ extension FeedTableCoordinator {
     /// a row id survives a remeasure because it is not a measurement.
     ///
     /// Mid-drag the re-measure is VISIBLE ROWS ONLY, off-screen rows riding their stale heights
-    /// until `settleAfterResize` — the Telegram-macOS pattern, and Apple's own live-resize
-    /// guidance: degrade during the drag, square up at its end. A full pass per frame re-asked
-    /// the whole transcript per frame, which was the drag's jitter.
+    /// until `settleAfterResize`: a full pass per frame re-asks the whole transcript per frame,
+    /// which was the drag's jitter.
     private func rewrap(fully: Bool) {
         guard let table, let scroller else { return }
         let anchor = model?.isFollowing == true ? nil : anchorRow()

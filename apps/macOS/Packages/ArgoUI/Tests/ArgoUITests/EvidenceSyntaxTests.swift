@@ -5,8 +5,8 @@ import SwiftUI
 import Testing
 
 /// Cutting a highlighted hunk back into the lines it was made of, through the one entry a view
-/// calls. Its own suite because it is the part that can silently go wrong: a patch whose colours
-/// have slipped one line against its gutter is still a plausible-looking patch.
+/// calls. It goes wrong silently: a patch whose colours slipped one line against its gutter still
+/// looks plausible.
 @Suite("Syntax line alignment")
 struct SyntaxLineTests {
     @Test
@@ -54,9 +54,8 @@ struct SyntaxLineTests {
         ) == nil)
     }
 
-    /// The claim that the dependency is wired up at all: a theme it rejects, or an alias it does
-    /// not know, fails silently as an uncoloured patch. WHICH spans were coloured is highlight.js's
-    /// business; that any of them were is Argo's.
+    /// The dependency is wired up at all: a theme it rejects, or an alias it does not know, fails
+    /// silently as an uncoloured patch.
     @Test
     func `a real hunk comes back coloured`() async throws {
         let lines = try #require(await SyntaxHighlight.lines(
@@ -121,18 +120,13 @@ struct SyntaxPatchTests {
     }
 }
 
-/// The AC: every colour the panel draws source in asserts its contrast against the surface it sits
-/// on. The theme is the dependency's, so this cannot be checked by reading a palette file — the
-/// grammar is run and every ink it actually produced is measured on the panel's own ground.
+/// Every colour the panel draws source in asserts its contrast against the surface it sits on. The
+/// theme is the dependency's, so the grammar is run and every ink it produced is measured rather
+/// than a palette file being read.
 @Suite("Syntax legibility")
 struct SyntaxContrastTests {
-    /// 3:1 and not the 4.5:1 the contract's own text roles clear.
-    ///
-    /// Xcode's comment grey lands just under 4.5 on a near-black ground, and it is Apple's number
-    /// for a reason: a comment is meant to recede from the code around it. Holding source to the
-    /// prose floor would mean rejecting the editor's own theme — which the panel exists to match —
-    /// so the floor here is the one for text a reader scans rather than reads word by word, and it
-    /// is asserted rather than assumed.
+    /// 3:1 and not the 4.5:1 the contract's own text roles clear: Xcode's comment grey lands just
+    /// under 4.5 on a near-black ground, so the prose floor would reject the editor's own theme.
     static let floor = 3.0
 
     @Test
@@ -165,8 +159,8 @@ struct SyntaxContrastTests {
 }
 
 private extension ArgoColor {
-    /// A rendered `Color` back in the contract's own components, so the same WCAG arithmetic the
-    /// palette is held to can be pointed at a colour the palette never chose.
+    /// A rendered `Color` back in the contract's own components, so the palette's WCAG arithmetic
+    /// can be pointed at a colour the palette never chose.
     init(_ color: Color) {
         let resolved = color.resolve(in: EnvironmentValues())
         self.init(

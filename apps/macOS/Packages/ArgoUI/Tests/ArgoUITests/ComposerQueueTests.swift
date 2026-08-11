@@ -16,8 +16,7 @@ struct ComposerQueueTests {
 
         #expect(driver.sent(to: "session-a").isEmpty)
         #expect(draft.queued.map(\.text) == ["And then open the PR."])
-        // The field clears the way a sent one does: the words are visibly held above it now, so
-        // leaving them in the field too would read as one message in two places.
+        // The field clears the way a sent one does: the words are visibly held above it now.
         #expect(draft.text.isEmpty)
     }
 
@@ -47,8 +46,7 @@ struct ComposerQueueTests {
         #expect(draft.queued.isEmpty)
     }
 
-    /// The chip's `×`. A follow-up waiting on a Turn is the one message the user can still take
-    /// back, so cancelling it must leave the rest of the queue exactly where it was.
+    /// The chip's `×`: cancelling one must leave the rest of the queue exactly where it was.
     @Test
     func `cancelling one queued turn leaves the others waiting`() {
         var draft = ComposerDraft()
@@ -62,8 +60,8 @@ struct ComposerQueueTests {
         #expect(draft.queued.map(\.text) == ["First", "Third"])
     }
 
-    /// A flush that hits a refusal stops there. The rest stay queued rather than being thrown at a
-    /// Session that has just said it cannot take them — and the seam carries the reason.
+    /// A flush that hits a refusal stops there; the rest stay queued and the seam carries the
+    /// reason.
     @Test
     func `a refused flush keeps the turns it never reached`() {
         let driver = InMemorySessionDriver()
@@ -93,8 +91,7 @@ struct ComposerQueueTests {
     }
 
     /// The seam's Retry after a refused flush. The words went into the queue before they were ever
-    /// put to the Session, so the field is empty — and a Retry reading the field there would draw
-    /// a remedy that does nothing in exactly the state that produced it.
+    /// put to the Session, so the field is empty and Retry must read the queue.
     @Test
     func `retrying a refused flush puts the queue back, not the empty field`() {
         let driver = InMemorySessionDriver()

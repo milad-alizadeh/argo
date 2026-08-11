@@ -29,12 +29,10 @@ struct HubConnectionTests {
     }
 
     /// The window inside `connect`: the previous Project is already dropped and the new one has
-    /// nothing standing. `connect` suspends on the checkout read, so a view does render here — and
-    /// "No live sessions" would be an answer about a Project that has not been read yet.
+    /// nothing standing. `connect` suspends on the checkout read, so a view does render here.
     ///
-    /// The window is HELD open rather than polled for. A test that spun waiting to catch it would
-    /// be asserting on how fast a checkout read happens to return, and the claim is that the state
-    /// exists at all — so the read parks inside it and the assertion is made standing there.
+    /// The window is HELD open by gating the checkout read rather than polled for, so the assertion
+    /// does not depend on how fast that read returns.
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a connect in flight reads as connecting, never as no sources`() async throws {
@@ -80,8 +78,8 @@ struct HubConnectionTests {
         await hub.disconnect()
     }
 
-    /// A retry re-points at what the Hub is already on. It holds that configuration, so nothing is
-    /// rebuilt on the way — a caller reassembling it could reassemble a different one.
+    /// A retry re-points at what the Hub is already on: it holds that configuration rather than
+    /// having a caller reassemble one.
     @Test(.timeLimit(.minutes(1)))
     @MainActor
     func `a retry re-points at the configuration the Hub is already on`() async throws {

@@ -1,21 +1,16 @@
 import SwiftUI
 
 /// One registered Project: its symbol, its full name over its path, what is live in it, and the
-/// verbs that manage it.
-///
-/// An unreachable row keeps its place and states "folder not found" in words. The dashed edge is
-/// the second reading of that, never the only one — and `Locate…` sits on the row rather than
-/// inside the menu, because on this row it is the primary action.
+/// verbs that manage it. An unreachable row keeps its place and states "folder not found" in
+/// words; the dashed edge is the second reading of that, never the only one.
 struct ProjectDrawerRow: View {
     @Environment(\.argo) private var argo
-    /// A drawer that stayed open over the cockpit it just re-pointed would be showing the answer
-    /// to a question already asked. Every verb that changes what the window is on closes it.
+    /// Every verb that changes what the window is on closes the drawer.
     @Environment(\.dismiss) private var dismiss
 
-    /// The row draws its own focus. The system's effect boxes the button it is on — here the
-    /// identity alone — so a rectangle wrapped two thirds of a row in a fill saying the same thing
-    /// as the active wash. This was pulled once on suspicion of causing a crash on open; the E2E
-    /// test now walks that path, and the crash was the accessibility tree, not this.
+    /// The row draws its own focus: the system's effect boxes the button it is on — here the
+    /// identity alone — which wrapped two thirds of a row in a fill. Pulled once on suspicion of
+    /// causing a crash on open; the crash was the accessibility tree, not this.
     @FocusState private var isFocused: Bool
 
     let row: ProjectDrawerProjection.Row
@@ -47,8 +42,7 @@ struct ProjectDrawerRow: View {
     }
 
     /// Clicking a row whose folder is gone points at the folder picker, not at a Project that
-    /// cannot be opened. A disabled row would grey out its own name, which is the one thing on it
-    /// that is still true.
+    /// cannot be opened.
     private func select() {
         guard row.isReachable else { return locate() }
         actions.selectProject(row.id)
@@ -71,9 +65,8 @@ struct ProjectDrawerRow: View {
                 Text(row.name)
                     .argoText(ArgoTypography.rowTitle)
                     .foregroundStyle(argo.color.text.primary)
-                // "folder not found" takes no hue of its own. The words and the dashed edge carry
-                // it, and the attention amber is spoken for by the state rollup (#164) — one
-                // colour meaning two things is what the merged vessel exists to end.
+                // "folder not found" takes no hue of its own: the attention amber is spoken for by
+                // the state rollup (#164).
                 Text(row.detail)
                     .argoText(ArgoTypography.machineCaption)
                     .foregroundStyle(row.isReachable ? argo.color.text.tertiary : argo.color.text
@@ -103,22 +96,16 @@ struct ProjectDrawerRow: View {
         }
     }
 
-    /// Prominent by placement and weight, not by hue: a stock tinted button would put the only
-    /// accent-coloured control in the shell on the one row that must not read as selected, and the
-    /// contract reserves that hue for selection and focus. That rule is `QuietButtonStyle` now,
-    /// because the Connect panel needs the same shape and two copies of it would drift.
+    /// Prominent by placement and weight, not by hue: the contract reserves the accent for
+    /// selection and focus, and this row must not read as selected.
     private var locateButton: some View {
         Button("Locate…", action: locate)
             .buttonStyle(.quiet)
     }
 
     /// Two independent readings on one shape: which Project the window is on, and whether its
-    /// folder is there. They compose because they are not alternatives — the active Project's
-    /// folder can be the one that moved, and that row has to say both at once.
-    ///
-    /// The wash alone marks the active row. There is no Ion Blue edge beside it: on glass the
-    /// wash already separates that row from every other, and a second mark saying the same thing
-    /// only competes with what the system paints for focus.
+    /// folder is there. They compose — the active Project's folder can be the one that moved, and
+    /// that row has to say both at once.
     private var rowSurface: some View {
         let shape = RoundedRectangle(cornerRadius: ArgoRadius.control)
         return shape

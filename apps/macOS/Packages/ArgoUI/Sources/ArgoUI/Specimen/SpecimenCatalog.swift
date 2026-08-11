@@ -1,15 +1,12 @@
 /// The named states the render harness can put on screen, one per launch.
 ///
-/// `#Preview` is the story (`swift-style.md`), but Xcode is the only thing that can draw one, and a
-/// screenshot is the only evidence a visual claim can be checked against. This catalog addresses
+/// `#Preview` is the story (`swift-style.md`), but only Xcode can draw one. This catalog addresses
 /// the same states by a name the command line can pass, so a state can be rendered to a PNG without
-/// a human driving the app into it — which for most of them is not possible at all, since the app
-/// launched against an ordinary checkout shows no Sessions.
+/// a human driving the app into it — impossible for most of them, since the app launched against an
+/// ordinary checkout shows no Sessions.
 ///
-/// Add a case here and it is renderable; `scripts/specimens.sh` reads the list out of this file
-/// rather than repeating it. What each case DRAWS is `SpecimenScreen`'s — the list and the wiring
-/// are separate files because the script parses this one, and a parser is a reason for a file to
-/// hold one thing.
+/// Add a case here and it is renderable; `scripts/specimens.sh` parses the list out of this file.
+/// What each case DRAWS is `SpecimenScreen`'s — kept separate so this file holds only the list.
 public enum Specimen: String, CaseIterable, Sendable {
     case foundations
     case contract
@@ -17,9 +14,8 @@ public enum Specimen: String, CaseIterable, Sendable {
     case ghostedRows
     case roster
     case churningRoster
-    // No swiped-row case: the reveal belongs to `.swipeActions` now, and the system opens it from
-    // a real gesture only — there is no state to hand the harness. It is an XCUITest claim
-    // (`ArgoE2ETests`), not a PNG.
+    // No swiped-row case: `.swipeActions` opens only from a real gesture, so there is no state to
+    // hand the harness. It is an XCUITest claim (`ArgoE2ETests`), not a PNG.
     case archivedRoster
     case spawningRoster
     case renamedRoster

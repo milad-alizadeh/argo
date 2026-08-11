@@ -1,12 +1,8 @@
 import ArgoEngine
 import SwiftUI
 
-/// A question put to somebody, drawn where it was asked.
-///
-/// The one attention-coloured thing in the feed, and only while it is WAITING. An answered question
-/// goes neutral: it is history, and history that goes on glowing is what teaches a reader that the
-/// colour means nothing. Neither state moves — a question is a moment in the reading, and a row
-/// pinned to the top of the feed is a row lying about when it happened.
+/// A question put to somebody, drawn where it was asked. The one attention-coloured thing in the
+/// feed, and only while it is WAITING; an answered one goes neutral. Neither state moves.
 struct FeedAskLine: View {
     @Environment(\.argo) private var argo
 
@@ -40,9 +36,7 @@ struct FeedAskLine: View {
         ask.isPending ? ArgoOperationalState.attention.ground(in: argo.color) : .transparent
     }
 
-    /// Only while it waits. A settled question keeps no rule around it: the feed's hairlines are
-    /// its punctuation, and a box drawn round an ordinary row is a border competing with the three
-    /// marks that are supposed to be the only lines in the column.
+    /// Only while it waits: a settled question keeps no rule around it.
     private var edge: ArgoColor {
         ask.isPending ? ink : .transparent
     }
@@ -71,8 +65,7 @@ private struct FeedAskQuestion: View {
     }
 
     /// The options exactly as they were offered, in the order they were offered. A question that
-    /// offered none draws none — free-form asks exist, and two invented buttons would be worse
-    /// than the honest absence.
+    /// offered none draws none — free-form asks exist.
     @ViewBuilder private var options: some View {
         if !question.options.isEmpty {
             FeedAskOptions(options: question.options, chosen: chosen, ink: ink)
@@ -93,8 +86,7 @@ private struct FeedAskQuestion: View {
     .argoAppearance()
 }
 
-// A question that offered nothing to choose between. Free-form asks exist, and the row has a branch
-// for one — so it gets a render, or the branch is a state nobody has looked at.
+// The free-form branch gets a render, or it is a state nobody has looked at.
 #Preview("Ask — a question with no options under it") {
     FeedAskLine(ask: FeedAsk(
         ask: Ask(questions: [Ask.Question(text: "What should I call the roll-up?", options: [])]),

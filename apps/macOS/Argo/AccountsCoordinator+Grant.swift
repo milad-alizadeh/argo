@@ -2,15 +2,11 @@ import ArgoEngine
 import ArgoUI
 import Foundation
 
-/// Authorizing one more identity, from the panel's side: ask for a code, show it, wait.
-///
-/// Two halves rather than one blocking call, because that is the shape `GitHubDeviceFlow` hands
-/// back and the reason it does: the code is on screen before anything waits on it. A user cannot
-/// finish a device flow they cannot read.
+/// Authorizing one more identity, from the panel's side: ask for a code, show it, wait. Two halves
+/// rather than one blocking call, so the code is on screen before anything waits on it.
 extension AccountsCoordinator {
-    /// Repeatable by construction. Nothing here asks whether an Account with this provider already
-    /// exists, because a personal and a work GitHub are two Accounts and the second is added the
-    /// same way as the first (#414).
+    /// Repeatable by construction — a personal and a work GitHub are two Accounts, and the second
+    /// is added the same way as the first (#414).
     func connect(_ provider: AccountProvider) {
         cancelWait()
         // The last refusal goes with it. A note left standing under a fresh device code would be
@@ -21,11 +17,7 @@ extension AccountsCoordinator {
 
     /// Stop waiting. The code stays good at the provider and the Account is simply not recorded:
     /// Argo cannot un-grant something the user may already have approved, and saying it had would
-    /// be a fabricated DIRECT.
-    ///
-    /// It rebuilds, and that is the whole of it: clearing the challenge is what the card is drawn
-    /// from, and without the rebuild the card the user just dismissed stays on screen until some
-    /// unrelated act happens to redraw the panel.
+    /// be a fabricated DIRECT. The rebuild is required — without it the dismissed card stays drawn.
     func stopWaiting() async {
         cancelWait()
         await refresh()

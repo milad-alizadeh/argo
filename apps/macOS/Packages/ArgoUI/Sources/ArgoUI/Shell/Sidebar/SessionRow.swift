@@ -2,34 +2,24 @@ import AppKit
 import ArgoEngine
 import SwiftUI
 
-/// One flat sidebar row over the sidebar's system material.
-///
-/// The row draws no selection of its own: on macOS 26 the sidebar's own rounded capsule
-/// *is* the neutral wash D30 asks for, and it is the same shape Finder, Mail and Xcode
-/// select with. Painting a second wash over it produced two stacked highlights, and
-/// replacing it means leaving `.listStyle(.sidebar)` — which is what the sidebar's Liquid
-/// Glass comes from (D3). Contents only, therefore; selection belongs to the system.
+/// One flat sidebar row over the sidebar's system material. It draws no selection of its own:
+/// `.listStyle(.sidebar)`'s own capsule is the wash (D30, D3), and a second one over it stacks
+/// two highlights.
 struct SessionRow: View {
-    /// How many times the field asks for focus before giving up, and how long it waits between
-    /// asks. A bound rather than a loop that could spin for the life of the row, and an interval
-    /// short enough that the first ask a settled `List` accepts is the one nobody notices.
+    /// Bound and interval on the focus retries in `open()`.
     private static let focusAttempts = 20
     private static let focusRetry = Duration.milliseconds(20)
 
     @Environment(\.argo) private var argo
 
     let row: SessionRosterProjection.Row
-    /// Name this Session, or — with `nil` — drop the name it has. Inert by default, so every
-    /// preview and specimen draws the row without a store behind it.
+    /// Name this Session, or — with `nil` — drop the name it has. Inert by default.
     var rename: (String?) -> Void = { _ in }
-    /// Whether this row is the one being typed into. Owned ABOVE the row rather than by it, because
-    /// two things outside the row now open the field: the menu bar's Rename, which is addressed at
-    /// whichever Session is selected, and the render harness, which cannot click. A row drawn
-    /// without one — every plain preview — is a row at rest.
+    /// Whether this row is the one being typed into. Owned ABOVE the row, because the menu bar's
+    /// Rename and the render harness both open the field from outside it.
     var isRenaming: Binding<Bool> = .constant(false)
-    /// Make this row the selected one. The row selects ITSELF because it also has to answer a
-    /// double-click, and one view cannot both carry a tap gesture and leave the click to the `List`
-    /// underneath it — see the gestures on `body`. Inert by default, like the rename beside it.
+    /// Make this row the selected one. The row selects ITSELF because a tap gesture inside a `List`
+    /// row swallows the click the `List` selects with — see the gestures on `body`.
     var select: () -> Void = {}
 
     @State private var typed = ""
@@ -41,21 +31,15 @@ struct SessionRow: View {
             secondaryLine
         }
         .padding(.vertical, ArgoSpacing.tight)
-        // A Session nobody here can drive is drawn quieter as a WHOLE — every element of it at
-        // once, including the state dot, which is the loudest thing on a running row. Applied
-        // over the assembled row rather than per-element so nothing can be left behind at full
-        // strength, and so a fact added to the row inherits it without being told.
+        // Applied over the assembled row, so nothing added to it is left behind at full strength.
         .opacity(row.isReadOnly ? ArgoOpacity.ghosted : ArgoOpacity.full)
         .contentShape(.rect)
-        // `.ignore` while the row is at rest and `.contain` while it is being typed into: the row
-        // is ONE thing to a screen reader, said in the projection's words, but a field opened
-        // inside it is a thing of its own that has to stay reachable.
+        // `.contain` while the field is open so it stays reachable; `.ignore` at rest makes the
+        // whole row one element to a screen reader.
         .accessibilityElement(children: isRenaming.wrappedValue ? .contain : .ignore)
-        // Ghosting is ink, and ink is nothing a screen reader can hear. What is announced is
-        // the projection's decision, not a second one taken here.
         .accessibilityLabel(row.announcement)
-        // AFTER the title's own gestures, so the layer that catches a double-click cannot stand
-        // between the pointer and the menu holding Reset (#502, story 20).
+        // AFTER the title's own gestures, so the double-click layer cannot stand between the
+        // pointer and the menu holding Reset (#502, story 20).
         .help(inspectionText)
         .contextMenu { copyActions }
     }
@@ -69,13 +53,9 @@ struct SessionRow: View {
         }
     }
 
-    /// The clear layer that answers both clicks over the title, and the title's alone: story 18
-    /// asks for a double-click on the TITLE, and a layer over the whole row would rename off the
-    /// state word and the empty end of the line too.
-    ///
-    /// It has to answer BOTH, because a tap gesture inside a `List` row hit-tests ahead of the row
-    /// and swallows the click the `List` selects with — so a layer that took only the double-click
-    /// would cost the title its selection, which is the bug this replaced.
+    /// The clear layer over the title alone that answers BOTH clicks: a tap gesture inside a `List`
+    /// row hit-tests ahead of the row and swallows the click the `List` selects with, so a layer
+    /// taking only the double-click would cost the title its selection.
     private var clickCatcher: some View {
         Color.clear
             .contentShape(.rect)
@@ -97,20 +77,14 @@ struct SessionRow: View {
                 .argoText(ArgoTypography.rowTitle)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                // Only while the row is at rest: the field above keeps its own clicks, because a
-                // caret you cannot place is worse than no edit-in-place at all.
+                // Only while the row is at rest: the field keeps its own clicks, or the caret
+                // cannot be placed.
                 .overlay { clickCatcher }
         }
     }
 
-    /// The name edited where it is READ — the Finder idiom for a sidebar, and the reason the panel
-    /// this replaced is gone: a rename that happens in the row cannot show you one title while you
-    /// retype another.
-    ///
-    /// Return commits, Escape restores, and losing focus commits — which is the platform's own
-    /// bargain for edit-in-place and not a fourth rule of Argo's. The Reset the panel had room for
-    /// is the row's context menu now (`resetAction`); it is the rarer of the two by far, and
-    /// story 20 asks that it exist, not that it sit under the field.
+    /// The name edited where it is READ. Return commits, Escape restores, and losing focus commits;
+    /// Reset lives in the row's context menu (`resetAction`).
     private var nameField: some View {
         TextField(SessionRenameProjection.prompt, text: $typed)
             .textFieldStyle(.plain)
@@ -127,14 +101,12 @@ struct SessionRow: View {
             .task { await open() }
     }
 
-    /// The field's own first moment, whichever gesture asked for it — this row's double-click, the
-    /// menu bar's Rename, or the render harness. It lives on the field because focus cannot be
-    /// taken before the thing being focused exists, and the name is read here for the same reason:
-    /// re-opening on a Session renamed since has to draw the name it has NOW.
+    /// The field's own first moment. It lives on the field because focus cannot be taken before the
+    /// thing being focused exists, and the name is read here so a re-open draws the name it has
+    /// NOW.
     ///
-    /// Asked for until it is HELD rather than once and hopefully: the `List` keeps keyboard focus
-    /// until its own update settles, and a request made before then is dropped without a word —
-    /// which is what shipped a field you had to click into and that ignored Return.
+    /// Asked for until it is HELD: the `List` keeps keyboard focus until its own update settles,
+    /// and a request made before then is dropped without a word.
     private func open() async {
         typed = row.rename.name
         for _ in 0 ..< Self.focusAttempts where !isFieldFocused {
@@ -143,15 +115,13 @@ struct SessionRow: View {
         }
     }
 
-    /// Opens the field. Everything else about opening — the name, the focus — belongs to the field
-    /// itself (`open`), which is the only place that knows it is on screen.
+    /// Opens the field. The name and the focus belong to the field itself (`open`).
     private func beginRenaming() {
         isRenaming.wrappedValue = true
     }
 
-    /// A blank field is not a rename and not a reset — the engine's own rule (`SessionAnnotations`)
-    /// rather than a second reading of it, so the store cannot drop a name this row accepted.
-    /// Nothing is raised for it: the row closes on the title it already had.
+    /// A blank field is not a rename and not a reset, by the engine's own rule
+    /// (`SessionAnnotations`); the row closes on the title it already had.
     private func commitRenaming() {
         defer { isRenaming.wrappedValue = false }
         guard SessionAnnotations.name(from: typed) != nil else { return }
@@ -162,12 +132,8 @@ struct SessionRow: View {
         isRenaming.wrappedValue = false
     }
 
-    /// The age takes the leading edge, under the title's own: it is the fact a scan down the
-    /// roster finds on nearly every row, and a column that starts where the last worktree name
-    /// happened to end is not a column. The worktree takes the right, under the state word.
-    ///
-    /// Absent entirely when neither half is there, rather than an empty `Text`, which would
-    /// leave a gap of whatever height the font happened to give it.
+    /// The age takes the leading edge, the worktree the right under the state word. Absent entirely
+    /// when neither half is there — an empty `Text` would leave a gap of the font's height.
     @ViewBuilder private var secondaryLine: some View {
         if row.worktree != nil || row.age != nil {
             HStack(spacing: ArgoSpacing.snug) {
@@ -175,8 +141,8 @@ struct SessionRow: View {
                     Text(age)
                         .argoText(ArgoTypography.rowMeta)
                         .lineLimit(1)
-                        // Three words that never lose one: a shortfall lands on the worktree
-                        // instead, which is built to give up its middle.
+                        // A width shortfall lands on the worktree instead, which gives up its
+                        // middle.
                         .layoutPriority(1)
                 }
                 Spacer(minLength: ArgoSpacing.tight)
@@ -186,10 +152,8 @@ struct SessionRow: View {
         }
     }
 
-    /// The same two stacked planes the session header spends on a worktree — one mark for one
-    /// meaning across the two surfaces. The mark is unconditional here where the header's is not:
-    /// the projection populates `worktree` only for a checkout git answered `worktree` for, so
-    /// there is no unread kind left for this to claim anything about.
+    /// The mark is unconditional here where the session header's is not: the projection populates
+    /// `worktree` only for a checkout git answered `worktree` for.
     @ViewBuilder private var worktreeLabel: some View {
         if let worktree = row.worktree {
             ArgoMarkedName(
@@ -198,15 +162,9 @@ struct SessionRow: View {
         }
     }
 
-    /// The one exceptional thing the row's first line still carries, on the right edge the age
-    /// under it takes — a column of marks reading down the roster rather than a word at wherever
-    /// each title happened to end.
-    ///
-    /// The word takes the dot's own ink, so the two never read as separate claims. The contract
-    /// already carries this: every state ink is asserted legible as a word and not only as a dot.
-    /// Drawn on the word alone, though — a word the projection spent under a state with no colour
-    /// would otherwise be announced and never drawn, which is the disagreement the one
-    /// `stateWord` exists to stop.
+    /// The word takes the state dot's own ink — every state ink is asserted legible as a word and
+    /// not only as a dot. Drawn even under a state with no colour, or it would be announced and
+    /// never drawn.
     @ViewBuilder private var stateWord: some View {
         if let word = row.stateWord {
             Text(word)
@@ -216,8 +174,7 @@ struct SessionRow: View {
     }
 
     @ViewBuilder private var copyActions: some View {
-        // The two things here that are not copies: a double-click is the gesture, and a gesture
-        // with nothing naming it is a feature only the person who built it knows about.
+        // Rename and Reset are not copies: they name the gestures nothing else on screen does.
         Button(SessionRenameProjection.heading) { beginRenaming() }
         resetAction
         Divider()
@@ -230,23 +187,16 @@ struct SessionRow: View {
         }
     }
 
-    /// The way back to the title the rename covered up (#502, story 20). Absent entirely for a
-    /// Session nobody has renamed: there is nothing to go back to, and a disabled item would read
-    /// as a way to clear the name.
-    ///
-    /// It names the title it restores rather than saying "Reset" alone, because by the time
-    /// somebody reaches for this the derived title is nowhere else on screen — which is the whole
-    /// reason the story exists, and the one thing the panel did that a menu has to keep doing.
+    /// The way back to the title the rename covered up (#502, story 20). Absent for a Session
+    /// nobody renamed, and it names the title it restores — nothing else on screen shows it.
     @ViewBuilder private var resetAction: some View {
         if let derived = row.rename.derived {
             Button("\(SessionRenameProjection.reset) “\(derived)”") { rename(nil) }
         }
     }
 
-    /// The full path, which is what the line above it stands in for — "absolute paths never
-    /// appear in the default presentation" (#377), and hover is where the whole of one belongs.
-    /// The branch is not here: it is the header's now, and a tooltip repeating it would be a
-    /// second place to read a fact that can change between the two.
+    /// The full path, which the line above stands in for — absolute paths never appear in the
+    /// default presentation (#377). The branch is not here: it is the header's.
     private var inspectionText: String {
         [row.title, row.location].compactMap(\.self).joined(separator: "\n")
     }

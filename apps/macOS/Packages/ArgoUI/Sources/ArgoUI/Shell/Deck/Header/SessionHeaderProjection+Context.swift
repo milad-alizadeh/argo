@@ -1,25 +1,20 @@
 import Foundation
 
-/// How full the Session's context is, and how alarmed to be about it.
-///
-/// The whole colour decision is the tier function below, and it lives here rather than in the view
-/// for the reason every other header rule does: a threshold crossed in a `body` is a threshold
-/// nothing can assert. What a surface receives is a reading it draws, never a number it judges.
+/// How full the Session's context is, and how alarmed to be about it. A surface receives a reading
+/// it draws, never a number it judges — the whole colour decision is the tier function below.
 extension SessionHeaderProjection {
     struct Context: Equatable, Sendable {
         /// Which of the two lines the Session is past. **`nil` is the honest gap** — a record that
-        /// carried no usage at all — and is never `.ok`: an unread context and an empty one are
-        /// opposite claims, and the quieter of the two is the one that is not a claim.
-        /// `okay` rather than the spec's `ok`: the house rule is that a name is a word, and a
-        /// two-letter one is the only thing here that could not be spelled.
+        /// carried no usage at all — and is never `.okay`: an unread context and an empty one are
+        /// opposite claims. `okay` rather than the spec's `ok`: a name here is a word.
         enum Tier: Equatable, Sendable {
             case okay
             case warn
             case crit
         }
 
-        /// The word over the reading. Its capitals are the type's treatment, not the vocabulary's,
-        /// which is why they are not written into the string.
+        /// The word over the reading. Its capitals are the type's treatment, so they are not
+        /// written into the string.
         let label = "Context"
         let tier: Tier?
         /// `217k / 1M`, or `unknown` where there is nothing to put against the window.
@@ -38,17 +33,12 @@ extension SessionHeaderProjection {
     /// The window and the two lines drawn across it.
     ///
     /// The two thresholds are **Argo's own policy and DIRECT** — a fixed number of tokens rather
-    /// than a share of the window, which is what sidesteps the model-dependent denominator
-    /// `CONTEXT.md` warns about: the ink a Session wears never depends on a window Argo may have
-    /// read wrong. Only the count they are compared against is DERIVED. They are not
-    /// user-configurable: this app has no Preferences surface by design, and a threshold somebody
-    /// can move is a threshold the ⓘ panel cannot explain.
+    /// than a share of the window, which sidesteps the model-dependent denominator `CONTEXT.md`
+    /// warns about: the ink a Session wears never depends on a window Argo may have read wrong.
+    /// Only the count they are compared against is DERIVED.
     ///
-    /// `capacity` is the denominator the reading is printed against, and it is ONE number for
-    /// every Session — the window of the models this build reads. It is the weakest thing here,
-    /// and it is deliberately not load-bearing: it moves no threshold and decides no colour. A
-    /// per-model window is its own change, upstream of this, where the model id would have to be
-    /// mapped to a size Argo can stand behind.
+    /// `capacity` is the denominator the reading is printed against, ONE number for every Session
+    /// — the window of the models this build reads. It moves no threshold and decides no colour.
     enum ContextPolicy {
         static let capacity = 1_000_000
         /// Handing off is worth doing.

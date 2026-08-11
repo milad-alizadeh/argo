@@ -27,8 +27,8 @@ struct FeedUnreadableTests {
         #expect(unreadable.lines == [raw])
     }
 
-    /// A truncated write can leave a tail of them. One row per line would turn a corrupt file into
-    /// a screenful of identical rows, which is the same fold the rest of the feed already makes.
+    /// A truncated write can leave a tail of them, and one row per line would turn a corrupt file
+    /// into a screenful of identical rows.
     @Test
     func `a run of unreadable lines is one row with a count`() throws {
         let rows = FeedProjection.rows(from: [
@@ -43,8 +43,7 @@ struct FeedUnreadableTests {
         #expect(unreadable.lines == ["{", "[", "\"\""])
     }
 
-    /// The run is consecutive, exactly as every other run in this feed is: two unreadable lines
-    /// with a readable one between them are two moments and stay two rows.
+    /// The run is consecutive, exactly as every other run in this feed is.
     @Test
     func `a readable record between two unreadable lines keeps them apart`() {
         let rows = FeedProjection.rows(from: [
@@ -56,8 +55,8 @@ struct FeedUnreadableTests {
         #expect(FeedFixture.unreadable(in: rows).map(\.count) == [1, 1])
     }
 
-    /// Something happened that nothing could read, so a count of what the run looked at can no
-    /// longer be a claim about the whole stretch.
+    /// With something unread in the middle, a count of what the run looked at can no longer be a
+    /// claim about the whole stretch.
     @Test
     func `an unreadable line breaks a run of looking`() {
         let rows = FeedProjection.rows(from:
@@ -68,8 +67,8 @@ struct FeedUnreadableTests {
         #expect(FeedFixture.surveys(in: rows).count == 2)
     }
 
-    /// It opens nothing. An unreadable line produced no evidence — there is no result behind it,
-    /// and a disclosure marker over an empty panel is the feed promising something it has not got.
+    /// An unreadable line produced no evidence, so a disclosure marker on it would open an empty
+    /// panel.
     @Test
     func `an unreadable line is not a piece of work the feed can open`() throws {
         let rows = FeedProjection.rows(from: [.unreadableLine(raw: "{")])
@@ -78,8 +77,7 @@ struct FeedUnreadableTests {
         #expect(!row.isCall)
     }
 
-    /// What a screen reader hears has to carry BOTH halves: that a line was unreadable, and how
-    /// many of them there were. A row spoken as "unreadable" alone reads as one incident.
+    /// A row spoken as "unreadable" alone reads as one incident, so the count has to be spoken too.
     @Test
     func `the run speaks how many lines it stands for`() throws {
         let rows = FeedProjection.rows(from: [

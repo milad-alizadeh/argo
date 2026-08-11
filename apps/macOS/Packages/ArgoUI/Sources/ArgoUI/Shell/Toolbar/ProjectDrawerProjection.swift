@@ -1,10 +1,8 @@
 import Foundation
 
-/// The registered set as the drawer's rows.
-///
-/// It exists so the drawer's honesty claims are values rather than view code: that an unreachable
-/// Project keeps its place and states it in words, and that a Project nothing has observed carries
-/// no count rather than a zero.
+/// The registered set as the drawer's rows, so the drawer's honesty claims are values rather than
+/// view code: an unreachable Project keeps its place and states it in words, and a Project nothing
+/// has observed carries no count rather than a zero.
 enum ProjectDrawerProjection {
     /// The words that replace a path when the folder is not where it was registered. Never a
     /// colour or a dashed edge alone — those are the second reading of this, not the first.
@@ -16,8 +14,8 @@ enum ProjectDrawerProjection {
         /// The folder, or `unreachable` in its place.
         let detail: String
         let isReachable: Bool
-        /// A row nobody registered carries no management verbs — there is no record to reveal,
-        /// re-point or forget, and a menu whose items did nothing would say there was.
+        /// A row nobody registered carries no management verbs: there is no record to reveal,
+        /// re-point or forget.
         let isRegistered: Bool
         let isActive: Bool
         /// The compact count the row draws, absent where nothing has observed this Project.

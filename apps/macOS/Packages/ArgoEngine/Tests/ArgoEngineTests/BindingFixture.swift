@@ -52,8 +52,8 @@ struct BindingFixture {
     }
 
     /// Which provider a Project's Work Item port actually resolves to, and which token it carries.
-    /// Read through `resolve` rather than off the registry, because resolving is what a reader does
-    /// and the token is the only thing two Accounts of one provider differ by.
+    /// Read through `resolve` rather than off the registry — the token is the only thing two
+    /// Accounts of one provider differ by.
     func provider(of projectID: String) async -> AccountProvider? {
         await ready(projectID)?.provider
     }
@@ -72,9 +72,8 @@ struct BindingFixture {
 }
 
 extension AccountRegistryStore {
-    /// A Linear identity in the registry. Nothing issues one yet — the grant is #371's — but the
-    /// registry is provider-agnostic by construction, and a Binding to Linear has to be expressible
-    /// before the adapter that reads through it exists.
+    /// A Linear identity in the registry. Nothing issues one yet (#371); the registry is
+    /// provider-agnostic, so a Binding to Linear is expressible before its adapter exists.
     @discardableResult
     func authorizeLinear(id providerAccountID: String, token: String) async throws
         -> AccountRegistry {
@@ -101,10 +100,8 @@ extension ProjectBinding {
 }
 
 /// The provider, with its verdict decided in advance and every question it was asked remembered.
-///
 /// Recording the token is what makes "no cross-talk" observable: two Projects on two Accounts of
-/// one provider differ in nothing else, so a test that only checked the verdict would pass with the
-/// tokens swapped.
+/// one provider differ in nothing else.
 actor RecordingScopeCheck: BindingScopeCheck {
     struct Question: Equatable {
         let provider: AccountProvider
@@ -133,10 +130,8 @@ actor RecordingScopeCheck: BindingScopeCheck {
     }
 }
 
-/// One canned provider response, and every request that reached it.
-///
-/// Single-shot rather than a queue because a scope check is one request: a queue would let a test
-/// pass by answering the *next* request when the check made none at all.
+/// One canned provider response, and every request that reached it. Single-shot rather than a
+/// queue: a scope check is one request.
 actor StubProviderAPI: HTTPTransport {
     private let body: String
     private let failure: HTTPTransportError?

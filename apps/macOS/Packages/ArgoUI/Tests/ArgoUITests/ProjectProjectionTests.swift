@@ -3,11 +3,9 @@ import ArgoEngine
 import Foundation
 import Testing
 
-/// What the shell can say about the registered SET, as opposed to about one Session.
-///
-/// The re-point itself is the Hub's own claim and is tested there (`Hub observation` — "re-pointing
-/// at another Project drops the previous one entirely"). What is tested here is that the shell
-/// reads that answer rather than keeping one of its own.
+/// What the shell can say about the registered SET, as opposed to about one Session. The re-point
+/// itself is the Hub's claim and is tested in `Hub observation`; here the shell must read that
+/// answer rather than keep one of its own.
 @Suite("Project projection")
 struct ProjectProjectionTests {
     @Test
@@ -22,7 +20,7 @@ struct ProjectProjectionTests {
     }
 
     /// Not zero: the Hub is pointed at one Project, so a count for any other is a fact Argo does
-    /// not have, and a zero would read as "nothing is running here".
+    /// not have.
     @Test
     @MainActor
     func `a Project the Hub is not on carries no count at all`() async {

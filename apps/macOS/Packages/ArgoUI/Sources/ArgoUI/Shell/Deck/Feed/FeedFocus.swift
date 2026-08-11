@@ -1,10 +1,8 @@
 /// Where the keyboard is, across the whole reading — the feed, the panel it opens, and the picture
 /// laid over both.
 ///
-/// One focus space rather than three, and that is the load-bearing part. A panel that took focus
-/// but could not hand it back leaves a reader who opened a row by pressing Return with no way home
-/// except the mouse they were not using; the return is only expressible if both ends are values in
-/// the same enum.
+/// One focus space rather than three: handing focus back from the panel to the row that opened it
+/// is only expressible if both ends are values in the same enum.
 ///
 /// Held by the deck, for the same reason the deck holds which row is open: opening a row resizes
 /// the column it sits in, so the feed is not the surface that owns what happened.
@@ -16,6 +14,6 @@ enum FeedFocus: Hashable {
     /// depending on how far down it they were.
     case panel
     /// A picture opened over the deck. It takes focus so Escape reaches it — `onExitCommand` only
-    /// fires for a view in the responder chain, and until now nothing put the lightbox in one.
+    /// fires for a view in the responder chain.
     case lightbox
 }

@@ -6,11 +6,9 @@ import Foundation
 /// Account (ADR-0018). Nothing in `AccountRegistry` holds it, which is what makes the registry file
 /// safe to sit unencrypted in application support.
 ///
-/// `expiresAt` and `refreshToken` are optional and present from the first commit, before anything
-/// issues an expiring token. GitHub's OAuth-App user token does not expire and so carries neither
-/// (#367); Linear's does and carries both (#371). Shaping the type around GitHub alone would make
-/// Linear a migration of a value that lives in the keychain, where a migration is at its most
-/// expensive — a failed one is a grant the user has to obtain again.
+/// GitHub's OAuth-App user token does not expire and so carries neither `expiresAt` nor
+/// `refreshToken` (#367); Linear's does and carries both (#371). Both stay optional: reshaping
+/// them later is a keychain migration, and a failed one costs the user the grant.
 public struct AccountGrant: Equatable, Sendable, Codable {
     public let accessToken: String
     /// What the provider actually granted, which is not always what was asked for: an org that
@@ -39,8 +37,7 @@ public struct AccountGrant: Equatable, Sendable, Codable {
     }
 }
 
-/// How long a grant lasts and what renews it — the two fields that differ per provider, named
-/// together so a call site has to say which lifecycle it is issuing.
+/// How long a grant lasts and what renews it — the two fields that differ per provider.
 public enum AccountGrantLifetime: Equatable, Sendable {
     case nonExpiring
     case expiring(at: Date, refreshToken: String?)

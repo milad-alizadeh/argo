@@ -14,8 +14,7 @@ actor WorkspaceReader {
     }
 
     func read(at directoryURL: URL) -> WorkspaceProjection? {
-        // A folder git will not count for is a folder Argo has nothing to say about — the whole
-        // read hangs off that answer rather than any one number inside it.
+        // The whole read hangs off this answer rather than any one number inside it.
         guard let dirty = dirtyCount(at: directoryURL) else { return nil }
         return WorkspaceProjection(
             kind: isWorktree(at: directoryURL) ? .worktree : .main,

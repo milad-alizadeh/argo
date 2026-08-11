@@ -3,9 +3,8 @@ import SwiftUI
 /// The active Project as the leading half of the scope vessel: its symbol, its full name and a
 /// disclosure. Clicking it opens the Project drawer.
 ///
-/// The name is spelled out rather than initialled — an initial is what sent this surface out of
-/// the sidebar. No state dot: nothing derives the per-Project worst-state rollup yet (#164), and
-/// an empty ring beside every Project is chrome standing in for a fact.
+/// The name is spelled out rather than initialled. No state dot: nothing derives the per-Project
+/// worst-state rollup yet (#164).
 struct ProjectVessel: View {
     @Environment(\.argo) private var argo
     @State private var isDrawerOpen = false
@@ -32,10 +31,8 @@ struct ProjectVessel: View {
 
     private var label: some View {
         HStack(spacing: ArgoSpacing.snug) {
-            // The drawer rows' role, not a control role. The Project name is the subject of this
-            // vessel and its own row in the drawer — one size for it in both places — and setting
-            // it above the branch is what makes the merged capsule read "this Project, on this
-            // checkout" rather than two equal facts glued together.
+            // The drawer rows' role, not a control role: one size for the Project name here and
+            // in the drawer, and a rung above the branch beside it.
             ArgoGlyph(symbol, .control)
             Text(project?.name ?? "No Project")
                 .argoText(ArgoTypography.rowTitle)
@@ -48,8 +45,7 @@ struct ProjectVessel: View {
         .toolbarSegment()
     }
 
-    /// A Project reads as a Project rather than as a bare word beside a state ring — and a Project
-    /// whose folder is gone says so with its mark as well as in the drawer's words.
+    /// A Project whose folder is gone says so with its mark as well as in the drawer's words.
     private var symbol: String {
         project?.isReachable == false ? ArgoSymbol.unreachableProject : ArgoSymbol.project
     }
@@ -61,8 +57,7 @@ struct ProjectVessel: View {
             : "Project — \(project.name) · folder not found"
     }
 
-    /// State is spoken, never left to the ring: unreachability is a word here for the same reason
-    /// it is a word in the drawer.
+    /// State is spoken, never left to the mark: unreachability is a word here and in the drawer.
     private var accessibilityLabel: String {
         guard let project else { return "Project, none registered" }
         return project.isReachable

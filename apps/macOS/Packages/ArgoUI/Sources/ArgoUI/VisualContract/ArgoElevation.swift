@@ -1,10 +1,7 @@
 import SwiftUI
 
-/// How far off its ground a surface sits.
-///
-/// Almost every rung is flat. Depth in this cockpit comes from material, edges and tonal
-/// separation; a shadow is reserved for the two surfaces that genuinely float free of the
-/// window's plane, and even there it stays soft rather than dark.
+/// How far off its ground a surface sits. Almost every rung is flat: depth comes from material,
+/// edges and tone, and a shadow is reserved for surfaces that genuinely float free of the plane.
 public struct ArgoElevation: Sendable {
     public let blur: CGFloat
     public let yOffset: CGFloat
@@ -40,9 +37,8 @@ public extension ArgoElevation {
 
     /// Roles nothing draws yet. See `ArgoMotion.unwired` for why they stay and why they say so.
     ///
-    /// The three zero rungs are NOT here. Nothing references them either, but that is what
-    /// honouring them looks like — a flat surface draws no shadow — and they are the control group
-    /// that gives `only genuinely floating surfaces cast a shadow` something to mean.
+    /// The three zero rungs are NOT here: nothing references them either, but a flat surface
+    /// drawing no shadow is what honouring them looks like.
     static let unwired: [String: String] = ["dragged": "drag-and-drop"]
 }
 

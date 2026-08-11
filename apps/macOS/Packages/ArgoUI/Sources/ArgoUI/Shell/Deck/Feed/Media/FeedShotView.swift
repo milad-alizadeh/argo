@@ -1,16 +1,9 @@
 import ArgoEngine
 import SwiftUI
 
-/// One picture in a gallery: the thumbnail, and where it came from.
-///
-/// No caption. The name, the dimensions and the provenance words all belong to the lightbox —
-/// the surface a reader opens when they want to know ABOUT the picture — and captioning every
-/// thumbnail with them said each three times per row. What stays on the thumbnail is the half a
-/// caption cannot carry: the provenances are drawn apart, not captioned apart. Captured bleeds to
-/// its own edges the way a screen capture does; the current file is framed in the broken edge the
-/// shell already uses for a weaker claim; a rendered artifact sits mounted on a plate, because it
-/// was drawn rather than captured off anything. The address survives as the hover's word and the
-/// spoken label.
+/// One picture in a gallery: the thumbnail, and where it came from. No caption — the name,
+/// dimensions and provenance words belong to the lightbox; provenance is drawn instead, and the
+/// address survives as the hover's word and the spoken label.
 struct FeedShotView: View {
     @Environment(\.argo) private var argo
 
@@ -33,12 +26,9 @@ struct FeedShotView: View {
             .accessibilityHint(showing.picture == nil ? "" : "Opens this image full size")
     }
 
-    /// The picture cropped to the shot's own box.
-    ///
-    /// Drawn as an overlay on a clear frame rather than as a sized `Image`: `scaledToFill` reports
-    /// the size it scaled TO, so a landscape shot in a 3:2 box laid out wider than the box and the
-    /// ground behind it came out offset from the picture on top of it. The clear frame is the one
-    /// thing in the stack with an exact size, and everything else is measured against it.
+    /// The picture cropped to the shot's own box. Drawn as an overlay on a clear frame rather than
+    /// as a sized `Image`: `scaledToFill` reports the size it scaled TO, so a landscape shot in a
+    /// 3:2 box lays out wider than the box and the ground comes out offset from the picture.
     @ViewBuilder private var plate: some View {
         if let picture = showing.picture {
             Color.clear
@@ -58,8 +48,7 @@ struct FeedShotView: View {
         }
     }
 
-    /// A shot with no picture says so where the picture would have been, in the panel's own words.
-    /// Drawn as an empty plate rather than as a glyph: there was never an image here to fail.
+    /// A shot with no picture says so where the picture would have been, as an empty plate.
     private var absence: some View {
         Text(MediaProvenance.absence)
             .argoText(ArgoTypography.caption)
@@ -72,13 +61,9 @@ struct FeedShotView: View {
             .overlay { frame }
     }
 
-    /// The edge that says which claim this is. Solid for what the agent saw and for what the
-    /// plugin drew; dashed for a re-read of the path and for an absence — the shell's existing
-    /// mark for a boundary that is not what it looks like.
-    ///
-    /// One ink for all four. The dash is the whole signal: drawing the weaker claims in a quieter
-    /// grey as WELL made them read as further away rather than as differently sourced, and at
-    /// thumbnail size the quieter grey simply disappeared.
+    /// The edge that says which claim this is. Solid for what the agent saw and for what the plugin
+    /// drew; dashed for a re-read of the path and for an absence. One ink for all four: a quieter
+    /// grey disappears at thumbnail size.
     private var frame: some View {
         RoundedRectangle(cornerRadius: ArgoRadius.control)
             .strokeBorder(

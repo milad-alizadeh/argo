@@ -1,15 +1,12 @@
 import ArgoEngine
 
 /// The Sessions the spend line is rendered from — one with every fact reported, and one whose
-/// subagent spend nobody reported, which is every Session on this machine today.
-///
-/// The two differ in exactly one fact, so a PNG of the pair shows what story 53 is about: the
-/// shorter line has to read as a complete line rather than as one with a hole in it.
+/// subagent spend nobody reported, which is every Session on this machine today. The two differ in
+/// exactly one fact (story 53).
 enum SessionSpendFixture {
     /// A day's work as a transcript actually records one: bursts of calls half a minute apart with
-    /// the reader away in between. Written as a rhythm rather than as a list of moments, because
-    /// what `worked` measures is the rhythm — a fixture of evenly spaced ticks would make the
-    /// five-minute cutoff decide nothing at all.
+    /// the reader away in between. A fixture of evenly spaced ticks would make the five-minute
+    /// cutoff decide nothing at all.
     private enum Rhythm {
         static let bursts = 6
         static let callsPerBurst = 25
@@ -40,9 +37,8 @@ enum SessionSpendFixture {
             workspace: .init(kind: .worktree, branch: "argo/#512-header-spend-duration", dirty: 3),
             lastSeenAtMs: moments.last,
             startedAtMs: moments.first,
-            // Readings off a real long-running Session on this machine, not round numbers: what
-            // the line has to fit is `1.83M tokens spent · 28.1M cached`, and one set to `2M`/`30M`
-            // would render the one width no real Session ever has.
+            // Readings off a real long-running Session, not round numbers: the line has to fit
+            // `1.83M tokens spent · 28.1M cached`, a width `2M`/`30M` would not test.
             spentTokens: 1_830_000,
             cachedTokens: 28_100_000,
             subagentTokens: subagentTokens,

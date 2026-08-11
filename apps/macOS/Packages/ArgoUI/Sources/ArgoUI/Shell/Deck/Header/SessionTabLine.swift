@@ -3,17 +3,16 @@ import SwiftUI
 /// The line under the header: the deck's tabs, and on its trailing edge what the Session has spent
 /// and how long it has been going.
 ///
-/// The spend sits HERE rather than beside the title because the header carries the Session's
-/// identity and one instrument, and a second reading beside the first would be two numbers
-/// competing at the top of the plane (D31, as #502 amended it).
+/// The spend sits HERE rather than beside the title, which carries the identity and one instrument
+/// (D31, as #502 amended it).
 ///
-/// The tabs themselves are still a placeholder (#401–#404). It is the slot that takes the slack, so
-/// the spend keeps its own edge on the day something real fills the zone.
+/// The tabs themselves are still a placeholder (#401–#404), and it is the slot that takes the
+/// slack so the spend keeps its own edge.
 struct SessionTabLine: View {
     @Environment(\.argo) private var argo
 
-    /// Already composed by the projection. Absent for a Session none of it could be read from —
-    /// the line then carries the tabs alone rather than an apology for a number.
+    /// Already composed by the projection. Absent for a Session none of it could be read from, and
+    /// the line then carries the tabs alone.
     let spend: String?
 
     var body: some View {
@@ -35,8 +34,7 @@ struct SessionTabLine: View {
 }
 
 /// The line as a Session with everything reported sees it, and as one whose subagent spend nobody
-/// reported — which is every Session today. The pair is the render: what has to be true is that the
-/// shorter line reads as complete rather than as one with a fact missing out of it.
+/// reported — which is every Session today.
 private struct SessionTabLineGallery: View {
     let width: CGFloat
 

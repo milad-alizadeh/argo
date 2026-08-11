@@ -1,10 +1,8 @@
 import Foundation
 
-/// One JSON-RPC 2.0 message off the companion socket.
-///
-/// Parsed through `JSONValue` rather than a `Codable` struct for the reason the transcript reader
-/// gives: this is untrusted input, and a strict decode turns one malformed field into a dropped
-/// connection instead of one error reply.
+/// One JSON-RPC 2.0 message off the companion socket. Parsed through `JSONValue`: this is
+/// untrusted input, and a strict decode turns one malformed field into a dropped connection
+/// instead of one error reply.
 struct CompanionRequest {
     /// Absent for a notification, which is exactly what says no reply is owed.
     let id: JSONValue?
@@ -25,11 +23,8 @@ struct CompanionRequest {
     }
 }
 
-/// The JSON-RPC envelope, as bytes on the wire.
-///
-/// Written by hand rather than encoded from a model because the payloads below are literal MCP
-/// documents — a tool schema is JSON that happens to live in Swift, and a `Codable` mirror of it
-/// would be a second place for it to drift.
+/// The JSON-RPC envelope, as bytes on the wire. Written by hand because the payloads below are
+/// literal MCP documents — a tool schema is JSON that happens to live in Swift.
 enum CompanionResponse {
     static func result(id: JSONValue?, _ payload: [String: Any]) -> [String: Any] {
         envelope(id: id, key: "result", value: payload)

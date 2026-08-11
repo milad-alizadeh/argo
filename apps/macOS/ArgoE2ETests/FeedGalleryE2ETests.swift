@@ -1,14 +1,9 @@
 import XCTest
 
-/// A thumbnail, clicked.
+/// A thumbnail, clicked. The lightbox is reachable no other way, and this is the only target that
+/// clicks.
 ///
-/// The lightbox is reachable no other way. It is not a row, so no projection test reaches it, and
-/// it is not on screen at rest, so no specimen renders it without being told to — a picture that
-/// opens onto nothing, or an overlay with no way back out of it, passes every package test in this
-/// repo. Clicking is the only thing that catches either, and this is the only target that clicks.
-///
-/// `@MainActor` on the case for the same reason `ProjectDrawerE2ETests` carries it: driving a UI is
-/// main-actor work under Swift 6 and `XCUIApplication()` is isolated to it.
+/// `@MainActor` because `XCUIApplication()` is isolated to it under Swift 6.
 @MainActor
 final class FeedGalleryE2ETests: XCTestCase {
     private let app = XCUIApplication()
@@ -16,9 +11,7 @@ final class FeedGalleryE2ETests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         continueAfterFailure = false
-        // The single-shot specimen, not the full gallery: one picture is one unambiguous thing to
-        // click, and whether a run of them lays out is the render's question rather than this
-        // one's.
+        // The single-shot specimen, not the full gallery: one unambiguous thing to click.
         app.launchArguments += ["--specimen", "feedSingleShot"]
         app.launch()
         XCTAssertTrue(
@@ -32,8 +25,8 @@ final class FeedGalleryE2ETests: XCTestCase {
         try await super.tearDown()
     }
 
-    /// One walk, for the reason the drawer's suite states: each case here costs a launch, and
-    /// relaunching the same bundle id back to back is the flakiest moment in the run.
+    /// One walk: each case costs a launch, and relaunching the same bundle id back to back is the
+    /// flakiest moment in the run.
     func testAThumbnailOpensFullSizeAndCloses() {
         let thumbnail = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label BEGINSWITH 'feed-at-rest.png'"))
@@ -41,8 +34,8 @@ final class FeedGalleryE2ETests: XCTestCase {
         XCTAssertTrue(thumbnail.waitForExistence(timeout: 20), "The gallery drew no thumbnail.")
         thumbnail.click()
 
-        // Addressed by the label the lightbox already carries — the WHOLE path, which is the one
-        // thing it says that the thumbnail does not.
+        // Addressed by the WHOLE path, which is the one thing the lightbox says that the thumbnail
+        // does not.
         let lit = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS 'feed-at-rest.png, full size'"))
             .firstMatch
@@ -57,9 +50,8 @@ final class FeedGalleryE2ETests: XCTestCase {
         )
         XCTAssertEqual(app.state, .runningForeground)
 
-        // The other way out, in the same walk rather than a second launch. Escape is the one that
-        // cannot be checked by rendering: it depends on which view holds the responder chain, and
-        // the deck answers for the lightbox precisely because the lightbox is never focused.
+        // Escape cannot be checked by rendering: it depends on which view holds the responder
+        // chain, and the deck answers for the lightbox because the lightbox is never focused.
         thumbnail.click()
         XCTAssertTrue(
             lit.waitForExistence(timeout: 10),

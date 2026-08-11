@@ -1,56 +1,43 @@
 import ArgoEngine
 
-// The one feed every specimen and `#Preview` is drawn from. Held apart from the projection
-// itself because none of it ships: it is the fixture, already read, so no two surfaces can be
-// looking at a different feed — and so nothing here can be mistaken for the reading.
+// The one feed every specimen and `#Preview` is drawn from — the fixture, already read.
 
 extension FeedProjection {
-    /// The preview transcript, already projected — the one place every specimen and `#Preview`
-    /// takes its rows from, so none of them can be looking at a different feed.
+    /// The preview transcript, already projected.
     static let previewRows = rows(from: CockpitPresentation.Session.previewTranscript)
 
-    /// A session at the length a real one reaches, projected. What every claim about SCALE is
-    /// checked against — the specimen render, the `#Preview`, and the measurement #427 asks for.
-    /// See `CockpitPresentation.Session.longTranscript`.
+    /// A session at the length a real one reaches, projected — what every claim about SCALE is
+    /// checked against, including the measurement #427 asks for.
     static let longRows = rows(from: CockpitPresentation.Session.longTranscript)
 
-    /// The LAST failed call in that long feed, and the last rather than the first because a panel
-    /// opened fifty turns above the fold would be a screenshot of a pane beside a stretch of
+    /// The LAST failed call in that long feed: one opened above the fold renders a pane beside
     /// reading nobody can see.
     static let longFailedCallID = longRows.reversed().failedCallID
 
-    /// The same feed with the prose taken out. A render of the call vocabulary that is four fifths
-    /// paragraphs is a render of the paragraphs — this is a filter over the shipping rows, never a
-    /// second set of them.
+    /// The same feed with the prose taken out. A filter over the shipping rows, never a second set.
     static let previewCallRows = previewRows.filter(\.isCall)
 
-    /// The rows the agent narrated itself, on their own — a Claude Code feed as that host actually
-    /// writes one, where a command arrives with the agent's account of what it was for. A filter
-    /// over the shipping rows like the rest: sentences written here would be a render of a feed
-    /// nobody is shown, and the one claim worth looking at is that prose in this slot still reads
-    /// as a row rather than as a paragraph.
+    /// The rows the agent narrated itself — a Claude Code feed, where a command arrives with the
+    /// agent's account of what it was for.
     static let previewNarratedRows = numbered(previewCallRows.compactMap { row in
         guard case let .call(call) = row.content, case .narration = call.subject else { return nil }
         return row.content
     })
 
-    /// A Codex Session's commands, projected — the feed a CLI that narrates nothing produces, and
-    /// the one place the shortening rule is looked at rather than asserted. Not a filter over the
-    /// preview rows: those are a Claude Code record, and its commands arrive narrated.
+    /// A Codex Session's commands, projected — the feed a CLI that narrates nothing produces. Not
+    /// a filter over the preview rows: those are a Claude Code record, whose commands arrive
+    /// narrated.
     static let previewCommandRows = rows(from: CockpitPresentation.Session.ranCommands)
 
     /// A turn that looked around through a shell and then changed something, projected. Its own
-    /// fixture rather than a filter: what it is a render OF is the boundary between a folded
-    /// stretch and the loud rows either side of it, and no filter over another feed has one.
+    /// fixture: it is a render of the boundary between a folded stretch and the loud rows either
+    /// side of it, which no filter over another feed has.
     static let previewFoldRows = rows(from: CockpitPresentation.Session.foldedLooking)
 
-    /// The same feed with the work taken out — what the agent SAID, at the shape it said it in. A
-    /// render of a transcript that is four fifths tool calls is a render of the tool calls.
+    /// The same feed with the work taken out — what the agent SAID, at the shape it said it in.
     static let previewProseRows = previewRows.filter(\.isProse)
 
-    /// The questions in that feed — the one still waiting and the one already settled. Taken off
-    /// the shipping rows, so a render of the attention state cannot be a render of a question
-    /// nobody is shown.
+    /// The questions in that feed — the one still waiting and the one already settled.
     static let previewAsks = previewRows.compactMap { row -> FeedAsk? in
         guard case let .ask(ask) = row.content else { return nil }
         return ask
@@ -62,17 +49,15 @@ extension FeedProjection {
         return mark
     }
 
-    /// The same reading, handed over. The whole feed and not a filter, because what the render has
-    /// to settle is the row's place: the last thing under a Session's whole transcript and its
-    /// spend, reading as a way OUT of it rather than as one more thing the agent said.
+    /// The same reading, handed over. The whole feed and not a filter: the render has to settle
+    /// the row's place, last under the Session's whole transcript and its spend.
     static let previewHandedOffRows = rows(
         from: CockpitPresentation.Session.previewTranscript,
         handedOff: previewHandoff,
     )
 
-    /// The punctuation with a Permission that ran out among it (#573) — the marks-only set, for
-    /// `previewMarkRows`'s reason and one more: what the render settles is that a refusal nobody
-    /// made reads as a departure from the marks around it, which needs those marks on one screen.
+    /// The punctuation with a Permission that ran out among it (#573) — the marks-only set, so a
+    /// refusal nobody made can be compared against the marks around it on one screen.
     static let previewExpiredMarkRows = numbered(
         (previewMarks + [.permissionExpired(previewExpiry)]).map(FeedRow.Content.mark),
     )
@@ -81,39 +66,36 @@ extension FeedProjection {
     /// the prompt it is the end of name the same call.
     static let previewExpiry = PermissionExpiry(id: "permission-1", toolName: "Bash")
 
-    /// The Session the preview reading was handed to. Titled like a real one, because the link is
-    /// only judgeable at the length a title actually reaches.
+    /// The Session the preview reading was handed to. Titled at the length a real title reaches,
+    /// because the link is only judgeable there.
     static let previewHandoff = FeedHandoff(
         sessionID: "session-handed-to",
         title: "Ship the native Liquid Glass application shell",
     )
 
-    /// The attention state on its own: both questions, with everything they were asked between
-    /// taken away. In the full feed they are two rows in a screenful, and a render where the one
-    /// waiting is below the fold settles nothing about the ink it takes.
+    /// The attention state on its own: both questions, with everything asked between taken away.
+    /// In the full feed the waiting one falls below the fold.
     static let previewAskRows = numbered(previewAsks.map(FeedRow.Content.ask))
 
-    /// The punctuation on its own, for the same reason — and it is the render that answers whether
-    /// the hairlines read as the shape of the reading rather than as rules drawn under rows.
+    /// The punctuation on its own, for the same reason.
     static let previewMarkRows = numbered(previewMarks.map(FeedRow.Content.mark))
 
-    /// Contents taken off the shipping feed, given their places back. Not a second way to build a
-    /// row: every one of these came out of `previewRows`, and only the gaps between them are new.
+    /// Contents taken off the shipping feed, given their places back — only the gaps are new.
     private static func numbered(_ contents: [FeedRow.Content]) -> [FeedRow] {
         contents.enumerated().map { position, content in
             FeedRow(id: position, content: content)
         }
     }
 
-    /// The collapsed run in that feed — the row standing for three edits of one file, which is the
-    /// only row whose panel holds more than one thing.
+    /// The collapsed run in that feed — three edits of one file, the only row whose panel holds
+    /// more than one thing.
     static let previewRunCallID = previewRows.first { row in
         guard case let .call(call) = row.content else { return false }
         return call.repeats > 1
     }?.id
 
-    /// The folded run of looking in that feed — the row standing for the reconnaissance a turn
-    /// opens with, and the only row whose panel captions each of its steps.
+    /// The folded run of looking in that feed — the only row whose panel captions each of its
+    /// steps.
     static let previewSurveyRowID = previewRows.first { row in
         if case .survey = row.content {
             return true
@@ -122,7 +104,7 @@ extension FeedProjection {
     }?.id
 
     /// The markdown document in that feed — the one row whose panel opens as prose rather than as
-    /// a patch, because the agent wrote the whole file and there is no change in it to read.
+    /// a patch: the agent wrote the whole file, so there is no change in it to read.
     static let previewDocumentCallID = previewRows.first { row in
         guard case let .call(call) = row.content, case let .file(file) = call.subject else {
             return false
@@ -131,51 +113,43 @@ extension FeedProjection {
     }?.id
 
     /// The pictures in that feed, in the order the turn produced them — every provenance the
-    /// cockpit tells apart, taken off the shipping rows rather than written out beside them.
+    /// cockpit tells apart.
     static let previewShots: [FeedShot] = previewRows.flatMap { row -> [FeedShot] in
         guard case let .gallery(gallery) = row.content else { return [] }
         return gallery.shots
     }
 
-    /// One shot on its own. A filter over those same shots and not a second set of them: whether a
-    /// gallery of one gets the same treatment as a gallery of six is only answerable if both are
-    /// made of the same pictures.
+    /// One shot on its own. A filter over those same shots, so a gallery of one and a gallery of
+    /// six are made of the same pictures.
     static let previewSingleShotRows = gallery(of: Array(previewShots.prefix(1)))
 
-    /// The shot the record kept no bytes for, alone — the one state a reader has to be able to tell
-    /// from a picture that failed to load, with nothing beside it to borrow an explanation from.
+    /// The shot the record kept no bytes for, alone — the state a reader has to tell from a
+    /// picture that failed to load, with nothing beside it to borrow an explanation from.
     static let previewAbsentShotRows = gallery(of: previewShots.filter { !$0.isOpenable })
 
     private static func gallery(of shots: [FeedShot]) -> [FeedRow] {
         shots.isEmpty ? [] : [FeedRow(id: 0, content: .gallery(FeedGallery(shots: shots)))]
     }
 
-    /// The failed call in that feed — the row every surface showing an OPEN panel opens on, so a
-    /// specimen and a `#Preview` cannot be looking at two different failures.
+    /// The failed call in that feed — the row every surface showing an OPEN panel opens on.
     static let previewFailedCallID = previewRows.failedCallID
 
     /// The row a reader left the end at with six of the Session's messages still below them.
     ///
-    /// Several rather than one, because what the badge has to prove is that it counts what was SAID
-    /// and not what arrived: the long feed puts dozens of calls under this row for every message,
-    /// and a single-digit number on a control with that much work beneath it is the whole claim.
-    /// Six and not three because the render has to be a reading that visibly LEFT the end — under
-    /// three messages there is less than a pane below, so the scroll clamps to the bottom and the
-    /// case comes out as a control standing over a reading that never went anywhere.
+    /// Several and not one: the badge counts what was SAID, and the long feed puts dozens of calls
+    /// under this row per message. Six and not three: under three messages there is less than a
+    /// pane below, so the scroll clamps to the bottom and the case renders as a reading that
+    /// never left the end.
     ///
-    /// Derived from the rows rather than written down. A hard-coded index is a number that means
-    /// nothing the day the fixture transcript grows a turn, and it would go on rendering SOME row
-    /// while quietly ceasing to be the one the count was chosen for.
+    /// Derived from the rows rather than hard-coded — an index goes on rendering SOME row the day
+    /// the fixture transcript grows a turn, while ceasing to be the one the count was chosen for.
     static let longHeldRowID = longRows.leaving(6)
 
-    /// That same reading with everything SAID below the reader's place taken out.
+    /// That same reading with everything SAID below the reader's place taken out — held at the
+    /// same place, so the two renders differ by the badge and by nothing else.
     ///
-    /// A long stretch of work and no prose, and a filter over the same rows held at the same place,
-    /// so the two renders differ by the badge and by nothing else.
-    ///
-    /// Cut by POSITION in the list rather than by comparing `FeedRow.ID`s. The ids are dense today,
-    /// so `<=` would work and would be a fixture quietly depending on that — the same assumption
-    /// that put a Session's reading at another Session's offset.
+    /// Cut by POSITION rather than by comparing `FeedRow.ID`s: the ids are dense today, so `<=`
+    /// would work and would be a fixture quietly depending on that.
     static let longSilentRows: [FeedRow] = {
         guard let at = longRows.firstIndex(where: { $0.id == longHeldRowID }) else { return [] }
         return longRows.prefix(through: at) + longRows[longRows.index(after: at)...]
@@ -185,8 +159,7 @@ extension FeedProjection {
 
 private extension Sequence<FeedRow> {
     /// The first row in this order that stands for a call the record answered with a failure.
-    /// Both feeds want it and neither wants the same end of the feed, so the direction is the
-    /// caller's and the rule is written once.
+    /// The direction is the caller's: the two feeds want opposite ends.
     var failedCallID: FeedRow.ID? {
         first { row in
             guard case let .call(call) = row.content else { return false }

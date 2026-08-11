@@ -4,10 +4,8 @@ import Testing
 
 /// What the way-back-to-the-newest control's measures claim, now that it carries no word.
 ///
-/// Its own suite for the reason `PlanPillContractTests` is one: the claims are about a
-/// relationship. The control shares the deck's bottom edge with the plan pill and lost the label
-/// that used to size it, so what it measures against is the OTHER float and the pointer — not the
-/// feed it sits over.
+/// The control shares the deck's bottom edge with the plan pill and carries no label, so what it
+/// measures against is the OTHER float and the pointer — not the feed it sits over.
 @Suite("The feed's tail control")
 struct FeedTailContractTests {
     /// The smallest a pointer target may be on macOS. A control that is only a mark has no words
@@ -20,8 +18,7 @@ struct FeedTailContractTests {
         #expect(ArgoFeedRow.tailDiameter > ArgoIconSize.control.rawValue)
     }
 
-    /// It clears the pill entirely rather than sitting beside it — the claim `tailLift` exists to
-    /// make, restated against the circle now that the control's own height is a token too.
+    /// It clears the pill entirely rather than sitting beside it — the claim `tailLift` exists for.
     @Test
     func `it floats clear of the plan pill's whole lane`() {
         #expect(ArgoFeedRow.tailLift > ArgoPlanPill.lift + ArgoPlanPill.laneHeight)

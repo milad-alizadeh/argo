@@ -2,11 +2,10 @@ import XCTest
 
 /// The ⓘ panel, opened the way a person opens it — by resting the pointer on the mark.
 ///
-/// Every rule the instrument carries is asserted in `SessionHeaderContextTests`, which is where a
-/// rule belongs — but none of those tests can click, and the panel is a POPOVER: its own window,
-/// its own environment, and the exact place a view that renders perfectly in a specimen comes
-/// apart. That has already happened once here, to the Project drawer. This is the only target that
-/// can catch it.
+/// Every rule the instrument carries is asserted in `SessionHeaderContextTests`, but none of those
+/// tests can click, and the panel is a POPOVER: its own window, its own environment, and the exact
+/// place a view that renders perfectly in a specimen comes apart. This is the only target that can
+/// catch it.
 ///
 /// `@MainActor` for the reason every case here carries it: driving a UI is main-actor work under
 /// Swift 6, and `XCUIApplication()` is isolated to it.
@@ -41,9 +40,8 @@ final class ContextGuideE2ETests: XCTestCase {
             about.waitForExistence(timeout: 20),
             "The header drew no ⓘ — or the zone combined its children and swallowed it.",
         )
-        // Hover and nothing else, which is now the whole gesture. The dwell before it opens is the
-        // one thing out here that a value test cannot reach — `waitForExistence` below is what
-        // absorbs it, and a panel that never opened fails on the same line.
+        // Hover and nothing else is the whole gesture. The dwell before it opens is absorbed by
+        // the `waitForExistence` below, where a panel that never opened also fails.
         about.hover()
 
         let line = app.staticTexts["handing off is worth doing"]
@@ -60,9 +58,8 @@ final class ContextGuideE2ETests: XCTestCase {
         // passing against a window that is already gone.
         XCTAssertEqual(app.state, .runningForeground)
 
-        // Story 42 — that the panel explains rather than repeats — is asserted where the panel's
-        // words are decided, in `SessionHeaderContextTests`. From out here the reading behind the
-        // popover and a reading inside it are the same query, so a check here would pass on both.
+        // Story 42 — that the panel explains rather than repeats — is asserted in
+        // `SessionHeaderContextTests`: from out here a check would pass on both readings.
 
         // Escape, which is the popover's own dismissal and the half of story 41 a render cannot
         // show. Typed at the app rather than at the panel: the popover holds key, and addressing

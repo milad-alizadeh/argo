@@ -7,16 +7,15 @@ final class FeedArrivalE2ETests: FeedE2ECase {
         "feedArriving"
     }
 
-    /// Rows arrive at the END of the reading. Somebody reading the middle of it must not be moved
-    /// by that — which is the whole of the difference between following a Session and reading one.
+    /// Rows arrive at the END of the reading; somebody reading the middle must not be moved by
+    /// that.
     ///
-    /// The row it holds is well inside the half the specimen opens with, deliberately. A row near
-    /// the boundary can be reached while the reading is still following, and a feed that is
-    /// following is SUPPOSED to move — the test would then fail for the opposite of its claim.
+    /// The row it holds is well inside the half the specimen opens with, deliberately: a row near
+    /// the boundary can be reached while the reading is still following, and a following feed is
+    /// SUPPOSED to move.
     ///
-    /// The last two assertions are what stop it passing vacuously. `Newest` says the reader really
-    /// is off the end, and the closing row says the reading really did grow while they sat there —
-    /// without both, a specimen that had stopped writing would satisfy every line above.
+    /// `Newest` and the closing row are the vacuity guards — without both, a specimen that had
+    /// stopped writing would satisfy every line above.
     func testRowsArrivingBelowDoNotMoveTheRowBeingRead() async throws {
         XCTAssertTrue(feed.waitForExistence(timeout: 20), "The deck drew no feed.")
 

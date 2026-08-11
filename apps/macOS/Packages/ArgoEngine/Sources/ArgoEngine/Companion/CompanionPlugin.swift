@@ -3,9 +3,9 @@ import Foundation
 /// The companion plugin on disk: a standard `.claude-plugin` bundle, written out per claim with
 /// that claim's socket baked into it.
 ///
-/// Materialized rather than shipped ready-made because the one thing it must say — which socket to
-/// talk down — is not known until the claim exists. The bytes come from the package's own resource,
-/// so a checkout and the built app load the same plugin.
+/// Materialized rather than shipped ready-made: the one thing it must say — which socket to talk
+/// down — is not known until the claim exists. The bytes come from the package's own resource, so
+/// a checkout and the built app load the same plugin.
 enum CompanionPlugin {
     /// Where the socket path goes in the resource's MCP declaration.
     static let socketPlaceholder = "__ARGO_COMPANION_SOCKET__"
@@ -13,12 +13,11 @@ enum CompanionPlugin {
     /// Write the plugin for one claim under `root`, and say how to reach it.
     ///
     /// Throws rather than returning nothing: a spawn that proceeded without its plugin would be a
-    /// managed Session that can never produce a CONVENTION fact, and saying so is better than
-    /// leaving the reader to wonder why the tier never appears.
+    /// managed Session that can never produce a CONVENTION fact.
     ///
     /// `gatedBy` is the permission gate's socket; with one, the bundle also carries the
-    /// `PreToolUse` hook and the `hooks/hooks.json` that installs it — which is what makes a
-    /// spawned Session's Permissions answerable in the cockpit rather than in a TUI nobody sees.
+    /// `PreToolUse` hook and the `hooks/hooks.json` that installs it, which is what makes a spawned
+    /// Session's Permissions answerable in the cockpit rather than in a TUI nobody sees.
     static func materialize(
         forClaim claim: SessionOwnership.ClaimID,
         under root: URL,

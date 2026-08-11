@@ -1,19 +1,14 @@
 import Foundation
 
 /// One Turn spelled as the keystrokes an interactive `claude` would have received from a person.
-///
-/// The Session is a real TUI in a PTY Argo owns and never draws (ADR-0024), so this is the whole of
-/// what "send" means: there is no API on the other end, only a terminal program reading a
-/// descriptor. Which is why the encoding is a type with tests rather than a string built at a call
-/// site — the difference between one Turn and five is four escape bytes.
+/// The Session is a real TUI in a PTY Argo owns and never draws (ADR-0024): there is no API on the
+/// other end, only a terminal program reading a descriptor.
 enum ClaudeTurn {
     /// The text as a bracketed paste, then the Return that submits it.
     ///
     /// A newline at that prompt SUBMITS, so a multi-line message written straight through would
-    /// arrive as one Turn per line — the first answered while the rest queued behind it, which is
-    /// both a wrong reading of what was asked and impossible to tell from the agent misbehaving.
-    /// The brackets are how a terminal says "this is text, not typing", and are the same thing that
-    /// stops ⌘V of a paragraph firing on its first line.
+    /// arrive as one Turn per line. The brackets are how a terminal says "this is text, not
+    /// typing".
     static func keystrokes(for text: String) -> String {
         "\(pasteStart)\(pasted(text))\(pasteEnd)\(submit)"
     }

@@ -1,12 +1,8 @@
 @testable import ArgoEngine
 import Testing
 
-/// Driving a Session Argo owns — the other direction from everything else in the Hub, which reads
-/// the world rather than acting on it.
-///
-/// The PTY is the only thing standing in for the world here: the claim, the ownership registry and
-/// the launch are all real, so what these prove is the whole path from a Session id the roster
-/// carries to bytes on a descriptor.
+/// Driving a Session Argo owns. The PTY is the only stand-in here — the claim, the ownership
+/// registry and the launch are real, so the whole path from Session id to bytes is covered.
 @Suite("Session drive")
 @MainActor
 struct SessionDriveTests {
@@ -25,9 +21,8 @@ struct SessionDriveTests {
         #expect(typed.hasSuffix("\r"))
     }
 
-    /// The composer is absent for a Session Argo cannot drive, so reaching this is the race
-    /// between drawing it and the PTY going away — and the answer has to be a refusal the surface
-    /// can repeat, never a write into nothing.
+    /// Reachable only by the race between drawing the composer and the PTY going away: the answer
+    /// is a refusal, never a write into nothing.
     @Test
     func `a Session Argo never spawned refuses the Turn`() throws {
         let fixture = try SpawnFixture()
@@ -50,8 +45,7 @@ struct SessionDriveTests {
         }
     }
 
-    /// Return on an empty field would submit an empty Turn to a live agent, which reads as the user
-    /// having asked for something and is the one keystroke the composer must not be able to leak.
+    /// Return on an empty field would submit an empty Turn to a live agent.
     @Test
     func `whitespace alone is not a Turn`() async throws {
         let fixture = try SpawnFixture()
@@ -64,8 +58,8 @@ struct SessionDriveTests {
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
 
-    /// What a cockpit test drives instead of a CLI. It is here rather than in a test target because
-    /// the surfaces that need it are in another module.
+    /// What a cockpit test drives instead of a CLI. Not in a test target: the surfaces that need it
+    /// are in another module.
     @Test
     func `the in-memory driver answers with what it was asked to send`() throws {
         let driver = InMemorySessionDriver()

@@ -1,11 +1,8 @@
 import ArgoEngine
 
-/// The agent's live to-do list, as the pill above the dock reads it.
-///
-/// Every value on it is DERIVED from the one list the record carries — where the agent says it is,
-/// how far it has got, how many steps there are. None of it is stored, and none of it is invented:
-/// a plan that marks nothing in progress has no current step, and this says so rather than
-/// nominating the next pending one.
+/// The agent's live to-do list, as the pill above the dock reads it. Every value is DERIVED from
+/// the one list the record carries, and none is invented: a plan that marks nothing in progress has
+/// no current step rather than the next pending one.
 struct PlanReading: Equatable, Sendable {
     /// One entry, addressed by its place in the list.
     struct Step: Identifiable, Equatable, Sendable {
@@ -19,18 +16,14 @@ struct PlanReading: Equatable, Sendable {
 
     let steps: [Step]
 
-    /// The reading of one list, which is the only way a reading is built. Numbering the entries is
-    /// the whole of it — a plan arrives complete, so there is nothing here to merge into.
+    /// A plan arrives complete, so there is nothing here to merge into: numbering is the whole job.
     init(entries: [PlanEntry]) {
         self.steps = entries.enumerated().map { position, entry in
             Step(id: position, text: entry.text, status: entry.status)
         }
     }
 
-    /// The step the agent says it is on, or `nil` when the list names none.
-    ///
-    /// The FIRST one marked, not the only one: a plan may carelessly mark two, and what the pill
-    /// asks is which step is current rather than how many claim to be.
+    /// The FIRST step marked in progress, not the only one — a plan may carelessly mark two.
     var current: Step? {
         steps.first { $0.status == .inProgress }
     }
@@ -49,12 +42,9 @@ struct PlanReading: Equatable, Sendable {
         steps.filter { $0.status == .completed }.count
     }
 
-    /// How much of the list is behind the agent, `0...1`. What the pill's ring is drawn from, and
-    /// the one reading that stays honest when no step is in progress — a finished plan is full and
-    /// an untouched one is empty, neither of which needs a current step to say.
-    ///
-    /// The projection never hands over a reading with no steps, but the initialiser above does not
-    /// forbid one — so the empty case is answered here rather than assumed away.
+    /// How much of the list is behind the agent, `0...1` — the one reading that stays honest with
+    /// no step in progress. The projection never hands over an empty reading, but the initialiser
+    /// does not forbid one, so the empty case is answered rather than assumed away.
     var progress: Double {
         steps.isEmpty ? 0 : Double(completed) / Double(count)
     }

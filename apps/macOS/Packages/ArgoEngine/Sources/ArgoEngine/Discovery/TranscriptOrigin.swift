@@ -22,10 +22,8 @@ enum TranscriptOrigin {
     }
 
     /// Everything up to the last newline the file has to offer, growing the read until one appears.
-    ///
-    /// Cutting at a newline rather than at a byte count is what keeps the decode honest: the tail
-    /// of a fixed-size read is half a record and possibly half a character, and there is no way to
-    /// tell that from a record that is genuinely malformed.
+    /// Cutting at a byte count instead would leave half a record — indistinguishable from one that
+    /// is genuinely malformed.
     private static func readFirstLines(from handle: FileHandle) -> Data? {
         var head = Data()
         while head.count < headByteLimit {

@@ -2,12 +2,9 @@
 import Foundation
 import Testing
 
-/// How full a Session's context is, folded out of the spends its records report.
-///
-/// The distinction every assertion here turns on: what a Session HOLDS is not what it has SPENT.
-/// Every request re-sends the whole conversation, so the running total is tokens billed and the
-/// latest reading is tokens in the window — and confusing the two reports a Session forty turns in
-/// as tens of times past a window it is nowhere near.
+/// How full a Session's context is, folded out of the spends its records report. What a Session
+/// HOLDS is not what it has SPENT: every request re-sends the whole conversation, so the running
+/// total is tokens billed and the latest reading is tokens in the window.
 @Suite("Session context")
 struct SessionContextTests {
     private static let projectURL = URL(fileURLWithPath: "/tmp/argo-context")
@@ -36,9 +33,8 @@ struct SessionContextTests {
         #expect(try #require(hub.sessions.first).contextTokens == 97300)
     }
 
-    /// A cached token is a cheaper token, not a smaller one: the model still reads it. Asserted on
-    /// its own because dropping the cache is the plausible mistake, and on an agent run the cache
-    /// is nearly the whole window.
+    /// A cached token is a cheaper token, not a smaller one: the model still reads it, and on an
+    /// agent run the cache is nearly the whole window.
     @Test
     @MainActor
     func `a cached read counts against the window like any other token`() async throws {
@@ -52,8 +48,7 @@ struct SessionContextTests {
         #expect(try #require(hub.sessions.first).contextTokens == 250_020)
     }
 
-    /// The honest gap. A Session whose records priced nothing has no context reading, and a zero
-    /// here would be rendered as an empty window — the opposite claim from an unread one.
+    /// A zero here would render as an empty window — the opposite claim from an unread one.
     @Test
     @MainActor
     func `a record that priced nothing leaves the context unread, never zero`() async throws {
@@ -68,9 +63,7 @@ struct SessionContextTests {
         #expect(try #require(hub.sessions.first).contextTokens == nil)
     }
 
-    /// A resume chain is one Session, and the reading it carries is the one from its later half —
-    /// but only where that half reported one at all. A resumed file with no spend in it yet must
-    /// not blank what the root already read.
+    /// A resumed file with no spend in it yet must not blank what the root already read.
     @Test
     @MainActor
     func `a resumed chain keeps the newest reading it has`() async throws {

@@ -3,10 +3,9 @@ import ArgoEngine
 
 /// A media result's bytes, decoded once, with what the image itself says about its size.
 ///
-/// A value rather than a computed property on the evidence, because decoding base64 into an
-/// `NSImage` is work and a SwiftUI `body` runs whenever anything near it changes — a gallery of six
-/// shots recomputing its pictures on every layout pass is the jitter, not a detail of it. Views
-/// build one of these once per shot and hold it.
+/// Decoding base64 into an `NSImage` is work and a SwiftUI `body` runs whenever anything near it
+/// changes, so this is a held value and never a computed property: a gallery of six shots
+/// recomputing its pictures on every layout pass is the jitter.
 struct MediaPicture {
     let image: NSImage
     /// The image's own pixel dimensions, `nil` where no representation carries them. Read off the
@@ -56,10 +55,8 @@ struct MediaPicture {
 }
 
 extension MediaEvidence {
-    /// Where the picture came from, paying a decode to find out whether there is one at all.
-    ///
-    /// A view holds a `MediaPicture` already and builds the provenance from that instead. This is
-    /// for everything that only wants the answer — the projection's own reading, and the tests.
+    /// Where the picture came from, paying a decode to find out whether there is one at all. For
+    /// callers holding no `MediaPicture` — the projection's own reading, and the tests.
     var provenance: MediaProvenance {
         MediaProvenance(self, showing: MediaPicture(self) != nil)
     }

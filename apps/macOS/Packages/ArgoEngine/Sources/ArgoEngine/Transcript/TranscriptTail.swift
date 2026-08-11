@@ -1,19 +1,14 @@
 import Foundation
 
-// Following a file that is still being written. The Electron reader watches the transcript ROOT and
-// re-reads whole files on a debounce; this follows ONE file from where it last stopped, which is
-// what makes the output a stream rather than a repeated snapshot.
+// Following a file that is still being written: ONE file read from where it last stopped.
 //
-// Two hazards the whole-file re-read never had, and both are handled here rather than by the
-// reader above: a record can be half-written when the watcher fires, so a trailing partial line is
-// carried rather than parsed; and a file can be truncated or replaced under an open handle, which
-// reads as a cursor past the end and is answered by starting over.
+// Two hazards handled here rather than by the reader above: a record can be half-written when the
+// watcher fires, so a trailing partial line is carried rather than parsed; and a file can be
+// truncated or replaced under an open handle, which reads as a cursor past the end.
 
-/// The read cursor over one transcript file.
-///
-/// An actor because the drain is called from a file-system event handler and from the initial read,
-/// and both mutate the same carry buffer. Two drains overlapping still produce lines in order: the
-/// offset only ever advances inside the actor, so whichever runs second reads what the first left.
+/// The read cursor over one transcript file. An actor because `drain` is called from a file-system
+/// event handler and from the initial read, and both mutate the same carry buffer; the offset only
+/// advances inside the actor, so overlapping drains still produce lines in order.
 private actor FileCursor {
     private let handle: FileHandle
     private var carry = Data()
@@ -49,11 +44,8 @@ private actor FileCursor {
         }
     }
 
-    /// Split what has accumulated on newlines, keeping the tail behind.
-    ///
-    /// The last element is only a line if the data ended on a newline. Otherwise it is a record the
-    /// agent is still writing, and parsing it would report a malformed line for a file that is
-    /// perfectly well-formed a millisecond later.
+    /// Split what has accumulated on newlines, keeping the tail behind: the last element is only a
+    /// line if the data ended on a newline, otherwise it is a record still being written.
     private func takeCompleteLines() -> [String] {
         var parts = carry.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: false)
         guard parts.count > 1 else { return [] }
@@ -66,14 +58,11 @@ private actor FileCursor {
 /// Every line already in the file, then every line appended to it, in the batches the reads came
 /// back in — until the caller stops listening.
 ///
-/// Batched rather than yielded one line at a time, because the batch boundary is itself a fact: the
-/// FIRST element is everything the file already held, so a consumer can tell a reconstruction from
-/// the news that follows it. Every read is yielded, empty ones included — an empty transcript has
-/// a backfill too, and a consumer waiting to be told the file has been read would otherwise wait
-/// forever.
+/// The FIRST batch is everything the file already held, so a consumer can tell a reconstruction
+/// from the news that follows it. Every read is yielded, empty ones included — an empty transcript
+/// has a backfill too.
 ///
-/// The stream does not finish on its own: a live transcript has no end, and an agent that has been
-/// quiet for an hour is idle rather than over. Cancelling the consuming task closes the file.
+/// The stream does not finish on its own; cancelling the consuming task closes the file.
 public func transcriptLines(at url: URL) -> AsyncStream<[String]> {
     AsyncStream { continuation in
         guard let cursor = FileCursor(url: url) else {

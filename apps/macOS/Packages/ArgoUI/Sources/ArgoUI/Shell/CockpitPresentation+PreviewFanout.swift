@@ -4,10 +4,9 @@ extension CockpitPresentation.Session {
     /// The three things a turn does that are not work or prose: it hands work to other agents, it
     /// asks somebody a question, and it gets punctuated.
     ///
-    /// Written as engine events like the rest of the fixture. Two subagents are left UNANSWERED on
-    /// purpose — a delegation the record has not answered is a child still working, which is the
-    /// state the rail exists for — and the third reports what it spent, which is the only place a
-    /// sidechain's cost is ever visible.
+    /// Two subagents are left UNANSWERED on purpose — a delegation the record has not answered is a
+    /// child still working — and the third reports what it spent, the only place a sidechain's cost
+    /// is ever visible.
     static let fannedOut: [TranscriptEvent] = [
         .toolCall(ToolCall(
             id: "fan-research", name: "Task", kind: .delegate,
@@ -58,8 +57,7 @@ extension CockpitPresentation.Session {
             usage: nil,
         )),
         // What the turn itself cost, beside what it paid other agents to work. Both grains are in
-        // the fixture because the roll-up at the foot of the reading claims to be the total of
-        // them, and a render of that claim over one grain would not be a render of it.
+        // the fixture because the roll-up at the foot of the reading claims to be their total.
         .usage(Usage(
             inputTokens: 5000,
             outputTokens: 120,

@@ -4,12 +4,12 @@ import SwiftUI
 import Testing
 
 /// The mark tracks the agent's backticks and nothing else. Every claim here is about WHICH
-/// characters get it — what it looks like is the visual contract's.
+/// characters get it.
 ///
 /// A `code` span is drawn as a GROUND, not a hue, so in the ordinary case it takes no ink at all
-/// and these tests would have nothing to read. They pass a `span` ink, which is the floor case:
-/// the one voice quiet enough that inheriting would put the run under the contrast floor on its
-/// own ground. Same runs either way — the ink is just what makes the choice observable.
+/// and these tests would have nothing to read. They pass a `span` ink — the floor case, the one
+/// voice quiet enough that inheriting would put the run under the contrast floor on its own
+/// ground. Same runs either way; the ink is what makes the choice observable.
 @Suite("Marked prose")
 struct MarkedProseTests {
     let ink = ArgoPalette.graphite.text.secondary
@@ -58,8 +58,7 @@ struct MarkedProseTests {
     }
 
     /// The ordinary case, and the reason the span parameter is an Optional rather than a colour:
-    /// a marked run inherits the voice around it, so nothing is written onto it at all. A run that
-    /// came back inked here would be a span claiming more than the sentence carrying it.
+    /// a marked run inherits the voice around it, so nothing is written onto it at all.
     @Test
     func `with no floor in force a code span takes no ink of its own`() {
         let source = parsed("Read `FeedView.swift` first.")

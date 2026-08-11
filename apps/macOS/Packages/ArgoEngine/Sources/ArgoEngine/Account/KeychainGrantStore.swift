@@ -30,9 +30,8 @@ public struct KeychainGrantStore: AccountGrantStore {
         try check(SecItemAdd(attributes as CFDictionary, nil))
     }
 
-    /// An entry that will not decode reads as no grant, not as an error. The recoverable answer is
-    /// "this Account is not connected, authorize it again"; the throw would be a launch that fails
-    /// on a keychain entry the user cannot see to fix.
+    /// An entry that will not decode reads as no grant, not as an error: a throw would be a launch
+    /// that fails on a keychain entry the user cannot see to fix.
     public func grant(for accountID: String) async throws -> AccountGrant? {
         var query = item(accountID)
         query[kSecReturnData as String] = true

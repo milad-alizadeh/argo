@@ -38,8 +38,8 @@ final class RecordingProcessHost: AgentProcessHost {
 /// One real `claude` under a real Hub: the same PTY host, launcher and companion root the app
 /// composes, in a temp folder of its own.
 ///
-/// Nothing here is a stand-in. That is the point — the permission gate is a hook the CLI installs,
-/// dials and blocks on, and no fake of ours can say whether that CLI honours the reply we send.
+/// Nothing here is a stand-in: the permission gate is a hook the CLI installs, dials and blocks on,
+/// so only the real CLI can say whether it honours the reply we send.
 @MainActor
 final class LiveClaudeFixture {
     /// The path the agent is asked to create. The file is the evidence: the command's own text is

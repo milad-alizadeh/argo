@@ -3,16 +3,12 @@ import ArgoEngine
 import Testing
 
 /// A file outside the tree the Session is working in (#380). The panel says every path relative to
-/// the Session's cwd, so one that is NOT relative to it reads as though it were — the marker is
-/// what
-/// stops a path from `~/Library` looking like a path in the repo.
+/// the Session's cwd, so the marker is what stops a `~/Library` path looking like a repo path.
 @Suite("External files")
 struct FeedExternalFileTests {
     private static let cwd = "/Users/milad/Developer/argo"
 
-    /// One address, and what the rule has to answer about it. A named shape rather than a tuple:
-    /// three anonymous members read as a puzzle in the failure message, which is the one place a
-    /// table-driven case is ever read.
+    /// One address, and what the rule has to answer about it.
     struct Address {
         let named: String
         let address: String
@@ -36,9 +32,8 @@ struct FeedExternalFileTests {
         #expect(path.isExternal(subject.address) == subject.isExternal, "\(subject.named)")
     }
 
-    /// A Session that never said where it was working marks nothing. There is nothing to be outside
-    /// OF, and every address in such a feed is absolute — the marker would land on all of them and
-    /// report the gap in the record as a fact about the files.
+    /// A Session that never said where it was working marks nothing: every address in such a feed
+    /// is absolute, so marking them all would report a gap in the record as a fact about the files.
     @Test
     func `a Session with no cwd marks nothing external`() {
         #expect(!FeedPath.anywhere.isExternal("/etc/hosts"))
@@ -57,8 +52,7 @@ struct FeedExternalFileTests {
         #expect(call.opened.steps.map(\.isExternal) == [true])
     }
 
-    /// The row is unchanged: it draws the shortest thing that identifies the call, on one line, and
-    /// a marker on it would be a second address on the one row that already had one.
+    /// The row is unchanged: the shortest thing that identifies the call, on one line.
     @Test
     func `a file inside the tree carries no marker at all`() throws {
         let call = try #require(FeedFixture.calls(in: Self.reading(
@@ -72,8 +66,8 @@ struct FeedExternalFileTests {
 
     // MARK: - Fixtures
 
-    /// One read, in a Session that said where it was working. The cwd is the whole point of the
-    /// fixture: without it there is nothing for a path to be outside of.
+    /// One read, in a Session that said where it was working — without a cwd there is nothing for a
+    /// path to be outside of.
     private static func reading(_ path: String, printing text: String) -> [TranscriptEvent] {
         [
             .cwd(cwd),

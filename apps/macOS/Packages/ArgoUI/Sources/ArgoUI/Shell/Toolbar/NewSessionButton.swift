@@ -3,11 +3,8 @@ import SwiftUI
 /// The affordance for STARTING a Session: one icon at the leading edge of the bar, in a glass
 /// container of its own, next to the system sidebar toggle.
 ///
-/// The glass is spelled HERE and not left to the toolbar, which is the opposite of what the two
-/// vessels do — and for their own reason. A vessel takes the toolbar's glass so its halves MERGE
-/// into one capsule; this control must not merge with anything, so its item hides the shared
-/// background and carries its own. Between them: one capsule per reading, and a verb is its own
-/// reading, not a fourth fact inside "this Project, on this checkout".
+/// The glass is spelled HERE and not left to the toolbar: this control must not merge with a
+/// neighbour, so its item hides the shared background and carries its own.
 struct NewSessionButton: View {
     /// How far the mark moves right and up to sit centred in its container. One number for both
     /// axes because the symbol's own imbalance is diagonal.
@@ -31,15 +28,13 @@ struct NewSessionButton: View {
                 .foregroundStyle(ink)
                 // `square.and.pencil` draws its square in the LOWER-LEFT of its own glyph box and
                 // spends the top-right on the pencil, so a box centred in the container leaves the
-                // body of the mark 1.3pt down and left of centre — measured off the render, not
-                // guessed. The correction centres the SQUARE, which is what the eye tracks; it
-                // belongs to this symbol and moves with it.
+                // body of the mark 1.3pt down and left of centre. The correction centres the
+                // SQUARE, and belongs to this symbol.
                 .offset(x: Self.opticalCentring, y: -Self.opticalCentring)
                 // A SQUARE of the bar's own container height, and not `toolbarSegment()`: that
                 // modifier measures a segment INSIDE a vessel, so it sized this container to one
                 // glyph plus padding — shorter than every other container on the bar, and with
-                // the mark sitting off its centre. A square frame is what centres a lone mark,
-                // and at this height its circle is the shape the platform gives a lone verb.
+                // the mark sitting off its centre.
                 .frame(
                     width: ArgoLayout.toolbarVesselHeight,
                     height: ArgoLayout.toolbarVesselHeight,

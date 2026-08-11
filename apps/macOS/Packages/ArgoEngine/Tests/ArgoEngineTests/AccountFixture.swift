@@ -2,12 +2,8 @@
 import Foundation
 
 /// A throwaway machine: a registry file that does not exist yet, and a grant store standing in for
-/// the login keychain.
-///
-/// The keychain is the one dependency the suite substitutes, and only because a `swift test` binary
-/// is unsigned and so has no keychain of its own to write to — a real `SecItem` call here either
-/// prompts whoever is at the machine or fails on the runner. Everything the registry itself does
-/// runs for real, against a real file.
+/// the login keychain. The keychain is the one substituted dependency, because a `swift test`
+/// binary is unsigned and a real `SecItem` call either prompts the user or fails on the runner.
 struct AccountFixture {
     let rootURL: URL
     let grants = RecordingGrantStore()
@@ -58,8 +54,7 @@ struct AccountFixture {
 }
 
 extension AccountRegistryStore {
-    /// A completed GitHub grant, which is where most of these tests start rather than what they are
-    /// about. Named parameters only where a test's claim turns on them.
+    /// A completed GitHub grant, where most of these tests start.
     @discardableResult
     func authorizeGitHub(
         id providerAccountID: String,

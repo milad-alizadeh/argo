@@ -2,17 +2,14 @@ import SwiftUI
 
 /// The whole shell over a Project with nothing started in it, and a spawn that PUBLISHES.
 ///
-/// Every other specimen hands the shell `.inert` actions, which is right for a still render and
-/// useless for a click: the toolbar's New Session button is only reachable by pressing it, and a
-/// press against `.inert` would prove the control exists rather than that it starts anything.
+/// Every other specimen hands the shell `.inert` actions, which is useless for a click: pressing
+/// New Session against `.inert` would prove the control exists rather than that it starts anything.
 ///
-/// What it stands in for is the Hub's own provisional row (#412) — the same shape, under an id
-/// that is a claim's, titled the way `AgentSpawn` titles one before its CLI has written a record.
-/// The PTY is the one part left out, deliberately: an E2E run must not start a real agent on the
-/// machine it is running on, and everything this case is a harness FOR happens above the process.
+/// It stands in for the Hub's own provisional row (#412) — the same shape, under a claim's id. The
+/// PTY is left out: an E2E run must not start a real agent on the machine it is running on.
 struct SpawningRosterSpecimen: View {
     /// The words the roster draws for a Session that has only just started — `AgentSpawn.title`'s,
-    /// so a rename there shows up here as a failing walk rather than as a fixture nobody re-read.
+    /// so a rename there shows up here as a failing walk.
     static let provisionalTitle = "New session"
 
     @State private var presentation = CockpitPresentation.emptyPreview

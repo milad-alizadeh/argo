@@ -1,12 +1,9 @@
 import SwiftUI
 
-/// The visual contract, shown on the surfaces it exists for.
-///
-/// Not the shell — #376/#377/#378 build that. This is the judgeable form of #375: the
-/// palette, type and motion roles dressed onto a real `NavigationSplitView`, so the sidebar
-/// is the system's Liquid Glass and the room and Git controls are the system's toolbar
-/// vessels. Nothing here re-implements a native control, and nothing holds a value of its
-/// own — every colour, size and duration comes from the contract.
+/// The visual contract dressed onto a real `NavigationSplitView`, so the sidebar is the system's
+/// Liquid Glass and the room and Git controls are the system's toolbar vessels (#375). Not the
+/// shell — #376/#377/#378 build that. Nothing here re-implements a native control, and nothing
+/// holds a value of its own.
 public struct FoundationSpecimen: View {
     @State private var selection: CockpitPresentation.Session.ID? = CockpitPresentation.preview
         .sessions.first?.id
@@ -29,15 +26,13 @@ public struct FoundationSpecimen: View {
         } detail: {
             SpecimenDeck(session: selected, tab: $tab)
         }
-        // The window title is the Project. The Session's title is the deck's headline —
-        // saying it twice is what makes a top bar read as a band.
+        // The window title is the Project; the Session's title is the deck's headline.
         .navigationTitle("argo")
         .toolbar { toolbar }
         .argoAppearance()
     }
 
-    /// Rooms and Git: the only two vessels, with the spacer between them keeping them two
-    /// rather than one long bar.
+    /// Rooms and Git: the only two vessels, kept two by the spacer between them.
     ///
     /// Rooms is the stock segmented `Picker` and stays that way. Liquid Glass on a segmented
     /// picker is applied by the system *during interaction* — press and drag and the
@@ -59,9 +54,8 @@ public struct FoundationSpecimen: View {
                 Button("Checkout…") {}
                 Button("Fetch") {}
             } label: {
-                // The word `GitVessel` degrades an unnameable checkout to, because this menu
-                // stands in for that vessel. The roster's own answer — draw no line at all —
-                // is not open to a control that has to be labelled something.
+                // The word `GitVessel` degrades an unnameable checkout to. The roster's own
+                // answer — draw no line — is not open to a control that must be labelled.
                 Label(
                     selected.workspace?.branch ?? "unknown",
                     systemImage: "arrow.trianglehead.branch",

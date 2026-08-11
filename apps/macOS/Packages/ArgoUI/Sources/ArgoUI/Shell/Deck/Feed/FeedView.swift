@@ -1,54 +1,43 @@
 import SwiftUI
 
-/// The Session's reading, filling the deck's feed zone.
+/// The Session's reading, filling the deck's feed zone. It takes rows and what the deck has open —
+/// no Session, no Hub — so the same view draws a live transcript, a specimen and a preview.
 ///
-/// It takes rows and what the deck has open — no Session, no Hub — so the same view draws a live
-/// transcript, a specimen and a preview. What is on screen is what the projection produced, in the
-/// order it produced it.
-///
-/// The scrolling itself is `FeedTable`'s — AppKit's, for the reasons written on it. What stays
-/// here is the one behaviour that is a fact about the WHOLE reading rather than about a scroll:
-/// whether it is still following the Session, and what was said since the reader left the end.
+/// The scrolling itself is `FeedTable`'s (AppKit's). What stays here is whether the reading is
+/// still following the Session, and what was said since the reader left the end.
 struct FeedView: View {
     @Environment(\.argo) private var argo
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Whether a deck seam is being dragged right now — the table degrades its re-measure to
-    /// the visible rows for exactly that long.
+    /// Whether a deck seam is being dragged — the table degrades its re-measure to the visible rows
+    /// for exactly that long.
     @Environment(\.deckIsResizing) private var isResizing
 
     let rows: [FeedRow]
-    /// What the deck has open and where the keyboard is. Owned by the deck, not here: opening a
-    /// row resizes the column this view is drawn in, and a picture covers every zone at once.
+    /// What the deck has open and where the keyboard is. Owned by the deck: opening a row resizes
+    /// the column this view is drawn in.
     let selection: FeedRowSelection
-    /// Which row the reading opens HELD at, as though the reader had scrolled up to it.
-    ///
-    /// A parameter for the reason `open` and `lit` are parameters of the deck: the way-back control
-    /// is on screen exactly while the reading has stopped following, and a screenshot cannot
-    /// scroll. Without it the two states this control has — bare, and carrying what was said since
-    /// — are reachable only by a person with a trackpad, which is a surface nobody ever looks at.
+    /// Which row the reading opens HELD at, as though the reader had scrolled up to it. A parameter
+    /// because a screenshot cannot scroll, and the detached state is otherwise unreachable.
     var held: FeedRow.ID?
-    /// Whether the composer floats over this reading. It decides three things at once — the
-    /// gutter at the end (`FeedTail`), the fade that lets rows run under the vessel, and how far
-    /// the way-back control lifts — because all three are one fact about the column's bottom edge.
+    /// Whether the composer floats over this reading. It decides the gutter at the end
+    /// (`FeedTail`), the fade that lets rows run under the vessel, and how far the way-back control
+    /// lifts — all three being one fact about the column's bottom edge.
     var isUnderComposer = false
 
-    /// Which prompts the reader has unfolded. Held here rather than in the row, because it is a
-    /// fact about the READING rather than about the view drawing a row — it has to survive the row
-    /// being rebuilt when the projection hands the feed a newer copy of it.
+    /// Which prompts the reader has unfolded. Held here so it survives the row being rebuilt when
+    /// the projection hands the feed a newer copy of it.
     @State private var unfolded: Set<FeedRow.ID> = []
-    /// Whether the reading is still following the Session — see `FeedTail`. Starts wherever the
-    /// reading opens: at the end for a live transcript, detached for one opened held.
+    /// Whether the reading is still following the Session — see `FeedTail`. Starts at the end for a
+    /// live transcript, detached for one opened held.
     ///
     /// A latch on what the READER last did, not a reading of where the content currently is: a
     /// Session appending a row moves the end away from an offset nobody touched, and following
     /// recomputed from that un-follows itself every time it has something new to show.
     @State private var isFollowing: Bool
-    /// The last row present when following broke — what the count on the way-back control is taken
-    /// from. See `FeedTail.newMessages`. It must not move until the reader is following again — a
-    /// place measured from the top of the pane would count what they were already looking at.
+    /// The last row present when following broke — what `FeedTail.newMessages` counts from. It must
+    /// not move until the reader is following again.
     @State private var leftAt: FeedRow.ID?
-    /// The row the user's own words just landed on, while the accent wash stands over it. The
-    /// echo is the acceptance — no toast — and the wash is what marks the echo as new.
+    /// The row the user's own words just landed on, while the accent wash stands over it.
     @State var washed: FeedRow.ID?
     /// The table's imperative verbs — see `FeedTableHandle`.
     @State private var table = FeedTableHandle()
@@ -63,9 +52,8 @@ struct FeedView: View {
         self.selection = selection
         self.held = held
         self.isUnderComposer = isUnderComposer
-        // A reading that opens held has already left the end, and the end it left is the row it
-        // was opened at — both true before the first frame, which is what lets a screenshot show
-        // the detached state.
+        // Both true before the first frame, which is what lets a screenshot show the detached
+        // state: a reading that opens held has already left the end, at the row it opened at.
         _isFollowing = State(initialValue: held == nil)
         _leftAt = State(initialValue: held)
     }
@@ -83,9 +71,8 @@ struct FeedView: View {
             onReaderScroll: reader(isNowFollowing:),
             handle: table,
         )
-        // The deck's own surfaces still hand the keyboard back the old way — by writing a row
-        // into the focus space. No row resolves there any more, so the value is translated into
-        // the table's focus the moment it appears.
+        // The deck's own surfaces hand the keyboard back by writing a row into the focus space. No
+        // row resolves there any more, so the value is translated into the table's focus on sight.
         .onChange(of: selection.focus.wrappedValue) { _, focus in
             guard case let .row(id) = focus else { return }
             table.focus(onto: id)
@@ -110,10 +97,8 @@ struct FeedView: View {
         .accessibilityLabel("Feed")
     }
 
-    /// The deck's selection with the keyboard's way home rewired onto the table. A row closing
-    /// its own panel from inside a cell cannot ride `FocusState` back — nothing binds `.row`
-    /// any more — so the hand-back is the table's own, deterministic rather than a write into a
-    /// focus space that resolves it to nothing.
+    /// The deck's selection with the keyboard's way home rewired onto the table. A row closing its
+    /// own panel from inside a cell cannot ride `FocusState` back — nothing binds `.row` any more.
     private var routed: FeedRowSelection {
         var routed = selection
         routed.homeward = { [table] id in table.focus(onto: id) }
@@ -129,8 +114,7 @@ struct FeedView: View {
                     follow: follow,
                 )
                 .padding(.trailing, ArgoFeedRow.inset)
-                // Lifted clear of the vessel when one floats there: a way back standing on
-                // the composer is a control on a control.
+                // Lifted clear of the vessel when one floats there.
                 .padding(
                     .bottom,
                     isUnderComposer ? ArgoComposerVessel.feedClearance : ArgoFeedRow.tailLift,
@@ -142,18 +126,17 @@ struct FeedView: View {
     }
 
     /// A scroll the reader made, reported as the following answer it produced. The count's anchor
-    /// is taken on the EDGE and taken fresh each time: leaving the end a second time counts from
-    /// that moment, so the badge reads *since you last left the bottom*. Arriving back at the end
-    /// clears it, which makes a scroll home worth as much as a click on the control.
+    /// is
+    /// taken on the EDGE and taken fresh each time, so the badge reads *since you last left the
+    /// bottom*; arriving back at the end clears it.
     private func reader(isNowFollowing following: Bool) {
         guard following != isFollowing else { return }
         isFollowing = following
         leftAt = following ? nil : rows.last?.id
     }
 
-    /// Back to the newest row, because the reader asked. Animated, since a jump they requested
-    /// should show them where it went — except under Reduce Motion, where the whole content of
-    /// the change is the movement, so it lands instantly.
+    /// Back to the newest row, because the reader asked. Animated — except under Reduce Motion,
+    /// where the whole content of the change is the movement, so it lands instantly.
     private func follow() {
         isFollowing = true
         leftAt = nil

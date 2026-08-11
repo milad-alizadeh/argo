@@ -5,15 +5,10 @@ import SwiftUI
 /// A roster mixing Sessions Argo owns with Sessions it only watches — the SHIPPING row, over the
 /// sidebar list it ships inside.
 ///
-/// Its own case because ghosting is a claim about a row's neighbours: one dimmed row alone is just
-/// a row, and whether "you cannot drive this" reads without a glyph to hunt for is only answerable
-/// with driveable rows above and below it. `sessionRows` carries one read-only Session among four;
-/// this one alternates, and puts every element a row can draw on a ghosted one — a long title, a
-/// worktree, an age, and a state word in the loudest ink the roster has.
-///
-/// The last of those is the judgement the PNG exists for: an attention word is the one ink on the
-/// row that is meant to be loud, and a ghosted row has to take it down with everything else rather
-/// than leaving a bright badge on a Session nobody can answer.
+/// Its own case because ghosting is a claim about a row's NEIGHBOURS: one dimmed row alone is just
+/// a row. `sessionRows` carries one read-only Session among four; this one alternates, and puts
+/// every element a row can draw on a ghosted one — a long title, a worktree, an age, and a state
+/// word in the loudest ink the roster has.
 struct GhostedRosterSpecimen: View {
     var body: some View {
         List {
@@ -54,8 +49,7 @@ struct GhostedRosterSpecimen: View {
         ),
         CockpitPresentation.Session(
             id: "managed-idle",
-            // In the Project's own checkout: a one-line row between two-line ones, so the rhythm
-            // of a roster that does not label every workspace is what the PNG is looked at for.
+            // In the Project's own checkout: a one-line row between two-line ones.
             title: "Wait for the next instruction",
             model: "claude-sonnet-4",
             workspaceLocation: checkout,
@@ -66,10 +60,8 @@ struct GhostedRosterSpecimen: View {
         ),
         CockpitPresentation.Session(
             id: "observed-running",
-            // Live and unreachable at once: the dot is the loudest thing on a running row, and
-            // it has to dim with the rest rather than reading as a Session you could steer.
-            //
-            // Detached, so there is no branch to name — the row is located all the same.
+            // Live and unreachable at once: the dot is the loudest thing on a running row and has
+            // to dim with the rest. Detached, so there is no branch to name.
             title: "Watch an externally launched agent work",
             model: nil,
             workspaceLocation: "/Users/milad/Experiments/argo/.claude/worktrees/ticket-311-spike",
@@ -79,8 +71,7 @@ struct GhostedRosterSpecimen: View {
         ),
         CockpitPresentation.Session(
             id: "observed-unknown",
-            // A transcript that stamped nothing and carried no turn boundary: no dot, no age, and
-            // no git read behind it either. The quietest row the roster can draw, ghosted on top.
+            // No dot, no age, no git read behind it — the quietest row the roster can draw.
             title: "Read a transcript that says almost nothing",
             model: nil,
             workspaceLocation: "/Users/milad/Developer/cockpit",

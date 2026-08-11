@@ -1,14 +1,11 @@
 @testable import ArgoUI
 import Testing
 
-/// The claims the contract makes about itself. They exist because every one of them is a
-/// rule a future view or a future colour tweak could break silently: nothing about a hex
-/// literal tells you it has drifted navy, or that a status has wandered into brand blue.
+/// The claims the contract makes about itself — rules a colour tweak could break silently.
 ///
 /// Every colour claim is parameterised over `ArgoPalette.all` rather than written against
-/// `graphite`, so a light appearance arrives already governed: the rules below are about
-/// RELATIONSHIPS between roles — separation, ordering, contrast — and every one of them is as
-/// true of a light palette as of this one.
+/// `graphite`, so a light appearance arrives already governed: the rules are about RELATIONSHIPS
+/// between roles — separation, ordering, contrast — not about absolute values.
 @Suite("Visual contract")
 struct VisualContractTests {
     static let palettes = ArgoPalette.all
@@ -30,9 +27,8 @@ struct VisualContractTests {
         #expect(palette.surface.sunken.relativeLuminance < palette.surface.base.relativeLuminance)
     }
 
-    /// Ordered by depth, not by brightness: a light appearance runs the other way, and what the
-    /// contract holds is that consecutive steps are DISTINCT and monotonic — the direction is the
-    /// appearance's business.
+    /// Ordered by depth, not by brightness: a light appearance runs the other way, so the claim is
+    /// only that consecutive steps are DISTINCT and monotonic.
     @Test(arguments: palettes)
     func `the ramp steps monotonically, so depth reads off tone alone`(
         _ appearance: (name: String, palette: ArgoPalette),
@@ -98,9 +94,8 @@ struct VisualContractTests {
 
     // MARK: - The diff inks are their own roles
 
-    /// The study drew a diffstat in the running teal and the failure red, and flagged the collision
-    /// itself. Held apart here, because the two sit inches apart in one feed: `+8` next to a live
-    /// Session's dot may not be the same green.
+    /// The two sit inches apart in one feed: `+8` next to a live Session's dot may not be the same
+    /// green.
     @Test(arguments: palettes)
     func `a diffstat never reads as an operational state`(
         _ appearance: (name: String, palette: ArgoPalette),
@@ -146,21 +141,17 @@ struct VisualContractTests {
         }
     }
 
-    /// Ghosting a whole surface takes every ink on it down at once, which is the one device in
-    /// the contract that can push a rung under its own floor. What holds it is a RELATIONSHIP
-    /// rather than a second number: a ghosted row's ink stays at least as present as `disabled`,
-    /// the rung this palette already spends on something inert — so a Session you cannot drive
-    /// reads no fainter than a control you cannot press, under any appearance.
+    /// Ghosting a whole surface takes every ink on it down at once — the one device in the contract
+    /// that can push a rung under its own floor. Held by a RELATIONSHIP rather than a second
+    /// number: a ghosted row's ink stays at least as present as `disabled`.
     @Test(arguments: palettes)
     func `a ghosted surface never falls below the ramp's own inert rung`(
         _ appearance: (name: String, palette: ArgoPalette),
     ) {
         let base = appearance.palette.surface.base
         let floor = appearance.palette.text.disabled.contrastRatio(on: base)
-        // The state inks are in this loop for the reason they are asserted legible as words
-        // elsewhere: on a ghosted row they are the LOUDEST thing being taken down — an amber
-        // `Needs input`, a red `Stopped`, a live dot — and a word that survives the dimming
-        // while its row does not is the per-ink rendering this replaced.
+        // The state inks are the LOUDEST thing a ghosted row takes down — an amber `Needs input`,
+        // a red `Stopped`, a live dot — so they are in this loop too.
         let ghosted = [appearance.palette.text.primary, appearance.palette.text.tertiary]
             + appearance.palette.state.all.map(\.color)
         for ink in ghosted {
@@ -168,11 +159,8 @@ struct VisualContractTests {
         }
     }
 
-    /// The text ramp is NEUTRAL, all of it. A hue in this palette means something — brand,
-    /// one of four operational states, one of two diff inks — and a rung of the text ramp is a
-    /// loudness, not a meaning. The rule exists because the exception is what happened: a
-    /// lavender `code` ink sat here at five times the saturation of every rung around it,
-    /// spending the app's loudest colour on "this run is machine text".
+    /// A hue in this palette means something — brand, one of four operational states, one of two
+    /// diff inks — and a rung of the text ramp is a loudness, not a meaning.
     @Test(arguments: palettes)
     func `every text rung is neutral — the ramp is loudness, never meaning`(
         _ appearance: (name: String, palette: ArgoPalette),
@@ -182,10 +170,8 @@ struct VisualContractTests {
         }
     }
 
-    /// A marked `code` span is found by its GROUND, so the ground has to separate from whatever
-    /// it lands on — and it lands on two surfaces, since a prompt says the same words inside a
-    /// raised bubble. It must also outrun the row washes, or a span reads as a row that happens
-    /// to be under the pointer.
+    /// A marked `code` span is found by its GROUND, and it lands on two surfaces — a prompt says
+    /// the same words inside a raised bubble. It must also outrun the row washes.
     @Test(arguments: palettes)
     func `a marked span's ground separates on both surfaces and outruns the row washes`(
         _ appearance: (name: String, palette: ArgoPalette),
@@ -198,9 +184,8 @@ struct VisualContractTests {
         #expect(surface.marked.opacity > surface.selected.opacity)
     }
 
-    /// The floor, which is the whole reason `TextRoles.marked(on:)` exists: the span inherits its
-    /// voice, and the quietest voice would fall under the contrast floor once the ground lifts the
-    /// backdrop out from under it.
+    /// Why `TextRoles.marked(on:)` exists: the span inherits its voice, and the quietest voice
+    /// would fall under the contrast floor once the ground lifts the backdrop out from under it.
     @Test(arguments: palettes)
     func `a marked span stays legible in every voice, on both surfaces`(
         _ appearance: (name: String, palette: ArgoPalette),

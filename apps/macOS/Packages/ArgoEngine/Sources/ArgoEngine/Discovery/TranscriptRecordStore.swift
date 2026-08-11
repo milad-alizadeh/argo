@@ -2,9 +2,8 @@ import Foundation
 
 /// A CLI's on-disk record: one directory per project, each holding that project's transcripts.
 ///
-/// A port in the same sense as the readers around it — the CLI owns this directory, Argo only
-/// observes it — which is why the root is a value the caller supplies rather than a constant
-/// compiled in.
+/// The CLI owns this directory and Argo only observes it, which is why the root is a value the
+/// caller supplies rather than a constant compiled in.
 public struct TranscriptRecordStore: Sendable, Equatable {
     public let rootURL: URL
     /// Whose directory this is. Carried by the store rather than inferred from a transcript's
