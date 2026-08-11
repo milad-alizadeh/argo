@@ -17,7 +17,15 @@ public extension Hub {
             terminals: terminals,
             permissions: permissions,
             attachments: AttachmentStore(root: Self.attachmentRoot),
+            stance: { [weak self] sessionID in self?.stance(of: sessionID) ?? .unknown },
         )
+    }
+
+    /// Where one Session stands, off the roster. It is the same reading every surface draws, so the
+    /// rung a change is counted from cannot disagree with the rung the footer states.
+    private func stance(of sessionID: String) -> SessionStance {
+        guard let session = sessions.first(where: { $0.id == sessionID }) else { return .unknown }
+        return SessionStance(mode: session.mode, isRunning: session.status == .running)
     }
 
     /// Where a pasted attachment's bytes land: Argo's own per-machine data, beside `handoffs/`.

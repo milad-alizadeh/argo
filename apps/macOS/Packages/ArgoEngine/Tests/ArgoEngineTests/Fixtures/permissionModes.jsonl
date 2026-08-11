@@ -1,0 +1,6 @@
+{"type": "last-prompt", "leafUuid": "mode-root"}
+{"type": "mode", "mode": "normal", "sessionId": "mode-session"}
+{"type": "permission-mode", "permissionMode": "acceptEdits", "sessionId": "mode-session"}
+{"parentUuid": null, "type": "user", "message": {"role": "user", "content": "cycle it"}, "uuid": "mode-prompt", "timestamp": "2026-08-11T16:35:03.405Z", "permissionMode": "acceptEdits", "cwd": "/Users/x/tree", "sessionId": "mode-session"}
+{"type": "permission-mode", "sessionId": "mode-session"}
+{"type": "permission-mode", "permissionMode": "auto", "sessionId": "mode-session"}

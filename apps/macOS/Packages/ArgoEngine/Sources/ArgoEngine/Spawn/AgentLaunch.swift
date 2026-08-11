@@ -29,6 +29,18 @@ public struct AgentLaunch: Sendable, Equatable {
         environment.map { "\($0.key)=\($0.value)" }.sorted()
     }
 
+    /// The same launch with more flags on it. Kept free of any one CLI's vocabulary: what the flags
+    /// SAY is `AgentCLI`'s, and this only decides where they go — before `opening`, for the reason
+    /// that one is last.
+    func adding(_ arguments: [String]) -> AgentLaunch {
+        AgentLaunch(
+            executablePath: executablePath,
+            cwd: cwd,
+            arguments: self.arguments + arguments,
+            environment: environment,
+        )
+    }
+
     /// The same launch, opening on a prompt. Last on argv, after the companion's flags — a
     /// positional arriving before a flag's value would be read as that value.
     func opening(_ prompt: String) -> AgentLaunch {

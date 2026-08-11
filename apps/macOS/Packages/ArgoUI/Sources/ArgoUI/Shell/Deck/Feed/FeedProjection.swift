@@ -82,7 +82,7 @@ enum FeedProjection {
         case let .usage(usage): usage
         case let .toolCallOutcome(outcome): outcome.usage
         case .prompt, .message, .thought, .toolCall, .recordIdentity, .headLeaf, .title, .cwd,
-             .model, .branch, .turnEnded, .plan, .compaction, .queued, .unreadableLine: nil
+             .model, .branch, .mode, .turnEnded, .plan, .compaction, .queued, .unreadableLine: nil
         }
     }
 
@@ -142,8 +142,11 @@ enum FeedProjection {
         case let .unreadableLine(raw): .unreadable(FeedUnreadable(lines: [raw]))
         // None of these is news of its own: an outcome is carried by the call's row, a spend is one
         // term of the roll-up at the foot, and a queue note says how the prompt below it arrived.
+        // The stance is one of these too, and pointedly: Mode is standing rather than something
+        // that
+        // happened, so it belongs on the composer's footer and not as a row in the reading.
         case .toolCallOutcome, .usage, .recordIdentity, .headLeaf, .title, .cwd, .model, .branch,
-             .plan, .queued: nil
+             .mode, .plan, .queued: nil
         }
     }
 

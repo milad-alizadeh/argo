@@ -90,8 +90,12 @@ struct HubHandoffTests {
 
         let launch = try #require(fixture.host.launches.first)
         #expect(launch.cwd == fixture.projectURL.path)
-        #expect(launch.arguments
-            == ["--mcp-config", launch.arguments[1], "--plugin-dir", launch.arguments[3]])
+        // The companion's flags, then the baseline rung (#545), and no prompt behind them.
+        #expect(launch.arguments == [
+            "--mcp-config", launch.arguments[1],
+            "--plugin-dir", launch.arguments[3],
+            "--permission-mode", "acceptEdits",
+        ])
     }
 
     /// The fresh row is published under a claim id and re-keyed to the id its CLI picks, so a link

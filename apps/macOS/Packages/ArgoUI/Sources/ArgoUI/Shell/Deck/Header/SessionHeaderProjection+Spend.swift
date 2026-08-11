@@ -67,8 +67,8 @@ extension SessionHeaderProjection {
             case let .toolCall(call): call.atMs
             case let .toolCallOutcome(outcome): outcome.endedAtMs
             case let .compaction(atMs): atMs
-            case .recordIdentity, .headLeaf, .title, .cwd, .model, .branch, .message, .thought,
-                 .turnEnded, .usage, .plan, .queued, .unreadableLine: nil
+            case .recordIdentity, .headLeaf, .title, .cwd, .model, .branch, .mode, .message,
+                 .thought, .turnEnded, .usage, .plan, .queued, .unreadableLine: nil
             }
         }
         .sorted()

@@ -1,0 +1,113 @@
+@testable import ArgoEngine
+import Foundation
+import Synchronization
+import Testing
+
+/// Moving a live Session's rung. `--permission-mode` is read at startup and nothing re-reads it, so
+/// the only way in afterwards is the keystroke the TUI binds to `chat:cycleMode`.
+///
+/// The ring below is not read from a doc: `claude` 2.1.227 was driven in a PTY on 2026-08-11 and
+/// its
+/// own footer reported `auto → manual → accept edits → plan → auto`. `bypassPermissions` and
+/// `dontAsk` are not on it, so cycling can never widen a boundary past `Auto`.
+@Suite("Drive mode")
+@MainActor
+struct DriveModeTests {
+    @Test
+    func `the ring's distance is counted forward, because shift+tab only goes one way`() {
+        #expect(ClaudePermissionMode.cycles(from: "acceptEdits", to: .auto) == 2)
+        #expect(ClaudePermissionMode.cycles(from: "auto", to: .code) == 2)
+        #expect(ClaudePermissionMode.cycles(from: "plan", to: .auto) == 1)
+        // Read Only and Plan are one value, so both are the same distance away.
+        #expect(ClaudePermissionMode.cycles(from: "manual", to: .plan) == 2)
+        #expect(ClaudePermissionMode.cycles(from: "manual", to: .readOnly) == 2)
+    }
+
+    /// Zero is a real answer: re-picking the rung a Session is already on must write nothing.
+    @Test
+    func `a Session already on the rung is left alone`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        try fixture.hub.driver.setMode(.code, for: claim.value)
+
+        #expect(fixture.host.started.last?.written.isEmpty == true)
+    }
+
+    @Test
+    func `a rung two steps round the ring is two keystrokes`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        try fixture.hub.driver.setMode(.auto, for: claim.value)
+
+        #expect(fixture.host.started.last?.written == ["\u{1B}[Z\u{1B}[Z"])
+    }
+
+    /// A value with no place on the ring — `dontAsk`, whose boundary Argo cannot see — leaves no
+    /// honest count of keystrokes, so nothing is sent. Guessing would walk the ring from a point
+    /// Argo does not know it is standing on.
+    @Test
+    func `a stance Argo cannot establish refuses the change rather than guessing`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+        await hubObserveToEnd(fixture.hub, hubTestObservation(
+            id: "session-from-cli",
+            events: [
+                .cwd(fixture.projectURL.path),
+                .prompt(text: "First prompt", atMs: Date().epochMs),
+                .mode(cli: "dontAsk"),
+            ],
+        ))
+
+        #expect(throws: SessionDriveError.modeUnreachable) {
+            try fixture.hub.driver.setMode(.readOnly, for: "session-from-cli")
+        }
+        #expect(fixture.host.started.last?.written.isEmpty == true)
+        _ = claim
+    }
+
+    /// The way round the ring passes through rungs the user did not ask for, `Auto` among them.
+    /// That
+    /// is nothing while the agent is idle, and a widened boundary while it is mid-Turn — so the
+    /// change waits for the Turn rather than racing it.
+    @Test
+    func `the rung does not move while a Turn is in flight`() async throws {
+        // A process in the Session's own folder is the other half of `running`: an open Turn
+        // nothing
+        // corroborates is quiet, so the fixture has to answer the process table too.
+        let live = Mutex<Set<String>>([])
+        let fixture = try SpawnFixture(liveness: { live.withLock { $0 } })
+        defer { fixture.remove() }
+        live.withLock { $0 = [fixture.resolvedProjectPath] }
+        _ = try await fixture.hub.spawnSession()
+        await fixture.hub.refreshLiveness()
+        await hubObserveToEnd(fixture.hub, hubTestObservation(
+            id: "session-from-cli",
+            events: [
+                .cwd(fixture.projectURL.path),
+                .mode(cli: "acceptEdits"),
+                .prompt(text: "Off you go", atMs: Date().epochMs),
+            ],
+        ))
+        #expect(fixture.hub.sessions.map(\.status) == [.running])
+
+        #expect(throws: SessionDriveError.modeBusy) {
+            try fixture.hub.driver.setMode(.auto, for: "session-from-cli")
+        }
+        #expect(fixture.host.started.last?.written.isEmpty == true)
+    }
+
+    @Test
+    func `a Session Argo does not own refuses the change`() throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+
+        #expect(throws: SessionDriveError.notDrivable) {
+            try fixture.hub.driver.setMode(.auto, for: "a-session-somebody-else-started")
+        }
+    }
+}

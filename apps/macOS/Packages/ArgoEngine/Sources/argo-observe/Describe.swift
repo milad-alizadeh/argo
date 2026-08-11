@@ -46,6 +46,8 @@ func describe(_ event: TranscriptEvent) -> String {
         "model       \(model)"
     case let .branch(branch):
         "branch      \(branch)"
+    case let .mode(cli):
+        "mode        \(cli)"
     case let .prompt(text, _):
         "prompt      \(oneLine(text))"
     case let .message(markdown):

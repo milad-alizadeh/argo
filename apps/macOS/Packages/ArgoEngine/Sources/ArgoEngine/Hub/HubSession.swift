@@ -42,6 +42,12 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     public private(set) var cwd: String?
     public private(set) var model: String?
     public private(set) var branch: String?
+    /// The rung Argo ITSELF put this Session on, set by the Hub off the spawn. It is the only place
+    /// Plan can come from: the CLI reports Read Only's boundary for both, so an observed value can
+    /// never say which of the two was meant (ADR-0025).
+    public internal(set) var setMode: SessionMode?
+    /// The CLI's own word for the stance, latest reading and nothing yet where no record said one.
+    private var observedMode: String?
     public private(set) var headLeafUUID: String?
     /// Everything the transcript said, in the order it said it. The facts above are a lossy fold
     /// over this stream, which is why it is retained whole for the surfaces that read it.
@@ -80,6 +86,23 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// giving it a guessed time, and liveness reads it as uncorroborated rather than recent.
     public var lastSeenAtMs: Int? {
         lastActivityAtMs ?? recordedAtMs
+    }
+
+    /// The Session's standing stance, as Argo can state it (ADR-0025).
+    ///
+    /// The rung Argo set wins over the reading of it in exactly one case, and only while the two
+    /// still agree: Plan. `claude` reports `plan` for Read Only and Plan alike, so the intent is
+    /// knowable from the spawn and from nowhere else. The moment the observed value stops being the
+    /// one Argo set, the reading is what is true.
+    public var mode: SessionModeReading {
+        guard let observedMode else {
+            return setMode.map { .exactly($0, cli: ClaudePermissionMode.value(for: $0)) }
+                ?? .unknown(cli: nil)
+        }
+        guard setMode == .plan, observedMode == ClaudePermissionMode.value(for: .plan) else {
+            return ClaudePermissionMode.reading(of: observedMode)
+        }
+        return .exactly(.plan, cli: observedMode)
     }
 
     /// What the Session has SPENT across its whole life, cache excluded (that is `cachedTokens`).
@@ -125,6 +148,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         self.cwd = spawn.cwd
         // DIRECT: Argo chose this program and started it.
         self.cli = spawn.cli
+        // DIRECT for the same reason: the rung went out on argv.
+        self.setMode = spawn.mode
         self.lastActivityAtMs = spawn.exit?.atMs ?? spawn.spawnedAtMs
         self.startedAtMs = spawn.spawnedAtMs
         self.lastStop = spawn.exit == nil ? .endTurn : .cancelled
@@ -148,6 +173,8 @@ public struct HubSession: Equatable, Identifiable, Sendable {
             model = observedModel
         case let .branch(observedBranch):
             branch = Self.branchName(observedBranch)
+        case let .mode(cli):
+            observedMode = cli
         case let .prompt(text, atMs):
             name.observe(prompt: text)
             turnOpen = true
@@ -227,6 +254,11 @@ public struct HubSession: Equatable, Identifiable, Sendable {
         spend = Self.summed(spend, continuation.spend)
         subagentSpend = Self.summed(subagentSpend, continuation.subagentSpend)
         branch = continuation.branch ?? branch
+        // A resume is a fresh `claude` with its own flag, so the later half's stance is the live
+        // one
+        // — and a file that has not stated one yet does not un-state the root's.
+        observedMode = continuation.observedMode ?? observedMode
+        setMode = continuation.setMode ?? setMode
         headLeafUUID = continuation.headLeafUUID ?? headLeafUUID
         observeActivity(continuation.lastActivityAtMs)
         observeActivity(continuation.startedAtMs)

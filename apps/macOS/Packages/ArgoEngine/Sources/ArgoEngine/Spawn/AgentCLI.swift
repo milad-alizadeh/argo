@@ -10,4 +10,16 @@ public enum AgentCLI: String, Sendable, CaseIterable {
     public var command: String {
         rawValue
     }
+
+    /// The flags that start this CLI on one rung of the ladder (ADR-0025). Per-CLI, because the
+    /// ladder is Argo's vocabulary and each CLI has its own word for the same boundary.
+    ///
+    /// It is read at startup and nothing re-reads it, which is why the rung has to be on argv
+    /// rather
+    /// than written somewhere the CLI is asked to notice.
+    func arguments(standingOn mode: SessionMode) -> [String] {
+        switch self {
+        case .claude: ["--permission-mode", ClaudePermissionMode.value(for: mode)]
+        }
+    }
 }

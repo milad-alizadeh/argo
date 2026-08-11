@@ -39,6 +39,10 @@ public enum TranscriptRecord: Sendable, Equatable {
     /// a machine that queued several off one Session leaves several files, each holding one copy of
     /// the same prompt and no agent output at all.
     case queueOperation
+    /// The host's own note of the Session's standing permission stance, written at every Turn
+    /// boundary and after a change. The `mode` record beside it in the same file is NOT this: it
+    /// carries `normal` and names a different axis.
+    case permissionMode(String)
     /// A record whose `type` this reader does not know — the hosts write several (`system`,
     /// `mode`, `bridge-session`) and will write more. Carries the raw line so observing it loses
     /// nothing.
@@ -69,6 +73,9 @@ public extension TranscriptRecord {
                 .map { TranscriptRecord.lastPrompt(leafUuid: $0) } ?? .unknown(raw: line)
         case "queue-operation":
             return .queueOperation
+        case "permission-mode":
+            return record.stringField("permissionMode")
+                .map(TranscriptRecord.permissionMode) ?? .unknown(raw: line)
         default:
             return .unknown(raw: line)
         }
@@ -82,7 +89,7 @@ extension TranscriptRecord {
         switch self {
         case let .user(record), let .assistant(record), let .attachment(record):
             record.cwd
-        case .aiTitle, .lastPrompt, .queueOperation, .unknown:
+        case .aiTitle, .lastPrompt, .queueOperation, .permissionMode, .unknown:
             nil
         }
     }
