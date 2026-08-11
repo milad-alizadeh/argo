@@ -141,7 +141,7 @@ by hand** — dropping the `skills` entry uninstalls nothing, and the stale copy
 advertising itself, two skills competing for the same prompts.
 
 The set is **deliberate** — a lock has no `"*"` wildcard, and editing one of Argo's own skills
-needs a push to `main` before a reinstall sees it. Add/sweep/drift workflow:
+needs a push to `main` before a reinstall sees it. Add/sweep workflow:
 `packages/argo-skills/README.md`.
 
 ## Code review

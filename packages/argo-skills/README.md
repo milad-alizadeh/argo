@@ -107,8 +107,7 @@ means it is simultaneously the manifest Argo ships and the install record of Arg
 `skills update` work against it unchanged.
 
 It is **not a version pin.** Entries carry no `ref`, so a restore installs whatever each
-source's default branch holds today; `computedHash` is drift detection (what
-`bin/skills-drift.mjs` reads), not a lock.
+source's default branch holds today; `computedHash` is content identity, not a lock.
 
 ### What a subset install leaves in the target
 
@@ -147,8 +146,7 @@ npx skills add mattpocock/skills --skill '*'   # re-resolves the whole source
 git diff skills-lock.json                      # review what appeared, then commit
 ```
 
-The weekly `skills-drift` workflow reports new upstream skills for the sources it watches,
-so this is a decision you get prompted for rather than one you have to remember.
+Sweeping is a decision you make when you want it — nothing watches upstream for you.
 
 ## Argo's own skills
 
