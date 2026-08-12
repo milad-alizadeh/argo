@@ -19,9 +19,9 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
 
     var symbol: String {
         switch self {
-        case .sessions: "waveform"
-        case .work: "checklist"
-        case .code: "chevron.left.forwardslash.chevron.right"
+        case .sessions: ArgoSymbol.sessionsRoom
+        case .work: ArgoSymbol.workRoom
+        case .code: ArgoSymbol.codeRoom
         }
     }
 
@@ -39,5 +39,15 @@ public enum CockpitRoom: String, CaseIterable, Identifiable, Sendable {
         case .work: "Command 2"
         case .code: "Command 3"
         }
+    }
+
+    /// Since #690 the tab draws no word, so this is the only place a sighted reader reads one.
+    var tooltip: String {
+        "\(title) — \(shortcutDescription)"
+    }
+
+    /// A comma, not the tooltip's dash: VoiceOver announces an em dash rather than pausing on it.
+    var voiceOverLabel: String {
+        "\(title), \(shortcutDescription)"
     }
 }

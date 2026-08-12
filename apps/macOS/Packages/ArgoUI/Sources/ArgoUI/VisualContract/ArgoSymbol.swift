@@ -29,6 +29,14 @@ public enum ArgoSymbol {
     /// rung.
     public static let disclosure = "chevron.right"
 
+    /// One mark per room, and since #690 the whole of what a room tab draws.
+    ///
+    /// `apple.terminal` is a terminal WINDOW. Bare `terminal` is `ran` below, the feed's mark for a
+    /// command that ran, and one glyph cannot mean both a room and a step inside it.
+    public static let sessionsRoom = "apple.terminal"
+    public static let workRoom = "checklist"
+    public static let codeRoom = programSource
+
     /// One mark per kind of call the feed can name. A call whose kind Argo could not read carries
     /// NO mark, deliberately — a mark is a claim about what happened.
     public static let searched = "magnifyingglass"
