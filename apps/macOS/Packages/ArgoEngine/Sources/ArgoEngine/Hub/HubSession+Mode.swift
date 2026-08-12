@@ -6,16 +6,31 @@ public extension HubSession {
         guard let modeSet else {
             return observedMode.map(ClaudePermissionMode.reading(of:)) ?? .unknown(cli: nil)
         }
-        // The record has not moved since Argo set the rung, and `claude` writes its stance only at
+        // Nothing has been written since Argo set the rung, and `claude` writes its stance only at
         // Turn boundaries — so the rung Argo put the Session on is the later fact of the two.
-        guard modeSet.observedWhenSet != observedMode, let observedMode else {
+        guard observedModeCount > modeSet.recordsWhenSet, let observedMode else {
             return .exactly(modeSet.mode, cli: ClaudePermissionMode.value(for: modeSet.mode))
         }
-        // The record moved, so it is what is true — except for Plan, which no CLI can report: it
-        // reports Read Only's boundary either way, and the intent is knowable only from the set.
+        // The record has spoken since, so it is what is true — except for Plan, which no CLI can
+        // report: it reports Read Only's boundary either way, and the intent is knowable only from
+        // the set.
         guard modeSet.mode == .plan, observedMode == ClaudePermissionMode.value(for: .plan) else {
             return ClaudePermissionMode.reading(of: observedMode)
         }
         return .exactly(.plan, cli: observedMode)
+    }
+
+    /// The rung Argo asked for and the CLI then contradicted, and `nil` for every ordinary reading
+    /// (#629).
+    ///
+    /// Only a record written AFTER the set can make this claim: before one, silence is not
+    /// disagreement. It exists because the correction is otherwise invisible — `mode` above snaps
+    /// to the real rung the moment the record lands, and nothing else would say why the control
+    /// moved on its own.
+    var modeDidNotTake: SessionMode? {
+        guard let modeSet, observedModeCount > modeSet.recordsWhenSet, let observedMode,
+              ClaudePermissionMode.value(for: modeSet.mode) != observedMode
+        else { return nil }
+        return modeSet.mode
     }
 }

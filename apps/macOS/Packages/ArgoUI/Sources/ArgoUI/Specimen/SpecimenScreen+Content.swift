@@ -222,11 +222,10 @@ extension SpecimenScreen {
         // Every state of the composer and of the prompt that takes its slot, drawn in
         // `SpecimenScreen+Vessel.swift`.
         case .composer, .composerTyping, .composerCeiling, .composerDraftKept, .composerQueued,
-             .composerRunning, .composerStopped,
-             .composerRefusal, .flatComposer, .composerStanding, .composerAttached,
-             .composerPasted, .composerDragOver, .composerNoAttach,
-             .composerModeNearly, .composerModeUnknown, .composerExternal, .composerOrphaned,
-             .composerEnded, .permission,
+             .composerRunning, .composerStopped, .composerRefusal, .flatComposer,
+             .composerStanding, .composerAttached, .composerPasted, .composerDragOver,
+             .composerNoAttach, .composerModeNearly, .composerModeUnknown, .composerModeRefused,
+             .composerExternal, .composerOrphaned, .composerEnded, .permission,
              .permissionStanding, .permissionEdit, .flatPermission:
             vessel
         // Every state of the Connect flow, drawn in `SpecimenScreen+Connect.swift`.

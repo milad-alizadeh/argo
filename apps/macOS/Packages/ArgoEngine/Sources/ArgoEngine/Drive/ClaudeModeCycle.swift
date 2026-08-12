@@ -6,12 +6,18 @@ enum ClaudeModeCycle {
     /// `ESC [ Z` — `CSI Z`, the back-tab every terminal sends for `shift+tab`.
     static let keystroke = "\u{1B}[Z"
 
-    /// The keystrokes that walk a Session from where it stands to `target`, and `nil` for a stance
-    /// the ring does not hold. One string, so the TUI reads every step out of a single buffer and
-    /// the rungs passed through stay inside one turn of its event loop.
-    static func keystrokes(from observed: String, to target: SessionMode) -> String? {
-        guard let steps = ClaudePermissionMode.cycles(from: observed, to: target)
-        else { return nil }
-        return String(repeating: keystroke, count: steps)
+    /// What separates one back-tab from the next.
+    ///
+    /// The TUI folds every back-tab that arrives in ONE read into a single mode change, so a walk
+    /// written as one string moves the Session one rung whatever it was asked for (#653). Spacing
+    /// them is the whole mechanism. Verified against `claude` 2.1.228 on 2026-08-12: 15 ms already
+    /// walks a three-step change correctly and no gap at all collapses it, so this is that floor
+    /// with room for a machine under load.
+    static let gap = Duration.milliseconds(50)
+
+    /// The wait between two back-tabs. It suspends rather than spins: the main queue goes on being
+    /// serviced, which is what the permission gate's own socket is read on.
+    static func pace() async {
+        try? await Task.sleep(for: gap)
     }
 }

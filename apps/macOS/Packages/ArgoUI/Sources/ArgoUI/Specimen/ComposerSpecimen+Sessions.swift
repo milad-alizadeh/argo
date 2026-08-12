@@ -14,6 +14,7 @@ extension ComposerSpecimen {
         standingAllows: [],
         isRunning: false,
         mode: .exactly(.code, cli: "acceptEdits"),
+        modeDidNotTake: nil,
         canAttach: true,
     )
 
@@ -27,6 +28,7 @@ extension ComposerSpecimen {
         standingAllows: [],
         isRunning: false,
         mode: composer.mode,
+        modeDidNotTake: nil,
         canAttach: false,
     )
 
@@ -39,6 +41,7 @@ extension ComposerSpecimen {
         standingAllows: [],
         isRunning: true,
         mode: composer.mode,
+        modeDidNotTake: nil,
         canAttach: true,
     )
 
@@ -51,6 +54,7 @@ extension ComposerSpecimen {
         standingAllows: ["Bash", "Read"].map(StandingAllow.init(toolName:)),
         isRunning: false,
         mode: composer.mode,
+        modeDidNotTake: nil,
         canAttach: true,
     )
 
@@ -64,6 +68,21 @@ extension ComposerSpecimen {
         standingAllows: [],
         isRunning: false,
         mode: .nearly(.readOnly, cli: "default"),
+        modeDidNotTake: nil,
+        canAttach: true,
+    )
+
+    /// The same Session after a rung that did not land (#629): the picker is back on the rung the
+    /// CLI reports, and the seam says which one was asked for. Its own case because the two facts
+    /// only make sense together — a control that moved back with no line above it reads as a bug.
+    static let modeRefused = SessionComposerProjection.Composer(
+        sessionID: composer.sessionID,
+        placeholder: composer.placeholder,
+        facts: composer.facts,
+        standingAllows: [],
+        isRunning: false,
+        mode: composer.mode,
+        modeDidNotTake: .auto,
         canAttach: true,
     )
 
@@ -76,6 +95,7 @@ extension ComposerSpecimen {
         standingAllows: [],
         isRunning: false,
         mode: .unknown(cli: "dontAsk"),
+        modeDidNotTake: nil,
         canAttach: true,
     )
 }

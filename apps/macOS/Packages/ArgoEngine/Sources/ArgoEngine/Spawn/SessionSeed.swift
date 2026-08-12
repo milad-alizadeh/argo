@@ -10,10 +10,10 @@ public struct SessionSeed: Sendable, Equatable {
     /// The prompt the agent opens on. Argo owns no more of the fresh Session than this — after the
     /// first turn it is an agent like any other.
     public let opening: String?
-    /// The rung the Session stands on (`CONTEXT.md` L2 · Autonomy, ADR-0025). `Code` by default,
-    /// which is the baseline the ladder is built around: ungated tools inside the Workspace should
-    /// not pay a Permission round trip.
-    public let mode: SessionMode
+    /// The rung the Session stands on (`CONTEXT.md` L2 · Autonomy, ADR-0025), and `nil` for the one
+    /// the user last picked (#629). Optional rather than defaulted to `Code`, because a caller that
+    /// names no rung and one that names the baseline are different asks and only the first defers.
+    public let mode: SessionMode?
     /// The chain to CONTINUE rather than start — the CLI's own id for its latest link. Absent is
     /// the plain New Session; present makes this the third caller of one spawn path (#10).
     public let resuming: String?
@@ -21,7 +21,7 @@ public struct SessionSeed: Sendable, Equatable {
     public init(
         cwd: String? = nil,
         opening: String? = nil,
-        mode: SessionMode = .code,
+        mode: SessionMode? = nil,
         resuming: String? = nil,
     ) {
         self.cwd = cwd

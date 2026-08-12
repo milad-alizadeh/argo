@@ -1,3 +1,4 @@
+import ArgoEngine
 @testable import ArgoUI
 import Testing
 
@@ -36,5 +37,28 @@ struct ComposerSeamNoteTests {
             ComposerSeamNote.kept(sinceMs: 9_000_000, nowMs: 1_000_000)
                 == .draftKept("Draft kept from a moment ago"),
         )
+    }
+
+    /// A rung that did not land is the seam's business, because the picker has already moved back
+    /// on its own and nothing else says why (#629).
+    @Test
+    func `a rung that did not take takes the seam`() {
+        let note = ComposerSeamNote.note(
+            for: ComposerDraft(),
+            enteredAtMs: 0,
+            modeDidNotTake: .auto,
+        )
+
+        #expect(note == .notice("Auto did not take. The Session is still on the rung shown."))
+    }
+
+    /// A refusal still outranks it: those words are unsent and at risk, and the seam is ONE line.
+    @Test
+    func `a refused send outranks a rung that did not take`() {
+        let draft = ComposerDraft(refusal: "The session is not accepting input")
+
+        let note = ComposerSeamNote.note(for: draft, enteredAtMs: 0, modeDidNotTake: .auto)
+
+        #expect(note == .refusal("The session is not accepting input"))
     }
 }

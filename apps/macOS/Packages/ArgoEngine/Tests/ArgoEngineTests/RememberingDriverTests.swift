@@ -15,7 +15,7 @@ struct RememberingDriverTests {
     @Test
     func `the acts it does not record still reach the adapter`() throws {
         let base = InMemorySessionDriver()
-        let driver = RememberingDriver(base: base) { _, _ in }
+        let driver = RememberingDriver(base: base, records: { _ in 0 }, remember: { _, _ in })
 
         try driver.send("Off you go.", to: "session-a")
         try driver.revokeStandingAllow("Bash", for: "session-a")
@@ -26,29 +26,50 @@ struct RememberingDriverTests {
     }
 
     @Test
-    func `a rung that landed is filed with the Session it landed on`() throws {
+    func `a rung that landed is filed with the Session it landed on`() async throws {
         let base = InMemorySessionDriver()
-        var filed: [(SessionMode, String)] = []
-        let driver = RememberingDriver(base: base) { filed.append(($0, $1)) }
+        var filed: [(SessionModeSet, String)] = []
+        let driver = RememberingDriver(
+            base: base, records: { _ in 0 }, remember: { filed.append(($0, $1)) },
+        )
 
-        try driver.setMode(.plan, for: "session-a")
+        try await driver.setMode(.plan, for: "session-a")
 
         #expect(base.rungs(for: "session-a") == [.plan])
-        #expect(filed.map(\.0) == [.plan])
+        #expect(filed.map(\.0.mode) == [.plan])
         #expect(filed.map(\.1) == ["session-a"])
+    }
+
+    /// The count is read BEFORE the walk, because the walk is no longer one write (#653): a record
+    /// the walk itself provokes must not be counted as one that was already there.
+    @Test
+    func `the record count is the one from before the walk`() async throws {
+        let base = InMemorySessionDriver()
+        var records = 4
+        var filed: [SessionModeSet] = []
+        let driver = RememberingDriver(
+            base: base, records: { _ in records }, remember: { set, _ in filed.append(set) },
+        )
+        base.duringSetMode = { records = 9 }
+
+        try await driver.setMode(.auto, for: "session-a")
+
+        #expect(filed.map(\.recordsWhenSet) == [4])
     }
 
     /// The refusal case is the whole reason the record sits behind the port rather than beside it:
     /// a rung filed for keystrokes that never went is the stale count it exists to prevent.
     @Test
-    func `a refused rung is not filed`() {
+    func `a refused rung is not filed`() async {
         let base = InMemorySessionDriver()
         base.refusal = .modeBusy
         var filed: [SessionMode] = []
-        let driver = RememberingDriver(base: base) { mode, _ in filed.append(mode) }
+        let driver = RememberingDriver(
+            base: base, records: { _ in 0 }, remember: { set, _ in filed.append(set.mode) },
+        )
 
-        #expect(throws: SessionDriveError.modeBusy) {
-            try driver.setMode(.auto, for: "session-a")
+        await #expect(throws: SessionDriveError.modeBusy) {
+            try await driver.setMode(.auto, for: "session-a")
         }
         #expect(filed.isEmpty)
     }

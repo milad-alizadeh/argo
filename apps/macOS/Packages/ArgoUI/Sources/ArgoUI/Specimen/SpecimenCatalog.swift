@@ -113,6 +113,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case composerNoAttach
     case composerModeNearly
     case composerModeUnknown
+    case composerModeRefused
     case composerExternal
     case composerOrphaned
     case composerEnded
