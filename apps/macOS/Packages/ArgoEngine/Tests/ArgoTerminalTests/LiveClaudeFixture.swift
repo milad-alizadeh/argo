@@ -1,4 +1,4 @@
-import ArgoEngine
+@testable import ArgoEngine
 import ArgoTerminal
 import Foundation
 
@@ -78,7 +78,10 @@ final class LiveClaudeFixture {
     /// `carryingSkills` puts this repo's own skills in the Project before the CLI starts, which is
     /// the only moment `claude` reads them. A handoff test needs it and a permission test must not
     /// have it: a skill in scope is one more thing the agent under test can decide to do.
+    /// `on` is the rung the Session opens on, and `nil` is what a New Session takes: this fixture
+    /// names no preference file, so that is `Code` and never the machine's own (#629).
     static func spawned(
+        on mode: SessionMode? = nil,
         patience: PermissionPatience = .default,
         carryingSkills skills: [String] = [],
     ) async throws
@@ -104,7 +107,12 @@ final class LiveClaudeFixture {
                 permissionPatience: patience,
             ),
         )
-        let claim = try await hub.spawnSession()
+        // Pointed at the Project BEFORE anything is spawned, exactly as the app does it. Without
+        // this the Hub reads no transcript at all: discovery starts in `connect` and nowhere else,
+        // so every claim made against the CLI's own record would be waiting on a sweep that was
+        // never begun (#653).
+        await hub.connect(to: LaunchConfiguration(projectURL: root, transcriptURLs: []))
+        let claim = try await hub.spawnSession(seed: SessionSeed(mode: mode))
         let fixture = LiveClaudeFixture(
             root: root,
             companionRoot: companionRoot,
@@ -126,6 +134,33 @@ final class LiveClaudeFixture {
     func pendingPermission() async -> PermissionRequest? {
         await settle(seconds: 180) { self.hub.sessions.first?.permission != nil }
         return hub.sessions.first?.permission
+    }
+
+    /// This fixture's Session on the roster, by the id every drive call is keyed by — never
+    /// `sessions.first`, which is an ordering rather than an identity.
+    var session: HubSession? {
+        hub.sessions.first { $0.id == sessionID }
+    }
+
+    /// The rung the CLI ITSELF last wrote, verbatim, and `nil` until it has written one. Never
+    /// `HubSession.mode`, which prefers the rung Argo asked for until the record moves — the whole
+    /// claim of a mode test is that the CLI agrees, so Argo's own answer cannot be the evidence.
+    var reportedRung: String? {
+        hub.sessions.compactMap(\.observedMode).last
+    }
+
+    /// Wait, watching for a Permission for the whole wait, and answer whether one was ever up.
+    ///
+    /// A reading taken at the end cannot make this claim: a prompt raised and then answered leaves
+    /// nothing behind. Polling is enough because a Permission BLOCKS the CLI until it is answered
+    /// or the gate's patience runs out, so it stands for as long as it takes anyone to notice.
+    func settleWatchingForPermissions(seconds: Int, until condition: () -> Bool) async -> Bool {
+        var raised = false
+        await settle(seconds: seconds) {
+            raised = raised || hub.sessions.contains { $0.permission != nil }
+            return condition()
+        }
+        return raised || hub.sessions.contains { !$0.expiredPermissions.isEmpty }
     }
 
     func hasMarkerFile() -> Bool {

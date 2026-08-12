@@ -52,7 +52,7 @@ a rung the agent acts; at its edge Permission fires.
 | **Read Only** | no writes are possible | `plan` | `read-only` |
 | **Plan** | Read Only, plus a plan to hand off | `plan` + `ExitPlanMode` | `/plan` |
 | **Code** | writes and runs inside the Workspace, asks to leave it | `acceptEdits` | Auto preset |
-| **Auto** | no boundary, asks nothing | `auto` | Full Access |
+| **Auto** | no boundary, asks nothing — **Argo's own gate allows without raising a Permission** (read from `claude` 2.1.228, #663) | `auto` | Full Access |
 
 The `claude` column was read from
 [the permission-modes reference](https://code.claude.com/docs/en/permission-modes) and then
@@ -114,11 +114,95 @@ adapter works.
 - **`{"type":"mode","mode":"normal"}` sits beside it and is a different axis.** Never read it as
   the stance.
 - **`--permission-mode acceptEdits` was honoured end to end**: the footer read `accept edits` and
-  the transcript wrote `acceptEdits`. It is the only rung driven the whole way; `plan` and `auto`
-  are exercised as *values the flag accepts* and as positions on the ring, not as spawns of their
-  own.
+  the transcript wrote `acceptEdits`. It was the only rung driven the whole way at the time; the
+  section below drives the rest.
 - **Nothing is written until the first prompt**, so a fresh spawn's rung is DIRECT from Argo's own
   record alone.
+
+## Verification · all four rungs, 2.1.228, 2026-08-12 (#629)
+
+Every rung is now driven by a **test** rather than by hand — `LiveModeTests`, on the live fixture
+the permission suite already uses: a real PTY, a real Hub, a temp Project, folder trust handled.
+Each claim is made against the CLI's own record or against the filesystem, never against the
+argument Argo sent, because an adapter that agrees with itself proves nothing.
+
+*(Corrected under #653. The fixture never pointed its Hub at the Project, and discovery starts in
+`Hub.connect` and nowhere else — so no transcript was read and every record-based claim below was
+waiting on a sweep that had not begun. The rows are what the tests establish now that it does.)*
+
+| Rung | Flag | What the live run established |
+|---|---|---|
+| **Auto** | `auto` | Spawned on it, the transcript reports `auto`. The gated call ran unasked once the gate learned the ladder — see the `Auto` section below (#663). |
+| **Code** | `acceptEdits` | Spawned on it, a gated `Bash` call still raises a Permission — the rung accepts edits, not commands. Unchanged from 2.1.227. |
+| **Read Only** | `plan` | Spawned on it, the agent does not write and the file it was asked for is never created. |
+| **Plan** | `plan` | The same value and the same observed behaviour as Read Only. Its intent is unobservable by construction, which is what this ADR already says. |
+
+So the `≈` rules stand against values the CLI still accepts: `manual` and `default` both read as
+`Read Only ≈`, `bypassPermissions` as `Auto ≈`, and `dontAsk` as `unknown`. Nothing in the
+2.1.227 → 2.1.228 step moved any of them.
+
+**`--permission-mode` is honoured for every rung.** The mid-Session half is the section below.
+
+## Verification · the mid-Session walk, 2.1.228, 2026-08-12 (#653)
+
+#629 read a failed `Code → Auto` change on a running Session as the CLI having withdrawn
+`shift+tab`. **It had not.** The 2.1.227 and 2.1.228 binaries were compared at the three places
+that decide this — the `Chat` keybinding table, the `ESC [ Z` decoder, and the `chat:cycleMode`
+handler — and they are identical. The bug was Argo's, and the multi-step walk had never worked.
+
+**The mechanism is `shift+tab`, one keystroke per WRITE.** Driven against 2.1.228 by writing
+back-tabs at a real PTY and reading the rung off the TUI's own footer:
+
+| What Argo wrote | Where the Session landed, from `acceptEdits` |
+|---|---|
+| `ESC [ Z` × 1 per write, six writes | `plan → auto → manual → acceptEdits → plan → auto` — the ring, one rung per keystroke |
+| `ESC [ Z ESC [ Z` in one write | `plan`. One rung, not two |
+| `ESC [ Z ESC [ Z ESC [ Z` in one write | one rung, not three |
+
+**Every back-tab arriving in a single read is one mode change to the TUI.** So a walk has to reach
+the CLI as separate reads, which means separate writes with a gap behind each. Two writes issued in
+the same run-loop turn collapse exactly as one string does; a gap of **15 ms** already walks a
+three-step change correctly, as do 60 ms and 120 ms. Argo waits **50 ms** — that floor with room
+for a machine under load — so the longest walk on a four-value ring costs 150 ms.
+
+This is why `SessionDriver.setMode` is the one act on the port that is `async`. It is not one
+keystroke but a walk, and it answers when the walk is done so the caller's refusal covers all of
+it.
+
+**The ring is unchanged**: `auto → manual → acceptEdits → plan → auto`, confirmed rung by rung from
+the footer. `bypassPermissions` and `dontAsk` are still not on it.
+
+`LiveModeTests` proves it against the CLI's own record: a Session raises a Permission on a gated
+`Bash` call while standing on `Code` — which is what makes it a *running* Session rather than a
+freshly spawned one — is moved to `Auto` while idle, and the next Turn's stance record reads
+`auto`. Reverting the fix to a single batched write turns the same test red with the record
+reading `plan`: one rung short, which is precisely the collapse.
+
+**A gated call cannot be the evidence for a rung, because Argo's own gate defeats it.**
+`PermissionChannel.asked` never reads the Session's mode, so the `PreToolUse` hook Argo installs
+asks on **every** tool call at every rung. `Auto` cannot mean "asks nothing" while that is true,
+and `LiveModeTests`' `Auto runs a gated call and never asks` fails on 2.1.228 for that reason —
+Argo's, not the CLI's. The rung itself reaches the CLI either way, which both record-based tests
+show. **This is #629's remaining half**: the flag is honoured and the walk lands, but the gate has
+to learn the ladder before `Auto` behaves like the top of it.
+
+*(Closed by #663 — the section below. The gate reads the rung now, so a gated call IS evidence
+again at every rung but the top, where it is evidence of the opposite.)*
+
+**A set outranks the record until a record is written AFTER it — counted, not compared.** The
+earlier rule compared the CLI value seen when the rung was set, which cannot tell a record that
+has not caught up from one that has spoken and repeated the old value. That is precisely what a
+change which did not land produces, so Argo went on drawing a rung nobody was standing on. Counting
+the Session's stance records makes silence and disagreement two different facts, which is what
+lets the snap-back exist at all. The walk lands now (#653), so the snap-back is the exception
+rather than the rule — but it is what stands between Argo and a rung it merely asked for, and the
+next CLI change is exactly what it is for.
+
+**A rung cannot be changed while a WALK is in flight either** (`SessionDriveError.modeWalking`).
+The walk takes time now, so a second pick can arrive in the middle of one — and it would count its
+distance from a stance the first walk has already left, then interleave its keystrokes with it.
+That lands the Session on a rung nobody picked, which is the same failure the rule below prevents
+mid-Turn, arriving by a different door.
 
 **A rung cannot be changed while a Turn is in flight.** The ring is walked, not written, so a
 change passes through rungs nobody asked for — `Auto` among them. Idle, that transit is nothing.
@@ -128,10 +212,66 @@ the ladder's own rule read at the one moment the transit is observable.
 
 **A rung Argo set outranks the record until the record moves.** `claude` writes its stance at Turn
 boundaries, so the last record can predate the last change. A set is Argo's own act and therefore
-DIRECT; it is kept with the value the record carried when it was made, and the moment the record
-carries something else the record is what is true. Without it a second change would count its
-distance from a stale rung and walk too far — landing the Session somewhere nobody asked for, which
-is the same failure `modeBusy` prevents.
+DIRECT; it is kept with how many stance records the Session had written when it was made, and the
+moment one is written after that the record is what is true. Without it a second change would count
+its distance from a stale rung and walk too far — landing the Session somewhere nobody asked for,
+which is the same failure `modeBusy` prevents.
+
+*(Amended by #629: the set was originally kept with the record's VALUE. See the 2.1.228
+verification above for why counting is the only version of this rule that can notice a change the
+CLI ignored.)*
+
+## Verification · what the gate does at `Auto`, 2.1.228, 2026-08-12 (#663)
+
+`Auto` still asked, because the boundary the rung names was Argo's to keep and Argo was not keeping
+it. The rung reached the CLI (both sections above), and then Argo's own `PreToolUse` hook asked
+anyway — so the CLI stopped asking on `Auto` and Argo started.
+
+**The gate hook runs at `auto`, can dial Argo, and the CLI honours the answer.** Read by rebuilding
+the companion plugin's own hook — the fifo-held `nc -U` of `Companion/Plugin/permission-hook.sh` —
+against a stand-in listener on a Unix socket outside the Workspace, then asking a headless 2.1.228
+for one gated `Bash` call while standing on `auto`:
+
+| What was read | At `auto` |
+|---|---|
+| The `PreToolUse` hook runs at all | yes — its payload carries `"permission_mode":"auto"` |
+| It can dial a socket outside the Workspace | yes, though `auto` sandboxes the Bash call itself |
+| The `allow` it carries back is honoured | yes — the call ran and the file appeared |
+
+The listener was a stand-in and not `PermissionChannel`, so what this establishes is the **path**:
+nothing about `auto` stops the hook reaching a socket Argo could be listening on, which is the only
+version of the sandbox worry that bears on the gate. The rung was what was missing, and the gate
+reads it now.
+
+**The 180 s stall #663 reported does not survive the fix.** It was seen through the TUI path — a
+real PTY, folder trust, the live fixture — where a gated call on `auto` produced no assistant turn
+at all. With the gate reading the rung, that same test runs the call and finishes in **12 seconds**,
+and all four of `LiveModeTests` pass against 2.1.228 on 2026-08-12.
+
+So the stall was the gate rather than the rung: the hook blocks until Argo answers, and a Permission
+nobody was shown is one nobody could answer, so the Turn stood still until the hook's own clock ran
+out. The one part of that report this does not account for is the Permission being absent from the
+roster as well; nothing here reproduces it, and the tests that would catch it now pass.
+
+**"Asks nothing" is answered, not left ungated.** The other shape — install no gate for a Session
+spawned on `Auto` — is simpler and was rejected, because a rung is *walked* mid-Session (#653): a
+Session moved down from `Auto` to `Code` would find no gate to ask through, and the rung it stands
+on would be a boundary nothing enforces. The gate is installed at every rung and allows at the top.
+
+**The rung is read at the call, never held from the spawn**, for the same reason. `PermissionChannel`
+takes a closure over the roster and asks it per call, so the reading the gate honours is the one the
+composer draws and a walk counts its distance from. A copy taken at the grant would gate for a
+boundary the Session had already left.
+
+**The rung is filed under the CLAIM at spawn**, because that is the only key that survives the
+re-key to the id the CLI picks — and between the re-key and the first stance record, nothing else
+knows the rung at all. A resume counts its `recordsWhenSet` from the chain it continues rather than
+from zero: from zero the chain's own next record reads as the CLI overruling a flag it honoured,
+which would both misdraw the composer and put the gate on the wrong rung.
+
+**Nothing is published for a call allowed this way.** No Permission is raised, so the cockpit shows
+what it shows for any ungated tool: the Tool Call itself, off the transcript. That is the honest
+reading — Argo asked nobody, so there is nothing DIRECT to report about a decision it never made.
 
 ## Consequences
 

@@ -69,6 +69,11 @@ struct DeckSeam: View {
 extension EnvironmentValues {
     /// Whether a deck seam is being dragged right now.
     @Entry var deckIsResizing: Bool = false
+
+    /// Whether the overview lane is beside the reading. The lane draws the reading's scroll knob
+    /// while it is, so the feed's own scroller would otherwise be a second one, drawn between the
+    /// reading and its map.
+    @Entry var deckHasMinimap: Bool = false
 }
 
 #Preview("Deck seam — a rail the reader can widen") {
@@ -78,7 +83,7 @@ extension EnvironmentValues {
         DeckSlot(zone: .rail)
             .frame(width: width)
         DeckSeam(width: $width, limits: ArgoLayout.railWidths, growsRightward: true)
-        DeckSlot(zone: .minimap)
+        DeckSlot(zone: .tabs)
     }
     .frame(width: 720, height: 260)
     .argoDeckSurface()

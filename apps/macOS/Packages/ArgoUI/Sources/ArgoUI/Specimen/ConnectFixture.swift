@@ -96,15 +96,15 @@ enum ConnectFixture {
         mode: .settings(agent: .claude),
     )
 
-    /// Which state each catalog case is a render of.
-    static let states: [(specimen: Specimen, reading: ConnectReading)] = [
-        (.connectFresh, fresh),
-        (.connectFolderOnly, folderOnly),
-        (.connectPartly, partly),
-        (.connectWired, wired),
-        (.connectWaiting, waiting),
-        (.connectRefused, refused),
-        (.connectBroken, broken),
-        (.projectSettings, settings),
+    /// One panel per state it can be in, each carrying the name it renders under.
+    static let states: [(name: String, reading: ConnectReading)] = [
+        ("connectFresh", fresh),
+        ("connectFolderOnly", folderOnly),
+        ("connectPartly", partly),
+        ("connectWired", wired),
+        ("connectWaiting", waiting),
+        ("connectRefused", refused),
+        ("connectBroken", broken),
+        ("projectSettings", settings),
     ]
 }

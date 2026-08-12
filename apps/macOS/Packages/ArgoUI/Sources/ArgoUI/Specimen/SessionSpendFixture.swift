@@ -15,11 +15,11 @@ enum SessionSpendFixture {
         static let betweenBurstsMs = 55 * 60 * 1000
     }
 
-    /// Each keyed by the catalog case that renders it, so the PNG a case is named for and the line
-    /// it actually draws cannot drift apart.
-    static let spends: [(specimen: Specimen, header: SessionHeaderProjection.Header)] = [
-        (.sessionSpend, header(subagentTokens: 4_130_000)),
-        (.sessionSpendUnreported, header(subagentTokens: nil)),
+    /// Each carries the name it renders under, so the PNG and the line it draws are one value and
+    /// cannot drift apart.
+    static let spends: [(name: String, header: SessionHeaderProjection.Header)] = [
+        ("sessionSpend", header(subagentTokens: 4_130_000)),
+        ("sessionSpendUnreported", header(subagentTokens: nil)),
     ]
 
     /// Just the headers, for the previews that judge the lines as a group.

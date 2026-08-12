@@ -29,6 +29,11 @@ public struct ArgoColor: Sendable, Hashable {
         Color(.sRGB, red: red, green: green, blue: blue, opacity: opacity)
     }
 
+    /// The same colour for a `CALayer` or a `CGContext`, neither of which can take a `Color`.
+    public var cgColor: CGColor {
+        CGColor(srgbRed: red, green: green, blue: blue, alpha: opacity)
+    }
+
     public func opacity(_ opacity: Double) -> ArgoColor {
         ArgoColor(red: red, green: green, blue: blue, opacity: opacity)
     }

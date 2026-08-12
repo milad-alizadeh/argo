@@ -137,15 +137,15 @@ struct ComposerDraft: Equatable {
 
     /// A rung asked for, and the port's reason where it refused (#545). A notice rather than a
     /// refusal: no words are at risk, so there is nothing for the seam's Retry to put back.
-    mutating func modeAsked(via setMode: () throws -> Void) {
-        do {
-            try setMode()
+    ///
+    /// Given the outcome rather than the act, because the walk is `async` now (#653) and a
+    /// `mutating` method cannot hold a draft open across the wait.
+    mutating func modeAsked(refusedWith error: (any Error)?) {
+        guard let error else {
             notice = nil
-        } catch let refused as SessionDriveError {
-            notice = refused.detail
-        } catch {
-            notice = error.localizedDescription
+            return
         }
+        notice = (error as? SessionDriveError)?.detail ?? error.localizedDescription
     }
 
     /// Take one waiting follow-up back — the chip's `×`. By id and never by text: two identical

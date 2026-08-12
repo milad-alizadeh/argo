@@ -30,20 +30,60 @@ struct DriveModeTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
 
-        try fixture.hub.driver.setMode(.code, for: claim.value)
+        try await fixture.hub.driver.setMode(.code, for: claim.value)
 
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
 
+    /// One keystroke per WRITE, and never two in one (#653): the TUI folds every back-tab that
+    /// arrives in a single read into one mode change, so a walk written as one string moves the
+    /// Session one rung however many steps it was asked for.
     @Test
-    func `a rung two steps round the ring is two keystrokes`() async throws {
+    func `a rung two steps round the ring is two separate writes`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
 
-        try fixture.hub.driver.setMode(.auto, for: claim.value)
+        try await fixture.hub.driver.setMode(.auto, for: claim.value)
 
-        #expect(fixture.host.started.last?.written == ["\u{1B}[Z\u{1B}[Z"])
+        #expect(fixture.host.started.last?.written == ["\u{1B}[Z", "\u{1B}[Z"])
+    }
+
+    /// The walk takes time now, so a second pick can arrive in the middle of one. Counted from the
+    /// stance the first walk has already left, it would interleave its keystrokes with that walk
+    /// and land the Session on a rung nobody picked — the failure `modeBusy` prevents mid-Turn.
+    @Test
+    func `a rung asked for mid-walk is refused rather than interleaved`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        let first = Task { try await fixture.hub.driver.setMode(.auto, for: claim.value) }
+        // A keystroke written is the walk begun, and the gap behind it is the window under test.
+        // Waiting on that rather than on a duration, so the claim holds on a slow machine too.
+        while fixture.host.started.last?.written.isEmpty != false {
+            await Task.yield()
+        }
+        await #expect(throws: SessionDriveError.modeWalking) {
+            try await fixture.hub.driver.setMode(.readOnly, for: claim.value)
+        }
+        try await first.value
+
+        // `acceptEdits → auto` and nothing else: the refused walk wrote no keystroke of its own.
+        #expect(fixture.host.started.last?.written == ["\u{1B}[Z", "\u{1B}[Z"])
+    }
+
+    /// A walk that ended releases the Session, or one refusal would freeze the rung for good.
+    @Test
+    func `a rung can be asked for again once the walk has ended`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        try await fixture.hub.driver.setMode(.auto, for: claim.value)
+        try await fixture.hub.driver.setMode(.readOnly, for: claim.value)
+
+        #expect(fixture.host.started.last?.written.count == 5)
     }
 
     /// A value with no place on the ring — `dontAsk`, whose boundary Argo cannot see — leaves no
@@ -63,8 +103,8 @@ struct DriveModeTests {
             ],
         ))
 
-        #expect(throws: SessionDriveError.modeUnreachable) {
-            try fixture.hub.driver.setMode(.readOnly, for: "session-from-cli")
+        await #expect(throws: SessionDriveError.modeUnreachable) {
+            try await fixture.hub.driver.setMode(.readOnly, for: "session-from-cli")
         }
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
@@ -94,8 +134,8 @@ struct DriveModeTests {
         ))
         #expect(fixture.hub.sessions.map(\.status) == [.running])
 
-        #expect(throws: SessionDriveError.modeBusy) {
-            try fixture.hub.driver.setMode(.auto, for: "session-from-cli")
+        await #expect(throws: SessionDriveError.modeBusy) {
+            try await fixture.hub.driver.setMode(.auto, for: "session-from-cli")
         }
         #expect(fixture.host.started.last?.written.isEmpty == true)
     }
@@ -110,15 +150,12 @@ struct DriveModeTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
 
-        try fixture.hub.driver.setMode(.auto, for: claim.value)
-        try fixture.hub.driver.setMode(.readOnly, for: claim.value)
+        try await fixture.hub.driver.setMode(.auto, for: claim.value)
+        try await fixture.hub.driver.setMode(.readOnly, for: claim.value)
 
         // `acceptEdits → auto` is two, and `auto → plan` is three. Counted from the stale record it
         // would have been one, landing the Session on `manual` — a rung nobody asked for.
-        #expect(fixture.host.started.last?.written == [
-            "\u{1B}[Z\u{1B}[Z",
-            "\u{1B}[Z\u{1B}[Z\u{1B}[Z",
-        ])
+        #expect(fixture.host.started.last?.written.count == 5)
     }
 
     /// The one rung the CLI cannot report. It answers `plan` for Read Only and Plan alike, so a
@@ -130,7 +167,7 @@ struct DriveModeTests {
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
 
-        try fixture.hub.driver.setMode(.plan, for: claim.value)
+        try await fixture.hub.driver.setMode(.plan, for: claim.value)
         await hubObserveToEnd(fixture.hub, hubTestObservation(
             id: "session-from-cli",
             events: [.cwd(fixture.projectURL.path), .mode(cli: "plan")],
@@ -140,12 +177,12 @@ struct DriveModeTests {
     }
 
     @Test
-    func `a Session Argo does not own refuses the change`() throws {
+    func `a Session Argo does not own refuses the change`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
 
-        #expect(throws: SessionDriveError.notDrivable) {
-            try fixture.hub.driver.setMode(.auto, for: "a-session-somebody-else-started")
+        await #expect(throws: SessionDriveError.notDrivable) {
+            try await fixture.hub.driver.setMode(.auto, for: "a-session-somebody-else-started")
         }
     }
 }

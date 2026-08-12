@@ -1,3 +1,5 @@
+import ArgoEngine
+
 /// What the line above the vessel says, and when it says it.
 ///
 /// Two notes, one seam. A restored draft is simply *there* — the seam does not offer to put it
@@ -25,9 +27,20 @@ enum ComposerSeamNote: Equatable {
     ///
     /// Here rather than in the vessel so the order is a claim a test can make. A precedence living
     /// in a `private var` on a View is one only a screenshot can check.
-    static func note(for draft: ComposerDraft, enteredAtMs: Int) -> Self? {
+    static func note(
+        for draft: ComposerDraft,
+        enteredAtMs: Int,
+        modeDidNotTake: SessionMode? = nil,
+    )
+        -> Self? {
         if let refusal = draft.refusal {
             return .refusal(refusal)
+        }
+        // Ahead of the draft's own notice, and a notice rather than a refusal: nothing was sent and
+        // no words are at risk, but the control the reader is looking at has just moved on its own
+        // and this is the only line that says why (#629).
+        if let modeDidNotTake {
+            return .notice(didNotTake(modeDidNotTake))
         }
         if let notice = draft.notice {
             return .notice(notice)
@@ -35,6 +48,12 @@ enum ComposerSeamNote: Equatable {
         guard !draft.text.isEmpty, let editedAtMs = draft.editedAtMs, editedAtMs < enteredAtMs
         else { return nil }
         return kept(sinceMs: editedAtMs, nowMs: enteredAtMs)
+    }
+
+    /// What the seam says about a rung that did not land. It names the rung that was asked for and
+    /// not the one the Session is on, because the picker beside it already says that one.
+    static func didNotTake(_ mode: SessionMode) -> String {
+        "\(mode.label) did not take. The Session is still on the rung shown."
     }
 
     /// The kept note's sentence. Under a minute it is worded rather than counted: a reader who

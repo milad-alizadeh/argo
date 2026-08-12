@@ -29,16 +29,27 @@ struct SessionsDeckTests {
     }
 
     @Test
-    func `only a zone too narrow for its own name turns its mark`() {
-        let turned = DeckZone.allCases.filter(\.marksVertically)
-        #expect(turned == [.minimap])
+    func `the minimap is no longer a placeholder`() {
+        #expect(!DeckZone.allCases.map(\.title).contains("Minimap lane"))
     }
 
     @Test
     func `the feed keeps the widest share of the row at the narrowest deck`() {
-        let feed = narrowestDeckWidth - ArgoLayout.agentsRailWidth - ArgoLayout.minimapLaneWidth
-        #expect(feed > ArgoLayout.agentsRailWidth)
-        #expect(feed > ArgoLayout.minimapLaneWidth)
+        let beside = narrowestDeckWidth - ArgoLayout.agentsRailWidth - ArgoLayout.seamGrabWidth
+        let lane = ArgoLayout.minimapLaneWidth(sharing: beside)
+        #expect(beside - lane > ArgoLayout.agentsRailWidth)
+        #expect(beside - lane > lane)
+    }
+
+    /// The rail's ceiling has to leave the feed its floor with the lane at ITS floor beside it, and
+    /// the rail's own seam counts against the same span the lane is a share of.
+    @Test
+    func `a rail dragged to its widest still leaves the feed its floor`() {
+        let limits = ArgoLayout.railLimits(in: narrowestDeckWidth)
+        let beside = narrowestDeckWidth - limits.upperBound - ArgoLayout.seamGrabWidth
+        let lane = ArgoLayout.minimapLaneWidth(sharing: beside)
+
+        #expect(beside - lane >= ArgoLayout.feedMinimumWidth)
     }
 
     /// The panel-open half of the same invariant.
@@ -101,7 +112,26 @@ struct SessionsDeckTests {
 
     @Test
     func `the lane stays a lane rather than becoming a second rail`() {
-        #expect(ArgoLayout.minimapLaneWidth < ArgoLayout.agentsRailWidth / 2)
+        #expect(ArgoLayout.minimapLaneWidths.upperBound < ArgoLayout.agentsRailWidth / 2)
+    }
+
+    /// The lane is a share of the reading it maps, so its compression holds steady across the whole
+    /// range of deck widths — which is what keeps the miniature looking the same at any of them.
+    @Test
+    func `the lane grows and shrinks with the reading beside it`() {
+        let narrow = ArgoLayout.minimapLaneWidth(sharing: 620)
+        let wide = ArgoLayout.minimapLaneWidth(sharing: 900)
+        #expect(narrow < wide)
+        #expect(ArgoLayout.minimapLaneWidths.contains(narrow))
+    }
+
+    /// The two ends of that share. Past either one the lane stops moving with the deck, exactly as
+    /// Xcode's minimap does once the editor reaches its own widest.
+    @Test
+    func `the lane stops at its floor and its ceiling`() {
+        let widths = ArgoLayout.minimapLaneWidths
+        #expect(ArgoLayout.minimapLaneWidth(sharing: 200) == widths.lowerBound)
+        #expect(ArgoLayout.minimapLaneWidth(sharing: 4000) == widths.upperBound)
     }
 
     /// The canopy and the composer both float over the reading, so what they cost it is scroll

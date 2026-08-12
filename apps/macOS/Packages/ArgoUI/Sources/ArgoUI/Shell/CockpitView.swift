@@ -64,23 +64,14 @@ public struct CockpitView: View {
         presentation.session(navigation.session)?.events ?? []
     }
 
-    /// The same Session's composer. Absent — no vessel at all — for a Session Argo cannot drive.
-    var composer: SessionComposerProjection.Composer? {
-        guard let session = presentation.session(navigation.session) else { return nil }
-        return SessionComposerProjection.composer(
-            for: session,
+    /// What is in the deck's one slot for the selected Session — the composer, the Permission
+    /// displacing it, the line saying there is nothing to steer, or nothing at all. One decision,
+    /// made in `DeckVessel` where a test can reach it.
+    var vessel: DeckVessel {
+        DeckVessel.resolve(
+            for: presentation.session(navigation.session),
             canAttach: actions.drive.canAttach,
         )
-    }
-
-    /// Why the same Session has none — the line that stands in the composer's place (#546).
-    var unavailable: SessionComposerProjection.Unavailable? {
-        SessionComposerProjection.unavailable(for: presentation.session(navigation.session))
-    }
-
-    /// The selected Session's pending Permission. While present it takes the composer's slot.
-    var prompt: PermissionPromptProjection.Prompt? {
-        PermissionPromptProjection.prompt(for: presentation.session(navigation.session))
     }
 
     /// The sheet is up exactly while there is a reading. Dismissing it — Escape, or the system's
@@ -113,6 +104,10 @@ public struct CockpitView: View {
                 max: ArgoLayout.sidebarMaximumWidth,
             )
         } detail: {
+            // Resolved once and handed to both: reading it a second time re-runs the selection
+            // lookup and every projection behind it.
+            let vessel = vessel
+
             InstrumentDeckShell(
                 room: navigation.room,
                 session: navigation.session,
@@ -120,16 +115,8 @@ public struct CockpitView: View {
                 header: header,
                 handOff: handOff,
                 showing: showing,
-                composer: composer,
-                unavailable: unavailable,
-                spawnBeside: spawnBeside,
-                send: send,
-                prompt: prompt,
-                decide: decide,
-                revoke: revoke,
-                stop: stop,
-                setMode: setMode,
-                draft: draft,
+                vessel: vessel,
+                intents: intents(for: vessel),
             )
             // What the chain link at the foot of a handed-off reading does. Injected here because
             // this is the one view that holds the navigation.

@@ -23,33 +23,14 @@ struct FeedRowHeightTests {
 
     /// The height the table itself would ask the delegate for, at a width a cell wraps at.
     private static func height(of content: FeedRow.Content) -> CGFloat {
-        let coordinator = FeedTableCoordinator()
-        let scroller = coordinator.makeScrollView()
-        scroller.frame = NSRect(x: 0, y: 0, width: width, height: 800)
-        guard let table = coordinator.table else { return 0 }
-        table.frame = scroller.frame
-        coordinator.apply(model(holding: content))
-        return coordinator.tableView(table, heightOfRow: 0)
-    }
-
-    private static func model(holding content: FeedRow.Content) -> FeedTableModel {
-        // A selection nothing drives: this suite measures rows, and no row here is ever opened.
-        let focus = FocusState<FeedFocus?>()
-        return FeedTableModel(
-            rows: [FeedRow(id: 0, content: content)],
-            selection: FeedRowSelection(
-                open: .constant(nil), step: .constant(nil), lit: .constant(nil),
-                focus: focus.projectedValue,
-            ),
-            held: nil,
-            isFollowing: false,
-            isResizing: false,
-            isUnderComposer: false,
-            washed: nil,
-            unfolded: .constant([]),
-            onReaderScroll: { _ in },
-            environment: EnvironmentValues(),
+        let handle = FeedTableHandle()
+        let coordinator = FeedTableFixture.laidOut(
+            [FeedRow(id: 0, content: content)],
+            in: CGSize(width: width, height: 800),
+            through: handle,
         )
+        guard let table = coordinator.table else { return 0 }
+        return coordinator.tableView(table, heightOfRow: 0)
     }
 
     @Test

@@ -79,6 +79,10 @@ struct SpawnFixture {
     /// The ownership ledger's file, under this fixture's root for the reason the chain's is: a
     /// restart has to read back what the launch before it owned, and never the machine's own.
     let ownershipFileURL: URL
+    /// The last-picked rung's file, under this fixture's root for the reason the two above are: a
+    /// restart has to open a Session on what the launch before it picked, and never on what the
+    /// person running the tests picked in the real app.
+    let modeFileURL: URL
     private let services: SpawnServices
     private let engine: Engine
 
@@ -101,6 +105,7 @@ struct SpawnFixture {
         try Self.installExecutable(named: "claude", in: binURL)
         self.chainFileURL = root.appending(path: "chain.json")
         self.ownershipFileURL = root.appending(path: "ownership.json")
+        self.modeFileURL = root.appending(path: "mode.json")
         self.engine = Engine(readCheckout: CheckoutFixture().read, readLiveness: liveness)
         self.services = SpawnServices(
             host: host,
@@ -110,6 +115,7 @@ struct SpawnFixture {
             companionRoot: companionRoot,
             chainFileURL: chainFileURL,
             ownershipFileURL: ownershipFileURL,
+            modeFileURL: modeFileURL,
             permissionPatience: permissionPatience,
         )
         self.hub = Hub(projectURL: projectURL, engine: engine, spawnServices: services)

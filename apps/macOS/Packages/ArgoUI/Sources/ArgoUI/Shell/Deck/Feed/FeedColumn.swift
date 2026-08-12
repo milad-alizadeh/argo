@@ -9,28 +9,29 @@ struct FeedColumn: View {
     let showing: PlanShowing
     let selection: FeedRowSelection
     var held: FeedRow.ID?
-    var composer: SessionComposerProjection.Composer?
-    var send: ComposerSend = { _, _ in }
-    var prompt: PermissionPromptProjection.Prompt?
-    var decide: (PermissionDecision) -> Void = { _ in }
-    var revoke: (String) -> Void = { _ in }
-    var stop: () throws -> Void = {}
-    var setMode: (SessionMode) throws -> Void = { _ in }
-    var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
+    /// What is in the slot below the reading — see `DeckVessel`.
+    var vessel = DeckVessel.none
+    /// What that vessel's controls do.
+    var intents = DeckIntents.inert
+    /// The reading's scroll authority, from the deck — the minimap beside this column holds the
+    /// same one.
+    let table: FeedTableHandle
 
     var body: some View {
-        FeedView(rows: feed, selection: selection, held: held, isUnderComposer: hasVessel)
-            // Over the feed rather than in the column's stack: a row in the stack would take
-            // height from the reading it is meant to sit above. Bounded to this column so it
-            // moves with the feed when a seam does, never over the panel.
-            .overlay(alignment: .bottom) { pill }
-            .overlay(alignment: .bottom) { vessel }
-            // Whatever the two seams leave it; prose inside is held to the measure by the rows.
-            .frame(maxWidth: .infinity)
-    }
-
-    private var hasVessel: Bool {
-        composer != nil || prompt != nil
+        FeedView(
+            rows: feed,
+            selection: selection,
+            held: held,
+            isUnderComposer: vessel.isFloating,
+            table: table,
+        )
+        // Over the feed rather than in the column's stack: a row in the stack would take
+        // height from the reading it is meant to sit above. Bounded to this column so it
+        // moves with the feed when a seam does, never over the panel.
+        .overlay(alignment: .bottom) { pill }
+        .overlay(alignment: .bottom) { floating }
+        // Whatever the two seams leave it; prose inside is held to the measure by the rows.
+        .frame(maxWidth: .infinity)
     }
 
     /// A Session that never reported a plan gets no pill — not an empty one, and not a note saying
@@ -40,28 +41,40 @@ struct FeedColumn: View {
             PlanPill(plan: plan, isRevealed: showing.isRevealed)
                 .padding(
                     .bottom,
-                    hasVessel ? ArgoComposerVessel.feedClearance : ArgoPlanPill.lift,
+                    vessel.isFloating ? ArgoComposerVessel.feedClearance : ArgoPlanPill.lift,
                 )
         }
     }
 
-    /// The prompt takes the composer's own slot: one vessel, holding whichever question is live.
-    @ViewBuilder private var vessel: some View {
-        if let prompt {
-            PermissionPrompt(prompt: prompt, decide: decide, revoke: revoke)
-                .padding(.horizontal, ArgoSpacing.section)
-                .padding(.bottom, ArgoSpacing.loose)
-        } else if let composer {
+    /// Which vessel is drawn is `DeckVessel`'s answer, already made — this switch only draws it.
+    /// The undriveable line is a row on the deck rather than a float, so it is not here.
+    @ViewBuilder private var floating: some View {
+        switch vessel {
+        case let .prompt(prompt):
+            PermissionPrompt(prompt: prompt, decide: intents.decide, revoke: intents.revoke)
+                .modifier(FloatingVessel())
+        case let .composer(composer):
             SessionComposer(
                 composer: composer,
-                send: send,
-                revoke: revoke,
-                stop: stop,
-                setMode: setMode,
-                draft: draft,
+                send: intents.send,
+                revoke: intents.revoke,
+                stop: intents.stop,
+                setMode: intents.setMode,
+                draft: intents.draft,
             )
+            .modifier(FloatingVessel())
+        case .unavailable, .none:
+            EmptyView()
+        }
+    }
+}
+
+/// Where a floating vessel sits against the feed's own column — one inset, so the two cannot come
+/// to disagree about where the slot is.
+private struct FloatingVessel: ViewModifier {
+    func body(content: Content) -> some View {
+        content
             .padding(.horizontal, ArgoSpacing.section)
             .padding(.bottom, ArgoSpacing.loose)
-        }
     }
 }

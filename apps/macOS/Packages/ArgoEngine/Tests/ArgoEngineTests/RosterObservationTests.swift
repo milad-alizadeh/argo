@@ -53,7 +53,7 @@ struct RosterObservationTests {
         let claim = try await fixture.hub.spawnSession()
         let watcher = watchingSessions(fixture.hub)
 
-        try fixture.hub.driver.setMode(.plan, for: claim.value)
+        try await fixture.hub.driver.setMode(.plan, for: claim.value)
 
         #expect(watcher.fired)
     }

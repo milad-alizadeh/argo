@@ -48,6 +48,9 @@ final class CockpitCoordinator {
                 // And the one place the real ownership ledger is. A Hub given none grades every
                 // Session it spawned `external` after a relaunch (ADR-0026).
                 ownershipFileURL: SessionOwnershipLedgerStore.defaultFileURL,
+                // And the one place the real preference is. A Hub given none opens every New
+                // Session on `Code` (#629).
+                modeFileURL: SessionModeStore.defaultFileURL,
             ),
         )
     }

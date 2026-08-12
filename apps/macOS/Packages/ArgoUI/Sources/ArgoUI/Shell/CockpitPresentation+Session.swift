@@ -129,6 +129,10 @@ public extension CockpitPresentation {
         /// `unknown` covers both the Session nobody has read a stance off and the one whose
         /// boundary Argo cannot see.
         public let mode: SessionModeReading
+        /// The rung Argo asked for and the CLI then contradicted, and `nil` for every ordinary
+        /// reading (#629). `mode` above has already snapped to the real rung, so this is the only
+        /// thing that can say why the control moved without the user touching it.
+        public let modeDidNotTake: SessionMode?
         /// Everything the Session's transcript said, in order — the feed's whole input. The
         /// engine's own events, undigested; `FeedProjection` is what draws them.
         public let events: [TranscriptEvent]
@@ -156,6 +160,7 @@ public extension CockpitPresentation {
             standingAllows: [StandingAllow] = [],
             expiredPermissions: [PermissionExpiry] = [],
             mode: SessionModeReading = .unknown(cli: nil),
+            modeDidNotTake: SessionMode? = nil,
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -180,6 +185,7 @@ public extension CockpitPresentation {
             self.standingAllows = standingAllows
             self.expiredPermissions = expiredPermissions
             self.mode = mode
+            self.modeDidNotTake = modeDidNotTake
             self.events = events
         }
     }

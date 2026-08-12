@@ -135,15 +135,17 @@ struct SessionHeaderHandoffTests {
     func `every state of the offer has a specimen of its own`() {
         let drawn = SessionHeaderFixture.handoffs
 
-        #expect(drawn.map(\.specimen) == [
-            .handoffWithheld,
-            .handoffAtWarn,
-            .handoffAtCrit,
-            .handoffOnReadOnly,
-            .handoffOnOrphaned,
-            .handedOffReading,
+        #expect(drawn.map(\.name) == [
+            "handoffWithheld",
+            "handoffAtWarn",
+            "handoffAtCrit",
+            "handoffOnReadOnly",
+            "handoffOnOrphaned",
         ])
-        #expect(drawn.map(\.header.handoff?.tier) == [nil, .warn, .crit, nil, nil, nil])
+        #expect(drawn.map(\.header.handoff?.tier) == [nil, .warn, .crit, nil, nil])
+        // The remedy taken is not an offer, so it is a fixture of its own: what is left on the red
+        // header is the link rather than the button.
+        #expect(SessionHeaderFixture.handedOff.handoff == nil)
     }
 
     private func header(

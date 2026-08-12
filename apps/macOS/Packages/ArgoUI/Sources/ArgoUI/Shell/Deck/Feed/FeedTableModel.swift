@@ -9,22 +9,20 @@ import SwiftUI
     var selection: FeedRowSelection
     /// Which row the reading opens held at — see `FeedView.held`.
     var held: FeedRow.ID?
-    /// Whether the reading is following the Session. Owned by `FeedView`, obeyed here.
-    var isFollowing: Bool
     /// Whether a deck seam is being dragged right now. Mid-drag the table re-measures visible
     /// rows only; the edge off this flag is when the deferred full pass runs.
     var isResizing: Bool
     /// Whether the composer floats over this reading — it grows the gutter under the last row,
     /// so the newest line genuinely ends clear of the vessel.
     var isUnderComposer: Bool
+    /// Whether the overview lane beside this reading is drawing its scroll knob. The platform
+    /// scroller is switched off while it is — see `EnvironmentValues.deckHasMinimap`.
+    var hasMinimap: Bool
     /// The row the user's own words just landed on, while the accent wash stands over it — see
     /// `FeedView.washed`.
     var washed: FeedRow.ID?
     /// Which prompts the reader has unfolded — the feed's copy, written through.
     var unfolded: Binding<Set<FeedRow.ID>>
-    /// Reports a scroll the READER made, as the following answer it produced. Never called for a
-    /// scroll this table made itself — AppKit's live-scroll notifications only fire for the hand.
-    var onReaderScroll: (Bool) -> Void
     /// The SwiftUI environment at the representable, replayed into every cell.
     var environment: EnvironmentValues
 
