@@ -65,12 +65,23 @@ struct SessionsDeck: View {
         // The canopy is declared FIRST and lifted by `zIndex`, not laid over the row as an overlay:
         // a stack is read in declaration order, so an overlay would put the Session's title after
         // the whole reading for VoiceOver and for the keyboard. `zIndex` moves only the paint.
-        ZStack(alignment: .top) {
-            DeckCanopy(header: header, handOff: handOff)
-                .zIndex(1)
-            zones
+        //
+        // The zones climb past the safe area to the window's TOP EDGE, and the canopy inset grows
+        // by the same amount, so nothing moves at rest but a scrolled reading runs behind the whole
+        // bar — stopping at the safe area left the toolbar's stretch of glass with nothing under
+        // it, a reading vanishing mid-bar. Measured before the zones discard it, hence the reader.
+        GeometryReader { window in
+            ZStack(alignment: .top) {
+                DeckCanopy(header: header, reach: window.safeAreaInsets.top, handOff: handOff)
+                    .zIndex(1)
+                zones
+                    .ignoresSafeArea(.container, edges: .top)
+            }
+            .environment(
+                \.argoDeckCanopy,
+                ArgoLayout.deckCanopyHeight + window.safeAreaInsets.top,
+            )
         }
-        .environment(\.argoDeckCanopy, ArgoLayout.deckCanopyHeight)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoLightbox(selection, in: feed)
     }

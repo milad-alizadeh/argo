@@ -1,13 +1,21 @@
 import SwiftUI
 
-/// The deck's top zone — the Session's identity and the tab line under it — as ONE glass bar
-/// floating over the reading (D10, as its 2026-08-12 amendment reads it).
+/// The deck's top zone — the Session's identity and the tab line under it — as the lower half of
+/// the window's chrome, with the reading passing beneath it (D10, as its 2026-08-12 amendment
+/// reads it).
 ///
-/// It carries no hairline of its own: the material is the boundary.
+/// It takes `argoChromeBar()` and so does the window toolbar directly above it. One material
+/// across both is what makes the icons up there and the Session's title down here read as one bar
+/// rather than two surfaces meeting, and the single hairline at the foot is where the chrome ends.
 struct DeckCanopy: View {
     /// Absent when nothing is selected. The bar still holds its height — every zone under it is
     /// inset by that height, and a canopy that collapsed would move all of them.
     let header: SessionHeaderProjection.Header?
+    /// How far the bar climbs past the safe area — the toolbar region's height, handed down by
+    /// `SessionsDeck`. The icon row and this header have to sit on ONE sheet, and a bar stopping
+    /// at the safe area leaves the icons on a strip of bare window. Zero where there is no
+    /// toolbar over the deck, and everything below draws exactly as before.
+    var reach: CGFloat = 0
     /// Hand this Session's work to a fresh one. Inert by default, so a specimen draws the button
     /// and spawns nothing.
     var handOff: () async -> Void = {}
@@ -20,9 +28,9 @@ struct DeckCanopy: View {
                 .frame(height: ArgoLayout.deckTabSlotHeight)
         }
         .frame(height: ArgoLayout.deckCanopyHeight)
-        // Square, because the bar meets the window on three sides: a radius here would open a
-        // crescent of deck at each top corner (D40).
-        .argoFloatingGlass(in: Rectangle())
+        .padding(.top, reach)
+        .argoChromeBar()
+        .ignoresSafeArea(.container, edges: .top)
     }
 }
 

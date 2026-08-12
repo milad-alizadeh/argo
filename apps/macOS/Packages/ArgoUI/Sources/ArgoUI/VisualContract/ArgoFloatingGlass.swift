@@ -11,9 +11,8 @@ import SwiftUI
 /// keyboard behaviour.
 struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
     @Environment(\.argo) private var argo
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
-    @Environment(\.argoSuppressesTransparency) private var isSuppressed
+    @Environment(\.argoIsFlat) private var isFlat
 
     let vessel: Vessel
     /// The state the surface is present BECAUSE of, worn on the edge — the amber a Permission
@@ -39,10 +38,6 @@ struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
         }
     }
 
-    private var isFlat: Bool {
-        reduceTransparency || isSuppressed || contrast == .increased
-    }
-
     private var edge: ArgoColor {
         contrast == .increased ? argo.color.edge.strong : argo.color.edge.subtle
     }
@@ -54,6 +49,15 @@ extension EnvironmentValues {
     /// direction only — nothing here can force transparency BACK on over a reader who asked for
     /// none.
     @Entry var argoSuppressesTransparency: Bool = false
+
+    /// Whether optical material is off for this reader. Read it rather than the three flags: two
+    /// surfaces that answered this differently would show a seam exactly where the setting meant
+    /// to remove one.
+    var argoIsFlat: Bool {
+        accessibilityReduceTransparency
+            || argoSuppressesTransparency
+            || colorSchemeContrast == .increased
+    }
 }
 
 extension View {

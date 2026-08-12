@@ -160,6 +160,10 @@ public struct CockpitView: View {
             }
         }
         .navigationTitle(presentation.activeProject?.name ?? "Argo")
+        // Hidden, so the icons sit on the window's own ground — and the canopy directly below is
+        // washed to that same ground. Letting the system draw its titlebar material here instead
+        // put the two bands a tone apart, which is the seam through the middle of what has to read
+        // as ONE bar. Two rendering paths cannot be matched by eye; one ground can.
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .frame(
             minWidth: ArgoLayout.windowMinimumWidth,

@@ -77,6 +77,11 @@ struct ArgoApp: App {
             .focusEffectDisabled()
         }
         .defaultSize(width: 1280, height: 800)
+        // Hidden title bar so the deck's content extends beneath the toolbar region. The chrome
+        // bar's ground reaches the top of the WINDOW that way (`ArgoChromeBar`) — with a titlebar
+        // in the way, the icons sat on a strip no surface of ours could reach, and the bar read as
+        // two pieces however the tones were matched.
+        .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             NewSessionCommands(
