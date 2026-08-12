@@ -81,13 +81,24 @@ enum ConnectPanelProjection {
         return row(title: "Folder", detail: folder, isMachine: true)
     }
 
-    /// Argo writes the plugin for every Session it starts, so this row has nothing to ask for.
+    /// Argo writes the plugin for every Session it starts, so no reading offers an install — the
+    /// row says whether that write can and did happen (#570).
     private static func companionRow(from reading: ConnectReading) -> Row {
         switch reading.companion {
         case .includedWithSpawns:
             row(
                 title: "Companion plugin",
                 detail: "Included with every session Argo starts. There is nothing to install.",
+            )
+        case .missingFromBuild:
+            row(
+                title: "Companion plugin",
+                detail: "Not available: this build ships no plugin, so sessions run without one.",
+            )
+        case let .installFailed(why):
+            row(
+                title: "Companion plugin",
+                detail: "The last session started without its plugin: \(why)",
             )
         case .unknown:
             row(title: "Companion plugin", detail: "unknown")

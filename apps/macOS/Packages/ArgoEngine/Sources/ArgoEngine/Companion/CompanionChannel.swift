@@ -21,6 +21,21 @@ public final class CompanionChannel {
     private let root: URL
     private let onFact: (SessionOwnership.ClaimID, CompanionFact) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
+    /// The last invite that failed, in its refusal's own words. Cleared by the next one that
+    /// succeeds: the failure is about the most recent spawn, never a mark against the Project.
+    private var lastRefusal: String?
+
+    /// What the Connect panel's companion row reads (#570). A build with nothing to write
+    /// outranks a remembered failure, because in that build the failure is only a symptom.
+    var standing: CompanionStanding {
+        Self.standing(ships: CompanionPlugin.shipsResources, lastRefusal: lastRefusal)
+    }
+
+    static func standing(ships: Bool, lastRefusal: String?) -> CompanionStanding {
+        guard ships else { return .missingFromBuild }
+        guard let lastRefusal else { return .includedWithSpawns }
+        return .installFailed(why: lastRefusal)
+    }
 
     init(
         root: URL = CompanionChannel.defaultRoot,
@@ -36,6 +51,21 @@ public final class CompanionChannel {
     func invite(
         _ claim: SessionOwnership.ClaimID,
         gatedBy permissionSocketPath: String? = nil,
+    ) throws
+        -> CompanionInvitation {
+        do {
+            let invitation = try open(claim, gatedBy: permissionSocketPath)
+            lastRefusal = nil
+            return invitation
+        } catch {
+            lastRefusal = (error as? AgentSpawnError)?.detail ?? error.localizedDescription
+            throw error
+        }
+    }
+
+    private func open(
+        _ claim: SessionOwnership.ClaimID,
+        gatedBy permissionSocketPath: String?,
     ) throws
         -> CompanionInvitation {
         try FileManager.default.createDirectory(
