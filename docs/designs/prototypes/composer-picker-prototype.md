@@ -153,6 +153,58 @@ These did not vary, so they are answers rather than variants. Each one is a rend
     — focus on @SessionComposer.swift` as typed, with a `Skill Loaded: code-review` marker from
     the transcript beside it. No expanded prompt, no third representation Argo invents.
 
+## The material, and why that picks A (2026-08-12)
+
+Checked against Apple's guidance and the house contract, and they agree: **A**, drawn in
+graphite rather than glass.
+
+**D14 decides it** (`cockpit-visual-identity-decisions.md` — *Glass is rationed by surface
+hierarchy*). Glass goes to the sidebar, to top control islands, and to "major transient surfaces
+such as the command palette". Everything else: "**Ordinary menus and popovers are nearly opaque
+graphite with a restrained glass edge.**" The 2026-08-09 amendment draws the line by what a
+surface hangs off — transient surfaces "standing over the reading on their own" are glass, and
+the graphite recipe "stays the rule for an ordinary popover or menu — those **hang off a control
+the reader clicked** rather than standing over the reading on their own."
+
+The `/` picker hangs off the composer's own field, so it is a menu: graphite, restrained edge.
+That is already what variant A is drawn in — it inherits the run-settings popover recipe #536
+settled (`rgba(52,55,61,.78)` with a restrained rim), so **A is not glass-on-glass**. It is
+graphite over glass, which is the sanctioned pattern.
+
+**B is the variant that conflicts.** It renders the most transient content in the app — a 75-row
+catalogue dismissed in two seconds — in the app's most expensive material, by extending the
+vessel's own glass. That inverts D14's "transparency is earned by architectural or interaction
+importance, not applied as a component-library default", and it makes a scrolling catalogue read
+as a permanent part of the input surface.
+
+Apple's guidance points the same way. [Materials](https://developer.apple.com/design/human-interface-guidelines/materials):
+"Use Liquid Glass effects sparingly… Limit these effects to the most important functional
+elements in your app." [Adopting Liquid Glass](https://developer.apple.com/documentation/TechnologyOverviews/adopting-liquid-glass):
+"avoid overcrowding or **layering Liquid Glass elements on top of each other**", and "Limit the
+use of Liquid Glass effects onscreen at the same time." Menus are the system's anchored-list
+component and adopt Liquid Glass automatically, so an anchored, long, scrollable list is a
+standard shape — the house contract just spells that shape graphite.
+
+**The counter-argument, recorded rather than dismissed:** SwiftUI's `GlassEffectContainer` with
+`glassEffectID` exists so glass shapes can "blend their shapes together and morph in and out of
+each other during transitions" — a vessel growing into a list is the material's signature move,
+which is a real reading of B. D14 outranks it here, rationing that move to surfaces that stand
+over the reading on their own.
+
+**One caveat against A, named so it is not rediscovered.**
+[HIG · Popovers](https://developer.apple.com/design/human-interface-guidelines/popovers) says to
+use a popover for "a small amount of information or functionality… a few related tasks" and
+"**Avoid making a popover too big.**" A ten-row filtering catalogue is not that. So it is built
+and named as a **menu / completion list**, not a popover — which is how it behaves:
+keyboard-first, filtering as you type, inserting text. Its full-vessel width stays earned,
+because the description *is* the content.
+
+Consequences for the implementation ticket: **no `.glassEffect` on this surface**, no
+`GlassEffectContainer`, and the per-row origin badge is dropped in favour of A's section headers
+— at rest the badge is a column of `PROJECT`. Variant C is the only one D14 would permit to be
+glass, a palette over the deck being a "major transient surface", and it loses on interaction
+anyway by taking the caret.
+
 ## The rename
 
 `AttachButton` cannot survive this ticket. The control now opens files, skills and commands, and

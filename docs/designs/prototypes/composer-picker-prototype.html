@@ -418,10 +418,16 @@
   .pk-foot .kbd { font-size: 9px; }
   .pk-shadow { font: 10px var(--sans); color: var(--attention); flex: none; }
 
-  /* ---- VARIANT A — a popover above the vessel, origin as section headers ----
+  /* ---- VARIANT A — a menu above the vessel, origin as section headers ----
      The user's own starting point: "a popover as we type /, similar style to the to-do list
-     but scrollable". It is the same material as the run-settings popover already on this
-     footer, anchored to the vessel's leading edge and capped at the vessel's own width. */
+     but scrollable". Anchored to the vessel's leading edge, at the vessel's own width.
+
+     MATERIAL: nearly opaque graphite with a restrained edge — the run-settings popover recipe
+     #536 settled, NOT glass. D14 rations glass to the sidebar, top control islands and surfaces
+     standing over the reading on their own; a list that hangs off the field the reader is typing
+     in is a menu, and menus are graphite. So this is graphite over glass, never glass on glass —
+     which is also what Apple asks for ("avoid … layering Liquid Glass elements on top of each
+     other"). Do not reach for .glassEffect or GlassEffectContainer when building it. */
   /* Full vessel width, not a narrow menu: the description is the reason the picker exists, and
      at 560px two thirds of every real description is an ellipsis. */
   .pkA {
