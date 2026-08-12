@@ -7,6 +7,7 @@ extension SpecimenRegistry {
         SpecimenEntry("foundations") { FoundationSpecimen() },
         SpecimenEntry("contract") { ContractSpecimen() },
         SpecimenEntry("sessionRows") { SessionRowsSpecimen() },
+        SpecimenEntry("turnClock") { TurnClockRosterSpecimen() },
         SpecimenEntry("ghostedRows") { GhostedRosterSpecimen() },
         SpecimenEntry("roster") { RosterSpecimen() },
         SpecimenEntry("churningRoster") { ChurningRosterSpecimen() },

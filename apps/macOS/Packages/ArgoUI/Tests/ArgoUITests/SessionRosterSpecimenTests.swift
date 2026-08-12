@@ -18,12 +18,50 @@ struct SessionRosterSpecimenTests {
         #expect(rows.contains { $0.worktree == nil })
         // A real ticket worktree, not a folder called `argo`.
         #expect(rows.contains { $0.worktree?.hasPrefix("ticket-") == true })
-        // A long label beside an age: the worktree must truncate rather than push the age off.
-        #expect(rows.contains { ($0.worktree?.count ?? 0) > 30 && $0.age != nil })
+        // A long label beside a clock: the worktree must truncate rather than push it off.
+        #expect(rows.contains { ($0.worktree?.count ?? 0) > 30 && $0.clock != nil })
         // A Session on a detached checkout, located without a branch to name.
         #expect(rows.contains { $0.branch == nil && $0.worktree != nil })
-        // A row with no age that is not the running one, which would satisfy a bare `age == nil`.
-        #expect(rows.contains { $0.age == nil && $0.state != .running })
+        // A row with no clock that is not the running one, which would satisfy a bare `== nil`.
+        #expect(rows.contains { $0.clock == nil && $0.state != .running })
+    }
+
+    @Test
+    func `the Turn clock specimen reaches all three readings of the one slot`() {
+        // The `turnClock` PNG is the only evidence the live and observed readings have
+        // (`cockpit-roster-turn-clock.md`): the shared preview's running Session deliberately
+        // carries no open-turn stamp, so it degrades and cannot render them.
+        let rows = TurnClockRosterSpecimen.rows
+
+        #expect(rows.contains {
+            if case .turn = $0.clock {
+                true
+            } else {
+                false
+            }
+        })
+        #expect(rows.contains {
+            if case .output = $0.clock {
+                true
+            } else {
+                false
+            }
+        })
+        #expect(rows.contains {
+            if case .seen = $0.clock {
+                true
+            } else {
+                false
+            }
+        })
+        // The observed reading rides a ghosted row, as it always will in the app.
+        #expect(rows.allSatisfy { row in
+            if case .output = row.clock {
+                row.isReadOnly
+            } else {
+                true
+            }
+        })
     }
 
     @Test
@@ -53,7 +91,7 @@ struct SessionRosterSpecimenTests {
         // Every element a row can draw has to appear ON a ghosted row, or the claim that the
         // row degrades as one is only rendered for half of it.
         #expect(rows.contains { $0.isReadOnly && $0.stateWord != nil })
-        #expect(rows.contains { $0.isReadOnly && $0.worktree != nil && $0.age != nil })
+        #expect(rows.contains { $0.isReadOnly && $0.worktree != nil && $0.clock != nil })
         // A row with nothing on its second line but an age is the shortest thing the roster draws,
         // and ghosting has to reach it.
         #expect(rows.contains { $0.isReadOnly && $0.worktree == nil })
