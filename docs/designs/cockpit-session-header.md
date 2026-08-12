@@ -9,7 +9,9 @@ rows — the window titlebar, a 56pt identity band and a 40pt tab line — and r
 top of every Session. This cuts it to two: the titlebar, and one 40pt tab line.
 
 **The renders in [`header/`](header/) are the spec.** The measurements below are the numbers a
-ticket must carry.
+ticket must carry. Six states: `rest` under the first line, `warn` past 150k, `crit` past 300k,
+`external` where the context cannot be read at all, `handoff-on-read-only` where it can but the
+Session cannot be driven, and `guide` with the ⓘ panel open.
 
 The study lives on the throwaway branch `worktree-prototype-two-row-header`
 (`docs/designs/prototypes/header-two-row-prototype.html`), where the two rejected layouts are
@@ -73,7 +75,7 @@ shipped placement supersedes it.
 | Instrument, label row to bar | `ArgoSpacing.tight` 4 | |
 | Instrument, label to reading | `ArgoSpacing.snug` 6 | |
 | `CONTEXT` label | `ArgoTypography.badge` — interface · caption1 10 · semibold · tracking 0.6, uppercase, `text.tertiary` | **changed from `caption`**: a 40pt line has no room for the band's size |
-| Reading | `ArgoTypography.machineCaption` — machine · subheadline 11, in the tier's ink | **changed from `machine`**, same reason |
+| Reading | `ArgoTypography.machineCaption` — machine · subheadline 11, in `ContextTierInk.readingInk` | **changed from `machine`**, same reason. The ink is amber past 150k and red past 300k, but `text.secondary` under the first line — a reading that celebrates is one the eye stops sorting from the facts beside it. The BAR keeps the tint at every tier |
 | Unreadable reading | the word `unknown` in `text.tertiary` | absence is the one thing here that is not a claim |
 | Bar | `ArgoLayout.contextBarHeight` 3, radius half its height | thin enough to read as a gauge, not a control |
 | Threshold ticks | 1pt in `edge.strong`, standing `ArgoLayout.contextBarTickOvershoot` 2 proud each side | without the overshoot a hairline inside a 3pt bar is the fill's own edge |
@@ -89,13 +91,24 @@ on the word and on a 1pt rim, `surface.overlay` as the ground, `ArgoTypography.c
 `snug` × `hair`. #692 landed that skin after the prototype was drawn, and the renders here are
 corrected to it. A tier's colour is spent on a word and a rim, never on a ground.
 
-## An external Session reads `unknown` over an empty track
+## An unreadable context reads `unknown` over an empty track
 
 The instrument is never absent — an unreadable context is still a context, and the absence lives
-inside the reading. An external Session draws the `CONTEXT` label, the word `unknown` in
-`text.tertiary`, and the 3pt track with **no fill and no ticks**. The empty track says Argo does
-not have the number without inventing one, which is `CONTEXT.md`'s degrade-down rule. It draws
-no Hand off either: the remedy is managed-only.
+inside the reading. A Session whose records carried no usage draws the `CONTEXT` label, the word
+`unknown` in `text.tertiary`, and the 3pt track with **no fill and no ticks**. The empty track
+says Argo does not have the number without inventing one, which is `CONTEXT.md`'s degrade-down
+rule.
+
+**What triggers it is the absent reading, not the access posture.** Argo reads an external
+Session's context off its transcript, so it often has the number — DERIVED rather than DIRECT,
+but a number. Such a Session gets the ordinary coloured reading and its filled track, and **no
+Hand off**: the remedy is gated on `managed`, because handing off means typing at a prompt Argo
+does not own. The warning without the button is the whole of what an external Session over the
+line looks like, and `handoff-on-read-only.png` is that state.
+
+The two are separate facts and either can hold without the other. `external.png` happens to show
+both at once — an external Session that also carried no usage — which is why it is easy to read
+the one as causing the other.
 
 ## Contract changes
 

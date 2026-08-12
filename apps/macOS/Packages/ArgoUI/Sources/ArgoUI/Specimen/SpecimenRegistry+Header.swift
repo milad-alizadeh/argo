@@ -29,6 +29,12 @@ extension SpecimenRegistry {
         // The tab line carrying the instruments, on an ordinary managed Session — the state the
         // other two families vary.
         SpecimenEntry("tabLineInstruments") { SessionHeaderSpecimen(access: .managed) },
+        // The state word, which only three statuses spend and which no family above varies. It
+        // rode to the tab line when the band was deleted (#693), so it needs a case of its own or
+        // the one reading that is drawn in an attention ink is renderable nowhere.
+        SpecimenEntry("tabLineStateWord") {
+            SessionHeaderSpecimen(header: SessionHeaderFixture.needsInput)
+        },
     ]
 
     private static let postures: [SpecimenEntry] = [
