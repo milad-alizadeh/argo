@@ -72,27 +72,22 @@ struct DeckContentRow: View {
                     intents: intents,
                     table: table,
                 )
-                if !zoning.isPanelOpen {
-                    DeckSeparator()
-                        .argoUnderCanopy()
-                        .transition(.opacity)
-                    MinimapLane(feed: table)
-                        .frame(width: zoning.laneWidth)
-                        .argoUnderCanopy()
-                        .transition(.opacity)
-                }
+                DeckSeparator()
+                    .argoUnderCanopy()
+                MinimapLane(feed: table)
+                    .frame(width: zoning.laneWidth)
+                    .argoUnderCanopy()
                 panel(zoning)
             }
-            // One transaction for the whole re-flow: three zones move on the one fact — the panel
-            // arrives, the rail and the minimap leave — so animating only the panel slides it in
-            // beside two columns that already blinked out. Scoped to the value rather than ambient
-            // so a feed growing underneath is still laid out instantly.
+            // One transaction for the whole re-flow: two zones move on the one fact — the panel
+            // arrives and the rail leaves — so animating only the panel slides it in beside a
+            // column that already blinked out. Scoped to the value rather than ambient so a feed
+            // growing underneath is still laid out instantly.
             .argoAnimation(.reveal, value: zoning.isPanelOpen)
             // Answers here rather than on the panel: the click that opened it came from the feed,
             // so that is where focus still is.
             .onExitCommand(perform: dismissTopmost)
             .environment(\.deckIsResizing, isResizing)
-            .environment(\.deckHasMinimap, !zoning.isPanelOpen)
         }
     }
 

@@ -123,5 +123,18 @@ extension SpecimenRegistry {
         SpecimenEntry("minimapLaneShortReading") {
             SpecimenScene.overview(Array(FeedProjection.previewRows.prefix(3)))
         },
+        // The pointer on one Turn. The Ion Blue line spans exactly that block and its prompt is
+        // drawn beside the lane — the one state a still cannot reach without being told.
+        SpecimenEntry("minimapLaneNamingTurn") {
+            SpecimenScene.overview(FeedProjection.longRows, naming: .turn(atShare: 0.4))
+        },
+        // ⇧⌘. Every Turn on screen named at once, and the ones too close together to be read drawn
+        // as a line with no words.
+        SpecimenEntry("minimapLaneEveryPrompt") {
+            SpecimenScene.overview(FeedProjection.longRows, naming: .everyTurn)
+        },
+        // A reading with every kind in it, so the vocabulary can be judged in one look: prose,
+        // commands, a mutation's two inks, a failure, a run of pictures and a question waiting.
+        SpecimenEntry("minimapLaneKinds") { SpecimenScene.overview(FeedProjection.previewRows) },
     ]
 }

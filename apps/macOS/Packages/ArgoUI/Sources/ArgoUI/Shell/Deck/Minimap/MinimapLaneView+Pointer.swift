@@ -51,18 +51,65 @@ extension MinimapLaneView {
         }
         addTrackingArea(NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .activeInKeyWindow],
+            // `mouseMoved` as well, because the Turn under the pointer is what an annotation
+            // names, and entering the lane says only that there IS one (#382).
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
             owner: self,
         ))
     }
 
-    override func mouseEntered(with _: NSEvent) {
+    override func mouseEntered(with event: NSEvent) {
+        pointedAt = laneY(of: event)
+        readModifiers(event.modifierFlags)
+        watchModifiers()
         light(true)
     }
 
-    /// A scrub carried off the lane keeps it lit — the hand is still on the reading.
+    /// A scrub carried off the lane keeps it lit — the hand is still on the reading. The Turn's
+    /// mark goes either way: it names a Turn under the pointer, and the pointer has left.
     override func mouseExited(with _: NSEvent) {
+        pointedAt = nil
+        holdsBothKeys = false
+        stopWatchingModifiers()
         light(grab != nil)
+        settleAnnotations()
+    }
+
+    /// The Turn under the pointer re-read. Only the annotation layer answers, and it does nothing
+    /// at all while the pointer stays inside the Turn it is already naming.
+    override func mouseMoved(with event: NSEvent) {
+        pointedAt = laneY(of: event)
+        settleAnnotations()
+    }
+
+    /// ⇧⌘ asks for every Turn's prompt at once, and only while the pointer is on the lane.
+    ///
+    /// A monitor rather than `flagsChanged`, which reaches the first responder alone — and the lane
+    /// never is one. Taking key focus off the composer to read a modifier would be a far worse
+    /// trade than watching for one while a pointer is actually here to use it.
+    func watchModifiers() {
+        guard modifierWatch == nil else { return }
+        // Weak, because the monitor outlives a view torn down between an enter and an exit — a
+        // deck closed under the pointer is exactly that — and a strong one would keep it alive.
+        modifierWatch = NSEvent
+            .addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
+                MainActor.assumeIsolated { self?.readModifiers(event.modifierFlags) }
+                return event
+            }
+    }
+
+    func stopWatchingModifiers() {
+        modifierWatch.map(NSEvent.removeMonitor)
+        modifierWatch = nil
+    }
+
+    /// Read off the keys as they are rather than latched, so letting go of either one puts the lane
+    /// back whichever way it was released.
+    func readModifiers(_ flags: NSEvent.ModifierFlags) {
+        let wanted = flags.isSuperset(of: [.shift, .command])
+        guard holdsBothKeys != wanted else { return }
+        holdsBothKeys = wanted
+        settleAnnotations()
     }
 
     /// A wheel over the lane scrolls the reading beside it, rather than nothing at all. The event
@@ -74,9 +121,9 @@ extension MinimapLaneView {
         scroller.scrollWheel(with: event)
     }
 
-    /// A press on the rectangle picks it up where it was grabbed; a press anywhere else in the lane
-    /// takes the reading there first, in one short animated scroll, and picks the rectangle up at
-    /// its centre — so a drag that follows carries on rather than jumping.
+    /// A press on the rectangle picks it up where it was grabbed; a press anywhere else opens the
+    /// Turn it landed in, in one short animated scroll, and picks the rectangle up where the hand
+    /// now sits over it — so a drag that follows carries on rather than jumping.
     ///
     /// A lane with nothing to scroll answers nothing. It draws no rectangle either, and a press
     /// that silently issued a scroll on a surface showing no viewport is a press that lied.
@@ -84,12 +131,24 @@ extension MinimapLaneView {
         guard geometry.isScrollable else { return }
         let laneY = laneY(of: event)
         let band = viewportBand()
-        if band.contains(laneY) {
+        guard !band.contains(laneY) else {
             grab = laneY - band.lowerBound
-        } else {
-            grab = geometry.viewportHeightInLane / 2
-            settle(at: geometry.offset(centringLaneY: laneY), over: pace)
+            return
         }
+        let offset = openedOffset(at: laneY)
+        grab = min(max(0, laneY - geometry.viewportY(at: offset)), geometry.viewportHeightInLane)
+        settle(at: offset, over: pace)
+    }
+
+    /// Where a click takes the reading: the head of the Turn it landed in, at the top of the
+    /// viewport. Past the end of the reading there is no Turn to open, so the click centres on the
+    /// place it landed instead.
+    private func openedOffset(at laneY: CGFloat) -> CGFloat {
+        let slide = geometry.laneOffset(at: feed?.offset() ?? 0)
+        guard let block = geometry.block(atMiniatureY: laneY + slide) else {
+            return geometry.offset(centringLaneY: laneY)
+        }
+        return geometry.offset(forLaneY: block.y - slide)
     }
 
     /// The scrub. Instant, and mapped through the same one place-in-the-lane-is-a-place-in-the-

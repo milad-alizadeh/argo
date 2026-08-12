@@ -13,18 +13,22 @@ struct MinimapGeometry: Equatable {
     /// Where each row starts, the total last — a prefix sum, so a row's position is a lookup
     /// rather than a walk over everything above it.
     let starts: [CGFloat]
+    /// The Turns the rows break into, worked out once here rather than per hover — the boundaries
+    /// are a property of the reading, and the reading is what this holds still.
+    let turns: [MinimapTurn]
     let reading: MinimapReading
     let lane: CGSize
 
     init(_ reading: MinimapReading, lane: CGSize) {
         var starts: [CGFloat] = [0]
-        starts.reserveCapacity(reading.rowHeights.count + 1)
+        starts.reserveCapacity(reading.rows.count + 1)
         var running: CGFloat = 0
-        for height in reading.rowHeights {
-            running += max(0, height)
+        for row in reading.rows {
+            running += max(0, row.height)
             starts.append(running)
         }
         self.starts = starts
+        self.turns = MinimapTurn.extents(of: reading.rows)
         self.reading = reading
         self.lane = CGSize(width: max(0, lane.width), height: max(0, lane.height))
     }

@@ -176,9 +176,37 @@ extension FeedCall {
     }
 }
 
+extension FeedCall {
+    /// How long this row's line runs, in characters, without building it. `spoken` joins five
+    /// pieces, and joining them once per call row per reshape is a string nobody draws. UTF-8
+    /// counts, which a `String` answers in constant time where `count` walks graphemes.
+    var length: Int {
+        kind.verb.utf8.count + 1 + subject.length
+    }
+}
+
+extension FeedCall.Subject {
+    /// How many characters the subject spells.
+    var length: Int {
+        switch self {
+        case let .file(file): file.name.utf8.count + (file.qualifier?.utf8.count ?? 0)
+        case let .command(command): command.utf8.count
+        case let .plain(text): text.utf8.count
+        case let .narration(text, _): text.utf8.count
+        }
+    }
+}
+
 extension FeedCall.Ending {
     var hasFailed: Bool {
         self == .failed
+    }
+
+    /// The ink a call with this ending is drawn in, for the row and the lane alike. Only a failure
+    /// carries a colour: a pending call is a rung above the finished ones rather than a hue, and a
+    /// success is the ordinary case.
+    var ink: FeedInk {
+        hasFailed ? .failure : .command
     }
 
     /// What a screen reader hears about the ending, where there is anything to say. A success is

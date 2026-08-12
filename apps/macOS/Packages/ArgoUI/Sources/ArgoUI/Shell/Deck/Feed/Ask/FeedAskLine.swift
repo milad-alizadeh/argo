@@ -24,11 +24,10 @@ struct FeedAskLine: View {
         .accessibilityLabel(ask.isPending ? "Question, waiting on you" : "Question, answered")
     }
 
-    /// The attention role while it waits, and the ordinary ink once it is settled.
+    /// The attention role while it waits, and the ordinary ink once it is settled — read off the
+    /// ask itself, which is also where the minimap reads it.
     private var ink: ArgoColor {
-        ask.isPending
-            ? ArgoOperationalState.attention.tint(in: argo.color)
-            : argo.color.text.secondary
+        ask.ink.role(in: argo.color)
     }
 
     /// A wash rather than a fill: the row still has to read as part of the column it interrupts.

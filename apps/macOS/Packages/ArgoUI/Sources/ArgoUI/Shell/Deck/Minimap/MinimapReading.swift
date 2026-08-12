@@ -1,10 +1,11 @@
 import Foundation
 
-/// The shape of the reading, as the overview lane needs it: every row's measured height and the
+/// The shape of the reading, as the overview lane needs it: every row measured and read, and the
 /// gutters around them. Not where the reading sits — that moves at frame rate and this does not.
 struct MinimapReading: Equatable {
-    /// Every row's height in document points, in the order they are read.
-    var rowHeights: [CGFloat] = []
+    /// Every row in the order they are read: its measured height, the shapes it is drawn as, and
+    /// the Turn boundaries it carries (#382).
+    var rows: [MinimapRow] = []
     /// How wide the rows are actually drawn — the feed column, up to the reading measure it stops
     /// at. The lane's compression is derived from this and its own width, so the miniature keeps
     /// the reading's aspect ratio; it moves with both deck seams, which is why it is measured

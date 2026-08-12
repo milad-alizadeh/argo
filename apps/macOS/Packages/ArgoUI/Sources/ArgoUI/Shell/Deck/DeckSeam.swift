@@ -69,11 +69,6 @@ struct DeckSeam: View {
 extension EnvironmentValues {
     /// Whether a deck seam is being dragged right now.
     @Entry var deckIsResizing: Bool = false
-
-    /// Whether the overview lane is beside the reading. The lane draws the reading's scroll knob
-    /// while it is, so the feed's own scroller would otherwise be a second one, drawn between the
-    /// reading and its map.
-    @Entry var deckHasMinimap: Bool = false
 }
 
 #Preview("Deck seam — a rail the reader can widen") {

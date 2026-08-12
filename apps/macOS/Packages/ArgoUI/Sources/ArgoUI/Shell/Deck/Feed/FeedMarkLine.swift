@@ -59,12 +59,10 @@ struct FeedMarkLine: View {
     }
 
     /// The roster's attention amber for the one mark that reports an act rather than the shape of
-    /// the record — the same colour the row wore while that prompt was waiting. Every other mark
-    /// stays tertiary: `cockpit-status-vocabulary.md` carries the state on the dot and keeps the
-    /// word neutral.
+    /// the record — the same colour the row wore while that prompt was waiting. Read off the mark,
+    /// which is also where the minimap reads it; `nil` falls back to the caption's own tertiary.
     private var wordInk: ArgoColor? {
-        guard case .permissionExpired = mark else { return nil }
-        return argo.color.state.attention
+        mark.ink.state(in: argo.color)
     }
 
     private func caption(_ text: String, in ink: ArgoColor? = nil) -> some View {

@@ -15,6 +15,11 @@ struct FeedPreview: View {
     /// read.
     var showsOverview = false
 
+    /// Which Turn the lane beside the reading is naming. Set after building rather than through
+    /// the initialiser, because it is a state only a still needs and every other caller wants the
+    /// lane the running app draws.
+    var naming: MinimapNaming = .nothing
+
     /// Which row the reading opens held at — as though the reader had scrolled up to it. The only
     /// way to a detached reading in a still, and the only way to put the lane's viewport rectangle
     /// anywhere but at the foot of the lane.
@@ -57,7 +62,7 @@ struct FeedPreview: View {
                 )
                 if showsOverview {
                     DeckSeparator()
-                    MinimapLane(feed: table)
+                    MinimapLane(feed: table, naming: naming)
                         .frame(width: ArgoLayout.minimapLaneWidth(sharing: proxy.size.width))
                 }
             }

@@ -104,9 +104,9 @@ import SwiftUI
         // The gutter above it grows by whatever the canopy covers. An inset and not a frame: the
         // rows keep the deck's full height to scroll through, and only START below the glass.
         scroller?.contentInsets.top = ArgoSpacing.section + fresh.environment.argoDeckCanopy
-        // The lane draws the knob while it is up, so the platform's own would be a second one
-        // between the reading and its map.
-        scroller?.hasVerticalScroller = !fresh.hasMinimap
+        // Never: the overview lane stands beside every reading and its lit rectangle IS this
+        // scrollbar, so the platform's own would draw a second one between the reading and its map.
+        scroller?.hasVerticalScroller = false
         place()
     }
 

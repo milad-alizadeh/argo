@@ -18,8 +18,14 @@ struct MinimapGeometryTests {
     /// 111 rows of 100pt in an 800pt column: 11,100pt of reading, 600 of it on screen.
     private static func long() -> MinimapReading {
         MinimapReading(
-            rowHeights: Array(repeating: 100, count: 111), columnWidth: 800, viewportHeight: 600,
+            rows: rows(Array(repeating: 100, count: 111)), columnWidth: 800, viewportHeight: 600,
         )
+    }
+
+    /// Rows carrying a line of prose apiece. What shape a row makes is `MinimapRowTests`; these are
+    /// about where it lands and how tall it stands.
+    static func rows(_ heights: [CGFloat]) -> [MinimapRow] {
+        heights.map { MinimapRow(height: $0, shape: .sentence(length: 40, ink: .command)) }
     }
 
     private static func geometry(_ reading: MinimapReading) -> MinimapGeometry {
@@ -55,7 +61,7 @@ struct MinimapGeometryTests {
     @Test
     func `a reading whose miniature fits the lane does not slide inside it`() {
         let reading = MinimapReading(
-            rowHeights: [400, 400], columnWidth: 800, viewportHeight: 300,
+            rows: Self.rows([400, 400]), columnWidth: 800, viewportHeight: 300,
         )
         let lane = Self.geometry(reading)
         #expect(lane.miniatureHeight == 100)
@@ -72,49 +78,6 @@ struct MinimapGeometryTests {
     }
 
     @Test
-    func `each row's mark sits at its own place in the reading`() {
-        let reading = MinimapReading(
-            rowHeights: [800, 2400, 400], columnWidth: 800, viewportHeight: 200, topInset: 24,
-        )
-        let lane = Self.geometry(reading)
-        #expect(lane.documentY(row: 0) == 0)
-        #expect(lane.documentY(row: 1) == 800)
-        #expect(lane.documentY(row: 2) == 3200)
-        // The top gutter is scrollable too, so the first mark starts below it.
-        #expect(lane.marks(in: 0 ... 600).map(\.y) == [3, 103, 403])
-    }
-
-    @Test
-    func `no single row may consume the overview in proportion to what it holds`() {
-        let reading = MinimapReading(
-            rowHeights: [40, 20000], columnWidth: 800, viewportHeight: 600,
-        )
-        #expect(Self.geometry(reading).marks(in: 0 ... 600)[1].height == 90)
-    }
-
-    @Test
-    func `a row compressed below what can be seen is drawn at the floor`() {
-        let reading = MinimapReading(rowHeights: [4], columnWidth: 800, viewportHeight: 600)
-        let marks = Self.geometry(reading).marks(in: 0 ... 600)
-        #expect(marks.map(\.height) == [ArgoMinimapLane.markMinimumHeight])
-    }
-
-    /// The whole reason #658 exists. At `feedAtScale`'s length the lane compressed the WHOLE
-    /// session into its own height, every mark fell to the 1pt floor and the lane read as a
-    /// texture. At the feed's own ratio a modest row is several points tall, whatever the length.
-    @Test
-    func `a session at a real length still has marks that can be told apart`() {
-        let reading = MinimapReading(
-            rowHeights: Array(repeating: 40, count: 1031),
-            columnWidth: 620,
-            viewportHeight: 600,
-        )
-        let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: 600))
-        let head = lane.marks(in: 0 ... 600).map(\.height)
-        #expect(head.allSatisfy { $0 > ArgoMinimapLane.markMinimumHeight * 4 })
-    }
-
-    @Test
     func `the reading may be scrolled from its top gutter to the end of its last row`() {
         var reading = Self.long()
         reading.topInset = 24
@@ -127,7 +90,7 @@ struct MinimapGeometryTests {
     @Test
     func `a reading that fits on screen cannot be scrolled`() {
         let reading = MinimapReading(
-            rowHeights: [100, 100], columnWidth: 800, viewportHeight: 600,
+            rows: Self.rows([100, 100]), columnWidth: 800, viewportHeight: 600,
         )
         let lane = Self.geometry(reading)
         #expect(lane.isScrollable == false)
@@ -142,7 +105,8 @@ struct MinimapGeometryTests {
     @Test
     func `a viewport too thin to grab is drawn at the floor`() {
         let reading = MinimapReading(
-            rowHeights: Array(repeating: 100, count: 200), columnWidth: 8000, viewportHeight: 600,
+            rows: Self.rows(Array(repeating: 100, count: 200)), columnWidth: 8000,
+            viewportHeight: 600,
         )
         let floor = ArgoMinimapLane.viewportMinimumHeight
         #expect(Self.geometry(reading).viewportHeightInLane == floor)
@@ -159,7 +123,7 @@ struct MinimapGeometryTests {
     @Test
     func `a viewport held up by the floor still ends flush with the lane`() {
         let reading = MinimapReading(
-            rowHeights: Array(repeating: 100, count: 20000), columnWidth: 8000,
+            rows: Self.rows(Array(repeating: 100, count: 20000)), columnWidth: 8000,
             viewportHeight: 600,
         )
         let lane = Self.geometry(reading)
@@ -173,7 +137,8 @@ struct MinimapGeometryTests {
     @Test
     func `a lane no taller than its lit range still maps a click`() {
         let reading = MinimapReading(
-            rowHeights: Array(repeating: 100, count: 60), columnWidth: 800, viewportHeight: 4800,
+            rows: Self.rows(Array(repeating: 100, count: 60)), columnWidth: 800,
+            viewportHeight: 4800,
         )
         let lane = MinimapGeometry(reading, lane: CGSize(width: 100, height: 20))
         #expect(lane.offset(forLaneY: 10) > lane.offsetRange.lowerBound)

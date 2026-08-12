@@ -1,7 +1,8 @@
 import Foundation
 
-// One neutral bar per row, at its true chronological position — and only the ones a given band of
-// the miniature actually holds, because the lane rasterises a band rather than the whole thing.
+// The rows' own shapes at the lane's scale, at their true chronological positions — and only for
+// the band of the miniature the lane currently holds as pixels, which is what bounds the cost of
+// this to the lane's height rather than to the session's length.
 
 extension MinimapGeometry {
     /// Where a row starts in the reading.
@@ -10,39 +11,90 @@ extension MinimapGeometry {
         return starts[row]
     }
 
-    /// Where a row's mark sits in the miniature, counted down from its head.
+    /// Where a row's block sits in the miniature, counted down from its head.
     func markY(row: Int) -> CGFloat {
         (reading.topInset + documentY(row: row)) * scale
+    }
+
+    /// How tall one line of the reading is drawn. The SAME for every row, everywhere in the lane:
+    /// two rows of one line each must read as the same weight, and a row's own padding is spacing
+    /// rather than content. What the padding buys is the gap to the next row, which is exactly what
+    /// it buys in the feed.
+    var lineSlot: CGFloat {
+        max(
+            ArgoMinimapLane.markMinimumHeight + ArgoMinimapLane.markGap,
+            ArgoFeedRow.lineHeight * scale,
+        )
+    }
+
+    /// How many of a row's lines are actually drawn: the lines it was measured at, held to what its
+    /// own space in the lane can hold, and then to the cap D25 puts on one event.
+    ///
+    /// Both limits take lines off the FOOT of the block and never move its head, so a capped row's
+    /// chronological place — and every place after it — stays exactly where the reading put it.
+    func drawnLines(row: Int) -> Int {
+        guard reading.rows.indices.contains(row) else { return 0 }
+        let height = reading.rows[row].height
+        return max(1, min(
+            MinimapRuns.lines(inside: height),
+            Int(height * scale / lineSlot),
+            Int(markCeiling / lineSlot),
+        ))
+    }
+
+    /// How tall a row's block stands, cap and all.
+    func markHeight(row: Int) -> CGFloat {
+        CGFloat(drawnLines(row: row)) * lineSlot
     }
 
     /// The marks inside a band of the miniature. Both ends are found by binary search over the
     /// prefix sums, so the cost is the band's own row count rather than the session's.
     ///
-    /// The low end is widened by one mark ceiling: a row that STARTS above the band can still be
-    /// drawn into it, because a mark under the visible floor is raised to where it can be seen.
+    /// The low end is widened by one block ceiling: a row that STARTS above the band can still be
+    /// drawn into it, because a block reaching past the visible floor is still partly in view.
     func marks(in band: ClosedRange<CGFloat>) -> [MinimapMark] {
-        guard scale > 0, !reading.rowHeights.isEmpty else { return [] }
+        guard scale > 0, !reading.rows.isEmpty else { return [] }
         let head = band.lowerBound / scale - reading.topInset - markCeiling / scale
         let foot = band.upperBound / scale - reading.topInset
-        return (row(startingAtOrBefore: head) ... row(startingAtOrBefore: foot)).map(mark(at:))
+        return (row(startingAtOrBefore: head) ... row(startingAtOrBefore: foot)).flatMap(marks(at:))
     }
 
-    private func mark(at row: Int) -> MinimapMark {
-        MinimapMark(y: markY(row: row), height: markHeight(of: reading.rowHeights[row]))
+    /// A row's runs as drawn rectangles, one line slot apiece.
+    private func marks(at row: Int) -> [MinimapMark] {
+        let lines = drawnLines(row: row)
+        let top = markY(row: row)
+        let slot = lineSlot
+        return MinimapRuns
+            .runs(of: reading.rows[row].shape, over: lines, across: reading.columnWidth)
+            .filter { $0.line < lines }
+            .map { run in
+                MinimapMark(
+                    y: top + slot * CGFloat(run.line),
+                    height: height(of: run, over: min(run.lines, lines - run.line), inside: slot),
+                    span: run.span,
+                    ink: run.ink,
+                )
+            }
     }
 
-    /// A row's weight, in proportion to the reading, up to the cap D25 puts on it and never below
-    /// what can be seen. The gap comes out of the mark rather than off its position, so a run of
-    /// rows reads as events without any of them moving off where it actually is.
-    private func markHeight(of rowHeight: CGFloat) -> CGFloat {
-        let drawn = rowHeight * scale - ArgoMinimapLane.markGap
-        return min(markCeiling, max(ArgoMinimapLane.markMinimumHeight, drawn))
+    /// How tall one run is drawn. A rule keeps the floor whatever the row is worth: the punctuation
+    /// between Turns is a hairline in the feed and stays one here. Everything else gives the gap
+    /// back, so a paragraph reads as lines rather than as a solid block.
+    private func height(of run: MinimapRun, over lines: Int, inside slot: CGFloat) -> CGFloat {
+        switch run.ink.shape {
+        case .rule: ArgoMinimapLane.markMinimumHeight
+        case .bar, .frame, .band:
+            max(
+                ArgoMinimapLane.markMinimumHeight,
+                CGFloat(max(1, lines)) * slot - ArgoMinimapLane.markGap,
+            )
+        }
     }
 
     /// The last row starting at or before `documentY`, clamped to the rows there are.
-    private func row(startingAtOrBefore documentY: CGFloat) -> Int {
+    func row(startingAtOrBefore documentY: CGFloat) -> Int {
         var low = 0
-        var high = reading.rowHeights.count - 1
+        var high = reading.rows.count - 1
         while low < high {
             let mid = (low + high + 1) / 2
             if starts[mid] <= documentY {

@@ -43,19 +43,23 @@ struct DeckZoning {
         ArgoLayout.railLimits(in: deck)
     }
 
-    /// The lane's share of what it and the feed have between them. The rail is outside that span,
-    /// so dragging the rail narrows the lane with the reading rather than only the reading.
+    /// The lane's share of what it and the feed have between them. The rail and the panel are both
+    /// outside that span, so dragging either narrows the lane with the reading rather than only the
+    /// reading — and the lane keeps mapping the reading while the panel is open, since a reader who
+    /// opened one row's evidence has not stopped needing to know where in the session they are.
     var laneWidth: CGFloat {
         let rail = showsRail ? seams.rail.wrappedValue + ArgoLayout.seamGrabWidth : 0
-        return ArgoLayout.minimapLaneWidth(sharing: deck - rail)
+        let panel = isPanelOpen ? panelWidth.wrappedValue + ArgoLayout.seamGrabWidth : 0
+        return ArgoLayout.minimapLaneWidth(sharing: deck - rail - panel)
     }
 
     var panelLimits: ClosedRange<CGFloat> {
         ArgoLayout.evidencePanelLimits(in: deck)
     }
 
-    /// The panel's width, defaulting to its share of the WHOLE deck — the rail and the minimap are
-    /// both shut while it is open. Seated on a whole point, the opening width included
+    /// The panel's width, defaulting to its share of the WHOLE deck — the rail is shut while it is
+    /// open, and the lane is a share of what is left. Seated on a whole point, the opening width
+    /// included
     /// (`ArgoLayout.seated`).
     var panelWidth: Binding<CGFloat> {
         let limits = panelLimits
