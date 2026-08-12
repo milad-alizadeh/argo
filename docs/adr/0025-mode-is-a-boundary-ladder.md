@@ -126,9 +126,13 @@ the permission suite already uses: a real PTY, a real Hub, a temp Project, folde
 Each claim is made against the CLI's own record or against the filesystem, never against the
 argument Argo sent, because an adapter that agrees with itself proves nothing.
 
+*(Corrected under #653. The fixture never pointed its Hub at the Project, and discovery starts in
+`Hub.connect` and nowhere else — so no transcript was read and every record-based claim below was
+waiting on a sweep that had not begun. The rows are what the tests establish now that it does.)*
+
 | Rung | Flag | What the live run established |
 |---|---|---|
-| **Auto** | `auto` | Spawned on it, the transcript reports `auto`; a gated `Bash` call runs, the file appears, and **no Permission is ever raised**. This is #629's reported bug and the test that closes it. |
+| **Auto** | `auto` | Spawned on it, the transcript reports `auto`. The gated call does **not** yet run unasked — see the mid-Session section below: Argo's own gate hook asks at every rung, so this half of #629 is still open. |
 | **Code** | `acceptEdits` | Spawned on it, a gated `Bash` call still raises a Permission — the rung accepts edits, not commands. Unchanged from 2.1.227. |
 | **Read Only** | `plan` | Spawned on it, the agent does not write and the file it was asked for is never created. |
 | **Plan** | `plan` | The same value and the same observed behaviour as Read Only. Its intent is unobservable by construction, which is what this ADR already says. |
@@ -137,23 +141,59 @@ So the `≈` rules stand against values the CLI still accepts: `manual` and `def
 `Read Only ≈`, `bypassPermissions` as `Auto ≈`, and `dontAsk` as `unknown`. Nothing in the
 2.1.227 → 2.1.228 step moved any of them.
 
-**`--permission-mode` is honoured for every rung. `shift+tab` no longer moves a running Session.**
-Driven twice on 2.1.228, a Session set from `Code` to `Auto` while idle stayed on `acceptEdits`:
-the next gated call raised a Permission and the file was never written. The keystroke Argo sends
-is unchanged and 2.1.227 accepted it, so this is a change in the CLI rather than in Argo.
+**`--permission-mode` is honoured for every rung.** The mid-Session half is the section below.
 
-**Argo degrades rather than pretends, and the mechanism is #653's to find.** The rung is still
-asked for — it costs nothing and it worked one version ago. When the record contradicts it the
-reading snaps back to the rung the CLI reports and the composer says which rung did not take. The
-live test asserts that degrade and marks the change itself a known issue, so the day a
-mid-Session change lands again the suite says so rather than quietly starting to pass.
+## Verification · the mid-Session walk, 2.1.228, 2026-08-12 (#653)
+
+#629 read a failed `Code → Auto` change on a running Session as the CLI having withdrawn
+`shift+tab`. **It had not.** The 2.1.227 and 2.1.228 binaries were compared at the three places
+that decide this — the `Chat` keybinding table, the `ESC [ Z` decoder, and the `chat:cycleMode`
+handler — and they are identical. The bug was Argo's, and the multi-step walk had never worked.
+
+**The mechanism is `shift+tab`, one keystroke per WRITE.** Driven against 2.1.228 by writing
+back-tabs at a real PTY and reading the rung off the TUI's own footer:
+
+| What Argo wrote | Where the Session landed, from `acceptEdits` |
+|---|---|
+| `ESC [ Z` × 1 per write, six writes | `plan → auto → manual → acceptEdits → plan → auto` — the ring, one rung per keystroke |
+| `ESC [ Z ESC [ Z` in one write | `plan`. One rung, not two |
+| `ESC [ Z ESC [ Z ESC [ Z` in one write | one rung, not three |
+
+**Every back-tab arriving in a single read is one mode change to the TUI.** So a walk has to reach
+the CLI as separate reads, which means separate writes with a gap behind each. Two writes issued in
+the same run-loop turn collapse exactly as one string does; a gap of **15 ms** already walks a
+three-step change correctly, as do 60 ms and 120 ms. Argo waits **50 ms** — that floor with room
+for a machine under load — so the longest walk on a four-value ring costs 150 ms.
+
+This is why `SessionDriver.setMode` is the one act on the port that is `async`. It is not one
+keystroke but a walk, and it answers when the walk is done so the caller's refusal covers all of
+it.
+
+**The ring is unchanged**: `auto → manual → acceptEdits → plan → auto`, confirmed rung by rung from
+the footer. `bypassPermissions` and `dontAsk` are still not on it.
+
+`LiveModeTests` proves it against the CLI's own record: a Session raises a Permission on a gated
+`Bash` call while standing on `Code` — which is what makes it a *running* Session rather than a
+freshly spawned one — is moved to `Auto` while idle, and the next Turn's stance record reads
+`auto`. Reverting the fix to a single batched write turns the same test red with the record
+reading `plan`: one rung short, which is precisely the collapse.
+
+**A gated call cannot be the evidence for a rung, because Argo's own gate defeats it.**
+`PermissionChannel.asked` never reads the Session's mode, so the `PreToolUse` hook Argo installs
+asks on **every** tool call at every rung. `Auto` cannot mean "asks nothing" while that is true,
+and `LiveModeTests`' `Auto runs a gated call and never asks` fails on 2.1.228 for that reason —
+Argo's, not the CLI's. The rung itself reaches the CLI either way, which both record-based tests
+show. **This is #629's remaining half**: the flag is honoured and the walk lands, but the gate has
+to learn the ladder before `Auto` behaves like the top of it.
 
 **A set outranks the record until a record is written AFTER it — counted, not compared.** The
 earlier rule compared the CLI value seen when the rung was set, which cannot tell a record that
-has not caught up from one that has spoken and repeated the old value. That is precisely the case
-a CLI ignoring the change produces, so Argo went on drawing a rung nobody was standing on. Counting
+has not caught up from one that has spoken and repeated the old value. That is precisely what a
+change which did not land produces, so Argo went on drawing a rung nobody was standing on. Counting
 the Session's stance records makes silence and disagreement two different facts, which is what
-lets the snap-back exist at all.
+lets the snap-back exist at all. The walk lands now (#653), so the snap-back is the exception
+rather than the rule — but it is what stands between Argo and a rung it merely asked for, and the
+next CLI change is exactly what it is for.
 
 **A rung cannot be changed while a Turn is in flight.** The ring is walked, not written, so a
 change passes through rungs nobody asked for — `Auto` among them. Idle, that transit is nothing.

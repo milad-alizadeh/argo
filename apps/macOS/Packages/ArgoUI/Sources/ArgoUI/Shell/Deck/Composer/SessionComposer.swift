@@ -21,8 +21,9 @@ struct SessionComposer: View {
     /// vessel exactly as it found it.
     var stop: () throws -> Void = {}
     /// Put the Session on a rung (#545). Throwing, like `stop`: a refused rung changed nothing,
-    /// and the seam is where the port's reason goes.
-    var setMode: (SessionMode) throws -> Void = { _ in }
+    /// and the seam is where the port's reason goes. Async besides, because the walk along the
+    /// ring is (#653).
+    var setMode: (SessionMode) async throws -> Void = { _ in }
     @Binding var draft: ComposerDraft
     /// Holds the drag-over state open for a render — see `AttachmentDropTarget.isHeldOpen`.
     var isDropTargeted = false
@@ -37,7 +38,7 @@ struct SessionComposer: View {
         send: @escaping ComposerSend,
         revoke: @escaping (String) -> Void = { _ in },
         stop: @escaping () throws -> Void = {},
-        setMode: @escaping (SessionMode) throws -> Void = { _ in },
+        setMode: @escaping (SessionMode) async throws -> Void = { _ in },
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
         isDropTargeted: Bool = false,
     ) {
@@ -161,8 +162,18 @@ struct SessionComposer: View {
 
     /// Ask the Session for a rung. The control shows nothing of its own, so a refusal needs no
     /// undoing here.
+    ///
+    /// In a `Task` because the picker's setter cannot wait: the walk takes a keystroke per rung
+    /// with a gap behind each (#653), and the note lands when it resolves.
     private func ask(for mode: SessionMode) {
-        draft.modeAsked { try setMode(mode) }
+        Task {
+            do {
+                try await setMode(mode)
+                draft.modeAsked(refusedWith: nil)
+            } catch {
+                draft.modeAsked(refusedWith: error)
+            }
+        }
     }
 
     /// The seam's remedy, which is not the same act as pressing send: what it puts back is

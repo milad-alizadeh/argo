@@ -36,10 +36,11 @@ extension CockpitView {
         return { try actions.drive.interrupt(sessionID) }
     }
 
-    /// Putting that Session on a rung (#545), bound the way `stop` is.
-    private func setMode(_ sessionID: String?) -> (SessionMode) throws -> Void {
+    /// Putting that Session on a rung (#545), bound the way `stop` is — and `async` because the
+    /// port's walk is: the ring is stepped one keystroke at a time (#653).
+    private func setMode(_ sessionID: String?) -> (SessionMode) async throws -> Void {
         guard let sessionID else { return { _ in } }
-        return { try actions.drive.setMode($0, for: sessionID) }
+        return { try await actions.drive.setMode($0, for: sessionID) }
     }
 
     /// What the composer is holding, out of the store that outlives the deck.

@@ -54,7 +54,7 @@ struct SpawnModeTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
-        try fixture.hub.driver.setMode(.auto, for: claim.value)
+        try await fixture.hub.driver.setMode(.auto, for: claim.value)
 
         _ = try await fixture.hub.spawnSession()
 
@@ -68,7 +68,7 @@ struct SpawnModeTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
-        try fixture.hub.driver.setMode(.readOnly, for: claim.value)
+        try await fixture.hub.driver.setMode(.readOnly, for: claim.value)
 
         _ = try await fixture.restarted().spawnSession()
 
@@ -93,8 +93,8 @@ struct SpawnModeTests {
                 .prompt(text: "Off you go", atMs: Date().epochMs),
             ],
         ))
-        #expect(throws: SessionDriveError.modeBusy) {
-            try fixture.hub.driver.setMode(.auto, for: "session-from-cli")
+        await #expect(throws: SessionDriveError.modeBusy) {
+            try await fixture.hub.driver.setMode(.auto, for: "session-from-cli")
         }
 
         _ = try await fixture.hub.spawnSession()

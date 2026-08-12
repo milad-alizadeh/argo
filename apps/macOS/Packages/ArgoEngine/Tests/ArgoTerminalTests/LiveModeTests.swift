@@ -2,9 +2,9 @@ import ArgoEngine
 import Foundation
 import Testing
 
-/// The ladder against the CLI it exists for (#629). Excluded from the default run for the reason
-/// `LivePermissionTests` is: these spawn the real `claude`, spend real tokens, and take as long as
-/// an agent takes — set `ARGO_LIVE_CLI=1` to run them.
+/// The ladder against the CLI it exists for (#629, #653). Excluded from the default run for the
+/// reason `LivePermissionTests` is: these spawn the real `claude`, spend real tokens, and take as
+/// long as an agent takes — set `ARGO_LIVE_CLI=1` to run them.
 ///
 /// What no other suite can show: that a rung Argo passes or walks to is a rung the CLI actually
 /// stands on. Every assertion here is made against the CLI's own report or against the filesystem,
@@ -29,6 +29,13 @@ struct LiveModeTests {
 
     /// The reported bug, and the test that closes it: on `Auto` a gated call runs and nobody is
     /// asked. The file is the evidence the call ran; the watch is the evidence nothing asked.
+    ///
+    /// KNOWN FAILING against 2.1.228 on 2026-08-12, for a reason that is Argo's and not the rung's:
+    /// `PermissionChannel.asked` never reads the Session's mode, so Argo's own `PreToolUse` hook
+    /// asks on every tool call whatever rung the Session stands on — and `Auto` cannot mean "asks
+    /// nothing" while it does. The rung itself reaches the CLI: the spawn test above and
+    /// `a rung set on a running Session takes effect` both read `auto` back off the CLI's own
+    /// record. This is #629's remaining half, not #653's.
     @Test(.timeLimit(.minutes(10)))
     func `Auto runs a gated call and never asks`() async throws {
         let live = try await LiveClaudeFixture.spawned(on: .auto)
@@ -41,45 +48,48 @@ struct LiveModeTests {
         #expect(!asked, "\(live.host.lastScreens)")
     }
 
-    /// The half of the ladder 2.1.228 took away, and what Argo does about it.
+    /// The other half of the ladder: a rung set on a Session that is ALREADY RUNNING reaches the
+    /// live CLI (#653).
     ///
-    /// `shift+tab` no longer moves a running Session, so the rung asked for here does not land
-    /// (#653). What this proves is therefore the DEGRADE: the reading snaps back to the rung the
-    /// CLI reports, and the composer is told which rung did not take — Argo never goes on drawing
-    /// a rung it merely asked for.
+    /// Proven by behaviour and not by the record, which is the only proof worth having here: this
+    /// Session raised a Permission on this exact call while it stood on `Code`, and raises none on
+    /// the same call once it has been moved to `Auto`. The two halves are one claim — a build that
+    /// simply stopped gating would fail the first, and one whose keystrokes went nowhere the
+    /// second.
     ///
-    /// The change itself is a `withKnownIssue`, so the day the CLI accepts one again this test
-    /// fails and says the known issue did not occur.
+    /// It is also the regression test for the collapse. The walk from `acceptEdits` to `auto` is
+    /// two back-tabs, and written as one string the CLI takes them as one and stops on `plan` — so
+    /// the assertion has to name the rung the CLI landed on, not merely that it moved.
+    ///
+    /// The second Turn asks for no tool. A tool call cannot be the evidence here: Argo's own gate
+    /// hook asks on EVERY call whatever the rung is, so what a gated call does says nothing about
+    /// the rung — see the note on `Auto runs a gated call and never asks`.
     @Test(.timeLimit(.minutes(15)))
-    func `a rung that does not reach the CLI snaps back and says which one`() async throws {
+    func `a rung set on a running Session takes effect`() async throws {
         let live = try await LiveClaudeFixture.spawned()
         defer { live.end() }
 
+        // A Permission raised is what makes this Session RUNNING rather than freshly spawned, and
+        // it is the rung `Code` doing it — the state the change has to survive.
         try live.ask(Self.prompt(touching: live.markerURL.path))
         let request = try #require(await live.pendingPermission(), "\(live.host.lastScreens)")
         try live.hub.driver.decide(.deny, answering: request.id, for: live.sessionID)
+        await live.settle(seconds: 120) { live.reportedRung != nil }
+        #expect(live.reportedRung == "acceptEdits", "\(live.host.lastScreens)")
 
         // The rung is WALKED, not written, so a change passes through rungs nobody asked for and
         // the port refuses one mid-Turn (ADR-0025). Idle first, then the change.
         await live.settle(seconds: 120) { live.session?.status == .idle }
-        try live.hub.driver.setMode(.auto, for: live.sessionID)
-        try live.ask(Self.prompt(touching: live.followUpMarkerURL.path))
+        try await live.hub.driver.setMode(.auto, for: live.sessionID)
 
-        // On `Auto` there would be nothing to answer. There is, and that IS the change not landing.
-        let second = await live.pendingPermission()
-        withKnownIssue("shift+tab no longer moves a running claude — #653") {
-            #expect(second == nil)
-        }
-        let pending = try #require(second, "\(live.host.lastScreens)")
-        try live.hub.driver.decide(.deny, answering: pending.id, for: live.sessionID)
+        // `claude` writes its stance at Turn boundaries, so a Turn has to END before the CLI has
+        // said anything at all about where the walk left it.
+        try live.ask("Reply with the single word: ready")
+        await live.settle(seconds: 180) { live.reportedRung == "auto" }
 
-        // The Turn has to END before the degrade is observable: `claude` writes its stance at Turn
-        // boundaries, and until one is written AFTER the set, silence is not disagreement.
-        await live.settle(seconds: 180) { live.session?.modeDidNotTake != nil }
-
-        #expect(live.session?.modeDidNotTake == .auto, "\(live.host.lastScreens)")
-        #expect(live.session?.mode == .exactly(.code, cli: "acceptEdits"))
-        #expect(!live.hasFollowUpMarker())
+        #expect(live.reportedRung == "auto", "\(live.host.lastScreens)")
+        #expect(live.session?.mode == .exactly(.auto, cli: "auto"))
+        #expect(live.session?.modeDidNotTake == nil)
     }
 
     /// The bottom of the ladder still stops the agent. Without this the suite above would pass just

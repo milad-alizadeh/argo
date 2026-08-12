@@ -107,6 +107,11 @@ final class LiveClaudeFixture {
                 permissionPatience: patience,
             ),
         )
+        // Pointed at the Project BEFORE anything is spawned, exactly as the app does it. Without
+        // this the Hub reads no transcript at all: discovery starts in `connect` and nowhere else,
+        // so every claim made against the CLI's own record would be waiting on a sweep that was
+        // never begun (#653).
+        await hub.connect(to: LaunchConfiguration(projectURL: root, transcriptURLs: []))
         let claim = try await hub.spawnSession(seed: SessionSeed(mode: mode))
         let fixture = LiveClaudeFixture(
             root: root,

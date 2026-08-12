@@ -39,7 +39,11 @@ public protocol SessionDriver {
     /// Put the Session on one rung of the autonomy ladder (#545, ADR-0025). The rung a Session
     /// STARTS on rides in on argv; a CLI reads that flag once, so moving it afterwards is a
     /// different act — see the `claude` adapter for what it takes.
-    func setMode(_ mode: SessionMode, for sessionID: String) throws
+    ///
+    /// The one act here that is `async`, unlike `send` and `interrupt`: a rung is not one keystroke
+    /// but a walk along a ring, and the steps have to reach the CLI as separate reads (#653). It
+    /// answers when the walk is done, so the caller's refusal covers the whole of it.
+    func setMode(_ mode: SessionMode, for sessionID: String) async throws
 
     /// Whether this adapter takes attachments at all (#540) — the composer omits the `+` rather
     /// than disabling it, and a drop is refused with the reason.

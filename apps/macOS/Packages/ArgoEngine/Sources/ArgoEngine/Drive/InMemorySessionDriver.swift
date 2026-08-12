@@ -72,7 +72,7 @@ public final class InMemorySessionDriver: SessionDriver {
 
     /// Records the rung it was asked for, which is what a surface has to be able to assert: the
     /// keystrokes that walk there are the `claude` adapter's own claim and are asserted with it.
-    public func setMode(_ mode: SessionMode, for sessionID: String) throws {
+    public func setMode(_ mode: SessionMode, for sessionID: String) async throws {
         if let refusal {
             throw refusal
         }

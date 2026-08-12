@@ -31,7 +31,7 @@ struct HubRelinquishTests {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
-        try fixture.hub.driver.setMode(.plan, for: claim.value)
+        try await fixture.hub.driver.setMode(.plan, for: claim.value)
 
         fixture.host.endLastProcess(exitCode: 0)
 

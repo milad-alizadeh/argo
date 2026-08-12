@@ -13,7 +13,7 @@ struct ComposerModeAskTests {
     func `a refused rung leaves the draft untouched`() {
         var draft = ComposerDraft(text: "Carry on with the plan.")
 
-        draft.modeAsked { throw SessionDriveError.modeBusy }
+        draft.modeAsked(refusedWith: SessionDriveError.modeBusy)
 
         #expect(draft.text == "Carry on with the plan.")
         #expect(draft.refusal == nil)
@@ -25,7 +25,7 @@ struct ComposerModeAskTests {
     func `the port's own reason reaches the seam as a notice`(refused: SessionDriveError) {
         var draft = ComposerDraft()
 
-        draft.modeAsked { throw refused }
+        draft.modeAsked(refusedWith: refused)
 
         #expect(draft.notice == refused.detail)
         #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0) == .notice(refused.detail))
@@ -35,7 +35,7 @@ struct ComposerModeAskTests {
     func `a rung that landed says nothing at all`() {
         var draft = ComposerDraft(notice: ComposerDraft.cleared)
 
-        draft.modeAsked {}
+        draft.modeAsked(refusedWith: nil)
 
         #expect(draft.notice == nil)
         #expect(ComposerSeamNote.note(for: draft, enteredAtMs: 0) == nil)

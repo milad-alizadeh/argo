@@ -16,7 +16,8 @@ struct DeckIntents {
     /// Stopping the Turn in flight (#541); a Session blocked on a Permission has nothing to stop.
     var stop: () throws -> Void = {}
     /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
-    var setMode: (SessionMode) throws -> Void = { _ in }
+    /// Async because the port's walk is: the ring is stepped one keystroke at a time (#653).
+    var setMode: (SessionMode) async throws -> Void = { _ in }
     /// The exit the undriveable line offers: a fresh Session in the shown one's folder.
     var spawnBeside: () async -> Void = {}
     /// What the composer is holding. A binding handed in from ABOVE the deck's Session identity:
