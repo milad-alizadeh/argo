@@ -20,15 +20,26 @@ struct DeckCanopy: View {
     /// and spawns nothing.
     var handOff: () async -> Void = {}
 
+    /// The canopy's own width — which IS the detail pane's, since the canopy spans it. What the
+    /// centred title's share is taken of (#692).
+    @State private var paneWidth: CGFloat = 0
+
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
+            // The strip the bar climbs into, which the window's own controls are drawn over. The
+            // title is centred HERE and not in a `ToolbarItem`: `.principal` is a slot between the
+            // bar's regions rather than a centring, and it parked the title against the scope
+            // vessel and pushed Rooms into the overflow menu. Zero-height wherever there is no
+            // toolbar above the deck, so a specimen of the deck alone draws no title.
+            TitlebarTitle(header: header, paneWidth: paneWidth)
+                .frame(height: reach)
             SessionHeader(header: header, handOff: handOff)
                 .frame(height: ArgoLayout.deckHeaderHeight)
-            SessionTabLine(spend: header?.spend)
+            SessionTabLine()
                 .frame(height: ArgoLayout.deckTabSlotHeight)
         }
-        .frame(height: ArgoLayout.deckCanopyHeight)
-        .padding(.top, reach)
+        .frame(height: ArgoLayout.deckCanopyHeight + reach)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { paneWidth = $0 }
         .argoChromeBar()
         .ignoresSafeArea(.container, edges: .top)
     }

@@ -1,9 +1,9 @@
 @testable import ArgoUI
 import Testing
 
-/// The two contract values the centred Session title will be built from (#691). Nothing draws them
-/// yet, so these are the whole of what holds them to the design until `TitlebarTitle` lands — and
-/// the `Mirror` completeness guard reaches colour groups only, never a static role.
+/// The two contract values the centred Session title is built from (#691), now that `TitlebarTitle`
+/// draws them (#692). They still need a suite of their own: the `Mirror` completeness guard reaches
+/// colour groups only, never a static role, and the share is a number no screenshot can measure.
 @Suite("Titlebar title contract")
 struct TitlebarTitleContractTests {
     @Test
@@ -29,12 +29,12 @@ struct TitlebarTitleContractTests {
         #expect(ArgoTypography.all.map(\.name).contains("windowTitle"))
     }
 
-    /// The specimen draws a kept role as unjudged, which is what stops an unset role reading as
-    /// shipped. `design-system.md` requires the note; the contract suite checks it names a real
-    /// role.
+    /// The specimen draws an unwired role as unjudged, which is what stops an unset role reading as
+    /// shipped. `TitlebarTitle` sets this one now, so the note has to go with it — a shipped role
+    /// left on that list is a rendering the specimen goes on disclaiming.
     @Test
-    func `the window-title role says what it is still waiting on`() {
-        #expect(ArgoTypography.unwired["windowTitle"] != nil)
+    func `the window-title role is no longer disclaimed, because something draws it`() {
+        #expect(ArgoTypography.unwired["windowTitle"] == nil)
     }
 
     /// The share is what keeps a CENTRED title clear of the scope vessel and the rooms capsule,

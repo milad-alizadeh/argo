@@ -78,6 +78,5 @@ public enum ArgoTypography {
     /// Roles nothing sets yet. See `ArgoMotion.unwired` for why they stay and why they say so.
     public static let unwired: [String: String] = [
         "identityHeading": "empty states and the Project header",
-        "windowTitle": "the centred Session title, once TitlebarTitle lands",
     ]
 }

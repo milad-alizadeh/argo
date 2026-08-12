@@ -93,12 +93,20 @@ struct SessionHeaderSpendTests {
         #expect(ElapsedTime.phrase(milliseconds: -5000) == "under a minute")
     }
 
+    /// The line has no specimen of its own since it moved to the titlebar title's hover (#692), and
+    /// a native tooltip never lands in a screenshot. This is what replaced the PNG: the composed
+    /// line reaches the header, and the header hands it to the hover unchanged.
     @Test
-    func `both spend lines have a specimen of their own`() {
-        let drawn = SessionSpendFixture.spends
+    func `the line reaches the hover that replaced the tab line`() throws {
+        let header = SessionHeaderProjection.header(from: session(
+            startedAtMs: 0,
+            lastSeenAtMs: 120 * minute,
+            spentTokens: 1_830_000,
+        ))
 
-        #expect(drawn.map(\.name) == ["sessionSpend", "sessionSpendUnreported"])
-        #expect(drawn.map { $0.header.spend?.contains("in subagents") } == [true, false])
+        let spend = try #require(header.spend)
+        #expect(spend == "1.83M tokens spent · started 2h ago")
+        #expect(try #require(header.tooltip).hasSuffix(spend))
     }
 
     /// A Session with a fixed spend: two hours spanned, twenty minutes of it worked.

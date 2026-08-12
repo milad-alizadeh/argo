@@ -12,6 +12,11 @@ import SwiftUI
 /// region its placement names, and an unplaced one resolves to the window's own — which in a split
 /// view is not the region the detail pane draws, so it expands where nothing is and leaves Rooms
 /// adrift. Sharing `.primaryAction` puts it inside the region Rooms is in.
+///
+/// The Session's title is NOT a toolbar item (#692). `.principal` is a slot between the regions,
+/// not a centring: it parked the title against the scope vessel and pushed Rooms into the bar's
+/// overflow menu. The title is drawn by `DeckCanopy`, which is the detail pane itself and already
+/// reaches up into this band.
 struct ShellToolbar: ToolbarContent {
     @Binding var room: CockpitRoom
     let presentation: CockpitPresentation

@@ -106,6 +106,22 @@ enum SessionHeaderProjection {
                 .compactMap(\.self)
                 .joined(separator: ", ")
         }
+
+        /// Everything the header's fact line and the tab line used to say out loud, on the hover of
+        /// the titlebar title that replaced them (#692) — identity first, one fact per line, then a
+        /// blank line and the telemetry exactly as the tab line worded it.
+        ///
+        /// The checkout and the access posture are their SENTENCES rather than their words: the two
+        /// facts the reader hovers for are which kind of checkout it is and why the composer is
+        /// shut, and neither is answered by a branch name or by `Read-only` alone.
+        ///
+        /// `nil`, never empty: `.help("")` still draws a chip, which reads as a fact that failed to
+        /// load rather than as a Session nothing is known about.
+        var tooltip: String? {
+            let facts = [agent, checkout?.detail, issue?.label, access?.detail].compactMap(\.self)
+            let halves = [facts.joined(separator: "\n"), spend ?? ""].filter { !$0.isEmpty }
+            return halves.isEmpty ? nil : halves.joined(separator: "\n\n")
+        }
     }
 
     static func header(from session: CockpitPresentation.Session) -> Header {
