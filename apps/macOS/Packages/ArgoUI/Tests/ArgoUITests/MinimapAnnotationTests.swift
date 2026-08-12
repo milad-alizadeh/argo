@@ -101,13 +101,33 @@ struct MinimapAnnotationTests {
 
     /// The line says a Turn is THERE, which stays true whether or not there is room to say what it
     /// asked. A crowded label may lose its words; its Turn may not lose its mark.
+    ///
+    /// Against `legible` itself rather than the mounted lane: whether any two Turns in the fixture
+    /// land within a label of each other follows from the rows' MEASURED heights, so a lane asked
+    /// for the crowded case answers differently on a machine whose text metrics differ.
     @Test
-    func `a Turn too crowded to label is still marked`() {
+    func `a Turn too crowded to label keeps its line and loses its words`() {
+        let crowding = ArgoMinimapLane.labelHeight / 2
+        let annotations = [
+            MinimapAnnotation(span: 0 ... 50, words: "first"),
+            MinimapAnnotation(span: crowding ... 60, words: "under the first"),
+            MinimapAnnotation(span: 200 ... 260, words: "clear of both"),
+        ]
+
+        let legible = MinimapAnnotation.legible(annotations, inside: 480)
+
+        #expect(legible.map(\.words) == ["first", nil, "clear of both"])
+        #expect(legible.map(\.span) == annotations.map(\.span))
+    }
+
+    /// Whatever the crowding costs a label, every Turn named at once still has a line to stand on.
+    @Test
+    func `every Turn marked at once keeps a line`() {
         let deck = Self.mounted()
         deck.lane.readModifiers([.shift, .command])
 
         let marked = deck.lane.marking
-        #expect(marked.contains { $0.words == nil })
+        #expect(!marked.isEmpty)
         #expect(marked.allSatisfy { $0.span.upperBound > $0.span.lowerBound })
     }
 }
