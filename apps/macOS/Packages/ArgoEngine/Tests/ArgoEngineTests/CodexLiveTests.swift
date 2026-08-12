@@ -82,4 +82,87 @@ struct CodexLiveTests {
         #expect(await live.settle(until: { live.thread?.turnID != nil }))
         #expect(live.thread?.turnID != stopped)
     }
+
+    /// The approval round trip against the real server (#549): it asks, the cockpit raises it, the
+    /// answer goes back as a JSON-RPC response, and the work happens.
+    ///
+    /// Opened on Read Only so the boundary is one the agent must ask to cross — writing anything is
+    /// outside a read-only sandbox, which is what makes the server raise an approval rather than
+    /// getting on with it. This constant is only as true as this run: `app-server` is experimental,
+    /// and an approval that stopped arriving would leave the adapter silently un-gated.
+    @Test(.timeLimit(.minutes(3)))
+    func `a real Codex asks for approval, and an allow lets the work through`() async throws {
+        var live = try LiveCodex()
+        defer { live.remove() }
+        let session = try await live.spawn(mode: .readOnly)
+
+        try live.hub.driver.send(
+            "Create a file named approved.txt in the working directory containing exactly: "
+                + "alive. Then stop.",
+            to: session,
+        )
+        #expect(await live.settle(until: { live.hub.sessions.first?.permission != nil }))
+        let raised = try #require(live.hub.sessions.first?.permission)
+
+        try live.hub.driver.decide(.allow, answering: raised.id, for: session)
+
+        #expect(await live.settle(until: { live.hasFile("approved.txt") }))
+        #expect(await live.settle(until: { live.hub.sessions.first?.permission == nil }))
+    }
+
+    /// The patch approval's own params carry no diff, so what the prompt names has to come off the
+    /// item's notifications, joined on `itemId`. Whether those arrive BEFORE the approval is an
+    /// ordering only the real server can settle — the spike recorded `turn/diff/updated`, which
+    /// lands after the answer and would be too late.
+    @Test(.timeLimit(.minutes(3)))
+    func `a real Codex patch approval names the file it would write`() async throws {
+        var live = try LiveCodex()
+        defer { live.remove() }
+        let session = try await live.spawn(mode: .readOnly)
+
+        try live.hub.driver.send(
+            "Create a file named patched.txt containing the single line: hello from patch. "
+                + "Use apply_patch, not a shell command. Then stop.",
+            to: session,
+        )
+        #expect(await live.settle(until: { live.hub.sessions.first?.permission != nil }))
+
+        let raised = try #require(live.hub.sessions.first?.permission)
+        guard case let .edit(path, hunks) = raised.target else {
+            Issue.record("the patch prompt named no file: \(raised.target)")
+            return
+        }
+        #expect(path.hasSuffix("patched.txt"))
+        #expect(!hunks.isEmpty)
+    }
+
+    /// The other half, and the one the spike had to prove separately: a decline refuses that ONE
+    /// action and the thread stays usable. That is what makes Argo's deny-on-timeout safe to
+    /// impose — an expiry is this same `decline`, sent late.
+    ///
+    /// The Turn is not waited on and must not be: a refused agent commonly asks a SECOND time, so
+    /// whether this Turn ends depends on what the model tries next. What is Argo's to assert is
+    /// that the prompt went, the file was never written, and the Session still takes a Turn.
+    @Test(.timeLimit(.minutes(3)))
+    func `a deny refuses the action and leaves the Session usable`() async throws {
+        var live = try LiveCodex()
+        defer { live.remove() }
+        let session = try await live.spawn(mode: .readOnly)
+
+        try live.hub.driver.send(
+            "Create a file named denied.txt in the working directory. Then stop.",
+            to: session,
+        )
+        #expect(await live.settle(until: { live.hub.sessions.first?.permission != nil }))
+        let raised = try #require(live.hub.sessions.first?.permission)
+
+        try live.hub.driver.decide(.deny, answering: raised.id, for: session)
+
+        #expect(await live.settle(until: { live.hub.sessions.first?.permission == nil }))
+        #expect(!live.hasFile("denied.txt"))
+        try live.hub.driver.interrupt(session)
+        #expect(await live.settle(until: { live.thread?.turnID == nil }))
+        try live.hub.driver.send("Reply with the single word: alive", to: session)
+        #expect(await live.settle(until: { live.thread?.turnID != nil }))
+    }
 }
