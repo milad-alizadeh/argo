@@ -55,8 +55,7 @@ struct PermissionChannelTests {
         }
     }
 
-    /// `Auto` is "no boundary, asks nothing" (ADR-0025), and Argo's own gate is part of "nothing":
-    /// the hook still fires and still gets an answer, but nobody is asked for it (#663).
+    /// The top rung asks nothing, Argo's own gate included (ADR-0025, #663).
     @Test
     func `a call on Auto is allowed without anyone being asked`() async throws {
         try await PermissionGate.withGate(on: .auto) { fixture, _, client in
@@ -64,13 +63,13 @@ struct PermissionChannelTests {
 
             let answer = try await PermissionGate.word(read: client)
 
+            let session = try #require(fixture.hub.sessions.first)
             #expect(answer == "allow")
-            #expect(fixture.hub.sessions.first?.permission == nil)
+            #expect(session.permission == nil)
         }
     }
 
-    /// The rung below the top still has an edge, so the gate must go on asking there — without this
-    /// a build that simply stopped gating would pass the test above (#663).
+    /// The rung below the top still has an edge, so the gate goes on asking there (#663).
     @Test
     func `a call on Read Only still asks`() async throws {
         try await PermissionGate.withGate(on: .readOnly) { fixture, _, client in
@@ -81,8 +80,7 @@ struct PermissionChannelTests {
         }
     }
 
-    /// The rung is read at the call and never held from the spawn, which is what makes the walk
-    /// (#653) reach the gate: the same Session asks on `Code` and stops asking once it is moved.
+    /// The rung is read per call, which is what makes a walk (#653) reach the gate.
     @Test
     func `a rung the Session walks to is the one the next call is judged by`() async throws {
         let gate = try GateFixture()

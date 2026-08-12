@@ -227,20 +227,27 @@ CLI ignored.)*
 it. The rung reached the CLI (both sections above), and then Argo's own `PreToolUse` hook asked
 anyway — so the CLI stopped asking on `Auto` and Argo started.
 
-**The hook reaches Argo at `auto`, and the CLI honours what comes back.** Read by rebuilding the
-companion plugin's own hook — the fifo-held `nc -U` of `Companion/Plugin/permission-hook.sh` —
-behind a real Unix socket listener outside the Workspace, then asking a headless 2.1.228 for one
-gated `Bash` call while standing on `auto`:
+**The gate hook runs at `auto`, can dial Argo, and the CLI honours the answer.** Read by rebuilding
+the companion plugin's own hook — the fifo-held `nc -U` of `Companion/Plugin/permission-hook.sh` —
+against a stand-in listener on a Unix socket outside the Workspace, then asking a headless 2.1.228
+for one gated `Bash` call while standing on `auto`:
 
 | What was read | At `auto` |
 |---|---|
-| The `PreToolUse` hook runs at all | yes — payload carries `"permission_mode":"auto"` |
+| The `PreToolUse` hook runs at all | yes — its payload carries `"permission_mode":"auto"` |
 | It can dial a socket outside the Workspace | yes, though `auto` sandboxes the Bash call itself |
 | The `allow` it carries back is honoured | yes — the call ran and the file appeared |
 
-So the two candidate causes the ticket named are settled: **the hook call does reach
-`PermissionChannel`**, and nothing about `auto`'s sandbox stops it. What was missing was only the
-rung, and the gate now reads it.
+The listener was a stand-in and not `PermissionChannel`, so what this establishes is the **path**:
+nothing about `auto` stops the hook reaching a socket Argo could be listening on, which is the only
+version of the sandbox worry that bears on the gate. The rung was what was missing, and the gate
+reads it now.
+
+**The 180 s stall #663 reported is NOT explained by this, and is not closed.** Headless on the same
+binary the same Turn produced an assistant turn and ran the call, so the stall is not inherent to
+the rung. It was seen through the TUI path — a real PTY, folder trust, a live fixture — and only
+`LiveModeTests` covers that. `Auto runs a gated call and never asks` is where it would reappear,
+and it is no longer masked by a `withKnownIssue`.
 
 **"Asks nothing" is answered, not left ungated.** The other shape — install no gate for a Session
 spawned on `Auto` — is simpler and was rejected, because a rung is *walked* mid-Session (#653): a
@@ -251,6 +258,12 @@ on would be a boundary nothing enforces. The gate is installed at every rung and
 takes a closure over the roster and asks it per call, so the reading the gate honours is the one the
 composer draws and a walk counts its distance from. A copy taken at the grant would gate for a
 boundary the Session had already left.
+
+**The rung is filed under the CLAIM at spawn**, because that is the only key that survives the
+re-key to the id the CLI picks — and between the re-key and the first stance record, nothing else
+knows the rung at all. A resume counts its `recordsWhenSet` from the chain it continues rather than
+from zero: from zero the chain's own next record reads as the CLI overruling a flag it honoured,
+which would both misdraw the composer and put the gate on the wrong rung.
 
 **Nothing is published for a call allowed this way.** No Permission is raised, so the cockpit shows
 what it shows for any ungated tool: the Tool Call itself, off the transcript. That is the honest

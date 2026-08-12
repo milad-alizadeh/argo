@@ -19,12 +19,8 @@ extension Hub {
         )
     }
 
-    /// The rung one claim's Session stands on, off the roster — the same reading the composer draws
-    /// and a walk counts its distance from, so the gate cannot honour a rung no surface shows
-    /// (#663).
-    ///
-    /// Through `rowID` rather than the claim's own value: a spawned row is re-keyed to the id its
-    /// CLI picked the moment a record appears, and the rung has to be found on both sides of that.
+    /// The rung one claim's Session stands on, off the roster the surfaces read (#663). Through
+    /// `rowID`, because the row is re-keyed to the id its CLI picks the moment a record appears.
     private func rung(ofClaim claim: SessionOwnership.ClaimID) -> SessionMode? {
         session(id: ownership.rowID(ofClaim: claim.value))?.mode.rung
     }

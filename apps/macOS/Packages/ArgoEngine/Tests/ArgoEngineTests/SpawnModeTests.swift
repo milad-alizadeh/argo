@@ -143,6 +143,27 @@ struct SpawnModeTests {
         #expect(read.mode == .exactly(.readOnly, cli: "plan"))
     }
 
+    /// A resume opens a NEW process on an old chain, so its rung is counted from the records that
+    /// chain has already written. From zero, the Session's own history would read as the CLI
+    /// overruling a flag it had in fact honoured (#663).
+    @Test
+    func `a resumed Session stands on the rung it was resumed on`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        await hubObserveToEnd(fixture.hub, hubTestObservation(
+            id: "session-from-cli",
+            events: [.cwd(fixture.projectURL.path), .mode(cli: "acceptEdits")],
+        ))
+
+        _ = try await fixture.hub.spawnSession(
+            seed: SessionSeed(mode: .auto, resuming: "session-from-cli"),
+        )
+
+        let session = try #require(fixture.hub.session(id: "session-from-cli"))
+        #expect(session.mode == .exactly(.auto, cli: "auto"))
+        #expect(session.modeDidNotTake == nil)
+    }
+
     /// The CLI is the authority the moment it says anything: a stance Argo set and the CLI then
     /// reports differently is the CLI's to state, not Argo's to insist on.
     @Test
@@ -152,8 +173,8 @@ struct SpawnModeTests {
             cli: .claude,
             cwd: "/tmp",
             spawnedAtMs: 0,
-            mode: .plan,
         ))
+        session.modeSet = SessionModeSet(mode: .plan)
 
         session.apply(.mode(cli: "auto"))
 

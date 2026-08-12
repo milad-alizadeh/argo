@@ -49,7 +49,7 @@ public extension Hub {
 
     /// How many stance records a Session has written, read before a walk begins — see
     /// `SessionModeSet` for why the count and not the value.
-    private func observedModeCount(of sessionID: String) -> Int {
+    internal func observedModeCount(of sessionID: String) -> Int {
         session(id: sessionID)?.observedModeCount ?? 0
     }
 

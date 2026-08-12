@@ -25,9 +25,8 @@ final class PermissionChannel {
     /// Written into directly rather than mirrored back through callbacks (#634): all three readings
     /// this channel owns land under one claim key, so there is nothing left for a caller to route.
     private let ledger: ClaimLedger
-    /// Where the Session stands, read at the moment a call arrives rather than held from its
-    /// spawn: a rung is walked mid-Session (#653), and a copy taken at the grant would go on
-    /// gating for a boundary the Session has already left.
+    /// Where the Session stands, asked per call: a rung is walked mid-Session (#653), so a reading
+    /// taken at the grant would be stale by the next one.
     private let rung: (SessionOwnership.ClaimID) -> SessionMode?
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
@@ -178,12 +177,8 @@ final class PermissionChannel {
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
             return reply(PermissionReply.line(.deny))
         }
-        // The top rung is "no boundary, asks nothing" (ADR-0025), and Argo's own gate is part of
-        // "nothing": a Session there is answered rather than shown, or the rung's definition is
-        // false wherever the CLI hands its calls to a hook (#663).
-        //
-        // Answered and not left ungated: the rung is walked mid-Session, so a Session that opens on
-        // `Auto` and is moved down has to find a gate already there to ask through.
+        // The top rung asks nothing, Argo's own gate included (ADR-0025, #663). The gate is still
+        // INSTALLED there, because a Session walked down from it has to find one already open.
         guard rung(claim) != .auto else {
             return reply(PermissionReply.line(.allow))
         }

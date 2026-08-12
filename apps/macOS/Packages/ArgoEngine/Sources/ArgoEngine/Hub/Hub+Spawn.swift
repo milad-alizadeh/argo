@@ -46,12 +46,20 @@ public extension Hub {
                 events: events(for: claim),
             )
             terminals.adopt(claim, process: process)
-            // Filed under the CLAIM as well as on the row, so the rung outlives the re-key to the
-            // id the CLI picks (#663). The row published below stands down at that moment, and
-            // until the first stance record lands it is the only thing that knows the rung — which
-            // the gate reads to decide whether this Session asks at all. A resume publishes no row
-            // at all, so there it is the only place the rung ever lives.
-            claims.setMode(SessionModeSet(mode: mode), for: claim)
+            // Filed under the CLAIM, which is the only key that survives the re-key to the id the
+            // CLI picks — a rung on the row below would be lost with it, and the gate reads this to
+            // decide whether the Session asks at all (#663).
+            //
+            // A resume continues a Session that has already written stance records, so the set is
+            // counted from THAT: from zero, its very next record would read as the CLI overruling
+            // a flag it had in fact honoured.
+            claims.setMode(
+                SessionModeSet(
+                    mode: mode,
+                    recordsWhenSet: seed.resuming.map(observedModeCount(of:)) ?? 0,
+                ),
+                for: claim,
+            )
             // A resume already has its row — the Session it continues — so publishing a second one
             // would draw that Session twice until the CLI wrote a record.
             if seed.resuming == nil {
@@ -60,7 +68,6 @@ public extension Hub {
                     cli: cli,
                     cwd: cwd,
                     spawnedAtMs: Date().epochMs,
-                    mode: mode,
                 )
             }
             return claim

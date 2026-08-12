@@ -33,9 +33,6 @@ struct LiveModeTests {
     /// Both halves together, because either alone passes against a broken build: a gate that
     /// refused everything would raise no prompt, and one that asked at every rung would still let
     /// the file appear once somebody answered.
-    ///
-    /// The known issue this carried until #663 is gone rather than widened — the gate reads the
-    /// Session's rung now, and `Auto` allows without raising a Permission.
     @Test(.timeLimit(.minutes(10)))
     func `Auto runs a gated call and never asks`() async throws {
         let live = try await LiveClaudeFixture.spawned(on: .auto)
