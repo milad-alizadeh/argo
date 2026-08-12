@@ -176,7 +176,7 @@ its approved study are authoritative for the replacement look and feel.
 - **Boundary:** Existing Session header, tabs, Agent selection, single-feed behaviour, density
   navigation, and Dock responsibilities remain intact. This changes their visual composition, not
   their interaction model; it does not reintroduce a Timeline or a second detail feed.
-- **Amendment — the window's top zone is ONE chrome bar — 2026-08-12:** the toolbar band, the
+- **Amendment — the window's top zone is ONE chrome bar — 2026-08-12 (#671):** the toolbar band, the
   Session header and the tab line under it are a single bar, not three surfaces stacked. One
   material runs across all of it and there is exactly one hairline, at the foot. The reading passes
   beneath and blurs through. The zones with a header of their own — the Agents rail and the evidence
