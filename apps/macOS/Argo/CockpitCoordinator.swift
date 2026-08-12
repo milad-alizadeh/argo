@@ -9,12 +9,13 @@ import Observation
 @MainActor
 @Observable
 final class CockpitCoordinator {
-    private(set) var registry = ProjectRegistry.empty
-    private(set) var launch: LaunchProject
+    /// Every act on the strip moves this and nothing else: the transition table is the value's,
+    /// where a test can reach it (#638).
+    private(set) var pointing: CockpitPointing
 
-    /// What the launch resolved to, kept for the window's life: switching away from an unregistered
-    /// launch target must be reversible without a relaunch.
-    private(set) var launchOrigin: LaunchProject?
+    var registry: ProjectRegistry {
+        pointing.registry
+    }
 
     /// What the user said about Sessions, as opposed to what the Hub observed — archived and named.
     /// Per machine and never committed.
@@ -34,7 +35,11 @@ final class CockpitCoordinator {
         self.configuration = configuration
         self.store = store
         self.annotationStore = annotationStore
-        self.launch = .unregistered(configuration.projectURL)
+        self.pointing = CockpitPointing(
+            registry: .empty,
+            launch: .unregistered(configuration.projectURL),
+            launchOrigin: nil,
+        )
         self.hub = Hub(
             projectURL: configuration.projectURL,
             engine: engine,
@@ -58,40 +63,32 @@ final class CockpitCoordinator {
     /// The active Project as a record; `nil` where the window points at an unregistered folder,
     /// which has no record for a Binding to be written into.
     var activeRecord: ProjectRecord? {
-        registry.project(id: launch.id)
+        registry.project(id: pointing.launch.id)
     }
 
     /// Read the registry, THEN point the Hub at whatever the launch resolves to: `--project`
     /// overrides the active Project, which is only knowable once the file has been read.
     func start() async {
-        registry = await store.load()
+        let registry = await store.load()
         annotations = await annotationStore.load()
         let resolved = await launchConfiguration()
-        let origin = LaunchProject.resolve(configuration: resolved, registry: registry)
-        launchOrigin = origin
-        await point(at: origin)
+        await apply(.launched(
+            LaunchProject.resolve(configuration: resolved, registry: registry),
+            reading: registry,
+        ))
     }
 
     /// Switching re-points the Hub, which drops the previous Project's tails, roster, checkout and
     /// connection before the new one establishes anything (#418).
     func select(projectID: String) async {
-        guard projectID != launch.id else { return }
-        if let record = registry.project(id: projectID) {
-            registry = await store.activate(id: record.id).registry
-            await point(at: .registered(record))
-        } else if let origin = launchOrigin, origin.id == projectID {
-            await point(at: origin)
-        }
+        await apply(.selected(id: projectID))
     }
 
     /// Registration takes a folder the user chooses, never one the app infers, and activates it.
     func addProject() async {
         guard let folderURL = chooseFolder(prompt: "Register") else { return }
         let registered = await store.register(at: folderURL)
-        registry = registered.registry
-        guard let record = registered.project else { return }
-        registry = await store.activate(id: record.id).registry
-        await point(at: .registered(record))
+        await apply(.landed(on: registered.project, leaving: registered.registry))
     }
 
     /// Re-point a Project whose folder has moved. Keyed on the id, so everything linked survives.
@@ -100,9 +97,12 @@ final class CockpitCoordinator {
               let folderURL = chooseFolder(prompt: "Locate")
         else { return }
         let relocated = await store.relocate(id: projectID, to: folderURL)
-        registry = relocated.registry
-        guard let record = registry.project(id: projectID) else { return }
-        await point(at: .registered(record))
+        // Asked by id rather than taking the store's record: a relocation refused because another
+        // Project already holds that root answers the OTHER Project, and this one has not moved.
+        await apply(.landed(
+            on: relocated.registry.project(id: projectID),
+            leaving: relocated.registry,
+        ))
     }
 
     /// Removing the Project on screen lands the window on the registry's new active record.
@@ -110,14 +110,7 @@ final class CockpitCoordinator {
     func removeProject(projectID: String) async {
         guard let record = registry.project(id: projectID) else { return }
         let removed = await store.remove(id: projectID)
-        registry = removed.registry
-        guard projectID == launch.id else { return }
-        guard let landing = removed.project else {
-            launch = .unregistered(record.url)
-            await hub.disconnect()
-            return
-        }
-        await point(at: .registered(landing))
+        await apply(.removed(record, leaving: removed.registry))
     }
 
     /// Archive a Session, or put one back. Only ever a gesture on a row; nothing derived from a
@@ -166,15 +159,27 @@ final class CockpitCoordinator {
         )
     }
 
-    /// A named transcript is an override for the launch target it was named with, so it is not
-    /// carried onto a Project the user switched to afterwards.
-    private func point(at project: LaunchProject) async {
-        launch = project
-        let isLaunchTarget = project.url == launchOrigin?.url
-        await hub.connect(to: LaunchConfiguration(
-            projectURL: project.url,
-            transcriptURLs: isLaunchTarget ? configuration.transcriptURLs : [],
-        ))
+    /// Carry out what the act decided: hold the new pointing, persist the one registry write it
+    /// asked for, and tell the Hub. Nothing here chooses — every branch was taken in the value.
+    private func apply(_ act: CockpitPointing.Act) async {
+        let move = pointing.moved(by: act)
+        pointing = move.pointing
+        if let projectID = move.activates {
+            // The store re-reads the file, so its answer carries whatever another window
+            // registered since — which the pointing derived above cannot know about.
+            pointing = await pointing.reading(store.activate(id: projectID).registry)
+        }
+        switch move.hub {
+        case let .connect(url, carryingLaunchTranscripts):
+            await hub.connect(to: LaunchConfiguration(
+                projectURL: url,
+                transcriptURLs: carryingLaunchTranscripts ? configuration.transcriptURLs : [],
+            ))
+        case .disconnect:
+            await hub.disconnect()
+        case .unchanged:
+            break
+        }
     }
 
     private func chooseFolder(prompt: String) -> URL? {

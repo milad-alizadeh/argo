@@ -4,6 +4,38 @@ import ArgoEngine
 /// the state and the view, on this side of the port. It lives here rather than in the app target
 /// so every honesty derivation below is provable in a test.
 public extension CockpitPresentation {
+    /// Where the window points, drawn as the strip. The registered set, and — on a launch pointed
+    /// at a folder nobody registered — that folder at the HEAD of it: `--project` and a bare launch
+    /// both land there, and a strip that drew only the registry would leave the roster on screen
+    /// belonging to no mark at all.
+    ///
+    /// The unregistered mark stays for the window's life, not only while it is active: it is the
+    /// only way back to where the process was pointed.
+    @MainActor
+    init(pointing: CockpitPointing, hub: Hub, annotations: SessionAnnotations = .empty) {
+        let registered = pointing.registry.projects.map {
+            Project(id: $0.id, name: $0.name, location: $0.path, isReachable: $0.isReachable)
+        }
+        var projects = registered
+        if case let .unregistered(url)? = pointing.launchOrigin {
+            projects.insert(
+                Project(
+                    id: url.path,
+                    name: HubProject(url: url).name,
+                    location: url.path,
+                    isRegistered: false,
+                ),
+                at: 0,
+            )
+        }
+        self.init(
+            projects: projects,
+            activeProjectID: pointing.launch.id,
+            hub: hub,
+            annotations: annotations,
+        )
+    }
+
     /// The Projects and the annotations are the app's own state, passed in; everything below is
     /// the Hub's reading of the Project it is pointed at.
     ///

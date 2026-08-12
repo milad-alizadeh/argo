@@ -4,8 +4,8 @@
 # append staged paths without changing what is checked: a boundary is a property of the
 # tree, not of the file you happened to touch.
 #
-# The three edges are ADR-0022's layering, and each is checkable by looking at imports and
-# declarations alone — which is the whole reason they are gates rather than review notes.
+# The four edges are ADR-0022's layering, and each is checkable by looking at imports,
+# declarations and size alone — which is the whole reason they are gates rather than review notes.
 set -eu
 
 APP_DIR="apps/macOS"
@@ -55,6 +55,20 @@ hits=$(grep -rnE '(struct|class|enum) +[A-Za-z0-9_]+ *: *[^{]*\bView\b' "$APP_TA
   --include='*.swift' 2>/dev/null || true)
 if [ -n "$hits" ]; then
   report "the app target declares a View — views belong in ArgoUI, the target owns only the @main scene (ADR-0022)" "$hits"
+fi
+
+# 4. And it stays the scene — the half of edge 3's sentence, "everything with logic in it belongs
+#    in a package", that a grep for `View` does not check (#638). Blank and comment lines are not
+#    counted, so prose that explains a seam is free.
+APP_TARGET_MAX_LINES=600
+lines=$(find "$APP_TARGET" -name '*.swift' -exec cat {} + 2>/dev/null \
+  | grep -cvE '^[[:space:]]*(//.*)?$' || true)
+if [ "$lines" -gt "$APP_TARGET_MAX_LINES" ]; then
+  report "the app target is $lines code lines, over its $APP_TARGET_MAX_LINES cap (ADR-0022)" \
+    "It holds the @main scene, the coordinators' observable boxes, and the AppKit panels that" \
+    "cannot leave it. Everything else is a derivation, and a derivation here is one no test can" \
+    "reach: the e2e suite launches onto --specimen, which never builds CockpitView at all." \
+    "Move the newest derivation into ArgoEngine or ArgoUI with a test, rather than raising this."
 fi
 
 if [ "$failed" -eq 1 ]; then
