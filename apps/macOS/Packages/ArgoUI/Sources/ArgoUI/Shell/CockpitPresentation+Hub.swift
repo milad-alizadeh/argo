@@ -86,6 +86,13 @@ extension CockpitPresentation.Session {
 }
 
 extension CockpitPresentation.Session {
+    /// The engine facts this projection deliberately drops — the reason the cockpit restates
+    /// `HubSession` instead of holding one (ADR-0027). Every other public fact on `HubSession`
+    /// must appear as `session.<name>` below, and `swift-boundaries.sh` edge 5 fails the build
+    /// when a new one appears in neither place.
+    ///
+    /// not-projected: sourceURL liveness convention modeSet headLeafUUID lastActivityAtMs
+    /// not-projected: hasAgentActivity isQueued signals statusReading
     init(observed session: HubSession, annotations: SessionAnnotations) {
         self.init(
             id: session.id,
