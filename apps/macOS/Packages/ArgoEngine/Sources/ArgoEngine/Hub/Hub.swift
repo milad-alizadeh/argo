@@ -65,6 +65,11 @@ public final class Hub {
     /// The PTYs behind those claims. Held for the life of this process, and ended with it.
     let terminals = AgentTerminals()
 
+    /// The Turns typed at those PTYs that the CLI has not yet answered for (#682). Built lazily
+    /// because its three closures read this Hub, and stored because a watch has to outlive the
+    /// `driver` value that started it — `driver` is composed fresh on every read.
+    @ObservationIgnored lazy var delivery = makeDelivery()
+
     /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
     /// spawn reaches the roster in the same update that opened its PTY.
     var spawns: [SessionOwnership.ClaimID: AgentSpawn] = [:]

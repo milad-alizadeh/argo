@@ -23,7 +23,10 @@ enum ClaudeTurn {
     private static let pasteEnd = "\u{1B}[201~"
     /// CR, not LF: Return arrives at a PTY as a carriage return, and a TUI listening for the key
     /// does not hear a line feed.
-    private static let submit = "\r"
+    ///
+    /// Not private, because `TurnDelivery` types it again where the first one was eaten — and one
+    /// spelling of Return must reach the CLI, not two that can drift (#628).
+    static let submit = "\r"
 
     /// What separates the paste from the Return.
     ///

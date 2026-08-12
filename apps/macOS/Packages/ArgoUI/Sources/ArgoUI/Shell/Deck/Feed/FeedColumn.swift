@@ -58,6 +58,7 @@ struct FeedColumn: View {
                 composer: composer,
                 send: intents.send,
                 revoke: intents.revoke,
+                lostTurnSeen: intents.lostTurnSeen,
                 stop: intents.stop,
                 setMode: intents.setMode,
                 draft: intents.draft,

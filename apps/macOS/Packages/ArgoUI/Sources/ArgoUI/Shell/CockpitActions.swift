@@ -42,6 +42,10 @@ public struct CockpitActions {
     /// Give a Session a name of the user's own, or — with `nil` — drop it and let the derived
     /// title come back (#502, stories 18 and 20).
     public let setSessionName: (String, String?) -> Void
+    /// Say the Turn the CLI never heard has been put back in the composer (#682), so the Hub stops
+    /// reporting it. Not on the drive port: nothing is being asked of the Session — this is Argo
+    /// taking back its own news, and the port is what Argo does TO an agent.
+    public let clearLostTurn: (String) -> Void
     /// Hand a full Session's work to a fresh one: run `/handoff` in it, wait for the brief, and
     /// start a Session seeded with it in the same folder and against the same issue (#513).
     ///
@@ -73,6 +77,7 @@ public struct CockpitActions {
         spawnSessionBeside: { _ in nil },
         setSessionArchived: { _, _ in },
         setSessionName: { _, _ in },
+        clearLostTurn: { _ in },
         handOffSession: { _, _ in nil },
         drive: inertDriver,
     )
@@ -99,6 +104,7 @@ public struct CockpitActions {
         spawnSessionBeside: @escaping (String) async -> String? = { _ in nil },
         setSessionArchived: @escaping (String, Bool) -> Void,
         setSessionName: @escaping (String, String?) -> Void,
+        clearLostTurn: @escaping (String) -> Void = { _ in },
         handOffSession: @escaping (String, Int?) async -> String?,
         drive: any SessionDriver,
     ) {
@@ -115,6 +121,7 @@ public struct CockpitActions {
         self.spawnSessionBeside = spawnSessionBeside
         self.setSessionArchived = setSessionArchived
         self.setSessionName = setSessionName
+        self.clearLostTurn = clearLostTurn
         self.handOffSession = handOffSession
         self.drive = drive
     }

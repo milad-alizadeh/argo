@@ -41,6 +41,11 @@ final class ClaimLedger {
         update(claim) { $0.modeSet = modeSet }
     }
 
+    /// A Turn the CLI never heard (#682), or `nil` to take the news back once the composer has it.
+    func setLostTurn(_ text: String?, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.lostTurn = text }
+    }
+
     /// The gate behind this claim is gone, so its three readings go — but the record stays. What
     /// the agent said and the rung Argo set are things that HAPPENED, so an orphaned Session keeps
     /// reading as what it was rather than blanking when its PTY exits.

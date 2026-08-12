@@ -17,6 +17,7 @@ extension CockpitView {
             send: send(to: driven),
             decide: decide(answering: vessel.prompt),
             revoke: revoke,
+            lostTurnSeen: lostTurnSeen(driven),
             stop: stop(driven),
             setMode: setMode(driven),
             spawnBeside: spawnBeside,
@@ -28,6 +29,14 @@ extension CockpitView {
     private func send(to sessionID: String?) -> ComposerSend {
         guard let sessionID else { return { _, _ in } }
         return { try actions.drive.send($0, attaching: $1, to: sessionID) }
+    }
+
+    /// The composer has the lost Turn's words back, so the Hub can stop reporting it (#682). Bound
+    /// the way `send` is, and inert with nothing selected — which is also the state with no field
+    /// to have put anything back into.
+    private func lostTurnSeen(_ sessionID: String?) -> () -> Void {
+        guard let sessionID else { return {} }
+        return { actions.clearLostTurn(sessionID) }
     }
 
     /// Stopping the Turn that Session is running (#541), bound the way `send` is.

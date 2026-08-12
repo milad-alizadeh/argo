@@ -148,6 +148,32 @@ struct ComposerDraft: Equatable {
         notice = (error as? SessionDriveError)?.detail ?? error.localizedDescription
     }
 
+    /// A Turn the CLI never heard, come back to the field it was typed in (#682).
+    ///
+    /// Given the outcome rather than the act, for the reason `modeAsked(refusedWith:)` is: the news
+    /// arrives seconds after the send returned, and a `mutating` method cannot hold a draft open
+    /// across that wait.
+    ///
+    /// The words go back only into a field the reader has not started using again — otherwise this
+    /// would type over a sentence they are in the middle of, which is the one thing decision 8
+    /// rules out. Where they are typing, the notice alone says the Turn is gone, and the words are
+    /// theirs to send again.
+    ///
+    /// `true` when the news has been taken in, which is what spends it: reported twice, a reader
+    /// would put the same Turn back twice.
+    mutating func turnLost(_ text: String) -> Bool {
+        guard notice != Self.lost else { return false }
+        notice = Self.lost
+        guard !isSendable else { return true }
+        self.text = text
+        return true
+    }
+
+    /// What the seam says about a Turn the CLI never heard. It does not offer a Retry: the words
+    /// are back in the field where Send is, and a second button for the same act would be a second
+    /// answer to "how do I send this".
+    static let lost = "The agent never received that message — your words are back below"
+
     /// Take one waiting follow-up back — the chip's `×`. By id and never by text: two identical
     /// follow-ups are two things.
     mutating func cancel(_ turn: QueuedTurn.ID) {

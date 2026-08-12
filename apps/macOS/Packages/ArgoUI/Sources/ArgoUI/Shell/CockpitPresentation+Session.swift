@@ -133,6 +133,10 @@ public extension CockpitPresentation {
         /// reading (#629). `mode` above has already snapped to the real rung, so this is the only
         /// thing that can say why the control moved without the user touching it.
         public let modeDidNotTake: SessionMode?
+        /// The last Turn typed at this Session that the CLI never heard, verbatim (#682), and
+        /// `nil` for every Turn that arrived. The composer cleared when the keystrokes were
+        /// written, so this is the only thing that can put the words back.
+        public let lostTurn: String?
         /// Everything the Session's transcript said, in order — the feed's whole input. The
         /// engine's own events, undigested; `FeedProjection` is what draws them.
         public let events: [TranscriptEvent]
@@ -161,6 +165,7 @@ public extension CockpitPresentation {
             expiredPermissions: [PermissionExpiry] = [],
             mode: SessionModeReading = .unknown(cli: nil),
             modeDidNotTake: SessionMode? = nil,
+            lostTurn: String? = nil,
             events: [TranscriptEvent] = [],
         ) {
             self.id = id
@@ -186,6 +191,7 @@ public extension CockpitPresentation {
             self.expiredPermissions = expiredPermissions
             self.mode = mode
             self.modeDidNotTake = modeDidNotTake
+            self.lostTurn = lostTurn
             self.events = events
         }
     }

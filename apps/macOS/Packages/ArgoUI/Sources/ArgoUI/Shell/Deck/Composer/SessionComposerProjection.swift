@@ -27,6 +27,10 @@ enum SessionComposerProjection {
         /// `mode` above is already back on the real rung — a picker showing a rung nobody is
         /// standing on would be a false DIRECT.
         let modeDidNotTake: SessionMode?
+        /// The last Turn the CLI never heard, verbatim (#682). The field cleared when Argo typed
+        /// it, so this is what puts the words back — and it is the words themselves rather than a
+        /// flag, because a reader told their message was lost and not shown it has lost it.
+        let lostTurn: String?
         /// Whether this Session's adapter takes attachments (#540). It comes IN rather than being
         /// derived from anything observed: a capability is a thing the adapter declares about
         /// itself, and the Hub's presentation has never heard of the drive port. `false` draws no
@@ -55,6 +59,7 @@ enum SessionComposerProjection {
             isRunning: isRunning,
             mode: session.mode,
             modeDidNotTake: session.modeDidNotTake,
+            lostTurn: session.lostTurn,
             canAttach: canAttach,
         )
     }

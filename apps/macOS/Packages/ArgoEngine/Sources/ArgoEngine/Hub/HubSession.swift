@@ -48,6 +48,13 @@ public struct HubSession: Equatable, Identifiable, Sendable {
     /// The rung Argo ITSELF put this Session on — off the spawn, or off a later set. The only
     /// place Plan can come from: the CLI reports Read Only's boundary for both (ADR-0025).
     public internal(set) var modeSet: SessionModeSet?
+    /// The last Turn typed at this Session that the CLI never heard (#682), verbatim.
+    ///
+    /// A Turn is submitted by a Return the file-mention popup can eat, and the composer clears on
+    /// the keystroke having been WRITTEN. This is the later news that it was never read, so the
+    /// words can go back where they were typed instead of being lost to a send that only looked
+    /// like one.
+    public internal(set) var lostTurn: String?
     /// The CLI's own word for the stance, latest reading and nothing yet where no record said one.
     private(set) var observedMode: String?
     /// How many stance records the Session has written. A rung Argo set stands until this moves

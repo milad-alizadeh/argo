@@ -165,6 +165,7 @@ struct ArgoApp: App {
             setSessionName: { id, name in
                 Task { await cockpit.setName(name, sessionID: id) }
             },
+            clearLostTurn: { id in cockpit.hub.clearLostTurn(for: id) },
             handOffSession: { id, issue in await cockpit.handOff(sessionID: id, issue: issue) },
             drive: cockpit.hub.driver,
         )
