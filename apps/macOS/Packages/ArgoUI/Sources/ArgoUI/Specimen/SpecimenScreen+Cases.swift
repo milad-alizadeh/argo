@@ -88,9 +88,7 @@ extension SpecimenScreen {
         step: Int? = nil,
         lit: FeedShot? = nil,
         held: FeedRow.ID? = nil,
-        composer: SessionComposerProjection.Composer? = nil,
-        prompt: PermissionPromptProjection.Prompt? = nil,
-        unavailable: SessionComposerProjection.Unavailable? = nil,
+        vessel: DeckVessel = .none,
         access: CockpitPresentation.Session.Access = .managed,
     )
         -> some View {
@@ -101,16 +99,14 @@ extension SpecimenScreen {
             feed: feed,
             // A prompt in the composer's slot IS the Session's status, so the band above it is read
             // off the same fact rather than named per case.
-            header: prompt == nil
+            header: vessel.prompt == nil
                 ? SessionHeaderFixture.header(for: access)
                 : SessionHeaderFixture.needsInput,
             open: open,
             step: step,
             lit: lit,
             held: held,
-            composer: composer,
-            unavailable: unavailable,
-            prompt: prompt,
+            vessel: vessel,
         )
     }
 }

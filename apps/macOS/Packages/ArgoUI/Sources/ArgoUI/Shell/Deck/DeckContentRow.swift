@@ -11,24 +11,11 @@ struct DeckContentRow: View {
     let showing: PlanShowing
     let selection: FeedRowSelection
     var held: FeedRow.ID?
-    /// Absent for a Session Argo cannot drive — the absence is the honest state, not a disabled
-    /// field (design decision 7).
-    var composer: SessionComposerProjection.Composer?
-    /// One Turn to the shown Session; refusals are thrown back and the composer's seam repeats
-    /// them.
-    var send: ComposerSend = { _, _ in }
-    /// The Permission the shown Session is blocked on — it takes the composer's slot.
-    var prompt: PermissionPromptProjection.Prompt?
-    var decide: (PermissionDecision) -> Void = { _ in }
-    /// Taking back one of the Session's standing allows, by tool (#572).
-    var revoke: (String) -> Void = { _ in }
-    /// Stopping the Turn in flight (#541); a Session blocked on a Permission has nothing to stop.
-    var stop: () throws -> Void = {}
-    /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.
-    var setMode: (SessionMode) throws -> Void = { _ in }
-    /// From above the Session identity so it survives a switch (#539). See
-    /// `InstrumentDeckShell.draft`.
-    var draft: Binding<ComposerDraft> = .constant(ComposerDraft())
+    /// What is in the slot below the reading — see `DeckVessel`. The undriveable line is not drawn
+    /// here: it replaces the reading's end rather than floating over it, so `SessionsDeck` owns it.
+    var vessel = DeckVessel.none
+    /// What that vessel's controls do.
+    var intents = DeckIntents.inert
     let seams: DeckSeams
     /// One flag for both seams — only one of them can be dragged at a time.
     @State private var isResizing = false
@@ -38,13 +25,15 @@ struct DeckContentRow: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let zoning = zoning(in: proxy.size.width)
+
             HStack(spacing: ArgoSpacing.flush) {
-                if showsRail {
-                    AgentsRail(agents: agents)
+                if zoning.showsRail {
+                    AgentsRail(agents: zoning.agents)
                         .frame(width: seams.rail.wrappedValue)
                     DeckSeam(
                         width: seams.rail,
-                        limits: railLimits(in: proxy.size.width),
+                        limits: zoning.railLimits,
                         growsRightward: true,
                         isDragging: { isResizing = $0 },
                     )
@@ -54,30 +43,24 @@ struct DeckContentRow: View {
                     showing: showing,
                     selection: selection,
                     held: held,
-                    composer: composer,
-                    send: send,
-                    prompt: prompt,
-                    decide: decide,
-                    revoke: revoke,
-                    stop: stop,
-                    setMode: setMode,
-                    draft: draft,
+                    vessel: vessel,
+                    intents: intents,
                     table: table,
                 )
-                if !isPanelOpen {
+                if !zoning.isPanelOpen {
                     DeckSeparator()
                         .transition(.opacity)
                     MinimapLane(feed: table)
                         .frame(width: ArgoLayout.minimapLaneWidth)
                         .transition(.opacity)
                 }
-                panel(in: proxy.size.width)
+                panel(zoning)
             }
             // One transaction for the whole re-flow: three zones move on the one fact — the panel
             // arrives, the rail and the minimap leave — so animating only the panel slides it in
             // beside two columns that already blinked out. Scoped to the value rather than ambient
             // so a feed growing underneath is still laid out instantly.
-            .argoAnimation(.reveal, value: isPanelOpen)
+            .argoAnimation(.reveal, value: zoning.isPanelOpen)
             // Answers here rather than on the panel: the click that opened it came from the feed,
             // so that is where focus still is.
             .onExitCommand(perform: dismissTopmost)
@@ -85,19 +68,8 @@ struct DeckContentRow: View {
         }
     }
 
-    /// On screen only while subagents are running, and never beside the panel.
-    private var showsRail: Bool {
-        !isPanelOpen && agents.contains(where: \.isRunning)
-    }
-
-    /// A `Bool` rather than the evidence itself: the evidence is re-read out of a live feed every
-    /// time the transcript grows, and an animation keyed to it would re-run the whole re-flow.
-    private var isPanelOpen: Bool {
-        openEvidence != nil
-    }
-
-    private var agents: [FeedAgent] {
-        FeedAgents.all(in: feed)
+    private func zoning(in deck: CGFloat) -> DeckZoning {
+        DeckZoning(deck: deck, feed: feed, open: selection.open, seams: seams)
     }
 
     /// Dismisses whatever is over what the reader was reading, innermost first. Answered here as
@@ -114,12 +86,12 @@ struct DeckContentRow: View {
     /// The panel and the edge that sizes it, stacked as ONE thing that arrives: `.move` travels a
     /// view by its OWN width, and the hairline seam carrying the transition alone would move about
     /// a point. Stacked, the pair travels the panel's width.
-    @ViewBuilder private func panel(in deck: CGFloat) -> some View {
-        if let evidence = openEvidence {
+    @ViewBuilder private func panel(_ zoning: DeckZoning) -> some View {
+        if let evidence = zoning.openEvidence {
             HStack(spacing: ArgoSpacing.flush) {
                 DeckSeam(
-                    width: panelBinding(in: deck),
-                    limits: ArgoLayout.evidencePanelLimits(in: deck),
+                    width: zoning.panelWidth,
+                    limits: zoning.panelLimits,
                     growsRightward: false,
                     isDragging: { isResizing = $0 },
                 )
@@ -128,48 +100,11 @@ struct DeckContentRow: View {
                     current: selection.step,
                     dismiss: selection.close,
                 )
-                .frame(width: panelBinding(in: deck).wrappedValue)
+                .frame(width: zoning.panelWidth.wrappedValue)
                 .focusable()
                 .focused(selection.focus, equals: .panel)
             }
             .transition(.move(edge: .trailing))
-        }
-    }
-
-    /// The panel's width, defaulting to its share of the WHOLE deck — the rail and the minimap are
-    /// both shut while it is open. Seated on a whole point, the opening width included
-    /// (`ArgoLayout.seated`).
-    private func panelBinding(in deck: CGFloat) -> Binding<CGFloat> {
-        let limits = ArgoLayout.evidencePanelLimits(in: deck)
-        let opening = deck * ArgoLayout.evidencePanelShare
-        return Binding(
-            get: { ArgoLayout.seated(seams.panel.wrappedValue ?? opening, in: limits) },
-            set: { seams.panel.wrappedValue = $0 },
-        )
-    }
-
-    private func railLimits(in deck: CGFloat) -> ClosedRange<CGFloat> {
-        let taken = ArgoLayout.minimapLaneWidth + ArgoLayout.feedMinimumWidth
-        let ceiling = min(ArgoLayout.railWidths.upperBound, deck - taken)
-        let floor = ArgoLayout.railWidths.lowerBound
-        return floor ... max(floor, ceiling)
-    }
-
-    /// The open row's evidence, resolved against the CURRENT feed rather than remembered — a live
-    /// transcript grows under the panel.
-    private var openEvidence: FeedEvidence? {
-        guard let open = selection.open,
-              let content = feed.first(where: { $0.id == open })?.content
-        else {
-            return nil
-        }
-        return switch content {
-        case let .call(call): call.opened
-        case let .survey(survey): survey.opened
-        // A row that cannot be clicked into the panel cannot be the open one, so these arms are
-        // unreachable — cases rather than a `default` so a new row kind that CAN open fails this
-        // build instead of silently resolving to a closed panel.
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: nil
         }
     }
 }

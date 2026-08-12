@@ -24,16 +24,8 @@ struct FeedRow: Identifiable, Equatable, Sendable {
 
         /// Whether this row is a call the record has not answered yet — the one the ion crosses.
         /// Asked by the projection, which draws the working thread only where no row is lit.
-        ///
-        /// A folded run counts: `FeedCallRun` keeps the run pending while any call in it is, so a
-        /// row standing for three edits is in flight exactly when its last edit is.
         var isCallInFlight: Bool {
-            switch self {
-            case let .call(call): call.ending == .pending
-            // A survey and a gallery are counts rather than lines, and neither draws an ion. A
-            // pending call folded into one is not a lit row, so the thread is what stands over it.
-            case .prompt, .message, .thought, .survey, .gallery, .ask, .mark, .unreadable: false
-            }
+            traits.isCallInFlight
         }
     }
 
@@ -46,50 +38,28 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     /// Whether this row is a piece of work rather than a piece of prose. Asked by the feed's own
     /// spacing and by the render that shows the calls alone.
     var isCall: Bool {
-        switch content {
-        case .call, .survey, .gallery: true
-        // A question, a mark and an unreadable line want the full step prose gets, not the tighter
-        // one that welds a run of work together.
-        case .prompt, .message, .thought, .ask, .mark, .unreadable: false
-        }
+        content.traits.isCall
     }
 
     /// Whether this row is something somebody SAID — neither the work nor the punctuation around
     /// it. Asked by the render that shows the reading with the work taken out.
     var isProse: Bool {
-        switch content {
-        case .prompt, .message, .thought: true
-        case .call, .survey, .gallery, .ask, .mark, .unreadable: false
-        }
+        content.traits.isProse
     }
 
-    /// Whether this row is something the AGENT said. Narrower than `isProse` — asked by the count
-    /// on the way-back control. A thought is deliberately not one: a Turn's final message routinely
-    /// contradicts its own reasoning, so counting both promises two things where the agent said
-    /// one.
+    /// Whether this row is something the AGENT said. Asked by the count on the way-back control.
     var isMessage: Bool {
-        switch content {
-        case .message: true
-        case .prompt, .thought, .call, .survey, .gallery, .ask, .mark, .unreadable: false
-        }
+        content.traits.isMessage
     }
 
     /// Whether this row is something the USER asked for. Asked by the accent wash that marks a
     /// just-sent Turn's echo.
     var isPrompt: Bool {
-        switch content {
-        case .prompt: true
-        case .message, .thought, .call, .survey, .gallery, .ask, .mark, .unreadable: false
-        }
+        content.traits.isPrompt
     }
 
-    /// Whether this row has anything for the evidence panel to show. One rule for pointer and
-    /// keyboard: a row that draws no disclosure marker must not open on Return either.
+    /// Whether this row has anything for the evidence panel to show.
     var opensEvidence: Bool {
-        switch content {
-        case let .call(call): call.disclosure == .available
-        case let .survey(survey): survey.disclosure == .available
-        case .prompt, .message, .thought, .gallery, .ask, .mark, .unreadable: false
-        }
+        content.traits.opensEvidence
     }
 }
