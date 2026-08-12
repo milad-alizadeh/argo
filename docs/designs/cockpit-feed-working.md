@@ -202,7 +202,8 @@ Three things learned in exploration that no PNG carries.
    from elapsed time and token count, not from the animation. The rejected variants H, I and K all
    carried a clock; **J does not**, so the feed now has no reading of how long a Turn has run.
    That fact needs a home in the Session header or the roster row. It is not in this design and it
-   is not an oversight — it is the open question this one leaves.
+   is not an oversight — it was the open question this one left, and #618 settled it in the
+   roster row: [`cockpit-roster-turn-clock.md`](cockpit-roster-turn-clock.md).
 
 ## Frozen names
 
