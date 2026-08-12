@@ -23,6 +23,9 @@ final class CodexThread {
     }
 
     let cwd: String
+    /// The Permissions this Session raises (#549). Held rather than reached for, because an
+    /// approval and the Turn it belongs to arrive down the same pipe and end with the same process.
+    let approvals: CodexApprovals
     private let write: @MainActor (String) -> Bool
     private(set) var stance: CodexStance
     private(set) var stage = Stage.handshaking
@@ -40,9 +43,15 @@ final class CodexThread {
     /// bytes reach the model with the Turn instead of when a tool goes and reads them.
     private var pendingImages: [URL] = []
 
-    init(cwd: String, mode: SessionMode, write: @escaping @MainActor (String) -> Bool) {
+    init(
+        cwd: String,
+        mode: SessionMode,
+        approvals: CodexApprovals,
+        write: @escaping @MainActor (String) -> Bool,
+    ) {
         self.cwd = cwd
         self.stance = CodexStance.of(mode)
+        self.approvals = approvals
         self.write = write
     }
 

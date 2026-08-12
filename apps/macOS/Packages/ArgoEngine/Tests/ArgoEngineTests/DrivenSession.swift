@@ -28,6 +28,8 @@ struct DrivenSession {
     let turns: () -> [String]
     /// End the process behind it, the way its host reports one going.
     let end: () -> Void
+    /// The Permission half: one gated call raised on the agent's side, and its answer (#549).
+    let gate: DrivenGate
 }
 
 @MainActor
@@ -43,16 +45,23 @@ extension SpawnFixture {
     private func driveClaude() async throws -> DrivenSession {
         let claim = try await hub.spawnSession(cli: .claude)
         let process = try started()
+        let hook = ClaudeHook(self, claim)
         return DrivenSession(
             id: claim.value,
             turns: { Self.pastes(in: process.written.joined()) },
             end: { process.end(exitCode: 0) },
+            gate: DrivenGate(
+                raise: hook.raise,
+                allowed: hook.allowed,
+                close: hook.close,
+            ),
         )
     }
 
     private func driveCodex() async throws -> DrivenSession {
         let session = try await openCodexSession()
         let process = try started()
+        let peer = CodexApprovalPeer(server: session.server)
         return DrivenSession(
             id: session.id,
             turns: {
@@ -61,6 +70,12 @@ extension SpawnFixture {
                 }
             },
             end: { process.end(exitCode: 0) },
+            gate: DrivenGate(
+                raise: peer.raise,
+                allowed: peer.allowed,
+                // There is no socket to give back: the gate rides on the pipes the process owns.
+                close: {},
+            ),
         )
     }
 

@@ -21,6 +21,14 @@ struct SessionAdapters: SessionDriver {
         claude.canAttach && codex.canAttach
     }
 
+    /// What BOTH adapters do, which is the only thing a port with no Session may say — and here the
+    /// two disagree, so it is `false` while a Codex Session is reachable at all (#685). The picker
+    /// this gates is not built yet; when it is, this is the reading that has to become per-Session,
+    /// for exactly the reason `canAttach` above names.
+    var canRunCommands: Bool {
+        claude.canRunCommands && codex.canRunCommands
+    }
+
     func send(_ text: String, to sessionID: String) throws {
         try adapter(for: sessionID).send(text, to: sessionID)
     }
