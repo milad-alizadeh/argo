@@ -21,8 +21,7 @@ extension MinimapRow {
 private extension FeedRow.Content {
     var shape: MinimapRowShape {
         switch self {
-        // The one row that is a SHAPE in the feed rather than lines of text: a filled bubble on the
-        // trailing edge. Drawn here the way it is read there.
+        // The prompt's lines, held against the trailing edge its bubble is drawn on.
         case let .prompt(text): .bubble(length: text.utf8.count)
         case let .message(text): .prose(length: text.utf8.count, ink: .message)
         case let .thought(text): .prose(length: text.utf8.count, ink: .thought)

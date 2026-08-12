@@ -9,7 +9,7 @@ import Foundation
 enum MinimapRowShape: Equatable, Sendable {
     /// Lines of text against the leading edge, each as full as the words that landed on it.
     case prose(length: Int, ink: FeedInk)
-    /// The prompt's bubble, against the trailing edge, as one block.
+    /// The prompt's lines, against the trailing edge, each as full as the words that landed on it.
     case bubble(length: Int)
     /// One line, as far across as the sentence got.
     case sentence(length: Int, ink: FeedInk)

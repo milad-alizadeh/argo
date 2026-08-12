@@ -50,10 +50,10 @@ struct MinimapRowTests {
         #expect(Self.shape(.thought("reasoned")) == .prose(length: 8, ink: .thought))
     }
 
-    /// The one row the feed draws as a shape rather than as lines of text: a filled bubble on the
-    /// trailing edge.
+    /// A prompt keeps its own shape, because its lines anchor on the trailing edge where its
+    /// bubble is drawn, not the leading edge prose runs from.
     @Test
-    func `a prompt is a bubble rather than lines of text`() {
+    func `a prompt is a bubble rather than prose`() {
         #expect(Self.shape(.prompt("Fix the seam")) == .bubble(length: 12))
     }
 
