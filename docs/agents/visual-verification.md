@@ -12,7 +12,8 @@ looking at a surface you are building.
 **Render one state in isolation** — the right one. From `apps/macOS`:
 `ARGO_SPECIMEN=<case> sh scripts/screenshot.sh out.png`, or `--specimen <case>`;
 `sh scripts/specimens.sh <dir> [name …]` for the set, and `ARGO_WINDOW_SIZE=<w>x<h>` when a
-width is part of the state. Cases live in `ArgoUI/Specimen/SpecimenCatalog.swift`.
+width is part of the state. Entries live in `ArgoUI/Specimen/SpecimenRegistry+*.swift`, and
+`Argo --list-specimens` prints every name.
 
 **Drive it like a user** — `sh scripts/e2e-test.sh`, also from `apps/macOS`. The only tests here
 that click; every other Swift test builds a projection and asserts on it.
@@ -29,10 +30,10 @@ process's window. Without it the PNG is blank rather than an error.
 
 ## Specimens — one state in isolation
 
-`ArgoUI/Specimen/SpecimenCatalog.swift` holds a `Specimen` case per renderable state.
-Adding a case is all it takes to add a state: `scripts/specimens.sh` reads the names out of
-the catalog rather than repeating them. Both scripts live under `apps/macOS/scripts/` and are
-run from `apps/macOS`.
+`ArgoUI/Specimen/SpecimenRegistry+*.swift` holds a `SpecimenEntry` per renderable state, in the
+file for its subject. Adding an entry is all it takes to add a state: `scripts/specimens.sh` asks
+the app for the names with `--list-specimens` rather than repeating them or parsing Swift source.
+Both scripts live under `apps/macOS/scripts/` and are run from `apps/macOS`.
 
 A width is part of the state for anything laid out in columns, which is why
 `ARGO_WINDOW_SIZE=<w>x<h>` exists — the narrow case is then a render somebody else can

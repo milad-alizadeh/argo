@@ -49,4 +49,28 @@ struct LaunchConfigurationTests {
         #expect(configuration.projectOverrideURL == nil)
         #expect(configuration.launchDirectoryURL.path == "/tmp/argo")
     }
+
+    /// The flag takes no value, and `specimens.sh` passes it LAST — where a parser reading the
+    /// next argument for every flag would never see it at all.
+    @Test
+    func `the list flag is read at the end of the arguments`() {
+        let configuration = LaunchConfiguration(
+            arguments: ["Argo", "--project", "/tmp/argo", "--list-specimens"],
+            currentDirectoryURL: URL(fileURLWithPath: "/tmp"),
+        )
+
+        #expect(configuration.listsSpecimens)
+        #expect(configuration.projectURL.path == "/tmp/argo")
+    }
+
+    @Test
+    func `an ordinary launch does not ask for the list`() {
+        let configuration = LaunchConfiguration(
+            arguments: ["Argo", "--specimen", "feedCalls"],
+            currentDirectoryURL: URL(fileURLWithPath: "/tmp/argo"),
+        )
+
+        #expect(!configuration.listsSpecimens)
+        #expect(configuration.specimenName == "feedCalls")
+    }
 }

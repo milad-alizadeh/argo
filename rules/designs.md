@@ -45,9 +45,9 @@ exempt from it because they are, respectively, the contract and the thing that s
 
 ## A state is settled by rendering it
 
-`ArgoUI/Specimen/SpecimenCatalog.swift` holds one `Specimen` case per renderable state.
-**Adding a case is all it takes to add a state** — `scripts/specimens.sh` reads the names out
-of the catalog rather than repeating them:
+`ArgoUI/Specimen/SpecimenRegistry+*.swift` holds one `SpecimenEntry` per renderable state, in the
+file for its subject. **Adding an entry is all it takes to add a state** — `scripts/specimens.sh`
+asks the app for the names rather than repeating them:
 
 ```sh
 cd apps/macOS
@@ -82,7 +82,7 @@ A big screen ships region by region over many tickets, so a brief is authoritati
 not built yet and stale for what is:
 
 - **not built** — the brief is truth. A design change means editing the brief.
-- **built** — the code and its specimen case are truth. A decision made while implementing
+- **built** — the code and its specimen entry are truth. A decision made while implementing
   lands in the code with its reason at the value, and the brief's corresponding passage is
   allowed to go stale.
 

@@ -9,7 +9,8 @@ import Foundation
 /// claim each carries is that the chip says which thing broke and what, if anything, to press.
 enum ConnectionHealthSpecimen {
     struct State {
-        let specimen: Specimen
+        /// The name this level renders under, so the chip and the PNG naming it are one value.
+        let name: String
         let reading: ConnectionHealthReading
     }
 
@@ -31,14 +32,14 @@ enum ConnectionHealthSpecimen {
     private static let lastSuccess = Date().addingTimeInterval(-4 * 60)
 
     static let states: [State] = [
-        State(specimen: .connectionStale, reading: ConnectionHealthReading(connections: [
+        State(name: "connectionStale", reading: ConnectionHealthReading(connections: [
             PortConnection(
                 port: .workItem,
                 account: work,
                 health: BindingHealth(fault: .read(.offline), lastSuccess: lastSuccess),
             ),
         ])),
-        State(specimen: .connectionsStale, reading: ConnectionHealthReading(connections: [
+        State(name: "connectionsStale", reading: ConnectionHealthReading(connections: [
             PortConnection(
                 port: .workItem,
                 account: work,
@@ -50,7 +51,7 @@ enum ConnectionHealthSpecimen {
                 health: BindingHealth(fault: .read(.rateLimited), lastSuccess: lastSuccess),
             ),
         ])),
-        State(specimen: .connectionNeedsReconnect, reading: ConnectionHealthReading(connections: [
+        State(name: "connectionNeedsReconnect", reading: ConnectionHealthReading(connections: [
             PortConnection(
                 port: .workItem,
                 account: work,
