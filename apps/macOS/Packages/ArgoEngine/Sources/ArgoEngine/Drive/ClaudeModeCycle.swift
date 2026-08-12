@@ -15,21 +15,9 @@ enum ClaudeModeCycle {
     /// with room for a machine under load.
     static let gap = Duration.milliseconds(50)
 
-    /// How many back-tabs walk a Session from where it stands to `target`, and `nil` for a stance
-    /// the ring does not hold. Zero is a real answer: the Session is already there.
-    static func steps(from observed: String, to target: SessionMode) -> Int? {
-        ClaudePermissionMode.cycles(from: observed, to: target)
-    }
-
-    /// The wait between two back-tabs.
-    ///
-    /// Yielding rather than sleeping, for the reason `LiveClaudeFixture.settle` is: the permission
-    /// gate's socket is read by a dispatch source on the main queue, and a walk that sleeps leaves
-    /// that queue unserviced for as long as it lasts.
-    static func pace(_ duration: Duration = gap) async {
-        let deadline = ContinuousClock.now + duration
-        while ContinuousClock.now < deadline {
-            await Task.yield()
-        }
+    /// The wait between two back-tabs. It suspends rather than spins: the main queue goes on being
+    /// serviced, which is what the permission gate's own socket is read on.
+    static func pace() async {
+        try? await Task.sleep(for: gap)
     }
 }

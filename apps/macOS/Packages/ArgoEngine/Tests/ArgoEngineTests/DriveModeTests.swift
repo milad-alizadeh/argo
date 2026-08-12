@@ -49,6 +49,43 @@ struct DriveModeTests {
         #expect(fixture.host.started.last?.written == ["\u{1B}[Z", "\u{1B}[Z"])
     }
 
+    /// The walk takes time now, so a second pick can arrive in the middle of one. Counted from the
+    /// stance the first walk has already left, it would interleave its keystrokes with that walk
+    /// and land the Session on a rung nobody picked — the failure `modeBusy` prevents mid-Turn.
+    @Test
+    func `a rung asked for mid-walk is refused rather than interleaved`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        let first = Task { try await fixture.hub.driver.setMode(.auto, for: claim.value) }
+        // A keystroke written is the walk begun, and the gap behind it is the window under test.
+        // Waiting on that rather than on a duration, so the claim holds on a slow machine too.
+        while fixture.host.started.last?.written.isEmpty != false {
+            await Task.yield()
+        }
+        await #expect(throws: SessionDriveError.modeWalking) {
+            try await fixture.hub.driver.setMode(.readOnly, for: claim.value)
+        }
+        try await first.value
+
+        // `acceptEdits → auto` and nothing else: the refused walk wrote no keystroke of its own.
+        #expect(fixture.host.started.last?.written == ["\u{1B}[Z", "\u{1B}[Z"])
+    }
+
+    /// A walk that ended releases the Session, or one refusal would freeze the rung for good.
+    @Test
+    func `a rung can be asked for again once the walk has ended`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession(seed: SessionSeed(mode: .code))
+
+        try await fixture.hub.driver.setMode(.auto, for: claim.value)
+        try await fixture.hub.driver.setMode(.readOnly, for: claim.value)
+
+        #expect(fixture.host.started.last?.written.count == 5)
+    }
+
     /// A value with no place on the ring — `dontAsk`, whose boundary Argo cannot see — leaves no
     /// honest count of keystrokes, so nothing is sent. Guessing would walk the ring from a point
     /// Argo does not know it is standing on.

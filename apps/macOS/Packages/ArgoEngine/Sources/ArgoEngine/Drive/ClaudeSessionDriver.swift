@@ -77,9 +77,12 @@ struct ClaudeSessionDriver: SessionDriver {
         let standing = stance(sessionID)
         guard !standing.isRunning else { throw SessionDriveError.modeBusy }
         guard let observed = standing.mode.cliValue,
-              let steps = ClaudeModeCycle.steps(from: observed, to: mode)
+              let steps = ClaudePermissionMode.cycles(from: observed, to: mode)
         else { throw SessionDriveError.modeUnreachable }
-        // Already there. Walking the whole ring round would be a no-op that passed through `Auto`.
+        // A second walk would count from a stance the first has already left, so it is refused for
+        // the reason a mid-Turn change is: the rung it landed on would be nobody's choice.
+        guard terminals.beginWalk(on: claim) else { throw SessionDriveError.modeWalking }
+        defer { terminals.endWalk(on: claim) }
         for _ in 0 ..< steps {
             guard terminals.write(ClaudeModeCycle.keystroke, to: claim) else {
                 throw SessionDriveError.notDrivable

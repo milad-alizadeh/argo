@@ -113,6 +113,10 @@ public enum SessionDriveError: Error, Equatable {
     /// `Auto` among them, which is nothing at an idle prompt and a widened boundary while a tool
     /// call is in flight.
     case modeBusy
+    /// A rung was asked for while a walk was still under way (#653). The ring is stepped one
+    /// keystroke at a time, so a second walk would count its distance from a stance the first has
+    /// already left and interleave its keystrokes — landing the Session on a rung nobody picked.
+    case modeWalking
     /// An attachment could not be written down, so no path could be named. The message stays where
     /// it was typed and the chips stay where they were, for the reason a refused send does: what
     /// failed is Argo's own act, and nothing about the Turn has happened yet.
@@ -127,6 +131,7 @@ public enum SessionDriveError: Error, Equatable {
         case .noSuchGrant: "This Session holds no standing allow for that tool"
         case .modeUnreachable: "Argo cannot say which rung this Session is on — Mode is unchanged"
         case .modeBusy: "The Mode stays where it is while a Turn is running — stop it first"
+        case .modeWalking: "A Mode change is already under way on this Session"
         case .cannotAttach:
             "This adapter takes no attachments — dropped files are refused rather than "
                 + "silently dropped."

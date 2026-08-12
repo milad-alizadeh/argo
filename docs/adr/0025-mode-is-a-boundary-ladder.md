@@ -195,6 +195,12 @@ lets the snap-back exist at all. The walk lands now (#653), so the snap-back is 
 rather than the rule — but it is what stands between Argo and a rung it merely asked for, and the
 next CLI change is exactly what it is for.
 
+**A rung cannot be changed while a WALK is in flight either** (`SessionDriveError.modeWalking`).
+The walk takes time now, so a second pick can arrive in the middle of one — and it would count its
+distance from a stance the first walk has already left, then interleave its keystrokes with it.
+That lands the Session on a rung nobody picked, which is the same failure the rule below prevents
+mid-Turn, arriving by a different door.
+
 **A rung cannot be changed while a Turn is in flight.** The ring is walked, not written, so a
 change passes through rungs nobody asked for — `Auto` among them. Idle, that transit is nothing.
 Mid-Turn it is a widened boundary while a tool call is running, so the port refuses instead

@@ -24,6 +24,11 @@ final class AgentTerminals {
     }
 
     private var agents: [SessionOwnership.ClaimID: Adopted] = [:]
+    /// Whose input a multi-write walk is holding. Kept here because this is what owns the writes:
+    /// a rung is walked one keystroke at a time (#653), and a second walk starting mid-way would
+    /// count its distance from a stance the first has already left and interleave its keystrokes
+    /// with it.
+    private var walking: Set<SessionOwnership.ClaimID> = []
     private var nextViewer = 0
 
     init() {}
@@ -61,6 +66,15 @@ final class AgentTerminals {
         guard let entry = agents[id] else { return false }
         entry.process.write(text)
         return true
+    }
+
+    /// Take this agent's input for a walk, and `false` where a walk already holds it.
+    func beginWalk(on id: SessionOwnership.ClaimID) -> Bool {
+        walking.insert(id).inserted
+    }
+
+    func endWalk(on id: SessionOwnership.ClaimID) {
+        walking.remove(id)
     }
 
     /// Watch and steer one agent, or `nil` when no live PTY answers to that claim.

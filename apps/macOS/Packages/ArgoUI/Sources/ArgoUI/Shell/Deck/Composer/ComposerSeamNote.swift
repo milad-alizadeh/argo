@@ -53,7 +53,7 @@ enum ComposerSeamNote: Equatable {
     /// What the seam says about a rung that did not land. It names the rung that was asked for and
     /// not the one the Session is on, because the picker beside it already says that one.
     static func didNotTake(_ mode: SessionMode) -> String {
-        "\(mode.label) did not take. The session is still on the rung shown."
+        "\(mode.label) did not take. The Session is still on the rung shown."
     }
 
     /// The kept note's sentence. Under a minute it is worded rather than counted: a reader who
