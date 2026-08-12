@@ -88,6 +88,20 @@ enum ConnectFixture {
         note: ConnectNote(refusal: .scopeNotVisible("trili/cockpit")),
     )
 
+    /// The honest `Not available yet`: this build ships no plugin, so no spawn can write one.
+    static let pluginMissing = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        companion: .missingFromBuild,
+    )
+
+    /// The last spawn could not write its plugin, told with the refusal's own words.
+    static let pluginFailed = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        companion: .installFailed(why: "Companion socket could not be opened"),
+    )
+
     /// The same panel re-entered on a Project that exists.
     static let settings = ConnectReading(
         folder: folder,
@@ -96,15 +110,17 @@ enum ConnectFixture {
         mode: .settings(agent: .claude),
     )
 
-    /// Which state each catalog case is a render of.
-    static let states: [(specimen: Specimen, reading: ConnectReading)] = [
-        (.connectFresh, fresh),
-        (.connectFolderOnly, folderOnly),
-        (.connectPartly, partly),
-        (.connectWired, wired),
-        (.connectWaiting, waiting),
-        (.connectRefused, refused),
-        (.connectBroken, broken),
-        (.projectSettings, settings),
+    /// One panel per state it can be in, each carrying the name it renders under.
+    static let states: [(name: String, reading: ConnectReading)] = [
+        ("connectFresh", fresh),
+        ("connectFolderOnly", folderOnly),
+        ("connectPartly", partly),
+        ("connectWired", wired),
+        ("connectWaiting", waiting),
+        ("connectRefused", refused),
+        ("connectBroken", broken),
+        ("connectPluginMissing", pluginMissing),
+        ("connectPluginFailed", pluginFailed),
+        ("projectSettings", settings),
     ]
 }

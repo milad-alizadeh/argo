@@ -25,16 +25,25 @@ final class PermissionChannel {
     /// Written into directly rather than mirrored back through callbacks (#634): all three readings
     /// this channel owns land under one claim key, so there is nothing left for a caller to route.
     private let ledger: ClaimLedger
+    /// Where the Session stands, asked per call: a rung is walked mid-Session (#653), so a reading
+    /// taken at the grant would be stale by the next one.
+    private let rung: (SessionOwnership.ClaimID) -> SessionMode?
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
     private var expired: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
     private var standing = StandingAllowTable()
     private var issued = 0
 
-    init(root: URL, patience: PermissionPatience = .default, ledger: ClaimLedger) {
+    init(
+        root: URL,
+        patience: PermissionPatience = .default,
+        ledger: ClaimLedger,
+        rung: @escaping (SessionOwnership.ClaimID) -> SessionMode?,
+    ) {
         self.root = root
         self.patience = patience
         self.ledger = ledger
+        self.rung = rung
     }
 
     /// Open this claim's gate and say where its hook should dial.
@@ -167,6 +176,11 @@ final class PermissionChannel {
             // Fail closed, and fast: a request Argo could not read is not one the user can be
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
             return reply(PermissionReply.line(.deny))
+        }
+        // The top rung asks nothing, Argo's own gate included (ADR-0025, #663). The gate is still
+        // INSTALLED there, because a Session walked down from it has to find one already open.
+        guard rung(claim) != .auto else {
+            return reply(PermissionReply.line(.allow))
         }
         // A tool the user has already ruled on for this Session never becomes a prompt at all.
         guard !standing.allows(request.toolName, for: claim) else {

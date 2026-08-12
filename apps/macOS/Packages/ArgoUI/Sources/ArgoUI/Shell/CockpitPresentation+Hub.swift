@@ -4,6 +4,38 @@ import ArgoEngine
 /// the state and the view, on this side of the port. It lives here rather than in the app target
 /// so every honesty derivation below is provable in a test.
 public extension CockpitPresentation {
+    /// Where the window points, drawn as the strip. The registered set, and — on a launch pointed
+    /// at a folder nobody registered — that folder at the HEAD of it: `--project` and a bare launch
+    /// both land there, and a strip that drew only the registry would leave the roster on screen
+    /// belonging to no mark at all.
+    ///
+    /// The unregistered mark stays for the window's life, not only while it is active: it is the
+    /// only way back to where the process was pointed.
+    @MainActor
+    init(pointing: CockpitPointing, hub: Hub, annotations: SessionAnnotations = .empty) {
+        let registered = pointing.registry.projects.map {
+            Project(id: $0.id, name: $0.name, location: $0.path, isReachable: $0.isReachable)
+        }
+        var projects = registered
+        if case let .unregistered(url)? = pointing.launchOrigin {
+            projects.insert(
+                Project(
+                    id: url.path,
+                    name: HubProject(url: url).name,
+                    location: url.path,
+                    isRegistered: false,
+                ),
+                at: 0,
+            )
+        }
+        self.init(
+            projects: projects,
+            activeProjectID: pointing.launch.id,
+            hub: hub,
+            annotations: annotations,
+        )
+    }
+
     /// The Projects and the annotations are the app's own state, passed in; everything below is
     /// the Hub's reading of the Project it is pointed at.
     ///
@@ -54,6 +86,27 @@ extension CockpitPresentation.Session {
 }
 
 extension CockpitPresentation.Session {
+    /// The engine facts this projection deliberately drops — the reason the cockpit restates
+    /// `HubSession` instead of holding one (ADR-0027). Every other public fact on `HubSession`
+    /// must appear as `session.<name>` below, and `swift-boundaries.sh` edge 5 fails the build
+    /// when a new one appears in neither place.
+    ///
+    /// Most of them are the raw INPUTS to a derivation the cockpit takes the result of. Handing a
+    /// view the inputs invites a second reading of a fact the Hub has already read.
+    ///
+    /// not-projected: liveness — an input to the status fold; `status` below is its result.
+    /// not-projected: convention — the same input at the CONVENTION tier.
+    /// not-projected: signals — the tuple that fold reads, and nothing else.
+    /// not-projected: statusReading — carries the honesty tier beside the status. The tier is the
+    ///   Hub's own bookkeeping, and no surface below the shell renders it.
+    /// not-projected: modeSet — an input to `mode`, which lands below already reconciled.
+    /// not-projected: lastActivityAtMs — one half of `lastSeenAtMs`, which lands below.
+    /// not-projected: sourceURL — where the record sits on disk. A path, not a fact about a
+    ///   Session, and the feed reads events rather than files.
+    /// not-projected: headLeafUUID — how the chain is stitched, which is the Hub's business.
+    /// not-projected: hasAgentActivity — the roster admission test, already applied upstream: a
+    ///   Session that fails it never reaches this projection at all.
+    /// not-projected: isQueued — the other half of that same admission test.
     init(observed session: HubSession, annotations: SessionAnnotations) {
         self.init(
             id: session.id,

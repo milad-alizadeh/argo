@@ -6,6 +6,10 @@ import SwiftUI
 ///
 /// Nothing may come between the minimap and the feed it maps — the panel takes the far edge. The
 /// minimap's seam is fixed; the other two move.
+///
+/// Every zone here starts below the canopy except the feed, which runs under it. That includes the
+/// seams: a hairline reaching the window's top edge behind the glass is the rule the canopy
+/// replaced, drawn again.
 struct DeckContentRow: View {
     let feed: [FeedRow]
     let showing: PlanShowing
@@ -57,6 +61,7 @@ struct DeckContentRow: View {
                         growsRightward: true,
                         isDragging: { isResizing = $0 },
                     )
+                    .argoUnderCanopy()
                 }
                 FeedColumn(
                     feed: feed,
@@ -68,8 +73,10 @@ struct DeckContentRow: View {
                     table: table,
                 )
                 DeckSeparator()
+                    .argoUnderCanopy()
                 MinimapLane(feed: table)
                     .frame(width: zoning.laneWidth)
+                    .argoUnderCanopy()
                 panel(zoning)
             }
             // One transaction for the whole re-flow: two zones move on the one fact — the panel
@@ -111,6 +118,7 @@ struct DeckContentRow: View {
                     growsRightward: false,
                     isDragging: { isResizing = $0 },
                 )
+                .argoUnderCanopy()
                 EvidencePanel(
                     evidence: evidence,
                     current: selection.step,

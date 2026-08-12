@@ -8,10 +8,6 @@ struct AgentSpawn: Sendable, Equatable {
     let cli: AgentCLI
     let cwd: String
     let spawnedAtMs: Int
-    /// The rung Argo started it on (ADR-0025) — DIRECT, and the only place `Plan` can be known
-    /// from: the CLI reports Read Only's boundary for Plan too, so nothing observed carries the
-    /// intent.
-    let mode: SessionMode
 
     /// How the PTY went away, once it has — and only for a spawn whose CLI never wrote a record,
     /// the one row no observation can reach.

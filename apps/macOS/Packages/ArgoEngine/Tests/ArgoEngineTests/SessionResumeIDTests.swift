@@ -40,7 +40,6 @@ struct SessionResumeIDTests {
             cli: .claude,
             cwd: "/tmp/argo",
             spawnedAtMs: 1000,
-            mode: .code,
         )
 
         #expect(HubSession(spawn: spawn).resumeID == nil)

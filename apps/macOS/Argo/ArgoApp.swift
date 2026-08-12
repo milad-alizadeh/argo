@@ -24,20 +24,29 @@ struct ArgoApp: App {
             arguments: CommandLine.arguments,
             currentDirectoryURL: currentDirectoryURL,
         )
+        // Answered before anything else is built, and the process ends on it: `specimens.sh` asks
+        // the app what it can render rather than parsing Swift source for a list.
+        if configuration.listsSpecimens {
+            for name in SpecimenRegistry.names {
+                print(name)
+            }
+            exit(0)
+        }
         self.specimenName = configuration.specimenName
         let projects = ProjectRegistryStore()
-        _cockpit = State(initialValue: CockpitCoordinator(
-            configuration: configuration,
-            store: projects,
-        ))
-        _accounts = State(initialValue: AccountsCoordinator(projects: projects))
+        let cockpit = CockpitCoordinator(configuration: configuration, store: projects)
+        let accounts = AccountsCoordinator(projects: projects)
+        // The row's fact is the Hub's, read at every panel rebuild rather than copied once.
+        accounts.companionStanding = { ConnectCompanion(standing: cockpit.hub.companionStanding) }
+        _cockpit = State(initialValue: cockpit)
+        _accounts = State(initialValue: accounts)
     }
 
     var body: some Scene {
         Window("Argo", id: "cockpit") {
             Group {
                 if let specimen {
-                    SpecimenScreen(specimen: specimen)
+                    SpecimenScreen(entry: specimen)
                 } else {
                     CockpitView(
                         presentation: cockpit.presentation,
@@ -77,6 +86,11 @@ struct ArgoApp: App {
             .focusEffectDisabled()
         }
         .defaultSize(width: 1280, height: 800)
+        // Hidden title bar so the deck's content extends beneath the toolbar region. The chrome
+        // bar's ground reaches the top of the WINDOW that way (`ArgoChromeBar`) — with a titlebar
+        // in the way, the icons sat on a strip no surface of ours could reach, and the bar read as
+        // two pieces however the tones were matched.
+        .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             NewSessionCommands(
@@ -126,8 +140,8 @@ struct ArgoApp: App {
 
     /// An unknown name renders the cockpit rather than failing: the harness names the state, and a
     /// typo there should not look like a launch worth screenshotting.
-    private var specimen: Specimen? {
-        specimenName.flatMap(Specimen.init(rawValue:))
+    private var specimen: SpecimenEntry? {
+        specimenName.flatMap(SpecimenRegistry.entry(named:))
     }
 
     private var actions: CockpitActions {

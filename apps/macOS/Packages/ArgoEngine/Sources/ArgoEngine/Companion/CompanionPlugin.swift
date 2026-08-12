@@ -10,6 +10,14 @@ enum CompanionPlugin {
     /// Where the socket path goes in the resource's MCP declaration.
     static let socketPlaceholder = "__ARGO_COMPANION_SOCKET__"
 
+    /// Whether this build carries the two plugin resources every spawn writes out.
+    static var shipsResources: Bool {
+        ["plugin", "mcp"].allSatisfy {
+            Bundle.module.url(forResource: $0, withExtension: "json", subdirectory: "Plugin")
+                != nil
+        }
+    }
+
     /// Write the plugin for one claim under `root`, and say how to reach it.
     ///
     /// Throws rather than returning nothing: a spawn that proceeded without its plugin would be a

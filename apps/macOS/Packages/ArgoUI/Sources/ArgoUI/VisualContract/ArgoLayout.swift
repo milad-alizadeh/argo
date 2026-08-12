@@ -50,6 +50,12 @@ public enum ArgoLayout {
     public static let deckHeaderHeight: CGFloat = 56
     public static let deckTabSlotHeight: CGFloat = 40
 
+    /// What the glass canopy covers, and so how far the zones beneath it are inset. Derived rather
+    /// than measured: the canopy IS those two zones, and a third number would let them drift.
+    public static var deckCanopyHeight: CGFloat {
+        deckHeaderHeight + deckTabSlotHeight
+    }
+
     /// The context instrument on the header's trailing edge. Fixed, not a share of the line: the
     /// branch beside it is what gives way (#502), and a shrinking instrument would move its two
     /// threshold ticks on every resize.

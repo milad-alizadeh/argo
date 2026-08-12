@@ -176,6 +176,25 @@ its approved study are authoritative for the replacement look and feel.
 - **Boundary:** Existing Session header, tabs, Agent selection, single-feed behaviour, density
   navigation, and Dock responsibilities remain intact. This changes their visual composition, not
   their interaction model; it does not reintroduce a Timeline or a second detail feed.
+- **Amendment — the window's top zone is ONE chrome bar — 2026-08-12 (#671):** the toolbar band, the
+  Session header and the tab line under it are a single bar, not three surfaces stacked. One
+  material runs across all of it and there is exactly one hairline, at the foot. The reading passes
+  beneath and blurs through. The zones with a header of their own — the Agents rail and the evidence
+  panel — begin below the bar instead of passing under it, since a header behind a blur is a header
+  nobody can read.
+- **The material is a blur, not Liquid Glass.** A float is present BECAUSE the reader is in a state
+  (D14), so its specular rim earns its keep. Chrome is always there, so the rim is decoration and
+  the boundary is the only thing worth drawing. It is nonetheless implemented as untinted
+  `glassEffect(.clear)` under a wash, because a SwiftUI `Material` and an `NSVisualEffectView` both
+  sample only what SwiftUI drew and the feed is an `NSTableView` — under either, the reading stopped
+  dead at the bar's edge. The glass is drawn taller than the bar and the surplus clipped, which
+  removes the mirrored strip it refracts along its own bottom edge.
+- **Why the amendment:** the two stacked opaque slots read as a grey box bolted to the top of the
+  plane, and a canopy with its own material put a seam between the window's icons and the Session's
+  title. Xcode's own toolbar is the reference: one bar, one rule under it, and the working surface
+  apparently continuing past the chrome. This is the only place the deck borrows a translucent
+  material — the plane behind it stays opaque graphite, so the contrast the original decision
+  protects survives everywhere else.
 
 ## D11 — Material replaces the decorative scene
 

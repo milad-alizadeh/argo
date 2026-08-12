@@ -10,13 +10,9 @@ extension FeedTableCoordinator {
         scroller.documentView = table
         scroller.hasVerticalScroller = true
         scroller.drawsBackground = false
-        // The feed's own gutters: the breath above the first row, and the one under the last
-        // that "back to the newest line" lands on. Insets rather than spacer rows, so the
-        // reading's content is exactly its rows.
+        // The gutters at each end are `apply`'s — both move with what floats there. Turning the
+        // automatic ones off is what lets it own them.
         scroller.automaticallyAdjustsContentInsets = false
-        scroller.contentInsets = NSEdgeInsets(
-            top: ArgoSpacing.section, left: 0, bottom: ArgoSpacing.section, right: 0,
-        )
         self.table = table
         self.scroller = scroller
         watch(scroller)

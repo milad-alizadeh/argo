@@ -128,7 +128,7 @@ struct SessionRosterProjectionTests {
         )).first)
 
         // `ago` and not a bare `2m`, which would read as how long something took.
-        #expect(row.age == "2m ago")
+        #expect(row.clock == .seen("2m ago"))
     }
 
     @Test(arguments: [
@@ -150,7 +150,7 @@ struct SessionRosterProjectionTests {
         ))
         .first)
 
-        #expect(row.age == phrase)
+        #expect(row.clock == .seen(phrase))
     }
 
     @Test
@@ -162,11 +162,11 @@ struct SessionRosterProjectionTests {
             lastSeenAtMs: msAgo(-180),
         )).first)
 
-        #expect(row.age == "just now")
+        #expect(row.clock == .seen("just now"))
     }
 
     @Test
-    func `a running Session words its age like any other`() throws {
+    func `a running Session with no Turn start on record words its age like any other`() throws {
         let row = try #require(
             rows(RosterSessionFixture.session(
                 id: "running",
@@ -175,8 +175,9 @@ struct SessionRosterProjectionTests {
             )).first,
         )
 
-        // The status decides the dot, never whether the age line is there.
-        #expect(row.age == "2m ago")
+        // Degrade-down: with nothing to anchor a live duration, the slot keeps the seen
+        // reading rather than guessing one (`cockpit-roster-turn-clock.md`).
+        #expect(row.clock == .seen("2m ago"))
     }
 
     @Test
@@ -185,7 +186,7 @@ struct SessionRosterProjectionTests {
             .first)
 
         // Absence renders as absence.
-        #expect(row.age == nil)
+        #expect(row.clock == nil)
     }
 
     @Test

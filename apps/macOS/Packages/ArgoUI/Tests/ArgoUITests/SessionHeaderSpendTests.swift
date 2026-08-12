@@ -97,7 +97,7 @@ struct SessionHeaderSpendTests {
     func `both spend lines have a specimen of their own`() {
         let drawn = SessionSpendFixture.spends
 
-        #expect(drawn.map(\.specimen) == [.sessionSpend, .sessionSpendUnreported])
+        #expect(drawn.map(\.name) == ["sessionSpend", "sessionSpendUnreported"])
         #expect(drawn.map { $0.header.spend?.contains("in subagents") } == [true, false])
     }
 

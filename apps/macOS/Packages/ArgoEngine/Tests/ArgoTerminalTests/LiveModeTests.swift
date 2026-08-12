@@ -30,15 +30,9 @@ struct LiveModeTests {
     /// The reported bug, and the test that closes it: on `Auto` a gated call runs and nobody is
     /// asked. The file is the evidence the call ran; the watch is the evidence nothing asked.
     ///
-    /// A known issue against 2.1.228 on 2026-08-12, for a reason that is Argo's and not the rung's:
-    /// `PermissionChannel.asked` never reads the Session's mode, so Argo's own `PreToolUse` hook
-    /// asks on every tool call whatever rung the Session stands on — and `Auto` cannot mean "asks
-    /// nothing" while it does. The rung itself reaches the CLI: the spawn test above and
-    /// `a rung set on a running Session takes effect` both read `auto` back off the CLI's own
-    /// record. This is #629's remaining half, not #653's.
-    ///
-    /// A `withKnownIssue` and not a deletion, so the day the gate learns the ladder this fails
-    /// saying the known issue did not occur, rather than quietly starting to pass.
+    /// Both halves together, because either alone passes against a broken build: a gate that
+    /// refused everything would raise no prompt, and one that asked at every rung would still let
+    /// the file appear once somebody answered.
     @Test(.timeLimit(.minutes(10)))
     func `Auto runs a gated call and never asks`() async throws {
         let live = try await LiveClaudeFixture.spawned(on: .auto)
@@ -47,10 +41,8 @@ struct LiveModeTests {
 
         let asked = await live.settleWatchingForPermissions(seconds: 180) { live.hasMarkerFile() }
 
-        withKnownIssue("Argo's own gate asks at every rung — #629") {
-            #expect(live.hasMarkerFile(), "\(live.host.lastScreens)")
-            #expect(!asked, "\(live.host.lastScreens)")
-        }
+        #expect(live.hasMarkerFile(), "\(live.host.lastScreens)")
+        #expect(!asked, "\(live.host.lastScreens)")
     }
 
     /// The other half of the ladder: a rung set on a Session that is ALREADY RUNNING reaches the
@@ -66,9 +58,9 @@ struct LiveModeTests {
     /// two back-tabs, and written as one string the CLI takes them as one and stops on `plan` — so
     /// the assertion has to name the rung the CLI landed on, not merely that it moved.
     ///
-    /// The second Turn asks for no tool. A tool call cannot be the evidence here: Argo's own gate
-    /// hook asks on EVERY call whatever the rung is, so what a gated call does says nothing about
-    /// the rung — see the note on `Auto runs a gated call and never asks`.
+    /// The second Turn asks for no tool, and the claim is made off the CLI's own stance record.
+    /// What a gated call does at `Auto` is the other test's evidence, and mixing the two would
+    /// leave this one failing for either of two reasons.
     @Test(.timeLimit(.minutes(15)))
     func `a rung set on a running Session takes effect`() async throws {
         let live = try await LiveClaudeFixture.spawned()

@@ -76,7 +76,7 @@ struct SessionRosterArchiveTests {
         let kept = try #require(SessionRosterProjection.rows(from: [cleared], now: now).first)
         #expect(row.title == kept.title)
         #expect(row.branch == kept.branch)
-        #expect(row.age == kept.age)
+        #expect(row.clock == kept.clock)
         #expect(row.announcement == kept.announcement)
     }
 

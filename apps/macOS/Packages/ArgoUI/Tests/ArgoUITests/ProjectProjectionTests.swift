@@ -70,6 +70,47 @@ struct ProjectProjectionTests {
         #expect(projection.activeProject?.name == "unregistered")
     }
 
+    /// At the head, and there for the window's life rather than only while it is active: it is the
+    /// only way back to where the process was pointed.
+    @Test
+    @MainActor
+    func `the folder a launch was pointed at heads the strip, unregistered`() {
+        let hub = Hub(projectURL: URL(fileURLWithPath: "/tmp/unregistered"))
+        let pointing = CockpitPointing(
+            registry: ProjectRegistry(projects: [argo], activeProjectID: argo.id),
+            launch: .registered(argo),
+            launchOrigin: .unregistered(URL(fileURLWithPath: "/tmp/unregistered")),
+        )
+
+        let projection = CockpitPresentation(pointing: pointing, hub: hub)
+
+        #expect(projection.projects.map(\.id) == ["/tmp/unregistered", "argo"])
+        #expect(projection.projects.map(\.isRegistered) == [false, true])
+        // The window is on the record, and the launch's own folder is still a mark to go back to.
+        #expect(projection.activeProject?.id == argo.id)
+    }
+
+    /// A launch that resolved to a record has nothing extra to draw — otherwise the strip would
+    /// show the same repository twice, once selected and once not.
+    @Test
+    @MainActor
+    func `a launch that resolved to a registered Project adds no second mark`() {
+        let hub = Hub(projectURL: argo.url)
+        let pointing = CockpitPointing(
+            registry: ProjectRegistry(projects: [argo], activeProjectID: argo.id),
+            launch: .registered(argo),
+            launchOrigin: .registered(argo),
+        )
+
+        let projection = CockpitPresentation(pointing: pointing, hub: hub)
+
+        #expect(projection.projects.map(\.id) == ["argo"])
+    }
+
+    private var argo: ProjectRecord {
+        ProjectRecord(id: "argo", path: "/tmp/argo")
+    }
+
     @MainActor
     private func presentation(
         of hub: Hub,

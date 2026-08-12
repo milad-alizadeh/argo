@@ -13,9 +13,13 @@ public struct LaunchConfiguration: Equatable, Sendable {
 
     public let transcriptURLs: [URL]
 
-    /// The catalog state to render instead of the cockpit, when the render harness asked for one.
-    /// Carried as a name rather than a `Specimen`: the engine has no view layer to name.
+    /// The registry state to render instead of the cockpit, when the render harness asked for one.
+    /// Carried as a name rather than a `SpecimenEntry`: the engine has no view layer to name.
     public let specimenName: String?
+
+    /// `--list-specimens`: print every renderable name and exit, which is how `specimens.sh` learns
+    /// the list. The app is the one that knows it, so nothing else parses Swift source to find out.
+    public let listsSpecimens: Bool
 
     /// Where this launch points before the registry has a say.
     public var projectURL: URL {
@@ -27,11 +31,13 @@ public struct LaunchConfiguration: Equatable, Sendable {
         projectOverrideURL: URL? = nil,
         transcriptURLs: [URL],
         specimenName: String? = nil,
+        listsSpecimens: Bool = false,
     ) {
         self.launchDirectoryURL = launchDirectoryURL.standardizedFileURL
         self.projectOverrideURL = projectOverrideURL?.standardizedFileURL
         self.transcriptURLs = transcriptURLs.map(\.standardizedFileURL)
         self.specimenName = specimenName
+        self.listsSpecimens = listsSpecimens
     }
 
     /// A configuration pointed at one named Project — what a caller that has already decided
@@ -53,9 +59,17 @@ public struct LaunchConfiguration: Equatable, Sendable {
         var projectOverrideURL: URL?
         var transcriptURLs: [URL] = []
         var specimenName: String?
+        var listsSpecimens = false
         var index = 0
         while index < arguments.count {
             let flag = arguments[index]
+            // Before the guard below, which reads a VALUE off the next argument: this flag takes
+            // none, and the harness passes it last.
+            if flag == "--list-specimens" {
+                listsSpecimens = true
+                index += 1
+                continue
+            }
             guard index + 1 < arguments.count else { break }
             let value = arguments[index + 1]
             switch flag {
@@ -77,6 +91,7 @@ public struct LaunchConfiguration: Equatable, Sendable {
             projectOverrideURL: projectOverrideURL,
             transcriptURLs: transcriptURLs,
             specimenName: specimenName,
+            listsSpecimens: listsSpecimens,
         )
     }
 }

@@ -20,9 +20,12 @@ enum SessionRosterProjection {
         /// True of every Session Argo does not own the terminal of, and always announced. Drawn
         /// by ghosting the whole row — title, branch, age and dot — not by a mark on one of them.
         let isReadOnly: Bool
-        /// How long ago this Session last did anything — the key the roster is ordered on. A
-        /// running Session says it too (`just now`). Absent only for a record carrying no time.
-        let age: String?
+        /// The age slot's one reading (`cockpit-roster-turn-clock.md`): a live Turn duration for
+        /// a managed running Session, `output … ago` for an observed one mid-turn, and how long
+        /// ago the Session was last seen otherwise. Absent only where no record carries a time.
+        let clock: Clock?
+        /// The clock as words, fixed at projection time — what `announcement` says for it.
+        private let spokenClock: String?
         let state: ArgoOperationalState?
         /// The dot carries `running`, `idle` and `ended`; a word is spent only where the roster
         /// needs the user to stop scanning.
@@ -42,7 +45,8 @@ enum SessionRosterProjection {
             worktree: String?,
             branch: String?,
             isReadOnly: Bool,
-            age: String?,
+            clock: Clock?,
+            spokenClock: String?,
             state: ArgoOperationalState?,
             stateWord: String?,
             isArchived: Bool,
@@ -54,7 +58,8 @@ enum SessionRosterProjection {
             self.worktree = worktree
             self.branch = branch
             self.isReadOnly = isReadOnly
-            self.age = age
+            self.clock = clock
+            self.spokenClock = spokenClock
             self.state = state
             self.stateWord = stateWord
             self.isArchived = isArchived
@@ -69,7 +74,7 @@ enum SessionRosterProjection {
                 stateWord,
                 isReadOnly ? "Read-only Session" : nil,
                 worktree.map { "in \($0)" },
-                age.map { "last active \($0)" },
+                spokenClock,
             ]
             .compactMap(\.self)
             .joined(separator: ", ")
@@ -125,7 +130,8 @@ enum SessionRosterProjection {
         return zip(sessions, worktrees(of: sessions))
             .filter { session, _ in session.isArchived == archived }
             .map { session, worktree in
-                Row(
+                let clock = clock(for: session, nowMs: nowMs)
+                return Row(
                     id: session.id,
                     // The name the user set, ahead of the issue's and the derived one
                     // (#502, story 19).
@@ -134,8 +140,8 @@ enum SessionRosterProjection {
                     worktree: worktree,
                     branch: session.workspace?.branch,
                     isReadOnly: isReadOnly(session.access),
-                    age: session.lastSeenAtMs
-                        .map { AgePhrase.phrase(sinceMs: $0, nowMs: nowMs) },
+                    clock: clock,
+                    spokenClock: spokenClock(clock, nowMs: nowMs),
                     state: SessionState.role(for: session.status),
                     stateWord: SessionState.word(for: session.status),
                     isArchived: session.isArchived,
