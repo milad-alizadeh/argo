@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PROTOTYPE — How long has this Turn been running? (#618)</title>
+<!--
+  THROWAWAY PROTOTYPE for issue #618. Four variants of the Turn-elapsed reading,
+  switchable via ?variant=A|B|C|D, the floating bar, or ←/→.
+
+  The question: after cockpit-feed-working.md, the feed shows THAT a Turn is in flight but
+  not HOW LONG. The clock was deliberately kept out of the feed. Where does it live —
+  the Session header, the roster row, or both? Elapsed alone, or elapsed plus a live token
+  count? Always, or only past ~10s (NN/g's threshold)? And how does the reading degrade
+  for an observed Session, where elapsed is DERIVED and a quiet mid-turn reads as idle?
+
+    A — Header, beside the state word. Always on. Elapsed alone.
+    B — Roster row. The row's age slot ticks a live duration. Header untouched.
+    C — Header tab line. A turn meter (elapsed + tokens) that appears only past 10s.
+    D — Both. Coarse minutes in the roster, precise elapsed + tokens in the header.
+
+  Honesty stance shared by all four, per CONTEXT.md's degrade-down rule:
+    DIRECT  (managed)  — a bare duration: `4m 12s`. Argo owns the Turn's start.
+    DERIVED (observed) — `output 12s ago`, tertiary ink, never the running mint, and no
+    token claim. Argo only ever saw the last record land; wording it as a duration would
+    render a false DIRECT. `ago` = a point in time observed; a bare figure = a duration owned.
+
+  The clock is real: it ticks from load. Press `r` to restart the selected Session's Turn,
+  so C's 10s gate can be replayed. `?s=<id>` selects a Session; `1986b0e5` is the
+  fresh-turn one, `32c9e59a` the six-minute one, `codex-56bf` the observed one.
+
+  Every colour, radius, spacing step and type role below is transcribed from
+  apps/macOS/Packages/ArgoUI/Sources/ArgoUI/VisualContract/ — GraphitePalette.swift,
+  ArgoGeometry.swift, ArgoLayout.swift, ArgoTypography.swift. The shell is forked from
+  roster-header-prototype.html; the header is the shipped SessionHeader.swift layout and
+  the row is the shipped SessionRow.swift layout. Only the elapsed reading is under test.
+-->
+<style>
+  :root {
+    /* GraphitePalette.swift — ground */
+    --sunken:  #191A1D;
+    --base:    #1E2024;
+    --raised:  #252729;
+    --overlay: #2E3136;
+    --glass-tint: rgba(255,255,255,.06);
+    --hover:      rgba(255,255,255,.045);
+    --selected:   rgba(255,255,255,.058);
+
+    /* text */
+    --text-1: #F2F4F6;
+    --text-2: #A8AEB5;
+    --text-3: #868D94;
+    --text-off: #4E545A;
+    --on-accent: #05070A;
+
+    /* edges */
+    --hairline: rgba(255,255,255,.08);
+    --subtle:   rgba(255,255,255,.13);
+    --strong:   rgba(255,255,255,.22);
+
+    /* accent + state */
+    --accent: #3E9BFF;
+    --accent-deep: #1E6FD4;
+    --accent-bright: #6FB6FF;
+    --running:   #46D3A8;
+    --idle:      #868E96;
+    --attention: #E8B24A;
+    --failure:   #F2555C;
+
+    /* ArgoGeometry.swift — radii + spacing */
+    --r-marker: 3px; --r-control: 6px; --r-popover: 12px;
+    --s-hair: 2px; --s-tight: 4px; --s-snug: 6px; --s-base: 8px;
+    --s-comfortable: 12px; --s-loose: 16px; --s-section: 24px;
+
+    /* ArgoLayout.swift */
+    --sidebar-w: 320px;
+    --deck-header-h: 56px;
+    --deck-tab-h: 40px;
+    --dot: 6px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #0d0e10;
+    color: var(--text-1);
+    font: 13px/1.45 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 2px; border-radius: var(--r-marker); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+  /* ---------- window ---------- */
+  .window {
+    position: fixed; inset: var(--s-section) var(--s-section) 72px;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--subtle);
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    background: var(--base);
+    min-width: 960px;
+  }
+  .panes { display: grid; grid-template-columns: var(--sidebar-w) 1fr; height: 100%; }
+
+  /* ---------- titlebar ---------- */
+  .titlebar {
+    position: absolute; top: 0; left: 0; right: 0; height: 46px; z-index: 20;
+    display: grid; grid-template-columns: var(--sidebar-w) 1fr;
+    pointer-events: none;
+  }
+  .titlebar > * { pointer-events: auto; }
+  .tb-lead { display: flex; align-items: center; padding-left: var(--s-base); }
+  .tb-trail {
+    display: flex; align-items: center; gap: var(--s-comfortable);
+    padding: 0 var(--s-comfortable) 0 var(--s-loose);
+  }
+  .bare {
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    width: 26px; height: 26px; border-radius: var(--r-control);
+    display: grid; place-items: center; flex: none;
+  }
+  .bare:hover { background: rgba(255,255,255,.07); color: var(--text-1); }
+  .bare svg { width: 15px; height: 15px; display: block; }
+  .lights { display: flex; gap: var(--s-base); padding: 0 var(--s-base) 0 var(--s-tight); }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+
+  .vessel {
+    display: inline-flex; align-items: center;
+    background: var(--glass-tint); border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 3px; height: 30px;
+  }
+  .vessel > span {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    color: var(--text-2); padding: 0 10px; height: 24px; font: 13px var(--sans);
+  }
+  .vessel .project { font-weight: 500; color: var(--text-1); }
+  .vessel .checkout { font-family: var(--mono); font-size: 12px; }
+  .vessel .divider { width: 1px; height: 16px; background: var(--subtle); flex: none; }
+  .vessel svg { width: 13px; height: 13px; flex: none; }
+
+  .rooms { display: inline-flex; gap: 2px; background: var(--glass-tint);
+           border: 1px solid var(--hairline); border-radius: 999px; padding: 3px; }
+  .rooms button {
+    display: inline-flex; align-items: center; gap: var(--s-snug);
+    border: none; background: none; cursor: pointer; color: var(--text-3);
+    font: 500 12.5px var(--sans); padding: 0 var(--s-comfortable); height: 24px; border-radius: 999px;
+  }
+  .rooms button svg { width: 13px; height: 13px; flex: none; }
+  .rooms button.on { background: var(--overlay); color: var(--text-1); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .rooms button:hover:not(.on) { color: var(--text-2); }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    display: flex; flex-direction: column; border-right: 1px solid var(--hairline);
+    background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+    backdrop-filter: blur(34px) saturate(140%);
+  }
+  .sidebar-head {
+    display: flex; align-items: center; gap: 2px;
+    height: 46px; flex: none; padding: 0 var(--s-snug) 0 var(--s-comfortable);
+  }
+  .roster { flex: 1; overflow-y: auto; padding: 0 var(--s-base) var(--s-base); }
+  .sidebar-foot {
+    padding: var(--s-base) var(--s-comfortable) var(--s-comfortable);
+    border-top: 1px solid var(--hairline); color: var(--text-3); font-size: 12px;
+  }
+
+  /* ---------- roster row (SessionRow.swift's shape) ---------- */
+  .row {
+    position: relative; border-radius: var(--r-control);
+    padding: 7px var(--s-base); margin-bottom: 1px;
+    cursor: default; transition: background 120ms ease;
+  }
+  .row:hover { background: var(--hover); }
+  .row.sel { background: var(--selected); }
+  .row.ext { opacity: .58; }
+
+  .dot { width: var(--dot); height: var(--dot); border-radius: 50%; flex: none; }
+  .dot.running   { background: var(--running); box-shadow: 0 0 6px rgba(70,211,168,.5); }
+  .dot.attn      { background: var(--attention); }
+  .dot.fail      { background: var(--failure); }
+  .dot.idle      { background: var(--idle); }
+  .dot.hollow    { background: transparent; box-shadow: inset 0 0 0 1px var(--text-off); }
+
+  .title {
+    font-size: 13px; font-weight: 500; color: var(--text-1); letter-spacing: -.05px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .meta {
+    font-family: var(--mono); font-size: 11px; color: var(--text-3);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .time { font-family: var(--mono); font-size: 11px; color: var(--text-3); flex: none; }
+  /* The live duration is the one reading in the sidebar allowed the running ink. */
+  .time.live { color: var(--running); }
+  .badge {
+    flex: none; font-size: 10px; font-weight: 600; letter-spacing: .5px;
+    text-transform: uppercase; color: var(--attention);
+  }
+  .badge.fail { color: var(--failure); }
+
+  /* ---------- deck ---------- */
+  .deck {
+    position: relative; display: flex; flex-direction: column;
+    background: var(--base); min-width: 0; padding-top: 46px;
+  }
+  .band {
+    height: var(--deck-header-h); flex: none;
+    display: flex; align-items: center; gap: var(--s-comfortable);
+    padding: 0 var(--s-section);
+  }
+  .tabslot {
+    height: var(--deck-tab-h); flex: none;
+    display: flex; align-items: flex-end; gap: var(--s-loose);
+    padding: 0 var(--s-section);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .tab {
+    font-size: 12.5px; color: var(--text-3); padding-bottom: var(--s-base);
+    border-bottom: 1.5px solid transparent; margin-bottom: -1px;
+  }
+  .tab.on { color: var(--text-1); font-weight: 500; border-bottom-color: var(--accent); }
+
+  .h-title {
+    font-size: 19px; font-weight: 600; letter-spacing: -.35px;
+    color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  .fact { font-size: 11.5px; color: var(--text-2); white-space: nowrap; }
+  .fact.mono { font-family: var(--mono); font-size: 11px; }
+  .fact.dim { color: var(--text-3); }
+  .fact.warn { color: var(--attention); }
+  .fact.crit { color: var(--failure); }
+  .fact.link { color: var(--accent); }
+  /* The Turn's own ink. It is state.running as a word, exactly as the dot spells it. */
+  .fact.run { color: var(--running); }
+  .factline { display: flex; align-items: center; gap: var(--s-snug); min-width: 0; overflow: hidden; }
+  .factline > * { flex: none; }
+  .factline > .fact:has(.gitline) { flex: 0 1 auto; min-width: 40px; overflow: hidden; }
+  .factline .gitline { min-width: 0; max-width: 100%; }
+  svg.g { width: 13px; height: 13px; flex: none; display: inline-block; vertical-align: -2px; }
+  .gitline { display: inline-flex; align-items: center; gap: var(--s-tight); }
+  .gitline > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gitline .g { width: 12px; height: 12px; flex: none; opacity: .8; }
+  .gitline .mark {
+    display: inline-flex; align-items: center; gap: 2px; margin-left: var(--s-tight);
+    color: var(--text-2);
+  }
+  .gitline .mark .g { width: 11px; height: 11px; opacity: 1; }
+  .dotsep { color: var(--text-off); font-size: 11px; }
+
+  .handoff {
+    flex: none; display: inline-flex; align-items: center; gap: var(--s-snug);
+    font: 600 12px/1.2 var(--sans); color: var(--on-accent);
+    background: var(--attention); border: none;
+    border-radius: var(--r-control); padding: 5px var(--s-base) 5px 10px; cursor: pointer;
+    text-align: left;
+  }
+  .handoff.crit { background: var(--failure); color: #fff; }
+  .handoff:hover { filter: brightness(1.08); }
+  .handoff svg { width: 14px; height: 14px; flex: none; }
+
+  /* context instrument — the shipped 200px column */
+  .bar { height: 3px; border-radius: 1.5px; background: rgba(255,255,255,.07); position: relative; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 1.5px; background: var(--running); }
+  .bar.warn > i { background: var(--attention); }
+  .bar.crit > i { background: var(--failure); }
+  .bar .tick { position: absolute; top: -2.5px; bottom: -2.5px; width: 1px; background: var(--strong); }
+
+  /* The turn meter appears; it must not shove the session totals when it does. */
+  .gate { opacity: 0; transition: opacity 400ms ease; }
+  .gate.ungated { opacity: 1; }
+
+  /* ---------- feed (context, not under test) ---------- */
+  .feed {
+    flex: 1; overflow: hidden; padding: var(--s-loose) var(--s-section);
+    -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent 100%);
+    display: flex; flex-direction: column;
+  }
+  .fr { display: flex; gap: var(--s-comfortable); padding: var(--s-snug) 0; align-items: baseline; }
+  .fr .k { width: 52px; flex: none; font-size: 11px; color: var(--text-3); text-align: right; }
+  .fr .v { font-size: 12.5px; color: var(--text-2); }
+  .fr .v code { font-family: var(--mono); font-size: 11.5px; color: var(--text-1); }
+  .fr .add { color: #A9D18E; font-family: var(--mono); font-size: 11.5px; }
+  .fr .rem { color: #D98C93; font-family: var(--mono); font-size: 11.5px; }
+
+  /* cockpit-feed-working.md's thread, loosely: the ion ramp sweeping the measure.
+     It says the Turn is ALIVE and deliberately nothing about how long — that gap is
+     exactly what this prototype is placing elsewhere. */
+  .thread-lane { height: 20px; position: relative; overflow: hidden; margin-top: var(--s-base); }
+  .thread, .thread-glow {
+    position: absolute; top: 9px; height: 2px; width: 30%; border-radius: 1px;
+    background: linear-gradient(90deg, transparent,
+      var(--accent-deep) 28%, var(--accent) 55%, var(--accent-bright) 76%,
+      var(--running) 88%, transparent);
+    animation: sweep 2.8s linear infinite;
+  }
+  .thread-glow { filter: blur(4px); opacity: .6; }
+  @keyframes sweep {
+    from { transform: translateX(-110%); }
+    to   { transform: translateX(443%); }
+  }
+
+  .dock {
+    flex: none; height: var(--deck-tab-h); border-top: 1px solid var(--hairline);
+    display: flex; align-items: center; gap: var(--s-base); padding: 0 var(--s-section);
+    font-size: 11.5px; color: var(--text-3); background: var(--sunken);
+  }
+
+  /* ---------- switcher (not part of the design under evaluation) ---------- */
+  .switch {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 50;
+    display: flex; align-items: center; gap: 2px;
+    background: #fff; color: #111; border-radius: 999px; padding: 4px 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.55); font: 600 12px/1 var(--sans);
+  }
+  .switch button { border: none; background: none; cursor: pointer; width: 26px; height: 26px; border-radius: 999px; font-size: 15px; }
+  .switch button:hover { background: rgba(0,0,0,.08); }
+  .switch span { padding: 0 var(--s-base); white-space: nowrap; }
+
+  .flex { display: flex; align-items: center; }
+  .col { display: flex; flex-direction: column; }
+  .grow { flex: 1; min-width: 0; }
+  .g2 { gap: 2px } .g4 { gap: var(--s-tight) } .g6 { gap: var(--s-snug) }
+  .g8 { gap: var(--s-base) } .g12 { gap: var(--s-comfortable) }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <header class="titlebar">
+    <div class="tb-lead">
+      <span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span>
+    </div>
+    <div class="tb-trail">
+      <div id="scope"></div>
+      <span style="flex:1"></span>
+      <div class="rooms">
+        <button class="on"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M2.5 6.5v3M5.5 4v8M8.5 2.5v11M11.5 5v6M14 7v2"/></svg>Sessions</button>
+        <button><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="3" cy="4" r="1.2"/><circle cx="3" cy="9.5" r="1.2"/><path d="M6.5 4h7M6.5 9.5h7M6.5 13.5h4"/></svg>Work</button>
+        <button><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5.5 5 2.5 8l3 3M10.5 5l3 3-3 3"/></svg>Code</button>
+      </div>
+    </div>
+  </header>
+  <div class="panes">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <span style="flex:1"></span>
+        <button class="bare" aria-label="New Session" title="New Session  ⌘N">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M8 3.4v9.2M3.4 8h9.2"/></svg>
+        </button>
+      </div>
+      <div class="roster" id="roster"></div>
+      <div class="sidebar-foot">Archived (2)</div>
+    </aside>
+
+    <section class="deck">
+      <div id="hdr"></div>
+      <div class="feed" id="feed"></div>
+      <div class="dock" id="dock"></div>
+    </section>
+  </div>
+</div>
+
+<div class="switch">
+  <button onclick="cycle(-1)" aria-label="Previous variant">‹</button>
+  <span id="switch-label" title="←/→ switch variants · r restarts the selected Session's Turn"></span>
+  <button onclick="cycle(1)" aria-label="Next variant">›</button>
+</div>
+
+<script>
+const CAPACITY = 1_000_000;
+const WARN = 150_000;
+const CRIT = 300_000;
+const tier = s => s.ctx == null ? null : s.ctx >= CRIT ? 'crit' : s.ctx >= WARN ? 'warn' : 'ok';
+const T0 = Date.now();
+/* NN/g: past ~10s a wait leaves the interaction and the user is owed a reading. */
+const GATE_SECONDS = 10;
+
+/* The same real sessions as roster-header-prototype.html (this machine, 2026-08-10), with
+   the liveness reassigned so every case #618 names is on screen at once:
+   - 0ec3b3b6 — managed, mid-turn 4m in. The ordinary case.
+   - 1986b0e5 — managed, turn started ~5s before load. Crosses C's 10s gate as you watch.
+   - 32c9e59a — managed, 6m+ into a turn at 472k context. The "is it stuck?" case.
+   - codex-56bf — external, observed mid-turn. Elapsed is DERIVED: Argo has only the last
+     record's arrival, so every variant words it `output Ns ago` and claims no duration.
+   `turn` is seconds already elapsed at load plus a token rate; both tick live. */
+const sessions = [
+  { id:'0ec3b3b6', title:'Roster and header content, then a prototype', state:'running', access:'managed',
+    branch:'main', worktree:false, dirty:1, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:'#400', ctx:216_764, total:29_926_918,
+    ran:'5h 51m', worked:'1h 13m', seen:null,
+    turn:{ ago:252, rate:33 } },
+
+  { id:'1986b0e5', title:'Restore the sessions Warp closed', state:'running', access:'managed',
+    branch:'main', worktree:false, dirty:1, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:null, ctx:67_175, total:1_287_782,
+    ran:'12m', worked:'12m', seen:null,
+    turn:{ ago:5, rate:48 } },
+
+  { id:'32c9e59a', title:'Retire Electron, set new design foundations', state:'running', access:'managed',
+    branch:'argo/retire-electron', worktree:true, dirty:0, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:'#373', ctx:472_233, total:193_281_846,
+    ran:'9h 25m', worked:'1h 35m', seen:null,
+    turn:{ ago:384, rate:20 } },
+
+  { id:'1a102eb8', title:'Which worktrees are half-finished and need a PR?', state:'attn', access:'managed',
+    branch:'argo/#476-feed-scroll-anchor', worktree:true, dirty:0, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:'#476', ctx:164_071, total:22_468_451,
+    ran:'48m', worked:'41m', seen:'51m', turn:null },
+
+  { id:'fff58dd6', title:'Draw the deck’s floating controls in glass', state:'fail', access:'managed',
+    branch:'argo/#490-new-message-badge', worktree:true, dirty:0, unpushed:0,
+    cli:'Claude Code', model:'Opus 5', ticket:'#489', ctx:250_997, total:45_875_370,
+    ran:'46m', worked:'46m', seen:'5h', turn:null },
+
+  /* Mid-turn as far as its transcript says — records are still landing. Argo never owns
+     this Turn's start, so its reading is DERIVED and worded as an observation. */
+  { id:'codex-56bf', title:'Native Session roster in Swift', state:'running', access:'external',
+    branch:'argo/#377-native-session-roster', worktree:true, dirty:0, unpushed:0,
+    cli:'Codex', model:'unknown', ticket:'#377', ctx:null, total:null,
+    ran:null, worked:null, seen:null,
+    turn:null, observed:{ last: T0 - 7_000, gap: 12_000 } },
+
+  { id:'w-375', title:'Graphite and Ion Blue across the shell', state:'idle', access:'orphaned',
+    branch:'worktree-ticket-375-graphite-ion-blue', worktree:true, dirty:0, unpushed:1,
+    cli:'Claude Code', model:'Opus 5', ticket:'#375', ctx:88_400, total:12_940_000,
+    ran:'2h 04m', worked:'1h 08m', seen:'3d', turn:null },
+];
+
+let selected = new URLSearchParams(location.search).get('s') || '0ec3b3b6';
+const byId = id => sessions.find(x => x.id === id);
+
+const k = n =>
+  n >= 1_000_000 ? (n / 1_000_000).toFixed(n % 1_000_000 ? 2 : 0).replace(/\.?0+$/,'') + 'M'
+  : n >= 1000 ? (n / 1000).toFixed(n >= 100_000 ? 0 : 1).replace('.0','') + 'k'
+  : String(n);
+const pct  = s => s.ctx == null ? null : Math.round(s.ctx / CAPACITY * 100);
+const over = s => tier(s) === 'warn' || tier(s) === 'crit';
+const word = s => s.state === 'attn' ? 'Needs input' : s.state === 'fail' ? 'Stopped' : null;
+const dotClass = s => s.access === 'external' ? 'hollow' : s.state;
+const sep = `<span class="dotsep">·</span>`;
+
+/* ---------- the clock ---------- */
+/* A bare figure is a duration Argo owns; `N ago` is a point in time it merely saw. The
+   roster settled that split for idle rows (`2m ago`), and the Turn reading keeps it. */
+const elapsedSec = s => s.turn ? Math.floor((Date.now() - T0) / 1000) + s.turn.ago : 0;
+const quietSec = s => s.observed ? Math.max(0, Math.floor((Date.now() - s.observed.last) / 1000)) : 0;
+const fmt = sec =>
+  sec < 60 ? `${sec}s`
+  : sec < 3600 ? `${Math.floor(sec / 60)}m ${String(sec % 60).padStart(2, '0')}s`
+  : `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
+const coarse = sec => sec < 60 ? `${sec}s` : sec < 3600 ? `${Math.floor(sec / 60)}m` : fmt(sec);
+/* A cost meter running in front of the user — variant C and D's actual question. */
+const turnTokens = s => Math.round(s.turn.rate * elapsedSec(s) * (1 + 0.08 * Math.sin(elapsedSec(s) / 7)));
+
+const isDirectTurn = s => s.state === 'running' && s.access === 'managed' && s.turn;
+const isDerivedTurn = s => s.state === 'running' && !!s.observed;
+
+/* The DERIVED reading, whole: tertiary ink, `ago` wording, no mint, no tokens. */
+const quietFact = s => `
+  <span class="fact mono dim">output <b data-quiet="${s.id}" style="font-weight:500"></b> ago</span>`;
+
+const SVG = {
+  branch: `<path d="M4.5 5.3v5.4"/><circle cx="4.5" cy="3.6" r="1.7"/><circle cx="4.5" cy="12.4" r="1.7"/>
+           <circle cx="11.5" cy="3.6" r="1.7"/><path d="M11.5 5.3v1.4a2.4 2.4 0 0 1-2.4 2.4H6.2"/>`,
+  worktree: `<rect x="5.4" y="5.4" width="8.2" height="8.2" rx="1.4"/><path d="M10.6 2.4H3.8a1.4 1.4 0 0 0-1.4 1.4v6.8"/>`,
+  folder: `<path d="M1.9 4.6a1.4 1.4 0 0 1 1.4-1.4h2.4l1.5 1.7h5.5a1.4 1.4 0 0 1 1.4 1.4v5.7a1.4 1.4 0 0 1-1.4 1.4H3.3a1.4 1.4 0 0 1-1.4-1.4z"/>`,
+  pencil: `<path d="M11.2 2.6 13.4 4.8 5.6 12.6 2.6 13.4l.8-3z"/>`,
+  push: `<path d="M8 13V4"/><path d="M4.4 7.6 8 4l3.6 3.6"/><path d="M4 2.6h8"/>`,
+};
+const glyph = d => `<svg class="g" viewBox="0 0 16 16" fill="none"
+  stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+const git = s => `
+  <span class="gitline">
+    ${glyph(s.worktree ? SVG.worktree : SVG.branch)}<span>${s.branch}</span>
+    ${s.dirty ? `<span class="mark" title="${s.dirty} uncommitted file${s.dirty > 1 ? 's' : ''}">${glyph(SVG.pencil)}${s.dirty}</span>` : ''}
+    ${s.unpushed ? `<span class="mark" title="${s.unpushed} commit${s.unpushed > 1 ? 's' : ''} not pushed">${glyph(SVG.push)}${s.unpushed}</span>` : ''}
+  </span>`;
+function access(s) {
+  if (s.access === 'external') return `<span class="fact dim">read-only</span>`;
+  if (s.access === 'orphaned') return `<span class="fact warn">orphaned</span>`;
+  return '';
+}
+const ctxWord = s => s.ctx == null ? 'unknown' : `${k(s.ctx)} / ${k(CAPACITY)}`;
+const TICKETS = {
+  '#400': 'Build the Sessions deck header',
+  '#373': 'Migrate the cockpit to SwiftUI',
+  '#476': 'Anchor the feed on its newest line',
+  '#489': 'Draw the deck’s floating controls in glass',
+  '#377': 'Native Session roster in Swift',
+  '#375': 'Graphite and Ion Blue across the shell',
+};
+const ticketTip = s => s.ticket ? `${s.ticket} — ${TICKETS[s.ticket] ?? ''}` : '';
+
+const handoff = s => !over(s) || s.access !== 'managed' ? '' : `
+  <button class="handoff ${tier(s)}"
+    title="Runs /handoff in this session, then opens a fresh one on the same branch and issue.">
+    <span>Hand off</span>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M13.5 11.5h-7a3 3 0 0 1 0-6H10"/><path d="M8 3.2 10.5 5.5 8 7.8"/></svg>
+  </button>`;
+
+const spend = s => [
+  s.total == null ? null : `${k(s.total)} tokens used`,
+  s.ran == null ? null : `started ${s.ran} ago`,
+  s.worked == null ? null : `worked ${s.worked}`,
+].filter(Boolean).join(' · ');
+const TICK_WARN = (WARN / CAPACITY * 100) + '%';
+const TICK_CRIT = (CRIT / CAPACITY * 100) + '%';
+
+/* ============ THE READING UNDER TEST ============ */
+
+/* What the header band's state region says, per variant. */
+function headerTurn(s, v) {
+  if (word(s)) return `<span class="fact ${s.state === 'fail' ? 'crit' : 'warn'}">${word(s)}</span>`;
+  if (isDerivedTurn(s) && (v === 'A' || v === 'D')) return quietFact(s);
+  if (!isDirectTurn(s)) return '';
+  if (v === 'A') return `
+    <span class="fact run">running</span>
+    <span class="fact mono run" data-elapsed="${s.id}"></span>`;
+  if (v === 'D') return `
+    <span class="fact run">running</span>
+    <span class="fact mono run" data-elapsed="${s.id}"></span> ${sep}
+    <span class="fact mono dim"><b data-tokens="${s.id}" style="font-weight:500"></b> tokens this turn</span>`;
+  return '';
+}
+
+/* What the tab line's trailing lane leads with, per variant. C only — and only past 10s. */
+function tabTurn(s, v) {
+  if (v !== 'C') return '';
+  if (isDerivedTurn(s)) return `${quietFact(s)} ${sep}`;
+  if (!isDirectTurn(s)) return '';
+  return `
+    <span class="gate flex g6" data-gate="${s.id}">
+      <span class="fact run">this turn</span>
+      <span class="fact mono run" data-elapsed="${s.id}"></span>
+      <span class="fact mono dim"><b data-tokens="${s.id}" style="font-weight:500"></b> tokens</span>
+      ${sep}
+    </span>`;
+}
+
+/* What the row's age slot says, per variant. B is precise; D is coarse minutes. */
+function rowTurn(s, v) {
+  if (v !== 'B' && v !== 'D') return s.seen ? `<span class="time">${s.seen} ago</span>` : '';
+  if (isDerivedTurn(s)) return `<span class="time">output <b data-quiet="${s.id}" style="font-weight:500"></b> ago</span>`;
+  if (isDirectTurn(s)) return `<span class="time live" data-elapsed="${s.id}" ${v === 'D' ? 'data-coarse="1"' : ''}></span>`;
+  return s.seen ? `<span class="time">${s.seen} ago</span>` : '';
+}
+
+/* ============ SURFACES (shipped layouts, not under test) ============ */
+
+/* SessionRow.swift: dot + title + state word, then the age leading and the worktree
+   trailing. Only the age slot's content varies. */
+const row = (s, v) => `
+  <div class="flex g8">
+    <span class="dot ${dotClass(s)}"></span>
+    <span class="title grow">${s.title}</span>
+    ${word(s) ? `<span class="badge ${s.state === 'fail' ? 'fail' : ''}">${word(s)}</span>` : ''}
+  </div>
+  <div class="flex g8" style="padding-left:14px">
+    ${rowTurn(s, v)}
+    <span class="grow"></span>
+    ${s.worktree ? `<span class="meta" style="flex:0 1 auto">${glyph(SVG.worktree)} ${s.branch}</span>` : ''}
+  </div>`;
+
+/* SessionHeader.swift: identity left (title over the fact line), then the state region,
+   Hand off, and the context instrument on the trailing edge. */
+const header = (s, v) => `
+  <div class="band">
+    <div class="col g2 grow">
+      <span class="h-title">${s.title}</span>
+      <div class="factline">
+        <span class="fact mono dim">${git(s)}</span> ${sep}
+        <span class="fact dim">${s.cli} · ${s.model}</span>
+        ${s.ticket ? `${sep}<span class="fact link" title="${ticketTip(s)}">Issue ${s.ticket} ↗</span>` : ''}
+        ${access(s) ? `${sep}${access(s)}` : ''}
+      </div>
+    </div>
+    <span class="flex g6">${headerTurn(s, v)}</span>
+    ${handoff(s)}
+    <div class="col g4" style="width:200px;flex:none">
+      <div class="flex g6" style="justify-content:space-between">
+        <span class="fact dim" style="font-size:10.5px;letter-spacing:.4px;text-transform:uppercase">Context</span>
+        <span class="fact mono ${tier(s) ?? ''}">${ctxWord(s)}</span>
+      </div>
+      <div class="bar ${tier(s) ?? ''}">
+        ${s.ctx != null ? `<i style="width:${Math.min(100, pct(s))}%"></i><span class="tick" style="left:${TICK_WARN}"></span><span class="tick" style="left:${TICK_CRIT}"></span>` : ''}
+      </div>
+    </div>
+  </div>
+  <div class="tabslot">
+    <span class="tab on">Activity</span><span class="tab">Delivery</span>
+    <span class="grow"></span>
+    <span class="flex g6" style="padding-bottom:var(--s-base)">
+      ${tabTurn(s, v)}
+      <span class="fact dim mono">${spend(s)}</span>
+    </span>
+  </div>`;
+
+const NAMES = {
+  A: 'Header — beside the state word',
+  B: 'Roster — the row ticks',
+  C: 'Header — turn meter past 10s',
+  D: 'Both — coarse row, precise header',
+};
+const KEYS = ['A', 'B', 'C', 'D'];
+
+function current() {
+  const v = (new URLSearchParams(location.search).get('variant') || 'A').toUpperCase();
+  return KEYS.includes(v) ? v : 'A';
+}
+
+function renderScope() {
+  document.getElementById('scope').innerHTML = `
+    <div class="vessel">
+      <span class="project">${glyph(SVG.folder)}argo</span>
+      <span class="divider"></span>
+      <span class="checkout">${glyph(SVG.branch)}main</span>
+    </div>`;
+}
+
+function renderFeed(s) {
+  const rows = `
+    <div class="fr"><span class="k">Search</span><span class="v"><code>rg toggleDevTools</code> · 41 matches · 180ms</span></div>
+    <div class="fr"><span class="k">Message</span><span class="v">The roster sorts on last activity now, and the caption says so.</span></div>
+    <div class="fr"><span class="k">Edit</span><span class="v"><span class="add">+18</span> <span class="rem">−6</span> &nbsp;<code>SessionRow.swift</code></span></div>
+    <div class="fr"><span class="k">Edit</span><span class="v"><span class="add">+2</span> <span class="rem">−9</span> &nbsp;<code>DeckZone.swift</code></span></div>
+    <div class="fr"><span class="k">Read</span><span class="v"><code>CockpitPresentation.swift</code> · 142 lines</span></div>
+    <div class="fr"><span class="k">Bash</span><span class="v"><code>swift test --filter SessionRosterProjectionTests</code></span></div>`;
+  /* The thread draws only for a managed running Session: for an observed one a quiet
+     mid-turn reads as idle, and drawing live work Argo cannot vouch for would be a false
+     DIRECT. The feed stays silent about duration in every variant — that was settled. */
+  const thread = isDirectTurn(s)
+    ? `<span class="grow"></span><div class="thread-lane"><div class="thread-glow"></div><div class="thread"></div></div>`
+    : '';
+  document.getElementById('feed').innerHTML = rows + thread;
+}
+
+function render() {
+  const v = current();
+  const s = byId(selected);
+  document.getElementById('roster').innerHTML = sessions.map(x => `
+    <div class="row ${x.id === selected ? 'sel' : ''} ${x.access === 'external' ? 'ext' : ''}"
+         onclick="selected='${x.id}';render()">${row(x, v)}</div>`).join('');
+  document.getElementById('hdr').innerHTML = header(s, v);
+  renderFeed(s);
+  document.getElementById('dock').innerHTML = s.access === 'managed'
+    ? `Terminal <span class="dotsep">·</span> live <span class="dotsep">·</span> <span style="font-family:var(--mono)">swift test --filter SessionRoster…</span>`
+    : `Transcript <span class="dotsep">·</span> ${s.access === 'orphaned'
+        ? 'orphaned — the terminal died with Argo, nothing to steer'
+        : 'read-only — external session, no PTY to steer'}`;
+  renderScope();
+  document.getElementById('switch-label').textContent = `${v} — ${NAMES[v]}`;
+  tick();
+}
+
+/* The 1Hz tick writes into the rendered spans rather than re-rendering, so the thread's
+   sweep is not restarted every second. */
+function tick() {
+  const now = Date.now();
+  for (const s of sessions) {
+    if (s.observed && now - s.observed.last > s.observed.gap) {
+      s.observed.last = now;
+      s.observed.gap = 4_000 + Math.random() * 14_000;
+    }
+  }
+  document.querySelectorAll('[data-elapsed]').forEach(el => {
+    const sec = elapsedSec(byId(el.dataset.elapsed));
+    el.textContent = el.dataset.coarse ? coarse(sec) : fmt(sec);
+  });
+  document.querySelectorAll('[data-tokens]').forEach(el => {
+    el.textContent = k(turnTokens(byId(el.dataset.tokens)));
+  });
+  document.querySelectorAll('[data-quiet]').forEach(el => {
+    el.textContent = fmt(quietSec(byId(el.dataset.quiet)));
+  });
+  document.querySelectorAll('[data-gate]').forEach(el => {
+    el.classList.toggle('ungated', elapsedSec(byId(el.dataset.gate)) >= GATE_SECONDS);
+  });
+}
+setInterval(tick, 1000);
+
+function cycle(d) {
+  history.replaceState(null, '', '?variant=' + KEYS[(KEYS.indexOf(current()) + d + KEYS.length) % KEYS.length]);
+  render();
+}
+
+addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+  /* Restart the selected Session's Turn, so the 10s gate can be replayed at will. */
+  if (e.key === 'r') {
+    const s = byId(selected);
+    if (s.turn) { s.turn.ago = -Math.floor((Date.now() - T0) / 1000); tick(); }
+  }
+});
+render();
+</script>
+</body>
+</html>
