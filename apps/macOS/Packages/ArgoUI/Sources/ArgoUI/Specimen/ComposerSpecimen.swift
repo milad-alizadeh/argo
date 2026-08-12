@@ -105,6 +105,14 @@ struct ComposerSpecimen: View {
         refusal: SessionDriveError.notDrivable.detail,
     )
 
+    /// A Turn the CLI never heard, come back to the field it was typed in (#682). The words are
+    /// the state: the reader watched the composer clear, so only a render settles whether finding
+    /// their message BACK reads as a recovery rather than as something they failed to send.
+    static let lost = ComposerDraft(
+        text: "what is @README.md about?",
+        notice: ComposerDraft.lost,
+    )
+
     /// A follow-up waiting on the Turn in flight, drawn above an empty field.
     static let queued = ComposerDraft(
         queued: [QueuedTurn(text: "And when that is green, open the PR against main.")],
