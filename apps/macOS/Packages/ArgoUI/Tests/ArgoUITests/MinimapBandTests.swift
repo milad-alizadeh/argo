@@ -35,6 +35,16 @@ struct MinimapBandTests {
         #expect(band.height == 900)
     }
 
+    /// The memory bound, stated as arithmetic: a band never exceeds the reach, so the pixels the
+    /// lane holds are a function of its own height and never of the session's length.
+    @Test
+    func `no band is taller than its reach, however long the session`() {
+        for miniature in [900, 9000, 900_000] as [CGFloat] {
+            let band = MinimapBand.around(0 ... 600, of: miniature, reach: Self.reach)
+            #expect(band.height <= Self.reach)
+        }
+    }
+
     @Test
     func `the band holds a lane-height of slack in either direction`() {
         let band = MinimapBand.around(1000 ... 1600, of: 9000, reach: Self.reach)

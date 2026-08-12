@@ -154,6 +154,31 @@ struct MinimapGeometryTests {
         #expect(lane.viewportY(at: lane.offsetRange.upperBound) == 525)
     }
 
+    /// The floor draws the lit range taller than it truly is, and the miniature slides that much
+    /// further for it — so the range still ends flush rather than overshooting the lane's foot.
+    @Test
+    func `a viewport held up by the floor still ends flush with the lane`() {
+        let reading = MinimapReading(
+            rowHeights: Array(repeating: 100, count: 20000), columnWidth: 8000,
+            viewportHeight: 600,
+        )
+        let lane = Self.geometry(reading)
+        #expect(lane.viewportHeightInLane == ArgoMinimapLane.viewportMinimumHeight)
+        // A tenth of a point: the compression here is 1/80, which no binary fraction lands on.
+        #expect(abs(lane.viewportY(at: lane.offsetRange.upperBound) - 576) < 0.1)
+    }
+
+    /// A lane with no room left over the lit range cannot solve for a slide, and a click on one
+    /// must still name the place it landed on rather than snapping the reading to its head.
+    @Test
+    func `a lane no taller than its lit range still maps a click`() {
+        let reading = MinimapReading(
+            rowHeights: Array(repeating: 100, count: 60), columnWidth: 800, viewportHeight: 4800,
+        )
+        let lane = MinimapGeometry(reading, lane: CGSize(width: 100, height: 20))
+        #expect(lane.offset(forLaneY: 10) > lane.offsetRange.lowerBound)
+    }
+
     @Test
     func `the reading at its start puts the viewport rectangle at the head of the lane`() {
         let lane = Self.geometry(Self.long())

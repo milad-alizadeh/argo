@@ -40,10 +40,21 @@ struct SessionsDeckTests {
 
     @Test
     func `the feed keeps the widest share of the row at the narrowest deck`() {
-        let beside = narrowestDeckWidth - ArgoLayout.agentsRailWidth
+        let beside = narrowestDeckWidth - ArgoLayout.agentsRailWidth - ArgoLayout.seamGrabWidth
         let lane = ArgoLayout.minimapLaneWidth(sharing: beside)
         #expect(beside - lane > ArgoLayout.agentsRailWidth)
         #expect(beside - lane > lane)
+    }
+
+    /// The rail's ceiling has to leave the feed its floor with the lane at ITS floor beside it, and
+    /// the rail's own seam counts against the same span the lane is a share of.
+    @Test
+    func `a rail dragged to its widest still leaves the feed its floor`() {
+        let limits = ArgoLayout.railLimits(in: narrowestDeckWidth)
+        let beside = narrowestDeckWidth - limits.upperBound - ArgoLayout.seamGrabWidth
+        let lane = ArgoLayout.minimapLaneWidth(sharing: beside)
+
+        #expect(beside - lane >= ArgoLayout.feedMinimumWidth)
     }
 
     /// The panel-open half of the same invariant.

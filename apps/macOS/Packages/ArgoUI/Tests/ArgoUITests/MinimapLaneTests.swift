@@ -97,17 +97,16 @@ struct MinimapLaneTests {
         #expect(deck.lane.marksFrame.maxY > Self.column.height)
     }
 
+    /// Once, for the whole travel from one end of the session to the other. How big the band that
+    /// gets drawn is belongs to `MinimapBandTests`.
     @Test
-    func `leaving the band draws the new one, and the lane holds one band's worth of pixels`()
-        throws {
+    func `leaving the band draws the new one, and only the new one`() {
         let deck = Self.mounted(over: FeedProjection.longRows)
         let drawn = deck.lane.markRedraws
 
         deck.feed.settle(at: .greatestFiniteMagnitude, over: nil)
 
         #expect(deck.lane.markRedraws == drawn + 1)
-        let band = try #require(deck.lane.drawnBand)
-        #expect(band.height == Self.column.height * ArgoMinimapLane.bandLaneHeights)
     }
 
     @Test

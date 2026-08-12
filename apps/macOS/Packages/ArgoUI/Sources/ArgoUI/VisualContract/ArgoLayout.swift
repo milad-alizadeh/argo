@@ -65,10 +65,9 @@ public enum ArgoLayout {
     public static let contextGuideThresholdWidth: CGFloat = 74
     /// Where the rail opens — a starting width, not a fixed one; the seam beside it moves.
     public static let agentsRailWidth: CGFloat = 256
-    /// The overview lane is a share of the reading it maps rather than a fixed slot, because its
-    /// compression is `laneWidth / feedColumnWidth` and a fixed slot would make that ratio move
-    /// every time a seam did. A share holds it steady, so the miniature looks the same at any deck
-    /// width. Xcode's minimap does the same, ceiling included.
+    /// The overview lane's share of the reading it maps. Its compression is
+    /// `laneWidth / feedColumnWidth`, so a share holds that ratio steady where a fixed slot would
+    /// move it with every seam.
     public static let minimapLaneShare: CGFloat = 0.15
     /// Where that share stops. Under the floor the lane is no longer a map of anything; over the
     /// ceiling it takes reading width to say nothing more.
@@ -104,6 +103,16 @@ public enum ArgoLayout {
         let floor = evidencePanelMinimumWidth
         let ceiling = deck - feedMinimumWidth
         return floor ... max(floor, ceiling)
+    }
+
+    /// How wide the rail may be dragged in a deck of a given width. The ceiling carries the
+    /// invariant: whatever the reader drags to, the feed is left `feedMinimumWidth` with the lane
+    /// at its own floor beside it. The rail's seam counts, because the lane's share is taken from
+    /// what is left after it.
+    public static func railLimits(in deck: CGFloat) -> ClosedRange<CGFloat> {
+        let taken = minimapLaneWidths.lowerBound + feedMinimumWidth + seamGrabWidth
+        let floor = railWidths.lowerBound
+        return floor ... max(floor, min(railWidths.upperBound, deck - taken))
     }
 
     /// A zone's width, seated inside its limits and on a whole point. A pointer reports in

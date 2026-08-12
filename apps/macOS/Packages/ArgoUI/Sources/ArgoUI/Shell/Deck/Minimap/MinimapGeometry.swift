@@ -56,8 +56,14 @@ struct MinimapGeometry: Equatable {
 
     /// How far the miniature slides inside the lane. Zero for a reading whose miniature already
     /// fits, which is the case the lane shows whole.
+    ///
+    /// It carries the lit range's own floor: where the floor draws that range taller than it truly
+    /// is, the miniature slides the difference further, so the range still ends flush with the
+    /// lane's foot at the end of the reading rather than overshooting it.
     var laneTravel: CGFloat {
-        max(0, miniatureHeight - lane.height)
+        let overflow = miniatureHeight - lane.height
+        guard overflow > 0 else { return 0 }
+        return overflow + viewportHeightInLane - reading.viewportHeight * scale
     }
 
     /// Where the reading may sit. The floor is the top gutter, which the clip view starts above;
@@ -103,9 +109,11 @@ struct MinimapGeometry: Equatable {
     /// the answer self-consistent: the rectangle lands exactly where the hand is.
     func offset(forLaneY laneY: CGFloat) -> CGFloat {
         let range = offsetRange
-        let perPoint = lanePointsPerReadingPoint
-        guard perPoint > 0 else { return range.lowerBound }
-        let landed = laneY / perPoint - reading.topInset
+        // A lane with no room left over the lit range has no travel to solve for, so the fallback
+        // is the plain compression. Never zero, so a click always names a place rather than
+        // snapping the reading to its head.
+        let solved = lanePointsPerReadingPoint
+        let landed = laneY / (solved > 0 ? solved : scale) - reading.topInset
         return min(range.upperBound, max(range.lowerBound, landed))
     }
 

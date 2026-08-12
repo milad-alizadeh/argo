@@ -11,13 +11,16 @@ extension MinimapLaneView {
     /// The marks layer put where the miniature has slid to, redrawing only when it has to.
     func placeMarks(slidTo laneOffset: CGFloat) {
         let window = laneOffset ... laneOffset + bounds.height
-        let band = drawnBand.flatMap { $0.covers(window) ? $0 : nil } ?? MinimapBand.around(
+        var band = MinimapBand.around(
             window,
             of: geometry.miniatureHeight,
             reach: bounds.height * ArgoMinimapLane.bandLaneHeights,
         )
+        if let drawn = drawnBand, drawn.covers(window) {
+            band = drawn
+        }
         paint(band)
-        marksLayer.frame = rect(at: band.origin - laneOffset, height: band.height, inset: 0)
+        marksLayer.frame = rect(at: band.origin - laneOffset, height: band.height)
     }
 
     /// The band rasterised, unless the pixels already there say the same thing. A feed append below
@@ -37,8 +40,6 @@ extension MinimapLaneView {
         marksLayer.contents = bitmap(of: marks, in: band)
     }
 
-    /// The ink is `inked`, which `paint` has just set — one fewer parameter to carry, and the one
-    /// caller is right above.
     private func bitmap(of marks: [MinimapMark], in band: MinimapBand) -> CGImage? {
         let inset = ArgoMinimapLane.markInset
         let scale = marksLayer.contentsScale

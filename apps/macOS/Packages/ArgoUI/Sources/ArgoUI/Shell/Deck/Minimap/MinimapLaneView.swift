@@ -106,21 +106,16 @@ final class MinimapLaneView: NSView {
         viewportLayer.backgroundColor = viewportGround
         viewportLayer.isHidden = !geometry.isScrollable
         viewportLayer.frame = rect(
-            at: geometry.viewportY(at: offset), height: geometry.viewportHeightInLane, inset: 0,
+            at: geometry.viewportY(at: offset), height: geometry.viewportHeightInLane,
         )
         CATransaction.commit()
     }
 
-    /// A lane-space band as AppKit wants it. Lane space counts down from the top, like the reading
-    /// it maps, and AppKit counts up; the view is deliberately NOT flipped, because a flipped host
-    /// flips its backing layer's geometry too and turns the marks bitmap over.
-    func rect(at laneY: CGFloat, height: CGFloat, inset: CGFloat) -> CGRect {
-        CGRect(
-            x: inset,
-            y: bounds.height - laneY - height,
-            width: bounds.width - inset * 2,
-            height: height,
-        )
+    /// A full-width lane band as AppKit wants it. Lane space counts down from the top, like the
+    /// reading it maps, and AppKit counts up; the view is deliberately NOT flipped, because a
+    /// flipped host flips its backing layer's geometry too and turns the marks bitmap over.
+    func rect(at laneY: CGFloat, height: CGFloat) -> CGRect {
+        CGRect(x: 0, y: bounds.height - laneY - height, width: bounds.width, height: height)
     }
 
     override func layout() {
@@ -144,12 +139,9 @@ final class MinimapLaneView: NSView {
         refresh()
     }
 
-    /// The visible range is a lit AREA rather than an outlined one — Xcode's own reading, and the
-    /// right one here: the lane is a picture, and a border over a picture hides a band of it.
-    ///
-    /// Two rungs of one family, `wash` at rest and `muted` under the pointer. Near-white rather
-    /// than the accent, because every mark under it is already a neutral and a blue ground would
-    /// tint the ones it covers into meaning something the ones beside them do not.
+    /// The visible range as a lit AREA rather than an outline, on two rungs of one family: `wash`
+    /// at rest, `muted` under the pointer. Near-white, because a coloured ground would tint the
+    /// marks it covers into reading differently from the ones beside them.
     var viewportGround: CGColor? {
         guard let palette else { return nil }
         let lit = palette.text.primary

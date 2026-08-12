@@ -31,8 +31,8 @@ struct FeedPreview: View {
     @State private var table = FeedTableHandle()
 
     var body: some View {
-        // The lane is a share of what it and the feed have between them, so the preview has to be
-        // measured like the deck rather than given a number.
+        // The lane is a share of what it and the feed have between them, so it is measured rather
+        // than given a number. No rail here, so the whole width is that span.
         GeometryReader { proxy in
             HStack(spacing: ArgoSpacing.flush) {
                 FeedView(
