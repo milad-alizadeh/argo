@@ -32,8 +32,7 @@ import SwiftUI
     /// The model the table is applied, with everything the deck owns left inert: these suites open
     /// no row, fold nothing and follow nothing. Also the way a suite grows the reading under a
     /// table that is already laid out.
-    /// `hasMinimap` defaults to the ordinary deck, which has the lane up beside the reading.
-    static func model(showing rows: [FeedRow], hasMinimap: Bool = true) -> FeedTableModel {
+    static func model(showing rows: [FeedRow]) -> FeedTableModel {
         let focus = FocusState<FeedFocus?>()
         return FeedTableModel(
             rows: rows,
@@ -44,7 +43,6 @@ import SwiftUI
             held: nil,
             isResizing: false,
             isUnderComposer: false,
-            hasMinimap: hasMinimap,
             washed: nil,
             unfolded: .constant([]),
             environment: EnvironmentValues(),

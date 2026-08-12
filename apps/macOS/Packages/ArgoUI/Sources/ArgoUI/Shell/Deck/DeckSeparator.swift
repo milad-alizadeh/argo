@@ -6,8 +6,14 @@ import SwiftUI
 struct DeckSeparator: View {
     @Environment(\.argo) private var argo
 
+    /// The divider is HIDDEN and drawn over, not tinted: it keeps the platform's own thickness and
+    /// its orientation from the stack it sits in, but an overlay of a translucent ink over its own
+    /// grey composites to a brighter line than the token asks for — every seam in the deck read
+    /// louder than `edge.hairline`.
     var body: some View {
-        Divider().overlay(argo.color.edge.hairline)
+        Divider()
+            .hidden()
+            .overlay(argo.color.edge.hairline)
     }
 }
 

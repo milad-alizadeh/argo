@@ -87,6 +87,28 @@ struct MinimapRunsTests {
     func `a row is drawn at the whole lines its height holds`(height: CGFloat, lines: Int) {
         #expect(MinimapRuns.lines(inside: height) == lines)
     }
+
+    /// One frame per shot, wrapping where the row's own grid wraps. The count is the whole question
+    /// a reader has about a turn that rendered something, so a run of six may not read as one slab.
+    @Test
+    func `a gallery draws one frame per shot, wrapped as the row wraps them`() {
+        // 400pt of column takes two 168pt shots to a line, whatever the contract's gap is.
+        let runs = MinimapRuns.runs(of: .shots(count: 5), over: 40, across: 400)
+
+        #expect(runs.count == 5)
+        #expect(runs.allSatisfy { $0.ink == .media })
+        #expect(runs[1].line == runs[0].line)
+        #expect(runs[1].span.lowerBound > runs[0].span.upperBound)
+        #expect(runs[2].line > runs[1].line)
+        // Each stands as many lines as its own height covers, and none runs the lane's full width.
+        #expect(runs.allSatisfy { $0.lines > 1 })
+        #expect(runs.allSatisfy { Self.width($0) < 1 })
+    }
+
+    @Test
+    func `a gallery of nothing draws nothing`() {
+        #expect(MinimapRuns.runs(of: .shots(count: 0), over: 4, across: 720).isEmpty)
+    }
 }
 
 private extension MinimapRunsTests {

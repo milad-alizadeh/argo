@@ -30,15 +30,14 @@ private extension FeedRow.Content {
         case let .survey(survey): .sentence(length: survey.length, ink: survey.ending.ink)
         case let .unreadable(unreadable):
             .sentence(length: unreadable.label.utf8.count, ink: .unreadable)
-        // Rows the lane draws as a shape rather than as a length. A gallery is a container, a
-        // question is the one thing that crosses the whole lane, and a mark is a rule — none is a
-        // sentence running out across the column, so none takes a sentence's width.
-        case .gallery: .whole(.media)
-        case .ask: .whole(.attention)
-        // The one mark that reports an act rather than the shape of the record, and the one that
-        // takes attention ink in the feed. It reads as an attention event here too.
-        case .mark(.permissionExpired): .whole(.attention)
-        case .mark: .whole(.boundary)
+        // Rows the lane draws as a shape rather than as a length. None is a sentence running out
+        // across the column, so none takes a sentence's width.
+        //
+        // Each asks its own type for its ink rather than answering for it here: a question that has
+        // been answered goes quiet in the row, and the lane has to go quiet with it.
+        case let .gallery(gallery): .shots(count: gallery.shots.count)
+        case let .ask(ask): .whole(ask.ink)
+        case let .mark(mark): .whole(mark.ink)
         }
     }
 
@@ -64,7 +63,7 @@ private extension FeedCall {
         // A failure is drawn as the failure it was, not as the mutation it attempted — the feed
         // puts the whole line in the failure ink, and the counts beside a red line would read as
         // a change that landed.
-        guard let churn, !churn.isSilent, ending != .failed else {
+        guard let churn, !churn.isSilent, !ending.hasFailed else {
             return .sentence(length: length, ink: ending.ink)
         }
         return .change(length: length, added: churn.added, removed: churn.removed)
@@ -74,17 +73,6 @@ private extension FeedCall {
     /// joining them once per call row per reshape is a string the lane never draws.
     var length: Int {
         kind.verb.utf8.count + 1 + subject.length
-    }
-}
-
-private extension FeedCall.Ending {
-    /// What ink the row is drawn in. Only a failure changes it — a pending call is not a state the
-    /// lane can hold still, and a success is the ordinary case.
-    var ink: MinimapInk {
-        switch self {
-        case .failed: .failure
-        case .pending, .succeeded: .command
-        }
     }
 }
 

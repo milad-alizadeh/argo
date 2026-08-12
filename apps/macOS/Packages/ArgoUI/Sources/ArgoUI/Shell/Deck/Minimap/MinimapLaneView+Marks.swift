@@ -29,7 +29,7 @@ extension MinimapLaneView {
     private func paint(_ band: MinimapBand) {
         guard let palette else { return }
         let marks = geometry.marks(in: band.range)
-        let inks = MinimapInk.allCases.map { $0.color(in: palette) }
+        let inks = FeedInk.allCases.map { $0.color(in: palette) }
         guard band != drawnBand || marks != drawnMarks || inks != inked else { return }
         markRedraws += 1
         drawnBand = band

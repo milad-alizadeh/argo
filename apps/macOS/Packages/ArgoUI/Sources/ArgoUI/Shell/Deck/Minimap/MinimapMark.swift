@@ -11,5 +11,5 @@ struct MinimapMark: Equatable {
     let height: CGFloat
     /// How far across the drawable width it runs, as shares of it.
     let span: ClosedRange<CGFloat>
-    let ink: MinimapInk
+    let ink: FeedInk
 }

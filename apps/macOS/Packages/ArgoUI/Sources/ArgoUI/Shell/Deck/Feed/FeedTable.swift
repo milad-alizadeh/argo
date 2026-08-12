@@ -50,7 +50,6 @@ struct FeedTable: NSViewRepresentable {
             held: held,
             isResizing: isResizing,
             isUnderComposer: isUnderComposer,
-            hasMinimap: context.environment.deckHasMinimap,
             washed: washed,
             unfolded: $unfolded,
             environment: context.environment,

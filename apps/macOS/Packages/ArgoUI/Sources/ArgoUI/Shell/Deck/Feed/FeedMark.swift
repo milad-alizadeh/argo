@@ -30,6 +30,16 @@ enum FeedMark: Equatable, Sendable {
 }
 
 extension FeedMark {
+    /// The ink this mark takes, for the row's words and for the lane alike. Attention for the one
+    /// mark that reports an ACT, and the rule ink for the rest: `cockpit-status-vocabulary.md`
+    /// carries the state on the dot and keeps the word neutral.
+    var ink: FeedInk {
+        switch self {
+        case .permissionExpired: .attention
+        case .compacted, .turnEnded, .spent, .handedOff, .interrupted, .working: .boundary
+        }
+    }
+
     /// What the mark says on screen, or `nil` where the rule alone says it. The stop reason is the
     /// HOST's word, carried verbatim: a reader comparing the feed with their terminal must find the
     /// same word in both.

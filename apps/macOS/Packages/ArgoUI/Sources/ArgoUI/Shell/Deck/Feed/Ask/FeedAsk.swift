@@ -22,6 +22,13 @@ struct FeedAsk: Equatable, Sendable {
         !isAnswered
     }
 
+    /// The ink this row is drawn in, answered HERE rather than in the view, so the lane and the row
+    /// cannot disagree about which questions are still waiting. An answered question is history and
+    /// takes the same ink as anything else the record has finished with.
+    var ink: FeedInk {
+        isPending ? .attention : .message
+    }
+
     /// Which of the offered options the answer named, or `nil`.
     ///
     /// DERIVED and deliberately weak: the answer is prose, not a field naming an option, so the

@@ -116,7 +116,7 @@ struct FeedCallLine: View {
     /// A failure is the ONLY outcome with a colour. For a reader who cannot see the red, the
     /// failure is carried by the accessibility label instead.
     private var verdict: ArgoColor? {
-        call.ending.hasFailed ? argo.color.state.failure : nil
+        call.ending.ink.state(in: argo.color)
     }
 
     /// Whether this is the call the agent is running right now.

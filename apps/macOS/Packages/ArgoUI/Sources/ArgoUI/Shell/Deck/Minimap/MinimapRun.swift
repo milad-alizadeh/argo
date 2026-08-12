@@ -6,7 +6,7 @@ import Foundation
 /// Two runs share a line where one row says two things at once — a mutation's added and removed
 /// halves, which the row itself draws side by side at the end of its sentence.
 struct MinimapRun: Equatable, Sendable {
-    let ink: MinimapInk
+    let ink: FeedInk
     /// Which of the row's drawn lines this starts on, counted from the head.
     let line: Int
     /// How many lines it covers. More than one for the shapes the feed draws as a block rather than

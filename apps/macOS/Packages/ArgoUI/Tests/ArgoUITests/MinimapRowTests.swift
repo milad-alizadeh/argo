@@ -101,19 +101,27 @@ struct MinimapRowTests {
     func `a question waiting on somebody crosses the lane`() {
         let ask = FeedAsk(ask: Ask(questions: []), isAnswered: false, answer: nil)
         #expect(Self.shape(.ask(ask)) == .whole(.attention))
-        #expect(MinimapInk.attention.shape == .band)
+        #expect(FeedInk.attention.shape == .band)
+    }
+
+    /// The row goes quiet the moment something answers it, and the lane has to go quiet with it —
+    /// a lane still amber beside a settled question is the map disagreeing with the reading.
+    @Test
+    func `a question somebody answered stops taking attention ink`() {
+        let settled = FeedAsk(ask: Ask(questions: []), isAnswered: true, answer: "Both")
+        #expect(Self.shape(.ask(settled)) == .whole(.message))
     }
 
     @Test
-    func `a run of pictures is a frame rather than a fill`() {
-        #expect(Self.shape(.gallery(FeedGallery(shots: []))) == .whole(.media))
-        #expect(MinimapInk.media.shape == .frame)
+    func `a run of pictures is one frame per shot rather than one over the run`() {
+        #expect(Self.shape(.gallery(FeedGallery(shots: []))) == .shots(count: 0))
+        #expect(FeedInk.media.shape == .frame)
     }
 
     @Test
     func `the punctuation between Turns is a rule`() {
         #expect(Self.shape(.mark(.compacted)) == .whole(.boundary))
-        #expect(MinimapInk.boundary.shape == .rule)
+        #expect(FeedInk.boundary.shape == .rule)
     }
 
     @Test(arguments: [

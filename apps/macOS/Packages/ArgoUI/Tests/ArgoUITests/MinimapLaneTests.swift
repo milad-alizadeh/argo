@@ -144,35 +144,19 @@ struct MinimapLaneTests {
         #expect(deck.lane.markRedraws == drawn)
     }
 
-    /// The knob is the reading's scroller, drawn where the platform's would be if the lane were not
-    /// standing in front of it — down the lane's outer edge, level with the lit range so the two
-    /// can never disagree about where the reader is.
+    /// One scrollbar, not two. The lit rectangle already stands for the visible range, and the
+    /// platform's own knob would draw BETWEEN the reading and its map.
     @Test
-    func `the scroll knob runs down the lane's outer edge, level with the lit range`() {
-        let deck = Self.mounted(over: FeedProjection.longRows)
-        let knob = deck.lane.scrollerFrame
-        let lit = deck.lane.viewportFrame
-
-        #expect(knob.maxX == Self.width - ArgoMinimapLane.scrollerInset)
-        #expect(knob.width == ArgoMinimapLane.scrollerWidth)
-        #expect(knob.minY == lit.minY)
-        #expect(knob.height == lit.height)
-        // Clear of the marks, which are held further off the edge than the knob is wide.
-        #expect(knob.minX > Self.width - ArgoMinimapLane.markInset)
-    }
-
-    /// One knob, not two. The platform's own would draw BETWEEN the reading and its map.
-    @Test
-    func `the feed hands its scroller to the lane while one is beside it`() throws {
+    func `the reading never draws a scrollbar of its own`() throws {
         let handle = FeedTableHandle()
         let table = FeedTableFixture.laidOut(
             FeedProjection.longRows, in: Self.column, through: handle,
         )
         #expect(try !#require(table.scroller).hasVerticalScroller)
 
-        table.apply(FeedTableFixture.model(showing: FeedProjection.longRows, hasMinimap: false))
+        table.apply(FeedTableFixture.model(showing: FeedProjection.longRows))
 
-        #expect(try #require(table.scroller).hasVerticalScroller)
+        #expect(try !#require(table.scroller).hasVerticalScroller)
     }
 
     @Test

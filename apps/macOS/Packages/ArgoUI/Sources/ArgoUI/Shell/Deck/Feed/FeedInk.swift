@@ -1,15 +1,20 @@
 import Foundation
 
-/// What one run of the miniature stands for, and the ink the feed already reads it in (#382).
+/// What a row of the reading stands for, and the ink it is drawn in (#382).
 ///
-/// The lane is the reading shrunk, so no hue is spent here that the rows below do not spend: the
-/// text ramp for what was said, the two diff inks for what a mutation did, and attention for the
-/// one row waiting on somebody. Every role is opaque, because the lane's own alpha is applied on
-/// top of it and a translucent role would be dimmed twice.
+/// The FEED owns this, not the minimap, and each of the feed's own types answers with its own —
+/// `FeedAsk.ink`, `FeedCall.ink`, `FeedMark.ink`. The row paints from it and the lane draws from
+/// it, so there is no second table of colours to fall out of step with the first. That drift is
+/// what put attention amber on a settled question in the lane while the row below it had already
+/// gone quiet.
+///
+/// No hue is spent here that the rows do not spend: the text ramp for what was said, the two diff
+/// inks for what a mutation did, and attention for the one row waiting on somebody. Every role is
+/// opaque, because the lane's own alpha is applied on top and a translucent role would dim twice.
 ///
 /// Colour is never the whole answer. D25's map may not depend on it, so the run's SHAPE carries the
-/// class too — see `crossesLane` and `isFramed` here, and the spans the projection gives each kind.
-enum MinimapInk: Equatable, Sendable, CaseIterable {
+/// class too — see `Shape` here, and the spans the projection gives each kind.
+enum FeedInk: Equatable, Sendable, CaseIterable {
     /// What someone asked for.
     case prompt
     /// What the agent said.
@@ -66,7 +71,19 @@ enum MinimapInk: Equatable, Sendable, CaseIterable {
         role(in: palette).opacity(ArgoMinimapLane.runOpacity)
     }
 
-    private func role(in palette: ArgoPalette) -> ArgoColor {
+    /// This ink where it says a STATE, and `nil` where it is only a rung. The feed colours a
+    /// failure and a question waiting on somebody, and spells everything else as loudness — so a
+    /// row asks here which of the two it has rather than testing the state a second time.
+    func state(in palette: ArgoPalette) -> ArgoColor? {
+        switch self {
+        case .failure, .attention: role(in: palette)
+        case .prompt, .message, .thought, .command, .added, .removed, .media, .boundary,
+             .unreadable: nil
+        }
+    }
+
+    /// The role at full strength, for the rows themselves. The lane takes `color(in:)` instead.
+    func role(in palette: ArgoPalette) -> ArgoColor {
         switch self {
         case .prompt: palette.text.primary
         // A message, a call and a picture frame share one rung. A rung is a loudness and not a

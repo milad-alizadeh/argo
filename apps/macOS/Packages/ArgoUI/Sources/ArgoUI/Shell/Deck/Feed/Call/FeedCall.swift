@@ -181,6 +181,13 @@ extension FeedCall.Ending {
         self == .failed
     }
 
+    /// The ink a call with this ending is drawn in, for the row and the lane alike. Only a failure
+    /// carries a colour: a pending call is a rung above the finished ones rather than a hue, and a
+    /// success is the ordinary case.
+    var ink: FeedInk {
+        hasFailed ? .failure : .command
+    }
+
     /// What a screen reader hears about the ending, where there is anything to say. A success is
     /// silent, as the drawn line is.
     var spoken: String? {
