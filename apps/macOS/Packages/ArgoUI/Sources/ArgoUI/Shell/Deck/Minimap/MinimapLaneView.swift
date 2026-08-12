@@ -54,6 +54,9 @@ final class MinimapLaneView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
+        // The band is several lane-heights tall and hangs off both ends of the lane by design, so
+        // the host clips it. Without this it paints over the deck header above and the row below.
+        layer?.masksToBounds = true
         marksLayer.contentsGravity = .resize
         layer?.addSublayer(marksLayer)
         layer?.addSublayer(viewportLayer)

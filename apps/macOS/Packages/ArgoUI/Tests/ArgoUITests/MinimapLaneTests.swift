@@ -97,6 +97,16 @@ struct MinimapLaneTests {
         #expect(deck.lane.marksFrame.maxY > Self.column.height)
     }
 
+    /// The band is taller than the lane, so the lane has to clip it. Unclipped, it painted over the
+    /// deck header above and the row below.
+    @Test
+    func `the band is clipped to the lane it hangs out of`() throws {
+        let deck = Self.mounted(over: FeedProjection.longRows)
+
+        #expect(deck.lane.marksFrame.height > Self.column.height)
+        #expect(try #require(deck.lane.layer).masksToBounds)
+    }
+
     /// Once, for the whole travel from one end of the session to the other. How big the band that
     /// gets drawn is belongs to `MinimapBandTests`.
     @Test
