@@ -71,11 +71,9 @@ public extension Hub {
         openThread(for: plan)
     }
 
-    /// What the CLI is started with. The companion plugin and the permission gate are `claude`'s
-    /// alone: the bundle speaks Claude Code's plugin format, and Codex raises its approvals over
-    /// the protocol rather than through a hook (ADR-0024).
+    /// What the CLI is started with — the flags, and the channels only some CLIs take.
     private func launch(for plan: AgentSpawnPlan) async throws -> AgentLaunch {
-        let invitation = plan.cli == .claude
+        let invitation = plan.cli.takesCompanionPlugin
             ? try companion?.invite(plan.claim, gatedBy: permissions?.grant(plan.claim))
             : nil
         let launch = try await spawnServices.launcher.launch(
@@ -86,16 +84,26 @@ public extension Hub {
         .adding(plan.cli.surfaceArguments)
         .adding(plan.cli.arguments(standingOn: plan.mode))
         .adding(plan.seed.resuming.map(plan.cli.arguments(resuming:)) ?? [])
-        // Codex opens on a Turn rather than on argv — see `openThread`.
-        guard plan.cli == .claude, let opening = plan.seed.opening else { return launch }
+        // A CLI that opens on a Turn instead takes its prompt in `openThread`.
+        guard plan.cli.opensOnArgv, let opening = plan.seed.opening else { return launch }
         return launch.opening(opening)
+    }
+
+    /// Whatever this CLI needs beyond a running process. A switch and not a capability flag: what
+    /// happens here is one CLI's own protocol, so a third has to say what its channel is rather
+    /// than answer yes or no to Codex's.
+    private func openThread(for plan: AgentSpawnPlan) {
+        switch plan.cli {
+        // The PTY is the whole channel: there is nothing to open on top of it.
+        case .claude: break
+        case .codex: openCodexThread(for: plan)
+        }
     }
 
     /// A Codex spawn is a JSON-RPC client as well as a process: the thread is asked for the moment
     /// the server is up, and the seed's prompt is its first Turn. Queued rather than sent, because
     /// the thread does not exist until the server says it does.
-    private func openThread(for plan: AgentSpawnPlan) {
-        guard plan.cli == .codex else { return }
+    private func openCodexThread(for plan: AgentSpawnPlan) {
         let claim = plan.claim
         let thread = CodexThread(cwd: plan.cwd, mode: plan.mode) { [weak self] line in
             self?.terminals.write(line, to: claim) ?? false
@@ -141,13 +149,14 @@ public extension Hub {
         permissions?.withdraw(claim)
     }
 
-    /// Every chunk goes to both tables. The codex one answers only for a claim it holds a thread
-    /// for, so a `claude` PTY's bytes reach it and stop there.
+    /// A chunk goes to ONE table. A Codex claim's bytes are JSON-RPC and belong to its thread; the
+    /// terminal table would only keep them in a replay buffer for a viewer that cannot exist,
+    /// because there is no PTY behind a Codex Session to draw.
     private func events(for claim: SessionOwnership.ClaimID) -> AgentProcessEvents {
         AgentProcessEvents(
             onData: { [weak self] chunk in
-                self?.terminals.received(chunk, from: claim)
-                self?.codex.received(chunk, from: claim)
+                guard let self, !codex.received(chunk, from: claim) else { return }
+                terminals.received(chunk, from: claim)
             },
             onExit: { [weak self] code in self?.processEnded(claim, exitCode: code) },
         )

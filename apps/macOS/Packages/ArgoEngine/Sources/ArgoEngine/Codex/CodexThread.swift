@@ -17,6 +17,9 @@ final class CodexThread {
     enum Stage: Equatable {
         case handshaking
         case ready(String)
+        /// The server refused the handshake, so there will never be a thread. Everything after it
+        /// is refused rather than queued behind a wait that cannot end.
+        case refused
     }
 
     let cwd: String
@@ -57,11 +60,15 @@ final class CodexThread {
     /// Put one Turn to the thread, or hold it until there is one. `false` where the line could not
     /// be written at all, which is the adapter's `notDrivable`.
     func send(_ text: String) -> Bool {
-        guard case let .ready(threadID) = stage else {
+        switch stage {
+        case .handshaking:
             queued.append(text)
             return true
+        case let .ready(threadID):
+            return start(text, on: threadID)
+        case .refused:
+            return false
         }
-        return start(text, on: threadID)
     }
 
     /// Stop the Turn in flight. Silence where there is none: whether a Turn is running is a DERIVED
@@ -114,7 +121,7 @@ final class CodexThread {
         put(CodexRPC.notification("initialized"))
         threadStartID = ask("thread/start", [
             "cwd": .string(cwd),
-            "approvalPolicy": .string(stance.approvalPolicy),
+            "approvalPolicy": .string(stance.approval.rawValue),
             "sandbox": .string(stance.sandbox.rawValue),
         ])
     }
@@ -133,13 +140,21 @@ final class CodexThread {
         turnID = turn
     }
 
+    /// The server refused a message the handshake depended on. Whatever was typed into the wait is
+    /// let go with it — held Turns would sit behind a thread that is never coming, which reads to
+    /// the user exactly like a message that was swallowed.
+    func refuse() {
+        stage = .refused
+        queued = []
+    }
+
     private func start(_ text: String, on threadID: String) -> Bool {
         let images = pendingImages
         pendingImages = []
         let sent = ask("turn/start", [
             "threadId": .string(threadID),
             "cwd": .string(cwd),
-            "approvalPolicy": .string(stance.approvalPolicy),
+            "approvalPolicy": .string(stance.approval.rawValue),
             "sandboxPolicy": stance.sandbox.policy,
             "input": .array([.object(["type": .string("text"), "text": .string(text)])]
                 + images.map(Self.imageInput)),

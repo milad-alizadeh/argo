@@ -15,7 +15,7 @@ extension SpawnFixture {
     func openCodexSession(seed: SessionSeed = .unseeded) async throws -> CodexSession {
         let claim = try await hub.spawnSession(cli: .codex, seed: seed)
         guard let process = host.started.last else {
-            throw AgentSpawnError.hostRefused(detail: "the fake host started nothing")
+            throw CodexFixtureFault.nothingStarted
         }
         let server = CodexConversation(
             written: { process.written },

@@ -42,16 +42,18 @@ public extension Hub {
     }
 
     /// What starts one CLI's surface: a PTY for the interactive `claude`, pipes for `codex
-    /// app-server`. A window that was given no host starts neither.
+    /// app-server`.
+    ///
+    /// The PTY host is what says this window may start agents AT ALL — a Hub built with none is
+    /// the render harness and every suite about observation, and neither may launch anything. So a
+    /// Codex spawn is refused for want of a host it will not itself use.
     internal func host(for cli: AgentCLI) throws -> AgentProcessHost {
+        guard let pty = spawnServices.host else {
+            throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
+        }
         switch cli {
-        case .claude:
-            guard let host = spawnServices.host else {
-                throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
-            }
-            return host
-        case .codex:
-            return codexHost
+        case .claude: return pty
+        case .codex: return codexHost
         }
     }
 

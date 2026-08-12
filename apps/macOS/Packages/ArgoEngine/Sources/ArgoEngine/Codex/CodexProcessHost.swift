@@ -51,11 +51,20 @@ final class CodexServerProcess: AgentProcess {
         }
     }
 
-    /// One JSON-RPC line. Written whole or not at all — a half-written line would frame the next
-    /// message into the middle of this one.
+    /// One JSON-RPC line.
+    ///
+    /// A write that fails means the pipe is broken, which means the server is gone — so it is
+    /// REPORTED as the exit it is rather than discarded. Swallowing it would leave the claim alive
+    /// over a dead process, and every Turn after it would read as sent.
     func write(_ text: String) {
         guard process.isRunning, let data = text.data(using: .utf8) else { return }
-        try? input.fileHandleForWriting.write(contentsOf: data)
+        do {
+            try input.fileHandleForWriting.write(contentsOf: data)
+        } catch {
+            // No code: the child was never reaped here, and absent is the honest answer for an
+            // exit Argo inferred from a broken descriptor rather than watched happen.
+            reportExit(nil)
+        }
     }
 
     /// Nothing to size: there is no terminal here for a viewport to match.
@@ -81,7 +90,7 @@ final class CodexServerProcess: AgentProcess {
         }
     }
 
-    private func reportExit(_ code: Int32) {
+    private func reportExit(_ code: Int32?) {
         guard !hasExited else { return }
         hasExited = true
         output.fileHandleForReading.readabilityHandler = nil

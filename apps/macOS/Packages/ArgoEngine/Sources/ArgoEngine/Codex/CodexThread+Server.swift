@@ -9,9 +9,7 @@ extension CodexThread {
         case let .answer(id, result): answered(id, result: result)
         case let .request(id, method, _): answer(id, asking: method)
         case let .notification(method, params): noticed(method, params: params)
-        // A refused request is not a Session-ending fact on its own: the handshake simply never
-        // completes, and the Turns queued behind it stay queued rather than being lost.
-        case .failure: break
+        case let .failure(id): failed(id)
         }
     }
 
@@ -22,6 +20,14 @@ extension CodexThread {
         guard id == threadStartID,
               let threadID = result["thread"]?.stringField("id") else { return }
         opened(threadID)
+    }
+
+    /// A refused `turn/start` is one Turn's failure and the thread lives on. A refused handshake is
+    /// the thread itself: nothing after it can be sent, so the wait ends rather than lasting for
+    /// ever.
+    private func failed(_ id: Int) {
+        guard id == initializeID || id == threadStartID else { return }
+        refuse()
     }
 
     private func noticed(_ method: String, params: JSONValue) {

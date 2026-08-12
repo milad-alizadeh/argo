@@ -47,6 +47,23 @@ struct LiveCodex {
         claim.flatMap { hub.codex.thread(for: $0) }
     }
 
+    /// What `codex --version` says, as the bare version — `codex-cli 0.147.0` answers `0.147.0`.
+    static func installedVersion() throws -> String {
+        let codex = Process()
+        codex.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        codex.arguments = ["codex", "--version"]
+        let output = Pipe()
+        codex.standardOutput = output
+        try codex.run()
+        let said = String(
+            data: output.fileHandleForReading.readDataToEndOfFile(),
+            encoding: .utf8,
+        ) ?? ""
+        codex.waitUntilExit()
+        return said.split(separator: " ").last.map { String($0) }?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? said
+    }
+
     /// A real PNG for an attachment to carry. Drawn here rather than embedded, so the fixture is
     /// something a reader can check rather than a base64 blob nobody can.
     func writeImage(named name: String) throws -> URL {
@@ -60,7 +77,7 @@ struct LiveCodex {
             bytesPerRow: 0,
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
-        ) else { throw AgentSpawnError.hostRefused(detail: "no bitmap context") }
+        ) else { throw CodexFixtureFault.noImage }
         context.setFillColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1)
         context.fill(CGRect(x: 0, y: 0, width: size, height: size))
         guard let image = context.makeImage(),
@@ -70,7 +87,7 @@ struct LiveCodex {
                   1,
                   nil,
               )
-        else { throw AgentSpawnError.hostRefused(detail: "no image destination") }
+        else { throw CodexFixtureFault.noImage }
         CGImageDestinationAddImage(destination, image, nil)
         CGImageDestinationFinalize(destination)
         return url

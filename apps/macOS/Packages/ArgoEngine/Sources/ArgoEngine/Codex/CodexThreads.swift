@@ -3,9 +3,8 @@ import Foundation
 /// The Codex threads Argo holds, one per claim — the app-server counterpart of `AgentTerminals`,
 /// and keyed the same way, because a claim is what survives the re-key to the id the CLI picks.
 ///
-/// The registry rather than the driver holds them, for the reason the terminals table does: the
-/// adapter is a value with no state to be the second copy of, and a Session that could be reached
-/// through two tables would have two answers to "is this steerable".
+/// Holding a thread here is also what says a Session is a Codex one, which is how the port picks
+/// its adapter (`SessionAdapters`).
 @MainActor
 final class CodexThreads {
     private var threads: [SessionOwnership.ClaimID: CodexThread] = [:]
@@ -20,9 +19,12 @@ final class CodexThreads {
         threads[claim]
     }
 
-    /// One chunk of that server's stdout, on its way to the thread's own reader.
-    func received(_ chunk: [UInt8], from claim: SessionOwnership.ClaimID) {
-        threads[claim]?.received(chunk)
+    /// One chunk of that server's stdout, on its way to the thread's own reader. `false` where this
+    /// claim is not a Codex one at all, which is what tells the caller the chunk is a PTY's.
+    func received(_ chunk: [UInt8], from claim: SessionOwnership.ClaimID) -> Bool {
+        guard let thread = threads[claim] else { return false }
+        thread.received(chunk)
+        return true
     }
 
     /// The process is gone, so the thread is: what is left of it is on disk, and nothing here can

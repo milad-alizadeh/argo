@@ -13,6 +13,29 @@ public enum AgentCLI: String, Sendable, CaseIterable {
         rawValue
     }
 
+    /// Variables that are true of Argo and false of the agent it starts, per CLI.
+    ///
+    /// `CLAUDE_CODE_CHILD_SESSION` is set in the environment of a `claude` running under another
+    /// one, and a `claude` that reads it writes no transcript of its own. Argo is very often itself
+    /// such a child — it is developed from inside a Session — so a spawn that passed this through
+    /// would produce the one Session no observation could ever reach: a live PTY with no record
+    /// behind it, permanently `unknown` in the roster.
+    ///
+    /// `OPENAI_API_KEY` is the credential Codex bills to an API key with, and Codex splits its
+    /// billing on the credential rather than on the surface (ADR-0024) — so a developer with that
+    /// variable exported, which is most of them, is the one way a spawned Session could be metered.
+    /// Argo must run on included tokens, so the key does not travel.
+    ///
+    /// Codex 0.147.0 was observed to keep using the ChatGPT sign-in even with the variable set, so
+    /// this is a guard against a version that prefers the key rather than a fix for one that does.
+    /// It costs nothing to hold: Argo has no reason to hand Codex a credential at all.
+    var scrubbedFromEnvironment: [String] {
+        switch self {
+        case .claude: ["CLAUDE_CODE_CHILD_SESSION"]
+        case .codex: ["OPENAI_API_KEY"]
+        }
+    }
+
     /// The flags that pick the CLI's SURFACE, before anything about this particular Session. Claude
     /// has none — the bare command is the interactive TUI, which is the surface that keeps
     /// subscription billing. Codex names its server explicitly.
@@ -20,6 +43,25 @@ public enum AgentCLI: String, Sendable, CaseIterable {
         switch self {
         case .claude: []
         case .codex: ["app-server"]
+        }
+    }
+
+    /// Whether Argo's companion plugin and its permission gate are installed for this CLI. The
+    /// bundle speaks Claude Code's plugin format, and Codex raises approvals over its own protocol
+    /// rather than through a hook (ADR-0024).
+    var takesCompanionPlugin: Bool {
+        switch self {
+        case .claude: true
+        case .codex: false
+        }
+    }
+
+    /// Whether a seeded prompt goes on argv. Codex's server takes no prompt there — its opening
+    /// prompt is the thread's first Turn, which is a message rather than an argument.
+    var opensOnArgv: Bool {
+        switch self {
+        case .claude: true
+        case .codex: false
         }
     }
 

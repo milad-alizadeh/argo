@@ -1,15 +1,11 @@
 import Foundation
 
-/// The drive port with the adapter chosen per Session (ADR-0024).
+/// The drive port with the adapter chosen per Session (ADR-0024), so no surface that raises an
+/// intent has to know which CLI it is talking to.
 ///
-/// The choice is made HERE and not at the surface that raised the intent: a composer that had to
-/// know which CLI it was talking to would be a cockpit change every time an adapter is added, which
-/// is the one thing the port exists to prevent.
-///
-/// It is made on the THREAD TABLE rather than on the Session's `cli`, because that table is Argo's
-/// own fact about a Session it holds a process for. `cli` is read off a record and is absent until
-/// one arrives — so routing on it would send the first Turn of a fresh Codex Session down the
-/// `claude` adapter, which holds no PTY for it and would refuse.
+/// The choice reads the THREAD TABLE and not the Session's `cli`: `cli` is read off a record, and a
+/// fresh Codex Session has none until its CLI writes one — so routing on it would send that
+/// Session's first Turn to the `claude` adapter, which holds no PTY for it.
 @MainActor
 struct SessionAdapters: SessionDriver {
     let claude: ClaudeSessionDriver

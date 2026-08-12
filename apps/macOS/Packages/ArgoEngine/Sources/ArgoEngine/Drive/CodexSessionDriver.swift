@@ -3,13 +3,8 @@ import Foundation
 /// The Codex adapter for the session-drive port: a Turn put to a `codex app-server` Argo already
 /// owns (ADR-0024, #548). Verified against `CodexClient.verifiedAgainst`.
 ///
-/// It starts nothing and owns nothing, exactly as the `claude` adapter does not — the claim
-/// registry and the thread table are the ones the spawn built. A value for the same reason: there
-/// is no state here to be the second copy of.
-///
-/// The two adapters look unalike below the seam and identical above it. Where Claude takes
-/// keystrokes at a prompt, this takes JSON-RPC requests; where Claude's interrupt is one `ESC`,
-/// this names the Turn it stops. The cockpit sees neither.
+/// It starts nothing and owns nothing: the claim registry and the thread table are the ones the
+/// spawn built, which is why this is a value and not an object.
 @MainActor
 struct CodexSessionDriver: SessionDriver {
     let ownership: SessionOwnership

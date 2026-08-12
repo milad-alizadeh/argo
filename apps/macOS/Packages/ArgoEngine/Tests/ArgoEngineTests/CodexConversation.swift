@@ -85,6 +85,18 @@ struct CodexConversation {
         ]))
     }
 
+    /// The server refusing something the client asked for.
+    func refuse(_ id: Int) {
+        emit(.object([
+            "jsonrpc": .string("2.0"),
+            "id": .number(Double(id)),
+            "error": .object([
+                "code": .number(-32600),
+                "message": .string("refused"),
+            ]),
+        ]))
+    }
+
     func answer(_ id: Int, result: JSONValue) {
         emit(.object([
             "jsonrpc": .string("2.0"),

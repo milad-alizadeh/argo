@@ -14,6 +14,14 @@ import Testing
 @Suite("Codex live", .enabled(if: LiveCodex.isEnabled))
 @MainActor
 struct CodexLiveTests {
+    /// The pin, checked. `app-server` is experimental and its shapes are observed rather than
+    /// specified (ADR-0024), so a Codex upgrade has to fail a test rather than drift silently past
+    /// the transcripts the adapter was written from.
+    @Test
+    func `the machine is on the Codex the adapter is verified against`() throws {
+        #expect(try LiveCodex.installedVersion() == CodexClient.verifiedAgainst)
+    }
+
     @Test(.timeLimit(.minutes(3)))
     func `a Turn sent from the port reaches a real Codex and does the work`() async throws {
         var live = try LiveCodex()

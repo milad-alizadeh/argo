@@ -148,6 +148,22 @@ struct CodexThreadTests {
         #expect(peer.server.answers.last?.result["message"] != nil)
     }
 
+    /// A handshake the server refuses is a thread that is never coming. Holding the Turns typed
+    /// into that wait would read, from the user's side, exactly like a message swallowed — so the
+    /// wait ends and everything after it is refused where the composer can say so.
+    @Test
+    func `a refused handshake refuses the Turns behind it rather than holding them`() {
+        let peer = CodexPeer()
+        peer.thread.begin()
+        #expect(peer.thread.send("First thought"))
+        let hello = try? #require(peer.server.request("initialize"))
+
+        peer.server.refuse(hello?.id ?? 0)
+
+        #expect(peer.server.turns.isEmpty)
+        #expect(!peer.thread.send("Second thought"))
+    }
+
     /// A rung is a property of the turn on this surface, so the change lands on the next one with
     /// nothing sent in between.
     @Test
