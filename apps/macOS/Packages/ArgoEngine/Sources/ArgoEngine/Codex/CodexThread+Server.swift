@@ -31,8 +31,8 @@ extension CodexThread {
     }
 
     /// A patch's content reaches Argo on the ITEM rather than on the approval that gates it, so
-    /// both notifications carrying `changes` are read: the item starting, and the patch being
-    /// revised while the prompt is up.
+    /// both notifications carrying `changes` are read. A prompt already raised keeps the target it
+    /// was raised with: what the user is reading may not change under them mid-decision.
     private func noticed(_ method: String, params: JSONValue) {
         switch method {
         case "turn/started": noted(turn: params["turn"]?.stringField("id"))

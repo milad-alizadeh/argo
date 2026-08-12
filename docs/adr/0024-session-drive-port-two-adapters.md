@@ -110,11 +110,19 @@ rather than a decision word — it is refused as unsupported, because the cockpi
 that produces one and a shape guessed at is worse than a refusal.
 
 **A patch prompt joins its own diff.** `item/fileChange/requestApproval` carries `itemId`,
-`threadId`, `turnId`, `reason` and `grantRoot` — no content. What the patch would write arrives on
-the item's own notifications (`item/started`, `item/fileChange/patchUpdated`), each carrying
-`changes: [{path, diff, kind}]`, so the adapter holds those per `itemId` and joins on it when the
-approval lands. A patch whose diff has not arrived is drawn verbatim rather than as an edit of
-nothing.
+`threadId`, `turnId`, `reason` and `grantRoot` — no content. What the patch would write arrives
+first, on the item's own notifications (`item/started`, `item/fileChange/patchUpdated`), each
+carrying `changes: [{path, diff, kind}]` — so the adapter holds those per `itemId` and joins on it
+when the approval lands. A patch whose diff has not arrived is drawn verbatim rather than as an
+edit of nothing.
+
+**`diff` means a different thing per `kind`, and reading it without the kind draws a deletion
+backwards.** Observed on 0.147.0 across all three: `update` puts a unified diff there
+(`"@@ -1,3 +1,3 @@\n alpha\n-bravo\n+DELTA\n charlie\n"`), while `add` and `delete` both put the
+file's **plain content** with no `@@` at all (`"hello from patch\n"`, `"alpha\nbravo\ncharlie\n"`).
+Parsed as a unified diff, an `add` yields no hunks and a `delete` yields none either — and read as
+whole-file content without consulting `kind`, a deletion would render every removed line as an
+addition. So the kind picks the side, and a kind this does not know degrades to verbatim text.
 
 Both paths are **DIRECT**: Argo owns the channel and the decision at both ends. This is the tier
 `CONTEXT.md` already assigns Permission, so no new tier is introduced — only a second source for
@@ -217,9 +225,14 @@ Full JSON-RPC transcripts and reproduction: `docs/research/2026-08-12-codex-app-
 - **The Permission half is exercised by the adapter (#549), against `codex-cli` 0.147.0.** Opened
   on `Read Only`, a real app-server asked to cross the boundary; the Permission was raised on the
   roster, `allow` let the work through and the file appeared, and `deny` refused that one action
-  while the Turn ended cleanly and the same thread answered a following one. Both are in
-  `CodexLiveTests`, gated on `ARGO_LIVE_CLI=1`. Every other server→client request is still answered
-  with a JSON-RPC error rather than left open.
+  while the file was never written and the same thread answered a following Turn. A real patch
+  approval was also shown to name its file and its hunks, which is what settles the ordering
+  question above — the item's `changes` arrive BEFORE the approval that gates them. All three are
+  in `CodexLiveTests`, gated on `ARGO_LIVE_CLI=1`. Every other server→client request is still
+  answered with a JSON-RPC error rather than left open.
+- **A denied agent commonly asks again**, so a Turn does not reliably end on one `decline`. That is
+  the agent's business rather than the adapter's, which is why the live deny test asserts the
+  prompt cleared and the file is absent instead of waiting for the Turn.
 - **Both adapters pass one Permission conformance suite.** `SessionDriverConformanceTests.Permission`
   runs each case against both, and asserts on the ROSTER row rather than on either wire — both CLIs
   raise the same command, so the two rows compare as one value. That is what "indistinguishable in

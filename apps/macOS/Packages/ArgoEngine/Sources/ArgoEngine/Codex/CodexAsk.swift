@@ -20,13 +20,8 @@ enum CodexAsk: String {
         }
     }
 
-    /// Two words on the wire over three answers, as on `claude`: what makes an `allowAlways`
-    /// standing happens on Argo's side, and the server is told the same `accept` either way.
-    ///
-    /// `acceptForSession` is deliberately never sent. It makes the SERVER stop asking, and Argo has
-    /// no way to take that back — a grant the cockpit published and could not revoke is exactly the
-    /// bug #572 fixed. `cancel` is not sent either: it interrupts the Turn, and a refused call is
-    /// not a stopped Turn.
+    /// Two of the server's four words. `acceptForSession` makes the SERVER stop asking with no way
+    /// back, and `cancel` interrupts the Turn as well as refusing the call — so neither is sent.
     static func word(_ decision: PermissionDecision) -> String {
         switch decision {
         case .allow, .allowAlways: "accept"
@@ -34,9 +29,8 @@ enum CodexAsk: String {
         }
     }
 
-    /// What the server's own clock would do about an unanswered one: nothing. It keeps none, so an
-    /// approval nobody answers holds the Turn open for ever (openai/codex#11816) — which is why
-    /// Argo's own clock answers this word instead.
+    /// What Argo's own clock answers with. The server keeps none, so an approval nobody answers
+    /// holds the Turn open for ever (openai/codex#11816).
     static let expired = word(.deny)
 
     /// The item a patch's diff is joined on. An exec ask names one too, and does not need it: its

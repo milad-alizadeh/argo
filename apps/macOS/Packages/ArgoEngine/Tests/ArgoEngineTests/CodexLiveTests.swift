@@ -110,9 +110,39 @@ struct CodexLiveTests {
         #expect(await live.settle(until: { live.hub.sessions.first?.permission == nil }))
     }
 
+    /// The patch approval's own params carry no diff, so what the prompt names has to come off the
+    /// item's notifications, joined on `itemId`. Whether those arrive BEFORE the approval is an
+    /// ordering only the real server can settle — the spike recorded `turn/diff/updated`, which
+    /// lands after the answer and would be too late.
+    @Test(.timeLimit(.minutes(3)))
+    func `a real Codex patch approval names the file it would write`() async throws {
+        var live = try LiveCodex()
+        defer { live.remove() }
+        let session = try await live.spawn(mode: .readOnly)
+
+        try live.hub.driver.send(
+            "Create a file named patched.txt containing the single line: hello from patch. "
+                + "Use apply_patch, not a shell command. Then stop.",
+            to: session,
+        )
+        #expect(await live.settle(until: { live.hub.sessions.first?.permission != nil }))
+
+        let raised = try #require(live.hub.sessions.first?.permission)
+        guard case let .edit(path, hunks) = raised.target else {
+            Issue.record("the patch prompt named no file: \(raised.target)")
+            return
+        }
+        #expect(path.hasSuffix("patched.txt"))
+        #expect(!hunks.isEmpty)
+    }
+
     /// The other half, and the one the spike had to prove separately: a decline refuses that ONE
-    /// action and the Turn carries on to a clean end, leaving the thread usable. That is what makes
-    /// Argo's deny-on-timeout safe to impose — an expiry is this same `decline`, sent late.
+    /// action and the thread stays usable. That is what makes Argo's deny-on-timeout safe to
+    /// impose — an expiry is this same `decline`, sent late.
+    ///
+    /// The Turn is not waited on and must not be: a refused agent commonly asks a SECOND time, so
+    /// whether this Turn ends depends on what the model tries next. What is Argo's to assert is
+    /// that the prompt went, the file was never written, and the Session still takes a Turn.
     @Test(.timeLimit(.minutes(3)))
     func `a deny refuses the action and leaves the Session usable`() async throws {
         var live = try LiveCodex()
@@ -128,8 +158,10 @@ struct CodexLiveTests {
 
         try live.hub.driver.decide(.deny, answering: raised.id, for: session)
 
-        #expect(await live.settle(until: { live.thread?.turnID == nil }))
+        #expect(await live.settle(until: { live.hub.sessions.first?.permission == nil }))
         #expect(!live.hasFile("denied.txt"))
+        try live.hub.driver.interrupt(session)
+        #expect(await live.settle(until: { live.thread?.turnID == nil }))
         try live.hub.driver.send("Reply with the single word: alive", to: session)
         #expect(await live.settle(until: { live.thread?.turnID != nil }))
     }

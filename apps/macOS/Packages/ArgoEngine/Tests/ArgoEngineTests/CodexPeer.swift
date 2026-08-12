@@ -32,7 +32,7 @@ final class CodexPeer {
         let approvals = CodexApprovals(
             patience: patience,
             publish: { wire.readings = $0 },
-            write: { line in line.map { _ = write($0) } },
+            write: write,
         )
         let thread = CodexThread(cwd: cwd, mode: mode, approvals: approvals, write: write)
         self.wire = wire

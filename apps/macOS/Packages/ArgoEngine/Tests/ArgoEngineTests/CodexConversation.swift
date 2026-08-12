@@ -108,8 +108,10 @@ struct CodexConversation {
         ]))
     }
 
-    /// The item carrying what a patch would write, as `item/started` reports it.
-    func patched(_ itemID: String, path: String, diff: String) {
+    /// The item carrying what a patch would write, as `item/started` reports it. The `kind` decides
+    /// how `diff` reads: a unified diff for `update`, the file's plain content for `add` and
+    /// `delete` (verified on codex-cli 0.147.0).
+    func patched(_ itemID: String, path: String, diff: String, kind: String = "update") {
         notify("item/started", params: .object(["item": .object([
             "type": .string("fileChange"),
             "id": .string(itemID),
@@ -117,7 +119,7 @@ struct CodexConversation {
             "changes": .array([.object([
                 "path": .string(path),
                 "diff": .string(diff),
-                "kind": .object(["type": .string("add")]),
+                "kind": .object(["type": .string(kind)]),
             ])]),
         ])]))
     }

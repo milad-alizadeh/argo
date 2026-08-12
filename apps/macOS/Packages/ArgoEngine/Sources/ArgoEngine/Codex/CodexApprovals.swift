@@ -2,19 +2,17 @@ import Foundation
 
 /// The approvals one Codex thread is holding, and the clock Argo keeps over each (#549, ADR-0024).
 ///
-/// The `codex` counterpart of `PermissionChannel`, and deliberately the same shape: a prompt from
-/// either CLI is one `PermissionRequest` under one claim, so the cockpit cannot tell them apart.
-/// What differs is only the transport — a JSON-RPC response by id, rather than a line down a
-/// socket.
+/// The `codex` counterpart of `PermissionChannel`: a prompt from either CLI is one
+/// `PermissionRequest` under one claim, and only the transport differs — a JSON-RPC response by id
+/// rather than a line down a socket.
 ///
-/// **The deadline here is Argo's, and it has to be.** The server keeps no clock of its own: an
-/// approval nobody answers holds the Turn open for ever (openai/codex#11816, and a 60-second hold
-/// sat open in the #547 spike). So the clock runs out, Argo answers `decline` itself, and the
-/// Session publishes a `PermissionExpiry` — DIRECT, Argo's own act from end to end.
+/// The server keeps no clock of its own, so an approval nobody answers holds the Turn open for ever
+/// (openai/codex#11816, and a 60-second hold sat open in the #547 spike). The deadline is therefore
+/// Argo's: it runs out, Argo answers `decline` itself, and the Session publishes a
+/// `PermissionExpiry`.
 ///
-/// Nothing here auto-allows at the top rung, unlike the `claude` gate. On this surface `Auto` is
-/// `approvalPolicy: "never"` on the Turn itself (`CodexStance`), so the server never asks and there
-/// is nothing to answer for.
+/// Nothing here auto-allows at the top rung, unlike the `claude` gate: on this surface `Auto` is
+/// `approvalPolicy: "never"` on the Turn itself (`CodexStance`), so the server never asks.
 @MainActor
 final class CodexApprovals {
     private struct Pending {
@@ -30,7 +28,7 @@ final class CodexApprovals {
 
     private let patience: PermissionPatience
     private let publish: @MainActor (GateReadings) -> Void
-    private let write: @MainActor (String?) -> Void
+    private let write: @MainActor (String) -> Bool
     private var pending: [Pending] = []
     private var readings = GateReadings()
     /// The diff of each file-change item this Turn, by `itemId`. Held here because the approval
@@ -42,7 +40,7 @@ final class CodexApprovals {
     init(
         patience: PermissionPatience,
         publish: @escaping @MainActor (GateReadings) -> Void,
-        write: @escaping @MainActor (String?) -> Void,
+        write: @escaping @MainActor (String) -> Bool,
     ) {
         self.patience = patience
         self.publish = publish
@@ -118,6 +116,10 @@ final class CodexApprovals {
         pending = []
         patches = [:]
         readings = GateReadings()
+        // Published rather than merely dropped: this gate owns these readings, so it is the one
+        // that has to clear them. Leaving that to the `claude` channel's own withdraw would make
+        // a Codex Session's stale prompt depend on a channel it never spoke over.
+        publish(readings)
     }
 
     private func allows(_ toolName: String) -> Bool {
@@ -150,7 +152,7 @@ final class CodexApprovals {
 
     private func expire(_ requestID: String) {
         guard let gone = take(requestID) else { return }
-        write(CodexRPC.result(id: gone.rpcID, ["decision": .string(CodexAsk.expired)]))
+        reply(gone.rpcID, word: CodexAsk.expired)
         readings.expiries.append(PermissionExpiry(gone.request))
         republish()
     }
@@ -168,7 +170,16 @@ final class CodexApprovals {
     }
 
     private func answer(_ rpcID: Int, _ decision: PermissionDecision) {
-        write(CodexRPC.result(id: rpcID, ["decision": .string(CodexAsk.word(decision))]))
+        reply(rpcID, word: CodexAsk.word(decision))
+    }
+
+    /// One JSON-RPC response, by the id the server is blocked on. The two ways it can come to
+    /// nothing both mean the answer could never have landed: a decision word that would not encode,
+    /// which no `PermissionDecision` produces, and a pipe that has already gone — and a server that
+    /// cannot be written to is not one still holding a Turn open.
+    private func reply(_ rpcID: Int, word: String) {
+        guard let line = CodexRPC.result(id: rpcID, ["decision": .string(word)]) else { return }
+        _ = write(line)
     }
 
     private func cancel(_ taken: [Pending]) {

@@ -113,7 +113,7 @@ public extension Hub {
         let approvals = CodexApprovals(
             patience: spawnServices.permissionPatience,
             publish: { [weak self] readings in self?.claims.publish(readings, for: claim) },
-            write: { line in line.map { _ = write($0) } },
+            write: write,
         )
         let thread = CodexThread(
             cwd: plan.cwd,

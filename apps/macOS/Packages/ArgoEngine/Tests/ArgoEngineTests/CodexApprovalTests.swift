@@ -43,6 +43,45 @@ struct CodexApprovalTests {
         ))
     }
 
+    /// The `diff` field means different things per kind, verified against codex-cli 0.147.0: a
+    /// unified diff for `update`, the file's plain content for `add` and `delete`. Read without the
+    /// kind, a deletion draws every removed line as an ADDITION — the one misrender a prompt the
+    /// user is deciding on must not make.
+    @Test(arguments: [
+        (kind: "add", side: DiffLineSide.add),
+        (kind: "delete", side: .del),
+    ])
+    func `a whole-file patch is drawn on the side its kind names`(
+        patch: (kind: String, side: DiffLineSide),
+    ) {
+        let peer = Self.opened()
+        peer.server.patched(
+            "exec-8",
+            path: "gone.txt",
+            diff: "alpha\nbravo\n",
+            kind: patch.kind,
+        )
+
+        peer.server.askPatch(4, itemID: "exec-8")
+
+        #expect(peer.readings.waiting.first?.target == .edit(path: "gone.txt", hunks: [[
+            DiffLine(side: patch.side, text: "alpha"),
+            DiffLine(side: patch.side, text: "bravo"),
+        ]]))
+    }
+
+    /// A kind this does not know degrades to the verbatim text rather than to a diff whose sides
+    /// might be the wrong way round.
+    @Test
+    func `a patch of an unknown kind stays verbatim`() {
+        let peer = Self.opened()
+        peer.server.patched("exec-9", path: "odd.txt", diff: "alpha\n", kind: "teleport")
+
+        peer.server.askPatch(5, itemID: "exec-9")
+
+        #expect(peer.readings.waiting.first?.target == .raw("alpha\n"))
+    }
+
     /// A patch whose diff never arrived is shown verbatim rather than as an edit of nothing: the
     /// user is deciding on it either way, and an empty diff would read as a change that writes
     /// nothing.
