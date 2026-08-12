@@ -45,15 +45,20 @@ extension FeedTableCoordinator {
         }
     }
 
-    /// The opening scroll, once per reading. Its first pass runs now and the rest a runloop turn
-    /// apart: the rows a scroll realises on its way to the landing replace their lazy heights on
-    /// the NEXT turn, so a single pass lands a line or two short.
+    /// The opening scroll, once per reading. Claimed now and landed a runloop turn later, then
+    /// re-aimed across a few more: the rows a scroll realises on its way to the landing replace
+    /// their lazy heights on the NEXT turn, so a single pass lands a line or two short. The first
+    /// pass waits too, because there is no layout to scroll until `apply` returns.
     ///
-    /// The pass count is here and not in the policy because it is a fact about `NSTableView`, not a
-    /// rule about where the reading goes.
+    /// It is claimed on this turn because `apply` runs again before the deferred pass, and a second
+    /// claim would start a second run.
+    ///
+    /// The pass count and the spacing are here and not in the policy because they are facts about
+    /// `NSTableView`, not rules about where the reading goes.
     func place() {
-        guard handle?.isOpeningOwed == true else { return }
-        openReading(passes: 3)
+        guard let handle, handle.isOpeningOwed else { return }
+        _ = handle.resolve(.readingOpened(held: model?.held))
+        DispatchQueue.main.async { [weak self] in self?.openReading(passes: 3) }
     }
 
     /// The one full re-measure a live resize defers — run the moment the seam or the window lets

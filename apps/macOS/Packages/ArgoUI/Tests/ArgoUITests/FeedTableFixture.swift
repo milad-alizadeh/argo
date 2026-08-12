@@ -11,8 +11,7 @@ import SwiftUI
     /// measured and the document has a height.
     ///
     /// The handle comes from the caller because the coordinator holds it weakly, as the deck's
-    /// does:
-    /// a fixture that owned it would keep alive what the running app lets go.
+    /// does.
     static func laidOut(
         _ rows: [FeedRow],
         in size: CGSize,

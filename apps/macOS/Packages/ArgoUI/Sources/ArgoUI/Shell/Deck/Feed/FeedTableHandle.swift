@@ -27,7 +27,8 @@ import SwiftUI
         self.leftAt = policy.leftAt
     }
 
-    /// Whether the opening scroll is still owed — see `FeedScrollPolicy`.
+    /// Whether the opening scroll is still owed — see `FeedScrollPolicy`. Read by the adapter and
+    /// not observable, because it is taken off the policy directly rather than mirrored.
     var isOpeningOwed: Bool {
         policy.isOpeningOwed
     }

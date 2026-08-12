@@ -3,9 +3,6 @@ import Testing
 
 /// Where the reading lands and what is re-measured to put it there — one test per row of the
 /// decision table the policy is the spec of (#664).
-///
-/// Every claim here used to be reachable only by an XCUITest that seized the machine's keyboard and
-/// mouse and never ran on CI, which is why a wrong landing could ship.
 @Suite("Feed scroll policy")
 struct FeedScrollPolicyTests {
     private static let anchor = FeedAnchor(row: 2, into: 12)
@@ -81,7 +78,7 @@ struct FeedScrollPolicyTests {
     }
 
     @Test
-    func `a later width holds the reader's own row and asks to settle when the drag stops`() {
+    func `a later width holds the row the reader is on, squaring up only what is on screen`() {
         var policy = FeedScrollFixture.laidOut()
         _ = FeedScrollFixture.scrolledAway(&policy)
         let decision = policy.resolve(.paneChanged(width: 700, height: 400, anchor: Self.anchor))
@@ -107,7 +104,7 @@ struct FeedScrollPolicyTests {
     }
 
     @Test
-    func `the seam letting go re-measures every row and holds the reader's own row`() {
+    func `the seam letting go squares up every off-screen row that rode the drag`() {
         var policy = FeedScrollFixture.laidOut()
         _ = FeedScrollFixture.scrolledAway(&policy)
         let decision = policy.resolve(.resizeEnded(anchor: Self.anchor))
@@ -149,9 +146,29 @@ struct FeedScrollPolicyTests {
     }
 
     @Test
-    func `a re-wrap with no row to hold onto falls back to the newest line`() {
+    func `a re-wrap with no row to hold onto leaves a detached reader where they are`() {
         var policy = FeedScrollFixture.laidOut()
         _ = FeedScrollFixture.scrolledAway(&policy)
-        #expect(policy.resolve(.resizeEnded(anchor: nil)).landing == .end)
+        #expect(policy.resolve(.resizeEnded(anchor: nil)).landing == .stay)
+    }
+
+    @Test
+    func `a height change while the reader has scrolled up moves nothing`() {
+        var policy = FeedScrollFixture.laidOut()
+        _ = FeedScrollFixture.scrolledAway(&policy)
+        let decision = policy.resolve(.paneChanged(width: 600, height: 900, anchor: nil))
+        #expect(decision.landing == .stay)
+        #expect(decision.remeasure == .none)
+    }
+
+    @Test
+    func `a reading replaced while the reader has scrolled up leaves them where they are`() {
+        var policy = FeedScrollFixture.showing()
+        _ = FeedScrollFixture.scrolledAway(&policy)
+        let decision = policy.resolve(
+            .rowsChanged(from: FeedScrollFixture.reading, to: [FeedScrollFixture.reading[1]]),
+        )
+        #expect(decision.landing == .stay)
+        #expect(decision.remeasure == .rebuild)
     }
 }

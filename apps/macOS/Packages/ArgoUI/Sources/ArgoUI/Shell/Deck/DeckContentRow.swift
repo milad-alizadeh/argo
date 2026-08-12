@@ -23,8 +23,7 @@ struct DeckContentRow: View {
     /// the minimap maps it.
     @State private var table: FeedTableHandle
 
-    /// Written out rather than left to the memberwise one so the handle can be seeded with `held`:
-    /// a reading that opens held is already detached, and it has to be before the first frame.
+    /// Seeds the handle with `held`, which has to be true before the first frame.
     init(
         feed: [FeedRow],
         showing: PlanShowing,

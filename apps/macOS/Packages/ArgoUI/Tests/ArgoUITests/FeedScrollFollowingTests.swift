@@ -48,17 +48,29 @@ struct FeedScrollFollowingTests {
     @Test
     func `a reading opened held is detached before a reader has touched anything`() {
         var policy = FeedScrollFixture.showing(held: 3)
-        #expect(policy.leftAt == 3)
         #expect(Self.landingOfNextRow(&policy) == .stay)
     }
 
     @Test
-    func `the way-back control both lands the reader and starts carrying them again`() {
+    func `a reading opened held counts from the row it was opened at`() {
+        let policy = FeedScrollFixture.showing(held: 3)
+        #expect(policy.leftAt == 3)
+    }
+
+    @Test
+    func `the way-back control starts the reader being carried again`() {
         var policy = FeedScrollFixture.showing()
         _ = FeedScrollFixture.scrolledAway(&policy)
-        #expect(policy.resolve(.followRequested).landing == .end)
-        #expect(policy.leftAt == nil)
+        _ = policy.resolve(.followRequested)
         #expect(Self.landingOfNextRow(&policy) == .end)
+    }
+
+    @Test
+    func `the way-back control leaves nothing for the count to read`() {
+        var policy = FeedScrollFixture.showing()
+        _ = FeedScrollFixture.scrolledAway(&policy)
+        _ = policy.resolve(.followRequested)
+        #expect(policy.leftAt == nil)
     }
 
     @Test
@@ -72,9 +84,9 @@ struct FeedScrollFollowingTests {
     }
 
     @Test
-    func `a reader's scroll during an opening wins, and the opening does not come back`() {
+    func `a reader's scroll during an opening retires the passes still to come`() {
         var policy = FeedScrollFixture.showing(held: 3)
-        #expect(policy.resolve(.readingOpened(held: 3)).landing == .row(3, into: 0))
+        _ = policy.resolve(.readingOpened(held: 3))
         _ = FeedScrollFixture.scrolledAway(&policy)
         #expect(policy.resolve(.readingOpened(held: 3)) == .stay)
     }

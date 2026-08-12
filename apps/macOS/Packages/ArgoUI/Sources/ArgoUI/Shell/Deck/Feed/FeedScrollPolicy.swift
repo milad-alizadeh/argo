@@ -128,10 +128,13 @@ struct FeedScrollPolicy {
         return FeedScrollDecision(landing: .end)
     }
 
-    /// The end while following, the row under the reader's eye when not — and the end when AppKit
-    /// could name no row at all.
+    /// The end while following, the row under the reader's eye when not.
+    ///
+    /// A detached reader whose row AppKit could not name is left where they are rather than sent to
+    /// the end, because the end is the one place a reader who scrolled up did not ask to be.
     private func landing(on anchor: FeedAnchor?) -> FeedLanding {
-        guard !isFollowing, let anchor else { return .end }
+        guard !isFollowing else { return .end }
+        guard let anchor else { return .stay }
         return .row(anchor.row, into: anchor.into)
     }
 }
