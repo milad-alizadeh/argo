@@ -37,7 +37,7 @@ struct DeckSlot: View {
 
 #Preview("Deck slot — a zone too narrow for its own name") {
     DeckSlot(zone: .rail)
-        .frame(width: ArgoLayout.minimapLaneWidth, height: 320)
+        .frame(width: ArgoLayout.minimapLaneWidths.lowerBound, height: 320)
         .argoDeckSurface()
         .argoAppearance()
 }

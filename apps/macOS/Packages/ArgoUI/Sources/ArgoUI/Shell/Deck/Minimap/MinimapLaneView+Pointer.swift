@@ -42,6 +42,29 @@ extension MinimapLaneView {
         refresh()
     }
 
+    /// The pointer's own zone, re-cut whenever the lane is. Key-window only: a lane lighting up in
+    /// a background window answers a hand that is not on it.
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas {
+            removeTrackingArea(area)
+        }
+        addTrackingArea(NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow],
+            owner: self,
+        ))
+    }
+
+    override func mouseEntered(with _: NSEvent) {
+        light(true)
+    }
+
+    /// A scrub carried off the lane keeps it lit — the hand is still on the reading.
+    override func mouseExited(with _: NSEvent) {
+        light(grab != nil)
+    }
+
     /// A wheel over the lane scrolls the reading beside it, rather than nothing at all. The event
     /// is handed to the scroll view whole, so momentum and rubber-banding stay the platform's.
     override func scrollWheel(with event: NSEvent) {
@@ -69,18 +92,27 @@ extension MinimapLaneView {
         }
     }
 
-    /// The scrub. Instant, and mapped through the ratio in `MinimapGeometry` — the rectangle
-    /// travels the lane less its own height while the reading travels everything it has.
+    /// The scrub. Instant, and mapped through the same one place-in-the-lane-is-a-place-in-the-
+    /// reading function a click goes through — a drag is a click whose grab point is not the
+    /// rectangle's centre, and nothing else.
     override func mouseDragged(with event: NSEvent) {
         guard let grab else { return }
-        settle(at: geometry.offset(forViewportY: laneY(of: event) - grab), over: nil)
+        settle(at: geometry.offset(forLaneY: laneY(of: event) - grab), over: nil)
     }
 
-    /// The hand off the lane. The scale was frozen for the length of the scrub, so whatever arrived
-    /// under it reflows the marks now.
-    override func mouseUp(with _: NSEvent) {
+    /// The hand off the lane. The geometry was frozen for the length of the scrub, so whatever
+    /// arrived under it reflows the marks now.
+    override func mouseUp(with event: NSEvent) {
         grab = nil
+        isLit = bounds.contains(convert(event.locationInWindow, from: nil))
         refresh()
+    }
+
+    /// The lit range brightened or returned to rest. Only the colour moves, so nothing repaints.
+    private func light(_ lit: Bool) {
+        guard isLit != lit else { return }
+        isLit = lit
+        settleViewport()
     }
 
     /// Where the pointer is, in the lane's own space.

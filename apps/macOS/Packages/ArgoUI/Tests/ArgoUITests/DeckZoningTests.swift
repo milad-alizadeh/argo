@@ -55,7 +55,8 @@ struct DeckZoningTests {
     @Test
     func `the rail may not be dragged into the minimap or the feed's floor`() {
         let limits = zoning(feed: working).railLimits
-        let taken = ArgoLayout.minimapLaneWidth + ArgoLayout.feedMinimumWidth
+        // The lane at its narrowest: it is a share of what the rail leaves, so it gives way too.
+        let taken = ArgoLayout.minimapLaneWidths.lowerBound + ArgoLayout.feedMinimumWidth
 
         #expect(limits.upperBound <= deck - taken)
         #expect(limits.upperBound <= ArgoLayout.railWidths.upperBound)

@@ -15,6 +15,9 @@ import SwiftUI
     /// Whether the composer floats over this reading — it grows the gutter under the last row,
     /// so the newest line genuinely ends clear of the vessel.
     var isUnderComposer: Bool
+    /// Whether the overview lane beside this reading is drawing its scroll knob. The platform
+    /// scroller is switched off while it is — see `EnvironmentValues.deckHasMinimap`.
+    var hasMinimap: Bool
     /// The row the user's own words just landed on, while the accent wash stands over it — see
     /// `FeedView.washed`.
     var washed: FeedRow.ID?

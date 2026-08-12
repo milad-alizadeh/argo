@@ -45,17 +45,21 @@ struct FeedPreview: View {
     }
 
     var body: some View {
-        HStack(spacing: ArgoSpacing.flush) {
-            FeedView(
-                rows: rows,
-                selection: FeedRowSelection(open: $open, step: $step, lit: $lit, focus: $focus),
-                held: held,
-                table: table,
-            )
-            if showsOverview {
-                DeckSeparator()
-                MinimapLane(feed: table)
-                    .frame(width: ArgoLayout.minimapLaneWidth)
+        // The lane is a share of what it and the feed have between them, so it is measured rather
+        // than given a number. No rail here, so the whole width is that span.
+        GeometryReader { proxy in
+            HStack(spacing: ArgoSpacing.flush) {
+                FeedView(
+                    rows: rows,
+                    selection: FeedRowSelection(open: $open, step: $step, lit: $lit, focus: $focus),
+                    held: held,
+                    table: table,
+                )
+                if showsOverview {
+                    DeckSeparator()
+                    MinimapLane(feed: table)
+                        .frame(width: ArgoLayout.minimapLaneWidth(sharing: proxy.size.width))
+                }
             }
         }
         .argoDeckSurface()

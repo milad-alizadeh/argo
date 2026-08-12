@@ -37,14 +37,17 @@ struct DeckZoning {
         return feed.first(where: { $0.id == open })?.content.opened
     }
 
-    /// How far the rail may be dragged at THIS width. Clamped upward from its own floor, because a
-    /// deck too narrow for the rail plus the minimap plus the feed's floor would otherwise produce
-    /// an inverted range — which traps the moment a seam reads it.
+    /// How far the rail may be dragged at THIS width. Read against the lane at its narrowest,
+    /// because the lane is a share of what the rail leaves and so gives way with the feed.
     var railLimits: ClosedRange<CGFloat> {
-        let taken = ArgoLayout.minimapLaneWidth + ArgoLayout.feedMinimumWidth
-        let ceiling = min(ArgoLayout.railWidths.upperBound, deck - taken)
-        let floor = ArgoLayout.railWidths.lowerBound
-        return floor ... max(floor, ceiling)
+        ArgoLayout.railLimits(in: deck)
+    }
+
+    /// The lane's share of what it and the feed have between them. The rail is outside that span,
+    /// so dragging the rail narrows the lane with the reading rather than only the reading.
+    var laneWidth: CGFloat {
+        let rail = showsRail ? seams.rail.wrappedValue + ArgoLayout.seamGrabWidth : 0
+        return ArgoLayout.minimapLaneWidth(sharing: deck - rail)
     }
 
     var panelLimits: ClosedRange<CGFloat> {

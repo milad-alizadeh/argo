@@ -71,7 +71,7 @@ struct DeckContentRow: View {
                     DeckSeparator()
                         .transition(.opacity)
                     MinimapLane(feed: table)
-                        .frame(width: ArgoLayout.minimapLaneWidth)
+                        .frame(width: zoning.laneWidth)
                         .transition(.opacity)
                 }
                 panel(zoning)
@@ -85,6 +85,7 @@ struct DeckContentRow: View {
             // so that is where focus still is.
             .onExitCommand(perform: dismissTopmost)
             .environment(\.deckIsResizing, isResizing)
+            .environment(\.deckHasMinimap, !zoning.isPanelOpen)
         }
     }
 
