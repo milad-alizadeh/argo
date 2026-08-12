@@ -1,10 +1,16 @@
 import AppKit
 import SwiftUI
 
-/// The AppKit half of the feed: what the table draws, and how a fresh reading lands on it. The
-/// only thing that moves the scroll; whether the reading follows stays `FeedView`'s.
+/// The AppKit half of the feed: what the table draws, and the one thing that moves the scroll.
+///
+/// It decides nothing about WHERE the reading lands — that is `FeedScrollPolicy`'s, reached through
+/// the handle. What stays here is AppKit facts only: the scroll view, the table, the
+/// measured-height
+/// cache, the ruler, and the keyboard's focused row.
 @MainActor final class FeedTableCoordinator: NSObject {
     var model: FeedTableModel?
+    /// The shared scroll authority, which holds the policy this coordinator reports to.
+    weak var handle: FeedTableHandle?
     /// What the table currently draws, diffed against each fresh model — the table is not a
     /// SwiftUI view, so nothing re-renders it on a change.
     private(set) var shown: [FeedRow] = []
@@ -20,18 +26,10 @@ import SwiftUI
     weak var table: FeedTableView?
     weak var scroller: NSScrollView?
 
-    /// Whether the opening scroll has been made. Reset when the reading empties, so the same
-    /// view opening a fresh record opens it at the end again.
-    var placed = false
-    /// A generation on the opening passes: the reader's first own scroll bumps it, and any pass
-    /// still queued finds itself stale — an open must never out-scroll a hand.
-    var opening = 0
     /// The row the keyboard is on. The table's own fact, not `FocusState`'s — the rows live in
     /// separate hosting hierarchies now, and a focus value none of them can resolve is noise.
     var focusedRow: Int?
-    /// The pane width last laid out against — what tells a re-wrap from a plain height change.
-    var paneWidth: CGFloat = 0
-    /// The full re-measure waiting for a width burst to go quiet — see `paneChanged`.
+    /// The full re-measure waiting for a width burst to go quiet — see `FeedSettle`.
     var settling: Task<Void, Never>?
 
     /// Measured row heights, by row index — the cache behind `heightOfRow`.
@@ -75,8 +73,7 @@ import SwiftUI
         NotificationCenter.default.removeObserver(self)
     }
 
-    /// A fresh reading, applied as the difference from the shown one. Appends are the live case
-    /// and stay appends — a reload would tear down every visible cell once per arriving row.
+    /// A fresh reading, reported to the policy as the difference from the shown one.
     ///
     /// A model in which nothing DRAWN changed is applied and left alone. `updateNSView` runs on
     /// every invalidation of the view above — every frame of a seam drag included — and a refresh
@@ -87,11 +84,11 @@ import SwiftUI
         let staleEnvironment = model?.environment
         model = fresh
         shown = fresh.rows
-        guard let table else { return }
+        guard table != nil else { return }
         if fresh.rows == stale {
             touchUp(against: fresh, from: staleEnvironment)
         } else {
-            reshape(from: stale, on: table)
+            decide(.rowsChanged(from: stale, to: fresh.rows))
         }
         // The seam letting go is the moment the width is final: one full re-measure squares
         // every off-screen row that rode the drag on a stale height.
@@ -194,23 +191,5 @@ import SwiftUI
         drawnOpen = fresh.selection.open
         guard !affected.isEmpty else { return }
         refresh(rows: affected, remeasuring: refolded)
-    }
-
-    private func reshape(from stale: [FeedRow], on table: NSTableView) {
-        switch FeedTableDelta.between(stale, and: shown) {
-        case let .append(arrived, rewritten):
-            if !arrived.isEmpty {
-                table.insertRows(at: IndexSet(integersIn: arrived), withAnimation: [])
-            }
-            if let rewritten {
-                refresh(rows: IndexSet(integer: rewritten), remeasuring: true)
-            }
-        case .reload:
-            dropMeasuredHeights()
-            table.reloadData()
-        }
-        if model?.isFollowing == true {
-            scrollToEnd(over: nil)
-        }
     }
 }

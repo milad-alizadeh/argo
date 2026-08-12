@@ -23,12 +23,26 @@ struct FeedPreview: View {
     /// Which row's evidence the preview opens on. A settable initial state for the same reason
     /// `SessionsDeck` takes one: the state belongs to the surface, and there is no other way to
     /// reach it without a click.
-    @State var open: FeedRow.ID?
+    @State private var open: FeedRow.ID?
     @State private var step: Int?
     @State private var lit: FeedShot?
     @FocusState private var focus: FeedFocus?
-    /// The one handle both surfaces hold — see `FeedTableHandle`.
-    @State private var table = FeedTableHandle()
+    /// The one handle both surfaces hold — see `FeedTableHandle`. Seeded with `held`, so a still
+    /// shows the detached state from its first frame.
+    @State private var table: FeedTableHandle
+
+    init(
+        rows: [FeedRow],
+        showsOverview: Bool = false,
+        held: FeedRow.ID? = nil,
+        open: FeedRow.ID? = nil,
+    ) {
+        self.rows = rows
+        self.showsOverview = showsOverview
+        self.held = held
+        _open = State(initialValue: open)
+        _table = State(initialValue: FeedTableHandle(held: held))
+    }
 
     var body: some View {
         // The lane is a share of what it and the feed have between them, so it is measured rather

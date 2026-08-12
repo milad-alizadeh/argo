@@ -28,9 +28,8 @@ struct MinimapLaneTests {
     }
 
     private static func mounted(over rows: [FeedRow]) -> Mounted {
-        let table = FeedTableFixture.laidOut(rows, in: column)
         let feed = FeedTableHandle()
-        feed.coordinator = table
+        let table = FeedTableFixture.laidOut(rows, in: column, through: feed)
         let lane = MinimapLaneView(
             frame: NSRect(x: 0, y: 0, width: width, height: column.height),
         )
@@ -39,6 +38,9 @@ struct MinimapLaneTests {
         // notification it registered here, and a fixture that skipped it would leave every claim
         // below asserting a method this suite called itself.
         lane.attach(to: feed)
+        // At the head of the reading, because a fresh one opens at its END and every claim below
+        // is about where the lane goes as the reading travels.
+        feed.settle(at: 0, over: nil)
         return Mounted(lane: lane, feed: feed, table: table)
     }
 
@@ -157,7 +159,8 @@ struct MinimapLaneTests {
     @Test
     func `a zone wider than the reading measure does not compress the lane further`() throws {
         let wide = CGSize(width: 1200, height: Self.column.height)
-        let table = FeedTableFixture.laidOut(FeedProjection.longRows, in: wide)
+        let handle = FeedTableHandle()
+        let table = FeedTableFixture.laidOut(FeedProjection.longRows, in: wide, through: handle)
 
         #expect(try #require(table.reading()).columnWidth == ArgoFeedRow.column)
     }
@@ -196,7 +199,10 @@ struct MinimapLaneTests {
     /// One knob, not two. The platform's own would draw BETWEEN the reading and its map.
     @Test
     func `the feed hands its scroller to the lane while one is beside it`() throws {
-        let table = FeedTableFixture.laidOut(FeedProjection.longRows, in: Self.column)
+        let handle = FeedTableHandle()
+        let table = FeedTableFixture.laidOut(
+            FeedProjection.longRows, in: Self.column, through: handle,
+        )
         #expect(try !#require(table.scroller).hasVerticalScroller)
 
         table.apply(FeedTableFixture.model(showing: FeedProjection.longRows, hasMinimap: false))

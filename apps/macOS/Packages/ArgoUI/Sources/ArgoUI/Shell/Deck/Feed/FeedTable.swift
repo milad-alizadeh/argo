@@ -14,12 +14,10 @@ struct FeedTable: NSViewRepresentable {
     let rows: [FeedRow]
     let selection: FeedRowSelection
     let held: FeedRow.ID?
-    let isFollowing: Bool
     let isResizing: Bool
     let isUnderComposer: Bool
     let washed: FeedRow.ID?
     @Binding var unfolded: Set<FeedRow.ID>
-    let onReaderScroll: (Bool) -> Void
     let handle: FeedTableHandle
 
     func makeCoordinator() -> FeedTableCoordinator {
@@ -28,14 +26,21 @@ struct FeedTable: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let view = context.coordinator.makeScrollView()
-        handle.coordinator = context.coordinator
+        bind(context.coordinator)
         context.coordinator.apply(model(in: context))
         return view
     }
 
     func updateNSView(_: NSScrollView, context: Context) {
-        handle.coordinator = context.coordinator
+        bind(context.coordinator)
         context.coordinator.apply(model(in: context))
+    }
+
+    /// The two halves of one authority: the handle reaches the table through the coordinator, and
+    /// the coordinator reaches the policy through the handle.
+    private func bind(_ coordinator: FeedTableCoordinator) {
+        handle.coordinator = coordinator
+        coordinator.handle = handle
     }
 
     private func model(in context: Context) -> FeedTableModel {
@@ -43,13 +48,11 @@ struct FeedTable: NSViewRepresentable {
             rows: rows,
             selection: selection,
             held: held,
-            isFollowing: isFollowing,
             isResizing: isResizing,
             isUnderComposer: isUnderComposer,
             hasMinimap: context.environment.deckHasMinimap,
             washed: washed,
             unfolded: $unfolded,
-            onReaderScroll: onReaderScroll,
             environment: context.environment,
         )
     }

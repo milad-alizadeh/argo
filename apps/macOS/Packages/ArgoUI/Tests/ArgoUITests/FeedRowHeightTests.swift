@@ -23,8 +23,11 @@ struct FeedRowHeightTests {
 
     /// The height the table itself would ask the delegate for, at a width a cell wraps at.
     private static func height(of content: FeedRow.Content) -> CGFloat {
+        let handle = FeedTableHandle()
         let coordinator = FeedTableFixture.laidOut(
-            [FeedRow(id: 0, content: content)], in: CGSize(width: width, height: 800),
+            [FeedRow(id: 0, content: content)],
+            in: CGSize(width: width, height: 800),
+            through: handle,
         )
         guard let table = coordinator.table else { return 0 }
         return coordinator.tableView(table, heightOfRow: 0)

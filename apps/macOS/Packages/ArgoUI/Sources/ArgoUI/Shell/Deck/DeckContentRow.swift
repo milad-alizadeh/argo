@@ -21,7 +21,27 @@ struct DeckContentRow: View {
     @State private var isResizing = false
     /// The reading's scroll authority, held here because two zones share it: the feed drives it and
     /// the minimap maps it.
-    @State private var table = FeedTableHandle()
+    @State private var table: FeedTableHandle
+
+    /// Seeds the handle with `held`, which has to be true before the first frame.
+    init(
+        feed: [FeedRow],
+        showing: PlanShowing,
+        selection: FeedRowSelection,
+        held: FeedRow.ID? = nil,
+        vessel: DeckVessel = .none,
+        intents: DeckIntents = .inert,
+        seams: DeckSeams,
+    ) {
+        self.feed = feed
+        self.showing = showing
+        self.selection = selection
+        self.held = held
+        self.vessel = vessel
+        self.intents = intents
+        self.seams = seams
+        _table = State(initialValue: FeedTableHandle(held: held))
+    }
 
     var body: some View {
         GeometryReader { proxy in
