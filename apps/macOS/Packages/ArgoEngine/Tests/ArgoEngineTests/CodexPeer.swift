@@ -7,6 +7,8 @@ import Foundation
 final class CodexWire {
     var lines: [String] = []
     var readings = GateReadings()
+    /// The status the thread last published, which is what the Hub would file under the claim.
+    var driveStatus: SessionStatus?
 }
 
 /// One `CodexThread` with a stand-in server on the other end of it — the thread driven directly,
@@ -34,7 +36,12 @@ final class CodexPeer {
             publish: { wire.readings = $0 },
             write: write,
         )
-        let thread = CodexThread(cwd: cwd, mode: mode, approvals: approvals, write: write)
+        let thread = CodexThread(
+            cwd: cwd,
+            mode: mode,
+            approvals: approvals,
+            channel: CodexChannel(write: write, report: { wire.driveStatus = $0 }),
+        )
         self.wire = wire
         self.thread = thread
         self.server = CodexConversation(
@@ -46,5 +53,10 @@ final class CodexPeer {
     /// What this Session's gate is showing — the readings the cockpit would draw off the claim.
     var readings: GateReadings {
         wire.readings
+    }
+
+    /// The status the thread has published off what the server said it was doing.
+    var driveStatus: SessionStatus? {
+        wire.driveStatus
     }
 }

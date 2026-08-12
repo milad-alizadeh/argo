@@ -110,6 +110,60 @@ struct CodexLiveTests {
         #expect(await live.settle(until: { live.hub.sessions.first?.permission == nil }))
     }
 
+    /// The status half of the same round trip (#683): `waitingOnApproval` tracks the request the
+    /// server is holding. Only a real server can settle it, because the status and the approval
+    /// arrive as separate lines — and `driveStatus` is published off the status alone, so a reading
+    /// of `permission` there is the flag and never the prompt beside it.
+    @Test(.timeLimit(.minutes(3)))
+    func `the waiting-on-approval flag tracks the request a real Codex holds`() async throws {
+        var live = try LiveCodex()
+        defer { live.remove() }
+        let session = try await live.spawn(mode: .readOnly)
+
+        try live.hub.driver.send(
+            "Create a file named flagged.txt in the working directory. Then stop.",
+            to: session,
+        )
+        #expect(await live.settle(until: {
+            live.hub.sessions.first?.driveStatus == .permission
+        }))
+        let raised = try #require(live.hub.sessions.first?.permission)
+
+        try live.hub.driver.decide(.deny, answering: raised.id, for: session)
+
+        #expect(await live.settle(until: {
+            live.hub.sessions.first?.driveStatus != .permission
+        }))
+    }
+
+    /// The deadline against a real server (#683): nothing answers, Argo's own clock declines the
+    /// call, and the Session is still there to take the next Turn. The spike proved a LATE
+    /// `decline` is honoured; this is Argo's clock actually sending one, as the ticket asks.
+    ///
+    /// The patience is nothing at all, so the refusal lands as the prompt is raised. The Turn is
+    /// not waited on, for the reason the manual deny above is not: what the agent tries next is
+    /// its business.
+    @Test(.timeLimit(.minutes(3)))
+    func `Argo's own clock declines an unanswered call and the Session lives on`() async throws {
+        var live = try LiveCodex(patience: .immediate)
+        defer { live.remove() }
+        let session = try await live.spawn(mode: .readOnly)
+
+        try live.hub.driver.send(
+            "Create a file named expired.txt in the working directory. Then stop.",
+            to: session,
+        )
+
+        #expect(await live.settle(until: {
+            live.hub.sessions.first?.expiredPermissions.isEmpty == false
+        }))
+        #expect(!live.hasFile("expired.txt"))
+        try live.hub.driver.interrupt(session)
+        #expect(await live.settle(until: { live.thread?.turnID == nil }))
+        try live.hub.driver.send("Reply with the single word: alive", to: session)
+        #expect(await live.settle(until: { live.thread?.turnID != nil }))
+    }
+
     /// The patch approval's own params carry no diff, so what the prompt names has to come off the
     /// item's notifications, joined on `itemId`. Whether those arrive BEFORE the approval is an
     /// ordering only the real server can settle — the spike recorded `turn/diff/updated`, which

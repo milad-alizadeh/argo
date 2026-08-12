@@ -96,6 +96,8 @@ extension CockpitPresentation.Session {
     ///
     /// not-projected: liveness — an input to the status fold; `status` below is its result.
     /// not-projected: convention — the same input at the CONVENTION tier.
+    /// not-projected: driveStatus — the same input again, at DIRECT, where the CLI's own protocol
+    ///   reported it (#683).
     /// not-projected: signals — the tuple that fold reads, and nothing else.
     /// not-projected: statusReading — carries the honesty tier beside the status. The tier is the
     ///   Hub's own bookkeeping, and no surface below the shell renders it.

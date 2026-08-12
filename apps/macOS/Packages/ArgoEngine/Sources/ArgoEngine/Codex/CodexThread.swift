@@ -26,7 +26,7 @@ final class CodexThread {
     /// The Permissions this Session raises (#549). Held rather than reached for, because an
     /// approval and the Turn it belongs to arrive down the same pipe and end with the same process.
     let approvals: CodexApprovals
-    private let write: @MainActor (String) -> Bool
+    private let channel: CodexChannel
     private(set) var stance: CodexStance
     private(set) var stage = Stage.handshaking
     private var lines = CodexLineBuffer()
@@ -47,12 +47,12 @@ final class CodexThread {
         cwd: String,
         mode: SessionMode,
         approvals: CodexApprovals,
-        write: @escaping @MainActor (String) -> Bool,
+        channel: CodexChannel,
     ) {
         self.cwd = cwd
         self.stance = CodexStance.of(mode)
         self.approvals = approvals
-        self.write = write
+        self.channel = channel
     }
 
     /// Say hello. Everything else waits on the server's answer to this.
@@ -114,14 +114,14 @@ final class CodexThread {
     func ask(_ method: String, _ params: [String: JSONValue]) -> Int? {
         issued += 1
         guard let line = CodexRPC.request(id: issued, method: method, params: params),
-              write(line)
+              channel.write(line)
         else { return nil }
         return issued
     }
 
     func put(_ line: String?) {
         guard let line else { return }
-        _ = write(line)
+        _ = channel.write(line)
     }
 
     /// The server said hello back, so the thread can be asked for — on the stance the rung names,
@@ -147,6 +147,21 @@ final class CodexThread {
 
     func noted(turn: String?) {
         turnID = turn
+    }
+
+    /// What the server says the thread is doing (#683). `nil` is an arm this vocabulary cannot
+    /// read, and nothing is published for it: the last status Argo could read is still the truest
+    /// thing it has about the Session.
+    func noted(status: CodexThreadStatus?) {
+        guard let status else { return }
+        channel.report(status.reading)
+    }
+
+    /// The process is gone. The gate's readings go with it, and so does the status the thread was
+    /// last reporting — a Session whose server has exited is not still running the Turn it was on.
+    func close() {
+        approvals.close()
+        channel.report(nil)
     }
 
     /// The server refused a message the handshake depended on. Whatever was typed into the wait is

@@ -18,11 +18,17 @@ public extension HubSession {
     /// ago, and the status is only ever a reading of the two together.
     ///
     /// A Permission Argo itself is holding open wins outright, at DIRECT — both ends of that hook
-    /// are Argo's. Below it, a status the agent REPORTED wins at the CONVENTION tier. A Session
-    /// with no channel, or one that has said nothing, falls through to DERIVED, never worse.
+    /// are Argo's. Then a status the CLI reported over the drive port, also DIRECT: the thread that
+    /// reported it is one Argo started and holds the pipe to, so the join from the report to this
+    /// Session is exact rather than the working directory and time window a transcript is matched
+    /// on. Below those, a status the agent REPORTED wins at the CONVENTION tier. A Session with no
+    /// channel, or one that has said nothing, falls through to DERIVED, never worse.
     var statusReading: SessionStatusReading {
         if permission != nil {
             return SessionStatusReading(tier: .direct, status: .permission)
+        }
+        if let driveStatus {
+            return SessionStatusReading(tier: .direct, status: driveStatus)
         }
         guard let reported = convention?.status else { return SessionStatus.read(signals) }
         return SessionStatusReading(tier: .convention, status: reported)

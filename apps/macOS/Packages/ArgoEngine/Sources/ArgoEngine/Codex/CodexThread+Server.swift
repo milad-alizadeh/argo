@@ -41,6 +41,7 @@ extension CodexThread {
             approvals.completedTurn()
         case "item/started": noted(patch: params["item"] ?? .null)
         case "item/fileChange/patchUpdated": noted(patch: params)
+        case "thread/status/changed": noted(status: CodexThreadStatus(params["status"] ?? .null))
         default: break
         }
     }

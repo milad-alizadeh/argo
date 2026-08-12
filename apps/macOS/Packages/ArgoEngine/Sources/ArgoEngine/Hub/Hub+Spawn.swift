@@ -120,7 +120,12 @@ public extension Hub {
             cwd: plan.cwd,
             mode: plan.mode,
             approvals: approvals,
-            write: write,
+            channel: CodexChannel(
+                write: write,
+                report: { [weak self] status in
+                    self?.claims.publish(driveStatus: status, for: claim)
+                },
+            ),
         )
         codex.open(claim, thread: thread)
         guard let opening = plan.seed.opening else { return }

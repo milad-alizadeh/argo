@@ -71,6 +71,19 @@ struct CodexConversation {
         notify("turn/started", params: .object(["turn": .object(["id": .string(turn)])]))
     }
 
+    /// The thread's own word for what it is doing, in the shape `ThreadStatusChangedNotification`
+    /// spells on 0.147.0: an arm name, and `activeFlags` beside it only on `active`.
+    func statusChanged(_ type: String, flags: [String]? = nil) {
+        var status: [String: JSONValue] = ["type": .string(type)]
+        if let flags {
+            status["activeFlags"] = .array(flags.map(JSONValue.string))
+        }
+        notify("thread/status/changed", params: .object([
+            "threadId": .string("thread-1"),
+            "status": .object(status),
+        ]))
+    }
+
     func completedTurn() {
         notify("turn/completed", params: .object(["turn": .object(["id": .string("done")])]))
     }

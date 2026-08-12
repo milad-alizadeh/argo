@@ -48,6 +48,12 @@ final class ClaimLedger {
         }
     }
 
+    /// What the CLI itself said this Session is doing (#683), or `nil` to take it back when the
+    /// process behind it goes.
+    func publish(driveStatus: SessionStatus?, for claim: SessionOwnership.ClaimID) {
+        update(claim) { $0.driveStatus = driveStatus }
+    }
+
     func setMode(_ modeSet: SessionModeSet, for claim: SessionOwnership.ClaimID) {
         update(claim) { $0.modeSet = modeSet }
     }
