@@ -117,23 +117,37 @@ struct CodexThreadTests {
         #expect(peer.server.request("turn/interrupt") == nil)
     }
 
-    /// Until #549 raises it as a Permission somebody can see, the boundary answers for itself. The
-    /// one thing it may not do is leave the request open: the server keeps no clock, so an
-    /// unanswered approval holds the Turn for ever.
+    /// An approval becomes a prompt somebody can see, and NOTHING is answered until they answer it
+    /// — the whole of what #549 changed. The server is left waiting on purpose: it keeps no clock,
+    /// so the only clock over this call is Argo's own.
     @Test(arguments: [
         "item/commandExecution/requestApproval",
         "item/fileChange/requestApproval",
     ])
-    func `an approval is answered, and answered no`(method: String) {
+    func `an approval is raised as a Permission rather than answered for the user`(method: String) {
         let peer = CodexPeer()
         peer.thread.begin()
         peer.server.open()
 
-        peer.server.ask(7, method: method)
+        peer.server.ask(7, method: method, params: .object(["itemId": .string("exec-1")]))
 
-        let answer = peer.server.answers.last
-        #expect(answer?.id == 7)
-        #expect(answer?.result.stringField("decision") == "decline")
+        #expect(peer.readings.waiting.count == 1)
+        #expect(peer.server.decision(7) == nil)
+    }
+
+    /// The server's third approval answers with a permission profile rather than a decision word,
+    /// and Argo has no control that produces one — so it is refused like any other request this
+    /// client cannot answer, rather than accepted in a shape guessed at.
+    @Test
+    func `the sandbox-widening approval is refused rather than raised`() {
+        let peer = CodexPeer()
+        peer.thread.begin()
+        peer.server.open()
+
+        peer.server.ask(8, method: "item/permissions/requestApproval")
+
+        #expect(peer.readings.waiting.isEmpty)
+        #expect(peer.server.answers.last?.result["message"] != nil)
     }
 
     @Test

@@ -37,6 +37,17 @@ final class ClaimLedger {
         update(claim) { $0.expiries = expired }
     }
 
+    /// All three of a gate's readings at once, in ONE update. A gate that published them separately
+    /// would move the roster three times for a single act, and leave it briefly showing a prompt
+    /// beside the expiry that ended it.
+    func publish(_ readings: GateReadings, for claim: SessionOwnership.ClaimID) {
+        update(claim) {
+            $0.waiting = readings.waiting
+            $0.standing = readings.standing
+            $0.expiries = readings.expiries
+        }
+    }
+
     func setMode(_ modeSet: SessionModeSet, for claim: SessionOwnership.ClaimID) {
         update(claim) { $0.modeSet = modeSet }
     }
