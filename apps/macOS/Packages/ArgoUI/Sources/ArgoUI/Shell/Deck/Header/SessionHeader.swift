@@ -1,14 +1,15 @@
 import SwiftUI
 
-/// The deck's top zone: the Session's own title, what you can do with it when that is not the
-/// default, and the facts that say what it is working on and with — its branch and that branch's
-/// state, its CLI and model, and the issue it serves.
+/// The deck's top zone, since the title left it for the titlebar (#692): what the Session is
+/// waiting for, what you can do with it when that is not the default, and the one instrument.
+///
+/// The identity it used to carry — the title and the fact line under it — is the window's document
+/// title and that title's hover now. Nothing here restates a fact drawn up there.
 ///
 /// It draws no ground and no rule of its own — the deck is one opaque plane, and the approved study
 /// puts no separator between the header and the tabs beneath it.
 ///
-/// The facts sit UNDER the title, not beside it
-/// (`docs/designs/prototypes/roster-header-prototype.html`, variant A).
+/// The band survives this move shrunken rather than deleted; deleting it is #693's.
 struct SessionHeader: View {
     @Environment(\.argo) private var argo
 
@@ -22,16 +23,8 @@ struct SessionHeader: View {
 
     var body: some View {
         // Centred rather than baseline-aligned: the instrument on the trailing edge is a bar with
-        // no baseline, and the identity beside it is two stacked lines with no single one.
+        // no baseline of its own.
         HStack(alignment: .center, spacing: ArgoSpacing.comfortable) {
-            identity
-                // Combined here and NOT over the whole header: combining over the instrument would
-                // swallow its ⓘ, and a control nothing can address is a panel nobody can open.
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(header?.announcement ?? "No Session selected")
-                // Above the Spacer, which otherwise takes the slack first and cuts a title that
-                // had room.
-                .layoutPriority(1)
             Spacer(minLength: ArgoSpacing.loose)
             if let header {
                 if let state = header.state {
@@ -50,33 +43,13 @@ struct SessionHeader: View {
         .accessibilityElement(children: .contain)
     }
 
-    /// Tight on purpose: the title and the line under it are ONE identity.
-    private var identity: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.hair) {
-            if let header {
-                title(header)
-                SessionHeaderFacts(header: header)
-            }
-        }
-    }
-
-    /// What the Session is waiting for, level with the title (`docs/designs/composer/perm.png`),
-    /// and outside the identity element so a screen reader hears it as a separate claim.
+    /// What the Session is waiting for (`docs/designs/composer/perm.png`), and its own element so a
+    /// screen reader hears it as a separate claim from the title above it.
     private func stateWord(_ state: SessionState.Reading) -> some View {
         Text(state.word)
             .argoText(ArgoTypography.rowMeta)
             .foregroundStyle(state.tone?.tint(in: argo.color) ?? argo.color.text.tertiary)
             .lineLimit(1)
-    }
-
-    /// Cut at the TAIL: a Session's title is written subject first, so its front tells two of them
-    /// apart.
-    private func title(_ header: SessionHeaderProjection.Header) -> some View {
-        Text(header.title)
-            .argoText(ArgoTypography.sessionTitle)
-            .foregroundStyle(argo.color.text.primary)
-            .lineLimit(1)
-            .truncationMode(.tail)
     }
 }
 

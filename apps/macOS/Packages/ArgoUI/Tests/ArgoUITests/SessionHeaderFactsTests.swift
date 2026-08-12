@@ -2,6 +2,10 @@ import ArgoEngine
 @testable import ArgoUI
 import Testing
 
+/// These are the PROJECTION's facts, not the fact line's. The line they were drawn on is gone
+/// (#692) and they now reach the reader through the titlebar title's hover and the announcement,
+/// so what they pin — the branch carried whole, an unread kind drawing nothing, a count of zero
+/// drawing nothing — is unchanged by the move.
 @Suite("Session header — the Workspace, the CLI and the issue")
 struct SessionHeaderFactsTests {
     @Test

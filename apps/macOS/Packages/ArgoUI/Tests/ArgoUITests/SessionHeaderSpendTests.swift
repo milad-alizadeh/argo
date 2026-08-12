@@ -93,14 +93,6 @@ struct SessionHeaderSpendTests {
         #expect(ElapsedTime.phrase(milliseconds: -5000) == "under a minute")
     }
 
-    @Test
-    func `both spend lines have a specimen of their own`() {
-        let drawn = SessionSpendFixture.spends
-
-        #expect(drawn.map(\.name) == ["sessionSpend", "sessionSpendUnreported"])
-        #expect(drawn.map { $0.header.spend?.contains("in subagents") } == [true, false])
-    }
-
     /// A Session with a fixed spend: two hours spanned, twenty minutes of it worked.
     private func spend(subagentTokens: Int?) -> String? {
         SessionHeaderProjection.spend(from: session(

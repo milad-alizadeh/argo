@@ -20,15 +20,23 @@ struct DeckCanopy: View {
     /// and spawns nothing.
     var handOff: () async -> Void = {}
 
+    /// The canopy's own width — which IS the detail pane's, since the canopy spans it. What the
+    /// centred title's share is taken of (#692).
+    @State private var paneWidth: CGFloat = 0
+
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
+            // Zero-height wherever there is no toolbar above the deck, so a specimen of the deck
+            // alone draws no title.
+            TitlebarTitle(header: header, paneWidth: paneWidth)
+                .frame(height: reach)
             SessionHeader(header: header, handOff: handOff)
                 .frame(height: ArgoLayout.deckHeaderHeight)
-            SessionTabLine(spend: header?.spend)
+            SessionTabLine()
                 .frame(height: ArgoLayout.deckTabSlotHeight)
         }
-        .frame(height: ArgoLayout.deckCanopyHeight)
-        .padding(.top, reach)
+        .frame(height: ArgoLayout.deckCanopyHeight + reach)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { paneWidth = $0 }
         .argoChromeBar()
         .ignoresSafeArea(.container, edges: .top)
     }
