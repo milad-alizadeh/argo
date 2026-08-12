@@ -132,15 +132,14 @@ struct SessionRow: View {
         isRenaming.wrappedValue = false
     }
 
-    /// The age takes the leading edge, the worktree the right under the state word. Absent entirely
-    /// when neither half is there — an empty `Text` would leave a gap of the font's height.
+    /// The clock takes the leading edge, the worktree the right under the state word. Absent
+    /// entirely when neither half is there — an empty `Text` would leave a gap of the font's
+    /// height.
     @ViewBuilder private var secondaryLine: some View {
-        if row.worktree != nil || row.age != nil {
+        if row.worktree != nil || row.clock != nil {
             HStack(spacing: ArgoSpacing.snug) {
-                if let age = row.age {
-                    Text(age)
-                        .argoText(ArgoTypography.rowMeta)
-                        .lineLimit(1)
+                if let clock = row.clock {
+                    RosterTurnClock(clock: clock)
                         // A width shortfall lands on the worktree instead, which gives up its
                         // middle.
                         .layoutPriority(1)

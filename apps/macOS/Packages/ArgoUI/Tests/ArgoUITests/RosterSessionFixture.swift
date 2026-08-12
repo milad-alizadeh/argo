@@ -21,6 +21,7 @@ enum RosterSessionFixture {
         lastSeenAtMs: Int? = nil,
         isArchived: Bool = false,
         explicitName: String? = nil,
+        events: [TranscriptEvent] = [],
     )
         -> CockpitPresentation.Session {
         CockpitPresentation.Session(
@@ -34,6 +35,7 @@ enum RosterSessionFixture {
             lastSeenAtMs: lastSeenAtMs,
             isArchived: isArchived,
             explicitName: explicitName,
+            events: events,
         )
     }
 }
