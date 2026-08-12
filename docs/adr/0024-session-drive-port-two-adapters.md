@@ -144,9 +144,7 @@ one that exists.
 
 ## Verification status
 
-Against `claude` 2.1.226 and `codex-cli` 0.144.5, 2026-08-10.
-
-**The `claude` adapter is proven.**
+**The `claude` adapter is proven — against `claude` 2.1.226, 2026-08-10.**
 
 - Long-lived multi-turn, images, and transcript persistence (image bytes embedded) — the parser
   needs no change.
@@ -181,3 +179,6 @@ Full JSON-RPC transcripts and reproduction: `docs/research/2026-08-12-codex-app-
   three configurations (default, `mcp_servers={}`, isolated `CODEX_HOME`); every `tools/call`
   stalled after `session_configured`, and `initialize` advertised only
   `capabilities: {tools: {listChanged: true}}`. The adapter uses app-server, not MCP.
+- **The approval channel is what the spike exercised; the rest of the row is mapped, not
+  verified.** `turn/interrupt`, `attach` via `input` items, and `approvalPolicy: "on-request"`
+  come from the server's own schema and remain to be exercised by the adapter build (#683).

@@ -5,8 +5,9 @@
 ## Verdict
 
 **`codex app-server` is a working approval channel.** Both approval kinds round-tripped, and
-deny-on-timeout is implementable by the client alone. Verified against **codex-cli 0.147.0**
-(macOS 26.5.1, arm64, ChatGPT sign-in) on 2026-08-12.
+deny-on-timeout is implementable by the client alone. Verified against **codex-cli 0.147.0** —
+the latest release at probe time; `codex update` resolved "latest" to 0.147.0 from 0.144.5 —
+on macOS 26.5.1, arm64, ChatGPT sign-in, 2026-08-12.
 
 - An **exec approval** arrived as the server→client JSON-RPC request
   `item/commandExecution/requestApproval`; the client replied `{"decision": "accept"}` and the
@@ -20,7 +21,10 @@ deny-on-timeout is implementable by the client alone. Verified against **codex-c
 
 The `codex mcp-server` dead end recorded against 0.144.5 on 2026-08-10 stands. Approvals were
 never MCP `elicitation/create`; on app-server they are plain JSON-RPC **requests from server to
-client**, which the client answers by JSON-RPC **response**. That is the whole mechanism.
+client**, which the client answers by JSON-RPC **response**. That is the whole mechanism. The
+ticket's other candidate — driving approvals off a `codex/event` notification stream — is moot
+on this surface: notifications carry no reply path, and app-server does not use one for
+approvals; everything that needs an answer arrives as a request with an `id`.
 
 ## The protocol, as exercised
 
