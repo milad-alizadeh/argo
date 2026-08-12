@@ -243,11 +243,15 @@ nothing about `auto` stops the hook reaching a socket Argo could be listening on
 version of the sandbox worry that bears on the gate. The rung was what was missing, and the gate
 reads it now.
 
-**The 180 s stall #663 reported is NOT explained by this, and is not closed.** Headless on the same
-binary the same Turn produced an assistant turn and ran the call, so the stall is not inherent to
-the rung. It was seen through the TUI path — a real PTY, folder trust, a live fixture — and only
-`LiveModeTests` covers that. `Auto runs a gated call and never asks` is where it would reappear,
-and it is no longer masked by a `withKnownIssue`.
+**The 180 s stall #663 reported does not survive the fix.** It was seen through the TUI path — a
+real PTY, folder trust, the live fixture — where a gated call on `auto` produced no assistant turn
+at all. With the gate reading the rung, that same test runs the call and finishes in **12 seconds**,
+and all four of `LiveModeTests` pass against 2.1.228 on 2026-08-12.
+
+So the stall was the gate rather than the rung: the hook blocks until Argo answers, and a Permission
+nobody was shown is one nobody could answer, so the Turn stood still until the hook's own clock ran
+out. The one part of that report this does not account for is the Permission being absent from the
+roster as well; nothing here reproduces it, and the tests that would catch it now pass.
 
 **"Asks nothing" is answered, not left ungated.** The other shape — install no gate for a Session
 spawned on `Auto` — is simpler and was rejected, because a rung is *walked* mid-Session (#653): a
