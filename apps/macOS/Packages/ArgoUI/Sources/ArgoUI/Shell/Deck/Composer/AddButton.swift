@@ -7,10 +7,14 @@ import UniformTypeIdentifiers
 /// A `+` and not a paperclip: what it opens is "give the agent something", which is the same act
 /// all three gestures make, and a paperclip would name only the one that goes through a picker.
 ///
+/// Named for the act rather than for attachment (`cockpit-composer-picker.md`, #708): #689 gives
+/// this control a menu of files, skills and commands, and two of those three are not attachments.
+/// Its sentence still says *Attach a file*, because until that menu exists a file is all it opens.
+///
 /// **It is absent, never disabled, for an adapter that takes no attachments** (design decision 9).
 /// That absence is the caller's — this view exists only where the capability holds, because a
 /// control that renders itself away is one whose disabled state somebody will eventually add back.
-struct AttachButton: View {
+struct AddButton: View {
     @Environment(\.argo) private var argo
 
     let attach: ([SessionAttachment]) -> Void
@@ -44,8 +48,8 @@ struct AttachButton: View {
     }
 }
 
-#Preview("Attach button") {
-    AttachButton(attach: { _ in })
+#Preview("Add button") {
+    AddButton(attach: { _ in })
         .padding(ArgoSpacing.section)
         .argoDeckSurface()
         .argoAppearance()
