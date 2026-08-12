@@ -117,6 +117,9 @@ struct CodexDriveTests {
         try fixture.hub.driver.send("Hello", to: claude.value)
         try fixture.hub.driver.send("Hello", to: codex.id)
 
+        // The Claude Turn's Return is a write of its own, behind a pause (#682), so it is waited
+        // for. Codex has no Return to wait for: a Turn there is one JSON-RPC request.
+        await settle { claudeProcess.written.joined().hasSuffix("\r") }
         #expect(claudeProcess.written.joined().hasSuffix("\r"))
         #expect(codex.server.turns.count == 1)
     }

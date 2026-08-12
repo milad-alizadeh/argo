@@ -57,6 +57,7 @@ public extension Hub {
     /// behind a claim this loop does not reach.
     func endOwnedSessions() {
         terminals.terminateAll()
+        delivery.forgetAll()
         for claim in ownership.liveClaims {
             relinquish(claim)
         }
@@ -155,6 +156,9 @@ public extension Hub {
     /// over. The three sites that give a claim up are a launch that failed, a process that exited,
     /// and the app quitting.
     private func relinquish(_ claim: SessionOwnership.ClaimID) {
+        // Before the claim is released, because the watch is keyed by Session and the id is read
+        // back through the claim that is about to stop answering.
+        delivery.forget(ownership.rowID(ofClaim: claim.value))
         ownership.release(claim)
         terminals.drop(claim)
         codex.close(claim)

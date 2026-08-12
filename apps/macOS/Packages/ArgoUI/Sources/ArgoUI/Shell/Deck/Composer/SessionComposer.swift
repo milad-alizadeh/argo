@@ -16,6 +16,8 @@ struct SessionComposer: View {
     let send: ComposerSend
     /// Take back a standing allow, by tool (#572). A closure for the reason `send` is.
     let revoke: (String) -> Void
+    /// Say the Turn reported lost has been put back, so the news is not delivered twice (#682).
+    var lostTurnSeen: () -> Void = {}
     /// Stop the Turn in flight (#541). A closure for the reason `send` is, and THROWING for the
     /// reason it is: what the port refuses, the seam repeats — and a refused stop must leave the
     /// vessel exactly as it found it.
@@ -37,6 +39,7 @@ struct SessionComposer: View {
         composer: SessionComposerProjection.Composer,
         send: @escaping ComposerSend,
         revoke: @escaping (String) -> Void = { _ in },
+        lostTurnSeen: @escaping () -> Void = {},
         stop: @escaping () throws -> Void = {},
         setMode: @escaping (SessionMode) async throws -> Void = { _ in },
         draft: Binding<ComposerDraft> = .constant(ComposerDraft()),
@@ -45,6 +48,7 @@ struct SessionComposer: View {
         self.composer = composer
         self.send = send
         self.revoke = revoke
+        self.lostTurnSeen = lostTurnSeen
         self.stop = stop
         self.setMode = setMode
         _draft = draft
@@ -68,6 +72,13 @@ struct SessionComposer: View {
         .onChange(of: composer.isRunning, initial: true) { _, isRunning in
             guard !isRunning else { return }
             draft.flush(via: send)
+        }
+        // A Turn the CLI never heard, put back where it was typed (#682). `initial` for the reason
+        // the flush above has it: the news lands while the reader may be looking at another
+        // Session, and it is still theirs when they come back to this one.
+        .onChange(of: composer.lostTurn, initial: true) { _, lost in
+            guard let lost, draft.turnLost(lost) else { return }
+            lostTurnSeen()
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Composer")

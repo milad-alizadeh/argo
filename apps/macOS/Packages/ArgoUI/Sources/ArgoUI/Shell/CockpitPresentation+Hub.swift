@@ -139,6 +139,7 @@ extension CockpitPresentation.Session {
             // CLI's word are what the composer renders, and a rung alone cannot say either.
             mode: session.mode,
             modeDidNotTake: session.modeDidNotTake,
+            lostTurn: session.lostTurn,
             events: session.events,
         )
     }

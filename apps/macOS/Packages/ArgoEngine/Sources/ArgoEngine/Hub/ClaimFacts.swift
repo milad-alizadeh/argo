@@ -16,6 +16,10 @@ struct ClaimFacts: Equatable {
     var expiries: [PermissionExpiry] = []
     /// The rung Argo last put it on (#545).
     var modeSet: SessionModeSet?
+    /// The last Turn typed at it that the CLI never heard, verbatim (#682). Held so the words can
+    /// go back where they were typed: the composer cleared on the strength of a keystroke that was
+    /// written, and this is the later news that it was never read.
+    var lostTurn: String?
 
     /// Absent rather than empty: a claim with nothing to say must leave the ledger, or an empty
     /// entry keeps it alive there long after the PTY behind it went.
@@ -25,5 +29,6 @@ struct ClaimFacts: Equatable {
             && standing.isEmpty
             && expiries.isEmpty
             && modeSet == nil
+            && lostTurn == nil
     }
 }

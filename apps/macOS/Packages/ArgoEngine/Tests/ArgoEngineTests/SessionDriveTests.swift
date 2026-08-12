@@ -14,11 +14,52 @@ struct SessionDriveTests {
 
         try fixture.hub.driver.send("Fix the caption, not the sort.", to: claim.value)
 
-        let typed = fixture.host.started.last?.written.joined() ?? ""
-        #expect(typed.contains("Fix the caption, not the sort."))
+        await settle { fixture.host.started.last?.written.count == 2 }
+        let typed = fixture.host.started.last?.written ?? []
+        #expect(typed.first?.contains("Fix the caption, not the sort.") == true)
         // Submitted, not left sitting in the field: a Turn nobody sent is indistinguishable from
         // one that never arrived.
-        #expect(typed.hasSuffix("\r"))
+        #expect(typed.last == "\r")
+    }
+
+    /// The Return arrives as its OWN write (#682). Written with the paste, it is read in the same
+    /// batch as the file-mention popup an `@` token opens — which takes it as its accept key and
+    /// leaves the Turn in the composer, sent-looking and unsent.
+    @Test
+    func `a Turn's Return reaches the PTY as a write of its own`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        try fixture.hub.driver.send("what is @README.md about?", to: claim.value)
+
+        await settle { fixture.host.started.last?.written.count == 2 }
+        let typed = fixture.host.started.last?.written ?? []
+        #expect(typed.count == 2)
+        #expect(typed.first?.hasSuffix("\r") == false)
+        #expect(typed.last == "\r")
+    }
+
+    /// The pause the split opens is a window a second Turn could land in, and a paste that landed
+    /// there would be submitted by the FIRST Turn's Return — the two messages arriving as one Turn.
+    /// Reachable from the composer alone: a queue released when a Turn ends sends its follow-ups
+    /// one after another.
+    @Test
+    func `a second Turn cannot land between the first Turn's paste and its Return`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        try fixture.hub.driver.send("First", to: claim.value)
+        try fixture.hub.driver.send("Second", to: claim.value)
+
+        await settle { fixture.host.started.last?.written.count == 4 }
+        let typed = fixture.host.started.last?.written ?? []
+        #expect(typed.count == 4)
+        #expect(typed.first?.contains("First") == true)
+        #expect(typed[1] == "\r")
+        #expect(typed[2].contains("Second"))
+        #expect(typed.last == "\r")
     }
 
     /// Reachable only by the race between drawing the composer and the PTY going away: the answer
@@ -94,10 +135,34 @@ struct SessionDriveTests {
         try fixture.hub.driver.interrupt(claim.value)
         try fixture.hub.driver.send("Do the other thing instead.", to: claim.value)
 
+        await settle { fixture.host.started.last?.written.count == 3 }
         let typed = fixture.host.started.last?.written ?? []
         #expect(typed.first == "\u{1B}")
-        #expect(typed.last?.contains("Do the other thing instead.") == true)
-        #expect(typed.last?.hasSuffix("\r") == true)
+        #expect(typed.dropFirst().first?.contains("Do the other thing instead.") == true)
+        #expect(typed.last == "\r")
+    }
+
+    /// Only the Return waits (#682). The paste goes when it is asked for, so a keystroke asked for
+    /// AFTERWARDS cannot overtake it — a Stop pressed on a Turn reaching the agent before the Turn
+    /// it was pressed on would be Argo inventing an order the user never typed.
+    @Test
+    func `a keystroke asked for after a Turn cannot overtake its paste`() async throws {
+        let fixture = try SpawnFixture()
+        defer { fixture.remove() }
+        let claim = try await fixture.hub.spawnSession()
+
+        try fixture.hub.driver.send("Off you go.", to: claim.value)
+        try fixture.hub.driver.interrupt(claim.value)
+
+        // Asserted BEFORE the Return has had its pause: the paste is already out, and the `ESC`
+        // behind it. Holding the `ESC` back instead is what would pace a mode walk into one read.
+        let atOnce = fixture.host.started.last?.written ?? []
+        #expect(atOnce.count == 2)
+        #expect(atOnce.first?.contains("Off you go.") == true)
+        #expect(atOnce.last == "\u{1B}")
+
+        await settle { fixture.host.started.last?.written.count == 3 }
+        #expect(fixture.host.started.last?.written.last == "\r")
     }
 
     @Test

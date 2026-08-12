@@ -19,6 +19,7 @@ public extension Hub {
                     terminals: terminals,
                     permissions: permissions,
                     attachments: AttachmentStore(root: Self.attachmentRoot),
+                    delivery: delivery,
                     stance: { [weak self] sessionID in self?.stance(of: sessionID) ?? .unknown },
                 ),
                 codex: CodexSessionDriver(
@@ -74,6 +75,45 @@ public extension Hub {
         modeStore.remember(set.mode)
         guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
         claims.setMode(set, for: claim)
+    }
+
+    /// The watch behind `delivery`, built here beside the driver it reports for.
+    ///
+    /// All three answers are read off this Hub at the moment they are asked, never held: a Turn is
+    /// watched for seconds, and a copy of the record count taken when the watch began would be
+    /// exactly the reading that cannot see the Turn arrive.
+    ///
+    /// Only the Claude adapter ever starts a watch, because only a keystroke can be eaten by a
+    /// popup. `isCodex` is asked anyway: a claim's bytes go to whichever table owns them, so a
+    /// Return typed at a Codex claim would land in the middle of its JSON-RPC and corrupt a
+    /// protocol stream rather than fail.
+    internal func makeDelivery() -> TurnDelivery {
+        TurnDelivery(TurnDelivery.Watch(
+            records: { [weak self] sessionID in self?.session(id: sessionID)?.events.count ?? 0 },
+            retype: { [weak self] sessionID in
+                guard let self, !isCodex(sessionID),
+                      let claim = ownership.ownerOf(sessionID: sessionID)
+                else { return false }
+                return terminals.write(ClaudeTurn.submit, to: claim)
+            },
+            lost: { [weak self] text, sessionID in self?.rememberLostTurn(text, for: sessionID) },
+        ))
+    }
+
+    /// File a Turn the CLI never heard (#682), against the CLAIM like every other drive fact: a
+    /// fresh Session is re-keyed to its own id the moment its record lands, and news filed under
+    /// the id it had before would be lost at the re-key.
+    ///
+    /// A Session with no claim is one Argo cannot type at, so there was no Turn of ours to lose.
+    internal func rememberLostTurn(_ text: String?, for sessionID: String) {
+        guard let claim = ownership.boundClaim(ofSessionID: sessionID) else { return }
+        claims.setLostTurn(text, for: claim)
+    }
+
+    /// The composer has the words back, so the news is spent. Taken back rather than left standing:
+    /// a Turn reported lost twice is one the reader would put back twice.
+    func clearLostTurn(for sessionID: String) {
+        rememberLostTurn(nil, for: sessionID)
     }
 
     /// How many stance records a Session has written, read before a walk begins — see

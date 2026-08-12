@@ -61,6 +61,7 @@ struct HubResumeTests {
 
         #expect(relaunched.steer(sessionID: sessionID, typing: "after"))
         let resumedProcess = try #require(fixture.host.started.last)
+        await settle { resumedProcess.written.contains { $0.contains("after") } }
         #expect(resumedProcess.written.contains { $0.contains("after") })
     }
 

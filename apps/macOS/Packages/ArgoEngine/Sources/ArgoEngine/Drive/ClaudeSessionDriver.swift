@@ -15,6 +15,8 @@ struct ClaudeSessionDriver: SessionDriver {
     let terminals: AgentTerminals
     let permissions: PermissionChannel?
     let attachments: AttachmentStore
+    /// Who watches for the CLI answering a Turn that was typed at it (#682).
+    let delivery: TurnDelivery
     /// Where the Session stands right now, read at the moment a rung is asked for rather than held:
     /// the distance to walk is counted from it, and a copy of it here would be the second answer to
     /// a question the roster already answers.
@@ -43,6 +45,9 @@ struct ClaudeSessionDriver: SessionDriver {
         else {
             throw SessionDriveError.notDrivable
         }
+        // Written is not heard (#682). What answers that is the CLI's own record, which arrives
+        // long after this call has returned — so the watch starts here and reports for itself.
+        delivery.typed(text, to: sessionID)
     }
 
     /// One `ESC` at the prompt (#541). It goes through the same claim `send` does — an interrupt

@@ -13,6 +13,9 @@ struct DeckIntents {
     /// Taking back one of the Session's standing allows, by tool (#572). Reached from BOTH the
     /// composer and the prompt, because either can draw the tray.
     var revoke: (String) -> Void = { _ in }
+    /// Saying the Turn reported lost has been put back in the field (#682), so the Hub stops
+    /// reporting it. The composer's own act: it is the thing that took the news in.
+    var lostTurnSeen: () -> Void = {}
     /// Stopping the Turn in flight (#541); a Session blocked on a Permission has nothing to stop.
     var stop: () throws -> Void = {}
     /// Putting the Session on a rung of the Mode ladder (#545); refused rungs reach the seam.

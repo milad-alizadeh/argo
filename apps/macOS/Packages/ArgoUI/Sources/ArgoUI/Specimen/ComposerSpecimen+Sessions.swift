@@ -15,6 +15,7 @@ extension ComposerSpecimen {
         isRunning: false,
         mode: .exactly(.code, cli: "acceptEdits"),
         modeDidNotTake: nil,
+        lostTurn: nil,
         canAttach: true,
     )
 
@@ -29,6 +30,7 @@ extension ComposerSpecimen {
         isRunning: false,
         mode: composer.mode,
         modeDidNotTake: nil,
+        lostTurn: nil,
         canAttach: false,
     )
 
@@ -42,6 +44,7 @@ extension ComposerSpecimen {
         isRunning: true,
         mode: composer.mode,
         modeDidNotTake: nil,
+        lostTurn: nil,
         canAttach: true,
     )
 
@@ -55,6 +58,7 @@ extension ComposerSpecimen {
         isRunning: false,
         mode: composer.mode,
         modeDidNotTake: nil,
+        lostTurn: nil,
         canAttach: true,
     )
 
@@ -69,6 +73,7 @@ extension ComposerSpecimen {
         isRunning: false,
         mode: .nearly(.readOnly, cli: "default"),
         modeDidNotTake: nil,
+        lostTurn: nil,
         canAttach: true,
     )
 
@@ -83,6 +88,7 @@ extension ComposerSpecimen {
         isRunning: false,
         mode: composer.mode,
         modeDidNotTake: .auto,
+        lostTurn: nil,
         canAttach: true,
     )
 
@@ -96,6 +102,7 @@ extension ComposerSpecimen {
         isRunning: false,
         mode: .unknown(cli: "dontAsk"),
         modeDidNotTake: nil,
+        lostTurn: nil,
         canAttach: true,
     )
 }
