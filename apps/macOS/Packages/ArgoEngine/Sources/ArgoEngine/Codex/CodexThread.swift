@@ -29,9 +29,6 @@ final class CodexThread {
     private let channel: CodexChannel
     private(set) var stance: CodexStance
     private(set) var stage = Stage.handshaking
-    /// The last thing the server said the thread was doing (#683). Held as well as published,
-    /// because the flags say more than the one status word Argo publishes off them.
-    private(set) var reported: CodexThreadStatus?
     private var lines = CodexLineBuffer()
     private var issued = 0
     private(set) var initializeID: Int?
@@ -153,11 +150,10 @@ final class CodexThread {
     }
 
     /// What the server says the thread is doing (#683). `nil` is an arm this vocabulary cannot
-    /// read, and it is left alone rather than published: the last status Argo could read is still
-    /// the truest thing it has about the Session.
+    /// read, and nothing is published for it: the last status Argo could read is still the truest
+    /// thing it has about the Session.
     func noted(status: CodexThreadStatus?) {
         guard let status else { return }
-        reported = status
         channel.report(status.reading)
     }
 
@@ -165,7 +161,6 @@ final class CodexThread {
     /// last reporting — a Session whose server has exited is not still running the Turn it was on.
     func close() {
         approvals.close()
-        reported = nil
         channel.report(nil)
     }
 

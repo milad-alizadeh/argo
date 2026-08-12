@@ -252,6 +252,10 @@ Full JSON-RPC transcripts and reproduction: `docs/research/2026-08-12-codex-app-
   approval are separate lines. The union's four arms are the server's own
   `ThreadStatusChangedNotification`, re-derivable with `codex app-server generate-json-schema`,
   which is where a version that changes them will show it.
+- **Deny-on-timeout is Argo's clock, live (#683).** With the patience window at nothing, a real
+  0.147.0 raised an approval, Argo declined it unasked, the roster published the
+  `PermissionExpiry`, the file was never written, and the same thread answered a following Turn.
+  The spike had shown a *late* `decline` is honoured; this is Argo's own clock sending one.
 - **A denied agent commonly asks again**, so a Turn does not reliably end on one `decline`. That is
   the agent's business rather than the adapter's, which is why the live deny test asserts the
   prompt cleared and the file is absent instead of waiting for the Turn.

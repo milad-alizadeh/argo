@@ -22,7 +22,6 @@ struct CodexStatusTests {
         Reported(type: "active", flags: ["waitingOnApproval"], status: .permission),
         Reported(type: "active", flags: ["waitingOnUserInput"], status: .asking),
         Reported(type: "idle", flags: [], status: .idle),
-        // Not `stopped`: a thread the server has failed is not a Turn that hit a wall of its own.
         Reported(type: "systemError", flags: [], status: .unknown),
     ])
     func `the thread's own word for what it is doing is what the roster reads`(
@@ -35,8 +34,6 @@ struct CodexStatusTests {
         #expect(peer.driveStatus == reported.status)
     }
 
-    /// An approval outranks a question because it is the one a Turn cannot get past, and the
-    /// cockpit draws one prompt.
     @Test
     func `a thread waiting on both an approval and a question reads as the approval`() {
         let peer = Self.opened()
@@ -46,8 +43,6 @@ struct CodexStatusTests {
         #expect(peer.driveStatus == .permission)
     }
 
-    /// A flag this vocabulary does not know leaves the thread active on the flags that were read:
-    /// the arm is the server's word and only the flag list is coarser.
     @Test
     func `an active thread with a flag this vocabulary cannot read is still active`() {
         let peer = Self.opened()
@@ -78,7 +73,6 @@ struct CodexStatusTests {
         peer.server.statusChanged("hibernating")
 
         #expect(peer.driveStatus == .idle)
-        #expect(peer.thread.reported == .idle)
     }
 
     /// The process is gone, so the Turn it was running is over. A status left standing would go on
@@ -91,7 +85,6 @@ struct CodexStatusTests {
         peer.thread.close()
 
         #expect(peer.driveStatus == nil)
-        #expect(peer.thread.reported == nil)
     }
 
     private static func opened() -> CodexPeer {

@@ -21,7 +21,9 @@ struct LiveCodex {
     let hub: Hub
     private var claim: SessionOwnership.ClaimID?
 
-    init() throws {
+    /// The patience is a parameter for the one test about it running out. Everywhere else it is a
+    /// day, so Argo's clock is never what decides.
+    init(patience: PermissionPatience = .default) throws {
         let token = String(UUID().uuidString.prefix(8))
         self.root = URL(fileURLWithPath: NSTemporaryDirectory())
             .appending(path: "argo-codex-\(token)", directoryHint: .isDirectory)
@@ -30,7 +32,7 @@ struct LiveCodex {
         self.hub = Hub(
             projectURL: projectURL,
             engine: Engine(readCheckout: CheckoutFixture().read, readLiveness: noLiveProcesses),
-            spawnServices: SpawnServices(host: FakeProcessHost()),
+            spawnServices: SpawnServices(host: FakeProcessHost(), permissionPatience: patience),
         )
     }
 

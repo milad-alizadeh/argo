@@ -158,10 +158,8 @@ struct CodexDriveTests {
         #expect(session.server.turns.count == 1)
     }
 
-    /// An approval is raised for the cockpit to answer (#549), so nothing is pending only while
-    /// nothing has asked.
     @Test
-    func `there is no Permission to answer on a Codex Session yet`() async throws {
+    func `a Codex Session nothing has asked about has no Permission to answer`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let session = try await fixture.openCodexSession()
