@@ -65,12 +65,25 @@ public enum ArgoLayout {
     public static let contextGuideThresholdWidth: CGFloat = 74
     /// Where the rail opens — a starting width, not a fixed one; the seam beside it moves.
     public static let agentsRailWidth: CGFloat = 256
-    /// Xcode's measure, near enough.
-    public static let minimapLaneWidth: CGFloat = 112
+    /// The overview lane is a share of the reading it maps rather than a fixed slot, because its
+    /// compression is `laneWidth / feedColumnWidth` and a fixed slot would make that ratio move
+    /// every time a seam did. A share holds it steady, so the miniature looks the same at any deck
+    /// width. Xcode's minimap does the same, ceiling included.
+    public static let minimapLaneShare: CGFloat = 0.15
+    /// Where that share stops. Under the floor the lane is no longer a map of anything; over the
+    /// ceiling it takes reading width to say nothing more.
+    public static let minimapLaneWidths: ClosedRange<CGFloat> = 72 ... 120
+
+    /// The lane's width beside a feed, given what the two of them have between them — the deck less
+    /// the rail and its seam.
+    public static func minimapLaneWidth(sharing span: CGFloat) -> CGFloat {
+        seated(span * minimapLaneShare, in: minimapLaneWidths)
+    }
 
     /// How far the rail may be dragged. It stops well before nothing.
     public static let railWidths: ClosedRange<CGFloat> = 180 ... 400
-    /// The narrowest the feed may be squeezed to by its neighbours.
+    /// The narrowest the feed may be squeezed to by its neighbours. Read against the lane at ITS
+    /// narrowest, because the two shrink together — see `minimapLaneWidth(sharing:)`.
     public static let feedMinimumWidth: CGFloat = 320
     /// A draggable seam's hit area. The line stays a hairline; this is the width of the invisible
     /// strip over it, which is what a pointer actually has to find.

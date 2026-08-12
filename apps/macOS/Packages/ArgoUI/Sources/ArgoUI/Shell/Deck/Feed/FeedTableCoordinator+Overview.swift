@@ -11,6 +11,10 @@ extension FeedTableCoordinator {
         guard let table, let scroller else { return nil }
         return MinimapReading(
             rowHeights: shown.indices.map { measuredHeight(at: $0, in: table) },
+            // What the rows are actually DRAWN across, which stops at the reading measure however
+            // wide the zone gets — a miniature of the zone would keep compressing past the point
+            // where the reading itself stopped widening.
+            columnWidth: min(table.bounds.width, ArgoFeedRow.column),
             viewportHeight: scroller.contentView.bounds.height,
             topInset: scroller.contentInsets.top,
             bottomInset: scroller.contentInsets.bottom,

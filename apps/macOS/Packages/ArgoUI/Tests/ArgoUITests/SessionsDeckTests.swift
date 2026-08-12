@@ -40,9 +40,10 @@ struct SessionsDeckTests {
 
     @Test
     func `the feed keeps the widest share of the row at the narrowest deck`() {
-        let feed = narrowestDeckWidth - ArgoLayout.agentsRailWidth - ArgoLayout.minimapLaneWidth
-        #expect(feed > ArgoLayout.agentsRailWidth)
-        #expect(feed > ArgoLayout.minimapLaneWidth)
+        let beside = narrowestDeckWidth - ArgoLayout.agentsRailWidth
+        let lane = ArgoLayout.minimapLaneWidth(sharing: beside)
+        #expect(beside - lane > ArgoLayout.agentsRailWidth)
+        #expect(beside - lane > lane)
     }
 
     /// The panel-open half of the same invariant.
@@ -105,7 +106,26 @@ struct SessionsDeckTests {
 
     @Test
     func `the lane stays a lane rather than becoming a second rail`() {
-        #expect(ArgoLayout.minimapLaneWidth < ArgoLayout.agentsRailWidth / 2)
+        #expect(ArgoLayout.minimapLaneWidths.upperBound < ArgoLayout.agentsRailWidth / 2)
+    }
+
+    /// The lane is a share of the reading it maps, so its compression holds steady across the whole
+    /// range of deck widths — which is what keeps the miniature looking the same at any of them.
+    @Test
+    func `the lane grows and shrinks with the reading beside it`() {
+        let narrow = ArgoLayout.minimapLaneWidth(sharing: 620)
+        let wide = ArgoLayout.minimapLaneWidth(sharing: 900)
+        #expect(narrow < wide)
+        #expect(ArgoLayout.minimapLaneWidths.contains(narrow))
+    }
+
+    /// The two ends of that share. Past either one the lane stops moving with the deck, exactly as
+    /// Xcode's minimap does once the editor reaches its own widest.
+    @Test
+    func `the lane stops at its floor and its ceiling`() {
+        let widths = ArgoLayout.minimapLaneWidths
+        #expect(ArgoLayout.minimapLaneWidth(sharing: 200) == widths.lowerBound)
+        #expect(ArgoLayout.minimapLaneWidth(sharing: 4000) == widths.upperBound)
     }
 
     @Test

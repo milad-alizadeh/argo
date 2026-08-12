@@ -31,17 +31,21 @@ struct FeedPreview: View {
     @State private var table = FeedTableHandle()
 
     var body: some View {
-        HStack(spacing: ArgoSpacing.flush) {
-            FeedView(
-                rows: rows,
-                selection: FeedRowSelection(open: $open, step: $step, lit: $lit, focus: $focus),
-                held: held,
-                table: table,
-            )
-            if showsOverview {
-                DeckSeparator()
-                MinimapLane(feed: table)
-                    .frame(width: ArgoLayout.minimapLaneWidth)
+        // The lane is a share of what it and the feed have between them, so the preview has to be
+        // measured like the deck rather than given a number.
+        GeometryReader { proxy in
+            HStack(spacing: ArgoSpacing.flush) {
+                FeedView(
+                    rows: rows,
+                    selection: FeedRowSelection(open: $open, step: $step, lit: $lit, focus: $focus),
+                    held: held,
+                    table: table,
+                )
+                if showsOverview {
+                    DeckSeparator()
+                    MinimapLane(feed: table)
+                        .frame(width: ArgoLayout.minimapLaneWidth(sharing: proxy.size.width))
+                }
             }
         }
         .argoDeckSurface()

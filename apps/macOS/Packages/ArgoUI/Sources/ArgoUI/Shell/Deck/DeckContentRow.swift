@@ -51,7 +51,7 @@ struct DeckContentRow: View {
                     DeckSeparator()
                         .transition(.opacity)
                     MinimapLane(feed: table)
-                        .frame(width: ArgoLayout.minimapLaneWidth)
+                        .frame(width: zoning.laneWidth)
                         .transition(.opacity)
                 }
                 panel(zoning)

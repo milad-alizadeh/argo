@@ -5,6 +5,11 @@ import Foundation
 struct MinimapReading: Equatable {
     /// Every row's height in document points, in the order they are read.
     var rowHeights: [CGFloat] = []
+    /// How wide the rows are actually drawn — the feed column, up to the reading measure it stops
+    /// at. The lane's compression is derived from this and its own width, so the miniature keeps
+    /// the reading's aspect ratio; it moves with both deck seams, which is why it is measured
+    /// rather than assumed.
+    var columnWidth: CGFloat = 0
     /// How much of the reading is on screen at once — the clip view's own height.
     var viewportHeight: CGFloat = 0
     /// The feed's gutters, above the first row and under the last. Part of what the reader can
