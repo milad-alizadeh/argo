@@ -4,8 +4,8 @@ import SwiftUI
 /// trailing edge. The glass is the toolbar's — applying it here would merge nothing and would make
 /// a merged scope cluster indistinguishable from two adjacent capsules.
 ///
-/// Tabs rather than a `Picker`: `.pickerStyle(.segmented)` renders a segment's text OR its image
-/// and silently drops the other, so the symbol every room declares never reached the screen.
+/// Tabs rather than a `Picker`: `.pickerStyle(.segmented)` brings its own fill and its own measure,
+/// so a segment cannot take the wash, the rim and the clearances the rest of the bar is built from.
 struct RoomsVessel: View {
     @Binding var selection: CockpitRoom
 
@@ -24,8 +24,10 @@ struct RoomsVessel: View {
     }
 }
 
-/// One room. Selection is the same tonal device the rest of the shell reads depth from — a wash
-/// and a lit rim, never a branded fill.
+/// One room, drawn as its mark alone (#690) — the word it stopped drawing is in `room.tooltip`.
+///
+/// Selection is the same tonal device the rest of the shell reads depth from — a wash and a lit
+/// rim, never a branded fill.
 private struct RoomTab: View {
     @Environment(\.argo) private var argo
 
@@ -35,18 +37,13 @@ private struct RoomTab: View {
 
     var body: some View {
         Button(action: select) {
-            Label {
-                Text(room.title)
-            } icon: {
-                ArgoGlyph(room.symbol, .control)
-            }
-            .labelStyle(.argo(ArgoTypography.control))
-            .foregroundStyle(isSelected ? argo.color.text.primary : argo.color.text.tertiary)
-            .toolbarSegment(isSelected: isSelected)
+            ArgoGlyph(room.symbol, .control)
+                .foregroundStyle(isSelected ? argo.color.text.primary : argo.color.text.tertiary)
+                .toolbarSegment(isSelected: isSelected, fit: .mark)
         }
         .buttonStyle(.plain)
-        .help("\(room.title) — \(room.shortcutDescription)")
-        .accessibilityLabel("\(room.title), \(room.shortcutDescription)")
+        .help(room.tooltip)
+        .accessibilityLabel(room.voiceOverLabel)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
