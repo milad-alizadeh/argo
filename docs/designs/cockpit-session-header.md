@@ -1,5 +1,5 @@
 <!-- status: approved
-     approved-at: 22b9d5c
+     approved-at: ad08d1d
      prototype: worktree-prototype-two-row-header -->
 
 # The two-row Session header
