@@ -30,11 +30,16 @@ enum ClaudeTurn {
     /// The TUI handles one read as one input batch, and an `@` token in the pasted text opens the
     /// file-mention popup inside that batch — the popup then takes the Return as its own accept key
     /// and the Turn sits in the composer, looking sent and never sent (#682). Verified against
-    /// `claude` 2.1.228 on 2026-08-12 in a PTY harness: one burst left the Turn unsent 2 times in
-    /// 13, while every split trial submitted, from 50 ms out to 2.5 s. This is that floor, which is
-    /// also the mode walk's (`ClaudeModeCycle.gap`) — measured separately, because the two are the
-    /// same batching read at different keys and either could move without the other.
-    private static let gap = Duration.milliseconds(50)
+    /// `claude` 2.1.228 on 2026-08-12 in a PTY harness over a full checkout of this repo: one burst
+    /// left the Turn unsent 2 times in 13, while every split trial submitted, 21 for 21, from 50 ms
+    /// out to 2.5 s.
+    ///
+    /// Three times the smallest value proved rather than that value itself. The evidence says the
+    /// mechanism is the read boundary and not the wait — 50 ms was already clean 8 times out of 8 —
+    /// but what closes the popup is a file search whose cost is the tree's, and the tree can always
+    /// be bigger than the one this was measured on. The headroom is free at a keystroke nobody is
+    /// waiting on, and being wrong the other way is a Turn that silently never runs.
+    private static let gap = Duration.milliseconds(150)
 
     /// The text made safe to sit between the brackets.
     ///

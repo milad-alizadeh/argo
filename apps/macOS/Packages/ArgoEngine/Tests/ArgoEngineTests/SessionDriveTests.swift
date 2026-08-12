@@ -142,11 +142,12 @@ struct SessionDriveTests {
         #expect(typed.last == "\r")
     }
 
-    /// Stop pressed inside the pause a Turn's two writes leave (#682). The `ESC` waits for the
-    /// Return rather than overtaking it: arriving between the paste and the Return it would stop
-    /// whatever ran BEFORE, and then the Return would submit the message it was meant to cancel.
+    /// A Turn waits for the Turn ahead of it and for nothing else (#682). An `ESC` held back behind
+    /// one would be spaced by whatever that Turn is waiting on rather than by its own caller, and a
+    /// mode walk whose steps lost their spacing is #653 again — so a single burst still goes when
+    /// it is asked for, even inside a Turn's own pause.
     @Test
-    func `an interrupt sent mid-Turn lands after the Turn it is stopping`() async throws {
+    func `a single keystroke is not held back by a Turn still being typed`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
@@ -154,12 +155,7 @@ struct SessionDriveTests {
         try fixture.hub.driver.send("Off you go.", to: claim.value)
         try fixture.hub.driver.interrupt(claim.value)
 
-        await settle { fixture.host.started.last?.written.count == 3 }
-        let typed = fixture.host.started.last?.written ?? []
-        #expect(typed.count == 3)
-        #expect(typed.first?.contains("Off you go.") == true)
-        #expect(typed.dropFirst().first == "\r")
-        #expect(typed.last == "\u{1B}")
+        #expect(fixture.host.started.last?.written == ["\u{1B}"])
     }
 
     @Test

@@ -29,12 +29,25 @@ final class AgentTerminals {
     /// count its distance from a stance the first has already left and interleave its keystrokes
     /// with it.
     private var walking: Set<SessionOwnership.ClaimID> = []
-    /// The paced writes still owed to each agent, newest last. Every write to a claim that has one
-    /// outstanding joins the chain, so nothing can land between the two halves of a Turn — a second
-    /// paste in that window would be submitted by the FIRST Turn's Return, as one Turn made of both
-    /// messages.
-    private var pacing: [SessionOwnership.ClaimID: Task<Void, Never>] = [:]
+    /// The Turn still being typed at each agent, so the next one waits for it: a second paste
+    /// landing between a Turn's paste and its Return would be submitted BY that Return, the two
+    /// messages arriving as one Turn.
+    ///
+    /// Only Turns queue here. A single-burst `write` goes out when it is asked for, as it always
+    /// has — an `ESC` or a back-tab held back behind a Turn would be paced by whatever the Turn is
+    /// waiting on rather than by its own caller, and a mode walk whose steps lost their spacing is
+    /// #653 again. It follows that a Turn's window is closed against other TURNS and nothing else.
+    private var typing: [SessionOwnership.ClaimID: Typing] = [:]
+    private var nextTyping = 0
     private var nextViewer = 0
+
+    /// One queued Turn, and the number that says whether the queue's tail is still THIS one by the
+    /// time it finishes — the tail is cleared only by the link that is still it, so a Turn that
+    /// arrived behind this one is not dropped out of the chain it is waiting on.
+    private struct Typing {
+        let number: Int
+        let task: Task<Void, Never>
+    }
 
     init() {}
 
@@ -61,7 +74,7 @@ final class AgentTerminals {
     /// The PTY exited: there is nothing left to steer.
     func drop(_ id: SessionOwnership.ClaimID) {
         agents.removeValue(forKey: id)
-        pacing.removeValue(forKey: id)?.cancel()
+        typing.removeValue(forKey: id)?.task.cancel()
     }
 
     /// Type at one agent's prompt without becoming a viewer of it — what Argo steering a Session it
@@ -70,34 +83,33 @@ final class AgentTerminals {
     @discardableResult
     func write(_ text: String, to id: SessionOwnership.ClaimID) -> Bool {
         guard let entry = agents[id] else { return false }
-        guard let ahead = pacing[id] else {
-            entry.process.write(text)
-            return true
-        }
-        pacing[id] = Task { [weak self] in
-            await ahead.value
-            self?.agents[id]?.process.write(text)
-        }
+        entry.process.write(text)
         return true
     }
 
     /// Type the two halves of one Turn, with the pause between them that makes them two reads
-    /// rather than one (`PacedKeystrokes`).
+    /// rather than one (`PacedKeystrokes`), behind whatever Turn is still being typed.
     ///
-    /// `true` says a live PTY answered when this was asked for, which is the same thing the
-    /// single-burst `write` answers — not that both halves landed. Nothing else could be said
-    /// honestly: the second half is written after the pause, and a PTY that goes away inside it
-    /// takes the Return with it, exactly as it would have taken the whole Turn a moment earlier.
+    /// `true` says a live PTY answered when this was asked for — not that either half landed.
+    /// Nothing else could be said honestly: both halves are written after the answer, and a PTY
+    /// that goes away in between takes what is left of the Turn with it, exactly as it would have
+    /// taken the whole Turn a moment earlier.
     @discardableResult
     func write(_ paced: PacedKeystrokes, to id: SessionOwnership.ClaimID) -> Bool {
         guard agents[id] != nil else { return false }
-        let ahead = pacing[id]
-        pacing[id] = Task { [weak self] in
+        let ahead = typing[id]?.task
+        nextTyping += 1
+        let number = nextTyping
+        typing[id] = Typing(number: number, task: Task { [weak self] in
             await ahead?.value
             self?.agents[id]?.process.write(paced.first)
             try? await Task.sleep(for: paced.gap)
+            guard !Task.isCancelled else { return }
             self?.agents[id]?.process.write(paced.second)
-        }
+            if self?.typing[id]?.number == number {
+                self?.typing[id] = nil
+            }
+        })
         return true
     }
 
@@ -136,10 +148,10 @@ final class AgentTerminals {
         // asked for, and the owner answers that by dropping the very table this would be walking.
         let ending = Array(agents.values)
         agents = [:]
-        for owed in pacing.values {
-            owed.cancel()
+        for turn in typing.values {
+            turn.task.cancel()
         }
-        pacing = [:]
+        typing = [:]
         for entry in ending {
             entry.process.terminate()
         }
