@@ -50,6 +50,10 @@ final class MinimapLaneView: NSView {
     var inked: ArgoColor?
 
     private let viewportLayer = CALayer()
+    /// The scroll knob down the lane's outer edge. The feed's own overlay scroller is switched off
+    /// while the lane is up, because it would draw BETWEEN the reading and its map — so the reading
+    /// keeps its scroller, and the lane is where it is drawn.
+    private let scrollerLayer = CALayer()
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -58,8 +62,10 @@ final class MinimapLaneView: NSView {
         // the host clips it. Without this it paints over the deck header above and the row below.
         layer?.masksToBounds = true
         marksLayer.contentsGravity = .resize
+        scrollerLayer.cornerRadius = ArgoMinimapLane.scrollerWidth / 2
         layer?.addSublayer(marksLayer)
         layer?.addSublayer(viewportLayer)
+        layer?.addSublayer(scrollerLayer)
     }
 
     @available(*, unavailable)
@@ -74,6 +80,11 @@ final class MinimapLaneView: NSView {
     /// Where the viewport rectangle is drawn — the lane's one moving part.
     var viewportFrame: CGRect {
         viewportLayer.frame
+    }
+
+    /// Where the scroll knob is drawn, down the lane's outer edge.
+    var scrollerFrame: CGRect {
+        scrollerLayer.frame
     }
 
     /// Where the marks bitmap currently sits, band and all.
@@ -111,7 +122,21 @@ final class MinimapLaneView: NSView {
         viewportLayer.frame = rect(
             at: geometry.viewportY(at: offset), height: geometry.viewportHeightInLane,
         )
+        settleScroller(over: viewportLayer.frame)
         CATransaction.commit()
+    }
+
+    /// The knob stands for the same range the lit area does, so the two can never disagree about
+    /// where the reader is. Inside the caller's transaction, never its own.
+    private func settleScroller(over lit: CGRect) {
+        scrollerLayer.backgroundColor = palette?.edge.strong.cgColor
+        scrollerLayer.isHidden = !geometry.isScrollable
+        scrollerLayer.frame = CGRect(
+            x: bounds.width - ArgoMinimapLane.scrollerWidth - ArgoMinimapLane.scrollerInset,
+            y: lit.minY,
+            width: ArgoMinimapLane.scrollerWidth,
+            height: lit.height,
+        )
     }
 
     /// A full-width lane band as AppKit wants it. Lane space counts down from the top, like the

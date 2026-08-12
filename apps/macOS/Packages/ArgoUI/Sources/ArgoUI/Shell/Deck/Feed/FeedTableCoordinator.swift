@@ -104,6 +104,9 @@ import SwiftUI
         scroller?.contentInsets.bottom = fresh.isUnderComposer
             ? ArgoComposerVessel.feedClearance
             : ArgoSpacing.section
+        // The lane draws the knob while it is up, so the platform's own would be a second one
+        // between the reading and its map.
+        scroller?.hasVerticalScroller = !fresh.hasMinimap
         place()
     }
 

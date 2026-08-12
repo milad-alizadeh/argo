@@ -65,6 +65,7 @@ struct DeckContentRow: View {
             // so that is where focus still is.
             .onExitCommand(perform: dismissTopmost)
             .environment(\.deckIsResizing, isResizing)
+            .environment(\.deckHasMinimap, !zoning.isPanelOpen)
         }
     }
 

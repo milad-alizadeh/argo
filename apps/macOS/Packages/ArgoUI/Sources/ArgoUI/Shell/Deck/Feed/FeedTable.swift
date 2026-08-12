@@ -46,6 +46,7 @@ struct FeedTable: NSViewRepresentable {
             isFollowing: isFollowing,
             isResizing: isResizing,
             isUnderComposer: isUnderComposer,
+            hasMinimap: context.environment.deckHasMinimap,
             washed: washed,
             unfolded: $unfolded,
             onReaderScroll: onReaderScroll,
