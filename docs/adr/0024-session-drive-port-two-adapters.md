@@ -179,6 +179,18 @@ Full JSON-RPC transcripts and reproduction: `docs/research/2026-08-12-codex-app-
   three configurations (default, `mcp_servers={}`, isolated `CODEX_HOME`); every `tools/call`
   stalled after `session_configured`, and `initialize` advertised only
   `capabilities: {tools: {listChanged: true}}`. The adapter uses app-server, not MCP.
-- **The approval channel is what the spike exercised; the rest of the row is mapped, not
-  verified.** `turn/interrupt`, `attach` via `input` items, and `approvalPolicy: "on-request"`
-  come from the server's own schema and remain to be exercised by the adapter build (#683).
+- **`send`, `attach` and `interrupt` are exercised by the adapter (#548), against `codex-cli`
+  0.147.0.** A Turn sent through the port reached a real app-server and did the work on disk;
+  `turn/interrupt` ended the running Turn and the same thread answered a following one; an image
+  attached as a `localImage` input item was accepted and its Turn completed. Under
+  `approvalPolicy: "on-request"` with a `workspace-write` sandbox, an ordinary write inside the
+  Workspace raises no approval — which is the `Code` rung's boundary. The live suite is
+  `CodexLiveTests`, gated on `ARGO_LIVE_CLI=1`.
+- **The Permission half is still #549.** Until the cockpit can raise a Codex approval, the adapter
+  answers every `requestApproval` with `decline` where it arrives, and every other server→client
+  request with a JSON-RPC error. Nothing is left unanswered, because the server keeps no clock and
+  an unanswered request holds the Turn open for ever.
+- **Codex records are not observed yet.** A spawned Codex Session is drivable from the moment it
+  appears, but discovery sweeps only `~/.claude/projects`, so its feed stays empty until the read
+  path learns `~/.codex/sessions` (ADR-0008 records the layout). Observation is not on this port,
+  so that gap is a separate piece of work rather than a hole in the adapter.

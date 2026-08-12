@@ -9,23 +9,50 @@ public extension Hub {
     /// Hub's life. A caller may therefore hold what this answers rather than re-read it, which
     /// `CockpitActions` does.
     ///
-    /// One adapter, because `AgentCLI` has one case. When a second CLI can be spawned this becomes
-    /// a choice made on the Session's own `cli`, and the wrong place to make it is the surface that
-    /// raised the intent.
+    /// Two adapters, one per `AgentCLI`, with the choice between them made on the Session rather
+    /// than at the surface that raised the intent (`SessionAdapters`).
     var driver: some SessionDriver {
         RememberingDriver(
-            base: ClaudeSessionDriver(
-                ownership: ownership,
-                terminals: terminals,
-                permissions: permissions,
-                attachments: AttachmentStore(root: Self.attachmentRoot),
-                stance: { [weak self] sessionID in self?.stance(of: sessionID) ?? .unknown },
+            base: SessionAdapters(
+                claude: ClaudeSessionDriver(
+                    ownership: ownership,
+                    terminals: terminals,
+                    permissions: permissions,
+                    attachments: AttachmentStore(root: Self.attachmentRoot),
+                    stance: { [weak self] sessionID in self?.stance(of: sessionID) ?? .unknown },
+                ),
+                codex: CodexSessionDriver(
+                    ownership: ownership,
+                    threads: codex,
+                    attachments: AttachmentStore(root: Self.attachmentRoot),
+                ),
+                isCodex: { [weak self] sessionID in self?.isCodex(sessionID) ?? false },
             ),
             records: { [weak self] sessionID in self?.observedModeCount(of: sessionID) ?? 0 },
             remember: { [weak self] set, sessionID in
                 self?.rememberMode(set, for: sessionID)
             },
         )
+    }
+
+    /// Whether this Session is driven over `codex app-server` — true exactly while Argo holds a
+    /// live thread for it, which is the same fact `ownerOf` grades steerability on.
+    internal func isCodex(_ sessionID: String) -> Bool {
+        ownership.ownerOf(sessionID: sessionID).flatMap(codex.thread(for:)) != nil
+    }
+
+    /// What starts one CLI's surface: a PTY for the interactive `claude`, pipes for `codex
+    /// app-server`. A window that was given no host starts neither.
+    internal func host(for cli: AgentCLI) throws -> AgentProcessHost {
+        switch cli {
+        case .claude:
+            guard let host = spawnServices.host else {
+                throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
+            }
+            return host
+        case .codex:
+            return codexHost
+        }
     }
 
     /// Where a rung that landed is filed (#545), and where the next New Session reads its own

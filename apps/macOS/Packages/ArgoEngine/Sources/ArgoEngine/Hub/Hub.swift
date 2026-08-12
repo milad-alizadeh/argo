@@ -65,6 +65,15 @@ public final class Hub {
     /// The PTYs behind those claims. Held for the life of this process, and ended with it.
     let terminals = AgentTerminals()
 
+    /// The Codex threads behind the claims that have one. Empty on a Hub that has spawned no
+    /// `codex`, which is also what tells the drive port which adapter a Session takes.
+    let codex = CodexThreads()
+
+    /// What starts a `codex app-server`. Pipes rather than a PTY, and engine-owned rather than
+    /// injected, because it links nothing the app has to supply (`CodexProcessHost`). The seam is
+    /// still there for a suite that must not start a real one.
+    @ObservationIgnored let codexHost: AgentProcessHost
+
     /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
     /// spawn reaches the roster in the same update that opened its PTY.
     var spawns: [SessionOwnership.ClaimID: AgentSpawn] = [:]
@@ -130,6 +139,7 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
+        self.codexHost = spawnServices.codexHost ?? CodexProcessHost()
         self.modeStore = SessionModeStore(fileURL: spawnServices.modeFileURL)
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has
