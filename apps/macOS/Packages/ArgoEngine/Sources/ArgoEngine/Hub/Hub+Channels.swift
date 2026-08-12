@@ -4,8 +4,7 @@ import Foundation
 /// where the prompts, the standing allows and the refused calls are read back from.
 @MainActor
 public extension Hub {
-    /// What the Connect panel's companion row reads (#570), and `nil` where no channel was ever
-    /// opened — a fact nobody can stand behind, which the panel degrades down to `unknown`.
+    /// The companion row's fact (#570); `nil` where no channel was opened, rendered `unknown`.
     var companionStanding: CompanionStanding? {
         companion?.standing
     }

@@ -39,8 +39,7 @@ final class AccountsCoordinator {
     /// The wait on a grant, held so it can be stopped and so a second `Connect` cannot leave two
     /// polls running against one panel.
     var grant: Task<Void, Never>?
-    /// Where the companion row's fact comes from (#570). Injected by the app because the channel
-    /// is the Hub's, which this coordinator has never heard of; the default is the honest floor.
+    /// The companion row's fact (#570), injected because the channel is the Hub's, not this one's.
     var companionStanding: @MainActor () -> ConnectCompanion = { .unknown }
 
     init(projects: ProjectRegistryStore) {

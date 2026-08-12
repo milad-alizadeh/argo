@@ -21,14 +21,17 @@ public final class CompanionChannel {
     private let root: URL
     private let onFact: (SessionOwnership.ClaimID, CompanionFact) -> Void
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
-    /// The last invite that failed, in its refusal's own words. Cleared by the next one that
-    /// succeeds: the failure is about the most recent spawn, never a mark against the Project.
+    /// The last invite that failed, in its refusal's own words; cleared by the next success.
     private var lastRefusal: String?
 
-    /// What the Connect panel's companion row reads (#570). A build with nothing to write
-    /// outranks a remembered failure, because in that build the failure is only a symptom.
+    /// What the companion row reads (#570): nothing to write outranks a remembered failure.
     var standing: CompanionStanding {
         Self.standing(ships: CompanionPlugin.shipsResources, lastRefusal: lastRefusal)
+    }
+
+    /// Called when the Hub re-points: the failure was the old Project's spawn, not the new one's.
+    func forgetRefusal() {
+        lastRefusal = nil
     }
 
     static func standing(ships: Bool, lastRefusal: String?) -> CompanionStanding {
