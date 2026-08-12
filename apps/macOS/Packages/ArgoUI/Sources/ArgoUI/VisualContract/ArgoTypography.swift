@@ -21,6 +21,14 @@ public enum ArgoTypography {
     public static let badge = ArgoTextStyle(
         typeface: .interface, rung: .caption1, weight: .semibold, tracking: 0.6,
     )
+    /// The window's own document title — the centred Session title (#691). `rowTitle` is this same
+    /// 13 at `medium`, so the weight is the whole of what separates them.
+    ///
+    /// Named rather than inherited: macOS gives `headline` a semibold of its own, and the design
+    /// froze semibold for the title, so a platform retune of the rung must not move it.
+    public static let windowTitle = ArgoTextStyle(
+        typeface: .interface, rung: .headline, weight: .semibold,
+    )
     /// A Session row's primary line.
     public static let rowTitle = ArgoTextStyle(typeface: .interface, rung: .body, weight: .medium)
     /// The one quiet metadata line under it.
@@ -54,6 +62,7 @@ public enum ArgoTypography {
         ("identityHeading", identityHeading),
         ("sectionLabel", sectionLabel),
         ("badge", badge),
+        ("windowTitle", windowTitle),
         ("rowTitle", rowTitle),
         ("rowMeta", rowMeta),
         ("body", body),
@@ -69,5 +78,6 @@ public enum ArgoTypography {
     /// Roles nothing sets yet. See `ArgoMotion.unwired` for why they stay and why they say so.
     public static let unwired: [String: String] = [
         "identityHeading": "empty states and the Project header",
+        "windowTitle": "the centred Session title, once TitlebarTitle lands",
     ]
 }

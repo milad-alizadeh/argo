@@ -21,6 +21,14 @@ public enum ArgoLayout {
     /// container of its OWN cannot inherit it from the toolbar, which sizes its own glass.
     public static let toolbarVesselHeight: CGFloat = 36
 
+    /// How much of the detail pane the centred Session title may take before it ellipsizes
+    /// (#691, `docs/designs/cockpit-session-header.md`). It protects the title from colliding with
+    /// the scope capsule and the rooms capsule, pinned to opposite edges of the bar.
+    ///
+    /// Must stay under a half: the title is centred, so it spends this on BOTH sides of the pane's
+    /// midpoint.
+    public static let titlebarTitleMaximumShare: CGFloat = 0.46
+
     // The Project half of the toolbar's scope capsule: wider than the checkout half, which
     // carries only a branch.
     public static let projectVesselMaximumWidth: CGFloat = 220
