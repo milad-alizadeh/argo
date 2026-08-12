@@ -357,13 +357,17 @@
   /* One row = one invocable thing. `nm` is mono because it is text the user is about to have
      typed for them; `ds` is the frontmatter's own words, clamped (see the doc: a real
      `description:` is trigger prose, not a caption). `hint` is the CLI's own argumentHint. */
-  /* A fixed 26pt row, so a list's height is a whole number of rows rather than a row cut in
-     half at the bottom edge. It is the to-do list's own rhythm, which the user named as the
-     reference — and it survives carrying a description because the description is one line
-     beside the name, not under it. */
+  /* A fixed row, so a list's height is a whole number of rows rather than a row cut in half at
+     the bottom edge. It is the to-do list's own rhythm, which the user named as the reference —
+     and it survives carrying a description because the description is one line beside the name,
+     not under it.
+     RECONCILED: 27 = ArgoTypography.machine.lineBox (12 × 1.21 → 15) + ArgoSpacing.snug either
+     side. Derived from the tallest role in the row rather than written down, the way
+     ArgoBadge.height and attachmentChipHeight are — a number here goes wrong the moment the type
+     role under it moves. The study drew 26; the derivation is 27. */
   .pk-row {
     display: flex; align-items: center; gap: var(--s-base); width: 100%; text-align: left;
-    height: 26px; padding: 0 var(--s-base); border-radius: var(--r-control);
+    height: 27px; padding: 0 var(--s-base); border-radius: var(--r-control);
     border: none; background: none; cursor: pointer; color: var(--text-1);
     font: 13px var(--sans);
   }
@@ -373,50 +377,52 @@
     font-size: 11px; color: var(--text-3); min-width: 0; flex: 1;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .pk-row .ds.none { color: var(--text-off); font-style: italic; }
+  /* The ramp's quietest rung and no italic: a role carries a face and a weight, never a slant. */
+  .pk-row .ds.none { color: var(--text-off); }
   .pk-row .org {
     flex: none; font: 10px var(--sans); font-weight: 600; letter-spacing: .4px;
-    text-transform: uppercase; color: var(--text-off);
+    text-transform: uppercase; color: var(--text-off); letter-spacing: .6px;
   }
   .pk-row:hover { background: var(--hover); }
-  /* the keyboard cursor. A hover highlight and a selection highlight cannot be the same ink,
-     or the list has two cursors the moment the pointer crosses it. */
-  .pk-row.cur { background: rgba(62,155,255,.18); box-shadow: inset 0 0 0 1px rgba(62,155,255,.35); }
+  /* The keyboard cursor: `surface.marked` under an Ion Blue LEADING EDGE at ArgoStroke.indicator
+     — what ArgoStroke's own doc says selection is. The edge, not the ground, is what separates it
+     from a pointer hover on `surface.hover`; two grounds six thousandths apart would give the list
+     two cursors the moment the pointer crossed it. The description lifts to `secondary` because
+     the row IS surface.marked, and TextRoles.marked(on:) floors a run on that ground there. */
+  .pk-row.cur { background: var(--marked); box-shadow: inset 2px 0 0 var(--accent); }
   .pk-row.cur .ds { color: var(--text-2); }
   .pk-row mark { background: none; color: var(--accent-bright); font-weight: 600; }
   .pk-row .nm mark { color: var(--accent-bright); }
 
+  /* sectionLabel — the role whose job is "sidebar and rail group labels", at its own 11. */
   .pk-sec {
-    font-size: 10px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+    font-size: 11px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
     color: var(--text-3); padding: var(--s-snug) var(--s-base) var(--s-tight);
     position: sticky; top: 0; z-index: 2;
     background: linear-gradient(180deg, rgba(46,49,54,.96), rgba(46,49,54,.86));
     backdrop-filter: blur(12px);
     display: flex; align-items: baseline; gap: var(--s-snug);
   }
+  /* machineCaption: the count and the origin's path are machine facts. */
   .pk-sec .n { color: var(--text-off); font-weight: 400; letter-spacing: 0;
-               text-transform: none; font-family: var(--mono); font-size: 10px; }
+               text-transform: none; font-family: var(--mono); font-size: 11px; }
   .pk-list { overflow-y: auto; overscroll-behavior: contain; }
-  .pk-empty { padding: var(--s-base); font-size: 12px; color: var(--text-3); }
+  .pk-empty { padding: var(--s-base); font-size: 11px; color: var(--text-3); }
   .pk-empty b { color: var(--text-2); }
   /* the two enumeration sources arrive separately, so the list says which half it is waiting
      on rather than holding the whole surface back for the slower one */
   .pk-wait { display: flex; align-items: center; gap: var(--s-snug);
              padding: var(--s-snug) var(--s-base); font-size: 11px; color: var(--text-3); }
-  .pk-wait i { width: 5px; height: 5px; border-radius: 50%; background: var(--text-3); display: block;
+  .pk-wait i { width: var(--dot); height: var(--dot); border-radius: 50%; background: var(--text-3); display: block;
                animation: pulse 1.1s ease-in-out infinite; }
   .pk-fail { display: flex; align-items: flex-start; gap: var(--s-snug);
              padding: var(--s-snug) var(--s-base); font-size: 11px; color: var(--attention); }
   .pk-fail .g { margin-top: 2px; }
-  /* the footer states the keys, once, on the surface that owns them */
-  .pk-foot {
-    display: flex; align-items: center; gap: var(--s-comfortable);
-    border-top: 1px solid var(--hairline); padding: var(--s-snug) var(--s-base);
-    font-size: 10px; color: var(--text-off);
-  }
-  .pk-foot .grow { flex: 1; }
-  .pk-foot .kbd { font-size: 9px; }
-  .pk-shadow { font: 10px var(--sans); color: var(--attention); flex: none; }
+  /* No footer. The keys it printed — ↑↓ ⏎ esc — are the platform's own conventions, and #536
+     decision 2 already refused printing them on this vessel; the counts it carried are on the
+     section headers, per origin, where they say more. Its 9px caps were the only values on this
+     surface under the type scale's 10pt floor, so the row and the outlier left together. */
+  .pk-shadow { font: 600 10px var(--sans); letter-spacing: .6px; color: var(--attention); flex: none; }
 
   /* ---- VARIANT A — a menu above the vessel, origin as section headers ----
      The user's own starting point: "a popover as we type /, similar style to the to-do list
@@ -436,19 +442,21 @@
     background: rgba(52,55,61,.78); backdrop-filter: blur(44px) saturate(180%);
     border: 1px solid var(--glass-rim); border-radius: var(--r-popover);
     box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 24px 60px rgba(0,0,0,.6);
-    padding: var(--s-tight) var(--s-tight) 0;
+    /* Even inset now the footer is gone: the bottom was 0 so a footer could sit flush to the
+       edge, and without one the last row was flush to it instead. */
+    padding: var(--s-tight);
     display: flex; flex-direction: column;
   }
-  /* ten rows and a section header at rest, then it scrolls: 10 × 26 + 25. Deeper than that and
-     the popover is a window; shallower and no second origin is ever in view. */
-  .pkA .pk-list { max-height: 285px; }
-  .pkA .pk-foot { margin: 0 calc(var(--s-tight) * -1); }
+  /* Ten rows and one section header at rest, then it scrolls — 27 × 10 + 24, both derived:
+     the header is sectionLabel's line box (11 × 1.21 → 14) with snug above and tight below.
+     Deeper than this and the menu is a window; shallower and no second origin is ever in view. */
+  .pkA .pk-list { max-height: 294px; }
 
   /* the `+` menu, variant A: three destinations, not a drawer of everything */
   /* It rises above the whole vessel, not off the footer: a menu that overlaps the field covers
      the draft it is about to add to. */
   .plusA {
-    position: absolute; left: var(--s-loose); bottom: calc(100% + var(--s-base)); z-index: 31; width: 268px;
+    position: absolute; left: var(--s-loose); bottom: calc(100% + var(--s-base)); z-index: 31;
     background: rgba(52,55,61,.80); backdrop-filter: blur(44px) saturate(180%);
     border: 1px solid var(--glass-rim); border-radius: var(--r-popover);
     box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 20px 48px rgba(0,0,0,.6);
@@ -462,7 +470,10 @@
   .plusA button:hover { background: var(--hover); }
   .plusA button .g { color: var(--text-3); }
   .plusA button .k2 { font: 11px var(--mono); color: var(--text-off); }
-  .plusA button .grow { flex: 1; }
+  .plusA button .grow { flex: 1; white-space: nowrap; }
+  /* No width: the menu hugs its longest row, the way ArgoComposerVessel.modeHeight has no width
+     because the Mode control hugs its selected rung. A stated width here is a number that has to
+     be re-measured every time a row's words change. */
 
   /* ---- VARIANT B — the vessel grows the list inside itself, origin as a row badge ----
      No second surface at all: the glass gets taller and the rows live inside its own rim,
@@ -474,7 +485,6 @@
      row rather than clipping one against the field below it */
   .pkB .pk-list { max-height: 156px; padding: 0 var(--s-base); }
   .pkB .pk-sec { background: none; backdrop-filter: none; padding-left: var(--s-base); }
-  .pkB .pk-foot { border: none; padding: var(--s-tight) var(--s-loose) 0; }
   .pkB .pk-empty, .pkB .pk-wait, .pkB .pk-fail { padding-left: var(--s-loose); }
 
   /* ---- VARIANT C — a command palette over the deck, three tabs ----
@@ -519,7 +529,6 @@
                      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
                      line-height: 1.4; }
   .pkC .pk-row .nmline { grid-column: 1; display: flex; align-items: baseline; gap: var(--s-snug); }
-  .pkC .pk-foot { padding: var(--s-snug) var(--s-loose); }
 
   /* file rows — the same row, with the path where the description goes. The name leads and the
      directory follows dimmed, because a leading path is a column of identical prefixes. */
@@ -1154,24 +1163,12 @@ const rowCount = () => {
   return m.prefix.length + m.loose.length;
 };
 
-const pickFoot = () => {
-  const p = ui.pick;
-  const what = p.scope === 'files' ? 'insert the mention' : 'insert the command';
-  return `<div class="pk-foot">
-    <span class="kbd">↑↓</span><span>move</span>
-    <span class="kbd">⏎</span><span>${what}</span>
-    <span class="kbd">esc</span><span>dismiss</span>
-    <span class="grow"></span>
-    <span>${rowCount()} of ${p.scope === 'files' ? FILES.length : shown().length}</span>
-  </div>`;
-};
 
 /* ---- VARIANT A — the popover, with a section per origin ---- */
 const pickerA = () => !ui.pick ? '' : `
   <div class="pkA" role="listbox" aria-label="Skills and commands" onclick="event.stopPropagation()">
     ${pickStatus()}
     <div class="pk-list" id="pk-list">${listBody(true)}</div>
-    ${pickFoot()}
   </div>`;
 
 /* A's `+`: the destinations, not a drawer of everything.
@@ -1192,7 +1189,6 @@ const pickerB = () => !ui.pick ? '' : `
   <div class="pkB" role="listbox" aria-label="Skills and commands">
     ${pickStatus()}
     <div class="pk-list" id="pk-list">${listBody(false)}</div>
-    ${pickFoot()}
   </div>`;
 
 /* ---- VARIANT C — the palette over the deck ---- */
@@ -1210,7 +1206,6 @@ const pickerC = s => !ui.pick ? '' : `
         <span class="n">${k === 'files' ? FILES.length : shown().length}</span></button>`).join('')}</div>` : ''}
     ${pickStatus()}
     <div class="pk-list" id="pk-list">${listBody(false)}</div>
-    ${pickFoot()}
   </div>`;
 
 /* --------------------------- the composer (frozen) --------------------------- */
