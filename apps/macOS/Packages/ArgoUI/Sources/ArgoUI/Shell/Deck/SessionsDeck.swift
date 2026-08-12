@@ -5,8 +5,8 @@ import SwiftUI
 /// its top edge. It paints no background — `InstrumentDeckShell` is the opaque plane, and a second
 /// fill here would be a second surface where the contract allows one.
 ///
-/// The canopy is an OVERLAY and not the first row of the stack: a row would take its height off the
-/// reading, and the reading has to reach the deck's top edge to pass under the glass.
+/// The canopy shares the stack's top edge with the row rather than sitting above it in a column —
+/// the reading has to reach the deck's top edge to pass under the glass.
 struct SessionsDeck: View {
     /// The selected Session's reading, projected above the deck.
     let feed: [FeedRow]
@@ -62,6 +62,20 @@ struct SessionsDeck: View {
     @FocusState private var focus: FeedFocus?
 
     var body: some View {
+        // The canopy is declared FIRST and lifted by `zIndex`, not laid over the row as an overlay:
+        // a stack is read in declaration order, so an overlay would put the Session's title after
+        // the whole reading for VoiceOver and for the keyboard. `zIndex` moves only the paint.
+        ZStack(alignment: .top) {
+            DeckCanopy(header: header, handOff: handOff)
+                .zIndex(1)
+            zones
+        }
+        .environment(\.argoDeckCanopy, ArgoLayout.deckCanopyHeight)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .argoLightbox(selection, in: feed)
+    }
+
+    private var zones: some View {
         VStack(spacing: ArgoSpacing.flush) {
             DeckContentRow(
                 feed: feed,
@@ -85,12 +99,7 @@ struct SessionsDeck: View {
                 ComposerUnavailable(reason: unavailable, spawn: spawnBeside)
             }
         }
-        // Told to the zones BEFORE the canopy is drawn over them: each one insets itself by this,
-        // which is what lets the reading run under the glass instead of stopping at it.
-        .environment(\.argoDeckCanopy, ArgoLayout.deckCanopyHeight)
-        .overlay(alignment: .top) { DeckCanopy(header: header, handOff: handOff) }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .argoLightbox(selection, in: feed)
     }
 
     private var selection: FeedRowSelection {

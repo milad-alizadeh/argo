@@ -104,9 +104,8 @@ import SwiftUI
         scroller?.contentInsets.bottom = fresh.isUnderComposer
             ? ArgoComposerVessel.feedClearance
             : ArgoSpacing.section
-        // The gutter above the first row is the same kind of fact, grown by whatever the canopy
-        // covers: an inset rather than a frame, so the rows keep the deck's full height to scroll
-        // THROUGH and only start below the glass.
+        // The gutter above it grows by whatever the canopy covers. An inset and not a frame: the
+        // rows keep the deck's full height to scroll through, and only START below the glass.
         scroller?.contentInsets.top = ArgoSpacing.section + fresh.environment.argoDeckCanopy
         place()
     }

@@ -11,9 +11,6 @@ struct FeedView: View {
     /// Whether a deck seam is being dragged — the table degrades its re-measure to the visible rows
     /// for exactly that long.
     @Environment(\.deckIsResizing) private var isResizing
-    /// What the canopy covers. The rows run under it — the table's own top inset starts them below
-    /// it — but the empty-feed word is centred rather than scrolled, so it has to clear it itself.
-    @Environment(\.argoDeckCanopy) private var canopy
 
     let rows: [FeedRow]
     /// What the deck has open and where the keyboard is. Owned by the deck: opening a row resizes
@@ -104,10 +101,10 @@ struct FeedView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
             if rows.isEmpty {
-                // Centred in what the canopy LEAVES, not in the column: the rows scroll under the
-                // glass, but a single line of type parked behind it just reads as half a word.
+                // Centred in what the canopy leaves: this word does not scroll, so it cannot use
+                // the table's inset the way the rows do.
                 FeedSilence()
-                    .padding(.top, canopy)
+                    .argoUnderCanopy()
             }
         }
         .accessibilityElement(children: .contain)

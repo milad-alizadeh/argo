@@ -1,10 +1,9 @@
 import SwiftUI
 
 /// The deck's top zone — the Session's identity and the tab line under it — as ONE glass bar
-/// floating over the reading, rather than two opaque slots stacked above it.
+/// floating over the reading (D10, as its 2026-08-12 amendment reads it).
 ///
-/// It carries no hairline of its own. The material is the boundary: rows arriving at the canopy
-/// blur through it instead of stopping at a rule, which is the whole reason the zone floats.
+/// It carries no hairline of its own: the material is the boundary.
 struct DeckCanopy: View {
     /// Absent when nothing is selected. The bar still holds its height — every zone under it is
     /// inset by that height, and a canopy that collapsed would move all of them.
@@ -28,32 +27,54 @@ struct DeckCanopy: View {
 }
 
 extension EnvironmentValues {
-    /// How far the canopy reaches down over the deck, published by `SessionsDeck` and read by the
-    /// three zones that run beneath it. An environment value rather than a parameter: it would
-    /// otherwise be threaded through four layers to reach the feed's scroller, and every one of
-    /// them would be carrying a fact about a view it does not draw.
-    ///
-    /// Zero everywhere else, so a specimen or a preview renders the zone with nothing over it.
+    /// How far the canopy reaches down over the deck, published by `SessionsDeck`. Zero everywhere
+    /// else, so a zone rendered on its own draws with nothing over it.
     @Entry var argoDeckCanopy: CGFloat = 0
 }
 
-#Preview("Deck canopy — over a reading it does not stop") {
-    SessionsDeck(
-        feed: FeedProjection.longRows,
-        header: SessionHeaderFixture.header(for: .managed),
-    )
-    .frame(width: 900, height: 620)
-    .argoDeckSurface()
-    .argoAppearance()
+extension View {
+    /// Starts this zone below the canopy instead of behind it. Every zone in the deck takes either
+    /// this or the feed's scroller inset — the feed is the only one whose content runs UNDER the
+    /// glass, because it is the only one that scrolls.
+    func argoUnderCanopy() -> some View {
+        modifier(ArgoUnderCanopy())
+    }
+}
+
+/// The inset spelled once, so a zone added to the deck later cannot quietly miss it.
+private struct ArgoUnderCanopy: ViewModifier {
+    @Environment(\.argoDeckCanopy) private var canopy
+
+    func body(content: Content) -> some View {
+        content.padding(.top, canopy)
+    }
+}
+
+/// The bar over a reading long enough to run beneath it, and over nothing — an empty deck and a
+/// deck with no Session on it are two different absences.
+private struct DeckCanopyGallery: View {
+    var isFlat = false
+
+    var body: some View {
+        VStack(spacing: ArgoSpacing.section) {
+            SessionsDeck(
+                feed: FeedProjection.longRows,
+                header: SessionHeaderFixture.header(for: .managed),
+                held: FeedProjection.longHeldRowID,
+            )
+            SessionsDeck(feed: [])
+        }
+        .argoWithoutTransparency(isFlat)
+        .frame(width: 900, height: 800)
+        .argoDeckSurface()
+        .argoAppearance()
+    }
+}
+
+#Preview("Deck canopy — over a reading, and over nothing") {
+    DeckCanopyGallery()
 }
 
 #Preview("Deck canopy — as a reader who asked for no transparency sees it") {
-    SessionsDeck(
-        feed: FeedProjection.longRows,
-        header: SessionHeaderFixture.header(for: .managed),
-    )
-    .argoWithoutTransparency()
-    .frame(width: 900, height: 620)
-    .argoDeckSurface()
-    .argoAppearance()
+    DeckCanopyGallery(isFlat: true)
 }

@@ -7,9 +7,6 @@ import SwiftUI
 /// when the rail appears at all is the deck's decision, made from the same reading these came from.
 struct AgentsRail: View {
     @Environment(\.argo) private var argo
-    /// What the canopy covers. The rail STARTS below it rather than running under it: its own
-    /// count line sits at the top, and a header behind glass is a header nobody can read.
-    @Environment(\.argoDeckCanopy) private var canopy
 
     let agents: [FeedAgent]
 
@@ -24,7 +21,8 @@ struct AgentsRail: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(ArgoSpacing.comfortable)
-        .padding(.top, canopy)
+        // Below the glass, not behind it: the count line sits at the top of this rail.
+        .argoUnderCanopy()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Subagents")
     }

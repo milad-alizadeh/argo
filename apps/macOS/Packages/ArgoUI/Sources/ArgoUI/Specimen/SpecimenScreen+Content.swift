@@ -48,6 +48,14 @@ extension SpecimenScreen {
         case .sessionsDeck:
             // The shell, not `SessionsDeck` — the assembled container is the plane plus its zones.
             InstrumentDeckShell(room: .sessions)
+        case .deckCanopy:
+            // The reading has to be long enough to reach the glass, or there is nothing behind it
+            // to blur and the case proves only that a bar was drawn.
+            sessions(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
+        case .flatDeckCanopy:
+            // A shipping gate: the canopy with the optical response gone, header and all.
+            sessions(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
+                .argoWithoutTransparency()
         case .sessionHeader:
             SessionHeaderSpecimen(access: .managed)
         case .externalSessionHeader:
