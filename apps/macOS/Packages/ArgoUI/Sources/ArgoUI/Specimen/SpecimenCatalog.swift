@@ -92,6 +92,10 @@ public enum Specimen: String, CaseIterable, Sendable {
     case flatFloatingControls
     case feedLeftBehind
     case feedLeftBehindInSilence
+    // The lane IN the whole deck is `feedAtScale`, and empty is `emptyFeed`.
+    case minimapLane
+    case minimapLaneHeld
+    case minimapLaneShortReading
     case twoReadings
     case composer
     case composerTyping

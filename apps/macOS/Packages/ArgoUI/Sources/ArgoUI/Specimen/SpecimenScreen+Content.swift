@@ -203,6 +203,18 @@ extension SpecimenScreen {
             sessions(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
         case .feedLeftBehindInSilence:
             sessions(FeedProjection.longSilentRows, held: FeedProjection.longHeldRowID)
+        case .minimapLane:
+            // A session at the length a real one reaches, following the end: the rectangle is at
+            // the foot of the lane and the marks above it are the whole transcript.
+            overview(FeedProjection.longRows)
+        case .minimapLaneHeld:
+            // The reader partway up the same session. What this settles is the one thing a still
+            // can settle about a scrub: that the rectangle stands where the reading actually is.
+            overview(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
+        case .minimapLaneShortReading:
+            // Nothing to scroll. The lane draws the reading at its own size rather than stretching
+            // three rows to fill it, which would read as a session ten times the length.
+            overview(Array(FeedProjection.previewRows.prefix(3)))
         case .twoReadings:
             // A pane's state must die with its Session, which `FeedRow.ID` being a POSITION
             // otherwise carries across.

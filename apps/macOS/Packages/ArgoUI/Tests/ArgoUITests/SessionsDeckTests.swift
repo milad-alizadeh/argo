@@ -34,9 +34,8 @@ struct SessionsDeckTests {
     }
 
     @Test
-    func `only a zone too narrow for its own name turns its mark`() {
-        let turned = DeckZone.allCases.filter(\.marksVertically)
-        #expect(turned == [.minimap])
+    func `the minimap is no longer a placeholder`() {
+        #expect(!DeckZone.allCases.map(\.title).contains("Minimap lane"))
     }
 
     @Test
