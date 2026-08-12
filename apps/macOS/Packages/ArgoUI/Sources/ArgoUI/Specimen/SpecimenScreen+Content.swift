@@ -56,6 +56,7 @@ extension SpecimenScreen {
             // A shipping gate: the canopy with the optical response gone, header and all.
             sessions(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
                 .argoWithoutTransparency()
+        case .agentsFanOut: AgentsFanOutSpecimen()
         case .sessionHeader:
             SessionHeaderSpecimen(access: .managed)
         case .externalSessionHeader:

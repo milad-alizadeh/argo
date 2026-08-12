@@ -31,6 +31,7 @@ public enum Specimen: String, CaseIterable, Sendable {
     case sessionsDeck
     case deckCanopy
     case flatDeckCanopy
+    case agentsFanOut
     case sessionHeader
     case externalSessionHeader
     case orphanedSessionHeader
