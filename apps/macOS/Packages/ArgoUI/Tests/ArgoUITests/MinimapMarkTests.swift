@@ -29,24 +29,32 @@ struct MinimapMarkTests {
         #expect(lane.marks(in: 0 ... 600).map(\.y) == [3, 103, 403])
     }
 
+    /// The cap takes lines off the FOOT of a block, so a huge row is drawn shorter rather than
+    /// moved — which is what keeps its place, and every place after it, where the reading put it.
     @Test
     func `no single row may consume the overview in proportion to what it holds`() {
         let reading = MinimapReading(
-            rows: MinimapGeometryTests.rows([40, 20000]), columnWidth: 800, viewportHeight: 600,
+            rows: [
+                MinimapRow(height: 40, shape: .sentence(length: 40, ink: .command)),
+                MinimapRow(height: 20000, shape: .prose(length: 40000, ink: .message)),
+            ],
+            columnWidth: 800,
+            viewportHeight: 600,
         )
         let lane = Self.geometry(reading)
-        #expect(lane.markHeight(row: 1) == lane.markCeiling)
-        // The gap comes off the run inside the block, so a run of rows still reads as events.
-        #expect(lane.marks(in: 0 ... 600)[1].height == lane.markCeiling - ArgoMinimapLane.markGap)
+        #expect(lane.markHeight(row: 1) <= lane.markCeiling)
+        #expect(lane.markHeight(row: 1) > lane.markCeiling - lane.lineSlot)
+        #expect(lane.markY(row: 1) == 5)
     }
 
     @Test
-    func `a row compressed below what can be seen is drawn at the floor`() {
+    func `a row compressed below what can be seen is still drawn at one whole line`() {
         let reading = MinimapReading(
             rows: MinimapGeometryTests.rows([4]), columnWidth: 800, viewportHeight: 600,
         )
-        let marks = Self.geometry(reading).marks(in: 0 ... 600)
-        #expect(marks.map(\.height) == [ArgoMinimapLane.markMinimumHeight])
+        let lane = Self.geometry(reading)
+        #expect(lane.marks(in: 0 ... 600)
+            .map(\.height) == [lane.lineSlot - ArgoMinimapLane.markGap])
     }
 
     /// The whole reason #658 exists. At `feedAtScale`'s length the lane squeezed the whole session
@@ -60,21 +68,40 @@ struct MinimapMarkTests {
             viewportHeight: 600,
         )
         let lane = MinimapGeometry(reading, lane: CGSize(width: 112, height: 600))
+        #expect(lane.lineSlot > ArgoMinimapLane.markMinimumHeight * 2)
         let head = lane.marks(in: 0 ... 600).map(\.height)
-        #expect(head.allSatisfy { $0 > ArgoMinimapLane.markMinimumHeight * 4 })
+        #expect(head.allSatisfy { $0 > ArgoMinimapLane.markMinimumHeight })
     }
 
     /// A paragraph is one bar per measured line, laid down its own block. Any of them landing
     /// outside it would put a line of one row's prose over the row above or below it.
     @Test
     func `a row's lines are laid inside the block the row was given`() {
-        let lines = (0 ..< 4).map { MinimapRun(ink: .message, line: $0, span: 0 ... 1) }
         let reading = MinimapReading(
-            rows: [MinimapRow(height: 800, runs: lines)], columnWidth: 800, viewportHeight: 600,
+            rows: [MinimapRow(height: 800, shape: .prose(length: 400, ink: .message))],
+            columnWidth: 800,
+            viewportHeight: 600,
         )
         let lane = Self.geometry(reading)
         let marks = lane.marks(in: 0 ... 600)
-        #expect(marks.count == 4)
+        #expect(!marks.isEmpty)
         #expect(marks.allSatisfy { $0.y >= 0 && $0.y + $0.height <= lane.markHeight(row: 0) })
+    }
+
+    /// Two rows of one line each must read as the same weight, whatever spacing the feed put around
+    /// them — the padding buys the gap to the next row, exactly as it does in the reading.
+    @Test
+    func `two one-line rows are drawn the same height however they are spaced`() {
+        let reading = MinimapReading(
+            rows: [
+                MinimapRow(height: 24, shape: .sentence(length: 40, ink: .command)),
+                MinimapRow(height: 39, shape: .sentence(length: 40, ink: .command)),
+            ],
+            columnWidth: 800,
+            viewportHeight: 600,
+        )
+        let heights = Self.geometry(reading).marks(in: 0 ... 600).map(\.height)
+        #expect(heights.count == 2)
+        #expect(heights[0] == heights[1])
     }
 }

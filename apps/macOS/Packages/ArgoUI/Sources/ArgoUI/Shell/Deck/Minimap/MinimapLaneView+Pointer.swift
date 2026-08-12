@@ -60,7 +60,7 @@ extension MinimapLaneView {
 
     override func mouseEntered(with event: NSEvent) {
         pointedAt = laneY(of: event)
-        read(event.modifierFlags)
+        readModifiers(event.modifierFlags)
         watchModifiers()
         light(true)
     }
@@ -93,7 +93,7 @@ extension MinimapLaneView {
         // deck closed under the pointer is exactly that — and a strong one would keep it alive.
         modifierWatch = NSEvent
             .addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
-                MainActor.assumeIsolated { self?.read(event.modifierFlags) }
+                MainActor.assumeIsolated { self?.readModifiers(event.modifierFlags) }
                 return event
             }
     }
@@ -105,7 +105,7 @@ extension MinimapLaneView {
 
     /// Read off the keys as they are rather than latched, so letting go of either one puts the lane
     /// back whichever way it was released.
-    private func read(_ flags: NSEvent.ModifierFlags) {
+    func readModifiers(_ flags: NSEvent.ModifierFlags) {
         let wanted = flags.isSuperset(of: [.shift, .command])
         guard holdsBothKeys != wanted else { return }
         holdsBothKeys = wanted

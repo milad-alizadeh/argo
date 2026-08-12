@@ -9,17 +9,16 @@ extension FeedTableCoordinator {
     /// put a mark where the row it stands for is not.
     func reading() -> MinimapReading? {
         guard let table, let scroller else { return nil }
-        // What the rows are actually DRAWN across, which stops at the reading measure however wide
-        // the zone gets — a miniature of the zone would keep compressing past the point where the
-        // reading itself stopped widening. It is also the measure a row's shapes are read against.
-        let measure = min(table.bounds.width, ArgoFeedRow.column)
         return MinimapReading(
-            rows: shown.indices.map { row in
-                MinimapRow(
-                    shown[row], height: measuredHeight(at: row, in: table), measure: measure,
-                )
-            },
-            columnWidth: measure,
+            rows: shown.indices.map { MinimapRow(
+                shown[$0],
+                height: measuredHeight(at: $0, in: table),
+            ) },
+            // What the rows are actually DRAWN across, which stops at the reading measure however
+            // wide the zone gets — a miniature of the zone would keep compressing past the point
+            // where the reading itself stopped widening. It is also the measure a row's shapes are
+            // read against.
+            columnWidth: min(table.bounds.width, ArgoFeedRow.column),
             viewportHeight: scroller.contentView.bounds.height,
             topInset: scroller.contentInsets.top,
             bottomInset: scroller.contentInsets.bottom,

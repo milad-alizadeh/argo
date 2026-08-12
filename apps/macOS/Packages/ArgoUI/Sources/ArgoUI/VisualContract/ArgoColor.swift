@@ -37,7 +37,7 @@ public struct ArgoColor: Sendable, Hashable {
 
     /// The same colour again for the one thing that takes neither: an `NSAttributedString`, which
     /// is how text is drawn into a bitmap rather than composed as a `Text`.
-    public var nsColor: NSColor {
+    var nsColor: NSColor {
         NSColor(srgbRed: red, green: green, blue: blue, alpha: opacity)
     }
 

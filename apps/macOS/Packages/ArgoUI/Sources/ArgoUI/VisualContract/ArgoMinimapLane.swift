@@ -46,9 +46,14 @@ public enum ArgoMinimapLane {
     /// scaled after — so this is its size on screen, not a size something later shrinks.
     public static let labelRung: ArgoTypeScale = .caption1
 
-    /// The breathing room inside a label's own ground, which is what lets it be read over the
-    /// miniature it covers.
+    /// The breathing room inside a label's own ground, which is what lets it be read over what it
+    /// covers.
     public static let labelPadding: CGFloat = ArgoSpacing.tight
+
+    /// How far a Turn's label may reach to the leading side of the lane, over the reading. The lane
+    /// itself is four or five words wide, and a prompt cut there names no Turn — so the label hangs
+    /// outside it. A sentence's worth and no more, because what is under it is the reading.
+    public static let labelWidth: CGFloat = 260
 
     /// How tall one label stands, ground and all. Also the closest two labels may be: under
     /// ⇧⌘ every Turn asks for one at once, and labels drawn on top of each other are none.

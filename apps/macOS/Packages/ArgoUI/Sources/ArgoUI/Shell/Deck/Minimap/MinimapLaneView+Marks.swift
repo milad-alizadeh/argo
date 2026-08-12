@@ -1,12 +1,11 @@
 import AppKit
 
 // The banded half of the lane: which slice of the miniature is held as pixels, where that slice is
-// put, and when it is drawn again (#658) — now drawing the rows' own shapes and the Ion Blue line
-// beside each Turn (#382).
+// put, and when it is drawn again (#658) — now drawing the rows' own shapes (#382).
 //
-// The whole point of the split is what does NOT happen here. A scroll inside the band sets the
-// marks layer's frame and returns; only leaving the band, or the band's own content changing,
-// reaches the rasteriser. A hover reaches it never — the labels are a layer above this one.
+// The whole point of the split is what does NOT happen here. A scroll inside the band moves the
+// marks layer and returns; only leaving the band, or the band's own content changing, reaches the
+// rasteriser. A hover reaches it never — the annotations are a layer above this one.
 
 extension MinimapLaneView {
     /// The marks layer put where the miniature has slid to, redrawing only when it has to.
@@ -36,45 +35,33 @@ extension MinimapLaneView {
         drawnBand = band
         drawnMarks = marks
         inked = inks
-        // Two before the view has a window to ask: the lane is only ever built on a Retina Mac,
-        // and a wrong guess costs one re-rasterise from `viewDidChangeBackingProperties`.
+        // Two before the view has a window to ask: the lane is only ever built on a Retina Mac, and
+        // a wrong guess costs one re-rasterise from `viewDidChangeBackingProperties`.
         marksLayer.contentsScale = window?.backingScaleFactor ?? 2
-        marksLayer.contents = bitmap(of: band)
+        marksLayer.contents = bitmap(marks, in: band)
     }
 
-    private func bitmap(of band: MinimapBand) -> CGImage? {
-        let scale = marksLayer.contentsScale
-        guard bounds.width > ArgoMinimapLane.markInset * 2, band.height > 0,
-              let context = CGContext(
-                  data: nil,
-                  width: Int(bounds.width * scale),
-                  height: Int(band.height * scale),
-                  bitsPerComponent: 8,
-                  bytesPerRow: 0,
-                  space: CGColorSpaceCreateDeviceRGB(),
-                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
-              )
-        else {
-            return nil
+    private func bitmap(_ marks: [MinimapMark], in band: MinimapBand) -> CGImage? {
+        guard bounds.width > ArgoMinimapLane.markInset * 2 else { return nil }
+        let size = CGSize(width: bounds.width, height: band.height)
+        return flipped(size, scale: marksLayer.contentsScale) { context in
+            for mark in marks {
+                draw(mark, in: context, of: band)
+            }
         }
-        context.scaleBy(x: scale, y: scale)
-        for mark in drawnMarks {
-            draw(mark, in: context, of: band)
-        }
-        return context.makeImage()
     }
 
-    /// One run, in the shape its ink carries. Band-local, and flipped: the marks count down from
-    /// the band's head, the context up.
+    /// One run, in the shape its ink carries. Band-local: the marks count down from the band's
+    /// head, and so does the context they are drawn into.
     private func draw(_ mark: MinimapMark, in context: CGContext, of band: MinimapBand) {
         guard let palette else { return }
-        // The one shape that crosses the whole lane. Everything else stands off both edges, which
-        // is what makes a needs-you row findable with the colour taken away.
+        // The one shape that crosses the whole lane. Everything else stands off both edges,
+        // which is what makes a needs-you row findable with the colour taken away.
         let inset = mark.ink.shape == .band ? 0 : ArgoMinimapLane.markInset
         let drawable = bounds.width - inset * 2
         let rect = CGRect(
             x: inset + mark.span.lowerBound * drawable,
-            y: band.height - (mark.y - band.origin) - mark.height,
+            y: mark.y - band.origin,
             width: (mark.span.upperBound - mark.span.lowerBound) * drawable,
             height: mark.height,
         )

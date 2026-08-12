@@ -2,7 +2,7 @@ import AppKit
 @testable import ArgoUI
 
 /// A lane over a laid-out feed, for the suites that need a real one: `MinimapLaneTests` for what a
-/// hand on it does to the reading, `MinimapLabelTests` for what the pointer names.
+/// hand on it does to the reading, `MinimapAnnotationTests` for what the pointer names.
 @MainActor
 enum MinimapLaneFixture {
     static let column = CGSize(width: 620, height: 480)

@@ -22,12 +22,10 @@ struct MinimapGeometryTests {
         )
     }
 
-    /// Rows carrying one full-width bar apiece. What shape a row makes is `MinimapRowTests`; these
-    /// are about where it lands and how tall it stands.
+    /// Rows carrying a line of prose apiece. What shape a row makes is `MinimapRowTests`; these are
+    /// about where it lands and how tall it stands.
     static func rows(_ heights: [CGFloat]) -> [MinimapRow] {
-        heights.map {
-            MinimapRow(height: $0, runs: [MinimapRun(ink: .message, line: 0, span: 0 ... 1)])
-        }
+        heights.map { MinimapRow(height: $0, shape: .sentence(length: 40, ink: .command)) }
     }
 
     private static func geometry(_ reading: MinimapReading) -> MinimapGeometry {

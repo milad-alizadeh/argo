@@ -74,6 +74,9 @@ final class MinimapLaneView: NSView {
     var annotationRedraws = 0
 
     let marksLayer = CALayer()
+    /// What holds the marks inside the lane. The band hangs off both ends of it by several lane
+    /// heights, and without this it would paint over the deck header above and the row below.
+    private let marksClip = CALayer()
     /// The slice of the miniature currently held as pixels, and what was drawn into it. All three
     /// are compared before a rasterise, so a feed append outside the band costs nothing.
     var drawnBand: MinimapBand?
@@ -87,9 +90,9 @@ final class MinimapLaneView: NSView {
     /// read rather than looked at, and it is the only layer a hover ever touches.
     let annotationsLayer = CALayer()
     var drawnAnnotations: [MinimapAnnotation] = []
-    /// The ink the annotations were drawn in, so a palette that did not change does not re-set
-    /// them.
-    var labelled: ArgoColor?
+    /// Every ink the annotations were drawn in, so a palette that did not change does not re-set
+    /// them — and one that moved any of the three does.
+    var labelled: [ArgoColor] = []
 
     private let viewportLayer = CALayer()
     /// The scroll knob down the lane's outer edge. The feed's own overlay scroller is switched off
@@ -101,11 +104,14 @@ final class MinimapLaneView: NSView {
         super.init(frame: frame)
         wantsLayer = true
         // The band is several lane-heights tall and hangs off both ends of the lane by design, so
-        // the host clips it. Without this it paints over the deck header above and the row below.
-        layer?.masksToBounds = true
+        // something has to clip it — but NOT the host, because a Turn's label is drawn to the left
+        // of the lane where there is room to read it whole. So the marks get a clipping layer of
+        // their own and the host lets its sublayers out.
+        marksClip.masksToBounds = true
         marksLayer.contentsGravity = .resize
+        marksClip.addSublayer(marksLayer)
         scrollerLayer.cornerRadius = ArgoMinimapLane.scrollerWidth / 2
-        layer?.addSublayer(marksLayer)
+        layer?.addSublayer(marksClip)
         layer?.addSublayer(viewportLayer)
         layer?.addSublayer(scrollerLayer)
         layer?.addSublayer(annotationsLayer)
@@ -152,6 +158,7 @@ final class MinimapLaneView: NSView {
         let offset = feed?.offset() ?? 0
         CATransaction.begin()
         CATransaction.setDisableActions(true)
+        marksClip.frame = bounds
         placeMarks(slidTo: geometry.laneOffset(at: offset))
         viewportLayer.backgroundColor = viewportGround
         viewportLayer.isHidden = !geometry.isScrollable

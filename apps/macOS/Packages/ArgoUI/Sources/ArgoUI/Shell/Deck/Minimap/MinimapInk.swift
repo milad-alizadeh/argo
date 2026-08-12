@@ -25,6 +25,10 @@ enum MinimapInk: Equatable, Sendable, CaseIterable {
     case removed
     /// A run of pictures. Drawn as a frame, never as a fill.
     case media
+    /// A call that failed. The feed draws the whole line in this ink, so the lane does too — a run
+    /// of red rows in the reading that showed as quiet grey here would be the lane lying about the
+    /// one thing a reader scans an overview for.
+    case failure
     /// A question waiting on somebody — the feed's one attention state.
     case attention
     /// The punctuation between Turns, drawn as the feed draws it: a rule.
@@ -49,7 +53,7 @@ enum MinimapInk: Equatable, Sendable, CaseIterable {
 
     var shape: Shape {
         switch self {
-        case .prompt, .message, .thought, .command, .added, .removed, .unreadable: .bar
+        case .prompt, .message, .thought, .command, .added, .removed, .failure, .unreadable: .bar
         case .media: .frame
         case .attention: .band
         case .boundary: .rule
@@ -72,6 +76,7 @@ enum MinimapInk: Equatable, Sendable, CaseIterable {
         case .thought, .unreadable: palette.text.tertiary
         case .added: palette.diff.added
         case .removed: palette.diff.removed
+        case .failure: palette.state.failure
         case .attention: palette.state.attention
         case .boundary: palette.text.disabled
         }

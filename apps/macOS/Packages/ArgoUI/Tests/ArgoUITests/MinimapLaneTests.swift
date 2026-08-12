@@ -61,14 +61,17 @@ struct MinimapLaneTests {
         #expect(deck.lane.marksFrame.maxY > Self.column.height)
     }
 
-    /// The band is taller than the lane, so the lane has to clip it. Unclipped, it painted over the
-    /// deck header above and the row below.
+    /// The band is taller than the lane, so something has to clip it. Unclipped, it painted over
+    /// the
+    /// deck header above and the row below. Not the lane itself, which lets a Turn's label out to
+    /// the reading beside it — the marks get a clipping layer of their own.
     @Test
     func `the band is clipped to the lane it hangs out of`() throws {
         let deck = Self.mounted(over: FeedProjection.longRows)
 
         #expect(deck.lane.marksFrame.height > Self.column.height)
-        #expect(try #require(deck.lane.layer).masksToBounds)
+        #expect(try #require(deck.lane.marksLayer.superlayer).masksToBounds)
+        #expect(try !#require(deck.lane.layer).masksToBounds)
     }
 
     /// Once, for the whole travel from one end of the session to the other. How big the band that

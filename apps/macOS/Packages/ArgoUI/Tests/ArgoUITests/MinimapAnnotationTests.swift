@@ -78,8 +78,7 @@ struct MinimapAnnotationTests {
         let deck = Self.mounted()
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 120)))
 
-        deck.lane.holdsBothKeys = true
-        deck.lane.settleAnnotations()
+        deck.lane.readModifiers([.shift, .command])
 
         #expect(deck.lane.drawnAnnotations.count > 1)
     }
@@ -89,8 +88,7 @@ struct MinimapAnnotationTests {
     @Test
     func `no two Turns are marked closer together than a label can be read`() {
         let deck = Self.mounted()
-        deck.lane.holdsBothKeys = true
-        deck.lane.settleAnnotations()
+        deck.lane.readModifiers([.shift, .command])
 
         let heads = deck.lane.drawnAnnotations.map(\.span.lowerBound)
         #expect(zip(heads, heads.dropFirst()).allSatisfy {

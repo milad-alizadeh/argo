@@ -3,27 +3,30 @@ import ArgoEngine
 import Foundation
 import Testing
 
-/// A feed row read as the shapes the lane draws it with (#382).
+/// What shape each feed row hands the lane (#382).
 ///
-/// The claim under the whole suite is that the lane is the reading SHRUNK: every ink here is one
-/// the row itself is drawn in, and every span is the alignment the row itself takes. A projection
-/// that drifts from that turns the lane into a legend, which is exactly what D25 was written
-/// against — and nothing on screen tells that drift from a scroll bug.
-@Suite("Minimap rows")
+/// The claim under the suite is that the lane is the reading SHRUNK: every ink here is one the row
+/// itself is drawn in, and every alignment is the one the row itself takes. A projection that
+/// drifts
+/// from that turns the lane into a legend, which is what D25 was written against — and nothing on
+/// screen tells that drift from a scroll bug.
+@Suite("Minimap row shapes")
 struct MinimapRowTests {
-    /// A 720pt column, which is the reading measure the feed stops widening at.
-    private static let measure: CGFloat = 720
-
-    private static func row(_ content: FeedRow.Content, height: CGFloat = 20) -> MinimapRow {
-        MinimapRow(FeedRow(id: 0, content: content), height: height, measure: measure)
+    private static func shape(_ content: FeedRow.Content) -> MinimapRowShape {
+        MinimapRow(FeedRow(id: 0, content: content), height: 20).shape
     }
 
-    private static func call(churn: FeedCall.Churn?) -> FeedCall {
+    private static func row(_ content: FeedRow.Content) -> MinimapRow {
+        MinimapRow(FeedRow(id: 0, content: content), height: 20)
+    }
+
+    private static func call(churn: FeedCall.Churn?, ending: FeedCall.Ending = .succeeded)
+        -> FeedCall {
         FeedCall(
             kind: churn == nil ? .execute : .edit,
             subject: .plain("bun run quality"),
             churn: churn,
-            ending: .succeeded,
+            ending: ending,
             evidence: [],
             repeats: 1,
             spend: nil,
@@ -31,45 +34,16 @@ struct MinimapRowTests {
     }
 
     @Test
-    func `a paragraph is drawn as one bar per line it was measured at`() {
-        let row = Self.row(.message(String(repeating: "word ", count: 200)), height: 100)
-        #expect(row.lines == 5)
-        #expect(row.runs.map(\.ink) == Array(repeating: .message, count: 5))
-        #expect(row.runs.map(\.line) == [0, 1, 2, 3, 4])
+    func `what the agent said is prose in the rung the feed says it in`() {
+        #expect(Self.shape(.message("said")) == .prose(length: 4, ink: .message))
+        #expect(Self.shape(.thought("reasoned")) == .prose(length: 8, ink: .thought))
     }
 
-    /// The ragged last line is the whole of what makes a block of bars read as prose. The line
-    /// COUNT is the row's measured height; only the raggedness comes from the words.
+    /// The one row the feed draws as a shape rather than as lines of text: a filled bubble on the
+    /// trailing edge.
     @Test
-    func `the last line of a paragraph is only as full as the words left for it`() {
-        let row = Self.row(.message(String(repeating: "x", count: 11)), height: 60)
-        #expect(row.runs.dropLast().allSatisfy { $0.span == 0 ... 1 })
-        #expect(row.runs.last?.span.upperBound == 0.75)
-    }
-
-    /// The one row the feed draws as a shape rather than as lines of text. Drawn here the way it is
-    /// read there — one solid block on the trailing edge, however tall the bubble was measured.
-    @Test
-    func `a prompt is one block on the trailing edge its bubble is drawn on`() {
-        let row = Self.row(.prompt("Fix the seam"), height: 80)
-        #expect(row.runs.count == 1)
-        #expect(row.runs[0].span.upperBound == 1)
-        #expect(row.runs[0].span.lowerBound > 0)
-    }
-
-    @Test
-    func `a prompt too long for its bubble stops where the bubble stops`() {
-        let row = Self.row(.prompt(String(repeating: "x", count: 4000)), height: 200)
-        #expect(row.runs[0].span.lowerBound == 1 - ArgoFeedRow.bubbleShare)
-    }
-
-    @Test
-    func `everything the agent said keeps the leading edge the feed draws it on`() {
-        let rows = [
-            Self.row(.message("said")), Self.row(.thought("reasoned")),
-            Self.row(.call(Self.call(churn: nil))),
-        ]
-        #expect(rows.allSatisfy { $0.runs.allSatisfy { $0.span.lowerBound == 0 } })
+    func `a prompt is a bubble rather than lines of text`() {
+        #expect(Self.shape(.prompt("Fix the seam")) == .bubble(length: 12))
     }
 
     @Test
@@ -79,29 +53,45 @@ struct MinimapRowTests {
     }
 
     @Test
-    func `a call is one slab however tall the row was measured`() {
-        let row = Self.row(.call(Self.call(churn: nil)), height: 80)
-        #expect(row.lines == 1)
-        #expect(row.runs.map(\.ink) == [.command])
+    func `a call is one sentence however tall the row was measured`() {
+        guard case let .sentence(_, ink) = Self.shape(.call(Self.call(churn: nil))) else {
+            Issue.record("a call with no patch is a sentence")
+            return
+        }
+        #expect(ink == .command)
     }
 
     @Test
-    func `a mutation says what it did in the feed's own two inks`() {
-        let row = Self.row(.call(Self.call(churn: FeedCall.Churn(added: 30, removed: 10))))
-        #expect(row.runs.map(\.ink) == [.command, .added, .removed])
-        // Three quarters of the churn was added, so three quarters of the churn's width is. Held
-        // to a tolerance because the claim is the proportion, never the last bit of it.
-        let added = row.runs[1].span
-        let removed = row.runs[2].span
-        let share = ArgoMinimapLane.churnShare
-        #expect(abs((added.upperBound - added.lowerBound) - share * 0.75) < 0.0001)
-        #expect(abs((removed.upperBound - removed.lowerBound) - share * 0.25) < 0.0001)
+    func `a mutation carries what it did in lines`() {
+        let churn = FeedCall.Churn(added: 30, removed: 10)
+        guard case let .change(_, added, removed) = Self.shape(.call(Self.call(churn: churn)))
+        else {
+            Issue.record("a call with a patch is a change")
+            return
+        }
+        #expect(added == 30)
+        #expect(removed == 10)
     }
 
     @Test
     func `a patch nothing could count is drawn as the call it was`() {
-        let row = Self.row(.call(Self.call(churn: FeedCall.Churn(added: 0, removed: 0))))
-        #expect(row.runs.map(\.ink) == [.command])
+        let silent = FeedCall.Churn(added: 0, removed: 0)
+        guard case .sentence = Self.shape(.call(Self.call(churn: silent))) else {
+            Issue.record("an uncountable patch is a sentence")
+            return
+        }
+    }
+
+    /// A failed row is red in the feed, so it is red here. An overview that drew a run of failures
+    /// in the same quiet grey as everything else would hide the one thing a reader scans one for.
+    @Test
+    func `a call that failed is drawn in the ink the feed fails in`() {
+        let failed = Self.call(churn: FeedCall.Churn(added: 3, removed: 1), ending: .failed)
+        guard case let .sentence(_, ink) = Self.shape(.call(failed)) else {
+            Issue.record("a failure is a sentence rather than a change")
+            return
+        }
+        #expect(ink == .failure)
     }
 
     /// D25's map may never depend on colour alone, so the row waiting on somebody is the one thing
@@ -110,21 +100,20 @@ struct MinimapRowTests {
     @Test
     func `a question waiting on somebody crosses the lane`() {
         let ask = FeedAsk(ask: Ask(questions: []), isAnswered: false, answer: nil)
-        let row = Self.row(.ask(ask))
-        #expect(row.runs.map(\.ink) == [.attention])
-        #expect(row.runs.map(\.ink.shape) == [.band])
+        #expect(Self.shape(.ask(ask)) == .whole(.attention))
+        #expect(MinimapInk.attention.shape == .band)
     }
 
     @Test
     func `a run of pictures is a frame rather than a fill`() {
-        let row = Self.row(.gallery(FeedGallery(shots: [])), height: 120)
-        #expect(row.runs.map(\.ink) == [.media])
-        #expect(row.runs.map(\.ink.shape) == [.frame])
+        #expect(Self.shape(.gallery(FeedGallery(shots: []))) == .whole(.media))
+        #expect(MinimapInk.media.shape == .frame)
     }
 
     @Test
     func `the punctuation between Turns is a rule`() {
-        #expect(Self.row(.mark(.compacted)).runs.map(\.ink.shape) == [.rule])
+        #expect(Self.shape(.mark(.compacted)) == .whole(.boundary))
+        #expect(MinimapInk.boundary.shape == .rule)
     }
 
     @Test(arguments: [
