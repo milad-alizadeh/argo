@@ -3,8 +3,8 @@ import SwiftUI
 /// The Session's reading, filling the deck's feed zone. It takes rows and what the deck has open —
 /// no Session, no Hub — so the same view draws a live transcript, a specimen and a preview.
 ///
-/// The scrolling itself is `FeedTable`'s (AppKit's). What stays here is whether the reading is
-/// still following the Session, and what was said since the reader left the end.
+/// The scrolling itself is `FeedTable`'s (AppKit's), and where it lands is `FeedScrollPolicy`'s.
+/// This view reads both off the handle and writes neither.
 struct FeedView: View {
     @Environment(\.argo) private var argo
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -23,23 +23,14 @@ struct FeedView: View {
     /// (`FeedTail`), the fade that lets rows run under the vessel, and how far the way-back control
     /// lifts — all three being one fact about the column's bottom edge.
     var isUnderComposer = false
-    /// The table's imperative verbs — see `FeedTableHandle`. Taken rather than owned, because the
-    /// overview lane beside the reading holds the same handle: two surfaces, one scroll authority.
+    /// The reading's scroll authority — see `FeedTableHandle`. Taken rather than owned, because the
+    /// overview lane beside the reading holds the same one, and because it has to be seeded with
+    /// `held` before this view exists.
     let table: FeedTableHandle
 
     /// Which prompts the reader has unfolded. Held here so it survives the row being rebuilt when
     /// the projection hands the feed a newer copy of it.
     @State private var unfolded: Set<FeedRow.ID> = []
-    /// Whether the reading is still following the Session — see `FeedTail`. Starts at the end for a
-    /// live transcript, detached for one opened held.
-    ///
-    /// A latch on what the READER last did, not a reading of where the content currently is: a
-    /// Session appending a row moves the end away from an offset nobody touched, and following
-    /// recomputed from that un-follows itself every time it has something new to show.
-    @State private var isFollowing: Bool
-    /// The last row present when following broke — what `FeedTail.newMessages` counts from. It must
-    /// not move until the reader is following again.
-    @State private var leftAt: FeedRow.ID?
     /// The row the user's own words just landed on, while the accent wash stands over it.
     @State var washed: FeedRow.ID?
     /// When the wait this reading is showing began, or `nil` while it is showing none. Held here
@@ -48,35 +39,15 @@ struct FeedView: View {
     /// come back reading as a fresh one.
     @State private var waitStarted: Date?
 
-    init(
-        rows: [FeedRow],
-        selection: FeedRowSelection,
-        held: FeedRow.ID? = nil,
-        isUnderComposer: Bool = false,
-        table: FeedTableHandle,
-    ) {
-        self.rows = rows
-        self.selection = selection
-        self.held = held
-        self.isUnderComposer = isUnderComposer
-        self.table = table
-        // Both true before the first frame, which is what lets a screenshot show the detached
-        // state: a reading that opens held has already left the end, at the row it opened at.
-        _isFollowing = State(initialValue: held == nil)
-        _leftAt = State(initialValue: held)
-    }
-
     var body: some View {
         FeedTable(
             rows: rows,
             selection: routed,
             held: held,
-            isFollowing: isFollowing,
             isResizing: isResizing,
             isUnderComposer: isUnderComposer,
             washed: washed,
             unfolded: $unfolded,
-            onReaderScroll: reader(isNowFollowing:),
             handle: table,
         )
         // The deck's own surfaces hand the keyboard back by writing a row into the focus space. No
@@ -122,9 +93,10 @@ struct FeedView: View {
     /// The way back down, on screen only while the reading has stopped following.
     private var tail: some View {
         ZStack {
-            if !isFollowing, !rows.isEmpty {
+            if !table.isFollowing, !rows.isEmpty {
                 FeedTailButton(
-                    newMessages: leftAt.map { FeedTail.newMessages(in: rows, since: $0) } ?? 0,
+                    newMessages: table.leftAt
+                        .map { FeedTail.newMessages(in: rows, since: $0) } ?? 0,
                     follow: follow,
                 )
                 .padding(.trailing, ArgoFeedRow.inset)
@@ -136,24 +108,12 @@ struct FeedView: View {
                 .transition(.opacity)
             }
         }
-        .argoAnimation(.reveal, value: isFollowing)
-    }
-
-    /// A scroll the reader made, reported as the following answer it produced. The count's anchor
-    /// is
-    /// taken on the EDGE and taken fresh each time, so the badge reads *since you last left the
-    /// bottom*; arriving back at the end clears it.
-    private func reader(isNowFollowing following: Bool) {
-        guard following != isFollowing else { return }
-        isFollowing = following
-        leftAt = following ? nil : rows.last?.id
+        .argoAnimation(.reveal, value: table.isFollowing)
     }
 
     /// Back to the newest row, because the reader asked. Animated — except under Reduce Motion,
     /// where the whole content of the change is the movement, so it lands instantly.
     private func follow() {
-        isFollowing = true
-        leftAt = nil
         table.follow(
             over: reduceMotion ? ArgoMotion.selection.reducedDuration : ArgoMotion.selection
                 .duration,

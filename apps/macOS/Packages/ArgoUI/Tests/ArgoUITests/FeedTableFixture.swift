@@ -9,11 +9,22 @@ import SwiftUI
 @MainActor enum FeedTableFixture {
     /// A coordinator showing `rows`, sized as a deck column and laid out — so every row has been
     /// measured and the document has a height.
-    static func laidOut(_ rows: [FeedRow], in size: CGSize) -> FeedTableCoordinator {
+    ///
+    /// The handle comes from the caller because the coordinator holds it weakly, as the deck's
+    /// does:
+    /// a fixture that owned it would keep alive what the running app lets go.
+    static func laidOut(
+        _ rows: [FeedRow],
+        in size: CGSize,
+        through handle: FeedTableHandle,
+    )
+        -> FeedTableCoordinator {
         let coordinator = FeedTableCoordinator()
         let scroller = coordinator.makeScrollView()
         scroller.frame = NSRect(origin: .zero, size: size)
         coordinator.table?.frame = scroller.frame
+        coordinator.handle = handle
+        handle.coordinator = coordinator
         coordinator.apply(model(showing: rows))
         scroller.layoutSubtreeIfNeeded()
         return coordinator
@@ -31,12 +42,10 @@ import SwiftUI
                 focus: focus.projectedValue,
             ),
             held: nil,
-            isFollowing: false,
             isResizing: false,
             isUnderComposer: false,
             washed: nil,
             unfolded: .constant([]),
-            onReaderScroll: { _ in },
             environment: EnvironmentValues(),
         )
     }

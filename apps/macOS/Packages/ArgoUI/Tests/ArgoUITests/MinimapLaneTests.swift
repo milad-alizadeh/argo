@@ -25,9 +25,8 @@ struct MinimapLaneTests {
     }
 
     private static func mounted(over rows: [FeedRow]) -> Mounted {
-        let table = FeedTableFixture.laidOut(rows, in: column)
         let feed = FeedTableHandle()
-        feed.coordinator = table
+        let table = FeedTableFixture.laidOut(rows, in: column, through: feed)
         let lane = MinimapLaneView(
             frame: NSRect(x: 0, y: 0, width: ArgoLayout.minimapLaneWidth, height: column.height),
         )

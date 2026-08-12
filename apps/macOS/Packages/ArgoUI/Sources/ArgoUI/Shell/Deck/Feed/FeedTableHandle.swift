@@ -1,19 +1,62 @@
 import SwiftUI
 
-/// The imperative verbs the SwiftUI half still owns — the way-back control's scroll, and the
-/// deck handing the keyboard back to a row. The same shape as `ScrollViewProxy`, for the same
-/// reason: a scroll is an act, not a state, and modelling it as state means inventing a token
-/// that changes whenever the act should happen.
-@MainActor final class FeedTableHandle {
-    weak var coordinator: FeedTableCoordinator?
+/// The reading's one scroll authority — the reading and the overview lane beside it hold the same
+/// one, so the two surfaces cannot come to disagree about where it is or whether it is following.
+///
+/// It owns `FeedScrollPolicy`, which is where every landing rule lives, and the imperative verbs
+/// the
+/// SwiftUI half still has over the table. The verbs are the shape of `ScrollViewProxy`, for the
+/// same
+/// reason: a scroll is an act, not a state, and modelling one as state means inventing a token that
+/// changes whenever the act should happen.
+@MainActor @Observable final class FeedTableHandle {
+    @ObservationIgnored weak var coordinator: FeedTableCoordinator?
+    @ObservationIgnored private var policy: FeedScrollPolicy
 
-    /// Back to the end of the reading. `nil` pace lands instantly.
+    /// Whether the reading is still following the Session.
+    private(set) var isFollowing: Bool
+    /// The last row present when following broke — what `FeedTail.newMessages` counts from.
+    private(set) var leftAt: FeedRow.ID?
+
+    /// Seeded with the row the reading opens held at, so both facts are already true before the
+    /// first frame — which is what lets a still show the detached state without anybody scrolling.
+    init(held: FeedRow.ID? = nil) {
+        let policy = FeedScrollPolicy(held: held)
+        self.policy = policy
+        self.isFollowing = policy.isFollowing
+        self.leftAt = policy.leftAt
+    }
+
+    /// Whether the opening scroll is still owed — see `FeedScrollPolicy`.
+    var isOpeningOwed: Bool {
+        policy.isOpeningOwed
+    }
+
+    func resolve(_ event: FeedScrollEvent) -> FeedScrollDecision {
+        let decision = policy.resolve(event)
+        publish()
+        return decision
+    }
+
+    /// Back to the newest row, because the reader asked. `nil` pace lands instantly.
     func follow(over pace: TimeInterval?) {
-        coordinator?.scrollToEnd(over: pace)
+        coordinator?.execute(resolve(.followRequested), over: pace)
     }
 
     /// The keyboard onto a row — the deck's half of `FeedRowSelection.close()`.
     func focus(onto id: FeedRow.ID) {
         coordinator?.focus(onto: id)
+    }
+
+    /// The policy's two published facts, mirrored out only when they actually change. An
+    /// `@Observable` stored property notifies on every write, and `resolve` runs once per frame of
+    /// a live scroll — mirroring unconditionally would re-render the reading at scroll rate.
+    private func publish() {
+        if isFollowing != policy.isFollowing {
+            isFollowing = policy.isFollowing
+        }
+        if leftAt != policy.leftAt {
+            leftAt = policy.leftAt
+        }
     }
 }
