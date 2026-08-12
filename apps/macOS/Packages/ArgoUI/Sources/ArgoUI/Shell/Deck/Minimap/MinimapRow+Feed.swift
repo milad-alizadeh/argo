@@ -23,7 +23,7 @@ private extension FeedRow.Content {
     @MainActor var shape: MinimapRowShape {
         switch self {
         // The prompt's lines, held against the trailing edge its bubble is drawn on.
-        case let .prompt(text): .bubble(length: text.utf8.count)
+        case let .prompt(text): .bubble(text: text)
         case let .message(text): MinimapProseBlock.shape(of: text, ink: .message)
         case let .thought(text): MinimapProseBlock.shape(of: text, ink: .thought)
         case let .call(call): call.shape

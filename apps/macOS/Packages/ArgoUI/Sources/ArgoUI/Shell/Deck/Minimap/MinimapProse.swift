@@ -20,6 +20,13 @@ struct MinimapProseBlock: Equatable, Sendable {
     var sourceLines: Int?
     /// Where the block's links sit, as UTF-8 offsets into its text.
     var links: [MinimapLinkSpan] = []
+    /// The words themselves, for a block whose lines the lane draws at the widths they really
+    /// wrapped to. Prose only: a fence and a table are drawn as their own shape.
+    var text = ""
+    /// A table's cells as their UTF-8 lengths, header row first. What its columns and its rows are
+    /// dealt by — see `MinimapRuns.cells`. Lengths and not the words, because the lane draws the
+    /// grid and never the text inside it.
+    var cells: [[Int]] = []
 }
 
 /// One markdown link's place in its block, `[label](url)` and all. The lane marks the source's own
@@ -40,7 +47,7 @@ extension MinimapProseBlock {
     @MainActor static func shape(of text: String, ink: FeedInk) -> MinimapRowShape {
         let blocks = ProseReading.structure(of: text)
         guard blocks.contains(where: \.isStructural) else {
-            return .prose(length: text.utf8.count, ink: ink)
+            return .prose(text: text, ink: ink)
         }
         return .composed(blocks: blocks, ink: ink)
     }
@@ -52,7 +59,12 @@ extension MinimapProseBlock {
             switch block {
             case let .heading(_, text), let .paragraph(text), let .bullet(text),
                  let .numbered(_, text):
-                MinimapProseBlock(kind: .prose, length: text.utf8.count, links: links(in: text))
+                MinimapProseBlock(
+                    kind: .prose,
+                    length: text.utf8.count,
+                    links: links(in: text),
+                    text: text,
+                )
             case let .fenced(code, _):
                 MinimapProseBlock(
                     kind: .fence,
@@ -65,6 +77,9 @@ extension MinimapProseBlock {
                     length: (table.header + table.rows.joined())
                         .reduce(0) { $0 + $1.utf8.count },
                     sourceLines: table.rows.count + 1,
+                    cells: ([table.header] + table.rows).map { row in
+                        row.map(\.utf8.count)
+                    },
                 )
             }
         }

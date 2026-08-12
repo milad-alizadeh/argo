@@ -37,10 +37,10 @@ extension MinimapGeometry {
     /// it.
     func drawnLines(row: Int) -> Int {
         guard reading.rows.indices.contains(row) else { return 0 }
-        let height = reading.rows[row].height
+        let row = reading.rows[row]
         return max(1, min(
-            MinimapRuns.lines(inside: height),
-            Int(height * scale / lineSlot),
+            MinimapRuns.lines(inside: row.height - row.shape.chrome),
+            Int(row.height * scale / lineSlot),
         ))
     }
 
@@ -54,7 +54,7 @@ extension MinimapGeometry {
     ///
     /// The low end is widened by one line slot: the floor under a line can draw a short row's
     /// block a touch past its own extent, so a row ending just above the band can still reach it.
-    func marks(in band: ClosedRange<CGFloat>) -> [MinimapMark] {
+    @MainActor func marks(in band: ClosedRange<CGFloat>) -> [MinimapMark] {
         guard scale > 0, !reading.rows.isEmpty else { return [] }
         let head = (band.lowerBound - lineSlot) / scale - reading.topInset
         let foot = band.upperBound / scale - reading.topInset
@@ -62,12 +62,18 @@ extension MinimapGeometry {
     }
 
     /// A row's runs as drawn rectangles, one line slot apiece.
-    private func marks(at row: Int) -> [MinimapMark] {
+    @MainActor private func marks(at row: Int) -> [MinimapMark] {
         let lines = drawnLines(row: row)
         let top = markY(row: row)
         let slot = lineSlot
+        let shape = reading.rows[row].shape
         return MinimapRuns
-            .runs(of: reading.rows[row].shape, over: lines, across: reading.columnWidth)
+            .runs(
+                of: shape,
+                over: lines,
+                across: proseMeasure,
+                wrapped: wrapping(of: shape, over: lines),
+            )
             .filter { $0.line < lines }
             .map { run in
                 MinimapMark(

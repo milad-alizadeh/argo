@@ -13,7 +13,7 @@ struct MinimapMarkTests {
         MinimapGeometry(reading, lane: CGSize(width: 100, height: 600))
     }
 
-    @Test
+    @Test @MainActor
     func `each row's mark sits at its own place in the reading`() {
         let reading = MinimapReading(
             rows: MinimapGeometryTests.rows([800, 2400, 400]),
@@ -36,7 +36,10 @@ struct MinimapMarkTests {
         let reading = MinimapReading(
             rows: [
                 MinimapRow(height: 40, shape: .sentence(length: 40, ink: .command)),
-                MinimapRow(height: 20000, shape: .prose(length: 40000, ink: .message)),
+                MinimapRow(
+                    height: 20000,
+                    shape: .prose(text: MinimapText.words(40000), ink: .message),
+                ),
             ],
             columnWidth: 800,
             viewportHeight: 600,
@@ -48,7 +51,7 @@ struct MinimapMarkTests {
         #expect(lane.markY(row: 1) == 5)
     }
 
-    @Test
+    @Test @MainActor
     func `a row compressed below what can be seen is still drawn at one whole line`() {
         let reading = MinimapReading(
             rows: MinimapGeometryTests.rows([4]), columnWidth: 800, viewportHeight: 600,
@@ -61,7 +64,7 @@ struct MinimapMarkTests {
     /// The whole reason #658 exists. At `feedAtScale`'s length the lane squeezed the whole session
     /// into its own height, every mark fell to the 1pt floor and the lane read as a texture. At the
     /// feed's own ratio a modest row is several points tall, whatever the length.
-    @Test
+    @Test @MainActor
     func `a session at a real length still has marks that can be told apart`() {
         let reading = MinimapReading(
             rows: MinimapGeometryTests.rows(Array(repeating: 40, count: 1031)),
@@ -76,10 +79,13 @@ struct MinimapMarkTests {
 
     /// A paragraph is one bar per measured line, laid down its own block. Any of them landing
     /// outside it would put a line of one row's prose over the row above or below it.
-    @Test
+    @Test @MainActor
     func `a row's lines are laid inside the block the row was given`() {
         let reading = MinimapReading(
-            rows: [MinimapRow(height: 800, shape: .prose(length: 400, ink: .message))],
+            rows: [MinimapRow(
+                height: 800,
+                shape: .prose(text: MinimapText.words(400), ink: .message),
+            )],
             columnWidth: 800,
             viewportHeight: 600,
         )
@@ -91,7 +97,7 @@ struct MinimapMarkTests {
 
     /// Two rows of one line each must read as the same weight, whatever spacing the feed put around
     /// them — the padding buys the gap to the next row, exactly as it does in the reading.
-    @Test
+    @Test @MainActor
     func `two one-line rows are drawn the same height however they are spaced`() {
         let reading = MinimapReading(
             rows: [

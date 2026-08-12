@@ -6,22 +6,25 @@ import Foundation
 /// Nothing here decides WHERE a row sits: the line count is the caller's, off the row's measured
 /// height. A lane that wrapped the text itself would draw a bar the reading has no line for.
 enum MinimapRuns {
-    /// The runs a shape makes across `lines` of drawn line, over a column `measure` points wide.
+    /// The runs a shape makes across `lines` of drawn line, over a column `measure` points wide —
+    /// at the widths the row's words really wrapped to, where the caller measured them.
     static func runs(
         of shape: MinimapRowShape,
         over lines: Int,
         across measure: CGFloat,
+        wrapped: MinimapWrapping = .unmeasured,
     )
         -> [MinimapRun] {
         switch shape {
-        case let .prose(length, ink):
-            fills(of: length, over: lines).enumerated().map { line, fill in
-                MinimapRun(ink: ink, line: line, span: span(0, fill))
-            }
-        case let .bubble(length):
-            bubble(length, over: lines, across: measure)
+        case let .prose(text, ink):
+            fills(of: text.utf8.count, over: lines, measured: wrapped.lines)
+                .enumerated().map { line, fill in
+                    MinimapRun(ink: ink, line: line, span: span(0, fill))
+                }
+        case let .bubble(text):
+            bubble(text.utf8.count, over: lines, across: measure, measured: wrapped.lines)
         case let .composed(blocks, ink):
-            composed(blocks, ink: ink, over: lines, across: measure)
+            composed(blocks, ink: ink, over: lines, across: measure, wrapped: wrapped)
         case let .sentence(length, ink):
             [MinimapRun(ink: ink, line: 0, span: span(0, fill(of: length, across: measure)))]
         case let .change(length, added, removed):
@@ -40,14 +43,30 @@ enum MinimapRuns {
         max(1, Int(height / ArgoFeedRow.lineHeight))
     }
 
-    /// How full each line of a block is, head to foot. All of them but the last, which is as full
-    /// as the characters left for it — the ragged edge that says "paragraph".
-    static func fills(of length: Int, over lines: Int) -> [CGFloat] {
+    /// How full each line of a block is, head to foot.
+    ///
+    /// The measured wrap where there is one — the widths the words actually came out at, which is
+    /// the only way the lane's lines and the reading's lines agree. Failing that, the character
+    /// count divided: every line full but the last, which is as full as the characters left for it.
+    static func fills(of length: Int, over lines: Int, measured: [CGFloat]? = nil) -> [CGFloat] {
         guard lines > 0 else { return [] }
+        if let measured {
+            return sampled(measured, over: lines)
+        }
         let perLine = max(1, Int((Double(max(0, length)) / Double(lines)).rounded(.up)))
         return (0 ..< lines).map { line in
             let landed = min(max(0, length - line * perLine), perLine)
             return CGFloat(landed) / CGFloat(perLine)
+        }
+    }
+
+    /// Measured lines over the lines the lane gave the block. Its own where it kept them all, and
+    /// evenly spaced where the lane compressed it into fewer — a squeezed paragraph reads as the
+    /// paragraph it is rather than as its first few lines and nothing else.
+    static func sampled(_ fills: [CGFloat], over lines: Int) -> [CGFloat] {
+        guard !fills.isEmpty, lines > 0 else { return [] }
+        return (0 ..< lines).map { line in
+            fills[min(fills.count - 1, line * fills.count / lines)]
         }
     }
 
@@ -57,17 +76,6 @@ enum MinimapRuns {
         let perLine = charactersPerLine(across: measure)
         guard perLine > 0 else { return 1 }
         return min(1, CGFloat(max(0, length)) / CGFloat(perLine))
-    }
-
-    /// A prompt's lines: one bar per drawn line, anchored where the bubble anchors its text — the
-    /// leading edge of a region held against the trailing edge — with the ragged last line running
-    /// out toward the trailing edge, so a prompt reads as the words it was rather than as a slab.
-    private static func bubble(_ length: Int, over lines: Int, across measure: CGFloat)
-        -> [MinimapRun] {
-        let width = min(ArgoFeedRow.bubbleShare, fill(of: length, across: measure))
-        return fills(of: length, over: lines).enumerated().map { line, fill in
-            MinimapRun(ink: .prompt, line: line, span: span(1 - width, 1 - width + fill * width))
-        }
     }
 
     /// A gallery's thumbnails, wrapped across the lane the way `FeedGalleryRow` wraps them across

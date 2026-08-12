@@ -136,5 +136,10 @@ extension SpecimenRegistry {
         // A reading with every kind in it, so the vocabulary can be judged in one look: prose,
         // commands, a mutation's two inks, a failure, a run of pictures and a question waiting.
         SpecimenEntry("minimapLaneKinds") { SpecimenScene.overview(FeedProjection.previewRows) },
+        // The lane beside markdown: a table drawn as its cells, paragraphs at the widths they
+        // wrapped to, and a one-line prompt worth one line of lane.
+        SpecimenEntry("minimapLaneMarkdown") {
+            SpecimenScene.overview(FeedProjection.previewMarkdownRows)
+        },
     ]
 }

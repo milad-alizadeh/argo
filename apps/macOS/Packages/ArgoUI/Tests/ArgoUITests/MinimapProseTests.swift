@@ -9,7 +9,7 @@ struct MinimapProseTests {
     @Test @MainActor
     func `plain prose keeps the plain shape`() {
         let shape = MinimapProseBlock.shape(of: "Nothing but words here.", ink: .message)
-        #expect(shape == .prose(length: 23, ink: .message))
+        #expect(shape == .prose(text: "Nothing but words here.", ink: .message))
     }
 
     @Test @MainActor

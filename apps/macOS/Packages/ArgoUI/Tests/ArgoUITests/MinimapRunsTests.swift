@@ -19,7 +19,7 @@ struct MinimapRunsTests {
 
     @Test
     func `a paragraph is one bar per line it was measured at`() {
-        let runs = Self.runs(.prose(length: 1000, ink: .message), lines: 5)
+        let runs = Self.runs(.prose(text: MinimapText.words(1000), ink: .message), lines: 5)
         #expect(runs.map(\.line) == [0, 1, 2, 3, 4])
         #expect(runs.allSatisfy { $0.ink == .message })
     }
@@ -27,28 +27,28 @@ struct MinimapRunsTests {
     /// The ragged last line is the whole of what makes a block of bars read as prose.
     @Test
     func `the last line of a paragraph is only as full as the words left for it`() {
-        let runs = Self.runs(.prose(length: 11, ink: .message), lines: 3)
+        let runs = Self.runs(.prose(text: MinimapText.words(11), ink: .message), lines: 3)
         #expect(runs.dropLast().allSatisfy { $0.span == 0 ... 1 })
         #expect(runs.last?.span.upperBound == 0.75)
     }
 
     @Test
     func `prose keeps the leading edge the feed draws it on`() {
-        #expect(Self.runs(.prose(length: 40, ink: .thought), lines: 2)
+        #expect(Self.runs(.prose(text: MinimapText.words(40), ink: .thought), lines: 2)
             .allSatisfy { $0.span.lowerBound == 0 })
     }
 
     /// One bar per line, not one block over the row — a prompt reads as its words, like prose does.
     @Test
     func `a prompt is one bar per line it was measured at`() {
-        let runs = Self.runs(.bubble(length: 4000), lines: 3)
+        let runs = Self.runs(.bubble(text: MinimapText.words(4000)), lines: 3)
         #expect(runs.map(\.line) == [0, 1, 2])
         #expect(runs.allSatisfy { $0.ink == .prompt })
     }
 
     @Test
     func `a prompt keeps the trailing edge its bubble is drawn on`() {
-        let runs = Self.runs(.bubble(length: 12), lines: 1)
+        let runs = Self.runs(.bubble(text: MinimapText.words(12)), lines: 1)
         #expect(runs.count == 1)
         #expect(runs[0].span.upperBound == 1)
         #expect(runs[0].span.lowerBound > 0)
@@ -58,7 +58,7 @@ struct MinimapRunsTests {
     /// of the trailing edge.
     @Test
     func `the last line of a prompt is only as full as the words left for it`() {
-        let runs = Self.runs(.bubble(length: 4000), lines: 3)
+        let runs = Self.runs(.bubble(text: MinimapText.words(4000)), lines: 3)
         let leading = 1 - ArgoFeedRow.bubbleShare
         #expect(runs.allSatisfy { abs($0.span.lowerBound - leading) < 0.0001 })
         #expect(runs.dropLast().allSatisfy { $0.span.upperBound == 1 })

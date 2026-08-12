@@ -47,8 +47,8 @@ struct FeedPrompt: View {
                 disclosure
             }
         }
-        .padding(.vertical, ArgoSpacing.comfortable)
-        .padding(.horizontal, ArgoSpacing.loose)
+        .padding(.vertical, ArgoFeedRow.bubbleInsetY)
+        .padding(.horizontal, ArgoFeedRow.bubbleInsetX)
         .background(argo.color.surface.raised, in: .rect(cornerRadius: ArgoRadius.popover))
         // A ceiling, not a width: the bubble sizes to a short prompt and holds a long one here.
         .frame(maxWidth: ceiling, alignment: .trailing)

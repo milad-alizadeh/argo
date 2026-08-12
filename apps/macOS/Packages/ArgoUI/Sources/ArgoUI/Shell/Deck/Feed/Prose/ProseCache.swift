@@ -17,6 +17,12 @@ struct ProseCache<Value> {
         self.ceiling = ceiling
     }
 
+    /// Everything held, surrendered — for a store whose answers depend on something other than the
+    /// string, and that something moved.
+    mutating func empty() {
+        readings.removeAll(keepingCapacity: true)
+    }
+
     mutating func reading(of text: String, read: (String) -> Value) -> Value {
         if let known = readings[text] {
             return known

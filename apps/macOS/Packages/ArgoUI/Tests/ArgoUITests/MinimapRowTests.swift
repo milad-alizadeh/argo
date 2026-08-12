@@ -47,15 +47,15 @@ struct MinimapRowTests {
 
     @Test
     func `what the agent said is prose in the rung the feed says it in`() {
-        #expect(Self.shape(.message("said")) == .prose(length: 4, ink: .message))
-        #expect(Self.shape(.thought("reasoned")) == .prose(length: 8, ink: .thought))
+        #expect(Self.shape(.message("said")) == .prose(text: "said", ink: .message))
+        #expect(Self.shape(.thought("reasoned")) == .prose(text: "reasoned", ink: .thought))
     }
 
     /// A prompt keeps its own shape, because its lines anchor on the trailing edge where its
     /// bubble is drawn, not the leading edge prose runs from.
     @Test
     func `a prompt is a bubble rather than prose`() {
-        #expect(Self.shape(.prompt("Fix the seam")) == .bubble(length: 12))
+        #expect(Self.shape(.prompt("Fix the seam")) == .bubble(text: "Fix the seam"))
     }
 
     @Test

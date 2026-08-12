@@ -12,23 +12,48 @@ extension MinimapRuns {
         ink: FeedInk,
         over lines: Int,
         across measure: CGFloat,
+        wrapped: MinimapWrapping = .unmeasured,
     )
         -> [MinimapRun] {
-        let shares = shares(of: lines, by: blocks.map { weight(of: $0, across: measure) })
+        let weights = blocks.indices.map {
+            weight(of: blocks[$0], measured: wrapped.lines(of: $0), across: measure)
+        }
         var runs: [MinimapRun] = []
         var cursor = 0
-        for (block, share) in zip(blocks, shares) where share > 0 {
-            runs.append(contentsOf: self.runs(of: block, ink, from: cursor, over: share))
+        for (at, share) in shares(of: lines, by: weights).enumerated() where share > 0 {
+            let block = Wrapped(block: blocks[at], lines: wrapped.lines(of: at))
+            runs.append(contentsOf: self.runs(
+                of: block,
+                ink,
+                on: cursor ..< cursor + share,
+                across: measure,
+            ))
             cursor += share
         }
         return runs
     }
 
-    /// How many feed lines one block stands, estimated the way raggedness already is. A table's
-    /// row stands about two text lines with its cell padding; a fence's box adds its own two.
-    private static func weight(of block: MinimapProseBlock, across measure: CGFloat) -> Int {
+    /// One block of the row and the wrap measured for it. The two travel together everywhere below,
+    /// because neither answers anything about how the block is drawn without the other.
+    struct Wrapped {
+        let block: MinimapProseBlock
+        let lines: [CGFloat]?
+    }
+
+    /// How many feed lines one block stands: the lines it really wrapped to where those were
+    /// measured, and otherwise the same estimate raggedness is drawn from. A table's row stands
+    /// about two text lines with its cell padding; a fence's box adds its own two.
+    private static func weight(
+        of block: MinimapProseBlock,
+        measured: [CGFloat]?,
+        across measure: CGFloat,
+    )
+        -> Int {
         switch block.kind {
         case .prose:
+            if let measured {
+                return max(1, measured.count)
+            }
             let perLine = CGFloat(MinimapRuns.charactersPerLine(across: measure))
             guard perLine > 0 else { return 1 }
             return max(1, Int((CGFloat(block.length) / perLine).rounded(.up)))
@@ -38,8 +63,8 @@ extension MinimapRuns {
     }
 
     /// Whole lines dealt in proportion to the weights, remainders to the heaviest blocks first —
-    /// so the deal is stable and sums exactly to `lines`.
-    private static func shares(of lines: Int, by weights: [Int]) -> [Int] {
+    /// so the deal is stable and sums exactly to `lines`. Shared with the table's own rows.
+    static func shares(of lines: Int, by weights: [Int]) -> [Int] {
         let total = weights.reduce(0, +)
         guard total > 0 else { return weights.map { _ in 0 } }
         var dealt = weights.map { $0 * lines / total }
@@ -51,24 +76,29 @@ extension MinimapRuns {
         return dealt
     }
 
+    /// One block over the lines it was dealt.
     private static func runs(
-        of block: MinimapProseBlock,
+        of wrapped: Wrapped,
         _ ink: FeedInk,
-        from cursor: Int,
-        over share: Int,
+        on band: Range<Int>,
+        across measure: CGFloat,
     )
         -> [MinimapRun] {
+        let block = wrapped.block
+        let cursor = band.lowerBound
+        let share = band.count
         switch block.kind {
-        // The box the feed draws around the cells, stroked — never the cells' own text.
+        // The cells the feed draws, each stroked — never the words inside them.
         case .table:
-            return [MinimapRun(ink: .table, line: cursor, lines: share, span: span(0, 1))]
+            return cells(of: block, from: cursor, over: share, across: measure)
         // The fence's box, filled: one slab where the paragraphs around it are ragged lines.
         case .fence:
             return [MinimapRun(ink: ink, line: cursor, lines: share, span: span(0, 1))]
         case .prose:
-            let bars = fills(of: block.length, over: share).enumerated().map { line, fill in
-                MinimapRun(ink: ink, line: cursor + line, span: span(0, fill))
-            }
+            let bars = fills(of: block.length, over: share, measured: wrapped.lines)
+                .enumerated().map { line, fill in
+                    MinimapRun(ink: ink, line: cursor + line, span: span(0, fill))
+                }
             return bars + links(of: block, from: cursor, over: share)
         }
     }
