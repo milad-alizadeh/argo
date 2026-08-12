@@ -28,17 +28,19 @@ extension MinimapGeometry {
     }
 
     /// How many of a row's lines are actually drawn: the lines it was measured at, held to what its
-    /// own space in the lane can hold, and then to the cap D25 puts on one event.
+    /// own space in the lane can hold — the row's true scaled extent, and D25's weight cap as
+    /// amended. A ceiling below that extent would cut a long message's block at its head and leave
+    /// the rest of its true span as dead lane.
     ///
-    /// Both limits take lines off the FOOT of the block and never move its head, so a capped row's
-    /// chronological place — and every place after it — stays exactly where the reading put it.
+    /// The limit takes lines off the FOOT of the block and never moves its head, so a compressed
+    /// row's chronological place — and every place after it — stays exactly where the reading put
+    /// it.
     func drawnLines(row: Int) -> Int {
         guard reading.rows.indices.contains(row) else { return 0 }
         let height = reading.rows[row].height
         return max(1, min(
             MinimapRuns.lines(inside: height),
             Int(height * scale / lineSlot),
-            Int(markCeiling / lineSlot),
         ))
     }
 
@@ -50,11 +52,11 @@ extension MinimapGeometry {
     /// The marks inside a band of the miniature. Both ends are found by binary search over the
     /// prefix sums, so the cost is the band's own row count rather than the session's.
     ///
-    /// The low end is widened by one block ceiling: a row that STARTS above the band can still be
-    /// drawn into it, because a block reaching past the visible floor is still partly in view.
+    /// The low end is widened by one line slot: the floor under a line can draw a short row's
+    /// block a touch past its own extent, so a row ending just above the band can still reach it.
     func marks(in band: ClosedRange<CGFloat>) -> [MinimapMark] {
         guard scale > 0, !reading.rows.isEmpty else { return [] }
-        let head = band.lowerBound / scale - reading.topInset - markCeiling / scale
+        let head = (band.lowerBound - lineSlot) / scale - reading.topInset
         let foot = band.upperBound / scale - reading.topInset
         return (row(startingAtOrBefore: head) ... row(startingAtOrBefore: foot)).flatMap(marks(at:))
     }

@@ -128,11 +128,6 @@ struct MinimapGeometry: Equatable {
         offset(forLaneY: laneY - viewportHeightInLane / 2)
     }
 
-    /// The tallest one mark may be drawn — D25's weight cap, as a share of the lane.
-    var markCeiling: CGFloat {
-        lane.height * ArgoMinimapLane.markMaximumShare
-    }
-
     /// A point of reading, in points of lane. `scale` less the miniature's own slide over the same
     /// travel, so it degrades to exactly `scale` for a miniature that fits the lane whole.
     private var lanePointsPerReadingPoint: CGFloat {

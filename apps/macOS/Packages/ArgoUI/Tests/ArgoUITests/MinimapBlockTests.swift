@@ -37,11 +37,11 @@ struct MinimapBlockTests {
         #expect(Self.blocks(Self.geometry()).map(\.prompt) == ["First", "Second"])
     }
 
-    /// A row held to the line cap is DRAWN shorter than the reading gave it. If a block ended where
-    /// its last row was drawn to, the lane would have stripes naming no Turn at all — and a hover
-    /// crossing one would drop the mark it had just put up.
+    /// A line-floored row can be DRAWN a touch short of the reading's own span. If a block ended
+    /// where its last row was drawn to, the lane would have stripes naming no Turn at all — and a
+    /// hover crossing one would drop the mark it had just put up.
     @Test
-    func `a Turn holding a capped row still reaches the Turn after it`() {
+    func `a Turn holding a huge row still reaches the Turn after it`() {
         var rows = MinimapGeometryTests.rows([100, 20000, 100])
         rows[0].prompt = "First"
         rows[1].endsTurn = true
@@ -53,7 +53,8 @@ struct MinimapBlockTests {
         let blocks = Self.blocks(lane)
 
         #expect(blocks.count == 2)
-        #expect(lane.markHeight(row: 1) < lane.reading.rows[1].height * lane.scale)
+        // The block fills its whole extent now — the gap the old per-event ceiling left is gone.
+        #expect(lane.markHeight(row: 1) == lane.reading.rows[1].height * lane.scale)
         #expect(blocks[0].range.upperBound == blocks[1].range.lowerBound)
     }
 

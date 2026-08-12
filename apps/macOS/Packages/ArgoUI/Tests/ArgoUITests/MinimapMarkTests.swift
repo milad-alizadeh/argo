@@ -29,10 +29,10 @@ struct MinimapMarkTests {
         #expect(lane.marks(in: 0 ... 600).map(\.y) == [3, 103, 403])
     }
 
-    /// The cap takes lines off the FOOT of a block, so a huge row is drawn shorter rather than
-    /// moved — which is what keeps its place, and every place after it, where the reading put it.
+    /// A huge row fills its own scaled extent and no more — cut short of it, the rest of its true
+    /// span would read as dead lane, which is the gap the old per-event ceiling manufactured.
     @Test
-    func `no single row may consume the overview in proportion to what it holds`() {
+    func `a huge row fills its own extent rather than stopping at a ceiling`() {
         let reading = MinimapReading(
             rows: [
                 MinimapRow(height: 40, shape: .sentence(length: 40, ink: .command)),
@@ -42,8 +42,9 @@ struct MinimapMarkTests {
             viewportHeight: 600,
         )
         let lane = Self.geometry(reading)
-        #expect(lane.markHeight(row: 1) <= lane.markCeiling)
-        #expect(lane.markHeight(row: 1) > lane.markCeiling - lane.lineSlot)
+        let extent = 20000 * lane.scale
+        #expect(lane.markHeight(row: 1) <= extent)
+        #expect(lane.markHeight(row: 1) > extent - lane.lineSlot)
         #expect(lane.markY(row: 1) == 5)
     }
 
