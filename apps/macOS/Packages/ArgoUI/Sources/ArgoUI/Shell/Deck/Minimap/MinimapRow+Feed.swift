@@ -4,12 +4,13 @@ import Foundation
 // vocabulary meets the feed's, and the reason the lane reads as the reading shrunk rather than as a
 // legend beside it: every alignment here is the row's own, and every ink is the row's own.
 //
-// Nothing here builds a run, measures a string, or allocates. It runs over every row of the reading
-// each time the feed reshapes.
+// Nothing here builds a run or measures a string. It runs over every row of the reading each time
+// the feed reshapes, so a prose row's markdown structure comes off `ProseReading`'s cache — one
+// parse per distinct text, a lookup after.
 
 extension MinimapRow {
     /// One feed row as the lane draws it, at the height the table measured for it.
-    init(_ row: FeedRow, height: CGFloat) {
+    @MainActor init(_ row: FeedRow, height: CGFloat) {
         self.init(height: height, shape: row.content.shape)
         if case let .prompt(text) = row.content {
             prompt = text
@@ -19,13 +20,12 @@ extension MinimapRow {
 }
 
 private extension FeedRow.Content {
-    var shape: MinimapRowShape {
+    @MainActor var shape: MinimapRowShape {
         switch self {
-        // The one row that is a SHAPE in the feed rather than lines of text: a filled bubble on the
-        // trailing edge. Drawn here the way it is read there.
+        // The prompt's lines, held against the trailing edge its bubble is drawn on.
         case let .prompt(text): .bubble(length: text.utf8.count)
-        case let .message(text): .prose(length: text.utf8.count, ink: .message)
-        case let .thought(text): .prose(length: text.utf8.count, ink: .thought)
+        case let .message(text): MinimapProseBlock.shape(of: text, ink: .message)
+        case let .thought(text): MinimapProseBlock.shape(of: text, ink: .thought)
         case let .call(call): call.shape
         case let .survey(survey): .sentence(length: survey.length, ink: survey.ending.ink)
         case let .unreadable(unreadable):

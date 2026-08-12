@@ -68,7 +68,19 @@ public final class Hub {
     /// The Turns typed at those PTYs that the CLI has not yet answered for (#682). Built lazily
     /// because its three closures read this Hub, and stored because a watch has to outlive the
     /// `driver` value that started it — `driver` is composed fresh on every read.
+    ///
+    /// PTYs and not threads: the Return it watches for is a keystroke, and the Codex adapter below
+    /// speaks JSON-RPC where a Turn is a request that was either accepted or refused.
     @ObservationIgnored lazy var delivery = makeDelivery()
+
+    /// The Codex threads behind the claims that have one. Empty on a Hub that has spawned no
+    /// `codex`, which is also what tells the drive port which adapter a Session takes.
+    let codex = CodexThreads()
+
+    /// What starts a `codex app-server`. Pipes rather than a PTY, and engine-owned rather than
+    /// injected, because it links nothing the app has to supply (`CodexProcessHost`). The seam is
+    /// still there for a suite that must not start a real one.
+    @ObservationIgnored let codexHost: AgentProcessHost
 
     /// The rows for agents Argo has started whose CLI has not yet written a record. Observed, so a
     /// spawn reaches the roster in the same update that opened its PTY.
@@ -135,6 +147,7 @@ public final class Hub {
         self.engine = engine
         self.discovery = discovery
         self.spawnServices = spawnServices
+        self.codexHost = spawnServices.codexHost ?? CodexProcessHost()
         self.modeStore = SessionModeStore(fileURL: spawnServices.modeFileURL)
         // Read at construction: the roster is published before anything is swept, and a chain
         // loaded a moment later would blank the link on the first reading of a Session that has

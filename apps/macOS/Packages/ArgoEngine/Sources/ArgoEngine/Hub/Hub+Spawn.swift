@@ -1,12 +1,12 @@
 import Foundation
 
 /// Argo starting a Session of its own — the one case where it is not observing. DIRECT: Argo holds
-/// the claim and the PTY, which is why the row is published here rather than waited for — `claude`
-/// writes no record until its first prompt (#361).
+/// the claim and the process, which is why the row is published here rather than waited for —
+/// `claude` writes no record until its first prompt (#361).
 @MainActor
 public extension Hub {
-    /// Launch the Project's agent, own its PTY, and put it in the roster. Returns the claim, which
-    /// is also the id of the row it just published. The seed is what a handoff adds and a New
+    /// Launch the Project's agent, own its process, and put it in the roster. Returns the claim,
+    /// which is also the id of the row it just published. The seed is what a handoff adds and a New
     /// Session leaves empty (#513): a folder other than the Project's, and a prompt to open on.
     ///
     /// A seed naming a chain to resume takes the same path (#10). Two things differ, and both
@@ -18,7 +18,7 @@ public extension Hub {
         seed: SessionSeed = .unseeded,
     ) async throws
         -> SessionOwnership.ClaimID {
-        guard let host = spawnServices.host else {
+        guard spawnServices.host != nil else {
             throw AgentSpawnError.hostRefused(detail: "This window cannot start agents")
         }
         let cwd = seed.cwd ?? project.url.path
@@ -27,60 +27,30 @@ public extension Hub {
               isDirectory.boolValue
         else { throw AgentSpawnError.unreachableWorkingDirectory(path: cwd) }
 
-        // The seed's rung, or the one the user last picked (#629) — resolved once, so the argv the
-        // CLI is launched with and the rung the row publishes cannot be two different answers.
-        let mode = seed.mode ?? modeStore.lastPicked()
-        let claim = seed.resuming.map { ownership.claim(cwd: cwd, resuming: $0) }
-            ?? ownership.claim(cwd: cwd)
+        // The seed's rung, or the one the user last picked (#629) — resolved once, so what the CLI
+        // is started with and the rung the row publishes cannot be two different answers.
+        let plan = AgentSpawnPlan(
+            cli: cli,
+            cwd: cwd,
+            mode: seed.mode ?? modeStore.lastPicked(),
+            seed: seed,
+            claim: seed.resuming.map { ownership.claim(cwd: cwd, resuming: $0) }
+                ?? ownership.claim(cwd: cwd),
+        )
         do {
-            let invitation = try companion?.invite(claim, gatedBy: permissions?.grant(claim))
-            let launch = try await spawnServices.launcher.launch(
-                cli: cli,
-                cwd: cwd,
-                companion: invitation,
-            )
-            .adding(cli.arguments(standingOn: mode))
-            .adding(seed.resuming.map(cli.arguments(resuming:)) ?? [])
-            let process = try host.start(
-                seed.opening.map(launch.opening) ?? launch,
-                events: events(for: claim),
-            )
-            terminals.adopt(claim, process: process)
-            // Filed under the CLAIM, which is the only key that survives the re-key to the id the
-            // CLI picks — a rung on the row below would be lost with it, and the gate reads this to
-            // decide whether the Session asks at all (#663).
-            //
-            // A resume continues a Session that has already written stance records, so the set is
-            // counted from THAT: from zero, its very next record would read as the CLI overruling
-            // a flag it had in fact honoured.
-            claims.setMode(
-                SessionModeSet(
-                    mode: mode,
-                    recordsWhenSet: seed.resuming.map(observedModeCount(of:)) ?? 0,
-                ),
-                for: claim,
-            )
-            // A resume already has its row — the Session it continues — so publishing a second one
-            // would draw that Session twice until the CLI wrote a record.
-            if seed.resuming == nil {
-                spawns[claim] = AgentSpawn(
-                    claim: claim,
-                    cli: cli,
-                    cwd: cwd,
-                    spawnedAtMs: Date().epochMs,
-                )
-            }
-            return claim
+            try await start(plan)
+            publish(plan)
+            return plan.claim
         } catch {
             // Nothing started, so nothing is owned. Relinquishing keeps the window from covering an
             // agent somebody else starts in this folder a moment later.
-            relinquish(claim)
+            relinquish(plan.claim)
             throw error
         }
     }
 
-    /// Every PTY this Hub owns, ended, and every channel with them. What window close and app quit
-    /// call: an agent Argo started must not outlive the Argo that started it.
+    /// Every process this Hub owns, ended, and every channel with them. What window close and app
+    /// quit call: an agent Argo started must not outlive the Argo that started it.
     ///
     /// The live claims are the whole set to walk: a socket is opened at spawn and closed by
     /// `relinquish`, which is also the only thing that releases a claim, so no gate can be open
@@ -93,30 +63,113 @@ public extension Hub {
         }
     }
 
-    /// One claim, given up: Argo's hold on it, the PTY behind it, and both channels it spoke over.
-    /// The three sites that give a claim up are a launch that failed, a PTY that exited, and the
-    /// app quitting.
+    private func start(_ plan: AgentSpawnPlan) async throws {
+        let process = try await host(for: plan.cli).start(
+            launch(for: plan),
+            events: events(for: plan.claim),
+        )
+        terminals.adopt(plan.claim, process: process)
+        openThread(for: plan)
+    }
+
+    /// What the CLI is started with — the flags, and the channels only some CLIs take.
+    private func launch(for plan: AgentSpawnPlan) async throws -> AgentLaunch {
+        let invitation = plan.cli.takesCompanionPlugin
+            ? try companion?.invite(plan.claim, gatedBy: permissions?.grant(plan.claim))
+            : nil
+        let launch = try await spawnServices.launcher.launch(
+            cli: plan.cli,
+            cwd: plan.cwd,
+            companion: invitation,
+        )
+        .adding(plan.cli.surfaceArguments)
+        .adding(plan.cli.arguments(standingOn: plan.mode))
+        .adding(plan.seed.resuming.map(plan.cli.arguments(resuming:)) ?? [])
+        // A CLI that opens on a Turn instead takes its prompt in `openThread`.
+        guard plan.cli.opensOnArgv, let opening = plan.seed.opening else { return launch }
+        return launch.opening(opening)
+    }
+
+    /// Whatever this CLI needs beyond a running process. A switch and not a capability flag: what
+    /// happens here is one CLI's own protocol, so a third has to say what its channel is rather
+    /// than answer yes or no to Codex's.
+    private func openThread(for plan: AgentSpawnPlan) {
+        switch plan.cli {
+        // The PTY is the whole channel: there is nothing to open on top of it.
+        case .claude: break
+        case .codex: openCodexThread(for: plan)
+        }
+    }
+
+    /// A Codex spawn is a JSON-RPC client as well as a process: the thread is asked for the moment
+    /// the server is up, and the seed's prompt is its first Turn. Queued rather than sent, because
+    /// the thread does not exist until the server says it does.
+    private func openCodexThread(for plan: AgentSpawnPlan) {
+        let claim = plan.claim
+        let thread = CodexThread(cwd: plan.cwd, mode: plan.mode) { [weak self] line in
+            self?.terminals.write(line, to: claim) ?? false
+        }
+        codex.open(claim, thread: thread)
+        guard let opening = plan.seed.opening else { return }
+        _ = thread.send(opening)
+    }
+
+    /// Filed under the CLAIM, which is the only key that survives the re-key to the id the CLI
+    /// picks — a rung on the row below would be lost with it, and the gate reads this to decide
+    /// whether the Session asks at all (#663).
+    ///
+    /// A resume continues a Session that has already written stance records, so the set is counted
+    /// from THAT: from zero, its very next record would read as the CLI overruling a flag it had in
+    /// fact honoured. It already has its row, too, so publishing a second one would draw that
+    /// Session twice until the CLI wrote a record.
+    private func publish(_ plan: AgentSpawnPlan) {
+        claims.setMode(
+            SessionModeSet(
+                mode: plan.mode,
+                recordsWhenSet: plan.seed.resuming.map(observedModeCount(of:)) ?? 0,
+            ),
+            for: plan.claim,
+        )
+        guard plan.seed.resuming == nil else { return }
+        spawns[plan.claim] = AgentSpawn(
+            claim: plan.claim,
+            cli: plan.cli,
+            cwd: plan.cwd,
+            spawnedAtMs: Date().epochMs,
+        )
+    }
+
+    /// One claim, given up: Argo's hold on it, the process behind it, and every channel it spoke
+    /// over. The three sites that give a claim up are a launch that failed, a process that exited,
+    /// and the app quitting.
     private func relinquish(_ claim: SessionOwnership.ClaimID) {
         // Before the claim is released, because the watch is keyed by Session and the id is read
         // back through the claim that is about to stop answering.
         delivery.forget(ownership.rowID(ofClaim: claim.value))
         ownership.release(claim)
         terminals.drop(claim)
+        codex.close(claim)
         companion?.withdraw(claim)
         permissions?.withdraw(claim)
     }
 
+    /// A chunk goes to ONE table. A Codex claim's bytes are JSON-RPC and belong to its thread; the
+    /// terminal table would only keep them in a replay buffer for a viewer that cannot exist,
+    /// because there is no PTY behind a Codex Session to draw.
     private func events(for claim: SessionOwnership.ClaimID) -> AgentProcessEvents {
         AgentProcessEvents(
-            onData: { [weak self] chunk in self?.terminals.received(chunk, from: claim) },
-            onExit: { [weak self] code in self?.ptyEnded(claim, exitCode: code) },
+            onData: { [weak self] chunk in
+                guard let self, !codex.received(chunk, from: claim) else { return }
+                terminals.received(chunk, from: claim)
+            },
+            onExit: { [weak self] code in self?.processEnded(claim, exitCode: code) },
         )
     }
 
-    /// The PTY is gone. Ownership cannot be re-adopted, so the claim closes and the Session demotes
-    /// to `orphaned` — a row still under the claim's own id is one no sweep will ever correct,
-    /// because the CLI never wrote a record.
-    private func ptyEnded(_ claim: SessionOwnership.ClaimID, exitCode: Int32?) {
+    /// The process is gone. Ownership cannot be re-adopted, so the claim closes and the Session
+    /// demotes to `orphaned` — a row still under the claim's own id is one no sweep will ever
+    /// correct, because the CLI never wrote a record.
+    private func processEnded(_ claim: SessionOwnership.ClaimID, exitCode: Int32?) {
         relinquish(claim)
         // The spawn itself stays: it is a ROW rather than a fact about one, and the exit code is
         // what this writes into it.

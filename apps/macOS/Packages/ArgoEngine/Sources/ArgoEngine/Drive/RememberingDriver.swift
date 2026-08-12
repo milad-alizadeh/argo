@@ -27,6 +27,10 @@ struct RememberingDriver<Base: SessionDriver>: SessionDriver {
         base.canAttach
     }
 
+    var canRunCommands: Bool {
+        base.canRunCommands
+    }
+
     func send(_ text: String, to sessionID: String) throws {
         try base.send(text, to: sessionID)
     }

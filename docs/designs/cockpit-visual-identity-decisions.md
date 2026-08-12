@@ -500,6 +500,11 @@ its approved study are authoritative for the replacement look and feel.
   the lane a near-continuous blue rail, spending the app's loudest colour on saying a session has
   Turns in it. Asked for directly while the work was being reviewed on screen, so it overrides the
   ticket rather than reinterpreting it.
+- **Amended on the reader's call — 2026-08-12:** **the weight cap no longer cuts a block below its
+  own scaled extent.** Since the shapes became the rows' own at the lane's scale, a row can never
+  outgrow its true share of the scroll — but the old per-event ceiling cut a long message's block at
+  its head and left the rest of its span as dead lane, which read as a hole in the session. The cap's
+  claim survives as the extent itself: weight is the row's real length, never more.
 
 ## D26 — Heavy evidence summarizes, then expands inline
 

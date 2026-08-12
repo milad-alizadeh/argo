@@ -102,13 +102,18 @@ struct SpawnFixture {
                 withIntermediateDirectories: true,
             )
         }
-        try Self.installExecutable(named: "claude", in: binURL)
+        for cli in AgentCLI.allCases {
+            try Self.installExecutable(named: cli.command, in: binURL)
+        }
         self.chainFileURL = root.appending(path: "chain.json")
         self.ownershipFileURL = root.appending(path: "ownership.json")
         self.modeFileURL = root.appending(path: "mode.json")
         self.engine = Engine(readCheckout: CheckoutFixture().read, readLiveness: liveness)
         self.services = SpawnServices(
             host: host,
+            // The same stand-in for both surfaces: what a Codex spawn does with its pipes is the
+            // adapter's claim, and starting a real `codex app-server` per assertion is not.
+            codexHost: host,
             // A `PATH` the test owns, so the launch resolves against a folder it wrote rather
             // than against whatever this Mac happens to have installed.
             launcher: AgentLauncher(run: { _ in "\(binURL.path)\n" }),

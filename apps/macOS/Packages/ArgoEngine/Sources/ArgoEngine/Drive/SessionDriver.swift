@@ -49,6 +49,13 @@ public protocol SessionDriver {
     /// than disabling it, and a drop is refused with the reason.
     var canAttach: Bool { get }
 
+    /// Whether a `/command` sent to this adapter fires the CLI's OWN command handling (#685).
+    ///
+    /// Per CLI rather than per command: `claude` parses `/` in the input machinery a pasted Turn
+    /// reaches, while `codex` parses it in a TUI composer Argo never touches, so there `/foo`
+    /// arrives as prose the model reads. A Session whose adapter says no draws no picker at all.
+    var canRunCommands: Bool { get }
+
     /// Put the user's attachments where this Session's agent can read them, and answer their
     /// absolute paths, in the order given — the order the Turn names them in. It does not send;
     /// `send` carries the Turn that names these paths, so message and files arrive as one Turn.
