@@ -55,20 +55,17 @@ public enum ArgoLayout {
     /// (`docs/designs/cockpit-roster-archive-foot.md`).
     public static let rosterFootMinimumHeight: CGFloat = 22
 
-    /// The Instrument Deck's one chrome zone. The 56pt identity band above it was deleted with
-    /// #693, and with it the `cockpit-sessions-liquid-glass.png` measurement that set the band's
-    /// height — `docs/designs/cockpit-session-header.md` supersedes that study here.
+    /// The Instrument Deck's one chrome zone (`docs/designs/cockpit-session-header.md`).
     public static let deckTabSlotHeight: CGFloat = 40
 
-    /// What the glass canopy covers, and so how far the zones beneath it are inset. Derived rather
-    /// than measured, even now that it is one zone: the canopy IS the chrome, and a second number
-    /// would let the two drift the moment a zone is added back.
+    /// What the glass canopy covers, and so how far the zones beneath it are inset. Derived, so a
+    /// zone added to the canopy cannot miss the inset.
     public static var deckCanopyHeight: CGFloat {
         deckTabSlotHeight
     }
 
-    /// The context instrument on the header's trailing edge. Fixed, not a share of the line: the
-    /// branch beside it is what gives way (#502), and a shrinking instrument would move its two
+    /// The context instrument on the tab line's trailing edge. Fixed, not a share of the line: the
+    /// tabs slot beside it is what gives way, and a shrinking instrument would move its two
     /// threshold ticks on every resize.
     public static let contextInstrumentWidth: CGFloat = 200
     /// Thin enough to read as a gauge rather than as a control — nothing here is draggable.

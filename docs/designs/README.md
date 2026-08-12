@@ -48,9 +48,12 @@ Every visual implementation session must read, in order:
    pixels; and
 5. for the minimap, [`cockpit-xcode-minimap-reference.png`](cockpit-xcode-minimap-reference.png).
 
-The PNG is load-bearing rather than illustrative: the decision log carries no measurements, so
-for the Instrument Deck's zone heights it is the only source — which is why `ArgoLayout.swift`
-cites it by name.
+The PNG is load-bearing rather than illustrative: the decision log carries no measurements, so it
+was the only source for the Instrument Deck's zone heights, and `ArgoLayout.swift` cited it by
+name. **It no longer sets the deck's chrome.** #693 deleted the 56pt identity band that
+measurement was for, and
+[`cockpit-session-header.md`](cockpit-session-header.md) supersedes it there. The PNG stands for
+everything else it shows.
 
 **The sidebar is native Liquid Glass, not a dark fill.** The project strip and the Sessions
 roster share one continuous system-material column that paints no background of its own (D2,

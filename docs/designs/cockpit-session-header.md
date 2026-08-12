@@ -73,7 +73,8 @@ shipped placement supersedes it.
 | Selected tab underline | `ArgoStroke.indicator` 2, `interaction.selectionIndicator` | the deck's existing vocabulary; the prototype's 1.5px snaps up |
 | Instrument width | `ArgoLayout.contextInstrumentWidth` 200 | fixed, never a share — a shrinking instrument would move its ticks on every resize |
 | Instrument, label row to bar | `ArgoSpacing.tight` 4 | |
-| Instrument, label to reading | `ArgoSpacing.snug` 6 | |
+| Instrument, `CONTEXT` to ⓘ | `ArgoSpacing.tight` 4 | the label row's own spacing |
+| Instrument, ⓘ to reading | a spacer, `ArgoSpacing.snug` 6 as its FLOOR | not the gap: the reading is pinned to the instrument's trailing edge and the spacer takes whatever is left, so 6 is only what a reading long enough to close the gap would keep |
 | `CONTEXT` label | `ArgoTypography.badge` — interface · caption1 10 · semibold · tracking 0.6, uppercase, `text.tertiary` | **changed from `caption`**: a 40pt line has no room for the band's size |
 | Reading | `ArgoTypography.machineCaption` — machine · subheadline 11, in `ContextTierInk.readingInk` | **changed from `machine`**, same reason. The ink is amber past 150k and red past 300k, but `text.secondary` under the first line — a reading that celebrates is one the eye stops sorting from the facts beside it. The BAR keeps the tint at every tier |
 | Unreadable reading | the word `unknown` in `text.tertiary` | absence is the one thing here that is not a claim |
