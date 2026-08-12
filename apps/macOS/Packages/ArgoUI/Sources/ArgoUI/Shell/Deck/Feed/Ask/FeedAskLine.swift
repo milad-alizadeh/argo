@@ -11,7 +11,7 @@ struct FeedAskLine: View {
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.blockStep) {
             ForEach(Array(ask.questions.enumerated()), id: \.offset) { _, question in
-                FeedAskQuestion(question: question, chosen: ask.chosen(in: question), ink: ink)
+                FeedAskQuestion(question: question, offers: ask.offers(in: question), ink: ink)
             }
         }
         .padding(ArgoSpacing.comfortable)
@@ -46,18 +46,23 @@ private struct FeedAskQuestion: View {
     @Environment(\.argo) private var argo
 
     let question: Ask.Question
-    /// Which option the answer named, where it named one.
-    let chosen: String?
+    /// The options it offered, numbered, in the order it offered them.
+    let offers: [FeedAskOffer]
     let ink: ArgoColor
 
+    /// The question and its options share one grid: a marker column, then the words. So the ask
+    /// glyph is drawn in the same column the option numbers are, and the options take no indent of
+    /// their own — one step in from the row, not two.
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoFeedRow.stepBeforeProse) {
-            HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.callGap) {
+            HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
                 ArgoGlyph(ArgoSymbol.asked, .inline)
                     .foregroundStyle(ink)
+                    .frame(width: ArgoFeedRow.markerWidth, alignment: .trailing)
                 Text(question.text)
                     .argoText(ArgoTypography.body)
                     .foregroundStyle(argo.color.text.primary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             options
         }
@@ -66,9 +71,8 @@ private struct FeedAskQuestion: View {
     /// The options exactly as they were offered, in the order they were offered. A question that
     /// offered none draws none — free-form asks exist.
     @ViewBuilder private var options: some View {
-        if !question.options.isEmpty {
-            FeedAskOptions(options: question.options, chosen: chosen, ink: ink)
-                .padding(.leading, ArgoFeedRow.callSymbolWidth + ArgoFeedRow.callGap)
+        if !offers.isEmpty {
+            FeedAskOptions(offers: offers)
         }
     }
 }

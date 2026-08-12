@@ -2,74 +2,81 @@ import SwiftUI
 
 /// The options a question offered, one per line, in the order they were offered.
 ///
-/// Stacked rather than run across the row, because that is the shape they were put in: a prompt
-/// offers a numbered list to choose from, and a row of chips that wrapped at some window widths and
-/// not others would be a different question at every deck size. Nothing here is pressable — the
-/// feed is a reading, and the place to answer is the session's own terminal.
+/// Drawn as the numbered list it was put as: stacked, on the feed's own marker grid, at the feed's
+/// own prose rung. A row of chips that wrapped at some window widths and not others would be a
+/// different question at every deck size, and options set smaller than the question read as a note
+/// about the row rather than the thing being chosen between. Nothing here is pressable — the feed
+/// is a reading, and the place to answer is the session's own terminal.
 struct FeedAskOptions: View {
-    let options: [String]
-    /// The one the answer named, where it named one. Every other option goes quiet around it, and
-    /// where the answer named none they all stay exactly as they were offered.
-    let chosen: String?
-    let ink: ArgoColor
+    let offers: [FeedAskOffer]
 
     var body: some View {
         VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            ForEach(options, id: \.self) { option in
-                FeedAskOption(label: option, isChosen: option == chosen, ink: ink)
+            ForEach(offers) { offer in
+                FeedAskOption(offer: offer, isQuiet: quiets(offer))
             }
         }
+    }
+
+    /// An option steps back only when another one was taken. Where the answer named none — the
+    /// state that matters — they all stay exactly as they were offered.
+    private func quiets(_ offer: FeedAskOffer) -> Bool {
+        !offer.isChosen && offers.contains { $0.isChosen }
     }
 }
 
-/// One option, drawn as it was offered.
+/// One option, drawn as it was offered: its number, then its words.
 private struct FeedAskOption: View {
     @Environment(\.argo) private var argo
 
-    let label: String
-    let isChosen: Bool
-    let ink: ArgoColor
+    let offer: FeedAskOffer
+    let isQuiet: Bool
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: ArgoSpacing.snug) {
+        HStack(alignment: .firstTextBaseline, spacing: ArgoFeedRow.markerGap) {
             mark
-            Text(label)
-                .argoText(ArgoTypography.caption)
-                .foregroundStyle(isChosen ? argo.color.text.primary : ink)
+            Text(offer.label)
+                .argoText(ArgoTypography.body)
+                .foregroundStyle(isQuiet ? argo.color.text.secondary : argo.color.text.primary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(isChosen ? "\(label), chosen" : label)
+        .accessibilityLabel(offer.isChosen ? "\(offer.label), chosen" : offer.label)
     }
 
-    /// The chosen option is marked; the rest hold the column with an empty one, so a list of
-    /// options sets its words on a single vertical whichever of them was taken.
-    private var mark: some View {
-        Color.clear
-            .frame(width: ArgoIconSize.inline.rawValue, height: ArgoIconSize.inline.rawValue)
-            .overlay {
-                if isChosen {
-                    ArgoGlyph(ArgoSymbol.chosen, .inline)
-                        .foregroundStyle(argo.color.text.primary)
-                }
-            }
+    /// The number the option was offered under, and the mark instead of it once it was taken. One
+    /// column either way, so the words set on a single vertical whichever option was chosen — the
+    /// same column a numbered list in the prose above is drawn in.
+    @ViewBuilder private var mark: some View {
+        if offer.isChosen {
+            ArgoGlyph(ArgoSymbol.chosen, .inline)
+                .foregroundStyle(argo.color.text.primary)
+                .frame(width: ArgoFeedRow.markerWidth, alignment: .trailing)
+        } else {
+            Text(offer.marker)
+                .argoText(ArgoTypography.body)
+                .monospacedDigit()
+                .foregroundStyle(argo.color.text.tertiary)
+                .frame(width: ArgoFeedRow.markerWidth, alignment: .trailing)
+        }
     }
 }
 
 #Preview("Ask options — offered, and the one that was taken") {
     VStack(alignment: .leading, spacing: ArgoSpacing.loose) {
-        FeedAskOptions(
-            options: ["The attention ink", "The ordinary ink"],
-            chosen: nil,
-            ink: ArgoTheme.graphite.color.state.attention,
-        )
-        FeedAskOptions(
-            options: ["The attention ink", "The ordinary ink"],
-            chosen: "The ordinary ink",
-            ink: ArgoTheme.graphite.color.text.secondary,
-        )
+        FeedAskOptions(offers: FeedAskOptionsPreview.offers(chosen: nil))
+        FeedAskOptions(offers: FeedAskOptionsPreview.offers(chosen: "The ordinary ink"))
     }
     .padding(ArgoFeedRow.inset)
     .frame(width: 420)
     .argoDeckSurface()
     .argoAppearance()
+}
+
+private enum FeedAskOptionsPreview {
+    static func offers(chosen: String?) -> [FeedAskOffer] {
+        ["The attention ink", "The ordinary ink"].enumerated().map { index, label in
+            FeedAskOffer(ordinal: index + 1, label: label, isChosen: label == chosen)
+        }
+    }
 }
