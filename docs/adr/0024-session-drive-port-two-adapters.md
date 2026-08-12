@@ -94,6 +94,28 @@ While the request is open the thread reports `activeFlags: ["waitingOnApproval"]
 cockpit's "needs input" signal. Not MCP elicitation: `codex mcp-server` never raised one
 (verified dead end, 0.144.5).
 
+**On this surface the patience window is the WHOLE mechanism, not a safety net.** The `claude`
+gate has two clocks and Argo's is the shorter, so the hook's own timeout stands behind it. The
+app-server has none at all: an approval nobody answers holds the Turn open for ever
+(openai/codex#11816, and a 60s hold sat open in the #547 spike). So the adapter imposes its own
+deadline, answers `decline` when it runs out, and publishes the `PermissionExpiry` — the same
+DIRECT reading the `claude` gate publishes, arrived at with no second clock to fall back on.
+
+**Argo sends two of the four decision words**, `accept` and `decline`, and nothing else.
+`acceptForSession` would make the SERVER stop asking with no way to take that back, so a standing
+allow (#572) is held on Argo's side instead, where a revocation has something to revoke. `cancel`
+would interrupt the Turn as well as refuse the action, which is not what a Deny means. The
+server's third approval, `item/permissions/requestApproval`, answers with a permission profile
+rather than a decision word — it is refused as unsupported, because the cockpit has no control
+that produces one and a shape guessed at is worse than a refusal.
+
+**A patch prompt joins its own diff.** `item/fileChange/requestApproval` carries `itemId`,
+`threadId`, `turnId`, `reason` and `grantRoot` — no content. What the patch would write arrives on
+the item's own notifications (`item/started`, `item/fileChange/patchUpdated`), each carrying
+`changes: [{path, diff, kind}]`, so the adapter holds those per `itemId` and joins on it when the
+approval lands. A patch whose diff has not arrived is drawn verbatim rather than as an edit of
+nothing.
+
 Both paths are **DIRECT**: Argo owns the channel and the decision at both ends. This is the tier
 `CONTEXT.md` already assigns Permission, so no new tier is introduced — only a second source for
 one that exists.
@@ -192,10 +214,16 @@ Full JSON-RPC transcripts and reproduction: `docs/research/2026-08-12-codex-app-
   CLI keeps using the ChatGPT sign-in even with that variable set — so the scrub is a guard against
   a version that prefers the key, not a fix for one that does. A live Turn ran with a bogus key
   exported and was answered.
-- **The Permission half is still #549.** Until the cockpit can raise a Codex approval, the adapter
-  answers every `requestApproval` with `decline` where it arrives, and every other server→client
-  request with a JSON-RPC error. Nothing is left unanswered, because the server keeps no clock and
-  an unanswered request holds the Turn open for ever.
+- **The Permission half is exercised by the adapter (#549), against `codex-cli` 0.147.0.** Opened
+  on `Read Only`, a real app-server asked to cross the boundary; the Permission was raised on the
+  roster, `allow` let the work through and the file appeared, and `deny` refused that one action
+  while the Turn ended cleanly and the same thread answered a following one. Both are in
+  `CodexLiveTests`, gated on `ARGO_LIVE_CLI=1`. Every other server→client request is still answered
+  with a JSON-RPC error rather than left open.
+- **Both adapters pass one Permission conformance suite.** `SessionDriverConformanceTests.Permission`
+  runs each case against both, and asserts on the ROSTER row rather than on either wire — both CLIs
+  raise the same command, so the two rows compare as one value. That is what "indistinguishable in
+  the cockpit" is checked by, rather than described as.
 - **Codex records are not observed yet.** A spawned Codex Session is drivable from the moment it
   appears, but discovery sweeps only `~/.claude/projects`, so its feed stays empty until the read
   path learns `~/.codex/sessions` (ADR-0008 records the layout). Observation is not on this port,

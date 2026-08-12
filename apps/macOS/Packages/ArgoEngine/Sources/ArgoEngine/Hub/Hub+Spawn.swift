@@ -105,9 +105,22 @@ public extension Hub {
     /// the thread does not exist until the server says it does.
     private func openCodexThread(for plan: AgentSpawnPlan) {
         let claim = plan.claim
-        let thread = CodexThread(cwd: plan.cwd, mode: plan.mode) { [weak self] line in
+        let write: @MainActor (String) -> Bool = { [weak self] line in
             self?.terminals.write(line, to: claim) ?? false
         }
+        // Filed under the CLAIM like every other gate reading, so a Permission raised before the
+        // CLI has written a record survives the re-key to the id it picks.
+        let approvals = CodexApprovals(
+            patience: spawnServices.permissionPatience,
+            publish: { [weak self] readings in self?.claims.publish(readings, for: claim) },
+            write: { line in line.map { _ = write($0) } },
+        )
+        let thread = CodexThread(
+            cwd: plan.cwd,
+            mode: plan.mode,
+            approvals: approvals,
+            write: write,
+        )
         codex.open(claim, thread: thread)
         guard let opening = plan.seed.opening else { return }
         _ = thread.send(opening)

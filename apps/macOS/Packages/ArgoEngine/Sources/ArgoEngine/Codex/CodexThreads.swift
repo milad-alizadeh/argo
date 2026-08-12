@@ -29,7 +29,10 @@ final class CodexThreads {
 
     /// The process is gone, so the thread is: what is left of it is on disk, and nothing here can
     /// reach it.
+    ///
+    /// The gate is closed first. Its clocks are `Task`s sleeping for a day against a server that
+    /// has exited, and dropping the thread alone would leave them running with nothing to answer.
     func close(_ claim: SessionOwnership.ClaimID) {
-        threads.removeValue(forKey: claim)
+        threads.removeValue(forKey: claim)?.approvals.close()
     }
 }

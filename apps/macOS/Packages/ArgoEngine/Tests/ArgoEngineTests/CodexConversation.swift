@@ -76,13 +76,55 @@ struct CodexConversation {
     }
 
     /// The server asking Argo something — an approval, above all.
-    func ask(_ id: Int, method: String) {
+    func ask(_ id: Int, method: String, params: JSONValue = .object([:])) {
         emit(.object([
             "jsonrpc": .string("2.0"),
             "id": .number(Double(id)),
             "method": .string(method),
-            "params": .object([:]),
+            "params": params,
         ]))
+    }
+
+    /// One gated shell command, in the shape the #547 spike recorded verbatim.
+    func askCommand(_ id: Int, command: String, itemID: String = "exec-1") {
+        ask(id, method: "item/commandExecution/requestApproval", params: .object([
+            "threadId": .string("thread-1"),
+            "turnId": .string("turn-1"),
+            "itemId": .string(itemID),
+            "command": .string(command),
+            "cwd": .string("/work"),
+        ]))
+    }
+
+    /// One gated patch. Lean by design: the diff for it travels on the item's own notifications,
+    /// which is what `patched` puts on the wire.
+    func askPatch(_ id: Int, itemID: String = "exec-1") {
+        ask(id, method: "item/fileChange/requestApproval", params: .object([
+            "threadId": .string("thread-1"),
+            "turnId": .string("turn-1"),
+            "itemId": .string(itemID),
+            "reason": .null,
+            "grantRoot": .null,
+        ]))
+    }
+
+    /// The item carrying what a patch would write, as `item/started` reports it.
+    func patched(_ itemID: String, path: String, diff: String) {
+        notify("item/started", params: .object(["item": .object([
+            "type": .string("fileChange"),
+            "id": .string(itemID),
+            "status": .string("inProgress"),
+            "changes": .array([.object([
+                "path": .string(path),
+                "diff": .string(diff),
+                "kind": .object(["type": .string("add")]),
+            ])]),
+        ])]))
+    }
+
+    /// What Argo answered the server's request with — the decision word, by the id it named.
+    func decision(_ id: Int) -> String? {
+        answers.last { $0.id == id }?.result.stringField("decision")
     }
 
     /// The server refusing something the client asked for.

@@ -18,6 +18,12 @@ struct CodexSessionDriver: SessionDriver {
         true
     }
 
+    /// `codex` parses `/` in a TUI composer Argo never touches, so a `/command` put to this surface
+    /// arrives at the model as prose (#685). A Session here draws no picker at all.
+    var canRunCommands: Bool {
+        false
+    }
+
     func send(_ text: String, to sessionID: String) throws {
         guard SessionTurn.isSendable(text) else { throw SessionDriveError.nothingToSend }
         guard let thread = thread(for: sessionID), thread.send(text) else {
@@ -58,22 +64,27 @@ struct CodexSessionDriver: SessionDriver {
         thread.setMode(mode)
     }
 
-    /// Nothing is ever waiting yet: an approval this adapter receives is declined where it arrives,
-    /// because there is no cockpit prompt to raise it on until #549. So the honest answer to
-    /// "answer the pending one" is that there is none, and never the silence of a decision that
-    /// went nowhere.
+    /// A JSON-RPC response to the request the server is blocked on (#549) — the whole of how an
+    /// approval is decided on this surface. Keyed by request like `claude`'s, and for the same
+    /// reason: a Session can have more than one call waiting, so answering "whatever is pending"
+    /// would spend the user's Allow on the prompt that replaced the one they read.
     func decide(
-        _: PermissionDecision,
-        answering _: String,
-        for _: String,
+        _ decision: PermissionDecision,
+        answering requestID: String,
+        for sessionID: String,
     ) throws {
-        throw SessionDriveError.nothingPending
+        guard let thread = thread(for: sessionID) else { throw SessionDriveError.notDrivable }
+        guard thread.approvals.decide(decision, answering: requestID) else {
+            throw SessionDriveError.nothingPending
+        }
     }
 
-    /// A standing allow is granted by answering a Permission `allowAlways`, which this adapter
-    /// cannot yet raise (#549) — so a Session here holds none, and a revocation names nothing.
-    func revokeStandingAllow(_: String, for _: String) throws {
-        throw SessionDriveError.noSuchGrant
+    /// The grant is Argo's own, not the server's (#572). `acceptForSession` would make the SERVER
+    /// stop asking with no way back, so the standing allow lives on this side of the wire — which
+    /// is what leaves a revocation something to take.
+    func revokeStandingAllow(_ toolName: String, for sessionID: String) throws {
+        guard let thread = thread(for: sessionID) else { throw SessionDriveError.notDrivable }
+        guard thread.approvals.revoke(toolName) else { throw SessionDriveError.noSuchGrant }
     }
 
     /// `ownerOf` answers only for a claim whose process still lives, so an orphaned Session refuses
