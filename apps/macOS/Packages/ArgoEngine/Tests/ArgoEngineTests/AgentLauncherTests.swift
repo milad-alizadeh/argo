@@ -69,6 +69,25 @@ struct AgentLauncherTests {
         #expect(launch.environment["HOME"] == "/Users/somebody")
     }
 
+    /// Codex splits its billing on the credential rather than on the surface (ADR-0024), and an
+    /// exported `OPENAI_API_KEY` is the one credential a spawn could be metered on. Argo must run
+    /// on included tokens, so it hands Codex no key at all — which is a claim about what ARGO
+    /// passes, and deliberately not one about which credential a given Codex would have preferred.
+    @Test
+    func `a spawned Codex is never handed an API key`() async throws {
+        let directory = try Self.directoryHolding("codex")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let launcher = AgentLauncher(
+            run: { _ in "\(directory.path)\n" },
+            inherited: ["OPENAI_API_KEY": "sk-live", "HOME": "/Users/somebody"],
+        )
+
+        let launch = try await launcher.launch(cli: .codex, cwd: "/tmp", companion: nil)
+
+        #expect(launch.environment["OPENAI_API_KEY"] == nil)
+        #expect(launch.environment["HOME"] == "/Users/somebody")
+    }
+
     /// The shell is asked ONCE. A `PATH` does not change while a window is open, and paying a
     /// login shell's startup per spawn would be felt.
     @Test

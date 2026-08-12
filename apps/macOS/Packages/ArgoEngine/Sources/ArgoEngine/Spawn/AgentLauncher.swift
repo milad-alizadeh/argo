@@ -39,18 +39,9 @@ public actor AgentLauncher {
             executablePath: executablePath,
             cwd: cwd,
             arguments: companion?.arguments ?? [],
-            environment: environment(searchPath: searchPath, companion: companion),
+            environment: environment(searchPath: searchPath, cli: cli, companion: companion),
         )
     }
-
-    /// Variables that are true of Argo and false of every agent Argo starts.
-    ///
-    /// `CLAUDE_CODE_CHILD_SESSION` is set in the environment of a `claude` running under another
-    /// one, and a `claude` that reads it writes no transcript of its own. Argo is very often
-    /// itself such a child — it is developed from inside a Session — so a spawn that passed this
-    /// through would produce the one Session no observation could ever reach: a live PTY with no
-    /// record behind it, permanently `unknown` in the roster.
-    private static let inheritedByNobody = ["CLAUDE_CODE_CHILD_SESSION"]
 
     private func resolvedSearchPath() -> String {
         if let searchPath {
@@ -62,16 +53,17 @@ public actor AgentLauncher {
     }
 
     /// This process's environment with the shell's `PATH` over the top, plus the channel's own
-    /// variables. Inherited rather than built: an agent needs the user's whole environment —
-    /// credentials, proxies, `mise` shims — and a hand-picked subset would break a machine at a
-    /// time.
+    /// variables, less what this CLI must not inherit (`AgentCLI.scrubbedFromEnvironment`).
+    /// Inherited rather than built: an agent needs the user's whole environment — credentials,
+    /// proxies, `mise` shims — and a hand-picked subset would break a machine at a time.
     private func environment(
         searchPath: String,
+        cli: AgentCLI,
         companion: CompanionInvitation?,
     )
         -> [String: String] {
         var environment = inherited
-        for key in Self.inheritedByNobody {
+        for key in cli.scrubbedFromEnvironment {
             environment.removeValue(forKey: key)
         }
         environment["PATH"] = searchPath

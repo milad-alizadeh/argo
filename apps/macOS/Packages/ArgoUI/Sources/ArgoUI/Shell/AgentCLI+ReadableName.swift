@@ -7,6 +7,7 @@ extension AgentCLI {
     var readableName: String {
         switch self {
         case .claude: "Claude Code"
+        case .codex: "Codex"
         }
     }
 }

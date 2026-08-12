@@ -289,10 +289,12 @@ reading — Argo asked nobody, so there is nothing DIRECT to report about a deci
   whose rows take a title and nothing else. All three were tried against the real control. So a
   rung is a word on the footer and its boundary is on hover. Giving `Auto` its loudness back needs
   a bespoke label and is deferred, not faked.
-- **Codex's mapping is on paper only.** Its presets line up with the ladder rung for rung in the
-  documentation, but #535 records that no Codex approval round trip could be observed at all and
-  says the adapter "should not be assumed". Nothing here changes that: the Codex column is a
-  reading of its docs, and the ladder must not be cited as evidence the adapter works.
+- **Codex's mapping is code now, and one rung of it is exercised.** The column is spelled by
+  `CodexStance`, which the adapter puts on `thread/start` and on every `turn/start` (#548) — so a
+  Codex rung is a property of the Turn rather than a walk along a ring. `Code` is the rung the live
+  suite runs at: under `on-request` with a `workspace-write` sandbox a write inside the Workspace
+  raised no approval, which is that rung's boundary. The other three remain a reading of Codex's
+  docs. What is verified is the surface, not every rung on it.
 - **`Mode` is still not `Permission`.** The ladder is where the boundary sits; a Permission is the
   prompt raised when something reaches for it. Nothing here merges them, and the criterion that
   they never share a shape in the cockpit stands.

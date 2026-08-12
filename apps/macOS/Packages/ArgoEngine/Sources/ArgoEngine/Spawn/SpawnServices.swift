@@ -5,6 +5,10 @@ import Foundation
 @MainActor
 public struct SpawnServices {
     public let host: AgentProcessHost?
+    /// What starts a `codex app-server`, where the engine's own pipe host is not what should run —
+    /// a suite that must not launch a real CLI. `nil` takes `CodexProcessHost`, which is what the
+    /// app wants and what needs no window.
+    public let codexHost: AgentProcessHost?
     public let launcher: AgentLauncher
     /// Where the companion channel writes its sockets and plugin directories.
     public let companionRoot: URL
@@ -25,6 +29,7 @@ public struct SpawnServices {
 
     public init(
         host: AgentProcessHost?,
+        codexHost: AgentProcessHost? = nil,
         launcher: AgentLauncher = AgentLauncher(),
         companionRoot: URL = CompanionChannel.defaultRoot,
         chainFileURL: URL? = nil,
@@ -33,6 +38,7 @@ public struct SpawnServices {
         permissionPatience: PermissionPatience = .default,
     ) {
         self.host = host
+        self.codexHost = codexHost
         self.launcher = launcher
         self.companionRoot = companionRoot
         self.chainFileURL = chainFileURL
