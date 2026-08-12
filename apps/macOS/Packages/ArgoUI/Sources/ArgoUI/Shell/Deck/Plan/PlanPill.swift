@@ -7,12 +7,14 @@ struct PlanPill: View {
     @Environment(\.argo) private var argo
 
     let plan: PlanReading
-    /// Whether the list is showing before anything is pointed at or focused — a specimen's seam,
-    /// since hover cannot be reached from a screenshot.
+    /// Whether the list is showing before anybody opened it — a specimen's seam, since a click
+    /// cannot be reached from a screenshot.
     var isRevealed = false
 
-    @State private var isPointedAt = false
-    @State private var isPointedAtList = false
+    /// Opened by a click and by nothing else. It used to open on hover, which put a panel over the
+    /// middle of the reading whenever the pointer crossed the pill on its way somewhere — the
+    /// reader had asked for nothing and lost the page they were on.
+    @State private var isOpen = false
     @FocusState private var isFocused: Bool
 
     var body: some View {
@@ -24,28 +26,39 @@ struct PlanPill: View {
             .accessibilityElement(children: .contain)
     }
 
-    /// The list, standing on the pill's own top edge — the gap between them is padding INSIDE this
-    /// view rather than space outside it, so the two hover regions meet. Across a gap belonging to
-    /// neither, the list closed itself the moment the reader reached for it.
+    /// The list, standing on the pill's own top edge.
     private var list: some View {
         PlanStepList(plan: plan)
             .padding(.bottom, ArgoPlanPill.listGap)
             .alignmentGuide(.top) { $0[.bottom] }
             .opacity(showsList ? 1 : 0)
             // Not merely invisible: a hidden list still under the pointer would eat the clicks
-            // meant for the feed behind it, and would open itself from empty space.
+            // meant for the feed behind it.
             .allowsHitTesting(showsList)
-            .onHover { isPointedAtList = $0 }
             .accessibilityHidden(!showsList)
     }
 
-    /// Revealed by any way in — hover for a pointer, focus for a keyboard, and the list keeps
-    /// itself open once it is.
     private var showsList: Bool {
-        isRevealed || isPointedAt || isPointedAtList || isFocused
+        isRevealed || isOpen
     }
 
+    /// A Button rather than a tap gesture, so Space and Return open the list for a keyboard the
+    /// same way a click does — and `ESC` gives it back, since the list stands over the reading.
     private var pill: some View {
+        Button { isOpen.toggle() } label: { line }
+            .buttonStyle(.plain)
+            .focusable()
+            .focused($isFocused)
+            .onExitCommand { isOpen = false }
+            // On the PILL and not on the view that also holds the list: an element spanning both
+            // puts this label on a frame the pointer cannot land in.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Plan")
+            .accessibilityValue(spoken)
+            .accessibilityHint(showsList ? "Hides the steps" : "Shows the steps")
+    }
+
+    private var line: some View {
         HStack(spacing: ArgoPlanPill.gap) {
             PlanRing(progress: plan.progress)
             PlanCounter(counter: counter)
@@ -57,14 +70,6 @@ struct PlanPill: View {
         .padding(.horizontal, ArgoPlanPill.insetX)
         .padding(.vertical, ArgoPlanPill.insetY)
         .argoFloatingGlass(in: .capsule)
-        // On the PILL and not on the view that also holds the list: an element spanning both puts
-        // this label on a frame the pointer cannot land in.
-        .onHover { isPointedAt = $0 }
-        .focusable()
-        .focused($isFocused)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Plan")
-        .accessibilityValue(spoken)
     }
 
     /// Where the agent is in the list — or, when the list names no step in progress, how much of
