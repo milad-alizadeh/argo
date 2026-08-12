@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// The band at the top of the deck, and the window title above it that took the band's identity
-/// (#692): one entry per access posture, and one per reading the band still has to carry.
+/// The deck's chrome: the window title that took the identity band's title (#692), and the tab
+/// line that took its instruments before the band was deleted (#693). One entry per access
+/// posture, and one per reading the tab line has to carry.
 ///
-/// The posture entries render the TITLE rather than the band, because that is where a posture is
-/// drawn now — the band draws the state word, the offer and the instrument, none of which the
-/// posture decides. The band's own entries are the two keyed families below it.
+/// The posture entries render the TITLE rather than the tab line, because that is where a posture
+/// is drawn — the line draws the state word, the offer and the instrument, none of which the
+/// posture decides. The line's own entries are the two keyed families below it.
 ///
 /// Those families are MAPPED from their fixtures rather than listed again here. A tier or an offer
 /// state is added to its fixture list and is renderable from that one edit — there is no second
@@ -25,9 +26,9 @@ extension SpecimenRegistry {
                 header: SessionHeaderFixture.handedOff,
             )
         },
-        // The band with no identity left on it — what #693 deletes, and what has to hold its
-        // height until it does.
-        SpecimenEntry("sessionHeader") { SessionHeaderSpecimen(access: .managed) },
+        // The tab line carrying the instruments, on an ordinary managed Session — the state the
+        // other two families vary.
+        SpecimenEntry("tabLineInstruments") { SessionHeaderSpecimen(access: .managed) },
     ]
 
     private static let postures: [SpecimenEntry] = [
