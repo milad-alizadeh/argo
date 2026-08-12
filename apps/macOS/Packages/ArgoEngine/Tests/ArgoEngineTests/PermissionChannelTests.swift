@@ -55,6 +55,56 @@ struct PermissionChannelTests {
         }
     }
 
+    /// `Auto` is "no boundary, asks nothing" (ADR-0025), and Argo's own gate is part of "nothing":
+    /// the hook still fires and still gets an answer, but nobody is asked for it (#663).
+    @Test
+    func `a call on Auto is allowed without anyone being asked`() async throws {
+        try await PermissionGate.withGate(on: .auto) { fixture, _, client in
+            client.sendLine(PermissionGate.bashCall)
+
+            let answer = try await PermissionGate.word(read: client)
+
+            #expect(answer == "allow")
+            #expect(fixture.hub.sessions.first?.permission == nil)
+        }
+    }
+
+    /// The rung below the top still has an edge, so the gate must go on asking there — without this
+    /// a build that simply stopped gating would pass the test above (#663).
+    @Test
+    func `a call on Read Only still asks`() async throws {
+        try await PermissionGate.withGate(on: .readOnly) { fixture, _, client in
+            client.sendLine(PermissionGate.bashCall)
+            await settle { fixture.hub.sessions.first?.permission != nil }
+
+            #expect(fixture.hub.sessions.first?.permission != nil)
+        }
+    }
+
+    /// The rung is read at the call and never held from the spawn, which is what makes the walk
+    /// (#653) reach the gate: the same Session asks on `Code` and stops asking once it is moved.
+    @Test
+    func `a rung the Session walks to is the one the next call is judged by`() async throws {
+        let gate = try GateFixture()
+        defer { gate.remove() }
+        let asking = try #require(CompanionClient(socketPath: gate.socketPath))
+        defer { asking.close() }
+
+        asking.sendLine(PermissionGate.bashCall)
+        await settle { !gate.facts.waiting.isEmpty }
+        #expect(!gate.facts.waiting.isEmpty)
+
+        gate.rung = .auto
+        let allowed = try #require(CompanionClient(socketPath: gate.socketPath))
+        defer { allowed.close() }
+        allowed.sendLine(PermissionGate.bashCall)
+
+        #expect(try await PermissionGate.word(read: allowed) == "allow")
+        // The call that was already waiting stays waiting: the rung says what happens NEXT, and
+        // a prompt somebody is looking at is not something a later change may answer for them.
+        #expect(gate.facts.waiting.count == 1)
+    }
+
     @Test
     func `an allow goes back down the hook and clears the prompt`() async throws {
         try await PermissionGate.withGate { fixture, claim, client in

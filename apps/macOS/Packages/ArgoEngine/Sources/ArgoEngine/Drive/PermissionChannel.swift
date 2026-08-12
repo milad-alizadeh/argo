@@ -25,16 +25,26 @@ final class PermissionChannel {
     /// Written into directly rather than mirrored back through callbacks (#634): all three readings
     /// this channel owns land under one claim key, so there is nothing left for a caller to route.
     private let ledger: ClaimLedger
+    /// Where the Session stands, read at the moment a call arrives rather than held from its
+    /// spawn: a rung is walked mid-Session (#653), and a copy taken at the grant would go on
+    /// gating for a boundary the Session has already left.
+    private let rung: (SessionOwnership.ClaimID) -> SessionMode?
     private var sockets: [SessionOwnership.ClaimID: CompanionSocket] = [:]
     private var pending: [SessionOwnership.ClaimID: [Pending]] = [:]
     private var expired: [SessionOwnership.ClaimID: [PermissionExpiry]] = [:]
     private var standing = StandingAllowTable()
     private var issued = 0
 
-    init(root: URL, patience: PermissionPatience = .default, ledger: ClaimLedger) {
+    init(
+        root: URL,
+        patience: PermissionPatience = .default,
+        ledger: ClaimLedger,
+        rung: @escaping (SessionOwnership.ClaimID) -> SessionMode?,
+    ) {
         self.root = root
         self.patience = patience
         self.ledger = ledger
+        self.rung = rung
     }
 
     /// Open this claim's gate and say where its hook should dial.
@@ -167,6 +177,15 @@ final class PermissionChannel {
             // Fail closed, and fast: a request Argo could not read is not one the user can be
             // shown, and leaving the hook to its timeout would freeze the turn for nothing.
             return reply(PermissionReply.line(.deny))
+        }
+        // The top rung is "no boundary, asks nothing" (ADR-0025), and Argo's own gate is part of
+        // "nothing": a Session there is answered rather than shown, or the rung's definition is
+        // false wherever the CLI hands its calls to a hook (#663).
+        //
+        // Answered and not left ungated: the rung is walked mid-Session, so a Session that opens on
+        // `Auto` and is moved down has to find a gate already there to ask through.
+        guard rung(claim) != .auto else {
+            return reply(PermissionReply.line(.allow))
         }
         // A tool the user has already ruled on for this Session never becomes a prompt at all.
         guard !standing.allows(request.toolName, for: claim) else {

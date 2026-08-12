@@ -52,7 +52,7 @@ a rung the agent acts; at its edge Permission fires.
 | **Read Only** | no writes are possible | `plan` | `read-only` |
 | **Plan** | Read Only, plus a plan to hand off | `plan` + `ExitPlanMode` | `/plan` |
 | **Code** | writes and runs inside the Workspace, asks to leave it | `acceptEdits` | Auto preset |
-| **Auto** | no boundary, asks nothing | `auto` | Full Access |
+| **Auto** | no boundary, asks nothing — **Argo's own gate allows without raising a Permission** (read from `claude` 2.1.228, #663) | `auto` | Full Access |
 
 The `claude` column was read from
 [the permission-modes reference](https://code.claude.com/docs/en/permission-modes) and then
@@ -132,7 +132,7 @@ waiting on a sweep that had not begun. The rows are what the tests establish now
 
 | Rung | Flag | What the live run established |
 |---|---|---|
-| **Auto** | `auto` | Spawned on it, the transcript reports `auto`. The gated call does **not** yet run unasked — see the mid-Session section below: Argo's own gate hook asks at every rung, so this half of #629 is still open. |
+| **Auto** | `auto` | Spawned on it, the transcript reports `auto`. The gated call ran unasked once the gate learned the ladder — see the `Auto` section below (#663). |
 | **Code** | `acceptEdits` | Spawned on it, a gated `Bash` call still raises a Permission — the rung accepts edits, not commands. Unchanged from 2.1.227. |
 | **Read Only** | `plan` | Spawned on it, the agent does not write and the file it was asked for is never created. |
 | **Plan** | `plan` | The same value and the same observed behaviour as Read Only. Its intent is unobservable by construction, which is what this ADR already says. |
@@ -186,6 +186,9 @@ Argo's, not the CLI's. The rung itself reaches the CLI either way, which both re
 show. **This is #629's remaining half**: the flag is honoured and the walk lands, but the gate has
 to learn the ladder before `Auto` behaves like the top of it.
 
+*(Closed by #663 — the section below. The gate reads the rung now, so a gated call IS evidence
+again at every rung but the top, where it is evidence of the opposite.)*
+
 **A set outranks the record until a record is written AFTER it — counted, not compared.** The
 earlier rule compared the CLI value seen when the rung was set, which cannot tell a record that
 has not caught up from one that has spoken and repeated the old value. That is precisely what a
@@ -217,6 +220,41 @@ which is the same failure `modeBusy` prevents.
 *(Amended by #629: the set was originally kept with the record's VALUE. See the 2.1.228
 verification above for why counting is the only version of this rule that can notice a change the
 CLI ignored.)*
+
+## Verification · what the gate does at `Auto`, 2.1.228, 2026-08-12 (#663)
+
+`Auto` still asked, because the boundary the rung names was Argo's to keep and Argo was not keeping
+it. The rung reached the CLI (both sections above), and then Argo's own `PreToolUse` hook asked
+anyway — so the CLI stopped asking on `Auto` and Argo started.
+
+**The hook reaches Argo at `auto`, and the CLI honours what comes back.** Read by rebuilding the
+companion plugin's own hook — the fifo-held `nc -U` of `Companion/Plugin/permission-hook.sh` —
+behind a real Unix socket listener outside the Workspace, then asking a headless 2.1.228 for one
+gated `Bash` call while standing on `auto`:
+
+| What was read | At `auto` |
+|---|---|
+| The `PreToolUse` hook runs at all | yes — payload carries `"permission_mode":"auto"` |
+| It can dial a socket outside the Workspace | yes, though `auto` sandboxes the Bash call itself |
+| The `allow` it carries back is honoured | yes — the call ran and the file appeared |
+
+So the two candidate causes the ticket named are settled: **the hook call does reach
+`PermissionChannel`**, and nothing about `auto`'s sandbox stops it. What was missing was only the
+rung, and the gate now reads it.
+
+**"Asks nothing" is answered, not left ungated.** The other shape — install no gate for a Session
+spawned on `Auto` — is simpler and was rejected, because a rung is *walked* mid-Session (#653): a
+Session moved down from `Auto` to `Code` would find no gate to ask through, and the rung it stands
+on would be a boundary nothing enforces. The gate is installed at every rung and allows at the top.
+
+**The rung is read at the call, never held from the spawn**, for the same reason. `PermissionChannel`
+takes a closure over the roster and asks it per call, so the reading the gate honours is the one the
+composer draws and a walk counts its distance from. A copy taken at the grant would gate for a
+boundary the Session had already left.
+
+**Nothing is published for a call allowed this way.** No Permission is raised, so the cockpit shows
+what it shows for any ungated tool: the Tool Call itself, off the transcript. That is the honest
+reading — Argo asked nobody, so there is nothing DIRECT to report about a decision it never made.
 
 ## Consequences
 

@@ -46,6 +46,12 @@ public extension Hub {
                 events: events(for: claim),
             )
             terminals.adopt(claim, process: process)
+            // Filed under the CLAIM as well as on the row, so the rung outlives the re-key to the
+            // id the CLI picks (#663). The row published below stands down at that moment, and
+            // until the first stance record lands it is the only thing that knows the rung — which
+            // the gate reads to decide whether this Session asks at all. A resume publishes no row
+            // at all, so there it is the only place the rung ever lives.
+            claims.setMode(SessionModeSet(mode: mode), for: claim)
             // A resume already has its row — the Session it continues — so publishing a second one
             // would draw that Session twice until the CLI wrote a record.
             if seed.resuming == nil {

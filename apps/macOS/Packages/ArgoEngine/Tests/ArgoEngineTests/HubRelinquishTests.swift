@@ -64,7 +64,12 @@ struct HubRelinquishTests {
 
             fixture.hub.endOwnedSessions()
 
-            #expect(fixture.hub.facts(forClaim: claim) == ClaimFacts())
+            // The three readings the GATE owns, and not the whole record: the rung Argo spawned
+            // this Session on is something that happened, so it outlives the PTY (#663).
+            let facts = fixture.hub.facts(forClaim: claim)
+            #expect(facts.waiting.isEmpty)
+            #expect(facts.standing.isEmpty)
+            #expect(facts.expiries.isEmpty)
         }
     }
 
