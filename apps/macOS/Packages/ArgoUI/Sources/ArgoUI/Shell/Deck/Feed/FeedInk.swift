@@ -2,18 +2,11 @@ import Foundation
 
 /// What a row of the reading stands for, and the ink it is drawn in (#382).
 ///
-/// The FEED owns this, not the minimap, and each of the feed's own types answers with its own —
-/// `FeedAsk.ink`, `FeedCall.ink`, `FeedMark.ink`. The row paints from it and the lane draws from
-/// it, so there is no second table of colours to fall out of step with the first. That drift is
-/// what put attention amber on a settled question in the lane while the row below it had already
-/// gone quiet.
+/// Each of the feed's own types answers with its own — `FeedAsk.ink`, `FeedCall.Ending.ink`,
+/// `FeedMark.ink` — and both the row and the lane read that one value.
 ///
-/// No hue is spent here that the rows do not spend: the text ramp for what was said, the two diff
-/// inks for what a mutation did, and attention for the one row waiting on somebody. Every role is
-/// opaque, because the lane's own alpha is applied on top and a translucent role would dim twice.
-///
-/// Colour is never the whole answer. D25's map may not depend on it, so the run's SHAPE carries the
-/// class too — see `Shape` here, and the spans the projection gives each kind.
+/// Every role must stay opaque: the lane applies its own alpha on top, and a translucent role
+/// would be dimmed twice.
 enum FeedInk: Equatable, Sendable, CaseIterable {
     /// What someone asked for.
     case prompt
@@ -63,12 +56,6 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         case .attention: .band
         case .boundary: .rule
         }
-    }
-
-    /// The role the feed reads this kind in, at the lane's own alpha. Taken off the palette rather
-    /// than named, so a second appearance moves the lane with everything else.
-    func color(in palette: ArgoPalette) -> ArgoColor {
-        role(in: palette).opacity(ArgoMinimapLane.runOpacity)
     }
 
     /// This ink where it says a STATE, and `nil` where it is only a rung. The feed colours a

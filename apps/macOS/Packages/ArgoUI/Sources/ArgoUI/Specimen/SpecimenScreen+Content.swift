@@ -203,9 +203,15 @@ extension SpecimenScreen {
             sessions(FeedProjection.longRows, held: FeedProjection.longHeldRowID)
         case .feedLeftBehindInSilence:
             sessions(FeedProjection.longSilentRows, held: FeedProjection.longHeldRowID)
-        case .minimapLane, .minimapLaneHeld, .minimapLaneShortReading, .minimapLaneNamingTurn,
-             .minimapLaneEveryPrompt, .minimapLaneKinds:
-            minimap
+        // Which lane state each shows is named HERE, in the one switch the build already holds
+        // exhaustive. A lookup beside it would need a fallback, and a fallback is what lets a case
+        // added later render the wrong lane in silence.
+        case .minimapLane: minimap(.following)
+        case .minimapLaneHeld: minimap(.held)
+        case .minimapLaneShortReading: minimap(.shortReading)
+        case .minimapLaneNamingTurn: minimap(.namingTurn)
+        case .minimapLaneEveryPrompt: minimap(.everyPrompt)
+        case .minimapLaneKinds: minimap(.kinds)
         case .twoReadings:
             // A pane's state must die with its Session, which `FeedRow.ID` being a POSITION
             // otherwise carries across.

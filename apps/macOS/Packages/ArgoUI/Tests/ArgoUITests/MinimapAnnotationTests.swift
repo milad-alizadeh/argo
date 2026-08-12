@@ -20,7 +20,7 @@ struct MinimapAnnotationTests {
 
     @Test
     func `a lane nobody is pointing at marks no Turn`() {
-        #expect(Self.mounted().lane.drawnAnnotations.isEmpty)
+        #expect(Self.mounted().lane.marking.isEmpty)
     }
 
     @Test
@@ -29,8 +29,8 @@ struct MinimapAnnotationTests {
 
         try deck.lane.mouseMoved(with: #require(Self.pointer(.mouseMoved, at: 120)))
 
-        let marked = try #require(deck.lane.drawnAnnotations.first)
-        #expect(deck.lane.drawnAnnotations.count == 1)
+        let marked = try #require(deck.lane.marking.first)
+        #expect(deck.lane.marking.count == 1)
         #expect(marked.span.contains(120))
     }
 
@@ -43,7 +43,7 @@ struct MinimapAnnotationTests {
         // nothing off the event it is handed.
         try deck.lane.mouseExited(with: #require(Self.pointer(.mouseMoved, at: 120)))
 
-        #expect(deck.lane.drawnAnnotations.isEmpty)
+        #expect(deck.lane.marking.isEmpty)
     }
 
     /// The whole reason the annotations are their own layer. A pointer crossing the lane must not
@@ -80,19 +80,34 @@ struct MinimapAnnotationTests {
 
         deck.lane.readModifiers([.shift, .command])
 
-        #expect(deck.lane.drawnAnnotations.count > 1)
+        #expect(deck.lane.marking.count > 1)
     }
 
-    /// Labels drawn on top of each other are none of them, so the lane drops the ones that would
-    /// not fit rather than stacking them.
+    /// Labels drawn on top of each other are none of them, so the lane drops the WORDS from any
+    /// that would not fit.
     @Test
-    func `no two Turns are marked closer together than a label can be read`() {
+    func `no two Turns are labelled closer together than a label can be read`() {
         let deck = Self.mounted()
         deck.lane.readModifiers([.shift, .command])
 
-        let heads = deck.lane.drawnAnnotations.map(\.span.lowerBound)
-        #expect(zip(heads, heads.dropFirst()).allSatisfy {
+        let labelled = deck.lane.marking
+            .filter { $0.words != nil }
+            .map { $0.labelY(inside: MinimapLaneFixture.column.height) }
+        #expect(!labelled.isEmpty)
+        #expect(zip(labelled, labelled.dropFirst()).allSatisfy {
             $1 - $0 >= ArgoMinimapLane.labelHeight
         })
+    }
+
+    /// The line says a Turn is THERE, which stays true whether or not there is room to say what it
+    /// asked. A crowded label may lose its words; its Turn may not lose its mark.
+    @Test
+    func `a Turn too crowded to label is still marked`() {
+        let deck = Self.mounted()
+        deck.lane.readModifiers([.shift, .command])
+
+        let marked = deck.lane.marking
+        #expect(marked.contains { $0.words == nil })
+        #expect(marked.allSatisfy { $0.span.upperBound > $0.span.lowerBound })
     }
 }

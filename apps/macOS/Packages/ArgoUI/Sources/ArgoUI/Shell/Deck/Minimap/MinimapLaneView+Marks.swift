@@ -29,16 +29,24 @@ extension MinimapLaneView {
     private func paint(_ band: MinimapBand) {
         guard let palette else { return }
         let marks = geometry.marks(in: band.range)
-        let inks = FeedInk.allCases.map { $0.color(in: palette) }
+        let inks = FeedInk.allCases.map { ink($0, in: palette) }
         guard band != drawnBand || marks != drawnMarks || inks != inked else { return }
         markRedraws += 1
         drawnBand = band
         drawnMarks = marks
         inked = inks
-        // Two before the view has a window to ask: the lane is only ever built on a Retina Mac, and
-        // a wrong guess costs one re-rasterise from `viewDidChangeBackingProperties`.
-        marksLayer.contentsScale = window?.backingScaleFactor ?? 2
+        marksLayer.contentsScale = backingScale
         marksLayer.contents = bitmap(marks, in: band)
+    }
+
+    /// A run's ink: the feed's own role at the lane's alpha. Under Increased Contrast the shapes
+    /// have to clear the surface before they have to sit under the words, so the alpha lifts —
+    /// which is also why `paint` compares on this rather than on the palette.
+    private func ink(_ ink: FeedInk, in palette: ArgoPalette) -> ArgoColor {
+        let alpha = raisesContrast
+            ? ArgoMinimapLane.runOpacityRaised
+            : ArgoMinimapLane.runOpacity
+        return ink.role(in: palette).opacity(alpha)
     }
 
     private func bitmap(_ marks: [MinimapMark], in band: MinimapBand) -> CGImage? {
@@ -65,7 +73,7 @@ extension MinimapLaneView {
             width: (mark.span.upperBound - mark.span.lowerBound) * drawable,
             height: mark.height,
         )
-        let ink = mark.ink.color(in: palette).cgColor
+        let ink = ink(mark.ink, in: palette).cgColor
         switch mark.ink.shape {
         case .bar, .band, .rule:
             context.setFillColor(ink)

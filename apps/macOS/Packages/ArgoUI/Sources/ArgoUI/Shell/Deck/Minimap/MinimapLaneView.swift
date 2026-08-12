@@ -22,6 +22,12 @@ final class MinimapLaneView: NSView {
         didSet { settleViewport() }
     }
 
+    /// Whether the reader asked for Increased Contrast, which lifts the runs' alpha so the marks
+    /// clear the surface they sit on.
+    var raisesContrast = false {
+        didSet { settleViewport() }
+    }
+
     /// Where inside the viewport rectangle a scrub was picked up — and, by being set at all, that
     /// one is in progress. The geometry is frozen for as long as it is.
     var grab: CGFloat?
@@ -36,26 +42,25 @@ final class MinimapLaneView: NSView {
     /// Where down the lane the pointer is, when it is on it (#382).
     var pointedAt: CGFloat?
 
-    /// The Turn a still names instead, as a share of the lane — see `MinimapNaming`. Resolved
-    /// against the height rather than stored as a point, because it is set before the lane has one.
-    var namedShare: CGFloat?
+    /// What a still asks the lane to name instead of a pointer — see `MinimapNaming`.
+    var naming = MinimapNaming.nothing {
+        didSet { settleAnnotations() }
+    }
 
     /// Which place down the lane is naming a Turn. The pointer wins: a real hand on the surface is
-    /// never overruled by what a specimen asked for.
+    /// never overruled by what a specimen asked for. A still's share is resolved against the height
+    /// here rather than stored as a point, because it is set before the lane has one.
     var hovered: CGFloat? {
-        pointedAt ?? namedShare.map { bounds.height * $0 }
+        pointedAt ?? naming.share.map { bounds.height * $0 }
     }
 
     /// Whether ⇧⌘ is held, which asks for every Turn at once rather than the one under the pointer.
     var holdsBothKeys = false
 
-    /// The same asked for by a still — see `MinimapNaming`.
-    var namesEveryTurn = false
-
     /// Whether every Turn on screen is named. Either source will do: one is a hand on the keyboard,
     /// the other is a render saying what state it is showing.
     var showsEveryPrompt: Bool {
-        holdsBothKeys || namesEveryTurn
+        holdsBothKeys || naming == .everyTurn
     }
 
     /// The modifier watch, held only while the pointer is on the lane.
@@ -89,14 +94,16 @@ final class MinimapLaneView: NSView {
     /// The annotation layer (#382). Over the marks and the lit range both, because an annotation is
     /// read rather than looked at, and it is the only layer a hover ever touches.
     let annotationsLayer = CALayer()
-    var drawnAnnotations: [MinimapAnnotation] = []
+    /// What the lane is marking right now. The lane's rendered output is a bitmap, so this is the
+    /// form in which it can say what went into one — and it is what a repaint is compared against.
+    /// Written by `settleAnnotations` and read everywhere else.
+    var marking: [MinimapAnnotation] = []
     /// Every ink the annotations were drawn in, so a palette that did not change does not re-set
     /// them — and one that moved any of the three does.
     var labelled: [ArgoColor] = []
 
-    /// The lit rectangle, which IS this reading's scrollbar. The feed's own overlay scroller stays
-    /// off: it would draw between the reading and its map, and a knob beside a viewport marker that
-    /// spans the same range is the same fact drawn twice.
+    /// The lit rectangle, which IS this reading's scrollbar — the feed's own overlay scroller stays
+    /// off, because it would draw between the reading and its map.
     private let viewportLayer = CALayer()
 
     override init(frame: NSRect) {
@@ -131,6 +138,13 @@ final class MinimapLaneView: NSView {
     /// Where the marks bitmap currently sits, band and all.
     var marksFrame: CGRect {
         marksLayer.frame
+    }
+
+    /// Whether the marks are held inside the lane while the annotations are let OUT of it. Both
+    /// halves at once, because that is the claim: the band may not paint over the deck around it,
+    /// and a Turn's label must still reach the reading beside it.
+    var clipsMarksOnly: Bool {
+        marksClip.masksToBounds && layer?.masksToBounds == false
     }
 
     /// The reading re-read and the lane put where it now sits.

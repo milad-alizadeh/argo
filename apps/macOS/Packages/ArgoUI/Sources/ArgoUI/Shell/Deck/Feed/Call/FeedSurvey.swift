@@ -87,6 +87,11 @@ struct FeedSurvey: Equatable, Sendable {
             )
         }
     }
+
+    /// How long the fold's line runs, in characters: a verb and a small number per tally.
+    var length: Int {
+        tallies.reduce(0) { $0 + $1.kind.verb.utf8.count + 3 }
+    }
 }
 
 extension FeedCall {

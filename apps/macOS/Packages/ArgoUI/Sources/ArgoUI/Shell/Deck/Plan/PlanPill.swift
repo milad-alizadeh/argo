@@ -11,9 +11,8 @@ struct PlanPill: View {
     /// cannot be reached from a screenshot.
     var isRevealed = false
 
-    /// Opened by a click and by nothing else. It used to open on hover, which put a panel over the
-    /// middle of the reading whenever the pointer crossed the pill on its way somewhere — the
-    /// reader had asked for nothing and lost the page they were on.
+    /// Opened by a click and by nothing else: the list stands over the middle of the reading, so a
+    /// pointer crossing the pill on its way somewhere may not open it.
     @State private var isOpen = false
     @FocusState private var isFocused: Bool
 

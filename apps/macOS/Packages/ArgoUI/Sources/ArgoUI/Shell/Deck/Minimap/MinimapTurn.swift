@@ -1,9 +1,6 @@
 import Foundation
 
 /// One Turn's stretch of the reading — the semantic block the lane draws a line beside (#382).
-///
-/// A Turn is the unit here because it is the unit the reader thinks in: one thing asked, and
-/// everything that happened because of it. Xcode marks a declaration; we mark a Turn.
 struct MinimapTurn: Equatable, Sendable {
     /// The rows it holds, both ends included.
     let rows: ClosedRange<Int>

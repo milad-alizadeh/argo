@@ -68,29 +68,4 @@ private extension FeedCall {
         }
         return .change(length: length, added: churn.added, removed: churn.removed)
     }
-
-    /// How long the row's sentence runs, without building it. `spoken` joins five pieces, and
-    /// joining them once per call row per reshape is a string the lane never draws.
-    var length: Int {
-        kind.verb.utf8.count + 1 + subject.length
-    }
-}
-
-private extension FeedCall.Subject {
-    var length: Int {
-        switch self {
-        case let .file(file): file.name.utf8.count + (file.qualifier?.utf8.count ?? 0)
-        case let .command(command): command.utf8.count
-        case let .plain(text): text.utf8.count
-        case let .narration(text, _): text.utf8.count
-        }
-    }
-}
-
-private extension FeedSurvey {
-    /// A fold's line is its tallies, and each tally is a verb and a small number. Counted rather
-    /// than rendered, for the reason a call's is.
-    var length: Int {
-        tallies.reduce(0) { $0 + $1.kind.verb.utf8.count + 3 }
-    }
 }

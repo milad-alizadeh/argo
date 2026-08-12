@@ -61,17 +61,14 @@ struct MinimapLaneTests {
         #expect(deck.lane.marksFrame.maxY > Self.column.height)
     }
 
-    /// The band is taller than the lane, so something has to clip it. Unclipped, it painted over
-    /// the
-    /// deck header above and the row below. Not the lane itself, which lets a Turn's label out to
-    /// the reading beside it — the marks get a clipping layer of their own.
+    /// The band is taller than the lane, so something has to clip it — but not the lane itself,
+    /// which lets a Turn's label out to the reading beside it.
     @Test
-    func `the band is clipped to the lane it hangs out of`() throws {
+    func `the band is clipped to the lane it hangs out of`() {
         let deck = Self.mounted(over: FeedProjection.longRows)
 
         #expect(deck.lane.marksFrame.height > Self.column.height)
-        #expect(try #require(deck.lane.marksLayer.superlayer).masksToBounds)
-        #expect(try !#require(deck.lane.layer).masksToBounds)
+        #expect(deck.lane.clipsMarksOnly)
     }
 
     /// Once, for the whole travel from one end of the session to the other. How big the band that
@@ -105,6 +102,34 @@ struct MinimapLaneTests {
 
         // Clicked near the head of the lane, so the reading went back towards its start.
         #expect(try #require(deck.feed.offset()) < 4000)
+    }
+
+    /// The ticket asks for a click on a Turn to scroll the feed TO it, so the reading opens at the
+    /// Turn's head rather than centred on wherever inside it the hand happened to land.
+    @Test
+    func `a click on a Turn opens the reading at that Turn`() throws {
+        let deck = Self.mounted(over: FeedProjection.longRows)
+        deck.feed.settle(at: 0, over: nil)
+        let laneY: CGFloat = 200
+        let named = try #require(deck.lane.geometry.block(atMiniatureY: laneY))
+
+        try deck.lane.mouseDown(with: #require(Self.pointer(.leftMouseDown, at: laneY)))
+
+        // The Turn's head is now at the top of what is on screen, within one drawn line of it.
+        let opened = try deck.lane.geometry.viewportY(at: #require(deck.feed.offset()))
+        #expect(abs(opened - named.y) < deck.lane.geometry.lineSlot)
+    }
+
+    /// D25's map may not depend on colour, and under Increased Contrast a shape has to clear the
+    /// surface it sits on before it has to sit under the words.
+    @Test
+    func `the runs are drawn louder under Increased Contrast`() {
+        let deck = Self.mounted(over: FeedProjection.longRows)
+        let quiet = deck.lane.markRedraws
+
+        deck.lane.raisesContrast = true
+
+        #expect(deck.lane.markRedraws > quiet)
     }
 
     @Test

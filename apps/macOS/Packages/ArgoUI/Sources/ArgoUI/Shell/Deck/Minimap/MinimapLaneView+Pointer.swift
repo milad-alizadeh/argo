@@ -121,9 +121,9 @@ extension MinimapLaneView {
         scroller.scrollWheel(with: event)
     }
 
-    /// A press on the rectangle picks it up where it was grabbed; a press anywhere else in the lane
-    /// takes the reading there first, in one short animated scroll, and picks the rectangle up at
-    /// its centre — so a drag that follows carries on rather than jumping.
+    /// A press on the rectangle picks it up where it was grabbed; a press anywhere else opens the
+    /// Turn it landed in, in one short animated scroll, and picks the rectangle up where the hand
+    /// now sits over it — so a drag that follows carries on rather than jumping.
     ///
     /// A lane with nothing to scroll answers nothing. It draws no rectangle either, and a press
     /// that silently issued a scroll on a surface showing no viewport is a press that lied.
@@ -131,12 +131,24 @@ extension MinimapLaneView {
         guard geometry.isScrollable else { return }
         let laneY = laneY(of: event)
         let band = viewportBand()
-        if band.contains(laneY) {
+        guard !band.contains(laneY) else {
             grab = laneY - band.lowerBound
-        } else {
-            grab = geometry.viewportHeightInLane / 2
-            settle(at: geometry.offset(centringLaneY: laneY), over: pace)
+            return
         }
+        let offset = openedOffset(at: laneY)
+        grab = min(max(0, laneY - geometry.viewportY(at: offset)), geometry.viewportHeightInLane)
+        settle(at: offset, over: pace)
+    }
+
+    /// Where a click takes the reading: the head of the Turn it landed in, at the top of the
+    /// viewport. Past the end of the reading there is no Turn to open, so the click centres on the
+    /// place it landed instead.
+    private func openedOffset(at laneY: CGFloat) -> CGFloat {
+        let slide = geometry.laneOffset(at: feed?.offset() ?? 0)
+        guard let block = geometry.block(atMiniatureY: laneY + slide) else {
+            return geometry.offset(centringLaneY: laneY)
+        }
+        return geometry.offset(forLaneY: block.y - slide)
     }
 
     /// The scrub. Instant, and mapped through the same one place-in-the-lane-is-a-place-in-the-

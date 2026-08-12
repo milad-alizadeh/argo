@@ -1,19 +1,13 @@
 import AppKit
 
-// The annotation half of the lane (#382): which Turn the pointer is naming, the Ion Blue line that
-// spans it, and the prompt drawn beside it.
+// The annotation half of the lane (#382): which Turn is named, the Ion Blue line that spans it, and
+// the prompt drawn beside it.
 //
-// Its own layer, and the only one a hover touches. The marks bitmap is never re-rasterised for a
-// pointer moving over the lane — an annotation is something laid over the miniature, not part of
-// it.
+// Its own layer, and the only one a hover touches — the marks bitmap is never re-rasterised for a
+// pointer moving over the lane.
 //
 // The label hangs to the LEFT of the lane, over the reading, right-aligned so it ends where the
-// lane
-// begins. The lane is about a hundred points wide, which is four or five words; a prompt cut there
-// says nothing a reader could tell one Turn from another by.
-//
-// The line is drawn for the named Turn ALONE. Every Turn wearing one at rest turned the lane into a
-// near-continuous blue rail, which spent the app's loudest colour on saying a session has Turns.
+// lane begins: the lane is four or five words wide, and a prompt cut there names no Turn.
 
 extension MinimapLaneView {
     /// The annotations re-resolved and drawn. Nothing happens when they say the same thing, which
@@ -21,12 +15,12 @@ extension MinimapLaneView {
     func settleAnnotations() {
         guard let palette else { return }
         let wanted = wantedAnnotations()
-        guard wanted != drawnAnnotations || inked(palette) != labelled else { return }
+        guard wanted != marking || inked(palette) != labelled else { return }
         annotationRedraws += 1
-        drawnAnnotations = wanted
+        marking = wanted
         labelled = inked(palette)
         annotationsLayer.frame = annotationBounds
-        annotationsLayer.contentsScale = window?.backingScaleFactor ?? 2
+        annotationsLayer.contentsScale = backingScale
         annotationsLayer.contents = wanted.isEmpty ? nil : bitmap(of: wanted)
     }
 
@@ -53,8 +47,10 @@ extension MinimapLaneView {
         let slide = geometry.laneOffset(at: feed?.offset() ?? 0)
         guard !showsEveryPrompt else {
             let window = slide ... slide + bounds.height
-            return MinimapAnnotation
-                .legible(geometry.blocks(in: window).map { annotation(of: $0, slidBy: slide) })
+            return MinimapAnnotation.legible(
+                geometry.blocks(in: window).map { annotation(of: $0, slidBy: slide) },
+                inside: bounds.height,
+            )
         }
         guard let hovered, let block = geometry.block(atMiniatureY: hovered + slide) else {
             return []
@@ -85,14 +81,17 @@ extension MinimapLaneView {
     private func draw(_ annotation: MinimapAnnotation, in context: CGContext) {
         guard let palette else { return }
         if let words = annotation.words {
-            draw(words, at: labelY(of: annotation), in: context)
+            draw(words, at: annotation.labelY(inside: bounds.height), in: context)
         }
+        // Stopped short of the next Turn: the block itself reaches it, so a hover never falls
+        // between two, but two lines drawn end to end read as one line rather than as two Turns.
+        let span = annotation.span.upperBound - annotation.span.lowerBound
         context.setFillColor(palette.interaction.accent.cgColor)
         context.fill(CGRect(
             x: ArgoMinimapLane.labelWidth + ArgoMinimapLane.turnLineInset,
             y: annotation.span.lowerBound,
             width: ArgoMinimapLane.turnLineWidth,
-            height: annotation.span.upperBound - annotation.span.lowerBound,
+            height: max(ArgoMinimapLane.turnLineWidth, span - ArgoMinimapLane.turnLineGap),
         ))
     }
 
@@ -112,14 +111,6 @@ extension MinimapLaneView {
         context.setFillColor(palette.surface.overlay.cgColor)
         context.fill(ground)
         text.draw(in: ground.insetBy(dx: padding, dy: padding))
-    }
-
-    /// Where the label sits: at the head of the block, held inside the lane — a Turn running off
-    /// the
-    /// top still has to say what it is.
-    private func labelY(of annotation: MinimapAnnotation) -> CGFloat {
-        let floor = max(0, bounds.height - ArgoMinimapLane.labelHeight)
-        return min(max(0, annotation.span.lowerBound), floor)
     }
 
     private func labelAttributes(in palette: ArgoPalette) -> [NSAttributedString.Key: Any] {

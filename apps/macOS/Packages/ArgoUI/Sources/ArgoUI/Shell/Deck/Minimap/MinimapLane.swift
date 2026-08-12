@@ -26,28 +26,15 @@ struct MinimapLane: NSViewRepresentable {
 
     private func dress(_ lane: MinimapLaneView, in environment: EnvironmentValues) {
         lane.palette = environment.argo.color
+        lane.raisesContrast = environment.accessibilityDifferentiateWithoutColor
+            || environment.colorSchemeContrast == .increased
         // A click's scroll is the one motion here, and under Reduce Motion the whole content of
         // that change is the movement — so it lands instead.
         lane.pace = environment.accessibilityReduceMotion
             ? nil
             : ArgoMotion.selection.duration
-        name(lane)
+        lane.naming = naming
         lane.attach(to: feed)
-    }
-
-    private func name(_ lane: MinimapLaneView) {
-        switch naming {
-        case .nothing:
-            lane.namedShare = nil
-            lane.namesEveryTurn = false
-        case let .turn(share):
-            lane.namedShare = share
-            lane.namesEveryTurn = false
-        case .everyTurn:
-            lane.namedShare = nil
-            lane.namesEveryTurn = true
-        }
-        lane.settleAnnotations()
     }
 }
 

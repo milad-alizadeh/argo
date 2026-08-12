@@ -6,18 +6,29 @@ import Testing
 /// What shape each feed row hands the lane (#382).
 ///
 /// The claim under the suite is that the lane is the reading SHRUNK: every ink here is one the row
-/// itself is drawn in, and every alignment is the one the row itself takes. A projection that
-/// drifts
-/// from that turns the lane into a legend, which is what D25 was written against — and nothing on
-/// screen tells that drift from a scroll bug.
+/// itself is drawn in, and every alignment is the row's own. Drift turns the lane into a legend,
+/// which is what D25 was written against.
 @Suite("Minimap row shapes")
 struct MinimapRowTests {
-    private static func shape(_ content: FeedRow.Content) -> MinimapRowShape {
-        MinimapRow(FeedRow(id: 0, content: content), height: 20).shape
-    }
-
     private static func row(_ content: FeedRow.Content) -> MinimapRow {
         MinimapRow(FeedRow(id: 0, content: content), height: 20)
+    }
+
+    private static func shape(_ content: FeedRow.Content) -> MinimapRowShape {
+        row(content).shape
+    }
+
+    /// The ink of a row drawn as one sentence, `nil` where it is drawn as anything else — so an
+    /// ink is one expectation rather than a guard and a recorded issue.
+    private static func sentenceInk(_ content: FeedRow.Content) -> FeedInk? {
+        guard case let .sentence(_, ink) = shape(content) else { return nil }
+        return ink
+    }
+
+    /// What a row drawn as a mutation says it did, `nil` where it is drawn as anything else.
+    private static func churn(_ content: FeedRow.Content) -> (added: Int, removed: Int)? {
+        guard case let .change(_, added, removed) = shape(content) else { return nil }
+        return (added, removed)
     }
 
     private static func call(churn: FeedCall.Churn?, ending: FeedCall.Ending = .succeeded)
@@ -54,32 +65,20 @@ struct MinimapRowTests {
 
     @Test
     func `a call is one sentence however tall the row was measured`() {
-        guard case let .sentence(_, ink) = Self.shape(.call(Self.call(churn: nil))) else {
-            Issue.record("a call with no patch is a sentence")
-            return
-        }
-        #expect(ink == .command)
+        #expect(Self.sentenceInk(.call(Self.call(churn: nil))) == .command)
     }
 
     @Test
     func `a mutation carries what it did in lines`() {
-        let churn = FeedCall.Churn(added: 30, removed: 10)
-        guard case let .change(_, added, removed) = Self.shape(.call(Self.call(churn: churn)))
-        else {
-            Issue.record("a call with a patch is a change")
-            return
-        }
-        #expect(added == 30)
-        #expect(removed == 10)
+        let did = Self.churn(.call(Self.call(churn: FeedCall.Churn(added: 30, removed: 10))))
+        #expect(did?.added == 30)
+        #expect(did?.removed == 10)
     }
 
     @Test
     func `a patch nothing could count is drawn as the call it was`() {
         let silent = FeedCall.Churn(added: 0, removed: 0)
-        guard case .sentence = Self.shape(.call(Self.call(churn: silent))) else {
-            Issue.record("an uncountable patch is a sentence")
-            return
-        }
+        #expect(Self.sentenceInk(.call(Self.call(churn: silent))) != nil)
     }
 
     /// A failed row is red in the feed, so it is red here. An overview that drew a run of failures
@@ -87,11 +86,7 @@ struct MinimapRowTests {
     @Test
     func `a call that failed is drawn in the ink the feed fails in`() {
         let failed = Self.call(churn: FeedCall.Churn(added: 3, removed: 1), ending: .failed)
-        guard case let .sentence(_, ink) = Self.shape(.call(failed)) else {
-            Issue.record("a failure is a sentence rather than a change")
-            return
-        }
-        #expect(ink == .failure)
+        #expect(Self.sentenceInk(.call(failed)) == .failure)
     }
 
     /// D25's map may never depend on colour alone, so the row waiting on somebody is the one thing

@@ -2,25 +2,44 @@ import Foundation
 
 /// One Turn named on the lane (#382): the stretch its block covers, and the words it opened with.
 ///
-/// Lane space, not miniature space — annotations are drawn on the layer that does not slide, so
-/// they are resolved against where the miniature currently sits and nowhere else.
+/// Lane space, not miniature space: the annotation layer does not slide, so these are resolved
+/// against where the miniature currently sits.
 ///
-/// `words` is `nil` for a promptless exchange. The Ion Blue line is still drawn: something happened
-/// there, and a Turn the lane refused to mark would read as a gap in the session.
+/// `words` is `nil` where there is nothing to say — a promptless exchange, or a label with no room.
+/// The Ion Blue line is drawn either way.
 struct MinimapAnnotation: Equatable {
     let span: ClosedRange<CGFloat>
     let words: String?
 }
 
 extension MinimapAnnotation {
-    /// The annotations that fit, head to foot. Two labels drawn on top of each other are neither,
-    /// so one closer than a label's height to the one above it is dropped rather than stacked —
-    /// which only happens under ⇧⌘, where every Turn asks to be named at once.
-    static func legible(_ annotations: [MinimapAnnotation]) -> [MinimapAnnotation] {
-        annotations.reduce(into: []) { kept, annotation in
-            guard let last = kept.last else { return kept.append(annotation) }
-            let apart = annotation.span.lowerBound - last.span.lowerBound
-            guard apart >= ArgoMinimapLane.labelHeight else { return }
+    /// Where the words sit: at the head of the block, held inside the lane. A Turn running off the
+    /// top still has to say what it is, and one at the foot has to stay on screen to be read.
+    func labelY(inside laneHeight: CGFloat) -> CGFloat {
+        let floor = max(0, laneHeight - ArgoMinimapLane.labelHeight)
+        return min(max(0, span.lowerBound), floor)
+    }
+
+    /// The same annotations with the WORDS dropped from any label that would land on the one above
+    /// it — two labels drawn on top of each other are neither. Only under ⇧⌘, where every Turn
+    /// asks to be named at once.
+    ///
+    /// The line always survives, because it says a Turn is THERE, which stays true whether or not
+    /// there is room to say what it asked. Compared on where each label actually lands, clamp
+    /// included: past the foot of the lane every head resolves to the same line.
+    static func legible(
+        _ annotations: [MinimapAnnotation],
+        inside laneHeight: CGFloat,
+    )
+        -> [MinimapAnnotation] {
+        var lastLabel: CGFloat?
+        return annotations.reduce(into: []) { kept, annotation in
+            let y = annotation.labelY(inside: laneHeight)
+            let crowded = lastLabel.map { y - $0 < ArgoMinimapLane.labelHeight } ?? false
+            guard annotation.words != nil, !crowded else {
+                return kept.append(MinimapAnnotation(span: annotation.span, words: nil))
+            }
+            lastLabel = y
             kept.append(annotation)
         }
     }

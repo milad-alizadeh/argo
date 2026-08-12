@@ -1,7 +1,7 @@
 import SwiftUI
 
-// The overview lane's own states (#402, #658, #382). Its own file because the lane has six of them
-// and the catalog's switch is already at its ceiling — the arm there hands over to this one.
+// The overview lane's own states (#402, #658, #382). Its own file because the catalog's switch is
+// already at its ceiling — the arms there name a state and hand over to this one.
 
 /// Which state of the lane a specimen shows.
 enum MinimapLaneState: Equatable {
@@ -14,23 +14,8 @@ enum MinimapLaneState: Equatable {
 }
 
 extension SpecimenScreen {
-    /// The lane's states, keyed by the case that shows each.
-    ///
-    /// A map rather than a second `switch specimen`, which could only be made exhaustive with a
-    /// `default` — and a `default` is exactly what would let a case added later render the wrong
-    /// lane in silence. The catalog's own switch stays the exhaustive one, and it still fails the
-    /// build for a `Specimen` case nobody handled.
-    static let laneStates: [Specimen: MinimapLaneState] = [
-        .minimapLane: .following,
-        .minimapLaneHeld: .held,
-        .minimapLaneShortReading: .shortReading,
-        .minimapLaneNamingTurn: .namingTurn,
-        .minimapLaneEveryPrompt: .everyPrompt,
-        .minimapLaneKinds: .kinds,
-    ]
-
-    @ViewBuilder var minimap: some View {
-        switch Self.laneStates[specimen] ?? .following {
+    @ViewBuilder func minimap(_ state: MinimapLaneState) -> some View {
+        switch state {
         // A session at the length a real one reaches, following the end: the rectangle is at the
         // foot of the lane and the marks above it are the whole transcript.
         case .following:
@@ -49,7 +34,7 @@ extension SpecimenScreen {
             overview(FeedProjection.longRows, naming: .turn(atShare: 0.4))
         case .everyPrompt:
             // ⇧⌘. Every Turn on screen named at once, and the ones too close together to be read
-            // dropped rather than stacked.
+            // drawn as a line with no words.
             overview(FeedProjection.longRows, naming: .everyTurn)
         case .kinds:
             // A reading with every kind in it, so the vocabulary can be judged in one look: prose,

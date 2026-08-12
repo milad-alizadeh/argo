@@ -20,16 +20,51 @@ struct MinimapBlockTests {
         return MinimapGeometry(reading, lane: CGSize(width: 100, height: 600))
     }
 
+    /// The whole miniature, which is what every claim about the set as a whole asks for.
+    private static func blocks(_ lane: MinimapGeometry) -> [MinimapBlock] {
+        lane.blocks(in: 0 ... lane.miniatureHeight)
+    }
+
     @Test
-    func `a block spans its Turn from the first row's head to the last row's foot`() {
-        let blocks = Self.geometry().blocks
+    func `a block spans its Turn from the first row's head to the next Turn's`() {
+        let blocks = Self.blocks(Self.geometry())
         #expect(blocks.map(\.y) == [0, 62.5])
         #expect(blocks.map(\.height) == [62.5, 62.5])
     }
 
     @Test
     func `a block carries the words its Turn opened with`() {
-        #expect(Self.geometry().blocks.map(\.prompt) == ["First", "Second"])
+        #expect(Self.blocks(Self.geometry()).map(\.prompt) == ["First", "Second"])
+    }
+
+    /// A row held to the line cap is DRAWN shorter than the reading gave it. If a block ended where
+    /// its last row was drawn to, the lane would have stripes naming no Turn at all — and a hover
+    /// crossing one would drop the mark it had just put up.
+    @Test
+    func `a Turn holding a capped row still reaches the Turn after it`() {
+        var rows = MinimapGeometryTests.rows([100, 20000, 100])
+        rows[0].prompt = "First"
+        rows[1].endsTurn = true
+        rows[2].prompt = "Second"
+        let lane = MinimapGeometry(
+            MinimapReading(rows: rows, columnWidth: 800, viewportHeight: 600),
+            lane: CGSize(width: 100, height: 600),
+        )
+        let blocks = Self.blocks(lane)
+
+        #expect(blocks.count == 2)
+        #expect(lane.markHeight(row: 1) < lane.reading.rows[1].height * lane.scale)
+        #expect(blocks[0].range.upperBound == blocks[1].range.lowerBound)
+    }
+
+    /// Every point over the reading names a Turn, so a pointer travelling down the lane never loses
+    /// the mark it is carrying.
+    @Test
+    func `no place over the reading is left naming no Turn`() {
+        let lane = Self.geometry()
+        #expect(stride(from: 0.0, to: 125.0, by: 2.5).allSatisfy {
+            lane.block(atMiniatureY: $0) != nil
+        })
     }
 
     @Test
@@ -59,6 +94,6 @@ struct MinimapBlockTests {
             MinimapReading(columnWidth: 800),
             lane: CGSize(width: 100, height: 600),
         )
-        #expect(lane.blocks.isEmpty)
+        #expect(Self.blocks(lane).isEmpty)
     }
 }

@@ -1,13 +1,10 @@
 import Foundation
 
-/// A row's shape turned into the runs that draw it (#382).
+/// A row's shape turned into the runs that draw it (#382). Called for the rows inside the lane's
+/// band and for no others, so its cost is bounded by the lane's height.
 ///
-/// Called for the rows inside the lane's band and for no others, so its cost is bounded by the
-/// lane's height rather than by the session's length.
-///
-/// Nothing here decides WHERE a row sits: the line count is the caller's, taken off the row's
-/// measured height. A lane that wrapped the text for itself would draw a bar the reading has no
-/// line for, which is the one thing the miniature may not do.
+/// Nothing here decides WHERE a row sits: the line count is the caller's, off the row's measured
+/// height. A lane that wrapped the text itself would draw a bar the reading has no line for.
 enum MinimapRuns {
     /// The runs a shape makes across `lines` of drawn line, over a column `measure` points wide.
     static func runs(

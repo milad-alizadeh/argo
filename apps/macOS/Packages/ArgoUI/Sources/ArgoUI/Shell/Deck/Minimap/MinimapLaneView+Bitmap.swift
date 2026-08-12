@@ -5,6 +5,13 @@ import AppKit
 // and a layer holding an image does not.
 
 extension MinimapLaneView {
+    /// The scale to rasterise at. Two before the view has a window to ask: the lane is only ever
+    /// built on a Retina Mac, and a wrong guess costs one re-rasterise from
+    /// `viewDidChangeBackingProperties`.
+    var backingScale: CGFloat {
+        window?.backingScaleFactor ?? 2
+    }
+
     /// A bitmap at the display's own backing scale, in LANE coordinates: the origin at the top left
     /// and y counting down, as the reading does.
     ///

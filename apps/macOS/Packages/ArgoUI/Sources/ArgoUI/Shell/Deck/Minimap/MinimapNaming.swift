@@ -13,4 +13,10 @@ enum MinimapNaming: Equatable {
     case turn(atShare: CGFloat)
     /// Every Turn on screen — what ⇧⌘ asks for.
     case everyTurn
+
+    /// Where down the lane one Turn is named, if one is.
+    var share: CGFloat? {
+        guard case let .turn(share) = self else { return nil }
+        return share
+    }
 }

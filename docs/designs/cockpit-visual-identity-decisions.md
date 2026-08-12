@@ -475,9 +475,12 @@ its approved study are authoritative for the replacement look and feel.
   slab as long as its sentence. The encoding above still holds; what changed is that the shapes are
   derived from each row rather than assigned to a class. "Never readable text" holds for the
   miniature and no longer for the annotations over it: hovering a Turn draws its prompt as real
-  text, and ⇧⌘ draws every one on screen. **The Ion Blue line spanning a Turn is drawn for the
-  hovered Turn alone** — one per Turn at rest made the lane a near-continuous blue rail, spending
-  the app's loudest colour on saying a session has Turns in it.
+  text, and ⇧⌘ draws every one on screen.
+- **Amended on the reader's call — 2026-08-12:** **the Ion Blue line spanning a Turn is drawn for the
+  hovered Turn alone**, against #382's "an Ion Blue line spans its extent". One per Turn at rest made
+  the lane a near-continuous blue rail, spending the app's loudest colour on saying a session has
+  Turns in it. Asked for directly while the work was being reviewed on screen, so it overrides the
+  ticket rather than reinterpreting it.
 
 ## D26 — Heavy evidence summarizes, then expands inline
 

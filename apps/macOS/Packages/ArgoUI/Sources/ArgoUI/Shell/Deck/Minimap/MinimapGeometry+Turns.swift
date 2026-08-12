@@ -29,12 +29,6 @@ extension MinimapGeometry {
         return found.range.contains(miniatureY) ? found : nil
     }
 
-    /// Every Turn as a block. The whole set, so only the callers that genuinely want all of them —
-    /// a test, or a reading short enough to hold whole — pay for it.
-    var blocks: [MinimapBlock] {
-        turns.map(block(of:))
-    }
-
     /// Where a place in the miniature falls in the reading.
     private func documentY(atMiniatureY miniatureY: CGFloat) -> CGFloat {
         miniatureY / scale - reading.topInset
@@ -56,9 +50,12 @@ extension MinimapGeometry {
         return low
     }
 
+    /// A block runs from its first row's head to where the NEXT row begins, not to where its last
+    /// row was DRAWN to. A row held to the line cap is drawn shorter than the reading gave it, and
+    /// that difference would be a stripe the lane named no Turn for.
     private func block(of turn: MinimapTurn) -> MinimapBlock {
         let head = markY(row: turn.rows.lowerBound)
-        let foot = markY(row: turn.rows.upperBound) + markHeight(row: turn.rows.upperBound)
+        let foot = markY(row: turn.rows.upperBound + 1)
         return MinimapBlock(y: head, height: max(0, foot - head), prompt: turn.prompt)
     }
 }

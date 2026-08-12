@@ -11,6 +11,9 @@ public enum ArgoMinimapLane {
     /// The floor under one mark. At a real session's length a row compresses below a point, and a
     /// mark nobody can see maps nothing. One point and no more, because the floor is also what
     /// merges neighbours: a thousand rows held at two would fill the lane with solid ink.
+    ///
+    /// A point rather than a pixel, which is what makes it D25's two: the lane is only ever drawn
+    /// on a Retina display, so one point of it is two pixels tall.
     public static let markMinimumHeight: CGFloat = 1
 
     /// The ceiling over one, and the whole of D25's weight cap: a huge diff, log or gallery may not
@@ -26,6 +29,11 @@ public enum ArgoMinimapLane {
     /// rung a dense lane reads as texture rather than as a second wall of content.
     public static let runOpacity: Double = 0.4
 
+    /// The same under Increased Contrast, where a shape has to clear the surface it sits on before
+    /// it has to sit under the words. Paired with `runOpacity` rather than replacing it, because
+    /// the lane is designed at the quieter of the two.
+    public static let runOpacityRaised: Double = 0.85
+
     /// How wide one character of the feed's prose is, as a share of its point size. SF Pro's
     /// average advance is close to half, which is the one number that turns a character count into
     /// a width. It decides only how RAGGED a bar is drawn, never where the bar sits.
@@ -40,6 +48,11 @@ public enum ArgoMinimapLane {
     /// Two points, because it stands beside the runs rather than among them.
     public static let turnLineWidth: CGFloat = 2
     public static let turnLineInset: CGFloat = 2
+
+    /// How far short of the next Turn one line stops. A block reaches the next block's head so a
+    /// hover never falls between two — but two lines drawn end to end are one line, and under ⇧⌘
+    /// every Turn on screen is marked at once.
+    public static let turnLineGap: CGFloat = ArgoSpacing.tight
 
     /// The rung a Turn's prompt is drawn at when the pointer names it. The smallest rung the HIG
     /// gives a label, and the label is rasterised at the display's own backing scale and never
