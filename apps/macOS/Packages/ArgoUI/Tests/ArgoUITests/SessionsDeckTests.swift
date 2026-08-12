@@ -11,9 +11,10 @@ struct SessionsDeckTests {
         ArgoLayout.windowMinimumWidth - ArgoLayout.sidebarMinimumWidth
     }
 
-    /// What the header and the tabs leave the row below them, at the shortest window.
+    /// The content row at the shortest window. It is the WHOLE deck: the canopy floats over it
+    /// rather than sitting above it, so what the canopy costs the row is scroll room, not height.
     private var contentRowHeight: CGFloat {
-        ArgoLayout.windowMinimumHeight - ArgoLayout.deckHeaderHeight - ArgoLayout.deckTabSlotHeight
+        ArgoLayout.windowMinimumHeight
     }
 
     @Test
@@ -109,14 +110,22 @@ struct SessionsDeckTests {
         #expect(ArgoLayout.minimapLaneWidth < ArgoLayout.agentsRailWidth / 2)
     }
 
+    /// The canopy IS the two zones it covers. A third number would let the glass and the inset
+    /// beneath it drift, which shows as rows either clipped at the top or floating below it.
     @Test
-    func `the deck's chrome leaves the content row most of its height`() {
-        #expect(contentRowHeight > ArgoLayout.windowMinimumHeight / 2)
+    func `the canopy covers exactly the header and the tabs`() {
+        #expect(
+            ArgoLayout.deckCanopyHeight
+                == ArgoLayout.deckHeaderHeight + ArgoLayout.deckTabSlotHeight,
+        )
     }
 
-    /// The composer floats over the reading, so what it costs the feed is scroll room.
+    /// Both float over the reading, so what they cost the feed is scroll room at each end. The
+    /// shortest window is where the two of them together could eat the column.
     @Test
-    func `the composer's clearance leaves the feed most of its column`() {
-        #expect(contentRowHeight - ArgoComposerVessel.feedClearance > contentRowHeight / 2)
+    func `the canopy and the composer together leave the feed most of its column`() {
+        let taken = ArgoLayout.deckCanopyHeight + ArgoComposerVessel.feedClearance
+
+        #expect(contentRowHeight - taken > contentRowHeight / 2)
     }
 }

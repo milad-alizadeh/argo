@@ -5,6 +5,9 @@ import SwiftUI
 /// selection — the deck owns which row is open.
 struct EvidencePanel: View {
     @Environment(\.argo) private var argo
+    /// What the canopy covers. The panel starts below it for the reason the rail does — its own
+    /// header and dismiss control are at the top.
+    @Environment(\.argoDeckCanopy) private var canopy
 
     let evidence: FeedEvidence
     /// Which step the feed pointed at, if any. A position rather than a scroll offset.
@@ -21,6 +24,9 @@ struct EvidencePanel: View {
             content
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Inside the background, so the sunken plane still reaches the deck's top edge — the glass
+        // has to have something of the panel's own to blur, not the deck showing through.
+        .padding(.top, canopy)
         .background(argo.color.surface.sunken)
         .onChange(of: evidence, initial: true) { reading = evidence.opening }
         .accessibilityElement(children: .contain)

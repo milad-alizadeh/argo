@@ -176,6 +176,17 @@ its approved study are authoritative for the replacement look and feel.
 - **Boundary:** Existing Session header, tabs, Agent selection, single-feed behaviour, density
   navigation, and Dock responsibilities remain intact. This changes their visual composition, not
   their interaction model; it does not reintroduce a Timeline or a second detail feed.
+- **Amendment — the deck's top zone is a glass canopy — 2026-08-12:** the Session header and the tab
+  line under it are ONE Liquid Glass bar spanning the deck's full width, floating over the content
+  rather than stacked above it. The reading runs beneath the bar and blurs through it; the bar
+  carries no hairline, because the material is the boundary. The zones with a header of their own —
+  the Agents rail and the evidence panel — begin below the glass instead of passing under it, since
+  a header behind glass is a header nobody can read.
+- **Why the amendment:** the two stacked opaque slots read as a grey box bolted to the top of the
+  plane. Xcode's own toolbar is the reference: the working surface appears to continue past the
+  chrome, which makes the deck feel deeper than it is and keeps the eye on the reading. This is the
+  only place the deck borrows the canopy's material — the plane behind it stays opaque graphite, so
+  the contrast the original decision protects survives everywhere else.
 
 ## D11 — Material replaces the decorative scene
 

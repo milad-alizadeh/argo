@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// The material a surface takes when it floats over the deck because of a state the reader is in.
+/// The material a surface takes when it floats over the deck rather than sitting in it.
 ///
-/// D14's transient-surfaces clause, spelled once. A surface qualifies when it is present because
-/// the reader is in a state and absent otherwise; the furniture of the deck stays flat.
+/// D14's transient-surfaces clause, spelled once: a surface qualifies when it is present because
+/// the reader is in a state and absent otherwise. The deck's canopy takes it too, on D10's
+/// amendment of 2026-08-12 — it is permanent, but it floats, and the rows run under it.
 ///
 /// Two settings take the material away and the surface has to survive both: Reduce Transparency
 /// (D21) and Increased Contrast. Neither changes the control's shape, hit area, semantics or

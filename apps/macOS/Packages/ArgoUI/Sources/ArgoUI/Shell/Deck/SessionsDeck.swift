@@ -1,9 +1,12 @@
 import ArgoEngine
 import SwiftUI
 
-/// The Sessions room's zone layout, stacked flush. It paints no background: `InstrumentDeckShell`
-/// is the opaque plane, and a second fill here would be a second surface where the contract allows
-/// one. Nothing is drawn between the header and its tabs — they read as one region.
+/// The Sessions room's zone layout: the content row filling the deck, with the canopy floating over
+/// its top edge. It paints no background — `InstrumentDeckShell` is the opaque plane, and a second
+/// fill here would be a second surface where the contract allows one.
+///
+/// The canopy is an OVERLAY and not the first row of the stack: a row would take its height off the
+/// reading, and the reading has to reach the deck's top edge to pass under the glass.
 struct SessionsDeck: View {
     /// The selected Session's reading, projected above the deck.
     let feed: [FeedRow]
@@ -60,11 +63,6 @@ struct SessionsDeck: View {
 
     var body: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            SessionHeader(header: header, handOff: handOff)
-                .frame(height: ArgoLayout.deckHeaderHeight)
-            SessionTabLine(spend: header?.spend)
-                .frame(height: ArgoLayout.deckTabSlotHeight)
-            DeckSeparator()
             DeckContentRow(
                 feed: feed,
                 showing: showing,
@@ -87,6 +85,10 @@ struct SessionsDeck: View {
                 ComposerUnavailable(reason: unavailable, spawn: spawnBeside)
             }
         }
+        // Told to the zones BEFORE the canopy is drawn over them: each one insets itself by this,
+        // which is what lets the reading run under the glass instead of stopping at it.
+        .environment(\.argoDeckCanopy, ArgoLayout.deckCanopyHeight)
+        .overlay(alignment: .top) { DeckCanopy(header: header, handOff: handOff) }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .argoLightbox(selection, in: feed)
     }
