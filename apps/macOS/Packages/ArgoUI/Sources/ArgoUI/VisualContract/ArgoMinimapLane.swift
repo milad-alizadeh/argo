@@ -16,11 +16,6 @@ public enum ArgoMinimapLane {
     /// on a Retina display, so one point of it is two pixels tall.
     public static let markMinimumHeight: CGFloat = 1
 
-    /// The ceiling over one, and the whole of D25's weight cap: a huge diff, log or gallery may not
-    /// consume the overview in proportion to what it holds. A share of the lane rather than a fixed
-    /// measure, because the cap is a claim about how much of the OVERVIEW one event may take.
-    public static let markMaximumShare: CGFloat = 0.15
-
     /// The gap held between two marks, so a run of rows reads as separate events.
     public static let markGap: CGFloat = 1
 

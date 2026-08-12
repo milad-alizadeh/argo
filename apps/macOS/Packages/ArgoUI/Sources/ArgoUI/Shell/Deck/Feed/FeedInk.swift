@@ -33,6 +33,10 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
     case boundary
     /// A stretch of the record nothing could parse.
     case unreadable
+    /// Words the agent linked somewhere — the one accent the feed spends inside prose.
+    case link
+    /// A pipe table's grid. A container of cells, stroked the way the feed strokes it.
+    case table
 
     /// How a run of this ink is drawn, which is what keeps the map legible with the colour taken
     /// away — under Increased Contrast, and for a reader who cannot tell amber from the ramp.
@@ -51,8 +55,9 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
 
     var shape: Shape {
         switch self {
-        case .prompt, .message, .thought, .command, .added, .removed, .failure, .unreadable: .bar
-        case .media: .frame
+        case .prompt, .message, .thought, .command, .added, .removed, .failure, .unreadable,
+             .link: .bar
+        case .media, .table: .frame
         case .attention: .band
         case .boundary: .rule
         }
@@ -65,7 +70,7 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         switch self {
         case .failure, .attention: role(in: palette)
         case .prompt, .message, .thought, .command, .added, .removed, .media, .boundary,
-             .unreadable: nil
+             .unreadable, .link, .table: nil
         }
     }
 
@@ -83,6 +88,10 @@ enum FeedInk: Equatable, Sendable, CaseIterable {
         case .failure: palette.state.failure
         case .attention: palette.state.attention
         case .boundary: palette.text.disabled
+        // The ink the feed gives the same words: a link is the accent, a table's grid sits on the
+        // message's own rung.
+        case .link: palette.interaction.accent
+        case .table: palette.text.secondary
         }
     }
 }

@@ -38,20 +38,31 @@ struct MinimapRunsTests {
             .allSatisfy { $0.span.lowerBound == 0 })
     }
 
+    /// One bar per line, not one block over the row — a prompt reads as its words, like prose does.
     @Test
-    func `a prompt keeps the trailing edge its bubble is drawn on`() {
-        let runs = Self.runs(.bubble(length: 12), lines: 3)
-        #expect(runs.count == 1)
-        #expect(runs[0].span.upperBound == 1)
-        #expect(runs[0].span.lowerBound > 0)
-        // One block over all three lines, not one bar on the first.
-        #expect(runs[0].lines == 3)
+    func `a prompt is one bar per line it was measured at`() {
+        let runs = Self.runs(.bubble(length: 4000), lines: 3)
+        #expect(runs.map(\.line) == [0, 1, 2])
+        #expect(runs.allSatisfy { $0.ink == .prompt })
     }
 
     @Test
-    func `a prompt too long for its bubble stops where the bubble stops`() {
-        let runs = Self.runs(.bubble(length: 4000))
-        #expect(runs[0].span.lowerBound == 1 - ArgoFeedRow.bubbleShare)
+    func `a prompt keeps the trailing edge its bubble is drawn on`() {
+        let runs = Self.runs(.bubble(length: 12), lines: 1)
+        #expect(runs.count == 1)
+        #expect(runs[0].span.upperBound == 1)
+        #expect(runs[0].span.lowerBound > 0)
+    }
+
+    /// The lines anchor where the bubble anchors its text, and the ragged last line runs out short
+    /// of the trailing edge.
+    @Test
+    func `the last line of a prompt is only as full as the words left for it`() {
+        let runs = Self.runs(.bubble(length: 4000), lines: 3)
+        let leading = 1 - ArgoFeedRow.bubbleShare
+        #expect(runs.allSatisfy { abs($0.span.lowerBound - leading) < 0.0001 })
+        #expect(runs.dropLast().allSatisfy { $0.span.upperBound == 1 })
+        #expect(runs.last.map { $0.span.upperBound < 1 } == true)
     }
 
     @Test

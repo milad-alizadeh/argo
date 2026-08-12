@@ -15,20 +15,21 @@ enum MinimapRuns {
         -> [MinimapRun] {
         switch shape {
         case let .prose(length, ink):
-            return fills(of: length, over: lines).enumerated().map { line, fill in
+            fills(of: length, over: lines).enumerated().map { line, fill in
                 MinimapRun(ink: ink, line: line, span: span(0, fill))
             }
         case let .bubble(length):
-            let width = min(ArgoFeedRow.bubbleShare, fill(of: length, across: measure))
-            return [MinimapRun(ink: .prompt, line: 0, lines: lines, span: span(1 - width, 1))]
+            bubble(length, over: lines, across: measure)
+        case let .composed(blocks, ink):
+            composed(blocks, ink: ink, over: lines, across: measure)
         case let .sentence(length, ink):
-            return [MinimapRun(ink: ink, line: 0, span: span(0, fill(of: length, across: measure)))]
+            [MinimapRun(ink: ink, line: 0, span: span(0, fill(of: length, across: measure)))]
         case let .change(length, added, removed):
-            return change(fill(of: length, across: measure), added, removed)
+            change(fill(of: length, across: measure), added, removed)
         case let .shots(count):
-            return shots(count, across: measure)
+            shots(count, across: measure)
         case let .whole(ink):
-            return [MinimapRun(ink: ink, line: 0, lines: lines, span: span(0, 1))]
+            [MinimapRun(ink: ink, line: 0, lines: lines, span: span(0, 1))]
         }
     }
 
@@ -56,6 +57,17 @@ enum MinimapRuns {
         let perLine = charactersPerLine(across: measure)
         guard perLine > 0 else { return 1 }
         return min(1, CGFloat(max(0, length)) / CGFloat(perLine))
+    }
+
+    /// A prompt's lines: one bar per drawn line, anchored where the bubble anchors its text — the
+    /// leading edge of a region held against the trailing edge — with the ragged last line running
+    /// out toward the trailing edge, so a prompt reads as the words it was rather than as a slab.
+    private static func bubble(_ length: Int, over lines: Int, across measure: CGFloat)
+        -> [MinimapRun] {
+        let width = min(ArgoFeedRow.bubbleShare, fill(of: length, across: measure))
+        return fills(of: length, over: lines).enumerated().map { line, fill in
+            MinimapRun(ink: .prompt, line: line, span: span(1 - width, 1 - width + fill * width))
+        }
     }
 
     /// A gallery's thumbnails, wrapped across the lane the way `FeedGalleryRow` wraps them across
@@ -98,7 +110,7 @@ enum MinimapRuns {
     }
 
     /// A span, ordered and held inside the lane. The one place a run's bounds are built.
-    private static func span(_ from: CGFloat, _ to: CGFloat) -> ClosedRange<CGFloat> {
+    static func span(_ from: CGFloat, _ to: CGFloat) -> ClosedRange<CGFloat> {
         let low = min(max(0, from), 1)
         let high = min(max(0, to), 1)
         return min(low, high) ... max(low, high)
@@ -107,7 +119,7 @@ enum MinimapRuns {
     /// How many characters a line of the feed's prose holds across a measure. SF Pro's average
     /// advance is close to half its point size, which is the one number that turns a character
     /// count into a width — and it only ever decides how RAGGED a bar is, never where it sits.
-    private static func charactersPerLine(across measure: CGFloat) -> Int {
+    static func charactersPerLine(across measure: CGFloat) -> Int {
         guard measure > 0 else { return 0 }
         return Int(measure / (ArgoFeedRow.proseRung.size * ArgoMinimapLane.characterAdvanceShare))
     }

@@ -62,4 +62,10 @@ struct FeedRow: Identifiable, Equatable, Sendable {
     var opensEvidence: Bool {
         content.traits.opensEvidence
     }
+
+    /// Whether this row is the working thread — the one row the reading measure does not hold, so
+    /// its ion sweeps the zone's full width and exits at the minimap's seam.
+    var isWorkingThread: Bool {
+        content == .mark(.working)
+    }
 }
