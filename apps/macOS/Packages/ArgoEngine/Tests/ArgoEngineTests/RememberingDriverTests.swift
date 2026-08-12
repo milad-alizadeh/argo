@@ -22,7 +22,27 @@ struct RememberingDriverTests {
 
         #expect(base.sent(to: "session-a") == ["Off you go."])
         #expect(base.revoked(for: "session-a") == ["Bash"])
-        #expect(driver.canAttach == base.canAttach)
+    }
+
+    /// A wrapper that answered for itself would hide an adapter with no command surface behind one
+    /// that has it, and the cockpit would draw a picker whose every row does nothing (#685). Both
+    /// answers, because a hard-coded `true` passes a test that only ever asks for `true`.
+    @Test(arguments: [true, false])
+    func `it carries its adapter's own answer about commands`(declared: Bool) {
+        let base = InMemorySessionDriver()
+        base.canRunCommands = declared
+        let driver = RememberingDriver(base: base, records: { _ in 0 }, remember: { _, _ in })
+
+        #expect(driver.canRunCommands == declared)
+    }
+
+    @Test(arguments: [true, false])
+    func `it carries its adapter's own answer about attachments`(declared: Bool) {
+        let base = InMemorySessionDriver()
+        base.canAttach = declared
+        let driver = RememberingDriver(base: base, records: { _ in 0 }, remember: { _, _ in })
+
+        #expect(driver.canAttach == declared)
     }
 
     @Test

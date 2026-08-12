@@ -27,6 +27,13 @@ struct ClaudeSessionDriver: SessionDriver {
         true
     }
 
+    /// Verified against the real CLI, not reasoned about: a `/command` inside the bracketed-paste
+    /// burst `send` writes reaches the same input machinery typing reaches, and fires (#589). The
+    /// assertion lives in `LiveCommandTests`, because this constant is only as true as that run.
+    var canRunCommands: Bool {
+        true
+    }
+
     func send(_ text: String, to sessionID: String) throws {
         guard SessionTurn.isSendable(text) else { throw SessionDriveError.nothingToSend }
         // `ownerOf` answers only for a claim whose PTY still lives, so an orphaned Session refuses
