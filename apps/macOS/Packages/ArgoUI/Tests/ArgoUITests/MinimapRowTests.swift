@@ -8,6 +8,7 @@ import Testing
 /// The claim under the suite is that the lane is the reading SHRUNK: every ink here is one the row
 /// itself is drawn in, and every alignment is the row's own. Drift turns the lane into a legend,
 /// which is what D25 was written against.
+@MainActor
 @Suite("Minimap row shapes")
 struct MinimapRowTests {
     private static func row(_ content: FeedRow.Content) -> MinimapRow {

@@ -20,6 +20,8 @@ enum MinimapRuns {
             }
         case let .bubble(length):
             bubble(length, over: lines, across: measure)
+        case let .composed(blocks, ink):
+            composed(blocks, ink: ink, over: lines, across: measure)
         case let .sentence(length, ink):
             [MinimapRun(ink: ink, line: 0, span: span(0, fill(of: length, across: measure)))]
         case let .change(length, added, removed):
@@ -108,7 +110,7 @@ enum MinimapRuns {
     }
 
     /// A span, ordered and held inside the lane. The one place a run's bounds are built.
-    private static func span(_ from: CGFloat, _ to: CGFloat) -> ClosedRange<CGFloat> {
+    static func span(_ from: CGFloat, _ to: CGFloat) -> ClosedRange<CGFloat> {
         let low = min(max(0, from), 1)
         let high = min(max(0, to), 1)
         return min(low, high) ... max(low, high)
@@ -117,7 +119,7 @@ enum MinimapRuns {
     /// How many characters a line of the feed's prose holds across a measure. SF Pro's average
     /// advance is close to half its point size, which is the one number that turns a character
     /// count into a width — and it only ever decides how RAGGED a bar is, never where it sits.
-    private static func charactersPerLine(across measure: CGFloat) -> Int {
+    static func charactersPerLine(across measure: CGFloat) -> Int {
         guard measure > 0 else { return 0 }
         return Int(measure / (ArgoFeedRow.proseRung.size * ArgoMinimapLane.characterAdvanceShare))
     }

@@ -12,6 +12,7 @@ import SwiftUI
 enum ProseReading {
     private static var marks = ProseCache<AttributedString>()
     private static var scans = ProseCache<[MarkdownBlock]>()
+    private static var structures = ProseCache<[MinimapProseBlock]>()
 
     /// The agent's own inline marks. See `FeedProseText` for why the read is inline-only.
     static func marked(_ text: String) -> AttributedString {
@@ -27,5 +28,10 @@ enum ProseReading {
     /// The blocks the agent gave the message its shape with.
     static func blocks(in text: String) -> [MarkdownBlock] {
         scans.reading(of: text) { MarkdownBlock.blocks(in: $0) }
+    }
+
+    /// The same blocks reduced to what the overview lane draws — see `MinimapProseBlock`.
+    static func structure(of text: String) -> [MinimapProseBlock] {
+        structures.reading(of: text) { MinimapProseBlock.blocks(from: blocks(in: $0)) }
     }
 }
