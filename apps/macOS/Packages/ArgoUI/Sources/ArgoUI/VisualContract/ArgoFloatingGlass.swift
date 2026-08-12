@@ -1,18 +1,18 @@
 import SwiftUI
 
-/// The material a surface takes when it floats over the deck because of a state the reader is in.
+/// The material a surface takes when it floats over the deck rather than sitting in it.
 ///
-/// D14's transient-surfaces clause, spelled once. A surface qualifies when it is present because
-/// the reader is in a state and absent otherwise; the furniture of the deck stays flat.
+/// Two kinds of surface qualify. A transient one is present because the reader is in a state and
+/// absent otherwise (D14). A fixed one is always there but the content passes beneath it — the
+/// deck's canopy, on D10's amendment of 2026-08-12.
 ///
 /// Two settings take the material away and the surface has to survive both: Reduce Transparency
 /// (D21) and Increased Contrast. Neither changes the control's shape, hit area, semantics or
 /// keyboard behaviour.
 struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
     @Environment(\.argo) private var argo
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
-    @Environment(\.argoSuppressesTransparency) private var isSuppressed
+    @Environment(\.argoIsFlat) private var isFlat
 
     let vessel: Vessel
     /// The state the surface is present BECAUSE of, worn on the edge — the amber a Permission
@@ -38,10 +38,6 @@ struct ArgoFloatingGlass<Vessel: InsettableShape>: ViewModifier {
         }
     }
 
-    private var isFlat: Bool {
-        reduceTransparency || isSuppressed || contrast == .increased
-    }
-
     private var edge: ArgoColor {
         contrast == .increased ? argo.color.edge.strong : argo.color.edge.subtle
     }
@@ -53,10 +49,19 @@ extension EnvironmentValues {
     /// direction only — nothing here can force transparency BACK on over a reader who asked for
     /// none.
     @Entry var argoSuppressesTransparency: Bool = false
+
+    /// Whether optical material is off for this reader. Read it rather than the three flags: two
+    /// surfaces that answered this differently would show a seam exactly where the setting meant
+    /// to remove one.
+    var argoIsFlat: Bool {
+        accessibilityReduceTransparency
+            || argoSuppressesTransparency
+            || colorSchemeContrast == .increased
+    }
 }
 
 extension View {
-    /// Draws this surface as a transient float over the deck — see `ArgoFloatingGlass`.
+    /// Draws this surface as a float over the deck — see `ArgoFloatingGlass`.
     func argoFloatingGlass(in vessel: some InsettableShape, rim: ArgoColor? = nil) -> some View {
         modifier(ArgoFloatingGlass(vessel: vessel, rim: rim))
     }

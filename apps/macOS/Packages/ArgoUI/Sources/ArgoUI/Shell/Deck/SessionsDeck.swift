@@ -1,9 +1,12 @@
 import ArgoEngine
 import SwiftUI
 
-/// The Sessions room's zone layout, stacked flush. It paints no background: `InstrumentDeckShell`
-/// is the opaque plane, and a second fill here would be a second surface where the contract allows
-/// one. Nothing is drawn between the header and its tabs — they read as one region.
+/// The Sessions room's zone layout: the content row filling the deck, with the canopy floating over
+/// its top edge. It paints no background — `InstrumentDeckShell` is the opaque plane, and a second
+/// fill here would be a second surface where the contract allows one.
+///
+/// The canopy shares the stack's top edge with the row rather than sitting above it in a column —
+/// the reading has to reach the deck's top edge to pass under the glass.
 struct SessionsDeck: View {
     /// The selected Session's reading, projected above the deck.
     let feed: [FeedRow]
@@ -39,12 +42,32 @@ struct SessionsDeck: View {
     @FocusState private var focus: FeedFocus?
 
     var body: some View {
+        // The canopy is declared FIRST and lifted by `zIndex`, not laid over the row as an overlay:
+        // a stack is read in declaration order, so an overlay would put the Session's title after
+        // the whole reading for VoiceOver and for the keyboard. `zIndex` moves only the paint.
+        //
+        // The zones climb past the safe area to the window's TOP EDGE, and the canopy inset grows
+        // by the same amount, so nothing moves at rest but a scrolled reading runs behind the whole
+        // bar — stopping at the safe area left the toolbar's stretch of glass with nothing under
+        // it, a reading vanishing mid-bar. Measured before the zones discard it, hence the reader.
+        GeometryReader { window in
+            ZStack(alignment: .top) {
+                DeckCanopy(header: header, reach: window.safeAreaInsets.top, handOff: handOff)
+                    .zIndex(1)
+                zones
+                    .ignoresSafeArea(.container, edges: .top)
+            }
+            .environment(
+                \.argoDeckCanopy,
+                ArgoLayout.deckCanopyHeight + window.safeAreaInsets.top,
+            )
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .argoLightbox(selection, in: feed)
+    }
+
+    private var zones: some View {
         VStack(spacing: ArgoSpacing.flush) {
-            SessionHeader(header: header, handOff: handOff)
-                .frame(height: ArgoLayout.deckHeaderHeight)
-            SessionTabLine(spend: header?.spend)
-                .frame(height: ArgoLayout.deckTabSlotHeight)
-            DeckSeparator()
             DeckContentRow(
                 feed: feed,
                 showing: showing,
@@ -62,7 +85,6 @@ struct SessionsDeck: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .argoLightbox(selection, in: feed)
     }
 
     private var selection: FeedRowSelection {

@@ -75,7 +75,10 @@ struct FeedView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
             if rows.isEmpty {
+                // Centred in what the canopy leaves: this word does not scroll, so it cannot use
+                // the table's inset the way the rows do.
                 FeedSilence()
+                    .argoUnderCanopy()
             }
         }
         .accessibilityElement(children: .contain)

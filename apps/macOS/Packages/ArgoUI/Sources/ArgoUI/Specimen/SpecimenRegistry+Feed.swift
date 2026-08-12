@@ -35,6 +35,9 @@ extension SpecimenRegistry {
                 .frame(width: ArgoLayout.agentsRailWidth)
                 .argoDeckSurface()
         },
+        // The one state in which the rail scrolls at all, held at the end of its own scroll so
+        // two chips pass under the chrome bar — every transcript fixture delegates too few.
+        SpecimenEntry("agentsFanOut") { AgentsFanOutSpecimen() },
         // A session at the length a real one reaches. Render narrow too (`ARGO_WINDOW_SIZE`).
         SpecimenEntry("feedAtScale") { SpecimenScene.sessions(FeedProjection.longRows) },
         // A row arriving at the end must not move the row somebody is looking at.

@@ -14,12 +14,27 @@ struct EvidencePanel: View {
     /// Which way the patches are being read. Re-seeded whenever the evidence changes.
     @State private var reading: EvidenceReading = .source
 
+    /// The header rides INSIDE the scroll, above the results, rather than pinned over them: a
+    /// pinned bar below the canopy would hide this column's content from the glass. Escape and the
+    /// row that opened the panel both still close it once the ✕ has scrolled away.
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
-            EvidenceHeader(evidence: evidence, reading: $reading, dismiss: dismiss)
-            DeckSeparator()
-            content
+        ScrollViewReader { pane in
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: ArgoSpacing.flush) {
+                    EvidenceHeader(evidence: evidence, reading: $reading, dismiss: dismiss)
+                    DeckSeparator()
+                    results
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .defaultScrollAnchor(.top)
+            // Not animated: a pane scrolling two thousand points is a smear.
+            .onChange(of: current, initial: true) {
+                guard let current else { return }
+                pane.scrollTo(current, anchor: .top)
+            }
         }
+        .argoScrollsUnderCanopy()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(argo.color.surface.sunken)
         .onChange(of: evidence, initial: true) { reading = evidence.opening }
@@ -27,28 +42,13 @@ struct EvidencePanel: View {
         .accessibilityLabel("Evidence")
     }
 
-    /// Everything the row stands for, in the order it happened. The scrolling lives here and not in
-    /// the arms below, so a run reads as one column; content shorter than the pane sits at the TOP
-    /// of it, because a scroll view centres what it does not have to scroll. Vertical only.
-    @ViewBuilder private var content: some View {
+    /// Everything the row stands for, in the order it happened. A plain stack and not a lazy one:
+    /// a lazy stack can only scroll to a row it has built, and the ninth file of a run is not built
+    /// until something scrolls near it.
+    @ViewBuilder private var results: some View {
         if evidence.steps.isEmpty {
             EvidenceAbsent()
         } else {
-            ScrollViewReader { pane in
-                results
-                    // Not animated: a pane scrolling two thousand points is a smear.
-                    .onChange(of: current, initial: true) {
-                        guard let current else { return }
-                        pane.scrollTo(current, anchor: .top)
-                    }
-            }
-        }
-    }
-
-    /// A plain stack and not a lazy one: a lazy stack can only scroll to a row it has built, and
-    /// the ninth file of a run is not built until something scrolls near it.
-    private var results: some View {
-        ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: ArgoSpacing.section) {
                 ForEach(evidence.steps) { step in
                     EvidenceStep(
@@ -62,8 +62,6 @@ struct EvidencePanel: View {
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .defaultScrollAnchor(.top)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
