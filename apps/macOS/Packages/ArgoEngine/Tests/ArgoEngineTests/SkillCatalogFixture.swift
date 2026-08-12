@@ -2,13 +2,11 @@
 import Foundation
 
 /// One skill to lay down: the directory the CLI knows it by, and what its `SKILL.md` states.
-///
-/// `markdown` replaces the generated file outright, which is how a test says "a `SKILL.md` that is
-/// not a skill" without a second write method.
 struct FixtureSkill {
     var directory: String
     var name: String?
     var description: String?
+    /// Replaces the generated file outright, for a `SKILL.md` that is not a skill.
     var markdown: String?
 
     var contents: String {
@@ -20,22 +18,12 @@ struct FixtureSkill {
     }
 }
 
-/// One plugin installed on the machine, as `installed_plugins.json` records it.
-struct FixturePlugin {
-    var name: String
-    var marketplace = "a-marketplace"
-    /// The Project it is installed for. `nil` is a user-wide install, which every Project sees.
-    var forProject: URL?
-    var skills: [FixtureSkill] = []
-}
-
 /// A machine with skills on it: a Project, a home directory, and a plugin cache, built on disk.
 ///
-/// Built rather than checked in, for `RecordDirectoryFixture`'s reason — what the catalog reads is
-/// the filesystem, and a fixture that stubbed the read would prove only that two fakes agree. The
-/// symlink case in particular has no in-memory equivalent: this repo's own skills are symlinks into
-/// `.agents/skills`, so a reader that did not follow one would find nothing here at all.
-struct SkillCatalogFixture {
+/// A class so its `deinit` clears up, as `TranscriptTailTests`' own fixture does. The symlink case
+/// has no in-memory equivalent: this repo's skills are symlinks into `.agents/skills`, so a reader
+/// that did not follow one would find nothing here at all.
+final class SkillCatalogFixture {
     let rootURL: URL
 
     init() throws {
@@ -43,6 +31,8 @@ struct SkillCatalogFixture {
             .appending(path: "argo-skills-\(UUID().uuidString)", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: rootURL, withIntermediateDirectories: true)
     }
+
+    deinit { try? FileManager.default.removeItem(at: rootURL) }
 
     var projectURL: URL {
         rootURL.appending(path: "project", directoryHint: .isDirectory)
@@ -58,10 +48,7 @@ struct SkillCatalogFixture {
 
     /// Where a Project's own skills live, and where the user's global ones do.
     var projectSkills: URL {
-        projectURL.appending(
-            path: ".claude/skills",
-            directoryHint: .isDirectory,
-        )
+        projectURL.appending(path: ".claude/skills", directoryHint: .isDirectory)
     }
 
     var userSkills: URL {
@@ -95,30 +82,43 @@ struct SkillCatalogFixture {
         )
     }
 
-    /// Install plugins, replacing whatever was installed before: the record is one file, so a
-    /// second
-    /// call rewrites it rather than appending to it.
+    /// Install plugins, replacing whatever was installed before: both files are rewritten, so a
+    /// second call replaces the machine's plugins rather than adding to them.
     func install(_ plugins: [FixturePlugin]) throws {
         var entries: [String: [[String: String]]] = [:]
         for plugin in plugins {
             let installURL = cache(for: plugin)
+            let skillsURL = installURL.appending(path: "skills", directoryHint: .isDirectory)
             for skill in plugin.skills {
-                try write(
-                    skill,
-                    into: installURL.appending(path: "skills", directoryHint: .isDirectory),
-                )
+                try write(skill, into: skillsURL)
             }
-            entries["\(plugin.name)@\(plugin.marketplace)"] = [record(for: plugin, at: installURL)]
+            entries[plugin.key] = [record(for: plugin, at: installURL)]
         }
         let recordURL = homeURL.appending(path: ".claude/plugins", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: recordURL, withIntermediateDirectories: true)
         try JSONSerialization
             .data(withJSONObject: ["version": 2, "plugins": entries])
             .write(to: recordURL.appending(path: "installed_plugins.json"))
+        try switchOn(plugins)
     }
 
-    func remove() {
-        try? FileManager.default.removeItem(at: rootURL)
+    /// The user settings' `enabledPlugins` — the other half of whether a plugin is reachable. One
+    /// the fixture never mentions is absent from the map, as `posthog` is on this machine.
+    func switchOn(_ plugins: [FixturePlugin]) throws {
+        try write(
+            settings: ["enabledPlugins": plugins.reduce(into: [:]) { switches, plugin in
+                switches[plugin.key] = plugin.isEnabled
+            }],
+            to: homeURL.appending(path: ".claude", directoryHint: .isDirectory),
+        )
+    }
+
+    /// One settings file, wherever the layering puts it.
+    func write(settings: [String: [String: Bool]], to directoryURL: URL) throws {
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        try JSONSerialization
+            .data(withJSONObject: settings)
+            .write(to: directoryURL.appending(path: "settings.json"))
     }
 
     private func cache(for plugin: FixturePlugin) -> URL {

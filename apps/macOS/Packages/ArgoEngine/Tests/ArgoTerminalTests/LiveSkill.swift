@@ -5,8 +5,8 @@ import Foundation
 enum LiveSkill {
     /// One of this repo's own, copied by name out of `.agents/skills`.
     case installed(String)
-    /// One written for the run. Its body names the fixture's own marker file and the command that
-    /// invokes it names nothing — so the marker appearing is evidence the body arrived (#685).
+    /// One written for the run, whose body names the fixture's marker file while the command that
+    /// invokes it names nothing (#685).
     case probe
 
     /// What a probe answers to. Its own command, and the directory it is written into.

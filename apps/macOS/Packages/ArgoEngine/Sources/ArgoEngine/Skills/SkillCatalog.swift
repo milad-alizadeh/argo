@@ -22,25 +22,29 @@ struct SkillCatalog {
         let origin: SkillOrigin
     }
 
-    /// The Project's skills, then the user's, then each plugin's, and each origin's own in name
-    /// order.
+    /// The Project's skills, then the user's, then each enabled plugin's, and each origin's own in
+    /// name order.
     ///
-    /// One row per command: a Project skill and a global skill of the same name are one `/name` to
-    /// the CLI, so a second row could not be picked. The Project's wins, being the narrower scope.
+    /// A Project skill and a global skill of the same name both get a row. Which one `/name`
+    /// resolves to is a CLI fact Argo has not measured, so neither is hidden on a guess.
     func skills() -> [Skill] {
-        var claimed: Set<String> = []
-        return sources()
-            .flatMap(skills(in:))
-            .filter { claimed.insert($0.command).inserted }
+        sources().flatMap(skills(in:))
     }
 
     private func sources() -> [Source] {
         [
             Source(url: skillsDirectory(under: projectURL), origin: .project),
             Source(url: skillsDirectory(under: homeURL), origin: .user),
-        ] + InstalledPlugins
-            .skillDirectories(under: homeURL, for: projectURL)
-            .map { Source(url: $0.url, origin: .plugin($0.plugin)) }
+        ] + enabledInstalls().map { Source(url: $0.skillsURL, origin: .plugin($0.plugin)) }
+    }
+
+    /// A plugin has to be both installed for this Project and switched on. Installed alone is not
+    /// enough: its skills are unpacked and no command reaches them.
+    private func enabledInstalls() -> [PluginInstall] {
+        let enabled = EnabledPlugins(homeURL: homeURL, projectURL: projectURL)
+        return InstalledPlugins
+            .installs(under: homeURL, for: projectURL)
+            .filter { enabled.isEnabled($0.key) }
     }
 
     private func skillsDirectory(under url: URL) -> URL {

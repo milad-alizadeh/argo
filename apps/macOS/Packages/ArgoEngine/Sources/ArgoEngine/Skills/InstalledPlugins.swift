@@ -3,54 +3,72 @@ import Foundation
 /// The record `claude` keeps of which plugins are installed, where their files were unpacked, and
 /// which Project each install belongs to.
 ///
-/// Read rather than globbed: the cache keeps every version ever installed — four of one plugin
-/// sit under this machine's cache — and only this record names the live one.
+/// Read rather than globbed: the cache keeps every version ever installed, and three plugins no
+/// longer installed at all sit under this machine's. Only this record names what is live.
+///
+/// Live is not the same as reachable — see `EnabledPlugins` for the other half.
 struct InstalledPlugins: Decodable {
     /// Keyed `plugin@marketplace`, with more than one install per key: the same plugin can be
     /// installed user-wide and again for a Project.
     let plugins: [String: [Install]]
 
     struct Install: Decodable {
-        let scope: String
+        let scope: Scope
         /// Present on a `project` install, naming the Project it was installed for.
         let projectPath: String?
         /// Where this install's files were unpacked. Its `skills/` directory is what a catalog
         /// reads.
         let installPath: String
 
-        /// Whether the named Project sees this install. A scope Argo does not know serves nothing,
-        /// rather than showing a Project skills it cannot invoke.
-        func serves(_ projectPath: String) -> Bool {
+        /// Whether the named Project reaches this install.
+        func serves(_ project: String) -> Bool {
             switch scope {
-            case "user": true
-            case "project": self.projectPath.map { standardized(URL(filePath: $0)) } == projectPath
-            default: false
+            case .user: true
+            case .project: projectPath.map(InstalledPlugins.normalizedPath) == project
+            case .unrecognised: false
             }
         }
     }
 
-    /// Every live install's plugin name and skills directory, for one Project. A record that cannot
-    /// be read answers nothing, which shows up as a picker carrying no plugin skills.
-    static func skillDirectories(
-        under homeURL: URL,
-        for projectURL: URL,
-    )
-        -> [(plugin: String, url: URL)] {
+    /// How widely one install reaches. Decoded rather than kept as a string so a scope the CLI adds
+    /// later arrives as `unrecognised` and reaches nothing, rather than being read as another.
+    enum Scope: Decodable {
+        case user
+        case project
+        case unrecognised
+
+        init(from decoder: any Decoder) throws {
+            switch try decoder.singleValueContainer().decode(String.self) {
+            case "user": self = .user
+            case "project": self = .project
+            default: self = .unrecognised
+            }
+        }
+    }
+
+    /// Every live install one Project reaches, in key order. A record that cannot be read answers
+    /// nothing, which shows up as a picker carrying no plugin skills at all.
+    static func installs(under homeURL: URL, for projectURL: URL) -> [PluginInstall] {
         let recordURL = homeURL.appending(path: ".claude/plugins/installed_plugins.json")
         guard let data = try? Data(contentsOf: recordURL),
               let record = try? JSONDecoder().decode(InstalledPlugins.self, from: data)
         else { return [] }
-        let project = standardized(projectURL)
+        let project = normalizedPath(projectURL.path(percentEncoded: false))
         return record.plugins
             .sorted { $0.key < $1.key }
             .flatMap { key, installs in
                 installs
                     .filter { $0.serves(project) }
-                    .map { (plugin: Self.name(of: key), url: Self.skills(at: $0.installPath)) }
+                    .map { install in
+                        PluginInstall(
+                            key: key,
+                            plugin: Self.name(of: key),
+                            skillsURL: Self.skills(at: install.installPath),
+                        )
+                    }
             }
     }
 
-    /// The part of the key before its marketplace, which is what the CLI answers to.
     private static func name(of key: String) -> String {
         String(key.split(separator: "@").first ?? "")
     }
@@ -61,8 +79,9 @@ struct InstalledPlugins: Decodable {
 
     /// Whether a file URL carries a trailing slash depends on whether the folder existed when it
     /// was built, so two URLs naming one folder are not reliably equal. Their paths are.
-    fileprivate static func standardized(_ url: URL) -> String {
-        let path = url.standardizedFileURL.path(percentEncoded: false)
-        return path.count > 1 && path.hasSuffix("/") ? String(path.dropLast()) : path
+    static func normalizedPath(_ path: String) -> String {
+        let standardized = URL(filePath: path).standardizedFileURL.path(percentEncoded: false)
+        guard standardized.count > 1, standardized.hasSuffix("/") else { return standardized }
+        return String(standardized.dropLast())
     }
 }
