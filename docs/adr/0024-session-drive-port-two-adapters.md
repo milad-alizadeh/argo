@@ -1,6 +1,6 @@
 # 0024 · The session-drive port; one adapter per CLI
 
-Status: proposed · 2026-08-10
+Status: accepted · 2026-08-12 (proposed 2026-08-10; Codex channel corrected to app-server and verified, #547)
 
 ## Context
 
@@ -49,12 +49,12 @@ Each adapter picks the CLI surface that keeps included tokens **and** can raise 
 
 | | `claude` adapter | `codex` adapter |
 |---|---|---|
-| Surface | interactive TUI in a PTY Argo owns, never rendered | `codex mcp` server mode, Argo is the MCP client |
+| Surface | interactive TUI in a PTY Argo owns, never rendered | `codex app-server`, JSON-RPC over stdio, Argo is the client |
 | Auth | subscription (interactive) | ChatGPT sign-in |
-| `send` | bracketed paste (`ESC[200~ … ESC[201~`) | MCP tool call |
-| `attach` | write into the Workspace, inject the absolute path | MCP tool call input |
-| `interrupt` | `ESC` to the PTY | MCP cancellation |
-| `decide` | `PreToolUse` hook returns the decision | reply to `elicitation/create` |
+| `send` | bracketed paste (`ESC[200~ … ESC[201~`) | `turn/start` |
+| `attach` | write into the Workspace, inject the absolute path | `input` item on `turn/start` |
+| `interrupt` | `ESC` to the PTY | `turn/interrupt` |
+| `decide` | `PreToolUse` hook returns the decision | respond to the server's `requestApproval` request |
 
 **Hidden is not headless.** The `claude` adapter runs the real TUI; it is only never drawn. That
 is what preserves interactive billing while the user sees a composer.
@@ -85,8 +85,14 @@ beyond configuration: an unregistered hook fails **open**, silently, because the
 that produced nothing as no opinion. The gate is therefore covered by a live-CLI test rather than
 by a fixture that could only ever prove Argo talks to itself.
 
-*`codex`* — with `approval_policy` at `untrusted` or `on-request`, the MCP server raises approvals
-as `elicitation/create`. Argo, as the client, renders the dialog and replies.
+*`codex`* — with `approvalPolicy` at `untrusted` or `on-request`, the app-server raises an
+approval as a **server→client JSON-RPC request**: `item/commandExecution/requestApproval` for a
+command, `item/fileChange/requestApproval` for a patch. Argo renders the dialog and answers by
+responding to the request's `id` with `{"decision": "accept" | "acceptForSession" | "decline" |
+"cancel"}` — `decline` refuses the action and the turn continues; `cancel` also interrupts it.
+While the request is open the thread reports `activeFlags: ["waitingOnApproval"]`, which is the
+cockpit's "needs input" signal. Not MCP elicitation: `codex mcp-server` never raised one
+(verified dead end, 0.144.5).
 
 Both paths are **DIRECT**: Argo owns the channel and the decision at both ends. This is the tier
 `CONTEXT.md` already assigns Permission, so no new tier is introduced — only a second source for
@@ -106,15 +112,16 @@ one that exists.
 
 ## Consequences
 
-- **Two unlike transports to maintain.** A PTY plus terminal-escape handling for `claude`; an MCP
-  client for `codex`. They share the port contract and nothing below it.
+- **Two unlike transports to maintain.** A PTY plus terminal-escape handling for `claude`; a
+  JSON-RPC stdio client for `codex app-server`. They share the port contract and nothing below it.
 - **Argo hosts a local IPC endpoint** for the `claude` hook, and must install/own the hook config
   for sessions it spawns. A `managed` session is now partly defined by Argo's hook being wired in.
 - **Blocking on a Permission is the intended behaviour, not a hazard.** The cockpit shows
   "needs input" and holds the Session there, as every agent UI does. On `claude` this is safe by
-  construction: hook expiry **denies** and the turn ends cleanly (verified). On `codex` it is not —
-  the MCP server hangs indefinitely if the client never replies (openai/codex#11816) — so the
-  Codex adapter must impose its own deny-on-timeout.
+  construction: hook expiry **denies** and the turn ends cleanly (verified). On `codex` the server
+  never times out on its own (a 60s unanswered hold stayed open; openai/codex#11816), so the
+  adapter imposes its own deny-on-timeout — verified: a late `decline` refuses the operation, the
+  turn ends cleanly, and the thread answers a follow-up turn.
 - **The composer must be cleared after an interrupt** before the next `send`, or leftover text
   concatenates onto the injected turn.
 - **`CLAUDE_CODE_CHILD_SESSION` must never reach a spawned session.** Inheriting it silently
@@ -126,19 +133,18 @@ one that exists.
 - **Attachment fidelity differs by adapter.** `claude` gets a path the agent must `Read`, so the
   transcript carries embedded bytes only once the agent looks; `codex` receives content through
   the tool call. Both stay DERIVED at the feed.
-- **Codex's elicitation path has known defects** — the server deserializes replies as flat structs
-  rather than MCP `ElicitResult` (openai/codex#18268), and auto-approve can send an empty
-  `content` against a schema that requires fields (#23383). The adapter codes to the shape the
-  server accepts, not the shape the spec describes, and pins the Codex version it was verified
-  against.
+- **The Codex approval contract is observed, not specified.** `codex app-server` is marked
+  experimental, and the exec request's `availableDecisions` omitted `decline` even though
+  `decline` was accepted and honored — so the field is advisory for UI, never the contract. The
+  adapter codes to the shapes recorded in the research doc and pins the Codex version it was
+  verified against. The MCP elicitation defects (openai/codex#18268, #23383) no longer apply to
+  the chosen channel.
 - **A `--permission-mode` baseline is still needed** for tools Argo chooses not to gate, or the
   hook is consulted on every read and the session crawls.
 
 ## Verification status
 
-Against `claude` 2.1.226 and `codex-cli` 0.144.5, 2026-08-10.
-
-**The `claude` adapter is proven.**
+**The `claude` adapter is proven — against `claude` 2.1.226, 2026-08-10.**
 
 - Long-lived multi-turn, images, and transcript persistence (image bytes embedded) — the parser
   needs no change.
@@ -156,15 +162,23 @@ Against `claude` 2.1.226 and `codex-cli` 0.144.5, 2026-08-10.
   a follow-up turn was answered. The transcript records it as a first-class entry —
   `[Request interrupted by user]` — so the interrupt is observable from the feed, not only the PTY.
 
-**The `codex` adapter is not proven — treat it as the open risk.** `codex mcp-server` exists and
-exposes `codex` / `codex-reply` with `approval-policy` and `sandbox` arguments, but no approval
-elicitation could be observed across three configurations (default, `mcp_servers={}`, and a fully
-isolated `CODEX_HOME`): every `tools/call` stalled after `session_configured`. Notably the server's
-`initialize` reply advertises **only** `capabilities: {tools: {listChanged: true}}` — it declares
-no elicitation capability, and approvals appear to travel as `codex/event` notifications rather
-than MCP `elicitation/create`. That is consistent with the known defects
-(openai/codex#18268, #11816, #23383) and may mean a client cannot answer them by the standard
-mechanism at all in this version.
+**The `codex` adapter channel is proven — against `codex-cli` 0.147.0, 2026-08-12 (#547).**
+Full JSON-RPC transcripts and reproduction: `docs/research/2026-08-12-codex-app-server-approvals.md`.
 
-Before `accepted`: demonstrate a Codex approval round trip, or replace the Codex adapter's
-approval channel with something that works and re-record it here.
+- **Exec approval round trip.** Under `approvalPolicy: "untrusted"`, `codex app-server` raised
+  `item/commandExecution/requestApproval` as a server→client JSON-RPC request; the client
+  responded `{"decision": "accept"}` and the command executed.
+- **Patch approval round trip.** Under a `read-only` sandbox, `item/fileChange/requestApproval`
+  was raised and answered `accept`; the file was written. The diff for the dialog arrives on the
+  `item/started` notification and `turn/diff/updated`, joined by `itemId`.
+- **Deny-on-timeout is implementable and demonstrated.** The server held an unanswered approval
+  open for 60s with no timeout of its own; a late `{"decision": "decline"}` was honored — the
+  item completed `status: "declined"`, the file was never created, the turn ended cleanly, and
+  the same thread answered a follow-up turn.
+- **`codex mcp-server` remains a dead end** (0.144.5, 2026-08-10): no approval elicitation across
+  three configurations (default, `mcp_servers={}`, isolated `CODEX_HOME`); every `tools/call`
+  stalled after `session_configured`, and `initialize` advertised only
+  `capabilities: {tools: {listChanged: true}}`. The adapter uses app-server, not MCP.
+- **The approval channel is what the spike exercised; the rest of the row is mapped, not
+  verified.** `turn/interrupt`, `attach` via `input` items, and `approvalPolicy: "on-request"`
+  come from the server's own schema and remain to be exercised by the adapter build (#683).
