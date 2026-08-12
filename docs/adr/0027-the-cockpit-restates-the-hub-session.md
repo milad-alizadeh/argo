@@ -11,9 +11,11 @@ one that cannot.
 `CockpitPresentation.Session` restates 24 facts that `HubSession` already holds, and 19 of them
 cross `init(observed:annotations:)` unchanged. Only five carry logic: `access`, `workspace`,
 `isArchived`, `explicitName`, and `issue`, which is hardcoded `nil` until a Work Item provider is
-connected. Ten of the copied types are engine types ArgoUI imports directly. Two of #632's
-explorers read that as duplication and proposed the obvious shrink — hold the `HubSession` and
-compute the derived facts on top:
+connected. Nine of the field types are engine types ArgoUI names directly rather than restating —
+`WorkspaceProjection`, `AgentCLI`, `SessionStatus`, `PermissionRequest`, `StandingAllow`,
+`PermissionExpiry`, `SessionModeReading`, `SessionMode`, `TranscriptEvent`. Two of #632's explorers
+read that as duplication and proposed the obvious shrink — hold the `HubSession` and compute the
+derived facts on top:
 
 ```swift
 struct Session { let observed: HubSession; let annotations: …; let issue: Issue? }
@@ -35,9 +37,10 @@ The rule permits the shrink. Something else has to decide it.
 `HubSession`.
 
 **And the projection is total.** Every public fact on `HubSession` either appears in the mapping as
-`session.<name>` or is named on a `not-projected:` line beside it. `swift-boundaries.sh` edge 5
-enforces both directions: a fact in neither place fails the build, and so does a `not-projected:`
-entry naming a fact that no longer exists.
+`session.<name>` — in code, not in prose — or on a `not-projected: <name> — <why>` line beside it.
+`swift-boundaries.sh` edge 5 enforces all three directions: a fact in neither place fails the
+build, so does a `not-projected:` entry naming a fact that no longer exists, and so does a fact
+claimed by both.
 
 At the time of writing that is 32 public facts — 22 landed, 10 deliberately dropped.
 
@@ -71,10 +74,16 @@ elegance; it was that a missed copy is silent. Edge 5 makes it loud, for a fract
   the work. It removes the silence.
 - **`not-projected:` is a list of decisions, maintained by hand.** That is the point: adding a fact
   to it is a sentence someone had to write about why the cockpit does not render it.
-- **Edge 5 matches declarations by text, not by type.** It reads `HubSession.swift` and the
-  `HubSession+*.swift` extensions for public `var`/`let` at struct indentation. A fact declared
-  somewhere else — a third file, a protocol conformance — is invisible to it. Add the file to the
+- **Edge 5 matches declarations by text, not by type.** It reads `HubSession*.swift` for `var`/`let`
+  at struct indentation, requiring the `public` keyword in the struct body and accepting it either
+  way inside a `public extension HubSession`. A fact declared outside that glob — a third file, a
+  protocol conformance, a `public extension` on some other type — is invisible to it. Widen the
   glob rather than working around this.
+- **Text matching fails silently, so the gate needs its own tests.**
+  `scripts/swift-boundaries.test.mjs` runs edge 5 against a synthetic tree and asserts it goes red
+  on each way the projection can fall behind, including the two that check nothing at all: a moved
+  `HubSession.swift`, and a declaration shape the pattern no longer matches. A gate matching
+  nothing passes everything, and nothing else in the repo would notice.
 - **A fact can land and still reach no pixel.** The gate proves the projection was told; it cannot
   prove a view draws it. That remains a test's job.
 - **The `let`/`var` argument disappears if `HubSession` ever becomes fully immutable.** If the Hub

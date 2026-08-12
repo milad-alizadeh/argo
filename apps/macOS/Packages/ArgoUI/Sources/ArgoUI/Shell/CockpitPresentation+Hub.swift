@@ -91,8 +91,22 @@ extension CockpitPresentation.Session {
     /// must appear as `session.<name>` below, and `swift-boundaries.sh` edge 5 fails the build
     /// when a new one appears in neither place.
     ///
-    /// not-projected: sourceURL liveness convention modeSet headLeafUUID lastActivityAtMs
-    /// not-projected: hasAgentActivity isQueued signals statusReading
+    /// Most of them are the raw INPUTS to a derivation the cockpit takes the result of. Handing a
+    /// view the inputs invites a second reading of a fact the Hub has already read.
+    ///
+    /// not-projected: liveness — an input to the status fold; `status` below is its result.
+    /// not-projected: convention — the same input at the CONVENTION tier.
+    /// not-projected: signals — the tuple that fold reads, and nothing else.
+    /// not-projected: statusReading — carries the honesty tier beside the status. The tier is the
+    ///   Hub's own bookkeeping, and no surface below the shell renders it.
+    /// not-projected: modeSet — an input to `mode`, which lands below already reconciled.
+    /// not-projected: lastActivityAtMs — one half of `lastSeenAtMs`, which lands below.
+    /// not-projected: sourceURL — where the record sits on disk. A path, not a fact about a
+    ///   Session, and the feed reads events rather than files.
+    /// not-projected: headLeafUUID — how the chain is stitched, which is the Hub's business.
+    /// not-projected: hasAgentActivity — the roster admission test, already applied upstream: a
+    ///   Session that fails it never reaches this projection at all.
+    /// not-projected: isQueued — the other half of that same admission test.
     init(observed session: HubSession, annotations: SessionAnnotations) {
         self.init(
             id: session.id,
