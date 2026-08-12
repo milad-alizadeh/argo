@@ -46,9 +46,14 @@ touch (each rule's `paths:` frontmatter states its scope):
 
 `apps/macOS`'s three layers — `ArgoEngine` ⊥ `ArgoUI` ⊥ the app target — are enforced by
 `scripts/swift-boundaries.sh` (in `quality:swift`, on the `macos` CI job and in pre-commit).
-Each edge is ADR-0022's layering and is checkable from imports and declarations alone, which is
-why they are gates rather than review notes. The sharpest one: **exactly one file in `ArgoUI`
-may read live Hub state** — the Hub → cockpit projection. Everything else takes a value.
+Every edge is checkable from imports and declarations alone, which is why they are gates rather
+than review notes. Four are ADR-0022's layering; the sharpest of those is **exactly one file in
+`ArgoUI` may read live Hub state** — the Hub → cockpit projection. Everything else takes a value.
+
+The fifth is ADR-0027, on that projection: the cockpit **restates** `HubSession` rather than
+holding one, so every public engine fact must land in the mapping or be named on a
+`not-projected:` line beside it. Adding a public fact to `HubSession` fails the build until you
+say which it is.
 
 The JS/TS boundary gates are dormant — no subject since ADR-0023 retired the Electron
 cockpit. Their scripts stay in `scripts/` for consumers; history and shape: ADR-0021, ADR-0023.

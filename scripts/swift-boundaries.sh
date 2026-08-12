@@ -4,8 +4,9 @@
 # append staged paths without changing what is checked: a boundary is a property of the
 # tree, not of the file you happened to touch.
 #
-# The four edges are ADR-0022's layering, and each is checkable by looking at imports,
-# declarations and size alone — which is the whole reason they are gates rather than review notes.
+# Edges 1-4 are ADR-0022's layering; edge 5 is ADR-0027, on the projection between two of its
+# layers. Each is checkable by looking at imports, declarations and size alone — which is the whole
+# reason they are gates rather than review notes.
 set -eu
 
 APP_DIR="apps/macOS"
@@ -14,6 +15,8 @@ ENGINE_SOURCES="$APP_DIR/Packages/ArgoEngine/Sources/ArgoEngine"
 APP_TARGET="$APP_DIR/Argo"
 # The one file in ArgoUI allowed to read live Hub state: the Hub → cockpit projection.
 PROJECTION_FILE="CockpitPresentation+Hub.swift"
+PROJECTION="$UI_SOURCES/ArgoUI/Shell/$PROJECTION_FILE"
+HUB_SESSION="$ENGINE_SOURCES/Hub/HubSession.swift"
 
 if [ ! -d "$APP_DIR" ]; then
   echo "swift-boundaries: $APP_DIR not found — run from the repo root" >&2
@@ -71,10 +74,81 @@ if [ "$lines" -gt "$APP_TARGET_MAX_LINES" ]; then
     "Move the newest derivation into ArgoEngine or ArgoUI with a test, rather than raising this."
 fi
 
+# 5. The projection is TOTAL. The cockpit's `Session` restates `HubSession` rather than holding
+#    one (ADR-0027), so every public engine fact must either land in the mapping as
+#    `session.<name>` or carry a `not-projected: <name> — <why>` line beside it. Without this, a
+#    new engine fact reaches no surface and nothing says so — the failure mode #572 and #573 each
+#    walked into by hand. `swift-boundaries.test.mjs` is the proof it stays loud.
+# A member of a `public extension` is public whether or not it repeats the keyword, so the two
+# contexts are matched by different rules and awk tracks which one it is in.
+hub_facts() {
+  awk '
+    function emit(  i, name) {
+      for (i = 1; i <= NF; i++)
+        if ($i == "var" || $i == "let") {
+          name = $(i + 1); sub(/[^A-Za-z0-9_].*/, "", name); print name; return
+        }
+    }
+    /^public extension HubSession/ { ext = 1; next }
+    /^}/ { ext = 0; next }
+    ext && /^    (public )?(var|let) [A-Za-z]/ { emit(); next }
+    /^    public ([a-z]+\(set\) )?(var|let) [A-Za-z]/ { emit() }
+  ' "$ENGINE_SOURCES"/Hub/HubSession*.swift | sort -u
+}
+# The first name on a marker line; whatever follows it is the reason, which is prose.
+not_projected() {
+  sed -nE 's/^.*not-projected:[[:space:]]*([A-Za-z0-9_]+).*/\1/p' "$PROJECTION" | sort -u
+}
+# Comment lines are excluded: prose may NAME a fact, and only the mapping can land one.
+mapped() {
+  grep -vE '^[[:space:]]*//' "$PROJECTION" | grep -oE 'session\.[A-Za-z0-9_]+' \
+    | cut -d. -f2 | sort -u
+}
+
+if [ ! -f "$HUB_SESSION" ] || [ ! -f "$PROJECTION" ]; then
+  report "edge 5 cannot see its own subjects — HubSession.swift or $PROJECTION_FILE has moved" \
+    "Point HUB_SESSION and PROJECTION at their new homes. An edge whose input is missing checks" \
+    "nothing, and nothing else in this repo would notice."
+else
+  facts=$(hub_facts)
+  dropped=$(not_projected)
+  landed=$(mapped)
+  accounted=$(printf '%s\n%s\n' "$landed" "$dropped" | grep -v '^$' | sort -u)
+
+  if [ -z "$facts" ]; then
+    report "edge 5 read no public facts off HubSession — the declarations it matches have changed" \
+      "Fix \`hub_facts\` in this script. An edge that matches nothing passes everything."
+  fi
+
+  hits=$(printf '%s\n' "$facts" | grep -vxF "$accounted" || true)
+  if [ -n "$hits" ]; then
+    report "these HubSession facts reach no cockpit surface and are not accounted for in $PROJECTION_FILE (ADR-0027)" \
+      "$hits" \
+      "Map each one in \`init(observed:annotations:)\`, or add a \`not-projected: <name> — <why>\`" \
+      "line above it saying why the cockpit does not render it."
+  fi
+
+  # The list the other way round: an entry naming a fact that no longer exists makes the check
+  # above pass for a reason that stopped being true.
+  hits=$(printf '%s\n' "$dropped" | grep -vxF "$facts" || true)
+  if [ -n "$hits" ]; then
+    report "\`not-projected:\` in $PROJECTION_FILE names facts HubSession no longer has" "$hits"
+  fi
+
+  # And a fact cannot be both. Left unchecked, a stale entry would go on covering a fact that has
+  # since been landed, and the entry's reason would read as current.
+  hits=$(printf '%s\n' "$landed" | grep -xF "$dropped" || true)
+  if [ -n "$hits" ]; then
+    report "these facts are mapped in $PROJECTION_FILE AND listed \`not-projected:\`" "$hits" \
+      "Drop the \`not-projected:\` line: the fact is rendered, so its reason is out of date."
+  fi
+fi
+
 if [ "$failed" -eq 1 ]; then
   echo "" >&2
-  echo "Fix the import, or move the file into the package that may own it. Never loosen this" >&2
-  echo "check: the layering is what keeps the engine runnable without a window." >&2
+  echo "Move the declaration into the package that may own it, or land the fact where the edge" >&2
+  echo "above says it belongs. Never loosen a check here: the layering is what keeps the engine" >&2
+  echo "runnable without a window, and the projection honest about what it drops." >&2
   exit 1
 fi
 
