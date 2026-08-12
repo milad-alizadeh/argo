@@ -33,20 +33,34 @@ extension EnvironmentValues {
 }
 
 extension View {
-    /// Starts this zone below the canopy instead of behind it. Every zone in the deck takes either
-    /// this or the feed's scroller inset — the feed is the only one whose content runs UNDER the
-    /// glass, because it is the only one that scrolls.
+    /// Starts this zone below the canopy and keeps it there. For the furniture that does not
+    /// scroll — the seams, the minimap lane, the word on an empty feed.
     func argoUnderCanopy() -> some View {
         modifier(ArgoUnderCanopy())
     }
+
+    /// Runs this scroll view's content BENEATH the canopy: it opens below the glass and passes
+    /// under it when scrolled. A content margin and not padding, so what a `ScrollViewReader`
+    /// scrolls to lands below the glass rather than behind it.
+    func argoScrollsUnderCanopy() -> some View {
+        modifier(ArgoScrollsUnderCanopy())
+    }
 }
 
-/// The inset spelled once, so a zone added to the deck later cannot quietly miss it.
+/// The two insets spelled once, so a zone added to the deck later cannot quietly miss them.
 private struct ArgoUnderCanopy: ViewModifier {
     @Environment(\.argoDeckCanopy) private var canopy
 
     func body(content: Content) -> some View {
         content.padding(.top, canopy)
+    }
+}
+
+private struct ArgoScrollsUnderCanopy: ViewModifier {
+    @Environment(\.argoDeckCanopy) private var canopy
+
+    func body(content: Content) -> some View {
+        content.contentMargins(.top, canopy, for: .scrollContent)
     }
 }
 

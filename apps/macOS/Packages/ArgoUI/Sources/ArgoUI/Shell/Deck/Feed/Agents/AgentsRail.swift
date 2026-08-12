@@ -10,19 +10,20 @@ struct AgentsRail: View {
 
     let agents: [FeedAgent]
 
+    /// The count line rides INSIDE the scroll, above the chips, rather than pinned over them.
+    /// Anything pinned below the canopy would hide this column's content from the glass, and a bar
+    /// with nothing behind it is a bar with no material to show.
     var body: some View {
-        VStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-            header
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: ArgoSpacing.tight) {
-                    ForEach(agents) { AgentChip(agent: $0) }
-                }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: ArgoSpacing.tight) {
+                header
+                ForEach(agents) { AgentChip(agent: $0) }
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(ArgoSpacing.comfortable)
         }
+        .argoScrollsUnderCanopy()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(ArgoSpacing.comfortable)
-        // Below the glass, not behind it: the count line sits at the top of this rail.
-        .argoUnderCanopy()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Subagents")
     }
