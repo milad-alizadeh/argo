@@ -142,12 +142,11 @@ struct SessionDriveTests {
         #expect(typed.last == "\r")
     }
 
-    /// A Turn waits for the Turn ahead of it and for nothing else (#682). An `ESC` held back behind
-    /// one would be spaced by whatever that Turn is waiting on rather than by its own caller, and a
-    /// mode walk whose steps lost their spacing is #653 again — so a single burst still goes when
-    /// it is asked for, even inside a Turn's own pause.
+    /// Only the Return waits (#682). The paste goes when it is asked for, so a keystroke asked for
+    /// AFTERWARDS cannot overtake it — a Stop pressed on a Turn reaching the agent before the Turn
+    /// it was pressed on would be Argo inventing an order the user never typed.
     @Test
-    func `a single keystroke is not held back by a Turn still being typed`() async throws {
+    func `a keystroke asked for after a Turn cannot overtake its paste`() async throws {
         let fixture = try SpawnFixture()
         defer { fixture.remove() }
         let claim = try await fixture.hub.spawnSession()
@@ -155,7 +154,15 @@ struct SessionDriveTests {
         try fixture.hub.driver.send("Off you go.", to: claim.value)
         try fixture.hub.driver.interrupt(claim.value)
 
-        #expect(fixture.host.started.last?.written == ["\u{1B}"])
+        // Asserted BEFORE the Return has had its pause: the paste is already out, and the `ESC`
+        // behind it. Holding the `ESC` back instead is what would pace a mode walk into one read.
+        let atOnce = fixture.host.started.last?.written ?? []
+        #expect(atOnce.count == 2)
+        #expect(atOnce.first?.contains("Off you go.") == true)
+        #expect(atOnce.last == "\u{1B}")
+
+        await settle { fixture.host.started.last?.written.count == 3 }
+        #expect(fixture.host.started.last?.written.last == "\r")
     }
 
     @Test

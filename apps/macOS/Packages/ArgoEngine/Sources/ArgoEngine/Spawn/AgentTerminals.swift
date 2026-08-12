@@ -36,7 +36,13 @@ final class AgentTerminals {
     /// Only Turns queue here. A single-burst `write` goes out when it is asked for, as it always
     /// has — an `ESC` or a back-tab held back behind a Turn would be paced by whatever the Turn is
     /// waiting on rather than by its own caller, and a mode walk whose steps lost their spacing is
-    /// #653 again. It follows that a Turn's window is closed against other TURNS and nothing else.
+    /// #653 again.
+    ///
+    /// So a Turn's pause is closed against other TURNS and against nothing else, and what can land
+    /// in it lands harmlessly: a back-tab cycles the rung and leaves the composer holding the
+    /// Turn, and an `ESC` clears the composer, after which the Return submits an empty field. That
+    /// second one drops the Turn rather than stopping it once it runs — which is what Stop was
+    /// pressed for either way.
     private var typing: [SessionOwnership.ClaimID: Typing] = [:]
     private var nextTyping = 0
     private var nextViewer = 0
@@ -88,27 +94,47 @@ final class AgentTerminals {
     }
 
     /// Type the two halves of one Turn, with the pause between them that makes them two reads
-    /// rather than one (`PacedKeystrokes`), behind whatever Turn is still being typed.
+    /// rather than one (`PacedKeystrokes`).
     ///
-    /// `true` says a live PTY answered when this was asked for — not that either half landed.
-    /// Nothing else could be said honestly: both halves are written after the answer, and a PTY
-    /// that goes away in between takes what is left of the Turn with it, exactly as it would have
-    /// taken the whole Turn a moment earlier.
+    /// The paste goes when it is asked for, exactly as the whole Turn used to, and only the Return
+    /// waits. Deferring the paste as well would let a keystroke asked for AFTERWARDS overtake it —
+    /// a Stop pressed on a Turn arriving before the Turn it was pressed on.
+    ///
+    /// A Turn typed while another is still being typed is the one thing that does wait, and it
+    /// waits whole: its paste landing in the pause would be submitted by the FIRST Turn's Return,
+    /// the two messages arriving as one Turn.
+    ///
+    /// `true` says a live PTY answered when this was asked for — not that the Return landed. A PTY
+    /// that goes away inside the pause takes it, exactly as it would have taken the whole Turn a
+    /// moment earlier.
     @discardableResult
     func write(_ paced: PacedKeystrokes, to id: SessionOwnership.ClaimID) -> Bool {
-        guard agents[id] != nil else { return false }
+        guard let entry = agents[id] else { return false }
         let ahead = typing[id]?.task
+        if ahead == nil {
+            entry.process.write(paced.first)
+        }
         nextTyping += 1
         let number = nextTyping
         typing[id] = Typing(number: number, task: Task { [weak self] in
-            await ahead?.value
-            self?.agents[id]?.process.write(paced.first)
+            // Cleared on every way out, and only by the link that is still the tail: a Turn that
+            // arrived behind this one is left holding the chain it is waiting on.
+            defer {
+                if self?.typing[id]?.number == number {
+                    self?.typing[id] = nil
+                }
+            }
+            // Checked after each wait rather than relying on the PTY having been dropped too.
+            // Awaiting a `Task<Void, Never>` is not cancellation-aware, so a cancelled link
+            // resumes like any other and would type into whatever answered next.
+            if let ahead {
+                await ahead.value
+                guard !Task.isCancelled else { return }
+                self?.agents[id]?.process.write(paced.first)
+            }
             try? await Task.sleep(for: paced.gap)
             guard !Task.isCancelled else { return }
             self?.agents[id]?.process.write(paced.second)
-            if self?.typing[id]?.number == number {
-                self?.typing[id] = nil
-            }
         })
         return true
     }
