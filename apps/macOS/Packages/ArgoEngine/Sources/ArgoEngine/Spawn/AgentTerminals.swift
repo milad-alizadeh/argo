@@ -29,6 +29,11 @@ final class AgentTerminals {
     /// count its distance from a stance the first has already left and interleave its keystrokes
     /// with it.
     private var walking: Set<SessionOwnership.ClaimID> = []
+    /// The paced writes still owed to each agent, newest last. Every write to a claim that has one
+    /// outstanding joins the chain, so nothing can land between the two halves of a Turn — a second
+    /// paste in that window would be submitted by the FIRST Turn's Return, as one Turn made of both
+    /// messages.
+    private var pacing: [SessionOwnership.ClaimID: Task<Void, Never>] = [:]
     private var nextViewer = 0
 
     init() {}
@@ -56,6 +61,7 @@ final class AgentTerminals {
     /// The PTY exited: there is nothing left to steer.
     func drop(_ id: SessionOwnership.ClaimID) {
         agents.removeValue(forKey: id)
+        pacing.removeValue(forKey: id)?.cancel()
     }
 
     /// Type at one agent's prompt without becoming a viewer of it — what Argo steering a Session it
@@ -64,7 +70,34 @@ final class AgentTerminals {
     @discardableResult
     func write(_ text: String, to id: SessionOwnership.ClaimID) -> Bool {
         guard let entry = agents[id] else { return false }
-        entry.process.write(text)
+        guard let ahead = pacing[id] else {
+            entry.process.write(text)
+            return true
+        }
+        pacing[id] = Task { [weak self] in
+            await ahead.value
+            self?.agents[id]?.process.write(text)
+        }
+        return true
+    }
+
+    /// Type the two halves of one Turn, with the pause between them that makes them two reads
+    /// rather than one (`PacedKeystrokes`).
+    ///
+    /// `true` says a live PTY answered when this was asked for, which is the same thing the
+    /// single-burst `write` answers — not that both halves landed. Nothing else could be said
+    /// honestly: the second half is written after the pause, and a PTY that goes away inside it
+    /// takes the Return with it, exactly as it would have taken the whole Turn a moment earlier.
+    @discardableResult
+    func write(_ paced: PacedKeystrokes, to id: SessionOwnership.ClaimID) -> Bool {
+        guard agents[id] != nil else { return false }
+        let ahead = pacing[id]
+        pacing[id] = Task { [weak self] in
+            await ahead?.value
+            self?.agents[id]?.process.write(paced.first)
+            try? await Task.sleep(for: paced.gap)
+            self?.agents[id]?.process.write(paced.second)
+        }
         return true
     }
 
@@ -103,6 +136,10 @@ final class AgentTerminals {
         // asked for, and the owner answers that by dropping the very table this would be walking.
         let ending = Array(agents.values)
         agents = [:]
+        for owed in pacing.values {
+            owed.cancel()
+        }
+        pacing = [:]
         for entry in ending {
             entry.process.terminate()
         }

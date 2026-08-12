@@ -22,10 +22,11 @@ struct HubHandoffTests {
 
         #expect(fixture.hub.steer(sessionID: "session-from-cli", typing: "/handoff /tmp/b.md"))
 
-        let written = try #require(fixture.host.started.last?.written.last)
-        #expect(fixture.host.started.last?.written.count == 1)
-        #expect(written.contains("/handoff /tmp/b.md"))
-        #expect(written.hasSuffix("\r"))
+        // The Turn is two writes with a pause between them (#682), so the Return is waited for.
+        await settle { fixture.host.started.last?.written.count == 2 }
+        let written = fixture.host.started.last?.written ?? []
+        #expect(written.first?.contains("/handoff /tmp/b.md") == true)
+        #expect(written.last == "\r")
     }
 
     /// Story 49 in the engine's own terms. An orphaned Session's claim outlived its PTY, so there

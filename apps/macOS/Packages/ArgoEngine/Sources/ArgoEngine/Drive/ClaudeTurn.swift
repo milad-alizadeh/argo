@@ -4,13 +4,17 @@ import Foundation
 /// The Session is a real TUI in a PTY Argo owns and never draws (ADR-0024): there is no API on the
 /// other end, only a terminal program reading a descriptor.
 enum ClaudeTurn {
-    /// The text as a bracketed paste, then the Return that submits it.
+    /// The text as a bracketed paste, then the Return that submits it — as two writes, never one.
     ///
     /// A newline at that prompt SUBMITS, so a multi-line message written straight through would
     /// arrive as one Turn per line. The brackets are how a terminal says "this is text, not
     /// typing".
-    static func keystrokes(for text: String) -> String {
-        "\(pasteStart)\(pasted(text))\(pasteEnd)\(submit)"
+    static func keystrokes(for text: String) -> PacedKeystrokes {
+        PacedKeystrokes(
+            first: "\(pasteStart)\(pasted(text))\(pasteEnd)",
+            second: submit,
+            gap: gap,
+        )
     }
 
     /// `ESC [ 200 ~` / `ESC [ 201 ~` — the DEC private mode the whole terminal world spells the
@@ -20,6 +24,17 @@ enum ClaudeTurn {
     /// CR, not LF: Return arrives at a PTY as a carriage return, and a TUI listening for the key
     /// does not hear a line feed.
     private static let submit = "\r"
+
+    /// What separates the paste from the Return.
+    ///
+    /// The TUI handles one read as one input batch, and an `@` token in the pasted text opens the
+    /// file-mention popup inside that batch — the popup then takes the Return as its own accept key
+    /// and the Turn sits in the composer, looking sent and never sent (#682). Verified against
+    /// `claude` 2.1.228 on 2026-08-12 in a PTY harness: one burst left the Turn unsent 2 times in
+    /// 13, while every split trial submitted, from 50 ms out to 2.5 s. This is that floor, which is
+    /// also the mode walk's (`ClaudeModeCycle.gap`) — measured separately, because the two are the
+    /// same batching read at different keys and either could move without the other.
+    private static let gap = Duration.milliseconds(50)
 
     /// The text made safe to sit between the brackets.
     ///
