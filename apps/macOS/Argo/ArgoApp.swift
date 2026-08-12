@@ -34,11 +34,12 @@ struct ArgoApp: App {
         }
         self.specimenName = configuration.specimenName
         let projects = ProjectRegistryStore()
-        _cockpit = State(initialValue: CockpitCoordinator(
-            configuration: configuration,
-            store: projects,
-        ))
-        _accounts = State(initialValue: AccountsCoordinator(projects: projects))
+        let cockpit = CockpitCoordinator(configuration: configuration, store: projects)
+        let accounts = AccountsCoordinator(projects: projects)
+        // The row's fact is the Hub's, read at every panel rebuild rather than copied once.
+        accounts.companionStanding = { ConnectCompanion(standing: cockpit.hub.companionStanding) }
+        _cockpit = State(initialValue: cockpit)
+        _accounts = State(initialValue: accounts)
     }
 
     var body: some Scene {

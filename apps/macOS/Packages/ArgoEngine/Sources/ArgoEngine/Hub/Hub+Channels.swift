@@ -2,6 +2,14 @@ import Foundation
 
 /// The channels an agent Argo spawned talks back over. Both write into the claim ledger, which is
 /// where the prompts, the standing allows and the refused calls are read back from.
+@MainActor
+public extension Hub {
+    /// The companion row's fact (#570); `nil` where no channel was opened, rendered `unknown`.
+    var companionStanding: CompanionStanding? {
+        companion?.standing
+    }
+}
+
 extension Hub {
     /// Opened at construction, not lazily: a channel that came into being on the first spawn would
     /// be a second thing that could fail at the moment an agent starts — which is the one moment

@@ -38,6 +38,8 @@ struct ConnectCopyTests {
         ConnectFixture.folderOnly,
         ConnectFixture.partly,
         ConnectFixture.wired,
+        ConnectFixture.pluginMissing,
+        ConnectFixture.pluginFailed,
         ConnectReading(companion: .unknown),
         ConnectReading(folder: ConnectFixture.folder, mode: .settings(agent: .claude)),
     ].map(ConnectPanelProjection.panel(from:))

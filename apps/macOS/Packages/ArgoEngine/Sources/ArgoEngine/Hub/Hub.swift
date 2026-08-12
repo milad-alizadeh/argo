@@ -155,6 +155,10 @@ public final class Hub {
         isConnecting = true
         defer { isConnecting = false }
         await disconnect()
+        // A remembered plugin failure would be a claim about a spawn another Project never made.
+        if configuration.projectURL != self.configuration.projectURL {
+            companion?.forgetRefusal()
+        }
         self.configuration = configuration
         project = HubProject(url: configuration.projectURL)
         await refreshCheckout()

@@ -39,6 +39,8 @@ final class AccountsCoordinator {
     /// The wait on a grant, held so it can be stopped and so a second `Connect` cannot leave two
     /// polls running against one panel.
     var grant: Task<Void, Never>?
+    /// The companion row's fact (#570), injected because the channel is the Hub's, not this one's.
+    var companionStanding: @MainActor () -> ConnectCompanion = { .unknown }
 
     init(projects: ProjectRegistryStore) {
         let store = AccountRegistryStore(bindings: ProjectBindingIndex(projects: projects))
@@ -147,8 +149,7 @@ final class AccountsCoordinator {
             folder: project?.path,
             accounts: accounts.load().accounts,
             ports: ports,
-            // Argo writes the plugin for every Session it starts; #570 owns whatever more it says.
-            companion: .includedWithSpawns,
+            companion: companionStanding(),
             challenge: challenge,
             note: note,
             authorizable: ConnectReading.authorizableToday,

@@ -88,6 +88,20 @@ enum ConnectFixture {
         note: ConnectNote(refusal: .scopeNotVisible("trili/cockpit")),
     )
 
+    /// The honest `Not available yet`: this build ships no plugin, so no spawn can write one.
+    static let pluginMissing = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        companion: .missingFromBuild,
+    )
+
+    /// The last spawn could not write its plugin, told with the refusal's own words.
+    static let pluginFailed = ConnectReading(
+        folder: folder,
+        accounts: [personal],
+        companion: .installFailed(why: "Companion socket could not be opened"),
+    )
+
     /// The same panel re-entered on a Project that exists.
     static let settings = ConnectReading(
         folder: folder,
@@ -105,6 +119,8 @@ enum ConnectFixture {
         ("connectWaiting", waiting),
         ("connectRefused", refused),
         ("connectBroken", broken),
+        ("connectPluginMissing", pluginMissing),
+        ("connectPluginFailed", pluginFailed),
         ("projectSettings", settings),
     ]
 }
